@@ -1,18 +1,37 @@
-import { DarkTheme, DefaultTheme, ThemeProvider } from 'expo-router';
-import * as SplashScreen from 'expo-splash-screen';
-import { useColorScheme } from 'react-native';
+import '../global.css';
 
-import { AnimatedSplashOverlay } from '@/components/animated-icon';
-import AppTabs from '@/components/app-tabs';
+import { Stack } from 'expo-router';
+import { ShareIntentProvider } from 'expo-share-intent';
 
-SplashScreen.preventAutoHideAsync();
+import { AuthProvider } from '@/hooks/useAuth';
+import { ShareIntentRouter } from '@/hooks/useShareIntentRouter';
 
-export default function TabLayout() {
-  const colorScheme = useColorScheme();
+export default function RootLayout() {
   return (
-    <ThemeProvider value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>
-      <AnimatedSplashOverlay />
-      <AppTabs />
-    </ThemeProvider>
+    <ShareIntentProvider options={{ debug: __DEV__, resetOnBackground: true }}>
+      <AuthProvider>
+        <ShareIntentRouter />
+        <Stack>
+          <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
+          <Stack.Screen
+            name="recipe/[id]"
+            options={{ headerShown: true, title: 'Recipe', headerTintColor: '#FF6B35' }}
+          />
+          <Stack.Screen
+            name="recipe/preview"
+            options={{ headerShown: true, title: 'Recipe', headerTintColor: '#FF6B35' }}
+          />
+          <Stack.Screen
+            name="auth"
+            options={{
+              headerShown: true,
+              title: 'Sign in',
+              headerTintColor: '#FF6B35',
+              presentation: 'modal',
+            }}
+          />
+        </Stack>
+      </AuthProvider>
+    </ShareIntentProvider>
   );
 }

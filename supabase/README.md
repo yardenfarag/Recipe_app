@@ -1,0 +1,94 @@
+# ChopChop Supabase Setup
+
+## Running the migration
+
+You don't need the Supabase CLI for this step. In your Supabase project dashboard:
+
+1. Go to **SQL Editor**
+2. Open `supabase/migrations/0001_init.sql` from this repo
+3. Paste the full contents and click **Run**
+
+This creates:
+- `profiles` table + auto-create trigger on signup
+- `recipes` table with RLS (users can only read/write their own rows)
+- Indexes and check constraints matching `docs/plan/MVP-PLAN.md`
+
+## Verifying it worked
+
+Run in SQL Editor:
+
+```sql
+select table_name from information_schema.tables where table_schema = 'public';
+-- expect: profiles, recipes
+
+select tablename, rowsecurity from pg_tables where schemaname = 'public';
+-- expect: rowsecurity = true for both
+```
+
+## Edge Function: `extract-recipe` (Step 2b)
+
+Takes `{ url }`, detects the platform, and (for YouTube) sends the video to Gemini
+with structured JSON output. Returns `{ status, platform, recipe?, message? }`.
+
+`status` is one of `full` | `partial` | `failed` | `coming_soon` (see ADR 003/004).
+The function does **not** save — the app persists the result (local guest store or
+Supabase) per ADR 002.
+
+### One-time setup
+
+`npm install -g supabase` is **not supported** by the Supabase CLI — it's
+already installed as a local dev dependency in this project (see
+`package.json`). Run every command below with `npx supabase ...` instead of
+`supabase ...`.
+
+```bash
+npx supabase login
+npx supabase link --project-ref ccobefeofhnncpgifxel
+```
+
+`login` opens a browser to authenticate the CLI with your Supabase account.
+
+### Secrets
+
+```bash
+# Required — Gemini API key (server-side only, never shipped to the app)
+npx supabase secrets set GEMINI_API_KEY=your_gemini_key
+
+# Optional — enriches extraction with description + top 10 comments (ADR 004).
+# Without it, extraction still works from the video alone.
+npx supabase secrets set YOUTUBE_API_KEY=your_youtube_data_api_key
+
+# Optional — override the model (default: gemini-2.5-flash)
+npx supabase secrets set GEMINI_MODEL=gemini-2.5-flash
+```
+
+### Deploy
+
+```bash
+npx supabase functions deploy extract-recipe
+```
+
+### Test it
+
+```bash
+curl -X POST \
+  'https://ccobefeofhnncpgifxel.supabase.co/functions/v1/extract-recipe' \
+  -H "Authorization: Bearer YOUR_PUBLISHABLE_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{"url":"https://www.youtube.com/watch?v=SOME_RECIPE_VIDEO"}'
+```
+
+Expected: JSON with `status: "full"` and a `recipe` object. Try a non-YouTube link
+to see the `coming_soon` response.
+
+## What's next (later Phase 2 steps)
+
+- **Step 2c:** Wire the AddRecipe screen → `extract-recipe` → RecipeDetail
+- **Step 2e:** Enable Apple + Google providers in **Authentication → Providers** in the dashboard
+
+## Schema notes
+
+- `extraction_status` and `missing_fields` support the partial-result UX from ADR 004
+- `platform` supports the staged rollout from ADR 003 (`youtube` | `instagram` | `tiktok` | `unknown`)
+- `migrated_from_guest` flags recipes that started as local guest saves (ADR 002)
+- `cost_estimate` stays a plain `$`/`$$`/`$$$` tier — locale display mapping happens client-side (ADR 008), not in the DB
