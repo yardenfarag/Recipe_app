@@ -7,20 +7,24 @@ import { RecipeView } from '@/components/RecipeView';
 import { GUEST_RECIPE_LIMIT, saveGuestRecipe } from '@/lib/guestRecipes';
 import { supabase } from '@/lib/supabase/client';
 import { saveRecipe } from '@/lib/supabase/recipes';
-import { Recipe } from '@/types/recipe';
+import { ExtractedRecipe } from '@/lib/supabase/extractRecipe';
 
 /**
  * Shows a freshly extracted recipe that has NOT been saved yet.
  * The `data` param is the JSON-serialized recipe returned by the
  * `extract-recipe` Edge Function (see src/lib/supabase/extractRecipe.ts).
+ *
+ * Typed as `ExtractedRecipe` (not `Recipe`) because this payload has no
+ * `id` / `user_id` / `created_at` yet — those only exist once `saveRecipe`
+ * or `saveGuestRecipe` persists it.
  */
 export default function RecipePreviewScreen() {
   const { data } = useLocalSearchParams<{ data: string }>();
   const [saving, setSaving] = useState(false);
 
-  let recipe: Recipe | null = null;
+  let recipe: ExtractedRecipe | null = null;
   try {
-    recipe = data ? (JSON.parse(data) as Recipe) : null;
+    recipe = data ? (JSON.parse(data) as ExtractedRecipe) : null;
   } catch {
     recipe = null;
   }

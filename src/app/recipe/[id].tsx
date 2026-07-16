@@ -4,6 +4,7 @@ import { ActivityIndicator, Text } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { RecipeView } from '@/components/RecipeView';
+import { pinchOrange } from '@/constants/brandColors';
 import { getGuestRecipeById } from '@/lib/guestRecipes';
 import { fetchRecipeById } from '@/lib/supabase/recipes';
 import { Recipe } from '@/types/recipe';
@@ -36,7 +37,7 @@ export default function RecipeDetailScreen() {
   if (recipe === undefined) {
     return (
       <SafeAreaView className="flex-1 bg-pinch-cream items-center justify-center">
-        <ActivityIndicator color="#FF6B35" />
+        <ActivityIndicator color={pinchOrange} />
       </SafeAreaView>
     );
   }

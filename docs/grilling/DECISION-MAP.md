@@ -150,9 +150,9 @@ replaces that placeholder in Step 2d/2e.
 | Step | What | Status |
 |------|------|--------|
 | 3a | Install `eas-cli`, `eas login`, `eas build:configure`, add `development` profile to `eas.json` | ✅ Done |
-| 3b | Install `expo-share-intent`, add config plugin to `app.json` | ⬜ Next |
-| 3c | Kick off first Android dev build on EAS, install on phone | ⬜ |
-| 3d | Wire share-intent listener → auto-route into existing extract flow | ⬜ |
+| 3b | Install `expo-share-intent`, add config plugin to `app.json` | ✅ Done |
+| 3c | Kick off first Android dev build on EAS, install on phone | 🔵 **Next** |
+| 3d | Wire share-intent listener → auto-route into existing extract flow | ✅ Done (bundled into 3b) |
 | 3e | Confirm Apple Developer account status, then iOS dev build | ⬜ |
 | 3f | iOS Share Extension end-to-end test | ⬜ |
 | 3g | Native Google Sign-In (replace browser OAuth) — stretch goal | ⬜ |

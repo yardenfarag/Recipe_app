@@ -3,6 +3,7 @@ import '../global.css';
 import { Stack } from 'expo-router';
 import { ShareIntentProvider } from 'expo-share-intent';
 
+import { pinchOrange } from '@/constants/brandColors';
 import { AuthProvider } from '@/hooks/useAuth';
 import { ShareIntentRouter } from '@/hooks/useShareIntentRouter';
 
@@ -15,18 +16,18 @@ export default function RootLayout() {
           <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
           <Stack.Screen
             name="recipe/[id]"
-            options={{ headerShown: true, title: 'Recipe', headerTintColor: '#FF6B35' }}
+            options={{ headerShown: true, title: 'Recipe', headerTintColor: pinchOrange }}
           />
           <Stack.Screen
             name="recipe/preview"
-            options={{ headerShown: true, title: 'Recipe', headerTintColor: '#FF6B35' }}
+            options={{ headerShown: true, title: 'Recipe', headerTintColor: pinchOrange }}
           />
           <Stack.Screen
             name="auth"
             options={{
               headerShown: true,
               title: 'Sign in',
-              headerTintColor: '#FF6B35',
+              headerTintColor: pinchOrange,
               presentation: 'modal',
             }}
           />

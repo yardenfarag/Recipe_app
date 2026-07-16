@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { ActivityIndicator, Modal, Pressable, ScrollView, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
+import { pinchOrange } from '@/constants/brandColors';
 import {
   SubstitutionAlternative,
   suggestSubstitution,
@@ -17,6 +18,11 @@ interface SubstitutionModalProps {
   onApply: (alternative: SubstitutionAlternative) => void;
 }
 
+/**
+ * Full-screen modal (ADR 005) shown when the user taps "Swap" on an
+ * ingredient. Fetches 2-3 AI alternatives on open and lets the user apply
+ * one, which the caller (`RecipeView`) writes back into the recipe.
+ */
 export function SubstitutionModal({
   visible,
   ingredient,
@@ -76,7 +82,7 @@ export function SubstitutionModal({
 
           {loading && (
             <View className="items-center py-10">
-              <ActivityIndicator color="#FF6B35" />
+              <ActivityIndicator color={pinchOrange} />
               <Text className="text-sm text-gray-400 mt-3">Finding alternatives…</Text>
             </View>
           )}

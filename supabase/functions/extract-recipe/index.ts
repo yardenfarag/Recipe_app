@@ -11,6 +11,13 @@ import { extractRecipeWithGemini, GeminiRecipe } from '../_shared/gemini.ts';
 // Response contract consumed by the app (mirrors ExtractionResult in ADR 004).
 type ExtractionStatus = 'full' | 'partial' | 'failed' | 'coming_soon';
 
+/**
+ * POST { url } -> { status, platform, recipe? , message? }
+ *
+ * Detects the platform, rejects anything not yet live (ADR 003), then for
+ * YouTube: fetches description + top comments (content ladder, ADR 004),
+ * sends it all to Gemini, and classifies the result as full/partial/failed.
+ */
 Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') {
     return new Response('ok', { headers: corsHeaders });
@@ -104,6 +111,7 @@ Deno.serve(async (req) => {
   }
 });
 
+/** Buckets a Gemini result into full/failed/partial per the ADR 004 rules. */
 function classify(r: GeminiRecipe): {
   status: Exclude<ExtractionStatus, 'coming_soon'>;
   missingFields: string[];

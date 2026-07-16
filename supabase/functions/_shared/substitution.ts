@@ -1,7 +1,10 @@
 // Ingredient substitution via Gemini's generateContent REST endpoint.
 // Text-only (no video), reuses the same model/key as recipe extraction.
 
+import { AppError, FetchError } from './errors.ts';
+
 const MODEL = Deno.env.get('GEMINI_MODEL') ?? 'gemini-3-flash-preview';
+const REQUEST_TIMEOUT_MS = 25_000;
 
 const SYSTEM_PROMPT = `You are a culinary expert helping a home cook who is missing an ingredient.
 
@@ -49,7 +52,12 @@ export async function suggestSubstitutionsWithGemini(
   input: SuggestSubstitutionInput,
 ): Promise<SubstitutionAlternative[]> {
   const apiKey = Deno.env.get('GEMINI_API_KEY');
-  if (!apiKey) throw new Error('GEMINI_API_KEY is not configured');
+  if (!apiKey) {
+    throw new AppError(
+      'substitution.ts: suggestSubstitutionsWithGemini',
+      'GEMINI_API_KEY is not configured',
+    );
+  }
 
   const text = buildTextContext(input);
   const endpoint = `https://generativelanguage.googleapis.com/v1beta/models/${MODEL}:generateContent`;
@@ -63,23 +71,52 @@ export async function suggestSubstitutionsWithGemini(
     },
   };
 
-  const res = await fetch(endpoint, {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      'x-goog-api-key': apiKey,
-    },
-    body: JSON.stringify(body),
-  });
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), REQUEST_TIMEOUT_MS);
+
+  let res: Response;
+  try {
+    res = await fetch(endpoint, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'x-goog-api-key': apiKey,
+      },
+      body: JSON.stringify(body),
+      signal: controller.signal,
+    });
+  } catch (err) {
+    const isTimeout = err instanceof Error && err.name === 'AbortError';
+    throw new FetchError(
+      'substitution.ts: suggestSubstitutionsWithGemini',
+      'Gemini request failed',
+      {
+        timedOut: isTimeout,
+        timeoutMs: REQUEST_TIMEOUT_MS,
+        originalError: err instanceof Error ? err.message : String(err),
+      },
+    );
+  } finally {
+    clearTimeout(timeout);
+  }
 
   if (!res.ok) {
     const errText = await res.text();
-    throw new Error(`Gemini API error (${res.status}): ${errText}`);
+    throw new FetchError(
+      'substitution.ts: suggestSubstitutionsWithGemini',
+      'Gemini API returned an error',
+      { status: res.status, body: errText },
+    );
   }
 
   const data = await res.json();
   const jsonText = data?.candidates?.[0]?.content?.parts?.[0]?.text;
-  if (!jsonText) throw new Error('Gemini returned no content');
+  if (!jsonText) {
+    throw new AppError(
+      'substitution.ts: suggestSubstitutionsWithGemini',
+      'Gemini returned no content',
+    );
+  }
 
   const parsed = JSON.parse(jsonText) as { alternatives: SubstitutionAlternative[] };
   return parsed.alternatives ?? [];

@@ -3,11 +3,18 @@ import { type ReactNode, useState } from 'react';
 import { Pressable, ScrollView, Text, View } from 'react-native';
 
 import { SubstitutionModal } from '@/components/SubstitutionModal';
+import { ExtractedRecipe } from '@/lib/supabase/extractRecipe';
 import { SubstitutionAlternative } from '@/lib/supabase/suggestSubstitution';
-import { Ingredient, Recipe } from '@/types/recipe';
+import { Ingredient } from '@/types/recipe';
 
+/**
+ * Scales ingredient quantities from `baseServings` to `target`, rounded to
+ * 2 decimals. `baseServings` must be >= 1 — both the DB column and the
+ * extraction pipeline guarantee this, but we clamp defensively here too
+ * since a divide-by-zero would otherwise silently produce `Infinity`.
+ */
 function scaleIngredients(ingredients: Ingredient[], baseServings: number, target: number) {
-  const factor = target / baseServings;
+  const factor = target / Math.max(1, baseServings);
   return ingredients.map((i) => ({
     ...i,
     quantity: Math.round(i.quantity * factor * 100) / 100,
@@ -15,11 +22,22 @@ function scaleIngredients(ingredients: Ingredient[], baseServings: number, targe
 }
 
 interface RecipeViewProps {
-  recipe: Recipe;
+  /**
+   * Accepts either a saved `Recipe` (has id/user_id/created_at) or a
+   * freshly extracted, not-yet-saved `ExtractedRecipe` — this component
+   * never reads the save-only fields, so either shape works.
+   */
+  recipe: ExtractedRecipe;
   /** Rendered below Instructions — e.g. a Save button on the preview screen. */
   footer?: ReactNode;
 }
 
+/**
+ * Full recipe display: badges, servings scaler, ingredients (with Swap),
+ * and instructions. Shared by the preview screen (unsaved recipe) and the
+ * saved recipe detail screen — see `RecipeViewProps.recipe` for why the
+ * prop type is `ExtractedRecipe` rather than the full `Recipe`.
+ */
 export function RecipeView({ recipe, footer }: RecipeViewProps) {
   const [servings, setServings] = useState(recipe.servings);
   // Ingredients at `recipe.servings` (the baseline scaling anchors to).
@@ -151,6 +169,7 @@ export function RecipeView({ recipe, footer }: RecipeViewProps) {
   );
 }
 
+/** Small pill used for calories/time/cost/effort at the top of the recipe. */
 function Badge({ label }: { label: string }) {
   return (
     <View className="bg-orange-100 rounded-full px-3 py-1">
@@ -159,6 +178,7 @@ function Badge({ label }: { label: string }) {
   );
 }
 
+/** Titled card wrapper used for the Ingredients and Instructions blocks. */
 function Section({ title, children }: { title: string; children: ReactNode }) {
   return (
     <View className="mb-5">

@@ -19,11 +19,11 @@ export default function AuthScreen() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
-  const [appleAvailable, setAppleAvailable] = useState(false);
+  const [isAppleAvailable, setIsAppleAvailable] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    isAppleAuthAvailable().then(setAppleAvailable);
+    isAppleAuthAvailable().then(setIsAppleAvailable);
   }, []);
 
   function done() {
@@ -166,7 +166,7 @@ export default function AuthScreen() {
           <View className="flex-1 h-px bg-gray-200" />
         </View>
 
-        {appleAvailable && (
+        {isAppleAvailable && (
           <AppleAuthentication.AppleAuthenticationButton
             buttonType={AppleAuthentication.AppleAuthenticationButtonType.SIGN_IN}
             buttonStyle={AppleAuthentication.AppleAuthenticationButtonStyle.BLACK}

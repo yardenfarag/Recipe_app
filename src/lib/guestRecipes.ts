@@ -50,7 +50,7 @@ export async function removeGuestRecipe(id: string): Promise<void> {
   await AsyncStorage.setItem(STORAGE_KEY, JSON.stringify(next));
 }
 
-/** Used once sign-up + guest migration ships in Step 2e. */
+/** Wipes all local guest recipes — used after a successful migration to Supabase. */
 export async function clearGuestRecipes(): Promise<void> {
   await AsyncStorage.removeItem(STORAGE_KEY);
 }

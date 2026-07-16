@@ -7,6 +7,12 @@ interface RequestBody {
   other_ingredients?: string[];
 }
 
+/**
+ * POST { ingredient, recipe_title, other_ingredients } -> { status, alternatives? , message? }
+ *
+ * Asks Gemini for 2-3 substitutes for a single ingredient, using the
+ * recipe title and remaining ingredients as context (ADR 005).
+ */
 Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') {
     return new Response('ok', { headers: corsHeaders });

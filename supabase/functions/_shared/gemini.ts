@@ -1,7 +1,10 @@
 // Gemini extraction via the generateContent REST endpoint.
 // Uses structured output (responseSchema) so we get valid JSON without parsing prose.
 
+import { AppError, FetchError } from './errors.ts';
+
 const MODEL = Deno.env.get('GEMINI_MODEL') ?? 'gemini-3-flash-preview';
+const REQUEST_TIMEOUT_MS = 25_000;
 
 const SYSTEM_PROMPT = `You are a master chef. Analyze the provided social media content (video, description, and top comments) and extract a precise recipe.
 
@@ -72,7 +75,9 @@ export interface ExtractInput {
 
 export async function extractRecipeWithGemini(input: ExtractInput): Promise<GeminiRecipe> {
   const apiKey = Deno.env.get('GEMINI_API_KEY');
-  if (!apiKey) throw new Error('GEMINI_API_KEY is not configured');
+  if (!apiKey) {
+    throw new AppError('gemini.ts: extractRecipeWithGemini', 'GEMINI_API_KEY is not configured');
+  }
 
   const textContext = buildTextContext(input);
 
@@ -95,24 +100,43 @@ export async function extractRecipeWithGemini(input: ExtractInput): Promise<Gemi
     },
   };
 
-  const res = await fetch(endpoint, {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      'x-goog-api-key': apiKey,
-    },
-    body: JSON.stringify(body),
-  });
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), REQUEST_TIMEOUT_MS);
+
+  let res: Response;
+  try {
+    res = await fetch(endpoint, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'x-goog-api-key': apiKey,
+      },
+      body: JSON.stringify(body),
+      signal: controller.signal,
+    });
+  } catch (err) {
+    const isTimeout = err instanceof Error && err.name === 'AbortError';
+    throw new FetchError('gemini.ts: extractRecipeWithGemini', 'Gemini request failed', {
+      timedOut: isTimeout,
+      timeoutMs: REQUEST_TIMEOUT_MS,
+      originalError: err instanceof Error ? err.message : String(err),
+    });
+  } finally {
+    clearTimeout(timeout);
+  }
 
   if (!res.ok) {
     const errText = await res.text();
-    throw new Error(`Gemini API error (${res.status}): ${errText}`);
+    throw new FetchError('gemini.ts: extractRecipeWithGemini', 'Gemini API returned an error', {
+      status: res.status,
+      body: errText,
+    });
   }
 
   const data = await res.json();
   const jsonText = data?.candidates?.[0]?.content?.parts?.[0]?.text;
   if (!jsonText) {
-    throw new Error('Gemini returned no content');
+    throw new AppError('gemini.ts: extractRecipeWithGemini', 'Gemini returned no content');
   }
 
   return JSON.parse(jsonText) as GeminiRecipe;

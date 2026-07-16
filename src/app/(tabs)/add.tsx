@@ -17,6 +17,10 @@ export default function AddRecipeScreen() {
   useEffect(() => {
     if (!hasShareIntent) return;
 
+    // Deliberately only watching `hasShareIntent`: expo-share-intent always
+    // flips this back to false when `resetShareIntent()` runs, so a second
+    // share always re-triggers this effect (false -> true) rather than
+    // being missed by a stale closure over `shareIntent`.
     const sharedUrl = shareIntent.webUrl ?? shareIntent.text;
     resetShareIntent();
     if (sharedUrl) {

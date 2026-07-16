@@ -7,9 +7,12 @@ import { Recipe } from '@/types/recipe';
 interface RecipeListRowProps {
   recipe: Recipe;
   onPress: () => void;
+  /** Long-press to delete — kept out-of-band from `onPress` so a tap always opens the recipe. */
+  onLongPress?: () => void;
 }
 
-export function RecipeListRow({ recipe, onPress }: RecipeListRowProps) {
+/** A single row in the Library list (ADR 006): thumbnail, title, and metadata. */
+export function RecipeListRow({ recipe, onPress, onLongPress }: RecipeListRowProps) {
   const metadata = [
     recipe.estimated_time_minutes != null ? `${recipe.estimated_time_minutes} min` : null,
     recipe.effort_level ?? null,
@@ -21,6 +24,7 @@ export function RecipeListRow({ recipe, onPress }: RecipeListRowProps) {
   return (
     <Pressable
       onPress={onPress}
+      onLongPress={onLongPress}
       className="flex-row items-center gap-3 px-4 py-3 bg-white border-b border-gray-100 active:bg-gray-50"
     >
       {recipe.image_url ? (

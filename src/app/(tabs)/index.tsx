@@ -1,37 +1,19 @@
-import { useFocusEffect } from '@react-navigation/native';
 import { router } from 'expo-router';
-import { useCallback, useState } from 'react';
 import { ActivityIndicator, Alert, FlatList, Pressable, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { RecipeListRow } from '@/components/RecipeListRow';
+import { pinchOrange } from '@/constants/brandColors';
 import { useAuth } from '@/hooks/useAuth';
-import { getGuestRecipes } from '@/lib/guestRecipes';
+import { useRecipes } from '@/hooks/useRecipes';
+import { removeGuestRecipe } from '@/lib/guestRecipes';
 import { signOut } from '@/lib/supabase/auth';
-import { fetchRecipes } from '@/lib/supabase/recipes';
+import { deleteRecipe } from '@/lib/supabase/recipes';
 import { Recipe } from '@/types/recipe';
 
 export default function HomeScreen() {
   const { user } = useAuth();
-  const [recipes, setRecipes] = useState<Recipe[]>([]);
-  const [loading, setLoading] = useState(true);
-
-  const load = useCallback(async () => {
-    try {
-      const data = user ? await fetchRecipes() : await getGuestRecipes();
-      setRecipes(data);
-    } catch {
-      setRecipes([]);
-    } finally {
-      setLoading(false);
-    }
-  }, [user]);
-
-  useFocusEffect(
-    useCallback(() => {
-      load();
-    }, [load]),
-  );
+  const { recipes, loading, refresh } = useRecipes();
 
   async function handleSignOut() {
     try {
@@ -41,10 +23,38 @@ export default function HomeScreen() {
     }
   }
 
+  function handleLongPressRecipe(recipe: Recipe) {
+    Alert.alert('Delete this recipe?', recipe.title, [
+      { text: 'Cancel', style: 'cancel' },
+      {
+        text: 'Delete',
+        style: 'destructive',
+        onPress: async () => {
+          try {
+            // Guest recipes live in AsyncStorage (ids prefixed "guest-");
+            // everything else is a Supabase row — same split used in
+            // recipe/[id].tsx for loading a single recipe.
+            if (recipe.id.startsWith('guest-')) {
+              await removeGuestRecipe(recipe.id);
+            } else {
+              await deleteRecipe(recipe.id);
+            }
+            refresh();
+          } catch (err) {
+            Alert.alert(
+              'Could not delete',
+              err instanceof Error ? err.message : 'Please try again.',
+            );
+          }
+        },
+      },
+    ]);
+  }
+
   if (loading) {
     return (
       <SafeAreaView className="flex-1 bg-pinch-cream items-center justify-center">
-        <ActivityIndicator color="#FF6B35" />
+        <ActivityIndicator color={pinchOrange} />
       </SafeAreaView>
     );
   }
@@ -81,7 +91,7 @@ export default function HomeScreen() {
 
   return (
     <SafeAreaView className="flex-1 bg-pinch-cream">
-      <View className="flex-row items-center justify-between px-5 pt-4 pb-2">
+      <View className="flex-row items-center justify-between px-5 pt-4 pb-1">
         <Text className="text-2xl font-bold text-pinch-dark">Your Recipes</Text>
         {user ? (
           <Pressable onPress={handleSignOut} className="px-3 py-1 active:opacity-70">
@@ -93,11 +103,16 @@ export default function HomeScreen() {
           </Pressable>
         )}
       </View>
+      <Text className="text-xs text-gray-400 px-5 pb-3">Long-press a recipe to delete it</Text>
       <FlatList
         data={recipes}
         keyExtractor={(item) => item.id}
         renderItem={({ item }) => (
-          <RecipeListRow recipe={item} onPress={() => router.push(`/recipe/${item.id}`)} />
+          <RecipeListRow
+            recipe={item}
+            onPress={() => router.push(`/recipe/${item.id}`)}
+            onLongPress={() => handleLongPressRecipe(item)}
+          />
         )}
         contentContainerStyle={{ paddingBottom: 24 }}
       />

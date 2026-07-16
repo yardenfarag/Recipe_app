@@ -19,12 +19,34 @@ export interface YouTubeMeta {
   topComments: YouTubeComment[];
 }
 
+/** Comment shape before we know the channelId, so isCreator can't be resolved yet. */
+interface RawComment {
+  text: string;
+  authorChannelId?: string;
+}
+
 export async function fetchYouTubeMeta(videoId: string): Promise<YouTubeMeta> {
   const apiKey = Deno.env.get('YOUTUBE_API_KEY');
   if (!apiKey) return { topComments: [] };
 
-  const { description, channelId } = await fetchVideoSnippet(videoId, apiKey);
-  const topComments = await fetchTopComments(videoId, apiKey, channelId);
+  // The snippet (for description + channelId) and raw comments are
+  // independent network calls, so fetch them concurrently — resolving
+  // which comments are from the creator happens afterward, once we know
+  // channelId, rather than blocking one fetch on the other.
+  const [{ description, channelId }, rawComments] = await Promise.all([
+    fetchVideoSnippet(videoId, apiKey),
+    fetchTopComments(videoId, apiKey),
+  ]);
+
+  // Surface the creator's own comment(s) first — that's almost always
+  // where the full recipe lives for Shorts/reels, regardless of where the
+  // relevance ranking placed it.
+  const topComments: YouTubeComment[] = rawComments
+    .map(({ text, authorChannelId }) => ({
+      text,
+      isCreator: Boolean(channelId) && authorChannelId === channelId,
+    }))
+    .sort((a, b) => Number(b.isCreator) - Number(a.isCreator));
 
   return { description, topComments };
 }
@@ -50,11 +72,7 @@ async function fetchVideoSnippet(
   }
 }
 
-async function fetchTopComments(
-  videoId: string,
-  apiKey: string,
-  channelId?: string,
-): Promise<YouTubeComment[]> {
+async function fetchTopComments(videoId: string, apiKey: string): Promise<RawComment[]> {
   try {
     const url = new URL('https://www.googleapis.com/youtube/v3/commentThreads');
     url.searchParams.set('part', 'snippet');
@@ -70,23 +88,15 @@ async function fetchTopComments(
     const data = await res.json();
     const items = data.items ?? [];
 
-    const comments: YouTubeComment[] = items
+    return items
       .map((it: any) => {
         const snippet = it.snippet?.topLevelComment?.snippet;
         const text = snippet?.textDisplay;
         if (typeof text !== 'string') return null;
-        const isCreator = Boolean(channelId) && snippet?.authorChannelId?.value === channelId;
-        return { text, isCreator };
+        return { text, authorChannelId: snippet?.authorChannelId?.value };
       })
-      .filter((c: YouTubeComment | null): c is YouTubeComment => c !== null)
+      .filter((c: RawComment | null): c is RawComment => c !== null)
       .slice(0, MAX_COMMENTS);
-
-    // Surface the creator's own comment(s) first — that's almost always
-    // where the full recipe lives for Shorts/reels, regardless of where the
-    // relevance ranking placed it.
-    comments.sort((a, b) => Number(b.isCreator) - Number(a.isCreator));
-
-    return comments;
   } catch {
     return [];
   }
