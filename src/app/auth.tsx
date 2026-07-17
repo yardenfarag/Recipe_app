@@ -1,9 +1,11 @@
+import Ionicons from '@expo/vector-icons/Ionicons';
 import * as AppleAuthentication from 'expo-apple-authentication';
 import { router } from 'expo-router';
 import { useEffect, useState } from 'react';
 import { ActivityIndicator, Alert, Pressable, Text, TextInput, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
+import { useThemePreference } from '@/hooks/useThemePreference';
 import {
   isAppleAuthAvailable,
   signInWithApple,
@@ -21,6 +23,7 @@ export default function AuthScreen() {
   const [loading, setLoading] = useState(false);
   const [isAppleAvailable, setIsAppleAvailable] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const { colors, scheme } = useThemePreference();
 
   useEffect(() => {
     isAppleAuthAvailable().then(setIsAppleAvailable);
@@ -64,8 +67,12 @@ export default function AuthScreen() {
       await signInWithApple();
       done();
     } catch (err) {
-      if (err instanceof Error && 'code' in err && (err as { code: string }).code === 'ERR_REQUEST_CANCELED') {
-        return; // user cancelled
+      if (
+        err instanceof Error &&
+        'code' in err &&
+        (err as { code: string }).code === 'ERR_REQUEST_CANCELED'
+      ) {
+        return;
       }
       setError(err instanceof Error ? err.message : 'Apple sign-in failed.');
     } finally {
@@ -86,102 +93,129 @@ export default function AuthScreen() {
     }
   }
 
+  const canSubmit = Boolean(email.trim() && password) && !loading;
+
   return (
-    <SafeAreaView className="flex-1 bg-pinch-cream" edges={['bottom']}>
-      <View className="flex-1 px-6 pt-6">
-        <Text className="text-2xl font-bold text-pinch-dark mb-1">
-          {mode === 'signup' ? 'Create your account' : 'Welcome back'}
-        </Text>
-        <Text className="text-sm text-gray-500 mb-8">
-          {mode === 'signup'
-            ? 'Save unlimited recipes and sync them across devices.'
-            : 'Sign in to access your recipe library.'}
-        </Text>
+    <SafeAreaView className="flex-1 bg-pinch-bg dark:bg-pinch-bg-dark" edges={['bottom']}>
+      <View className="flex-1 px-6 pt-4">
+        <View className="mb-6">
+          <View className="mb-3 h-12 w-12 items-center justify-center rounded-2xl bg-pinch-primary-soft dark:bg-pinch-primary-soft-dark">
+            <Ionicons name="restaurant" size={24} color={colors.primary} />
+          </View>
+          <Text className="mb-1 text-2xl font-bold text-pinch-dark dark:text-pinch-text-dark">
+            {mode === 'signup' ? 'Create your account' : 'Welcome back'}
+          </Text>
+          <Text className="text-sm leading-5 text-pinch-muted dark:text-pinch-muted-dark">
+            {mode === 'signup'
+              ? 'Save unlimited recipes and sync them across devices.'
+              : 'Sign in to access your recipe library.'}
+          </Text>
+        </View>
 
-        <Text className="text-sm font-medium text-pinch-dark mb-2">Email</Text>
-        <TextInput
-          className="bg-white border border-gray-200 rounded-xl px-4 py-4 text-base text-pinch-dark mb-4"
-          placeholder="you@example.com"
-          placeholderTextColor="#9CA3AF"
-          value={email}
-          onChangeText={setEmail}
-          autoCapitalize="none"
-          autoCorrect={false}
-          keyboardType="email-address"
-          editable={!loading}
-        />
+        <Text className="mb-2 text-sm font-semibold text-pinch-dark dark:text-pinch-text-dark">
+          Email
+        </Text>
+        <View className="mb-4 flex-row items-center rounded-2xl border border-pinch-border bg-pinch-surface px-3.5 dark:border-pinch-border-dark dark:bg-pinch-surface-dark">
+          <Ionicons name="mail-outline" size={18} color={colors.textSecondary} />
+          <TextInput
+            className="flex-1 px-3 py-4 text-base text-pinch-dark dark:text-pinch-text-dark"
+            placeholder="you@example.com"
+            placeholderTextColor={colors.textSecondary}
+            value={email}
+            onChangeText={setEmail}
+            autoCapitalize="none"
+            autoCorrect={false}
+            keyboardType="email-address"
+            editable={!loading}
+          />
+        </View>
 
-        <Text className="text-sm font-medium text-pinch-dark mb-2">Password</Text>
-        <TextInput
-          className="bg-white border border-gray-200 rounded-xl px-4 py-4 text-base text-pinch-dark mb-6"
-          placeholder="••••••••"
-          placeholderTextColor="#9CA3AF"
-          value={password}
-          onChangeText={setPassword}
-          secureTextEntry
-          autoCapitalize="none"
-          editable={!loading}
-        />
+        <Text className="mb-2 text-sm font-semibold text-pinch-dark dark:text-pinch-text-dark">
+          Password
+        </Text>
+        <View className="mb-5 flex-row items-center rounded-2xl border border-pinch-border bg-pinch-surface px-3.5 dark:border-pinch-border-dark dark:bg-pinch-surface-dark">
+          <Ionicons name="lock-closed-outline" size={18} color={colors.textSecondary} />
+          <TextInput
+            className="flex-1 px-3 py-4 text-base text-pinch-dark dark:text-pinch-text-dark"
+            placeholder="••••••••"
+            placeholderTextColor={colors.textSecondary}
+            value={password}
+            onChangeText={setPassword}
+            secureTextEntry
+            autoCapitalize="none"
+            editable={!loading}
+          />
+        </View>
 
         {error && (
-          <View className="rounded-xl px-4 py-3 mb-6 border bg-red-50 border-red-100">
-            <Text className="text-sm text-red-700">{error}</Text>
+          <View className="mb-5 rounded-2xl border border-red-200 bg-red-50 px-4 py-3 dark:border-red-900 dark:bg-[#3A2424]">
+            <Text className="text-sm text-red-700 dark:text-red-300">{error}</Text>
           </View>
         )}
 
         <Pressable
-          className={`rounded-full py-4 items-center ${
-            email.trim() && password ? 'bg-pinch-orange' : 'bg-gray-300'
+          className={`items-center rounded-full py-4 ${
+            canSubmit
+              ? 'bg-pinch-primary dark:bg-pinch-primary-dark'
+              : 'bg-[#D9CFD3] dark:bg-[#3A3034]'
           }`}
           onPress={handleEmail}
-          disabled={!email.trim() || !password || loading}
+          disabled={!canSubmit}
         >
           {loading ? (
             <ActivityIndicator color="#fff" />
           ) : (
-            <Text className="text-white font-bold text-lg">
+            <Text className="text-lg font-bold text-white">
               {mode === 'signup' ? 'Sign up' : 'Sign in'}
             </Text>
           )}
         </Pressable>
 
         <Pressable
-          className="py-4 items-center"
+          className="items-center py-4"
           onPress={() => {
             setMode((m) => (m === 'signup' ? 'signin' : 'signup'));
             setError(null);
           }}
           disabled={loading}
         >
-          <Text className="text-sm text-pinch-green font-medium">
+          <Text className="text-sm font-semibold text-pinch-primary dark:text-pinch-primary-dark">
             {mode === 'signup'
               ? 'Already have an account? Sign in'
               : "Don't have an account? Sign up"}
           </Text>
         </Pressable>
 
-        <View className="flex-row items-center my-4">
-          <View className="flex-1 h-px bg-gray-200" />
-          <Text className="mx-3 text-xs text-gray-400">or continue with</Text>
-          <View className="flex-1 h-px bg-gray-200" />
+        <View className="my-2 flex-row items-center">
+          <View className="h-px flex-1 bg-pinch-border dark:bg-pinch-border-dark" />
+          <Text className="mx-3 text-xs text-pinch-muted dark:text-pinch-muted-dark">
+            or continue with
+          </Text>
+          <View className="h-px flex-1 bg-pinch-border dark:bg-pinch-border-dark" />
         </View>
 
         {isAppleAvailable && (
           <AppleAuthentication.AppleAuthenticationButton
             buttonType={AppleAuthentication.AppleAuthenticationButtonType.SIGN_IN}
-            buttonStyle={AppleAuthentication.AppleAuthenticationButtonStyle.BLACK}
+            buttonStyle={
+              scheme === 'dark'
+                ? AppleAuthentication.AppleAuthenticationButtonStyle.WHITE
+                : AppleAuthentication.AppleAuthenticationButtonStyle.BLACK
+            }
             cornerRadius={999}
-            style={{ width: '100%', height: 52, marginBottom: 12 }}
+            style={{ width: '100%', height: 52, marginBottom: 12, marginTop: 8 }}
             onPress={handleApple}
           />
         )}
 
         <Pressable
-          className="rounded-full py-4 items-center border border-gray-300 bg-white flex-row justify-center"
+          className="mt-1 flex-row items-center justify-center rounded-full border border-pinch-border bg-pinch-surface py-4 dark:border-pinch-border-dark dark:bg-pinch-surface-dark"
           onPress={handleGoogle}
           disabled={loading}
         >
-          <Text className="text-base font-semibold text-pinch-dark">Continue with Google</Text>
+          <Text className="text-base font-semibold text-pinch-dark dark:text-pinch-text-dark">
+            Continue with Google
+          </Text>
         </Pressable>
       </View>
     </SafeAreaView>

@@ -14,9 +14,26 @@ if (!supabaseUrl || !supabaseKey) {
   );
 }
 
+// Expo web static export SSR-renders in Node where `window` is undefined.
+// AsyncStorage's web impl touches `window.localStorage` and crashes auth init.
+const authStorage = {
+  getItem: (key: string) => {
+    if (typeof window === 'undefined') return null;
+    return AsyncStorage.getItem(key);
+  },
+  setItem: (key: string, value: string) => {
+    if (typeof window === 'undefined') return;
+    return AsyncStorage.setItem(key, value);
+  },
+  removeItem: (key: string) => {
+    if (typeof window === 'undefined') return;
+    return AsyncStorage.removeItem(key);
+  },
+};
+
 export const supabase = createClient(supabaseUrl, supabaseKey, {
   auth: {
-    storage: AsyncStorage,
+    storage: authStorage,
     autoRefreshToken: true,
     persistSession: true,
     detectSessionInUrl: false,

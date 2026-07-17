@@ -1,27 +1,20 @@
+import Ionicons from '@expo/vector-icons/Ionicons';
 import { router } from 'expo-router';
 import { ActivityIndicator, Alert, FlatList, Pressable, Text, View } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { RecipeListRow } from '@/components/RecipeListRow';
-import { pinchOrange } from '@/constants/brandColors';
+import { Screen } from '@/components/Screen';
 import { useAuth } from '@/hooks/useAuth';
 import { useRecipes } from '@/hooks/useRecipes';
+import { useThemePreference } from '@/hooks/useThemePreference';
 import { removeGuestRecipe } from '@/lib/guestRecipes';
-import { signOut } from '@/lib/supabase/auth';
 import { deleteRecipe } from '@/lib/supabase/recipes';
 import { Recipe } from '@/types/recipe';
 
 export default function HomeScreen() {
   const { user } = useAuth();
   const { recipes, loading, refresh } = useRecipes();
-
-  async function handleSignOut() {
-    try {
-      await signOut();
-    } catch (err) {
-      Alert.alert('Sign out failed', err instanceof Error ? err.message : 'Please try again.');
-    }
-  }
+  const { colors } = useThemePreference();
 
   function handleLongPressRecipe(recipe: Recipe) {
     Alert.alert('Delete this recipe?', recipe.title, [
@@ -31,9 +24,6 @@ export default function HomeScreen() {
         style: 'destructive',
         onPress: async () => {
           try {
-            // Guest recipes live in AsyncStorage (ids prefixed "guest-");
-            // everything else is a Supabase row — same split used in
-            // recipe/[id].tsx for loading a single recipe.
             if (recipe.id.startsWith('guest-')) {
               await removeGuestRecipe(recipe.id);
             } else {
@@ -53,57 +43,74 @@ export default function HomeScreen() {
 
   if (loading) {
     return (
-      <SafeAreaView className="flex-1 bg-pinch-cream items-center justify-center">
-        <ActivityIndicator color={pinchOrange} />
-      </SafeAreaView>
+      <Screen className="items-center justify-center">
+        <ActivityIndicator color={colors.primary} size="large" />
+      </Screen>
     );
   }
 
   if (recipes.length === 0) {
     return (
-      <SafeAreaView className="flex-1 bg-pinch-cream">
-        <View className="flex-1 items-center justify-center px-8">
-          <Text className="text-6xl mb-4">🍳</Text>
-          <Text className="text-3xl font-bold text-pinch-dark text-center mb-2">Pinch</Text>
-          <Text className="text-base text-gray-500 text-center mb-10">
-            Snap recipes from social media and cook smarter.
+      <Screen>
+        <View className="flex-1 items-center justify-center px-8 pb-10">
+          <View className="mb-5 h-20 w-20 items-center justify-center rounded-full bg-pinch-primary-soft dark:bg-pinch-primary-soft-dark">
+            <Ionicons name="restaurant" size={36} color={colors.primary} />
+          </View>
+          <Text className="mb-2 text-center text-4xl font-bold tracking-tight text-pinch-dark dark:text-pinch-text-dark">
+            Pinch
+          </Text>
+          <Text className="mb-10 text-center text-base leading-6 text-pinch-muted dark:text-pinch-muted-dark">
+            Snap recipes from social media and cook something lovely.
           </Text>
 
-          <View className="w-full rounded-2xl bg-white p-8 items-center shadow-sm border border-orange-100">
-            <Text className="text-5xl mb-4">📭</Text>
-            <Text className="text-xl font-semibold text-pinch-dark mb-2 text-center">
-              You have no recipes yet
+          <View className="w-full items-center rounded-3xl border border-pinch-primary-soft bg-pinch-surface p-8 dark:border-pinch-primary-soft-dark dark:bg-pinch-surface-dark">
+            <View className="mb-4 h-14 w-14 items-center justify-center rounded-2xl bg-pinch-rose-soft dark:bg-pinch-rose-soft-dark">
+              <Ionicons name="sparkles" size={28} color={colors.accent} />
+            </View>
+            <Text className="mb-2 text-center text-xl font-bold text-pinch-dark dark:text-pinch-text-dark">
+              Your kitchen is empty
             </Text>
-            <Text className="text-sm text-gray-400 text-center mb-6">
+            <Text className="mb-7 text-center text-sm leading-5 text-pinch-muted dark:text-pinch-muted-dark">
               Paste a TikTok, Instagram, or YouTube link to extract your first recipe.
             </Text>
             <Pressable
-              className="bg-pinch-orange rounded-full px-8 py-4 active:opacity-80"
+              className="w-full items-center rounded-full bg-pinch-primary py-4 active:opacity-80 dark:bg-pinch-primary-dark"
               onPress={() => router.push('/add')}
             >
-              <Text className="text-white font-bold text-base">Get Started</Text>
+              <Text className="text-base font-bold text-white">Get started</Text>
             </Pressable>
           </View>
+
+          {!user && (
+            <Pressable onPress={() => router.push('/auth')} className="mt-6 active:opacity-70">
+              <Text className="text-sm font-semibold text-pinch-primary dark:text-pinch-primary-dark">
+                Sign in to sync recipes
+              </Text>
+            </Pressable>
+          )}
         </View>
-      </SafeAreaView>
+      </Screen>
     );
   }
 
   return (
-    <SafeAreaView className="flex-1 bg-pinch-cream">
-      <View className="flex-row items-center justify-between px-5 pt-4 pb-1">
-        <Text className="text-2xl font-bold text-pinch-dark">Your Recipes</Text>
-        {user ? (
-          <Pressable onPress={handleSignOut} className="px-3 py-1 active:opacity-70">
-            <Text className="text-sm text-pinch-green font-medium">Sign out</Text>
-          </Pressable>
-        ) : (
-          <Pressable onPress={() => router.push('/auth')} className="px-3 py-1 active:opacity-70">
-            <Text className="text-sm text-pinch-green font-medium">Sign in</Text>
-          </Pressable>
-        )}
+    <Screen>
+      <View className="px-5 pb-1 pt-3">
+        <Text className="text-xs font-semibold uppercase tracking-widest text-pinch-rose dark:text-pinch-rose-dark">
+          Pinch
+        </Text>
+        <Text className="text-2xl font-bold text-pinch-dark dark:text-pinch-text-dark">
+          Your recipes
+        </Text>
       </View>
-      <Text className="text-xs text-gray-400 px-5 pb-3">Long-press a recipe to delete it</Text>
+
+      <View className="mx-5 mb-3 mt-2 flex-row items-center gap-2 rounded-2xl bg-pinch-primary-soft/70 px-3.5 py-2.5 dark:bg-pinch-primary-soft-dark">
+        <Ionicons name="hand-left-outline" size={14} color={colors.textSecondary} />
+        <Text className="flex-1 text-xs text-pinch-muted dark:text-pinch-muted-dark">
+          Long-press a recipe to delete it
+        </Text>
+      </View>
+
       <FlatList
         data={recipes}
         keyExtractor={(item) => item.id}
@@ -114,8 +121,9 @@ export default function HomeScreen() {
             onLongPress={() => handleLongPressRecipe(item)}
           />
         )}
-        contentContainerStyle={{ paddingBottom: 24 }}
+        contentContainerStyle={{ paddingHorizontal: 20, paddingBottom: 28, gap: 10 }}
+        showsVerticalScrollIndicator={false}
       />
-    </SafeAreaView>
+    </Screen>
   );
 }

@@ -1,8 +1,8 @@
 import Ionicons from '@expo/vector-icons/Ionicons';
 import { Tabs } from 'expo-router';
-import { useColorScheme } from 'react-native';
+import { Platform } from 'react-native';
 
-import { Colors } from '@/constants/theme';
+import { useThemePreference } from '@/hooks/useThemePreference';
 
 /**
  * Standard (non-experimental) expo-router Tabs.
@@ -13,23 +13,38 @@ import { Colors } from '@/constants/theme';
  * until that's resolved upstream.
  */
 export default function AppTabs() {
-  const scheme = useColorScheme();
-  const colors = Colors[scheme === 'unspecified' ? 'light' : scheme ?? 'light'];
+  const { colors } = useThemePreference();
 
   return (
     <Tabs
       screenOptions={{
         headerShown: false,
-        tabBarActiveTintColor: colors.text,
+        tabBarActiveTintColor: colors.primary,
         tabBarInactiveTintColor: colors.textSecondary,
-        tabBarStyle: { backgroundColor: colors.background },
-      }}>
+        tabBarStyle: {
+          backgroundColor: colors.tabBar,
+          borderTopColor: colors.border,
+          borderTopWidth: 1,
+          height: Platform.select({ ios: 88, android: 68 }),
+          paddingTop: 6,
+          paddingBottom: Platform.select({ ios: 28, android: 10 }),
+        },
+        tabBarLabelStyle: {
+          fontSize: 12,
+          fontWeight: '600',
+        },
+      }}
+    >
       <Tabs.Screen
         name="index"
         options={{
           title: 'Library',
           tabBarIcon: ({ color, size, focused }) => (
-            <Ionicons name={focused ? 'home' : 'home-outline'} size={size} color={color} />
+            <Ionicons
+              name={focused ? 'book' : 'book-outline'}
+              size={size}
+              color={color}
+            />
           ),
         }}
       />
@@ -38,7 +53,24 @@ export default function AppTabs() {
         options={{
           title: 'Snap',
           tabBarIcon: ({ color, size, focused }) => (
-            <Ionicons name={focused ? 'camera' : 'camera-outline'} size={size} color={color} />
+            <Ionicons
+              name={focused ? 'sparkles' : 'sparkles-outline'}
+              size={size}
+              color={color}
+            />
+          ),
+        }}
+      />
+      <Tabs.Screen
+        name="settings"
+        options={{
+          title: 'Settings',
+          tabBarIcon: ({ color, size, focused }) => (
+            <Ionicons
+              name={focused ? 'settings' : 'settings-outline'}
+              size={size}
+              color={color}
+            />
           ),
         }}
       />

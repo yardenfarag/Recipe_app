@@ -1,13 +1,13 @@
 import { router, useLocalSearchParams } from 'expo-router';
 import { useState } from 'react';
 import { ActivityIndicator, Alert, Pressable, Text } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { RecipeView } from '@/components/RecipeView';
+import { Screen } from '@/components/Screen';
 import { GUEST_RECIPE_LIMIT, saveGuestRecipe } from '@/lib/guestRecipes';
 import { supabase } from '@/lib/supabase/client';
-import { saveRecipe } from '@/lib/supabase/recipes';
 import { ExtractedRecipe } from '@/lib/supabase/extractRecipe';
+import { saveRecipe } from '@/lib/supabase/recipes';
 
 /**
  * Shows a freshly extracted recipe that has NOT been saved yet.
@@ -31,11 +31,11 @@ export default function RecipePreviewScreen() {
 
   if (!recipe) {
     return (
-      <SafeAreaView className="flex-1 bg-pinch-cream items-center justify-center px-6">
-        <Text className="text-base text-gray-500 text-center">
+      <Screen className="items-center justify-center px-6" edges={['bottom']}>
+        <Text className="text-center text-base text-pinch-muted dark:text-pinch-muted-dark">
           Something went wrong loading this recipe.
         </Text>
-      </SafeAreaView>
+      </Screen>
     );
   }
 
@@ -45,13 +45,9 @@ export default function RecipePreviewScreen() {
       const { data: userData } = await supabase.auth.getUser();
 
       if (!userData.user) {
-        // ADR 002 — guests get GUEST_RECIPE_LIMIT free local saves, then a sign-up prompt.
         const result = await saveGuestRecipe(recipe!);
 
         if (!result.ok) {
-          // ADR 002 — quota exhausted: prompt sign-up. After signing in, the
-          // guest recipes migrate automatically (useAuth) and tapping Save
-          // again persists this one to Supabase.
           Alert.alert(
             'Free limit reached',
             `You've saved ${GUEST_RECIPE_LIMIT} recipes as a guest. Sign up to save this one and unlock unlimited recipes.`,
@@ -79,23 +75,23 @@ export default function RecipePreviewScreen() {
   }
 
   return (
-    <SafeAreaView className="flex-1 bg-pinch-cream" edges={['bottom']}>
+    <Screen edges={['bottom']}>
       <RecipeView
         recipe={recipe}
         footer={
           <Pressable
-            className="bg-pinch-green rounded-full py-4 items-center mt-2 mb-8"
+            className="mb-8 mt-2 items-center rounded-full bg-pinch-primary py-4 active:opacity-80 dark:bg-pinch-primary-dark"
             onPress={handleSave}
             disabled={saving}
           >
             {saving ? (
               <ActivityIndicator color="#fff" />
             ) : (
-              <Text className="text-white font-bold text-base">Save Recipe</Text>
+              <Text className="text-base font-bold text-white">Save recipe</Text>
             )}
           </Pressable>
         }
       />
-    </SafeAreaView>
+    </Screen>
   );
 }

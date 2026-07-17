@@ -1,9 +1,11 @@
+import Ionicons from '@expo/vector-icons/Ionicons';
 import { router } from 'expo-router';
 import { useShareIntentContext } from 'expo-share-intent';
 import { useEffect, useState } from 'react';
 import { ActivityIndicator, Pressable, Text, TextInput, View } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
 
+import { Screen } from '@/components/Screen';
+import { useThemePreference } from '@/hooks/useThemePreference';
 import { extractRecipe } from '@/lib/supabase/extractRecipe';
 
 type Banner = { kind: 'error' | 'info'; message: string } | null;
@@ -13,14 +15,11 @@ export default function AddRecipeScreen() {
   const [loading, setLoading] = useState(false);
   const [banner, setBanner] = useState<Banner>(null);
   const { hasShareIntent, shareIntent, resetShareIntent } = useShareIntentContext();
+  const { colors } = useThemePreference();
 
   useEffect(() => {
     if (!hasShareIntent) return;
 
-    // Deliberately only watching `hasShareIntent`: expo-share-intent always
-    // flips this back to false when `resetShareIntent()` runs, so a second
-    // share always re-triggers this effect (false -> true) rather than
-    // being missed by a stale closure over `shareIntent`.
     const sharedUrl = shareIntent.webUrl ?? shareIntent.text;
     resetShareIntent();
     if (sharedUrl) {
@@ -53,7 +52,6 @@ export default function AddRecipeScreen() {
         return;
       }
 
-      // full or partial — hand off to the preview screen (not saved yet, ADR 002/004)
       router.push({
         pathname: '/recipe/preview',
         params: { data: JSON.stringify(result.recipe) },
@@ -66,69 +64,99 @@ export default function AddRecipeScreen() {
     }
   }
 
+  const canSubmit = Boolean(url.trim()) && !loading;
+
   return (
-    <SafeAreaView className="flex-1 bg-pinch-cream">
-      <View className="flex-1 px-6 pt-6">
-        <Text className="text-2xl font-bold text-pinch-dark mb-1">Snap a Recipe</Text>
-        <Text className="text-sm text-gray-500 mb-8">
-          Paste a link from YouTube — Instagram and TikTok are coming soon
-        </Text>
+    <Screen>
+      <View className="flex-1 px-6 pt-3">
+        <View className="mb-6">
+          <Text className="mb-1 text-xs font-semibold uppercase tracking-widest text-pinch-rose dark:text-pinch-rose-dark">
+            New recipe
+          </Text>
+          <Text className="text-2xl font-bold text-pinch-dark dark:text-pinch-text-dark">
+            Snap a recipe
+          </Text>
+          <Text className="mt-1.5 text-sm leading-5 text-pinch-muted dark:text-pinch-muted-dark">
+            Paste a YouTube link — Instagram and TikTok are coming soon
+          </Text>
+        </View>
 
-        <Text className="text-sm font-medium text-pinch-dark mb-2">Recipe URL</Text>
-        <TextInput
-          className="bg-white border border-gray-200 rounded-xl px-4 py-4 text-base text-pinch-dark mb-6"
-          placeholder="https://youtube.com/watch?v=..."
-          placeholderTextColor="#9CA3AF"
-          value={url}
-          onChangeText={(text) => {
-            setUrl(text);
-            if (banner) setBanner(null);
-          }}
-          autoCapitalize="none"
-          autoCorrect={false}
-          keyboardType="url"
-          editable={!loading}
-        />
+        <View className="mb-5 rounded-3xl border border-pinch-border bg-pinch-surface p-5 dark:border-pinch-border-dark dark:bg-pinch-surface-dark">
+          <Text className="mb-2 text-sm font-semibold text-pinch-dark dark:text-pinch-text-dark">
+            Recipe URL
+          </Text>
+          <View className="mb-4 flex-row items-center rounded-2xl bg-pinch-bg px-3.5 dark:bg-pinch-bg-dark">
+            <Ionicons name="link-outline" size={18} color={colors.textSecondary} />
+            <TextInput
+              className="flex-1 px-3 py-4 text-base text-pinch-dark dark:text-pinch-text-dark"
+              placeholder="https://youtube.com/watch?v=..."
+              placeholderTextColor={colors.textSecondary}
+              value={url}
+              onChangeText={(text) => {
+                setUrl(text);
+                if (banner) setBanner(null);
+              }}
+              autoCapitalize="none"
+              autoCorrect={false}
+              keyboardType="url"
+              editable={!loading}
+            />
+          </View>
 
-        {banner && (
-          <View
-            className={`rounded-xl px-4 py-3 mb-6 border ${
-              banner.kind === 'error'
-                ? 'bg-red-50 border-red-100'
-                : 'bg-orange-50 border-orange-100'
-            }`}
-          >
-            <Text
-              className={`text-sm ${
-                banner.kind === 'error' ? 'text-red-700' : 'text-orange-700'
+          {banner && (
+            <View
+              className={`mb-4 rounded-2xl border px-4 py-3 ${
+                banner.kind === 'error'
+                  ? 'border-red-200 bg-red-50 dark:border-red-900 dark:bg-[#3A2424]'
+                  : 'border-pinch-primary-soft bg-pinch-primary-soft dark:border-pinch-primary-soft-dark dark:bg-pinch-primary-soft-dark'
               }`}
             >
-              {banner.message}
+              <Text
+                className={`text-sm leading-5 ${
+                  banner.kind === 'error'
+                    ? 'text-red-700 dark:text-red-300'
+                    : 'text-pinch-primary dark:text-pinch-primary-dark'
+                }`}
+              >
+                {banner.message}
+              </Text>
+            </View>
+          )}
+
+          <Pressable
+            className={`items-center rounded-full py-4 ${
+              canSubmit
+                ? 'bg-pinch-primary dark:bg-pinch-primary-dark'
+                : 'bg-[#D9CFD3] dark:bg-[#3A3034]'
+            }`}
+            onPress={() => handleForkIt()}
+            disabled={!canSubmit}
+          >
+            {loading ? (
+              <ActivityIndicator color="#fff" />
+            ) : (
+              <View className="flex-row items-center gap-2">
+                <Ionicons name="restaurant-outline" size={18} color="#fff" />
+                <Text className="text-lg font-bold text-white">Fork it!</Text>
+              </View>
+            )}
+          </Pressable>
+        </View>
+
+        <View className="rounded-3xl border border-pinch-rose-soft bg-pinch-rose-soft p-4 dark:border-pinch-rose-soft-dark dark:bg-pinch-rose-soft-dark">
+          <View className="mb-1.5 flex-row items-center gap-2">
+            <Ionicons name="share-outline" size={16} color={colors.accent} />
+            <Text className="text-sm font-semibold text-pinch-dark dark:text-pinch-text-dark">
+              Share Sheet
             </Text>
           </View>
-        )}
-
-        <Pressable
-          className={`rounded-full py-4 items-center ${url.trim() ? 'bg-pinch-orange' : 'bg-gray-300'}`}
-          onPress={() => handleForkIt()}
-          disabled={!url.trim() || loading}
-        >
-          {loading ? (
-            <ActivityIndicator color="#fff" />
-          ) : (
-            <Text className="text-white font-bold text-lg">Fork it! 🍴</Text>
-          )}
-        </Pressable>
-
-        <View className="mt-8 rounded-xl bg-orange-50 p-4 border border-orange-100">
-          <Text className="text-sm text-orange-800 font-medium mb-1">Share Sheet</Text>
-          <Text className="text-xs text-orange-600">
-            On Android dev builds, you can share a link straight into Pinch from other apps — it
-            lands here and Forks it automatically. iOS support follows once the Apple Developer
-            account is set up (ADR 009/010).
+          <Text className="text-xs leading-5 text-pinch-muted dark:text-pinch-muted-dark">
+            On Android dev builds, share a link straight into Pinch from other apps — it lands here
+            and Forks it automatically. iOS support follows once the Apple Developer account is set
+            up.
           </Text>
         </View>
       </View>
-    </SafeAreaView>
+    </Screen>
   );
 }
