@@ -1,3 +1,5 @@
+import { FunctionsHttpError } from '@supabase/supabase-js';
+
 import { supabase } from '@/lib/supabase/client';
 import { Recipe } from '@/types/recipe';
 
@@ -9,8 +11,29 @@ export type ExtractedRecipe = Omit<Recipe, 'id' | 'user_id' | 'created_at'>;
 export interface ExtractResult {
   status: ExtractStatus;
   platform: 'youtube' | 'instagram' | 'tiktok' | 'unknown';
-  recipe?: ExtractedRecipe;
+  /** Unsaved extraction, or a full saved recipe when `cached` is true. */
+  recipe?: ExtractedRecipe | Recipe;
   message?: string;
+  /** True when the URL was already in the user's library — no extraction ran. */
+  cached?: boolean;
+}
+
+async function invokeErrorMessage(error: unknown): Promise<string> {
+  if (error instanceof FunctionsHttpError) {
+    try {
+      const body = (await error.context.json()) as { message?: string; error?: string };
+      if (body.message) return body.message;
+      if (body.error) return body.error;
+    } catch {
+      // Fall through to generic message.
+    }
+  }
+
+  if (error instanceof Error && error.message && !error.message.includes('non-2xx')) {
+    return error.message;
+  }
+
+  return 'Could not reach the extraction service. Please try again.';
 }
 
 /**
@@ -24,12 +47,22 @@ export async function extractRecipe(url: string): Promise<ExtractResult> {
   });
 
   if (error) {
-    // Network / non-2xx from the function itself
     return {
       status: 'failed',
       platform: 'unknown',
-      message: 'Could not reach the extraction service. Please try again.',
+      message: await invokeErrorMessage(error),
     };
+  }
+
+  if (data && typeof data === 'object' && 'error' in data) {
+    const errBody = data as { error?: string };
+    if (typeof errBody.error === 'string') {
+      return {
+        status: 'failed',
+        platform: 'unknown',
+        message: errBody.error,
+      };
+    }
   }
 
   return (

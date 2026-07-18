@@ -3,7 +3,7 @@
 
 import { AppError, FetchError } from './errors.ts';
 
-const MODEL = Deno.env.get('GEMINI_MODEL') ?? 'gemini-3-flash-preview';
+const MODEL = Deno.env.get('GEMINI_MODEL') ?? 'gemini-3.5-flash';
 const REQUEST_TIMEOUT_MS = 25_000;
 
 const SYSTEM_PROMPT = `You are a culinary expert helping a home cook who is missing an ingredient.
@@ -68,6 +68,7 @@ export async function suggestSubstitutionsWithGemini(
     generationConfig: {
       responseMimeType: 'application/json',
       responseSchema: SUBSTITUTION_SCHEMA,
+      thinkingConfig: { thinkingLevel: 'minimal' },
     },
   };
 

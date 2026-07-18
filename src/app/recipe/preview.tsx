@@ -1,40 +1,48 @@
-import { router, useLocalSearchParams } from 'expo-router';
-import { useState } from 'react';
+import { router } from 'expo-router';
+import { useCallback, useState } from 'react';
 import { ActivityIndicator, Alert, Pressable, Text } from 'react-native';
 
 import { RecipeView } from '@/components/RecipeView';
 import { Screen } from '@/components/Screen';
 import { GUEST_RECIPE_LIMIT, saveGuestRecipe } from '@/lib/guestRecipes';
+import { clearRecipeDraft, peekRecipeDraft } from '@/lib/recipeDraft';
 import { supabase } from '@/lib/supabase/client';
 import { ExtractedRecipe } from '@/lib/supabase/extractRecipe';
 import { saveRecipe } from '@/lib/supabase/recipes';
 
 /**
  * Shows a freshly extracted recipe that has NOT been saved yet.
- * The `data` param is the JSON-serialized recipe returned by the
- * `extract-recipe` Edge Function (see src/lib/supabase/extractRecipe.ts).
- *
- * Typed as `ExtractedRecipe` (not `Recipe`) because this payload has no
- * `id` / `user_id` / `created_at` yet — those only exist once `saveRecipe`
- * or `saveGuestRecipe` persists it.
+ * Recipe payload lives in the in-memory draft store (see recipeDraft.ts).
  */
 export default function RecipePreviewScreen() {
-  const { data } = useLocalSearchParams<{ data: string }>();
+  const parsed = peekRecipeDraft();
   const [saving, setSaving] = useState(false);
+  const [recipeToSave, setRecipeToSave] = useState<ExtractedRecipe | null>(parsed);
 
-  let recipe: ExtractedRecipe | null = null;
-  try {
-    recipe = data ? (JSON.parse(data) as ExtractedRecipe) : null;
-  } catch {
-    recipe = null;
-  }
+  const handleContentChange = useCallback(
+    (content: {
+      servings: number;
+      ingredients: ExtractedRecipe['ingredients'];
+      instructions: ExtractedRecipe['instructions'];
+      calories?: number;
+    }) => {
+      setRecipeToSave((prev) => (prev ? { ...prev, ...content } : prev));
+    },
+    [],
+  );
 
-  if (!recipe) {
+  if (!parsed || !recipeToSave) {
     return (
       <Screen className="items-center justify-center px-6" edges={['bottom']}>
-        <Text className="text-center text-base text-pinch-muted dark:text-pinch-muted-dark">
-          Something went wrong loading this recipe.
+        <Text className="mb-4 text-center text-base text-pinch-muted dark:text-pinch-muted-dark">
+          No recipe to preview. Extract one from the Snap tab first.
         </Text>
+        <Pressable
+          onPress={() => router.replace('/add')}
+          className="rounded-full bg-pinch-primary px-5 py-3 active:opacity-80 dark:bg-pinch-primary-dark"
+        >
+          <Text className="text-sm font-bold text-white">Go to Snap</Text>
+        </Pressable>
       </Screen>
     );
   }
@@ -45,7 +53,7 @@ export default function RecipePreviewScreen() {
       const { data: userData } = await supabase.auth.getUser();
 
       if (!userData.user) {
-        const result = await saveGuestRecipe(recipe!);
+        const result = await saveGuestRecipe(recipeToSave);
 
         if (!result.ok) {
           Alert.alert(
@@ -59,12 +67,14 @@ export default function RecipePreviewScreen() {
           return;
         }
 
+        clearRecipeDraft();
         Alert.alert('Saved!', 'This recipe is now in your library.');
         router.replace('/');
         return;
       }
 
-      await saveRecipe(recipe!);
+      await saveRecipe(recipeToSave);
+      clearRecipeDraft();
       Alert.alert('Saved!', 'This recipe is now in your library.');
       router.replace('/');
     } catch (err) {
@@ -77,7 +87,8 @@ export default function RecipePreviewScreen() {
   return (
     <Screen edges={['bottom']}>
       <RecipeView
-        recipe={recipe}
+        recipe={parsed}
+        onContentChange={handleContentChange}
         footer={
           <Pressable
             className="mb-8 mt-2 items-center rounded-full bg-pinch-primary py-4 active:opacity-80 dark:bg-pinch-primary-dark"

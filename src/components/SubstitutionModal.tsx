@@ -46,15 +46,22 @@ export function SubstitutionModal({
     setError(null);
     setAlternatives([]);
 
-    suggestSubstitution(ingredient, recipeTitle, otherIngredients).then((result) => {
-      if (!isMounted) return;
-      setLoading(false);
-      if (result.status === 'failed' || !result.alternatives) {
-        setError(result.message ?? "Couldn't find a substitute. Try again.");
-        return;
-      }
-      setAlternatives(result.alternatives);
-    });
+    suggestSubstitution(ingredient, recipeTitle, otherIngredients)
+      .then((result) => {
+        if (!isMounted) return;
+        if (result.status === 'failed' || !result.alternatives) {
+          setError(result.message ?? "Couldn't find a substitute. Try again.");
+          return;
+        }
+        setAlternatives(result.alternatives);
+      })
+      .catch(() => {
+        if (!isMounted) return;
+        setError("Couldn't find a substitute. Try again.");
+      })
+      .finally(() => {
+        if (isMounted) setLoading(false);
+      });
 
     return () => {
       isMounted = false;

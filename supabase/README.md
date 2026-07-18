@@ -13,6 +13,9 @@ This creates:
 - `recipes` table with RLS (users can only read/write their own rows)
 - Indexes and check constraints matching `docs/plan/MVP-PLAN.md`
 
+Run `0002_profile_avatar.sql` through `0006_recipe_thumbnails.sql`
+after `0001_init.sql` when setting up a fresh project or catching up an existing database.
+
 ## Verifying it worked
 
 Run in SQL Editor:
@@ -27,8 +30,9 @@ select tablename, rowsecurity from pg_tables where schemaname = 'public';
 
 ## Edge Function: `extract-recipe` (Step 2b)
 
-Takes `{ url }`, detects the platform, and (for YouTube) sends the video to Gemini
-with structured JSON output. Returns `{ status, platform, recipe?, message? }`.
+Takes `{ url }`, detects the platform, fetches metadata (YouTube Data API / ScrapeCreators for
+Instagram & TikTok), runs the Gemini content ladder, and returns structured JSON.
+Returns `{ status, platform, recipe?, message? }`.
 
 `status` is one of `full` | `partial` | `failed` | `coming_soon` (see ADR 003/004).
 The function does **not** save — the app persists the result (local guest store or
@@ -58,14 +62,20 @@ npx supabase secrets set GEMINI_API_KEY=your_gemini_key
 # Without it, extraction still works from the video alone.
 npx supabase secrets set YOUTUBE_API_KEY=your_youtube_data_api_key
 
-# Optional — override the model (default: gemini-2.5-flash)
-npx supabase secrets set GEMINI_MODEL=gemini-2.5-flash
+# Optional — override the model (default: gemini-3.5-flash in code)
+npx supabase secrets set GEMINI_MODEL=gemini-3.5-flash
+
+# Required for Instagram + TikTok extraction (ScrapeCreators)
+npx supabase secrets set SCRAPECREATORS_API_KEY=your_scrapecreators_api_key
 ```
 
 ### Deploy
 
 ```bash
 npx supabase functions deploy extract-recipe
+npx supabase functions deploy backfill-thumbnails
+npx supabase functions deploy suggest-substitution
+npx supabase functions deploy transform-recipe
 ```
 
 ### Test it
@@ -78,8 +88,8 @@ curl -X POST \
   -d '{"url":"https://www.youtube.com/watch?v=SOME_RECIPE_VIDEO"}'
 ```
 
-Expected: JSON with `status: "full"` and a `recipe` object. Try a non-YouTube link
-to see the `coming_soon` response.
+Expected: JSON with `status: "full"` and a `recipe` object. Try Instagram Reel or
+TikTok URLs once `SCRAPECREATORS_API_KEY` is set in Supabase secrets.
 
 ## What's next (later Phase 2 steps)
 

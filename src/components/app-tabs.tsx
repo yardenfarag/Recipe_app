@@ -49,6 +49,19 @@ export default function AppTabs() {
         }}
       />
       <Tabs.Screen
+        name="favorites"
+        options={{
+          title: 'Favorites',
+          tabBarIcon: ({ color, size, focused }) => (
+            <Ionicons
+              name={focused ? 'heart' : 'heart-outline'}
+              size={size}
+              color={color}
+            />
+          ),
+        }}
+      />
+      <Tabs.Screen
         name="add"
         options={{
           title: 'Snap',

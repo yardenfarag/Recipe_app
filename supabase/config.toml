@@ -1,0 +1,3 @@
+# Edge Function limits — extract-recipe runs scrape + Gemini text + optional video.
+[functions.extract-recipe]
+timeout = 120

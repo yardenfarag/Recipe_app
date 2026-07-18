@@ -15,7 +15,7 @@ import { signOut } from '@/lib/supabase/auth';
 import { uploadAvatar } from '@/lib/supabase/profile';
 
 export default function SettingsScreen() {
-  const { user } = useAuth();
+  const { user, migrationError, retryMigration } = useAuth();
   const { avatarUrl, refresh } = useProfile();
   const { colors } = useThemePreference();
   const [uploading, setUploading] = useState(false);
@@ -151,6 +151,23 @@ export default function SettingsScreen() {
             </Text>
             <ThemeToggle />
           </View>
+
+          {migrationError && (
+            <View className="mb-6 rounded-3xl border border-amber-200 bg-amber-50 p-4 dark:border-amber-900 dark:bg-[#3A3420]">
+              <Text className="mb-1 text-sm font-semibold text-amber-900 dark:text-amber-200">
+                Local recipes not synced
+              </Text>
+              <Text className="mb-3 text-sm leading-5 text-amber-800 dark:text-amber-300">
+                {migrationError}
+              </Text>
+              <Pressable
+                onPress={() => void retryMigration()}
+                className="items-center rounded-full bg-pinch-primary py-3 active:opacity-80 dark:bg-pinch-primary-dark"
+              >
+                <Text className="text-sm font-bold text-white">Retry sync</Text>
+              </Pressable>
+            </View>
+          )}
 
           <Text className="text-center text-xs text-pinch-muted dark:text-pinch-muted-dark">
             Pinch v{Constants.expoConfig?.version ?? '1.0.0'}

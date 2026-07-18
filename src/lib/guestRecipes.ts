@@ -13,6 +13,14 @@ export type SaveGuestRecipeResult =
   | { ok: true; recipe: Recipe }
   | { ok: false; reason: 'quota_exceeded' };
 
+async function writeGuestRecipes(recipes: Recipe[]): Promise<void> {
+  try {
+    await AsyncStorage.setItem(STORAGE_KEY, JSON.stringify(recipes));
+  } catch {
+    throw new Error('Could not save to local storage. Check device storage and try again.');
+  }
+}
+
 export async function getGuestRecipes(): Promise<Recipe[]> {
   try {
     const raw = await AsyncStorage.getItem(STORAGE_KEY);
@@ -40,19 +48,36 @@ export async function saveGuestRecipe(recipe: NewGuestRecipe): Promise<SaveGuest
   };
 
   const next = [saved, ...existing];
-  await AsyncStorage.setItem(STORAGE_KEY, JSON.stringify(next));
+  await writeGuestRecipes(next);
   return { ok: true, recipe: saved };
 }
 
 export async function removeGuestRecipe(id: string): Promise<void> {
   const existing = await getGuestRecipes();
   const next = existing.filter((r) => r.id !== id);
-  await AsyncStorage.setItem(STORAGE_KEY, JSON.stringify(next));
+  await writeGuestRecipes(next);
+}
+
+/** Replaces the full guest recipe list — used after thumbnail backfill. */
+export async function replaceGuestRecipes(recipes: Recipe[]): Promise<void> {
+  await writeGuestRecipes(recipes);
+}
+
+export async function setGuestRecipeFavorite(id: string, isFavorite: boolean): Promise<void> {
+  const existing = await getGuestRecipes();
+  const next = existing.map((recipe) =>
+    recipe.id === id ? { ...recipe, is_favorite: isFavorite } : recipe,
+  );
+  await writeGuestRecipes(next);
 }
 
 /** Wipes all local guest recipes — used after a successful migration to Supabase. */
 export async function clearGuestRecipes(): Promise<void> {
-  await AsyncStorage.removeItem(STORAGE_KEY);
+  try {
+    await AsyncStorage.removeItem(STORAGE_KEY);
+  } catch {
+    throw new Error('Could not clear local recipes after sync.');
+  }
 }
 
 function generateGuestId(): string {

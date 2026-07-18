@@ -18,9 +18,18 @@ export async function migrateGuestRecipesToSupabase(userId: string): Promise<num
     migrated_from_guest: true,
   }));
 
-  const { error } = await supabase.from('recipes').insert(rows);
-  if (error) throw error;
+  let migrated = 0;
+
+  for (const row of rows) {
+    const { error } = await supabase.from('recipes').insert(row);
+    if (error) {
+      // Unique URL constraint — already in library from a prior partial migration.
+      if (error.code === '23505') continue;
+      throw error;
+    }
+    migrated += 1;
+  }
 
   await clearGuestRecipes();
-  return rows.length;
+  return migrated;
 }

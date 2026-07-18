@@ -5,6 +5,7 @@ import { Stack } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { ShareIntentProvider } from 'expo-share-intent';
 
+import { ErrorBoundary } from '@/components/ErrorBoundary';
 import { AuthProvider } from '@/hooks/useAuth';
 import { ShareIntentRouter } from '@/hooks/useShareIntentRouter';
 import { ThemeProvider, useThemePreference } from '@/hooks/useThemePreference';
@@ -50,10 +51,12 @@ export default function RootLayout() {
       options={{ debug: __DEV__, resetOnBackground: true, disabled: isExpoGo }}
     >
       <ThemeProvider>
-        <AuthProvider>
-          <ShareIntentRouter />
-          <RootNavigator />
-        </AuthProvider>
+        <ErrorBoundary>
+          <AuthProvider>
+            <ShareIntentRouter />
+            <RootNavigator />
+          </AuthProvider>
+        </ErrorBoundary>
       </ThemeProvider>
     </ShareIntentProvider>
   );

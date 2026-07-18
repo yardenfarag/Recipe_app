@@ -5,7 +5,10 @@ import { useEffect, useState } from 'react';
 import { ActivityIndicator, Pressable, Text, TextInput, View } from 'react-native';
 
 import { Screen } from '@/components/Screen';
+import { useAuth } from '@/hooks/useAuth';
 import { useThemePreference } from '@/hooks/useThemePreference';
+import { findExistingGuestRecipe } from '@/lib/findExistingRecipe';
+import { setRecipeDraft } from '@/lib/recipeDraft';
 import { extractRecipe } from '@/lib/supabase/extractRecipe';
 
 type Banner = { kind: 'error' | 'info'; message: string } | null;
@@ -15,6 +18,7 @@ export default function AddRecipeScreen() {
   const [loading, setLoading] = useState(false);
   const [banner, setBanner] = useState<Banner>(null);
   const { hasShareIntent, shareIntent, resetShareIntent } = useShareIntentContext();
+  const { user } = useAuth();
   const { colors } = useThemePreference();
 
   useEffect(() => {
@@ -24,12 +28,12 @@ export default function AddRecipeScreen() {
     resetShareIntent();
     if (sharedUrl) {
       setUrl(sharedUrl);
-      handleForkIt(sharedUrl);
+      handleGetRecipe(sharedUrl);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [hasShareIntent]);
 
-  async function handleForkIt(overrideUrl?: string) {
+  async function handleGetRecipe(overrideUrl?: string) {
     const target = (overrideUrl ?? url).trim();
     if (!target) return;
 
@@ -37,7 +41,23 @@ export default function AddRecipeScreen() {
     setLoading(true);
 
     try {
+      // Guests: check local library. Signed-in users: extract-recipe handles duplicates server-side.
+      if (!user) {
+        const existing = await findExistingGuestRecipe(target);
+        if (existing) {
+          router.push(`/recipe/${existing.id}`);
+          setUrl('');
+          return;
+        }
+      }
+
       const result = await extractRecipe(target);
+
+      if (result.cached && result.recipe && 'id' in result.recipe) {
+        router.push(`/recipe/${result.recipe.id}`);
+        setUrl('');
+        return;
+      }
 
       if (result.status === 'coming_soon') {
         setBanner({ kind: 'info', message: result.message ?? 'That platform is coming soon.' });
@@ -52,10 +72,8 @@ export default function AddRecipeScreen() {
         return;
       }
 
-      router.push({
-        pathname: '/recipe/preview',
-        params: { data: JSON.stringify(result.recipe) },
-      });
+      setRecipeDraft(result.recipe);
+      router.push('/recipe/preview');
       setUrl('');
     } catch {
       setBanner({ kind: 'error', message: 'Something went wrong. Please try again.' });
@@ -77,7 +95,7 @@ export default function AddRecipeScreen() {
             Snap a recipe
           </Text>
           <Text className="mt-1.5 text-sm leading-5 text-pinch-muted dark:text-pinch-muted-dark">
-            Paste a YouTube link — Instagram and TikTok are coming soon
+            Paste a YouTube, Instagram, or TikTok link
           </Text>
         </View>
 
@@ -129,7 +147,7 @@ export default function AddRecipeScreen() {
                 ? 'bg-pinch-primary dark:bg-pinch-primary-dark'
                 : 'bg-[#D9CFD3] dark:bg-[#3A3034]'
             }`}
-            onPress={() => handleForkIt()}
+            onPress={() => handleGetRecipe()}
             disabled={!canSubmit}
           >
             {loading ? (
@@ -137,7 +155,7 @@ export default function AddRecipeScreen() {
             ) : (
               <View className="flex-row items-center gap-2">
                 <Ionicons name="restaurant-outline" size={18} color="#fff" />
-                <Text className="text-lg font-bold text-white">Fork it!</Text>
+                <Text className="text-lg font-bold text-white">Get Recipe</Text>
               </View>
             )}
           </Pressable>
@@ -151,9 +169,8 @@ export default function AddRecipeScreen() {
             </Text>
           </View>
           <Text className="text-xs leading-5 text-pinch-muted dark:text-pinch-muted-dark">
-            On Android dev builds, share a link straight into Pinch from other apps — it lands here
-            and Forks it automatically. iOS support follows once the Apple Developer account is set
-            up.
+            In a development build, share a YouTube, Instagram, or TikTok link into Pinch from another
+            app — it lands here and runs Get Recipe automatically. This does not work in Expo Go.
           </Text>
         </View>
       </View>
