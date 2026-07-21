@@ -1,10 +1,14 @@
 // Full-recipe dietary / lifestyle transforms via Gemini structured output.
 
 import { normalizeStoredCalories } from './calories.ts';
-import { AppError, FetchError } from './errors.ts';
+import {
+  generateGeminiJson,
+  sanitizeGeminiText,
+} from './geminiClient.ts';
+import type { GeminiUsageSnapshot } from './pricing.ts';
 
-const MODEL = Deno.env.get('GEMINI_MODEL') ?? 'gemini-3.5-flash';
-const REQUEST_TIMEOUT_MS = 30_000;
+const REQUEST_TIMEOUT_MS = 35_000;
+const MAX_OUTPUT_TOKENS = 4_096;
 
 export type RecipeVariantKey =
   | 'healthier'
@@ -38,7 +42,7 @@ Rules:
 - Preserve the spirit of the original dish — this should still feel like the same recipe, adapted.
 - Update ingredients with realistic quantities and units; adjust instructions to match any swaps.
 - Keep the same number of servings unless a change is required for the variant.
-- Before setting calories, write calories_reasoning: brief estimate from main ingredients, confirm calories is TOTAL for all servings.
+- calories_reasoning: one short phrase estimating kcal from main ingredients; calories is TOTAL for all servings.
 - Write a concise summary (1–2 sentences) of what you changed.
 - Return ONLY data matching the schema.`;
 
@@ -92,82 +96,47 @@ export interface TransformedRecipe {
   calories?: number;
   calories_reasoning?: string;
   summary: string;
+  usage?: GeminiUsageSnapshot | null;
 }
 
 export async function transformRecipeWithGemini(
   input: TransformRecipeInput,
 ): Promise<TransformedRecipe> {
-  const apiKey = Deno.env.get('GEMINI_API_KEY');
-  if (!apiKey) {
-    throw new AppError(
-      'recipeVariant.ts: transformRecipeWithGemini',
-      'GEMINI_API_KEY is not configured',
-    );
-  }
-
   const goal = VARIANT_INSTRUCTIONS[input.variant];
   const text = buildTextContext(input, goal);
-  const endpoint = `https://generativelanguage.googleapis.com/v1beta/models/${MODEL}:generateContent`;
 
-  const body = {
-    systemInstruction: { parts: [{ text: SYSTEM_PROMPT }] },
-    contents: [{ role: 'user', parts: [{ text }] }],
-    generationConfig: {
-      responseMimeType: 'application/json',
-      responseSchema: TRANSFORM_SCHEMA,
-      thinkingConfig: { thinkingLevel: 'minimal' },
-    },
-  };
+  const { data: parsed, usage } = await generateGeminiJson<TransformedRecipe>({
+    tier: 'fast',
+    systemPrompt: SYSTEM_PROMPT,
+    parts: [{ text }],
+    responseSchema: TRANSFORM_SCHEMA,
+    timeoutMs: REQUEST_TIMEOUT_MS,
+    maxOutputTokens: MAX_OUTPUT_TOKENS,
+    kind: 'transform',
+    context: 'recipeVariant.ts: transformRecipeWithGemini',
+  });
 
-  const controller = new AbortController();
-  const timeout = setTimeout(() => controller.abort(), REQUEST_TIMEOUT_MS);
-
-  let res: Response;
-  try {
-    res = await fetch(endpoint, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'x-goog-api-key': apiKey,
-      },
-      body: JSON.stringify(body),
-      signal: controller.signal,
-    });
-  } catch (err) {
-    const isTimeout = err instanceof Error && err.name === 'AbortError';
-    throw new FetchError('recipeVariant.ts: transformRecipeWithGemini', 'Gemini request failed', {
-      timedOut: isTimeout,
-      timeoutMs: REQUEST_TIMEOUT_MS,
-      originalError: err instanceof Error ? err.message : String(err),
-    });
-  } finally {
-    clearTimeout(timeout);
-  }
-
-  if (!res.ok) {
-    const errText = await res.text();
-    throw new FetchError('recipeVariant.ts: transformRecipeWithGemini', 'Gemini API returned an error', {
-      status: res.status,
-      body: errText,
-    });
-  }
-
-  const data = await res.json();
-  const jsonText = data?.candidates?.[0]?.content?.parts?.[0]?.text;
-  if (!jsonText) {
-    throw new AppError('recipeVariant.ts: transformRecipeWithGemini', 'Gemini returned no content');
-  }
-
-  const parsed = JSON.parse(jsonText) as TransformedRecipe;
   const servings = parsed.servings > 0 ? parsed.servings : input.servings;
 
   return {
-    ingredients: parsed.ingredients ?? [],
-    instructions: parsed.instructions ?? [],
+    ingredients: (parsed.ingredients ?? []).map((ing) => ({
+      name: sanitizeGeminiText(ing.name ?? ''),
+      quantity: Number(ing.quantity),
+      unit: sanitizeGeminiText(ing.unit ?? ''),
+    })),
+    instructions: (parsed.instructions ?? []).map((step) => ({
+      step: Number(step.step),
+      text: sanitizeGeminiText(step.text ?? ''),
+    })),
     servings,
     calories: normalizeStoredCalories(parsed.calories ?? null, servings) ?? undefined,
-    calories_reasoning: parsed.calories_reasoning,
-    summary: parsed.summary?.trim() || 'Recipe adapted to your chosen style.',
+    calories_reasoning: parsed.calories_reasoning
+      ? sanitizeGeminiText(parsed.calories_reasoning)
+      : undefined,
+    summary: sanitizeGeminiText(
+      parsed.summary?.trim() || 'Recipe adapted to your chosen style.',
+    ),
+    usage,
   };
 }
 

@@ -40,6 +40,8 @@ function RootNavigator() {
             presentation: 'modal',
           }}
         />
+        <Stack.Screen name="reset-password" options={{ title: 'Reset password' }} />
+        <Stack.Screen name="admin/usage" options={{ title: 'Usage & tokens' }} />
       </Stack>
     </>
   );

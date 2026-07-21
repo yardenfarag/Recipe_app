@@ -30,7 +30,8 @@ export function ThemeToggle({ compact = false }: ThemeToggleProps) {
         onPress={cyclePreference}
         accessibilityRole="button"
         accessibilityLabel={`Theme: ${LABELS[preference]}. Tap to change.`}
-        className="h-10 w-10 items-center justify-center rounded-full bg-pinch-primary-soft active:opacity-70 dark:bg-pinch-primary-soft-dark"
+        className="h-10 w-10 items-center justify-center rounded-[16px] active:opacity-70"
+        style={{ backgroundColor: colors.primarySoft }}
         hitSlop={8}
       >
         <Ionicons name={ICONS[preference]} size={20} color={colors.primary} />
@@ -39,7 +40,10 @@ export function ThemeToggle({ compact = false }: ThemeToggleProps) {
   }
 
   return (
-    <View className="flex-row rounded-full bg-pinch-primary-soft p-1 dark:bg-pinch-primary-soft-dark">
+    <View
+      className="flex-row rounded-[18px] p-1"
+      style={{ backgroundColor: colors.primarySoft }}
+    >
       {(['system', 'light', 'dark'] as ThemePreference[]).map((mode) => {
         const active = preference === mode;
         return (
@@ -48,9 +52,8 @@ export function ThemeToggle({ compact = false }: ThemeToggleProps) {
             onPress={() => setPreference(mode)}
             accessibilityRole="button"
             accessibilityState={{ selected: active }}
-            className={`flex-row items-center gap-1.5 rounded-full px-3.5 py-2 ${
-              active ? 'bg-pinch-surface shadow-sm dark:bg-pinch-surface-dark' : ''
-            }`}
+            className="flex-row items-center gap-1.5 rounded-[14px] px-3.5 py-2"
+            style={active ? { backgroundColor: colors.surface } : undefined}
           >
             <Ionicons
               name={ICONS[mode]}
@@ -58,11 +61,8 @@ export function ThemeToggle({ compact = false }: ThemeToggleProps) {
               color={active ? colors.primary : colors.textSecondary}
             />
             <Text
-              className={`text-xs font-semibold ${
-                active
-                  ? 'text-pinch-primary dark:text-pinch-primary-dark'
-                  : 'text-pinch-muted dark:text-pinch-muted-dark'
-              }`}
+              className="text-xs font-semibold"
+              style={{ color: active ? colors.primary : colors.textSecondary }}
             >
               {LABELS[mode]}
             </Text>

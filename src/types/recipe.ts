@@ -35,6 +35,10 @@ export interface Recipe {
   extraction_source?: ExtractionSource;
   /** Gemini reasoning for the calorie estimate — stored for QA, not shown in MVP UI. */
   calories_reasoning?: string;
+  /** Gemini reasoning for the time estimate — stored for QA, not shown in MVP UI. */
+  time_reasoning?: string;
+  /** Short lowercase labels (cuisine, meal, dish type, etc.) for browsing / trends. */
+  tags?: string[];
   missing_fields?: string[];
   migrated_from_guest?: boolean;
   /** Quick-access pin in the library Favorites section. */

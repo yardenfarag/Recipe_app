@@ -77,6 +77,47 @@ describe('filterAndSortRecipes', () => {
     expect(result).toHaveLength(1);
     expect(result[0].title).toBe('Apple Salad');
   });
+
+  it('filters by tag in search', () => {
+    const withTags = [
+      ...recipes,
+      mockRecipe({
+        id: '4',
+        title: 'Mystery Bowl',
+        tags: ['vegan', 'bowl'],
+        created_at: '2026-04-01T00:00:00.000Z',
+      }),
+    ];
+    const result = filterAndSortRecipes(withTags, 'vegan', 'newest');
+    expect(result.map((r) => r.id)).toEqual(['4']);
+  });
+
+  it('OR-filters by selected tags', () => {
+    const withTags = [
+      mockRecipe({ id: 'a', title: 'A', tags: ['pasta', 'dinner'] }),
+      mockRecipe({ id: 'b', title: 'B', tags: ['dessert'] }),
+      mockRecipe({ id: 'c', title: 'C', tags: ['dinner'] }),
+    ];
+    const result = filterAndSortRecipes(withTags, {
+      selectedTags: ['pasta', 'dessert'],
+      sort: 'title_asc',
+    });
+    expect(result.map((r) => r.id)).toEqual(['a', 'b']);
+  });
+
+  it('intersects collection allowlist with other filters', () => {
+    const withTags = [
+      mockRecipe({ id: 'a', title: 'A', tags: ['dinner'] }),
+      mockRecipe({ id: 'b', title: 'B', tags: ['dinner'] }),
+      mockRecipe({ id: 'c', title: 'C', tags: ['dessert'] }),
+    ];
+    const result = filterAndSortRecipes(withTags, {
+      selectedTags: ['dinner'],
+      recipeIdAllowlist: new Set(['b', 'c']),
+      sort: 'title_asc',
+    });
+    expect(result.map((r) => r.id)).toEqual(['b']);
+  });
 });
 
 describe('getFavoriteRecipes', () => {

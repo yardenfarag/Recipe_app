@@ -1,5 +1,6 @@
 /**
- * Pinch design tokens — soft berry rose + sky accent, light & dark.
+ * Pinch design tokens — spacing/fonts + default Mist Colors fallback.
+ * Live UI should read colors from `useThemePreference()` so theme packs apply.
  */
 
 import '@/global.css';
@@ -7,74 +8,24 @@ import '@/global.css';
 import { Platform } from 'react-native';
 
 import {
-  pinchBg,
-  pinchBgDark,
-  pinchBorder,
-  pinchBorderDark,
-  pinchDark,
-  pinchMuted,
-  pinchMutedDark,
-  pinchPrimary,
-  pinchPrimaryDark,
-  pinchPrimarySoft,
-  pinchPrimarySoftDark,
-  pinchRose,
-  pinchRoseDark,
-  pinchRoseSoft,
-  pinchRoseSoftDark,
-  pinchSurface,
-  pinchSurfaceDark,
-  pinchTextDark,
-} from '@/constants/brandColors';
+  DEFAULT_THEME_PACK,
+  ThemePacks,
+  type ThemePackColors,
+} from '@/constants/themes';
 
+const pack = ThemePacks[DEFAULT_THEME_PACK];
+
+/** @deprecated Prefer useThemePreference().colors — kept for template leftovers. */
 export const Colors = {
-  light: {
-    text: pinchDark,
-    textSecondary: pinchMuted,
-    background: pinchBg,
-    surface: pinchSurface,
-    surfaceSoft: pinchPrimarySoft,
-    backgroundElement: pinchPrimarySoft,
-    backgroundSelected: '#E8C4D0',
-    primary: pinchPrimary,
-    primarySoft: pinchPrimarySoft,
-    accent: pinchRose,
-    accentSoft: pinchRoseSoft,
-    border: pinchBorder,
-    danger: '#C45C5C',
-    dangerSoft: '#FCE8E8',
-    warning: '#B8860B',
-    warningSoft: '#FBF3D9',
-    success: pinchPrimary,
-    successSoft: pinchPrimarySoft,
-    tabBar: pinchSurface,
-    overlay: 'rgba(42, 36, 40, 0.45)',
-  },
-  dark: {
-    text: pinchTextDark,
-    textSecondary: pinchMutedDark,
-    background: pinchBgDark,
-    surface: pinchSurfaceDark,
-    surfaceSoft: pinchPrimarySoftDark,
-    backgroundElement: pinchPrimarySoftDark,
-    backgroundSelected: '#4A3540',
-    primary: pinchPrimaryDark,
-    primarySoft: pinchPrimarySoftDark,
-    accent: pinchRoseDark,
-    accentSoft: pinchRoseSoftDark,
-    border: pinchBorderDark,
-    danger: '#E88A8A',
-    dangerSoft: '#3A2424',
-    warning: '#E8C96A',
-    warningSoft: '#3A3420',
-    success: pinchPrimaryDark,
-    successSoft: pinchPrimarySoftDark,
-    tabBar: '#1A1518',
-    overlay: 'rgba(0, 0, 0, 0.55)',
-  },
+  light: pack.light,
+  dark: pack.dark,
 } as const;
 
-export type ThemeColor = keyof typeof Colors.light & keyof typeof Colors.dark;
+type StringColorKey<T> = {
+  [K in keyof T]: T[K] extends string ? K : never;
+}[keyof T];
+
+export type ThemeColor = StringColorKey<ThemePackColors>;
 
 export const Fonts = Platform.select({
   ios: {

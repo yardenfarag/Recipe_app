@@ -6,7 +6,10 @@ import { router } from 'expo-router';
 import { useState } from 'react';
 import { ActivityIndicator, Alert, Pressable, ScrollView, Text, View } from 'react-native';
 
+import { BrandHeader } from '@/components/BrandHeader';
+import { CookieMark } from '@/components/CookieMark';
 import { Screen } from '@/components/Screen';
+import { ThemePackPicker } from '@/components/ThemePackPicker';
 import { ThemeToggle } from '@/components/ThemeToggle';
 import { useAuth } from '@/hooks/useAuth';
 import { useProfile } from '@/hooks/useProfile';
@@ -16,9 +19,33 @@ import { uploadAvatar } from '@/lib/supabase/profile';
 
 export default function SettingsScreen() {
   const { user, migrationError, retryMigration } = useAuth();
-  const { avatarUrl, refresh } = useProfile();
+  const {
+    avatarUrl,
+    tokenBalance,
+    tokenPackNotifyAt,
+    isAdmin,
+    refresh,
+    requestPackNotify,
+  } = useProfile();
   const { colors } = useThemePreference();
   const [uploading, setUploading] = useState(false);
+  const [notifying, setNotifying] = useState(false);
+
+  async function handleNotifyPacks() {
+    if (!user || tokenPackNotifyAt || notifying) return;
+    setNotifying(true);
+    try {
+      await requestPackNotify();
+      Alert.alert('You’re on the list', 'We’ll email you when token packs are live.');
+    } catch (err) {
+      Alert.alert(
+        'Could not save',
+        err instanceof Error ? err.message : 'Please try again.',
+      );
+    } finally {
+      setNotifying(false);
+    }
+  }
 
   async function handleSignOut() {
     try {
@@ -32,7 +59,7 @@ export default function SettingsScreen() {
     if (!user) {
       Alert.alert('Sign in required', 'Sign in to add a profile picture.', [
         { text: 'Cancel', style: 'cancel' },
-        { text: 'Sign in', onPress: () => router.push('/auth') },
+        { text: 'Sign in', onPress: () => router.push('/auth?mode=signin&reason=sync') },
       ]);
       return;
     }
@@ -94,19 +121,24 @@ export default function SettingsScreen() {
   }
 
   return (
-    <Screen>
+    <Screen dense>
       <ScrollView className="flex-1" contentContainerStyle={{ paddingBottom: 40 }}>
-        <View className="px-5 pt-3">
-          <Text className="text-xs font-semibold uppercase tracking-widest text-pinch-rose dark:text-pinch-rose-dark">
-            Pinch
-          </Text>
-          <Text className="mb-6 text-2xl font-bold text-pinch-dark dark:text-pinch-text-dark">
-            Settings
-          </Text>
+        <View className="px-5 pt-1">
+          <BrandHeader title="Settings" subtitle="Account & appearance" />
 
-          <View className="mb-6 items-center rounded-3xl border border-pinch-border bg-pinch-surface p-6 dark:border-pinch-border-dark dark:bg-pinch-surface-dark">
+          <View
+            className="mb-5 mt-6 items-center rounded-[28px] p-6"
+            style={{
+              backgroundColor: colors.frosted,
+              borderWidth: 1,
+              borderColor: colors.frostedBorder,
+            }}
+          >
             <Pressable onPress={handleChangeAvatar} disabled={uploading} className="relative mb-3">
-              <View className="h-24 w-24 items-center justify-center overflow-hidden rounded-full bg-pinch-primary-soft dark:bg-pinch-primary-soft-dark">
+              <View
+                className="h-24 w-24 items-center justify-center overflow-hidden rounded-full"
+                style={{ backgroundColor: colors.primarySoft }}
+              >
                 {avatarUrl ? (
                   <Image
                     source={{ uri: avatarUrl }}
@@ -119,7 +151,13 @@ export default function SettingsScreen() {
                   <Ionicons name="person" size={40} color={colors.primary} />
                 )}
               </View>
-              <View className="absolute bottom-0 right-0 h-8 w-8 items-center justify-center rounded-full border-2 border-pinch-surface bg-pinch-primary dark:border-pinch-surface-dark dark:bg-pinch-primary-dark">
+              <View
+                className="absolute bottom-0 right-0 h-8 w-8 items-center justify-center rounded-full border-2"
+                style={{
+                  backgroundColor: colors.primary,
+                  borderColor: colors.surface,
+                }}
+              >
                 {uploading ? (
                   <ActivityIndicator size="small" color="#fff" />
                 ) : (
@@ -128,50 +166,140 @@ export default function SettingsScreen() {
               </View>
             </Pressable>
 
-            <Text className="mb-1 text-base font-semibold text-pinch-dark dark:text-pinch-text-dark">
+            <Text className="mb-1 text-base font-semibold" style={{ color: colors.text }}>
               {user?.email ?? 'Guest'}
             </Text>
-            <Text className="mb-4 text-center text-xs text-pinch-muted dark:text-pinch-muted-dark">
-              {user ? 'Signed in' : 'Sign in to sync your recipes across devices'}
+            <Text className="mb-4 text-center text-xs" style={{ color: colors.textSecondary }}>
+              {user
+                ? tokenBalance != null
+                  ? `Signed in · ${tokenBalance} tokens`
+                  : 'Signed in'
+                : 'Sign in to sync your recipes across devices'}
             </Text>
 
             <Pressable
-              onPress={() => (user ? handleSignOut() : router.push('/auth'))}
-              className="h-10 items-center justify-center rounded-full bg-pinch-primary-soft px-5 active:opacity-70 dark:bg-pinch-primary-soft-dark"
+              onPress={() =>
+                user ? handleSignOut() : router.push('/auth?mode=signin&reason=sync')
+              }
+              className="h-10 items-center justify-center rounded-[18px] px-5 active:opacity-70"
+              style={{ backgroundColor: colors.primarySoft }}
             >
-              <Text className="text-sm font-semibold text-pinch-primary dark:text-pinch-primary-dark">
+              <Text className="text-sm font-semibold" style={{ color: colors.primary }}>
                 {user ? 'Sign out' : 'Sign in'}
               </Text>
             </Pressable>
           </View>
 
-          <View className="mb-6 rounded-3xl border border-pinch-border bg-pinch-surface p-5 dark:border-pinch-border-dark dark:bg-pinch-surface-dark">
-            <Text className="mb-3 text-sm font-semibold text-pinch-dark dark:text-pinch-text-dark">
-              Appearance
+          {user ? (
+            <View
+              className="mb-5 rounded-[28px] p-5"
+              style={{
+                backgroundColor: colors.frosted,
+                borderWidth: 1,
+                borderColor: colors.frostedBorder,
+              }}
+            >
+              <Text className="mb-1 text-sm font-semibold" style={{ color: colors.text }}>
+                Tokens
+              </Text>
+              <Text className="mb-2 text-3xl font-bold" style={{ color: colors.text }}>
+                {tokenBalance ?? '—'}
+              </Text>
+              <Text className="text-xs leading-5" style={{ color: colors.textSecondary }}>
+                Extract costs 10 · Remix costs 5 · Translate is free · Cached extracts are free.
+                Token packs are coming soon.
+              </Text>
+              {tokenPackNotifyAt ? (
+                <Text className="mt-3 text-xs font-medium" style={{ color: colors.accent }}>
+                  You’re on the pack waitlist.
+                </Text>
+              ) : (
+                <Pressable
+                  className="mt-3 self-start rounded-[18px] px-4 py-2 active:opacity-80"
+                  style={{ backgroundColor: colors.primary }}
+                  onPress={() => void handleNotifyPacks()}
+                  disabled={notifying}
+                >
+                  {notifying ? (
+                    <ActivityIndicator color="#fff" />
+                  ) : (
+                    <Text className="text-sm font-bold text-white">Notify me</Text>
+                  )}
+                </Pressable>
+              )}
+            </View>
+          ) : null}
+
+          {isAdmin ? (
+            <Pressable
+              onPress={() => router.push('/admin/usage')}
+              className="mb-5 rounded-[28px] p-5 active:opacity-80"
+              style={{
+                backgroundColor: colors.frosted,
+                borderWidth: 1,
+                borderColor: colors.frostedBorder,
+              }}
+            >
+              <Text className="mb-1 text-sm font-semibold" style={{ color: colors.text }}>
+                Admin · Usage & costs
+              </Text>
+              <Text className="text-xs leading-5" style={{ color: colors.textSecondary }}>
+                Token tracker, Gemini/ScrapeCreators spend, and ledger (you only).
+              </Text>
+            </Pressable>
+          ) : null}
+
+          <View
+            className="mb-5 rounded-[28px] p-5"
+            style={{
+              backgroundColor: colors.frosted,
+              borderWidth: 1,
+              borderColor: colors.frostedBorder,
+            }}
+          >
+            <Text
+              className="mb-3 text-sm font-semibold"
+              style={{ color: colors.text }}
+            >
+              Light / dark
             </Text>
             <ThemeToggle />
+            <Text
+              className="mb-4 mt-5 text-sm font-semibold"
+              style={{ color: colors.text }}
+            >
+              Drift theme
+            </Text>
+            <ThemePackPicker />
           </View>
 
           {migrationError && (
-            <View className="mb-6 rounded-3xl border border-amber-200 bg-amber-50 p-4 dark:border-amber-900 dark:bg-[#3A3420]">
-              <Text className="mb-1 text-sm font-semibold text-amber-900 dark:text-amber-200">
+            <View
+              className="mb-5 rounded-[28px] p-4"
+              style={{ backgroundColor: colors.warningSoft }}
+            >
+              <Text className="mb-1 text-sm font-semibold" style={{ color: colors.warning }}>
                 Local recipes not synced
               </Text>
-              <Text className="mb-3 text-sm leading-5 text-amber-800 dark:text-amber-300">
+              <Text className="mb-3 text-sm leading-5" style={{ color: colors.warning }}>
                 {migrationError}
               </Text>
               <Pressable
                 onPress={() => void retryMigration()}
-                className="items-center rounded-full bg-pinch-primary py-3 active:opacity-80 dark:bg-pinch-primary-dark"
+                className="items-center rounded-[22px] py-3 active:opacity-80"
+                style={{ backgroundColor: colors.primary }}
               >
                 <Text className="text-sm font-bold text-white">Retry sync</Text>
               </Pressable>
             </View>
           )}
 
-          <Text className="text-center text-xs text-pinch-muted dark:text-pinch-muted-dark">
-            Pinch v{Constants.expoConfig?.version ?? '1.0.0'}
-          </Text>
+          <View className="items-center gap-2 pt-2">
+            <CookieMark size={18} color={colors.textSecondary} />
+            <Text className="text-center text-xs" style={{ color: colors.textSecondary }}>
+              v{Constants.expoConfig?.version ?? '1.0.0'}
+            </Text>
+          </View>
         </View>
       </ScrollView>
     </Screen>

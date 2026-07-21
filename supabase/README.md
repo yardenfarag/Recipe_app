@@ -62,7 +62,10 @@ npx supabase secrets set GEMINI_API_KEY=your_gemini_key
 # Without it, extraction still works from the video alone.
 npx supabase secrets set YOUTUBE_API_KEY=your_youtube_data_api_key
 
-# Optional — override the model (default: gemini-3.5-flash in code)
+# Optional — override models (defaults shown)
+# Text / translate / remix / swap → Flash-Lite (fast + cheap)
+npx supabase secrets set GEMINI_FAST_MODEL=gemini-3.1-flash-lite
+# Video extract → 3.5 Flash (stronger multimodal)
 npx supabase secrets set GEMINI_MODEL=gemini-3.5-flash
 
 # Required for Instagram + TikTok extraction (ScrapeCreators)
@@ -76,6 +79,7 @@ npx supabase functions deploy extract-recipe
 npx supabase functions deploy backfill-thumbnails
 npx supabase functions deploy suggest-substitution
 npx supabase functions deploy transform-recipe
+npx supabase functions deploy translate-recipe
 ```
 
 ### Test it

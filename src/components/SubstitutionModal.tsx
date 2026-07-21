@@ -5,6 +5,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { useThemePreference } from '@/hooks/useThemePreference';
 import { formatQuantity } from '@/lib/formatQuantity';
+import { RecipeLanguageCode } from '@/lib/recipeLanguages';
 import {
   SubstitutionAlternative,
   suggestSubstitution,
@@ -16,6 +17,8 @@ interface SubstitutionModalProps {
   ingredient: Ingredient | null;
   recipeTitle: string;
   otherIngredients: string[];
+  /** Active translation language — biases swaps to that locale's supermarket. */
+  language?: RecipeLanguageCode | null;
   onClose: () => void;
   onApply: (alternative: SubstitutionAlternative) => void;
 }
@@ -30,6 +33,7 @@ export function SubstitutionModal({
   ingredient,
   recipeTitle,
   otherIngredients,
+  language = null,
   onClose,
   onApply,
 }: SubstitutionModalProps) {
@@ -46,7 +50,7 @@ export function SubstitutionModal({
     setError(null);
     setAlternatives([]);
 
-    suggestSubstitution(ingredient, recipeTitle, otherIngredients)
+    suggestSubstitution(ingredient, recipeTitle, otherIngredients, language)
       .then((result) => {
         if (!isMounted) return;
         if (result.status === 'failed' || !result.alternatives) {
@@ -67,7 +71,7 @@ export function SubstitutionModal({
       isMounted = false;
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [visible, ingredient?.name]);
+  }, [visible, ingredient?.name, language]);
 
   return (
     <Modal
@@ -76,15 +80,18 @@ export function SubstitutionModal({
       presentationStyle="pageSheet"
       onRequestClose={onClose}
     >
-      <SafeAreaView className="flex-1 bg-pinch-bg dark:bg-pinch-bg-dark">
+      <SafeAreaView className="flex-1" style={{ backgroundColor: colors.background }}>
         <View className="flex-row items-center justify-between px-5 pb-2 pt-4">
           <Pressable
             onPress={onClose}
-            className="h-10 w-10 items-center justify-center rounded-full bg-pinch-primary-soft active:opacity-70 dark:bg-pinch-primary-soft-dark"
+            accessibilityRole="button"
+            accessibilityLabel="Close"
+            className="h-10 w-10 items-center justify-center rounded-full active:opacity-70"
+            style={{ backgroundColor: colors.primarySoft }}
           >
             <Ionicons name="close" size={20} color={colors.text} />
           </Pressable>
-          <Text className="text-base font-bold text-pinch-dark dark:text-pinch-text-dark">
+          <Text className="text-base font-bold" style={{ color: colors.text }}>
             Swap ingredient
           </Text>
           <View style={{ width: 40 }} />
@@ -92,12 +99,15 @@ export function SubstitutionModal({
 
         <ScrollView className="flex-1 px-5" showsVerticalScrollIndicator={false}>
           {ingredient && (
-            <View className="mb-5 rounded-3xl border border-pinch-border bg-pinch-surface p-4 dark:border-pinch-border-dark dark:bg-pinch-surface-dark">
-              <Text className="mb-1 text-xs font-medium text-pinch-muted dark:text-pinch-muted-dark">
+            <View
+              className="mb-5 rounded-3xl border p-4"
+              style={{ borderColor: colors.border, backgroundColor: colors.surface }}
+            >
+              <Text className="mb-1 text-xs font-medium" style={{ color: colors.textSecondary }}>
                 Instead of
               </Text>
-              <Text className="text-lg font-bold text-pinch-dark dark:text-pinch-text-dark">
-                {formatQuantity(ingredient.quantity, ingredient.unit)} {ingredient.name}
+              <Text className="text-lg font-bold" style={{ color: colors.text }}>
+                {formatQuantity(ingredient.quantity, ingredient.unit, language)} {ingredient.name}
               </Text>
             </View>
           )}
@@ -105,15 +115,20 @@ export function SubstitutionModal({
           {loading && (
             <View className="items-center py-12">
               <ActivityIndicator color={colors.primary} size="large" />
-              <Text className="mt-3 text-sm text-pinch-muted dark:text-pinch-muted-dark">
+              <Text className="mt-3 text-sm" style={{ color: colors.textSecondary }}>
                 Finding cozy alternatives…
               </Text>
             </View>
           )}
 
           {!loading && error && (
-            <View className="rounded-2xl border border-red-200 bg-red-50 px-4 py-3 dark:border-red-900 dark:bg-[#3A2424]">
-              <Text className="text-sm text-red-700 dark:text-red-300">{error}</Text>
+            <View
+              className="rounded-2xl border px-4 py-3"
+              style={{ borderColor: colors.dangerSoft, backgroundColor: colors.dangerSoft }}
+            >
+              <Text className="text-sm" style={{ color: colors.danger }}>
+                {error}
+              </Text>
             </View>
           )}
 
@@ -121,16 +136,18 @@ export function SubstitutionModal({
             alternatives.map((alt) => (
               <View
                 key={alt.name}
-                className="mb-3 rounded-3xl border border-pinch-border bg-pinch-surface p-4 dark:border-pinch-border-dark dark:bg-pinch-surface-dark"
+                className="mb-3 rounded-3xl border p-4"
+                style={{ borderColor: colors.border, backgroundColor: colors.surface }}
               >
-                <Text className="mb-1 text-base font-bold text-pinch-dark dark:text-pinch-text-dark">
-                  {formatQuantity(alt.quantity, alt.unit)} {alt.name}
+                <Text className="mb-1 text-base font-bold" style={{ color: colors.text }}>
+                  {formatQuantity(alt.quantity, alt.unit, language)} {alt.name}
                 </Text>
-                <Text className="mb-3 text-sm leading-5 text-pinch-muted dark:text-pinch-muted-dark">
+                <Text className="mb-3 text-sm leading-5" style={{ color: colors.textSecondary }}>
                   {alt.reason}
                 </Text>
                 <Pressable
-                  className="items-center rounded-full bg-pinch-primary py-3 active:opacity-80 dark:bg-pinch-primary-dark"
+                  className="items-center rounded-full py-3 active:opacity-80"
+                  style={{ backgroundColor: colors.primary }}
                   onPress={() => onApply(alt)}
                 >
                   <Text className="text-sm font-bold text-white">Use this</Text>

@@ -1,19 +1,25 @@
 import Ionicons from '@expo/vector-icons/Ionicons';
-import { router } from 'expo-router';
-import { useCallback, useDeferredValue, useMemo, useState } from 'react';
+import { router, useLocalSearchParams } from 'expo-router';
+import { useCallback, useDeferredValue, useEffect, useMemo, useState } from 'react';
 import {
   ActivityIndicator,
   Alert,
   FlatList,
+  Modal,
+  Platform,
   Pressable,
   Text,
+  TextInput,
   View,
 } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 
+import { BrandHeader } from '@/components/BrandHeader';
 import { RecipeLibraryToolbar } from '@/components/RecipeLibraryToolbar';
 import { RecipeListRow } from '@/components/RecipeListRow';
 import { Screen } from '@/components/Screen';
 import { useAuth } from '@/hooks/useAuth';
+import { useCollections } from '@/hooks/useCollections';
 import { useRecipes } from '@/hooks/useRecipes';
 import { useThemePreference } from '@/hooks/useThemePreference';
 import { removeGuestRecipe } from '@/lib/guestRecipes';
@@ -22,24 +28,212 @@ import {
   isRecipeLibraryFiltered,
   RecipeSortKey,
 } from '@/lib/recipeListQuery';
+import { collectLibraryTags } from '@/lib/recipeTags';
 import { deleteRecipe } from '@/lib/supabase/recipes';
 import { Recipe } from '@/types/recipe';
+
+/** Alert.alert button actions are unreliable on web — use window.confirm there. */
+function confirmDestructive(
+  title: string,
+  message: string,
+  confirmLabel: string,
+  onConfirm: () => void | Promise<void>,
+) {
+  if (Platform.OS === 'web') {
+    const ok =
+      typeof window !== 'undefined' && window.confirm(`${title}\n\n${message}`);
+    if (ok) void onConfirm();
+    return;
+  }
+
+  Alert.alert(title, message, [
+    { text: 'Cancel', style: 'cancel' },
+    {
+      text: confirmLabel,
+      style: 'destructive',
+      onPress: () => {
+        void onConfirm();
+      },
+    },
+  ]);
+}
+type CollectionNameModalState =
+  | { mode: 'create' }
+  | { mode: 'rename'; id: string; name: string }
+  | null;
 
 export default function HomeScreen() {
   const { user } = useAuth();
   const { recipes, loading, error, refresh, toggleFavorite } = useRecipes();
+  const {
+    collections,
+    createCollection,
+    renameCollection,
+    deleteCollection,
+  } = useCollections();
   const { colors } = useThemePreference();
+  const params = useLocalSearchParams<{
+    tag?: string;
+    collection?: string;
+    favorites?: string;
+    saved?: string;
+  }>();
+
   const [search, setSearch] = useState('');
   const [sort, setSort] = useState<RecipeSortKey>('newest');
+  const [selectedTags, setSelectedTags] = useState<string[]>([]);
+  const [selectedCollectionId, setSelectedCollectionId] = useState<string | null>(null);
+  const [favoritesOnly, setFavoritesOnly] = useState(false);
+  const [savedBanner, setSavedBanner] = useState(false);
+  const [nameModal, setNameModal] = useState<CollectionNameModalState>(null);
+  const [nameDraft, setNameDraft] = useState('');
+  const [savingName, setSavingName] = useState(false);
   const deferredSearch = useDeferredValue(search);
   const isSearchPending = search !== deferredSearch;
 
-  const displayedRecipes = useMemo(
-    () => filterAndSortRecipes(recipes, deferredSearch, sort),
-    [recipes, deferredSearch, sort],
-  );
+  useEffect(() => {
+    const tagParam = typeof params.tag === 'string' ? params.tag.trim().toLowerCase() : '';
+    if (tagParam) {
+      setSelectedTags((prev) => (prev.includes(tagParam) ? prev : [...prev, tagParam]));
+    }
+  }, [params.tag]);
 
-  const hasActiveFilters = isRecipeLibraryFiltered(deferredSearch, sort);
+  useEffect(() => {
+    const collectionParam =
+      typeof params.collection === 'string' ? params.collection.trim() : '';
+    if (collectionParam) {
+      setSelectedCollectionId(collectionParam);
+    }
+  }, [params.collection]);
+
+  useEffect(() => {
+    if (params.favorites === '1' || params.favorites === 'true') {
+      setFavoritesOnly(true);
+    }
+  }, [params.favorites]);
+
+  useEffect(() => {
+    if (params.saved === '1' || params.saved === 'true') {
+      setSavedBanner(true);
+      router.setParams({ saved: undefined });
+    }
+  }, [params.saved]);
+
+  const availableTags = useMemo(() => collectLibraryTags(recipes), [recipes]);
+
+  const collectionAllowlist = useMemo(() => {
+    if (!selectedCollectionId) return null;
+    const collection = collections.find((c) => c.id === selectedCollectionId);
+    return new Set(collection?.recipeIds ?? []);
+  }, [collections, selectedCollectionId]);
+
+  const displayedRecipes = useMemo(() => {
+    const filtered = filterAndSortRecipes(recipes, {
+      searchQuery: deferredSearch,
+      sort,
+      selectedTags,
+      recipeIdAllowlist: collectionAllowlist,
+    });
+    if (!favoritesOnly) return filtered;
+    return filtered.filter((r) => r.is_favorite === true);
+  }, [recipes, deferredSearch, sort, selectedTags, collectionAllowlist, favoritesOnly]);
+
+  const hasActiveFilters =
+    isRecipeLibraryFiltered(deferredSearch, sort, selectedTags, selectedCollectionId) ||
+    favoritesOnly;
+
+  const clearFilters = useCallback(() => {
+    setSearch('');
+    setSort('newest');
+    setSelectedTags([]);
+    setSelectedCollectionId(null);
+    setFavoritesOnly(false);
+  }, []);
+
+  const handleToggleTag = useCallback((tag: string) => {
+    setSelectedTags((prev) =>
+      prev.includes(tag) ? prev.filter((t) => t !== tag) : [...prev, tag],
+    );
+  }, []);
+
+  const openCreateCollection = useCallback(() => {
+    setNameDraft('');
+    setNameModal({ mode: 'create' });
+  }, []);
+
+  const handleSaveCollectionName = useCallback(async () => {
+    if (!nameModal) return;
+    const trimmed = nameDraft.trim();
+    if (!trimmed) {
+      Alert.alert('Name required', 'Enter a collection name.');
+      return;
+    }
+
+    setSavingName(true);
+    try {
+      if (nameModal.mode === 'create') {
+        const created = await createCollection(trimmed);
+        setSelectedCollectionId(created.id);
+      } else {
+        await renameCollection(nameModal.id, trimmed);
+      }
+      setNameModal(null);
+    } catch (err) {
+      Alert.alert(
+        'Could not save',
+        err instanceof Error ? err.message : 'Please try again.',
+      );
+    } finally {
+      setSavingName(false);
+    }
+  }, [createCollection, nameDraft, nameModal, renameCollection]);
+
+  const handleManageCollection = useCallback(
+    (id: string) => {
+      const collection = collections.find((c) => c.id === id);
+      if (!collection) return;
+
+      Alert.alert(collection.name, undefined, [
+        { text: 'Cancel', style: 'cancel' },
+        {
+          text: 'Rename',
+          onPress: () => {
+            setNameDraft(collection.name);
+            setNameModal({ mode: 'rename', id, name: collection.name });
+          },
+        },
+        {
+          text: 'Delete',
+          style: 'destructive',
+          onPress: () => {
+            Alert.alert(
+              'Delete collection?',
+              'Recipes stay in your library — only this collection is removed.',
+              [
+                { text: 'Cancel', style: 'cancel' },
+                {
+                  text: 'Delete',
+                  style: 'destructive',
+                  onPress: async () => {
+                    try {
+                      await deleteCollection(id);
+                      if (selectedCollectionId === id) setSelectedCollectionId(null);
+                    } catch (err) {
+                      Alert.alert(
+                        'Could not delete',
+                        err instanceof Error ? err.message : 'Please try again.',
+                      );
+                    }
+                  },
+                },
+              ],
+            );
+          },
+        },
+      ]);
+    },
+    [collections, deleteCollection, selectedCollectionId],
+  );
 
   const handleToggleFavorite = useCallback(
     async (recipe: Recipe) => {
@@ -55,30 +249,23 @@ export default function HomeScreen() {
     [toggleFavorite],
   );
 
-  const handleLongPressRecipe = useCallback(
+  const confirmDeleteRecipe = useCallback(
     (recipe: Recipe) => {
-      Alert.alert('Delete this recipe?', recipe.title, [
-        { text: 'Cancel', style: 'cancel' },
-        {
-          text: 'Delete',
-          style: 'destructive',
-          onPress: async () => {
-            try {
-              if (recipe.id.startsWith('guest-')) {
-                await removeGuestRecipe(recipe.id);
-              } else {
-                await deleteRecipe(recipe.id);
-              }
-              refresh();
-            } catch (err) {
-              Alert.alert(
-                'Could not delete',
-                err instanceof Error ? err.message : 'Please try again.',
-              );
-            }
-          },
-        },
-      ]);
+      confirmDestructive('Delete this recipe?', recipe.title, 'Delete', async () => {
+        try {
+          if (recipe.id.startsWith('guest-')) {
+            await removeGuestRecipe(recipe.id);
+          } else {
+            await deleteRecipe(recipe.id);
+          }
+          refresh();
+        } catch (err) {
+          Alert.alert(
+            'Could not delete',
+            err instanceof Error ? err.message : 'Please try again.',
+          );
+        }
+      });
     },
     [refresh],
   );
@@ -88,42 +275,55 @@ export default function HomeScreen() {
   }, []);
 
   const renderItem = useCallback(
-    ({ item }: { item: Recipe }) => (
+    ({ item, index }: { item: Recipe; index: number }) => (
       <RecipeListRow
         recipe={item}
+        index={index}
         onPress={() => openRecipe(item)}
-        onLongPress={() => handleLongPressRecipe(item)}
+        onLongPress={() => confirmDeleteRecipe(item)}
+        onDelete={() => confirmDeleteRecipe(item)}
         onToggleFavorite={() => handleToggleFavorite(item)}
       />
     ),
-    [handleLongPressRecipe, handleToggleFavorite, openRecipe],
+    [confirmDeleteRecipe, handleToggleFavorite, openRecipe],
   );
 
   const listHeader = useMemo(
     () => (
-      <View className="gap-3 pb-3">
+      <View className="gap-4 pb-3 pt-1">
+        {savedBanner && (
+          <View
+            className="flex-row items-center gap-2 rounded-[20px] px-3.5 py-2.5"
+            style={{ backgroundColor: colors.successSoft }}
+          >
+            <Ionicons name="checkmark-circle" size={16} color={colors.success} />
+            <Text className="flex-1 text-xs font-medium" style={{ color: colors.success }}>
+              Saved to your library
+            </Text>
+            <Pressable onPress={() => setSavedBanner(false)} hitSlop={8}>
+              <Ionicons name="close" size={16} color={colors.success} />
+            </Pressable>
+          </View>
+        )}
+
         {error && recipes.length > 0 && (
-          <View className="flex-row items-center gap-2 rounded-2xl border border-amber-200 bg-amber-50 px-3.5 py-2.5 dark:border-amber-900 dark:bg-[#3A3420]">
-            <Ionicons name="warning-outline" size={16} color={colors.accent} />
-            <Text className="flex-1 text-xs text-amber-800 dark:text-amber-200">
+          <View
+            className="flex-row items-center gap-2 rounded-[20px] px-3.5 py-2.5"
+            style={{ backgroundColor: colors.warningSoft }}
+          >
+            <Ionicons name="warning-outline" size={16} color={colors.warning} />
+            <Text className="flex-1 text-xs" style={{ color: colors.warning }}>
               Could not refresh — showing saved recipes.
             </Text>
             <Pressable onPress={() => refresh()} hitSlop={8}>
-              <Text className="text-xs font-semibold text-pinch-primary dark:text-pinch-primary-dark">
+              <Text className="text-xs font-semibold" style={{ color: colors.primary }}>
                 Retry
               </Text>
             </Pressable>
           </View>
         )}
 
-        <View>
-          <Text className="text-xs font-semibold uppercase tracking-widest text-pinch-rose dark:text-pinch-rose-dark">
-            Pinch
-          </Text>
-          <Text className="text-2xl font-bold text-pinch-dark dark:text-pinch-text-dark">
-            Your recipes
-          </Text>
-        </View>
+        <BrandHeader title="Your recipes" subtitle="Your kitchen" />
 
         <RecipeLibraryToolbar
           search={search}
@@ -132,17 +332,44 @@ export default function HomeScreen() {
           onSortChange={setSort}
           resultCount={displayedRecipes.length}
           isSearchPending={isSearchPending}
+          favoritesOnly={favoritesOnly}
+          onToggleFavorites={() => setFavoritesOnly((v) => !v)}
+          availableTags={availableTags}
+          selectedTags={selectedTags}
+          onToggleTag={handleToggleTag}
+          onClearTags={() => setSelectedTags([])}
+          collections={collections.map((c) => ({ id: c.id, name: c.name }))}
+          selectedCollectionId={selectedCollectionId}
+          onSelectCollection={setSelectedCollectionId}
+          onLongPressCollection={handleManageCollection}
+          onManageCollection={handleManageCollection}
+          onCreateCollection={openCreateCollection}
         />
-
-        <View className="flex-row items-center gap-2 rounded-2xl bg-pinch-primary-soft/70 px-3.5 py-2.5 dark:bg-pinch-primary-soft-dark">
-          <Ionicons name="hand-left-outline" size={14} color={colors.textSecondary} />
-          <Text className="flex-1 text-xs text-pinch-muted dark:text-pinch-muted-dark">
-            Long-press a recipe to delete · tap ♥ to save to Favorites
-          </Text>
-        </View>
       </View>
     ),
-    [colors.accent, colors.textSecondary, displayedRecipes.length, error, isSearchPending, recipes.length, refresh, search, sort],
+    [
+      availableTags,
+      collections,
+      colors.primary,
+      colors.success,
+      colors.successSoft,
+      colors.warning,
+      colors.warningSoft,
+      displayedRecipes.length,
+      error,
+      favoritesOnly,
+      handleManageCollection,
+      handleToggleTag,
+      isSearchPending,
+      openCreateCollection,
+      recipes.length,
+      refresh,
+      savedBanner,
+      search,
+      selectedCollectionId,
+      selectedTags,
+      sort,
+    ],
   );
 
   if (loading) {
@@ -156,18 +383,22 @@ export default function HomeScreen() {
   if (error && recipes.length === 0) {
     return (
       <Screen className="items-center justify-center px-8">
-        <View className="mb-5 h-16 w-16 items-center justify-center rounded-full bg-red-50 dark:bg-[#3A2424]">
-          <Ionicons name="cloud-offline-outline" size={32} color={colors.accent} />
+        <View
+          className="mb-5 h-16 w-16 items-center justify-center rounded-[22px]"
+          style={{ backgroundColor: colors.dangerSoft }}
+        >
+          <Ionicons name="cloud-offline-outline" size={32} color={colors.danger} />
         </View>
-        <Text className="mb-2 text-center text-xl font-bold text-pinch-dark dark:text-pinch-text-dark">
+        <Text className="mb-2 text-center text-xl font-bold" style={{ color: colors.text }}>
           Could not load recipes
         </Text>
-        <Text className="mb-6 text-center text-sm leading-5 text-pinch-muted dark:text-pinch-muted-dark">
+        <Text className="mb-6 text-center text-sm leading-5" style={{ color: colors.textSecondary }}>
           {error}
         </Text>
         <Pressable
           onPress={() => refresh()}
-          className="rounded-full bg-pinch-primary px-6 py-3 active:opacity-80 dark:bg-pinch-primary-dark"
+          className="rounded-[22px] px-6 py-3.5 active:opacity-80"
+          style={{ backgroundColor: colors.primary }}
         >
           <Text className="text-base font-bold text-white">Try again</Text>
         </Pressable>
@@ -179,38 +410,27 @@ export default function HomeScreen() {
     return (
       <Screen>
         <View className="flex-1 items-center justify-center px-8 pb-10">
-          <View className="mb-5 h-20 w-20 items-center justify-center rounded-full bg-pinch-primary-soft dark:bg-pinch-primary-soft-dark">
-            <Ionicons name="restaurant" size={36} color={colors.primary} />
-          </View>
-          <Text className="mb-2 text-center text-4xl font-bold tracking-tight text-pinch-dark dark:text-pinch-text-dark">
-            Pinch
-          </Text>
-          <Text className="mb-10 text-center text-base leading-6 text-pinch-muted dark:text-pinch-muted-dark">
-            Snap recipes from social media and cook something lovely.
-          </Text>
+          <BrandHeader
+            size="hero"
+            align="center"
+            title="Your kitchen awaits"
+            subtitle="Snap a recipe from social — keep cooking calm and simple."
+          />
 
-          <View className="w-full items-center rounded-3xl border border-pinch-primary-soft bg-pinch-surface p-8 dark:border-pinch-primary-soft-dark dark:bg-pinch-surface-dark">
-            <View className="mb-4 h-14 w-14 items-center justify-center rounded-2xl bg-pinch-rose-soft dark:bg-pinch-rose-soft-dark">
-              <Ionicons name="sparkles" size={28} color={colors.accent} />
-            </View>
-            <Text className="mb-2 text-center text-xl font-bold text-pinch-dark dark:text-pinch-text-dark">
-              Your kitchen is empty
-            </Text>
-            <Text className="mb-7 text-center text-sm leading-5 text-pinch-muted dark:text-pinch-muted-dark">
-              Paste a YouTube link to extract your first recipe — Instagram and TikTok are coming
-              soon.
-            </Text>
-            <Pressable
-              className="w-full items-center rounded-full bg-pinch-primary py-4 active:opacity-80 dark:bg-pinch-primary-dark"
-              onPress={() => router.push('/add')}
-            >
-              <Text className="text-base font-bold text-white">Get started</Text>
-            </Pressable>
-          </View>
+          <Pressable
+            className="mt-8 w-full items-center rounded-[22px] py-4 active:opacity-80"
+            style={{ backgroundColor: colors.primary }}
+            onPress={() => router.push('/add')}
+          >
+            <Text className="text-base font-bold text-white">Snap first recipe</Text>
+          </Pressable>
 
           {!user && (
-            <Pressable onPress={() => router.push('/auth')} className="mt-6 active:opacity-70">
-              <Text className="text-sm font-semibold text-pinch-primary dark:text-pinch-primary-dark">
+            <Pressable
+              onPress={() => router.push('/auth?mode=signin&reason=sync')}
+              className="mt-5 active:opacity-70"
+            >
+              <Text className="text-sm font-semibold" style={{ color: colors.primary }}>
                 Sign in to sync recipes
               </Text>
             </Pressable>
@@ -231,28 +451,33 @@ export default function HomeScreen() {
         ListEmptyComponent={
           hasActiveFilters ? (
             <View className="items-center px-4 py-10">
-              <View className="mb-3 h-14 w-14 items-center justify-center rounded-2xl bg-pinch-primary-soft dark:bg-pinch-primary-soft-dark">
-                <Ionicons name="search-outline" size={26} color={colors.primary} />
-              </View>
-              <Text className="mb-1 text-center text-base font-semibold text-pinch-dark dark:text-pinch-text-dark">
-                No matches
+              <Text className="mb-1 text-center text-base font-semibold" style={{ color: colors.text }}>
+                {favoritesOnly &&
+                !deferredSearch &&
+                selectedTags.length === 0 &&
+                selectedCollectionId == null
+                  ? 'No favorites yet'
+                  : 'No matches'}
               </Text>
-              <Text className="mb-5 text-center text-sm text-pinch-muted dark:text-pinch-muted-dark">
-                Try a different search or sort option.
+              <Text className="mb-5 text-center text-sm" style={{ color: colors.textSecondary }}>
+                {favoritesOnly &&
+                !deferredSearch &&
+                selectedTags.length === 0 &&
+                selectedCollectionId == null
+                  ? 'Tap the heart on a recipe to see it here.'
+                  : 'Try a different search, tag, or collection.'}
               </Text>
               <Pressable
-                onPress={() => {
-                  setSearch('');
-                  setSort('newest');
-                }}
-                className="rounded-full bg-pinch-primary px-5 py-2.5 active:opacity-80 dark:bg-pinch-primary-dark"
+                onPress={clearFilters}
+                className="rounded-[22px] px-5 py-2.5 active:opacity-80"
+                style={{ backgroundColor: colors.primary }}
               >
                 <Text className="text-sm font-semibold text-white">Clear filters</Text>
               </Pressable>
             </View>
           ) : null
         }
-        contentContainerStyle={{ paddingHorizontal: 20, paddingBottom: 28, gap: 10 }}
+        contentContainerStyle={{ paddingHorizontal: 20, paddingBottom: 28, gap: 12 }}
         showsVerticalScrollIndicator={false}
         keyboardShouldPersistTaps="handled"
         keyboardDismissMode="on-drag"
@@ -260,6 +485,53 @@ export default function HomeScreen() {
         maxToRenderPerBatch={10}
         windowSize={7}
       />
+
+      <Modal
+        visible={nameModal != null}
+        animationType="slide"
+        presentationStyle="pageSheet"
+        onRequestClose={() => setNameModal(null)}
+      >
+        <SafeAreaView className="flex-1" style={{ backgroundColor: colors.background }}>
+          <View
+            className="flex-row items-center justify-between border-b px-5 py-4"
+            style={{ borderColor: colors.frostedBorder }}
+          >
+            <Pressable onPress={() => setNameModal(null)}>
+              <Text style={{ color: colors.textSecondary }}>Cancel</Text>
+            </Pressable>
+            <Text className="text-base font-bold" style={{ color: colors.text }}>
+              {nameModal?.mode === 'rename' ? 'Rename collection' : 'New collection'}
+            </Text>
+            <Pressable onPress={() => void handleSaveCollectionName()} disabled={savingName}>
+              {savingName ? (
+                <ActivityIndicator color={colors.primary} />
+              ) : (
+                <Text className="font-bold" style={{ color: colors.primary }}>
+                  Save
+                </Text>
+              )}
+            </Pressable>
+          </View>
+          <View className="px-5 pt-5">
+            <TextInput
+              className="rounded-2xl border px-4 py-3 text-base"
+              style={{
+                color: colors.text,
+                borderColor: colors.frostedBorder,
+                backgroundColor: colors.surface,
+              }}
+              placeholder="Collection name"
+              placeholderTextColor={colors.textSecondary}
+              value={nameDraft}
+              onChangeText={setNameDraft}
+              autoFocus
+              returnKeyType="done"
+              onSubmitEditing={() => void handleSaveCollectionName()}
+            />
+          </View>
+        </SafeAreaView>
+      </Modal>
     </Screen>
   );
 }

@@ -11,6 +11,9 @@ import { useThemePreference } from '@/hooks/useThemePreference';
  * NativeWind's babel/css-interop JSX wrapping (TypeError: Cannot read
  * property 'displayName' of undefined). Stick to the stable `Tabs` API
  * until that's resolved upstream.
+ *
+ * Order: Library · Snap · List · Settings (Snap centered among four).
+ * Favorites lives as a Library filter — tab hidden via href: null.
  */
 export default function AppTabs() {
   const { colors } = useThemePreference();
@@ -23,14 +26,14 @@ export default function AppTabs() {
         tabBarInactiveTintColor: colors.textSecondary,
         tabBarStyle: {
           backgroundColor: colors.tabBar,
-          borderTopColor: colors.border,
+          borderTopColor: colors.frostedBorder,
           borderTopWidth: 1,
           height: Platform.select({ ios: 88, android: 68 }),
           paddingTop: 6,
           paddingBottom: Platform.select({ ios: 28, android: 10 }),
         },
         tabBarLabelStyle: {
-          fontSize: 12,
+          fontSize: 11,
           fontWeight: '600',
         },
       }}
@@ -42,19 +45,6 @@ export default function AppTabs() {
           tabBarIcon: ({ color, size, focused }) => (
             <Ionicons
               name={focused ? 'book' : 'book-outline'}
-              size={size}
-              color={color}
-            />
-          ),
-        }}
-      />
-      <Tabs.Screen
-        name="favorites"
-        options={{
-          title: 'Favorites',
-          tabBarIcon: ({ color, size, focused }) => (
-            <Ionicons
-              name={focused ? 'heart' : 'heart-outline'}
               size={size}
               color={color}
             />
@@ -75,6 +65,19 @@ export default function AppTabs() {
         }}
       />
       <Tabs.Screen
+        name="list"
+        options={{
+          title: 'List',
+          tabBarIcon: ({ color, size, focused }) => (
+            <Ionicons
+              name={focused ? 'cart' : 'cart-outline'}
+              size={size}
+              color={color}
+            />
+          ),
+        }}
+      />
+      <Tabs.Screen
         name="settings"
         options={{
           title: 'Settings',
@@ -85,6 +88,12 @@ export default function AppTabs() {
               color={color}
             />
           ),
+        }}
+      />
+      <Tabs.Screen
+        name="favorites"
+        options={{
+          href: null,
         }}
       />
     </Tabs>

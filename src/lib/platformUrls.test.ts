@@ -5,8 +5,28 @@ import {
   extractContentId,
   extractInstagramId,
   extractTikTokId,
+  normalizeSocialUrl,
   recipeUrlsMatch,
 } from '@/lib/platformUrls';
+
+describe('normalizeSocialUrl', () => {
+  it('extracts a URL from share-sheet text', () => {
+    expect(
+      normalizeSocialUrl('Try this recipe https://www.instagram.com/reel/CigMSGeD4Hd/ 🍝'),
+    ).toBe('https://www.instagram.com/reel/CigMSGeD4Hd/');
+  });
+
+  it('adds https to supported scheme-less links', () => {
+    expect(normalizeSocialUrl('youtube.com/watch?v=dQw4w9WgXcQ')).toBe(
+      'https://youtube.com/watch?v=dQw4w9WgXcQ',
+    );
+  });
+
+  it('rejects unsupported and misleading hosts', () => {
+    expect(normalizeSocialUrl('https://example.com/recipe')).toBeNull();
+    expect(normalizeSocialUrl('https://youtube.com.evil.test/watch?v=abc')).toBeNull();
+  });
+});
 
 describe('detectPlatform', () => {
   it('detects YouTube', () => {

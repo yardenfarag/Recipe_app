@@ -145,3 +145,43 @@ export async function setRecipeFavorite(id: string, isFavorite: boolean): Promis
     throw error;
   }
 }
+
+export async function setRecipeTags(id: string, tags: string[]): Promise<void> {
+  const { error } = await supabase.from('recipes').update({ tags }).eq('id', id);
+  if (error) {
+    if (error.message.includes('tags') || error.code === 'PGRST204') {
+      throw new Error(
+        'Recipe tags are not enabled yet — run migration 0008_recipe_tags.sql in Supabase.',
+      );
+    }
+    throw error;
+  }
+}
+
+/** Persists remix / swap / translate edits on an already-saved recipe. */
+export async function updateRecipeContent(
+  id: string,
+  content: {
+    title: string;
+    servings: number;
+    ingredients: Recipe['ingredients'];
+    instructions: Recipe['instructions'];
+    calories?: number;
+  },
+): Promise<Recipe> {
+  const { data, error } = await supabase
+    .from('recipes')
+    .update({
+      title: content.title,
+      servings: content.servings,
+      ingredients: content.ingredients,
+      instructions: content.instructions,
+      calories: content.calories,
+    })
+    .eq('id', id)
+    .select()
+    .single();
+
+  if (error) throw error;
+  return data as Recipe;
+}

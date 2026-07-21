@@ -2,6 +2,34 @@ import type { Platform } from '@/types/recipe';
 
 import { extractYouTubeId } from '@/lib/youtube';
 
+const SUPPORTED_DOMAIN_PATTERN =
+  /(?:www\.)?(?:youtube\.com|youtu\.be|instagram\.com|tiktok\.com|vm\.tiktok\.com|vt\.tiktok\.com)\/[^\s<>"']+/i;
+
+/**
+ * Pulls a supported social URL from pasted/share-sheet text and normalizes
+ * scheme-less links. Returns null for malformed or unsupported hosts.
+ */
+export function normalizeSocialUrl(input: string): string | null {
+  const trimmed = input.trim();
+  if (!trimmed) return null;
+
+  const absoluteMatch = trimmed.match(/https?:\/\/[^\s<>"']+/i)?.[0];
+  const bareMatch = absoluteMatch ? null : trimmed.match(SUPPORTED_DOMAIN_PATTERN)?.[0];
+  const candidate = (absoluteMatch ?? (bareMatch ? `https://${bareMatch}` : ''))
+    .replace(/[)\]},.!?;:]+$/g, '')
+    .trim();
+
+  if (!candidate) return null;
+
+  try {
+    const parsed = new URL(candidate);
+    if (!['http:', 'https:'].includes(parsed.protocol)) return null;
+    return detectPlatform(parsed.toString()) === 'unknown' ? null : parsed.toString();
+  } catch {
+    return null;
+  }
+}
+
 /** Detects the social platform from a URL hostname. */
 export function detectPlatform(url: string): Platform | 'unknown' {
   let host: string;

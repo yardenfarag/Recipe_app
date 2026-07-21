@@ -1,5 +1,5 @@
 import { useFocusEffect } from '@react-navigation/native';
-import { useCallback, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 
 import { useAuth } from '@/hooks/useAuth';
 import { backfillRecipeThumbnails } from '@/lib/backfillRecipeThumbnails';
@@ -12,9 +12,11 @@ import { Recipe } from '@/types/recipe';
  * Loads the current user's recipes — guest (AsyncStorage) or Supabase,
  * depending on auth state — and refreshes whenever the screen regains
  * focus (e.g. after saving a recipe or signing in/out).
+ *
+ * Waits for guest→cloud migration to finish so the library does not flash empty.
  */
 export function useRecipes() {
-  const { user } = useAuth();
+  const { user, migrationStatus } = useAuth();
   const [recipes, setRecipes] = useState<Recipe[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -59,9 +61,20 @@ export function useRecipes() {
 
   useFocusEffect(
     useCallback(() => {
+      if (user && migrationStatus === 'running') {
+        setLoading(true);
+        return;
+      }
       refresh();
-    }, [refresh]),
+    }, [refresh, user, migrationStatus]),
   );
+
+  useEffect(() => {
+    if (!user) return;
+    if (migrationStatus === 'done' || migrationStatus === 'error') {
+      void refresh();
+    }
+  }, [user, migrationStatus, refresh]);
 
   return { recipes, loading, error, refresh, patchRecipe, toggleFavorite };
 }

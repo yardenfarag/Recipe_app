@@ -12,6 +12,7 @@ export const dummyRecipe: Recipe = {
   estimated_time_minutes: 20,
   cost_estimate: '$',
   effort_level: 'Easy',
+  tags: ['pasta', 'italian', 'dinner', 'quick'],
   ingredients: [
     { name: 'spaghetti', quantity: 200, unit: 'g' },
     { name: 'butter', quantity: 3, unit: 'tbsp' },

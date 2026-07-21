@@ -1,3 +1,4 @@
+import { RecipeLanguageCode } from '@/lib/recipeLanguages';
 import { supabase } from '@/lib/supabase/client';
 import { Ingredient } from '@/types/recipe';
 
@@ -19,12 +20,14 @@ export interface SubstitutionResult {
 /**
  * Asks the `suggest-substitution` Edge Function for 2-3 alternatives to a
  * given ingredient, using the recipe title + other ingredients as context
- * (ADR 005).
+ * (ADR 005). Pass `language` when the recipe is translated so swaps match
+ * that locale's supermarket (e.g. Hebrew → Israel).
  */
 export async function suggestSubstitution(
   ingredient: Ingredient,
   recipeTitle: string,
   otherIngredients: string[],
+  language?: RecipeLanguageCode | null,
 ): Promise<SubstitutionResult> {
   const { data, error } = await supabase.functions.invoke<SubstitutionResult>(
     'suggest-substitution',
@@ -33,6 +36,7 @@ export async function suggestSubstitution(
         ingredient,
         recipe_title: recipeTitle,
         other_ingredients: otherIngredients,
+        ...(language ? { language } : {}),
       },
     },
   );

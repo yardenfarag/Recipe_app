@@ -1,6 +1,6 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import * as SystemUI from 'expo-system-ui';
-import { colorScheme as nwColorScheme, useColorScheme as useNwColorScheme } from 'nativewind';
+import { colorScheme as nwColorScheme } from 'nativewind';
 import {
   createContext,
   useCallback,
@@ -12,9 +12,17 @@ import {
 } from 'react';
 import { Appearance } from 'react-native';
 
-import { Colors } from '@/constants/theme';
+import {
+  DEFAULT_THEME_PACK,
+  getThemePackColors,
+  isThemePackId,
+  ThemePacks,
+  type ThemePackColors,
+  type ThemePackId,
+} from '@/constants/themes';
 
-const STORAGE_KEY = 'pinch.themePreference';
+const SCHEME_KEY = 'pinch.themePreference';
+const PACK_KEY = 'pinch.themePack';
 
 export type ThemePreference = 'system' | 'light' | 'dark';
 export type ResolvedScheme = 'light' | 'dark';
@@ -23,8 +31,11 @@ type ThemeContextValue = {
   preference: ThemePreference;
   /** Resolved light/dark after applying system preference. */
   scheme: ResolvedScheme;
-  colors: (typeof Colors)[ResolvedScheme];
+  packId: ThemePackId;
+  packName: string;
+  colors: ThemePackColors;
   setPreference: (next: ThemePreference) => void;
+  setPackId: (next: ThemePackId) => void;
   /** Cycles system → light → dark → system. */
   cyclePreference: () => void;
 };
@@ -38,79 +49,116 @@ function resolveScheme(preference: ThemePreference): ResolvedScheme {
   return preference;
 }
 
-function applyScheme(preference: ThemePreference) {
-  // NativeWind class strategy — 'system' follows the OS.
-  nwColorScheme.set(preference);
+function applyAppearance(preference: ThemePreference, packId: ThemePackId) {
   const resolved = resolveScheme(preference);
-  void SystemUI.setBackgroundColorAsync(Colors[resolved].background);
+  // Always pass resolved light/dark — never "system". On web, NativeWind's
+  // class darkMode removes the `dark` class whenever value !== "dark", so
+  // set("system") while the OS is dark leaves MistAtmosphere dark (JS packs)
+  // but body text stuck on light tokens (text-pinch-dark on dark mist).
+  nwColorScheme.set(resolved);
+  const colors = getThemePackColors(packId, resolved);
+  void SystemUI.setBackgroundColorAsync(colors.background);
 }
 
 export function ThemeProvider({ children }: { children: ReactNode }) {
   const [preference, setPreferenceState] = useState<ThemePreference>('system');
-  const { colorScheme: nwScheme } = useNwColorScheme();
+  const [packId, setPackIdState] = useState<ThemePackId>(DEFAULT_THEME_PACK);
+  const [resolvedScheme, setResolvedScheme] = useState<ResolvedScheme>(() =>
+    resolveScheme('system'),
+  );
 
-  // Apply system immediately, then hydrate any saved override.
+  const syncAppearance = useCallback((nextPreference: ThemePreference, nextPack: ThemePackId) => {
+    const resolved = resolveScheme(nextPreference);
+    applyAppearance(nextPreference, nextPack);
+    setResolvedScheme(resolved);
+  }, []);
+
   useEffect(() => {
-    applyScheme('system');
+    syncAppearance('system', DEFAULT_THEME_PACK);
     let cancelled = false;
     (async () => {
       try {
-        const saved = await AsyncStorage.getItem(STORAGE_KEY);
-        const next: ThemePreference =
-          saved === 'light' || saved === 'dark' || saved === 'system' ? saved : 'system';
+        const [savedScheme, savedPack] = await Promise.all([
+          AsyncStorage.getItem(SCHEME_KEY),
+          AsyncStorage.getItem(PACK_KEY),
+        ]);
+        const nextScheme: ThemePreference =
+          savedScheme === 'light' || savedScheme === 'dark' || savedScheme === 'system'
+            ? savedScheme
+            : 'system';
+        const nextPack: ThemePackId = isThemePackId(savedPack)
+          ? savedPack
+          : DEFAULT_THEME_PACK;
         if (!cancelled) {
-          setPreferenceState(next);
-          applyScheme(next);
+          setPreferenceState(nextScheme);
+          setPackIdState(nextPack);
+          syncAppearance(nextScheme, nextPack);
         }
       } catch {
-        // Keep system default.
+        // Keep defaults.
       }
     })();
     return () => {
       cancelled = true;
     };
-  }, []);
+  }, [syncAppearance]);
 
-  // Keep resolved scheme in sync when OS appearance changes under "system".
   useEffect(() => {
     const sub = Appearance.addChangeListener(() => {
       if (preference === 'system') {
-        applyScheme('system');
+        syncAppearance('system', packId);
       }
     });
     return () => sub.remove();
-  }, [preference]);
+  }, [preference, packId, syncAppearance]);
 
-  const setPreference = useCallback((next: ThemePreference) => {
-    setPreferenceState(next);
-    applyScheme(next);
-    void AsyncStorage.setItem(STORAGE_KEY, next);
-  }, []);
+  const setPreference = useCallback(
+    (next: ThemePreference) => {
+      setPreferenceState(next);
+      syncAppearance(next, packId);
+      void AsyncStorage.setItem(SCHEME_KEY, next);
+    },
+    [packId, syncAppearance],
+  );
+
+  const setPackId = useCallback(
+    (next: ThemePackId) => {
+      setPackIdState(next);
+      syncAppearance(preference, next);
+      void AsyncStorage.setItem(PACK_KEY, next);
+    },
+    [preference, syncAppearance],
+  );
 
   const cyclePreference = useCallback(() => {
     setPreferenceState((prev) => {
       const order: ThemePreference[] = ['system', 'light', 'dark'];
       const next = order[(order.indexOf(prev) + 1) % order.length];
-      applyScheme(next);
-      void AsyncStorage.setItem(STORAGE_KEY, next);
+      syncAppearance(next, packId);
+      void AsyncStorage.setItem(SCHEME_KEY, next);
       return next;
     });
-  }, []);
+  }, [packId, syncAppearance]);
 
-  const scheme: ResolvedScheme =
-    nwScheme === 'dark' || nwScheme === 'light'
-      ? nwScheme
-      : resolveScheme(preference);
+  const scheme = resolvedScheme;
+
+  const colors = useMemo(
+    () => getThemePackColors(packId, scheme),
+    [packId, scheme],
+  );
 
   const value = useMemo(
     () => ({
       preference,
       scheme,
-      colors: Colors[scheme],
+      packId,
+      packName: ThemePacks[packId].name,
+      colors,
       setPreference,
+      setPackId,
       cyclePreference,
     }),
-    [preference, scheme, setPreference, cyclePreference],
+    [preference, scheme, packId, colors, setPreference, setPackId, cyclePreference],
   );
 
   return <ThemeContext.Provider value={value}>{children}</ThemeContext.Provider>;

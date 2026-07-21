@@ -1,6 +1,8 @@
 import { normalizeStoredCalories } from '../_shared/calories.ts';
 import { corsHeaders, jsonResponse } from '../_shared/cors.ts';
+import { FetchError } from '../_shared/errors.ts';
 import { extractRecipeWithLadder, GeminiRecipe } from '../_shared/gemini.ts';
+import { fetchInstagramMeta } from '../_shared/instagram.ts';
 import {
   canonicalInstagramUrl,
   canonicalTikTokUrl,
@@ -10,28 +12,44 @@ import {
   type Platform,
   youTubeThumbnail,
 } from '../_shared/platform.ts';
+import type { PlatformMeta } from '../_shared/platformMeta.ts';
+import { persistSocialThumbnail } from '../_shared/persistThumbnail.ts';
+import {
+  estimateScrapeCredits,
+  GUEST_EXTRACT_LIMIT,
+  TOKEN_COST_EXTRACT,
+} from '../_shared/pricing.ts';
 import {
   createAuthedSupabase,
   extractVideoIdForPlatform,
   findExistingRecipeForUser,
 } from '../_shared/recipeLookup.ts';
-import type { PlatformMeta } from '../_shared/platformMeta.ts';
-import { fetchInstagramMeta } from '../_shared/instagram.ts';
+import { createServiceSupabase } from '../_shared/supabaseAdmin.ts';
+import { normalizeRecipeTags } from '../_shared/tags.ts';
 import { fetchTikTokMeta } from '../_shared/tiktok.ts';
+import {
+  getGuestExtractCount,
+  getTokenBalance,
+  guestRemainingFromCount,
+  reserveGuestExtraction,
+  spendTokens,
+} from '../_shared/tokens.ts';
+import { logUsageEvent } from '../_shared/usageLog.ts';
 import { fetchYouTubeMeta } from '../_shared/youtube.ts';
-import { FetchError } from '../_shared/errors.ts';
-import { persistSocialThumbnail } from '../_shared/persistThumbnail.ts';
 
 // Response contract consumed by the app (mirrors ExtractionResult in ADR 004).
 type ExtractionStatus = 'full' | 'partial' | 'failed' | 'coming_soon';
 
 /**
- * POST { url } -> { status, platform, recipe? , message? , cached? }
+ * POST { url, guest_install_id? } -> { status, platform, recipe?, message?, cached?, ... }
  *
  * Detects the platform, rejects anything not yet live (ADR 003), then for
  * YouTube: returns an existing saved recipe when the URL is already in the
  * user's library, otherwise runs the content ladder (description → comments →
  * captions → video) before classifying the result.
+ *
+ * Phase B: guests are capped server-side; signed-in users spend 10 tokens on
+ * non-cached extractions (including failed recipe finds after provider work).
  */
 Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') {
@@ -41,10 +59,16 @@ Deno.serve(async (req) => {
     return jsonResponse({ error: 'Method not allowed' }, 405);
   }
 
+  const started = Date.now();
   let url: string;
+  let guestInstallId: string | null = null;
   try {
     const body = await req.json();
     url = String(body.url ?? '').trim();
+    const rawInstall = body.guest_install_id ?? body.guestInstallId;
+    if (typeof rawInstall === 'string' && rawInstall.trim().length >= 8) {
+      guestInstallId = rawInstall.trim().slice(0, 128);
+    }
   } catch {
     return jsonResponse({ error: 'Invalid JSON body' }, 400);
   }
@@ -85,30 +109,107 @@ Deno.serve(async (req) => {
     });
   }
 
+  const admin = createServiceSupabase();
   const authHeader = req.headers.get('Authorization');
-  if (authHeader) {
-    const supabase = createAuthedSupabase(authHeader);
-    if (supabase) {
-      const {
-        data: { user },
-      } = await supabase.auth.getUser();
+  let userId: string | null = null;
+  let authedClient = authHeader ? createAuthedSupabase(authHeader) : null;
 
-      if (user) {
-        const existing = await findExistingRecipeForUser(supabase, url, platform, contentId);
-        if (existing) {
-          return jsonResponse({
-            status: existing.extraction_status ?? 'full',
+  if (authedClient) {
+    const {
+      data: { user },
+    } = await authedClient.auth.getUser();
+    userId = user?.id ?? null;
+
+    if (userId) {
+      const existing = await findExistingRecipeForUser(authedClient, url, platform, contentId);
+      if (existing) {
+        await logUsageEvent(admin, {
+          userId,
+          action: 'extract',
+          platform,
+          status: 'cached',
+          tokensCharged: 0,
+          durationMs: Date.now() - started,
+          metadata: { cached: true },
+        });
+
+        const balance = admin ? await getTokenBalance(admin, userId) : null;
+        return jsonResponse({
+          status: existing.extraction_status ?? 'full',
+          platform,
+          recipe: existing,
+          cached: true,
+          tokens_charged: 0,
+          token_balance: balance,
+        });
+      }
+
+      const balance = admin ? await getTokenBalance(admin, userId) : null;
+      if (balance != null && balance < TOKEN_COST_EXTRACT) {
+        await logUsageEvent(admin, {
+          userId,
+          action: 'extract',
+          platform,
+          status: 'insufficient_tokens',
+          tokensCharged: 0,
+          durationMs: Date.now() - started,
+          metadata: { balance, required: TOKEN_COST_EXTRACT },
+        });
+        return jsonResponse(
+          {
+            status: 'failed' as ExtractionStatus,
             platform,
-            recipe: existing,
-            cached: true,
-          });
-        }
+            code: 'insufficient_tokens',
+            message: `You need ${TOKEN_COST_EXTRACT} tokens to extract a recipe. You have ${balance}.`,
+            token_balance: balance,
+            tokens_required: TOKEN_COST_EXTRACT,
+          },
+          402,
+        );
       }
     }
   }
 
+  let guestRemaining: number | null = null;
+  if (!userId) {
+    if (!guestInstallId || !admin) {
+      return jsonResponse(
+        {
+          status: 'failed' as ExtractionStatus,
+          platform,
+          code: 'guest_id_required',
+          message: 'Sign up to extract recipes, or update the app to continue as a guest.',
+        },
+        401,
+      );
+    }
+
+    const reserved = await reserveGuestExtraction(admin, guestInstallId);
+    if ('blocked' in reserved) {
+      await logUsageEvent(admin, {
+        guestInstallId,
+        action: 'extract',
+        platform,
+        status: 'guest_limit',
+        tokensCharged: 0,
+        durationMs: Date.now() - started,
+      });
+      return jsonResponse(
+        {
+          status: 'failed' as ExtractionStatus,
+          platform,
+          code: 'guest_limit',
+          message: `You've used your ${GUEST_EXTRACT_LIMIT} free recipe extractions. Sign up to keep going.`,
+          guest_extracts_remaining: 0,
+        },
+        429,
+      );
+    }
+    guestRemaining = reserved.remaining;
+  }
+
   try {
-    console.log('[extract-recipe] start', { platform, url, contentId });
+    console.log('[extract-recipe] start', { platform, url, contentId, userId: Boolean(userId) });
 
     const meta = await fetchPlatformMeta(platform, url, contentId);
     console.log('[extract-recipe] meta ready', {
@@ -123,7 +224,12 @@ Deno.serve(async (req) => {
       hasThumbnail: Boolean(meta.thumbnailUrl),
     });
 
-    const { recipe: gemini, source } = await extractRecipeWithLadder({
+    const {
+      recipe: gemini,
+      source,
+      usages,
+      usedInstagramVideoDownload,
+    } = await extractRecipeWithLadder({
       platform,
       sourceUrl: url,
       videoUrl: meta.videoUrl,
@@ -141,12 +247,46 @@ Deno.serve(async (req) => {
     });
 
     const { status, missingFields } = classify(gemini);
+    const scrapeCredits = estimateScrapeCredits(platform, usedInstagramVideoDownload === true);
 
     if (status === 'failed') {
+      let tokenBalance: number | null = null;
+      let tokensCharged = 0;
+
+      if (userId && admin) {
+        const spent = await spendTokens(admin, userId, TOKEN_COST_EXTRACT, 'extract_failed', url, {
+          platform,
+          source,
+        });
+        if (spent.ok) {
+          tokensCharged = TOKEN_COST_EXTRACT;
+          tokenBalance = spent.balance;
+        } else if (spent.code === 'insufficient_tokens') {
+          tokenBalance = await getTokenBalance(admin, userId);
+        }
+      }
+
+      await logUsageEvent(admin, {
+        userId,
+        guestInstallId: userId ? null : guestInstallId,
+        action: 'extract',
+        platform,
+        status: 'failed',
+        extractionSource: source,
+        usages,
+        scrapecreatorsCredits: scrapeCredits,
+        tokensCharged,
+        durationMs: Date.now() - started,
+        errorMessage: 'No recipe found',
+      });
+
       return jsonResponse({
         status,
         platform,
         message: "Couldn't find a recipe in this video. Try a different link.",
+        tokens_charged: tokensCharged,
+        token_balance: tokenBalance,
+        guest_extracts_remaining: guestRemaining,
       });
     }
 
@@ -176,12 +316,93 @@ Deno.serve(async (req) => {
       extraction_status: status,
       extraction_source: source,
       calories_reasoning: gemini.calories_reasoning?.trim() || null,
+      time_reasoning: gemini.time_reasoning?.trim() || null,
+      tags: normalizeRecipeTags(gemini.tags),
       missing_fields: missingFields,
     };
 
-    return jsonResponse({ status, platform, recipe });
+    let tokenBalance: number | null = null;
+    let tokensCharged = 0;
+
+    if (userId && admin) {
+      const spent = await spendTokens(admin, userId, TOKEN_COST_EXTRACT, 'extract', url, {
+        platform,
+        source,
+        status,
+      });
+      if (!spent.ok) {
+        await logUsageEvent(admin, {
+          userId,
+          action: 'extract',
+          platform,
+          status: spent.code === 'insufficient_tokens' ? 'insufficient_tokens' : 'metering_error',
+          extractionSource: source,
+          usages,
+          scrapecreatorsCredits: scrapeCredits,
+          tokensCharged: 0,
+          durationMs: Date.now() - started,
+          errorMessage: spent.code,
+        });
+        return jsonResponse(
+          {
+            status: 'failed' as ExtractionStatus,
+            platform,
+            code: spent.code === 'insufficient_tokens' ? 'insufficient_tokens' : 'metering_error',
+            message:
+              spent.code === 'insufficient_tokens'
+                ? `You need ${TOKEN_COST_EXTRACT} tokens to extract a recipe.`
+                : 'Could not update your token balance. Please try again.',
+            token_balance: await getTokenBalance(admin, userId),
+            tokens_required: TOKEN_COST_EXTRACT,
+          },
+          spent.code === 'insufficient_tokens' ? 402 : 500,
+        );
+      }
+      tokensCharged = TOKEN_COST_EXTRACT;
+      tokenBalance = spent.balance;
+    }
+
+    await logUsageEvent(admin, {
+      userId,
+      guestInstallId: userId ? null : guestInstallId,
+      action: 'extract',
+      platform,
+      status,
+      extractionSource: source,
+      usages,
+      scrapecreatorsCredits: scrapeCredits,
+      tokensCharged,
+      durationMs: Date.now() - started,
+    });
+
+    return jsonResponse({
+      status,
+      platform,
+      recipe,
+      tokens_charged: tokensCharged,
+      token_balance: tokenBalance,
+      guest_extracts_remaining: guestRemaining,
+    });
   } catch (err) {
     console.error('extract-recipe error:', err);
+
+    // Guest slot already reserved — keep it (provider work may have run).
+    if (!userId && guestInstallId && admin && guestRemaining == null) {
+      guestRemaining = guestRemainingFromCount(await getGuestExtractCount(admin, guestInstallId));
+    }
+
+    const errorMessage = err instanceof Error ? err.message : String(err);
+    await logUsageEvent(admin, {
+      userId,
+      guestInstallId: userId ? null : guestInstallId,
+      action: 'extract',
+      platform,
+      status: 'error',
+      tokensCharged: 0,
+      durationMs: Date.now() - started,
+      errorMessage: errorMessage.slice(0, 500),
+      scrapecreatorsCredits: estimateScrapeCredits(platform, false),
+    });
 
     if (err instanceof FetchError) {
       const lower = err.message.toLowerCase();
@@ -204,6 +425,7 @@ Deno.serve(async (req) => {
           status: 'failed' as ExtractionStatus,
           platform,
           message,
+          guest_extracts_remaining: guestRemaining,
         },
         err.message.includes('Too many requests') ? 429 : 502,
       );
@@ -214,6 +436,7 @@ Deno.serve(async (req) => {
         status: 'failed' as ExtractionStatus,
         platform,
         message: 'Something went wrong while reading the video. Please try again.',
+        guest_extracts_remaining: guestRemaining,
       },
       500,
     );

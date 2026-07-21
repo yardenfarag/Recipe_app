@@ -1,17 +1,37 @@
 // Gemini extraction via the generateContent REST endpoint.
 // Uses structured output (responseSchema) so we get valid JSON without parsing prose.
 
-import { AppError, FetchError } from './errors.ts';
+import { FetchError } from './errors.ts';
+import {
+  generateGeminiJson,
+  resolveGeminiModel,
+  type GeminiPart,
+  type GeminiTier,
+} from './geminiClient.ts';
 import { isInstagramCdnUrl, resolveInstagramVideoForGemini } from './instagram.ts';
 import type { Platform } from './platform.ts';
+import type { GeminiUsageSnapshot } from './pricing.ts';
 
-const MODEL = Deno.env.get('GEMINI_MODEL') ?? 'gemini-3.5-flash';
-const TEXT_TIMEOUT_MS = 45_000;
+export type { GeminiUsageSnapshot } from './pricing.ts';
+
+/** Text extract is simple structured IO — use Flash-Lite. Video needs standard Flash. */
+const TEXT_TIMEOUT_MS = 35_000;
 const VIDEO_TIMEOUT_MS = 60_000;
+const TEXT_MAX_OUTPUT_TOKENS = 4_096;
+const VIDEO_MAX_OUTPUT_TOKENS = 4_096;
+const MAX_DESCRIPTION_CHARS = 4_000;
+const MAX_CAPTIONS_CHARS = 6_000;
+const MAX_COMMENTS = 12;
+const MAX_COMMENT_CHARS = 500;
 
-const CALORIE_RULES = `- Before setting calories, write calories_reasoning: 1–3 sentences estimating kcal from the main caloric ingredients, show your per-portion math, and confirm whether calories will be TOTAL for all servings combined.
-- For calories: return the combined kcal for ALL portions at the stated servings count (not per-portion). Example: 12 cookies at ~150 kcal each → servings=12, calories=1800.
-- For servings: the number of equal portions the recipe yields (usually 1–12). Do not confuse grams or individual item counts with servings unless each item is one portion.`;
+const CALORIE_RULES = `- calories_reasoning: one short phrase naming the main caloric ingredients and confirming calories is TOTAL for all servings.
+- calories: combined kcal for ALL portions at the stated servings (not per-portion). Example: 12 cookies ≈150 kcal each → servings=12, calories=1800.
+- servings: equal portions the recipe yields (usually 1–12). Do not confuse grams or item counts with servings unless each item is one portion.`;
+
+const TIME_RULES = `- time_reasoning: one short phrase (prep + cook/bake + waits).
+- estimated_time_minutes: TOTAL wall-clock minutes until ready — include oven and mandatory waits, not just hands-on time. Example: mix 15 + chill 30 + bake 12 + cool 5 → 62.`;
+
+const TAG_RULES = `- tags: 3–6 short lowercase labels (cuisine, meal, dish type, method, traits). Example: ["dessert","cookies","baked","american"]. No hashtags or invented diet claims.`;
 
 const TEXT_SYSTEM_PROMPT = `You are a master chef. Analyze the provided text from a social media post and extract a precise recipe.
 
@@ -19,8 +39,10 @@ Rules:
 - Use ONLY the text provided — do not guess or invent ingredients/steps that are not present.
 - Comments marked "(from the video's creator)" are especially likely to contain the complete recipe.
 - Include ingredients with measurements, and step-by-step instructions when present.
-- Estimate total time in minutes, a cost tier from 1-3 dollar signs, and an effort level when you can infer them.
+- Estimate a cost tier from 1-3 dollar signs and an effort level when you can infer them.
+${TIME_RULES}
 ${CALORIE_RULES}
+${TAG_RULES}
 - If the text genuinely contains no recipe, set found_recipe to false and leave other fields empty.
 - Do NOT invent instructions if none are present — return what you found and leave instructions empty instead.
 - Return ONLY data matching the schema.`;
@@ -31,8 +53,10 @@ Rules:
 - Treat the video and text context as complementary sources — prefer explicit written measurements in text over visual guesses.
 - Comments marked "(from the video's creator)" are especially likely to contain the authoritative recipe.
 - Include ingredients with measurements, and step-by-step instructions.
-- Estimate total time in minutes, a cost tier from 1-3 dollar signs, and an effort level.
+- Estimate a cost tier from 1-3 dollar signs and an effort level.
+${TIME_RULES}
 ${CALORIE_RULES}
+${TAG_RULES}
 - If the content genuinely contains no recipe, set found_recipe to false and leave other fields empty.
 - Do NOT invent instructions if none are present — return what you found and leave instructions empty instead.
 - Return ONLY data matching the schema.`;
@@ -73,9 +97,20 @@ const RECIPE_SCHEMA = {
         'Brief chain-of-thought: key caloric ingredients, per-portion math, confirm total vs per-serving before setting calories.',
     },
     calories: { type: 'integer' },
+    time_reasoning: {
+      type: 'string',
+      description:
+        'Brief chain-of-thought: break down prep + cook/bake + required waits with minutes each, then sum to total wall-clock time before setting estimated_time_minutes.',
+    },
     estimated_time_minutes: { type: 'integer' },
     cost_estimate: { type: 'string', enum: ['$', '$$', '$$$'] },
     effort_level: { type: 'string', enum: ['Easy', 'Medium', 'Hard'] },
+    tags: {
+      type: 'array',
+      items: { type: 'string' },
+      description:
+        '3–6 short lowercase labels: cuisine, meal, dish type, method, traits. Stable for trends.',
+    },
   },
   required: ['found_recipe', 'title', 'servings', 'ingredients', 'instructions'],
 };
@@ -90,14 +125,19 @@ export interface GeminiRecipe {
   instructions: { step: number; text: string }[];
   calories_reasoning?: string;
   calories?: number;
+  time_reasoning?: string;
   estimated_time_minutes?: number;
   cost_estimate?: '$' | '$$' | '$$$';
   effort_level?: 'Easy' | 'Medium' | 'Hard';
+  tags?: string[];
 }
 
 export interface LadderResult {
   recipe: GeminiRecipe;
   source: ExtractionSource;
+  usages: GeminiUsageSnapshot[];
+  /** True when Instagram download_media was needed for the video rung. */
+  usedInstagramVideoDownload?: boolean;
 }
 
 const EMPTY_RECIPE: GeminiRecipe = {
@@ -142,10 +182,13 @@ export async function extractRecipeWithLadder(input: ExtractInput): Promise<Ladd
   const hasComments = input.topComments.length > 0;
   const hasCaptions = Boolean(input.captions?.trim());
   const hasAnyText = hasDescription || hasComments || hasCaptions;
+  const usages: GeminiUsageSnapshot[] = [];
+  let usedInstagramVideoDownload = false;
 
   console.log('[gemini] ladder start', {
     platform: input.platform,
-    model: MODEL,
+    fastModel: resolveGeminiModel('fast'),
+    standardModel: resolveGeminiModel('standard'),
     hasDescription,
     descriptionLen: input.description?.trim().length ?? 0,
     comments: input.topComments.length,
@@ -167,17 +210,20 @@ export async function extractRecipeWithLadder(input: ExtractInput): Promise<Ladd
         },
         TEXT_TIMEOUT_MS,
       );
+      if (fromText.usage) usages.push(fromText.usage);
       console.log('[gemini] text step done', {
         ms: Date.now() - textStarted,
-        found: geminiFoundRecipe(fromText),
-        foundRecipe: fromText.found_recipe,
-        ingredients: fromText.ingredients?.length ?? 0,
-        instructions: fromText.instructions?.length ?? 0,
+        found: geminiFoundRecipe(fromText.recipe),
+        foundRecipe: fromText.recipe.found_recipe,
+        ingredients: fromText.recipe.ingredients?.length ?? 0,
+        instructions: fromText.recipe.instructions?.length ?? 0,
+        usage: fromText.usage,
       });
-      if (geminiFoundRecipe(fromText)) {
+      if (geminiFoundRecipe(fromText.recipe)) {
         return {
-          recipe: fromText,
+          recipe: fromText.recipe,
           source: hasCaptions ? 'captions' : hasComments ? 'comments' : 'description',
+          usages,
         };
       }
     } catch (err) {
@@ -195,17 +241,25 @@ export async function extractRecipeWithLadder(input: ExtractInput): Promise<Ladd
   console.log('[gemini] video step start');
   try {
     const fromVideo = await extractRecipeWithVideo(input);
+    if (fromVideo.usage) usages.push(fromVideo.usage);
+    usedInstagramVideoDownload = fromVideo.usedInstagramVideoDownload === true;
     console.log('[gemini] video step done', {
-      found: geminiFoundRecipe(fromVideo),
-      foundRecipe: fromVideo.found_recipe,
+      found: geminiFoundRecipe(fromVideo.recipe),
+      foundRecipe: fromVideo.recipe.found_recipe,
+      usage: fromVideo.usage,
     });
-    return { recipe: fromVideo, source: 'video' };
+    return {
+      recipe: fromVideo.recipe,
+      source: 'video',
+      usages,
+      usedInstagramVideoDownload,
+    };
   } catch (err) {
     console.error('[gemini] video step failed', {
       error: err instanceof Error ? err.message : String(err),
     });
     if (isGeminiTimeout(err)) {
-      return { recipe: EMPTY_RECIPE, source: 'video' };
+      return { recipe: EMPTY_RECIPE, source: 'video', usages, usedInstagramVideoDownload };
     }
     throw err;
   }
@@ -215,12 +269,18 @@ async function extractRecipeFromText(
   input: ExtractInput,
   sections: TextSections,
   timeoutMs: number,
-): Promise<GeminiRecipe> {
+): Promise<{ recipe: GeminiRecipe; usage: GeminiUsageSnapshot | null }> {
   const textContext = buildTextContext(input, sections);
-  return callGemini(TEXT_SYSTEM_PROMPT, [{ text: textContext }], timeoutMs);
+  return callGemini(TEXT_SYSTEM_PROMPT, [{ text: textContext }], timeoutMs, 'text');
 }
 
-async function extractRecipeWithVideo(input: ExtractInput): Promise<GeminiRecipe> {
+async function extractRecipeWithVideo(
+  input: ExtractInput,
+): Promise<{
+  recipe: GeminiRecipe;
+  usage: GeminiUsageSnapshot | null;
+  usedInstagramVideoDownload?: boolean;
+}> {
   const textContext = buildTextContext(input, {
     description: true,
     comments: true,
@@ -230,8 +290,10 @@ async function extractRecipeWithVideo(input: ExtractInput): Promise<GeminiRecipe
   let videoUri = input.videoUrl?.trim();
   if (!videoUri) {
     console.log('[gemini] video step — no videoUrl, falling back to text-only');
-    return callGemini(TEXT_SYSTEM_PROMPT, [{ text: textContext }], TEXT_TIMEOUT_MS);
+    return callGemini(TEXT_SYSTEM_PROMPT, [{ text: textContext }], TEXT_TIMEOUT_MS, 'text');
   }
+
+  let usedInstagramVideoDownload = false;
 
   // Instagram CDN URLs hang Gemini forever — only use hosted (download_media) URLs.
   if (input.platform === 'instagram') {
@@ -250,16 +312,17 @@ async function extractRecipeWithVideo(input: ExtractInput): Promise<GeminiRecipe
         });
         if (hosted && !isInstagramCdnUrl(hosted)) {
           videoUri = hosted;
+          usedInstagramVideoDownload = true;
         } else {
           console.log('[gemini] skipping multimodal — no Gemini-fetchable Instagram video');
-          return EMPTY_RECIPE;
+          return { recipe: EMPTY_RECIPE, usage: null, usedInstagramVideoDownload };
         }
       } catch (err) {
         console.error('[gemini] hosted Instagram video resolve failed', {
           ms: Date.now() - resolveStarted,
           error: err instanceof Error ? err.message : String(err),
         });
-        return EMPTY_RECIPE;
+        return { recipe: EMPTY_RECIPE, usage: null, usedInstagramVideoDownload };
       }
     }
   }
@@ -270,108 +333,40 @@ async function extractRecipeWithVideo(input: ExtractInput): Promise<GeminiRecipe
     isCdn: isInstagramCdnUrl(videoUri),
   });
 
-  return callGemini(
+  const result = await callGemini(
     VIDEO_SYSTEM_PROMPT,
     [{ fileData: { fileUri: videoUri } }, { text: textContext }],
     VIDEO_TIMEOUT_MS,
+    'video',
   );
+  return { ...result, usedInstagramVideoDownload };
 }
 
 async function callGemini(
   systemPrompt: string,
-  parts: Array<{ text: string } | { fileData: { fileUri: string } }>,
+  parts: GeminiPart[],
   timeoutMs: number,
-): Promise<GeminiRecipe> {
-  const apiKey = Deno.env.get('GEMINI_API_KEY');
-  if (!apiKey) {
-    throw new AppError('gemini.ts: callGemini', 'GEMINI_API_KEY is not configured');
-  }
-
-  const endpoint = `https://generativelanguage.googleapis.com/v1beta/models/${MODEL}:generateContent`;
-
-  const body = {
-    systemInstruction: { parts: [{ text: systemPrompt }] },
-    contents: [{ role: 'user', parts }],
-    generationConfig: {
-      responseMimeType: 'application/json',
-      responseSchema: RECIPE_SCHEMA,
-      // Gemini 3.5 defaults to medium thinking — too slow for Edge Function budgets.
-      thinkingConfig: { thinkingLevel: 'minimal' },
-    },
-  };
-
-  const hasFile = parts.some((p) => 'fileData' in p);
-  console.log('[gemini] callGemini start', {
-    model: MODEL,
+  kind: 'text' | 'video',
+): Promise<{ recipe: GeminiRecipe; usage: GeminiUsageSnapshot | null }> {
+  const tier: GeminiTier = kind === 'video' ? 'standard' : 'fast';
+  const { data: recipe, usage, durationMs } = await generateGeminiJson<GeminiRecipe>({
+    tier,
+    systemPrompt,
+    parts,
+    responseSchema: RECIPE_SCHEMA,
     timeoutMs,
-    hasFile,
-    parts: parts.map((p) => ('text' in p ? `text:${p.text.length}` : `file:${safeUrlHost(p.fileData.fileUri)}`)),
+    maxOutputTokens: kind === 'video' ? VIDEO_MAX_OUTPUT_TOKENS : TEXT_MAX_OUTPUT_TOKENS,
+    kind,
+    context: 'gemini.ts: callGemini',
   });
 
-  const controller = new AbortController();
-  const timeout = setTimeout(() => controller.abort(), timeoutMs);
-  const started = Date.now();
-
-  let res: Response;
-  try {
-    res = await fetch(endpoint, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'x-goog-api-key': apiKey,
-      },
-      body: JSON.stringify(body),
-      signal: controller.signal,
-    });
-  } catch (err) {
-    const isTimeout = err instanceof Error && err.name === 'AbortError';
-    console.error('[gemini] callGemini fetch failed', {
-      ms: Date.now() - started,
-      timedOut: isTimeout,
-      timeoutMs,
-      hasFile,
-      error: err instanceof Error ? err.message : String(err),
-    });
-    throw new FetchError('gemini.ts: callGemini', 'Gemini request failed', {
-      timedOut: isTimeout,
-      timeoutMs: timeoutMs,
-      hasFile,
-      originalError: err instanceof Error ? err.message : String(err),
-    });
-  } finally {
-    clearTimeout(timeout);
-  }
-
-  console.log('[gemini] callGemini response', {
-    ms: Date.now() - started,
-    status: res.status,
-    hasFile,
+  console.log('[gemini] callGemini ok', {
+    kind,
+    tier,
+    ms: durationMs,
+    usage,
   });
-
-  if (!res.ok) {
-    const errText = await res.text();
-    console.error('[gemini] callGemini HTTP error', {
-      status: res.status,
-      body: errText.slice(0, 500),
-    });
-    throw new FetchError('gemini.ts: callGemini', 'Gemini API returned an error', {
-      status: res.status,
-      body: errText,
-    });
-  }
-
-  const data = await res.json();
-  const jsonText = data?.candidates?.[0]?.content?.parts?.[0]?.text;
-  if (!jsonText) {
-    console.error('[gemini] callGemini empty content', {
-      finishReason: data?.candidates?.[0]?.finishReason,
-      blockReason: data?.promptFeedback?.blockReason,
-    });
-    throw new AppError('gemini.ts: callGemini', 'Gemini returned no content');
-  }
-
-  console.log('[gemini] callGemini ok', { ms: Date.now() - started, jsonLen: jsonText.length });
-  return JSON.parse(jsonText) as GeminiRecipe;
+  return { recipe, usage };
 }
 
 function safeUrlHost(url: string): string | null {
@@ -386,17 +381,33 @@ function isGeminiTimeout(err: unknown): boolean {
   return err instanceof FetchError && err.message.toLowerCase().includes('timedout=true');
 }
 
+function truncate(text: string, maxChars: number): string {
+  const trimmed = text.trim();
+  if (trimmed.length <= maxChars) return trimmed;
+  return `${trimmed.slice(0, maxChars)}…`;
+}
+
 function buildTextContext(input: ExtractInput, sections: TextSections): string {
   const parts: string[] = [];
   parts.push('Extract the recipe from the sources below.');
 
   if (sections.description && input.description?.trim()) {
-    parts.push(`\n--- VIDEO DESCRIPTION ---\n${input.description.trim()}`);
+    parts.push(
+      `\n--- VIDEO DESCRIPTION ---\n${truncate(input.description, MAX_DESCRIPTION_CHARS)}`,
+    );
   }
 
   if (sections.comments && input.topComments.length > 0) {
-    const comments = input.topComments
-      .map((c, i) => `${i + 1}. ${c.isCreator ? "(from the video's creator) " : ''}${c.text}`)
+    // Creator comments first — they usually hold the full recipe.
+    const ranked = [...input.topComments].sort(
+      (a, b) => Number(b.isCreator) - Number(a.isCreator),
+    );
+    const comments = ranked
+      .slice(0, MAX_COMMENTS)
+      .map(
+        (c, i) =>
+          `${i + 1}. ${c.isCreator ? "(from the video's creator) " : ''}${truncate(c.text, MAX_COMMENT_CHARS)}`,
+      )
       .join('\n');
     parts.push(
       `\n--- TOP COMMENTS ---\nThe full recipe is often posted here rather than in the description, especially for Shorts.\n${comments}`,
@@ -404,7 +415,9 @@ function buildTextContext(input: ExtractInput, sections: TextSections): string {
   }
 
   if (sections.captions && input.captions?.trim()) {
-    parts.push(`\n--- VIDEO CAPTIONS / TRANSCRIPT ---\n${input.captions.trim()}`);
+    parts.push(
+      `\n--- VIDEO CAPTIONS / TRANSCRIPT ---\n${truncate(input.captions, MAX_CAPTIONS_CHARS)}`,
+    );
   }
 
   if (sections.description === false && sections.comments === false && sections.captions) {

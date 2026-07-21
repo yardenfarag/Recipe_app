@@ -8,12 +8,15 @@ export interface Profile {
   id: string;
   email: string | null;
   avatar_url: string | null;
+  token_balance: number;
+  is_admin: boolean;
+  token_pack_notify_at: string | null;
 }
 
 export async function fetchProfile(userId: string): Promise<Profile | null> {
   const { data, error } = await supabase
     .from('profiles')
-    .select('id, email, avatar_url')
+    .select('id, email, avatar_url, token_balance, is_admin, token_pack_notify_at')
     .eq('id', userId)
     .single();
 
@@ -21,7 +24,41 @@ export async function fetchProfile(userId: string): Promise<Profile | null> {
     if (error.code === 'PGRST116') return null; // no row
     throw error;
   }
-  return data as Profile;
+  const row = data as {
+    id: string;
+    email: string | null;
+    avatar_url: string | null;
+    token_balance?: number | null;
+    is_admin?: boolean | null;
+    token_pack_notify_at?: string | null;
+  };
+  return {
+    id: row.id,
+    email: row.email,
+    avatar_url: row.avatar_url,
+    token_balance: typeof row.token_balance === 'number' ? row.token_balance : 0,
+    is_admin: row.is_admin === true,
+    token_pack_notify_at: row.token_pack_notify_at ?? null,
+  };
+}
+
+/** Opt in to token-pack launch emails. Idempotent if already set. */
+export async function requestTokenPackNotify(userId: string): Promise<string> {
+  const at = new Date().toISOString();
+  const { data, error } = await supabase
+    .from('profiles')
+    .update({ token_pack_notify_at: at })
+    .eq('id', userId)
+    .is('token_pack_notify_at', null)
+    .select('token_pack_notify_at')
+    .maybeSingle();
+
+  if (error) throw error;
+  if (data?.token_pack_notify_at) return data.token_pack_notify_at;
+
+  const existing = await fetchProfile(userId);
+  if (existing?.token_pack_notify_at) return existing.token_pack_notify_at;
+  throw new Error('Could not save notify preference.');
 }
 
 /**

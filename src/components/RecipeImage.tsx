@@ -1,6 +1,6 @@
 import Ionicons from '@expo/vector-icons/Ionicons';
 import { Image } from 'expo-image';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { StyleSheet, View, type StyleProp, type ViewStyle } from 'react-native';
 
 import { useThemePreference } from '@/hooks/useThemePreference';
@@ -34,6 +34,10 @@ export function RecipeImage({
   const { colors } = useThemePreference();
   const [failed, setFailed] = useState(false);
   const scale = 2;
+
+  useEffect(() => {
+    setFailed(false);
+  }, [uri]);
 
   if (failed) {
     return (

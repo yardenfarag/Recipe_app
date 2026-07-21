@@ -1,5 +1,6 @@
 import { FunctionsHttpError } from '@supabase/supabase-js';
 
+import { getInstallId } from '@/lib/installId';
 import { supabase } from '@/lib/supabase/client';
 import { Recipe } from '@/types/recipe';
 
@@ -16,24 +17,42 @@ export interface ExtractResult {
   message?: string;
   /** True when the URL was already in the user's library — no extraction ran. */
   cached?: boolean;
+  code?: 'insufficient_tokens' | 'guest_limit' | 'guest_id_required' | 'metering_error' | string;
+  tokens_charged?: number;
+  token_balance?: number | null;
+  guest_extracts_remaining?: number | null;
+  tokens_required?: number;
 }
 
-async function invokeErrorMessage(error: unknown): Promise<string> {
+async function invokeErrorMessage(error: unknown): Promise<{
+  message: string;
+  code?: string;
+  token_balance?: number | null;
+  guest_extracts_remaining?: number | null;
+  tokens_required?: number;
+}> {
   if (error instanceof FunctionsHttpError) {
     try {
-      const body = (await error.context.json()) as { message?: string; error?: string };
-      if (body.message) return body.message;
-      if (body.error) return body.error;
+      const body = (await error.context.json()) as ExtractResult & { error?: string };
+      if (body.message || body.error) {
+        return {
+          message: body.message ?? body.error ?? 'Request failed',
+          code: body.code,
+          token_balance: body.token_balance,
+          guest_extracts_remaining: body.guest_extracts_remaining,
+          tokens_required: body.tokens_required,
+        };
+      }
     } catch {
       // Fall through to generic message.
     }
   }
 
   if (error instanceof Error && error.message && !error.message.includes('non-2xx')) {
-    return error.message;
+    return { message: error.message };
   }
 
-  return 'Could not reach the extraction service. Please try again.';
+  return { message: 'Could not reach the extraction service. Please try again.' };
 }
 
 /**
@@ -42,15 +61,21 @@ async function invokeErrorMessage(error: unknown): Promise<string> {
  * (local guest store or Supabase) per ADR 002.
  */
 export async function extractRecipe(url: string): Promise<ExtractResult> {
+  const guestInstallId = await getInstallId();
   const { data, error } = await supabase.functions.invoke<ExtractResult>('extract-recipe', {
-    body: { url },
+    body: { url, guest_install_id: guestInstallId },
   });
 
   if (error) {
+    const details = await invokeErrorMessage(error);
     return {
       status: 'failed',
       platform: 'unknown',
-      message: await invokeErrorMessage(error),
+      message: details.message,
+      code: details.code,
+      token_balance: details.token_balance,
+      guest_extracts_remaining: details.guest_extracts_remaining,
+      tokens_required: details.tokens_required,
     };
   }
 

@@ -3,6 +3,13 @@
  * glyphs. Sixteenths and finer aren't included — nobody measures 1/16 tsp,
  * that's what `formatQuantity` collapses into "a pinch" instead.
  */
+
+import {
+  CulinaryUnitLanguage,
+  isCountUnit,
+  localizeCulinaryUnit,
+} from '@/lib/culinaryUnits';
+
 const NICE_FRACTIONS: { value: number; glyph: string }[] = [
   { value: 1 / 8, glyph: '⅛' },
   { value: 1 / 4, glyph: '¼' },
@@ -30,13 +37,32 @@ const PINCHABLE_UNITS = new Set(['tsp', 'tsps', 'teaspoon', 'teaspoons']);
  *
  * Returns the full amount string (including unit, or standing alone for
  * "a pinch"), ready to render next to the ingredient name.
+ *
+ * When `language` is set, common English units are localized (cup→כוס) and
+ * placeholder count units like "unit"/"pc" are omitted.
  */
-export function formatQuantity(quantity: number, unit: string): string {
-  if (!Number.isFinite(quantity) || quantity <= 0) return `${quantity} ${unit}`.trim();
+export function formatQuantity(
+  quantity: number,
+  unit: string,
+  language?: CulinaryUnitLanguage | null,
+): string {
+  const displayUnit = language
+    ? localizeCulinaryUnit(unit, language, quantity)
+    : isCountUnit(unit)
+      ? ''
+      : unit.trim();
+
+  if (!Number.isFinite(quantity) || quantity <= 0) {
+    return `${quantity} ${displayUnit}`.trim();
+  }
 
   const normalizedUnit = unit.trim().toLowerCase();
 
   if (quantity < PINCH_THRESHOLD && PINCHABLE_UNITS.has(normalizedUnit)) {
+    if (language && language !== 'en') {
+      const localizedPinch = localizeCulinaryUnit('pinch', language, 1);
+      return localizedPinch || 'a pinch';
+    }
     return 'a pinch';
   }
 
@@ -67,9 +93,9 @@ export function formatQuantity(quantity: number, unit: string): string {
   // "g" or "cup" amount) — showing "0" would look broken, so floor it to
   // the smallest fraction we recognize instead.
   if (bestWhole === 0 && !bestGlyph) {
-    return `${NICE_FRACTIONS[0].glyph} ${unit}`.trim();
+    return `${NICE_FRACTIONS[0].glyph} ${displayUnit}`.trim();
   }
 
   const amount = bestWhole > 0 ? `${bestWhole}${bestGlyph}` : bestGlyph;
-  return `${amount} ${unit}`.trim();
+  return `${amount} ${displayUnit}`.trim();
 }
