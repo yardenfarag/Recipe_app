@@ -181,6 +181,16 @@ export default function AddRecipeScreen() {
         return;
       }
 
+      if (result.code === 'video_too_long') {
+        setBanner({
+          kind: 'error',
+          message:
+            result.message ??
+            'This video is too long to analyze. Try a clip under 3 minutes, or one with the recipe in the caption.',
+        });
+        return;
+      }
+
       if (result.cached && result.recipe && 'id' in result.recipe) {
         router.push(`/recipe/${result.recipe.id}`);
         setUrl('');
@@ -217,7 +227,7 @@ export default function AddRecipeScreen() {
       <View className="flex-1 px-6 pt-1">
         <BrandHeader
           title="Snap a recipe"
-          subtitle="Paste a YouTube, Instagram, or TikTok link"
+          subtitle="Paste a YouTube, Instagram, or TikTok link (up to 3 min)"
         />
 
         <View

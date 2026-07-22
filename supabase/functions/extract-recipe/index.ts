@@ -35,6 +35,7 @@ import {
   spendTokens,
 } from '../_shared/tokens.ts';
 import { logUsageEvent } from '../_shared/usageLog.ts';
+import { formatMaxVideoDurationLabel, isVideoTooLong } from '../_shared/videoLimits.ts';
 import { fetchYouTubeMeta } from '../_shared/youtube.ts';
 
 // Response contract consumed by the app (mirrors ExtractionResult in ADR 004).
@@ -222,17 +223,40 @@ Deno.serve(async (req) => {
       hasVideoUrl: Boolean(meta.videoUrl),
       videoUrlHost: meta.videoUrl ? safeHost(meta.videoUrl) : null,
       hasThumbnail: Boolean(meta.thumbnailUrl),
+      durationSeconds: meta.durationSeconds ?? null,
     });
+
+    if (isVideoTooLong(meta.durationSeconds) && !hasTextSources(meta)) {
+      await logUsageEvent(admin, {
+        userId,
+        guestInstallId: userId ? null : guestInstallId,
+        action: 'extract',
+        platform,
+        status: 'video_too_long',
+        tokensCharged: 0,
+        durationMs: Date.now() - started,
+        errorMessage: `duration_seconds=${meta.durationSeconds}`,
+      });
+      return jsonResponse({
+        status: 'failed' as ExtractionStatus,
+        platform,
+        code: 'video_too_long',
+        message: `This video is longer than ${formatMaxVideoDurationLabel()}. Try a shorter clip with the recipe in the caption or comments.`,
+        guest_extracts_remaining: guestRemaining,
+      });
+    }
 
     const {
       recipe: gemini,
       source,
       usages,
       usedInstagramVideoDownload,
+      videoSkippedReason,
     } = await extractRecipeWithLadder({
       platform,
       sourceUrl: url,
       videoUrl: meta.videoUrl,
+      durationSeconds: meta.durationSeconds,
       description: meta.description,
       captions: meta.captions,
       topComments: meta.topComments,
@@ -252,8 +276,9 @@ Deno.serve(async (req) => {
     if (status === 'failed') {
       let tokenBalance: number | null = null;
       let tokensCharged = 0;
+      const rejectedAsTooLong = videoSkippedReason === 'too_long';
 
-      if (userId && admin) {
+      if (userId && admin && !rejectedAsTooLong) {
         const spent = await spendTokens(admin, userId, TOKEN_COST_EXTRACT, 'extract_failed', url, {
           platform,
           source,
@@ -264,6 +289,8 @@ Deno.serve(async (req) => {
         } else if (spent.code === 'insufficient_tokens') {
           tokenBalance = await getTokenBalance(admin, userId);
         }
+      } else if (userId && admin && rejectedAsTooLong) {
+        tokenBalance = await getTokenBalance(admin, userId);
       }
 
       await logUsageEvent(admin, {
@@ -271,19 +298,24 @@ Deno.serve(async (req) => {
         guestInstallId: userId ? null : guestInstallId,
         action: 'extract',
         platform,
-        status: 'failed',
+        status: rejectedAsTooLong ? 'video_too_long' : 'failed',
         extractionSource: source,
         usages,
         scrapecreatorsCredits: scrapeCredits,
         tokensCharged,
         durationMs: Date.now() - started,
-        errorMessage: 'No recipe found',
+        errorMessage: rejectedAsTooLong
+          ? `duration_seconds=${meta.durationSeconds ?? 'unknown'}`
+          : 'No recipe found',
       });
 
       return jsonResponse({
         status,
         platform,
-        message: "Couldn't find a recipe in this video. Try a different link.",
+        code: rejectedAsTooLong ? 'video_too_long' : undefined,
+        message: rejectedAsTooLong
+          ? `This video is longer than ${formatMaxVideoDurationLabel()}. Try a shorter clip, or a post with the recipe written in the caption.`
+          : "Couldn't find a recipe in this video. Try a different link.",
         tokens_charged: tokensCharged,
         token_balance: tokenBalance,
         guest_extracts_remaining:
@@ -505,6 +537,14 @@ function classify(r: GeminiRecipe): {
 
 function capitalize(s: string): string {
   return s.charAt(0).toUpperCase() + s.slice(1);
+}
+
+function hasTextSources(meta: PlatformMeta): boolean {
+  return (
+    Boolean(meta.description?.trim()) ||
+    meta.topComments.length > 0 ||
+    Boolean(meta.captions?.trim())
+  );
 }
 
 function safeHost(url: string): string | null {

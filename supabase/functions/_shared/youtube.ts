@@ -8,6 +8,7 @@
 // which now treats these as a primary source, not just a gap-filler).
 
 import { youTubeThumbnail } from './platform.ts';
+import { parseDurationSeconds, parseYouTubeIsoDuration } from './videoLimits.ts';
 
 const MAX_COMMENTS = 10;
 
@@ -22,6 +23,8 @@ export interface YouTubeMeta {
   thumbnailUrl?: string;
   /** Plain-text captions/transcript when available (via YouTube player metadata). */
   captions?: string;
+  /** Video length in seconds when available from the Data API or player metadata. */
+  durationSeconds?: number;
   topComments: YouTubeComment[];
 }
 
@@ -57,20 +60,23 @@ interface RawComment {
 
 export async function fetchYouTubeMeta(videoId: string): Promise<YouTubeMeta> {
   const apiKey = Deno.env.get('YOUTUBE_API_KEY');
+  const player = await fetchYouTubePlayerMetadata(videoId);
 
   if (!apiKey) {
-    const captions = await fetchYouTubeCaptions(videoId);
-    return { topComments: [], captions };
+    return {
+      topComments: [],
+      captions: player.captions,
+      durationSeconds: player.durationSeconds,
+    };
   }
 
   // The snippet (for description + channelId) and raw comments are
   // independent network calls, so fetch them concurrently — resolving
   // which comments are from the creator happens afterward, once we know
   // channelId, rather than blocking one fetch on the other.
-  const [{ description, channelId, thumbnailUrl }, rawComments, captions] = await Promise.all([
+  const [{ description, channelId, thumbnailUrl, durationSeconds }, rawComments] = await Promise.all([
     fetchVideoSnippet(videoId, apiKey),
     fetchTopComments(videoId, apiKey),
-    fetchYouTubeCaptions(videoId),
   ]);
 
   // Surface the creator's own comment(s) first — that's almost always
@@ -83,16 +89,27 @@ export async function fetchYouTubeMeta(videoId: string): Promise<YouTubeMeta> {
     }))
     .sort((a, b) => Number(b.isCreator) - Number(a.isCreator));
 
-  return { description, thumbnailUrl, captions, topComments };
+  return {
+    description,
+    thumbnailUrl,
+    captions: player.captions,
+    durationSeconds: durationSeconds ?? player.durationSeconds,
+    topComments,
+  };
 }
 
 async function fetchVideoSnippet(
   videoId: string,
   apiKey: string,
-): Promise<{ description?: string; channelId?: string; thumbnailUrl?: string }> {
+): Promise<{
+  description?: string;
+  channelId?: string;
+  thumbnailUrl?: string;
+  durationSeconds?: number;
+}> {
   try {
     const url = new URL('https://www.googleapis.com/youtube/v3/videos');
-    url.searchParams.set('part', 'snippet');
+    url.searchParams.set('part', 'snippet,contentDetails');
     url.searchParams.set('id', videoId);
     url.searchParams.set('key', apiKey);
 
@@ -100,11 +117,13 @@ async function fetchVideoSnippet(
     if (!res.ok) return {};
 
     const data = await res.json();
-    const snippet = data.items?.[0]?.snippet;
+    const item = data.items?.[0];
+    const snippet = item?.snippet;
     return {
       description: snippet?.description ?? undefined,
       channelId: snippet?.channelId,
       thumbnailUrl: pickBestApiThumbnail(snippet?.thumbnails),
+      durationSeconds: parseYouTubeIsoDuration(item?.contentDetails?.duration),
     };
   } catch {
     return {};
@@ -143,8 +162,12 @@ async function fetchTopComments(videoId: string, apiKey: string): Promise<RawCom
 
 const MAX_CAPTION_CHARS = 12_000;
 
-/** Fetches plain-text captions via YouTube's player metadata (public timedtext tracks). */
-export async function fetchYouTubeCaptions(videoId: string): Promise<string | undefined> {
+interface YouTubePlayerMetadata {
+  captions?: string;
+  durationSeconds?: number;
+}
+
+async function fetchYouTubePlayerMetadata(videoId: string): Promise<YouTubePlayerMetadata> {
   try {
     const res = await fetch('https://www.youtube.com/youtubei/v1/player?prettyPrint=false', {
       method: 'POST',
@@ -165,24 +188,36 @@ export async function fetchYouTubeCaptions(videoId: string): Promise<string | un
         videoId,
       }),
     });
-    if (!res.ok) return undefined;
+    if (!res.ok) return {};
 
     const data = await res.json();
+    const lengthSeconds = parseDurationSeconds(data?.videoDetails?.lengthSeconds);
+
     const tracks = data?.captions?.playerCaptionsTracklistRenderer?.captionTracks;
-    if (!Array.isArray(tracks) || tracks.length === 0) return undefined;
+    let captions: string | undefined;
+    if (Array.isArray(tracks) && tracks.length > 0) {
+      const track = pickCaptionTrack(tracks);
+      if (track?.baseUrl) {
+        const captionRes = await fetch(track.baseUrl);
+        if (captionRes.ok) {
+          const text = parseTimedTextXml(await captionRes.text());
+          if (text) {
+            captions = text.length > MAX_CAPTION_CHARS ? text.slice(0, MAX_CAPTION_CHARS) : text;
+          }
+        }
+      }
+    }
 
-    const track = pickCaptionTrack(tracks);
-    if (!track?.baseUrl) return undefined;
-
-    const captionRes = await fetch(track.baseUrl);
-    if (!captionRes.ok) return undefined;
-
-    const text = parseTimedTextXml(await captionRes.text());
-    if (!text) return undefined;
-    return text.length > MAX_CAPTION_CHARS ? text.slice(0, MAX_CAPTION_CHARS) : text;
+    return { captions, durationSeconds: lengthSeconds };
   } catch {
-    return undefined;
+    return {};
   }
+}
+
+/** Fetches plain-text captions via YouTube's player metadata (public timedtext tracks). */
+export async function fetchYouTubeCaptions(videoId: string): Promise<string | undefined> {
+  const { captions } = await fetchYouTubePlayerMetadata(videoId);
+  return captions;
 }
 
 interface CaptionTrack {

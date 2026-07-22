@@ -17,7 +17,7 @@ export interface ExtractResult {
   message?: string;
   /** True when the URL was already in the user's library — no extraction ran. */
   cached?: boolean;
-  code?: 'insufficient_tokens' | 'guest_limit' | 'guest_id_required' | 'metering_error' | string;
+  code?: 'insufficient_tokens' | 'guest_limit' | 'guest_id_required' | 'metering_error' | 'video_too_long' | string;
   tokens_charged?: number;
   token_balance?: number | null;
   guest_extracts_remaining?: number | null;

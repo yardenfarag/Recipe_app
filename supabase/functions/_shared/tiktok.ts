@@ -10,6 +10,7 @@ import {
   scrapeCreatorsGet,
   webVttToPlainText,
 } from './scrapecreators.ts';
+import { parseDurationMilliseconds } from './videoLimits.ts';
 
 const MAX_COMMENTS = 10;
 
@@ -28,6 +29,7 @@ interface TikTokAwemeDetail {
   desc?: string;
   author?: { unique_id?: string; nickname?: string; uid?: string };
   video?: TikTokCoverFields & {
+    duration?: number;
     has_watermark?: boolean;
     play_addr?: { url_list?: string[] };
     download_no_watermark_addr?: { url_list?: string[] };
@@ -87,6 +89,7 @@ export async function fetchTikTokMeta(url: string): Promise<PlatformMeta> {
     topComments,
     videoUrl: resolveTikTokVideoUrl(videoResponse, detail),
     contentId: videoId,
+    durationSeconds: parseDurationMilliseconds(detail.video?.duration),
   };
 }
 

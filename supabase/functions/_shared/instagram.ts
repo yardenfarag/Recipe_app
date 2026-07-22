@@ -6,6 +6,7 @@ import {
 } from './platform.ts';
 import { EMPTY_PLATFORM_META, type PlatformMeta, type PostComment } from './platformMeta.ts';
 import { scrapeCreatorsGet } from './scrapecreators.ts';
+import { parseDurationMilliseconds, parseDurationSeconds } from './videoLimits.ts';
 
 const MAX_COMMENTS = 10;
 
@@ -76,7 +77,7 @@ export async function fetchInstagramMeta(url: string): Promise<PlatformMeta> {
   }
 
   console.log('[instagram] fetchMeta start', { url, shortcode });
-  const { media, fetchUrl } = await fetchInstagramMediaWithFallback(url);
+  const { media, fetchUrl, response } = await fetchInstagramMediaWithFallback(url);
   const ownerUsername = readString(media.owner, 'username');
   const ownerId = readString(media.owner, 'id');
   const topComments = extractInstagramComments(media, ownerUsername, ownerId);
@@ -88,6 +89,7 @@ export async function fetchInstagramMeta(url: string): Promise<PlatformMeta> {
 
   const description = extractInstagramCaption(media);
   const videoUrl = extractInstagramVideoUrl(media);
+  const durationSeconds = extractInstagramDurationSeconds(media, response);
   console.log('[instagram] fetchMeta done', {
     fetchUrl,
     ownerUsername,
@@ -97,6 +99,7 @@ export async function fetchInstagramMeta(url: string): Promise<PlatformMeta> {
     hasVideoUrl: Boolean(videoUrl),
     videoHost: videoUrl ? safeHost(videoUrl) : null,
     isCdnVideo: videoUrl ? isInstagramCdnUrl(videoUrl) : null,
+    durationSeconds: durationSeconds ?? null,
   });
 
   return {
@@ -105,13 +108,14 @@ export async function fetchInstagramMeta(url: string): Promise<PlatformMeta> {
     captions: undefined,
     topComments,
     videoUrl,
+    durationSeconds,
     contentId: readString(media, 'shortcode') ?? readString(media, 'code') ?? shortcode,
   };
 }
 
 async function fetchInstagramMediaWithFallback(
   url: string,
-): Promise<{ media: Record<string, unknown>; fetchUrl: string }> {
+): Promise<{ media: Record<string, unknown>; fetchUrl: string; response: Record<string, unknown> }> {
   const candidates = instagramFetchUrlCandidates(url);
   let lastError: FetchError | undefined;
 
@@ -135,7 +139,7 @@ async function fetchInstagramMediaWithFallback(
         mediaKeys: media ? Object.keys(media).slice(0, 20) : [],
       });
       if (media) {
-        return { media, fetchUrl: sanitizeInstagramUrl(fetchUrl) };
+        return { media, fetchUrl: sanitizeInstagramUrl(fetchUrl), response };
       }
 
       lastError = new FetchError('instagram.ts: fetchInstagramMeta', 'Instagram post not found', {
@@ -288,6 +292,81 @@ async function fetchInstagramOembedThumbnail(url: string): Promise<string | unde
   } finally {
     clearTimeout(timeout);
   }
+}
+
+function extractInstagramDurationSeconds(
+  media: Record<string, unknown>,
+  envelope?: Record<string, unknown>,
+): number | undefined {
+  const secondCandidates = [
+    media.video_duration,
+    media.duration,
+    readPath<number>(media, 'video', 'video_duration'),
+    readPath<number>(media, 'video', 'duration'),
+    readPath<number>(media, 'clips_metadata', 'original_sound_info', 'duration'),
+  ];
+  for (const candidate of secondCandidates) {
+    const normalized = parseDurationSeconds(candidate);
+    if (normalized != null) return normalized;
+  }
+
+  const millisecondCandidates = [
+    readPath<number>(media, 'clips_metadata', 'original_sound_info', 'duration_in_ms'),
+    readPath<number>(media, 'video', 'duration_in_ms'),
+    readPath<number>(media, 'video', 'playable_duration_in_ms'),
+    readPath<number>(media, 'video', 'duration_ms'),
+  ];
+  for (const candidate of millisecondCandidates) {
+    const normalized = parseDurationMilliseconds(candidate);
+    if (normalized != null) return normalized;
+  }
+
+  const carousel =
+    readPath<Array<{ media?: Record<string, unknown> }>>(media, 'edge_sidecar_to_children', 'edges') ??
+    readPath<Array<{ node?: Record<string, unknown> }>>(media, 'carousel_media') ??
+    [];
+  let maxDuration: number | undefined;
+  for (const item of carousel) {
+    const node =
+      item && typeof item === 'object' && 'media' in item && item.media
+        ? item.media
+        : item && typeof item === 'object' && 'node' in item
+          ? (item.node as Record<string, unknown> | undefined)
+          : undefined;
+    if (!node || typeof node !== 'object') continue;
+    const duration = extractInstagramDurationSeconds(node as Record<string, unknown>);
+    if (duration != null && (maxDuration == null || duration > maxDuration)) {
+      maxDuration = duration;
+    }
+  }
+  if (maxDuration != null) return maxDuration;
+
+  if (envelope) {
+    return extractInstagramDurationFromEnvelope(envelope);
+  }
+
+  return undefined;
+}
+
+function extractInstagramDurationFromEnvelope(
+  envelope: Record<string, unknown>,
+): number | undefined {
+  const roots: Record<string, unknown>[] = [envelope];
+  const data = envelope.data;
+  if (data && typeof data === 'object') {
+    roots.push(data as Record<string, unknown>);
+  }
+
+  for (const root of roots) {
+    const direct =
+      parseDurationSeconds(root.video_duration) ??
+      parseDurationSeconds(root.duration) ??
+      parseDurationMilliseconds(root.duration_ms) ??
+      parseDurationMilliseconds(root.video_duration_ms);
+    if (direct != null) return direct;
+  }
+
+  return undefined;
 }
 
 function extractInstagramVideoUrl(media: Record<string, unknown>): string | undefined {

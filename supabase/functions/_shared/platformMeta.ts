@@ -12,6 +12,8 @@ export interface PlatformMeta {
   topComments: PostComment[];
   /** Direct MP4/CDN URL for multimodal Gemini fallback. */
   videoUrl?: string;
+  /** Source video length in seconds when the platform reports it. */
+  durationSeconds?: number;
   /** Platform-native content id when resolved (e.g. TikTok numeric id from short links). */
   contentId?: string;
 }

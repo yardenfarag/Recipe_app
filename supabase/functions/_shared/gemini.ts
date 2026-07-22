@@ -11,12 +11,14 @@ import {
 import { isInstagramCdnUrl, resolveInstagramVideoForGemini } from './instagram.ts';
 import type { Platform } from './platform.ts';
 import type { GeminiUsageSnapshot } from './pricing.ts';
+import { formatMaxVideoDurationLabel, isVideoTooLong } from './videoLimits.ts';
 
 export type { GeminiUsageSnapshot } from './pricing.ts';
 
 /** Text extract is simple structured IO — use Flash-Lite. Video needs standard Flash. */
 const TEXT_TIMEOUT_MS = 35_000;
-const VIDEO_TIMEOUT_MS = 60_000;
+const VIDEO_TIMEOUT_MS = 120_000;
+const TIMESTAMP_MAP_TIMEOUT_MS = 90_000;
 const TEXT_MAX_OUTPUT_TOKENS = 4_096;
 const VIDEO_MAX_OUTPUT_TOKENS = 4_096;
 const MAX_DESCRIPTION_CHARS = 4_000;
@@ -171,6 +173,8 @@ export interface LadderResult {
   usages: GeminiUsageSnapshot[];
   /** True when Instagram download_media was needed for the video rung. */
   usedInstagramVideoDownload?: boolean;
+  /** Set when multimodal video was skipped (e.g. duration cap). */
+  videoSkippedReason?: 'too_long';
 }
 
 const EMPTY_RECIPE: GeminiRecipe = {
@@ -187,6 +191,8 @@ export interface ExtractInput {
   sourceUrl: string;
   /** Direct video URL for multimodal fallback (IG/TikTok CDN). Falls back to sourceUrl. */
   videoUrl?: string;
+  /** Source video length in seconds — skips multimodal when over the app limit. */
+  durationSeconds?: number;
   description?: string;
   captions?: string;
   topComments: { text: string; isCreator: boolean }[];
@@ -228,6 +234,8 @@ export async function extractRecipeWithLadder(input: ExtractInput): Promise<Ladd
     hasCaptions,
     hasVideoUrl: Boolean(input.videoUrl?.trim()),
     videoUrlHost: input.videoUrl ? safeUrlHost(input.videoUrl) : null,
+    durationSeconds: input.durationSeconds ?? null,
+    videoTooLong: isVideoTooLong(input.durationSeconds),
   });
 
   if (hasAnyText) {
@@ -254,13 +262,22 @@ export async function extractRecipeWithLadder(input: ExtractInput): Promise<Ladd
       });
       if (geminiFoundRecipe(fromText.recipe)) {
         let recipe = normalizeGeminiRecipe(fromText.recipe);
-        if (recipe.instructions.length > 0) {
+        const textSource: ExtractionSource = hasCaptions
+          ? 'captions'
+          : hasComments
+            ? 'comments'
+            : 'description';
+        const shouldMapTimestamps =
+          recipe.instructions.length > 0 &&
+          !isVideoTooLong(input.durationSeconds) &&
+          textSource !== 'captions';
+        if (shouldMapTimestamps) {
           const mapped = await tryMapInstructionTimestamps(input, recipe.instructions, usages);
           recipe = { ...recipe, instructions: mapped.instructions };
         }
         return {
           recipe,
-          source: hasCaptions ? 'captions' : hasComments ? 'comments' : 'description',
+          source: textSource,
           usages,
         };
       }
@@ -277,6 +294,20 @@ export async function extractRecipeWithLadder(input: ExtractInput): Promise<Ladd
   }
 
   console.log('[gemini] video step start');
+  if (isVideoTooLong(input.durationSeconds)) {
+    console.log('[gemini] video step skipped — duration over limit', {
+      durationSeconds: input.durationSeconds,
+      limitLabel: formatMaxVideoDurationLabel(),
+    });
+    return {
+      recipe: EMPTY_RECIPE,
+      source: 'video',
+      usages,
+      usedInstagramVideoDownload,
+      videoSkippedReason: 'too_long',
+    };
+  }
+
   try {
     const fromVideo = await extractRecipeWithVideo(input);
     if (fromVideo.usage) usages.push(fromVideo.usage);
@@ -467,7 +498,7 @@ async function mapInstructionTimestampsFromVideo(
     systemPrompt: TIMESTAMP_MAP_PROMPT,
     parts: [{ fileData: { fileUri: videoUri } }, { text: prompt }],
     responseSchema: TIMESTAMP_MAP_SCHEMA,
-    timeoutMs: 45_000,
+    timeoutMs: TIMESTAMP_MAP_TIMEOUT_MS,
     maxOutputTokens: 1_024,
     kind: 'timestamp_map',
     context: 'gemini.ts: mapInstructionTimestampsFromVideo',

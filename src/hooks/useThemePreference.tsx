@@ -58,17 +58,21 @@ function applyAppearance(preference: ThemePreference, packId: ThemePackId) {
   // but body text stuck on light tokens (text-pinch-dark on dark mist).
   nwColorScheme.set(resolved);
   const colors = getThemePackColors(packId, resolved);
-  void SystemUI.setBackgroundColorAsync(colors.background);
-  if (Platform.OS === 'android') {
-    void (async () => {
+  void (async () => {
+    try {
+      await SystemUI.setBackgroundColorAsync(colors.background);
+    } catch {
+      // Non-fatal on some Android builds.
+    }
+    if (Platform.OS === 'android') {
       try {
         await NavigationBar.setBackgroundColorAsync(colors.tabBar);
         await NavigationBar.setButtonStyleAsync(resolved === 'dark' ? 'light' : 'dark');
       } catch {
         // Some Android builds/devices reject nav bar theming; non-fatal.
       }
-    })();
-  }
+    }
+  })();
 }
 
 export function ThemeProvider({ children }: { children: ReactNode }) {

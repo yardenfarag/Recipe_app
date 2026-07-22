@@ -70,10 +70,14 @@ export const RecipeVideoPanel = forwardRef<RecipeVideoPanelHandle, RecipeVideoPa
     const icon = PLATFORM_ICON[video.platform] ?? 'play-circle-outline';
 
     async function openOriginal() {
-      await WebBrowser.openBrowserAsync(video.url, {
-        presentationStyle: WebBrowser.WebBrowserPresentationStyle.FULL_SCREEN,
-        enableBarCollapsing: true,
-      });
+      try {
+        await WebBrowser.openBrowserAsync(video.url, {
+          presentationStyle: WebBrowser.WebBrowserPresentationStyle.FULL_SCREEN,
+          enableBarCollapsing: true,
+        });
+      } catch {
+        // User dismissed or the platform blocked the browser — non-fatal.
+      }
     }
 
     return (
