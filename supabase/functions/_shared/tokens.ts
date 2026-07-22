@@ -71,7 +71,9 @@ export async function getGuestExtractCount(
 export async function reserveGuestExtraction(
   admin: SupabaseClient,
   installId: string,
-): Promise<{ remaining: number } | { blocked: true; remaining: 0 }> {
+): Promise<
+  { remaining: number } | { blocked: true; remaining: 0 } | { error: true }
+> {
   const { data, error } = await admin.rpc('reserve_guest_extraction', {
     p_install_id: installId,
     p_limit: GUEST_EXTRACT_LIMIT,
@@ -79,12 +81,12 @@ export async function reserveGuestExtraction(
 
   if (error) {
     console.error('[tokens] reserveGuestExtraction', error);
-    return { blocked: true, remaining: 0 };
+    return { error: true as const };
   }
 
   const newCount = typeof data === 'number' ? data : Number(data);
   if (!Number.isFinite(newCount) || newCount < 0) {
-    return { blocked: true, remaining: 0 };
+    return { blocked: true, remaining: 0 as const };
   }
 
   return { remaining: GUEST_EXTRACT_LIMIT - newCount };

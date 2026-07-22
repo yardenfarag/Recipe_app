@@ -1,5 +1,5 @@
 import { router, useNavigation } from 'expo-router';
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { ActivityIndicator, Alert, Pressable, Text, View } from 'react-native';
 
 import { RecipeView } from '@/components/RecipeView';
@@ -21,6 +21,7 @@ export default function RecipePreviewScreen() {
   const { colors } = useThemePreference();
   const navigation = useNavigation();
   const [saving, setSaving] = useState(false);
+  const saveInFlight = useRef(false);
   const [recipeToSave, setRecipeToSave] = useState<ExtractedRecipe | null>(parsed);
 
   useEffect(() => {
@@ -42,26 +43,27 @@ export default function RecipePreviewScreen() {
     [],
   );
 
-  if (!parsed || !recipeToSave) {
+  if (!recipeToSave) {
     return (
       <Screen className="items-center justify-center px-6" edges={['bottom']}>
         <Text className="mb-4 text-center text-base" style={{ color: colors.textSecondary }}>
           No recipe to preview. Extract one from the Snap tab first.
         </Text>
         <Pressable
-          onPress={() => router.replace('/add')}
+          onPress={() => router.replace('/')}
           className="rounded-full px-5 py-3 active:opacity-80"
           style={{ backgroundColor: colors.primary }}
         >
-          <Text className="text-sm font-bold text-white">Go to Snap</Text>
+          <Text className="text-sm font-bold text-white">Go to library</Text>
         </Pressable>
       </Screen>
     );
   }
 
   async function handleSave() {
-    if (!recipeToSave) return;
+    if (!recipeToSave || saveInFlight.current) return;
 
+    saveInFlight.current = true;
     setSaving(true);
     try {
       const { data: userData } = await supabase.auth.getUser();
@@ -72,7 +74,7 @@ export default function RecipePreviewScreen() {
         if (!result.ok) {
           Alert.alert(
             'Free limit reached',
-            `You've saved ${GUEST_RECIPE_LIMIT} recipes as a guest. Sign up to save this one and unlock unlimited recipes.`,
+            `Guest accounts can save up to ${GUEST_RECIPE_LIMIT} recipes (${result.savedCount} saved). Sign up to save more.`,
             [
               { text: 'Not now', style: 'cancel' },
               {
@@ -84,17 +86,18 @@ export default function RecipePreviewScreen() {
           return;
         }
 
-        clearRecipeDraft();
         router.replace('/?saved=1');
+        clearRecipeDraft();
         return;
       }
 
       await saveRecipe(recipeToSave);
-      clearRecipeDraft();
       router.replace('/?saved=1');
+      clearRecipeDraft();
     } catch (err) {
       Alert.alert('Could not save', err instanceof Error ? err.message : 'Please try again.');
     } finally {
+      saveInFlight.current = false;
       setSaving(false);
     }
   }

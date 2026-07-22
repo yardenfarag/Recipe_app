@@ -1,0 +1,52 @@
+# Build Android production AAB on EAS when you push (or run manually).
+# Same EAS cloud queue as `eas build` locally — GitHub just starts it for you.
+#
+# Setup (one-time): GitHub repo → Settings → Secrets → Actions → New secret
+#   EXPO_TOKEN = token from https://expo.dev/accounts/yardenfa/settings/access-tokens
+#
+# EAS env vars (Supabase URL/key, legal URLs) must already exist on the Expo project.
+
+name: EAS Build Android (production)
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [master, main]
+    paths:
+      - 'app.json'
+      - 'eas.json'
+      - 'package.json'
+      - 'package-lock.json'
+      - 'src/**'
+      - 'assets/**'
+      - 'supabase/functions/**'
+      - '.github/workflows/eas-build-android.yml'
+
+concurrency:
+  group: eas-android-production
+  cancel-in-progress: true
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Setup EAS
+        uses: expo/expo-github-action@v8
+        with:
+          eas-version: latest
+          token: ${{ secrets.EXPO_TOKEN }}
+
+      - name: Build production AAB
+        run: eas build --platform android --profile production --non-interactive --no-wait

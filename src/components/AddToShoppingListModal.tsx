@@ -10,8 +10,9 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
+import { useMeasurementPreference } from '@/hooks/useMeasurementPreference';
 import { useThemePreference } from '@/hooks/useThemePreference';
-import { formatQuantity } from '@/lib/formatQuantity';
+import { displayIngredientAmount } from '@/lib/displayIngredientAmount';
 import { RecipeLanguageCode } from '@/lib/recipeLanguages';
 import { Ingredient } from '@/types/recipe';
 
@@ -35,6 +36,7 @@ export function AddToShoppingListModal({
   onConfirm,
 }: AddToShoppingListModalProps) {
   const { colors } = useThemePreference();
+  const { system: measurementSystem } = useMeasurementPreference();
   const [selected, setSelected] = useState<Set<number>>(() => new Set());
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -159,7 +161,10 @@ export function AddToShoppingListModal({
                     {ing.name}
                   </Text>
                   <Text className="text-sm tabular-nums" style={{ color: colors.textSecondary }}>
-                    {formatQuantity(ing.quantity, ing.unit, language)}
+                    {displayIngredientAmount(ing.quantity, ing.unit, {
+                      system: measurementSystem,
+                      language,
+                    })}
                   </Text>
                 </Pressable>
               );

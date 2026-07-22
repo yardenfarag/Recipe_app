@@ -1,5 +1,6 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
+import { detectPlatform, recipeUrlsMatch } from '@/lib/platformUrls';
 import { Recipe } from '@/types/recipe';
 
 /** ADR 002 — guests can save up to 3 recipes locally before signing up. */
@@ -12,7 +13,7 @@ export type NewGuestRecipe = Omit<Recipe, 'id' | 'created_at' | 'user_id'>;
 
 export type SaveGuestRecipeResult =
   | { ok: true; recipe: Recipe }
-  | { ok: false; reason: 'quota_exceeded' };
+  | { ok: false; reason: 'quota_exceeded'; savedCount: number };
 
 async function writeGuestRecipes(recipes: Recipe[]): Promise<void> {
   try {
@@ -56,8 +57,21 @@ export async function getGuestRecipeById(id: string): Promise<Recipe | null> {
 export async function saveGuestRecipe(recipe: NewGuestRecipe): Promise<SaveGuestRecipeResult> {
   return serializeMutation(async () => {
     const existing = await readGuestRecipes();
+
+    if (recipe.original_url?.trim()) {
+      const platform = recipe.platform ?? detectPlatform(recipe.original_url);
+      const duplicate = existing.find(
+        (saved) =>
+          saved.original_url &&
+          recipeUrlsMatch(recipe.original_url!, saved.original_url, platform),
+      );
+      if (duplicate) {
+        return { ok: true, recipe: duplicate };
+      }
+    }
+
     if (existing.length >= GUEST_RECIPE_LIMIT) {
-      return { ok: false, reason: 'quota_exceeded' };
+      return { ok: false, reason: 'quota_exceeded', savedCount: existing.length };
     }
 
     const saved: Recipe = {
@@ -232,7 +246,12 @@ function sanitizeInstructions(value: unknown): Recipe['instructions'] | null {
     const text = readString(item.text);
     const step = readFiniteNumber(item.step);
     if (!text || step === null) return null;
-    instructions.push({ text, step });
+    const instruction: Recipe['instructions'][number] = { text, step };
+    const timestamp = readFiniteNumber(item.timestamp_seconds);
+    if (timestamp !== null && timestamp >= 0) {
+      instruction.timestamp_seconds = Math.round(timestamp);
+    }
+    instructions.push(instruction);
   }
   return instructions;
 }

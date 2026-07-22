@@ -7,6 +7,7 @@ import { CookieMark } from '@/components/CookieMark';
 import { RecipeImage } from '@/components/RecipeImage';
 import { useThemePreference } from '@/hooks/useThemePreference';
 import { formatCostEstimate } from '@/lib/formatCostEstimate';
+import { formatRecipeDuration } from '@/lib/formatRecipeDuration';
 import { Recipe } from '@/types/recipe';
 
 interface RecipeListRowProps {
@@ -34,7 +35,9 @@ export const RecipeListRow = memo(function RecipeListRow({
   const isFavorite = recipe.is_favorite === true;
 
   const metadata = [
-    recipe.estimated_time_minutes != null ? `${recipe.estimated_time_minutes} min` : null,
+    recipe.estimated_time_minutes != null
+      ? formatRecipeDuration(recipe.estimated_time_minutes)
+      : null,
     recipe.effort_level ?? null,
     recipe.cost_estimate ? formatCostEstimate(recipe.cost_estimate) : null,
   ]

@@ -1,4 +1,5 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import * as NavigationBar from 'expo-navigation-bar';
 import * as SystemUI from 'expo-system-ui';
 import { colorScheme as nwColorScheme } from 'nativewind';
 import {
@@ -10,7 +11,7 @@ import {
   useState,
   type ReactNode,
 } from 'react';
-import { Appearance } from 'react-native';
+import { Appearance, Platform } from 'react-native';
 
 import {
   DEFAULT_THEME_PACK,
@@ -58,6 +59,16 @@ function applyAppearance(preference: ThemePreference, packId: ThemePackId) {
   nwColorScheme.set(resolved);
   const colors = getThemePackColors(packId, resolved);
   void SystemUI.setBackgroundColorAsync(colors.background);
+  if (Platform.OS === 'android') {
+    void (async () => {
+      try {
+        await NavigationBar.setBackgroundColorAsync(colors.tabBar);
+        await NavigationBar.setButtonStyleAsync(resolved === 'dark' ? 'light' : 'dark');
+      } catch {
+        // Some Android builds/devices reject nav bar theming; non-fatal.
+      }
+    })();
+  }
 }
 
 export function ThemeProvider({ children }: { children: ReactNode }) {

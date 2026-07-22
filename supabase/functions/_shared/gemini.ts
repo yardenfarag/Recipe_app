@@ -53,6 +53,8 @@ Rules:
 - Treat the video and text context as complementary sources — prefer explicit written measurements in text over visual guesses.
 - Comments marked "(from the video's creator)" are especially likely to contain the authoritative recipe.
 - Include ingredients with measurements, and step-by-step instructions.
+- For each instruction, set timestamp_seconds to when that step begins in the video (whole seconds from 0). Omit if unclear.
+- Steps must follow video chronology. Skip sponsor intros — first step may start after 0:15.
 - Estimate a cost tier from 1-3 dollar signs and an effort level.
 ${TIME_RULES}
 ${CALORIE_RULES}
@@ -87,6 +89,11 @@ const RECIPE_SCHEMA = {
         properties: {
           step: { type: 'integer' },
           text: { type: 'string' },
+          timestamp_seconds: {
+            type: 'integer',
+            description:
+              'Video only: second in the source video when this step begins. Omit when unknown.',
+          },
         },
         required: ['step', 'text'],
       },
@@ -115,6 +122,32 @@ const RECIPE_SCHEMA = {
   required: ['found_recipe', 'title', 'servings', 'ingredients', 'instructions'],
 };
 
+const TIMESTAMP_MAP_PROMPT = `You map recipe steps to timestamps in a cooking video.
+
+Rules:
+- Watch the video and find when each listed step BEGINS (seconds from the start).
+- Match step numbers exactly to the provided list.
+- Include only steps with a clear visual or spoken moment.
+- Return ONLY data matching the schema.`;
+
+const TIMESTAMP_MAP_SCHEMA = {
+  type: 'object',
+  properties: {
+    steps: {
+      type: 'array',
+      items: {
+        type: 'object',
+        properties: {
+          step: { type: 'integer' },
+          timestamp_seconds: { type: 'integer' },
+        },
+        required: ['step', 'timestamp_seconds'],
+      },
+    },
+  },
+  required: ['steps'],
+};
+
 export type ExtractionSource = 'description' | 'comments' | 'captions' | 'video';
 
 export interface GeminiRecipe {
@@ -122,7 +155,7 @@ export interface GeminiRecipe {
   title: string;
   servings: number;
   ingredients: { name: string; quantity: number; unit: string }[];
-  instructions: { step: number; text: string }[];
+  instructions: { step: number; text: string; timestamp_seconds?: number }[];
   calories_reasoning?: string;
   calories?: number;
   time_reasoning?: string;
@@ -220,8 +253,13 @@ export async function extractRecipeWithLadder(input: ExtractInput): Promise<Ladd
         usage: fromText.usage,
       });
       if (geminiFoundRecipe(fromText.recipe)) {
+        let recipe = normalizeGeminiRecipe(fromText.recipe);
+        if (recipe.instructions.length > 0) {
+          const mapped = await tryMapInstructionTimestamps(input, recipe.instructions, usages);
+          recipe = { ...recipe, instructions: mapped.instructions };
+        }
         return {
-          recipe: fromText.recipe,
+          recipe,
           source: hasCaptions ? 'captions' : hasComments ? 'comments' : 'description',
           usages,
         };
@@ -249,7 +287,7 @@ export async function extractRecipeWithLadder(input: ExtractInput): Promise<Ladd
       usage: fromVideo.usage,
     });
     return {
-      recipe: fromVideo.recipe,
+      recipe: normalizeGeminiRecipe(fromVideo.recipe),
       source: 'video',
       usages,
       usedInstagramVideoDownload,
@@ -342,6 +380,117 @@ async function extractRecipeWithVideo(
   return { ...result, usedInstagramVideoDownload };
 }
 
+function normalizeGeminiRecipe(recipe: GeminiRecipe): GeminiRecipe {
+  return {
+    ...recipe,
+    instructions: normalizeInstructions(recipe.instructions ?? []),
+  };
+}
+
+function normalizeInstructions(
+  instructions: { step: number; text: string; timestamp_seconds?: number }[],
+): GeminiRecipe['instructions'] {
+  return instructions.map((step, index) => {
+    const normalized: GeminiRecipe['instructions'][number] = {
+      step: Number.isFinite(step.step) ? step.step : index + 1,
+      text: step.text ?? '',
+    };
+    if (
+      typeof step.timestamp_seconds === 'number' &&
+      Number.isFinite(step.timestamp_seconds) &&
+      step.timestamp_seconds >= 0
+    ) {
+      normalized.timestamp_seconds = Math.round(step.timestamp_seconds);
+    }
+    return normalized;
+  });
+}
+
+async function resolvePlayableVideoUri(input: ExtractInput): Promise<string | null> {
+  let videoUri = input.videoUrl?.trim();
+  if (!videoUri) return null;
+
+  if (input.platform === 'instagram' && isInstagramCdnUrl(videoUri)) {
+    try {
+      const hosted = await resolveInstagramVideoForGemini(input.sourceUrl);
+      if (hosted && !isInstagramCdnUrl(hosted)) {
+        videoUri = hosted;
+      } else {
+        return null;
+      }
+    } catch {
+      return null;
+    }
+  }
+
+  return videoUri;
+}
+
+async function tryMapInstructionTimestamps(
+  input: ExtractInput,
+  instructions: GeminiRecipe['instructions'],
+  usages: GeminiUsageSnapshot[],
+): Promise<{ instructions: GeminiRecipe['instructions'] }> {
+  const videoUri = await resolvePlayableVideoUri(input);
+  if (!videoUri) {
+    return { instructions };
+  }
+
+  try {
+    const mapped = await mapInstructionTimestampsFromVideo(input, instructions, videoUri);
+    if (mapped.usage) usages.push(mapped.usage);
+    return { instructions: mapped.instructions };
+  } catch (err) {
+    console.error('[gemini] timestamp map failed', {
+      error: err instanceof Error ? err.message : String(err),
+    });
+    return { instructions };
+  }
+}
+
+async function mapInstructionTimestampsFromVideo(
+  input: ExtractInput,
+  instructions: GeminiRecipe['instructions'],
+  videoUri: string,
+): Promise<{ instructions: GeminiRecipe['instructions']; usage: GeminiUsageSnapshot | null }> {
+  const stepList = instructions.map((step) => `${step.step}. ${step.text}`).join('\n');
+  const prompt = `Find when each recipe step below begins in the video.\n\n--- STEPS ---\n${stepList}`;
+
+  console.log('[gemini] timestamp map start', {
+    platform: input.platform,
+    steps: instructions.length,
+    videoHost: safeUrlHost(videoUri),
+  });
+
+  const { data, usage } = await generateGeminiJson<{ steps: { step: number; timestamp_seconds: number }[] }>({
+    tier: 'standard',
+    systemPrompt: TIMESTAMP_MAP_PROMPT,
+    parts: [{ fileData: { fileUri: videoUri } }, { text: prompt }],
+    responseSchema: TIMESTAMP_MAP_SCHEMA,
+    timeoutMs: 45_000,
+    maxOutputTokens: 1_024,
+    kind: 'timestamp_map',
+    context: 'gemini.ts: mapInstructionTimestampsFromVideo',
+  });
+
+  const byStep = new Map<number, number>();
+  for (const row of data.steps ?? []) {
+    const step = Number(row.step);
+    const seconds = Number(row.timestamp_seconds);
+    if (Number.isFinite(step) && Number.isFinite(seconds) && seconds >= 0) {
+      byStep.set(step, Math.round(seconds));
+    }
+  }
+
+  return {
+    instructions: instructions.map((inst) => {
+      const timestamp = byStep.get(inst.step);
+      return timestamp != null ? { ...inst, timestamp_seconds: timestamp } : inst;
+    }),
+    usage,
+  };
+}
+
 async function callGemini(
   systemPrompt: string,
   parts: GeminiPart[],
@@ -366,7 +515,7 @@ async function callGemini(
     ms: durationMs,
     usage,
   });
-  return { recipe, usage };
+  return { recipe: normalizeGeminiRecipe(recipe), usage };
 }
 
 function safeUrlHost(url: string): string | null {

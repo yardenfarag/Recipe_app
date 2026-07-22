@@ -1,11 +1,10 @@
 import * as AppleAuthentication from 'expo-apple-authentication';
-import { makeRedirectUri } from 'expo-auth-session';
 import * as QueryParams from 'expo-auth-session/build/QueryParams';
-import * as Linking from 'expo-linking';
 import * as WebBrowser from 'expo-web-browser';
 import { Platform } from 'react-native';
 
 import { normalizeEmail } from '@/lib/authValidation';
+import { authRedirectUri } from '@/lib/authRedirect';
 import { supabase } from '@/lib/supabase/client';
 
 WebBrowser.maybeCompleteAuthSession();
@@ -128,8 +127,32 @@ export async function signInWithApple() {
  * registered in the Supabase dashboard. Reliable deep-linking with the
  * `pinch://` scheme requires a dev build (Phase 3, ADR 007).
  */
+/** Finish OAuth from a callback URL (PKCE code or legacy token hash). */
+export async function completeOAuthFromCallbackUrl(url: string): Promise<void> {
+  const { params, errorCode } = QueryParams.getQueryParams(url);
+  if (errorCode) throw new Error('Google sign-in could not be completed. Please try again.');
+
+  const code = params.code;
+  if (code) {
+    const { error } = await supabase.auth.exchangeCodeForSession(code);
+    if (error) throw friendlyAuthError(error, 'social');
+    return;
+  }
+
+  const { access_token, refresh_token } = params;
+  if (!access_token || !refresh_token) {
+    throw new Error('Google sign-in did not return a valid session.');
+  }
+
+  const { error } = await supabase.auth.setSession({
+    access_token,
+    refresh_token,
+  });
+  if (error) throw friendlyAuthError(error, 'social');
+}
+
 export async function signInWithGoogle() {
-  const redirectTo = makeRedirectUri({ scheme: 'pinch', path: 'auth-callback' });
+  const redirectTo = authRedirectUri('auth-callback');
 
   const { data, error } = await supabase.auth.signInWithOAuth({
     provider: 'google',
@@ -147,25 +170,12 @@ export async function signInWithGoogle() {
     return { cancelled: true as const };
   }
 
-  const { params, errorCode } = QueryParams.getQueryParams(result.url);
-  if (errorCode) throw new Error('Google sign-in could not be completed. Please try again.');
-
-  const { access_token, refresh_token } = params;
-  if (!access_token || !refresh_token) {
-    throw new Error('Google sign-in did not return a valid session.');
-  }
-
-  const { error: sessionError } = await supabase.auth.setSession({
-    access_token,
-    refresh_token,
-  });
-  if (sessionError) throw friendlyAuthError(sessionError, 'social');
-
+  await completeOAuthFromCallbackUrl(result.url);
   return { cancelled: false as const };
 }
 
 export async function requestPasswordReset(email: string): Promise<void> {
-  const redirectTo = Linking.createURL('reset-password');
+  const redirectTo = authRedirectUri('reset-password');
   const { error } = await supabase.auth.resetPasswordForEmail(normalizeEmail(email), {
     redirectTo,
   });

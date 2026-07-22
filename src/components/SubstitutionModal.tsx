@@ -3,8 +3,9 @@ import { useEffect, useState } from 'react';
 import { ActivityIndicator, Modal, Pressable, ScrollView, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
+import { useMeasurementPreference } from '@/hooks/useMeasurementPreference';
 import { useThemePreference } from '@/hooks/useThemePreference';
-import { formatQuantity } from '@/lib/formatQuantity';
+import { displayIngredientAmount } from '@/lib/displayIngredientAmount';
 import { RecipeLanguageCode } from '@/lib/recipeLanguages';
 import {
   SubstitutionAlternative,
@@ -38,6 +39,7 @@ export function SubstitutionModal({
   onApply,
 }: SubstitutionModalProps) {
   const { colors } = useThemePreference();
+  const { system: measurementSystem } = useMeasurementPreference();
   const [loading, setLoading] = useState(false);
   const [alternatives, setAlternatives] = useState<SubstitutionAlternative[]>([]);
   const [error, setError] = useState<string | null>(null);
@@ -107,7 +109,11 @@ export function SubstitutionModal({
                 Instead of
               </Text>
               <Text className="text-lg font-bold" style={{ color: colors.text }}>
-                {formatQuantity(ingredient.quantity, ingredient.unit, language)} {ingredient.name}
+                {displayIngredientAmount(ingredient.quantity, ingredient.unit, {
+                  system: measurementSystem,
+                  language,
+                })}{' '}
+                {ingredient.name}
               </Text>
             </View>
           )}
@@ -140,7 +146,11 @@ export function SubstitutionModal({
                 style={{ borderColor: colors.border, backgroundColor: colors.surface }}
               >
                 <Text className="mb-1 text-base font-bold" style={{ color: colors.text }}>
-                  {formatQuantity(alt.quantity, alt.unit, language)} {alt.name}
+                  {displayIngredientAmount(alt.quantity, alt.unit, {
+                    system: measurementSystem,
+                    language,
+                  })}{' '}
+                  {alt.name}
                 </Text>
                 <Text className="mb-3 text-sm leading-5" style={{ color: colors.textSecondary }}>
                   {alt.reason}

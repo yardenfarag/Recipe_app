@@ -8,6 +8,7 @@ import { ActivityIndicator, Alert, Pressable, ScrollView, Text, View } from 'rea
 
 import { BrandHeader } from '@/components/BrandHeader';
 import { CookieMark } from '@/components/CookieMark';
+import { MeasurementToggle } from '@/components/MeasurementToggle';
 import { Screen } from '@/components/Screen';
 import { ThemePackPicker } from '@/components/ThemePackPicker';
 import { ThemeToggle } from '@/components/ThemeToggle';
@@ -184,7 +185,7 @@ export default function SettingsScreen() {
   }
 
   return (
-    <Screen dense>
+    <Screen dense tabScreen>
       <ScrollView className="flex-1" contentContainerStyle={{ paddingBottom: 40 }}>
         <View className="px-5 pt-1">
           <BrandHeader title="Settings" subtitle="Account & appearance" />
@@ -345,6 +346,14 @@ export default function SettingsScreen() {
               Drift theme
             </Text>
             <ThemePackPicker />
+            <Text className="mb-3 mt-5 text-sm font-semibold" style={{ color: colors.text }}>
+              Recipe measurements
+            </Text>
+            <MeasurementToggle />
+            <Text className="mt-2 text-xs leading-5" style={{ color: colors.textSecondary }}>
+              Default for every recipe — spoons & cups, or grams & milliliters. You can still flip it
+              on any recipe.
+            </Text>
           </View>
 
           {migrationError && (

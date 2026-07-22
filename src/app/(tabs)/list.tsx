@@ -399,7 +399,7 @@ export default function ShoppingListScreen() {
 
   if (loading && items.length === 0) {
     return (
-      <Screen className="items-center justify-center">
+      <Screen tabScreen className="items-center justify-center">
         <ActivityIndicator color={colors.primary} size="large" />
       </Screen>
     );
@@ -407,7 +407,7 @@ export default function ShoppingListScreen() {
 
   if (error && items.length === 0) {
     return (
-      <Screen>
+      <Screen tabScreen>
         <View className="flex-1 items-center justify-center px-8 pb-10">
           <Ionicons name="cloud-offline-outline" size={42} color={colors.textSecondary} />
           <Text className="mb-2 mt-4 text-center text-2xl font-bold" style={{ color: colors.text }}>
@@ -429,7 +429,7 @@ export default function ShoppingListScreen() {
   }
 
   return (
-    <Screen>
+    <Screen tabScreen>
       <View className="flex-1 px-5 pt-2">
         <View className="flex-row items-start gap-3">
           <View className="min-w-0 flex-1">

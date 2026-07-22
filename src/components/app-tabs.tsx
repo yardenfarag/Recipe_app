@@ -1,8 +1,10 @@
 import Ionicons from '@expo/vector-icons/Ionicons';
 import { Tabs } from 'expo-router';
-import { Platform } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { useThemePreference } from '@/hooks/useThemePreference';
+
+const TAB_BAR_CONTENT_HEIGHT = 56;
 
 /**
  * Standard (non-experimental) expo-router Tabs.
@@ -17,6 +19,8 @@ import { useThemePreference } from '@/hooks/useThemePreference';
  */
 export default function AppTabs() {
   const { colors } = useThemePreference();
+  const insets = useSafeAreaInsets();
+  const tabBarPaddingBottom = Math.max(insets.bottom, 8);
 
   return (
     <Tabs
@@ -28,9 +32,9 @@ export default function AppTabs() {
           backgroundColor: colors.tabBar,
           borderTopColor: colors.frostedBorder,
           borderTopWidth: 1,
-          height: Platform.select({ ios: 88, android: 68 }),
+          height: TAB_BAR_CONTENT_HEIGHT + tabBarPaddingBottom,
           paddingTop: 6,
-          paddingBottom: Platform.select({ ios: 28, android: 10 }),
+          paddingBottom: tabBarPaddingBottom,
         },
         tabBarLabelStyle: {
           fontSize: 11,

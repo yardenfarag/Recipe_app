@@ -170,6 +170,8 @@ export default function AddRecipeScreen() {
       }
 
       if (result.code === 'guest_limit') {
+        await setGuestExtractionsRemaining(0);
+        setGuestExtractsRemaining(0);
         setBanner({
           kind: 'limit',
           message:
@@ -211,7 +213,7 @@ export default function AddRecipeScreen() {
   const canSubmit = Boolean(url.trim()) && !loading;
 
   return (
-    <Screen dense>
+    <Screen dense tabScreen>
       <View className="flex-1 px-6 pt-1">
         <BrandHeader
           title="Snap a recipe"

@@ -114,10 +114,17 @@ export async function translateRecipeWithGemini(
         unit: localizeCulinaryUnit(rawUnit || fallbackUnit, input.targetLanguage, quantity),
       };
     }),
-    instructions: (parsed.instructions ?? []).map((step) => ({
-      step: Number(step.step),
-      text: sanitizeGeminiText(step.text ?? ''),
-    })),
+    instructions: (parsed.instructions ?? []).map((step) => {
+      const stepNumber = Number(step.step);
+      const original = input.instructions.find((row) => row.step === stepNumber);
+      return {
+        step: stepNumber,
+        text: sanitizeGeminiText(step.text ?? ''),
+        ...(original?.timestamp_seconds != null
+          ? { timestamp_seconds: original.timestamp_seconds }
+          : {}),
+      };
+    }),
     usage,
   };
 }

@@ -51,7 +51,9 @@
       [
         "expo-share-intent",
         {
-          "androidIntentFilters": ["text/*"],
+          "androidIntentFilters": [
+            "text/*"
+          ],
           "iosActivationRules": {
             "NSExtensionActivationSupportsText": true,
             "NSExtensionActivationSupportsWebURLWithMaxCount": 1,
@@ -64,6 +66,17 @@
         {
           "photosPermission": "Pinch needs access to your photos so you can set a profile picture.",
           "cameraPermission": "Pinch needs access to your camera so you can take a profile picture."
+        }
+      ],
+      [
+        "expo-build-properties",
+        {
+          "android": {
+            "compileSdkVersion": 35,
+            "targetSdkVersion": 35,
+            "buildToolsVersion": "35.0.0",
+            "useLegacyPackaging": false
+          }
         }
       ]
     ],

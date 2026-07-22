@@ -374,7 +374,7 @@ export default function HomeScreen() {
 
   if (loading) {
     return (
-      <Screen className="items-center justify-center">
+      <Screen tabScreen className="items-center justify-center">
         <ActivityIndicator color={colors.primary} size="large" />
       </Screen>
     );
@@ -382,7 +382,7 @@ export default function HomeScreen() {
 
   if (error && recipes.length === 0) {
     return (
-      <Screen className="items-center justify-center px-8">
+      <Screen tabScreen className="items-center justify-center px-8">
         <View
           className="mb-5 h-16 w-16 items-center justify-center rounded-[22px]"
           style={{ backgroundColor: colors.dangerSoft }}
@@ -408,7 +408,7 @@ export default function HomeScreen() {
 
   if (recipes.length === 0) {
     return (
-      <Screen>
+      <Screen tabScreen>
         <View className="flex-1 items-center justify-center px-8 pb-10">
           <BrandHeader
             size="hero"
@@ -441,7 +441,7 @@ export default function HomeScreen() {
   }
 
   return (
-    <Screen>
+    <Screen tabScreen>
       <FlatList
         data={displayedRecipes}
         extraData={recipes}

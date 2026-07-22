@@ -7,6 +7,7 @@ import { ShareIntentProvider } from 'expo-share-intent';
 
 import { ErrorBoundary } from '@/components/ErrorBoundary';
 import { AuthProvider } from '@/hooks/useAuth';
+import { MeasurementProvider } from '@/hooks/useMeasurementPreference';
 import { ShareIntentRouter } from '@/hooks/useShareIntentRouter';
 import { ThemeProvider, useThemePreference } from '@/hooks/useThemePreference';
 
@@ -41,6 +42,7 @@ function RootNavigator() {
           }}
         />
         <Stack.Screen name="reset-password" options={{ title: 'Reset password' }} />
+        <Stack.Screen name="auth-callback" options={{ headerShown: false }} />
         <Stack.Screen name="admin/usage" options={{ title: 'Usage & tokens' }} />
       </Stack>
     </>
@@ -53,12 +55,14 @@ export default function RootLayout() {
       options={{ debug: __DEV__, resetOnBackground: true, disabled: isExpoGo }}
     >
       <ThemeProvider>
-        <ErrorBoundary>
-          <AuthProvider>
-            <ShareIntentRouter />
-            <RootNavigator />
-          </AuthProvider>
-        </ErrorBoundary>
+        <MeasurementProvider>
+          <ErrorBoundary>
+            <AuthProvider>
+              <ShareIntentRouter />
+              <RootNavigator />
+            </AuthProvider>
+          </ErrorBoundary>
+        </MeasurementProvider>
       </ThemeProvider>
     </ShareIntentProvider>
   );

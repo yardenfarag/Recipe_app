@@ -14,6 +14,8 @@ export interface Ingredient {
 export interface Instruction {
   step: number;
   text: string;
+  /** Seconds into the source video where this step begins (video extraction). */
+  timestamp_seconds?: number;
 }
 
 /** Mirrors the `recipes` table (supabase/migrations/0001_init.sql). */

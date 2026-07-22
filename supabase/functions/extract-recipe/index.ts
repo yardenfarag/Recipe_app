@@ -184,8 +184,8 @@ Deno.serve(async (req) => {
       );
     }
 
-    const reserved = await reserveGuestExtraction(admin, guestInstallId);
-    if ('blocked' in reserved) {
+    const guestCount = await getGuestExtractCount(admin, guestInstallId);
+    if (guestCount >= GUEST_EXTRACT_LIMIT) {
       await logUsageEvent(admin, {
         guestInstallId,
         action: 'extract',
@@ -205,7 +205,7 @@ Deno.serve(async (req) => {
         429,
       );
     }
-    guestRemaining = reserved.remaining;
+    guestRemaining = guestRemainingFromCount(guestCount);
   }
 
   try {
@@ -286,7 +286,10 @@ Deno.serve(async (req) => {
         message: "Couldn't find a recipe in this video. Try a different link.",
         tokens_charged: tokensCharged,
         token_balance: tokenBalance,
-        guest_extracts_remaining: guestRemaining,
+        guest_extracts_remaining:
+          guestInstallId && admin
+            ? guestRemainingFromCount(await getGuestExtractCount(admin, guestInstallId))
+            : guestRemaining,
       });
     }
 
@@ -360,6 +363,37 @@ Deno.serve(async (req) => {
       }
       tokensCharged = TOKEN_COST_EXTRACT;
       tokenBalance = spent.balance;
+    } else if (guestInstallId && admin) {
+      const charged = await reserveGuestExtraction(admin, guestInstallId);
+      if ('error' in charged) {
+        await logUsageEvent(admin, {
+          guestInstallId,
+          action: 'extract',
+          platform,
+          status: 'metering_error',
+          extractionSource: source,
+          usages,
+          scrapecreatorsCredits: scrapeCredits,
+          tokensCharged: 0,
+          durationMs: Date.now() - started,
+          errorMessage: 'guest_metering_error',
+        });
+        return jsonResponse(
+          {
+            status: 'failed' as ExtractionStatus,
+            platform,
+            code: 'metering_error',
+            message: 'Could not verify your free extraction allowance. Please try again.',
+            guest_extracts_remaining: guestRemaining,
+          },
+          500,
+        );
+      }
+      if ('blocked' in charged) {
+        guestRemaining = 0;
+      } else {
+        guestRemaining = charged.remaining;
+      }
     }
 
     await logUsageEvent(admin, {
@@ -386,8 +420,8 @@ Deno.serve(async (req) => {
   } catch (err) {
     console.error('extract-recipe error:', err);
 
-    // Guest slot already reserved — keep it (provider work may have run).
-    if (!userId && guestInstallId && admin && guestRemaining == null) {
+    // Failed extractions no longer consume guest quota — re-read remaining for the client.
+    if (!userId && guestInstallId && admin) {
       guestRemaining = guestRemainingFromCount(await getGuestExtractCount(admin, guestInstallId));
     }
 
