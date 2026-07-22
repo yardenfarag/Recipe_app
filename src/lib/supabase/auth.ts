@@ -41,6 +41,60 @@ export async function signOut() {
   if (error) throw error;
 }
 
+/**
+ * Permanently deletes the signed-in account via Edge Function (avatars + auth user).
+ * For Apple identities, pass a fresh `authorizationCode` from Sign in with Apple so
+ * the server can revoke tokens (TN3194).
+ */
+export async function deleteAccount(options?: {
+  appleAuthorizationCode?: string | null;
+}): Promise<void> {
+  const { data, error } = await supabase.functions.invoke<{ ok?: boolean; error?: string }>(
+    'delete-account',
+    {
+      body: {
+        apple_authorization_code: options?.appleAuthorizationCode ?? undefined,
+      },
+    },
+  );
+
+  if (error) {
+    throw new Error(error.message || 'Could not delete account. Please try again.');
+  }
+  if (data && typeof data === 'object' && 'error' in data && data.error) {
+    throw new Error(String(data.error));
+  }
+
+  // Session may already be invalid after server-side delete.
+  await supabase.auth.signOut({ scope: 'local' });
+}
+
+/** True when the current session includes an Apple identity. */
+export function userHasAppleIdentity(user: {
+  identities?: { provider: string }[] | null;
+  app_metadata?: { provider?: string; providers?: string[] } | null;
+} | null): boolean {
+  if ((user?.identities ?? []).some((id) => id.provider === 'apple')) return true;
+  const meta = user?.app_metadata;
+  if (meta?.provider === 'apple') return true;
+  if (Array.isArray(meta?.providers) && meta.providers.includes('apple')) return true;
+  return false;
+}
+
+/**
+ * Re-prompts Sign in with Apple to obtain an authorization code for token revoke
+ * during account deletion.
+ */
+export async function requestAppleAuthorizationCodeForDeletion(): Promise<string | null> {
+  const credential = await AppleAuthentication.signInAsync({
+    requestedScopes: [
+      AppleAuthentication.AppleAuthenticationScope.FULL_NAME,
+      AppleAuthentication.AppleAuthenticationScope.EMAIL,
+    ],
+  });
+  return credential.authorizationCode ?? null;
+}
+
 /** Whether the native "Sign in with Apple" button should be shown (iOS only). */
 export async function isAppleAuthAvailable(): Promise<boolean> {
   if (Platform.OS !== 'ios') return false;

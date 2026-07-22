@@ -10,7 +10,10 @@
     "ios": {
       "icon": "./assets/expo.icon",
       "usesAppleSignIn": true,
-      "bundleIdentifier": "com.pinch.app"
+      "bundleIdentifier": "com.pinch.app",
+      "infoPlist": {
+        "ITSAppUsesNonExemptEncryption": false
+      }
     },
     "android": {
       "package": "com.pinch.app",
@@ -73,7 +76,9 @@
       "router": {},
       "eas": {
         "projectId": "58f56906-4b2d-49ca-9e87-a706b5d7cf1f"
-      }
+      },
+      "legalBaseUrl": "https://yardenfarag.github.io/Recipe_app",
+      "supportEmail": "yarden.farag@gmail.com"
     }
   }
 }

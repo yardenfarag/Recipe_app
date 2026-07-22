@@ -14,7 +14,13 @@ import { ThemeToggle } from '@/components/ThemeToggle';
 import { useAuth } from '@/hooks/useAuth';
 import { useProfile } from '@/hooks/useProfile';
 import { useThemePreference } from '@/hooks/useThemePreference';
-import { signOut } from '@/lib/supabase/auth';
+import { LEGAL_URLS, openLegalUrl } from '@/lib/legal';
+import {
+  deleteAccount,
+  requestAppleAuthorizationCodeForDeletion,
+  signOut,
+  userHasAppleIdentity,
+} from '@/lib/supabase/auth';
 import { uploadAvatar } from '@/lib/supabase/profile';
 
 export default function SettingsScreen() {
@@ -30,6 +36,7 @@ export default function SettingsScreen() {
   const { colors } = useThemePreference();
   const [uploading, setUploading] = useState(false);
   const [notifying, setNotifying] = useState(false);
+  const [deleting, setDeleting] = useState(false);
 
   async function handleNotifyPacks() {
     if (!user || tokenPackNotifyAt || notifying) return;
@@ -52,6 +59,62 @@ export default function SettingsScreen() {
       await signOut();
     } catch (err) {
       Alert.alert('Sign out failed', err instanceof Error ? err.message : 'Please try again.');
+    }
+  }
+
+  function handleDeleteAccount() {
+    if (!user || deleting) return;
+
+    Alert.alert(
+      'Delete account?',
+      'This permanently removes your recipes, avatar, tokens, and account. This cannot be undone.',
+      [
+        { text: 'Cancel', style: 'cancel' },
+        {
+          text: 'Continue',
+          style: 'destructive',
+          onPress: () => {
+            Alert.alert(
+              'Confirm deletion',
+              'Are you sure you want to delete your Pinch account forever?',
+              [
+                { text: 'Cancel', style: 'cancel' },
+                {
+                  text: 'Delete account',
+                  style: 'destructive',
+                  onPress: () => void confirmDeleteAccount(),
+                },
+              ],
+            );
+          },
+        },
+      ],
+    );
+  }
+
+  async function confirmDeleteAccount() {
+    if (!user || deleting) return;
+    setDeleting(true);
+    try {
+      let appleAuthorizationCode: string | null = null;
+      if (userHasAppleIdentity(user)) {
+        try {
+          appleAuthorizationCode = await requestAppleAuthorizationCodeForDeletion();
+        } catch {
+          // TN3194: still fulfill deletion if Apple re-auth is cancelled/unavailable.
+        }
+      }
+
+      await deleteAccount({ appleAuthorizationCode });
+      router.replace('/');
+      Alert.alert('Account deleted', 'Your Pinch account and data have been removed.');
+    } catch (err) {
+      Alert.alert(
+        'Could not delete account',
+        err instanceof Error ? err.message : 'Please try again.',
+      );
+    } finally {
+      setDeleting(false);
     }
   }
 
@@ -188,6 +251,23 @@ export default function SettingsScreen() {
                 {user ? 'Sign out' : 'Sign in'}
               </Text>
             </Pressable>
+
+            {user ? (
+              <Pressable
+                onPress={handleDeleteAccount}
+                disabled={deleting}
+                className="mt-3 h-10 items-center justify-center rounded-[18px] px-5 active:opacity-70"
+                style={{ backgroundColor: colors.warningSoft }}
+              >
+                {deleting ? (
+                  <ActivityIndicator color={colors.warning} />
+                ) : (
+                  <Text className="text-sm font-semibold" style={{ color: colors.warning }}>
+                    Delete account
+                  </Text>
+                )}
+              </Pressable>
+            ) : null}
           </View>
 
           {user ? (
@@ -257,17 +337,11 @@ export default function SettingsScreen() {
               borderColor: colors.frostedBorder,
             }}
           >
-            <Text
-              className="mb-3 text-sm font-semibold"
-              style={{ color: colors.text }}
-            >
+            <Text className="mb-3 text-sm font-semibold" style={{ color: colors.text }}>
               Light / dark
             </Text>
             <ThemeToggle />
-            <Text
-              className="mb-4 mt-5 text-sm font-semibold"
-              style={{ color: colors.text }}
-            >
+            <Text className="mb-4 mt-5 text-sm font-semibold" style={{ color: colors.text }}>
               Drift theme
             </Text>
             <ThemePackPicker />
@@ -293,6 +367,44 @@ export default function SettingsScreen() {
               </Pressable>
             </View>
           )}
+
+          <View
+            className="mb-5 rounded-[28px] p-5"
+            style={{
+              backgroundColor: colors.frosted,
+              borderWidth: 1,
+              borderColor: colors.frostedBorder,
+            }}
+          >
+            <Text className="mb-3 text-sm font-semibold" style={{ color: colors.text }}>
+              Legal &amp; support
+            </Text>
+            {(
+              [
+                ['Privacy Policy', LEGAL_URLS.privacy],
+                ['Terms of Use', LEGAL_URLS.terms],
+                ['Delete account (web)', LEGAL_URLS.deleteAccount],
+              ] as const
+            ).map(([label, url]) => (
+              <Pressable
+                key={label}
+                onPress={() => void openLegalUrl(url)}
+                className="mb-2 py-2 active:opacity-70"
+              >
+                <Text className="text-sm font-semibold" style={{ color: colors.primary }}>
+                  {label}
+                </Text>
+              </Pressable>
+            ))}
+            <Pressable
+              onPress={() => void openLegalUrl(LEGAL_URLS.supportMailto)}
+              className="py-2 active:opacity-70"
+            >
+              <Text className="text-sm font-semibold" style={{ color: colors.primary }}>
+                Contact support
+              </Text>
+            </Pressable>
+          </View>
 
           <View className="items-center gap-2 pt-2">
             <CookieMark size={18} color={colors.textSecondary} />

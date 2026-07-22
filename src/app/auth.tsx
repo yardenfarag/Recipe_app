@@ -13,6 +13,7 @@ import {
   normalizeEmail,
   validatePassword,
 } from '@/lib/authValidation';
+import { LEGAL_URLS, openLegalUrl } from '@/lib/legal';
 import {
   isAppleAuthAvailable,
   requestPasswordReset,
@@ -452,6 +453,22 @@ export default function AuthScreen() {
             </Text>
           </Pressable>
         )}
+
+        <View className="mt-6 flex-row flex-wrap items-center justify-center gap-x-3 gap-y-2">
+          <Pressable onPress={() => void openLegalUrl(LEGAL_URLS.privacy)} disabled={loading}>
+            <Text className="text-xs font-medium" style={{ color: colors.textSecondary }}>
+              Privacy
+            </Text>
+          </Pressable>
+          <Text className="text-xs" style={{ color: colors.textSecondary }}>
+            ·
+          </Text>
+          <Pressable onPress={() => void openLegalUrl(LEGAL_URLS.terms)} disabled={loading}>
+            <Text className="text-xs font-medium" style={{ color: colors.textSecondary }}>
+              Terms
+            </Text>
+          </Pressable>
+        </View>
       </View>
     </SafeAreaView>
   );

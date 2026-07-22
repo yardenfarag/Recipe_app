@@ -1,0 +1,66 @@
+Pinch — soft-launch store checklist (Android first)
+==================================================
+
+Legal URLs (after GitHub Pages is enabled on this repo):
+  Privacy:  https://yardenfarag.github.io/Recipe_app/privacy.html
+  Terms:    https://yardenfarag.github.io/Recipe_app/terms.html
+  Delete:   https://yardenfarag.github.io/Recipe_app/delete-account.html
+  Support:  yarden.farag@gmail.com
+
+Enable Pages: GitHub repo → Settings → Pages → Source: GitHub Actions
+Commit + push `legal/` and `.github/workflows/deploy-legal-pages.yml`, then
+open the workflow run (or use workflow_dispatch).
+
+--- Play Console ---
+1. Create app: Pinch / package com.pinch.app
+2. Store listing short description (≤80 chars):
+   Snap recipes from social videos — clean ingredients, steps, and smart swaps.
+3. Full description:
+   Pinch turns TikTok, Instagram, and YouTube cooking videos into structured
+   recipes you can save, scale, remix, and shop for.
+
+   • Paste or share a video link
+   • Get ingredients, steps, time, and effort estimates
+   • Scale servings and try substitutions
+   • Free token allowance for AI extracts (paid packs coming later)
+
+   Soft launch: no in-app purchases yet.
+4. Privacy policy URL: (see above)
+5. Data safety: account email, user content (recipes/avatar), app activity;
+   encrypted in transit; deletion in-app (Settings → Delete account) + web URL.
+6. Content rating questionnaire; no ads; target 13+.
+7. Upload screenshots from production/preview build + feature graphic + icon.
+8. Internal testing track: upload AAB from
+     npx eas-cli build --platform android --profile production
+   then (interactive — links Google Play service account the first time):
+     npx eas-cli submit --platform android --profile production --latest
+   Manual upload alternative: Play Console → Internal testing → create release
+   → upload the AAB artifact URL below.
+
+Production Android build finished (AAB):
+  https://expo.dev/accounts/yardenfa/projects/pinch/builds/4a4e5f60-8889-4557-8291-9a25212476b0
+  Artifact: https://expo.dev/artifacts/eas/3QRDpZ4iHHdM-BgkRXmTb2sxGsBuLiwmrKGlWud0cf8.aab
+
+--- App Store Connect (after Play path works) ---
+1. Paid Apple Developer membership; app record bundle id com.pinch.app
+2. Privacy nutrition labels matching Data safety; privacy + support URLs
+3. Export compliance: ITSAppUsesNonExemptEncryption = false (app.json)
+4. Screenshots for required devices
+5. First iOS production build must be INTERACTIVE (credentials for two targets):
+     npx eas-cli build --platform ios --profile production
+   Targets needing profiles:
+     - com.pinch.app (Pinch)
+     - com.pinch.app.share-extension (ShareExtension)
+   Non-interactive setup fails until those exist on EAS.
+6. TestFlight smoke: Apple Sign-In, share sheet, Settings → Delete account
+7. Submit for review. Notes: AI extraction from public social URLs; free tokens;
+   no IAP yet; account deletion in Settings.
+8. Replace eas.json submit.production.ios.ascAppId with the real App Store Connect id.
+
+Apple revoke secrets (before iOS production):
+  npx supabase secrets set APPLE_CLIENT_ID=com.pinch.app
+  npx supabase secrets set APPLE_TEAM_ID=...
+  npx supabase secrets set APPLE_KEY_ID=...
+  npx supabase secrets set APPLE_PRIVATE_KEY=...
+
+delete-account Edge Function: deployed to project ccobefeofhnncpgifxel

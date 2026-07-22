@@ -1,0 +1,102 @@
+:root {
+  color-scheme: light dark;
+  --bg: #f7f4ef;
+  --text: #1c1917;
+  --muted: #57534e;
+  --accent: #b45309;
+  --card: #ffffffcc;
+  --border: #e7e5e4;
+  font-family: "Segoe UI", system-ui, -apple-system, sans-serif;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --bg: #0c0a09;
+    --text: #fafaf9;
+    --muted: #a8a29e;
+    --accent: #fbbf24;
+    --card: #1c1917cc;
+    --border: #292524;
+  }
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  background:
+    radial-gradient(1200px 600px at 10% -10%, #fdba7440, transparent),
+    radial-gradient(900px 500px at 100% 0%, #a8a29e33, transparent),
+    var(--bg);
+  color: var(--text);
+  line-height: 1.6;
+}
+
+main {
+  max-width: 42rem;
+  margin: 0 auto;
+  padding: 2.5rem 1.25rem 4rem;
+}
+
+.brand {
+  font-size: 0.85rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--accent);
+  text-decoration: none;
+}
+
+h1 {
+  margin: 0.4rem 0 0.75rem;
+  font-size: clamp(1.8rem, 4vw, 2.4rem);
+  line-height: 1.15;
+}
+
+.meta {
+  color: var(--muted);
+  font-size: 0.95rem;
+  margin-bottom: 1.75rem;
+}
+
+.card {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 1.25rem;
+  padding: 1.25rem 1.35rem;
+  backdrop-filter: blur(8px);
+}
+
+h2 {
+  margin: 1.75rem 0 0.5rem;
+  font-size: 1.15rem;
+}
+
+p,
+li {
+  color: var(--text);
+}
+
+ul {
+  padding-left: 1.2rem;
+}
+
+a {
+  color: var(--accent);
+}
+
+nav.links {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem 1rem;
+  margin-top: 2rem;
+  font-size: 0.95rem;
+}
+
+footer {
+  margin-top: 2.5rem;
+  color: var(--muted);
+  font-size: 0.85rem;
+}
