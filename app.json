@@ -10,13 +10,13 @@
     "ios": {
       "icon": "./assets/expo.icon",
       "usesAppleSignIn": true,
-      "bundleIdentifier": "com.pinch.app",
+      "bundleIdentifier": "com.pinch.myapp",
       "infoPlist": {
         "ITSAppUsesNonExemptEncryption": false
       }
     },
     "android": {
-      "package": "com.pinch.app",
+      "package": "com.pinch.myapp",
       "adaptiveIcon": {
         "backgroundColor": "#F4F1F8",
         "foregroundImage": "./assets/images/android-icon-foreground.png",

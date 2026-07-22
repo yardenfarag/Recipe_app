@@ -2,7 +2,7 @@
  * Sign in with Apple token exchange + revoke for account deletion (TN3194).
  *
  * Secrets (Supabase Edge Function):
- * - APPLE_CLIENT_ID — native app bundle id (com.pinch.app)
+ * - APPLE_CLIENT_ID — native app bundle id (com.pinch.myapp)
  * - APPLE_TEAM_ID
  * - APPLE_KEY_ID
  * - APPLE_PRIVATE_KEY — .p8 contents (PEM), newlines may be escaped as \n

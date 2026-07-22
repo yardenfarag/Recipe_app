@@ -7,12 +7,16 @@ Legal URLs (after GitHub Pages is enabled on this repo):
   Delete:   https://yardenfarag.github.io/Recipe_app/delete-account.html
   Support:  yarden.farag@gmail.com
 
-Enable Pages: GitHub repo → Settings → Pages → Source: GitHub Actions
-Commit + push `legal/` and `.github/workflows/deploy-legal-pages.yml`, then
-open the workflow run (or use workflow_dispatch).
+Enable Pages (one-time, required before the workflow succeeds):
+  Repo → Settings → Pages → Build and deployment → Source: GitHub Actions
+  Then re-run the "Deploy legal pages" workflow (Actions → workflow_dispatch
+  or push any change under legal/).
+
+  If enablement via the workflow is blocked by GitHub permissions, the manual
+  Settings step above is the fix. The Node 20 deprecation warning is harmless.
 
 --- Play Console ---
-1. Create app: Pinch / package com.pinch.app
+1. Create app: Pinch / package com.pinch.myapp
 2. Store listing short description (≤80 chars):
    Snap recipes from social videos — clean ingredients, steps, and smart swaps.
 3. Full description:
@@ -42,15 +46,15 @@ Production Android build finished (AAB):
   Artifact: https://expo.dev/artifacts/eas/3QRDpZ4iHHdM-BgkRXmTb2sxGsBuLiwmrKGlWud0cf8.aab
 
 --- App Store Connect (after Play path works) ---
-1. Paid Apple Developer membership; app record bundle id com.pinch.app
+1. Paid Apple Developer membership; app record bundle id com.pinch.myapp
 2. Privacy nutrition labels matching Data safety; privacy + support URLs
 3. Export compliance: ITSAppUsesNonExemptEncryption = false (app.json)
 4. Screenshots for required devices
 5. First iOS production build must be INTERACTIVE (credentials for two targets):
      npx eas-cli build --platform ios --profile production
    Targets needing profiles:
-     - com.pinch.app (Pinch)
-     - com.pinch.app.share-extension (ShareExtension)
+     - com.pinch.myapp (Pinch)
+     - com.pinch.myapp.share-extension (ShareExtension)
    Non-interactive setup fails until those exist on EAS.
 6. TestFlight smoke: Apple Sign-In, share sheet, Settings → Delete account
 7. Submit for review. Notes: AI extraction from public social URLs; free tokens;
@@ -58,7 +62,7 @@ Production Android build finished (AAB):
 8. Replace eas.json submit.production.ios.ascAppId with the real App Store Connect id.
 
 Apple revoke secrets (before iOS production):
-  npx supabase secrets set APPLE_CLIENT_ID=com.pinch.app
+  npx supabase secrets set APPLE_CLIENT_ID=com.pinch.myapp
   npx supabase secrets set APPLE_TEAM_ID=...
   npx supabase secrets set APPLE_KEY_ID=...
   npx supabase secrets set APPLE_PRIVATE_KEY=...

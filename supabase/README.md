@@ -86,7 +86,7 @@ npx supabase functions deploy delete-account
 Optional Apple token-revoke secrets (iOS account deletion, TN3194):
 
 ```bash
-npx supabase secrets set APPLE_CLIENT_ID=com.pinch.app
+npx supabase secrets set APPLE_CLIENT_ID=com.pinch.myapp
 npx supabase secrets set APPLE_TEAM_ID=your_team_id
 npx supabase secrets set APPLE_KEY_ID=your_key_id
 npx supabase secrets set APPLE_PRIVATE_KEY="-----BEGIN PRIVATE KEY-----
