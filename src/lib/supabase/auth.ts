@@ -5,6 +5,7 @@ import { Platform } from 'react-native';
 
 import { normalizeEmail } from '@/lib/authValidation';
 import { authRedirectUri } from '@/lib/authRedirect';
+import { parseAuthCallbackParams } from '@/lib/supabase/authCallbackParams';
 import { supabase } from '@/lib/supabase/client';
 
 WebBrowser.maybeCompleteAuthSession();
@@ -132,14 +133,16 @@ export async function completeOAuthFromCallbackUrl(url: string): Promise<void> {
   const { params, errorCode } = QueryParams.getQueryParams(url);
   if (errorCode) throw new Error('Google sign-in could not be completed. Please try again.');
 
-  const code = params.code;
+  const parsed = parseAuthCallbackParams(url);
+  const code = params.code ?? parsed.code;
   if (code) {
     const { error } = await supabase.auth.exchangeCodeForSession(code);
     if (error) throw friendlyAuthError(error, 'social');
     return;
   }
 
-  const { access_token, refresh_token } = params;
+  const access_token = params.access_token ?? parsed.accessToken;
+  const refresh_token = params.refresh_token ?? parsed.refreshToken;
   if (!access_token || !refresh_token) {
     throw new Error('Google sign-in did not return a valid session.');
   }
@@ -183,33 +186,51 @@ export async function requestPasswordReset(email: string): Promise<void> {
 }
 
 export async function consumePasswordRecoveryUrl(url: string): Promise<void> {
-  const parsed = new URL(url);
-  const query = parsed.searchParams;
-  const hash = new URLSearchParams(parsed.hash.replace(/^#/, ''));
-  const code = query.get('code') ?? hash.get('code');
+  const params = parseAuthCallbackParams(url);
 
-  if (code) {
-    const { error } = await supabase.auth.exchangeCodeForSession(code);
+  if (params.tokenHash) {
+    const { error } = await supabase.auth.verifyOtp({
+      token_hash: params.tokenHash,
+      type: 'recovery',
+    });
     if (error) throw friendlyAuthError(error, 'reset');
     return;
   }
 
-  const accessToken = query.get('access_token') ?? hash.get('access_token');
-  const refreshToken = query.get('refresh_token') ?? hash.get('refresh_token');
-  if (!accessToken || !refreshToken) {
-    throw new Error('This password reset link is invalid or has expired.');
+  if (params.code) {
+    const { error } = await supabase.auth.exchangeCodeForSession(params.code);
+    if (error) throw friendlyAuthError(error, 'reset');
+    return;
   }
 
-  const { error } = await supabase.auth.setSession({
-    access_token: accessToken,
-    refresh_token: refreshToken,
-  });
-  if (error) throw friendlyAuthError(error, 'reset');
+  if (params.accessToken && params.refreshToken) {
+    const { error } = await supabase.auth.setSession({
+      access_token: params.accessToken,
+      refresh_token: params.refreshToken,
+    });
+    if (error) throw friendlyAuthError(error, 'reset');
+    return;
+  }
+
+  throw new Error('This password reset link is invalid or has expired.');
 }
 
 export async function updatePassword(password: string): Promise<void> {
-  const { error } = await supabase.auth.updateUser({ password });
-  if (error) throw friendlyAuthError(error, 'update');
+  const { data: sessionData, error: sessionError } = await supabase.auth.getSession();
+  if (sessionError) throw friendlyAuthError(sessionError, 'update');
+
+  const email = sessionData.session?.user?.email;
+  if (!email) {
+    throw new Error('Your reset session expired. Open the link from your email again.');
+  }
+
+  const { error: updateError } = await supabase.auth.updateUser({ password });
+  if (updateError) throw friendlyAuthError(updateError, 'update');
+
+  // Recovery sessions can keep you logged in even when the password did not persist.
+  // Re-authenticate with the new password so the next manual sign-in works too.
+  await supabase.auth.signOut({ scope: 'local' });
+  await signInWithEmail(email, password);
 }
 
 type AuthAction = 'signin' | 'signup' | 'social' | 'reset' | 'update';

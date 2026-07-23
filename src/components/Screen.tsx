@@ -1,10 +1,13 @@
 import { type ReactNode } from 'react';
-import { View, type ViewProps } from 'react-native';
+import { Platform, View, type ViewProps } from 'react-native';
 import { SafeAreaView, type Edge } from 'react-native-safe-area-context';
 
 import { MistAtmosphere } from '@/components/MistAtmosphere';
+import { useThemePreference } from '@/hooks/useThemePreference';
 
-const TAB_SCREEN_EDGES: Edge[] = ['top', 'left', 'right'];
+/** Android status bar is opaque — top inset is handled natively; extra padding caused a light band. */
+const TAB_SCREEN_EDGES: Edge[] =
+  Platform.OS === 'android' ? ['left', 'right'] : ['top', 'left', 'right'];
 
 type ScreenProps = ViewProps & {
   children: ReactNode;
@@ -30,7 +33,15 @@ export function Screen({
   className,
   ...rest
 }: ScreenProps) {
-  const resolvedEdges = edges ?? (tabScreen ? TAB_SCREEN_EDGES : undefined);
+  const { colors } = useThemePreference();
+  const resolvedEdges =
+    edges ??
+    (tabScreen
+      ? TAB_SCREEN_EDGES
+      : Platform.OS === 'android'
+        ? (['left', 'right', 'bottom'] as Edge[])
+        : undefined);
+  const canvasStyle = { backgroundColor: colors.background };
   const content = plain ? (
     children
   ) : (
@@ -39,14 +50,19 @@ export function Screen({
 
   if (bare) {
     return (
-      <View className={`flex-1 ${className ?? ''}`} {...rest}>
+      <View className={`flex-1 ${className ?? ''}`} style={canvasStyle} {...rest}>
         {content}
       </View>
     );
   }
 
   return (
-    <SafeAreaView className={`flex-1 ${className ?? ''}`} edges={resolvedEdges} {...rest}>
+    <SafeAreaView
+      className={`flex-1 ${className ?? ''}`}
+      edges={resolvedEdges}
+      style={canvasStyle}
+      {...rest}
+    >
       {content}
     </SafeAreaView>
   );

@@ -1,7 +1,11 @@
 import Constants from 'expo-constants';
 import type { Platform } from '@/types/recipe';
 
-import { detectPlatform } from '@/lib/platformUrls';
+import {
+  detectPlatform,
+  extractInstagramId,
+  extractTikTokId,
+} from '@/lib/platformUrls';
 import { extractYouTubeId } from '@/lib/youtube';
 
 /** Mobile UA helps TikTok/Instagram pages load in WebView instead of 404/desktop blocks. */
@@ -90,7 +94,31 @@ export function recipeVideoUrlAtSeconds(
   }
 }
 
-/** Page URL for IG/TikTok WebView (mobile sites play better than embed iframes). */
+/** Instagram embed player — works in WebView without login (page URLs often 404). */
+export function instagramEmbedUrl(originalUrl: string): string | null {
+  const shortcode = extractInstagramId(originalUrl);
+  if (!shortcode) return null;
+
+  try {
+    const path = new URL(originalUrl).pathname;
+    const kindMatch = path.match(/\/(reel|reels|p|tv)\//);
+    const kind =
+      kindMatch?.[1] === 'reels' ? 'reel' : (kindMatch?.[1] as 'reel' | 'p' | 'tv' | undefined);
+    const segment = kind ?? 'reel';
+    return `https://www.instagram.com/${segment}/${shortcode}/embed/captioned/`;
+  } catch {
+    return `https://www.instagram.com/reel/${shortcode}/embed/captioned/`;
+  }
+}
+
+/** TikTok embed player — guest-friendly; watch pages block in-app WebViews. */
+export function tiktokEmbedUrl(originalUrl: string): string | null {
+  const videoId = extractTikTokId(originalUrl);
+  if (!videoId) return null;
+  return `https://www.tiktok.com/embed/v2/${videoId}`;
+}
+
+/** Page URL for IG/TikTok when embed ids are unavailable (e.g. short links). */
 export function recipeVideoWebViewPageUrl(
   originalUrl: string,
   platform: Platform,
@@ -128,6 +156,28 @@ export function buildRecipeVideoWebViewSource(
       uri,
       headers: { Referer: VIDEO_WEBVIEW_REFERER_URL },
     };
+  }
+
+  if (info.platform === 'instagram') {
+    const embedUrl = instagramEmbedUrl(info.url);
+    if (embedUrl) {
+      return {
+        type: 'html',
+        html: recipeVideoEmbedHtml(embedUrl),
+        baseUrl: 'https://www.instagram.com',
+      };
+    }
+  }
+
+  if (info.platform === 'tiktok') {
+    const embedUrl = tiktokEmbedUrl(info.url);
+    if (embedUrl) {
+      return {
+        type: 'html',
+        html: recipeVideoEmbedHtml(embedUrl),
+        baseUrl: 'https://www.tiktok.com',
+      };
+    }
   }
 
   return {

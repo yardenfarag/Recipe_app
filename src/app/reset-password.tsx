@@ -10,7 +10,8 @@ import { getPasswordStrength, validatePassword } from '@/lib/authValidation';
 import { consumePasswordRecoveryUrl, updatePassword } from '@/lib/supabase/auth';
 
 export default function ResetPasswordScreen() {
-  const recoveryUrl = Linking.useLinkingURL();
+  const linkingUrl = Linking.useLinkingURL();
+  const [recoveryUrl, setRecoveryUrl] = useState<string | null | undefined>(undefined);
   const [ready, setReady] = useState(false);
   const [done, setDone] = useState(false);
   const [loading, setLoading] = useState(false);
@@ -21,6 +22,29 @@ export default function ResetPasswordScreen() {
   const { colors } = useThemePreference();
 
   useEffect(() => {
+    if (linkingUrl) {
+      setRecoveryUrl(linkingUrl);
+      return;
+    }
+
+    let active = true;
+    const timer = setTimeout(() => {
+      void (async () => {
+        const initial = await Linking.getInitialURL();
+        if (!active) return;
+        setRecoveryUrl(initial ?? null);
+      })();
+    }, 500);
+
+    return () => {
+      active = false;
+      clearTimeout(timer);
+    };
+  }, [linkingUrl]);
+
+  useEffect(() => {
+    if (recoveryUrl === undefined) return;
+
     if (!recoveryUrl) {
       setReady(false);
       setError('Open the reset link from your email to continue.');

@@ -66,6 +66,7 @@ function applyAppearance(preference: ThemePreference, packId: ThemePackId) {
     }
     if (Platform.OS === 'android') {
       try {
+        RNStatusBar.setTranslucent(false);
         RNStatusBar.setBarStyle(resolved === 'dark' ? 'light-content' : 'dark-content');
         RNStatusBar.setBackgroundColor(colors.background);
       } catch {

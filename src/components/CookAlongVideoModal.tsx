@@ -103,16 +103,23 @@ export function CookAlongVideoModal({
       transparent
       onRequestClose={onClose}
     >
-      <View className="flex-1 justify-end" style={{ backgroundColor: colors.overlay }}>
-        <Pressable className="flex-1" onPress={onClose} accessibilityLabel="Close video" />
+      <View className="flex-1 justify-end" pointerEvents="box-none">
+        {/* Pass touches through so the recipe scrolls; close only via X or back. */}
+        <View className="flex-1" pointerEvents="none" />
 
         <View
+          pointerEvents="auto"
           style={{
             height: sheetHeight + insets.bottom,
             paddingBottom: insets.bottom,
             backgroundColor: colors.background,
             borderTopLeftRadius: 24,
             borderTopRightRadius: 24,
+            shadowColor: '#000',
+            shadowOffset: { width: 0, height: -4 },
+            shadowOpacity: 0.15,
+            shadowRadius: 12,
+            elevation: 16,
           }}
         >
           <View className="flex-row items-center justify-between px-4 pb-2 pt-3">
@@ -196,6 +203,8 @@ export function CookAlongVideoModal({
                   mediaPlaybackRequiresUserAction={false}
                   javaScriptEnabled
                   domStorageEnabled
+                  thirdPartyCookiesEnabled
+                  sharedCookiesEnabled
                   setSupportMultipleWindows={false}
                   originWhitelist={['*']}
                   onLoadStart={() => setLoading(true)}

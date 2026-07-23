@@ -4,6 +4,8 @@ import {
   buildRecipeVideoWebViewSource,
   getRecipePlatformLabel,
   getRecipeVideoInfo,
+  instagramEmbedUrl,
+  tiktokEmbedUrl,
   VIDEO_WEBVIEW_REFERER_URL,
   youtubeWatchUrlAtSeconds,
 } from './recipeVideo';
@@ -52,13 +54,28 @@ describe('buildRecipeVideoWebViewSource', () => {
     }
   });
 
-  it('loads page URL for TikTok', () => {
-    const url = 'https://www.tiktok.com/@chef/video/123';
+  it('loads TikTok embed iframe instead of watch page', () => {
+    const url = 'https://www.tiktok.com/@chef/video/1234567890';
     const source = buildRecipeVideoWebViewSource(getRecipeVideoInfo(url));
-    expect(source?.type).toBe('uri');
-    if (source?.type === 'uri') {
-      expect(source.uri).toBe(url);
+    expect(source?.type).toBe('html');
+    if (source?.type === 'html') {
+      expect(source.html).toContain('tiktok.com/embed/v2/1234567890');
+      expect(source.baseUrl).toBe('https://www.tiktok.com');
     }
+    expect(tiktokEmbedUrl(url)).toBe('https://www.tiktok.com/embed/v2/1234567890');
+  });
+
+  it('loads Instagram embed iframe instead of reel page', () => {
+    const url = 'https://www.instagram.com/reel/ABC123/';
+    const source = buildRecipeVideoWebViewSource(getRecipeVideoInfo(url));
+    expect(source?.type).toBe('html');
+    if (source?.type === 'html') {
+      expect(source.html).toContain('instagram.com/reel/ABC123/embed/captioned/');
+      expect(source.baseUrl).toBe('https://www.instagram.com');
+    }
+    expect(instagramEmbedUrl(url)).toBe(
+      'https://www.instagram.com/reel/ABC123/embed/captioned/',
+    );
   });
 });
 
