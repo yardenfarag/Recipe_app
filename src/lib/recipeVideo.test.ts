@@ -1,26 +1,30 @@
 import { describe, expect, it } from 'vitest';
 
-import { getRecipePlatformLabel, getRecipeVideoInfo, recipeVideoEmbedHtml, youtubeWatchUrlAtSeconds } from './recipeVideo';
+import {
+  buildRecipeVideoWebViewSource,
+  getRecipePlatformLabel,
+  getRecipeVideoInfo,
+  VIDEO_WEBVIEW_REFERER_URL,
+  youtubeWatchUrlAtSeconds,
+} from './recipeVideo';
 
 describe('getRecipeVideoInfo', () => {
-  it('embeds YouTube watch URLs', () => {
+  it('uses in-app webview for YouTube watch URLs', () => {
     const info = getRecipeVideoInfo('https://www.youtube.com/watch?v=dQw4w9WgXcQ');
-    expect(info.mode).toBe('embed');
+    expect(info.mode).toBe('webview');
     expect(info.platform).toBe('youtube');
     expect(info.youtubeVideoId).toBe('dQw4w9WgXcQ');
-    expect(info.embedUrl).toContain('embed/dQw4w9WgXcQ');
-    expect(info.embedUrl).toContain('enablejsapi=1');
   });
 
-  it('opens Instagram externally', () => {
+  it('uses in-app webview for Instagram', () => {
     const url = 'https://www.instagram.com/reel/ABC123/';
-    expect(getRecipeVideoInfo(url).mode).toBe('external');
+    expect(getRecipeVideoInfo(url).mode).toBe('webview');
     expect(getRecipeVideoInfo(url).platform).toBe('instagram');
   });
 
-  it('opens TikTok externally', () => {
+  it('uses in-app webview for TikTok', () => {
     const url = 'https://www.tiktok.com/@chef/video/123';
-    expect(getRecipeVideoInfo(url).mode).toBe('external');
+    expect(getRecipeVideoInfo(url).mode).toBe('webview');
     expect(getRecipeVideoInfo(url).platform).toBe('tiktok');
   });
 
@@ -36,11 +40,25 @@ describe('getRecipePlatformLabel', () => {
   });
 });
 
-describe('recipeVideoEmbedHtml', () => {
-  it('includes the embed iframe', () => {
-    expect(recipeVideoEmbedHtml('https://example.com/embed/x')).toContain('<iframe');
-    expect(recipeVideoEmbedHtml('https://example.com/embed/x')).toContain('https://example.com/embed/x');
-    expect(recipeVideoEmbedHtml('https://example.com/embed/x')).toContain('enablejsapi=1');
+describe('buildRecipeVideoWebViewSource', () => {
+  it('adds referer headers for YouTube embeds', () => {
+    const info = getRecipeVideoInfo('https://www.youtube.com/watch?v=dQw4w9WgXcQ');
+    const source = buildRecipeVideoWebViewSource(info, 30);
+    expect(source?.type).toBe('uri');
+    if (source?.type === 'uri') {
+      expect(source.uri).toContain('embed/dQw4w9WgXcQ');
+      expect(source.uri).toContain('start=30');
+      expect(source.headers?.Referer).toBe(VIDEO_WEBVIEW_REFERER_URL);
+    }
+  });
+
+  it('loads page URL for TikTok', () => {
+    const url = 'https://www.tiktok.com/@chef/video/123';
+    const source = buildRecipeVideoWebViewSource(getRecipeVideoInfo(url));
+    expect(source?.type).toBe('uri');
+    if (source?.type === 'uri') {
+      expect(source.uri).toBe(url);
+    }
   });
 });
 

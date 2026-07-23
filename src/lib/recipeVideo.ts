@@ -1,17 +1,33 @@
+import Constants from 'expo-constants';
 import type { Platform } from '@/types/recipe';
 
 import { detectPlatform } from '@/lib/platformUrls';
 import { extractYouTubeId } from '@/lib/youtube';
 
-export type RecipeVideoMode = 'embed' | 'external' | 'none';
+/** Mobile UA helps TikTok/Instagram pages load in WebView instead of 404/desktop blocks. */
+export const VIDEO_WEBVIEW_USER_AGENT =
+  'Mozilla/5.0 (Linux; Android 14; Mobile) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Mobile Safari/537.36';
+
+export type RecipeVideoMode = 'webview' | 'none';
 
 export type RecipeVideoInfo = {
   mode: RecipeVideoMode;
   url: string;
   platform: Platform;
   youtubeVideoId?: string;
-  embedUrl?: string;
 };
+
+/** Referer required by YouTube embeds in mobile WebViews (Error 153 without it). */
+export const VIDEO_WEBVIEW_REFERER =
+  Constants.expoConfig?.android?.package ??
+  Constants.expoConfig?.ios?.bundleIdentifier ??
+  'com.pinch.myapp';
+
+export const VIDEO_WEBVIEW_REFERER_URL = `https://${VIDEO_WEBVIEW_REFERER}`;
+
+export type RecipeVideoWebViewSource =
+  | { type: 'uri'; uri: string; headers?: Record<string, string> }
+  | { type: 'html'; html: string; baseUrl: string };
 
 const PLATFORM_LABEL: Record<Platform, string> = {
   youtube: 'YouTube',
@@ -37,20 +53,90 @@ export function getRecipeVideoInfo(
 
   if (platform === 'youtube') {
     const youtubeVideoId = extractYouTubeId(url);
-    if (!youtubeVideoId) {
-      return { mode: 'external', url, platform: 'youtube' };
-    }
-    const embedUrl = `https://www.youtube.com/embed/${youtubeVideoId}?enablejsapi=1&playsinline=1&rel=0&modestbranding=1&iv_load_policy=3`;
-    return { mode: 'embed', url, platform: 'youtube', youtubeVideoId, embedUrl };
+    return { mode: 'webview', url, platform: 'youtube', youtubeVideoId: youtubeVideoId ?? undefined };
   }
 
   if (platform === 'instagram' || platform === 'tiktok') {
-    return { mode: 'external', url, platform };
+    return { mode: 'webview', url, platform };
   }
 
-  return { mode: 'external', url, platform: platform === 'unknown' ? 'unknown' : platform };
+  return { mode: 'webview', url, platform: platform === 'unknown' ? 'unknown' : platform };
 }
 
+/** YouTube watch URL with start time (seconds). */
+export function youtubeWatchUrlAtSeconds(originalUrl: string, seconds: number): string | null {
+  const videoId = extractYouTubeId(originalUrl);
+  if (!videoId) return null;
+  const clamped = Math.max(0, Math.round(seconds));
+  return `https://www.youtube.com/watch?v=${videoId}&t=${clamped}`;
+}
+
+/** Best-effort page URL with timestamp for external platforms. */
+export function recipeVideoUrlAtSeconds(
+  originalUrl: string,
+  platform: Platform,
+  seconds: number,
+): string {
+  const clamped = Math.max(0, Math.round(seconds));
+  const youtube = youtubeWatchUrlAtSeconds(originalUrl, clamped);
+  if (platform === 'youtube' && youtube) return youtube;
+
+  try {
+    const parsed = new URL(originalUrl);
+    parsed.searchParams.set('t', String(clamped));
+    return parsed.toString();
+  } catch {
+    return originalUrl;
+  }
+}
+
+/** Page URL for IG/TikTok WebView (mobile sites play better than embed iframes). */
+export function recipeVideoWebViewPageUrl(
+  originalUrl: string,
+  platform: Platform,
+  startSeconds?: number,
+): string {
+  if (platform === 'youtube') {
+    if (startSeconds != null && startSeconds > 0) {
+      return youtubeWatchUrlAtSeconds(originalUrl, startSeconds) ?? originalUrl;
+    }
+    return originalUrl;
+  }
+  if (startSeconds != null && startSeconds > 0) {
+    return recipeVideoUrlAtSeconds(originalUrl, platform, startSeconds);
+  }
+  return originalUrl;
+}
+
+/** WebView source for cook-along modal — YouTube uses embed + Referer; others use page URL. */
+export function buildRecipeVideoWebViewSource(
+  info: RecipeVideoInfo,
+  startSeconds?: number,
+): RecipeVideoWebViewSource | null {
+  if (info.mode === 'none' || !info.url) return null;
+
+  if (info.platform === 'youtube' && info.youtubeVideoId) {
+    const start =
+      startSeconds != null && startSeconds > 0 ? `&start=${Math.round(startSeconds)}` : '';
+    const origin = encodeURIComponent(VIDEO_WEBVIEW_REFERER_URL);
+    const uri =
+      `https://www.youtube.com/embed/${info.youtubeVideoId}` +
+      `?enablejsapi=1&playsinline=1&rel=0&modestbranding=1&iv_load_policy=3` +
+      `&origin=${origin}${start}`;
+    return {
+      type: 'uri',
+      uri,
+      headers: { Referer: VIDEO_WEBVIEW_REFERER_URL },
+    };
+  }
+
+  return {
+    type: 'uri',
+    uri: recipeVideoWebViewPageUrl(info.url, info.platform, startSeconds),
+  };
+}
+
+/** @deprecated Inline embed HTML — use buildRecipeVideoWebViewSource in modal instead. */
 export function recipeVideoEmbedHtml(embedUrl: string): string {
   const src = embedUrl.includes('enablejsapi=1')
     ? embedUrl
@@ -77,7 +163,7 @@ export function recipeVideoEmbedHtml(embedUrl: string): string {
 </html>`;
 }
 
-/** JS injected into the YouTube embed WebView to seek playback. */
+/** @deprecated Seek via modal reload with startSeconds instead. */
 export function buildYouTubeSeekScript(seconds: number): string {
   const clamped = Math.max(0, Math.round(seconds));
   return `(function() {
@@ -89,31 +175,4 @@ export function buildYouTubeSeekScript(seconds: number): string {
     );
     true;
   })();`;
-}
-
-/** YouTube watch URL with start time (seconds). */
-export function youtubeWatchUrlAtSeconds(originalUrl: string, seconds: number): string | null {
-  const videoId = extractYouTubeId(originalUrl);
-  if (!videoId) return null;
-  const clamped = Math.max(0, Math.round(seconds));
-  return `https://www.youtube.com/watch?v=${videoId}&t=${clamped}`;
-}
-
-/** Best-effort deep link with timestamp for external platforms. */
-export function recipeVideoUrlAtSeconds(
-  originalUrl: string,
-  platform: Platform,
-  seconds: number,
-): string {
-  const clamped = Math.max(0, Math.round(seconds));
-  const youtube = youtubeWatchUrlAtSeconds(originalUrl, clamped);
-  if (platform === 'youtube' && youtube) return youtube;
-
-  try {
-    const parsed = new URL(originalUrl);
-    parsed.searchParams.set('t', String(clamped));
-    return parsed.toString();
-  } catch {
-    return originalUrl;
-  }
 }

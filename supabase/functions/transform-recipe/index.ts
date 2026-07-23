@@ -1,9 +1,7 @@
 import { corsHeaders, jsonResponse } from '../_shared/cors.ts';
-import { TOKEN_COST_REMIX } from '../_shared/pricing.ts';
 import { createAuthedSupabase } from '../_shared/recipeLookup.ts';
 import { isRecipeVariantKey, transformRecipeWithGemini } from '../_shared/recipeVariant.ts';
 import { createServiceSupabase } from '../_shared/supabaseAdmin.ts';
-import { getTokenBalance, spendTokens } from '../_shared/tokens.ts';
 import { logUsageEvent } from '../_shared/usageLog.ts';
 
 const MAX_BODY_BYTES = 64_000;
@@ -26,10 +24,10 @@ interface RequestBody {
 }
 
 /**
- * POST { variant, recipe } -> { status, recipe?, message?, tokens_charged?, token_balance? }
+ * POST { variant, recipe } -> { status, recipe?, message? }
  *
  * Adapts a full recipe for a dietary/lifestyle goal (healthier, vegan, etc.).
- * Requires a signed-in user and spends 5 tokens on success.
+ * Requires a signed-in user. Remix is not counted against extract quotas.
  */
 Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') {
@@ -75,27 +73,6 @@ Deno.serve(async (req) => {
   }
 
   const admin = createServiceSupabase();
-  const balance = admin ? await getTokenBalance(admin, user.id) : null;
-  if (balance != null && balance < TOKEN_COST_REMIX) {
-    await logUsageEvent(admin, {
-      userId: user.id,
-      action: 'remix',
-      status: 'insufficient_tokens',
-      tokensCharged: 0,
-      durationMs: Date.now() - started,
-      metadata: { balance, required: TOKEN_COST_REMIX },
-    });
-    return jsonResponse(
-      {
-        status: 'failed',
-        code: 'insufficient_tokens',
-        message: `You need ${TOKEN_COST_REMIX} tokens to remix a recipe. You have ${balance}.`,
-        token_balance: balance,
-        tokens_required: TOKEN_COST_REMIX,
-      },
-      402,
-    );
-  }
 
   let body: RequestBody;
   try {
@@ -214,49 +191,13 @@ Deno.serve(async (req) => {
       });
     }
 
-    let tokenBalance = balance;
-    let tokensCharged = 0;
-    if (admin) {
-      const spent = await spendTokens(admin, user.id, TOKEN_COST_REMIX, 'remix', variant, {
-        variant,
-        title: recipe.title.trim().slice(0, 80),
-      });
-      if (!spent.ok) {
-        await logUsageEvent(admin, {
-          userId: user.id,
-          action: 'remix',
-          status: spent.code === 'insufficient_tokens' ? 'insufficient_tokens' : 'metering_error',
-          usages: transformed.usage ? [transformed.usage] : [],
-          tokensCharged: 0,
-          durationMs: Date.now() - started,
-          metadata: { variant },
-          errorMessage: spent.code,
-        });
-        return jsonResponse(
-          {
-            status: 'failed',
-            code: spent.code === 'insufficient_tokens' ? 'insufficient_tokens' : 'metering_error',
-            message:
-              spent.code === 'insufficient_tokens'
-                ? `You need ${TOKEN_COST_REMIX} tokens to remix a recipe.`
-                : 'Could not update your token balance. Please try again.',
-            token_balance: await getTokenBalance(admin, user.id),
-            tokens_required: TOKEN_COST_REMIX,
-          },
-          spent.code === 'insufficient_tokens' ? 402 : 500,
-        );
-      }
-      tokensCharged = TOKEN_COST_REMIX;
-      tokenBalance = spent.balance;
-    }
-
     const { usage: _usage, ...recipePayload } = transformed;
     await logUsageEvent(admin, {
       userId: user.id,
       action: 'remix',
       status: 'ok',
       usages: transformed.usage ? [transformed.usage] : [],
-      tokensCharged,
+      tokensCharged: 0,
       durationMs: Date.now() - started,
       metadata: { variant },
     });
@@ -265,8 +206,7 @@ Deno.serve(async (req) => {
       status: 'ok',
       recipe: recipePayload,
       variant,
-      tokens_charged: tokensCharged,
-      token_balance: tokenBalance,
+      tokens_charged: 0,
     });
   } catch (err) {
     console.error('transform-recipe error:', err);

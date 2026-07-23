@@ -11,7 +11,7 @@ import {
   useState,
   type ReactNode,
 } from 'react';
-import { Appearance, Platform } from 'react-native';
+import { Appearance, Platform, StatusBar as RNStatusBar } from 'react-native';
 
 import {
   DEFAULT_THEME_PACK,
@@ -65,6 +65,12 @@ function applyAppearance(preference: ThemePreference, packId: ThemePackId) {
       // Non-fatal on some Android builds.
     }
     if (Platform.OS === 'android') {
+      try {
+        RNStatusBar.setBarStyle(resolved === 'dark' ? 'light-content' : 'dark-content');
+        RNStatusBar.setBackgroundColor(colors.background);
+      } catch {
+        // Non-fatal on some Android builds.
+      }
       try {
         await NavigationBar.setBackgroundColorAsync(colors.tabBar);
         await NavigationBar.setButtonStyleAsync(resolved === 'dark' ? 'light' : 'dark');

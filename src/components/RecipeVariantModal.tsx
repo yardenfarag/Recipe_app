@@ -7,7 +7,6 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { useThemePreference } from '@/hooks/useThemePreference';
 import { RECIPE_VARIANTS, RecipeVariantKey } from '@/lib/recipeVariants';
 import { transformRecipe, TransformedRecipePayload } from '@/lib/supabase/transformRecipe';
-import { TOKEN_COST_REMIX } from '@/lib/tokens';
 import { Ingredient, Instruction } from '@/types/recipe';
 
 interface RecipeVariantModalProps {
@@ -218,9 +217,7 @@ export function RecipeVariantModal({
                 style={{ backgroundColor: colors.primary }}
                 onPress={handleApply}
               >
-                <Text className="text-base font-bold text-white">
-                  Use this version · {TOKEN_COST_REMIX} tokens
-                </Text>
+                <Text className="text-base font-bold text-white">Use this version</Text>
               </Pressable>
 
               <Pressable

@@ -1,6 +1,6 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
-import { GUEST_EXTRACTION_LIMIT } from '@/lib/tokens';
+import { GUEST_EXTRACTION_LIMIT } from '@/lib/quotas';
 
 /**
  * Local mirror of guest extract remaining for UI.

@@ -1,5 +1,12 @@
 import { decode } from 'base64-arraybuffer';
 
+import {
+  currentYearMonthUtc,
+  freeExtractsRemaining,
+  isSubscriptionActive,
+  monthlyExtractsRemaining,
+  type SubscriptionStatus,
+} from '@/lib/quotas';
 import { supabase } from '@/lib/supabase/client';
 
 const AVATAR_BUCKET = 'avatars';
@@ -11,27 +18,82 @@ export interface Profile {
   token_balance: number;
   is_admin: boolean;
   token_pack_notify_at: string | null;
+  subscription_status: SubscriptionStatus;
+  subscription_expires_at: string | null;
+  free_extracts_used: number;
+  monthly_extracts_used: number;
+}
+
+export interface ProfileQuota {
+  subscriptionStatus: SubscriptionStatus;
+  subscriptionActive: boolean;
+  freeExtractsUsed: number;
+  freeExtractsRemaining: number;
+  monthlyExtractsUsed: number;
+  monthlyExtractsRemaining: number | null;
+  extractsRemaining: number;
+}
+
+export function profileQuota(profile: Profile | null): ProfileQuota | null {
+  if (!profile) return null;
+  const subscriptionActive = isSubscriptionActive(
+    profile.subscription_status,
+    profile.subscription_expires_at,
+  );
+  const freeRemaining = freeExtractsRemaining(profile.free_extracts_used);
+  const monthlyRemaining = subscriptionActive
+    ? monthlyExtractsRemaining(profile.monthly_extracts_used)
+    : null;
+  return {
+    subscriptionStatus: profile.subscription_status,
+    subscriptionActive,
+    freeExtractsUsed: profile.free_extracts_used,
+    freeExtractsRemaining: freeRemaining,
+    monthlyExtractsUsed: profile.monthly_extracts_used,
+    monthlyExtractsRemaining: monthlyRemaining,
+    extractsRemaining: subscriptionActive ? (monthlyRemaining ?? 0) : freeRemaining,
+  };
 }
 
 export async function fetchProfile(userId: string): Promise<Profile | null> {
-  const { data, error } = await supabase
-    .from('profiles')
-    .select('id, email, avatar_url, token_balance, is_admin, token_pack_notify_at')
-    .eq('id', userId)
-    .single();
+  const yearMonth = currentYearMonthUtc();
+  const [profileResult, monthlyResult] = await Promise.all([
+    supabase
+      .from('profiles')
+      .select(
+        'id, email, avatar_url, token_balance, is_admin, token_pack_notify_at, subscription_status, subscription_expires_at, free_extracts_used',
+      )
+      .eq('id', userId)
+      .single(),
+    supabase
+      .from('extract_usage_monthly')
+      .select('extract_count')
+      .eq('user_id', userId)
+      .eq('year_month', yearMonth)
+      .maybeSingle(),
+  ]);
 
-  if (error) {
-    if (error.code === 'PGRST116') return null; // no row
-    throw error;
+  if (profileResult.error) {
+    if (profileResult.error.code === 'PGRST116') return null;
+    throw profileResult.error;
   }
-  const row = data as {
+
+  const row = profileResult.data as {
     id: string;
     email: string | null;
     avatar_url: string | null;
     token_balance?: number | null;
     is_admin?: boolean | null;
     token_pack_notify_at?: string | null;
+    subscription_status?: string | null;
+    subscription_expires_at?: string | null;
+    free_extracts_used?: number | null;
   };
+
+  const status = row.subscription_status;
+  const subscription_status: SubscriptionStatus =
+    status === 'active' || status === 'canceled' ? status : 'free';
+
   return {
     id: row.id,
     email: row.email,
@@ -39,26 +101,52 @@ export async function fetchProfile(userId: string): Promise<Profile | null> {
     token_balance: typeof row.token_balance === 'number' ? row.token_balance : 0,
     is_admin: row.is_admin === true,
     token_pack_notify_at: row.token_pack_notify_at ?? null,
+    subscription_status,
+    subscription_expires_at: row.subscription_expires_at ?? null,
+    free_extracts_used:
+      typeof row.free_extracts_used === 'number' ? row.free_extracts_used : 0,
+    monthly_extracts_used:
+      typeof monthlyResult.data?.extract_count === 'number'
+        ? monthlyResult.data.extract_count
+        : 0,
   };
 }
 
-/** Opt in to token-pack launch emails. Idempotent if already set. */
-export async function requestTokenPackNotify(userId: string): Promise<string> {
-  const at = new Date().toISOString();
-  const { data, error } = await supabase
-    .from('profiles')
-    .update({ token_pack_notify_at: at })
-    .eq('id', userId)
-    .is('token_pack_notify_at', null)
-    .select('token_pack_notify_at')
-    .maybeSingle();
-
+/** Honor-system Pinch Plus until real IAP. */
+export async function activateSubscription(userId?: string): Promise<SubscriptionStatus> {
+  const id = userId ?? (await supabase.auth.getUser()).data.user?.id;
+  if (!id) throw new Error('Sign in required');
+  const { data, error } = await supabase.rpc('activate_subscription', {
+    p_user_id: id,
+  });
   if (error) throw error;
-  if (data?.token_pack_notify_at) return data.token_pack_notify_at;
+  return data === 'active' ? 'active' : 'active';
+}
 
-  const existing = await fetchProfile(userId);
-  if (existing?.token_pack_notify_at) return existing.token_pack_notify_at;
-  throw new Error('Could not save notify preference.');
+export async function cancelSubscription(userId?: string): Promise<SubscriptionStatus> {
+  const id = userId ?? (await supabase.auth.getUser()).data.user?.id;
+  if (!id) throw new Error('Sign in required');
+  const { data, error } = await supabase.rpc('cancel_subscription', {
+    p_user_id: id,
+  });
+  if (error) throw error;
+  return data === 'canceled' || data === 'free' || data === 'active'
+    ? (data as SubscriptionStatus)
+    : 'canceled';
+}
+
+/** Admin: activate Plus for another user. */
+export async function adminSetSubscription(
+  userId: string,
+  active: boolean,
+): Promise<SubscriptionStatus> {
+  const { data, error } = await supabase.rpc(
+    active ? 'activate_subscription' : 'cancel_subscription',
+    { p_user_id: userId },
+  );
+  if (error) throw error;
+  if (active) return 'active';
+  return data === 'canceled' ? 'canceled' : 'canceled';
 }
 
 /**

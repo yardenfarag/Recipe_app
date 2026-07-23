@@ -3,26 +3,33 @@ import { useCallback, useState } from 'react';
 
 import { useAuth } from '@/hooks/useAuth';
 import { isAdminUser } from '@/lib/admin';
-import { fetchProfile, requestTokenPackNotify } from '@/lib/supabase/profile';
+import type { SubscriptionStatus } from '@/lib/quotas';
+import type { ProfileQuota } from '@/lib/supabase/profile';
+import {
+  activateSubscription,
+  cancelSubscription,
+  fetchProfile,
+  profileQuota,
+} from '@/lib/supabase/profile';
 
 /**
- * Loads the current signed-in user's profile (avatar, tokens, admin)
+ * Loads the current signed-in user's profile (avatar, plan, admin)
  * and refreshes on focus. Guests have no `profiles` row, so this is a no-op
  * for them — callers should branch on `useAuth().user` for guest UI.
  */
 export function useProfile() {
   const { user } = useAuth();
   const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
-  const [tokenBalance, setTokenBalance] = useState<number | null>(null);
-  const [tokenPackNotifyAt, setTokenPackNotifyAt] = useState<string | null>(null);
+  const [quota, setQuota] = useState<ProfileQuota | null>(null);
+  const [subscriptionStatus, setSubscriptionStatus] = useState<SubscriptionStatus | null>(null);
   const [isAdmin, setIsAdmin] = useState(false);
   const [loading, setLoading] = useState(true);
 
   const refresh = useCallback(async () => {
     if (!user) {
       setAvatarUrl(null);
-      setTokenBalance(null);
-      setTokenPackNotifyAt(null);
+      setQuota(null);
+      setSubscriptionStatus(null);
       setIsAdmin(false);
       setLoading(false);
       return;
@@ -30,8 +37,8 @@ export function useProfile() {
     try {
       const profile = await fetchProfile(user.id);
       setAvatarUrl(profile?.avatar_url ?? null);
-      setTokenBalance(profile?.token_balance ?? 0);
-      setTokenPackNotifyAt(profile?.token_pack_notify_at ?? null);
+      setQuota(profileQuota(profile));
+      setSubscriptionStatus(profile?.subscription_status ?? 'free');
       setIsAdmin(
         isAdminUser({
           email: user.email ?? profile?.email,
@@ -40,20 +47,25 @@ export function useProfile() {
       );
     } catch {
       setAvatarUrl(null);
-      setTokenBalance(null);
-      setTokenPackNotifyAt(null);
+      setQuota(null);
+      setSubscriptionStatus(null);
       setIsAdmin(isAdminUser({ email: user.email }));
     } finally {
       setLoading(false);
     }
   }, [user]);
 
-  const requestPackNotify = useCallback(async () => {
+  const upgradeToPlus = useCallback(async () => {
     if (!user) throw new Error('Sign in required');
-    const at = await requestTokenPackNotify(user.id);
-    setTokenPackNotifyAt(at);
-    return at;
-  }, [user]);
+    await activateSubscription(user.id);
+    await refresh();
+  }, [user, refresh]);
+
+  const cancelPlus = useCallback(async () => {
+    if (!user) throw new Error('Sign in required');
+    await cancelSubscription(user.id);
+    await refresh();
+  }, [user, refresh]);
 
   useFocusEffect(
     useCallback(() => {
@@ -63,11 +75,16 @@ export function useProfile() {
 
   return {
     avatarUrl,
-    tokenBalance,
-    tokenPackNotifyAt,
+    quota,
+    subscriptionStatus,
+    subscriptionActive: quota?.subscriptionActive ?? false,
+    extractsRemaining: quota?.extractsRemaining ?? null,
+    freeExtractsRemaining: quota?.freeExtractsRemaining ?? null,
+    monthlyExtractsRemaining: quota?.monthlyExtractsRemaining ?? null,
     isAdmin,
     loading,
     refresh,
-    requestPackNotify,
+    upgradeToPlus,
+    cancelPlus,
   };
 }

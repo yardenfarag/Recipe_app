@@ -7,6 +7,11 @@
     "icon": "./assets/images/icon.png",
     "scheme": "pinch",
     "userInterfaceStyle": "automatic",
+    "androidStatusBar": {
+      "backgroundColor": "#F4F1F8",
+      "barStyle": "dark-content",
+      "translucent": false
+    },
     "ios": {
       "icon": "./assets/expo.icon",
       "usesAppleSignIn": true,
@@ -17,6 +22,7 @@
     },
     "android": {
       "package": "com.pinch.myapp",
+      "backgroundColor": "#F4F1F8",
       "adaptiveIcon": {
         "backgroundColor": "#F4F1F8",
         "foregroundImage": "./assets/images/android-icon-foreground.png",
@@ -75,7 +81,9 @@
             "compileSdkVersion": 35,
             "targetSdkVersion": 35,
             "buildToolsVersion": "35.0.0",
-            "useLegacyPackaging": false
+            "useLegacyPackaging": false,
+            "enableMinifyInReleaseBuilds": true,
+            "extraProguardRules": "-keepattributes SourceFile,LineNumberTable\n-keepattributes *Annotation*\n-keep class com.swmansion.reanimated.** { *; }\n-keep class com.facebook.react.turbomodule.** { *; }"
           }
         }
       ]

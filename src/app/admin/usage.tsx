@@ -1,13 +1,21 @@
 import { useFocusEffect } from '@react-navigation/native';
 import { router } from 'expo-router';
 import { useCallback, useState, type ReactNode } from 'react';
-import { ActivityIndicator, Pressable, ScrollView, Text, View } from 'react-native';
+import {
+  ActivityIndicator,
+  Alert,
+  Pressable,
+  ScrollView,
+  Text,
+  TextInput,
+  View,
+} from 'react-native';
 
 import { Screen } from '@/components/Screen';
 import { useAuth } from '@/hooks/useAuth';
 import { useProfile } from '@/hooks/useProfile';
 import { useThemePreference } from '@/hooks/useThemePreference';
-import { ADMIN_PRICE_CARD, TOKEN_PACKS } from '@/lib/tokens';
+import { ADMIN_PRICE_CARD } from '@/lib/quotas';
 import {
   fetchAdminTokenLedger,
   fetchAdminUsageEvents,
@@ -15,6 +23,12 @@ import {
   type AiUsageEvent,
   type TokenLedgerRow,
 } from '@/lib/supabase/adminUsage';
+import { adminSetSubscription } from '@/lib/supabase/profile';
+import {
+  closeSupportTicket,
+  fetchSupportTickets,
+  type SupportTicket,
+} from '@/lib/supabase/supportTickets';
 
 function usd(value: number): string {
   return `$${value.toFixed(4)}`;
@@ -39,8 +53,11 @@ export default function AdminUsageScreen() {
   const { colors } = useThemePreference();
   const [events, setEvents] = useState<AiUsageEvent[]>([]);
   const [ledger, setLedger] = useState<TokenLedgerRow[]>([]);
+  const [tickets, setTickets] = useState<SupportTicket[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [grantUserId, setGrantUserId] = useState('');
+  const [grantBusy, setGrantBusy] = useState(false);
 
   const refresh = useCallback(async () => {
     if (!user || !isAdmin) {
@@ -50,12 +67,14 @@ export default function AdminUsageScreen() {
     setError(null);
     setLoading(true);
     try {
-      const [usageRows, ledgerRows] = await Promise.all([
+      const [usageRows, ledgerRows, ticketRows] = await Promise.all([
         fetchAdminUsageEvents(120),
         fetchAdminTokenLedger(80),
+        fetchSupportTickets(80),
       ]);
       setEvents(usageRows);
       setLedger(ledgerRows);
+      setTickets(ticketRows);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Could not load admin usage.');
     } finally {
@@ -73,6 +92,38 @@ export default function AdminUsageScreen() {
       void refresh();
     }, [profileLoading, user, isAdmin, refresh]),
   );
+
+  async function handleGrant(active: boolean) {
+    const id = grantUserId.trim();
+    if (!id || grantBusy) return;
+    setGrantBusy(true);
+    try {
+      await adminSetSubscription(id, active);
+      Alert.alert(active ? 'Plus granted' : 'Plus revoked', `User ${shortId(id)}`);
+      setGrantUserId('');
+    } catch (err) {
+      Alert.alert(
+        'Could not update plan',
+        err instanceof Error ? err.message : 'Please try again.',
+      );
+    } finally {
+      setGrantBusy(false);
+    }
+  }
+
+  async function handleCloseTicket(id: string) {
+    try {
+      await closeSupportTicket(id);
+      setTickets((prev) =>
+        prev.map((t) => (t.id === id ? { ...t, status: 'closed' as const } : t)),
+      );
+    } catch (err) {
+      Alert.alert(
+        'Could not close ticket',
+        err instanceof Error ? err.message : 'Please try again.',
+      );
+    }
+  }
 
   if (profileLoading) {
     return (
@@ -105,15 +156,16 @@ export default function AdminUsageScreen() {
   }
 
   const totals = summarizeUsage(events);
+  const openTickets = tickets.filter((t) => t.status === 'open');
 
   return (
     <Screen dense>
       <ScrollView className="flex-1" contentContainerStyle={{ paddingBottom: 48, paddingHorizontal: 16 }}>
         <Text className="mb-1 mt-2 text-2xl font-bold" style={{ color: colors.text }}>
-          Usage & tokens
+          Usage & support
         </Text>
         <Text className="mb-4 text-sm" style={{ color: colors.textSecondary }}>
-          Owner-only cost log. Prices are list rates from the Phase B research card.
+          Owner-only cost log, tickets, and plan tools. Users can also self-upgrade until IAP.
         </Text>
 
         <Pressable
@@ -144,25 +196,99 @@ export default function AdminUsageScreen() {
                 value={usd(ADMIN_PRICE_CARD.scrapecreatorsUsdPerCredit)}
                 colors={colors}
               />
-              <Row label="Extract charge" value={`${ADMIN_PRICE_CARD.extractTokens} tokens`} colors={colors} />
-              <Row label="Remix charge" value={`${ADMIN_PRICE_CARD.remixTokens} tokens`} colors={colors} />
-              <Row label="Signup bonus" value={`${ADMIN_PRICE_CARD.signupBonus} tokens`} colors={colors} />
+              <Row label="Free extracts" value={String(ADMIN_PRICE_CARD.freeExtractLimit)} colors={colors} />
+              <Row
+                label="Plus monthly extracts"
+                value={String(ADMIN_PRICE_CARD.plusMonthlyExtractLimit)}
+                colors={colors}
+              />
               <Row label="Guest extracts" value={String(ADMIN_PRICE_CARD.guestExtractLimit)} colors={colors} />
-              {TOKEN_PACKS.map((pack) => (
-                <Row
-                  key={pack.tokens}
-                  label={`Pack ${pack.label}`}
-                  value={`$${pack.priceUsd.toFixed(2)}`}
-                  colors={colors}
-                />
-              ))}
+              <Row label="Plus display price" value={ADMIN_PRICE_CARD.plusPriceDisplay} colors={colors} />
+            </Section>
+
+            <Section title="Grant / revoke Plus" colors={colors}>
+              <Text className="mb-2 text-xs" style={{ color: colors.textSecondary }}>
+                Optional support tool. Paste a profile user id.
+              </Text>
+              <TextInput
+                className="mb-3 rounded-[14px] px-3 py-2 text-sm"
+                style={{
+                  color: colors.text,
+                  backgroundColor: colors.background,
+                  borderWidth: 1,
+                  borderColor: colors.frostedBorder,
+                }}
+                placeholder="user uuid"
+                placeholderTextColor={colors.textSecondary}
+                value={grantUserId}
+                onChangeText={setGrantUserId}
+                autoCapitalize="none"
+                autoCorrect={false}
+              />
+              <View className="flex-row gap-2">
+                <Pressable
+                  className="rounded-[14px] px-3 py-2"
+                  style={{ backgroundColor: colors.primary }}
+                  onPress={() => void handleGrant(true)}
+                  disabled={grantBusy}
+                >
+                  <Text className="text-xs font-bold text-white">Grant Plus</Text>
+                </Pressable>
+                <Pressable
+                  className="rounded-[14px] px-3 py-2"
+                  style={{ backgroundColor: colors.warningSoft }}
+                  onPress={() => void handleGrant(false)}
+                  disabled={grantBusy}
+                >
+                  <Text className="text-xs font-bold" style={{ color: colors.warning }}>
+                    Revoke Plus
+                  </Text>
+                </Pressable>
+              </View>
+            </Section>
+
+            <Section title={`Support tickets (${openTickets.length} open)`} colors={colors}>
+              {tickets.length === 0 ? (
+                <Text className="text-xs" style={{ color: colors.textSecondary }}>
+                  No tickets yet.
+                </Text>
+              ) : (
+                tickets.map((ticket) => (
+                  <View
+                    key={ticket.id}
+                    className="mb-3 border-b pb-3"
+                    style={{ borderBottomColor: colors.frostedBorder }}
+                  >
+                    <Text className="mb-1 text-xs font-semibold" style={{ color: colors.text }}>
+                      {ticket.status.toUpperCase()} · {ticket.category} · {fmtWhen(ticket.created_at)}
+                    </Text>
+                    <Text className="mb-1 text-xs" style={{ color: colors.textSecondary }}>
+                      {ticket.email ?? shortId(ticket.user_id)} · {shortId(ticket.id)}
+                    </Text>
+                    <Text className="mb-2 text-sm leading-5" style={{ color: colors.text }}>
+                      {ticket.message}
+                    </Text>
+                    {ticket.status === 'open' ? (
+                      <Pressable
+                        className="self-start rounded-[12px] px-3 py-1.5"
+                        style={{ backgroundColor: colors.primarySoft }}
+                        onPress={() => void handleCloseTicket(ticket.id)}
+                      >
+                        <Text className="text-xs font-semibold" style={{ color: colors.primary }}>
+                          Mark closed
+                        </Text>
+                      </Pressable>
+                    ) : null}
+                  </View>
+                ))
+              )}
             </Section>
 
             <Section title={`Totals (last ${events.length} events)`} colors={colors}>
               <Row label="Provider cost" value={usd(totals.totalCostUsd)} colors={colors} />
               <Row label="Gemini" value={usd(totals.geminiCostUsd)} colors={colors} />
               <Row label="ScrapeCreators" value={usd(totals.scrapecreatorsCostUsd)} colors={colors} />
-              <Row label="Tokens charged" value={String(totals.tokensCharged)} colors={colors} />
+              <Row label="Tokens charged (legacy)" value={String(totals.tokensCharged)} colors={colors} />
               <Row label="Extracts / remixes" value={`${totals.extracts} / ${totals.remixes}`} colors={colors} />
               <Row label="Cached / failed" value={`${totals.cached} / ${totals.failed}`} colors={colors} />
               <Row
@@ -201,7 +327,7 @@ export default function AdminUsageScreen() {
               </ScrollView>
             </Section>
 
-            <Section title="Token ledger" colors={colors}>
+            <Section title="Token ledger (legacy)" colors={colors}>
               <ScrollView horizontal showsHorizontalScrollIndicator>
                 <View>
                   <TableHeader

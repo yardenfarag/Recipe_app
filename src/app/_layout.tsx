@@ -1,6 +1,7 @@
 import '../global.css';
 
 import Constants, { ExecutionEnvironment } from 'expo-constants';
+import { Platform } from 'react-native';
 import { Stack } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { ShareIntentProvider } from 'expo-share-intent';
@@ -21,7 +22,11 @@ function RootNavigator() {
 
   return (
     <>
-      <StatusBar style={scheme === 'dark' ? 'light' : 'dark'} />
+      <StatusBar
+        style={scheme === 'dark' ? 'light' : 'dark'}
+        backgroundColor={colors.background}
+        translucent={Platform.OS === 'android' ? false : undefined}
+      />
       <Stack
         screenOptions={{
           headerShadowVisible: false,
@@ -43,7 +48,7 @@ function RootNavigator() {
         />
         <Stack.Screen name="reset-password" options={{ title: 'Reset password' }} />
         <Stack.Screen name="auth-callback" options={{ headerShown: false }} />
-        <Stack.Screen name="admin/usage" options={{ title: 'Usage & tokens' }} />
+        <Stack.Screen name="admin/usage" options={{ title: 'Usage & support' }} />
       </Stack>
     </>
   );

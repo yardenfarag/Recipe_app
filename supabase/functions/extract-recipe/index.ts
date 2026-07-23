@@ -14,11 +14,16 @@ import {
 } from '../_shared/platform.ts';
 import type { PlatformMeta } from '../_shared/platformMeta.ts';
 import { persistSocialThumbnail } from '../_shared/persistThumbnail.ts';
+import { estimateScrapeCredits, FREE_EXTRACT_LIMIT, GUEST_EXTRACT_LIMIT, PLUS_MONTHLY_EXTRACT_LIMIT } from '../_shared/pricing.ts';
 import {
-  estimateScrapeCredits,
-  GUEST_EXTRACT_LIMIT,
-  TOKEN_COST_EXTRACT,
-} from '../_shared/pricing.ts';
+  canStartExtract,
+  getGuestExtractCount,
+  guestRemainingFromCount,
+  quotaFields,
+  type QuotaSnapshot,
+  reserveGuestExtraction,
+  reserveSignedInExtract,
+} from '../_shared/quotas.ts';
 import {
   createAuthedSupabase,
   extractVideoIdForPlatform,
@@ -27,13 +32,6 @@ import {
 import { createServiceSupabase } from '../_shared/supabaseAdmin.ts';
 import { normalizeRecipeTags } from '../_shared/tags.ts';
 import { fetchTikTokMeta } from '../_shared/tiktok.ts';
-import {
-  getGuestExtractCount,
-  getTokenBalance,
-  guestRemainingFromCount,
-  reserveGuestExtraction,
-  spendTokens,
-} from '../_shared/tokens.ts';
 import { logUsageEvent } from '../_shared/usageLog.ts';
 import { formatMaxVideoDurationLabel, isVideoTooLong } from '../_shared/videoLimits.ts';
 import { fetchYouTubeMeta } from '../_shared/youtube.ts';
@@ -49,8 +47,8 @@ type ExtractionStatus = 'full' | 'partial' | 'failed' | 'coming_soon';
  * user's library, otherwise runs the content ladder (description → comments →
  * captions → video) before classifying the result.
  *
- * Phase B: guests are capped server-side; signed-in users spend 10 tokens on
- * non-cached extractions (including failed recipe finds after provider work).
+ * Guests: 3 lifetime extracts / install. Signed-in free: 10 lifetime.
+ * Pinch Plus: 90 / calendar month (UTC). Cached URL re-extract is free.
  */
 Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') {
@@ -121,7 +119,7 @@ Deno.serve(async (req) => {
     } = await authedClient.auth.getUser();
     userId = user?.id ?? null;
 
-    if (userId) {
+    if (userId && admin) {
       const existing = await findExistingRecipeForUser(authedClient, url, platform, contentId);
       if (existing) {
         await logUsageEvent(admin, {
@@ -134,38 +132,38 @@ Deno.serve(async (req) => {
           metadata: { cached: true },
         });
 
-        const balance = admin ? await getTokenBalance(admin, userId) : null;
+        const gate = await canStartExtract(admin, userId);
         return jsonResponse({
           status: existing.extraction_status ?? 'full',
           platform,
           recipe: existing,
           cached: true,
           tokens_charged: 0,
-          token_balance: balance,
+          ...quotaFields(gate.snapshot),
         });
       }
 
-      const balance = admin ? await getTokenBalance(admin, userId) : null;
-      if (balance != null && balance < TOKEN_COST_EXTRACT) {
+      const gate = await canStartExtract(admin, userId);
+      if (!gate.ok) {
+        const code = gate.code === 'error' ? 'metering_error' : gate.code;
         await logUsageEvent(admin, {
           userId,
           action: 'extract',
           platform,
-          status: 'insufficient_tokens',
+          status: code,
           tokensCharged: 0,
           durationMs: Date.now() - started,
-          metadata: { balance, required: TOKEN_COST_EXTRACT },
+          metadata: { ...quotaFields(gate.snapshot) },
         });
         return jsonResponse(
           {
             status: 'failed' as ExtractionStatus,
             platform,
-            code: 'insufficient_tokens',
-            message: `You need ${TOKEN_COST_EXTRACT} tokens to extract a recipe. You have ${balance}.`,
-            token_balance: balance,
-            tokens_required: TOKEN_COST_EXTRACT,
+            code,
+            message: quotaBlockMessage(code),
+            ...quotaFields(gate.snapshot),
           },
-          402,
+          code === 'metering_error' ? 500 : 402,
         );
       }
     }
@@ -274,23 +272,12 @@ Deno.serve(async (req) => {
     const scrapeCredits = estimateScrapeCredits(platform, usedInstagramVideoDownload === true);
 
     if (status === 'failed') {
-      let tokenBalance: number | null = null;
-      let tokensCharged = 0;
       const rejectedAsTooLong = videoSkippedReason === 'too_long';
-
-      if (userId && admin && !rejectedAsTooLong) {
-        const spent = await spendTokens(admin, userId, TOKEN_COST_EXTRACT, 'extract_failed', url, {
-          platform,
-          source,
-        });
-        if (spent.ok) {
-          tokensCharged = TOKEN_COST_EXTRACT;
-          tokenBalance = spent.balance;
-        } else if (spent.code === 'insufficient_tokens') {
-          tokenBalance = await getTokenBalance(admin, userId);
-        }
-      } else if (userId && admin && rejectedAsTooLong) {
-        tokenBalance = await getTokenBalance(admin, userId);
+      // Failed finds do not consume free/Plus extract quota (same as guests).
+      let snapshot: QuotaSnapshot | null = null;
+      if (userId && admin) {
+        const gate = await canStartExtract(admin, userId);
+        snapshot = gate.snapshot;
       }
 
       await logUsageEvent(admin, {
@@ -302,7 +289,7 @@ Deno.serve(async (req) => {
         extractionSource: source,
         usages,
         scrapecreatorsCredits: scrapeCredits,
-        tokensCharged,
+        tokensCharged: 0,
         durationMs: Date.now() - started,
         errorMessage: rejectedAsTooLong
           ? `duration_seconds=${meta.durationSeconds ?? 'unknown'}`
@@ -316,8 +303,8 @@ Deno.serve(async (req) => {
         message: rejectedAsTooLong
           ? `This video is longer than ${formatMaxVideoDurationLabel()}. Try a shorter clip, or a post with the recipe written in the caption.`
           : "Couldn't find a recipe in this video. Try a different link.",
-        tokens_charged: tokensCharged,
-        token_balance: tokenBalance,
+        tokens_charged: 0,
+        ...quotaFields(snapshot),
         guest_extracts_remaining:
           guestInstallId && admin
             ? guestRemainingFromCount(await getGuestExtractCount(admin, guestInstallId))
@@ -356,45 +343,36 @@ Deno.serve(async (req) => {
       missing_fields: missingFields,
     };
 
-    let tokenBalance: number | null = null;
-    let tokensCharged = 0;
+    let snapshot: QuotaSnapshot | null = null;
 
     if (userId && admin) {
-      const spent = await spendTokens(admin, userId, TOKEN_COST_EXTRACT, 'extract', url, {
-        platform,
-        source,
-        status,
-      });
-      if (!spent.ok) {
+      const reserved = await reserveSignedInExtract(admin, userId);
+      if (!reserved.ok) {
+        const code = reserved.code;
         await logUsageEvent(admin, {
           userId,
           action: 'extract',
           platform,
-          status: spent.code === 'insufficient_tokens' ? 'insufficient_tokens' : 'metering_error',
+          status: code,
           extractionSource: source,
           usages,
           scrapecreatorsCredits: scrapeCredits,
           tokensCharged: 0,
           durationMs: Date.now() - started,
-          errorMessage: spent.code,
+          errorMessage: code,
         });
         return jsonResponse(
           {
             status: 'failed' as ExtractionStatus,
             platform,
-            code: spent.code === 'insufficient_tokens' ? 'insufficient_tokens' : 'metering_error',
-            message:
-              spent.code === 'insufficient_tokens'
-                ? `You need ${TOKEN_COST_EXTRACT} tokens to extract a recipe.`
-                : 'Could not update your token balance. Please try again.',
-            token_balance: await getTokenBalance(admin, userId),
-            tokens_required: TOKEN_COST_EXTRACT,
+            code,
+            message: quotaBlockMessage(code),
+            ...quotaFields(reserved.snapshot),
           },
-          spent.code === 'insufficient_tokens' ? 402 : 500,
+          code === 'metering_error' ? 500 : 402,
         );
       }
-      tokensCharged = TOKEN_COST_EXTRACT;
-      tokenBalance = spent.balance;
+      snapshot = reserved.snapshot;
     } else if (guestInstallId && admin) {
       const charged = await reserveGuestExtraction(admin, guestInstallId);
       if ('error' in charged) {
@@ -437,16 +415,17 @@ Deno.serve(async (req) => {
       extractionSource: source,
       usages,
       scrapecreatorsCredits: scrapeCredits,
-      tokensCharged,
+      tokensCharged: 0,
       durationMs: Date.now() - started,
+      metadata: snapshot ? { ...quotaFields(snapshot) } : {},
     });
 
     return jsonResponse({
       status,
       platform,
       recipe,
-      tokens_charged: tokensCharged,
-      token_balance: tokenBalance,
+      tokens_charged: 0,
+      ...quotaFields(snapshot),
       guest_extracts_remaining: guestRemaining,
     });
   } catch (err) {
@@ -533,6 +512,16 @@ function classify(r: GeminiRecipe): {
   // "full" needs title + ingredients + steps (ADR 004). Otherwise partial.
   const isFull = hasTitle && hasIngredients && hasInstructions;
   return { status: isFull ? 'full' : 'partial', missingFields };
+}
+
+function quotaBlockMessage(code: string): string {
+  if (code === 'subscription_required') {
+    return `You've used your ${FREE_EXTRACT_LIMIT} free recipe saves. Upgrade to Pinch Plus to keep going.`;
+  }
+  if (code === 'monthly_limit') {
+    return `You've reached your Pinch Plus limit of ${PLUS_MONTHLY_EXTRACT_LIMIT} saves this month.`;
+  }
+  return 'Could not verify your save allowance. Please try again.';
 }
 
 function capitalize(s: string): string {

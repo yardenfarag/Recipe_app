@@ -1,5 +1,4 @@
 import Ionicons from '@expo/vector-icons/Ionicons';
-import * as WebBrowser from 'expo-web-browser';
 import { router } from 'expo-router';
 import { type ReactNode, useEffect, useMemo, useRef, useState } from 'react';
 import { Alert, Pressable, ScrollView, Text, TouchableOpacity, View } from 'react-native';
@@ -22,7 +21,7 @@ import { applyMeasurementSystem } from '@/lib/convertMeasurement';
 import { displayIngredientAmount } from '@/lib/displayIngredientAmount';
 import { formatRecipeDuration } from '@/lib/formatRecipeDuration';
 import { formatVideoTimestamp } from '@/lib/formatVideoTimestamp';
-import { getRecipeVideoInfo, recipeVideoUrlAtSeconds } from '@/lib/recipeVideo';
+import { getRecipeVideoInfo } from '@/lib/recipeVideo';
 import { getCalorieDisplay } from '@/lib/recipeCalories';
 import {
   getRecipeLanguageLabel,
@@ -36,7 +35,6 @@ import { setRecipeTags } from '@/lib/supabase/recipes';
 import { SubstitutionAlternative } from '@/lib/supabase/suggestSubstitution';
 import { TranslatedRecipePayload } from '@/lib/supabase/translateRecipe';
 import { TransformedRecipePayload } from '@/lib/supabase/transformRecipe';
-import { TOKEN_COST_REMIX } from '@/lib/tokens';
 import { Ingredient, Instruction } from '@/types/recipe';
 
 /**
@@ -233,21 +231,7 @@ export function RecipeView({
 
   async function handleStepTimestamp(seconds: number) {
     if (sourceVideo.mode === 'none' || !recipe.original_url) return;
-
-    if (sourceVideo.mode === 'embed') {
-      videoPanelRef.current?.seekTo(seconds);
-      return;
-    }
-
-    const url = recipeVideoUrlAtSeconds(
-      recipe.original_url,
-      sourceVideo.platform,
-      seconds,
-    );
-    await WebBrowser.openBrowserAsync(url, {
-      presentationStyle: WebBrowser.WebBrowserPresentationStyle.FULL_SCREEN,
-      enableBarCollapsing: true,
-    });
+    videoPanelRef.current?.seekTo(seconds);
   }
 
   return (
@@ -458,9 +442,6 @@ export function RecipeView({
                 Remix
               </Text>
             </View>
-            <Text className="text-[11px] font-medium" style={{ color: colors.accent }}>
-              {TOKEN_COST_REMIX} tokens
-            </Text>
           </Pressable>
         </View>
 

@@ -17,19 +17,31 @@ export interface ExtractResult {
   message?: string;
   /** True when the URL was already in the user's library — no extraction ran. */
   cached?: boolean;
-  code?: 'insufficient_tokens' | 'guest_limit' | 'guest_id_required' | 'metering_error' | 'video_too_long' | string;
+  code?:
+    | 'subscription_required'
+    | 'monthly_limit'
+    | 'guest_limit'
+    | 'guest_id_required'
+    | 'metering_error'
+    | 'video_too_long'
+    | 'insufficient_tokens'
+    | string;
   tokens_charged?: number;
-  token_balance?: number | null;
   guest_extracts_remaining?: number | null;
-  tokens_required?: number;
+  extracts_remaining?: number | null;
+  free_extracts_remaining?: number | null;
+  monthly_extracts_remaining?: number | null;
+  subscription_status?: string | null;
 }
 
 async function invokeErrorMessage(error: unknown): Promise<{
   message: string;
   code?: string;
-  token_balance?: number | null;
   guest_extracts_remaining?: number | null;
-  tokens_required?: number;
+  extracts_remaining?: number | null;
+  free_extracts_remaining?: number | null;
+  monthly_extracts_remaining?: number | null;
+  subscription_status?: string | null;
 }> {
   if (error instanceof FunctionsHttpError) {
     try {
@@ -38,9 +50,11 @@ async function invokeErrorMessage(error: unknown): Promise<{
         return {
           message: body.message ?? body.error ?? 'Request failed',
           code: body.code,
-          token_balance: body.token_balance,
           guest_extracts_remaining: body.guest_extracts_remaining,
-          tokens_required: body.tokens_required,
+          extracts_remaining: body.extracts_remaining,
+          free_extracts_remaining: body.free_extracts_remaining,
+          monthly_extracts_remaining: body.monthly_extracts_remaining,
+          subscription_status: body.subscription_status,
         };
       }
     } catch {
@@ -73,9 +87,11 @@ export async function extractRecipe(url: string): Promise<ExtractResult> {
       platform: 'unknown',
       message: details.message,
       code: details.code,
-      token_balance: details.token_balance,
       guest_extracts_remaining: details.guest_extracts_remaining,
-      tokens_required: details.tokens_required,
+      extracts_remaining: details.extracts_remaining,
+      free_extracts_remaining: details.free_extracts_remaining,
+      monthly_extracts_remaining: details.monthly_extracts_remaining,
+      subscription_status: details.subscription_status,
     };
   }
 

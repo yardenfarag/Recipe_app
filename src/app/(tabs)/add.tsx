@@ -17,11 +17,18 @@ import {
   setGuestExtractionsRemaining,
 } from '@/lib/guestExtractionUsage';
 import { normalizeSocialUrl } from '@/lib/platformUrls';
+import {
+  FREE_EXTRACT_LIMIT,
+  PLUS_MONTHLY_EXTRACT_LIMIT,
+  PLUS_PRICE_DISPLAY,
+  PLUS_PRICE_NOTE,
+} from '@/lib/quotas';
 import { setRecipeDraft } from '@/lib/recipeDraft';
 import { extractRecipe } from '@/lib/supabase/extractRecipe';
-import { TOKEN_COST_EXTRACT } from '@/lib/tokens';
 
-type Banner = { kind: 'error' | 'info' | 'limit' | 'tokens'; message: string } | null;
+type Banner =
+  | { kind: 'error' | 'info' | 'limit' | 'subscription' | 'monthly'; message: string }
+  | null;
 
 const EXTRACT_STATUS_LINES = [
   'Reading the video…',
@@ -38,14 +45,16 @@ export default function AddRecipeScreen() {
   const [statusIndex, setStatusIndex] = useState(0);
   const [banner, setBanner] = useState<Banner>(null);
   const [guestExtractsRemaining, setGuestExtractsRemaining] = useState<number | null>(null);
-  const [notifying, setNotifying] = useState(false);
+  const [upgrading, setUpgrading] = useState(false);
   const { hasShareIntent, shareIntent, resetShareIntent } = useShareIntentContext();
   const { user } = useAuth();
   const {
-    tokenBalance,
-    tokenPackNotifyAt,
+    subscriptionActive,
+    extractsRemaining,
+    freeExtractsRemaining,
+    monthlyExtractsRemaining,
     refresh: refreshProfile,
-    requestPackNotify,
+    upgradeToPlus,
   } = useProfile();
   const { colors } = useThemePreference();
 
@@ -91,19 +100,20 @@ export default function AddRecipeScreen() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [hasShareIntent]);
 
-  async function handleNotifyPacks() {
-    if (!user || tokenPackNotifyAt || notifying) return;
-    setNotifying(true);
+  async function handleUpgrade() {
+    if (!user || upgrading) return;
+    setUpgrading(true);
     try {
-      await requestPackNotify();
-      Alert.alert('You’re on the list', 'We’ll email you when token packs are live.');
+      await upgradeToPlus();
+      setBanner(null);
+      Alert.alert('Pinch Plus', 'You’re on Plus. Billing isn’t live yet — enjoy the higher limit.');
     } catch (err) {
       Alert.alert(
-        'Could not save',
+        'Could not upgrade',
         err instanceof Error ? err.message : 'Please try again.',
       );
     } finally {
-      setNotifying(false);
+      setUpgrading(false);
     }
   }
 
@@ -141,10 +151,24 @@ export default function AddRecipeScreen() {
           });
           return;
         }
-      } else if (tokenBalance != null && tokenBalance < TOKEN_COST_EXTRACT) {
+      } else if (
+        !subscriptionActive &&
+        freeExtractsRemaining != null &&
+        freeExtractsRemaining <= 0
+      ) {
         setBanner({
-          kind: 'tokens',
-          message: `You need ${TOKEN_COST_EXTRACT} tokens to extract (you have ${tokenBalance}). Token packs are coming soon.`,
+          kind: 'subscription',
+          message: `You've used your ${FREE_EXTRACT_LIMIT} free recipe saves. Upgrade to Pinch Plus to keep going.`,
+        });
+        return;
+      } else if (
+        subscriptionActive &&
+        monthlyExtractsRemaining != null &&
+        monthlyExtractsRemaining <= 0
+      ) {
+        setBanner({
+          kind: 'monthly',
+          message: `You've reached your Pinch Plus limit of ${PLUS_MONTHLY_EXTRACT_LIMIT} saves this month.`,
         });
         return;
       }
@@ -155,16 +179,26 @@ export default function AddRecipeScreen() {
         await setGuestExtractionsRemaining(result.guest_extracts_remaining);
         setGuestExtractsRemaining(result.guest_extracts_remaining);
       }
-      if (user && typeof result.token_balance === 'number') {
+      if (user) {
         await refreshProfile();
       }
 
-      if (result.code === 'insufficient_tokens') {
+      if (result.code === 'subscription_required' || result.code === 'insufficient_tokens') {
         setBanner({
-          kind: 'tokens',
+          kind: 'subscription',
           message:
             result.message ??
-            `You need ${TOKEN_COST_EXTRACT} tokens to extract a recipe.`,
+            `You've used your ${FREE_EXTRACT_LIMIT} free recipe saves. Upgrade to Pinch Plus to keep going.`,
+        });
+        return;
+      }
+
+      if (result.code === 'monthly_limit') {
+        setBanner({
+          kind: 'monthly',
+          message:
+            result.message ??
+            `You've reached your Pinch Plus limit of ${PLUS_MONTHLY_EXTRACT_LIMIT} saves this month.`,
         });
         return;
       }
@@ -222,6 +256,14 @@ export default function AddRecipeScreen() {
 
   const canSubmit = Boolean(url.trim()) && !loading;
 
+  const signedInQuotaLabel = (() => {
+    if (!user || extractsRemaining == null) return null;
+    if (subscriptionActive) {
+      return `${extractsRemaining}/${PLUS_MONTHLY_EXTRACT_LIMIT} Plus saves left this month`;
+    }
+    return `${extractsRemaining}/${FREE_EXTRACT_LIMIT} free saves left`;
+  })();
+
   return (
     <Screen dense tabScreen>
       <View className="flex-1 px-6 pt-1">
@@ -247,11 +289,11 @@ export default function AddRecipeScreen() {
               {guestExtractsRemaining === 1 ? '' : 's'} left
             </Text>
           )}
-          {user && tokenBalance != null && (
+          {signedInQuotaLabel ? (
             <Text className="mb-2 text-xs font-medium" style={{ color: colors.accent }}>
-              {tokenBalance} tokens · extract costs {TOKEN_COST_EXTRACT}
+              {signedInQuotaLabel}
             </Text>
-          )}
+          ) : null}
           <View
             className="mb-4 flex-row items-center rounded-[18px] px-3.5"
             style={{ backgroundColor: colors.background }}
@@ -299,26 +341,23 @@ export default function AddRecipeScreen() {
                   <Text className="text-sm font-bold text-white">Sign up</Text>
                 </Pressable>
               )}
-              {banner.kind === 'tokens' && (
+              {banner.kind === 'subscription' && (
                 <View className="mt-3">
-                  {tokenPackNotifyAt ? (
-                    <Text className="text-xs font-medium" style={{ color: colors.textSecondary }}>
-                      You’re on the list — we’ll email you when packs are live.
-                    </Text>
-                  ) : (
-                    <Pressable
-                      className="self-start rounded-[18px] px-4 py-2"
-                      style={{ backgroundColor: colors.primary }}
-                      onPress={() => void handleNotifyPacks()}
-                      disabled={notifying}
-                    >
-                      {notifying ? (
-                        <ActivityIndicator color="#fff" />
-                      ) : (
-                        <Text className="text-sm font-bold text-white">Notify me</Text>
-                      )}
-                    </Pressable>
-                  )}
+                  <Text className="mb-2 text-xs" style={{ color: colors.textSecondary }}>
+                    Pinch Plus {PLUS_PRICE_DISPLAY}. {PLUS_PRICE_NOTE}
+                  </Text>
+                  <Pressable
+                    className="self-start rounded-[18px] px-4 py-2"
+                    style={{ backgroundColor: colors.primary }}
+                    onPress={() => void handleUpgrade()}
+                    disabled={upgrading}
+                  >
+                    {upgrading ? (
+                      <ActivityIndicator color="#fff" />
+                    ) : (
+                      <Text className="text-sm font-bold text-white">Upgrade to Plus</Text>
+                    )}
+                  </Pressable>
                 </View>
               )}
             </View>

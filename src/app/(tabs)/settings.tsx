@@ -10,12 +10,20 @@ import { BrandHeader } from '@/components/BrandHeader';
 import { CookieMark } from '@/components/CookieMark';
 import { MeasurementToggle } from '@/components/MeasurementToggle';
 import { Screen } from '@/components/Screen';
+import { SupportTicketModal } from '@/components/SupportTicketModal';
 import { ThemePackPicker } from '@/components/ThemePackPicker';
 import { ThemeToggle } from '@/components/ThemeToggle';
 import { useAuth } from '@/hooks/useAuth';
 import { useProfile } from '@/hooks/useProfile';
 import { useThemePreference } from '@/hooks/useThemePreference';
 import { LEGAL_URLS, openLegalUrl } from '@/lib/legal';
+import { confirmAction, confirmDestructive } from '@/lib/confirmAction';
+import {
+  FREE_EXTRACT_LIMIT,
+  PLUS_MONTHLY_EXTRACT_LIMIT,
+  PLUS_PRICE_DISPLAY,
+  PLUS_PRICE_NOTE,
+} from '@/lib/quotas';
 import {
   deleteAccount,
   requestAppleAuthorizationCodeForDeletion,
@@ -28,30 +36,56 @@ export default function SettingsScreen() {
   const { user, migrationError, retryMigration } = useAuth();
   const {
     avatarUrl,
-    tokenBalance,
-    tokenPackNotifyAt,
+    subscriptionActive,
+    extractsRemaining,
     isAdmin,
     refresh,
-    requestPackNotify,
+    upgradeToPlus,
+    cancelPlus,
   } = useProfile();
   const { colors } = useThemePreference();
   const [uploading, setUploading] = useState(false);
-  const [notifying, setNotifying] = useState(false);
+  const [planBusy, setPlanBusy] = useState(false);
   const [deleting, setDeleting] = useState(false);
+  const [supportOpen, setSupportOpen] = useState(false);
 
-  async function handleNotifyPacks() {
-    if (!user || tokenPackNotifyAt || notifying) return;
-    setNotifying(true);
+  async function handleUpgrade() {
+    if (!user || planBusy) return;
+    const ok = await confirmAction('Upgrade to Pinch Plus?', PLUS_PRICE_NOTE, 'Upgrade');
+    if (!ok) return;
+    setPlanBusy(true);
     try {
-      await requestPackNotify();
-      Alert.alert('You’re on the list', 'We’ll email you when token packs are live.');
+      await upgradeToPlus();
+      Alert.alert('You’re on Plus', `${PLUS_MONTHLY_EXTRACT_LIMIT} recipe saves per month.`);
     } catch (err) {
       Alert.alert(
-        'Could not save',
+        'Could not upgrade',
         err instanceof Error ? err.message : 'Please try again.',
       );
     } finally {
-      setNotifying(false);
+      setPlanBusy(false);
+    }
+  }
+
+  async function handleCancelPlus() {
+    if (!user || planBusy) return;
+    const ok = await confirmDestructive(
+      'Cancel Pinch Plus?',
+      'You’ll go back to the free plan. Remaining free saves are unchanged.',
+      'Cancel Plus',
+    );
+    if (!ok) return;
+    setPlanBusy(true);
+    try {
+      await cancelPlus();
+      Alert.alert('Subscription canceled', 'You’re on the free plan again.');
+    } catch (err) {
+      Alert.alert(
+        'Could not cancel',
+        err instanceof Error ? err.message : 'Please try again.',
+      );
+    } finally {
+      setPlanBusy(false);
     }
   }
 
@@ -68,7 +102,7 @@ export default function SettingsScreen() {
 
     Alert.alert(
       'Delete account?',
-      'This permanently removes your recipes, avatar, tokens, and account. This cannot be undone.',
+      'This permanently removes your recipes, avatar, plan, and account. This cannot be undone.',
       [
         { text: 'Cancel', style: 'cancel' },
         {
@@ -184,6 +218,15 @@ export default function SettingsScreen() {
     }
   }
 
+  const planLabel = subscriptionActive ? 'Pinch Plus' : 'Free';
+  const planDetail = subscriptionActive
+    ? extractsRemaining != null
+      ? `${extractsRemaining}/${PLUS_MONTHLY_EXTRACT_LIMIT} saves left this month`
+      : `${PLUS_MONTHLY_EXTRACT_LIMIT} saves / month`
+    : extractsRemaining != null
+      ? `${extractsRemaining}/${FREE_EXTRACT_LIMIT} free saves left`
+      : `${FREE_EXTRACT_LIMIT} free lifetime saves`;
+
   return (
     <Screen dense tabScreen>
       <ScrollView className="flex-1" contentContainerStyle={{ paddingBottom: 40 }}>
@@ -235,9 +278,7 @@ export default function SettingsScreen() {
             </Text>
             <Text className="mb-4 text-center text-xs" style={{ color: colors.textSecondary }}>
               {user
-                ? tokenBalance != null
-                  ? `Signed in · ${tokenBalance} tokens`
-                  : 'Signed in'
+                ? `Signed in · ${planLabel}`
                 : 'Sign in to sync your recipes across devices'}
             </Text>
 
@@ -281,30 +322,44 @@ export default function SettingsScreen() {
               }}
             >
               <Text className="mb-1 text-sm font-semibold" style={{ color: colors.text }}>
-                Tokens
+                Plan
               </Text>
-              <Text className="mb-2 text-3xl font-bold" style={{ color: colors.text }}>
-                {tokenBalance ?? '—'}
+              <Text className="mb-1 text-3xl font-bold" style={{ color: colors.text }}>
+                {planLabel}
+              </Text>
+              <Text className="mb-2 text-sm" style={{ color: colors.accent }}>
+                {planDetail}
               </Text>
               <Text className="text-xs leading-5" style={{ color: colors.textSecondary }}>
-                Extract costs 10 · Remix costs 5 · Translate is free · Cached extracts are free.
-                Token packs are coming soon.
+                Pinch Plus is {PLUS_PRICE_DISPLAY} when billing launches. Cached recipes and remix /
+                translate stay free of extract quota. {PLUS_PRICE_NOTE}
               </Text>
-              {tokenPackNotifyAt ? (
-                <Text className="mt-3 text-xs font-medium" style={{ color: colors.accent }}>
-                  You’re on the pack waitlist.
-                </Text>
+              {subscriptionActive ? (
+                <Pressable
+                  className="mt-3 self-start rounded-[18px] px-4 py-2 active:opacity-80"
+                  style={{ backgroundColor: colors.warningSoft }}
+                  onPress={() => void handleCancelPlus()}
+                  disabled={planBusy}
+                >
+                  {planBusy ? (
+                    <ActivityIndicator color={colors.warning} />
+                  ) : (
+                    <Text className="text-sm font-bold" style={{ color: colors.warning }}>
+                      Cancel subscription
+                    </Text>
+                  )}
+                </Pressable>
               ) : (
                 <Pressable
                   className="mt-3 self-start rounded-[18px] px-4 py-2 active:opacity-80"
                   style={{ backgroundColor: colors.primary }}
-                  onPress={() => void handleNotifyPacks()}
-                  disabled={notifying}
+                  onPress={() => void handleUpgrade()}
+                  disabled={planBusy}
                 >
-                  {notifying ? (
+                  {planBusy ? (
                     <ActivityIndicator color="#fff" />
                   ) : (
-                    <Text className="text-sm font-bold text-white">Notify me</Text>
+                    <Text className="text-sm font-bold text-white">Upgrade to Plus</Text>
                   )}
                 </Pressable>
               )}
@@ -322,10 +377,10 @@ export default function SettingsScreen() {
               }}
             >
               <Text className="mb-1 text-sm font-semibold" style={{ color: colors.text }}>
-                Admin · Usage & costs
+                Admin · Usage & support
               </Text>
               <Text className="text-xs leading-5" style={{ color: colors.textSecondary }}>
-                Token tracker, Gemini/ScrapeCreators spend, and ledger (you only).
+                Cost log, support tickets, and plan tools (you only).
               </Text>
             </Pressable>
           ) : null}
@@ -405,12 +460,22 @@ export default function SettingsScreen() {
                 </Text>
               </Pressable>
             ))}
+            {user ? (
+              <Pressable
+                onPress={() => setSupportOpen(true)}
+                className="mb-2 py-2 active:opacity-70"
+              >
+                <Text className="text-sm font-semibold" style={{ color: colors.primary }}>
+                  Report an issue
+                </Text>
+              </Pressable>
+            ) : null}
             <Pressable
               onPress={() => void openLegalUrl(LEGAL_URLS.supportMailto)}
               className="py-2 active:opacity-70"
             >
               <Text className="text-sm font-semibold" style={{ color: colors.primary }}>
-                Contact support
+                Email support
               </Text>
             </Pressable>
           </View>
@@ -423,6 +488,8 @@ export default function SettingsScreen() {
           </View>
         </View>
       </ScrollView>
+
+      <SupportTicketModal visible={supportOpen} onClose={() => setSupportOpen(false)} />
     </Screen>
   );
 }
