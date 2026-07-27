@@ -1,13 +1,8 @@
 import Ionicons from '@expo/vector-icons/Ionicons';
+import { useTranslation } from 'react-i18next';
 import { Pressable, Text, View } from 'react-native';
 
 import { useThemePreference, type ThemePreference } from '@/hooks/useThemePreference';
-
-const LABELS: Record<ThemePreference, string> = {
-  system: 'Auto',
-  light: 'Light',
-  dark: 'Dark',
-};
 
 const ICONS: Record<ThemePreference, keyof typeof Ionicons.glyphMap> = {
   system: 'phone-portrait-outline',
@@ -22,14 +17,21 @@ type ThemeToggleProps = {
 
 /** Theme control: compact cycles modes; full shows Auto / Light / Dark. */
 export function ThemeToggle({ compact = false }: ThemeToggleProps) {
+  const { t } = useTranslation();
   const { preference, colors, setPreference, cyclePreference } = useThemePreference();
+
+  const labels: Record<ThemePreference, string> = {
+    system: t('theme.auto'),
+    light: t('theme.light'),
+    dark: t('theme.dark'),
+  };
 
   if (compact) {
     return (
       <Pressable
         onPress={cyclePreference}
         accessibilityRole="button"
-        accessibilityLabel={`Theme: ${LABELS[preference]}. Tap to change.`}
+        accessibilityLabel={t('theme.a11y', { mode: labels[preference] })}
         className="h-10 w-10 items-center justify-center rounded-[16px] active:opacity-70"
         style={{ backgroundColor: colors.primarySoft }}
         hitSlop={8}
@@ -64,7 +66,7 @@ export function ThemeToggle({ compact = false }: ThemeToggleProps) {
               className="text-xs font-semibold"
               style={{ color: active ? colors.primary : colors.textSecondary }}
             >
-              {LABELS[mode]}
+              {labels[mode]}
             </Text>
           </Pressable>
         );

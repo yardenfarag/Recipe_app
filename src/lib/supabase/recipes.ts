@@ -119,9 +119,15 @@ export async function saveRecipe(recipe: NewRecipe): Promise<Recipe> {
   const { data: userData, error: userError } = await supabase.auth.getUser();
   if (userError || !userData.user) throw new Error('Must be signed in to save a recipe');
 
+  const { translations: _translations, display_title: _displayTitle, ...persistable } = recipe;
+
   const { data, error } = await supabase
     .from('recipes')
-    .insert({ ...recipe, user_id: userData.user.id })
+    .insert({
+      ...persistable,
+      source_language: persistable.source_language ?? 'en',
+      user_id: userData.user.id,
+    })
     .select()
     .single();
 
@@ -158,7 +164,7 @@ export async function setRecipeTags(id: string, tags: string[]): Promise<void> {
   }
 }
 
-/** Persists remix / swap / translate edits on an already-saved recipe. */
+/** Persists remix / swap edits on an already-saved recipe (canonical fields only). */
 export async function updateRecipeContent(
   id: string,
   content: {
@@ -183,5 +189,9 @@ export async function updateRecipeContent(
     .single();
 
   if (error) throw error;
+
+  // Canonical text changed — drop stale translation overlays.
+  await supabase.from('recipe_translations').delete().eq('recipe_id', id);
+
   return data as Recipe;
 }

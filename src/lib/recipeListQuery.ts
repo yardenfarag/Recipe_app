@@ -27,12 +27,13 @@ interface RecipeSortValues {
 function buildSortValues(recipe: Recipe): RecipeSortValues {
   const ingredientNames = recipe.ingredients.slice(0, 12).map((i) => i.name);
   const tags = (recipe.tags ?? []).map((t) => t.trim().toLowerCase()).filter(Boolean);
-  const searchHaystack = [recipe.title, ...ingredientNames, ...tags]
+  const displayTitle = recipe.display_title?.trim() || recipe.title;
+  const searchHaystack = [recipe.title, displayTitle, ...ingredientNames, ...tags]
     .join(' ')
     .toLocaleLowerCase();
 
   return {
-    titleKey: recipe.title.trim().toLocaleLowerCase(),
+    titleKey: displayTitle.trim().toLocaleLowerCase(),
     searchHaystack,
     tagSet: new Set(tags),
     caloriesPerServing:

@@ -1,6 +1,6 @@
 import { clearGuestRecipes, getGuestRecipes, replaceGuestRecipes } from '@/lib/guestRecipes';
 import { supabase } from '@/lib/supabase/client';
-import type { Recipe } from '@/types/recipe';
+import type { Recipe, RecipeTranslationContent } from '@/types/recipe';
 
 export type GuestRecipeMigrationResult = {
   migrated: number;
@@ -45,6 +45,7 @@ export async function migrateGuestRecipesToSupabase(
       missing_fields: recipe.missing_fields,
       is_favorite: recipe.is_favorite === true,
       migrated_from_guest: true,
+      source_language: recipe.source_language ?? 'en',
     };
 
     const { data, error } = await supabase.from('recipes').insert(row).select('id').single();
@@ -60,6 +61,7 @@ export async function migrateGuestRecipesToSupabase(
             .maybeSingle();
           if (existing?.id) {
             idMap[recipe.id] = existing.id as string;
+            await migrateGuestTranslations(existing.id as string, recipe.translations);
             continue;
           }
         }
@@ -70,7 +72,9 @@ export async function migrateGuestRecipesToSupabase(
       throw error;
     }
 
-    idMap[recipe.id] = (data as { id: string }).id;
+    const newId = (data as { id: string }).id;
+    idMap[recipe.id] = newId;
+    await migrateGuestTranslations(newId, recipe.translations);
     migrated += 1;
   }
 
@@ -80,4 +84,26 @@ export async function migrateGuestRecipesToSupabase(
     await replaceGuestRecipes(unmapped);
   }
   return { migrated, idMap };
+}
+
+async function migrateGuestTranslations(
+  recipeId: string,
+  translations: Record<string, RecipeTranslationContent> | undefined,
+): Promise<void> {
+  if (!translations) return;
+  const rows = Object.entries(translations).map(([language_code, content]) => ({
+    recipe_id: recipeId,
+    language_code,
+    title: content.title,
+    ingredients: content.ingredients,
+    instructions: content.instructions,
+  }));
+  if (rows.length === 0) return;
+  const { error } = await supabase.from('recipe_translations').upsert(rows, {
+    onConflict: 'recipe_id,language_code',
+  });
+  // Best-effort: recipes already migrated even if translation table is missing.
+  if (error && error.code !== 'PGRST205') {
+    console.warn('Could not migrate guest recipe translations', error.message);
+  }
 }

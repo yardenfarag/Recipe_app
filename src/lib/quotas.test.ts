@@ -16,7 +16,7 @@ describe('extract quotas', () => {
     expect(FREE_EXTRACT_LIMIT).toBe(10);
     expect(PLUS_MONTHLY_EXTRACT_LIMIT).toBe(90);
     expect(GUEST_EXTRACTION_LIMIT).toBe(3);
-    expect(PLUS_PRICE_DISPLAY).toBe('$6.99/mo');
+    expect(PLUS_PRICE_DISPLAY).toBe('$9.99/mo');
     expect(ADMIN_PRICE_CARD.freeExtractLimit).toBe(10);
     expect(ADMIN_PRICE_CARD.plusMonthlyExtractLimit).toBe(90);
     expect(ADMIN_PRICE_CARD.guestExtractLimit).toBe(3);

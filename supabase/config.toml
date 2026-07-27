@@ -1,3 +1,5 @@
-# Edge Function limits — extract-recipe runs scrape + Gemini text + optional video.
-[functions.extract-recipe]
-timeout = 120
+# Edge Function notes — extract-recipe runs scrape + Gemini text + optional video.
+# Per-function wall-clock timeout is not a supported config.toml key in current CLI;
+# set longer limits in the Supabase Dashboard if extract hits the default cap.
+# [functions.extract-recipe]
+# verify_jwt = true

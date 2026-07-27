@@ -1,15 +1,22 @@
 import { router, useNavigation } from 'expo-router';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { ActivityIndicator, Alert, Pressable, Text, View } from 'react-native';
+import { useTranslation } from 'react-i18next';
 
 import { RecipeView } from '@/components/RecipeView';
 import { Screen } from '@/components/Screen';
+import { useLanguagePreference } from '@/hooks/useLanguagePreference';
+import { useLocalizedRecipe } from '@/hooks/useLocalizedRecipe';
 import { useThemePreference } from '@/hooks/useThemePreference';
+import { DEFAULT_SOURCE_LANGUAGE } from '@/lib/appLanguages';
+import { ensureRecipeTranslation } from '@/lib/ensureRecipeTranslation';
 import { GUEST_RECIPE_LIMIT, saveGuestRecipe } from '@/lib/guestRecipes';
 import { clearRecipeDraft, peekRecipeDraft } from '@/lib/recipeDraft';
 import { supabase } from '@/lib/supabase/client';
 import { ExtractedRecipe } from '@/lib/supabase/extractRecipe';
+import { upsertRecipeTranslation } from '@/lib/supabase/recipeTranslations';
 import { saveRecipe } from '@/lib/supabase/recipes';
+import type { RecipeTranslationContent } from '@/types/recipe';
 
 /**
  * Shows a freshly extracted recipe that has NOT been saved yet.
@@ -17,18 +24,40 @@ import { saveRecipe } from '@/lib/supabase/recipes';
  * Save stays fixed at the top so it is not missed while scrolling.
  */
 export default function RecipePreviewScreen() {
+  const { t } = useTranslation();
   const parsed = peekRecipeDraft();
   const { colors } = useThemePreference();
+  const { language: preferredLanguage } = useLanguagePreference();
   const navigation = useNavigation();
   const [saving, setSaving] = useState(false);
   const saveInFlight = useRef(false);
-  const [recipeToSave, setRecipeToSave] = useState<ExtractedRecipe | null>(parsed);
+  const [recipeToSave, setRecipeToSave] = useState<ExtractedRecipe | null>(() =>
+    parsed
+      ? { ...parsed, source_language: parsed.source_language ?? DEFAULT_SOURCE_LANGUAGE }
+      : null,
+  );
+  const pendingTranslation = useRef<RecipeTranslationContent | null>(null);
+
+  const {
+    displayContent,
+    activeLanguage,
+    translating,
+    applyManualTranslation,
+  } = useLocalizedRecipe(recipeToSave, undefined);
 
   useEffect(() => {
     navigation.setOptions({
-      title: recipeToSave?.title?.trim() || 'Preview',
+      title: displayContent?.title?.trim() || recipeToSave?.title?.trim() || t('recipe.preview'),
     });
-  }, [navigation, recipeToSave?.title]);
+  }, [navigation, displayContent?.title, recipeToSave?.title, t]);
+
+  useEffect(() => {
+    if (displayContent && activeLanguage) {
+      pendingTranslation.current = displayContent;
+    } else {
+      pendingTranslation.current = null;
+    }
+  }, [displayContent, activeLanguage]);
 
   const handleContentChange = useCallback(
     (content: {
@@ -47,14 +76,14 @@ export default function RecipePreviewScreen() {
     return (
       <Screen className="items-center justify-center px-6" edges={['bottom']}>
         <Text className="mb-4 text-center text-base" style={{ color: colors.textSecondary }}>
-          No recipe to preview. Extract one from the Snap tab first.
+          {t('recipe.noPreview')}
         </Text>
         <Pressable
           onPress={() => router.replace('/')}
           className="rounded-full px-5 py-3 active:opacity-80"
           style={{ backgroundColor: colors.primary }}
         >
-          <Text className="text-sm font-bold text-white">Go to library</Text>
+          <Text className="text-sm font-bold text-white">{t('recipe.goToLibrary')}</Text>
         </Pressable>
       </Screen>
     );
@@ -66,19 +95,44 @@ export default function RecipePreviewScreen() {
     saveInFlight.current = true;
     setSaving(true);
     try {
+      const canonical: ExtractedRecipe = {
+        ...recipeToSave,
+        source_language: recipeToSave.source_language ?? DEFAULT_SOURCE_LANGUAGE,
+      };
+
+      // Eager translate at save if preferred language differs and we don't have overlay yet.
+      let translation = pendingTranslation.current;
+      if (!translation && preferredLanguage !== (canonical.source_language ?? DEFAULT_SOURCE_LANGUAGE)) {
+        const result = await ensureRecipeTranslation({
+          recipe: canonical,
+          targetLanguage: preferredLanguage,
+        });
+        if (result.status === 'ok') {
+          translation = result.content;
+        }
+      }
+
       const { data: userData } = await supabase.auth.getUser();
 
       if (!userData.user) {
-        const result = await saveGuestRecipe(recipeToSave);
+        const result = await saveGuestRecipe({
+          ...canonical,
+          translations: translation
+            ? { [preferredLanguage]: translation }
+            : undefined,
+        });
 
         if (!result.ok) {
           Alert.alert(
-            'Free limit reached',
-            `Guest accounts can save up to ${GUEST_RECIPE_LIMIT} recipes (${result.savedCount} saved). Sign up to save more.`,
+            t('recipe.guestLimitTitle'),
+            t('recipe.guestLimitBody', {
+              limit: GUEST_RECIPE_LIMIT,
+              saved: result.savedCount,
+            }),
             [
-              { text: 'Not now', style: 'cancel' },
+              { text: t('common.notNow'), style: 'cancel' },
               {
-                text: 'Sign up',
+                text: t('auth.signUp'),
                 onPress: () => router.push('/auth?mode=signup&reason=save_limit'),
               },
             ],
@@ -91,22 +145,26 @@ export default function RecipePreviewScreen() {
         return;
       }
 
-      await saveRecipe(recipeToSave);
+      const saved = await saveRecipe(canonical);
+      if (translation) {
+        try {
+          await upsertRecipeTranslation(saved.id, preferredLanguage, translation);
+        } catch {
+          // Non-fatal — lazy translate on open will retry.
+        }
+      }
       router.replace('/?saved=1');
       clearRecipeDraft();
     } catch (err) {
-      Alert.alert('Could not save', err instanceof Error ? err.message : 'Please try again.');
+      Alert.alert(
+        t('recipe.saveFailedTitle'),
+        err instanceof Error ? err.message : t('common.tryAgain'),
+      );
     } finally {
       saveInFlight.current = false;
       setSaving(false);
     }
   }
-
-  const displayRecipe: ExtractedRecipe = {
-    ...parsed,
-    ...recipeToSave,
-    title: recipeToSave.title,
-  };
 
   return (
     <Screen edges={['bottom']}>
@@ -123,17 +181,27 @@ export default function RecipePreviewScreen() {
           onPress={handleSave}
           disabled={saving}
           accessibilityRole="button"
-          accessibilityLabel="Save recipe"
+          accessibilityLabel={t('recipe.save')}
         >
           {saving ? (
             <ActivityIndicator color="#fff" />
           ) : (
-            <Text className="text-base font-bold text-white">Save recipe</Text>
+            <Text className="text-base font-bold text-white">{t('recipe.save')}</Text>
           )}
         </Pressable>
       </View>
 
-      <RecipeView recipe={displayRecipe} onContentChange={handleContentChange} />
+      <RecipeView
+        recipe={recipeToSave}
+        onContentChange={handleContentChange}
+        localizedContent={displayContent}
+        localizedLanguage={activeLanguage}
+        translating={translating}
+        onTranslationPersist={(language, content) => {
+          pendingTranslation.current = content;
+          void applyManualTranslation(language, content);
+        }}
+      />
     </Screen>
   );
 }

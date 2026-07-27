@@ -1,6 +1,7 @@
 import Ionicons from '@expo/vector-icons/Ionicons';
 import { router } from 'expo-router';
 import { type ReactNode, useEffect, useMemo, useRef, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Alert, Pressable, ScrollView, Text, TouchableOpacity, View } from 'react-native';
 
 import { MeasurementToggle } from '@/components/MeasurementToggle';
@@ -35,7 +36,7 @@ import { setRecipeTags } from '@/lib/supabase/recipes';
 import { SubstitutionAlternative } from '@/lib/supabase/suggestSubstitution';
 import { TranslatedRecipePayload } from '@/lib/supabase/translateRecipe';
 import { TransformedRecipePayload } from '@/lib/supabase/transformRecipe';
-import { Ingredient, Instruction } from '@/types/recipe';
+import { Ingredient, Instruction, RecipeTranslationContent } from '@/types/recipe';
 
 /**
  * Scales ingredient quantities from `baseServings` to `target`, rounded to
@@ -64,17 +65,35 @@ interface RecipeViewProps {
    * Accepts either a saved `Recipe` (has id/user_id/created_at) or a
    * freshly extracted, not-yet-saved `ExtractedRecipe` — this component
    * never reads the save-only fields, so either shape works.
+   * Always pass **canonical** (source-language) content here.
    */
   recipe: ExtractedRecipe;
   /** Optional trailing content inside the scroll (rarely needed). */
   footer?: ReactNode;
-  /** Fired when title/ingredients/instructions/servings/calories change. */
+  /**
+   * Fired when canonical title/ingredients/instructions/servings/calories change.
+   * Never includes an active translation overlay (ADR 012).
+   */
   onContentChange?: (content: RecipeContentSnapshot) => void;
   /** Saved recipes only — shows a heart toggle in the header. */
   isFavorite?: boolean;
   onToggleFavorite?: () => void;
   /** When set, ingredients added to the shopping list keep this recipe as provenance. */
   recipeId?: string;
+  /** Preferred-language overlay from cache / auto-translate. */
+  localizedContent?: RecipeTranslationContent | null;
+  localizedLanguage?: RecipeLanguageCode | null;
+  /** True while auto-translate is in flight. */
+  translating?: boolean;
+  /** Persist a language overlay without mutating canonical recipe rows. */
+  onTranslationPersist?: (
+    language: RecipeLanguageCode,
+    content: RecipeTranslationContent,
+  ) => void | Promise<void>;
+  /** Prefer cache before Gemini when picking a language in the modal. */
+  getCachedTranslation?: (
+    language: RecipeLanguageCode,
+  ) => Promise<RecipeTranslationContent | null> | RecipeTranslationContent | null;
 }
 
 /**
@@ -88,7 +107,13 @@ export function RecipeView({
   isFavorite,
   onToggleFavorite,
   recipeId,
+  localizedContent,
+  localizedLanguage = null,
+  translating = false,
+  onTranslationPersist,
+  getCachedTranslation,
 }: RecipeViewProps) {
+  const { t } = useTranslation();
   const { colors } = useThemePreference();
   const { system: measurementSystem } = useMeasurementPreference();
   const { addFromRecipe } = useShoppingList();
@@ -106,12 +131,22 @@ export function RecipeView({
     calories: recipe.calories,
   });
   /** Untranslated content used as the source for every language switch. */
-  const translationSourceRef = useRef<RecipeContentSnapshot | null>(null);
+  const translationSourceRef = useRef<RecipeContentSnapshot | null>({
+    title: recipe.title,
+    servings: recipe.servings,
+    ingredients: recipe.ingredients,
+    instructions: recipe.instructions,
+    calories: recipe.calories,
+  });
 
-  const [title, setTitle] = useState(recipe.title);
+  const [title, setTitle] = useState(localizedContent?.title ?? recipe.title);
   const [baseServings, setBaseServings] = useState(recipe.servings);
-  const [baseIngredients, setBaseIngredients] = useState<Ingredient[]>(recipe.ingredients);
-  const [baseInstructions, setBaseInstructions] = useState<Instruction[]>(recipe.instructions);
+  const [baseIngredients, setBaseIngredients] = useState<Ingredient[]>(
+    localizedContent?.ingredients ?? recipe.ingredients,
+  );
+  const [baseInstructions, setBaseInstructions] = useState<Instruction[]>(
+    localizedContent?.instructions ?? recipe.instructions,
+  );
   const [calories, setCalories] = useState(recipe.calories);
   const [servings, setServings] = useState(recipe.servings);
   const [tags, setTags] = useState<string[]>(recipe.tags ?? []);
@@ -123,7 +158,9 @@ export function RecipeView({
   const [translateModalOpen, setTranslateModalOpen] = useState(false);
   const [activeVariant, setActiveVariant] = useState<RecipeVariantKey | null>(null);
   const [variantSummary, setVariantSummary] = useState<string | null>(null);
-  const [activeLanguage, setActiveLanguage] = useState<RecipeLanguageCode | null>(null);
+  const [activeLanguage, setActiveLanguage] = useState<RecipeLanguageCode | null>(
+    localizedLanguage,
+  );
   const videoPanelRef = useRef<RecipeVideoPanelHandle>(null);
 
   const recipeCollections = recipeId ? collectionsForRecipe(recipeId) : [];
@@ -133,7 +170,74 @@ export function RecipeView({
   const calorieDisplay = getCalorieDisplay(calories, baseServings, servings);
   const textDirection = isRtlRecipeLanguage(activeLanguage) ? 'rtl' : 'ltr';
 
+  // Sync auto-localized overlay from parent without rewriting canonical refs.
   useEffect(() => {
+    translationSourceRef.current = {
+      title: recipe.title,
+      servings: recipe.servings,
+      ingredients: recipe.ingredients,
+      instructions: recipe.instructions,
+      calories: recipe.calories,
+    };
+    originalRef.current = {
+      title: recipe.title,
+      servings: recipe.servings,
+      ingredients: recipe.ingredients,
+      instructions: recipe.instructions,
+      calories: recipe.calories,
+    };
+    setBaseServings(recipe.servings);
+    setCalories(recipe.calories);
+    setServings(recipe.servings);
+    setTags(recipe.tags ?? []);
+
+    if (localizedContent && localizedLanguage) {
+      setTitle(localizedContent.title);
+      setBaseIngredients(localizedContent.ingredients);
+      setBaseInstructions(localizedContent.instructions);
+      setActiveLanguage(localizedLanguage);
+    } else {
+      setTitle(recipe.title);
+      setBaseIngredients(recipe.ingredients);
+      setBaseInstructions(recipe.instructions);
+      setActiveLanguage(null);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- intentional sync on identity of canonical + overlay
+  }, [
+    recipe.title,
+    recipe.servings,
+    recipe.calories,
+    recipe.ingredients,
+    recipe.instructions,
+    recipe.tags,
+    localizedContent,
+    localizedLanguage,
+  ]);
+
+  // When remix/swap mutates display while not translated, keep canonical ref in sync.
+  useEffect(() => {
+    if (activeLanguage != null) return;
+    translationSourceRef.current = {
+      title,
+      servings: baseServings,
+      ingredients: baseIngredients,
+      instructions: baseInstructions,
+      calories,
+    };
+  }, [title, baseServings, baseIngredients, baseInstructions, calories, activeLanguage]);
+
+  useEffect(() => {
+    if (activeLanguage != null) {
+      const canonical = translationSourceRef.current;
+      onContentChange?.({
+        title: canonical?.title ?? recipe.title,
+        servings: baseServings,
+        ingredients: canonical?.ingredients ?? recipe.ingredients,
+        instructions: canonical?.instructions ?? recipe.instructions,
+        calories,
+      });
+      return;
+    }
     onContentChange?.({
       title,
       servings: baseServings,
@@ -141,7 +245,18 @@ export function RecipeView({
       instructions: baseInstructions,
       calories,
     });
-  }, [title, baseServings, baseIngredients, baseInstructions, calories, onContentChange]);
+  }, [
+    title,
+    baseServings,
+    baseIngredients,
+    baseInstructions,
+    calories,
+    activeLanguage,
+    onContentChange,
+    recipe.title,
+    recipe.ingredients,
+    recipe.instructions,
+  ]);
 
   function handleApplySubstitution(alternative: SubstitutionAlternative) {
     if (swapIndex == null) return;
@@ -161,6 +276,8 @@ export function RecipeView({
   }
 
   function handleApplyVariant(result: TransformedRecipePayload, variant: RecipeVariantKey) {
+    const canonicalTitle = translationSourceRef.current?.title ?? recipe.title;
+    setTitle(canonicalTitle);
     setBaseServings(result.servings);
     setBaseIngredients(result.ingredients);
     setBaseInstructions(result.instructions);
@@ -169,7 +286,13 @@ export function RecipeView({
     setActiveVariant(variant);
     setVariantSummary(result.summary);
     setActiveLanguage(null);
-    translationSourceRef.current = null;
+    translationSourceRef.current = {
+      title: canonicalTitle,
+      servings: result.servings,
+      ingredients: result.ingredients,
+      instructions: result.instructions,
+      calories: result.calories,
+    };
   }
 
   function handleRevertVariant() {
@@ -183,16 +306,16 @@ export function RecipeView({
     setActiveVariant(null);
     setVariantSummary(null);
     setActiveLanguage(null);
-    translationSourceRef.current = null;
+    translationSourceRef.current = { ...original };
   }
 
   function handleApplyTranslation(result: TranslatedRecipePayload, language: RecipeLanguageCode) {
     if (!translationSourceRef.current) {
       translationSourceRef.current = {
-        title,
+        title: recipe.title,
         servings: baseServings,
-        ingredients: baseIngredients,
-        instructions: baseInstructions,
+        ingredients: recipe.ingredients,
+        instructions: recipe.instructions,
         calories,
       };
     }
@@ -200,6 +323,11 @@ export function RecipeView({
     setBaseIngredients(result.ingredients);
     setBaseInstructions(result.instructions);
     setActiveLanguage(language);
+    void onTranslationPersist?.(language, {
+      title: result.title,
+      ingredients: result.ingredients,
+      instructions: result.instructions,
+    });
   }
 
   function handleShowOriginalLanguage() {
@@ -211,14 +339,13 @@ export function RecipeView({
     setCalories(prior.calories);
     setServings(prior.servings);
     setActiveLanguage(null);
-    translationSourceRef.current = null;
   }
 
   const translationSource = translationSourceRef.current ?? {
-    title,
+    title: recipe.title,
     servings: baseServings,
-    ingredients: baseIngredients,
-    instructions: baseInstructions,
+    ingredients: recipe.ingredients,
+    instructions: recipe.instructions,
     calories,
   };
 
@@ -372,17 +499,30 @@ export function RecipeView({
           </View>
         </View>
 
+        {translating ? (
+          <View
+            className="mb-4 rounded-2xl border px-4 py-3"
+            style={{ borderColor: colors.border, backgroundColor: colors.surface }}
+          >
+            <Text className="text-sm" style={{ color: colors.textSecondary }}>
+              {t('recipe.translating')}
+            </Text>
+          </View>
+        ) : null}
+
         {activeLanguage != null && (
           <View
             className="mb-4 rounded-2xl border px-4 py-3"
             style={{ borderColor: colors.primarySoft, backgroundColor: colors.primarySoft }}
           >
             <Text className="text-sm font-semibold" style={{ color: colors.primary }}>
-              Showing {getRecipeLanguageLabel(activeLanguage)}
+              {t('recipe.showingLanguage', {
+                language: getRecipeLanguageLabel(activeLanguage),
+              })}
             </Text>
             <Pressable onPress={handleShowOriginalLanguage} className="mt-2 active:opacity-70">
               <Text className="text-sm font-semibold" style={{ color: colors.accent }}>
-                Show original language
+                {t('recipe.showOriginal')}
               </Text>
             </Pressable>
           </View>
@@ -699,6 +839,10 @@ export function RecipeView({
         ingredients={translationSource.ingredients}
         instructions={translationSource.instructions}
         activeLanguage={activeLanguage}
+        getCachedTranslation={
+          getCachedTranslation ??
+          ((language) => recipe.translations?.[language] ?? null)
+        }
         onClose={() => setTranslateModalOpen(false)}
         onApply={handleApplyTranslation}
         onShowOriginal={handleShowOriginalLanguage}

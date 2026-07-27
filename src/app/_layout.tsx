@@ -1,16 +1,20 @@
 import '../global.css';
 
 import Constants, { ExecutionEnvironment } from 'expo-constants';
-import { Platform } from 'react-native';
 import { Stack } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { ShareIntentProvider } from 'expo-share-intent';
+import { useTranslation } from 'react-i18next';
 
 import { ErrorBoundary } from '@/components/ErrorBoundary';
 import { AuthProvider } from '@/hooks/useAuth';
+import { LanguageProvider } from '@/hooks/useLanguagePreference';
 import { MeasurementProvider } from '@/hooks/useMeasurementPreference';
+import { OnboardingProvider, useOnboarding } from '@/hooks/useOnboarding';
+import { OnboardingGate } from '@/hooks/useOnboardingGate';
 import { ShareIntentRouter } from '@/hooks/useShareIntentRouter';
 import { ThemeProvider, useThemePreference } from '@/hooks/useThemePreference';
+import { I18nProvider } from '@/i18n';
 
 // expo-share-intent needs native code, so it can't do anything in Expo Go —
 // disabling it there avoids a console warning and pointless listener setup.
@@ -19,37 +23,38 @@ const isExpoGo = Constants.executionEnvironment === ExecutionEnvironment.StoreCl
 
 function RootNavigator() {
   const { colors, scheme } = useThemePreference();
+  const { t } = useTranslation();
+  const { ready: onboardingReady } = useOnboarding();
 
   return (
     <>
-      <StatusBar
-        style={scheme === 'dark' ? 'light' : 'dark'}
-        backgroundColor={colors.background}
-        translucent={Platform.OS === 'android' ? false : undefined}
-      />
-      <Stack
-        screenOptions={{
-          headerShadowVisible: false,
-          headerTintColor: colors.primary,
-          headerStyle: { backgroundColor: colors.background },
-          headerTitleStyle: { fontWeight: '700', color: colors.text },
-          contentStyle: { backgroundColor: colors.background },
-        }}
-      >
-        <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
-        <Stack.Screen name="recipe/[id]" options={{ title: 'Recipe' }} />
-        <Stack.Screen name="recipe/preview" options={{ title: 'Preview' }} />
-        <Stack.Screen
-          name="auth"
-          options={{
-            title: 'Welcome',
-            presentation: 'modal',
+      <StatusBar style={scheme === 'dark' ? 'light' : 'dark'} />
+      {onboardingReady ? (
+        <Stack
+          screenOptions={{
+            headerShadowVisible: false,
+            headerTintColor: colors.primary,
+            headerStyle: { backgroundColor: colors.background },
+            headerTitleStyle: { fontWeight: '700', color: colors.text },
+            contentStyle: { backgroundColor: colors.background },
           }}
-        />
-        <Stack.Screen name="reset-password" options={{ title: 'Reset password' }} />
-        <Stack.Screen name="auth-callback" options={{ headerShown: false }} />
-        <Stack.Screen name="admin/usage" options={{ title: 'Usage & support' }} />
-      </Stack>
+        >
+          <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
+          <Stack.Screen name="onboarding" options={{ headerShown: false, animation: 'fade' }} />
+          <Stack.Screen name="recipe/[id]" options={{ title: t('nav.recipe') }} />
+          <Stack.Screen name="recipe/preview" options={{ title: t('nav.preview') }} />
+          <Stack.Screen
+            name="auth"
+            options={{
+              title: t('nav.welcome'),
+              presentation: 'modal',
+            }}
+          />
+          <Stack.Screen name="reset-password" options={{ title: t('nav.resetPassword') }} />
+          <Stack.Screen name="auth-callback" options={{ headerShown: false }} />
+          <Stack.Screen name="admin/usage" options={{ title: t('nav.usage') }} />
+        </Stack>
+      ) : null}
     </>
   );
 }
@@ -60,14 +65,21 @@ export default function RootLayout() {
       options={{ debug: __DEV__, resetOnBackground: true, disabled: isExpoGo }}
     >
       <ThemeProvider>
-        <MeasurementProvider>
-          <ErrorBoundary>
-            <AuthProvider>
-              <ShareIntentRouter />
-              <RootNavigator />
-            </AuthProvider>
-          </ErrorBoundary>
-        </MeasurementProvider>
+        <LanguageProvider>
+          <I18nProvider>
+            <MeasurementProvider>
+              <OnboardingProvider>
+                <ErrorBoundary>
+                  <AuthProvider>
+                    <OnboardingGate />
+                    <ShareIntentRouter />
+                    <RootNavigator />
+                  </AuthProvider>
+                </ErrorBoundary>
+              </OnboardingProvider>
+            </MeasurementProvider>
+          </I18nProvider>
+        </LanguageProvider>
       </ThemeProvider>
     </ShareIntentProvider>
   );

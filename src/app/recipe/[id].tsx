@@ -2,9 +2,11 @@ import { useFocusEffect, useNavigation } from '@react-navigation/native';
 import { useLocalSearchParams } from 'expo-router';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { ActivityIndicator, Alert, Pressable, Text } from 'react-native';
+import { useTranslation } from 'react-i18next';
 
 import { RecipeView } from '@/components/RecipeView';
 import { Screen } from '@/components/Screen';
+import { useLocalizedRecipe } from '@/hooks/useLocalizedRecipe';
 import { useThemePreference } from '@/hooks/useThemePreference';
 import { backfillRecipeThumbnails } from '@/lib/backfillRecipeThumbnails';
 import { getGuestRecipeById, updateGuestRecipeContent } from '@/lib/guestRecipes';
@@ -32,6 +34,7 @@ function contentMatchesRecipe(
 }
 
 export default function RecipeDetailScreen() {
+  const { t } = useTranslation();
   const { id } = useLocalSearchParams<{ id: string }>();
   const navigation = useNavigation();
   const [recipe, setRecipe] = useState<Recipe | null | undefined>(undefined);
@@ -40,11 +43,30 @@ export default function RecipeDetailScreen() {
   const recipeRef = useRef<Recipe | null>(null);
   const persistQueue = useRef(Promise.resolve());
 
+  const {
+    displayContent,
+    activeLanguage,
+    translating,
+    translationError,
+    applyManualTranslation,
+    loadCached,
+  } = useLocalizedRecipe(recipe ?? null, recipe?.id);
+
   useEffect(() => {
-    if (recipe?.title) {
-      navigation.setOptions({ title: recipe.title });
+    const title = displayContent?.title ?? recipe?.title;
+    if (title) {
+      navigation.setOptions({ title });
     }
-  }, [navigation, recipe?.title]);
+  }, [navigation, displayContent?.title, recipe?.title]);
+
+  const lastTranslationError = useRef<string | null>(null);
+  useEffect(() => {
+    if (translationError && translationError !== lastTranslationError.current) {
+      lastTranslationError.current = translationError;
+      Alert.alert(t('recipe.translateFailedTitle'), translationError);
+    }
+    if (!translationError) lastTranslationError.current = null;
+  }, [translationError, t]);
 
   const loadRecipe = useCallback(async () => {
     setLoadError(null);
@@ -65,9 +87,9 @@ export default function RecipeDetailScreen() {
     } catch (err) {
       setRecipe(null);
       recipeRef.current = null;
-      setLoadError(err instanceof Error ? err.message : 'Could not load this recipe.');
+      setLoadError(err instanceof Error ? err.message : t('recipe.loadFailed'));
     }
-  }, [id]);
+  }, [id, t]);
 
   useFocusEffect(
     useCallback(() => {
@@ -90,8 +112,8 @@ export default function RecipeDetailScreen() {
       setRecipe(rolled);
       recipeRef.current = rolled;
       Alert.alert(
-        'Could not update favorite',
-        err instanceof Error ? err.message : 'Please try again.',
+        t('recipe.favoriteFailedTitle'),
+        err instanceof Error ? err.message : t('common.tryAgain'),
       );
     }
   }
@@ -124,12 +146,12 @@ export default function RecipeDetailScreen() {
         })
         .catch((err) => {
           Alert.alert(
-            'Could not save changes',
-            err instanceof Error ? err.message : 'Your remix may not have been saved. Try again.',
+            t('recipe.saveFailedTitle'),
+            err instanceof Error ? err.message : t('recipe.saveFailedBody'),
           );
         });
     },
-    [id],
+    [id, t],
   );
 
   if (recipe === undefined) {
@@ -144,7 +166,7 @@ export default function RecipeDetailScreen() {
     return (
       <Screen className="items-center justify-center px-6" edges={['bottom']}>
         <Text className="mb-2 text-center text-base font-semibold" style={{ color: colors.text }}>
-          Could not load recipe
+          {t('recipe.loadFailedTitle')}
         </Text>
         <Text className="mb-5 text-center text-sm" style={{ color: colors.textSecondary }}>
           {loadError}
@@ -154,7 +176,7 @@ export default function RecipeDetailScreen() {
           className="rounded-full px-5 py-3 active:opacity-80"
           style={{ backgroundColor: colors.primary }}
         >
-          <Text className="text-sm font-bold text-white">Try again</Text>
+          <Text className="text-sm font-bold text-white">{t('common.tryAgain')}</Text>
         </Pressable>
       </Screen>
     );
@@ -164,7 +186,7 @@ export default function RecipeDetailScreen() {
     return (
       <Screen className="items-center justify-center px-6" edges={['bottom']}>
         <Text className="text-center text-base" style={{ color: colors.textSecondary }}>
-          Recipe not found.
+          {t('recipe.notFound')}
         </Text>
       </Screen>
     );
@@ -178,6 +200,13 @@ export default function RecipeDetailScreen() {
         isFavorite={recipe.is_favorite === true}
         onToggleFavorite={handleToggleFavorite}
         onContentChange={handleContentChange}
+        localizedContent={displayContent}
+        localizedLanguage={activeLanguage}
+        translating={translating}
+        onTranslationPersist={(language, content) => {
+          void applyManualTranslation(language, content);
+        }}
+        getCachedTranslation={loadCached}
       />
     </Screen>
   );

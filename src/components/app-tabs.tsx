@@ -1,5 +1,6 @@
 import Ionicons from '@expo/vector-icons/Ionicons';
 import { Tabs } from 'expo-router';
+import { useTranslation } from 'react-i18next';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { useThemePreference } from '@/hooks/useThemePreference';
@@ -18,6 +19,7 @@ const TAB_BAR_CONTENT_HEIGHT = 56;
  * Favorites lives as a Library filter — tab hidden via href: null.
  */
 export default function AppTabs() {
+  const { t } = useTranslation();
   const { colors } = useThemePreference();
   const insets = useSafeAreaInsets();
   const tabBarPaddingBottom = Math.max(insets.bottom, 8);
@@ -45,7 +47,7 @@ export default function AppTabs() {
       <Tabs.Screen
         name="index"
         options={{
-          title: 'Library',
+          title: t('tabs.library'),
           tabBarIcon: ({ color, size, focused }) => (
             <Ionicons
               name={focused ? 'book' : 'book-outline'}
@@ -58,7 +60,7 @@ export default function AppTabs() {
       <Tabs.Screen
         name="add"
         options={{
-          title: 'Snap',
+          title: t('tabs.snap'),
           tabBarIcon: ({ color, size, focused }) => (
             <Ionicons
               name={focused ? 'sparkles' : 'sparkles-outline'}
@@ -71,7 +73,7 @@ export default function AppTabs() {
       <Tabs.Screen
         name="list"
         options={{
-          title: 'List',
+          title: t('tabs.list'),
           tabBarIcon: ({ color, size, focused }) => (
             <Ionicons
               name={focused ? 'cart' : 'cart-outline'}
@@ -84,7 +86,7 @@ export default function AppTabs() {
       <Tabs.Screen
         name="settings"
         options={{
-          title: 'Settings',
+          title: t('tabs.settings'),
           tabBarIcon: ({ color, size, focused }) => (
             <Ionicons
               name={focused ? 'settings' : 'settings-outline'}

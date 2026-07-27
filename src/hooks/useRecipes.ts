@@ -2,9 +2,13 @@ import { useFocusEffect } from '@react-navigation/native';
 import { useCallback, useEffect, useState } from 'react';
 
 import { useAuth } from '@/hooks/useAuth';
+import { useLanguagePreference } from '@/hooks/useLanguagePreference';
+import { effectiveSourceLanguage } from '@/lib/appLanguages';
 import { backfillRecipeThumbnails } from '@/lib/backfillRecipeThumbnails';
 import { getGuestRecipes } from '@/lib/guestRecipes';
+import { withDisplayTitles } from '@/lib/recipeDisplayTitle';
 import { normalizeRecipeFavorite, normalizeRecipes, toggleRecipeFavorite } from '@/lib/recipeFavorites';
+import { fetchRecipeTranslationsForLanguage } from '@/lib/supabase/recipeTranslations';
 import { fetchRecipes } from '@/lib/supabase/recipes';
 import { Recipe } from '@/types/recipe';
 
@@ -17,6 +21,7 @@ import { Recipe } from '@/types/recipe';
  */
 export function useRecipes() {
   const { user, migrationStatus } = useAuth();
+  const { language: preferredLanguage } = useLanguagePreference();
   const [recipes, setRecipes] = useState<Recipe[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -26,13 +31,38 @@ export function useRecipes() {
     try {
       const data = user ? await fetchRecipes() : await getGuestRecipes();
       const backfilled = await backfillRecipeThumbnails(normalizeRecipes(data));
-      setRecipes(backfilled);
+
+      let withTranslations = backfilled;
+      if (user) {
+        const needingTitle = backfilled.filter(
+          (r) => effectiveSourceLanguage(r.source_language) !== preferredLanguage,
+        );
+        if (needingTitle.length > 0) {
+          const map = await fetchRecipeTranslationsForLanguage(
+            preferredLanguage,
+            needingTitle.map((r) => r.id),
+          );
+          withTranslations = backfilled.map((recipe) => {
+            const cached = map[recipe.id];
+            if (!cached) return recipe;
+            return {
+              ...recipe,
+              translations: {
+                ...(recipe.translations ?? {}),
+                [preferredLanguage]: cached,
+              },
+            };
+          });
+        }
+      }
+
+      setRecipes(withDisplayTitles(withTranslations, preferredLanguage));
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Could not load your recipes.');
     } finally {
       setLoading(false);
     }
-  }, [user]);
+  }, [user, preferredLanguage]);
 
   const patchRecipe = useCallback((id: string, patch: Partial<Recipe>) => {
     setRecipes((prev) =>

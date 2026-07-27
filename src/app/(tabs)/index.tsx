@@ -14,6 +14,8 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
+import { useTranslation } from 'react-i18next';
+
 import { BrandHeader } from '@/components/BrandHeader';
 import { RecipeLibraryToolbar } from '@/components/RecipeLibraryToolbar';
 import { RecipeListRow } from '@/components/RecipeListRow';
@@ -63,6 +65,7 @@ type CollectionNameModalState =
   | null;
 
 export default function HomeScreen() {
+  const { t } = useTranslation();
   const { user } = useAuth();
   const { recipes, loading, error, refresh, toggleFavorite } = useRecipes();
   const {
@@ -323,7 +326,7 @@ export default function HomeScreen() {
           </View>
         )}
 
-        <BrandHeader title="Your recipes" subtitle="Your kitchen" />
+        <BrandHeader title={t('library.title')} subtitle={t('library.subtitle')} />
 
         <RecipeLibraryToolbar
           search={search}

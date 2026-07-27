@@ -1,6 +1,7 @@
 import Ionicons from '@expo/vector-icons/Ionicons';
 import { router } from 'expo-router';
 import { useCallback, useMemo, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import {
   ActivityIndicator,
   Alert,
@@ -66,6 +67,7 @@ export default function ShoppingListScreen() {
     clearAll,
   } = useShoppingList();
   const { colors } = useThemePreference();
+  const { t } = useTranslation();
 
   const [name, setName] = useState('');
   const [quantityText, setQuantityText] = useState('');
@@ -433,7 +435,7 @@ export default function ShoppingListScreen() {
       <View className="flex-1 px-5 pt-2">
         <View className="flex-row items-start gap-3">
           <View className="min-w-0 flex-1">
-            <BrandHeader title="List" subtitle="Groceries for your recipes" />
+            <BrandHeader title={t('list.title')} subtitle={t('list.subtitle')} />
           </View>
           {items.length > 0 ? (
             <Pressable

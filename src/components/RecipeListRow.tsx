@@ -76,7 +76,7 @@ export const RecipeListRow = memo(function RecipeListRow({
               style={{ color: colors.text }}
               numberOfLines={2}
             >
-              {recipe.title}
+              {recipe.display_title ?? recipe.title}
             </Text>
             {metadata.length > 0 && (
               <Text className="mt-1.5 text-sm" style={{ color: colors.textSecondary }}>

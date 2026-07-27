@@ -1,5 +1,6 @@
 import Ionicons from '@expo/vector-icons/Ionicons';
 import { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { ActivityIndicator, Modal, Pressable, ScrollView, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
@@ -13,7 +14,7 @@ import {
   translateRecipe,
   TranslatedRecipePayload,
 } from '@/lib/supabase/translateRecipe';
-import { Ingredient, Instruction } from '@/types/recipe';
+import { Ingredient, Instruction, RecipeTranslationContent } from '@/types/recipe';
 
 interface RecipeTranslateModalProps {
   visible: boolean;
@@ -21,6 +22,10 @@ interface RecipeTranslateModalProps {
   ingredients: Ingredient[];
   instructions: Instruction[];
   activeLanguage: RecipeLanguageCode | null;
+  /** Optional cache lookup before calling Gemini. */
+  getCachedTranslation?: (
+    language: RecipeLanguageCode,
+  ) => Promise<RecipeTranslationContent | null> | RecipeTranslationContent | null;
   onClose: () => void;
   onApply: (result: TranslatedRecipePayload, language: RecipeLanguageCode) => void;
   onShowOriginal: () => void;
@@ -28,7 +33,7 @@ interface RecipeTranslateModalProps {
 
 /**
  * Sheet for translating recipe content into one of the supported languages.
- * Always sends the currently displayed content to Gemini.
+ * Always translates from the provided source (canonical) content.
  */
 export function RecipeTranslateModal({
   visible,
@@ -36,10 +41,12 @@ export function RecipeTranslateModal({
   ingredients,
   instructions,
   activeLanguage,
+  getCachedTranslation,
   onClose,
   onApply,
   onShowOriginal,
 }: RecipeTranslateModalProps) {
+  const { t } = useTranslation();
   const { colors } = useThemePreference();
   const [loadingLanguage, setLoadingLanguage] = useState<RecipeLanguageCode | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -61,6 +68,14 @@ export function RecipeTranslateModal({
     setError(null);
 
     try {
+      const cached = (await getCachedTranslation?.(language)) ?? null;
+      if (cached) {
+        onApply(cached, language);
+        setError(null);
+        onClose();
+        return;
+      }
+
       const result = await translateRecipe(language, {
         title,
         ingredients,
@@ -68,7 +83,7 @@ export function RecipeTranslateModal({
       });
 
       if (result.status === 'failed' || !result.recipe) {
-        setError(result.message ?? "Couldn't translate this recipe. Try again.");
+        setError(result.message ?? t('recipe.translateFailedTitle'));
         return;
       }
 
@@ -76,7 +91,7 @@ export function RecipeTranslateModal({
       setError(null);
       onClose();
     } catch {
-      setError("Couldn't translate this recipe. Try again.");
+      setError(t('recipe.translateFailedTitle'));
     } finally {
       setLoadingLanguage(null);
     }
@@ -109,13 +124,13 @@ export function RecipeTranslateModal({
             <Ionicons name="close" size={20} color={colors.text} />
           </Pressable>
           <Text className="text-base font-bold" style={{ color: colors.text }}>
-            Translate recipe
+            {t('recipe.translateTitle')}
           </Text>
           <View className="h-10 w-10" />
         </View>
 
         <Text className="mb-3 px-5 text-sm leading-5" style={{ color: colors.textSecondary }}>
-          Recipes stay in their original language until you pick one below.
+          {t('recipe.translateHint')}
         </Text>
 
         {error ? (

@@ -21,7 +21,7 @@ export const FREE_EXTRACT_LIMIT = 10;
 /** Calendar-month extracts for Pinch Plus (UTC YYYY-MM). */
 export const PLUS_MONTHLY_EXTRACT_LIMIT = 90;
 /** Display price until real IAP. */
-export const PLUS_PRICE_DISPLAY = '$6.99/mo';
+export const PLUS_PRICE_DISPLAY = '$9.99/mo';
 
 export interface GeminiUsageSnapshot {
   model: string;

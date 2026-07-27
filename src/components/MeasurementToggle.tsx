@@ -1,13 +1,14 @@
 import Ionicons from '@expo/vector-icons/Ionicons';
+import { useTranslation } from 'react-i18next';
 import { Pressable, Text, View } from 'react-native';
 
 import { useMeasurementPreference } from '@/hooks/useMeasurementPreference';
 import { useThemePreference } from '@/hooks/useThemePreference';
 import type { MeasurementSystem } from '@/lib/convertMeasurement';
 
-const MODES: { id: MeasurementSystem; label: string; icon: keyof typeof Ionicons.glyphMap }[] = [
-  { id: 'original', label: 'Spoons', icon: 'restaurant-outline' },
-  { id: 'metric', label: 'Grams', icon: 'scale-outline' },
+const MODES: { id: MeasurementSystem; icon: keyof typeof Ionicons.glyphMap }[] = [
+  { id: 'original', icon: 'restaurant-outline' },
+  { id: 'metric', icon: 'scale-outline' },
 ];
 
 type MeasurementToggleProps = {
@@ -17,8 +18,14 @@ type MeasurementToggleProps = {
 
 /** Cute pill toggle — cups & spoons vs grams & milliliters. */
 export function MeasurementToggle({ hint = false }: MeasurementToggleProps) {
+  const { t } = useTranslation();
   const { system, setSystem } = useMeasurementPreference();
   const { colors } = useThemePreference();
+
+  const labels: Record<MeasurementSystem, string> = {
+    original: t('measurement.spoons'),
+    metric: t('measurement.grams'),
+  };
 
   return (
     <View>
@@ -46,7 +53,7 @@ export function MeasurementToggle({ hint = false }: MeasurementToggleProps) {
                 className="text-xs font-semibold"
                 style={{ color: active ? colors.primary : colors.textSecondary }}
               >
-                {mode.label}
+                {labels[mode.id]}
               </Text>
             </Pressable>
           );
@@ -54,7 +61,7 @@ export function MeasurementToggle({ hint = false }: MeasurementToggleProps) {
       </View>
       {hint && system === 'metric' ? (
         <Text className="mt-2 text-center text-[11px] leading-4" style={{ color: colors.textSecondary }}>
-          Liquids in ml · solids in g · cloves & pinches stay cozy
+          {t('measurement.metricHint')}
         </Text>
       ) : null}
     </View>

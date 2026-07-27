@@ -1,7 +1,8 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
+import { DEFAULT_SOURCE_LANGUAGE } from '@/lib/appLanguages';
 import { detectPlatform, recipeUrlsMatch } from '@/lib/platformUrls';
-import { Recipe } from '@/types/recipe';
+import { Recipe, RecipeTranslationContent } from '@/types/recipe';
 
 /** ADR 002 — guests can save up to 3 recipes locally before signing up. */
 export const GUEST_RECIPE_LIMIT = 3;
@@ -76,6 +77,7 @@ export async function saveGuestRecipe(recipe: NewGuestRecipe): Promise<SaveGuest
 
     const saved: Recipe = {
       ...recipe,
+      source_language: recipe.source_language ?? DEFAULT_SOURCE_LANGUAGE,
       id: generateGuestId(),
       created_at: new Date().toISOString(),
     };
@@ -117,7 +119,7 @@ export async function setGuestRecipeTags(id: string, tags: string[]): Promise<vo
   });
 }
 
-/** Persists remix / swap / translate edits on a local guest recipe. */
+/** Persists remix / swap edits on a local guest recipe (canonical fields only). */
 export async function updateGuestRecipeContent(
   id: string,
   content: {
@@ -140,6 +142,8 @@ export async function updateGuestRecipeContent(
         ingredients: content.ingredients,
         instructions: content.instructions,
         calories: content.calories,
+        // Canonical text changed — drop stale translation overlays.
+        translations: undefined,
       };
       return updated;
     });
@@ -147,6 +151,40 @@ export async function updateGuestRecipeContent(
     await writeGuestRecipes(next);
     return updated;
   });
+}
+
+/** Upserts a language overlay without touching canonical recipe fields. */
+export async function upsertGuestRecipeTranslation(
+  id: string,
+  languageCode: string,
+  content: RecipeTranslationContent,
+): Promise<Recipe | null> {
+  return serializeMutation(async () => {
+    const existing = await readGuestRecipes();
+    let updated: Recipe | null = null;
+    const next = existing.map((recipe) => {
+      if (recipe.id !== id) return recipe;
+      updated = {
+        ...recipe,
+        translations: {
+          ...(recipe.translations ?? {}),
+          [languageCode]: content,
+        },
+      };
+      return updated;
+    });
+    if (!updated) return null;
+    await writeGuestRecipes(next);
+    return updated;
+  });
+}
+
+export async function getGuestRecipeTranslation(
+  id: string,
+  languageCode: string,
+): Promise<RecipeTranslationContent | null> {
+  const recipe = await getGuestRecipeById(id);
+  return recipe?.translations?.[languageCode] ?? null;
 }
 
 /** Wipes all local guest recipes — used after a successful migration to Supabase. */
@@ -196,8 +234,12 @@ function sanitizeStoredRecipe(value: unknown): Recipe | null {
   assignString(recipe, 'calories_reasoning', value.calories_reasoning);
   assignString(recipe, 'time_reasoning', value.time_reasoning);
   assignString(recipe, 'created_at', value.created_at);
+  assignString(recipe, 'source_language', value.source_language);
   assignNumber(recipe, 'calories', value.calories);
   assignNumber(recipe, 'estimated_time_minutes', value.estimated_time_minutes);
+
+  const translations = sanitizeTranslations(value.translations);
+  if (translations) recipe.translations = translations;
 
   if (['youtube', 'instagram', 'tiktok', 'unknown'].includes(String(value.platform))) {
     recipe.platform = value.platform as Recipe['platform'];
@@ -230,9 +272,10 @@ function sanitizeIngredients(value: unknown): Recipe['ingredients'] | null {
   for (const item of value) {
     if (!isRecord(item)) return null;
     const name = readString(item.name);
-    const unit = readString(item.unit);
+    // Unit may be empty string for countable items after translation.
+    const unit = typeof item.unit === 'string' ? item.unit.trim() : null;
     const quantity = readFiniteNumber(item.quantity);
-    if (!name || !unit || quantity === null) return null;
+    if (!name || unit === null || quantity === null) return null;
     ingredients.push({ name, unit, quantity });
   }
   return ingredients;
@@ -261,6 +304,22 @@ function sanitizeStringArray(value: unknown): string[] | null {
   if (!Array.isArray(value) || value.length > 100) return null;
   const strings = value.map(readString);
   return strings.every((item): item is string => item !== null) ? strings : null;
+}
+
+function sanitizeTranslations(
+  value: unknown,
+): Record<string, RecipeTranslationContent> | null {
+  if (value == null || !isRecord(value)) return null;
+  const out: Record<string, RecipeTranslationContent> = {};
+  for (const [code, entry] of Object.entries(value)) {
+    if (!code.trim() || !isRecord(entry)) continue;
+    const title = readString(entry.title);
+    const ingredients = sanitizeIngredients(entry.ingredients);
+    const instructions = sanitizeInstructions(entry.instructions);
+    if (!title || !ingredients || !instructions) continue;
+    out[code] = { title, ingredients, instructions };
+  }
+  return Object.keys(out).length > 0 ? out : null;
 }
 
 function assignString<K extends keyof Recipe>(

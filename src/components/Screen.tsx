@@ -1,13 +1,15 @@
 import { type ReactNode } from 'react';
-import { Platform, View, type ViewProps } from 'react-native';
+import { View, type ViewProps } from 'react-native';
 import { SafeAreaView, type Edge } from 'react-native-safe-area-context';
 
 import { MistAtmosphere } from '@/components/MistAtmosphere';
 import { useThemePreference } from '@/hooks/useThemePreference';
 
-/** Android status bar is opaque — top inset is handled natively; extra padding caused a light band. */
-const TAB_SCREEN_EDGES: Edge[] =
-  Platform.OS === 'android' ? ['left', 'right'] : ['top', 'left', 'right'];
+/** Tab roots: top inset clears the status bar; bottom is owned by the tab bar. */
+const TAB_SCREEN_EDGES: Edge[] = ['top', 'left', 'right'];
+
+/** Stack screens without a native header — inset all sides. */
+const DEFAULT_EDGES: Edge[] = ['top', 'left', 'right', 'bottom'];
 
 type ScreenProps = ViewProps & {
   children: ReactNode;
@@ -31,38 +33,30 @@ export function Screen({
   plain,
   dense,
   className,
+  style,
   ...rest
 }: ScreenProps) {
   const { colors } = useThemePreference();
-  const resolvedEdges =
-    edges ??
-    (tabScreen
-      ? TAB_SCREEN_EDGES
-      : Platform.OS === 'android'
-        ? (['left', 'right', 'bottom'] as Edge[])
-        : undefined);
-  const canvasStyle = { backgroundColor: colors.background };
-  const content = plain ? (
-    children
-  ) : (
-    <MistAtmosphere dense={dense}>{children}</MistAtmosphere>
+  const resolvedEdges = edges ?? (tabScreen ? TAB_SCREEN_EDGES : DEFAULT_EDGES);
+  const canvasStyle = { flex: 1, backgroundColor: colors.background };
+
+  // Keep layout classes (items-center, px-*, etc.) on an inner flex child so
+  // SafeAreaView / MistAtmosphere stay full-bleed. Centering on the outer
+  // canvas shrinks the atmosphere to content width — a thin "narrow screen".
+  const body = (
+    <View className={`flex-1 ${className ?? ''}`} style={style} {...rest}>
+      {children}
+    </View>
   );
 
+  const content = plain ? body : <MistAtmosphere dense={dense}>{body}</MistAtmosphere>;
+
   if (bare) {
-    return (
-      <View className={`flex-1 ${className ?? ''}`} style={canvasStyle} {...rest}>
-        {content}
-      </View>
-    );
+    return <View style={canvasStyle}>{content}</View>;
   }
 
   return (
-    <SafeAreaView
-      className={`flex-1 ${className ?? ''}`}
-      edges={resolvedEdges}
-      style={canvasStyle}
-      {...rest}
-    >
+    <SafeAreaView className="flex-1" edges={resolvedEdges} style={canvasStyle}>
       {content}
     </SafeAreaView>
   );

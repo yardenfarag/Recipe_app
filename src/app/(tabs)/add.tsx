@@ -3,6 +3,7 @@ import Constants, { ExecutionEnvironment } from 'expo-constants';
 import { router } from 'expo-router';
 import { useShareIntentContext } from 'expo-share-intent';
 import { useEffect, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { ActivityIndicator, Alert, Pressable, Text, TextInput, View } from 'react-native';
 
 import { BrandHeader } from '@/components/BrandHeader';
@@ -40,6 +41,7 @@ const EXTRACT_STATUS_LINES = [
 const isExpoGo = Constants.executionEnvironment === ExecutionEnvironment.StoreClient;
 
 export default function AddRecipeScreen() {
+  const { t } = useTranslation();
   const [url, setUrl] = useState('');
   const [loading, setLoading] = useState(false);
   const [statusIndex, setStatusIndex] = useState(0);
@@ -268,8 +270,8 @@ export default function AddRecipeScreen() {
     <Screen dense tabScreen>
       <View className="flex-1 px-6 pt-1">
         <BrandHeader
-          title="Snap a recipe"
-          subtitle="Paste a YouTube, Instagram, or TikTok link (up to 3 min)"
+          title={t('snap.title')}
+          subtitle={t('snap.subtitle')}
         />
 
         <View

@@ -65,15 +65,15 @@ function applyAppearance(preference: ThemePreference, packId: ThemePackId) {
       // Non-fatal on some Android builds.
     }
     if (Platform.OS === 'android') {
+      // Edge-to-edge is always on (Expo 54 / RN 0.81). Only bar *style* is
+      // reliably customizable — translucent/backgroundColor are no-ops or
+      // deprecated under edge-to-edge.
       try {
-        RNStatusBar.setTranslucent(false);
         RNStatusBar.setBarStyle(resolved === 'dark' ? 'light-content' : 'dark-content');
-        RNStatusBar.setBackgroundColor(colors.background);
       } catch {
         // Non-fatal on some Android builds.
       }
       try {
-        await NavigationBar.setBackgroundColorAsync(colors.tabBar);
         await NavigationBar.setButtonStyleAsync(resolved === 'dark' ? 'light' : 'dark');
       } catch {
         // Some Android builds/devices reject nav bar theming; non-fatal.

@@ -14,7 +14,7 @@ Product tokens created friction at the moment of saving a recipe. Users want a s
 |---|---|---|
 | Guest | 3 lifetime / install | Unchanged |
 | Free (signed in) | **10 lifetime** recipe extracts | Then paywall |
-| Pinch Plus | **90 extracts / calendar month** (UTC) | Display price **$6.99/mo** |
+| Pinch Plus | **90 extracts / calendar month** (UTC) | Display price **$9.99/mo** |
 | Cached URL re-extract | Free | No provider work |
 
 - **Gated action:** extract only. Remix / translate / substitution are not counted.

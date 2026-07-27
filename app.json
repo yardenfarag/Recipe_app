@@ -8,9 +8,8 @@
     "scheme": "pinch",
     "userInterfaceStyle": "automatic",
     "androidStatusBar": {
-      "backgroundColor": "#F4F1F8",
       "barStyle": "dark-content",
-      "translucent": false
+      "translucent": true
     },
     "ios": {
       "icon": "./assets/expo.icon",
