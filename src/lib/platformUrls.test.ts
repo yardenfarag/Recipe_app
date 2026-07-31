@@ -22,9 +22,15 @@ describe('normalizeSocialUrl', () => {
     );
   });
 
-  it('rejects unsupported and misleading hosts', () => {
-    expect(normalizeSocialUrl('https://example.com/recipe')).toBeNull();
-    expect(normalizeSocialUrl('https://youtube.com.evil.test/watch?v=abc')).toBeNull();
+  it('accepts recipe website URLs', () => {
+    expect(normalizeSocialUrl('https://www.allrecipes.com/recipe/21151/simple-roast-chicken/')).toBe(
+      'https://www.allrecipes.com/recipe/21151/simple-roast-chicken/',
+    );
+  });
+
+  it('rejects localhost and non-http schemes', () => {
+    expect(normalizeSocialUrl('https://localhost/recipe')).toBeNull();
+    expect(normalizeSocialUrl('ftp://example.com/recipe')).toBeNull();
   });
 });
 
@@ -43,6 +49,12 @@ describe('detectPlatform', () => {
 
   it('detects TikTok short links', () => {
     expect(detectPlatform('https://vm.tiktok.com/ZMabcdef/')).toBe('tiktok');
+  });
+
+  it('detects recipe websites as web', () => {
+    expect(detectPlatform('https://www.foodnetwork.com/recipes/ina-garten/roast-chicken')).toBe(
+      'web',
+    );
   });
 });
 

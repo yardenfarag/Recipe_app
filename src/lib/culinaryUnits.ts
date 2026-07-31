@@ -206,10 +206,12 @@ const UNIT_MAP: Record<string, Record<CulinaryUnitLanguage, UnitForms>> = {
 
 const ALIASES: Record<string, string> = {
   cups: 'cup',
+  c: 'cup',
   tsps: 'tsp',
   tbsps: 'tbsp',
   tablespoons: 'tablespoon',
   teaspoons: 'teaspoon',
+  t: 'tsp',
   gram: 'g',
   grams: 'g',
   kilogram: 'kg',
@@ -239,13 +241,27 @@ const ALIASES: Record<string, string> = {
   sticks: 'stick',
 };
 
+/** Localized unit label → canonical English key (for converted / translated recipes). */
+const LOCALIZED_TO_CANONICAL: Record<string, string> = (() => {
+  const map: Record<string, string> = {};
+  for (const [canonical, langs] of Object.entries(UNIT_MAP)) {
+    for (const formsForLang of Object.values(langs)) {
+      const one = formsForLang.one.trim().toLowerCase();
+      const other = formsForLang.other.trim().toLowerCase();
+      if (one) map[one] = canonical;
+      if (other) map[other] = canonical;
+    }
+  }
+  return map;
+})();
+
 function normalizeUnitKey(unit: string): string {
   return unit.trim().toLowerCase().replace(/\./g, '').replace(/\s+/g, ' ');
 }
 
 function canonicalKey(unit: string): string {
   const normalized = normalizeUnitKey(unit);
-  return ALIASES[normalized] ?? normalized;
+  return ALIASES[normalized] ?? LOCALIZED_TO_CANONICAL[normalized] ?? normalized;
 }
 
 /** Canonical unit key for conversion / localization (cup, g, tbsp, …). */

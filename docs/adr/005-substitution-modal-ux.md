@@ -6,7 +6,7 @@
 
 ## Context
 
-ChopChop offers AI-powered ingredient substitutions when a user doesn't have an item. The UX must feel helpful and trustworthy — not a throwaway alert.
+Pinch offers AI-powered ingredient substitutions when a user doesn't have an item. The UX must feel helpful and trustworthy — not a throwaway alert.
 
 ## Decision
 

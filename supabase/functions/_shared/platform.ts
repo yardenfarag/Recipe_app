@@ -1,15 +1,21 @@
-export type Platform = 'youtube' | 'instagram' | 'tiktok' | 'unknown';
+export type Platform = 'youtube' | 'instagram' | 'tiktok' | 'web' | 'unknown';
 
 /** Which platforms have live extraction (ADR 003 staged rollout). */
-export const LIVE_PLATFORMS: Platform[] = ['youtube', 'instagram', 'tiktok'];
+export const LIVE_PLATFORMS: Platform[] = ['youtube', 'instagram', 'tiktok', 'web'];
 
 export function detectPlatform(url: string): Platform {
-  let host: string;
+  let parsed: URL;
   try {
-    host = new URL(url).hostname.toLowerCase().replace(/^www\./, '');
+    parsed = new URL(url);
   } catch {
     return 'unknown';
   }
+
+  if (parsed.protocol !== 'http:' && parsed.protocol !== 'https:') {
+    return 'unknown';
+  }
+
+  const host = parsed.hostname.toLowerCase().replace(/^www\./, '');
 
   if (host === 'youtube.com' || host === 'youtu.be' || host.endsWith('.youtube.com')) {
     return 'youtube';
@@ -23,6 +29,12 @@ export function detectPlatform(url: string): Platform {
   if (host === 'vm.tiktok.com' || host === 'vt.tiktok.com') {
     return 'tiktok';
   }
+
+  // Any other public http(s) URL is treated as a recipe webpage.
+  if (host && host !== 'localhost' && !host.endsWith('.localhost') && !host.endsWith('.local')) {
+    return 'web';
+  }
+
   return 'unknown';
 }
 
@@ -176,7 +188,26 @@ export function recipeUrlsMatch(
     return inputTikTokId === storedTikTokId;
   }
 
-  return inputUrl.trim() === storedUrl.trim();
+  return canonicalizeUrlForCompare(inputUrl) === canonicalizeUrlForCompare(storedUrl);
+}
+
+function canonicalizeUrlForCompare(url: string): string {
+  try {
+    const u = new URL(url.trim());
+    u.hash = '';
+    for (const key of [...u.searchParams.keys()]) {
+      if (/^(utm_|fbclid|gclid|mc_|ref$)/i.test(key)) {
+        u.searchParams.delete(key);
+      }
+    }
+    u.hostname = u.hostname.toLowerCase().replace(/^www\./, '');
+    let path = u.pathname;
+    if (path.length > 1 && path.endsWith('/')) path = path.slice(0, -1);
+    u.pathname = path;
+    return u.toString();
+  } catch {
+    return url.trim();
+  }
 }
 
 /** CDN fallback when the Data API is unavailable — true 16:9, no letterbox bars. */

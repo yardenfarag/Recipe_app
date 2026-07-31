@@ -7,6 +7,7 @@ import { Alert, Pressable, ScrollView, Text, TouchableOpacity, View } from 'reac
 import { MeasurementToggle } from '@/components/MeasurementToggle';
 import { AddToCollectionModal } from '@/components/AddToCollectionModal';
 import { AddToShoppingListModal } from '@/components/AddToShoppingListModal';
+import { CookAlongVideoModal } from '@/components/CookAlongVideoModal';
 import { EditTagsModal } from '@/components/EditTagsModal';
 import { RecipeImage } from '@/components/RecipeImage';
 import { RecipeVideoPanel, type RecipeVideoPanelHandle } from '@/components/RecipeVideoPanel';
@@ -156,12 +157,20 @@ export function RecipeView({
   const [collectionModalOpen, setCollectionModalOpen] = useState(false);
   const [variantModalOpen, setVariantModalOpen] = useState(false);
   const [translateModalOpen, setTranslateModalOpen] = useState(false);
+  const [cookAlongOpen, setCookAlongOpen] = useState(false);
+  const [cookAlongStartSeconds, setCookAlongStartSeconds] = useState(0);
+  const [cookAlongSheetHeight, setCookAlongSheetHeight] = useState(0);
   const [activeVariant, setActiveVariant] = useState<RecipeVariantKey | null>(null);
   const [variantSummary, setVariantSummary] = useState<string | null>(null);
   const [activeLanguage, setActiveLanguage] = useState<RecipeLanguageCode | null>(
     localizedLanguage,
   );
   const videoPanelRef = useRef<RecipeVideoPanelHandle>(null);
+
+  function openCookAlong(startSeconds = 0) {
+    setCookAlongStartSeconds(Math.max(0, Math.round(startSeconds)));
+    setCookAlongOpen(true);
+  }
 
   const recipeCollections = recipeId ? collectionsForRecipe(recipeId) : [];
 
@@ -349,7 +358,11 @@ export function RecipeView({
     calories,
   };
 
-  const sourceVideo = getRecipeVideoInfo(recipe.original_url, recipe.platform);
+  const sourceVideo = getRecipeVideoInfo(
+    recipe.original_url,
+    recipe.platform,
+    recipe.source_video_url,
+  );
   const showSideThumbnail = Boolean(recipe.image_url) && sourceVideo.mode === 'none';
   const hasStepTimestamps = useMemo(
     () => baseInstructions.some((step) => step.timestamp_seconds != null),
@@ -362,10 +375,11 @@ export function RecipeView({
   }
 
   return (
+    <View className="flex-1">
     <ScrollView
       className="flex-1"
       showsVerticalScrollIndicator={false}
-      contentContainerStyle={{ paddingBottom: 24 }}
+      contentContainerStyle={{ paddingBottom: 24 + cookAlongSheetHeight }}
     >
       <View className="px-5 pt-4">
         {sourceVideo.mode !== 'none' ? (
@@ -373,7 +387,9 @@ export function RecipeView({
             ref={videoPanelRef}
             originalUrl={recipe.original_url}
             platform={recipe.platform}
+            sourceVideoUrl={recipe.source_video_url}
             posterUri={recipe.image_url}
+            onRequestPlay={openCookAlong}
           />
         ) : null}
 
@@ -752,7 +768,24 @@ export function RecipeView({
 
         {footer}
       </View>
+    </ScrollView>
 
+      {cookAlongOpen && recipe.original_url ? (
+        <CookAlongVideoModal
+          visible={cookAlongOpen}
+          onClose={() => {
+            setCookAlongOpen(false);
+            setCookAlongSheetHeight(0);
+          }}
+          originalUrl={recipe.original_url}
+          platform={recipe.platform}
+          sourceVideoUrl={recipe.source_video_url}
+          startSeconds={cookAlongStartSeconds}
+          onSheetHeightChange={setCookAlongSheetHeight}
+        />
+      ) : null}
+
+      {/* Modals must sit outside ScrollView — nested Modals often fail to present on iOS. */}
       <AddToShoppingListModal
         visible={shoppingListModalOpen}
         ingredients={scaledIngredients}
@@ -847,7 +880,7 @@ export function RecipeView({
         onApply={handleApplyTranslation}
         onShowOriginal={handleShowOriginalLanguage}
       />
-    </ScrollView>
+    </View>
   );
 }
 

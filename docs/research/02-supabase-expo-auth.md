@@ -1,4 +1,4 @@
-# ChopChop MVP: Supabase + Expo Auth Research
+# Pinch MVP: Supabase + Expo Auth Research
 
 > **Sources:** Official Supabase documentation ([supabase.com/docs](https://supabase.com/docs)) only. Researched July 2026.
 >
@@ -72,7 +72,7 @@ Requires a **redirect URL** and often native SDK configuration:
 | Google (native) | ❌ | `@react-native-google-signin` needs dev build; browser OAuth fallback possible with deep linking |
 | Google OAuth (browser) | ⚠️ | Works with `scheme` config; more setup than email |
 
-**Recommendation for ChopChop MVP:** Email/password in Phase 2; Apple Sign-In on iOS is viable in Expo Go if needed; defer native Google to Phase 3 (dev build).
+**Recommendation for Pinch MVP:** Email/password in Phase 2; Apple Sign-In on iOS is viable in Expo Go if needed; defer native Google to Phase 3 (dev build).
 
 ---
 

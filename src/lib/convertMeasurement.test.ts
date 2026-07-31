@@ -33,6 +33,12 @@ describe('convertToMetric', () => {
     expect(convertToMetric(200, 'g')).toEqual({ quantity: 200, unit: 'g' });
     expect(convertToMetric(15, 'ml')).toEqual({ quantity: 15, unit: 'ml' });
   });
+
+  it('converts localized spoon/cup units via reverse map', () => {
+    expect(convertToMetric(1, 'כוס')).toEqual({ quantity: 240, unit: 'ml' });
+    expect(convertToMetric(1, 'כף')).toEqual({ quantity: 15, unit: 'ml' });
+    expect(convertToMetric(1, 'taza')).toEqual({ quantity: 240, unit: 'ml' });
+  });
 });
 
 describe('applyMeasurementSystem', () => {

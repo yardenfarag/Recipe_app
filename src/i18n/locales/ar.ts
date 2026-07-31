@@ -178,7 +178,7 @@ export default {
   },
   "snap": {
     "title": "سناب وصفة",
-    "subtitle": "الصق رابطًا من YouTube أو Instagram أو TikTok (حتى 3 دقائق)"
+    "subtitle": "الصق رابطًا من YouTube أو Instagram أو TikTok أو موقع وصفات"
   },
   "list": {
     "title": "القائمة",

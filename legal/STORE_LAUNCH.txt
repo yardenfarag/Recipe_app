@@ -50,16 +50,16 @@ Production Android build finished (AAB):
 2. Privacy nutrition labels matching Data safety; privacy + support URLs
 3. Export compliance: ITSAppUsesNonExemptEncryption = false (app.json)
 4. Screenshots for required devices
-5. First iOS production build must be INTERACTIVE (credentials for two targets):
+5. iOS production builds: push to master (GitHub Action `EAS Build iOS`) or
      npx eas-cli build --platform ios --profile production
-   Targets needing profiles:
+   First interactive build already created credentials for:
      - com.pinch.myapp (Pinch)
      - com.pinch.myapp.share-extension (ShareExtension)
-   Non-interactive setup fails until those exist on EAS.
+   Then: eas submit / TestFlight.
 6. TestFlight smoke: Apple Sign-In, share sheet, Settings → Delete account
 7. Submit for review. Notes: AI extraction from public social URLs; free tokens;
    no IAP yet; account deletion in Settings.
-8. Replace eas.json submit.production.ios.ascAppId with the real App Store Connect id.
+8. eas.json submit.production.ios.ascAppId is set (6796310453).
 
 Apple revoke secrets (before iOS production):
   npx supabase secrets set APPLE_CLIENT_ID=com.pinch.myapp

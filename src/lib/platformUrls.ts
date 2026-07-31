@@ -2,19 +2,30 @@ import type { Platform } from '@/types/recipe';
 
 import { extractYouTubeId } from '@/lib/youtube';
 
-const SUPPORTED_DOMAIN_PATTERN =
+const SOCIAL_DOMAIN_PATTERN =
   /(?:www\.)?(?:youtube\.com|youtu\.be|instagram\.com|tiktok\.com|vm\.tiktok\.com|vt\.tiktok\.com)\/[^\s<>"']+/i;
 
+/** Bare host/path without scheme (share text sometimes omits https). */
+const BARE_URL_PATTERN =
+  /(?:www\.)?(?:[a-z0-9-]+\.)+[a-z]{2,}\/[^\s<>"']+/i;
+
 /**
- * Pulls a supported social URL from pasted/share-sheet text and normalizes
- * scheme-less links. Returns null for malformed or unsupported hosts.
+ * Pulls a recipe URL from pasted/share-sheet text and normalizes scheme-less
+ * links. Accepts YouTube / Instagram / TikTok and other public http(s) pages.
  */
 export function normalizeSocialUrl(input: string): string | null {
   const trimmed = input.trim();
   if (!trimmed) return null;
 
+  // Reject non-http(s) schemes even when a host/path is present.
+  if (/^[a-z][a-z0-9+.-]*:/i.test(trimmed) && !/^https?:/i.test(trimmed)) {
+    return null;
+  }
+
   const absoluteMatch = trimmed.match(/https?:\/\/[^\s<>"']+/i)?.[0];
-  const bareMatch = absoluteMatch ? null : trimmed.match(SUPPORTED_DOMAIN_PATTERN)?.[0];
+  const bareMatch = absoluteMatch
+    ? null
+    : trimmed.match(SOCIAL_DOMAIN_PATTERN)?.[0] ?? trimmed.match(BARE_URL_PATTERN)?.[0];
   const candidate = (absoluteMatch ?? (bareMatch ? `https://${bareMatch}` : ''))
     .replace(/[)\]},.!?;:]+$/g, '')
     .trim();
@@ -24,20 +35,27 @@ export function normalizeSocialUrl(input: string): string | null {
   try {
     const parsed = new URL(candidate);
     if (!['http:', 'https:'].includes(parsed.protocol)) return null;
-    return detectPlatform(parsed.toString()) === 'unknown' ? null : parsed.toString();
+    const platform = detectPlatform(parsed.toString());
+    return platform === 'unknown' ? null : parsed.toString();
   } catch {
     return null;
   }
 }
 
-/** Detects the social platform from a URL hostname. */
+/** Detects the content platform from a URL hostname. */
 export function detectPlatform(url: string): Platform | 'unknown' {
-  let host: string;
+  let parsed: URL;
   try {
-    host = new URL(url).hostname.toLowerCase().replace(/^www\./, '');
+    parsed = new URL(url);
   } catch {
     return 'unknown';
   }
+
+  if (parsed.protocol !== 'http:' && parsed.protocol !== 'https:') {
+    return 'unknown';
+  }
+
+  const host = parsed.hostname.toLowerCase().replace(/^www\./, '');
 
   if (host === 'youtube.com' || host === 'youtu.be' || host.endsWith('.youtube.com')) {
     return 'youtube';
@@ -53,6 +71,11 @@ export function detectPlatform(url: string): Platform | 'unknown' {
   ) {
     return 'tiktok';
   }
+
+  if (host && host !== 'localhost' && !host.endsWith('.localhost') && !host.endsWith('.local')) {
+    return 'web';
+  }
+
   return 'unknown';
 }
 
@@ -106,7 +129,27 @@ export function recipeUrlsMatch(
     if (inputId && storedId) return inputId === storedId;
   }
 
-  return inputUrl.trim() === storedUrl.trim();
+  return canonicalizeUrlForCompare(inputUrl) === canonicalizeUrlForCompare(storedUrl);
+}
+
+function canonicalizeUrlForCompare(url: string): string {
+  try {
+    const u = new URL(url.trim());
+    u.hash = '';
+    // Drop common tracking params for web recipe dedupe.
+    for (const key of [...u.searchParams.keys()]) {
+      if (/^(utm_|fbclid|gclid|mc_|ref$)/i.test(key)) {
+        u.searchParams.delete(key);
+      }
+    }
+    u.hostname = u.hostname.toLowerCase().replace(/^www\./, '');
+    let path = u.pathname;
+    if (path.length > 1 && path.endsWith('/')) path = path.slice(0, -1);
+    u.pathname = path;
+    return u.toString();
+  } catch {
+    return url.trim();
+  }
 }
 
 /** Returns a platform content id when one can be parsed from the URL. */

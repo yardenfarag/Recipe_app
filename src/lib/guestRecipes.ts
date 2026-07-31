@@ -231,6 +231,7 @@ function sanitizeStoredRecipe(value: unknown): Recipe | null {
   assignString(recipe, 'user_id', value.user_id);
   assignString(recipe, 'original_url', value.original_url);
   assignString(recipe, 'image_url', value.image_url);
+  assignString(recipe, 'source_video_url', value.source_video_url);
   assignString(recipe, 'calories_reasoning', value.calories_reasoning);
   assignString(recipe, 'time_reasoning', value.time_reasoning);
   assignString(recipe, 'created_at', value.created_at);
@@ -241,7 +242,7 @@ function sanitizeStoredRecipe(value: unknown): Recipe | null {
   const translations = sanitizeTranslations(value.translations);
   if (translations) recipe.translations = translations;
 
-  if (['youtube', 'instagram', 'tiktok', 'unknown'].includes(String(value.platform))) {
+  if (['youtube', 'instagram', 'tiktok', 'web', 'unknown'].includes(String(value.platform))) {
     recipe.platform = value.platform as Recipe['platform'];
   }
   if (['$', '$$', '$$$'].includes(String(value.cost_estimate))) {
@@ -250,7 +251,7 @@ function sanitizeStoredRecipe(value: unknown): Recipe | null {
   if (['Easy', 'Medium', 'Hard'].includes(String(value.effort_level))) {
     recipe.effort_level = value.effort_level as Recipe['effort_level'];
   }
-  if (['description', 'comments', 'captions', 'video'].includes(String(value.extraction_source))) {
+  if (['description', 'comments', 'captions', 'video', 'web'].includes(String(value.extraction_source))) {
     recipe.extraction_source = value.extraction_source as Recipe['extraction_source'];
   }
   if (typeof value.is_favorite === 'boolean') recipe.is_favorite = value.is_favorite;

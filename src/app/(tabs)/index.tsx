@@ -417,7 +417,7 @@ export default function HomeScreen() {
             size="hero"
             align="center"
             title="Your kitchen awaits"
-            subtitle="Snap a recipe from social — keep cooking calm and simple."
+            subtitle="Snap a recipe from a link — keep cooking calm and simple."
           />
 
           <Pressable

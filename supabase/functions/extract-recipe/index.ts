@@ -34,6 +34,7 @@ import { normalizeRecipeTags } from '../_shared/tags.ts';
 import { fetchTikTokMeta } from '../_shared/tiktok.ts';
 import { logUsageEvent } from '../_shared/usageLog.ts';
 import { formatMaxVideoDurationLabel, isVideoTooLong } from '../_shared/videoLimits.ts';
+import { fetchWebRecipeMeta } from '../_shared/webRecipe.ts';
 import { fetchYouTubeMeta } from '../_shared/youtube.ts';
 
 // Response contract consumed by the app (mirrors ExtractionResult in ADR 004).
@@ -85,7 +86,7 @@ Deno.serve(async (req) => {
       platform,
       message:
         platform === 'unknown'
-          ? "We couldn't recognize that link. Try a YouTube, Instagram, or TikTok video."
+          ? "We couldn't recognize that link. Try a YouTube, Instagram, TikTok, or recipe website link."
           : `${capitalize(platform)} support is coming soon — we're starting with YouTube.`,
     });
   }
@@ -224,7 +225,7 @@ Deno.serve(async (req) => {
       durationSeconds: meta.durationSeconds ?? null,
     });
 
-    if (isVideoTooLong(meta.durationSeconds) && !hasTextSources(meta)) {
+    if (isVideoTooLong(meta.durationSeconds) && !hasTextSources(meta) && platform !== 'web') {
       await logUsageEvent(admin, {
         userId,
         guestInstallId: userId ? null : guestInstallId,
@@ -253,8 +254,9 @@ Deno.serve(async (req) => {
     } = await extractRecipeWithLadder({
       platform,
       sourceUrl: url,
-      videoUrl: meta.videoUrl,
-      durationSeconds: meta.durationSeconds,
+      // Web pages: recipe lives in HTML/JSON-LD — don't multimodal the embed for extraction.
+      videoUrl: platform === 'web' ? undefined : meta.videoUrl,
+      durationSeconds: platform === 'web' ? undefined : meta.durationSeconds,
       description: meta.description,
       captions: meta.captions,
       topComments: meta.topComments,
@@ -302,7 +304,9 @@ Deno.serve(async (req) => {
         code: rejectedAsTooLong ? 'video_too_long' : undefined,
         message: rejectedAsTooLong
           ? `This video is longer than ${formatMaxVideoDurationLabel()}. Try a shorter clip, or a post with the recipe written in the caption.`
-          : "Couldn't find a recipe in this video. Try a different link.",
+          : platform === 'web'
+            ? "Couldn't find a recipe on this page. Try a different link."
+            : "Couldn't find a recipe in this video. Try a different link.",
         tokens_charged: 0,
         ...quotaFields(snapshot),
         guest_extracts_remaining:
@@ -325,6 +329,7 @@ Deno.serve(async (req) => {
       original_url: canonicalOriginalUrl(platform, resolvedContentId, url),
       platform,
       image_url: imageUrl,
+      source_video_url: platform === 'web' ? meta.videoUrl ?? null : null,
       ingredients: gemini.ingredients,
       instructions: gemini.instructions,
       servings: gemini.servings > 0 ? gemini.servings : 1,
@@ -457,13 +462,19 @@ Deno.serve(async (req) => {
         lower.includes('not found') ||
         lower.includes('invalid instagram') ||
         lower.includes('scrapecreators request failed') ||
-        lower.includes('gemini request failed')
+        lower.includes('gemini request failed') ||
+        lower.includes('could not load this webpage') ||
+        lower.includes("couldn't read this page") ||
+        lower.includes("doesn't look like a recipe webpage") ||
+        lower.includes('webpage returned an error')
           ? err.message.includes('ScrapeCreators request failed')
             ? 'Instagram took too long to respond — try again.'
             : err.message.includes('timedOut=true')
               ? 'Recipe extraction timed out — try again in a moment.'
               : err.message
-          : "Couldn't load this video — try again.";
+          : platform === 'web'
+            ? "Couldn't load this page — try again."
+            : "Couldn't load this video — try again.";
 
       return jsonResponse(
         {
@@ -480,7 +491,10 @@ Deno.serve(async (req) => {
       {
         status: 'failed' as ExtractionStatus,
         platform,
-        message: 'Something went wrong while reading the video. Please try again.',
+        message:
+          platform === 'web'
+            ? 'Something went wrong while reading this page. Please try again.'
+            : 'Something went wrong while reading the video. Please try again.',
         guest_extracts_remaining: guestRemaining,
       },
       500,
@@ -556,6 +570,8 @@ async function fetchPlatformMeta(
       return await fetchInstagramMeta(url);
     case 'tiktok':
       return await fetchTikTokMeta(url);
+    case 'web':
+      return await fetchWebRecipeMeta(url);
     default:
       return { topComments: [] };
   }
@@ -589,6 +605,10 @@ async function resolveThumbnail(
     });
     // Prefer durable Storage URL; fall back to CDN so the client still has a chance.
     return hosted ?? meta.thumbnailUrl;
+  }
+
+  if (platform === 'web') {
+    return meta.thumbnailUrl ?? null;
   }
 
   return meta.thumbnailUrl ?? null;

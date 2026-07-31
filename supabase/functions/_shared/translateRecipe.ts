@@ -1,6 +1,5 @@
 // Translate recipe title / ingredients / instructions via Gemini structured output.
 
-import { localizeCulinaryUnit } from './culinaryUnits.ts';
 import {
   generateGeminiJson,
   sanitizeGeminiText,
@@ -106,12 +105,14 @@ export async function translateRecipeWithGemini(
     title: sanitizeGeminiText(parsed.title?.trim() || input.title),
     ingredients: (parsed.ingredients ?? []).map((ing, index) => {
       const quantity = Number(ing.quantity);
-      const fallbackUnit = input.ingredients[index]?.unit ?? ing.unit ?? '';
-      const rawUnit = sanitizeGeminiText(ing.unit ?? fallbackUnit);
+      // Keep canonical English units so grams/spoons conversion still works;
+      // the client localizes unit labels at display time.
+      const sourceUnit = input.ingredients[index]?.unit ?? '';
+      const rawUnit = sanitizeGeminiText(ing.unit ?? sourceUnit);
       return {
         name: sanitizeGeminiText(ing.name ?? ''),
         quantity,
-        unit: localizeCulinaryUnit(rawUnit || fallbackUnit, input.targetLanguage, quantity),
+        unit: sourceUnit || rawUnit,
       };
     }),
     instructions: (parsed.instructions ?? []).map((step) => {

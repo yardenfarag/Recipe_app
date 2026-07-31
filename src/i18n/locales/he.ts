@@ -178,7 +178,7 @@ export default {
   },
   "snap": {
     "title": "סנאפ למתכון",
-    "subtitle": "מדביקים קישור מ-YouTube, מ-Instagram או מ-TikTok (עד 3 דקות)"
+    "subtitle": "מדביקים קישור מ-YouTube, Instagram, TikTok או מאתר מתכונים"
   },
   "list": {
     "title": "רשימה",

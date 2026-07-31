@@ -1,4 +1,4 @@
-# ChopChop MVP Plan
+# Pinch MVP Plan
 
 **Developer:** Yarden  
 **Stack:** Expo SDK 54 · NativeWind v4 · Supabase · Gemini Flash  
@@ -18,7 +18,7 @@ Snap a recipe from social media → get a clean, structured, scalable recipe wit
 
 | # | Task | Output |
 |---|------|--------|
-| 1 | `npx create-expo-app@latest ChopChop --template default` | Expo Router + TS project |
+| 1 | `npx create-expo-app@latest Pinch --template default` | Expo Router + TS project |
 | 2 | Install & configure NativeWind v4 | `tailwind.config.js`, `global.css`, `metro.config.js`, `babel.config.js` |
 | 3 | Folder structure | `src/components`, `src/screens`, `src/lib/supabase`, `src/hooks` |
 | 4 | Supabase client stub | `src/lib/supabase/client.ts` + `.env.example` |
@@ -124,7 +124,7 @@ Use Gemini [structured output](https://ai.google.dev/gemini-api/docs/structured-
 ## Folder Structure
 
 ```
-ChopChop/
+Pinch/
 ├── app/                          # Expo Router screens
 │   ├── (tabs)/
 │   │   ├── index.tsx             # Home (Recipe Library)

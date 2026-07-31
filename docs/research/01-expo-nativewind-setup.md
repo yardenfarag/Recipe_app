@@ -1,4 +1,4 @@
-# ChopChop MVP: Expo + NativeWind Setup Research
+# Pinch MVP: Expo + NativeWind Setup Research
 
 > **Sources:** Official Expo documentation ([docs.expo.dev](https://docs.expo.dev)) and NativeWind documentation ([nativewind.dev](https://www.nativewind.dev)) only. Researched July 2026.
 >
@@ -55,12 +55,12 @@ React Navigation alternative: `--example with-react-navigation`.
 
 **Source:** [create-expo-app — Templates](https://docs.expo.dev/more/create-expo/)
 
-### ChopChop MVP recommendation
+### Pinch MVP recommendation
 
 For **Expo Go on a physical phone in July 2026**, start with the SDK 54 default (no template flag):
 
 ```sh
-npx create-expo-app@latest chopchop
+npx create-expo-app@latest Pinch
 ```
 
 Expo Go on the App Store / Play Store supports **one SDK version at a time**. On iPhone, older Expo Go versions cannot be side-loaded ([development builds intro](https://docs.expo.dev/develop/development-builds/introduction/)). SDK 54 aligns with the store version during the transition.
@@ -260,7 +260,7 @@ Expo Go is a **fixed native binary** — only pre-bundled native libraries are a
 | **App icon / splash screen testing** | Native assets immutable in Expo Go | [Dev builds intro](https://docs.expo.dev/develop/development-builds/introduction/) |
 | **Bitcode, custom JS engine, blocked permissions** | Build-time native config | [SDK 54 app.json schema](https://docs.expo.dev/llms-sdk-v54.0.0.txt) |
 
-### Share extensions & share intents (ChopChop-relevant)
+### Share extensions & share intents (Pinch-relevant)
 
 **Outgoing share** (`Sharing.shareAsync`) — **works in Expo Go**.
 
@@ -340,7 +340,7 @@ const url = process.env.EXPO_PUBLIC_SUPABASE_URL; // ✓ inlined
 | Git | Add `.env*.local` to `.gitignore` |
 | Disable | `EXPO_NO_DOTENV=1` or `EXPO_NO_CLIENT_ENV_VARS=1` |
 
-### ChopChop notes
+### Pinch notes
 
 - **Supabase anon key** in `EXPO_PUBLIC_` is acceptable (designed for client use; protect with RLS).
 - **Gemini API key** in `EXPO_PUBLIC_` exposes the key to anyone who inspects the app bundle — acceptable for MVP/prototyping only; use a backend proxy for production.
@@ -394,7 +394,7 @@ project-root/
 - [Start developing — File structure](https://docs.expo.dev/get-started/start-developing/)
 - [Expo Router installation](https://docs.expo.dev/router/installation/)
 
-### Suggested ChopChop additions (convention, not official)
+### Suggested Pinch additions (convention, not official)
 
 ```
 src/
@@ -407,7 +407,7 @@ Keep these outside `src/app/` so Expo Router does not treat them as routes.
 
 ---
 
-## ChopChop MVP Compatibility Matrix
+## Pinch MVP Compatibility Matrix
 
 | Capability | Expo Go MVP | Dev Build Later |
 |------------|-------------|-----------------|
@@ -424,14 +424,14 @@ Keep these outside `src/app/` so Expo Router does not treat them as routes.
 
 ---
 
-## Quick Start Commands (ChopChop)
+## Quick Start Commands (Pinch)
 
 ```sh
 # 1. Create project (SDK 54 for physical Expo Go, July 2026)
-npx create-expo-app@latest chopchop
+npx create-expo-app@latest Pinch
 
 # 2. Add NativeWind
-cd chopchop
+cd Pinch
 npm install nativewind react-native-reanimated react-native-safe-area-context
 npm install --dev tailwindcss@^3.4.17 prettier-plugin-tailwindcss@^0.5.11 babel-preset-expo
 npx tailwindcss init

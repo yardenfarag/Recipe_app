@@ -246,13 +246,13 @@ export default function AuthScreen() {
           Email
         </Text>
         <View
-          className="mb-4 flex-row items-center rounded-2xl border px-3.5"
+          className="mb-4 h-14 flex-row items-center rounded-2xl border px-3.5"
           style={{ borderColor: colors.border, backgroundColor: colors.surface }}
         >
           <Ionicons name="mail-outline" size={18} color={colors.textSecondary} />
           <TextInput
-            className="flex-1 px-3 py-4 text-base"
-            style={{ color: colors.text }}
+            className="flex-1 px-3 text-base"
+            style={{ color: colors.text, paddingVertical: 0 }}
             placeholder="you@example.com"
             placeholderTextColor={colors.textSecondary}
             value={email}
@@ -265,6 +265,7 @@ export default function AuthScreen() {
             keyboardType="email-address"
             autoComplete="email"
             textContentType="emailAddress"
+            textAlignVertical="center"
             editable={!loading}
             onSubmitEditing={() => {
               if (mode === 'forgot' && canSubmit) void handleEmail();
@@ -278,13 +279,13 @@ export default function AuthScreen() {
               Password
             </Text>
             <View
-              className="flex-row items-center rounded-2xl border px-3.5"
+              className="h-14 flex-row items-center rounded-2xl border px-3.5"
               style={{ borderColor: colors.border, backgroundColor: colors.surface }}
             >
               <Ionicons name="lock-closed-outline" size={18} color={colors.textSecondary} />
               <TextInput
-                className="flex-1 px-3 py-4 text-base"
-                style={{ color: colors.text }}
+                className="flex-1 px-3 text-base"
+                style={{ color: colors.text, paddingVertical: 0 }}
                 placeholder="••••••••"
                 placeholderTextColor={colors.textSecondary}
                 value={password}
@@ -296,6 +297,7 @@ export default function AuthScreen() {
                 autoCapitalize="none"
                 autoComplete={mode === 'signup' ? 'new-password' : 'current-password'}
                 textContentType={mode === 'signup' ? 'newPassword' : 'password'}
+                textAlignVertical="center"
                 editable={!loading}
                 onSubmitEditing={() => {
                   if (canSubmit) void handleEmail();

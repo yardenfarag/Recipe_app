@@ -6,7 +6,7 @@
 
 ## Context
 
-ChopChop's vision covers TikTok, Instagram, and YouTube. Scraping reliability varies sharply by platform — YouTube has captions/APIs; Instagram and TikTok are harder. The user wants all platforms eventually, not a YouTube-only product.
+Pinch's vision covers TikTok, Instagram, and YouTube. Scraping reliability varies sharply by platform — YouTube has captions/APIs; Instagram and TikTok are harder. The user wants all platforms eventually, not a YouTube-only product.
 
 ## Decision
 

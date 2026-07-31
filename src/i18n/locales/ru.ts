@@ -178,7 +178,7 @@ export default {
   },
   "snap": {
     "title": "Снап рецепта",
-    "subtitle": "Вставьте ссылку из YouTube, Instagram или TikTok (до 3 мин)"
+    "subtitle": "Вставьте ссылку из YouTube, Instagram, TikTok или с сайта рецептов"
   },
   "list": {
     "title": "Список",

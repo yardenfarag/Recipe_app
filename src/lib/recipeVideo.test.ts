@@ -33,24 +33,45 @@ describe('getRecipeVideoInfo', () => {
   it('returns none without a URL', () => {
     expect(getRecipeVideoInfo(undefined).mode).toBe('none');
   });
+
+  it('hides cook-along for web recipes without an embedded video', () => {
+    const info = getRecipeVideoInfo(
+      'https://www.allrecipes.com/recipe/21151/chicken/',
+      'web',
+    );
+    expect(info.mode).toBe('none');
+    expect(info.platform).toBe('web');
+  });
+
+  it('uses an embedded YouTube video for web cook-along', () => {
+    const info = getRecipeVideoInfo(
+      'https://www.allrecipes.com/recipe/21151/chicken/',
+      'web',
+      'https://www.youtube.com/watch?v=dQw4w9WgXcQ',
+    );
+    expect(info.mode).toBe('webview');
+    expect(info.platform).toBe('youtube');
+    expect(info.youtubeVideoId).toBe('dQw4w9WgXcQ');
+  });
 });
 
 describe('getRecipePlatformLabel', () => {
   it('labels platforms for UI copy', () => {
     expect(getRecipePlatformLabel('youtube')).toBe('YouTube');
     expect(getRecipePlatformLabel('tiktok')).toBe('TikTok');
+    expect(getRecipePlatformLabel('web')).toBe('Website');
   });
 });
 
 describe('buildRecipeVideoWebViewSource', () => {
-  it('adds referer headers for YouTube embeds', () => {
+  it('wraps YouTube embeds in HTML with start time', () => {
     const info = getRecipeVideoInfo('https://www.youtube.com/watch?v=dQw4w9WgXcQ');
     const source = buildRecipeVideoWebViewSource(info, 30);
-    expect(source?.type).toBe('uri');
-    if (source?.type === 'uri') {
-      expect(source.uri).toContain('embed/dQw4w9WgXcQ');
-      expect(source.uri).toContain('start=30');
-      expect(source.headers?.Referer).toBe(VIDEO_WEBVIEW_REFERER_URL);
+    expect(source?.type).toBe('html');
+    if (source?.type === 'html') {
+      expect(source.html).toContain('embed/dQw4w9WgXcQ');
+      expect(source.html).toContain('start=30');
+      expect(source.baseUrl).toBe(VIDEO_WEBVIEW_REFERER_URL);
     }
   });
 

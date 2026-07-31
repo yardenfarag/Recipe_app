@@ -11,7 +11,7 @@ export type ExtractedRecipe = Omit<Recipe, 'id' | 'user_id' | 'created_at'>;
 
 export interface ExtractResult {
   status: ExtractStatus;
-  platform: 'youtube' | 'instagram' | 'tiktok' | 'unknown';
+  platform: 'youtube' | 'instagram' | 'tiktok' | 'web' | 'unknown';
   /** Unsaved extraction, or a full saved recipe when `cached` is true. */
   recipe?: ExtractedRecipe | Recipe;
   message?: string;

@@ -1,9 +1,9 @@
 export type EffortLevel = 'Easy' | 'Medium' | 'Hard';
 export type CostEstimate = '$' | '$$' | '$$$';
-export type Platform = 'youtube' | 'instagram' | 'tiktok' | 'unknown';
+export type Platform = 'youtube' | 'instagram' | 'tiktok' | 'web' | 'unknown';
 export type ExtractionStatus = 'full' | 'partial';
 /** Which content-ladder rung yielded the recipe (ADR 004). */
-export type ExtractionSource = 'description' | 'comments' | 'captions' | 'video';
+export type ExtractionSource = 'description' | 'comments' | 'captions' | 'video' | 'web';
 
 export interface Ingredient {
   name: string;
@@ -33,6 +33,11 @@ export interface Recipe {
   original_url?: string;
   platform?: Platform;
   image_url?: string;
+  /**
+   * Optional playable video for cook-along when `platform` is `web`
+   * (e.g. a YouTube embed found on the recipe page).
+   */
+  source_video_url?: string;
   ingredients: Ingredient[];
   instructions: Instruction[];
   servings: number;

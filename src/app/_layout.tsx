@@ -37,6 +37,8 @@ function RootNavigator() {
             headerStyle: { backgroundColor: colors.background },
             headerTitleStyle: { fontWeight: '700', color: colors.text },
             contentStyle: { backgroundColor: colors.background },
+            // Avoid "(tabs)" (route group name) as the iOS back label.
+            headerBackButtonDisplayMode: 'minimal',
           }}
         >
           <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
@@ -62,7 +64,7 @@ function RootNavigator() {
 export default function RootLayout() {
   return (
     <ShareIntentProvider
-      options={{ debug: __DEV__, resetOnBackground: true, disabled: isExpoGo }}
+      options={{ debug: __DEV__, resetOnBackground: false, disabled: isExpoGo }}
     >
       <ThemeProvider>
         <LanguageProvider>

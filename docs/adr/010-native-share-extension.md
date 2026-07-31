@@ -6,10 +6,10 @@
 
 ## Context
 
-The core vision (share from TikTok/IG/YouTube → ChopChop appears in the OS share sheet → recipe extracted automatically) requires native code:
+The core vision (share from TikTok/IG/YouTube → Pinch appears in the OS share sheet → recipe extracted automatically) requires native code:
 
 - **iOS:** a Share Extension target (separate mini-app bundle) that receives the shared URL and hands off to the main app.
-- **Android:** an intent filter (`ACTION_SEND`, mime type `text/plain`) declared in the manifest so ChopChop appears as a share target.
+- **Android:** an intent filter (`ACTION_SEND`, mime type `text/plain`) declared in the manifest so Pinch appears as a share target.
 
 Neither is possible in Expo Go; both require a dev build (ADR 009).
 

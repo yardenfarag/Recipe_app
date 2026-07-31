@@ -30,6 +30,7 @@ export async function migrateGuestRecipesToSupabase(
       original_url: recipe.original_url,
       platform: recipe.platform,
       image_url: recipe.image_url,
+      source_video_url: recipe.source_video_url,
       ingredients: recipe.ingredients,
       instructions: recipe.instructions,
       servings: recipe.servings,

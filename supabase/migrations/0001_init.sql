@@ -1,4 +1,4 @@
--- ChopChop initial schema
+-- Pinch initial schema
 -- Run this in the Supabase SQL Editor (or via `supabase db push` once the CLI is linked)
 
 -- ============================================================

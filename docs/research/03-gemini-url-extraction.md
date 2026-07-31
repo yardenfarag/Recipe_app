@@ -1,4 +1,4 @@
-# ChopChop MVP: Gemini + URL Extraction Research
+# Pinch MVP: Gemini + URL Extraction Research
 
 > **Sources:** Official Google AI documentation ([ai.google.dev](https://ai.google.dev)) only. Researched July 2026.
 >
@@ -61,7 +61,7 @@ tools: [{ type: 'url_context' }]
 - Public recipe websites (Food Network, AllRecipes, etc.)
 - Text/HTML pages, PDFs, images
 
-### What does NOT work (critical for ChopChop)
+### What does NOT work (critical for Pinch)
 
 | URL type | Supported? |
 |----------|------------|
@@ -74,7 +74,7 @@ tools: [{ type: 'url_context' }]
 
 ### Implication
 
-ChopChop **must scrape/fetch content server-side** before sending text to Gemini. URL Context alone is insufficient for TikTok/IG/YT.
+Pinch **must scrape/fetch content server-side** before sending text to Gemini. URL Context alone is insufficient for TikTok/IG/YT.
 
 ---
 
@@ -138,7 +138,7 @@ Valid for production scale but over-engineered for MVP. Edge Functions suffice.
 | Flow | Phase | Expo Go? |
 |------|-------|----------|
 | Paste URL on AddRecipe screen | Phase 1–2 | ✅ |
-| Share → ChopChop from TikTok/IG | Phase 3 | ❌ Dev build |
+| Share → Pinch from TikTok/IG | Phase 3 | ❌ Dev build |
 
 **Recommended MVP:** Paste URL first. Share Sheet deferred until dev build.
 

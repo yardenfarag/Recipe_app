@@ -6,9 +6,9 @@
 
 ## Context
 
-ChopChop is a React Native (Expo) mobile app that extracts structured recipes from social-media video URLs (TikTok, Instagram, YouTube) using Gemini AI, stores them in Supabase, and lets users scale servings and request ingredient substitutions.
+Pinch is a React Native (Expo) mobile app that extracts structured recipes from social-media video URLs (TikTok, Instagram, YouTube) using Gemini AI, stores them in Supabase, and lets users scale servings and request ingredient substitutions.
 
-The user wants to develop on a physical phone via **Expo Go** for the current session, while the long-term vision includes **Share Sheet integration** (tap Share → ChopChop icon in TikTok/IG/YT).
+The user wants to develop on a physical phone via **Expo Go** for the current session, while the long-term vision includes **Share Sheet integration** (tap Share → Pinch icon in TikTok/IG/YT).
 
 ## Decision
 

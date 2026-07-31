@@ -178,7 +178,7 @@ export default {
   },
   "snap": {
     "title": "Snap a recipe",
-    "subtitle": "Paste a YouTube, Instagram, or TikTok link (up to 3 min)"
+    "subtitle": "Paste a YouTube, Instagram, TikTok, or recipe website link"
   },
   "list": {
     "title": "List",

@@ -66,6 +66,16 @@ export function formatQuantity(
     return 'a pinch';
   }
 
+  // Metric mass/volume reads better as plain decimals ("240 ml"), not cooking fractions.
+  const METRIC_UNITS = new Set(['g', 'kg', 'ml', 'liter', 'l', 'litre', 'liters', 'litres']);
+  if (METRIC_UNITS.has(normalizedUnit)) {
+    const rounded =
+      quantity >= 100
+        ? Math.round(quantity)
+        : Math.round(quantity * 100) / 100;
+    return `${rounded} ${displayUnit}`.trim();
+  }
+
   const whole = Math.floor(quantity);
   const remainder = quantity - whole;
 

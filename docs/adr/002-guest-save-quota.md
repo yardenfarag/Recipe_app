@@ -6,7 +6,7 @@
 
 ## Context
 
-ChopChop needs an auth strategy for Phase 2. Requiring sign-up before the first Snap creates friction; allowing unlimited anonymous use complicates persistence and abuse prevention.
+Pinch needs an auth strategy for Phase 2. Requiring sign-up before the first Snap creates friction; allowing unlimited anonymous use complicates persistence and abuse prevention.
 
 ## Decision
 

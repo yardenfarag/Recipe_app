@@ -17,7 +17,7 @@ import {
   GUEST_EXTRACTION_LIMIT,
   setGuestExtractionsRemaining,
 } from '@/lib/guestExtractionUsage';
-import { normalizeSocialUrl } from '@/lib/platformUrls';
+import { detectPlatform, normalizeSocialUrl } from '@/lib/platformUrls';
 import {
   FREE_EXTRACT_LIMIT,
   PLUS_MONTHLY_EXTRACT_LIMIT,
@@ -33,6 +33,12 @@ type Banner =
 
 const EXTRACT_STATUS_LINES = [
   'Reading the video…',
+  'Pulling out ingredients…',
+  'Almost ready…',
+] as const;
+
+const WEB_EXTRACT_STATUS_LINES = [
+  'Reading the page…',
   'Pulling out ingredients…',
   'Almost ready…',
 ] as const;
@@ -79,28 +85,35 @@ export default function AddRecipeScreen() {
       setStatusIndex(0);
       return;
     }
+    const lines =
+      detectPlatform(url) === 'web' ? WEB_EXTRACT_STATUS_LINES : EXTRACT_STATUS_LINES;
     const id = setInterval(() => {
-      setStatusIndex((i) => (i + 1) % EXTRACT_STATUS_LINES.length);
+      setStatusIndex((i) => (i + 1) % lines.length);
     }, 2800);
     return () => clearInterval(id);
-  }, [loading]);
+  }, [loading, url]);
 
   useEffect(() => {
     if (!hasShareIntent) return;
 
-    const sharedUrl = normalizeSocialUrl(shareIntent.webUrl ?? shareIntent.text ?? '');
+    // Wait until the payload is present — on Android hasShareIntent can flip
+    // true a tick before webUrl/text are hydrated; resetting early drops the share.
+    const raw = shareIntent.webUrl ?? shareIntent.text ?? '';
+    if (!raw.trim()) return;
+
+    const sharedUrl = normalizeSocialUrl(raw);
     resetShareIntent();
     if (sharedUrl) {
       setUrl(sharedUrl);
-      handleGetRecipe(sharedUrl);
+      void handleGetRecipe(sharedUrl);
     } else {
       setBanner({
         kind: 'error',
-        message: 'That share did not include a valid YouTube, Instagram, or TikTok link.',
+        message: 'That share did not include a valid recipe link.',
       });
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [hasShareIntent]);
+  }, [hasShareIntent, shareIntent.webUrl, shareIntent.text]);
 
   async function handleUpgrade() {
     if (!user || upgrading) return;
@@ -125,7 +138,7 @@ export default function AddRecipeScreen() {
     if (!target) {
       setBanner({
         kind: 'error',
-        message: 'Enter a valid YouTube, Instagram, or TikTok video link.',
+        message: 'Enter a valid recipe link (YouTube, Instagram, TikTok, or a recipe website).',
       });
       return;
     }
@@ -241,7 +254,7 @@ export default function AddRecipeScreen() {
       if (result.status === 'failed' || !result.recipe) {
         setBanner({
           kind: 'error',
-          message: result.message ?? "Couldn't find a recipe in this video. Try a different link.",
+          message: result.message ?? "Couldn't find a recipe in this link. Try a different one.",
         });
         return;
       }
@@ -257,6 +270,8 @@ export default function AddRecipeScreen() {
   }
 
   const canSubmit = Boolean(url.trim()) && !loading;
+  const statusLines =
+    detectPlatform(url) === 'web' ? WEB_EXTRACT_STATUS_LINES : EXTRACT_STATUS_LINES;
 
   const signedInQuotaLabel = (() => {
     if (!user || extractsRemaining == null) return null;
@@ -304,7 +319,7 @@ export default function AddRecipeScreen() {
             <TextInput
               className="flex-1 px-3 py-4 text-base"
               style={{ color: colors.text }}
-              placeholder="https://youtube.com/watch?v=..."
+              placeholder="https://… recipe link"
               placeholderTextColor={colors.textSecondary}
               value={url}
               onChangeText={(text) => {
@@ -378,7 +393,7 @@ export default function AddRecipeScreen() {
               <View className="items-center gap-2">
                 <ActivityIndicator color="#fff" />
                 <Text className="text-sm font-medium text-white">
-                  {EXTRACT_STATUS_LINES[statusIndex]}
+                  {statusLines[statusIndex]}
                 </Text>
               </View>
             ) : (
@@ -403,7 +418,7 @@ export default function AddRecipeScreen() {
           <Text className="text-xs leading-5" style={{ color: colors.textSecondary }}>
             {isExpoGo
               ? 'Share → Pinch isn’t available in Expo Go — it needs a development or production build. Paste a link above for now.'
-              : 'In YouTube, Instagram, or TikTok, tap Share → Pinch. The link opens here and Snap runs automatically.'}
+              : 'From YouTube, Instagram, TikTok, or your browser, tap Share → Pinch. The link opens here and Snap runs automatically.'}
           </Text>
         </View>
       </View>

@@ -1,4 +1,4 @@
-# ChopChop Grilling Session
+# Pinch Grilling Session
 
 **Mode:** Human-in-the-loop, one question at a time  
 **Goal:** Lock Phase 2–3 product and technical decisions before building  
@@ -55,7 +55,7 @@ All 8 decisions locked. See `docs/adr/` for full records.
   build (Phase 3).
 - **Google:** Enable the **Google** provider (needs a Google Cloud OAuth
   client) and add the redirect URL to Supabase → Authentication → URL
-  Configuration. Reliable deep-linking with the `chopchop://` scheme requires
+  Configuration. Reliable deep-linking with the `Pinch://` scheme requires
   a **dev build** — in Expo Go the `exp://` proxy is flaky (ADR 007).
 
 **Note on 2c:** The Save button on `recipe/preview.tsx` currently checks for an

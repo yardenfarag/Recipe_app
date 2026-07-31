@@ -13,8 +13,13 @@ describe('formatQuantity', () => {
     expect(formatQuantity(1.5, 'cups')).toBe('1½ cups');
   });
 
-  it('floors sub-threshold non-pinching units to the smallest fraction', () => {
-    expect(formatQuantity(0.05, 'g')).toBe('⅛ g');
+  it('floors sub-threshold non-metric units to the smallest fraction', () => {
+    expect(formatQuantity(0.05, 'cup')).toBe('⅛ cup');
+  });
+
+  it('formats metric mass/volume as plain decimals', () => {
+    expect(formatQuantity(240, 'ml')).toBe('240 ml');
+    expect(formatQuantity(0.05, 'g')).toBe('0.05 g');
   });
 
   it('omits English count placeholders like unit/pc', () => {

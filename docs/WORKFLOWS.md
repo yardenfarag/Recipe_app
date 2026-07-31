@@ -5,8 +5,6 @@
 
 This document explains **every major workflow** in Pinch: what happens, which pieces of code own it, and **why it exists**. For product vocabulary, see [`GLOSSARY.md`](./GLOSSARY.md). For decision history, see [`adr/`](./adr/).
 
-> **Name note:** Early docs and the Supabase project still say “ChopChop.” The shipping product UI is **Pinch**. Same app.
-
 ---
 
 ## 1. What Pinch is

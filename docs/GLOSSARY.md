@@ -1,11 +1,11 @@
-# ChopChop Glossary
+# Pinch Glossary
 
-Canonical language for the ChopChop recipe-snapping app. All specs, ADRs, and code comments should use these terms consistently.
+Canonical language for the Pinch recipe-snapping app. All specs, ADRs, and code comments should use these terms consistently.
 
 ## Core Concepts
 
 **Snap**:
-The act of sending a social-media video URL to ChopChop so the app can extract a structured recipe from it.
+The act of sending a social-media video URL to Pinch so the app can extract a structured recipe from it.
 _Avoid_: Scan, import, capture
 
 **Fork it!**:

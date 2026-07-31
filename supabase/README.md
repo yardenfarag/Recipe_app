@@ -1,4 +1,4 @@
-# ChopChop Supabase Setup
+# Pinch Supabase Setup
 
 ## Running the migration
 

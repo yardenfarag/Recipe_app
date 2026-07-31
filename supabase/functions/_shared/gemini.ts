@@ -21,7 +21,7 @@ const VIDEO_TIMEOUT_MS = 120_000;
 const TIMESTAMP_MAP_TIMEOUT_MS = 90_000;
 const TEXT_MAX_OUTPUT_TOKENS = 4_096;
 const VIDEO_MAX_OUTPUT_TOKENS = 4_096;
-const MAX_DESCRIPTION_CHARS = 4_000;
+const MAX_DESCRIPTION_CHARS = 10_000;
 const MAX_CAPTIONS_CHARS = 6_000;
 const MAX_COMMENTS = 12;
 const MAX_COMMENT_CHARS = 500;
@@ -35,11 +35,12 @@ const TIME_RULES = `- time_reasoning: one short phrase (prep + cook/bake + waits
 
 const TAG_RULES = `- tags: 3–6 short lowercase labels (cuisine, meal, dish type, method, traits). Example: ["dessert","cookies","baked","american"]. No hashtags or invented diet claims.`;
 
-const TEXT_SYSTEM_PROMPT = `You are a master chef. Analyze the provided text from a social media post and extract a precise recipe.
+const TEXT_SYSTEM_PROMPT = `You are a master chef. Analyze the provided text from a social media post or recipe webpage and extract a precise recipe.
 
 Rules:
 - Use ONLY the text provided — do not guess or invent ingredients/steps that are not present.
 - Comments marked "(from the video's creator)" are especially likely to contain the complete recipe.
+- When a structured recipe (schema.org JSON-LD) is present, prefer it over surrounding page chrome (ads, navigation, related posts).
 - Include ingredients with measurements, and step-by-step instructions when present.
 - Estimate a cost tier from 1-3 dollar signs and an effort level when you can infer them.
 ${TIME_RULES}
@@ -150,7 +151,7 @@ const TIMESTAMP_MAP_SCHEMA = {
   required: ['steps'],
 };
 
-export type ExtractionSource = 'description' | 'comments' | 'captions' | 'video';
+export type ExtractionSource = 'description' | 'comments' | 'captions' | 'video' | 'web';
 
 export interface GeminiRecipe {
   found_recipe: boolean;
@@ -262,15 +263,20 @@ export async function extractRecipeWithLadder(input: ExtractInput): Promise<Ladd
       });
       if (geminiFoundRecipe(fromText.recipe)) {
         let recipe = normalizeGeminiRecipe(fromText.recipe);
-        const textSource: ExtractionSource = hasCaptions
-          ? 'captions'
-          : hasComments
-            ? 'comments'
-            : 'description';
+        const textSource: ExtractionSource =
+          input.platform === 'web'
+            ? 'web'
+            : hasCaptions
+              ? 'captions'
+              : hasComments
+                ? 'comments'
+                : 'description';
         const shouldMapTimestamps =
           recipe.instructions.length > 0 &&
+          input.platform !== 'web' &&
           !isVideoTooLong(input.durationSeconds) &&
-          textSource !== 'captions';
+          textSource !== 'captions' &&
+          textSource !== 'web';
         if (shouldMapTimestamps) {
           const mapped = await tryMapInstructionTimestamps(input, recipe.instructions, usages);
           recipe = { ...recipe, instructions: mapped.instructions };
@@ -291,6 +297,11 @@ export async function extractRecipeWithLadder(input: ExtractInput): Promise<Ladd
     }
   } else {
     console.log('[gemini] skipping text step — no description/comments/captions');
+  }
+
+  if (input.platform === 'web') {
+    console.log('[gemini] web platform — skipping multimodal video step');
+    return { recipe: EMPTY_RECIPE, source: 'web', usages };
   }
 
   console.log('[gemini] video step start');
@@ -573,7 +584,9 @@ function buildTextContext(input: ExtractInput, sections: TextSections): string {
 
   if (sections.description && input.description?.trim()) {
     parts.push(
-      `\n--- VIDEO DESCRIPTION ---\n${truncate(input.description, MAX_DESCRIPTION_CHARS)}`,
+      input.platform === 'web'
+        ? `\n--- WEBPAGE CONTENT ---\n${truncate(input.description, MAX_DESCRIPTION_CHARS)}`
+        : `\n--- VIDEO DESCRIPTION ---\n${truncate(input.description, MAX_DESCRIPTION_CHARS)}`,
     );
   }
 
