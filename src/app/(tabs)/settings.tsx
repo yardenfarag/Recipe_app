@@ -504,7 +504,10 @@ export default function SettingsScreen() {
           <View className="items-center gap-2 pt-2">
             <CookieMark size={18} color={colors.textSecondary} />
             <Text className="text-center text-xs" style={{ color: colors.textSecondary }}>
-              v{Constants.expoConfig?.version ?? '1.0.0'}
+              v{Constants.nativeAppVersion ?? Constants.expoConfig?.version ?? '1.0.0'}
+              {Constants.nativeBuildVersion
+                ? ` (${Constants.nativeBuildVersion})`
+                : ''}
             </Text>
           </View>
         </View>
