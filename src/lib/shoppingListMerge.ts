@@ -97,6 +97,89 @@ export function appendToShoppingList(
   };
 }
 
+export type MergeShoppingListResult = {
+  items: ShoppingListItem[];
+  /** New lines created (not stacked onto an existing key). */
+  addedCount: number;
+  /** Incoming rows stacked onto a matching name+unit line. */
+  mergedCount: number;
+};
+
+/**
+ * Appends incoming rows, stacking quantities when name + unit (+ qty mode)
+ * already match a line on the list (including earlier rows in this batch).
+ */
+export function mergeIntoShoppingList(
+  existing: ShoppingListItem[],
+  incoming: ShoppingListIncomingItem[],
+  now = new Date().toISOString(),
+): MergeShoppingListResult {
+  const result: ShoppingListItem[] = existing.map((item) => ({
+    ...item,
+    sourceRecipeIds: item.sourceRecipeIds ? [...item.sourceRecipeIds] : undefined,
+  }));
+
+  const indexByKey = new Map<string, number>();
+  for (let i = 0; i < result.length; i += 1) {
+    const item = result[i];
+    const key = shoppingListCombineKey(item.name, item.quantity, item.unit);
+    if (!indexByKey.has(key)) indexByKey.set(key, i);
+  }
+
+  let addedCount = 0;
+  let mergedCount = 0;
+  let seed = 0;
+
+  for (const next of incoming) {
+    const name = next.name.trim();
+    if (!name) continue;
+
+    const quantity = hasQuantity(next.quantity) ? next.quantity : null;
+    const unit = next.unit?.trim() ? next.unit.trim() : null;
+    const key = shoppingListCombineKey(name, quantity, unit);
+    const existingIndex = indexByKey.get(key);
+
+    if (existingIndex != null) {
+      const current = result[existingIndex];
+      const mergedQuantity =
+        hasQuantity(current.quantity) && hasQuantity(quantity)
+          ? Math.round(((current.quantity as number) + (quantity as number)) * 100) / 100
+          : current.quantity ?? quantity;
+
+      result[existingIndex] = {
+        ...current,
+        quantity: mergedQuantity,
+        // Incoming rows are always unchecked → stacked line needs buying again.
+        checked: false,
+        sourceRecipeIds: uniqueIds([
+          ...(current.sourceRecipeIds ?? []),
+          ...(next.sourceRecipeId ? [next.sourceRecipeId] : []),
+        ]),
+        updated_at: now,
+      };
+      mergedCount += 1;
+      continue;
+    }
+
+    const created: ShoppingListItem = {
+      id: createId(seed),
+      name,
+      quantity,
+      unit,
+      checked: false,
+      sourceRecipeIds: next.sourceRecipeId ? [next.sourceRecipeId] : undefined,
+      created_at: now,
+      updated_at: now,
+    };
+    indexByKey.set(key, result.length);
+    result.push(created);
+    addedCount += 1;
+    seed += 1;
+  }
+
+  return { items: result, addedCount, mergedCount };
+}
+
 /**
  * How many lines share each normalized name. Counts ≤ 1 are omitted.
  */

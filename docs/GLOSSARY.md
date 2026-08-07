@@ -68,13 +68,13 @@ _Avoid_: Custom build, dev client (dev client is the JS side; dev build is the n
 The pre-built Expo sandbox app for rapid JS iteration. Sufficient for MVP screens, auth, and paste-URL flow.
 _Avoid_: Expo app, simulator
 
-**Guest save**:
-A recipe saved locally on device without an account, counting toward the 3-recipe quota before sign-up is required.
+**Guest extract**:
+An extraction run without an account (up to 3 per install). Guests cannot save; sign-up is required to keep recipes.
 _Avoid_: Anonymous recipe, temp save
 
-**Save quota**:
-The limit of 3 guest saves per device. Attempting a 4th save triggers the sign-up prompt.
-_Avoid_: Free trial, usage limit
+**Extract quota**:
+Monthly signed-in limits: Free 15 / month, Pinch Plus 100 / month (UTC). Guests: 3 lifetime extracts per install.
+_Avoid_: Free trial, save quota
 
 ## Platforms
 

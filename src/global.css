@@ -1,3 +1,44 @@
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+/**
+ * Themed scrollbars (web). Colors come from ThemeProvider via
+ * --pinch-scrollbar-* CSS variables on :root.
+ */
+:root {
+  --pinch-scrollbar-size: 10px;
+  --pinch-scrollbar-track: transparent;
+  --pinch-scrollbar-thumb: rgba(123, 107, 154, 0.35);
+  --pinch-scrollbar-thumb-hover: rgba(123, 107, 154, 0.55);
+}
+
+* {
+  scrollbar-width: thin;
+  scrollbar-color: var(--pinch-scrollbar-thumb) var(--pinch-scrollbar-track);
+}
+
+*::-webkit-scrollbar {
+  width: var(--pinch-scrollbar-size);
+  height: var(--pinch-scrollbar-size);
+}
+
+*::-webkit-scrollbar-track {
+  background: var(--pinch-scrollbar-track);
+  border-radius: 999px;
+}
+
+*::-webkit-scrollbar-thumb {
+  background-color: var(--pinch-scrollbar-thumb);
+  border-radius: 999px;
+  border: 2px solid transparent;
+  background-clip: padding-box;
+}
+
+*::-webkit-scrollbar-thumb:hover {
+  background-color: var(--pinch-scrollbar-thumb-hover);
+}
+
+*::-webkit-scrollbar-corner {
+  background: transparent;
+}

@@ -28,11 +28,17 @@ type LocalizedState = {
  */
 export function useLocalizedRecipe(recipe: ExtractedRecipe | null | undefined, recipeId?: string) {
   const { language: preferredLanguage, ready } = useLanguagePreference();
+  // Include ingredient/instruction content so swaps & remixes refresh overlays
+  // (length alone misses same-count edits that change step text).
   const recipeKey = recipe
-    ? `${recipeId ?? 'draft'}:${recipe.title}:${recipe.ingredients.length}:${preferredLanguage}`
+    ? `${recipeId ?? 'draft'}:${preferredLanguage}:${recipe.title}:${recipe.servings}:${JSON.stringify(recipe.ingredients)}:${JSON.stringify(recipe.instructions)}`
     : '';
   const [state, setState] = useState<LocalizedState | null>(null);
   const runId = useRef(0);
+  // Keep latest recipe for the effect without re-running on parent identity churn
+  // (preview/detail often clone the recipe on every content echo).
+  const recipeRef = useRef(recipe);
+  recipeRef.current = recipe;
 
   const persistTranslation = useCallback(
     async (language: string, content: RecipeTranslationContent) => {
@@ -48,28 +54,30 @@ export function useLocalizedRecipe(recipe: ExtractedRecipe | null | undefined, r
 
   const loadCached = useCallback(
     async (language: string): Promise<RecipeTranslationContent | null> => {
+      const current = recipeRef.current;
       if (!recipeId) {
-        return recipe?.translations?.[language] ?? null;
+        return current?.translations?.[language] ?? null;
       }
       if (recipeId.startsWith('guest-')) {
         return getGuestRecipeTranslation(recipeId, language);
       }
       return fetchRecipeTranslation(recipeId, language);
     },
-    [recipeId, recipe?.translations],
+    [recipeId],
   );
 
   useEffect(() => {
-    if (!recipe || !ready) {
+    const current = recipeRef.current;
+    if (!current || !ready) {
       setState(null);
       return;
     }
 
-    const source = effectiveSourceLanguage(recipe.source_language);
+    const source = effectiveSourceLanguage(current.source_language);
     const canonical: RecipeTranslationContent = {
-      title: recipe.title,
-      ingredients: recipe.ingredients,
-      instructions: recipe.instructions,
+      title: current.title,
+      ingredients: current.ingredients,
+      instructions: current.instructions,
     };
 
     if (preferredLanguage === source) {
@@ -95,10 +103,10 @@ export function useLocalizedRecipe(recipe: ExtractedRecipe | null | undefined, r
         const cached = await loadCached(preferredLanguage);
         const result = await ensureRecipeTranslation({
           recipe: {
-            title: recipe.title,
-            ingredients: recipe.ingredients,
-            instructions: recipe.instructions,
-            source_language: recipe.source_language,
+            title: current.title,
+            ingredients: current.ingredients,
+            instructions: current.instructions,
+            source_language: current.source_language,
           },
           targetLanguage: preferredLanguage,
           cached,
@@ -145,7 +153,7 @@ export function useLocalizedRecipe(recipe: ExtractedRecipe | null | undefined, r
         });
       }
     })();
-  }, [recipeKey, ready, preferredLanguage, loadCached, persistTranslation, recipe]);
+  }, [recipeKey, ready, preferredLanguage, loadCached, persistTranslation]);
 
   const applyManualTranslation = useCallback(
     async (language: RecipeLanguageCode, content: RecipeTranslationContent) => {
@@ -175,18 +183,19 @@ export function useLocalizedRecipe(recipe: ExtractedRecipe | null | undefined, r
   );
 
   const showOriginal = useCallback(() => {
-    if (!recipe) return;
+    const current = recipeRef.current;
+    if (!current) return;
     setState({
       display: {
-        title: recipe.title,
-        ingredients: recipe.ingredients,
-        instructions: recipe.instructions,
+        title: current.title,
+        ingredients: current.ingredients,
+        instructions: current.instructions,
       },
       activeLanguage: null,
       translating: false,
       error: null,
     });
-  }, [recipe]);
+  }, []);
 
   return {
     preferredLanguage,

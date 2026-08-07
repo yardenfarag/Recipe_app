@@ -241,23 +241,23 @@ const ALIASES: Record<string, string> = {
   sticks: 'stick',
 };
 
+function normalizeUnitKey(unit: string): string {
+  return unit.trim().toLowerCase().replace(/\./g, '').replace(/\s+/g, ' ');
+}
+
 /** Localized unit label → canonical English key (for converted / translated recipes). */
 const LOCALIZED_TO_CANONICAL: Record<string, string> = (() => {
   const map: Record<string, string> = {};
   for (const [canonical, langs] of Object.entries(UNIT_MAP)) {
     for (const formsForLang of Object.values(langs)) {
-      const one = formsForLang.one.trim().toLowerCase();
-      const other = formsForLang.other.trim().toLowerCase();
+      const one = normalizeUnitKey(formsForLang.one);
+      const other = normalizeUnitKey(formsForLang.other);
       if (one) map[one] = canonical;
       if (other) map[other] = canonical;
     }
   }
   return map;
 })();
-
-function normalizeUnitKey(unit: string): string {
-  return unit.trim().toLowerCase().replace(/\./g, '').replace(/\s+/g, ' ');
-}
 
 function canonicalKey(unit: string): string {
   const normalized = normalizeUnitKey(unit);
@@ -295,4 +295,26 @@ export function localizeCulinaryUnit(
 
 export function isCountUnit(unit: string): boolean {
   return COUNT_UNIT_KEYS.has(canonicalKey(unit));
+}
+
+/** True when the unit is in UNIT_MAP (or a count placeholder). */
+export function isKnownCulinaryUnit(unit: string): boolean {
+  const key = canonicalKey(unit);
+  return Boolean(UNIT_MAP[key]) || COUNT_UNIT_KEYS.has(key);
+}
+
+/**
+ * Localize ingredient units into a target language.
+ * Known units are mapped; freeform units are left as-is.
+ */
+export function localizeIngredientUnits<T extends { quantity: number; unit: string }>(
+  ingredients: T[],
+  language: CulinaryUnitLanguage,
+): T[] {
+  return ingredients.map((ing) => ({
+    ...ing,
+    unit: isKnownCulinaryUnit(ing.unit)
+      ? localizeCulinaryUnit(ing.unit, language, ing.quantity)
+      : (ing.unit?.trim() ?? ''),
+  }));
 }

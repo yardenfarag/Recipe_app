@@ -45,7 +45,7 @@ function PackIcon({ id, primary, accent }: { id: ThemePackId; primary: string; a
           <Path d="M18 22 L16.5 24.5 L19.5 24.5 Z" fill="#2A2634" opacity={0.4} />
         </Svg>
       );
-    case 'potter':
+    case 'wizard':
       return (
         <Svg {...common}>
           <Circle cx="11" cy="18" r="7" fill="none" stroke={primary} strokeWidth="2.2" />

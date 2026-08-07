@@ -1,5 +1,6 @@
 import Ionicons from '@expo/vector-icons/Ionicons';
 import { memo } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Pressable, Text, View } from 'react-native';
 import Animated, { FadeInDown } from 'react-native-reanimated';
 
@@ -13,13 +14,15 @@ import { Recipe } from '@/types/recipe';
 interface RecipeListRowProps {
   recipe: Recipe;
   onPress: () => void;
-  /** Long-press to delete — kept out-of-band from `onPress` so a tap always opens the recipe. */
+  /** Long-press opens the recipe actions menu (same as ⋯). */
   onLongPress?: () => void;
-  /** Visible delete affordance — parent must confirm before removing. */
-  onDelete?: () => void;
+  /** Overflow menu (add to collection / rename / delete). */
+  onMore?: () => void;
   onToggleFavorite?: () => void;
   /** Stagger entrance delay index (list position). */
   index?: number;
+  /** `card` stacks image above title for multi-column grids. */
+  variant?: 'row' | 'card';
 }
 
 /** Frosted mist card in the Library list. */
@@ -27,10 +30,12 @@ export const RecipeListRow = memo(function RecipeListRow({
   recipe,
   onPress,
   onLongPress,
-  onDelete,
+  onMore,
   onToggleFavorite,
   index = 0,
+  variant = 'row',
 }: RecipeListRowProps) {
+  const { t } = useTranslation();
   const { colors } = useThemePreference();
   const isFavorite = recipe.is_favorite === true;
 
@@ -44,80 +49,125 @@ export const RecipeListRow = memo(function RecipeListRow({
     .filter(Boolean)
     .join(' · ');
 
+  const card = variant === 'card';
+
   return (
-    <Animated.View entering={FadeInDown.delay(Math.min(index * 60, 360)).springify()}>
+    <Animated.View
+      entering={FadeInDown.delay(Math.min(index * 60, 360)).springify()}
+      style={card ? { flex: 1 } : undefined}
+    >
       <View
-        className="flex-row items-center gap-2 rounded-[28px] p-3.5"
+        className={
+          card
+            ? 'overflow-hidden rounded-[28px]'
+            : 'flex-row items-center gap-2 rounded-[28px] p-3.5'
+        }
         style={{
           backgroundColor: colors.frosted,
           borderWidth: 1,
           borderColor: colors.frostedBorder,
+          ...(card ? { flex: 1 } : null),
         }}
       >
         <Pressable
           onPress={onPress}
           onLongPress={onLongPress}
-          className="min-w-0 flex-1 flex-row items-center gap-3.5 active:opacity-90"
+          className={
+            card
+              ? 'active:opacity-90'
+              : 'min-w-0 flex-1 flex-row items-center gap-3.5 active:opacity-90'
+          }
         >
           {recipe.image_url ? (
-            <RecipeImage uri={recipe.image_url} variant="thumb" borderRadius={22} />
+            card ? (
+              <RecipeImage
+                uri={recipe.image_url}
+                variant="hero"
+                borderRadius={0}
+                style={{ height: 140 }}
+              />
+            ) : (
+              <RecipeImage uri={recipe.image_url} variant="thumb" borderRadius={22} />
+            )
           ) : (
             <View
-              className="h-[72px] w-[72px] items-center justify-center rounded-[22px]"
+              className={
+                card
+                  ? 'h-36 w-full items-center justify-center'
+                  : 'h-[72px] w-[72px] items-center justify-center rounded-[22px]'
+              }
               style={{ backgroundColor: colors.primarySoft }}
             >
-              <CookieMark size={28} color={colors.primary} />
+              <CookieMark size={card ? 40 : 28} color={colors.primary} />
             </View>
           )}
 
-          <View className="min-w-0 flex-1 pr-1">
+          <View className={card ? 'gap-1 p-3.5' : 'min-w-0 flex-1 pr-1'}>
             <Text
-              className="text-base font-bold leading-5"
+              className={card ? 'text-[15px] font-bold leading-5' : 'text-base font-bold leading-5'}
               style={{ color: colors.text }}
-              numberOfLines={2}
+              numberOfLines={card ? 3 : 2}
             >
               {recipe.display_title ?? recipe.title}
             </Text>
             {metadata.length > 0 && (
-              <Text className="mt-1.5 text-sm" style={{ color: colors.textSecondary }}>
+              <Text
+                className={card ? 'mt-1 text-xs' : 'mt-1.5 text-sm'}
+                style={{ color: colors.textSecondary }}
+                numberOfLines={card ? 2 : 1}
+              >
                 {metadata}
               </Text>
             )}
           </View>
         </Pressable>
 
-        {onToggleFavorite != null && (
-          <Pressable
-            onPress={(e) => {
-              e.stopPropagation?.();
-              onToggleFavorite();
-            }}
-            hitSlop={12}
-            className="min-h-[44px] min-w-[44px] items-center justify-center active:opacity-60"
-            accessibilityRole="button"
-            accessibilityLabel={isFavorite ? 'Remove from favorites' : 'Add to favorites'}
+        {(onToggleFavorite != null || onMore != null) && (
+          <View
+            className={
+              card
+                ? 'absolute right-2 top-2 flex-row gap-1'
+                : 'flex-row items-center'
+            }
           >
-            <Ionicons
-              name={isFavorite ? 'heart' : 'heart-outline'}
-              size={22}
-              color={isFavorite ? colors.primary : colors.textSecondary}
-            />
-          </Pressable>
-        )}
+            {onToggleFavorite != null && (
+              <Pressable
+                onPress={(e) => {
+                  e.stopPropagation?.();
+                  onToggleFavorite();
+                }}
+                hitSlop={12}
+                className="min-h-[40px] min-w-[40px] items-center justify-center rounded-full active:opacity-60"
+                style={card ? { backgroundColor: colors.frosted } : undefined}
+                accessibilityRole="button"
+                accessibilityLabel={
+                  isFavorite ? t('library.removeFavorite') : t('library.addFavorite')
+                }
+              >
+                <Ionicons
+                  name={isFavorite ? 'heart' : 'heart-outline'}
+                  size={22}
+                  color={isFavorite ? colors.primary : colors.textSecondary}
+                />
+              </Pressable>
+            )}
 
-        {onDelete != null && (
-          <Pressable
-            onPress={(e) => {
-              e.stopPropagation?.();
-              onDelete();
-            }}
-            hitSlop={12}
-            className="z-10 min-h-[44px] min-w-[44px] items-center justify-center active:opacity-60"
-            accessibilityRole="button"
-            accessibilityLabel="Delete recipe"
-          >
-            <Ionicons name="ellipsis-vertical" size={18} color={colors.textSecondary} />
-          </Pressable>
+            {onMore != null && (
+              <Pressable
+                onPress={(e) => {
+                  e.stopPropagation?.();
+                  onMore();
+                }}
+                hitSlop={12}
+                className="z-10 min-h-[40px] min-w-[40px] items-center justify-center rounded-full active:opacity-60"
+                style={card ? { backgroundColor: colors.frosted } : undefined}
+                accessibilityRole="button"
+                accessibilityLabel={t('library.recipeActions')}
+              >
+                <Ionicons name="ellipsis-vertical" size={18} color={colors.textSecondary} />
+              </Pressable>
+            )}
+          </View>
         )}
       </View>
     </Animated.View>

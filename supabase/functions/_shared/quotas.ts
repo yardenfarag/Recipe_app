@@ -1,7 +1,7 @@
 import type { SupabaseClient } from 'https://esm.sh/@supabase/supabase-js@2';
 
 import {
-  FREE_EXTRACT_LIMIT,
+  FREE_MONTHLY_EXTRACT_LIMIT,
   GUEST_EXTRACT_LIMIT,
   PLUS_MONTHLY_EXTRACT_LIMIT,
 } from './pricing.ts';
@@ -44,7 +44,7 @@ export async function getQuotaSnapshot(
 ): Promise<QuotaSnapshot | null> {
   const { data: profile, error } = await admin
     .from('profiles')
-    .select('subscription_status, subscription_expires_at, free_extracts_used')
+    .select('subscription_status, subscription_expires_at')
     .eq('id', userId)
     .maybeSingle();
 
@@ -62,26 +62,23 @@ export async function getQuotaSnapshot(
     subscriptionStatus === 'active' &&
     (expiresAt == null || Number.isNaN(expiresAt) || expiresAt > Date.now());
 
-  const freeExtractsUsed =
-    typeof profile.free_extracts_used === 'number' ? profile.free_extracts_used : 0;
-  const freeExtractsRemaining = Math.max(0, FREE_EXTRACT_LIMIT - freeExtractsUsed);
-
-  let monthlyExtractsUsed = 0;
-  if (subscriptionActive) {
-    const yearMonth = currentYearMonthUtc();
-    const { data: monthly, error: monthlyError } = await admin
-      .from('extract_usage_monthly')
-      .select('extract_count')
-      .eq('user_id', userId)
-      .eq('year_month', yearMonth)
-      .maybeSingle();
-    if (monthlyError) {
-      console.error('[quotas] getQuotaSnapshot monthly', monthlyError);
-    }
-    monthlyExtractsUsed =
-      typeof monthly?.extract_count === 'number' ? monthly.extract_count : 0;
+  const yearMonth = currentYearMonthUtc();
+  const { data: monthly, error: monthlyError } = await admin
+    .from('extract_usage_monthly')
+    .select('extract_count')
+    .eq('user_id', userId)
+    .eq('year_month', yearMonth)
+    .maybeSingle();
+  if (monthlyError) {
+    console.error('[quotas] getQuotaSnapshot monthly', monthlyError);
   }
 
+  const monthlyExtractsUsed =
+    typeof monthly?.extract_count === 'number' ? monthly.extract_count : 0;
+
+  const freeExtractsRemaining = subscriptionActive
+    ? 0
+    : Math.max(0, FREE_MONTHLY_EXTRACT_LIMIT - monthlyExtractsUsed);
   const monthlyExtractsRemaining = subscriptionActive
     ? Math.max(0, PLUS_MONTHLY_EXTRACT_LIMIT - monthlyExtractsUsed)
     : null;
@@ -89,7 +86,7 @@ export async function getQuotaSnapshot(
   return {
     subscriptionStatus,
     subscriptionActive,
-    freeExtractsUsed,
+    freeExtractsUsed: subscriptionActive ? 0 : monthlyExtractsUsed,
     freeExtractsRemaining,
     monthlyExtractsUsed,
     monthlyExtractsRemaining,
@@ -135,7 +132,7 @@ export async function canStartExtract(
 }
 
 /**
- * Atomically reserves one extract against free or Plus monthly quota.
+ * Atomically reserves one extract against Free or Plus monthly quota.
  */
 export async function reserveSignedInExtract(
   admin: SupabaseClient,
@@ -149,42 +146,16 @@ export async function reserveSignedInExtract(
     }
 > {
   const active = await isSubscriptionActive(admin, userId);
+  const limit = active ? PLUS_MONTHLY_EXTRACT_LIMIT : FREE_MONTHLY_EXTRACT_LIMIT;
+  const blockedCode = active ? 'monthly_limit' : 'subscription_required';
 
-  if (active) {
-    const { data, error } = await admin.rpc('reserve_monthly_extract', {
-      p_user_id: userId,
-      p_year_month: currentYearMonthUtc(),
-      p_limit: PLUS_MONTHLY_EXTRACT_LIMIT,
-    });
-    if (error) {
-      console.error('[quotas] reserve_monthly_extract', error);
-      return {
-        ok: false,
-        code: 'metering_error',
-        snapshot: await getQuotaSnapshot(admin, userId),
-      };
-    }
-    const newCount = typeof data === 'number' ? data : Number(data);
-    if (!Number.isFinite(newCount) || newCount < 0) {
-      return {
-        ok: false,
-        code: 'monthly_limit',
-        snapshot: await getQuotaSnapshot(admin, userId),
-      };
-    }
-    const snapshot = await getQuotaSnapshot(admin, userId);
-    if (!snapshot) {
-      return { ok: false, code: 'metering_error', snapshot: null };
-    }
-    return { ok: true, snapshot };
-  }
-
-  const { data, error } = await admin.rpc('reserve_free_extract', {
+  const { data, error } = await admin.rpc('reserve_monthly_extract', {
     p_user_id: userId,
-    p_limit: FREE_EXTRACT_LIMIT,
+    p_year_month: currentYearMonthUtc(),
+    p_limit: limit,
   });
   if (error) {
-    console.error('[quotas] reserve_free_extract', error);
+    console.error('[quotas] reserve_monthly_extract', error);
     return {
       ok: false,
       code: 'metering_error',
@@ -195,7 +166,7 @@ export async function reserveSignedInExtract(
   if (!Number.isFinite(newCount) || newCount < 0) {
     return {
       ok: false,
-      code: 'subscription_required',
+      code: blockedCode,
       snapshot: await getQuotaSnapshot(admin, userId),
     };
   }

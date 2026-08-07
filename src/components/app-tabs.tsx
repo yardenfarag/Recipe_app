@@ -1,8 +1,11 @@
 import Ionicons from '@expo/vector-icons/Ionicons';
 import { Tabs } from 'expo-router';
 import { useTranslation } from 'react-i18next';
+import { View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
+import { WebSidebar } from '@/components/WebSidebar';
+import { useBreakpoint } from '@/hooks/useBreakpoint';
 import { useThemePreference } from '@/hooks/useThemePreference';
 
 const TAB_BAR_CONTENT_HEIGHT = 56;
@@ -17,27 +20,31 @@ const TAB_BAR_CONTENT_HEIGHT = 56;
  *
  * Order: Library · Snap · List · Settings (Snap centered among four).
  * Favorites lives as a Library filter — tab hidden via href: null.
+ * On wide viewports, bottom tabs hide and WebSidebar takes over.
  */
 export default function AppTabs() {
   const { t } = useTranslation();
   const { colors } = useThemePreference();
   const insets = useSafeAreaInsets();
+  const { isWide } = useBreakpoint();
   const tabBarPaddingBottom = Math.max(insets.bottom, 8);
 
-  return (
+  const tabs = (
     <Tabs
       screenOptions={{
         headerShown: false,
         tabBarActiveTintColor: colors.primary,
         tabBarInactiveTintColor: colors.textSecondary,
-        tabBarStyle: {
-          backgroundColor: colors.tabBar,
-          borderTopColor: colors.frostedBorder,
-          borderTopWidth: 1,
-          height: TAB_BAR_CONTENT_HEIGHT + tabBarPaddingBottom,
-          paddingTop: 6,
-          paddingBottom: tabBarPaddingBottom,
-        },
+        tabBarStyle: isWide
+          ? { display: 'none' }
+          : {
+              backgroundColor: colors.tabBar,
+              borderTopColor: colors.frostedBorder,
+              borderTopWidth: 1,
+              height: TAB_BAR_CONTENT_HEIGHT + tabBarPaddingBottom,
+              paddingTop: 6,
+              paddingBottom: tabBarPaddingBottom,
+            },
         tabBarLabelStyle: {
           fontSize: 11,
           fontWeight: '600',
@@ -103,5 +110,16 @@ export default function AppTabs() {
         }}
       />
     </Tabs>
+  );
+
+  if (!isWide) {
+    return tabs;
+  }
+
+  return (
+    <View style={{ flex: 1, flexDirection: 'row', backgroundColor: colors.background }}>
+      <WebSidebar />
+      <View style={{ flex: 1 }}>{tabs}</View>
+    </View>
   );
 }

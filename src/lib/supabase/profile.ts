@@ -20,6 +20,7 @@ export interface Profile {
   token_pack_notify_at: string | null;
   subscription_status: SubscriptionStatus;
   subscription_expires_at: string | null;
+  /** @deprecated Lifetime counter; Free/Plus both use monthly_extracts_used. */
   free_extracts_used: number;
   monthly_extracts_used: number;
 }
@@ -40,16 +41,15 @@ export function profileQuota(profile: Profile | null): ProfileQuota | null {
     profile.subscription_status,
     profile.subscription_expires_at,
   );
-  const freeRemaining = freeExtractsRemaining(profile.free_extracts_used);
-  const monthlyRemaining = subscriptionActive
-    ? monthlyExtractsRemaining(profile.monthly_extracts_used)
-    : null;
+  const used = profile.monthly_extracts_used;
+  const freeRemaining = subscriptionActive ? 0 : freeExtractsRemaining(used);
+  const monthlyRemaining = subscriptionActive ? monthlyExtractsRemaining(used) : null;
   return {
     subscriptionStatus: profile.subscription_status,
     subscriptionActive,
-    freeExtractsUsed: profile.free_extracts_used,
+    freeExtractsUsed: subscriptionActive ? 0 : used,
     freeExtractsRemaining: freeRemaining,
-    monthlyExtractsUsed: profile.monthly_extracts_used,
+    monthlyExtractsUsed: used,
     monthlyExtractsRemaining: monthlyRemaining,
     extractsRemaining: subscriptionActive ? (monthlyRemaining ?? 0) : freeRemaining,
   };
@@ -112,7 +112,7 @@ export async function fetchProfile(userId: string): Promise<Profile | null> {
   };
 }
 
-/** Honor-system Pinch Plus until real IAP. */
+/** Honor-system Pinch Plus until real IAP. Gated by PLUS_SELF_UPGRADE_ENABLED for self-serve. */
 export async function activateSubscription(userId?: string): Promise<SubscriptionStatus> {
   const id = userId ?? (await supabase.auth.getUser()).data.user?.id;
   if (!id) throw new Error('Sign in required');

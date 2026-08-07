@@ -17,8 +17,14 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { BrandHeader } from '@/components/BrandHeader';
 import { Screen } from '@/components/Screen';
+import { SelectRecipesForShoppingListModal } from '@/components/SelectRecipesForShoppingListModal';
+import { useCollections } from '@/hooks/useCollections';
+import { useLanguagePreference } from '@/hooks/useLanguagePreference';
+import { useMeasurementPreference } from '@/hooks/useMeasurementPreference';
+import { useRecipes } from '@/hooks/useRecipes';
 import { useShoppingList } from '@/hooks/useShoppingList';
 import { useThemePreference } from '@/hooks/useThemePreference';
+import { applyMeasurementSystem } from '@/lib/convertMeasurement';
 import { formatQuantity } from '@/lib/formatQuantity';
 import {
   getDuplicateNameCounts,
@@ -59,6 +65,7 @@ export default function ShoppingListScreen() {
     error,
     refresh,
     addManual,
+    addFromRecipes,
     combineDuplicates,
     toggleChecked,
     updateItem,
@@ -66,13 +73,18 @@ export default function ShoppingListScreen() {
     clearChecked,
     clearAll,
   } = useShoppingList();
+  const { recipes } = useRecipes();
+  const { collections } = useCollections();
+  const { system: measurementSystem } = useMeasurementPreference();
   const { colors } = useThemePreference();
+  const { language: appLanguage } = useLanguagePreference();
   const { t } = useTranslation();
 
   const [name, setName] = useState('');
   const [quantityText, setQuantityText] = useState('');
   const [unit, setUnit] = useState('');
   const [adding, setAdding] = useState(false);
+  const [fromRecipesOpen, setFromRecipesOpen] = useState(false);
   const [editingItem, setEditingItem] = useState<ShoppingListItem | null>(null);
   const [editName, setEditName] = useState('');
   const [editQuantity, setEditQuantity] = useState('');
@@ -105,6 +117,38 @@ export default function ShoppingListScreen() {
       }
     },
     [combineDuplicates],
+  );
+
+  const handleAddFromRecipes = useCallback(
+    async (selectedIds: string[]) => {
+      const selected = recipes.filter((recipe) => selectedIds.includes(recipe.id));
+      const payload = selected.map((recipe) => ({
+        id: recipe.id,
+        ingredients: (recipe.ingredients ?? []).map((ing) => {
+          const converted = applyMeasurementSystem(
+            ing.quantity,
+            ing.unit,
+            measurementSystem,
+          );
+          return {
+            name: ing.name,
+            quantity: converted.quantity,
+            unit: converted.unit,
+          };
+        }),
+      }));
+
+      const result = await addFromRecipes(payload);
+      Alert.alert(
+        t('list.fromRecipesSuccessTitle'),
+        t('list.fromRecipesSuccessBody', {
+          recipes: selected.length,
+          added: result.addedCount,
+          merged: result.mergedCount,
+        }),
+      );
+    },
+    [addFromRecipes, measurementSystem, recipes, t],
   );
 
   const handleAdd = useCallback(async () => {
@@ -299,7 +343,7 @@ export default function ShoppingListScreen() {
     ({ item }: { item: ShoppingListItem }) => {
       const amount =
         item.quantity != null
-          ? formatQuantity(item.quantity, item.unit ?? '')
+          ? formatQuantity(item.quantity, item.unit ?? '', appLanguage)
           : item.unit
             ? item.unit
             : null;
@@ -396,7 +440,16 @@ export default function ShoppingListScreen() {
         </View>
       );
     },
-    [colors, duplicateCounts, handleCombine, handleLongPress, handleRemove, handleToggle, openEdit],
+    [
+      appLanguage,
+      colors,
+      duplicateCounts,
+      handleCombine,
+      handleLongPress,
+      handleRemove,
+      handleToggle,
+      openEdit,
+    ],
   );
 
   if (loading && items.length === 0) {
@@ -469,8 +522,24 @@ export default function ShoppingListScreen() {
           </View>
         )}
 
+        <Pressable
+          accessibilityRole="button"
+          accessibilityLabel={t('list.fromRecipes')}
+          className="mt-5 flex-row items-center justify-center gap-2 rounded-3xl border px-4 py-3.5 active:opacity-80"
+          style={{
+            backgroundColor: colors.surface,
+            borderColor: colors.frostedBorder,
+          }}
+          onPress={() => setFromRecipesOpen(true)}
+        >
+          <Ionicons name="restaurant-outline" size={18} color={colors.primary} />
+          <Text className="text-sm font-bold" style={{ color: colors.primary }}>
+            {t('list.fromRecipes')}
+          </Text>
+        </Pressable>
+
         <View
-          className="mt-5 gap-2 rounded-3xl border p-3"
+          className="mt-3 gap-2 rounded-3xl border p-3"
           style={{ backgroundColor: colors.surface, borderColor: colors.frostedBorder }}
         >
           <TextInput
@@ -688,6 +757,14 @@ export default function ShoppingListScreen() {
           </View>
         </SafeAreaView>
       </Modal>
+
+      <SelectRecipesForShoppingListModal
+        visible={fromRecipesOpen}
+        recipes={recipes}
+        collections={collections}
+        onClose={() => setFromRecipesOpen(false)}
+        onConfirm={handleAddFromRecipes}
+      />
     </Screen>
   );
 }

@@ -75,6 +75,12 @@ export function useCollections() {
 
       if (user) {
         await renameCollectionRemote(id, trimmed);
+      } else {
+        const duplicate = collections.some(
+          (c) =>
+            c.id !== id && c.name.trim().toLowerCase() === trimmed.toLowerCase(),
+        );
+        if (duplicate) throw new Error('You already have a collection with that name.');
       }
 
       const next = collections.map((c) => (c.id === id ? { ...c, name: trimmed } : c));

@@ -1,6 +1,6 @@
 import { router, useNavigation } from 'expo-router';
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { ActivityIndicator, Alert, Pressable, Text, View } from 'react-native';
+import { ActivityIndicator, Alert, Platform, Pressable, Text, View } from 'react-native';
 import { useTranslation } from 'react-i18next';
 
 import { RecipeView } from '@/components/RecipeView';
@@ -9,9 +9,11 @@ import { useLanguagePreference } from '@/hooks/useLanguagePreference';
 import { useLocalizedRecipe } from '@/hooks/useLocalizedRecipe';
 import { useThemePreference } from '@/hooks/useThemePreference';
 import { DEFAULT_SOURCE_LANGUAGE } from '@/lib/appLanguages';
+import { confirmAction } from '@/lib/confirmAction';
 import { ensureRecipeTranslation } from '@/lib/ensureRecipeTranslation';
-import { GUEST_RECIPE_LIMIT, saveGuestRecipe } from '@/lib/guestRecipes';
+import { recipeContentEquals } from '@/lib/recipeContentEquals';
 import { clearRecipeDraft, peekRecipeDraft } from '@/lib/recipeDraft';
+import { isRecipeLanguageCode } from '@/lib/recipeLanguages';
 import { supabase } from '@/lib/supabase/client';
 import { ExtractedRecipe } from '@/lib/supabase/extractRecipe';
 import { upsertRecipeTranslation } from '@/lib/supabase/recipeTranslations';
@@ -36,7 +38,10 @@ export default function RecipePreviewScreen() {
       ? { ...parsed, source_language: parsed.source_language ?? DEFAULT_SOURCE_LANGUAGE }
       : null,
   );
-  const pendingTranslation = useRef<RecipeTranslationContent | null>(null);
+  const pendingTranslation = useRef<{
+    language: string;
+    content: RecipeTranslationContent;
+  } | null>(null);
 
   const {
     displayContent,
@@ -53,7 +58,7 @@ export default function RecipePreviewScreen() {
 
   useEffect(() => {
     if (displayContent && activeLanguage) {
-      pendingTranslation.current = displayContent;
+      pendingTranslation.current = { language: activeLanguage, content: displayContent };
     } else {
       pendingTranslation.current = null;
     }
@@ -67,7 +72,11 @@ export default function RecipePreviewScreen() {
       instructions: ExtractedRecipe['instructions'];
       calories?: number;
     }) => {
-      setRecipeToSave((prev) => (prev ? { ...prev, ...content } : prev));
+      setRecipeToSave((prev) => {
+        if (!prev) return prev;
+        if (recipeContentEquals(prev, content)) return prev;
+        return { ...prev, ...content };
+      });
     },
     [],
   );
@@ -102,53 +111,45 @@ export default function RecipePreviewScreen() {
 
       // Eager translate at save if preferred language differs and we don't have overlay yet.
       let translation = pendingTranslation.current;
-      if (!translation && preferredLanguage !== (canonical.source_language ?? DEFAULT_SOURCE_LANGUAGE)) {
+      if (
+        !translation &&
+        preferredLanguage !== (canonical.source_language ?? DEFAULT_SOURCE_LANGUAGE)
+      ) {
         const result = await ensureRecipeTranslation({
           recipe: canonical,
           targetLanguage: preferredLanguage,
         });
         if (result.status === 'ok') {
-          translation = result.content;
+          translation = { language: preferredLanguage, content: result.content };
         }
       }
 
       const { data: userData } = await supabase.auth.getUser();
 
       if (!userData.user) {
-        const result = await saveGuestRecipe({
-          ...canonical,
-          translations: translation
-            ? { [preferredLanguage]: translation }
-            : undefined,
-        });
-
-        if (!result.ok) {
-          Alert.alert(
+        if (Platform.OS === 'web') {
+          const signUp = await confirmAction(
             t('recipe.guestLimitTitle'),
-            t('recipe.guestLimitBody', {
-              limit: GUEST_RECIPE_LIMIT,
-              saved: result.savedCount,
-            }),
-            [
-              { text: t('common.notNow'), style: 'cancel' },
-              {
-                text: t('auth.signUp'),
-                onPress: () => router.push('/auth?mode=signup&reason=save_limit'),
-              },
-            ],
+            t('recipe.guestLimitBody'),
+            t('auth.signUp'),
           );
+          if (signUp) router.push('/auth?mode=signup&reason=save_limit');
           return;
         }
-
-        router.replace('/?saved=1');
-        clearRecipeDraft();
+        Alert.alert(t('recipe.guestLimitTitle'), t('recipe.guestLimitBody'), [
+          { text: t('common.notNow'), style: 'cancel' },
+          {
+            text: t('auth.signUp'),
+            onPress: () => router.push('/auth?mode=signup&reason=save_limit'),
+          },
+        ]);
         return;
       }
 
       const saved = await saveRecipe(canonical);
-      if (translation) {
+      if (translation && isRecipeLanguageCode(translation.language)) {
         try {
-          await upsertRecipeTranslation(saved.id, preferredLanguage, translation);
+          await upsertRecipeTranslation(saved.id, translation.language, translation.content);
         } catch {
           // Non-fatal — lazy translate on open will retry.
         }
@@ -173,11 +174,12 @@ export default function RecipePreviewScreen() {
         style={{
           backgroundColor: colors.background,
           borderBottomColor: colors.frostedBorder,
+          alignItems: 'center',
         }}
       >
         <Pressable
-          className="items-center rounded-full py-3.5 active:opacity-80"
-          style={{ backgroundColor: colors.primary }}
+          className="w-full items-center rounded-full py-3.5 active:opacity-80"
+          style={{ backgroundColor: colors.primary, maxWidth: 420 }}
           onPress={handleSave}
           disabled={saving}
           accessibilityRole="button"
@@ -198,7 +200,7 @@ export default function RecipePreviewScreen() {
         localizedLanguage={activeLanguage}
         translating={translating}
         onTranslationPersist={(language, content) => {
-          pendingTranslation.current = content;
+          pendingTranslation.current = { language, content };
           void applyManualTranslation(language, content);
         }}
       />

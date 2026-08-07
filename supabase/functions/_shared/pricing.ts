@@ -11,15 +11,17 @@ export const SCRAPECREATORS_USD_PER_CREDIT = 0.00188;
 
 /** @deprecated Product tokens retired; kept for admin historical labels only. */
 export const TOKEN_COST_EXTRACT = 10;
-/** @deprecated Product tokens retired; remix is unmetered. */
+/** @deprecated Product tokens retired; remix is Plus-gated, not token-metered. */
 export const TOKEN_COST_REMIX = 5;
 
-/** Keep in sync with client GUEST_EXTRACTION_LIMIT / GUEST_RECIPE_LIMIT. */
+/** Keep in sync with client GUEST_EXTRACTION_LIMIT. */
 export const GUEST_EXTRACT_LIMIT = 3;
-/** Lifetime free extracts for signed-in non-Plus users. */
-export const FREE_EXTRACT_LIMIT = 10;
+/** Calendar-month extracts for signed-in Free users (UTC YYYY-MM). */
+export const FREE_MONTHLY_EXTRACT_LIMIT = 15;
+/** @deprecated Use FREE_MONTHLY_EXTRACT_LIMIT. */
+export const FREE_EXTRACT_LIMIT = FREE_MONTHLY_EXTRACT_LIMIT;
 /** Calendar-month extracts for Pinch Plus (UTC YYYY-MM). */
-export const PLUS_MONTHLY_EXTRACT_LIMIT = 90;
+export const PLUS_MONTHLY_EXTRACT_LIMIT = 100;
 /** Display price until real IAP. */
 export const PLUS_PRICE_DISPLAY = '$9.99/mo';
 

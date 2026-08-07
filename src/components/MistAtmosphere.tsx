@@ -1,6 +1,6 @@
 import { LinearGradient } from 'expo-linear-gradient';
 import { useEffect, type ReactNode } from 'react';
-import { Dimensions, StyleSheet, View } from 'react-native';
+import { StyleSheet, useWindowDimensions, View } from 'react-native';
 import Animated, {
   Easing,
   interpolate,
@@ -16,7 +16,7 @@ import Svg, { Circle, Ellipse, G, Line, Path, Rect } from 'react-native-svg';
 import { useThemePreference } from '@/hooks/useThemePreference';
 import type { ThemePackColors, ThemePackId } from '@/constants/themes';
 
-const { width, height } = Dimensions.get('window');
+type Viewport = { width: number; height: number };
 
 /** Soft color wash — kept subtle so motif icons stay the visual focus. */
 function DriftOrb({
@@ -124,7 +124,15 @@ function MistCloud({ color, w = 56 }: { color: string; w?: number }) {
   );
 }
 
-function MistEffects({ colors, dense }: { colors: ThemePackColors; dense?: boolean }) {
+function MistEffects({
+  colors,
+  dense,
+  width,
+}: {
+  colors: ThemePackColors;
+  dense?: boolean;
+  width: number;
+}) {
   return (
     <>
       <DriftOrb size={200} color={colors.mistOrbA} x={-60} y={40} duration={5600} />
@@ -220,7 +228,15 @@ function Apple({ color, leaf, size = 26 }: { color: string; leaf: string; size?:
   );
 }
 
-function FruityEffects({ colors, dense }: { colors: ThemePackColors; dense?: boolean }) {
+function FruityEffects({
+  colors,
+  dense,
+  width,
+}: {
+  colors: ThemePackColors;
+  dense?: boolean;
+  width: number;
+}) {
   return (
     <>
       <DriftOrb size={160} color={colors.mistOrbA} x={-50} y={60} duration={6200} />
@@ -337,7 +353,15 @@ function YarnBall({ color, size = 28 }: { color: string; size?: number }) {
   );
 }
 
-function CatEffects({ colors, dense }: { colors: ThemePackColors; dense?: boolean }) {
+function CatEffects({
+  colors,
+  dense,
+  width,
+}: {
+  colors: ThemePackColors;
+  dense?: boolean;
+  width: number;
+}) {
   return (
     <>
       <DriftOrb size={170} color={colors.mistOrbA} x={-40} y={50} duration={6000} />
@@ -362,7 +386,7 @@ function CatEffects({ colors, dense }: { colors: ThemePackColors; dense?: boolea
   );
 }
 
-/* ─── Potter ───────────────────────────────────────────────────────────── */
+/* ─── Wizard ───────────────────────────────────────────────────────────── */
 
 function RoundGlasses({ color, size = 44 }: { color: string; size?: number }) {
   return (
@@ -424,7 +448,17 @@ function Spark({ x, y, color, delay }: { x: number; y: number; color: string; de
   );
 }
 
-function PotterEffects({ colors, dense }: { colors: ThemePackColors; dense?: boolean }) {
+function WizardEffects({
+  colors,
+  dense,
+  width,
+  height,
+}: {
+  colors: ThemePackColors;
+  dense?: boolean;
+  width: number;
+  height: number;
+}) {
   return (
     <>
       <DriftOrb size={150} color={colors.mistOrbA} x={-50} y={80} duration={6800} />
@@ -512,12 +546,14 @@ function Bat({
   color,
   delay,
   duration,
+  width,
 }: {
   startX: number;
   y: number;
   color: string;
   delay: number;
   duration: number;
+  width: number;
 }) {
   const t = useSharedValue(0);
   const flap = useSharedValue(0);
@@ -555,7 +591,15 @@ function Bat({
   );
 }
 
-function DraculaEffects({ colors, dense }: { colors: ThemePackColors; dense?: boolean }) {
+function DraculaEffects({
+  colors,
+  dense,
+  width,
+}: {
+  colors: ThemePackColors;
+  dense?: boolean;
+  width: number;
+}) {
   return (
     <>
       <DriftOrb size={180} color={colors.mistOrbA} x={-70} y={30} duration={7000} />
@@ -579,7 +623,7 @@ function DraculaEffects({ colors, dense }: { colors: ThemePackColors; dense?: bo
       </DriftMotif>
       <BloodDrop x={36} y={130} color={colors.primary} delay={0} size={11} />
       <BloodDrop x={48} y={128} color={colors.primary} delay={700} size={9} />
-      <Bat startX={-40} y={160} color={colors.primary} delay={0} duration={14000} />
+      <Bat startX={-40} y={160} color={colors.primary} delay={0} duration={14000} width={width} />
       {!dense && (
         <>
           <DriftMotif x={width - 56} y={280} delay={500} duration={5800} sway={6}>
@@ -587,8 +631,8 @@ function DraculaEffects({ colors, dense }: { colors: ThemePackColors; dense?: bo
           </DriftMotif>
           <BloodDrop x={width - 42} y={310} color={colors.primary} delay={400} size={10} />
           <BloodDrop x={width - 30} y={308} color={colors.accent} delay={1100} size={8} />
-          <Bat startX={-20} y={300} color={colors.accent} delay={2000} duration={16000} />
-          <Bat startX={-60} y={440} color={colors.primary} delay={4500} duration={15000} />
+          <Bat startX={-20} y={300} color={colors.accent} delay={2000} duration={16000} width={width} />
+          <Bat startX={-60} y={440} color={colors.primary} delay={4500} duration={15000} width={width} />
           <BloodDrop x={width * 0.45} y={400} color={colors.primary} delay={1800} size={12} />
         </>
       )}
@@ -632,7 +676,15 @@ function CloudPuff({ color, size = 36 }: { color: string; size?: number }) {
   );
 }
 
-function SunnyEffects({ colors, dense }: { colors: ThemePackColors; dense?: boolean }) {
+function SunnyEffects({
+  colors,
+  dense,
+  width,
+}: {
+  colors: ThemePackColors;
+  dense?: boolean;
+  width: number;
+}) {
   const pulse = useSharedValue(0);
   useEffect(() => {
     pulse.value = withRepeat(
@@ -742,7 +794,15 @@ function CrescentMoon({ color, size = 36 }: { color: string; size?: number }) {
   );
 }
 
-function ShootingStar({ color, delay }: { color: string; delay: number }) {
+function ShootingStar({
+  color,
+  delay,
+  width,
+}: {
+  color: string;
+  delay: number;
+  width: number;
+}) {
   const t = useSharedValue(0);
   useEffect(() => {
     t.value = withDelay(
@@ -780,7 +840,15 @@ function ShootingStar({ color, delay }: { color: string; delay: number }) {
   );
 }
 
-function StarryEffects({ colors, dense }: { colors: ThemePackColors; dense?: boolean }) {
+function StarryEffects({
+  colors,
+  dense,
+  width,
+}: {
+  colors: ThemePackColors;
+  dense?: boolean;
+  width: number;
+}) {
   const stars = [
     [36, 70, 16],
     [90, 140, 11],
@@ -809,7 +877,7 @@ function StarryEffects({ colors, dense }: { colors: ThemePackColors; dense?: boo
           size={size}
         />
       ))}
-      {!dense && <ShootingStar color={colors.accent} delay={2500} />}
+      {!dense && <ShootingStar color={colors.accent} delay={2500} width={width} />}
     </>
   );
 }
@@ -818,27 +886,30 @@ function PackEffects({
   packId,
   colors,
   dense,
+  viewport,
 }: {
   packId: ThemePackId;
   colors: ThemePackColors;
   dense?: boolean;
+  viewport: Viewport;
 }) {
+  const { width, height } = viewport;
   switch (packId) {
     case 'fruity':
-      return <FruityEffects colors={colors} dense={dense} />;
+      return <FruityEffects colors={colors} dense={dense} width={width} />;
     case 'cat':
-      return <CatEffects colors={colors} dense={dense} />;
-    case 'potter':
-      return <PotterEffects colors={colors} dense={dense} />;
+      return <CatEffects colors={colors} dense={dense} width={width} />;
+    case 'wizard':
+      return <WizardEffects colors={colors} dense={dense} width={width} height={height} />;
     case 'dracula':
-      return <DraculaEffects colors={colors} dense={dense} />;
+      return <DraculaEffects colors={colors} dense={dense} width={width} />;
     case 'sunny':
-      return <SunnyEffects colors={colors} dense={dense} />;
+      return <SunnyEffects colors={colors} dense={dense} width={width} />;
     case 'starry':
-      return <StarryEffects colors={colors} dense={dense} />;
+      return <StarryEffects colors={colors} dense={dense} width={width} />;
     case 'mist':
     default:
-      return <MistEffects colors={colors} dense={dense} />;
+      return <MistEffects colors={colors} dense={dense} width={width} />;
   }
 }
 
@@ -854,12 +925,19 @@ type MistAtmosphereProps = {
  */
 export function MistAtmosphere({ children, dense }: MistAtmosphereProps) {
   const { colors, packId } = useThemePreference();
+  const { width, height } = useWindowDimensions();
 
   return (
     <View style={styles.root}>
       <LinearGradient colors={[...colors.mistGradient]} style={StyleSheet.absoluteFill} />
       <View pointerEvents="none" style={StyleSheet.absoluteFill}>
-        <PackEffects key={packId} packId={packId} colors={colors} dense={dense} />
+        <PackEffects
+          key={`${packId}-${Math.round(width)}-${Math.round(height)}`}
+          packId={packId}
+          colors={colors}
+          dense={dense}
+          viewport={{ width, height }}
+        />
       </View>
       <View style={styles.content}>{children}</View>
     </View>

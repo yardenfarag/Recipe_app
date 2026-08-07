@@ -3,7 +3,9 @@
 import { generateGeminiJson, sanitizeGeminiText } from './geminiClient.ts';
 
 const REQUEST_TIMEOUT_MS = 20_000;
+const REWRITE_TIMEOUT_MS = 25_000;
 const MAX_OUTPUT_TOKENS = 1_024;
+const REWRITE_MAX_OUTPUT_TOKENS = 4_096;
 
 export const SUBSTITUTION_LANGUAGE_CODES = ['en', 'es', 'he', 'ru', 'ar', 'de', 'fr'] as const;
 export type SubstitutionLanguageCode = (typeof SUBSTITUTION_LANGUAGE_CODES)[number];
@@ -99,6 +101,41 @@ export interface SuggestSubstitutionInput {
   language?: SubstitutionLanguageCode | null;
 }
 
+export interface RewriteInstructionsForSubstitutionInput {
+  ingredient: { name: string; quantity: number; unit: string };
+  alternative: { name: string; quantity: number; unit: string };
+  instructions: { step: number; text: string }[];
+  recipeTitle?: string;
+  language?: SubstitutionLanguageCode | null;
+}
+
+const REWRITE_SYSTEM_PROMPT = `You are a practical home-cooking expert updating recipe steps after one ingredient was swapped.
+
+Rules:
+- Rewrite instructions so they match the substitute (name, quantity/unit, and technique only when needed).
+- Keep the same number of steps, the same order, and the same language as the input steps.
+- Change only steps that mention the old ingredient or need a technique tweak for the substitute.
+- Do not invent new steps, remove steps, or change unrelated ingredients.
+- Return ONLY data matching the schema.`;
+
+const REWRITE_SCHEMA = {
+  type: 'object',
+  properties: {
+    instructions: {
+      type: 'array',
+      items: {
+        type: 'object',
+        properties: {
+          step: { type: 'integer' },
+          text: { type: 'string' },
+        },
+        required: ['step', 'text'],
+      },
+    },
+  },
+  required: ['instructions'],
+};
+
 export function isSubstitutionLanguageCode(value: string): value is SubstitutionLanguageCode {
   return (SUBSTITUTION_LANGUAGE_CODES as readonly string[]).includes(value);
 }
@@ -125,6 +162,31 @@ export async function suggestSubstitutionsWithGemini(
   }));
 }
 
+/** Patches step text after the user applies a substitute (keeps step count/order). */
+export async function rewriteInstructionsForSubstitutionWithGemini(
+  input: RewriteInstructionsForSubstitutionInput,
+): Promise<{ step: number; text: string }[]> {
+  if (input.instructions.length === 0) return [];
+
+  const { data } = await generateGeminiJson<{
+    instructions: { step: number; text: string }[];
+  }>({
+    tier: 'fast',
+    systemPrompt: REWRITE_SYSTEM_PROMPT,
+    parts: [{ text: buildRewriteContext(input) }],
+    responseSchema: REWRITE_SCHEMA,
+    timeoutMs: REWRITE_TIMEOUT_MS,
+    maxOutputTokens: REWRITE_MAX_OUTPUT_TOKENS,
+    kind: 'substitution',
+    context: 'substitution.ts: rewriteInstructionsForSubstitutionWithGemini',
+  });
+
+  return (data.instructions ?? []).map((step, index) => ({
+    step: Number.isFinite(Number(step.step)) ? Number(step.step) : index + 1,
+    text: sanitizeGeminiText(step.text ?? ''),
+  }));
+}
+
 function buildTextContext(input: SuggestSubstitutionInput): string {
   const parts: string[] = [];
   const locale = resolveLocaleGuidance(input.language, input.ingredient.name);
@@ -148,6 +210,27 @@ function buildTextContext(input: SuggestSubstitutionInput): string {
   }
 
   return parts.join('\n');
+}
+
+function buildRewriteContext(input: RewriteInstructionsForSubstitutionInput): string {
+  const locale = resolveLocaleGuidance(input.language, input.ingredient.name);
+  const lines: string[] = [];
+
+  if (input.recipeTitle?.trim()) {
+    lines.push(`Recipe: ${input.recipeTitle.trim()}`);
+  }
+  lines.push(
+    `Old ingredient: ${input.ingredient.quantity} ${input.ingredient.unit || ''} ${input.ingredient.name}`.trim(),
+  );
+  lines.push(
+    `New ingredient: ${input.alternative.quantity} ${input.alternative.unit || ''} ${input.alternative.name}`.trim(),
+  );
+  lines.push(`Keep steps in: ${locale.languageName}`);
+  lines.push('\n--- INSTRUCTIONS ---');
+  for (const step of input.instructions) {
+    lines.push(`${step.step}. ${step.text}`);
+  }
+  return lines.join('\n');
 }
 
 function resolveLocaleGuidance(

@@ -7,6 +7,7 @@ import { ShareIntentProvider } from 'expo-share-intent';
 import { useTranslation } from 'react-i18next';
 
 import { ErrorBoundary } from '@/components/ErrorBoundary';
+import { StackHeaderBackButton } from '@/components/StackHeaderBackButton';
 import { AuthProvider } from '@/hooks/useAuth';
 import { LanguageProvider } from '@/hooks/useLanguagePreference';
 import { MeasurementProvider } from '@/hooks/useMeasurementPreference';
@@ -20,6 +21,11 @@ import { I18nProvider } from '@/i18n';
 // disabling it there avoids a console warning and pointless listener setup.
 // It re-enables itself automatically once running in a dev build (ADR 010).
 const isExpoGo = Constants.executionEnvironment === ExecutionEnvironment.StoreClient;
+
+/** Keep Library under recipe/deep links so the header back control has a target. */
+export const unstable_settings = {
+  initialRouteName: '(tabs)',
+};
 
 function RootNavigator() {
   const { colors, scheme } = useThemePreference();
@@ -43,8 +49,27 @@ function RootNavigator() {
         >
           <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
           <Stack.Screen name="onboarding" options={{ headerShown: false, animation: 'fade' }} />
-          <Stack.Screen name="recipe/[id]" options={{ title: t('nav.recipe') }} />
-          <Stack.Screen name="recipe/preview" options={{ title: t('nav.preview') }} />
+          <Stack.Screen
+            name="recipe/[id]"
+            options={{
+              title: t('nav.recipe'),
+              headerLeft: (props) => <StackHeaderBackButton tintColor={props.tintColor} />,
+            }}
+          />
+          <Stack.Screen
+            name="recipe/preview"
+            options={{
+              title: t('nav.preview'),
+              headerLeft: (props) => <StackHeaderBackButton tintColor={props.tintColor} />,
+            }}
+          />
+          <Stack.Screen
+            name="s/[token]"
+            options={{
+              title: t('nav.sharedRecipe'),
+              headerLeft: (props) => <StackHeaderBackButton tintColor={props.tintColor} />,
+            }}
+          />
           <Stack.Screen
             name="auth"
             options={{

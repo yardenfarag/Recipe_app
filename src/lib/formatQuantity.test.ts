@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
-import { localizeCulinaryUnit } from './culinaryUnits';
+import { localizeCulinaryUnit, localizeIngredientUnits } from './culinaryUnits';
 import { formatQuantity } from './formatQuantity';
 
 describe('formatQuantity', () => {
@@ -33,11 +33,35 @@ describe('formatQuantity', () => {
     expect(formatQuantity(1, 'unit', 'he')).toBe('1');
     expect(formatQuantity(3, 'tbsp', 'he')).toBe('3 כפות');
   });
+
+  it('formats metric amounts when the unit is already localized', () => {
+    expect(formatQuantity(240, 'מ״ל', 'he')).toBe('240 מ״ל');
+    expect(formatQuantity(200, 'גרם', 'he')).toBe('200 גרם');
+  });
 });
 
 describe('localizeCulinaryUnit', () => {
   it('maps common English units into Hebrew', () => {
     expect(localizeCulinaryUnit('tbsp', 'he', 1)).toBe('כף');
     expect(localizeCulinaryUnit('g', 'he', 200)).toBe('גרם');
+  });
+
+  it('round-trips localized units into another language', () => {
+    expect(localizeCulinaryUnit('כוס', 'en', 1)).toBe('cup');
+    expect(localizeCulinaryUnit('כוס', 'es', 2)).toBe('tazas');
+  });
+});
+
+describe('localizeIngredientUnits', () => {
+  it('localizes known units and leaves freeform units alone', () => {
+    const result = localizeIngredientUnits(
+      [
+        { name: 'flour', quantity: 1, unit: 'cup' },
+        { name: 'herbs', quantity: 1, unit: 'handful' },
+      ],
+      'he',
+    );
+    expect(result[0].unit).toBe('כוס');
+    expect(result[1].unit).toBe('handful');
   });
 });

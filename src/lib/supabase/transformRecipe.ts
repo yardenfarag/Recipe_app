@@ -20,7 +20,7 @@ export interface TransformRecipeResult {
   variant?: RecipeVariantKey;
   recipe?: TransformedRecipePayload;
   message?: string;
-  code?: 'insufficient_tokens' | 'auth_required' | 'metering_error' | string;
+  code?: 'insufficient_tokens' | 'auth_required' | 'subscription_required' | 'metering_error' | string;
   tokens_charged?: number;
   token_balance?: number | null;
   tokens_required?: number;

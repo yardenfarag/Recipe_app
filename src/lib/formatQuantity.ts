@@ -6,6 +6,7 @@
 
 import {
   CulinaryUnitLanguage,
+  canonicalUnitKey,
   isCountUnit,
   localizeCulinaryUnit,
 } from '@/lib/culinaryUnits';
@@ -56,9 +57,9 @@ export function formatQuantity(
     return `${quantity} ${displayUnit}`.trim();
   }
 
-  const normalizedUnit = unit.trim().toLowerCase();
+  const unitKey = canonicalUnitKey(unit);
 
-  if (quantity < PINCH_THRESHOLD && PINCHABLE_UNITS.has(normalizedUnit)) {
+  if (quantity < PINCH_THRESHOLD && PINCHABLE_UNITS.has(unitKey)) {
     if (language && language !== 'en') {
       const localizedPinch = localizeCulinaryUnit('pinch', language, 1);
       return localizedPinch || 'a pinch';
@@ -67,8 +68,9 @@ export function formatQuantity(
   }
 
   // Metric mass/volume reads better as plain decimals ("240 ml"), not cooking fractions.
-  const METRIC_UNITS = new Set(['g', 'kg', 'ml', 'liter', 'l', 'litre', 'liters', 'litres']);
-  if (METRIC_UNITS.has(normalizedUnit)) {
+  // Use canonical keys so localized units (גרם, мл) still take this path.
+  const METRIC_UNITS = new Set(['g', 'kg', 'ml', 'liter']);
+  if (METRIC_UNITS.has(unitKey)) {
     const rounded =
       quantity >= 100
         ? Math.round(quantity)

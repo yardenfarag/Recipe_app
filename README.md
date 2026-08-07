@@ -1,8 +1,27 @@
-# Welcome to your Expo app 👋
+# Pinch
 
-This is an [Expo](https://expo.dev) project created with [`create-expo-app`](https://www.npmjs.com/package/create-expo-app).
+Pinch turns recipe videos and links into a calm, cookable kitchen on your phone — and now on the web too. Paste a URL from YouTube, Instagram, TikTok, or the web; Pinch extracts ingredients and steps, saves them to your library, and helps you shop and cook along.
 
-## Get started
+## Why Pinch
+
+- **Snap from a link** — extract a structured recipe instead of scrubbing a video
+- **Your library** — search, tags, collections, favorites, and theme packs
+- **Shopping list** — add ingredients and check them off at the store
+- **Cook along** — play the source video beside the recipe
+- **Sync** — sign in to save and keep recipes across devices (guests can try a few extractions)
+- **i18n & units** — multiple languages and metric/imperial toggle
+
+## Screenshots
+
+Add captures under `docs/screenshots/` and link them here when ready:
+
+| Library | Recipe | Snap | List |
+| --- | --- | --- | --- |
+| ![Library](docs/screenshots/library.png) | ![Recipe](docs/screenshots/recipe.png) | ![Snap](docs/screenshots/snap.png) | ![List](docs/screenshots/list.png) |
+
+Web uses a sidebar on wide screens, a multi-column library grid, and a two-column recipe layout. Mobile keeps the familiar bottom tabs.
+
+## Quick start
 
 1. Install dependencies
 
@@ -10,47 +29,88 @@ This is an [Expo](https://expo.dev) project created with [`create-expo-app`](htt
    npm install
    ```
 
-2. Start the app
+2. Copy env and fill Supabase values
 
    ```bash
-   npx expo start
+   cp .env.example .env
    ```
 
-In the output, you'll find options to open the app in a
+3. Start the app
 
-- [development build](https://docs.expo.dev/develop/development-builds/introduction/)
-- [Android emulator](https://docs.expo.dev/workflow/android-studio-emulator/)
-- [iOS simulator](https://docs.expo.dev/workflow/ios-simulator/)
-- [Expo Go](https://expo.dev/go), a limited sandbox for trying out app development with Expo
+   ```bash
+   npm start          # Expo dev server
+   npm run web        # Web (desktop-friendly layout)
+   npm run ios        # iOS (dev client / simulator)
+   npm run android    # Android
+   ```
 
-You can start developing by editing the files inside the **app** directory. This project uses [file-based routing](https://docs.expo.dev/router/introduction).
+4. Run tests
 
-## Get a fresh project
+   ```bash
+   npm test
+   ```
 
-When you're ready, run:
+## Web deploy (GitHub Pages + Actions)
+
+The app exports as a static SPA (`web.output: single`) with `experiments.baseUrl` set to `/Recipe_app` for project Pages.
+
+Workflow: [`.github/workflows/deploy-web.yml`](.github/workflows/deploy-web.yml)
+
+- Builds with `npx expo export -p web`
+- Merges legal HTML (`privacy.html`, `terms.html`, `delete-account.html`, `legal.html`) into `dist/`
+- Adds `.nojekyll` and `404.html` (SPA fallback)
+- Deploys via GitHub Pages
+
+Live URL: https://yardenfarag.github.io/Recipe_app
+
+### Secrets & variables to configure
+
+In the GitHub repo: **Settings → Secrets and variables → Actions**
+
+| Name | Kind | Required | Notes |
+| --- | --- | --- | --- |
+| `EXPO_PUBLIC_SUPABASE_URL` | Secret | Yes | Same as local `.env` |
+| `EXPO_PUBLIC_SUPABASE_KEY` | Secret | Yes | Publishable/anon key (public in the bundle; still don’t commit it) |
+| `EXPO_PUBLIC_ADMIN_EMAILS` | Secret | No | Comma-separated admin emails |
+| `EXPO_PUBLIC_LEGAL_BASE_URL` | Variable | No | Defaults to the Pages URL |
+| `EXPO_PUBLIC_SUPPORT_EMAIL` | Variable | No | Support mailto address |
+
+Also ensure **Settings → Pages → Source** is **GitHub Actions**.
+
+Do **not** put Edge Function secrets (`GEMINI_*`, YouTube, ScrapeCreators, Apple revoke keys) in this workflow — those stay in Supabase. See [`supabase/README.md`](supabase/README.md).
+
+`EXPO_TOKEN` remains for EAS iOS/Android builds only.
+
+### Local production web build
 
 ```bash
-npm run reset-project
+npm run export:web
+npm run serve:web
 ```
 
-This command will move the starter code to the **app-example** directory and create a blank **app** directory where you can start developing.
+### Supabase Auth redirects (web)
 
-### Other setup steps
+In Supabase → Authentication → URL Configuration, keep mobile `pinch://` entries and also allow:
 
-- To set up ESLint for linting, run `npx expo lint`, or follow our guide on ["Using ESLint and Prettier"](https://docs.expo.dev/guides/using-eslint/)
-- If you'd like to set up unit testing, follow our guide on ["Unit Testing with Jest"](https://docs.expo.dev/develop/unit-testing/)
-- Learn more about the TypeScript setup in this template in our guide on ["Using TypeScript"](https://docs.expo.dev/guides/typescript/)
+- `https://yardenfarag.github.io/Recipe_app`
+- `https://yardenfarag.github.io/Recipe_app/auth-callback`
+- `https://yardenfarag.github.io/Recipe_app/reset-password`
+- Dev web: `http://localhost:8081/**`
+
+Details are mirrored in [`.env.example`](.env.example).
+
+## Legal
+
+- [Privacy](https://yardenfarag.github.io/Recipe_app/privacy.html)
+- [Terms](https://yardenfarag.github.io/Recipe_app/terms.html)
+- [Delete account](https://yardenfarag.github.io/Recipe_app/delete-account.html)
+- [Legal hub](https://yardenfarag.github.io/Recipe_app/legal.html)
+
+## Stack
+
+Expo SDK 54 · Expo Router · NativeWind · Supabase · i18next
 
 ## Learn more
 
-To learn more about developing your project with Expo, look at the following resources:
-
-- [Expo documentation](https://docs.expo.dev/): Learn fundamentals, or go into advanced topics with our [guides](https://docs.expo.dev/guides).
-- [Learn Expo tutorial](https://docs.expo.dev/tutorial/introduction/): Follow a step-by-step tutorial where you'll create a project that runs on Android, iOS, and the web.
-
-## Join the community
-
-Join our community of developers creating universal apps.
-
-- [Expo on GitHub](https://github.com/expo/expo): View our open source platform and contribute.
-- [Discord community](https://chat.expo.dev): Chat with Expo users and ask questions.
+- [Expo docs](https://docs.expo.dev/)
+- Backend / Edge Functions: [`supabase/README.md`](supabase/README.md)

@@ -1,11 +1,13 @@
 import Ionicons from '@expo/vector-icons/Ionicons';
 import * as AppleAuthentication from 'expo-apple-authentication';
 import { router, useLocalSearchParams } from 'expo-router';
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useState, type ReactNode } from 'react';
 import { ActivityIndicator, Pressable, Text, TextInput, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { CookieMark } from '@/components/CookieMark';
+import { AuthCardWidth } from '@/constants/theme';
+import { useBreakpoint } from '@/hooks/useBreakpoint';
 import { useThemePreference } from '@/hooks/useThemePreference';
 import {
   getPasswordStrength,
@@ -25,7 +27,7 @@ import {
 
 type Mode = 'signin' | 'signup' | 'forgot';
 type WaitingFor = 'confirm' | 'reset' | null;
-type AuthReason = 'extract_limit' | 'save_limit' | 'sync' | undefined;
+type AuthReason = 'extract_limit' | 'save_limit' | 'sync' | 'shared_recipe' | undefined;
 
 function parseMode(value: string | string[] | undefined): Mode {
   const raw = Array.isArray(value) ? value[0] : value;
@@ -34,8 +36,53 @@ function parseMode(value: string | string[] | undefined): Mode {
 
 function parseReason(value: string | string[] | undefined): AuthReason {
   const raw = Array.isArray(value) ? value[0] : value;
-  if (raw === 'extract_limit' || raw === 'save_limit' || raw === 'sync') return raw;
+  if (
+    raw === 'extract_limit' ||
+    raw === 'save_limit' ||
+    raw === 'sync' ||
+    raw === 'shared_recipe'
+  ) {
+    return raw;
+  }
   return undefined;
+}
+
+function AuthShell({ children }: { children: ReactNode }) {
+  const { colors } = useThemePreference();
+  const { isMediumUp } = useBreakpoint();
+
+  if (!isMediumUp) {
+    return (
+      <SafeAreaView className="flex-1" style={{ backgroundColor: colors.background }} edges={['bottom']}>
+        {children}
+      </SafeAreaView>
+    );
+  }
+
+  return (
+    <SafeAreaView
+      className="flex-1 items-center justify-center px-6"
+      style={{ backgroundColor: colors.background }}
+      edges={['bottom', 'top']}
+    >
+      <View
+        style={{
+          width: '100%',
+          maxWidth: AuthCardWidth,
+          borderRadius: 28,
+          borderWidth: 1,
+          borderColor: colors.frostedBorder,
+          backgroundColor: colors.surface,
+          paddingHorizontal: 24,
+          paddingTop: 28,
+          paddingBottom: 24,
+          maxHeight: '100%',
+        }}
+      >
+        {children}
+      </View>
+    </SafeAreaView>
+  );
 }
 
 export default function AuthScreen() {
@@ -153,6 +200,7 @@ export default function AuthScreen() {
   const passwordStrength = getPasswordStrength(password);
   const canSubmit =
     Boolean(email.trim()) && (mode === 'forgot' || Boolean(password)) && !loading;
+  const { isMediumUp } = useBreakpoint();
 
   const subtitle =
     reason === 'extract_limit'
@@ -161,16 +209,18 @@ export default function AuthScreen() {
         ? 'Create a free account to save this recipe and sync your library.'
         : reason === 'sync'
           ? 'Sign in to sync recipes across your devices.'
-          : mode === 'signup'
-            ? 'Save recipes and sync them across devices.'
-            : mode === 'forgot'
-              ? 'Enter your email and we’ll send you a secure reset link.'
-              : 'Sign in to access your recipe library.';
+          : reason === 'shared_recipe'
+            ? 'Create a free account to save this shared recipe to your kitchen.'
+            : mode === 'signup'
+              ? 'Save recipes and sync them across devices.'
+              : mode === 'forgot'
+                ? 'Enter your email and we’ll send you a secure reset link.'
+                : 'Sign in to access your recipe library.';
 
   if (waitingFor) {
     const isConfirm = waitingFor === 'confirm';
     return (
-      <SafeAreaView className="flex-1" style={{ backgroundColor: colors.background }} edges={['bottom']}>
+      <AuthShell>
         <View className="flex-1 items-center justify-center px-6 pb-10">
           <View
             className="mb-5 h-16 w-16 items-center justify-center rounded-full"
@@ -216,13 +266,13 @@ export default function AuthScreen() {
             </Text>
           </Pressable>
         </View>
-      </SafeAreaView>
+      </AuthShell>
     );
   }
 
   return (
-    <SafeAreaView className="flex-1" style={{ backgroundColor: colors.background }} edges={['bottom']}>
-      <View className="flex-1 px-6 pt-4">
+    <AuthShell>
+      <View className="flex-1 px-6 pt-4" style={isMediumUp ? { paddingHorizontal: 0, paddingTop: 0 } : undefined}>
         <View className="mb-6">
           <View
             className="mb-3 h-12 w-12 items-center justify-center rounded-2xl"
@@ -472,6 +522,6 @@ export default function AuthScreen() {
           </Pressable>
         </View>
       </View>
-    </SafeAreaView>
+    </AuthShell>
   );
 }

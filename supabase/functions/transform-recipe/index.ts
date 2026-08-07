@@ -1,4 +1,5 @@
 import { corsHeaders, jsonResponse } from '../_shared/cors.ts';
+import { isSubscriptionActive } from '../_shared/quotas.ts';
 import { createAuthedSupabase } from '../_shared/recipeLookup.ts';
 import { isRecipeVariantKey, transformRecipeWithGemini } from '../_shared/recipeVariant.ts';
 import { createServiceSupabase } from '../_shared/supabaseAdmin.ts';
@@ -27,7 +28,7 @@ interface RequestBody {
  * POST { variant, recipe } -> { status, recipe?, message? }
  *
  * Adapts a full recipe for a dietary/lifestyle goal (healthier, vegan, etc.).
- * Requires a signed-in user. Remix is not counted against extract quotas.
+ * Requires Pinch Plus. Remix is not counted against extract quotas.
  */
 Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') {
@@ -73,6 +74,21 @@ Deno.serve(async (req) => {
   }
 
   const admin = createServiceSupabase();
+  if (!admin) {
+    return jsonResponse({ status: 'failed', message: 'Server is not configured.' }, 500);
+  }
+
+  const plusActive = await isSubscriptionActive(admin, user.id);
+  if (!plusActive) {
+    return jsonResponse(
+      {
+        status: 'failed',
+        code: 'subscription_required',
+        message: 'Remix is included with Pinch Plus. Upgrade to adapt recipes with AI.',
+      },
+      402,
+    );
+  }
 
   let body: RequestBody;
   try {

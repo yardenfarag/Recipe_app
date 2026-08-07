@@ -1,6 +1,6 @@
 import { RecipeLanguageCode } from '@/lib/recipeLanguages';
 import { supabase } from '@/lib/supabase/client';
-import { Ingredient } from '@/types/recipe';
+import { Ingredient, Instruction } from '@/types/recipe';
 
 export interface SubstitutionAlternative {
   name: string;
@@ -14,6 +14,12 @@ export type SubstitutionStatus = 'ok' | 'failed';
 export interface SubstitutionResult {
   status: SubstitutionStatus;
   alternatives?: SubstitutionAlternative[];
+  message?: string;
+}
+
+export interface RewriteInstructionsResult {
+  status: SubstitutionStatus;
+  instructions?: { step: number; text: string }[];
   message?: string;
 }
 
@@ -33,6 +39,7 @@ export async function suggestSubstitution(
     'suggest-substitution',
     {
       body: {
+        mode: 'suggest',
         ingredient,
         recipe_title: recipeTitle,
         other_ingredients: otherIngredients,
@@ -49,4 +56,47 @@ export async function suggestSubstitution(
   }
 
   return data ?? { status: 'failed', message: 'No response from the substitution service.' };
+}
+
+/**
+ * Rewrites instruction steps so they match an applied ingredient swap.
+ * Call when the user taps "Use this" so the method stays consistent.
+ */
+export async function rewriteInstructionsForSubstitution(
+  ingredient: Ingredient,
+  alternative: Pick<SubstitutionAlternative, 'name' | 'quantity' | 'unit'>,
+  instructions: Instruction[],
+  recipeTitle: string,
+  language?: RecipeLanguageCode | null,
+): Promise<RewriteInstructionsResult> {
+  const { data, error } = await supabase.functions.invoke<RewriteInstructionsResult>(
+    'suggest-substitution',
+    {
+      body: {
+        mode: 'rewrite_instructions',
+        ingredient,
+        alternative,
+        instructions: instructions.map((step) => ({
+          step: step.step,
+          text: step.text,
+        })),
+        recipe_title: recipeTitle,
+        ...(language ? { language } : {}),
+      },
+    },
+  );
+
+  if (error) {
+    return {
+      status: 'failed',
+      message: 'Could not update the recipe steps. Please try again.',
+    };
+  }
+
+  return (
+    data ?? {
+      status: 'failed',
+      message: 'No response from the substitution service.',
+    }
+  );
 }

@@ -1,8 +1,19 @@
 import { effectiveSourceLanguage } from '@/lib/appLanguages';
+import { localizeIngredientUnits } from '@/lib/culinaryUnits';
 import { translateRecipe } from '@/lib/supabase/translateRecipe';
 import type { Ingredient, Instruction, RecipeTranslationContent } from '@/types/recipe';
 import type { RecipeLanguageCode } from '@/lib/recipeLanguages';
 import { isRecipeLanguageCode } from '@/lib/recipeLanguages';
+
+function withLocalizedUnits(
+  content: RecipeTranslationContent,
+  language: RecipeLanguageCode,
+): RecipeTranslationContent {
+  return {
+    ...content,
+    ingredients: localizeIngredientUnits(content.ingredients, language),
+  };
+}
 
 export type CanonicalRecipeText = {
   title: string;
@@ -36,10 +47,6 @@ export async function ensureRecipeTranslation(options: {
     return { status: 'source', content: canonical };
   }
 
-  if (options.cached) {
-    return { status: 'ok', content: options.cached, fromCache: true };
-  }
-
   if (!isRecipeLanguageCode(options.targetLanguage)) {
     return {
       status: 'failed',
@@ -48,7 +55,18 @@ export async function ensureRecipeTranslation(options: {
     };
   }
 
-  const result = await translateRecipe(options.targetLanguage as RecipeLanguageCode, {
+  const language = options.targetLanguage;
+
+  if (options.cached) {
+    // Older caches may still hold source-language units — normalize on read.
+    return {
+      status: 'ok',
+      content: withLocalizedUnits(options.cached, language),
+      fromCache: true,
+    };
+  }
+
+  const result = await translateRecipe(language, {
     title: canonical.title,
     ingredients: canonical.ingredients,
     instructions: canonical.instructions,
@@ -64,11 +82,14 @@ export async function ensureRecipeTranslation(options: {
 
   return {
     status: 'ok',
-    content: {
-      title: result.recipe.title,
-      ingredients: result.recipe.ingredients,
-      instructions: result.recipe.instructions,
-    },
+    content: withLocalizedUnits(
+      {
+        title: result.recipe.title,
+        ingredients: result.recipe.ingredients,
+        instructions: result.recipe.instructions,
+      },
+      language,
+    ),
     fromCache: false,
   };
 }

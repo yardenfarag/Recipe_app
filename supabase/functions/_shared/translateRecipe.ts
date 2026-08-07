@@ -1,6 +1,10 @@
 // Translate recipe title / ingredients / instructions via Gemini structured output.
 
 import {
+  isKnownCulinaryUnit,
+  localizeCulinaryUnit,
+} from './culinaryUnits.ts';
+import {
   generateGeminiJson,
   sanitizeGeminiText,
 } from './geminiClient.ts';
@@ -105,14 +109,12 @@ export async function translateRecipeWithGemini(
     title: sanitizeGeminiText(parsed.title?.trim() || input.title),
     ingredients: (parsed.ingredients ?? []).map((ing, index) => {
       const quantity = Number(ing.quantity);
-      // Keep canonical English units so grams/spoons conversion still works;
-      // the client localizes unit labels at display time.
       const sourceUnit = input.ingredients[index]?.unit ?? '';
       const rawUnit = sanitizeGeminiText(ing.unit ?? sourceUnit);
       return {
         name: sanitizeGeminiText(ing.name ?? ''),
         quantity,
-        unit: sourceUnit || rawUnit,
+        unit: resolveTranslatedUnit(sourceUnit, rawUnit, input.targetLanguage, quantity),
       };
     }),
     instructions: (parsed.instructions ?? []).map((step) => {
@@ -128,6 +130,27 @@ export async function translateRecipeWithGemini(
     }),
     usage,
   };
+}
+
+/**
+ * Prefer localizing the source unit (stable for grams/spoons reverse-map).
+ * Fall back to Gemini's unit for freeform measurements outside UNIT_MAP.
+ */
+function resolveTranslatedUnit(
+  sourceUnit: string,
+  geminiUnit: string,
+  language: TranslateLanguageCode,
+  quantity: number,
+): string {
+  const source = sourceUnit.trim();
+  const gemini = geminiUnit.trim();
+  if (source && isKnownCulinaryUnit(source)) {
+    return localizeCulinaryUnit(source, language, quantity);
+  }
+  if (gemini && isKnownCulinaryUnit(gemini)) {
+    return localizeCulinaryUnit(gemini, language, quantity);
+  }
+  return gemini || source;
 }
 
 function buildTextContext(input: TranslateRecipeInput, targetName: string): string {

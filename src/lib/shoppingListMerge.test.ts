@@ -4,6 +4,7 @@ import {
   appendToShoppingList,
   combineDuplicatesForName,
   getDuplicateNameCounts,
+  mergeIntoShoppingList,
   normalizeShoppingName,
   normalizeShoppingUnit,
   shoppingListCombineKey,
@@ -74,6 +75,71 @@ describe('appendToShoppingList', () => {
       { name: 'Flour', quantity: 100, unit: 'g' },
     ]);
     expect(items).toHaveLength(2);
+  });
+});
+
+describe('mergeIntoShoppingList', () => {
+  it('stacks quantities for the same name+unit', () => {
+    const existing = [item({ id: 'a', name: 'Butter', quantity: 200, unit: 'g' })];
+    const { items, addedCount, mergedCount } = mergeIntoShoppingList(existing, [
+      { name: 'butter', quantity: 150, unit: 'g', sourceRecipeId: 'r2' },
+    ]);
+    expect(items).toHaveLength(1);
+    expect(items[0].quantity).toBe(350);
+    expect(items[0].sourceRecipeIds).toEqual(['r2']);
+    expect(addedCount).toBe(0);
+    expect(mergedCount).toBe(1);
+  });
+
+  it('stacks matching ingredients across the incoming batch', () => {
+    const { items, addedCount, mergedCount } = mergeIntoShoppingList([], [
+      { name: 'Butter', quantity: 200, unit: 'g', sourceRecipeId: 'r1' },
+      { name: 'Butter', quantity: 150, unit: 'g', sourceRecipeId: 'r2' },
+    ]);
+    expect(items).toHaveLength(1);
+    expect(items[0].quantity).toBe(350);
+    expect(items[0].sourceRecipeIds).toEqual(['r1', 'r2']);
+    expect(addedCount).toBe(1);
+    expect(mergedCount).toBe(1);
+  });
+
+  it('keeps different units as separate lines', () => {
+    const existing = [item({ id: 'a', name: 'Flour', quantity: 1, unit: 'cup' })];
+    const { items, addedCount, mergedCount } = mergeIntoShoppingList(existing, [
+      { name: 'Flour', quantity: 100, unit: 'g' },
+    ]);
+    expect(items).toHaveLength(2);
+    expect(addedCount).toBe(1);
+    expect(mergedCount).toBe(0);
+  });
+
+  it('unions provenance and clears checked when stacking onto a checked line', () => {
+    const existing = [
+      item({
+        id: 'a',
+        name: 'Milk',
+        quantity: 1,
+        unit: 'cup',
+        checked: true,
+        sourceRecipeIds: ['r1'],
+      }),
+    ];
+    const { items } = mergeIntoShoppingList(existing, [
+      { name: 'Milk', quantity: 2, unit: 'cup', sourceRecipeId: 'r2' },
+    ]);
+    expect(items[0].quantity).toBe(3);
+    expect(items[0].checked).toBe(false);
+    expect(items[0].sourceRecipeIds).toEqual(['r1', 'r2']);
+  });
+
+  it('skips empty names', () => {
+    const { items, addedCount } = mergeIntoShoppingList([], [
+      { name: '   ', quantity: 1, unit: null },
+      { name: 'Salt', quantity: null, unit: null },
+    ]);
+    expect(items).toHaveLength(1);
+    expect(items[0].name).toBe('Salt');
+    expect(addedCount).toBe(1);
   });
 });
 

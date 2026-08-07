@@ -1,6 +1,10 @@
 import { describe, expect, it } from 'vitest';
 
-import { applyMeasurementSystem, convertToMetric } from './convertMeasurement';
+import {
+  applyMeasurementSystem,
+  convertToMetric,
+  convertToSpoons,
+} from './convertMeasurement';
 
 describe('convertToMetric', () => {
   it('converts cups to milliliters', () => {
@@ -41,8 +45,38 @@ describe('convertToMetric', () => {
   });
 });
 
+describe('convertToSpoons', () => {
+  it('converts milliliters to cups / spoons', () => {
+    expect(convertToSpoons(240, 'ml')).toEqual({ quantity: 1, unit: 'cup' });
+    expect(convertToSpoons(30, 'ml')).toEqual({ quantity: 2, unit: 'tbsp' });
+    expect(convertToSpoons(5, 'ml')).toEqual({ quantity: 1, unit: 'tsp' });
+  });
+
+  it('converts grams to ounces', () => {
+    expect(convertToSpoons(227, 'g')).toEqual({ quantity: 8, unit: 'oz' });
+  });
+
+  it('leaves already-spoon units unchanged', () => {
+    expect(convertToSpoons(1, 'cup')).toEqual({ quantity: 1, unit: 'cup' });
+    expect(convertToSpoons(2, 'tbsp')).toEqual({ quantity: 2, unit: 'tbsp' });
+  });
+
+  it('leaves count units unchanged', () => {
+    expect(convertToSpoons(3, 'cloves')).toEqual({ quantity: 3, unit: 'cloves' });
+  });
+});
+
 describe('applyMeasurementSystem', () => {
-  it('passes through in original mode', () => {
+  it('converts to metric in grams mode', () => {
+    expect(applyMeasurementSystem(1, 'cup', 'metric')).toEqual({ quantity: 240, unit: 'ml' });
+  });
+
+  it('converts metric storage to spoons in spoons mode', () => {
+    expect(applyMeasurementSystem(240, 'ml', 'original')).toEqual({ quantity: 1, unit: 'cup' });
+    expect(applyMeasurementSystem(15, 'ml', 'original')).toEqual({ quantity: 1, unit: 'tbsp' });
+  });
+
+  it('keeps cups in spoons mode', () => {
     expect(applyMeasurementSystem(1, 'cup', 'original')).toEqual({ quantity: 1, unit: 'cup' });
   });
 });

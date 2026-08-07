@@ -4,7 +4,7 @@ import { Image } from 'expo-image';
 import * as ImagePicker from 'expo-image-picker';
 import { router } from 'expo-router';
 import { useState } from 'react';
-import { ActivityIndicator, Alert, Pressable, ScrollView, Text, View } from 'react-native';
+import { ActivityIndicator, Alert, Platform, Pressable, ScrollView, Text, View } from 'react-native';
 
 import { BrandHeader } from '@/components/BrandHeader';
 import { CookieMark } from '@/components/CookieMark';
@@ -14,7 +14,9 @@ import { Screen } from '@/components/Screen';
 import { SupportTicketModal } from '@/components/SupportTicketModal';
 import { ThemePackPicker } from '@/components/ThemePackPicker';
 import { ThemeToggle } from '@/components/ThemeToggle';
+import { FormContentWidth } from '@/constants/theme';
 import { useAuth } from '@/hooks/useAuth';
+import { useBreakpoint } from '@/hooks/useBreakpoint';
 import { useProfile } from '@/hooks/useProfile';
 import { useThemePreference } from '@/hooks/useThemePreference';
 import { useTranslation } from 'react-i18next';
@@ -24,6 +26,7 @@ import {
   FREE_EXTRACT_LIMIT,
   PLUS_MONTHLY_EXTRACT_LIMIT,
   PLUS_PRICE_DISPLAY,
+  PLUS_SELF_UPGRADE_ENABLED,
 } from '@/lib/quotas';
 import {
   deleteAccount,
@@ -46,13 +49,14 @@ export default function SettingsScreen() {
     cancelPlus,
   } = useProfile();
   const { colors } = useThemePreference();
+  const { isMediumUp } = useBreakpoint();
   const [uploading, setUploading] = useState(false);
   const [planBusy, setPlanBusy] = useState(false);
   const [deleting, setDeleting] = useState(false);
   const [supportOpen, setSupportOpen] = useState(false);
 
   async function handleUpgrade() {
-    if (!user || planBusy) return;
+    if (!PLUS_SELF_UPGRADE_ENABLED || !user || planBusy) return;
     const ok = await confirmAction(
       t('settings.upgradeConfirmTitle'),
       t('settings.billingNote'),
@@ -80,7 +84,7 @@ export default function SettingsScreen() {
     if (!user || planBusy) return;
     const ok = await confirmDestructive(
       t('settings.cancelConfirmTitle'),
-      t('settings.cancelConfirmBody'),
+      t('settings.cancelConfirmBody', { limit: FREE_EXTRACT_LIMIT }),
       t('settings.cancelConfirmAction'),
     );
     if (!ok) return;
@@ -112,23 +116,20 @@ export default function SettingsScreen() {
   function handleDeleteAccount() {
     if (!user || deleting) return;
 
-    Alert.alert(t('settings.deleteConfirmTitle'), t('settings.deleteConfirmBody'), [
-      { text: t('common.cancel'), style: 'cancel' },
-      {
-        text: t('common.continue'),
-        style: 'destructive',
-        onPress: () => {
-          Alert.alert(t('settings.deleteConfirmFinalTitle'), t('settings.deleteConfirmFinalBody'), [
-            { text: t('common.cancel'), style: 'cancel' },
-            {
-              text: t('settings.deleteAccount'),
-              style: 'destructive',
-              onPress: () => void confirmDeleteAccount(),
-            },
-          ]);
-        },
-      },
-    ]);
+    void (async () => {
+      const first = await confirmDestructive(
+        t('settings.deleteConfirmTitle'),
+        t('settings.deleteConfirmBody'),
+        t('common.continue'),
+      );
+      if (!first) return;
+      const second = await confirmDestructive(
+        t('settings.deleteConfirmFinalTitle'),
+        t('settings.deleteConfirmFinalBody'),
+        t('settings.deleteAccount'),
+      );
+      if (second) void confirmDeleteAccount();
+    })();
   }
 
   async function confirmDeleteAccount() {
@@ -159,10 +160,19 @@ export default function SettingsScreen() {
 
   function handleChangeAvatar() {
     if (!user) {
-      Alert.alert(t('settings.signInRequiredTitle'), t('settings.signInRequiredBody'), [
-        { text: t('common.cancel'), style: 'cancel' },
-        { text: t('settings.signIn'), onPress: () => router.push('/auth?mode=signin&reason=sync') },
-      ]);
+      void (async () => {
+        const ok = await confirmAction(
+          t('settings.signInRequiredTitle'),
+          t('settings.signInRequiredBody'),
+          t('settings.signIn'),
+        );
+        if (ok) router.push('/auth?mode=signin&reason=sync');
+      })();
+      return;
+    }
+
+    if (Platform.OS === 'web') {
+      void pickImage('library');
       return;
     }
 
@@ -242,8 +252,19 @@ export default function SettingsScreen() {
 
   return (
     <Screen dense tabScreen>
-      <ScrollView className="flex-1" contentContainerStyle={{ paddingBottom: 40 }}>
-        <View className="px-5 pt-1">
+      <ScrollView
+        className="flex-1"
+        contentContainerStyle={{ paddingBottom: 40 }}
+        showsVerticalScrollIndicator={false}
+      >
+        <View
+          className="px-5 pt-1"
+          style={
+            isMediumUp
+              ? { maxWidth: FormContentWidth, width: '100%', alignSelf: 'center' }
+              : undefined
+          }
+        >
           <BrandHeader title={t('settings.title')} subtitle={t('settings.subtitle')} />
 
           <View
@@ -364,7 +385,7 @@ export default function SettingsScreen() {
                     </Text>
                   )}
                 </Pressable>
-              ) : (
+              ) : PLUS_SELF_UPGRADE_ENABLED ? (
                 <Pressable
                   className="mt-3 self-start rounded-[18px] px-4 py-2 active:opacity-80"
                   style={{ backgroundColor: colors.primary }}
@@ -377,6 +398,15 @@ export default function SettingsScreen() {
                     <Text className="text-sm font-bold text-white">{t('settings.upgrade')}</Text>
                   )}
                 </Pressable>
+              ) : (
+                <View
+                  className="mt-3 self-start rounded-[18px] px-4 py-2"
+                  style={{ backgroundColor: colors.primarySoft }}
+                >
+                  <Text className="text-sm font-bold" style={{ color: colors.primary }}>
+                    {t('settings.upgradeInDevelopment')}
+                  </Text>
+                </View>
               )}
             </View>
           ) : null}

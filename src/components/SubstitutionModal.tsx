@@ -1,46 +1,54 @@
-import Ionicons from '@expo/vector-icons/Ionicons';
 import { useEffect, useState } from 'react';
-import { ActivityIndicator, Modal, Pressable, ScrollView, Text, View } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { useTranslation } from 'react-i18next';
+import { ActivityIndicator, Pressable, ScrollView, Text, View } from 'react-native';
 
+import { SheetModal } from '@/components/SheetModal';
 import { useMeasurementPreference } from '@/hooks/useMeasurementPreference';
 import { useThemePreference } from '@/hooks/useThemePreference';
 import { displayIngredientAmount } from '@/lib/displayIngredientAmount';
+import {
+  mergeRewrittenInstructions,
+  patchInstructionsForSubstitution,
+} from '@/lib/patchInstructionsForSubstitution';
 import { RecipeLanguageCode } from '@/lib/recipeLanguages';
 import {
   SubstitutionAlternative,
+  rewriteInstructionsForSubstitution,
   suggestSubstitution,
 } from '@/lib/supabase/suggestSubstitution';
-import { Ingredient } from '@/types/recipe';
+import { Ingredient, Instruction } from '@/types/recipe';
 
 interface SubstitutionModalProps {
   visible: boolean;
   ingredient: Ingredient | null;
   recipeTitle: string;
   otherIngredients: string[];
+  instructions: Instruction[];
   /** Active translation language — biases swaps to that locale's supermarket. */
   language?: RecipeLanguageCode | null;
   onClose: () => void;
-  onApply: (alternative: SubstitutionAlternative) => void;
+  onApply: (alternative: SubstitutionAlternative, instructions: Instruction[]) => void;
 }
 
 /**
- * Full-screen modal (ADR 005) shown when the user taps "Swap" on an
- * ingredient. Fetches 2-3 AI alternatives on open and lets the user apply
- * one, which the caller (`RecipeView`) writes back into the recipe.
+ * Shown when the user taps "Swap" on an ingredient. Fetches AI alternatives
+ * and lets the user apply one (caller writes ingredients + instructions back).
  */
 export function SubstitutionModal({
   visible,
   ingredient,
   recipeTitle,
   otherIngredients,
+  instructions,
   language = null,
   onClose,
   onApply,
 }: SubstitutionModalProps) {
+  const { t } = useTranslation();
   const { colors } = useThemePreference();
   const { system: measurementSystem } = useMeasurementPreference();
   const [loading, setLoading] = useState(false);
+  const [applyingName, setApplyingName] = useState<string | null>(null);
   const [alternatives, setAlternatives] = useState<SubstitutionAlternative[]>([]);
   const [error, setError] = useState<string | null>(null);
 
@@ -51,19 +59,20 @@ export function SubstitutionModal({
     setLoading(true);
     setError(null);
     setAlternatives([]);
+    setApplyingName(null);
 
     suggestSubstitution(ingredient, recipeTitle, otherIngredients, language)
       .then((result) => {
         if (!isMounted) return;
         if (result.status === 'failed' || !result.alternatives) {
-          setError(result.message ?? "Couldn't find a substitute. Try again.");
+          setError(result.message ?? t('recipe.swapFailed'));
           return;
         }
         setAlternatives(result.alternatives);
       })
       .catch(() => {
         if (!isMounted) return;
-        setError("Couldn't find a substitute. Try again.");
+        setError(t('recipe.swapFailed'));
       })
       .finally(() => {
         if (isMounted) setLoading(false);
@@ -75,75 +84,86 @@ export function SubstitutionModal({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [visible, ingredient?.name, language]);
 
+  async function handleApply(alt: SubstitutionAlternative) {
+    if (!ingredient || applyingName) return;
+    setApplyingName(alt.name);
+    setError(null);
+
+    let nextInstructions = patchInstructionsForSubstitution(
+      instructions,
+      ingredient.name,
+      alt.name,
+    );
+
+    try {
+      const result = await rewriteInstructionsForSubstitution(
+        ingredient,
+        alt,
+        instructions,
+        recipeTitle,
+        language,
+      );
+      if (result.status === 'ok' && result.instructions?.length) {
+        nextInstructions = mergeRewrittenInstructions(instructions, result.instructions);
+      }
+    } catch {
+      // Local name patch already prepared above.
+    }
+
+    onApply(alt, nextInstructions);
+    setApplyingName(null);
+  }
+
   return (
-    <Modal
-      visible={visible}
-      animationType="slide"
-      presentationStyle="pageSheet"
-      onRequestClose={onClose}
-    >
-      <SafeAreaView className="flex-1" style={{ backgroundColor: colors.background }}>
-        <View className="flex-row items-center justify-between px-5 pb-2 pt-4">
-          <Pressable
-            onPress={onClose}
-            accessibilityRole="button"
-            accessibilityLabel="Close"
-            className="h-10 w-10 items-center justify-center rounded-full active:opacity-70"
-            style={{ backgroundColor: colors.primarySoft }}
+    <SheetModal visible={visible} onClose={onClose} title={t('recipe.swapTitle')} maxWidth={480}>
+      <ScrollView className="flex-1 px-5" showsVerticalScrollIndicator={false}>
+        {ingredient && (
+          <View
+            className="mb-5 rounded-3xl border p-4"
+            style={{ borderColor: colors.border, backgroundColor: colors.background }}
           >
-            <Ionicons name="close" size={20} color={colors.text} />
-          </Pressable>
-          <Text className="text-base font-bold" style={{ color: colors.text }}>
-            Swap ingredient
-          </Text>
-          <View style={{ width: 40 }} />
-        </View>
+            <Text className="mb-1 text-xs font-medium" style={{ color: colors.textSecondary }}>
+              {t('recipe.swapInsteadOf')}
+            </Text>
+            <Text className="text-lg font-bold" style={{ color: colors.text }}>
+              {displayIngredientAmount(ingredient.quantity, ingredient.unit, {
+                system: measurementSystem,
+                language,
+              })}{' '}
+              {ingredient.name}
+            </Text>
+          </View>
+        )}
 
-        <ScrollView className="flex-1 px-5" showsVerticalScrollIndicator={false}>
-          {ingredient && (
-            <View
-              className="mb-5 rounded-3xl border p-4"
-              style={{ borderColor: colors.border, backgroundColor: colors.surface }}
-            >
-              <Text className="mb-1 text-xs font-medium" style={{ color: colors.textSecondary }}>
-                Instead of
-              </Text>
-              <Text className="text-lg font-bold" style={{ color: colors.text }}>
-                {displayIngredientAmount(ingredient.quantity, ingredient.unit, {
-                  system: measurementSystem,
-                  language,
-                })}{' '}
-                {ingredient.name}
-              </Text>
-            </View>
-          )}
+        {loading && (
+          <View className="items-center py-12">
+            <ActivityIndicator color={colors.primary} size="large" />
+            <Text className="mt-3 text-sm" style={{ color: colors.textSecondary }}>
+              {t('recipe.swapFinding')}
+            </Text>
+          </View>
+        )}
 
-          {loading && (
-            <View className="items-center py-12">
-              <ActivityIndicator color={colors.primary} size="large" />
-              <Text className="mt-3 text-sm" style={{ color: colors.textSecondary }}>
-                Finding cozy alternatives…
-              </Text>
-            </View>
-          )}
+        {!loading && error && (
+          <View
+            className="rounded-2xl border px-4 py-3"
+            style={{ borderColor: colors.dangerSoft, backgroundColor: colors.dangerSoft }}
+          >
+            <Text className="text-sm" style={{ color: colors.danger }}>
+              {error}
+            </Text>
+          </View>
+        )}
 
-          {!loading && error && (
-            <View
-              className="rounded-2xl border px-4 py-3"
-              style={{ borderColor: colors.dangerSoft, backgroundColor: colors.dangerSoft }}
-            >
-              <Text className="text-sm" style={{ color: colors.danger }}>
-                {error}
-              </Text>
-            </View>
-          )}
-
-          {!loading &&
-            alternatives.map((alt) => (
+        {!loading &&
+          alternatives.map((alt) => {
+            const isApplying = applyingName === alt.name;
+            const disabled = applyingName != null;
+            return (
               <View
                 key={alt.name}
                 className="mb-3 rounded-3xl border p-4"
-                style={{ borderColor: colors.border, backgroundColor: colors.surface }}
+                style={{ borderColor: colors.border, backgroundColor: colors.background }}
               >
                 <Text className="mb-1 text-base font-bold" style={{ color: colors.text }}>
                   {displayIngredientAmount(alt.quantity, alt.unit, {
@@ -157,15 +177,29 @@ export function SubstitutionModal({
                 </Text>
                 <Pressable
                   className="items-center rounded-full py-3 active:opacity-80"
-                  style={{ backgroundColor: colors.primary }}
-                  onPress={() => onApply(alt)}
+                  style={{
+                    backgroundColor: colors.primary,
+                    opacity: disabled && !isApplying ? 0.5 : 1,
+                  }}
+                  disabled={disabled}
+                  onPress={() => void handleApply(alt)}
                 >
-                  <Text className="text-sm font-bold text-white">Use this</Text>
+                  {isApplying ? (
+                    <View className="flex-row items-center gap-2">
+                      <ActivityIndicator color="#fff" size="small" />
+                      <Text className="text-sm font-bold text-white">
+                        {t('recipe.swapUpdatingSteps')}
+                      </Text>
+                    </View>
+                  ) : (
+                    <Text className="text-sm font-bold text-white">{t('recipe.swapUseThis')}</Text>
+                  )}
                 </Pressable>
               </View>
-            ))}
-        </ScrollView>
-      </SafeAreaView>
-    </Modal>
+            );
+          })}
+        <View className="h-4" />
+      </ScrollView>
+    </SheetModal>
   );
 }

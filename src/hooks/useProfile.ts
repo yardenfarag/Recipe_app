@@ -3,7 +3,7 @@ import { useCallback, useState } from 'react';
 
 import { useAuth } from '@/hooks/useAuth';
 import { isAdminUser } from '@/lib/admin';
-import type { SubscriptionStatus } from '@/lib/quotas';
+import { PLUS_SELF_UPGRADE_ENABLED, type SubscriptionStatus } from '@/lib/quotas';
 import type { ProfileQuota } from '@/lib/supabase/profile';
 import {
   activateSubscription,
@@ -56,6 +56,9 @@ export function useProfile() {
   }, [user]);
 
   const upgradeToPlus = useCallback(async () => {
+    if (!PLUS_SELF_UPGRADE_ENABLED) {
+      throw new Error('Pinch Plus is in development');
+    }
     if (!user) throw new Error('Sign in required');
     await activateSubscription(user.id);
     await refresh();

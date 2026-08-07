@@ -1,5 +1,6 @@
 import { FunctionsHttpError } from '@supabase/supabase-js';
 
+import { localizeIngredientUnits } from '@/lib/culinaryUnits';
 import { RecipeLanguageCode } from '@/lib/recipeLanguages';
 import { supabase } from '@/lib/supabase/client';
 import { Ingredient, Instruction } from '@/types/recipe';
@@ -63,5 +64,17 @@ export async function translateRecipe(
     };
   }
 
-  return data ?? { status: 'failed', message: 'No response from the translation service.' };
+  if (!data || data.status === 'failed' || !data.recipe) {
+    return data ?? { status: 'failed', message: 'No response from the translation service.' };
+  }
+
+  // Ensure units are in the target language even if an older edge build
+  // still returns source-language unit strings.
+  return {
+    ...data,
+    recipe: {
+      ...data.recipe,
+      ingredients: localizeIngredientUnits(data.recipe.ingredients, targetLanguage),
+    },
+  };
 }

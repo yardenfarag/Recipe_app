@@ -2,7 +2,7 @@ import { CulinaryUnitLanguage } from '@/lib/culinaryUnits';
 import { applyMeasurementSystem, type MeasurementSystem } from '@/lib/convertMeasurement';
 import { formatQuantity } from '@/lib/formatQuantity';
 
-/** Renders an ingredient amount, optionally converted to metric (g / ml). */
+/** Renders an ingredient amount, optionally converted between spoons and metric. */
 export function displayIngredientAmount(
   quantity: number,
   unit: string,

@@ -6,6 +6,7 @@ import {
   extractTikTokId,
   recipeUrlsMatch,
 } from '@/lib/platformUrls';
+import { recipeContentEquals } from '@/lib/recipeContentEquals';
 import { extractYouTubeId, recipeUrlsMatch as youtubeUrlsMatch } from '@/lib/youtube';
 import { Recipe } from '@/types/recipe';
 
@@ -140,6 +141,15 @@ export async function deleteRecipe(id: string): Promise<void> {
   if (error) throw error;
 }
 
+/** Renames a saved recipe's canonical title. */
+export async function renameRecipe(id: string, title: string): Promise<void> {
+  const trimmed = title.trim();
+  if (!trimmed) throw new Error('Recipe name is required.');
+
+  const { error } = await supabase.from('recipes').update({ title: trimmed }).eq('id', id);
+  if (error) throw error;
+}
+
 export async function setRecipeFavorite(id: string, isFavorite: boolean): Promise<void> {
   const { error } = await supabase.from('recipes').update({ is_favorite: isFavorite }).eq('id', id);
   if (error) {
@@ -175,6 +185,9 @@ export async function updateRecipeContent(
     calories?: number;
   },
 ): Promise<Recipe> {
+  const existing = await fetchRecipeById(id);
+  const textChanged = !existing || !recipeContentEquals(existing, content);
+
   const { data, error } = await supabase
     .from('recipes')
     .update({
@@ -190,8 +203,10 @@ export async function updateRecipeContent(
 
   if (error) throw error;
 
-  // Canonical text changed — drop stale translation overlays.
-  await supabase.from('recipe_translations').delete().eq('recipe_id', id);
+  // Only drop overlays when canonical text actually changed (remix / swap / edit).
+  if (textChanged) {
+    await supabase.from('recipe_translations').delete().eq('recipe_id', id);
+  }
 
   return data as Recipe;
 }

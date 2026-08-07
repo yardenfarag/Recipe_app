@@ -48,8 +48,8 @@ type ExtractionStatus = 'full' | 'partial' | 'failed' | 'coming_soon';
  * user's library, otherwise runs the content ladder (description → comments →
  * captions → video) before classifying the result.
  *
- * Guests: 3 lifetime extracts / install. Signed-in free: 10 lifetime.
- * Pinch Plus: 90 / calendar month (UTC). Cached URL re-extract is free.
+ * Guests: 3 lifetime extracts / install (cannot save). Signed-in free: 15 / month.
+ * Pinch Plus: 100 / calendar month (UTC). Cached URL re-extract is free.
  */
 Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') {
@@ -530,12 +530,12 @@ function classify(r: GeminiRecipe): {
 
 function quotaBlockMessage(code: string): string {
   if (code === 'subscription_required') {
-    return `You've used your ${FREE_EXTRACT_LIMIT} free recipe saves. Upgrade to Pinch Plus to keep going.`;
+    return `You've used your ${FREE_EXTRACT_LIMIT} free recipe extractions this month. Upgrade to Pinch Plus to keep going.`;
   }
   if (code === 'monthly_limit') {
-    return `You've reached your Pinch Plus limit of ${PLUS_MONTHLY_EXTRACT_LIMIT} saves this month.`;
+    return `You've reached your Pinch Plus limit of ${PLUS_MONTHLY_EXTRACT_LIMIT} extractions this month.`;
   }
-  return 'Could not verify your save allowance. Please try again.';
+  return 'Could not verify your extraction allowance. Please try again.';
 }
 
 function capitalize(s: string): string {

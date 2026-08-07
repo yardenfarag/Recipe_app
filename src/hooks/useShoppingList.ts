@@ -9,6 +9,7 @@ import {
 import {
   appendToShoppingList,
   combineDuplicatesForName,
+  mergeIntoShoppingList,
   sortShoppingListItems,
 } from '@/lib/shoppingListMerge';
 import {
@@ -28,6 +29,12 @@ export type AddShoppingItemsResult = {
   items: ShoppingListItem[];
   /** Names that were already on the list before this add. */
   alreadyOnList: string[];
+};
+
+export type MergeFromRecipesResult = {
+  items: ShoppingListItem[];
+  addedCount: number;
+  mergedCount: number;
 };
 
 /**
@@ -101,6 +108,40 @@ export function useShoppingList() {
       );
     },
     [addItems],
+  );
+
+  /**
+   * Flatten ingredients from multiple recipes and stack matching name+unit
+   * lines onto the current list (unlike append-only addFromRecipe).
+   */
+  const addFromRecipes = useCallback(
+    async (
+      recipes: {
+        id: string;
+        ingredients: { name: string; quantity: number; unit: string }[];
+      }[],
+    ): Promise<MergeFromRecipesResult> => {
+      const incoming: ShoppingListIncomingItem[] = [];
+      for (const recipe of recipes) {
+        for (const ing of recipe.ingredients) {
+          incoming.push({
+            name: ing.name,
+            quantity: Number.isFinite(ing.quantity) ? ing.quantity : null,
+            unit: ing.unit?.trim() ? ing.unit : null,
+            sourceRecipeId: recipe.id,
+          });
+        }
+      }
+
+      const previous = user ? await fetchShoppingList() : await getGuestShoppingList();
+      const { items: next, addedCount, mergedCount } = mergeIntoShoppingList(
+        previous,
+        incoming,
+      );
+      const saved = await persistList(previous, next);
+      return { items: saved, addedCount, mergedCount };
+    },
+    [persistList, user],
   );
 
   const combineDuplicates = useCallback(
@@ -272,6 +313,7 @@ export function useShoppingList() {
     refresh,
     addManual,
     addFromRecipe,
+    addFromRecipes,
     combineDuplicates,
     toggleChecked,
     updateItem,

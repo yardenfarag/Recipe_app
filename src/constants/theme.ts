@@ -67,4 +67,11 @@ export const Radius = {
 } as const;
 
 export const BottomTabInset = Platform.select({ ios: 50, android: 80 }) ?? 0;
-export const MaxContentWidth = 800;
+/** Centered content column on medium+ web/tablet layouts. */
+export const MaxContentWidth = 1200;
+/** Narrow form column (settings, snap card). */
+export const FormContentWidth = 640;
+/** Auth modal card width on web. */
+export const AuthCardWidth = 420;
+/** Desktop sidebar width. */
+export const WebSidebarWidth = 220;

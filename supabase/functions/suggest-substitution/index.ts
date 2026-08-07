@@ -1,6 +1,7 @@
 import { corsHeaders, jsonResponse } from '../_shared/cors.ts';
 import {
   isSubstitutionLanguageCode,
+  rewriteInstructionsForSubstitutionWithGemini,
   suggestSubstitutionsWithGemini,
 } from '../_shared/substitution.ts';
 
@@ -10,21 +11,29 @@ const MAX_INGREDIENT_NAME_CHARS = 160;
 const MAX_UNIT_CHARS = 40;
 const MAX_OTHER_INGREDIENTS = 60;
 const MAX_OTHER_INGREDIENT_CHARS = 160;
+const MAX_INSTRUCTIONS = 80;
+const MAX_INSTRUCTION_CHARS = 2_000;
 
 interface RequestBody {
+  /** Default: suggest alternatives. `rewrite_instructions` patches steps after apply. */
+  mode?: string;
   ingredient?: { name?: string; quantity?: number; unit?: string };
+  alternative?: { name?: string; quantity?: number; unit?: string; reason?: string };
   recipe_title?: string;
   other_ingredients?: string[];
+  instructions?: { step?: number; text?: string }[];
   /** Active recipe language code (en/es/he/ru/ar/de/fr) when the user translated. */
   language?: string;
 }
 
 /**
- * POST { ingredient, recipe_title, other_ingredients, language? }
+ * POST suggest: { ingredient, recipe_title, other_ingredients, language? }
  *   -> { status, alternatives?, message? }
  *
- * Asks Gemini for 2-3 supermarket-realistic substitutes for a single
- * ingredient, biased to the cook's locale from `language` (ADR 005).
+ * POST rewrite: { mode: 'rewrite_instructions', ingredient, alternative, instructions, ... }
+ *   -> { status, instructions?, message? }
+ *
+ * Asks Gemini for supermarket-realistic substitutes, or patches steps after a swap (ADR 005).
  */
 Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') {
@@ -48,22 +57,20 @@ Deno.serve(async (req) => {
     return jsonResponse({ error: 'Invalid JSON body' }, 400);
   }
 
-  const ingredient = body.ingredient;
-  if (!ingredient?.name || ingredient.quantity == null) {
-    return jsonResponse({ error: 'Missing or invalid "ingredient" in request body' }, 400);
+  const mode = body.mode?.trim() || 'suggest';
+  if (mode === 'rewrite_instructions') {
+    return handleRewrite(body);
   }
-  const ingredientName = ingredient.name.trim();
-  const ingredientUnit = typeof ingredient.unit === 'string' ? ingredient.unit.trim() : '';
-  const quantity = Number(ingredient.quantity);
-  if (
-    !ingredientName ||
-    ingredientName.length > MAX_INGREDIENT_NAME_CHARS ||
-    ingredientUnit.length > MAX_UNIT_CHARS ||
-    !Number.isFinite(quantity) ||
-    quantity < 0 ||
-    quantity > 1_000_000
-  ) {
-    return jsonResponse({ error: 'Invalid "ingredient" in request body' }, 400);
+  if (mode !== 'suggest') {
+    return jsonResponse({ error: 'Unsupported mode' }, 400);
+  }
+  return handleSuggest(body);
+});
+
+async function handleSuggest(body: RequestBody): Promise<Response> {
+  const parsedIngredient = parseIngredient(body.ingredient);
+  if (!parsedIngredient.ok) {
+    return jsonResponse({ error: parsedIngredient.error }, 400);
   }
 
   const recipeTitle = body.recipe_title?.trim();
@@ -93,17 +100,11 @@ Deno.serve(async (req) => {
     );
   }
 
-  const languageRaw = body.language?.trim().toLowerCase();
-  const language =
-    languageRaw && isSubstitutionLanguageCode(languageRaw) ? languageRaw : null;
+  const language = parseLanguage(body.language);
 
   try {
     const alternatives = await suggestSubstitutionsWithGemini({
-      ingredient: {
-        name: ingredientName,
-        quantity,
-        unit: ingredientUnit,
-      },
+      ingredient: parsedIngredient.value,
       recipeTitle,
       otherIngredients: (body.other_ingredients ?? []).map((item) => item.trim()),
       language,
@@ -127,7 +128,128 @@ Deno.serve(async (req) => {
       500,
     );
   }
-});
+}
+
+async function handleRewrite(body: RequestBody): Promise<Response> {
+  const parsedIngredient = parseIngredient(body.ingredient);
+  if (!parsedIngredient.ok) {
+    return jsonResponse({ error: parsedIngredient.error }, 400);
+  }
+  const parsedAlternative = parseIngredient(body.alternative, 'alternative');
+  if (!parsedAlternative.ok) {
+    return jsonResponse({ error: parsedAlternative.error }, 400);
+  }
+
+  const instructions = parseInstructions(body.instructions);
+  if (!instructions.ok) {
+    return jsonResponse({ error: instructions.error }, 400);
+  }
+
+  const recipeTitle = body.recipe_title?.trim();
+  if (recipeTitle != null && recipeTitle.length > MAX_RECIPE_TITLE_CHARS) {
+    return jsonResponse(
+      { error: `Recipe title must be ${MAX_RECIPE_TITLE_CHARS} characters or fewer` },
+      400,
+    );
+  }
+
+  if (instructions.value.length === 0) {
+    return jsonResponse({ status: 'ok', instructions: [] });
+  }
+
+  const language = parseLanguage(body.language);
+
+  try {
+    const rewritten = await rewriteInstructionsForSubstitutionWithGemini({
+      ingredient: parsedIngredient.value,
+      alternative: parsedAlternative.value,
+      instructions: instructions.value,
+      recipeTitle: recipeTitle || undefined,
+      language,
+    });
+
+    if (rewritten.length === 0) {
+      return jsonResponse({
+        status: 'failed',
+        message: "Couldn't update the recipe steps for this swap. Try again.",
+      });
+    }
+
+    return jsonResponse({ status: 'ok', instructions: rewritten });
+  } catch (err) {
+    console.error('suggest-substitution rewrite error:', err);
+    return jsonResponse(
+      {
+        status: 'failed',
+        message: 'Something went wrong updating the recipe steps. Please try again.',
+      },
+      500,
+    );
+  }
+}
+
+function parseLanguage(value: string | undefined) {
+  const languageRaw = value?.trim().toLowerCase();
+  return languageRaw && isSubstitutionLanguageCode(languageRaw) ? languageRaw : null;
+}
+
+function parseIngredient(
+  ingredient: RequestBody['ingredient'] | RequestBody['alternative'],
+  label = 'ingredient',
+):
+  | { ok: true; value: { name: string; quantity: number; unit: string } }
+  | { ok: false; error: string } {
+  if (!ingredient?.name || ingredient.quantity == null) {
+    return { ok: false, error: `Missing or invalid "${label}" in request body` };
+  }
+  const name = ingredient.name.trim();
+  const unit = typeof ingredient.unit === 'string' ? ingredient.unit.trim() : '';
+  const quantity = Number(ingredient.quantity);
+  if (
+    !name ||
+    name.length > MAX_INGREDIENT_NAME_CHARS ||
+    unit.length > MAX_UNIT_CHARS ||
+    !Number.isFinite(quantity) ||
+    quantity < 0 ||
+    quantity > 1_000_000
+  ) {
+    return { ok: false, error: `Invalid "${label}" in request body` };
+  }
+  return { ok: true, value: { name, quantity, unit } };
+}
+
+function parseInstructions(
+  instructions: RequestBody['instructions'],
+):
+  | { ok: true; value: { step: number; text: string }[] }
+  | { ok: false; error: string } {
+  if (instructions == null) {
+    return { ok: false, error: 'Missing "instructions" in request body' };
+  }
+  if (!Array.isArray(instructions) || instructions.length > MAX_INSTRUCTIONS) {
+    return {
+      ok: false,
+      error: `Instructions must be an array of at most ${MAX_INSTRUCTIONS} steps`,
+    };
+  }
+
+  const value: { step: number; text: string }[] = [];
+  for (let i = 0; i < instructions.length; i++) {
+    const row = instructions[i];
+    const text = typeof row?.text === 'string' ? row.text.trim() : '';
+    const step = Number(row?.step);
+    if (
+      !text ||
+      text.length > MAX_INSTRUCTION_CHARS ||
+      !Number.isFinite(step) ||
+      step < 1
+    ) {
+      return { ok: false, error: 'Invalid "instructions" in request body' };
+    }
+    value.push({ step: Math.round(step), text });
+  }
+  return { ok: true, value };
+}
 
 function requestIsTooLarge(req: Request, maxBytes: number): boolean {
   const contentLength = Number(req.headers.get('content-length'));

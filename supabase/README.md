@@ -1,31 +1,87 @@
 # Pinch Supabase Setup
 
-## Running the migration
+`npm install -g supabase` is **not supported** by the Supabase CLI — it's
+already installed as a local dev dependency in this project (see
+`package.json`). Run every command below with `npx supabase ...` instead of
+`supabase ...`.
 
-You don't need the Supabase CLI for this step. In your Supabase project dashboard:
+## One-time CLI setup
+
+```bash
+npx supabase login
+npx supabase link --project-ref ccobefeofhnncpgifxel
+```
+
+`login` opens a browser to authenticate the CLI with your Supabase account.
+
+## Run migrations (remote)
+
+Pushes every pending file in `supabase/migrations/` to the linked project:
+
+```bash
+npx supabase db push
+```
+
+Preview without applying:
+
+```bash
+npx supabase db push --dry-run
+```
+
+### Manual alternative (SQL Editor)
+
+You can also paste a single migration into the dashboard:
 
 1. Go to **SQL Editor**
-2. Open `supabase/migrations/0001_init.sql` from this repo
+2. Open the migration file (e.g. `supabase/migrations/0016_monthly_free_quotas.sql`)
 3. Paste the full contents and click **Run**
 
-This creates:
-- `profiles` table + auto-create trigger on signup
-- `recipes` table with RLS (users can only read/write their own rows)
-- Indexes and check constraints matching `docs/plan/MVP-PLAN.md`
+Fresh project: run `0001_init.sql` through the latest migration in order
+(`0002` … `0016`, etc.).
 
-Run `0002_profile_avatar.sql` through `0006_recipe_thumbnails.sql`
-after `0001_init.sql` when setting up a fresh project or catching up an existing database.
+## Redeploy Edge Functions
 
-## Verifying it worked
+Deploy all app functions:
+
+```bash
+npx supabase functions deploy extract-recipe
+npx supabase functions deploy backfill-thumbnails
+npx supabase functions deploy suggest-substitution
+npx supabase functions deploy transform-recipe
+npx supabase functions deploy translate-recipe
+npx supabase functions deploy delete-account
+npx supabase functions deploy recipe-share
+```
+
+### Recipe share links (`recipe-share` + migration `0017`)
+
+Outbound share creates an opaque token + recipe snapshot (so recipients don’t need access to the owner’s private row). Recipients open `…/share.html?t=TOKEN` → app deep link `pinch://s/TOKEN` → claim copies the snapshot into their library.
+
+```bash
+npx supabase db push
+npx supabase functions deploy recipe-share
+```
+
+After the app is on the stores, set App Store / Play URLs in `legal/share.html` (`APP_STORE_URL` / `PLAY_STORE_URL`).
+
+For the Free / Plus quota + remix-gating change, you only need:
+
+```bash
+npx supabase db push
+npx supabase functions deploy extract-recipe
+npx supabase functions deploy transform-recipe
+```
+
+## Verifying schema
 
 Run in SQL Editor:
 
 ```sql
 select table_name from information_schema.tables where table_schema = 'public';
--- expect: profiles, recipes
+-- expect: profiles, recipes, extract_usage_monthly, …
 
 select tablename, rowsecurity from pg_tables where schemaname = 'public';
--- expect: rowsecurity = true for both
+-- expect: rowsecurity = true for user tables
 ```
 
 ## Edge Function: `extract-recipe` (Step 2b)
@@ -37,20 +93,6 @@ Returns `{ status, platform, recipe?, message? }`.
 `status` is one of `full` | `partial` | `failed` | `coming_soon` (see ADR 003/004).
 The function does **not** save — the app persists the result (local guest store or
 Supabase) per ADR 002.
-
-### One-time setup
-
-`npm install -g supabase` is **not supported** by the Supabase CLI — it's
-already installed as a local dev dependency in this project (see
-`package.json`). Run every command below with `npx supabase ...` instead of
-`supabase ...`.
-
-```bash
-npx supabase login
-npx supabase link --project-ref ccobefeofhnncpgifxel
-```
-
-`login` opens a browser to authenticate the CLI with your Supabase account.
 
 ### Secrets
 
@@ -70,17 +112,6 @@ npx supabase secrets set GEMINI_MODEL=gemini-3.5-flash
 
 # Required for Instagram + TikTok extraction (ScrapeCreators)
 npx supabase secrets set SCRAPECREATORS_API_KEY=your_scrapecreators_api_key
-```
-
-### Deploy
-
-```bash
-npx supabase functions deploy extract-recipe
-npx supabase functions deploy backfill-thumbnails
-npx supabase functions deploy suggest-substitution
-npx supabase functions deploy transform-recipe
-npx supabase functions deploy translate-recipe
-npx supabase functions deploy delete-account
 ```
 
 Optional Apple token-revoke secrets (iOS account deletion, TN3194):

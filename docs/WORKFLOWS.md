@@ -326,7 +326,7 @@ Secrets (server only): `GEMINI_API_KEY`, optional `YOUTUBE_API_KEY`, `SCRAPECREA
 
 | Module | Role |
 |--------|------|
-| `guestRecipes.ts` | Local guest CRUD + 3-save quota |
+| `guestRecipes.ts` | Local guest CRUD (saves disabled; migrate residual on signup) |
 | `migrateGuestRecipes.ts` | Guest → Supabase on sign-in |
 | `recipeDraft.ts` | In-memory handoff Snap → Preview |
 | `findExistingRecipe.ts` | Guest duplicate check |

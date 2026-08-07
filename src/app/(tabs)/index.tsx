@@ -5,60 +5,44 @@ import {
   ActivityIndicator,
   Alert,
   FlatList,
-  Modal,
   Platform,
   Pressable,
   Text,
-  TextInput,
   View,
 } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { useTranslation } from 'react-i18next';
 
+import { AddToCollectionModal } from '@/components/AddToCollectionModal';
 import { BrandHeader } from '@/components/BrandHeader';
+import { ConfirmDialog } from '@/components/ConfirmDialog';
+import { NameEditModal } from '@/components/NameEditModal';
+import { RecipeActionsMenu } from '@/components/RecipeActionsMenu';
 import { RecipeLibraryToolbar } from '@/components/RecipeLibraryToolbar';
 import { RecipeListRow } from '@/components/RecipeListRow';
 import { Screen } from '@/components/Screen';
 import { useAuth } from '@/hooks/useAuth';
+import { useBreakpoint } from '@/hooks/useBreakpoint';
 import { useCollections } from '@/hooks/useCollections';
 import { useRecipes } from '@/hooks/useRecipes';
 import { useThemePreference } from '@/hooks/useThemePreference';
-import { removeGuestRecipe } from '@/lib/guestRecipes';
+import { removeGuestRecipe, renameGuestRecipe } from '@/lib/guestRecipes';
 import {
   filterAndSortRecipes,
   isRecipeLibraryFiltered,
   RecipeSortKey,
 } from '@/lib/recipeListQuery';
 import { collectLibraryTags } from '@/lib/recipeTags';
-import { deleteRecipe } from '@/lib/supabase/recipes';
+import { upsertRecipeTranslation } from '@/lib/supabase/recipeTranslations';
+import { deleteRecipe, renameRecipe } from '@/lib/supabase/recipes';
+import { translateAppError } from '@/lib/translateAppError';
+import {
+  isCollectionNameTaken,
+  isRecipeNameTaken,
+  recipeVisibleName,
+} from '@/lib/uniqueNames';
 import { Recipe } from '@/types/recipe';
 
-/** Alert.alert button actions are unreliable on web — use window.confirm there. */
-function confirmDestructive(
-  title: string,
-  message: string,
-  confirmLabel: string,
-  onConfirm: () => void | Promise<void>,
-) {
-  if (Platform.OS === 'web') {
-    const ok =
-      typeof window !== 'undefined' && window.confirm(`${title}\n\n${message}`);
-    if (ok) void onConfirm();
-    return;
-  }
-
-  Alert.alert(title, message, [
-    { text: 'Cancel', style: 'cancel' },
-    {
-      text: confirmLabel,
-      style: 'destructive',
-      onPress: () => {
-        void onConfirm();
-      },
-    },
-  ]);
-}
 type CollectionNameModalState =
   | { mode: 'create' }
   | { mode: 'rename'; id: string; name: string }
@@ -67,14 +51,18 @@ type CollectionNameModalState =
 export default function HomeScreen() {
   const { t } = useTranslation();
   const { user } = useAuth();
-  const { recipes, loading, error, refresh, toggleFavorite } = useRecipes();
+  const { recipes, loading, error, refresh, patchRecipe, toggleFavorite } = useRecipes();
   const {
     collections,
     createCollection,
     renameCollection,
     deleteCollection,
+    setMembershipsForRecipe,
+    collectionsForRecipe,
   } = useCollections();
   const { colors } = useThemePreference();
+  const { isWide, isMediumUp } = useBreakpoint();
+  const numColumns = isWide ? 3 : isMediumUp ? 2 : 1;
   const params = useLocalSearchParams<{
     tag?: string;
     collection?: string;
@@ -90,7 +78,13 @@ export default function HomeScreen() {
   const [savedBanner, setSavedBanner] = useState(false);
   const [nameModal, setNameModal] = useState<CollectionNameModalState>(null);
   const [nameDraft, setNameDraft] = useState('');
-  const [savingName, setSavingName] = useState(false);
+  const [menuRecipe, setMenuRecipe] = useState<Recipe | null>(null);
+  const [collectionRecipe, setCollectionRecipe] = useState<Recipe | null>(null);
+  const [renameTarget, setRenameTarget] = useState<Recipe | null>(null);
+  const [deleteTarget, setDeleteTarget] = useState<Recipe | null>(null);
+  const [deletingRecipe, setDeletingRecipe] = useState(false);
+  const [deleteCollectionId, setDeleteCollectionId] = useState<string | null>(null);
+  const [deletingCollection, setDeletingCollection] = useState(false);
   const deferredSearch = useDeferredValue(search);
   const isSearchPending = search !== deferredSearch;
 
@@ -164,114 +158,131 @@ export default function HomeScreen() {
     setNameModal({ mode: 'create' });
   }, []);
 
-  const handleSaveCollectionName = useCallback(async () => {
-    if (!nameModal) return;
-    const trimmed = nameDraft.trim();
-    if (!trimmed) {
-      Alert.alert('Name required', 'Enter a collection name.');
-      return;
-    }
-
-    setSavingName(true);
-    try {
-      if (nameModal.mode === 'create') {
-        const created = await createCollection(trimmed);
-        setSelectedCollectionId(created.id);
-      } else {
-        await renameCollection(nameModal.id, trimmed);
-      }
-      setNameModal(null);
-    } catch (err) {
-      Alert.alert(
-        'Could not save',
-        err instanceof Error ? err.message : 'Please try again.',
-      );
-    } finally {
-      setSavingName(false);
-    }
-  }, [createCollection, nameDraft, nameModal, renameCollection]);
+  const openRecipeMenu = useCallback((recipe: Recipe) => {
+    setMenuRecipe(recipe);
+  }, []);
 
   const handleManageCollection = useCallback(
     (id: string) => {
       const collection = collections.find((c) => c.id === id);
       if (!collection) return;
 
+      if (Platform.OS === 'web') {
+        setNameDraft(collection.name);
+        setNameModal({ mode: 'rename', id, name: collection.name });
+        return;
+      }
+
       Alert.alert(collection.name, undefined, [
-        { text: 'Cancel', style: 'cancel' },
+        { text: t('common.cancel'), style: 'cancel' },
         {
-          text: 'Rename',
+          text: t('library.rename'),
           onPress: () => {
             setNameDraft(collection.name);
             setNameModal({ mode: 'rename', id, name: collection.name });
           },
         },
         {
-          text: 'Delete',
+          text: t('common.delete'),
           style: 'destructive',
-          onPress: () => {
-            Alert.alert(
-              'Delete collection?',
-              'Recipes stay in your library — only this collection is removed.',
-              [
-                { text: 'Cancel', style: 'cancel' },
-                {
-                  text: 'Delete',
-                  style: 'destructive',
-                  onPress: async () => {
-                    try {
-                      await deleteCollection(id);
-                      if (selectedCollectionId === id) setSelectedCollectionId(null);
-                    } catch (err) {
-                      Alert.alert(
-                        'Could not delete',
-                        err instanceof Error ? err.message : 'Please try again.',
-                      );
-                    }
-                  },
-                },
-              ],
-            );
-          },
+          onPress: () => setDeleteCollectionId(id),
         },
       ]);
     },
-    [collections, deleteCollection, selectedCollectionId],
+    [collections, t],
   );
+
+  const handleConfirmDeleteCollection = useCallback(async () => {
+    if (!deleteCollectionId) return;
+    setDeletingCollection(true);
+    try {
+      await deleteCollection(deleteCollectionId);
+      if (selectedCollectionId === deleteCollectionId) setSelectedCollectionId(null);
+      setNameModal(null);
+      setDeleteCollectionId(null);
+    } catch (err) {
+      Alert.alert(t('library.couldNotDelete'), translateAppError(err, t));
+    } finally {
+      setDeletingCollection(false);
+    }
+  }, [deleteCollection, deleteCollectionId, selectedCollectionId, t]);
 
   const handleToggleFavorite = useCallback(
     async (recipe: Recipe) => {
       try {
         await toggleFavorite(recipe);
       } catch (err) {
-        Alert.alert(
-          'Could not update favorite',
-          err instanceof Error ? err.message : 'Please try again.',
-        );
+        Alert.alert(t('recipe.favoriteFailedTitle'), translateAppError(err, t));
       }
     },
-    [toggleFavorite],
+    [t, toggleFavorite],
   );
 
-  const confirmDeleteRecipe = useCallback(
-    (recipe: Recipe) => {
-      confirmDestructive('Delete this recipe?', recipe.title, 'Delete', async () => {
-        try {
-          if (recipe.id.startsWith('guest-')) {
-            await removeGuestRecipe(recipe.id);
-          } else {
-            await deleteRecipe(recipe.id);
-          }
-          refresh();
-        } catch (err) {
-          Alert.alert(
-            'Could not delete',
-            err instanceof Error ? err.message : 'Please try again.',
-          );
-        }
+  const handleRenameRecipe = useCallback(
+    async (name: string) => {
+      if (!renameTarget) return;
+      const trimmed = name.trim();
+      if (!trimmed) throw new Error('Recipe name is required.');
+      if (isRecipeNameTaken(recipes, trimmed, renameTarget.id)) {
+        throw new Error('You already have a recipe with that name.');
+      }
+
+      if (renameTarget.id.startsWith('guest-')) {
+        const updated = await renameGuestRecipe(renameTarget.id, trimmed);
+        if (!updated) throw new Error('Recipe not found.');
+        patchRecipe(renameTarget.id, {
+          title: trimmed,
+          display_title: trimmed,
+          translations: updated.translations,
+        });
+        return;
+      }
+
+      await renameRecipe(renameTarget.id, trimmed);
+
+      const translations = renameTarget.translations
+        ? Object.fromEntries(
+            Object.entries(renameTarget.translations).map(([code, content]) => [
+              code,
+              { ...content, title: trimmed },
+            ]),
+          )
+        : undefined;
+
+      if (translations) {
+        await Promise.all(
+          Object.entries(translations).map(([code, content]) =>
+            upsertRecipeTranslation(renameTarget.id, code, content),
+          ),
+        );
+      }
+
+      patchRecipe(renameTarget.id, {
+        title: trimmed,
+        display_title: trimmed,
+        translations,
       });
     },
-    [refresh],
+    [patchRecipe, recipes, renameTarget],
   );
+
+  const handleConfirmDeleteRecipe = useCallback(async () => {
+    if (!deleteTarget) return;
+    setDeletingRecipe(true);
+    try {
+      if (deleteTarget.id.startsWith('guest-')) {
+        await removeGuestRecipe(deleteTarget.id);
+      } else {
+        await deleteRecipe(deleteTarget.id);
+      }
+      setDeleteTarget(null);
+      refresh();
+    } catch (err) {
+      Alert.alert(t('library.couldNotDelete'), translateAppError(err, t));
+    } finally {
+      setDeletingRecipe(false);
+    }
+  }, [deleteTarget, refresh, t]);
 
   const openRecipe = useCallback((recipe: Recipe) => {
     router.push(`/recipe/${recipe.id}`);
@@ -279,16 +290,19 @@ export default function HomeScreen() {
 
   const renderItem = useCallback(
     ({ item, index }: { item: Recipe; index: number }) => (
-      <RecipeListRow
-        recipe={item}
-        index={index}
-        onPress={() => openRecipe(item)}
-        onLongPress={() => confirmDeleteRecipe(item)}
-        onDelete={() => confirmDeleteRecipe(item)}
-        onToggleFavorite={() => handleToggleFavorite(item)}
-      />
+      <View style={numColumns > 1 ? { flex: 1, paddingHorizontal: 6 } : undefined}>
+        <RecipeListRow
+          recipe={item}
+          index={index}
+          variant={numColumns > 1 ? 'card' : 'row'}
+          onPress={() => openRecipe(item)}
+          onLongPress={numColumns > 1 ? undefined : () => openRecipeMenu(item)}
+          onMore={() => openRecipeMenu(item)}
+          onToggleFavorite={() => handleToggleFavorite(item)}
+        />
+      </View>
     ),
-    [confirmDeleteRecipe, handleToggleFavorite, openRecipe],
+    [handleToggleFavorite, numColumns, openRecipe, openRecipeMenu],
   );
 
   const listHeader = useMemo(
@@ -372,8 +386,13 @@ export default function HomeScreen() {
       selectedCollectionId,
       selectedTags,
       sort,
+      t,
     ],
   );
+
+  const collectionPendingDelete = deleteCollectionId
+    ? collections.find((c) => c.id === deleteCollectionId)
+    : null;
 
   if (loading) {
     return (
@@ -446,9 +465,12 @@ export default function HomeScreen() {
   return (
     <Screen tabScreen>
       <FlatList
+        key={`library-${numColumns}`}
         data={displayedRecipes}
         extraData={recipes}
         keyExtractor={(item) => item.id}
+        numColumns={numColumns}
+        columnWrapperStyle={numColumns > 1 ? { gap: 0, marginBottom: 12 } : undefined}
         renderItem={renderItem}
         ListHeaderComponent={listHeader}
         ListEmptyComponent={
@@ -480,7 +502,11 @@ export default function HomeScreen() {
             </View>
           ) : null
         }
-        contentContainerStyle={{ paddingHorizontal: 20, paddingBottom: 28, gap: 12 }}
+        contentContainerStyle={{
+          paddingHorizontal: numColumns > 1 ? 14 : 20,
+          paddingBottom: 28,
+          gap: numColumns > 1 ? 0 : 12,
+        }}
         showsVerticalScrollIndicator={false}
         keyboardShouldPersistTaps="handled"
         keyboardDismissMode="on-drag"
@@ -489,52 +515,130 @@ export default function HomeScreen() {
         windowSize={7}
       />
 
-      <Modal
+      <RecipeActionsMenu
+        visible={menuRecipe != null}
+        recipeTitle={menuRecipe ? recipeVisibleName(menuRecipe) : ''}
+        onClose={() => setMenuRecipe(null)}
+        onAddToCollection={() => {
+          if (!menuRecipe) return;
+          setCollectionRecipe(menuRecipe);
+          setMenuRecipe(null);
+        }}
+        onRename={() => {
+          if (!menuRecipe) return;
+          setRenameTarget(menuRecipe);
+          setMenuRecipe(null);
+        }}
+        onDelete={() => {
+          if (!menuRecipe) return;
+          setDeleteTarget(menuRecipe);
+          setMenuRecipe(null);
+        }}
+      />
+
+      <AddToCollectionModal
+        visible={collectionRecipe != null}
+        collections={collections}
+        selectedIds={
+          collectionRecipe ? collectionsForRecipe(collectionRecipe.id).map((c) => c.id) : []
+        }
+        onClose={() => setCollectionRecipe(null)}
+        onCreate={createCollection}
+        onSave={async (ids) => {
+          if (!collectionRecipe) return;
+          await setMembershipsForRecipe(collectionRecipe.id, ids);
+        }}
+      />
+
+      <NameEditModal
+        visible={renameTarget != null}
+        title={t('library.renameRecipe')}
+        initialValue={renameTarget ? recipeVisibleName(renameTarget) : ''}
+        placeholder={t('library.recipeNamePlaceholder')}
+        onClose={() => setRenameTarget(null)}
+        onSave={handleRenameRecipe}
+      />
+
+      <ConfirmDialog
+        visible={deleteTarget != null}
+        title={t('library.deleteRecipeTitle')}
+        message={
+          deleteTarget
+            ? t('library.deleteRecipeBody', { name: recipeVisibleName(deleteTarget) })
+            : ''
+        }
+        confirmLabel={t('common.delete')}
+        cancelLabel={t('common.cancel')}
+        destructive
+        loading={deletingRecipe}
+        onCancel={() => {
+          if (!deletingRecipe) setDeleteTarget(null);
+        }}
+        onConfirm={() => void handleConfirmDeleteRecipe()}
+      />
+
+      <ConfirmDialog
+        visible={deleteCollectionId != null}
+        title={t('library.deleteCollectionTitle')}
+        message={
+          collectionPendingDelete
+            ? t('library.deleteCollectionBody', { name: collectionPendingDelete.name })
+            : t('library.deleteCollectionBodyGeneric')
+        }
+        confirmLabel={t('common.delete')}
+        cancelLabel={t('common.cancel')}
+        destructive
+        loading={deletingCollection}
+        onCancel={() => {
+          if (!deletingCollection) setDeleteCollectionId(null);
+        }}
+        onConfirm={() => void handleConfirmDeleteCollection()}
+      />
+
+      <NameEditModal
         visible={nameModal != null}
-        animationType="slide"
-        presentationStyle="pageSheet"
-        onRequestClose={() => setNameModal(null)}
-      >
-        <SafeAreaView className="flex-1" style={{ backgroundColor: colors.background }}>
-          <View
-            className="flex-row items-center justify-between border-b px-5 py-4"
-            style={{ borderColor: colors.frostedBorder }}
-          >
-            <Pressable onPress={() => setNameModal(null)}>
-              <Text style={{ color: colors.textSecondary }}>Cancel</Text>
-            </Pressable>
-            <Text className="text-base font-bold" style={{ color: colors.text }}>
-              {nameModal?.mode === 'rename' ? 'Rename collection' : 'New collection'}
-            </Text>
-            <Pressable onPress={() => void handleSaveCollectionName()} disabled={savingName}>
-              {savingName ? (
-                <ActivityIndicator color={colors.primary} />
-              ) : (
-                <Text className="font-bold" style={{ color: colors.primary }}>
-                  Save
-                </Text>
-              )}
-            </Pressable>
-          </View>
-          <View className="px-5 pt-5">
-            <TextInput
-              className="rounded-2xl border px-4 py-3 text-base"
-              style={{
-                color: colors.text,
-                borderColor: colors.frostedBorder,
-                backgroundColor: colors.surface,
+        title={
+          nameModal?.mode === 'rename'
+            ? t('library.renameCollection')
+            : t('library.newCollection')
+        }
+        initialValue={nameDraft}
+        placeholder={t('library.collectionNamePlaceholder')}
+        onClose={() => setNameModal(null)}
+        onSave={async (name) => {
+          if (!nameModal) return;
+          const trimmed = name.trim();
+          if (!trimmed) {
+            throw new Error(t('library.collectionNameRequired'));
+          }
+          const excludeId = nameModal.mode === 'rename' ? nameModal.id : undefined;
+          if (isCollectionNameTaken(collections, trimmed, excludeId)) {
+            throw new Error(t('library.collectionNameTaken'));
+          }
+          if (nameModal.mode === 'create') {
+            const created = await createCollection(trimmed);
+            setSelectedCollectionId(created.id);
+          } else {
+            await renameCollection(nameModal.id, trimmed);
+          }
+        }}
+        footer={
+          nameModal?.mode === 'rename' ? (
+            <Pressable
+              className="mt-6 items-center rounded-2xl py-3.5 active:opacity-80"
+              style={{ backgroundColor: colors.dangerSoft }}
+              onPress={() => {
+                setDeleteCollectionId(nameModal.id);
+                setNameModal(null);
               }}
-              placeholder="Collection name"
-              placeholderTextColor={colors.textSecondary}
-              value={nameDraft}
-              onChangeText={setNameDraft}
-              autoFocus
-              returnKeyType="done"
-              onSubmitEditing={() => void handleSaveCollectionName()}
-            />
-          </View>
-        </SafeAreaView>
-      </Modal>
+            >
+              <Text className="text-sm font-bold" style={{ color: colors.danger }}>
+                {t('library.deleteCollection')}
+              </Text>
+            </Pressable>
+          ) : null
+        }
+      />
     </Screen>
   );
 }

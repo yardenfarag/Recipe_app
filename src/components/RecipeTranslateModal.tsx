@@ -1,10 +1,11 @@
 import Ionicons from '@expo/vector-icons/Ionicons';
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { ActivityIndicator, Modal, Pressable, ScrollView, Text, View } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { ActivityIndicator, Pressable, ScrollView, Text, View } from 'react-native';
 
+import { SheetModal } from '@/components/SheetModal';
 import { useThemePreference } from '@/hooks/useThemePreference';
+import { localizeIngredientUnits } from '@/lib/culinaryUnits';
 import {
   getRecipeLanguageLabel,
   RECIPE_LANGUAGES,
@@ -70,7 +71,13 @@ export function RecipeTranslateModal({
     try {
       const cached = (await getCachedTranslation?.(language)) ?? null;
       if (cached) {
-        onApply(cached, language);
+        onApply(
+          {
+            ...cached,
+            ingredients: localizeIngredientUnits(cached.ingredients, language),
+          },
+          language,
+        );
         setError(null);
         onClose();
         return;
@@ -105,94 +112,75 @@ export function RecipeTranslateModal({
   }
 
   return (
-    <Modal
+    <SheetModal
       visible={visible}
-      animationType="slide"
-      presentationStyle="pageSheet"
-      onRequestClose={handleClose}
+      onClose={handleClose}
+      title={t('recipe.translateTitle')}
+      maxWidth={480}
     >
-      <SafeAreaView className="flex-1" style={{ backgroundColor: colors.background }}>
-        <View className="flex-row items-center justify-between px-5 pb-2 pt-4">
-          <Pressable
-            onPress={handleClose}
-            disabled={Boolean(loadingLanguage)}
-            accessibilityRole="button"
-            accessibilityLabel="Close"
-            className="h-10 w-10 items-center justify-center rounded-full active:opacity-70"
-            style={{ backgroundColor: colors.primarySoft }}
-          >
-            <Ionicons name="close" size={20} color={colors.text} />
-          </Pressable>
-          <Text className="text-base font-bold" style={{ color: colors.text }}>
-            {t('recipe.translateTitle')}
-          </Text>
-          <View className="h-10 w-10" />
-        </View>
+      <Text className="mb-3 px-5 text-sm leading-5" style={{ color: colors.textSecondary }}>
+        {t('recipe.translateHint')}
+      </Text>
 
-        <Text className="mb-3 px-5 text-sm leading-5" style={{ color: colors.textSecondary }}>
-          {t('recipe.translateHint')}
+      {error ? (
+        <Text className="mb-3 px-5 text-sm" style={{ color: colors.danger }}>
+          {error}
         </Text>
+      ) : null}
 
-        {error ? (
-          <Text className="mb-3 px-5 text-sm" style={{ color: colors.danger }}>
-            {error}
-          </Text>
-        ) : null}
+      <ScrollView className="flex-1 px-5" contentContainerStyle={{ paddingBottom: 32 }}>
+        {activeLanguage != null && (
+          <Pressable
+            onPress={handleShowOriginal}
+            disabled={Boolean(loadingLanguage)}
+            className="mb-3 flex-row items-center justify-between rounded-2xl border px-4 py-3.5 active:opacity-80"
+            style={{ borderColor: colors.border, backgroundColor: colors.surface }}
+          >
+            <View className="flex-1 pr-3">
+              <Text className="text-base font-semibold" style={{ color: colors.text }}>
+                Original language
+              </Text>
+              <Text className="mt-0.5 text-xs" style={{ color: colors.textSecondary }}>
+                Show the recipe as extracted
+              </Text>
+            </View>
+            <Ionicons name="arrow-undo-outline" size={18} color={colors.primary} />
+          </Pressable>
+        )}
 
-        <ScrollView className="flex-1 px-5" contentContainerStyle={{ paddingBottom: 32 }}>
-          {activeLanguage != null && (
+        {RECIPE_LANGUAGES.map((lang) => {
+          const selected = activeLanguage === lang.code;
+          const loading = loadingLanguage === lang.code;
+          return (
             <Pressable
-              onPress={handleShowOriginal}
+              key={lang.code}
+              onPress={() => void handleSelectLanguage(lang.code)}
               disabled={Boolean(loadingLanguage)}
-              className="mb-3 flex-row items-center justify-between rounded-2xl border px-4 py-3.5 active:opacity-80"
-              style={{ borderColor: colors.border, backgroundColor: colors.surface }}
+              className="mb-2.5 flex-row items-center justify-between rounded-2xl border px-4 py-3.5 active:opacity-80"
+              style={{
+                backgroundColor: selected ? colors.primarySoft : colors.surface,
+                borderColor: selected ? colors.primary : colors.border,
+              }}
             >
               <View className="flex-1 pr-3">
                 <Text className="text-base font-semibold" style={{ color: colors.text }}>
-                  Original language
+                  {lang.nativeLabel}
                 </Text>
                 <Text className="mt-0.5 text-xs" style={{ color: colors.textSecondary }}>
-                  Show the recipe as extracted
+                  {getRecipeLanguageLabel(lang.code)}
                 </Text>
               </View>
-              <Ionicons name="arrow-undo-outline" size={18} color={colors.primary} />
+              {loading ? (
+                <ActivityIndicator color={colors.primary} />
+              ) : selected ? (
+                <Ionicons name="checkmark-circle" size={22} color={colors.primary} />
+              ) : (
+                <Ionicons name="chevron-forward" size={18} color={colors.textSecondary} />
+              )}
             </Pressable>
-          )}
-
-          {RECIPE_LANGUAGES.map((lang) => {
-            const selected = activeLanguage === lang.code;
-            const loading = loadingLanguage === lang.code;
-            return (
-              <Pressable
-                key={lang.code}
-                onPress={() => void handleSelectLanguage(lang.code)}
-                disabled={Boolean(loadingLanguage)}
-                className="mb-2.5 flex-row items-center justify-between rounded-2xl border px-4 py-3.5 active:opacity-80"
-                style={{
-                  backgroundColor: selected ? colors.primarySoft : colors.surface,
-                  borderColor: selected ? colors.primary : colors.border,
-                }}
-              >
-                <View className="flex-1 pr-3">
-                  <Text className="text-base font-semibold" style={{ color: colors.text }}>
-                    {lang.nativeLabel}
-                  </Text>
-                  <Text className="mt-0.5 text-xs" style={{ color: colors.textSecondary }}>
-                    {getRecipeLanguageLabel(lang.code)}
-                  </Text>
-                </View>
-                {loading ? (
-                  <ActivityIndicator color={colors.primary} />
-                ) : selected ? (
-                  <Ionicons name="checkmark-circle" size={22} color={colors.primary} />
-                ) : (
-                  <Ionicons name="chevron-forward" size={18} color={colors.textSecondary} />
-                )}
-              </Pressable>
-            );
-          })}
-        </ScrollView>
-      </SafeAreaView>
-    </Modal>
+          );
+        })}
+      </ScrollView>
+    </SheetModal>
   );
 }

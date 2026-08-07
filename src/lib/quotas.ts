@@ -1,14 +1,18 @@
 /** Extract quotas and Pinch Plus display pricing (replaces product tokens). */
 
-/** Keep in sync with GUEST_RECIPE_LIMIT — guests shouldn’t extract more than they can save. */
+/** Lifetime guest extracts per install (guests cannot save). */
 export const GUEST_EXTRACTION_LIMIT = 3;
-/** Lifetime free extracts for signed-in non-Plus users. */
-export const FREE_EXTRACT_LIMIT = 10;
+/** Calendar-month extracts for signed-in Free users (UTC YYYY-MM). */
+export const FREE_MONTHLY_EXTRACT_LIMIT = 15;
+/** @deprecated Use FREE_MONTHLY_EXTRACT_LIMIT — free is monthly now. */
+export const FREE_EXTRACT_LIMIT = FREE_MONTHLY_EXTRACT_LIMIT;
 /** Calendar-month extracts for Pinch Plus (UTC YYYY-MM). */
-export const PLUS_MONTHLY_EXTRACT_LIMIT = 90;
+export const PLUS_MONTHLY_EXTRACT_LIMIT = 100;
 /** Display price until real IAP. */
 export const PLUS_PRICE_DISPLAY = '$9.99/mo';
-export const PLUS_PRICE_NOTE = 'Billing isn’t live yet — upgrade is free for now.';
+/** Self-serve free Plus upgrade is off for go-live until billing ships. */
+export const PLUS_SELF_UPGRADE_ENABLED = false;
+export const PLUS_PRICE_NOTE = 'Pinch Plus is in development.';
 
 export type SubscriptionStatus = 'free' | 'active' | 'canceled';
 
@@ -17,7 +21,7 @@ export const ADMIN_PRICE_CARD = {
   geminiInputUsdPerM: 1.5,
   geminiOutputUsdPerM: 9.0,
   scrapecreatorsUsdPerCredit: 0.00188,
-  freeExtractLimit: FREE_EXTRACT_LIMIT,
+  freeExtractLimit: FREE_MONTHLY_EXTRACT_LIMIT,
   plusMonthlyExtractLimit: PLUS_MONTHLY_EXTRACT_LIMIT,
   guestExtractLimit: GUEST_EXTRACTION_LIMIT,
   plusPriceDisplay: PLUS_PRICE_DISPLAY,
@@ -40,7 +44,7 @@ export function isSubscriptionActive(
 }
 
 export function freeExtractsRemaining(used: number): number {
-  return Math.max(0, FREE_EXTRACT_LIMIT - Math.max(0, used));
+  return Math.max(0, FREE_MONTHLY_EXTRACT_LIMIT - Math.max(0, used));
 }
 
 export function monthlyExtractsRemaining(used: number): number {

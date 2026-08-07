@@ -8,7 +8,7 @@ export type ThemePackId =
   | 'mist'
   | 'fruity'
   | 'cat'
-  | 'potter'
+  | 'wizard'
   | 'dracula'
   | 'sunny'
   | 'starry';
@@ -243,9 +243,9 @@ export const ThemePacks: Record<ThemePackId, ThemePack> = {
     },
   },
 
-  potter: {
-    id: 'potter',
-    name: 'Potter Drift',
+  wizard: {
+    id: 'wizard',
+    name: 'Wizard Drift',
     blurb: 'Parchment glow — floating candles & sparks.',
     swatches: ['#8B3A4A', '#C4A35A', '#F3E8D4'],
     light: {
@@ -468,7 +468,7 @@ export const THEME_PACK_ORDER: ThemePackId[] = [
   'mist',
   'fruity',
   'cat',
-  'potter',
+  'wizard',
   'dracula',
   'sunny',
   'starry',
@@ -476,8 +476,21 @@ export const THEME_PACK_ORDER: ThemePackId[] = [
 
 export const DEFAULT_THEME_PACK: ThemePackId = 'mist';
 
+/** Legacy pack id kept so saved prefs migrate cleanly. */
+const LEGACY_PACK_ALIASES: Record<string, ThemePackId> = {
+  potter: 'wizard',
+};
+
 export function isThemePackId(value: string | null | undefined): value is ThemePackId {
   return value != null && value in ThemePacks;
+}
+
+/** Resolve a stored pack id, including legacy aliases (e.g. potter → wizard). */
+export function normalizeThemePackId(value: string | null | undefined): ThemePackId {
+  if (value != null && value in LEGACY_PACK_ALIASES) {
+    return LEGACY_PACK_ALIASES[value];
+  }
+  return isThemePackId(value) ? value : DEFAULT_THEME_PACK;
 }
 
 export function getThemePackColors(

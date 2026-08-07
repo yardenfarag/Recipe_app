@@ -1,0 +1,110 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Shared recipe — Pinch</title>
+    <link rel="stylesheet" href="./styles.css" />
+    <style>
+      .actions {
+        display: flex;
+        flex-direction: column;
+        gap: 0.75rem;
+        margin-top: 1.25rem;
+      }
+      .btn {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        border-radius: 999px;
+        padding: 0.85rem 1.25rem;
+        font-weight: 700;
+        text-decoration: none;
+        border: 1px solid transparent;
+        cursor: pointer;
+      }
+      .btn-primary {
+        background: var(--accent);
+        color: #fff;
+      }
+      .btn-secondary {
+        background: transparent;
+        color: var(--text);
+        border-color: var(--border);
+      }
+      .btn[hidden] {
+        display: none !important;
+      }
+      .hint {
+        color: var(--muted);
+        font-size: 0.95rem;
+        margin: 0.75rem 0 0;
+      }
+    </style>
+  </head>
+  <body>
+    <main>
+      <a class="brand" href="./legal.html">Pinch</a>
+      <h1>Someone shared a recipe with you</h1>
+      <p class="meta">Open it in Pinch to save an exact copy to your kitchen.</p>
+
+      <div class="card">
+        <p>
+          If you already have Pinch, we’ll try to open the app. Otherwise, grab it from
+          the App Store or Google Play, then open this link again.
+        </p>
+        <div class="actions">
+          <a class="btn btn-primary" id="open-app" href="#">Open in Pinch</a>
+          <a class="btn btn-secondary" id="app-store" href="#" hidden>Download on the App Store</a>
+          <a class="btn btn-secondary" id="play-store" href="#" hidden>Get it on Google Play</a>
+          <a class="btn btn-secondary" id="open-web" href="#">Continue in browser</a>
+        </div>
+        <p class="hint" id="missing-token" hidden>
+          This share link is missing its code. Ask your friend to share the recipe again.
+        </p>
+      </div>
+    </main>
+    <script>
+      (function () {
+        // Set these when the app is listed. Empty = hide the button.
+        var APP_STORE_URL = '';
+        var PLAY_STORE_URL = '';
+
+        var params = new URLSearchParams(window.location.search);
+        var token = (params.get('t') || '').trim();
+        var openApp = document.getElementById('open-app');
+        var openWeb = document.getElementById('open-web');
+        var appStore = document.getElementById('app-store');
+        var playStore = document.getElementById('play-store');
+        var missing = document.getElementById('missing-token');
+
+        if (!token) {
+          missing.hidden = false;
+          openApp.hidden = true;
+          openWeb.hidden = true;
+          return;
+        }
+
+        var appUrl = 'pinch://s/' + encodeURIComponent(token);
+        var webUrl = './s/' + encodeURIComponent(token);
+
+        openApp.setAttribute('href', appUrl);
+        openWeb.setAttribute('href', webUrl);
+
+        if (APP_STORE_URL) {
+          appStore.hidden = false;
+          appStore.setAttribute('href', APP_STORE_URL);
+        }
+        if (PLAY_STORE_URL) {
+          playStore.hidden = false;
+          playStore.setAttribute('href', PLAY_STORE_URL);
+        }
+
+        // Best-effort auto-open for users who already have the app.
+        window.setTimeout(function () {
+          window.location.href = appUrl;
+        }, 400);
+      })();
+    </script>
+  </body>
+</html>

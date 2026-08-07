@@ -2,10 +2,11 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 
 import { DEFAULT_SOURCE_LANGUAGE } from '@/lib/appLanguages';
 import { detectPlatform, recipeUrlsMatch } from '@/lib/platformUrls';
+import { recipeContentEquals } from '@/lib/recipeContentEquals';
 import { Recipe, RecipeTranslationContent } from '@/types/recipe';
 
-/** ADR 002 — guests can save up to 3 recipes locally before signing up. */
-export const GUEST_RECIPE_LIMIT = 3;
+/** Guests cannot save; sign-up is required to keep recipes. */
+export const GUEST_RECIPE_LIMIT = 0;
 
 const STORAGE_KEY = 'pinch:guest-recipes';
 let mutationQueue: Promise<void> = Promise.resolve();
@@ -94,6 +95,38 @@ export async function removeGuestRecipe(id: string): Promise<void> {
   });
 }
 
+/** Renames a guest recipe and keeps translation titles in sync for the library. */
+export async function renameGuestRecipe(id: string, title: string): Promise<Recipe | null> {
+  const trimmed = title.trim();
+  if (!trimmed) throw new Error('Recipe name is required.');
+
+  return serializeMutation(async () => {
+    const existing = await readGuestRecipes();
+    let updated: Recipe | null = null;
+    const next = existing.map((recipe) => {
+      if (recipe.id !== id) return recipe;
+      const translations = recipe.translations
+        ? Object.fromEntries(
+            Object.entries(recipe.translations).map(([code, content]) => [
+              code,
+              { ...content, title: trimmed },
+            ]),
+          )
+        : undefined;
+      updated = {
+        ...recipe,
+        title: trimmed,
+        display_title: trimmed,
+        translations,
+      };
+      return updated;
+    });
+    if (!updated) return null;
+    await writeGuestRecipes(next);
+    return updated;
+  });
+}
+
 /** Replaces the full guest recipe list — used after thumbnail backfill. */
 export async function replaceGuestRecipes(recipes: Recipe[]): Promise<void> {
   return serializeMutation(() => writeGuestRecipes(recipes));
@@ -135,6 +168,7 @@ export async function updateGuestRecipeContent(
     let updated: Recipe | null = null;
     const next = existing.map((recipe) => {
       if (recipe.id !== id) return recipe;
+      const textChanged = !recipeContentEquals(recipe, content);
       updated = {
         ...recipe,
         title: content.title,
@@ -142,8 +176,8 @@ export async function updateGuestRecipeContent(
         ingredients: content.ingredients,
         instructions: content.instructions,
         calories: content.calories,
-        // Canonical text changed — drop stale translation overlays.
-        translations: undefined,
+        // Only drop overlays when canonical text actually changed.
+        translations: textChanged ? undefined : recipe.translations,
       };
       return updated;
     });

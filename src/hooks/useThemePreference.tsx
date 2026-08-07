@@ -16,7 +16,7 @@ import { Appearance, Platform, StatusBar as RNStatusBar } from 'react-native';
 import {
   DEFAULT_THEME_PACK,
   getThemePackColors,
-  isThemePackId,
+  normalizeThemePackId,
   ThemePacks,
   type ThemePackColors,
   type ThemePackId,
@@ -50,6 +50,23 @@ function resolveScheme(preference: ThemePreference): ResolvedScheme {
   return preference;
 }
 
+function hexToRgba(hex: string, alpha: number): string {
+  const raw = hex.replace('#', '');
+  if (raw.length !== 6) return hex;
+  const r = parseInt(raw.slice(0, 2), 16);
+  const g = parseInt(raw.slice(2, 4), 16);
+  const b = parseInt(raw.slice(4, 6), 16);
+  return `rgba(${r}, ${g}, ${b}, ${alpha})`;
+}
+
+function applyWebScrollbarTheme(colors: ThemePackColors) {
+  if (Platform.OS !== 'web' || typeof document === 'undefined') return;
+  const root = document.documentElement;
+  root.style.setProperty('--pinch-scrollbar-track', 'transparent');
+  root.style.setProperty('--pinch-scrollbar-thumb', hexToRgba(colors.primary, 0.32));
+  root.style.setProperty('--pinch-scrollbar-thumb-hover', hexToRgba(colors.primary, 0.55));
+}
+
 function applyAppearance(preference: ThemePreference, packId: ThemePackId) {
   const resolved = resolveScheme(preference);
   // Always pass resolved light/dark — never "system". On web, NativeWind's
@@ -58,6 +75,8 @@ function applyAppearance(preference: ThemePreference, packId: ThemePackId) {
   // but body text stuck on light tokens (text-pinch-dark on dark mist).
   nwColorScheme.set(resolved);
   const colors = getThemePackColors(packId, resolved);
+  applyWebScrollbarTheme(colors);
+
   void (async () => {
     try {
       await SystemUI.setBackgroundColorAsync(colors.background);
@@ -108,13 +127,14 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
           savedScheme === 'light' || savedScheme === 'dark' || savedScheme === 'system'
             ? savedScheme
             : 'system';
-        const nextPack: ThemePackId = isThemePackId(savedPack)
-          ? savedPack
-          : DEFAULT_THEME_PACK;
+        const nextPack = normalizeThemePackId(savedPack);
         if (!cancelled) {
           setPreferenceState(nextScheme);
           setPackIdState(nextPack);
           syncAppearance(nextScheme, nextPack);
+          if (savedPack === 'potter') {
+            void AsyncStorage.setItem(PACK_KEY, nextPack);
+          }
         }
       } catch {
         // Keep defaults.

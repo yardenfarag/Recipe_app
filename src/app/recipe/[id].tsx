@@ -10,28 +10,10 @@ import { useLocalizedRecipe } from '@/hooks/useLocalizedRecipe';
 import { useThemePreference } from '@/hooks/useThemePreference';
 import { backfillRecipeThumbnails } from '@/lib/backfillRecipeThumbnails';
 import { getGuestRecipeById, updateGuestRecipeContent } from '@/lib/guestRecipes';
+import { recipeContentEquals } from '@/lib/recipeContentEquals';
 import { toggleRecipeFavorite } from '@/lib/recipeFavorites';
 import { fetchRecipeById, updateRecipeContent } from '@/lib/supabase/recipes';
-import { Ingredient, Instruction, Recipe } from '@/types/recipe';
-
-function contentMatchesRecipe(
-  recipe: Recipe,
-  content: {
-    title: string;
-    servings: number;
-    ingredients: Ingredient[];
-    instructions: Instruction[];
-    calories?: number;
-  },
-) {
-  return (
-    content.title === recipe.title &&
-    content.servings === recipe.servings &&
-    content.calories === recipe.calories &&
-    JSON.stringify(content.ingredients) === JSON.stringify(recipe.ingredients) &&
-    JSON.stringify(content.instructions) === JSON.stringify(recipe.instructions)
-  );
-}
+import { Recipe } from '@/types/recipe';
 
 export default function RecipeDetailScreen() {
   const { t } = useTranslation();
@@ -122,13 +104,13 @@ export default function RecipeDetailScreen() {
     (content: {
       title: string;
       servings: number;
-      ingredients: Ingredient[];
-      instructions: Instruction[];
+      ingredients: Recipe['ingredients'];
+      instructions: Recipe['instructions'];
       calories?: number;
     }) => {
       const current = recipeRef.current;
       if (!current || !id) return;
-      if (contentMatchesRecipe(current, content)) return;
+      if (recipeContentEquals(current, content)) return;
 
       const optimistic = { ...current, ...content };
       setRecipe(optimistic);

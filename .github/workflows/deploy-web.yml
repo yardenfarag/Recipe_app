@@ -1,0 +1,70 @@
+name: Deploy web to GitHub Pages
+
+on:
+  push:
+    branches: [master, main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: true
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Export Expo web
+        env:
+          EXPO_PUBLIC_SUPABASE_URL: ${{ secrets.EXPO_PUBLIC_SUPABASE_URL }}
+          EXPO_PUBLIC_SUPABASE_KEY: ${{ secrets.EXPO_PUBLIC_SUPABASE_KEY }}
+          EXPO_PUBLIC_ADMIN_EMAILS: ${{ secrets.EXPO_PUBLIC_ADMIN_EMAILS }}
+          EXPO_PUBLIC_LEGAL_BASE_URL: ${{ vars.EXPO_PUBLIC_LEGAL_BASE_URL }}
+          EXPO_PUBLIC_SUPPORT_EMAIL: ${{ vars.EXPO_PUBLIC_SUPPORT_EMAIL }}
+        run: |
+          export EXPO_PUBLIC_LEGAL_BASE_URL="${EXPO_PUBLIC_LEGAL_BASE_URL:-https://yardenfarag.github.io/Recipe_app}"
+          export EXPO_PUBLIC_SUPPORT_EMAIL="${EXPO_PUBLIC_SUPPORT_EMAIL:-yarden.farag@gmail.com}"
+          npx expo export -p web
+
+      - name: Merge legal pages into dist
+        run: |
+          # Keep Expo SPA index.html; preserve existing policy URLs at site root.
+          cp legal/privacy.html legal/terms.html legal/delete-account.html legal/share.html legal/styles.css dist/
+          cp legal/index.html dist/legal.html
+          touch dist/.nojekyll
+          cp dist/index.html dist/404.html
+
+      - name: Setup Pages
+        uses: actions/configure-pages@v5
+        with:
+          enablement: true
+
+      - name: Upload artifact
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: dist
+
+  deploy:
+    needs: build
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    runs-on: ubuntu-latest
+    steps:
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4

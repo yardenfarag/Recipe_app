@@ -1,0 +1,26 @@
+---
+description: Every new feature must work on iOS, Android, and web, and ship with translations
+alwaysApply: true
+---
+
+# Cross-platform + i18n (every change)
+
+For every new UI, flow, copy, error, or user-facing string:
+
+## Platforms
+
+- Design and implement for **iOS, Android, and web** — not one platform with the others as an afterthought.
+- Prefer shared React Native / Expo patterns that work everywhere; gate platform-specific code only when required (`Platform.OS`, web-only APIs, safe areas, navigation, file/share/camera, etc.).
+- Check layout, navigation, gestures, keyboard, and permissions on all three targets before considering the work done.
+- Avoid web-only or native-only APIs without a fallback or alternate path on the other platforms.
+
+## Translations
+
+- **No hardcoded user-facing strings** in components or screens. Use `useTranslation` / `t('…')` from `react-i18next`.
+- Add keys to **all** locale files under `src/i18n/locales/`: `en.ts`, `es.ts`, `he.ts`, `ru.ts`, `ar.ts`. Keep key structure and interpolation (`{{var}}`) identical across locales.
+- Prefer existing `common.*` keys for shared actions (cancel, save, delete, etc.) before inventing new ones.
+- RTL: Hebrew and Arabic must remain usable (layout, icons, chevrons, text alignment) when language flips.
+
+## Definition of done
+
+A feature is incomplete if it only works on one platform or only has English copy.
