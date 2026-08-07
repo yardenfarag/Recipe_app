@@ -119,7 +119,7 @@ export function RecipeView({
 }: RecipeViewProps) {
   const { t } = useTranslation();
   const { colors } = useThemePreference();
-  const { isWide, isMediumUp } = useBreakpoint();
+  const { isWide } = useBreakpoint();
   const { system: measurementSystem } = useMeasurementPreference();
   const { addFromRecipe } = useShoppingList();
   const {
@@ -409,21 +409,33 @@ export function RecipeView({
 
   async function handleStepTimestamp(seconds: number) {
     if (sourceVideo.mode === 'none' || !recipe.original_url) return;
-    videoPanelRef.current?.seekTo(seconds);
+    if (videoPanelRef.current) {
+      videoPanelRef.current.seekTo(seconds);
+      return;
+    }
+    openCookAlong(seconds);
   }
+
+  const sideCookAlong = isWide && sourceVideo.mode !== 'none';
 
   return (
     <View className="flex-1">
+    <View
+      style={
+        sideCookAlong
+          ? { flex: 1, flexDirection: 'row', width: '100%', maxWidth: 1200, alignSelf: 'center' }
+          : { flex: 1 }
+      }
+    >
     <ScrollView
       className="flex-1"
       showsVerticalScrollIndicator={false}
-      contentContainerStyle={{ paddingBottom: 24 + cookAlongSheetHeight }}
+      contentContainerStyle={{
+        paddingBottom: 24 + (sideCookAlong ? 0 : cookAlongSheetHeight),
+      }}
     >
-      <View
-        className={isMediumUp ? 'px-8 pt-5' : 'px-5 pt-4'}
-        style={isWide ? { width: '100%', maxWidth: 1120, alignSelf: 'center' } : undefined}
-      >
-        {sourceVideo.mode !== 'none' ? (
+      <View className="px-5 pt-4">
+        {!sideCookAlong && sourceVideo.mode !== 'none' ? (
           <RecipeVideoPanel
             ref={videoPanelRef}
             originalUrl={recipe.original_url}
@@ -435,22 +447,14 @@ export function RecipeView({
         ) : null}
 
         <View
-          className="mb-4 rounded-[28px] border p-4"
-          style={{
-            borderColor: colors.border,
-            backgroundColor: colors.surface,
-            ...(isWide ? { padding: 28 } : null),
-          }}
+          className="mb-4 rounded-3xl border p-4"
+          style={{ borderColor: colors.border, backgroundColor: colors.surface }}
         >
-          <View className={isWide ? 'flex-row items-start gap-6' : 'flex-row items-start gap-3.5'}>
-            <View className="min-w-0 flex-1">
+          <View className="flex-row items-start gap-3.5">
+            <View className="flex-1">
               <View className="flex-row items-start gap-2">
                 <Text
-                  className={
-                    isWide
-                      ? 'flex-1 text-[34px] font-bold leading-10'
-                      : 'flex-1 text-2xl font-bold leading-8'
-                  }
+                  className="flex-1 text-2xl font-bold leading-8"
                   style={{ color: colors.text, writingDirection: textDirection }}
                 >
                   {title}
@@ -566,19 +570,7 @@ export function RecipeView({
               ) : null}
             </View>
 
-            {isWide && recipe.image_url && sourceVideo.mode === 'none' ? (
-              <View
-                className="overflow-hidden rounded-[22px] border"
-                style={{ borderColor: colors.primarySoft, width: 220 }}
-              >
-                <RecipeImage
-                  uri={recipe.image_url}
-                  variant="hero"
-                  borderRadius={0}
-                  style={{ height: 160 }}
-                />
-              </View>
-            ) : showSideThumbnail ? (
+            {showSideThumbnail ? (
               <View className="rounded-2xl border" style={{ borderColor: colors.primarySoft }}>
                 <RecipeImage uri={recipe.image_url!} variant="compact" />
               </View>
@@ -654,12 +646,10 @@ export function RecipeView({
           </View>
         )}
 
-        <View className="mb-5 flex-row flex-wrap gap-2">
+        <View className="mb-5 flex-row gap-2.5">
           <Pressable
             onPress={() => setTranslateModalOpen(true)}
-            className={`flex-row items-center justify-center gap-2 rounded-full border px-4 py-3 active:opacity-90 ${
-              isWide ? '' : 'flex-1'
-            }`}
+            className="flex-1 flex-row items-center justify-center gap-2 rounded-3xl border py-3.5 active:opacity-90"
             style={{ borderColor: colors.border, backgroundColor: colors.surface }}
           >
             <Ionicons name="language-outline" size={18} color={colors.primary} />
@@ -669,245 +659,229 @@ export function RecipeView({
           </Pressable>
           <Pressable
             onPress={() => setVariantModalOpen(true)}
-            className={`flex-row items-center justify-center gap-2 rounded-full border px-4 py-3 active:opacity-90 ${
-              isWide ? '' : 'flex-1'
-            }`}
+            className="flex-1 items-center justify-center gap-0.5 rounded-3xl border py-3 active:opacity-90"
             style={{ borderColor: colors.accentSoft, backgroundColor: colors.accentSoft }}
           >
-            <Ionicons name="color-wand-outline" size={18} color={colors.accent} />
-            <Text className="text-sm font-bold" style={{ color: colors.text }}>
-              Remix
-            </Text>
-          </Pressable>
-          {recipeId ? (
-            <Pressable
-              onPress={() => setCollectionModalOpen(true)}
-              className={`flex-row items-center justify-center gap-2 rounded-full border px-4 py-3 active:opacity-90 ${
-                isWide ? '' : 'w-full'
-              }`}
-              style={{ borderColor: colors.border, backgroundColor: colors.surface }}
-            >
-              <Ionicons name="folder-outline" size={18} color={colors.accent} />
+            <View className="flex-row items-center gap-2">
+              <Ionicons name="color-wand-outline" size={18} color={colors.accent} />
               <Text className="text-sm font-bold" style={{ color: colors.text }}>
-                {t('library.addToCollection')}
+                Remix
               </Text>
-            </Pressable>
-          ) : null}
-          {isWide && scaledIngredients.length > 0 ? (
-            <Pressable
-              onPress={() => setShoppingListModalOpen(true)}
-              className="flex-row items-center justify-center gap-2 rounded-full border px-4 py-3 active:opacity-90"
-              style={{ borderColor: colors.primarySoft, backgroundColor: colors.primarySoft }}
-            >
-              <Ionicons name="cart-outline" size={18} color={colors.primary} />
-              <Text className="text-sm font-bold" style={{ color: colors.primary }}>
-                Add to list
-              </Text>
-            </Pressable>
-          ) : null}
+            </View>
+          </Pressable>
         </View>
 
-        {!isWide ? (
-          <View
-            className="mb-5 flex-row items-center justify-between rounded-3xl border px-4 py-3.5"
+        {recipeId ? (
+          <Pressable
+            onPress={() => setCollectionModalOpen(true)}
+            className="mb-5 flex-row items-center justify-center gap-2 rounded-3xl border py-3.5 active:opacity-90"
             style={{ borderColor: colors.border, backgroundColor: colors.surface }}
           >
-            <View>
-              <Text className="text-sm font-semibold" style={{ color: colors.text }}>
-                Servings
-              </Text>
-              {calorieDisplay != null && (
-                <Text className="mt-0.5 text-xs" style={{ color: colors.textSecondary }}>
-                  ≈ {calorieDisplay.total.toLocaleString()} cal total
-                </Text>
-              )}
-            </View>
-            <View className="flex-row items-center gap-3">
-              <StepperButton icon="remove" onPress={() => setServings((s) => Math.max(1, s - 1))} />
-              <Text
-                className="min-w-[28px] text-center text-xl font-bold"
-                style={{ color: colors.text }}
-              >
-                {servings}
-              </Text>
-              <StepperButton icon="add" onPress={() => setServings((s) => s + 1)} />
-            </View>
-          </View>
+            <Ionicons name="folder-outline" size={18} color={colors.accent} />
+            <Text className="text-sm font-bold" style={{ color: colors.text }}>
+              {t('library.addToCollection')}
+            </Text>
+          </Pressable>
         ) : null}
 
-        {scaledIngredients.length > 0 && !isWide ? (
-          <View className="mb-4">
-            <MeasurementToggle hint />
+        <View
+          className="mb-5 flex-row items-center justify-between rounded-3xl border px-4 py-3.5"
+          style={{ borderColor: colors.border, backgroundColor: colors.surface }}
+        >
+          <View>
+            <Text className="text-sm font-semibold" style={{ color: colors.text }}>
+              Servings
+            </Text>
+            {calorieDisplay != null && (
+              <Text className="mt-0.5 text-xs" style={{ color: colors.textSecondary }}>
+                ≈ {calorieDisplay.total.toLocaleString()} cal total
+              </Text>
+            )}
           </View>
-        ) : null}
+          <View className="flex-row items-center gap-3">
+            <StepperButton icon="remove" onPress={() => setServings((s) => Math.max(1, s - 1))} />
+            <Text
+              className="min-w-[28px] text-center text-xl font-bold"
+              style={{ color: colors.text }}
+            >
+              {servings}
+            </Text>
+            <StepperButton icon="add" onPress={() => setServings((s) => s + 1)} />
+          </View>
+        </View>
 
-        <View className={isWide ? 'mb-5 flex-row items-start gap-6' : undefined}>
-          {scaledIngredients.length > 0 && (
-            <View className={isWide ? 'gap-4' : undefined} style={isWide ? { width: 380 } : undefined}>
-              {isWide ? (
-                <>
-                  <View
-                    className="flex-row items-center justify-between rounded-3xl border px-4 py-3.5"
-                    style={{ borderColor: colors.border, backgroundColor: colors.surface }}
-                  >
-                    <View>
-                      <Text className="text-sm font-semibold" style={{ color: colors.text }}>
-                        Servings
-                      </Text>
-                      {calorieDisplay != null && (
-                        <Text className="mt-0.5 text-xs" style={{ color: colors.textSecondary }}>
-                          ≈ {calorieDisplay.total.toLocaleString()} cal total
-                        </Text>
-                      )}
-                    </View>
-                    <View className="flex-row items-center gap-3">
-                      <StepperButton
-                        icon="remove"
-                        onPress={() => setServings((s) => Math.max(1, s - 1))}
-                      />
-                      <Text
-                        className="min-w-[28px] text-center text-xl font-bold"
-                        style={{ color: colors.text }}
-                      >
-                        {servings}
-                      </Text>
-                      <StepperButton icon="add" onPress={() => setServings((s) => s + 1)} />
-                    </View>
-                  </View>
-                  <MeasurementToggle hint />
-                </>
-              ) : null}
-              <Section
-                title="Ingredients"
-                count={scaledIngredients.length}
-                headerRight={
-                  isWide ? undefined : (
-                  <Pressable
-                    className="flex-row items-center gap-1 rounded-full px-3 py-1.5 active:opacity-80"
-                    style={{ backgroundColor: colors.primarySoft }}
-                    onPress={() => setShoppingListModalOpen(true)}
-                  >
-                    <Ionicons name="cart-outline" size={14} color={colors.primary} />
-                    <Text className="text-xs font-semibold" style={{ color: colors.primary }}>
-                      Add to list
-                    </Text>
-                  </Pressable>
-                  )
-                }
-              >
-                {scaledIngredients.map((ing, index) => (
-                  <View
-                    key={`${ing.name}-${index}`}
-                    className={`flex-row items-center justify-between py-3.5 ${
-                      index < scaledIngredients.length - 1 ? 'border-b' : ''
-                    }`}
-                    style={
-                      index < scaledIngredients.length - 1
-                        ? { borderColor: colors.primarySoft }
-                        : undefined
-                    }
-                  >
-                    <Text
-                      className="flex-1 pr-2 text-base font-medium"
-                      style={{
-                        color: colors.text,
-                        writingDirection: textDirection,
-                        textAlign: textDirection === 'rtl' ? 'right' : 'left',
-                      }}
-                    >
-                      {ing.name}
-                    </Text>
-                    <Text className="text-sm tabular-nums" style={{ color: colors.textSecondary }}>
-                      {displayIngredientAmount(ing.quantity, ing.unit, {
-                        system: measurementSystem,
-                        language: activeLanguage,
-                      })}
-                    </Text>
-                    <Pressable
-                      className="ml-3 rounded-full px-3 py-1.5"
-                      style={{ backgroundColor: colors.accentSoft }}
-                      onPress={() => setSwapIndex(index)}
-                    >
-                      <Text className="text-xs font-semibold" style={{ color: colors.accent }}>
-                        {t('recipe.swapAction')}
-                      </Text>
-                    </Pressable>
-                  </View>
-                ))}
-              </Section>
+        {scaledIngredients.length > 0 && (
+          <>
+            <View className="mb-4">
+              <MeasurementToggle hint />
             </View>
-          )}
-
-          {baseInstructions.length > 0 && (
-            <View className={isWide ? 'min-w-0 flex-1' : undefined}>
-              <Section
-                title="Instructions"
-                count={baseInstructions.length}
-                headerRight={
-                  hasStepTimestamps ? (
-                    <Text className="text-[11px] font-medium" style={{ color: colors.textSecondary }}>
-                      Tap a time to jump
-                    </Text>
-                  ) : undefined
-                }
-              >
-                {baseInstructions.map((step, index) => (
-                  <View
-                    key={`${step.step}-${index}`}
-                    className={`flex-row gap-3 py-3.5 ${
-                      index < baseInstructions.length - 1 ? 'border-b' : ''
-                    }`}
+            <Section
+              title="Ingredients"
+              count={scaledIngredients.length}
+              headerRight={
+                <Pressable
+                  className="flex-row items-center gap-1 rounded-full px-3 py-1.5 active:opacity-80"
+                  style={{ backgroundColor: colors.primarySoft }}
+                  onPress={() => setShoppingListModalOpen(true)}
+                >
+                  <Ionicons name="cart-outline" size={14} color={colors.primary} />
+                  <Text className="text-xs font-semibold" style={{ color: colors.primary }}>
+                    Add to list
+                  </Text>
+                </Pressable>
+              }
+            >
+              {scaledIngredients.map((ing, index) => (
+                <View
+                  key={`${ing.name}-${index}`}
+                  className={`flex-row items-center justify-between py-3.5 ${
+                    index < scaledIngredients.length - 1 ? 'border-b' : ''
+                  }`}
+                  style={
+                    index < scaledIngredients.length - 1
+                      ? { borderColor: colors.primarySoft }
+                      : undefined
+                  }
+                >
+                  <Text
+                    className="flex-1 pr-2 text-base font-medium"
                     style={{
-                      flexDirection: textDirection === 'rtl' ? 'row-reverse' : 'row',
-                      ...(index < baseInstructions.length - 1
-                        ? { borderColor: colors.primarySoft }
-                        : null),
+                      color: colors.text,
+                      writingDirection: textDirection,
+                      textAlign: textDirection === 'rtl' ? 'right' : 'left',
                     }}
                   >
-                    <View
-                      className="mt-0.5 h-7 w-7 shrink-0 items-center justify-center rounded-full"
-                      style={{ backgroundColor: colors.primary }}
+                    {ing.name}
+                  </Text>
+                  <Text className="text-sm tabular-nums" style={{ color: colors.textSecondary }}>
+                    {displayIngredientAmount(ing.quantity, ing.unit, {
+                      system: measurementSystem,
+                      language: activeLanguage,
+                    })}
+                  </Text>
+                  <Pressable
+                    className="ml-3 rounded-full px-3 py-1.5"
+                    style={{ backgroundColor: colors.accentSoft }}
+                    onPress={() => setSwapIndex(index)}
+                  >
+                    <Text className="text-xs font-semibold" style={{ color: colors.accent }}>
+                      {t('recipe.swapAction')}
+                    </Text>
+                  </Pressable>
+                </View>
+              ))}
+            </Section>
+          </>
+        )}
+
+        {baseInstructions.length > 0 && (
+          <Section
+            title="Instructions"
+            count={baseInstructions.length}
+            headerRight={
+              hasStepTimestamps ? (
+                <Text className="text-[11px] font-medium" style={{ color: colors.textSecondary }}>
+                  Tap a time to jump
+                </Text>
+              ) : undefined
+            }
+          >
+            {baseInstructions.map((step, index) => (
+              <View
+                key={`${step.step}-${index}`}
+                className={`flex-row gap-3 py-3.5 ${
+                  index < baseInstructions.length - 1 ? 'border-b' : ''
+                }`}
+                style={{
+                  flexDirection: textDirection === 'rtl' ? 'row-reverse' : 'row',
+                  ...(index < baseInstructions.length - 1
+                    ? { borderColor: colors.primarySoft }
+                    : null),
+                }}
+              >
+                <View
+                  className="mt-0.5 h-7 w-7 shrink-0 items-center justify-center rounded-full"
+                  style={{ backgroundColor: colors.primary }}
+                >
+                  <Text className="text-xs font-bold text-white">{step.step}</Text>
+                </View>
+                <View className="flex-1">
+                  {step.timestamp_seconds != null ? (
+                    <Pressable
+                      onPress={() => void handleStepTimestamp(step.timestamp_seconds!)}
+                      className="mb-1.5 flex-row items-center gap-1 self-start rounded-full px-2.5 py-1 active:opacity-80"
+                      style={{ backgroundColor: colors.accentSoft }}
+                      accessibilityRole="button"
+                      accessibilityLabel={`Jump to step ${step.step} at ${formatVideoTimestamp(step.timestamp_seconds)}`}
                     >
-                      <Text className="text-xs font-bold text-white">{step.step}</Text>
-                    </View>
-                    <View className="flex-1">
-                      {step.timestamp_seconds != null ? (
-                        <Pressable
-                          onPress={() => void handleStepTimestamp(step.timestamp_seconds!)}
-                          className="mb-1.5 flex-row items-center gap-1 self-start rounded-full px-2.5 py-1 active:opacity-80"
-                          style={{ backgroundColor: colors.accentSoft }}
-                          accessibilityRole="button"
-                          accessibilityLabel={`Jump to step ${step.step} at ${formatVideoTimestamp(step.timestamp_seconds)}`}
-                        >
-                          <Ionicons name="play-circle" size={14} color={colors.accent} />
-                          <Text className="text-xs font-bold tabular-nums" style={{ color: colors.accent }}>
-                            {formatVideoTimestamp(step.timestamp_seconds)}
-                          </Text>
-                        </Pressable>
-                      ) : null}
-                      <Text
-                        className="text-base leading-6"
-                        style={{
-                          color: colors.text,
-                          writingDirection: textDirection,
-                          textAlign: textDirection === 'rtl' ? 'right' : 'left',
-                        }}
-                      >
-                        {step.text}
+                      <Ionicons name="play-circle" size={14} color={colors.accent} />
+                      <Text className="text-xs font-bold tabular-nums" style={{ color: colors.accent }}>
+                        {formatVideoTimestamp(step.timestamp_seconds)}
                       </Text>
-                    </View>
-                  </View>
-                ))}
-              </Section>
-            </View>
-          )}
-        </View>
+                    </Pressable>
+                  ) : null}
+                  <Text
+                    className="text-base leading-6"
+                    style={{
+                      color: colors.text,
+                      writingDirection: textDirection,
+                      textAlign: textDirection === 'rtl' ? 'right' : 'left',
+                    }}
+                  >
+                    {step.text}
+                  </Text>
+                </View>
+              </View>
+            ))}
+          </Section>
+        )}
 
         {footer}
       </View>
     </ScrollView>
 
-      {cookAlongOpen && recipe.original_url ? (
+      {sideCookAlong ? (
+        <View
+          style={{
+            width: 360,
+            paddingTop: 16,
+            paddingRight: 20,
+            paddingBottom: 20,
+            paddingLeft: 8,
+            alignSelf: 'flex-start',
+            // Keep cook-along visible while the recipe scrolls (web).
+            position: 'sticky' as 'relative',
+            top: 16,
+          }}
+        >
+          {cookAlongOpen && recipe.original_url ? (
+            <CookAlongVideoModal
+              visible
+              placement="sidebar"
+              onClose={() => {
+                setCookAlongOpen(false);
+                setCookAlongSheetHeight(0);
+              }}
+              originalUrl={recipe.original_url}
+              platform={recipe.platform}
+              sourceVideoUrl={recipe.source_video_url}
+              startSeconds={cookAlongStartSeconds}
+            />
+          ) : (
+            <RecipeVideoPanel
+              ref={videoPanelRef}
+              originalUrl={recipe.original_url}
+              platform={recipe.platform}
+              sourceVideoUrl={recipe.source_video_url}
+              posterUri={recipe.image_url}
+              onRequestPlay={openCookAlong}
+            />
+          )}
+        </View>
+      ) : null}
+    </View>
+
+      {!sideCookAlong && cookAlongOpen && recipe.original_url ? (
         <CookAlongVideoModal
           visible={cookAlongOpen}
           onClose={() => {

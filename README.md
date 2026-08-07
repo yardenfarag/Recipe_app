@@ -13,13 +13,15 @@ Pinch turns recipe videos and links into a calm, cookable kitchen on your phone 
 
 ## Screenshots
 
-Add captures under `docs/screenshots/` and link them here when ready:
+Desktop web (wide viewport). On smaller screens the same flows use bottom tabs instead of the left sidebar.
 
-| Library | Recipe | Snap | List |
-| --- | --- | --- | --- |
-| ![Library](docs/screenshots/library.png) | ![Recipe](docs/screenshots/recipe.png) | ![Snap](docs/screenshots/snap.png) | ![List](docs/screenshots/list.png) |
+| Library | Recipe |
+| --- | --- |
+| ![Library — recipe grid with sidebar](docs/screenshots/library.png) | ![Recipe — ingredients and cook-along on the side](docs/screenshots/recipe.png) |
 
-Web uses a sidebar on wide screens, a multi-column library grid, and a two-column recipe layout. Mobile keeps the familiar bottom tabs.
+| Snap | List |
+| --- | --- |
+| ![Snap — paste a recipe link](docs/screenshots/snap.png) | ![List — shopping list](docs/screenshots/list.png) |
 
 ## Quick start
 

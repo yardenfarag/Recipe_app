@@ -40,12 +40,17 @@ type CookAlongVideoModalProps = {
   startSeconds?: number;
   /** Lets the recipe ScrollView pad so content can scroll above the sheet. */
   onSheetHeightChange?: (height: number) => void;
+  /**
+   * `sheet` — bottom sheet (native) / centered dialog (web).
+   * `sidebar` — fills parent column (wide web recipe layout).
+   */
+  placement?: 'sheet' | 'sidebar';
 };
 
 /**
- * In-app cook-along sheet (not a Modal): recipe stays scrollable above it.
- * On web: larger centered dialog with iframe / open-in-browser fallback.
- * Closes only via the X button — tapping the recipe does not dismiss playback.
+ * In-app cook-along player.
+ * Sheet: bottom sheet on native, dialog on narrow web.
+ * Sidebar: docked column for wide web recipe pages.
  */
 export function CookAlongVideoModal({
   visible,
@@ -55,6 +60,7 @@ export function CookAlongVideoModal({
   sourceVideoUrl,
   startSeconds = 0,
   onSheetHeightChange,
+  placement = 'sheet',
 }: CookAlongVideoModalProps) {
   const { colors } = useThemePreference();
   const insets = useSafeAreaInsets();
@@ -64,6 +70,7 @@ export function CookAlongVideoModal({
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState(false);
   const isWeb = Platform.OS === 'web';
+  const isSidebar = placement === 'sidebar';
 
   const video = useMemo(
     () => getRecipeVideoInfo(originalUrl, platform, sourceVideoUrl),
@@ -84,12 +91,12 @@ export function CookAlongVideoModal({
   const webDialogWidth = Math.min(windowWidth - 48, isWide ? 920 : 640);
 
   useEffect(() => {
-    if (!visible) {
+    if (!visible || isSidebar) {
       onSheetHeightChange?.(0);
       return;
     }
     onSheetHeightChange?.(isWeb ? 0 : totalHeight);
-  }, [visible, totalHeight, onSheetHeightChange, isWeb]);
+  }, [visible, totalHeight, onSheetHeightChange, isWeb, isSidebar]);
 
   useEffect(() => {
     if (visible) {
@@ -262,14 +269,19 @@ export function CookAlongVideoModal({
 
       <View
         className="mx-4 overflow-hidden rounded-2xl bg-black"
-        style={{ flex: 1, minHeight: isWeb ? 360 : undefined }}
+        style={{
+          flex: 1,
+          minHeight: isSidebar ? 220 : isWeb ? 360 : undefined,
+          aspectRatio: isSidebar ? 16 / 9 : undefined,
+          maxHeight: isSidebar ? 280 : undefined,
+        }}
       >
         {videoPlayer}
       </View>
 
       <Pressable
         onPress={() => void openInBrowser()}
-        className="mx-4 mt-2 flex-row items-center justify-center gap-1.5 py-2 active:opacity-70"
+        className="mx-4 mt-2 mb-3 flex-row items-center justify-center gap-1.5 py-2 active:opacity-70"
       >
         <Ionicons name="open-outline" size={16} color={colors.textSecondary} />
         <Text className="text-xs font-medium" style={{ color: colors.textSecondary }}>
@@ -278,6 +290,23 @@ export function CookAlongVideoModal({
       </Pressable>
     </>
   );
+
+  if (isSidebar) {
+    return (
+      <View
+        style={{
+          flex: 1,
+          backgroundColor: colors.surface,
+          borderRadius: 28,
+          borderWidth: 1,
+          borderColor: colors.frostedBorder,
+          overflow: 'hidden',
+        }}
+      >
+        {chrome}
+      </View>
+    );
+  }
 
   if (isWeb) {
     return (
