@@ -1,4 +1,9 @@
 import { corsHeaders, jsonResponse } from '../_shared/cors.ts';
+import {
+  currentUtcDate,
+  refundDailyAiUsage,
+  reserveDailyAiUsage,
+} from '../_shared/dailyAiUsage.ts';
 import { createAuthedSupabase } from '../_shared/recipeLookup.ts';
 import { createServiceSupabase } from '../_shared/supabaseAdmin.ts';
 import {
@@ -14,13 +19,14 @@ const MAX_INSTRUCTIONS = 50;
 const MAX_INGREDIENT_NAME_CHARS = 160;
 const MAX_UNIT_CHARS = 40;
 const MAX_INSTRUCTION_CHARS = 1_000;
+const DAILY_TRANSLATION_LIMIT = 10;
 
 interface RequestBody {
   target_language?: string;
   recipe?: {
     title?: string;
     ingredients?: { name?: string; quantity?: number; unit?: string }[];
-    instructions?: { step?: number; text?: string }[];
+    instructions?: { step?: number; text?: string; timestamp_seconds?: number }[];
   };
 }
 
@@ -43,18 +49,22 @@ Deno.serve(async (req) => {
 
   const started = Date.now();
   const authHeader = req.headers.get('Authorization');
-  let userId: string | null = null;
-  if (authHeader) {
-    const authed = createAuthedSupabase(authHeader);
-    if (authed) {
-      const {
-        data: { user },
-      } = await authed.auth.getUser();
-      userId = user?.id ?? null;
-    }
+  const authed = authHeader ? createAuthedSupabase(authHeader) : null;
+  const {
+    data: { user },
+  } = authed ? await authed.auth.getUser() : { data: { user: null } };
+  if (!user) {
+    return jsonResponse(
+      { status: 'failed', code: 'auth_required', message: 'Sign in to translate recipes.' },
+      401,
+    );
   }
+  const userId = user.id;
 
   const admin = createServiceSupabase();
+  if (!admin) {
+    return jsonResponse({ status: 'failed', code: 'metering_error', message: 'metering_error' }, 500);
+  }
 
   let body: RequestBody;
   try {
@@ -135,10 +145,37 @@ Deno.serve(async (req) => {
       (s): s is { step: number; text: string } =>
         s.step != null && typeof s.text === 'string' && s.text.trim().length > 0,
     )
-    .map((s) => ({ step: s.step, text: s.text.trim() }));
+    .map((s) => ({
+      step: s.step,
+      text: s.text.trim(),
+      ...(Number.isFinite(s.timestamp_seconds)
+        ? { timestamp_seconds: Math.max(0, Math.round(s.timestamp_seconds!)) }
+        : {}),
+    }));
 
   if (ingredients.length === 0 && instructions.length === 0) {
     return jsonResponse({ error: 'Recipe must include ingredients or instructions to translate' }, 400);
+  }
+
+  const usageDate = currentUtcDate();
+  const usageGate = await reserveDailyAiUsage(
+    admin,
+    userId,
+    'translation',
+    DAILY_TRANSLATION_LIMIT,
+    usageDate,
+  );
+  if (usageGate === 'limited') {
+    return jsonResponse(
+      { status: 'failed', code: 'daily_limit', message: 'daily_limit' },
+      429,
+    );
+  }
+  if (usageGate === 'error') {
+    return jsonResponse(
+      { status: 'failed', code: 'metering_error', message: 'metering_error' },
+      500,
+    );
   }
 
   try {
@@ -150,6 +187,7 @@ Deno.serve(async (req) => {
     });
 
     if (!translated.title.trim()) {
+      await refundDailyAiUsage(admin, userId, 'translation', usageDate);
       await logUsageEvent(admin, {
         userId,
         action: 'translate',
@@ -184,6 +222,7 @@ Deno.serve(async (req) => {
     });
   } catch (err) {
     console.error('translate-recipe error:', err);
+    await refundDailyAiUsage(admin, userId, 'translation', usageDate);
     const errMessage = err instanceof Error ? err.message : String(err);
     const timedOut = /timedOut=true/i.test(errMessage);
     await logUsageEvent(admin, {

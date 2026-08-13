@@ -3,27 +3,28 @@ import Constants from 'expo-constants';
 import { Image } from 'expo-image';
 import * as ImagePicker from 'expo-image-picker';
 import { router } from 'expo-router';
-import { useState } from 'react';
-import { ActivityIndicator, Alert, Platform, Pressable, ScrollView, Text, View } from 'react-native';
+import { type ReactNode, useState } from 'react';
+import {
+  ActivityIndicator,
+  Alert,
+  Platform,
+  Pressable,
+  ScrollView,
+  Text,
+  View,
+} from 'react-native';
 
 import { BrandHeader } from '@/components/BrandHeader';
 import { CookieMark } from '@/components/CookieMark';
-import { LanguagePicker } from '@/components/LanguagePicker';
-import { MeasurementToggle } from '@/components/MeasurementToggle';
 import { Screen } from '@/components/Screen';
-import { SupportTicketModal } from '@/components/SupportTicketModal';
-import { ThemePackPicker } from '@/components/ThemePackPicker';
-import { ThemeToggle } from '@/components/ThemeToggle';
-import { TokenPurchaseSheet } from '@/components/TokenPurchaseSheet';
 import { FormContentWidth } from '@/constants/theme';
 import { useAuth } from '@/hooks/useAuth';
 import { useBreakpoint } from '@/hooks/useBreakpoint';
 import { useProfile } from '@/hooks/useProfile';
+import { useRtl } from '@/hooks/useRtl';
 import { useThemePreference } from '@/hooks/useThemePreference';
 import { useTranslation } from 'react-i18next';
-import { LEGAL_URLS, openLegalUrl } from '@/lib/legal';
 import { confirmAction, confirmDestructive } from '@/lib/confirmAction';
-import { FREE_MONTHLY_EXTRACT_LIMIT } from '@/lib/quotas';
 import {
   deleteAccount,
   requestAppleAuthorizationCodeForDeletion,
@@ -32,13 +33,122 @@ import {
 } from '@/lib/supabase/auth';
 import { uploadAvatar } from '@/lib/supabase/profile';
 
+type SettingsSectionProps = {
+  title: string;
+  icon: keyof typeof Ionicons.glyphMap;
+  children: ReactNode;
+  description?: string;
+  danger?: boolean;
+};
+
+function SettingsSection({
+  title,
+  icon,
+  children,
+  description,
+  danger = false,
+}: SettingsSectionProps) {
+  const { colors } = useThemePreference();
+  const tone = danger ? colors.warning : colors.primary;
+
+  return (
+    <View className="mb-5">
+      <View className="mb-2.5 flex-row items-center gap-2 px-1">
+        <View
+          className="h-8 w-8 items-center justify-center rounded-[12px]"
+          style={{ backgroundColor: danger ? colors.warningSoft : colors.primarySoft }}
+        >
+          <Ionicons name={icon} size={17} color={tone} />
+        </View>
+        <View className="min-w-0 flex-1">
+          <Text className="text-base font-bold" style={{ color: danger ? tone : colors.text }}>
+            {title}
+          </Text>
+          {description ? (
+            <Text className="mt-0.5 text-xs leading-4" style={{ color: colors.textSecondary }}>
+              {description}
+            </Text>
+          ) : null}
+        </View>
+      </View>
+      <View
+        className="overflow-hidden rounded-[24px] border p-5"
+        style={{
+          backgroundColor: colors.frosted,
+          borderColor: danger ? colors.warning : colors.frostedBorder,
+        }}
+      >
+        {children}
+      </View>
+    </View>
+  );
+}
+
+type SettingsActionRowProps = {
+  label: string;
+  icon: keyof typeof Ionicons.glyphMap;
+  onPress: () => void;
+  destructive?: boolean;
+  last?: boolean;
+  disabled?: boolean;
+  description?: string;
+};
+
+function SettingsActionRow({
+  label,
+  icon,
+  onPress,
+  destructive = false,
+  last = false,
+  disabled = false,
+  description,
+}: SettingsActionRowProps) {
+  const { colors } = useThemePreference();
+  const { chevronForward } = useRtl();
+  const color = destructive ? colors.warning : colors.text;
+
+  return (
+    <Pressable
+      onPress={onPress}
+      disabled={disabled}
+      accessibilityRole="button"
+      accessibilityState={{ disabled }}
+      className="min-h-12 flex-row items-center gap-3 py-3 active:opacity-65 disabled:opacity-50"
+      style={{
+        borderColor: colors.frostedBorder,
+        borderBottomWidth: last ? 0 : 1,
+      }}
+    >
+      <View
+        className="h-9 w-9 items-center justify-center rounded-[14px]"
+        style={{ backgroundColor: destructive ? colors.warningSoft : colors.primarySoft }}
+      >
+        <Ionicons name={icon} size={18} color={destructive ? colors.warning : colors.primary} />
+      </View>
+      <View className="min-w-0 flex-1">
+        <Text className="text-sm font-semibold" style={{ color }}>
+          {label}
+        </Text>
+        {description ? (
+          <Text className="mt-0.5 text-xs leading-4" style={{ color: colors.textSecondary }}>
+            {description}
+          </Text>
+        ) : null}
+      </View>
+      <Ionicons
+        name={chevronForward}
+        size={17}
+        color={destructive ? colors.warning : colors.textSecondary}
+      />
+    </Pressable>
+  );
+}
+
 export default function SettingsScreen() {
   const { t } = useTranslation();
   const { user, migrationError, retryMigration } = useAuth();
   const {
     avatarUrl,
-    freeExtractsRemaining,
-    purchasedCredits,
     totalCredits,
     isAdmin,
     refresh,
@@ -47,8 +157,6 @@ export default function SettingsScreen() {
   const { isMediumUp } = useBreakpoint();
   const [uploading, setUploading] = useState(false);
   const [deleting, setDeleting] = useState(false);
-  const [supportOpen, setSupportOpen] = useState(false);
-  const [creditsOpen, setCreditsOpen] = useState(false);
 
   async function handleSignOut() {
     try {
@@ -203,243 +311,168 @@ export default function SettingsScreen() {
           <BrandHeader title={t('settings.title')} subtitle={t('settings.subtitle')} />
 
           <View
-            className="mb-5 mt-6 items-center rounded-[28px] p-6"
+            className="mb-6 mt-6 rounded-[28px] p-5"
             style={{
               backgroundColor: colors.frosted,
               borderWidth: 1,
               borderColor: colors.frostedBorder,
             }}
           >
-            <Pressable onPress={handleChangeAvatar} disabled={uploading} className="relative mb-3">
-              <View
-                className="h-24 w-24 items-center justify-center overflow-hidden rounded-full"
-                style={{ backgroundColor: colors.primarySoft }}
+            <View className="flex-row items-center gap-4">
+              <Pressable
+                onPress={handleChangeAvatar}
+                disabled={uploading}
+                accessibilityRole="button"
+                accessibilityLabel={t('settings.changeAvatarTitle')}
+                className="relative"
               >
-                {avatarUrl ? (
-                  <Image
-                    source={{ uri: avatarUrl }}
-                    style={{ width: 96, height: 96, backgroundColor: colors.primarySoft }}
-                    contentFit="cover"
-                    contentPosition="center"
-                    transition={200}
-                  />
-                ) : (
-                  <Ionicons name="person" size={40} color={colors.primary} />
-                )}
-              </View>
-              <View
-                className="absolute bottom-0 right-0 h-8 w-8 items-center justify-center rounded-full border-2"
-                style={{
-                  backgroundColor: colors.primary,
-                  borderColor: colors.surface,
-                }}
-              >
-                {uploading ? (
-                  <ActivityIndicator size="small" color="#fff" />
-                ) : (
-                  <Ionicons name="camera" size={14} color="#fff" />
-                )}
-              </View>
-            </Pressable>
+                <View
+                  className="h-[72px] w-[72px] items-center justify-center overflow-hidden rounded-full"
+                  style={{ backgroundColor: colors.primarySoft }}
+                >
+                  {avatarUrl ? (
+                    <Image
+                      source={{ uri: avatarUrl }}
+                      style={{ width: 72, height: 72, backgroundColor: colors.primarySoft }}
+                      contentFit="cover"
+                      contentPosition="center"
+                      transition={200}
+                    />
+                  ) : (
+                    <Ionicons name="person" size={31} color={colors.primary} />
+                  )}
+                </View>
+                <View
+                  className="absolute bottom-0 h-7 w-7 items-center justify-center rounded-full border-2"
+                  style={{
+                    backgroundColor: colors.primary,
+                    borderColor: colors.surface,
+                    end: 0,
+                  }}
+                >
+                  {uploading ? (
+                    <ActivityIndicator size="small" color="#fff" />
+                  ) : (
+                    <Ionicons name="camera" size={12} color="#fff" />
+                  )}
+                </View>
+              </Pressable>
 
-            <Text className="mb-1 text-base font-semibold" style={{ color: colors.text }}>
-              {user?.email ?? t('settings.guest')}
-            </Text>
-            <Text className="mb-4 text-center text-xs" style={{ color: colors.textSecondary }}>
-              {user
-                ? t('settings.signedIn', { plan: planLabel })
-                : t('settings.signInToSync')}
-            </Text>
+              <View className="min-w-0 flex-1">
+                <Text className="text-base font-bold" style={{ color: colors.text }} numberOfLines={1}>
+                  {user?.email ?? t('settings.guest')}
+                </Text>
+                <Text className="mt-1 text-xs leading-4" style={{ color: colors.textSecondary }}>
+                  {user
+                    ? t('settings.signedIn', { plan: planLabel })
+                    : t('settings.signInToSync')}
+                </Text>
+              </View>
+            </View>
 
             <Pressable
               onPress={() =>
-                user ? handleSignOut() : router.push('/auth?mode=signin&reason=sync')
+                user ? void handleSignOut() : router.push('/auth?mode=signin&reason=sync')
               }
-              className="h-10 items-center justify-center rounded-[18px] px-5 active:opacity-70"
+              accessibilityRole="button"
+              className="mt-4 min-h-11 items-center justify-center rounded-[18px] px-5 active:opacity-70"
               style={{ backgroundColor: colors.primarySoft }}
             >
               <Text className="text-sm font-semibold" style={{ color: colors.primary }}>
                 {user ? t('settings.signOut') : t('settings.signIn')}
               </Text>
             </Pressable>
-
-            {user ? (
-              <Pressable
-                onPress={handleDeleteAccount}
-                disabled={deleting}
-                className="mt-3 h-10 items-center justify-center rounded-[18px] px-5 active:opacity-70"
-                style={{ backgroundColor: colors.warningSoft }}
-              >
-                {deleting ? (
-                  <ActivityIndicator color={colors.warning} />
-                ) : (
-                  <Text className="text-sm font-semibold" style={{ color: colors.warning }}>
-                    {t('settings.deleteAccount')}
-                  </Text>
-                )}
-              </Pressable>
-            ) : null}
           </View>
 
-          {user ? (
-            <View
-              className="mb-5 rounded-[28px] p-5"
-              style={{
-                backgroundColor: colors.frosted,
-                borderWidth: 1,
-                borderColor: colors.frostedBorder,
-              }}
-            >
-              <Text className="mb-1 text-sm font-semibold" style={{ color: colors.text }}>
-                {t('settings.plan')}
-              </Text>
-              <Text className="mb-1 text-3xl font-bold" style={{ color: colors.text }}>
-                {planLabel}
-              </Text>
-              <Text className="mb-2 text-sm" style={{ color: colors.accent }}>
-                {t('settings.creditsTotal', { count: totalCredits ?? 0 })}
-              </Text>
-              <Text className="text-xs leading-5" style={{ color: colors.textSecondary }}>
-                {t('settings.creditsFree', {
-                  remaining: freeExtractsRemaining ?? 0,
-                  limit: FREE_MONTHLY_EXTRACT_LIMIT,
-                })}
-              </Text>
-              <Text className="mt-1 text-xs leading-5" style={{ color: colors.textSecondary }}>
-                {t('settings.creditsPurchased', { count: purchasedCredits ?? 0 })}
-              </Text>
-              <Text className="mt-1 text-xs leading-5" style={{ color: colors.textSecondary }}>
-                {t('settings.creditsReset')}
-              </Text>
-              <Pressable
-                className="mt-3 self-start rounded-[18px] px-4 py-2 active:opacity-80"
-                style={{ backgroundColor: colors.primary }}
-                onPress={() => setCreditsOpen(true)}
-              >
-                <Text className="text-sm font-bold text-white">{t('credits.buyAction')}</Text>
-              </Pressable>
-            </View>
-          ) : null}
-
-          {isAdmin ? (
-            <Pressable
-              onPress={() => router.push('/admin/usage')}
-              className="mb-5 rounded-[28px] p-5 active:opacity-80"
-              style={{
-                backgroundColor: colors.frosted,
-                borderWidth: 1,
-                borderColor: colors.frostedBorder,
-              }}
-            >
-              <Text className="mb-1 text-sm font-semibold" style={{ color: colors.text }}>
-                {t('settings.adminTitle')}
-              </Text>
-              <Text className="text-xs leading-5" style={{ color: colors.textSecondary }}>
-                {t('settings.adminBody')}
-              </Text>
-            </Pressable>
-          ) : null}
-
-          <View
-            className="mb-5 rounded-[28px] p-5"
-            style={{
-              backgroundColor: colors.frosted,
-              borderWidth: 1,
-              borderColor: colors.frostedBorder,
-            }}
-          >
-            <Text className="mb-3 text-sm font-semibold" style={{ color: colors.text }}>
-              {t('settings.language')}
-            </Text>
-            <LanguagePicker />
-            <Text className="mt-2 text-xs leading-5" style={{ color: colors.textSecondary }}>
-              {t('settings.languageHint')}
-            </Text>
-            <Text className="mb-3 mt-5 text-sm font-semibold" style={{ color: colors.text }}>
-              {t('settings.lightDark')}
-            </Text>
-            <ThemeToggle />
-            <Text className="mb-4 mt-5 text-sm font-semibold" style={{ color: colors.text }}>
-              {t('settings.driftTheme')}
-            </Text>
-            <ThemePackPicker />
-            <Text className="mb-3 mt-5 text-sm font-semibold" style={{ color: colors.text }}>
-              {t('settings.measurements')}
-            </Text>
-            <MeasurementToggle />
-            <Text className="mt-2 text-xs leading-5" style={{ color: colors.textSecondary }}>
-              {t('settings.measurementsHint')}
-            </Text>
-          </View>
-
-          {migrationError && (
-            <View
-              className="mb-5 rounded-[28px] p-4"
-              style={{ backgroundColor: colors.warningSoft }}
-            >
+          {migrationError ? (
+            <View className="mb-5 rounded-[24px] p-4" style={{ backgroundColor: colors.warningSoft }}>
               <Text className="mb-1 text-sm font-semibold" style={{ color: colors.warning }}>
                 {t('settings.migrationTitle')}
               </Text>
               <Text className="mb-3 text-sm leading-5" style={{ color: colors.warning }}>
-                {migrationError}
+                {t('errorBoundary.body')}
               </Text>
               <Pressable
                 onPress={() => void retryMigration()}
-                className="items-center rounded-[22px] py-3 active:opacity-80"
+                accessibilityRole="button"
+                className="items-center rounded-[18px] py-3 active:opacity-80"
                 style={{ backgroundColor: colors.primary }}
               >
                 <Text className="text-sm font-bold text-white">{t('settings.migrationRetry')}</Text>
               </Pressable>
             </View>
-          )}
+          ) : null}
 
-          <View
-            className="mb-5 rounded-[28px] p-5"
-            style={{
-              backgroundColor: colors.frosted,
-              borderWidth: 1,
-              borderColor: colors.frostedBorder,
-            }}
-          >
-            <Text className="mb-3 text-sm font-semibold" style={{ color: colors.text }}>
-              {t('settings.legalSupport')}
-            </Text>
-            {(
-              [
-                [t('settings.privacyPolicy'), LEGAL_URLS.privacy],
-                [t('settings.termsOfUse'), LEGAL_URLS.terms],
-                [t('settings.deleteAccountWeb'), LEGAL_URLS.deleteAccount],
-              ] as const
-            ).map(([label, url]) => (
-              <Pressable
-                key={url}
-                onPress={() => void openLegalUrl(url)}
-                className="mb-2 py-2 active:opacity-70"
-              >
-                <Text className="text-sm font-semibold" style={{ color: colors.primary }}>
-                  {label}
-                </Text>
-              </Pressable>
-            ))}
+          <SettingsSection title={t('settings.yourSettings')} icon="options-outline">
             {user ? (
-              <Pressable
-                onPress={() => setSupportOpen(true)}
-                className="mb-2 py-2 active:opacity-70"
-              >
-                <Text className="text-sm font-semibold" style={{ color: colors.primary }}>
-                  {t('settings.reportIssue')}
-                </Text>
-              </Pressable>
+              <SettingsActionRow
+                label={t('settings.plan')}
+                description={t('settings.creditsTotal', { count: totalCredits ?? 0 })}
+                icon="sparkles-outline"
+                onPress={() => router.push('/settings/credits')}
+              />
             ) : null}
-            <Pressable
-              onPress={() => void openLegalUrl(LEGAL_URLS.supportMailto)}
-              className="py-2 active:opacity-70"
-            >
-              <Text className="text-sm font-semibold" style={{ color: colors.primary }}>
-                {t('settings.emailSupport')}
+            <SettingsActionRow
+              label={t('settings.recipePreferences')}
+              description={t('settings.recipePreferencesHint')}
+              icon="restaurant-outline"
+              onPress={() => router.push('/settings/recipe')}
+            />
+            <SettingsActionRow
+              label={t('settings.appearance')}
+              description={t('settings.appearanceHint')}
+              icon="color-palette-outline"
+              onPress={() => router.push('/settings/appearance')}
+            />
+            <SettingsActionRow
+              label={t('settings.languageAndRegion')}
+              description={t('settings.languageHint')}
+              icon="language-outline"
+              onPress={() => router.push('/settings/language')}
+            />
+            <SettingsActionRow
+              label={t('settings.legalSupport')}
+              description={t('settings.legalSupportHint')}
+              icon="help-buoy-outline"
+              onPress={() => router.push('/settings/support')}
+              last
+            />
+          </SettingsSection>
+
+          {isAdmin ? (
+            <SettingsSection title={t('settings.adminTitle')} icon="shield-checkmark-outline">
+              <Text className="mb-3 text-xs leading-5" style={{ color: colors.textSecondary }}>
+                {t('settings.adminBody')}
               </Text>
-            </Pressable>
-          </View>
+              <SettingsActionRow
+                label={t('settings.adminTitle')}
+                icon="analytics-outline"
+                onPress={() => router.push('/admin/usage')}
+                last
+              />
+            </SettingsSection>
+          ) : null}
+
+          {user ? (
+            <SettingsSection
+              title={t('settings.dangerZone')}
+              icon="warning-outline"
+              description={t('settings.dangerZoneHint')}
+              danger
+            >
+              <SettingsActionRow
+                label={t('settings.deleteAccount')}
+                icon="trash-outline"
+                onPress={handleDeleteAccount}
+                destructive
+                disabled={deleting}
+                last
+              />
+              {deleting ? (
+                <ActivityIndicator className="mt-2" color={colors.warning} />
+              ) : null}
+            </SettingsSection>
+          ) : null}
 
           <View className="items-center gap-2 pt-2">
             <CookieMark size={18} color={colors.textSecondary} />
@@ -453,8 +486,6 @@ export default function SettingsScreen() {
         </View>
       </ScrollView>
 
-      <SupportTicketModal visible={supportOpen} onClose={() => setSupportOpen(false)} />
-      <TokenPurchaseSheet visible={creditsOpen} onClose={() => setCreditsOpen(false)} />
     </Screen>
   );
 }

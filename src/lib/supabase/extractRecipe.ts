@@ -1,5 +1,6 @@
 import { FunctionsHttpError } from '@supabase/supabase-js';
 
+import { getOrCreateExtractionRequestId } from '@/lib/extractionRequestId';
 import { getInstallId } from '@/lib/installId';
 import { supabase } from '@/lib/supabase/client';
 import { Recipe } from '@/types/recipe';
@@ -26,6 +27,7 @@ export interface ExtractResult {
     | 'video_too_long'
     | 'insufficient_credits'
     | 'insufficient_tokens'
+    | 'compensation_pending'
     | string;
   tokens_charged?: number;
   guest_extracts_remaining?: number | null;
@@ -35,6 +37,8 @@ export interface ExtractResult {
   subscription_status?: string | null;
   purchased_credits?: number | null;
   total_credits?: number | null;
+  /** Client-side idempotency key; acknowledged only after durable handling. */
+  request_id?: string;
 }
 
 async function invokeErrorMessage(error: unknown): Promise<{
@@ -76,6 +80,11 @@ async function invokeErrorMessage(error: unknown): Promise<{
   return { message: 'Could not reach the extraction service. Please try again.' };
 }
 
+/** True when a retry must reuse the same request id to avoid a second charge. */
+export function extractionOutcomeIsUncertain(code?: string): boolean {
+  return code === 'compensation_pending' || code === 'metering_error';
+}
+
 /**
  * Sends a social URL to the `extract-recipe` Edge Function and returns the
  * structured result. Does not persist — the caller decides where to save
@@ -83,20 +92,21 @@ async function invokeErrorMessage(error: unknown): Promise<{
  */
 export async function extractRecipe(url: string): Promise<ExtractResult> {
   const guestInstallId = await getInstallId();
-  const requestId =
-    globalThis.crypto?.randomUUID?.() ??
-    `extract-${Date.now()}-${Math.random().toString(36).slice(2, 12)}`;
+  const requestId = await getOrCreateExtractionRequestId(url);
   const { data, error } = await supabase.functions.invoke<ExtractResult>('extract-recipe', {
     body: { url, guest_install_id: guestInstallId, request_id: requestId },
   });
 
   if (error) {
+    // Keep the key after HTTP and transport failures. A 5xx can mean the
+    // reservation is still charged and waiting for compensation.
     const details = await invokeErrorMessage(error);
     return {
       status: 'failed',
       platform: 'unknown',
       message: details.message,
       code: details.code,
+      request_id: requestId,
       guest_extracts_remaining: details.guest_extracts_remaining,
       extracts_remaining: details.extracts_remaining,
       free_extracts_remaining: details.free_extracts_remaining,
@@ -114,15 +124,19 @@ export async function extractRecipe(url: string): Promise<ExtractResult> {
         status: 'failed',
         platform: 'unknown',
         message: errBody.error,
+        request_id: requestId,
       };
     }
   }
 
   return (
-    data ?? {
-      status: 'failed',
-      platform: 'unknown',
-      message: 'No response from the extraction service.',
-    }
+    data
+      ? { ...data, request_id: requestId }
+      : {
+          status: 'failed',
+          platform: 'unknown',
+          message: 'No response from the extraction service.',
+          request_id: requestId,
+        }
   );
 }

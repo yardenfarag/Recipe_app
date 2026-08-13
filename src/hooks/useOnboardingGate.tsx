@@ -17,7 +17,7 @@ export function OnboardingGate() {
     if (!ready) return;
 
     const onOnboarding = segments[0] === 'onboarding' || pathname === '/onboarding';
-    const onSnap = pathname === '/add' || segments.includes('add');
+    const onSnap = pathname === '/add' || segments.some((segment) => String(segment) === 'add');
 
     // Let ShareIntentRouter own first-open shares — do not yank away from Snap.
     if (!completed && !onOnboarding && !onSnap) {

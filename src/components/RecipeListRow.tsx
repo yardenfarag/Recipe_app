@@ -1,13 +1,14 @@
 import Ionicons from '@expo/vector-icons/Ionicons';
-import { memo } from 'react';
+import { Fragment, memo, type ReactNode } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Pressable, Text, View } from 'react-native';
 import Animated, { FadeInDown } from 'react-native-reanimated';
 
 import { CookieMark } from '@/components/CookieMark';
+import { CostEstimateDisplay } from '@/components/CostEstimateDisplay';
 import { RecipeImage } from '@/components/RecipeImage';
 import { useThemePreference } from '@/hooks/useThemePreference';
-import { formatCostEstimate } from '@/lib/formatCostEstimate';
+import { COST_I18N_KEYS } from '@/lib/formatCostEstimate';
 import { formatRecipeDuration } from '@/lib/formatRecipeDuration';
 import { Recipe } from '@/types/recipe';
 
@@ -39,17 +40,58 @@ export const RecipeListRow = memo(function RecipeListRow({
   const { colors } = useThemePreference();
   const isFavorite = recipe.is_favorite === true;
 
-  const metadata = [
+  const timeLabel =
     recipe.estimated_time_minutes != null
-      ? formatRecipeDuration(recipe.estimated_time_minutes)
-      : null,
-    recipe.effort_level ?? null,
-    recipe.cost_estimate ? formatCostEstimate(recipe.cost_estimate) : null,
-  ]
-    .filter(Boolean)
-    .join(' · ');
+      ? formatRecipeDuration(recipe.estimated_time_minutes, {
+          minutes: t('recipe.durationMin'),
+          hours: t('recipe.durationHr'),
+        })
+      : null;
+  const effortLabel = recipe.effort_level
+    ? t(`recipe.effort.${recipe.effort_level.toLowerCase()}`)
+    : null;
+  const costLabel = recipe.cost_estimate
+    ? t(COST_I18N_KEYS[recipe.cost_estimate])
+    : null;
 
   const card = variant === 'card';
+  const metaClass = card ? 'text-xs' : 'text-sm';
+  const metaStyle = { color: colors.textSecondary };
+  const metaParts: { key: string; node: ReactNode }[] = [];
+  if (timeLabel) {
+    metaParts.push({
+      key: 'time',
+      node: (
+        <Text className={metaClass} style={metaStyle}>
+          {timeLabel}
+        </Text>
+      ),
+    });
+  }
+  if (effortLabel) {
+    metaParts.push({
+      key: 'effort',
+      node: (
+        <Text className={metaClass} style={metaStyle}>
+          {effortLabel}
+        </Text>
+      ),
+    });
+  }
+  if (recipe.cost_estimate && costLabel) {
+    metaParts.push({
+      key: 'cost',
+      node: (
+        <CostEstimateDisplay
+          tier={recipe.cost_estimate}
+          label={costLabel}
+          color={colors.textSecondary}
+          textClassName={metaClass}
+          meterSize={card ? 5 : 6}
+        />
+      ),
+    });
+  }
 
   return (
     <Animated.View
@@ -102,7 +144,7 @@ export const RecipeListRow = memo(function RecipeListRow({
             </View>
           )}
 
-          <View className={card ? 'gap-1 p-3.5' : 'min-w-0 flex-1 pr-1'}>
+          <View className={card ? 'gap-1 p-3.5' : 'min-w-0 flex-1'} style={card ? undefined : { paddingEnd: 4 }}>
             <Text
               className={card ? 'text-[15px] font-bold leading-5' : 'text-base font-bold leading-5'}
               style={{ color: colors.text }}
@@ -110,14 +152,25 @@ export const RecipeListRow = memo(function RecipeListRow({
             >
               {recipe.display_title ?? recipe.title}
             </Text>
-            {metadata.length > 0 && (
-              <Text
-                className={card ? 'mt-1 text-xs' : 'mt-1.5 text-sm'}
-                style={{ color: colors.textSecondary }}
-                numberOfLines={card ? 2 : 1}
+            {metaParts.length > 0 && (
+              <View
+                className={
+                  card
+                    ? 'mt-1 flex-row flex-wrap items-center'
+                    : 'mt-1.5 flex-row items-center overflow-hidden'
+                }
               >
-                {metadata}
-              </Text>
+                {metaParts.map((part, index) => (
+                  <Fragment key={part.key}>
+                    {index > 0 ? (
+                      <Text className={metaClass} style={metaStyle}>
+                        {' · '}
+                      </Text>
+                    ) : null}
+                    {part.node}
+                  </Fragment>
+                ))}
+              </View>
             )}
           </View>
         </Pressable>
@@ -126,9 +179,10 @@ export const RecipeListRow = memo(function RecipeListRow({
           <View
             className={
               card
-                ? 'absolute right-2 top-2 flex-row gap-1'
+                ? 'absolute top-2 flex-row gap-1'
                 : 'flex-row items-center'
             }
+            style={card ? { end: 8 } : undefined}
           >
             {onToggleFavorite != null && (
               <Pressable

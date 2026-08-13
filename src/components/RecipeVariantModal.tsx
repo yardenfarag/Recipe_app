@@ -6,6 +6,7 @@ import { ActivityIndicator, Pressable, ScrollView, Text, View } from 'react-nati
 
 import { SheetModal } from '@/components/SheetModal';
 import { useAuth } from '@/hooks/useAuth';
+import { useRtl } from '@/hooks/useRtl';
 import { useThemePreference } from '@/hooks/useThemePreference';
 import { RECIPE_VARIANTS, RecipeVariantKey } from '@/lib/recipeVariants';
 import { transformRecipe, TransformedRecipePayload } from '@/lib/supabase/transformRecipe';
@@ -39,6 +40,7 @@ export function RecipeVariantModal({
 }: RecipeVariantModalProps) {
   const { t } = useTranslation();
   const { colors } = useThemePreference();
+  const { chevronForward } = useRtl();
   const { user } = useAuth();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -136,13 +138,13 @@ export function RecipeVariantModal({
                 </View>
                 <View className="flex-1">
                   <Text className="text-base font-bold" style={{ color: colors.text }}>
-                    {option.label}
+                    {t(`recipe.variants.${option.key}.label`)}
                   </Text>
                   <Text className="mt-0.5 text-sm" style={{ color: colors.textSecondary }}>
-                    {option.description}
+                    {t(`recipe.variants.${option.key}.description`)}
                   </Text>
                 </View>
-                <Ionicons name="chevron-forward" size={18} color={colors.textSecondary} />
+                <Ionicons name={chevronForward} size={18} color={colors.textSecondary} />
               </Pressable>
             ))}
           </>

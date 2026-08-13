@@ -18,12 +18,18 @@ import { estimateScrapeCredits, GUEST_EXTRACT_LIMIT } from '../_shared/pricing.t
 import {
   canStartExtract,
   finalizeSignedInExtract,
+  finalizeGuestExtraction,
   getGuestExtractCount,
   guestRemainingFromCount,
   quotaFields,
   type QuotaSnapshot,
   type CreditReservation,
+  type GuestExtractionReservation,
+  markGuestExtractionCompensationPending,
+  markSignedInExtractCompensationPending,
+  refundGuestExtraction,
   refundSignedInExtract,
+  refundSignedInExtractAfterFinalizeFailure,
   reserveGuestExtraction,
   reserveSignedInExtract,
 } from '../_shared/quotas.ts';
@@ -122,6 +128,8 @@ Deno.serve(async (req) => {
   const authHeader = req.headers.get('Authorization');
   let userId: string | null = null;
   let creditReservation: CreditReservation | null = null;
+  let guestReservation: GuestExtractionReservation | null = null;
+  let compensationPending = false;
   let authedClient = authHeader ? createAuthedSupabase(authHeader) : null;
 
   if (authedClient) {
@@ -181,6 +189,18 @@ Deno.serve(async (req) => {
     }
   }
 
+  if (userId && !admin) {
+    return jsonResponse(
+      {
+        status: 'failed' as ExtractionStatus,
+        platform,
+        code: 'metering_error',
+        message: quotaBlockMessage('metering_error'),
+      },
+      500,
+    );
+  }
+
   let guestRemaining: number | null = null;
   if (!userId) {
     if (!guestInstallId || !admin) {
@@ -195,8 +215,19 @@ Deno.serve(async (req) => {
       );
     }
 
-    const guestCount = await getGuestExtractCount(admin, guestInstallId);
-    if (guestCount >= GUEST_EXTRACT_LIMIT) {
+    const reserved = await reserveGuestExtraction(admin, guestInstallId, requestId);
+    if ('error' in reserved) {
+      return jsonResponse(
+        {
+          status: 'failed' as ExtractionStatus,
+          platform,
+          code: 'metering_error',
+          message: 'Could not verify your free extraction allowance. Please try again.',
+        },
+        500,
+      );
+    }
+    if ('blocked' in reserved) {
       await logUsageEvent(admin, {
         guestInstallId,
         action: 'extract',
@@ -216,7 +247,8 @@ Deno.serve(async (req) => {
         429,
       );
     }
-    guestRemaining = guestRemainingFromCount(guestCount);
+    guestReservation = reserved.reservation;
+    guestRemaining = guestReservation.remaining;
   }
 
   try {
@@ -238,13 +270,26 @@ Deno.serve(async (req) => {
 
     if (isVideoTooLong(meta.durationSeconds) && !hasTextSources(meta) && platform !== 'web') {
       if (userId && creditReservation) {
-        await refundSignedInExtract(
+        const refunded = await compensateSignedInExtract(
           admin,
           userId,
-          creditReservation.reservationId,
+          creditReservation,
           'video_too_long',
         );
-        creditReservation = null;
+        compensationPending = !refunded;
+        if (refunded) creditReservation = null;
+      } else if (guestInstallId && guestReservation) {
+        const refunded = await compensateGuestExtraction(
+          admin,
+          guestInstallId,
+          guestReservation,
+          'video_too_long',
+        );
+        compensationPending = !refunded;
+        if (refunded) {
+          guestReservation = null;
+          guestRemaining = guestRemainingFromCount(await getGuestExtractCount(admin, guestInstallId));
+        }
       }
       await logUsageEvent(admin, {
         userId,
@@ -255,7 +300,11 @@ Deno.serve(async (req) => {
         tokensCharged: 0,
         durationMs: Date.now() - started,
         errorMessage: `duration_seconds=${meta.durationSeconds}`,
+        metadata: compensationMetadata(creditReservation, guestReservation, compensationPending),
       });
+      if (compensationPending) {
+        return compensationPendingResponse(platform, guestRemaining, creditReservation);
+      }
       return jsonResponse({
         status: 'failed' as ExtractionStatus,
         platform,
@@ -296,13 +345,23 @@ Deno.serve(async (req) => {
     if (status === 'failed') {
       const rejectedAsTooLong = videoSkippedReason === 'too_long';
       if (userId && creditReservation) {
-        await refundSignedInExtract(
+        const refunded = await compensateSignedInExtract(
           admin,
           userId,
-          creditReservation.reservationId,
+          creditReservation,
           rejectedAsTooLong ? 'video_too_long' : 'no_recipe_found',
         );
-        creditReservation = null;
+        compensationPending = !refunded;
+        if (refunded) creditReservation = null;
+      } else if (guestInstallId && guestReservation) {
+        const refunded = await compensateGuestExtraction(
+          admin,
+          guestInstallId,
+          guestReservation,
+          rejectedAsTooLong ? 'video_too_long' : 'no_recipe_found',
+        );
+        compensationPending = !refunded;
+        if (refunded) guestReservation = null;
       }
       // Failed finds do not consume recipe credits (same as guests).
       let snapshot: QuotaSnapshot | null = null;
@@ -325,8 +384,12 @@ Deno.serve(async (req) => {
         errorMessage: rejectedAsTooLong
           ? `duration_seconds=${meta.durationSeconds ?? 'unknown'}`
           : 'No recipe found',
+        metadata: compensationMetadata(creditReservation, guestReservation, compensationPending),
       });
 
+      if (compensationPending) {
+        return compensationPendingResponse(platform, guestRemaining, creditReservation);
+      }
       return jsonResponse({
         status,
         platform,
@@ -355,6 +418,7 @@ Deno.serve(async (req) => {
 
     const recipe = {
       title: gemini.title,
+      source_language: normalizeLanguageCode(gemini.source_language),
       original_url: canonicalOriginalUrl(platform, resolvedContentId, url),
       platform,
       image_url: imageUrl,
@@ -386,7 +450,20 @@ Deno.serve(async (req) => {
         creditReservation.reservationId,
       );
       if (!finalized) {
-        const code = 'metering_error';
+        const compensated = await compensateSignedInExtract(
+          admin,
+          userId,
+          creditReservation,
+          'finalize_failed',
+          true,
+        );
+        const failedReservation = creditReservation;
+        compensationPending = !compensated;
+        if (compensated) {
+          creditReservation = null;
+          snapshot = (await canStartExtract(admin, userId)).snapshot;
+        }
+        const code = compensationPending ? 'compensation_pending' : 'metering_error';
         await logUsageEvent(admin, {
           userId,
           action: 'extract',
@@ -400,8 +477,9 @@ Deno.serve(async (req) => {
           errorMessage: code,
           metadata: {
             request_id: requestId,
-            reservation_id: creditReservation.reservationId,
-            credit_source: creditReservation.source,
+            reservation_id: failedReservation.reservationId,
+            credit_source: failedReservation.source,
+            compensation_pending: compensationPending,
           },
         });
         return jsonResponse(
@@ -410,41 +488,55 @@ Deno.serve(async (req) => {
             platform,
             code,
             message: quotaBlockMessage(code),
+            compensation_pending: compensationPending,
+            tokens_charged: compensationPending ? 1 : 0,
             ...quotaFields(snapshot),
           },
           500,
         );
       }
-    } else if (guestInstallId && admin) {
-      const charged = await reserveGuestExtraction(admin, guestInstallId);
-      if ('error' in charged) {
+    } else if (guestInstallId && admin && guestReservation) {
+      const finalized = await finalizeGuestExtraction(
+        admin,
+        guestInstallId,
+        guestReservation.reservationId,
+      );
+      if (!finalized) {
+        const compensated = await compensateGuestExtraction(
+          admin,
+          guestInstallId,
+          guestReservation,
+          'finalize_failed',
+        );
+        compensationPending = !compensated;
+        if (compensated) {
+          guestReservation = null;
+          guestRemaining = guestRemainingFromCount(await getGuestExtractCount(admin, guestInstallId));
+        }
         await logUsageEvent(admin, {
           guestInstallId,
           action: 'extract',
           platform,
-          status: 'metering_error',
+          status: compensationPending ? 'compensation_pending' : 'metering_error',
           extractionSource: source,
           usages,
           scrapecreatorsCredits: scrapeCredits,
           tokensCharged: 0,
           durationMs: Date.now() - started,
-          errorMessage: 'guest_metering_error',
+          errorMessage: 'guest_finalize_error',
+          metadata: compensationMetadata(creditReservation, guestReservation, compensationPending),
         });
         return jsonResponse(
           {
             status: 'failed' as ExtractionStatus,
             platform,
-            code: 'metering_error',
+            code: compensationPending ? 'compensation_pending' : 'metering_error',
             message: 'Could not verify your free extraction allowance. Please try again.',
+            compensation_pending: compensationPending,
             guest_extracts_remaining: guestRemaining,
           },
           500,
         );
-      }
-      if ('blocked' in charged) {
-        guestRemaining = 0;
-      } else {
-        guestRemaining = charged.remaining;
       }
     }
 
@@ -481,13 +573,23 @@ Deno.serve(async (req) => {
     console.error('extract-recipe error:', err);
 
     if (userId && creditReservation) {
-      await refundSignedInExtract(
+      const refunded = await compensateSignedInExtract(
         admin,
         userId,
-        creditReservation.reservationId,
+        creditReservation,
         'extraction_error',
       );
-      creditReservation = null;
+      compensationPending = !refunded;
+      if (refunded) creditReservation = null;
+    } else if (!userId && guestInstallId && guestReservation) {
+      const refunded = await compensateGuestExtraction(
+        admin,
+        guestInstallId,
+        guestReservation,
+        'extraction_error',
+      );
+      compensationPending = !refunded;
+      if (refunded) guestReservation = null;
     }
 
     // Failed extractions do not consume guest quota — re-read remaining for the client.
@@ -506,8 +608,12 @@ Deno.serve(async (req) => {
       durationMs: Date.now() - started,
       errorMessage: errorMessage.slice(0, 500),
       scrapecreatorsCredits: estimateScrapeCredits(platform, false),
+      metadata: compensationMetadata(creditReservation, guestReservation, compensationPending),
     });
 
+    if (compensationPending) {
+      return compensationPendingResponse(platform, guestRemaining, creditReservation);
+    }
     if (err instanceof FetchError) {
       const lower = err.message.toLowerCase();
       const message =
@@ -555,6 +661,105 @@ Deno.serve(async (req) => {
     );
   }
 });
+
+async function compensateSignedInExtract(
+  admin: NonNullable<ReturnType<typeof createServiceSupabase>>,
+  userId: string,
+  reservation: CreditReservation,
+  reason: string,
+  afterFinalizeFailure = false,
+): Promise<boolean> {
+  const result = afterFinalizeFailure
+    ? await refundSignedInExtractAfterFinalizeFailure(
+        admin,
+        userId,
+        reservation.reservationId,
+      )
+    : await refundSignedInExtract(
+        admin,
+        userId,
+        reservation.reservationId,
+        reason,
+      );
+  if (result.confirmed) return true;
+
+  const queued = await markSignedInExtractCompensationPending(
+    admin,
+    userId,
+    reservation.reservationId,
+    reason,
+    result.error,
+  );
+  console.error('[extract-recipe] signed-in compensation pending', {
+    reservationId: reservation.reservationId,
+    reason,
+    queued,
+    error: result.error,
+  });
+  return false;
+}
+
+async function compensateGuestExtraction(
+  admin: NonNullable<ReturnType<typeof createServiceSupabase>>,
+  installId: string,
+  reservation: GuestExtractionReservation,
+  reason: string,
+): Promise<boolean> {
+  const result = await refundGuestExtraction(
+    admin,
+    installId,
+    reservation.reservationId,
+    reason,
+  );
+  if (result.confirmed) return true;
+
+  const queued = await markGuestExtractionCompensationPending(
+    admin,
+    installId,
+    reservation.reservationId,
+    reason,
+    result.error,
+  );
+  console.error('[extract-recipe] guest compensation pending', {
+    reservationId: reservation.reservationId,
+    reason,
+    queued,
+    error: result.error,
+  });
+  return false;
+}
+
+function compensationMetadata(
+  signedIn: CreditReservation | null,
+  guest: GuestExtractionReservation | null,
+  pending: boolean,
+): Record<string, unknown> {
+  if (!pending) return {};
+  return {
+    compensation_pending: true,
+    reservation_id: signedIn?.reservationId ?? guest?.reservationId ?? null,
+    reservation_kind: signedIn ? 'signed_in' : 'guest',
+  };
+}
+
+function compensationPendingResponse(
+  platform: Platform,
+  guestRemaining: number | null,
+  signedInReservation: CreditReservation | null,
+): Response {
+  return jsonResponse(
+    {
+      status: 'failed' as ExtractionStatus,
+      platform,
+      code: 'compensation_pending',
+      message: quotaBlockMessage('metering_error'),
+      compensation_pending: true,
+      tokens_charged: signedInReservation ? 1 : 0,
+      guest_extracts_remaining: guestRemaining,
+    },
+    500,
+  );
+}
 
 /** Buckets a Gemini result into full/failed/partial per the ADR 004 rules. */
 function classify(r: GeminiRecipe): {
@@ -634,6 +839,11 @@ function canonicalOriginalUrl(
   if (platform === 'instagram' && contentId) return canonicalInstagramUrl(contentId);
   if (platform === 'tiktok' && contentId) return canonicalTikTokUrl(contentId);
   return url.trim();
+}
+
+function normalizeLanguageCode(value: string | null | undefined): string {
+  const normalized = value?.trim().toLowerCase().split(/[-_]/)[0];
+  return normalized && /^[a-z]{2}$/.test(normalized) ? normalized : 'en';
 }
 
 async function resolveThumbnail(

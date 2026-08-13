@@ -34,6 +34,15 @@ const TIME_RULES = `- time_reasoning: one short phrase (prep + cook/bake + waits
 - estimated_time_minutes: TOTAL wall-clock minutes until ready — include oven and mandatory waits, not just hands-on time. Example: mix 15 + chill 30 + bake 12 + cool 5 → 62.`;
 
 const TAG_RULES = `- tags: 3–6 short lowercase labels (cuisine, meal, dish type, method, traits). Example: ["dessert","cookies","baked","american"]. No hashtags or invented diet claims.`;
+const LANGUAGE_RULE =
+  '- source_language: the lowercase ISO 639-1 language code used by the extracted title, ingredients, and instructions (for example en, es, he, ru, ar, de, or fr).';
+
+const INSTRUCTION_RULES = `- Rewrite the source directions as clear, complete, plain-language instructions for a home cook.
+- Preserve every explicit cooking action and keep the steps in the correct order. Split dense directions into separate steps when that makes them easier to follow.
+- Make each step actionable: name what to add or do, where to do it, and include any stated time, temperature, texture, or visual cue.
+- Whenever an ingredient is used, include its stated quantity and unit directly in that instruction (for example, "Add the 80 grams of sugar to the mixing bowl"). Keep the ingredient list and instructions consistent.
+- Never invent a quantity, ingredient, technique, time, temperature, equipment, or missing action. If a detail is absent, write the clearest faithful step possible without adding it.
+- Use short, simple sentences and direct verbs. Avoid vague wording such as "mix everything" when the source identifies the ingredients.`;
 
 const TEXT_SYSTEM_PROMPT = `You are a master chef. Analyze the provided text from a social media post or recipe webpage and extract a precise recipe.
 
@@ -42,10 +51,12 @@ Rules:
 - Comments marked "(from the video's creator)" are especially likely to contain the complete recipe.
 - When a structured recipe (schema.org JSON-LD) is present, prefer it over surrounding page chrome (ads, navigation, related posts).
 - Include ingredients with measurements, and step-by-step instructions when present.
+${INSTRUCTION_RULES}
 - Estimate a cost tier from 1-3 dollar signs and an effort level when you can infer them.
 ${TIME_RULES}
 ${CALORIE_RULES}
 ${TAG_RULES}
+${LANGUAGE_RULE}
 - If the text genuinely contains no recipe, set found_recipe to false and leave other fields empty.
 - Do NOT invent instructions if none are present — return what you found and leave instructions empty instead.
 - Return ONLY data matching the schema.`;
@@ -56,12 +67,14 @@ Rules:
 - Treat the video and text context as complementary sources — prefer explicit written measurements in text over visual guesses.
 - Comments marked "(from the video's creator)" are especially likely to contain the authoritative recipe.
 - Include ingredients with measurements, and step-by-step instructions.
+${INSTRUCTION_RULES}
 - For each instruction, set timestamp_seconds to when that step begins in the video (whole seconds from 0). Omit if unclear.
 - Steps must follow video chronology. Skip sponsor intros — first step may start after 0:15.
 - Estimate a cost tier from 1-3 dollar signs and an effort level.
 ${TIME_RULES}
 ${CALORIE_RULES}
 ${TAG_RULES}
+${LANGUAGE_RULE}
 - If the content genuinely contains no recipe, set found_recipe to false and leave other fields empty.
 - Do NOT invent instructions if none are present — return what you found and leave instructions empty instead.
 - Return ONLY data matching the schema.`;
@@ -71,6 +84,7 @@ const RECIPE_SCHEMA = {
   type: 'object',
   properties: {
     found_recipe: { type: 'boolean' },
+    source_language: { type: 'string' },
     title: { type: 'string' },
     servings: { type: 'integer' },
     ingredients: {
@@ -91,7 +105,11 @@ const RECIPE_SCHEMA = {
         type: 'object',
         properties: {
           step: { type: 'integer' },
-          text: { type: 'string' },
+          text: {
+            type: 'string',
+            description:
+              'Clear, complete, plain-language cooking direction with stated ingredient quantities included where used.',
+          },
           timestamp_seconds: {
             type: 'integer',
             description:
@@ -122,7 +140,14 @@ const RECIPE_SCHEMA = {
         '3–6 short lowercase labels: cuisine, meal, dish type, method, traits. Stable for trends.',
     },
   },
-  required: ['found_recipe', 'title', 'servings', 'ingredients', 'instructions'],
+  required: [
+    'found_recipe',
+    'source_language',
+    'title',
+    'servings',
+    'ingredients',
+    'instructions',
+  ],
 };
 
 const TIMESTAMP_MAP_PROMPT = `You map recipe steps to timestamps in a cooking video.
@@ -155,6 +180,7 @@ export type ExtractionSource = 'description' | 'comments' | 'captions' | 'video'
 
 export interface GeminiRecipe {
   found_recipe: boolean;
+  source_language: string;
   title: string;
   servings: number;
   ingredients: { name: string; quantity: number; unit: string }[];
@@ -180,6 +206,7 @@ export interface LadderResult {
 
 const EMPTY_RECIPE: GeminiRecipe = {
   found_recipe: false,
+  source_language: 'en',
   title: '',
   servings: 0,
   ingredients: [],

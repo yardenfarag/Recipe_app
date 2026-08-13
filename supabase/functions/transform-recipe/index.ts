@@ -168,9 +168,10 @@ Deno.serve(async (req) => {
     return jsonResponse({ error: 'Recipe must include at least one ingredient' }, 400);
   }
 
+  const usageDate = new Date().toISOString().slice(0, 10);
   const { data: remixCount, error: remixLimitError } = await admin.rpc('reserve_daily_remix', {
     p_user_id: user.id,
-    p_usage_date: new Date().toISOString().slice(0, 10),
+    p_usage_date: usageDate,
     p_limit: DAILY_REMIX_LIMIT,
   });
   if (remixLimitError) {
@@ -206,6 +207,7 @@ Deno.serve(async (req) => {
     });
 
     if (transformed.ingredients.length === 0) {
+      await refundRemixReservation(admin, user.id, usageDate);
       await logUsageEvent(admin, {
         userId: user.id,
         action: 'remix',
@@ -241,6 +243,7 @@ Deno.serve(async (req) => {
     });
   } catch (err) {
     console.error('transform-recipe error:', err);
+    await refundRemixReservation(admin, user.id, usageDate);
     await logUsageEvent(admin, {
       userId: user.id,
       action: 'remix',
@@ -259,6 +262,18 @@ Deno.serve(async (req) => {
     );
   }
 });
+
+async function refundRemixReservation(
+  admin: NonNullable<ReturnType<typeof createServiceSupabase>>,
+  userId: string,
+  usageDate: string,
+): Promise<void> {
+  const { error } = await admin.rpc('refund_daily_remix', {
+    p_user_id: userId,
+    p_usage_date: usageDate,
+  });
+  if (error) console.error('[transform-recipe] refund_daily_remix', error);
+}
 
 function requestIsTooLarge(req: Request, maxBytes: number): boolean {
   const contentLength = Number(req.headers.get('content-length'));

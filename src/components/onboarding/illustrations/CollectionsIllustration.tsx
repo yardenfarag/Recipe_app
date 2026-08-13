@@ -12,11 +12,17 @@ import Animated, {
 
 import { PhoneFrame } from '@/components/onboarding/illustrations/PhoneFrame';
 import { useThemePreference } from '@/hooks/useThemePreference';
+import { useTranslation } from 'react-i18next';
 
-const CHIPS = ['Dinner', 'Baking', 'Weeknight'] as const;
+const CHIP_KEYS = [
+  'onboarding.chipDinner',
+  'onboarding.chipBaking',
+  'onboarding.chipWeeknight',
+] as const;
 
 /** Soft collection chips that pulse into place. */
 export function CollectionsIllustration() {
+  const { t } = useTranslation();
   const { colors } = useThemePreference();
   const [reduceMotion, setReduceMotion] = useState(false);
   const pulse = useSharedValue(0);
@@ -67,9 +73,9 @@ export function CollectionsIllustration() {
           >
             Collections
           </Text>
-          {CHIPS.map((label, index) => (
+          {CHIP_KEYS.map((key, index) => (
             <Animated.View
-              key={label}
+              key={key}
               entering={
                 reduceMotion ? undefined : FadeInDown.delay(index * 90).springify().damping(16)
               }
@@ -95,7 +101,7 @@ export function CollectionsIllustration() {
                 }}
                 numberOfLines={1}
               >
-                {label}
+                {t(key)}
               </Text>
             </Animated.View>
           ))}

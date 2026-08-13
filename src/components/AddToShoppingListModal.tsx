@@ -7,10 +7,13 @@ import {
   Text,
   View,
 } from 'react-native';
+import { useTranslation } from 'react-i18next';
 
 import { SheetModal } from '@/components/SheetModal';
+import { useLanguagePreference } from '@/hooks/useLanguagePreference';
 import { useMeasurementPreference } from '@/hooks/useMeasurementPreference';
 import { useThemePreference } from '@/hooks/useThemePreference';
+import { resolveCulinaryLanguage } from '@/lib/culinaryUnits';
 import { displayIngredientAmount } from '@/lib/displayIngredientAmount';
 import { RecipeLanguageCode } from '@/lib/recipeLanguages';
 import { Ingredient } from '@/types/recipe';
@@ -34,8 +37,11 @@ export function AddToShoppingListModal({
   onClose,
   onConfirm,
 }: AddToShoppingListModalProps) {
+  const { t } = useTranslation();
   const { colors } = useThemePreference();
+  const { language: appLanguage } = useLanguagePreference();
   const { system: measurementSystem } = useMeasurementPreference();
+  const unitLanguage = resolveCulinaryLanguage(language, appLanguage);
   const [selected, setSelected] = useState<Set<number>>(() => new Set());
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -73,7 +79,7 @@ export function AddToShoppingListModal({
   async function handleConfirm() {
     const picked = ingredients.filter((_, index) => selected.has(index));
     if (picked.length === 0) {
-      setError('Pick at least one ingredient.');
+      setError(t('addToList.pickOne'));
       return;
     }
 
@@ -83,7 +89,7 @@ export function AddToShoppingListModal({
       await onConfirm(picked);
       onClose();
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Could not add to list.');
+      setError(err instanceof Error ? err.message : t('addToList.failed'));
     } finally {
       setSaving(false);
     }
@@ -93,7 +99,7 @@ export function AddToShoppingListModal({
     <SheetModal
       visible={visible}
       onClose={onClose}
-      title="Add to list"
+      title={t('addToList.title')}
       maxWidth={520}
       footer={
         <View className="border-t px-5 py-4" style={{ borderColor: colors.border }}>
@@ -110,7 +116,9 @@ export function AddToShoppingListModal({
               <ActivityIndicator color="#fff" />
             ) : (
               <Text className="text-sm font-bold text-white">
-                Add {selectedCount} item{selectedCount === 1 ? '' : 's'}
+                {t(selectedCount === 1 ? 'addToList.addOne' : 'addToList.addOther', {
+                  count: selectedCount,
+                })}
               </Text>
             )}
           </Pressable>
@@ -119,11 +127,16 @@ export function AddToShoppingListModal({
     >
       <View className="flex-row items-center justify-between px-5 pb-3">
         <Text className="text-sm" style={{ color: colors.textSecondary }}>
-          {selectedCount} of {ingredients.length} selected
+          {t('addToList.selected', { selected: selectedCount, total: ingredients.length })}
         </Text>
-        <Pressable onPress={toggleAll} className="active:opacity-70">
+        <Pressable
+          onPress={toggleAll}
+          className="active:opacity-70"
+          accessibilityRole="button"
+          accessibilityState={{ selected: allSelected }}
+        >
           <Text className="text-sm font-semibold" style={{ color: colors.primary }}>
-            {allSelected ? 'Deselect all' : 'Select all'}
+            {t(allSelected ? 'addToList.deselectAll' : 'addToList.selectAll')}
           </Text>
         </Pressable>
       </View>
@@ -147,6 +160,9 @@ export function AddToShoppingListModal({
                     : undefined
                 }
                 onPress={() => toggleIndex(index)}
+                accessibilityRole="checkbox"
+                accessibilityState={{ checked: isOn }}
+                accessibilityLabel={t('addToList.ingredientLabel', { name: ing.name })}
               >
                 <View
                   className="h-6 w-6 items-center justify-center rounded-md border-2"
@@ -158,15 +174,15 @@ export function AddToShoppingListModal({
                   {isOn ? <Ionicons name="checkmark" size={14} color="#fff" /> : null}
                 </View>
                 <Text
-                  className="flex-1 pr-2 text-base font-medium"
-                  style={{ color: colors.text }}
+                  className="flex-1 text-base font-medium"
+                  style={{ color: colors.text, paddingEnd: 8 }}
                 >
                   {ing.name}
                 </Text>
                 <Text className="text-sm tabular-nums" style={{ color: colors.textSecondary }}>
                   {displayIngredientAmount(ing.quantity, ing.unit, {
                     system: measurementSystem,
-                    language,
+                    language: unitLanguage,
                   })}
                 </Text>
               </Pressable>

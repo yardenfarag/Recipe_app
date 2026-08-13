@@ -25,13 +25,9 @@ export function BrandHeader({
   const rtl = isRtlAppLanguage(language);
   const isHero = size === 'hero';
   const centered = align === 'center';
-
-  // Prefer explicit RTL layout so the brand stack stays aligned even before a
-  // full I18nManager reload after changing language.
-  const rowDirection = centered ? undefined : rtl ? ('row-reverse' as const) : ('row' as const);
   const textAlign = centered ? ('center' as const) : rtl ? ('right' as const) : ('left' as const);
   const writingDirection = rtl ? ('rtl' as const) : ('ltr' as const);
-  const blockAlign = centered ? 'center' : rtl ? 'flex-end' : 'flex-start';
+  const blockAlign = centered ? 'center' : 'flex-start';
 
   return (
     <View
@@ -42,7 +38,7 @@ export function BrandHeader({
         style={
           centered
             ? { alignItems: 'center' }
-            : { flexDirection: rowDirection, alignItems: 'center', gap: 12 }
+            : { flexDirection: 'row', alignItems: 'center', gap: 12 }
         }
       >
         <View
@@ -63,7 +59,7 @@ export function BrandHeader({
                 letterSpacing: 0.6,
                 writingDirection: 'ltr',
                 textAlign,
-                alignSelf: centered ? 'center' : rtl ? 'flex-end' : 'flex-start',
+                alignSelf: centered ? 'center' : 'flex-start',
               }}
             >
               Pinch
@@ -105,7 +101,7 @@ export function BrandHeader({
               letterSpacing: 0.6,
               writingDirection: 'ltr',
               textAlign,
-              alignSelf: centered ? 'center' : rtl ? 'flex-end' : 'flex-start',
+              alignSelf: centered ? 'center' : 'flex-start',
             }}
           >
             Pinch

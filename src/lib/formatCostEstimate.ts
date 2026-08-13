@@ -1,66 +1,42 @@
-import * as Localization from 'expo-localization';
-
 import { CostEstimate } from '@/types/recipe';
 
-/**
- * ADR 008 — cost tier is stored locale-agnostic; display maps it per device
- * region. Regions not listed here fall back to text labels (Budget/
- * Moderate/Premium) rather than guessing a currency symbol — deliberate
- * per ADR 008, not an oversight, but kept as wide as practical.
- */
-const CURRENCY_SYMBOL_BY_REGION: Record<string, string> = {
-  // USD
-  US: '$',
-  CA: '$',
-  AU: '$',
-  NZ: '$',
-  SG: '$',
-  HK: '$',
-  // Euro zone
-  DE: '€',
-  FR: '€',
-  ES: '€',
-  IT: '€',
-  NL: '€',
-  PT: '€',
-  IE: '€',
-  AT: '€',
-  BE: '€',
-  FI: '€',
-  GR: '€',
-  // Other single-currency regions
-  IL: '₪',
-  GB: '£',
-  JP: '¥',
-  CN: '¥',
-  IN: '₹',
-  KR: '₩',
-  BR: 'R$',
-  MX: '$',
-  ZA: 'R',
-  CH: 'CHF',
-  SE: 'kr',
-  NO: 'kr',
-  DK: 'kr',
-};
+export const COST_TIER_COUNT = 3;
+
+export const COST_I18N_KEYS = {
+  $: 'recipe.cost.budget',
+  $$: 'recipe.cost.typical',
+  $$$: 'recipe.cost.expensive',
+} as const;
+
+const FILLED_DOT = '\u25CF'; // ●
+const EMPTY_DOT = '\u25CB'; // ○
+/** Keep the meter LTR inside RTL strings so ●○○ never visually flips to ○○●. */
+const LRI = '\u2066';
+const PDI = '\u2069';
 
 const TEXT_LABELS: Record<CostEstimate, string> = {
   $: 'Budget',
-  $$: 'Moderate',
-  $$$: 'Premium',
+  $$: 'Typical',
+  $$$: 'Expensive',
 };
 
-export function formatCostEstimate(tier: CostEstimate): string {
-  const region = Localization.getLocales()[0]?.regionCode ?? undefined;
-  const symbol = region ? CURRENCY_SYMBOL_BY_REGION[region] : undefined;
+export function costFilledCount(tier: CostEstimate): number {
+  return tier.length;
+}
 
-  if (!symbol) return TEXT_LABELS[tier];
+export function costMeterString(tier: CostEstimate): string {
+  const filled = costFilledCount(tier);
+  const meter = FILLED_DOT.repeat(filled) + EMPTY_DOT.repeat(COST_TIER_COUNT - filled);
+  return `${LRI}${meter}${PDI}`;
+}
 
-  // Only single-character symbols ($, €, £, ₪, ¥, ₹, ₩, R) repeat cleanly
-  // into a "$$"-style tier indicator. Multi-character codes (CHF, kr, R$)
-  // would otherwise concatenate into nonsense (e.g. "CHFCHF") — fall back
-  // to the locale-neutral text label for those instead.
-  if (symbol.length > 1) return TEXT_LABELS[tier];
-
-  return symbol.repeat(tier.length);
+/**
+ * Compact cost label for text-only contexts: "●○○ Budget".
+ * UI prefers `CostEstimateDisplay` so dots are drawn, not font glyphs.
+ */
+export function formatCostEstimate(
+  tier: CostEstimate,
+  textLabels: Record<CostEstimate, string> = TEXT_LABELS,
+): string {
+  return `${costMeterString(tier)} ${textLabels[tier]}`;
 }

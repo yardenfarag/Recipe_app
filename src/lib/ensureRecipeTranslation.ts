@@ -1,5 +1,5 @@
-import { effectiveSourceLanguage } from '@/lib/appLanguages';
 import { localizeIngredientUnits } from '@/lib/culinaryUnits';
+import { resolveRecipeSourceLanguage } from '@/lib/recipeSourceLanguage';
 import { translateRecipe } from '@/lib/supabase/translateRecipe';
 import type { Ingredient, Instruction, RecipeTranslationContent } from '@/types/recipe';
 import type { RecipeLanguageCode } from '@/lib/recipeLanguages';
@@ -25,7 +25,12 @@ export type CanonicalRecipeText = {
 export type EnsureTranslationResult =
   | { status: 'source'; content: RecipeTranslationContent }
   | { status: 'ok'; content: RecipeTranslationContent; fromCache: boolean }
-  | { status: 'failed'; message: string; content: RecipeTranslationContent };
+  | {
+      status: 'failed';
+      message: string;
+      code?: string;
+      content: RecipeTranslationContent;
+    };
 
 /**
  * Returns content in `targetLanguage`, translating via Gemini when needed.
@@ -36,7 +41,7 @@ export async function ensureRecipeTranslation(options: {
   targetLanguage: string;
   cached?: RecipeTranslationContent | null;
 }): Promise<EnsureTranslationResult> {
-  const source = effectiveSourceLanguage(options.recipe.source_language);
+  const source = resolveRecipeSourceLanguage(options.recipe);
   const canonical: RecipeTranslationContent = {
     title: options.recipe.title,
     ingredients: options.recipe.ingredients,
@@ -76,6 +81,7 @@ export async function ensureRecipeTranslation(options: {
     return {
       status: 'failed',
       message: result.message ?? "Couldn't translate this recipe. Try again.",
+      code: result.code,
       content: canonical,
     };
   }

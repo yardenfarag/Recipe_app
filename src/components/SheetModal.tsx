@@ -9,7 +9,9 @@ import {
   useWindowDimensions,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { useTranslation } from 'react-i18next';
 
+import { useRtl } from '@/hooks/useRtl';
 import { useThemePreference } from '@/hooks/useThemePreference';
 
 type SheetModalProps = {
@@ -43,9 +45,12 @@ export function SheetModal({
   showCloseButton = true,
   headerLeft,
 }: SheetModalProps) {
+  const { t } = useTranslation();
   const { colors } = useThemePreference();
+  const { rtl } = useRtl();
   const { height: windowHeight } = useWindowDimensions();
   const isWeb = Platform.OS === 'web';
+  const dirStyle = { direction: rtl ? ('rtl' as const) : ('ltr' as const) };
 
   const header = (
     <View className="flex-row items-center justify-between px-5 pb-2 pt-4">
@@ -55,7 +60,7 @@ export function SheetModal({
         <Pressable
           onPress={onClose}
           accessibilityRole="button"
-          accessibilityLabel="Close"
+          accessibilityLabel={t('common.close')}
           className="h-10 w-10 items-center justify-center rounded-full active:opacity-70"
           style={{ backgroundColor: colors.primarySoft }}
         >
@@ -80,11 +85,11 @@ export function SheetModal({
       <Modal visible={visible} transparent animationType="fade" onRequestClose={onClose}>
         <View
           className="flex-1 items-center justify-center px-4 py-8"
-          style={{ backgroundColor: 'rgba(20, 16, 28, 0.48)' }}
+          style={{ backgroundColor: 'rgba(20, 16, 28, 0.48)', ...dirStyle }}
         >
           <Pressable
             accessibilityRole="button"
-            accessibilityLabel="Dismiss"
+            accessibilityLabel={t('common.dismiss')}
             onPress={onClose}
             style={{
               position: 'absolute',
@@ -96,6 +101,8 @@ export function SheetModal({
           />
           <View
             pointerEvents="auto"
+            accessibilityViewIsModal
+            accessibilityLabel={title}
             style={{
               width: '100%',
               maxWidth,
@@ -127,7 +134,12 @@ export function SheetModal({
       presentationStyle="pageSheet"
       onRequestClose={onClose}
     >
-      <SafeAreaView className="flex-1" style={{ backgroundColor: colors.background }}>
+      <SafeAreaView
+        className="flex-1"
+        style={{ backgroundColor: colors.background, ...dirStyle }}
+        accessibilityViewIsModal
+        accessibilityLabel={title}
+      >
         {header}
         <View className="flex-1">{children}</View>
         {footer}

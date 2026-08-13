@@ -1,9 +1,11 @@
 import Ionicons from '@expo/vector-icons/Ionicons';
 import { useState } from 'react';
 import { Pressable, ScrollView, Text, TextInput, View } from 'react-native';
+import { useTranslation } from 'react-i18next';
 
 import { useThemePreference } from '@/hooks/useThemePreference';
 import { RECIPE_SORT_OPTIONS, RecipeSortKey } from '@/lib/recipeListQuery';
+import { translateRecipeTag } from '@/lib/recipeTags';
 
 export type LibraryCollectionChip = {
   id: string;
@@ -51,6 +53,7 @@ export function RecipeLibraryToolbar({
   onManageCollection,
   onCreateCollection,
 }: RecipeLibraryToolbarProps) {
+  const { t } = useTranslation();
   const { colors, scheme } = useThemePreference();
   const isDark = scheme === 'dark';
   const inactiveChipBg = isDark ? 'rgba(40,36,48,0.6)' : 'rgba(255,255,255,0.55)';
@@ -76,7 +79,7 @@ export function RecipeLibraryToolbar({
         <TextInput
           className="flex-1 px-3 py-3.5 text-base"
           style={{ color: colors.text }}
-          placeholder="Search recipes…"
+          placeholder={t('library.searchPlaceholder')}
           placeholderTextColor={colors.textSecondary}
           value={search}
           onChangeText={onSearchChange}
@@ -90,7 +93,7 @@ export function RecipeLibraryToolbar({
             onPress={() => onSearchChange('')}
             hitSlop={8}
             className="active:opacity-70"
-            accessibilityLabel="Clear search"
+            accessibilityLabel={t('library.clearSearch')}
           >
             <Ionicons name="close-circle" size={18} color={colors.textSecondary} />
           </Pressable>
@@ -107,7 +110,7 @@ export function RecipeLibraryToolbar({
             }}
             accessibilityRole="button"
             accessibilityState={{ selected: favoritesOnly }}
-            accessibilityLabel="Favorites filter"
+            accessibilityLabel={t('library.favoritesFilter')}
           >
             <Ionicons
               name={favoritesOnly ? 'heart' : 'heart-outline'}
@@ -118,7 +121,7 @@ export function RecipeLibraryToolbar({
               className="text-sm font-semibold"
               style={{ color: favoritesOnly ? '#fff' : colors.text }}
             >
-              Favorites
+              {t('library.favorites')}
             </Text>
           </Pressable>
         ) : null}
@@ -131,11 +134,11 @@ export function RecipeLibraryToolbar({
           }}
           accessibilityRole="button"
           accessibilityState={{ expanded: filtersOpen }}
-          accessibilityLabel="Toggle filters"
+          accessibilityLabel={t('library.toggleFilters')}
         >
           <Ionicons name="options-outline" size={14} color={colors.primary} />
           <Text className="text-sm font-semibold" style={{ color: colors.primary }}>
-            Filter
+            {t('library.filter')}
           </Text>
           {filtersActive ? (
             <View
@@ -146,10 +149,12 @@ export function RecipeLibraryToolbar({
         </Pressable>
 
         <Text
-          className={`ml-auto text-xs ${isSearchPending ? 'opacity-60' : ''}`}
-          style={{ color: colors.textSecondary }}
+          className={`text-xs ${isSearchPending ? 'opacity-60' : ''}`}
+          style={{ color: colors.textSecondary, marginStart: 'auto' }}
         >
-          {resultCount} {resultCount === 1 ? 'recipe' : 'recipes'}
+          {t(resultCount === 1 ? 'library.recipeCountOne' : 'library.recipeCountOther', {
+            count: resultCount,
+          })}
         </Text>
       </View>
 
@@ -158,7 +163,7 @@ export function RecipeLibraryToolbar({
           <ScrollView
             horizontal
             showsHorizontalScrollIndicator={false}
-            contentContainerStyle={{ gap: 8, paddingRight: 4 }}
+            contentContainerStyle={{ gap: 8, paddingEnd: 4 }}
             keyboardShouldPersistTaps="handled"
           >
             {RECIPE_SORT_OPTIONS.map((option) => {
@@ -167,6 +172,8 @@ export function RecipeLibraryToolbar({
                 <Pressable
                   key={option.key}
                   onPress={() => onSortChange(option.key)}
+                  accessibilityRole="button"
+                  accessibilityState={{ selected: active }}
                   className="flex-row items-center gap-1.5 rounded-[14px] px-3.5 py-2 active:opacity-80"
                   style={{
                     backgroundColor: active ? colors.primary : inactiveChipBg,
@@ -181,7 +188,7 @@ export function RecipeLibraryToolbar({
                     className="text-sm font-semibold"
                     style={{ color: active ? '#fff' : colors.text }}
                   >
-                    {option.label}
+                    {t(`library.sort.${option.key}`)}
                   </Text>
                 </Pressable>
               );
@@ -195,12 +202,12 @@ export function RecipeLibraryToolbar({
                   className="text-xs font-semibold uppercase tracking-wide"
                   style={{ color: colors.textSecondary }}
                 >
-                  Tags
+                  {t('library.tags')}
                 </Text>
                 {selectedTags.length > 0 && onClearTags ? (
                   <Pressable onPress={onClearTags} hitSlop={8} className="active:opacity-70">
                     <Text className="text-xs font-semibold" style={{ color: colors.primary }}>
-                      Clear
+                      {t('common.clear')}
                     </Text>
                   </Pressable>
                 ) : null}
@@ -208,7 +215,7 @@ export function RecipeLibraryToolbar({
               <ScrollView
                 horizontal
                 showsHorizontalScrollIndicator={false}
-                contentContainerStyle={{ gap: 8, paddingRight: 4 }}
+                contentContainerStyle={{ gap: 8, paddingEnd: 4 }}
                 keyboardShouldPersistTaps="handled"
               >
                 {availableTags.map((tag) => {
@@ -217,16 +224,18 @@ export function RecipeLibraryToolbar({
                     <Pressable
                       key={tag}
                       onPress={() => onToggleTag?.(tag)}
+                      accessibilityRole="button"
+                      accessibilityState={{ selected: active }}
                       className="rounded-[14px] px-3.5 py-2 active:opacity-80"
                       style={{
                         backgroundColor: active ? colors.primary : inactiveChipBg,
                       }}
                     >
                       <Text
-                        className="text-sm font-semibold capitalize"
+                        className="text-sm font-semibold"
                         style={{ color: active ? '#fff' : colors.text }}
                       >
-                        {tag}
+                        {translateRecipeTag(tag, t)}
                       </Text>
                     </Pressable>
                   );
@@ -240,12 +249,12 @@ export function RecipeLibraryToolbar({
               className="text-xs font-semibold uppercase tracking-wide"
               style={{ color: colors.textSecondary }}
             >
-              Collections
+              {t('library.collections')}
             </Text>
             <ScrollView
               horizontal
               showsHorizontalScrollIndicator={false}
-              contentContainerStyle={{ gap: 8, paddingRight: 4 }}
+              contentContainerStyle={{ gap: 8, paddingEnd: 4 }}
               keyboardShouldPersistTaps="handled"
             >
               <Pressable
@@ -259,7 +268,7 @@ export function RecipeLibraryToolbar({
                   className="text-sm font-semibold"
                   style={{ color: selectedCollectionId == null ? '#fff' : colors.text }}
                 >
-                  All
+                  {t('library.allCollections')}
                 </Text>
               </Pressable>
               {collections.map((collection) => {
@@ -269,6 +278,8 @@ export function RecipeLibraryToolbar({
                     key={collection.id}
                     onPress={() => onSelectCollection?.(active ? null : collection.id)}
                     onLongPress={() => onLongPressCollection?.(collection.id)}
+                    accessibilityRole="button"
+                    accessibilityState={{ selected: active }}
                     className="flex-row items-center gap-1.5 rounded-[14px] px-3.5 py-2 active:opacity-80"
                     style={{
                       backgroundColor: active ? colors.primary : inactiveChipBg,
@@ -292,7 +303,9 @@ export function RecipeLibraryToolbar({
                           onManageCollection(collection.id);
                         }}
                         hitSlop={8}
-                        accessibilityLabel={`Manage ${collection.name}`}
+                        accessibilityLabel={t('library.manageCollection', {
+                          name: collection.name,
+                        })}
                       >
                         <Ionicons
                           name="ellipsis-horizontal"
@@ -312,7 +325,7 @@ export function RecipeLibraryToolbar({
                 >
                   <Ionicons name="add" size={14} color={colors.primary} />
                   <Text className="text-sm font-semibold" style={{ color: colors.primary }}>
-                    New
+                    {t('library.new')}
                   </Text>
                 </Pressable>
               ) : null}

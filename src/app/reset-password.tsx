@@ -2,7 +2,17 @@ import Ionicons from '@expo/vector-icons/Ionicons';
 import * as Linking from 'expo-linking';
 import { router } from 'expo-router';
 import { useEffect, useState } from 'react';
-import { ActivityIndicator, Pressable, Text, TextInput, View } from 'react-native';
+import {
+  ActivityIndicator,
+  KeyboardAvoidingView,
+  Platform,
+  Pressable,
+  ScrollView,
+  Text,
+  TextInput,
+  View,
+} from 'react-native';
+import { useTranslation } from 'react-i18next';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { useThemePreference } from '@/hooks/useThemePreference';
@@ -10,6 +20,7 @@ import { getPasswordStrength, validatePassword } from '@/lib/authValidation';
 import { consumePasswordRecoveryUrl, updatePassword } from '@/lib/supabase/auth';
 
 export default function ResetPasswordScreen() {
+  const { t } = useTranslation();
   const linkingUrl = Linking.useLinkingURL();
   const [recoveryUrl, setRecoveryUrl] = useState<string | null | undefined>(undefined);
   const [ready, setReady] = useState(false);
@@ -47,7 +58,7 @@ export default function ResetPasswordScreen() {
 
     if (!recoveryUrl) {
       setReady(false);
-      setError('Open the reset link from your email to continue.');
+      setError(t('resetPassword.openLink'));
       return;
     }
 
@@ -65,7 +76,7 @@ export default function ResetPasswordScreen() {
         if (active) {
           setReady(false);
           setError(
-            err instanceof Error ? err.message : 'This password reset link is invalid or expired.',
+            err instanceof Error ? err.message : t('resetPassword.invalidLink'),
           );
         }
       });
@@ -73,16 +84,22 @@ export default function ResetPasswordScreen() {
     return () => {
       active = false;
     };
-  }, [recoveryUrl]);
+  }, [recoveryUrl, t]);
 
   async function handleUpdatePassword() {
     const validationError = validatePassword(password);
     if (validationError) {
-      setError(validationError);
+      setError(
+        validationError === 'Use at least 8 characters.'
+          ? t('auth.passwordMin')
+          : validationError === 'Include at least one letter.'
+            ? t('auth.passwordLetter')
+            : t('auth.passwordNumber'),
+      );
       return;
     }
     if (password !== confirmation) {
-      setError('Passwords do not match.');
+      setError(t('resetPassword.mismatch'));
       return;
     }
 
@@ -92,7 +109,7 @@ export default function ResetPasswordScreen() {
       await updatePassword(password);
       setDone(true);
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Your password could not be updated.');
+      setError(err instanceof Error ? err.message : t('resetPassword.updateFailed'));
     } finally {
       setLoading(false);
     }
@@ -112,17 +129,17 @@ export default function ResetPasswordScreen() {
             <Ionicons name="checkmark-circle-outline" size={34} color={colors.primary} />
           </View>
           <Text className="mb-2 text-center text-2xl font-bold" style={{ color: colors.text }}>
-            Password updated
+            {t('resetPassword.updatedTitle')}
           </Text>
           <Text className="mb-8 text-center text-base leading-6" style={{ color: colors.textSecondary }}>
-            You’re signed in. Your recipes are ready whenever you are.
+            {t('resetPassword.updatedBody')}
           </Text>
           <Pressable
             className="w-full items-center rounded-full py-4"
             style={{ backgroundColor: colors.primary }}
             onPress={() => router.replace('/')}
           >
-            <Text className="text-lg font-bold text-white">Go to library</Text>
+            <Text className="text-lg font-bold text-white">{t('recipe.goToLibrary')}</Text>
           </Pressable>
         </View>
       </SafeAreaView>
@@ -130,7 +147,17 @@ export default function ResetPasswordScreen() {
   }
 
   return (
-    <SafeAreaView className="flex-1 px-6 pt-8" style={{ backgroundColor: colors.background }}>
+    <SafeAreaView className="flex-1" style={{ backgroundColor: colors.background }}>
+      <KeyboardAvoidingView
+        className="flex-1"
+        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+      >
+        <ScrollView
+          className="flex-1 px-6"
+          contentContainerStyle={{ flexGrow: 1, paddingTop: 32, paddingBottom: 32 }}
+          keyboardShouldPersistTaps="handled"
+          keyboardDismissMode={Platform.OS === 'ios' ? 'interactive' : 'on-drag'}
+        >
       <View
         className="mb-6 h-12 w-12 items-center justify-center rounded-2xl"
         style={{ backgroundColor: colors.primarySoft }}
@@ -138,10 +165,10 @@ export default function ResetPasswordScreen() {
         <Ionicons name="lock-open-outline" size={24} color={colors.primary} />
       </View>
       <Text className="mb-2 text-2xl font-bold" style={{ color: colors.text }}>
-        Choose a new password
+        {t('resetPassword.chooseTitle')}
       </Text>
       <Text className="mb-6 text-sm leading-5" style={{ color: colors.textSecondary }}>
-        Use at least 8 characters with one letter and one number.
+        {t('resetPassword.chooseHint')}
       </Text>
 
       {!ready && !error && <ActivityIndicator color={colors.primary} />}
@@ -155,7 +182,7 @@ export default function ResetPasswordScreen() {
             <TextInput
               className="flex-1 py-4 text-base"
               style={{ color: colors.text }}
-              placeholder="New password"
+              placeholder={t('resetPassword.newPassword')}
               placeholderTextColor={colors.textSecondary}
               value={password}
               onChangeText={(value) => {
@@ -171,7 +198,7 @@ export default function ResetPasswordScreen() {
               onPress={() => setShowPassword((value) => !value)}
               hitSlop={10}
               accessibilityRole="button"
-              accessibilityLabel={showPassword ? 'Hide password' : 'Show password'}
+              accessibilityLabel={t(showPassword ? 'auth.hidePassword' : 'auth.showPassword')}
             >
               <Ionicons
                 name={showPassword ? 'eye-off-outline' : 'eye-outline'}
@@ -203,8 +230,7 @@ export default function ResetPasswordScreen() {
               })}
             </View>
             <Text className="text-xs" style={{ color: colors.textSecondary }}>
-              {strength[0].toUpperCase()}
-              {strength.slice(1)} password
+              {t(`auth.strength.${strength}`)}
             </Text>
           </View>
 
@@ -215,7 +241,7 @@ export default function ResetPasswordScreen() {
               borderColor: colors.border,
               backgroundColor: colors.surface,
             }}
-            placeholder="Confirm new password"
+            placeholder={t('resetPassword.confirmPassword')}
             placeholderTextColor={colors.textSecondary}
             value={confirmation}
             onChangeText={(value) => {
@@ -254,7 +280,7 @@ export default function ResetPasswordScreen() {
           {loading ? (
             <ActivityIndicator color="#fff" />
           ) : (
-            <Text className="text-lg font-bold text-white">Update password</Text>
+            <Text className="text-lg font-bold text-white">{t('resetPassword.update')}</Text>
           )}
         </Pressable>
       )}
@@ -266,10 +292,12 @@ export default function ResetPasswordScreen() {
           onPress={() => router.replace('/auth?mode=forgot')}
         >
           <Text className="text-base font-semibold" style={{ color: colors.text }}>
-            Request a new reset link
+            {t('resetPassword.requestNewLink')}
           </Text>
         </Pressable>
       )}
+        </ScrollView>
+      </KeyboardAvoidingView>
     </SafeAreaView>
   );
 }

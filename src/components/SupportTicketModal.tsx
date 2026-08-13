@@ -2,12 +2,15 @@ import { useState } from 'react';
 import {
   ActivityIndicator,
   Alert,
+  KeyboardAvoidingView,
+  Platform,
   Pressable,
   ScrollView,
   Text,
   TextInput,
   View,
 } from 'react-native';
+import { useTranslation } from 'react-i18next';
 
 import { SheetModal } from '@/components/SheetModal';
 import { useAuth } from '@/hooks/useAuth';
@@ -17,12 +20,7 @@ import {
   type SupportTicketCategory,
 } from '@/lib/supabase/supportTickets';
 
-const CATEGORIES: { key: SupportTicketCategory; label: string }[] = [
-  { key: 'bug', label: 'Bug' },
-  { key: 'billing', label: 'Billing / plan' },
-  { key: 'account', label: 'Account' },
-  { key: 'other', label: 'Other' },
-];
+const CATEGORIES: SupportTicketCategory[] = ['bug', 'billing', 'account', 'other'];
 
 interface SupportTicketModalProps {
   visible: boolean;
@@ -30,6 +28,7 @@ interface SupportTicketModalProps {
 }
 
 export function SupportTicketModal({ visible, onClose }: SupportTicketModalProps) {
+  const { t } = useTranslation();
   const { user } = useAuth();
   const { colors } = useThemePreference();
   const [category, setCategory] = useState<SupportTicketCategory>('bug');
@@ -48,11 +47,11 @@ export function SupportTicketModal({ visible, onClose }: SupportTicketModalProps
       setMessage('');
       setCategory('bug');
       onClose();
-      Alert.alert('Ticket sent', 'Thanks — we’ll look into it.');
+      Alert.alert(t('support.sentTitle'), t('support.sentBody'));
     } catch (err) {
       Alert.alert(
-        'Could not send',
-        err instanceof Error ? err.message : 'Please try again.',
+        t('support.sendFailed'),
+        err instanceof Error ? err.message : t('common.tryAgain'),
       );
     } finally {
       setSubmitting(false);
@@ -63,25 +62,34 @@ export function SupportTicketModal({ visible, onClose }: SupportTicketModalProps
     <SheetModal
       visible={visible}
       onClose={onClose}
-      title="Report an issue"
+      title={t('support.title')}
       maxWidth={520}
       showCloseButton
     >
-      <ScrollView className="flex-1 px-5" contentContainerStyle={{ paddingBottom: 40 }}>
+      <KeyboardAvoidingView
+        className="flex-1"
+        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+      >
+      <ScrollView
+        className="flex-1 px-5"
+        contentContainerStyle={{ paddingBottom: 40 }}
+        keyboardShouldPersistTaps="handled"
+        keyboardDismissMode={Platform.OS === 'ios' ? 'interactive' : 'on-drag'}
+      >
         <Text className="mb-5 text-sm leading-5" style={{ color: colors.textSecondary }}>
-          Tell us what went wrong. We read every ticket.
+          {t('support.hint')}
         </Text>
 
         <Text className="mb-2 text-sm font-semibold" style={{ color: colors.text }}>
-          Category
+          {t('support.category')}
         </Text>
         <View className="mb-4 flex-row flex-wrap gap-2">
           {CATEGORIES.map((item) => {
-            const selected = category === item.key;
+            const selected = category === item;
             return (
               <Pressable
-                key={item.key}
-                onPress={() => setCategory(item.key)}
+                key={item}
+                onPress={() => setCategory(item)}
                 className="rounded-full px-3 py-2"
                 style={{
                   backgroundColor: selected ? colors.primarySoft : colors.frosted,
@@ -93,7 +101,7 @@ export function SupportTicketModal({ visible, onClose }: SupportTicketModalProps
                   className="text-sm font-semibold"
                   style={{ color: selected ? colors.primary : colors.text }}
                 >
-                  {item.label}
+                  {t(`support.categories.${item}`)}
                 </Text>
               </Pressable>
             );
@@ -101,7 +109,7 @@ export function SupportTicketModal({ visible, onClose }: SupportTicketModalProps
         </View>
 
         <Text className="mb-2 text-sm font-semibold" style={{ color: colors.text }}>
-          What happened?
+          {t('support.whatHappened')}
         </Text>
         <TextInput
           className="mb-4 min-h-[140px] rounded-[18px] px-4 py-3 text-base"
@@ -115,7 +123,7 @@ export function SupportTicketModal({ visible, onClose }: SupportTicketModalProps
           multiline
           value={message}
           onChangeText={setMessage}
-          placeholder="Steps, what you expected, and what you saw…"
+          placeholder={t('support.placeholder')}
           placeholderTextColor={colors.textSecondary}
           editable={!submitting}
         />
@@ -129,16 +137,17 @@ export function SupportTicketModal({ visible, onClose }: SupportTicketModalProps
           {submitting ? (
             <ActivityIndicator color="#fff" />
           ) : (
-            <Text className="text-base font-bold text-white">Submit ticket</Text>
+            <Text className="text-base font-bold text-white">{t('support.submit')}</Text>
           )}
         </Pressable>
 
         <Pressable onPress={onClose} className="items-center py-3 active:opacity-70">
           <Text className="text-sm font-semibold" style={{ color: colors.textSecondary }}>
-            Cancel
+            {t('common.cancel')}
           </Text>
         </Pressable>
       </ScrollView>
+      </KeyboardAvoidingView>
     </SheetModal>
   );
 }

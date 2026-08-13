@@ -1,7 +1,7 @@
 begin;
 
 create extension if not exists pgtap with schema extensions;
-select plan(17);
+select plan(43);
 
 insert into auth.users (
   instance_id, id, aud, role, email, encrypted_password,
@@ -125,6 +125,30 @@ select is(
   2,
   'duplicate refund does not add balance'
 );
+select is(
+  public.reopen_refunded_recipe_credit(
+    '10000000-0000-4000-8000-000000000001',
+    '2099-01',
+    'request-paid-01',
+    15
+  )->>'status',
+  'reserved',
+  'an unknown-outcome retry can reopen a refunded signed-in reservation'
+);
+select is(
+  (select token_balance from public.profiles
+   where id = '10000000-0000-4000-8000-000000000001'),
+  1,
+  'reopening a refunded paid reservation charges once'
+);
+select ok(
+  public.refund_recipe_credit(
+    '10000000-0000-4000-8000-000000000001',
+    (select (result->>'reservation_id')::uuid from paid_reservation),
+    'retry_cleanup'
+  ),
+  'a reopened reservation remains refundable'
+);
 
 update public.profiles
 set token_balance = 0
@@ -195,6 +219,196 @@ select is(
    where user_id = '10000000-0000-4000-8000-000000000001'),
   1,
   'only one purchase grant is recorded'
+);
+
+create temporary table finalize_failure_reservation as
+select public.reserve_recipe_credit(
+  '10000000-0000-4000-8000-000000000001',
+  '2099-04',
+  'request-finalize-failure',
+  15
+) as result;
+
+select ok(
+  public.finalize_recipe_credit(
+    '10000000-0000-4000-8000-000000000001',
+    (select (result->>'reservation_id')::uuid from finalize_failure_reservation)
+  ),
+  'recipe credit can reach finalized state'
+);
+select ok(
+  public.refund_recipe_credit_after_finalize_failure(
+    '10000000-0000-4000-8000-000000000001',
+    (select (result->>'reservation_id')::uuid from finalize_failure_reservation)
+  ),
+  'a failed finalize response refunds even if the transaction committed'
+);
+select is(
+  (select extract_count from public.extract_usage_monthly
+   where user_id = '10000000-0000-4000-8000-000000000001'
+     and year_month = '2099-04'),
+  0,
+  'finalize-failure refund restores signed-in allowance'
+);
+
+create temporary table guest_reservation as
+select public.reserve_guest_extraction_v2(
+  'install-billing-test',
+  'guest-request-01',
+  3
+) as result;
+
+select ok(
+  (select result->>'reservation_id' from guest_reservation) is not null,
+  'guest extraction is reserved before work'
+);
+select is(
+  (select extract_count from public.guest_usage where install_id = 'install-billing-test'),
+  1,
+  'guest reservation increments usage'
+);
+select is(
+  public.reserve_guest_extraction_v2(
+    'install-billing-test',
+    'guest-request-01',
+    3
+  )->>'reservation_id',
+  (select result->>'reservation_id' from guest_reservation),
+  'guest retry returns the same reservation'
+);
+select is(
+  (select extract_count from public.guest_usage where install_id = 'install-billing-test'),
+  1,
+  'guest retry does not bypass or double-charge quota'
+);
+select ok(
+  public.refund_guest_extraction(
+    'install-billing-test',
+    (select (result->>'reservation_id')::uuid from guest_reservation),
+    'test_failure'
+  ),
+  'failed guest reservation can be refunded'
+);
+select is(
+  (select extract_count from public.guest_usage where install_id = 'install-billing-test'),
+  0,
+  'guest refund restores quota'
+);
+select is(
+  public.reserve_guest_extraction_v2(
+    'install-billing-test',
+    'guest-request-01',
+    3
+  )->>'status',
+  'reserved',
+  'a refunded unknown-outcome retry can reserve again'
+);
+select is(
+  (select extract_count from public.guest_usage where install_id = 'install-billing-test'),
+  1,
+  're-reserving a refunded guest request charges once'
+);
+select ok(
+  public.finalize_guest_extraction(
+    'install-billing-test',
+    (select (result->>'reservation_id')::uuid from guest_reservation)
+  ),
+  'successful guest reservation finalizes'
+);
+select isnt(
+  public.refund_guest_extraction(
+    'install-billing-test',
+    (select (result->>'reservation_id')::uuid from guest_reservation),
+    'too_late'
+  ),
+  true,
+  'finalized guest usage cannot be refunded'
+);
+select ok(
+  public.refund_guest_extraction(
+    'install-billing-test',
+    (select (result->>'reservation_id')::uuid from guest_reservation),
+    'finalize_failed'
+  ),
+  'failed guest finalize response refunds a committed reservation'
+);
+select is(
+  (select extract_count from public.guest_usage where install_id = 'install-billing-test'),
+  0,
+  'guest finalize-failure refund restores quota'
+);
+
+select is(
+  public.reserve_daily_ai_usage(
+    '10000000-0000-4000-8000-000000000001',
+    'translation',
+    '2099-01-01',
+    2
+  ),
+  1,
+  'daily AI usage starts at one'
+);
+select is(
+  public.reserve_daily_ai_usage(
+    '10000000-0000-4000-8000-000000000001',
+    'translation',
+    '2099-01-01',
+    2
+  ),
+  2,
+  'daily AI usage reaches its limit'
+);
+select is(
+  public.reserve_daily_ai_usage(
+    '10000000-0000-4000-8000-000000000001',
+    'translation',
+    '2099-01-01',
+    2
+  ),
+  -1,
+  'daily AI usage blocks over-limit work'
+);
+select ok(
+  public.refund_daily_ai_usage(
+    '10000000-0000-4000-8000-000000000001',
+    'translation',
+    '2099-01-01'
+  ),
+  'failed daily AI usage can be refunded'
+);
+select is(
+  public.reserve_daily_ai_usage(
+    '10000000-0000-4000-8000-000000000001',
+    'translation',
+    '2099-01-01',
+    2
+  ),
+  2,
+  'refunded daily AI allowance is reusable'
+);
+
+select is(
+  public.reserve_daily_remix(
+    '10000000-0000-4000-8000-000000000001',
+    '2099-01-01',
+    5
+  ),
+  1,
+  'daily remix usage is reserved'
+);
+select ok(
+  public.refund_daily_remix(
+    '10000000-0000-4000-8000-000000000001',
+    '2099-01-01'
+  ),
+  'failed remix reservation can be refunded'
+);
+select is(
+  (select remix_count from public.remix_usage_daily
+   where user_id = '10000000-0000-4000-8000-000000000001'
+     and usage_date = '2099-01-01'),
+  0,
+  'remix refund restores daily allowance'
 );
 
 select * from finish();

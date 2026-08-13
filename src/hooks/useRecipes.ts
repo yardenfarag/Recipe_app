@@ -3,10 +3,10 @@ import { useCallback, useEffect, useState } from 'react';
 
 import { useAuth } from '@/hooks/useAuth';
 import { useLanguagePreference } from '@/hooks/useLanguagePreference';
-import { effectiveSourceLanguage } from '@/lib/appLanguages';
 import { backfillRecipeThumbnails } from '@/lib/backfillRecipeThumbnails';
 import { getGuestRecipes } from '@/lib/guestRecipes';
 import { withDisplayTitles } from '@/lib/recipeDisplayTitle';
+import { resolveRecipeSourceLanguage } from '@/lib/recipeSourceLanguage';
 import { normalizeRecipeFavorite, normalizeRecipes, toggleRecipeFavorite } from '@/lib/recipeFavorites';
 import { fetchRecipeTranslationsForLanguage } from '@/lib/supabase/recipeTranslations';
 import { fetchRecipes } from '@/lib/supabase/recipes';
@@ -35,7 +35,7 @@ export function useRecipes() {
       let withTranslations = backfilled;
       if (user) {
         const needingTitle = backfilled.filter(
-          (r) => effectiveSourceLanguage(r.source_language) !== preferredLanguage,
+          (recipe) => resolveRecipeSourceLanguage(recipe) !== preferredLanguage,
         );
         if (needingTitle.length > 0) {
           const map = await fetchRecipeTranslationsForLanguage(

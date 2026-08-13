@@ -1,7 +1,7 @@
 import Ionicons from '@expo/vector-icons/Ionicons';
 import { Image } from 'expo-image';
 import { useEffect, useState } from 'react';
-import { StyleSheet, View, type StyleProp, type ViewStyle } from 'react-native';
+import { Platform, StyleSheet, View, type StyleProp, type ViewStyle } from 'react-native';
 
 import { useThemePreference } from '@/hooks/useThemePreference';
 import { recipeImageSource } from '@/lib/recipeImageSource';
@@ -33,7 +33,9 @@ export function RecipeImage({
 }: RecipeImageProps) {
   const { colors } = useThemePreference();
   const [failed, setFailed] = useState(false);
-  const scale = 2;
+  // Native: zoom past baked-in pillarbox bars. Web: CORS often blanks the
+  // image, and 2× scale turns that into a huge empty/dark strip.
+  const scale = Platform.OS === 'web' ? 1 : 2;
 
   useEffect(() => {
     setFailed(false);
@@ -64,7 +66,7 @@ export function RecipeImage({
     <View
       style={[
         styles.frame,
-        { borderRadius },
+        { borderRadius, backgroundColor: colors.primarySoft },
         variant === 'hero'
           ? styles.hero
           : variant === 'compact'

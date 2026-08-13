@@ -2,6 +2,7 @@ import { FunctionsHttpError } from '@supabase/supabase-js';
 
 import { localizeIngredientUnits } from '@/lib/culinaryUnits';
 import { RecipeLanguageCode } from '@/lib/recipeLanguages';
+import { runSingleFlight } from '@/lib/singleFlight';
 import { supabase } from '@/lib/supabase/client';
 import { Ingredient, Instruction } from '@/types/recipe';
 
@@ -16,6 +17,7 @@ export interface TranslateRecipeResult {
   target_language?: RecipeLanguageCode;
   recipe?: TranslatedRecipePayload;
   message?: string;
+  code?: 'auth_required' | 'daily_limit' | 'metering_error' | string;
 }
 
 export interface TranslateRecipeRequest {
@@ -24,26 +26,46 @@ export interface TranslateRecipeRequest {
   instructions: Instruction[];
 }
 
-async function invokeErrorMessage(error: unknown): Promise<string> {
+const translationFlights = new Map<string, Promise<TranslateRecipeResult>>();
+
+async function invokeErrorDetails(error: unknown): Promise<{ message: string; code?: string }> {
   if (error instanceof FunctionsHttpError) {
     try {
-      const body = (await error.context.json()) as { message?: string; error?: string };
-      if (body.message) return body.message;
-      if (body.error) return body.error;
+      const body = (await error.context.json()) as {
+        message?: string;
+        error?: string;
+        code?: string;
+      };
+      if (body.message || body.error) {
+        return {
+          message: body.message ?? body.error ?? 'Request failed',
+          code: body.code,
+        };
+      }
     } catch {
       // Fall through.
     }
   }
 
   if (error instanceof Error && error.message && !error.message.includes('non-2xx')) {
-    return error.message;
+    return { message: error.message };
   }
 
-  return 'Could not reach the translation service. Please try again.';
+  return { message: 'Could not reach the translation service. Please try again.' };
 }
 
 /** Translates recipe title, ingredients, and instructions into a target language. */
 export async function translateRecipe(
+  targetLanguage: RecipeLanguageCode,
+  recipe: TranslateRecipeRequest,
+): Promise<TranslateRecipeResult> {
+  const key = `${targetLanguage}:${JSON.stringify(recipe)}`;
+  return runSingleFlight(translationFlights, key, () =>
+    invokeTranslation(targetLanguage, recipe),
+  );
+}
+
+async function invokeTranslation(
   targetLanguage: RecipeLanguageCode,
   recipe: TranslateRecipeRequest,
 ): Promise<TranslateRecipeResult> {
@@ -58,9 +80,11 @@ export async function translateRecipe(
   );
 
   if (error) {
+    const details = await invokeErrorDetails(error);
     return {
       status: 'failed',
-      message: await invokeErrorMessage(error),
+      message: details.message,
+      code: details.code,
     };
   }
 

@@ -54,7 +54,7 @@ export function ThemeToggle({ compact = false }: ThemeToggleProps) {
             onPress={() => setPreference(mode)}
             accessibilityRole="button"
             accessibilityState={{ selected: active }}
-            className="flex-row items-center gap-1.5 rounded-[14px] px-3.5 py-2"
+              className="min-w-0 flex-1 flex-row items-center justify-center gap-1 rounded-[14px] px-2 py-2"
             style={active ? { backgroundColor: colors.surface } : undefined}
           >
             <Ionicons
@@ -63,8 +63,9 @@ export function ThemeToggle({ compact = false }: ThemeToggleProps) {
               color={active ? colors.primary : colors.textSecondary}
             />
             <Text
-              className="text-xs font-semibold"
+                className="min-w-0 text-xs font-semibold"
               style={{ color: active ? colors.primary : colors.textSecondary }}
+                numberOfLines={1}
             >
               {labels[mode]}
             </Text>

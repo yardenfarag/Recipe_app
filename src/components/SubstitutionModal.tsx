@@ -3,8 +3,10 @@ import { useTranslation } from 'react-i18next';
 import { ActivityIndicator, Pressable, ScrollView, Text, View } from 'react-native';
 
 import { SheetModal } from '@/components/SheetModal';
+import { useLanguagePreference } from '@/hooks/useLanguagePreference';
 import { useMeasurementPreference } from '@/hooks/useMeasurementPreference';
 import { useThemePreference } from '@/hooks/useThemePreference';
+import { resolveCulinaryLanguage } from '@/lib/culinaryUnits';
 import { displayIngredientAmount } from '@/lib/displayIngredientAmount';
 import {
   mergeRewrittenInstructions,
@@ -46,7 +48,9 @@ export function SubstitutionModal({
 }: SubstitutionModalProps) {
   const { t } = useTranslation();
   const { colors } = useThemePreference();
+  const { language: appLanguage } = useLanguagePreference();
   const { system: measurementSystem } = useMeasurementPreference();
+  const unitLanguage = resolveCulinaryLanguage(language, appLanguage);
   const [loading, setLoading] = useState(false);
   const [applyingName, setApplyingName] = useState<string | null>(null);
   const [alternatives, setAlternatives] = useState<SubstitutionAlternative[]>([]);
@@ -128,7 +132,7 @@ export function SubstitutionModal({
             <Text className="text-lg font-bold" style={{ color: colors.text }}>
               {displayIngredientAmount(ingredient.quantity, ingredient.unit, {
                 system: measurementSystem,
-                language,
+                language: unitLanguage,
               })}{' '}
               {ingredient.name}
             </Text>
@@ -168,7 +172,7 @@ export function SubstitutionModal({
                 <Text className="mb-1 text-base font-bold" style={{ color: colors.text }}>
                   {displayIngredientAmount(alt.quantity, alt.unit, {
                     system: measurementSystem,
-                    language,
+                    language: unitLanguage,
                   })}{' '}
                   {alt.name}
                 </Text>

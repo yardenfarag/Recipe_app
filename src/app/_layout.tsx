@@ -5,6 +5,7 @@ import { Stack } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { ShareIntentProvider } from 'expo-share-intent';
 import { useTranslation } from 'react-i18next';
+import { Platform } from 'react-native';
 
 import { ErrorBoundary } from '@/components/ErrorBoundary';
 import { StackHeaderBackButton } from '@/components/StackHeaderBackButton';
@@ -45,6 +46,8 @@ function RootNavigator() {
             contentStyle: { backgroundColor: colors.background },
             // Avoid "(tabs)" (route group name) as the iOS back label.
             headerBackButtonDisplayMode: 'minimal',
+            // Web has no status bar — the extra inset shows up as a dark gap.
+            ...(Platform.OS === 'web' ? { headerStatusBarHeight: 0 } : null),
           }}
         >
           <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
@@ -60,6 +63,7 @@ function RootNavigator() {
             name="recipe/preview"
             options={{
               title: t('nav.preview'),
+              headerShown: Platform.OS !== 'web',
               headerLeft: (props) => <StackHeaderBackButton tintColor={props.tintColor} />,
             }}
           />
@@ -79,6 +83,51 @@ function RootNavigator() {
           />
           <Stack.Screen name="reset-password" options={{ title: t('nav.resetPassword') }} />
           <Stack.Screen name="auth-callback" options={{ headerShown: false }} />
+          <Stack.Screen
+            name="settings/credits"
+            options={{
+              title: t('settings.plan'),
+              headerLeft: (props) => (
+                <StackHeaderBackButton tintColor={props.tintColor} fallback="/settings" />
+              ),
+            }}
+          />
+          <Stack.Screen
+            name="settings/recipe"
+            options={{
+              title: t('settings.recipePreferences'),
+              headerLeft: (props) => (
+                <StackHeaderBackButton tintColor={props.tintColor} fallback="/settings" />
+              ),
+            }}
+          />
+          <Stack.Screen
+            name="settings/appearance"
+            options={{
+              title: t('settings.appearance'),
+              headerLeft: (props) => (
+                <StackHeaderBackButton tintColor={props.tintColor} fallback="/settings" />
+              ),
+            }}
+          />
+          <Stack.Screen
+            name="settings/language"
+            options={{
+              title: t('settings.languageAndRegion'),
+              headerLeft: (props) => (
+                <StackHeaderBackButton tintColor={props.tintColor} fallback="/settings" />
+              ),
+            }}
+          />
+          <Stack.Screen
+            name="settings/support"
+            options={{
+              title: t('settings.legalSupport'),
+              headerLeft: (props) => (
+                <StackHeaderBackButton tintColor={props.tintColor} fallback="/settings" />
+              ),
+            }}
+          />
           <Stack.Screen name="admin/usage" options={{ title: t('nav.usage') }} />
         </Stack>
       ) : null}

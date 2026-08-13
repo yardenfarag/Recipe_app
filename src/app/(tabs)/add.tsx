@@ -16,6 +16,7 @@ import { useBreakpoint } from '@/hooks/useBreakpoint';
 import { useProfile } from '@/hooks/useProfile';
 import { useThemePreference } from '@/hooks/useThemePreference';
 import { confirmAction } from '@/lib/confirmAction';
+import { clearExtractionRequestId } from '@/lib/extractionRequestId';
 import { findExistingGuestRecipe } from '@/lib/findExistingRecipe';
 import {
   getGuestExtractionsRemaining,
@@ -25,7 +26,7 @@ import {
 import { detectPlatform, normalizeSocialUrl } from '@/lib/platformUrls';
 import { FREE_MONTHLY_EXTRACT_LIMIT } from '@/lib/quotas';
 import { setRecipeDraft } from '@/lib/recipeDraft';
-import { extractRecipe } from '@/lib/supabase/extractRecipe';
+import { extractRecipe, extractionOutcomeIsUncertain } from '@/lib/supabase/extractRecipe';
 
 type Banner =
   | { kind: 'error' | 'info' | 'limit' | 'credits'; message: string }
@@ -165,6 +166,19 @@ export default function AddRecipeScreen() {
 
       const result = await extractRecipe(target);
 
+      if (
+        (!result.recipe || result.cached) &&
+        result.request_id &&
+        !extractionOutcomeIsUncertain(result.code)
+      ) {
+        try {
+          await clearExtractionRequestId(target, result.request_id);
+        } catch (error) {
+          // Retaining a completed idempotency key is safe and avoids recharging.
+          console.warn('[extraction] request acknowledgement failed', error);
+        }
+      }
+
       if (typeof result.guest_extracts_remaining === 'number') {
         await setGuestExtractionsRemaining(result.guest_extracts_remaining);
         setGuestExtractsRemaining(result.guest_extracts_remaining);
@@ -216,7 +230,15 @@ export default function AddRecipeScreen() {
         return;
       }
 
-      setRecipeDraft(result.recipe);
+      try {
+        await setRecipeDraft(
+          result.recipe,
+          result.request_id ? { url: target, requestId: result.request_id } : undefined,
+        );
+      } catch (error) {
+        // The in-memory copy is still available for this session.
+        console.warn('[recipe-draft] persistence failed', error);
+      }
       router.push('/recipe/preview');
       setUrl('');
     } catch {

@@ -1,56 +1,40 @@
 import { clearGuestShoppingList, getGuestShoppingList } from '@/lib/guestShoppingList';
-import { appendToShoppingList } from '@/lib/shoppingListMerge';
-import {
-  clearShoppingList,
-  fetchShoppingList,
-  insertShoppingListItem,
-} from '@/lib/supabase/shoppingList';
+import { supabase } from '@/lib/supabase/client';
 
 /**
- * After sign-in, append the guest shopping list onto the user's cloud list
- * (duplicates kept as separate lines), then clear local storage.
- * Best-effort: if cloud writes fail, guest data is kept.
+ * Append all guest lines in one database transaction, then clear local storage.
+ * Existing cloud lines are never replaced. If the transaction fails, no guest
+ * lines are committed and the local copy remains available for retry.
  */
-export async function migrateGuestShoppingListToSupabase(userId: string): Promise<number> {
+export async function migrateGuestShoppingListToSupabase(
+  userId: string,
+  recipeIdMap: Record<string, string> = {},
+): Promise<number> {
   const guestItems = await getGuestShoppingList();
   if (guestItems.length === 0) return 0;
 
-  const cloudItems = await fetchShoppingList();
-  const { items: merged } = appendToShoppingList(
-    cloudItems,
-    guestItems.map((item) => ({
-      name: item.name,
-      quantity: item.quantity,
-      unit: item.unit,
-      sourceRecipeId: item.sourceRecipeIds?.[0],
-    })),
-  );
-
-  // Re-apply guest checked state onto the newly appended lines (same order).
-  const appended = merged.slice(cloudItems.length);
-  for (let i = 0; i < guestItems.length && i < appended.length; i += 1) {
-    if (guestItems[i].checked) {
-      appended[i].checked = true;
-      appended[i].sourceRecipeIds = guestItems[i].sourceRecipeIds;
-    } else if (guestItems[i].sourceRecipeIds?.length) {
-      appended[i].sourceRecipeIds = guestItems[i].sourceRecipeIds;
-    }
-  }
-
-  await clearShoppingList();
-
-  for (const item of merged) {
-    await insertShoppingListItem(userId, {
+  const { data, error } = await supabase.rpc('migrate_guest_shopping_list', {
+    p_user_id: userId,
+    p_items: guestItems.map((item) => ({
       name: item.name,
       quantity: item.quantity,
       unit: item.unit,
       checked: item.checked,
-      sourceRecipeIds: item.sourceRecipeIds,
+      source_recipe_ids:
+        item.sourceRecipeIds
+          ?.map((id) => recipeIdMap[id] ?? (id.startsWith('guest-') ? null : id))
+          .filter((id): id is string => Boolean(id)) ?? null,
       created_at: item.created_at,
       updated_at: item.updated_at,
-    });
+    })),
+  });
+  if (error) throw error;
+
+  const migrated = typeof data === 'number' ? data : Number(data);
+  if (!Number.isFinite(migrated) || migrated !== guestItems.length) {
+    throw new Error('Guest shopping list sync was incomplete.');
   }
 
   await clearGuestShoppingList();
-  return guestItems.length;
+  return migrated;
 }

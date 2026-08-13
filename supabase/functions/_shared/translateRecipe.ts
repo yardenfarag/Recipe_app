@@ -9,9 +9,10 @@ import {
   sanitizeGeminiText,
 } from './geminiClient.ts';
 import type { GeminiUsageSnapshot } from './pricing.ts';
+import { assertTranslationIdentity } from './translationIntegrity.ts';
 
-const REQUEST_TIMEOUT_MS = 25_000;
-const MAX_OUTPUT_TOKENS = 2_048;
+const REQUEST_TIMEOUT_MS = 45_000;
+const MAX_OUTPUT_TOKENS = 8_192;
 
 export const TRANSLATE_LANGUAGE_CODES = ['en', 'es', 'he', 'ru', 'ar', 'de', 'fr'] as const;
 export type TranslateLanguageCode = (typeof TRANSLATE_LANGUAGE_CODES)[number];
@@ -30,7 +31,9 @@ const SYSTEM_PROMPT = `You are a professional culinary translator.
 
 Rules:
 - Translate the recipe title, ingredient names, units, and instruction text into the target language.
-- Keep quantities as numbers.
+- Preserve every ingredient and instruction in its original order.
+- Copy each immutable source_index exactly; never renumber or reorder it.
+- Keep quantities exactly unchanged. Do not convert measurement systems.
 - ALWAYS translate unit words into natural culinary units in the target language (e.g. cup→כוס/taza, tbsp→כף/cucharada, g→גרם).
 - For countable items whose unit is "unit", "pc", "piece", "each", or similar placeholders, set unit to an empty string — recipes just show the number next to the ingredient name.
 - Preserve step order and step numbers.
@@ -48,11 +51,12 @@ const TRANSLATE_SCHEMA = {
       items: {
         type: 'object',
         properties: {
+          source_index: { type: 'integer' },
           name: { type: 'string' },
           quantity: { type: 'number' },
           unit: { type: 'string' },
         },
-        required: ['name', 'quantity', 'unit'],
+        required: ['source_index', 'name', 'quantity', 'unit'],
       },
     },
     instructions: {
@@ -60,10 +64,11 @@ const TRANSLATE_SCHEMA = {
       items: {
         type: 'object',
         properties: {
+          source_index: { type: 'integer' },
           step: { type: 'integer' },
           text: { type: 'string' },
         },
-        required: ['step', 'text'],
+        required: ['source_index', 'step', 'text'],
       },
     },
   },
@@ -74,7 +79,7 @@ export interface TranslateRecipeInput {
   targetLanguage: TranslateLanguageCode;
   title: string;
   ingredients: { name: string; quantity: number; unit: string }[];
-  instructions: { step: number; text: string }[];
+  instructions: { step: number; text: string; timestamp_seconds?: number }[];
 }
 
 export interface TranslatedRecipe {
@@ -82,6 +87,21 @@ export interface TranslatedRecipe {
   ingredients: { name: string; quantity: number; unit: string }[];
   instructions: { step: number; text: string }[];
   usage?: GeminiUsageSnapshot | null;
+}
+
+interface GeminiTranslatedRecipe {
+  title: string;
+  ingredients: {
+    source_index: number;
+    name: string;
+    quantity: number;
+    unit: string;
+  }[];
+  instructions: {
+    source_index: number;
+    step: number;
+    text: string;
+  }[];
 }
 
 export function isTranslateLanguageCode(value: string): value is TranslateLanguageCode {
@@ -94,7 +114,7 @@ export async function translateRecipeWithGemini(
   const targetName = LANGUAGE_NAMES[input.targetLanguage];
   const text = buildTextContext(input, targetName);
 
-  const { data: parsed, usage } = await generateGeminiJson<TranslatedRecipe>({
+  const { data: parsed, usage } = await generateGeminiJson<GeminiTranslatedRecipe>({
     tier: 'fast',
     systemPrompt: SYSTEM_PROMPT,
     parts: [{ text }],
@@ -105,29 +125,60 @@ export async function translateRecipeWithGemini(
     context: 'translateRecipe.ts: translateRecipeWithGemini',
   });
 
+  const title = sanitizeGeminiText(parsed.title?.trim() ?? '');
+  const ingredients = parsed.ingredients ?? [];
+  const instructions = parsed.instructions ?? [];
+
+  if (!title) {
+    throw new Error('Translation response did not preserve the complete recipe');
+  }
+  // Validate immutable identity before rebuilding from source values. Length
+  // checks alone cannot detect same-length reordering by the model.
+  assertTranslationIdentity(
+    input.ingredients,
+    input.instructions,
+    ingredients,
+    instructions,
+  );
+
+  const translatedIngredients = input.ingredients.map((source, index) => {
+    const translated = ingredients[index];
+    const name = sanitizeGeminiText(translated?.name ?? '').trim();
+    if (!name) {
+      throw new Error(`Translation response omitted ingredient ${index + 1}`);
+    }
+    const sourceUnit = source.unit ?? '';
+    const rawUnit = sanitizeGeminiText(translated?.unit ?? sourceUnit);
+    return {
+      name,
+      quantity: source.quantity,
+      unit: resolveTranslatedUnit(
+        sourceUnit,
+        rawUnit,
+        input.targetLanguage,
+        source.quantity,
+      ),
+    };
+  });
+
+  const translatedInstructions = input.instructions.map((source, index) => {
+    const text = sanitizeGeminiText(instructions[index]?.text ?? '').trim();
+    if (!text) {
+      throw new Error(`Translation response omitted instruction ${index + 1}`);
+    }
+    return {
+      step: source.step,
+      text,
+      ...(source.timestamp_seconds != null
+        ? { timestamp_seconds: source.timestamp_seconds }
+        : {}),
+    };
+  });
+
   return {
-    title: sanitizeGeminiText(parsed.title?.trim() || input.title),
-    ingredients: (parsed.ingredients ?? []).map((ing, index) => {
-      const quantity = Number(ing.quantity);
-      const sourceUnit = input.ingredients[index]?.unit ?? '';
-      const rawUnit = sanitizeGeminiText(ing.unit ?? sourceUnit);
-      return {
-        name: sanitizeGeminiText(ing.name ?? ''),
-        quantity,
-        unit: resolveTranslatedUnit(sourceUnit, rawUnit, input.targetLanguage, quantity),
-      };
-    }),
-    instructions: (parsed.instructions ?? []).map((step) => {
-      const stepNumber = Number(step.step);
-      const original = input.instructions.find((row) => row.step === stepNumber);
-      return {
-        step: stepNumber,
-        text: sanitizeGeminiText(step.text ?? ''),
-        ...(original?.timestamp_seconds != null
-          ? { timestamp_seconds: original.timestamp_seconds }
-          : {}),
-      };
-    }),
+    title,
+    ingredients: translatedIngredients,
+    instructions: translatedInstructions,
     usage,
   };
 }
@@ -160,13 +211,15 @@ function buildTextContext(input: TranslateRecipeInput, targetName: string): stri
     '\n--- INGREDIENTS ---',
   ];
 
-  for (const ing of input.ingredients) {
-    lines.push(`- ${ing.quantity} ${ing.unit} ${ing.name}`);
+  for (const [index, ing] of input.ingredients.entries()) {
+    lines.push(
+      `- source_index=${index} | quantity=${ing.quantity} | unit=${ing.unit} | name=${ing.name}`,
+    );
   }
 
   lines.push('\n--- INSTRUCTIONS ---');
-  for (const step of input.instructions) {
-    lines.push(`${step.step}. ${step.text}`);
+  for (const [index, step] of input.instructions.entries()) {
+    lines.push(`source_index=${index} | step=${step.step} | text=${step.text}`);
   }
 
   return lines.join('\n');

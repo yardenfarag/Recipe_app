@@ -16,6 +16,15 @@ export function applyRtlFlag(language: AppLanguageCode) {
   const shouldRtl = isRtlAppLanguage(language);
   I18nManager.allowRTL(shouldRtl);
   I18nManager.forceRTL(shouldRtl);
+
+  // NativeWind `flex-row` is CSS `flex-direction: row` on web — it only
+  // mirrors when the document (or an ancestor) is `dir=rtl`.
+  if (Platform.OS === 'web' && typeof document !== 'undefined') {
+    const dir = shouldRtl ? 'rtl' : 'ltr';
+    document.documentElement.dir = dir;
+    document.documentElement.lang = language;
+    if (document.body) document.body.dir = dir;
+  }
 }
 
 export function reloadForRtl(): void {
@@ -34,9 +43,10 @@ export function promptRtlReloadIfNeeded(
   previous: AppLanguageCode,
   next: AppLanguageCode,
 ): void {
-  if (!languageChangeNeedsReload(previous, next)) return;
-
   applyRtlFlag(next);
+  if (!languageChangeNeedsReload(previous, next)) return;
+  // Web mirrors immediately via `document.dir` + the root `direction` style.
+  if (Platform.OS === 'web') return;
 
   Alert.alert(
     i18n.t('settings.rtlReloadTitle'),

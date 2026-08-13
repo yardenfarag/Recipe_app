@@ -1,6 +1,7 @@
 import Ionicons from '@expo/vector-icons/Ionicons';
 import * as WebBrowser from 'expo-web-browser';
 import { createElement, useEffect, useMemo, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import {
   ActivityIndicator,
   Platform,
@@ -30,6 +31,15 @@ const HEIGHT_PRESET: Record<HeightPreset, number> = {
   medium: 0.48,
   tall: 0.66,
 };
+
+/** Reels / TikTok — portrait player. YouTube stays landscape. */
+function isPortraitSocialVideo(platform: RecipePlatform): boolean {
+  return platform === 'instagram' || platform === 'tiktok';
+}
+
+/** Chrome around the iframe (title row + open-in-browser link). */
+const WEB_DIALOG_CHROME = 112;
+const WEB_DIALOG_INSET = 12;
 
 type CookAlongVideoModalProps = {
   visible: boolean;
@@ -62,6 +72,7 @@ export function CookAlongVideoModal({
   onSheetHeightChange,
   placement = 'sheet',
 }: CookAlongVideoModalProps) {
+  const { t } = useTranslation();
   const { colors } = useThemePreference();
   const insets = useSafeAreaInsets();
   const { height: windowHeight, width: windowWidth } = useWindowDimensions();
@@ -80,7 +91,13 @@ export function CookAlongVideoModal({
     () => buildRecipeVideoWebViewSource(video, startSeconds),
     [video, startSeconds],
   );
-  const platformLabel = getRecipePlatformLabel(video.platform);
+  const platformLabel =
+    video.platform === 'web'
+      ? t('cookAlong.website')
+      : video.platform === 'unknown'
+        ? t('cookAlong.video')
+        : getRecipePlatformLabel(video.platform);
+  const isPortraitVideo = isPortraitSocialVideo(video.platform);
   const sheetHeight = Math.round(
     windowHeight *
       (isWeb && isWide
@@ -88,7 +105,14 @@ export function CookAlongVideoModal({
         : HEIGHT_PRESET[heightPreset]),
   );
   const totalHeight = sheetHeight + insets.bottom;
-  const webDialogWidth = Math.min(windowWidth - 48, isWide ? 920 : 640);
+  const maxDialogW = windowWidth - WEB_DIALOG_INSET * 2;
+  const maxDialogH = windowHeight - WEB_DIALOG_INSET * 2;
+  const webDialogHeight = isPortraitVideo
+    ? maxDialogH
+    : Math.min(maxDialogH, Math.round(Math.min(maxDialogW, 960) * (9 / 16)) + WEB_DIALOG_CHROME);
+  const webDialogWidth = isPortraitVideo
+    ? Math.min(maxDialogW, Math.round((webDialogHeight - WEB_DIALOG_CHROME) * (9 / 16)) + 32)
+    : Math.min(maxDialogW, isWide ? 960 : 800);
 
   useEffect(() => {
     if (!visible || isSidebar) {
@@ -132,14 +156,14 @@ export function CookAlongVideoModal({
     <View className="flex-1 items-center justify-center px-6">
       <Ionicons name="alert-circle-outline" size={36} color="#fff" />
       <Text className="mt-3 text-center text-sm leading-5 text-white/90">
-        Couldn&apos;t load the video here. Try opening it in your browser instead.
+        {t('cookAlong.loadFailed')}
       </Text>
       <Pressable
         onPress={() => void openInBrowser()}
         className="mt-4 rounded-full px-5 py-2.5 active:opacity-80"
         style={{ backgroundColor: colors.primary }}
       >
-        <Text className="text-sm font-bold text-white">Open in browser</Text>
+        <Text className="text-sm font-bold text-white">{t('cookAlong.openInBrowser')}</Text>
       </Pressable>
     </View>
   ) : (
@@ -154,7 +178,7 @@ export function CookAlongVideoModal({
           createElement('iframe', {
             key: webViewKey,
             src: webSource.uri,
-            title: 'Cook along video',
+            title: t('cookAlong.iframeTitle'),
             allow:
               'accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture',
             allowFullScreen: true,
@@ -174,7 +198,7 @@ export function CookAlongVideoModal({
           createElement('iframe', {
             key: webViewKey,
             srcDoc: webSource.html,
-            title: 'Cook along video',
+            title: t('cookAlong.iframeTitle'),
             allow:
               'accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture',
             allowFullScreen: true,
@@ -221,14 +245,14 @@ export function CookAlongVideoModal({
   const chrome = (
     <>
       <View className="flex-row items-center justify-between px-4 pb-2 pt-3">
-        <View className="flex-1 pr-3">
+        <View className="flex-1" style={{ paddingEnd: 12 }}>
           <Text className="text-base font-bold" style={{ color: colors.text }}>
-            Cook along
+            {t('cookAlong.title')}
           </Text>
           <Text className="text-xs" style={{ color: colors.textSecondary }}>
             {platformLabel}
-            {startSeconds > 0 ? ` · from ${formatClock(startSeconds)}` : ''}
-            {isWeb ? '' : ' · scroll recipe above'}
+            {startSeconds > 0 ? ` · ${t('cookAlong.fromTime', { time: formatClock(startSeconds) })}` : ''}
+            {isWeb ? '' : ` · ${t('cookAlong.scrollRecipe')}`}
           </Text>
         </View>
         <Pressable
@@ -236,7 +260,7 @@ export function CookAlongVideoModal({
           hitSlop={12}
           className="h-9 w-9 items-center justify-center rounded-full active:opacity-70"
           style={{ backgroundColor: colors.frosted }}
-          accessibilityLabel="Close cook-along video"
+          accessibilityLabel={t('cookAlong.close')}
         >
           <Ionicons name="close" size={20} color={colors.text} />
         </Pressable>
@@ -256,10 +280,16 @@ export function CookAlongVideoModal({
                 }}
               >
                 <Text
-                  className="text-[11px] font-semibold capitalize"
+                  className="text-[11px] font-semibold"
                   style={{ color: active ? '#fff' : colors.textSecondary }}
                 >
-                  {preset}
+                  {t(
+                    preset === 'compact'
+                      ? 'cookAlong.heightCompact'
+                      : preset === 'medium'
+                        ? 'cookAlong.heightMedium'
+                        : 'cookAlong.heightTall',
+                  )}
                 </Text>
               </Pressable>
             );
@@ -271,9 +301,7 @@ export function CookAlongVideoModal({
         className="mx-4 overflow-hidden rounded-2xl bg-black"
         style={{
           flex: 1,
-          minHeight: isSidebar ? 220 : isWeb ? 360 : undefined,
-          aspectRatio: isSidebar ? 16 / 9 : undefined,
-          maxHeight: isSidebar ? 280 : undefined,
+          minHeight: isSidebar || isWeb ? 0 : undefined,
         }}
       >
         {videoPlayer}
@@ -285,7 +313,7 @@ export function CookAlongVideoModal({
       >
         <Ionicons name="open-outline" size={16} color={colors.textSecondary} />
         <Text className="text-xs font-medium" style={{ color: colors.textSecondary }}>
-          Open in browser if playback fails
+          {t('cookAlong.openInBrowserHint')}
         </Text>
       </Pressable>
     </>
@@ -322,7 +350,7 @@ export function CookAlongVideoModal({
           alignItems: 'center',
           justifyContent: 'center',
           backgroundColor: 'rgba(0,0,0,0.45)',
-          padding: 24,
+          padding: WEB_DIALOG_INSET,
         }}
       >
         <Pressable
@@ -334,14 +362,14 @@ export function CookAlongVideoModal({
             bottom: 0,
           }}
           onPress={onClose}
-          accessibilityLabel="Dismiss cook-along"
+          accessibilityLabel={t('cookAlong.dismiss')}
         />
         <View
           pointerEvents="auto"
           style={{
             width: webDialogWidth,
-            maxHeight: windowHeight * 0.88,
-            height: Math.min(windowHeight * 0.78, 640),
+            height: webDialogHeight,
+            maxHeight: webDialogHeight,
             backgroundColor: colors.background,
             borderRadius: 24,
             paddingBottom: 12,

@@ -6,6 +6,7 @@ import {
   ActivityIndicator,
   Alert,
   FlatList,
+  KeyboardAvoidingView,
   Modal,
   Platform,
   Pressable,
@@ -16,12 +17,14 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { BrandHeader } from '@/components/BrandHeader';
+import { ConfirmDialog } from '@/components/ConfirmDialog';
 import { Screen } from '@/components/Screen';
 import { SelectRecipesForShoppingListModal } from '@/components/SelectRecipesForShoppingListModal';
 import { useCollections } from '@/hooks/useCollections';
 import { useLanguagePreference } from '@/hooks/useLanguagePreference';
 import { useMeasurementPreference } from '@/hooks/useMeasurementPreference';
 import { useRecipes } from '@/hooks/useRecipes';
+import { useRtl } from '@/hooks/useRtl';
 import { useShoppingList } from '@/hooks/useShoppingList';
 import { useThemePreference } from '@/hooks/useThemePreference';
 import { applyMeasurementSystem } from '@/lib/convertMeasurement';
@@ -31,32 +34,6 @@ import {
   normalizeShoppingName,
 } from '@/lib/shoppingListMerge';
 import type { ShoppingListItem } from '@/types/shoppingList';
-
-/** Alert.alert button actions are unreliable on web — use window.confirm there. */
-function confirmDestructive(
-  title: string,
-  message: string,
-  confirmLabel: string,
-  onConfirm: () => void | Promise<void>,
-) {
-  if (Platform.OS === 'web') {
-    const ok =
-      typeof window !== 'undefined' && window.confirm(`${title}\n\n${message}`);
-    if (ok) void onConfirm();
-    return;
-  }
-
-  Alert.alert(title, message, [
-    { text: 'Cancel', style: 'cancel' },
-    {
-      text: confirmLabel,
-      style: 'destructive',
-      onPress: () => {
-        void onConfirm();
-      },
-    },
-  ]);
-}
 
 export default function ShoppingListScreen() {
   const {
@@ -78,6 +55,7 @@ export default function ShoppingListScreen() {
   const { system: measurementSystem } = useMeasurementPreference();
   const { colors } = useThemePreference();
   const { language: appLanguage } = useLanguagePreference();
+  const { rtl } = useRtl();
   const { t } = useTranslation();
 
   const [name, setName] = useState('');
@@ -90,6 +68,13 @@ export default function ShoppingListScreen() {
   const [editQuantity, setEditQuantity] = useState('');
   const [editUnit, setEditUnit] = useState('');
   const [savingEdit, setSavingEdit] = useState(false);
+  const [confirmAction, setConfirmAction] = useState<{
+    title: string;
+    message: string;
+    label: string;
+    run: () => Promise<void>;
+  } | null>(null);
+  const [confirming, setConfirming] = useState(false);
   const [notice, setNotice] = useState<{
     message: string;
     combineName?: string;
@@ -111,12 +96,12 @@ export default function ShoppingListScreen() {
         setNotice(null);
       } catch (err) {
         Alert.alert(
-          'Could not combine',
-          err instanceof Error ? err.message : 'Please try again.',
+          t('list.combineFailed'),
+          err instanceof Error ? err.message : t('common.tryAgain'),
         );
       }
     },
-    [combineDuplicates],
+    [combineDuplicates, t],
   );
 
   const handleAddFromRecipes = useCallback(
@@ -154,7 +139,7 @@ export default function ShoppingListScreen() {
   const handleAdd = useCallback(async () => {
     const trimmedName = name.trim();
     if (!trimmedName) {
-      Alert.alert('Name required', 'Enter what you need to buy.');
+      Alert.alert(t('list.nameRequired'), t('list.enterItem'));
       return;
     }
 
@@ -163,7 +148,7 @@ export default function ShoppingListScreen() {
     if (qtyTrimmed) {
       const parsed = Number(qtyTrimmed);
       if (!Number.isFinite(parsed) || parsed <= 0) {
-        Alert.alert('Invalid amount', 'Quantity must be a positive number.');
+        Alert.alert(t('list.invalidAmount'), t('list.positiveQuantity'));
         return;
       }
       quantity = parsed;
@@ -183,7 +168,7 @@ export default function ShoppingListScreen() {
       if (result.alreadyOnList.length > 0) {
         const label = result.alreadyOnList[0];
         setNotice({
-          message: `${label} was already on your list — kept as a separate line.`,
+          message: t('list.alreadyListed', { name: label }),
           combineName: label,
         });
       } else {
@@ -191,13 +176,13 @@ export default function ShoppingListScreen() {
       }
     } catch (err) {
       Alert.alert(
-        'Could not add item',
-        err instanceof Error ? err.message : 'Please try again.',
+        t('list.addFailed'),
+        err instanceof Error ? err.message : t('common.tryAgain'),
       );
     } finally {
       setAdding(false);
     }
-  }, [addManual, name, quantityText, unit]);
+  }, [addManual, name, quantityText, t, unit]);
 
   const handleToggle = useCallback(
     async (item: ShoppingListItem) => {
@@ -205,12 +190,12 @@ export default function ShoppingListScreen() {
         await toggleChecked(item.id);
       } catch (err) {
         Alert.alert(
-          'Could not update',
-          err instanceof Error ? err.message : 'Please try again.',
+          t('list.updateFailed'),
+          err instanceof Error ? err.message : t('common.tryAgain'),
         );
       }
     },
-    [toggleChecked],
+    [t, toggleChecked],
   );
 
   const handleRemove = useCallback(
@@ -219,12 +204,12 @@ export default function ShoppingListScreen() {
         await removeItem(item.id);
       } catch (err) {
         Alert.alert(
-          'Could not remove',
-          err instanceof Error ? err.message : 'Please try again.',
+          t('list.removeFailed'),
+          err instanceof Error ? err.message : t('common.tryAgain'),
         );
       }
     },
-    [removeItem],
+    [removeItem, t],
   );
 
   const openEdit = useCallback((item: ShoppingListItem) => {
@@ -238,7 +223,7 @@ export default function ShoppingListScreen() {
     if (!editingItem) return;
     const trimmed = editName.trim();
     if (!trimmed) {
-      Alert.alert('Name required', 'Enter an item name.');
+      Alert.alert(t('list.nameRequired'), t('list.enterItemName'));
       return;
     }
 
@@ -247,7 +232,7 @@ export default function ShoppingListScreen() {
     if (raw) {
       const parsed = Number(raw);
       if (!Number.isFinite(parsed) || parsed <= 0) {
-        Alert.alert('Invalid amount', 'Quantity must be a positive number.');
+        Alert.alert(t('list.invalidAmount'), t('list.positiveQuantity'));
         return;
       }
       quantity = parsed;
@@ -263,13 +248,13 @@ export default function ShoppingListScreen() {
       setEditingItem(null);
     } catch (err) {
       Alert.alert(
-        'Could not update',
-        err instanceof Error ? err.message : 'Please try again.',
+        t('list.updateFailed'),
+        err instanceof Error ? err.message : t('common.tryAgain'),
       );
     } finally {
       setSavingEdit(false);
     }
-  }, [editName, editQuantity, editUnit, editingItem, updateItem]);
+  }, [editName, editQuantity, editUnit, editingItem, t, updateItem]);
 
   const handleLongPress = useCallback(
     (item: ShoppingListItem) => {
@@ -279,65 +264,70 @@ export default function ShoppingListScreen() {
         style?: 'cancel' | 'destructive';
         onPress?: () => void;
       }[] = [
-        { text: 'Cancel', style: 'cancel' },
-        { text: 'Edit', onPress: () => openEdit(item) },
+        { text: t('common.cancel'), style: 'cancel' },
+        { text: t('common.edit'), onPress: () => openEdit(item) },
       ];
 
       if (dupCount > 1) {
         buttons.push({
-          text: 'Combine duplicates',
+          text: t('list.combineDuplicates'),
           onPress: () => void handleCombine(item.name),
         });
       }
 
       buttons.push({
-        text: 'Remove',
+        text: t('common.remove'),
         style: 'destructive',
         onPress: () => handleRemove(item),
       });
 
       Alert.alert(item.name, undefined, buttons);
     },
-    [duplicateCounts, handleCombine, handleRemove, openEdit],
+    [duplicateCounts, handleCombine, handleRemove, openEdit, t],
   );
 
   const handleClearChecked = useCallback(() => {
     if (checkedCount === 0) return;
-    confirmDestructive(
-      'Clear checked items?',
-      `${checkedCount} item${checkedCount === 1 ? '' : 's'} will be removed.`,
-      'Clear checked',
-      async () => {
+    setConfirmAction({
+      title: t('list.clearCheckedTitle'),
+      message: t(
+        checkedCount === 1 ? 'list.clearCheckedBodyOne' : 'list.clearCheckedBodyOther',
+        { count: checkedCount },
+      ),
+      label: t('list.clearChecked'),
+      run: async () => {
         try {
           await clearChecked();
         } catch (err) {
           Alert.alert(
-            'Could not clear',
-            err instanceof Error ? err.message : 'Please try again.',
+            t('list.clearFailed'),
+            err instanceof Error ? err.message : t('common.tryAgain'),
           );
         }
       },
-    );
-  }, [checkedCount, clearChecked]);
+    });
+  }, [checkedCount, clearChecked, t]);
 
   const handleDeleteAll = useCallback(() => {
     if (items.length === 0) return;
-    confirmDestructive(
-      'Delete entire list?',
-      `${items.length} item${items.length === 1 ? '' : 's'} will be permanently removed.`,
-      'Delete all',
-      async () => {
+    setConfirmAction({
+      title: t('list.deleteAllTitle'),
+      message: t(items.length === 1 ? 'list.deleteAllBodyOne' : 'list.deleteAllBodyOther', {
+        count: items.length,
+      }),
+      label: t('list.deleteAll'),
+      run: async () => {
         try {
           await clearAll();
         } catch (err) {
           Alert.alert(
-            'Could not delete list',
-            err instanceof Error ? err.message : 'Please try again.',
+            t('list.deleteFailed'),
+            err instanceof Error ? err.message : t('common.tryAgain'),
           );
         }
       },
-    );
-  }, [clearAll, items.length]);
+    });
+  }, [clearAll, items.length, t]);
 
   const renderItem = useCallback(
     ({ item }: { item: ShoppingListItem }) => {
@@ -356,8 +346,8 @@ export default function ShoppingListScreen() {
           style={{
             backgroundColor: colors.surface,
             borderColor: isDuplicate ? colors.warning : colors.frostedBorder,
-            borderLeftWidth: isDuplicate ? 3 : 1,
-            borderLeftColor: isDuplicate ? colors.warning : colors.frostedBorder,
+            borderStartWidth: isDuplicate ? 3 : 1,
+            borderStartColor: isDuplicate ? colors.warning : colors.frostedBorder,
             opacity: item.checked ? 0.55 : 1,
           }}
         >
@@ -393,12 +383,12 @@ export default function ShoppingListScreen() {
                     style={{ backgroundColor: colors.warningSoft }}
                     onPress={() => {
                       Alert.alert(
-                        'Listed more than once',
-                        `${item.name} appears ${dupCount} times. Combine matching amounts, or keep them separate.`,
+                        t('list.duplicateTitle'),
+                        t('list.duplicateBody', { name: item.name, count: dupCount }),
                         [
-                          { text: 'Keep separate', style: 'cancel' },
+                          { text: t('list.keepSeparate'), style: 'cancel' },
                           {
-                            text: 'Combine',
+                            text: t('list.combine'),
                             onPress: () => void handleCombine(item.name),
                           },
                         ],
@@ -407,7 +397,7 @@ export default function ShoppingListScreen() {
                     hitSlop={6}
                   >
                     <Text className="text-[11px] font-bold" style={{ color: colors.warning }}>
-                      Also listed · {dupCount}
+                      {t('list.alsoListed', { count: dupCount })}
                     </Text>
                   </Pressable>
                 ) : null}
@@ -421,7 +411,7 @@ export default function ShoppingListScreen() {
           </Pressable>
           <Pressable
             accessibilityRole="button"
-            accessibilityLabel={`Edit ${item.name}`}
+            accessibilityLabel={t('list.editItemLabel', { name: item.name })}
             className="min-h-[44px] min-w-[44px] items-center justify-center rounded-full active:opacity-70"
             hitSlop={8}
             onPress={() => openEdit(item)}
@@ -430,7 +420,7 @@ export default function ShoppingListScreen() {
           </Pressable>
           <Pressable
             accessibilityRole="button"
-            accessibilityLabel={`Remove ${item.name}`}
+            accessibilityLabel={t('list.removeItemLabel', { name: item.name })}
             className="min-h-[44px] min-w-[44px] items-center justify-center rounded-full active:opacity-70"
             hitSlop={8}
             onPress={() => void handleRemove(item)}
@@ -449,6 +439,7 @@ export default function ShoppingListScreen() {
       handleRemove,
       handleToggle,
       openEdit,
+      t,
     ],
   );
 
@@ -466,17 +457,17 @@ export default function ShoppingListScreen() {
         <View className="flex-1 items-center justify-center px-8 pb-10">
           <Ionicons name="cloud-offline-outline" size={42} color={colors.textSecondary} />
           <Text className="mb-2 mt-4 text-center text-2xl font-bold" style={{ color: colors.text }}>
-            Couldn&apos;t load list
+            {t('list.loadFailedTitle')}
           </Text>
           <Text className="mb-6 text-center text-base leading-6" style={{ color: colors.textSecondary }}>
-            Check your connection and try again.
+            {t('list.loadFailedBody')}
           </Text>
           <Pressable
             className="rounded-[22px] px-6 py-3.5 active:opacity-80"
             style={{ backgroundColor: colors.primary }}
             onPress={() => void refresh()}
           >
-            <Text className="text-base font-bold text-white">Try again</Text>
+            <Text className="text-base font-bold text-white">{t('common.tryAgainAction')}</Text>
           </Pressable>
         </View>
       </Screen>
@@ -485,6 +476,10 @@ export default function ShoppingListScreen() {
 
   return (
     <Screen tabScreen>
+      <KeyboardAvoidingView
+        className="flex-1"
+        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+      >
       <View className="flex-1 px-5 pt-2">
         <View className="flex-row items-start gap-3">
           <View className="min-w-0 flex-1">
@@ -493,14 +488,14 @@ export default function ShoppingListScreen() {
           {items.length > 0 ? (
             <Pressable
               accessibilityRole="button"
-              accessibilityLabel="Clear list"
+              accessibilityLabel={t('list.clearList')}
               className="mt-1 flex-row items-center gap-1.5 rounded-2xl px-3 py-2.5 active:opacity-80"
               style={{ backgroundColor: colors.dangerSoft }}
               onPress={handleDeleteAll}
             >
               <Ionicons name="trash-outline" size={16} color={colors.danger} />
               <Text className="text-xs font-bold" style={{ color: colors.danger }}>
-                Clear list
+                {t('list.clearList')}
               </Text>
             </Pressable>
           ) : null}
@@ -512,11 +507,11 @@ export default function ShoppingListScreen() {
             style={{ backgroundColor: colors.dangerSoft }}
           >
             <Text className="flex-1 text-sm" style={{ color: colors.danger }}>
-              Couldn&apos;t refresh — showing your last list.
+              {t('list.refreshFailed')}
             </Text>
             <Pressable onPress={() => void refresh()} hitSlop={8}>
               <Text className="text-sm font-bold" style={{ color: colors.danger }}>
-                Retry
+                {t('common.retry')}
               </Text>
             </Pressable>
           </View>
@@ -549,7 +544,7 @@ export default function ShoppingListScreen() {
               borderColor: colors.frostedBorder,
               backgroundColor: colors.background,
             }}
-            placeholder="Item name"
+            placeholder={t('list.itemName')}
             placeholderTextColor={colors.textSecondary}
             value={name}
             onChangeText={setName}
@@ -558,8 +553,12 @@ export default function ShoppingListScreen() {
           />
           {typingDuplicateCount > 0 ? (
             <Text className="px-1 text-xs font-medium" style={{ color: colors.warning }}>
-              Already on your list · {typingDuplicateCount} line
-              {typingDuplicateCount === 1 ? '' : 's'} (you can still add another)
+              {t(
+                typingDuplicateCount === 1
+                  ? 'list.typingDuplicateOne'
+                  : 'list.typingDuplicateOther',
+                { count: typingDuplicateCount },
+              )}
             </Text>
           ) : null}
           <View className="flex-row gap-2">
@@ -570,7 +569,7 @@ export default function ShoppingListScreen() {
                 borderColor: colors.frostedBorder,
                 backgroundColor: colors.background,
               }}
-              placeholder="Qty"
+              placeholder={t('list.quantityShort')}
               placeholderTextColor={colors.textSecondary}
               value={quantityText}
               onChangeText={setQuantityText}
@@ -583,7 +582,7 @@ export default function ShoppingListScreen() {
                 borderColor: colors.frostedBorder,
                 backgroundColor: colors.background,
               }}
-              placeholder="Unit (optional)"
+              placeholder={t('list.unitOptional')}
               placeholderTextColor={colors.textSecondary}
               value={unit}
               onChangeText={setUnit}
@@ -595,6 +594,8 @@ export default function ShoppingListScreen() {
               style={{ backgroundColor: colors.primary, opacity: adding ? 0.7 : 1 }}
               disabled={adding}
               onPress={() => void handleAdd()}
+              accessibilityRole="button"
+              accessibilityLabel={t('list.addItem')}
             >
               {adding ? (
                 <ActivityIndicator color="#fff" />
@@ -621,12 +622,17 @@ export default function ShoppingListScreen() {
                   onPress={() => void handleCombine(notice.combineName!)}
                 >
                   <Text className="text-sm font-bold" style={{ color: colors.warning }}>
-                    Combine into one line
+                    {t('list.combineOneLine')}
                   </Text>
                 </Pressable>
               ) : null}
             </View>
-            <Pressable onPress={() => setNotice(null)} hitSlop={8}>
+            <Pressable
+              onPress={() => setNotice(null)}
+              hitSlop={8}
+              accessibilityRole="button"
+              accessibilityLabel={t('common.dismiss')}
+            >
               <Ionicons name="close" size={18} color={colors.textSecondary} />
             </Pressable>
           </View>
@@ -637,15 +643,15 @@ export default function ShoppingListScreen() {
             <BrandHeader
               size="hero"
               align="center"
-              title="List is empty"
-              subtitle="Add items above, or open a recipe and tap Add to list."
+              title={t('list.emptyTitle')}
+              subtitle={t('list.emptyBody')}
             />
             <Pressable
               className="mt-8 rounded-[22px] px-6 py-3.5 active:opacity-80"
               style={{ backgroundColor: colors.primary }}
               onPress={() => router.push('/')}
             >
-              <Text className="text-base font-bold text-white">Browse recipes</Text>
+              <Text className="text-base font-bold text-white">{t('list.browseRecipes')}</Text>
             </Pressable>
           </View>
         ) : (
@@ -663,7 +669,10 @@ export default function ShoppingListScreen() {
                     className="mb-2 text-xs font-semibold uppercase tracking-wide"
                     style={{ color: colors.textSecondary }}
                   >
-                    {items.length - checkedCount} left · {checkedCount} checked
+                    {t('list.progress', {
+                      left: items.length - checkedCount,
+                      checked: checkedCount,
+                    })}
                   </Text>
                 ) : null
               }
@@ -679,13 +688,14 @@ export default function ShoppingListScreen() {
                   className="text-sm font-semibold"
                   style={{ color: checkedCount === 0 ? colors.textSecondary : colors.text }}
                 >
-                  Clear checked
+                  {t('list.clearChecked')}
                 </Text>
               </Pressable>
             </View>
           </>
         )}
       </View>
+      </KeyboardAvoidingView>
 
       <Modal
         visible={editingItem != null}
@@ -693,23 +703,30 @@ export default function ShoppingListScreen() {
         presentationStyle="pageSheet"
         onRequestClose={() => setEditingItem(null)}
       >
-        <SafeAreaView className="flex-1" style={{ backgroundColor: colors.background }}>
+        <SafeAreaView
+          className="flex-1"
+          style={{ backgroundColor: colors.background, direction: rtl ? 'rtl' : 'ltr' }}
+        >
+          <KeyboardAvoidingView
+            className="flex-1"
+            behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+          >
           <View
             className="flex-row items-center justify-between border-b px-5 py-4"
             style={{ borderColor: colors.frostedBorder }}
           >
             <Pressable onPress={() => setEditingItem(null)}>
-              <Text style={{ color: colors.textSecondary }}>Cancel</Text>
+              <Text style={{ color: colors.textSecondary }}>{t('common.cancel')}</Text>
             </Pressable>
             <Text className="text-base font-bold" style={{ color: colors.text }}>
-              Edit item
+              {t('list.editItem')}
             </Text>
             <Pressable onPress={() => void handleSaveEdit()} disabled={savingEdit}>
               {savingEdit ? (
                 <ActivityIndicator color={colors.primary} />
               ) : (
                 <Text className="font-bold" style={{ color: colors.primary }}>
-                  Save
+                  {t('common.save')}
                 </Text>
               )}
             </Pressable>
@@ -722,7 +739,7 @@ export default function ShoppingListScreen() {
                 borderColor: colors.frostedBorder,
                 backgroundColor: colors.surface,
               }}
-              placeholder="Name"
+              placeholder={t('library.namePlaceholder')}
               placeholderTextColor={colors.textSecondary}
               value={editName}
               onChangeText={setEditName}
@@ -735,7 +752,7 @@ export default function ShoppingListScreen() {
                   borderColor: colors.frostedBorder,
                   backgroundColor: colors.surface,
                 }}
-                placeholder="Qty"
+                placeholder={t('list.quantityShort')}
                 placeholderTextColor={colors.textSecondary}
                 value={editQuantity}
                 onChangeText={setEditQuantity}
@@ -748,13 +765,14 @@ export default function ShoppingListScreen() {
                   borderColor: colors.frostedBorder,
                   backgroundColor: colors.surface,
                 }}
-                placeholder="Unit"
+                placeholder={t('list.unit')}
                 placeholderTextColor={colors.textSecondary}
                 value={editUnit}
                 onChangeText={setEditUnit}
               />
             </View>
           </View>
+          </KeyboardAvoidingView>
         </SafeAreaView>
       </Modal>
 
@@ -764,6 +782,27 @@ export default function ShoppingListScreen() {
         collections={collections}
         onClose={() => setFromRecipesOpen(false)}
         onConfirm={handleAddFromRecipes}
+      />
+
+      <ConfirmDialog
+        visible={confirmAction != null}
+        title={confirmAction?.title ?? ''}
+        message={confirmAction?.message ?? ''}
+        confirmLabel={confirmAction?.label ?? t('common.delete')}
+        cancelLabel={t('common.cancel')}
+        destructive
+        loading={confirming}
+        onCancel={() => {
+          if (!confirming) setConfirmAction(null);
+        }}
+        onConfirm={() => {
+          if (!confirmAction) return;
+          setConfirming(true);
+          void confirmAction.run().finally(() => {
+            setConfirming(false);
+            setConfirmAction(null);
+          });
+        }}
       />
     </Screen>
   );

@@ -1,6 +1,11 @@
-import { clearGuestRecipes, getGuestRecipes, replaceGuestRecipes } from '@/lib/guestRecipes';
+import {
+  clearGuestMigrationJournal,
+  prepareGuestRecipeIdMap,
+  updateGuestRecipeIdMapping,
+} from '@/lib/guestMigrationJournal';
+import { clearGuestRecipes, getGuestRecipes } from '@/lib/guestRecipes';
 import { supabase } from '@/lib/supabase/client';
-import type { Recipe, RecipeTranslationContent } from '@/types/recipe';
+import type { RecipeTranslationContent } from '@/types/recipe';
 
 export type GuestRecipeMigrationResult = {
   migrated: number;
@@ -10,21 +15,25 @@ export type GuestRecipeMigrationResult = {
 
 /**
  * ADR 002 — after sign-up, move the user's local guest recipes into their
- * Supabase library, then clear the local store. Best-effort: if the insert
- * fails we keep the local copies so nothing is lost.
+ * Supabase library. Guest recipes and the durable id map remain local until
+ * collections and shopping-list provenance have migrated successfully.
  */
 export async function migrateGuestRecipesToSupabase(
   userId: string,
 ): Promise<GuestRecipeMigrationResult> {
   const guestRecipes = await getGuestRecipes();
-  if (guestRecipes.length === 0) return { migrated: 0, idMap: {} };
+  const idMap = await prepareGuestRecipeIdMap(
+    userId,
+    guestRecipes.map((recipe) => recipe.id),
+  );
+  if (guestRecipes.length === 0) return { migrated: 0, idMap };
 
-  const idMap: Record<string, string> = {};
-  const unmapped: Recipe[] = [];
   let migrated = 0;
 
   for (const recipe of guestRecipes) {
+    const cloudId = idMap[recipe.id];
     const row = {
+      id: cloudId,
       user_id: userId,
       title: recipe.title,
       original_url: recipe.original_url,
@@ -51,40 +60,57 @@ export async function migrateGuestRecipesToSupabase(
 
     const { data, error } = await supabase.from('recipes').insert(row).select('id').single();
     if (error) {
-      // Unique URL constraint — already in library from a prior partial migration.
       if (error.code === '23505') {
+        const { data: mappedRecipe, error: mappedError } = await supabase
+          .from('recipes')
+          .select('id')
+          .eq('user_id', userId)
+          .eq('id', cloudId)
+          .maybeSingle();
+        if (mappedError) throw mappedError;
+        if (mappedRecipe?.id) {
+          await migrateGuestTranslations(cloudId, recipe.translations);
+          continue;
+        }
+
+        // A recipe saved separately with the same URL wins; journal the
+        // existing id so dependent memberships and provenance remain intact.
         if (recipe.original_url) {
-          const { data: existing } = await supabase
+          const { data: existing, error: existingError } = await supabase
             .from('recipes')
             .select('id')
             .eq('user_id', userId)
             .eq('original_url', recipe.original_url)
             .maybeSingle();
+          if (existingError) throw existingError;
           if (existing?.id) {
-            idMap[recipe.id] = existing.id as string;
-            await migrateGuestTranslations(existing.id as string, recipe.translations);
+            const existingId = existing.id as string;
+            idMap[recipe.id] = existingId;
+            await updateGuestRecipeIdMapping(userId, recipe.id, existingId);
+            await migrateGuestTranslations(existingId, recipe.translations);
             continue;
           }
         }
-        // Duplicate without a resolvable URL match — keep the local copy.
-        unmapped.push(recipe);
-        continue;
       }
       throw error;
     }
 
     const newId = (data as { id: string }).id;
-    idMap[recipe.id] = newId;
-    await migrateGuestTranslations(newId, recipe.translations);
+    if (newId !== cloudId) {
+      idMap[recipe.id] = newId;
+      await updateGuestRecipeIdMapping(userId, recipe.id, newId);
+    }
+    await migrateGuestTranslations(idMap[recipe.id], recipe.translations);
     migrated += 1;
   }
 
-  if (unmapped.length === 0) {
-    await clearGuestRecipes();
-  } else {
-    await replaceGuestRecipes(unmapped);
-  }
   return { migrated, idMap };
+}
+
+/** Clear source recipes last, after every id-map consumer has completed. */
+export async function finalizeGuestRecipeMigration(userId: string): Promise<void> {
+  await clearGuestRecipes();
+  await clearGuestMigrationJournal(userId);
 }
 
 async function migrateGuestTranslations(

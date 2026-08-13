@@ -2,7 +2,17 @@ import Ionicons from '@expo/vector-icons/Ionicons';
 import * as AppleAuthentication from 'expo-apple-authentication';
 import { router, useLocalSearchParams } from 'expo-router';
 import { useEffect, useMemo, useState, type ReactNode } from 'react';
-import { ActivityIndicator, Pressable, Text, TextInput, View } from 'react-native';
+import {
+  ActivityIndicator,
+  KeyboardAvoidingView,
+  Platform,
+  Pressable,
+  ScrollView,
+  Text,
+  TextInput,
+  View,
+} from 'react-native';
+import { useTranslation } from 'react-i18next';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { CookieMark } from '@/components/CookieMark';
@@ -51,10 +61,27 @@ function AuthShell({ children }: { children: ReactNode }) {
   const { colors } = useThemePreference();
   const { isMediumUp } = useBreakpoint();
 
+  const keyboardSafeContent = (
+    <KeyboardAvoidingView
+      className="flex-1"
+      behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+    >
+      <ScrollView
+        className="flex-1"
+        contentContainerStyle={{ flexGrow: 1 }}
+        keyboardShouldPersistTaps="handled"
+        keyboardDismissMode={Platform.OS === 'ios' ? 'interactive' : 'on-drag'}
+        showsVerticalScrollIndicator={false}
+      >
+        {children}
+      </ScrollView>
+    </KeyboardAvoidingView>
+  );
+
   if (!isMediumUp) {
     return (
       <SafeAreaView className="flex-1" style={{ backgroundColor: colors.background }} edges={['bottom']}>
-        {children}
+        {keyboardSafeContent}
       </SafeAreaView>
     );
   }
@@ -79,13 +106,14 @@ function AuthShell({ children }: { children: ReactNode }) {
           maxHeight: '100%',
         }}
       >
-        {children}
+        {keyboardSafeContent}
       </View>
     </SafeAreaView>
   );
 }
 
 export default function AuthScreen() {
+  const { t } = useTranslation();
   const params = useLocalSearchParams<{ mode?: string; reason?: string }>();
   const initialMode = useMemo(() => parseMode(params.mode), [params.mode]);
   const reason = useMemo(() => parseReason(params.reason), [params.reason]);
@@ -125,17 +153,23 @@ export default function AuthScreen() {
     setError(null);
     const normalizedEmail = normalizeEmail(email);
     if (!isValidEmail(normalizedEmail)) {
-      setError('Enter a valid email address.');
+      setError(t('auth.validEmail'));
       return;
     }
     if (mode !== 'forgot' && !password) {
-      setError('Enter your password.');
+      setError(t('auth.enterPassword'));
       return;
     }
     if (mode === 'signup') {
       const passwordError = validatePassword(password);
       if (passwordError) {
-        setError(passwordError);
+        setError(
+          passwordError === 'Use at least 8 characters.'
+            ? t('auth.passwordMin')
+            : passwordError === 'Include at least one letter.'
+              ? t('auth.passwordLetter')
+              : t('auth.passwordNumber'),
+        );
         return;
       }
     }
@@ -158,7 +192,7 @@ export default function AuthScreen() {
       }
       done();
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Something went wrong. Please try again.');
+      setError(err instanceof Error ? err.message : t('auth.genericError'));
     } finally {
       setLoading(false);
     }
@@ -178,7 +212,7 @@ export default function AuthScreen() {
       ) {
         return;
       }
-      setError(err instanceof Error ? err.message : 'Apple sign-in failed.');
+      setError(err instanceof Error ? err.message : t('auth.appleFailed'));
     } finally {
       setLoading(false);
     }
@@ -191,7 +225,7 @@ export default function AuthScreen() {
       const result = await signInWithGoogle();
       if (!result.cancelled) done();
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Google sign-in failed.');
+      setError(err instanceof Error ? err.message : t('auth.googleFailed'));
     } finally {
       setLoading(false);
     }
@@ -204,18 +238,18 @@ export default function AuthScreen() {
 
   const subtitle =
     reason === 'extract_limit'
-      ? 'Create a free account to keep extracting recipes from social videos.'
+      ? t('auth.reasonExtract')
       : reason === 'save_limit'
-        ? 'Create a free account to save this recipe and sync your library.'
+        ? t('auth.reasonSave')
         : reason === 'sync'
-          ? 'Sign in to sync recipes across your devices.'
+          ? t('auth.reasonSync')
           : reason === 'shared_recipe'
-            ? 'Create a free account to save this shared recipe to your kitchen.'
+            ? t('auth.reasonShared')
             : mode === 'signup'
-              ? 'Save recipes and sync them across devices.'
+              ? t('auth.signupSubtitle')
               : mode === 'forgot'
-                ? 'Enter your email and we’ll send you a secure reset link.'
-                : 'Sign in to access your recipe library.';
+                ? t('auth.forgotSubtitle')
+                : t('auth.signinSubtitle');
 
   if (waitingFor) {
     const isConfirm = waitingFor === 'confirm';
@@ -229,20 +263,16 @@ export default function AuthScreen() {
             <Ionicons name="mail-open-outline" size={30} color={colors.primary} />
           </View>
           <Text className="mb-2 text-center text-2xl font-bold" style={{ color: colors.text }}>
-            Check your email
+            {t('auth.checkEmail')}
           </Text>
           <Text className="mb-2 text-center text-base leading-6" style={{ color: colors.textSecondary }}>
-            {isConfirm
-              ? 'We sent a confirmation link to'
-              : 'If an account exists for that address, we sent a reset link to'}
+            {t(isConfirm ? 'auth.confirmSent' : 'auth.resetSent')}
           </Text>
           <Text className="mb-6 text-center text-base font-semibold" style={{ color: colors.text }}>
             {normalizeEmail(email)}
           </Text>
           <Text className="mb-8 text-center text-sm leading-5" style={{ color: colors.textSecondary }}>
-            {isConfirm
-              ? 'Open the link on this phone, then come back here and sign in.'
-              : 'Open the link on this phone to choose a new password.'}
+            {t(isConfirm ? 'auth.confirmInstructions' : 'auth.resetInstructions')}
           </Text>
           <Pressable
             className="mb-3 w-full items-center rounded-full py-4"
@@ -250,7 +280,7 @@ export default function AuthScreen() {
             onPress={() => switchMode('signin')}
           >
             <Text className="text-lg font-bold text-white">
-              {isConfirm ? 'I confirmed — sign in' : 'Back to sign in'}
+              {t(isConfirm ? 'auth.confirmedSignIn' : 'auth.backToSignIn')}
             </Text>
           </Pressable>
           <Pressable
@@ -262,7 +292,7 @@ export default function AuthScreen() {
             }}
           >
             <Text className="text-sm font-semibold" style={{ color: colors.primary }}>
-              {isConfirm ? 'Use a different email' : 'Resend or edit email'}
+              {t(isConfirm ? 'auth.differentEmail' : 'auth.resendOrEdit')}
             </Text>
           </Pressable>
         </View>
@@ -282,10 +312,10 @@ export default function AuthScreen() {
           </View>
           <Text className="mb-1 text-2xl font-bold" style={{ color: colors.text }}>
             {mode === 'signup'
-              ? 'Create your account'
+              ? t('auth.createAccount')
               : mode === 'forgot'
-                ? 'Reset your password'
-                : 'Welcome back'}
+                ? t('auth.resetPassword')
+                : t('auth.welcomeBack')}
           </Text>
           <Text className="text-sm leading-5" style={{ color: colors.textSecondary }}>
             {subtitle}
@@ -293,7 +323,7 @@ export default function AuthScreen() {
         </View>
 
         <Text className="mb-2 text-sm font-semibold" style={{ color: colors.text }}>
-          Email
+          {t('auth.email')}
         </Text>
         <View
           className="mb-4 h-14 flex-row items-center rounded-2xl border px-3.5"
@@ -303,7 +333,7 @@ export default function AuthScreen() {
           <TextInput
             className="flex-1 px-3 text-base"
             style={{ color: colors.text, paddingVertical: 0 }}
-            placeholder="you@example.com"
+            placeholder={t('auth.emailPlaceholder')}
             placeholderTextColor={colors.textSecondary}
             value={email}
             onChangeText={(value) => {
@@ -326,7 +356,7 @@ export default function AuthScreen() {
         {mode !== 'forgot' && (
           <>
             <Text className="mb-2 text-sm font-semibold" style={{ color: colors.text }}>
-              Password
+              {t('auth.password')}
             </Text>
             <View
               className="h-14 flex-row items-center rounded-2xl border px-3.5"
@@ -357,7 +387,7 @@ export default function AuthScreen() {
                 onPress={() => setShowPassword((value) => !value)}
                 hitSlop={10}
                 accessibilityRole="button"
-                accessibilityLabel={showPassword ? 'Hide password' : 'Show password'}
+                accessibilityLabel={t(showPassword ? 'auth.hidePassword' : 'auth.showPassword')}
                 disabled={loading}
               >
                 <Ionicons
@@ -393,8 +423,8 @@ export default function AuthScreen() {
                 </View>
                 <Text className="text-xs" style={{ color: colors.textSecondary }}>
                   {password
-                    ? `${passwordStrength[0].toUpperCase()}${passwordStrength.slice(1)} password`
-                    : 'Use 8+ characters with at least one letter and one number.'}
+                    ? t(`auth.strength.${passwordStrength}`)
+                    : t('auth.passwordHint')}
                 </Text>
               </View>
             )}
@@ -406,7 +436,7 @@ export default function AuthScreen() {
                 disabled={loading}
               >
                 <Text className="text-sm font-semibold" style={{ color: colors.primary }}>
-                  Forgot password?
+                  {t('auth.forgotPassword')}
                 </Text>
               </Pressable>
             )}
@@ -437,10 +467,10 @@ export default function AuthScreen() {
           ) : (
             <Text className="text-lg font-bold text-white">
               {mode === 'signup'
-                ? 'Sign up'
+                ? t('auth.signUp')
                 : mode === 'forgot'
-                  ? 'Send reset link'
-                  : 'Sign in'}
+                  ? t('auth.sendResetLink')
+                  : t('auth.signIn')}
             </Text>
           )}
         </Pressable>
@@ -452,10 +482,10 @@ export default function AuthScreen() {
         >
           <Text className="text-sm font-semibold" style={{ color: colors.primary }}>
             {mode === 'signup'
-              ? 'Already have an account? Sign in'
+              ? t('auth.haveAccount')
               : mode === 'forgot'
-                ? 'Back to sign in'
-                : "Don't have an account? Sign up"}
+                ? t('auth.backToSignIn')
+                : t('auth.needAccount')}
           </Text>
         </Pressable>
 
@@ -463,7 +493,7 @@ export default function AuthScreen() {
           <View className="my-2 flex-row items-center">
             <View className="h-px flex-1" style={{ backgroundColor: colors.border }} />
             <Text className="mx-3 text-xs" style={{ color: colors.textSecondary }}>
-              or continue with
+              {t('auth.orContinueWith')}
             </Text>
             <View className="h-px flex-1" style={{ backgroundColor: colors.border }} />
           </View>
@@ -501,7 +531,7 @@ export default function AuthScreen() {
             }}
           >
             <Text className="text-base font-semibold" style={{ color: colors.text }}>
-              Continue with Google
+              {t('auth.continueGoogle')}
             </Text>
           </Pressable>
         )}
@@ -509,7 +539,7 @@ export default function AuthScreen() {
         <View className="mt-6 flex-row flex-wrap items-center justify-center gap-x-3 gap-y-2">
           <Pressable onPress={() => void openLegalUrl(LEGAL_URLS.privacy)} disabled={loading}>
             <Text className="text-xs font-medium" style={{ color: colors.textSecondary }}>
-              Privacy
+              {t('auth.privacy')}
             </Text>
           </Pressable>
           <Text className="text-xs" style={{ color: colors.textSecondary }}>
@@ -517,7 +547,7 @@ export default function AuthScreen() {
           </Text>
           <Pressable onPress={() => void openLegalUrl(LEGAL_URLS.terms)} disabled={loading}>
             <Text className="text-xs font-medium" style={{ color: colors.textSecondary }}>
-              Terms
+              {t('auth.terms')}
             </Text>
           </Pressable>
         </View>

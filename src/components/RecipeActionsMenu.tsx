@@ -3,6 +3,7 @@ import { useTranslation } from 'react-i18next';
 import { Modal, Platform, Pressable, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
+import { useRtl } from '@/hooks/useRtl';
 import { useThemePreference } from '@/hooks/useThemePreference';
 
 interface RecipeActionsMenuProps {
@@ -25,6 +26,7 @@ export function RecipeActionsMenu({
 }: RecipeActionsMenuProps) {
   const { t } = useTranslation();
   const { colors } = useThemePreference();
+  const { rtl } = useRtl();
   const insets = useSafeAreaInsets();
   const isWeb = Platform.OS === 'web';
 
@@ -32,7 +34,10 @@ export function RecipeActionsMenu({
     <Modal visible={visible} transparent animationType="fade" onRequestClose={onClose}>
       <Pressable
         className={isWeb ? 'flex-1 items-center justify-center px-4' : 'flex-1 justify-end'}
-        style={{ backgroundColor: 'rgba(20, 16, 28, 0.48)' }}
+        style={{
+          backgroundColor: 'rgba(20, 16, 28, 0.48)',
+          direction: rtl ? 'rtl' : 'ltr',
+        }}
         onPress={onClose}
       >
         <Pressable

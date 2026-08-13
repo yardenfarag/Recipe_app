@@ -1,6 +1,7 @@
 import Ionicons from '@expo/vector-icons/Ionicons';
 import { Component, type ErrorInfo, type ReactNode } from 'react';
 import { Pressable, Text, View } from 'react-native';
+import { useTranslation } from 'react-i18next';
 
 import { useThemePreference } from '@/hooks/useThemePreference';
 
@@ -12,8 +13,9 @@ interface State {
   error: Error | null;
 }
 
-function ErrorFallback({ error, onRetry }: { error: Error; onRetry: () => void }) {
+function ErrorFallback({ onRetry }: { onRetry: () => void }) {
   const { colors } = useThemePreference();
+  const { t } = useTranslation();
 
   return (
     <View
@@ -27,17 +29,17 @@ function ErrorFallback({ error, onRetry }: { error: Error; onRetry: () => void }
         <Ionicons name="alert-circle-outline" size={32} color={colors.danger} />
       </View>
       <Text className="mb-2 text-center text-xl font-bold" style={{ color: colors.text }}>
-        Something went wrong
+        {t('errorBoundary.title')}
       </Text>
       <Text className="mb-6 text-center text-sm leading-5" style={{ color: colors.textSecondary }}>
-        {error.message || 'An unexpected error occurred.'}
+        {t('errorBoundary.body')}
       </Text>
       <Pressable
         onPress={onRetry}
         className="rounded-full px-6 py-3 active:opacity-80"
         style={{ backgroundColor: colors.primary }}
       >
-        <Text className="text-base font-bold text-white">Try again</Text>
+        <Text className="text-base font-bold text-white">{t('common.tryAgainAction')}</Text>
       </Pressable>
     </View>
   );
@@ -52,9 +54,7 @@ export class ErrorBoundary extends Component<Props, State> {
   }
 
   componentDidCatch(error: Error, info: ErrorInfo) {
-    if (__DEV__) {
-      console.error('[ErrorBoundary]', error, info.componentStack);
-    }
+    console.error('[ErrorBoundary]', error, info.componentStack);
   }
 
   private handleRetry = () => {
@@ -63,7 +63,7 @@ export class ErrorBoundary extends Component<Props, State> {
 
   render() {
     if (this.state.error) {
-      return <ErrorFallback error={this.state.error} onRetry={this.handleRetry} />;
+      return <ErrorFallback onRetry={this.handleRetry} />;
     }
 
     return this.props.children;

@@ -2,6 +2,7 @@ import * as Linking from 'expo-linking';
 import { router } from 'expo-router';
 import { useEffect, useState } from 'react';
 import { ActivityIndicator, Pressable, Text, View } from 'react-native';
+import { useTranslation } from 'react-i18next';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { useThemePreference } from '@/hooks/useThemePreference';
@@ -11,6 +12,7 @@ const CALLBACK_WAIT_MS = 4_000;
 
 /** Handles Google OAuth when Android/iOS opens pinch://auth-callback from the browser. */
 export default function AuthCallbackScreen() {
+  const { t } = useTranslation();
   const callbackUrl = Linking.useLinkingURL();
   const { colors } = useThemePreference();
   const [error, setError] = useState<string | null>(null);
@@ -25,7 +27,7 @@ export default function AuthCallbackScreen() {
         if (active) router.replace('/');
       } catch (err) {
         if (active) {
-          setError(err instanceof Error ? err.message : 'Sign-in could not be completed.');
+          setError(err instanceof Error ? err.message : t('auth.callbackFailed'));
         }
       }
     }
@@ -46,7 +48,7 @@ export default function AuthCallbackScreen() {
           await finishSignIn(initial);
           return;
         }
-        setError('Sign-in link was missing. Try again from the sign-in screen.');
+        setError(t('auth.callbackMissing'));
       })();
     }, CALLBACK_WAIT_MS);
 
@@ -54,7 +56,7 @@ export default function AuthCallbackScreen() {
       active = false;
       if (waitTimer) clearTimeout(waitTimer);
     };
-  }, [callbackUrl]);
+  }, [callbackUrl, t]);
 
   return (
     <SafeAreaView className="flex-1 px-6" style={{ backgroundColor: colors.background }}>
@@ -63,7 +65,7 @@ export default function AuthCallbackScreen() {
           <>
             <ActivityIndicator color={colors.primary} size="large" />
             <Text className="mt-4 text-base" style={{ color: colors.textSecondary }}>
-              Finishing sign-in…
+              {t('auth.callbackFinishing')}
             </Text>
           </>
         ) : (
@@ -76,7 +78,7 @@ export default function AuthCallbackScreen() {
               style={{ backgroundColor: colors.primary }}
               onPress={() => router.replace('/auth')}
             >
-              <Text className="text-base font-bold text-white">Back to sign in</Text>
+              <Text className="text-base font-bold text-white">{t('auth.backToSignIn')}</Text>
             </Pressable>
           </>
         )}

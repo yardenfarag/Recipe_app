@@ -318,3 +318,28 @@ export function localizeIngredientUnits<T extends { quantity: number; unit: stri
       : (ing.unit?.trim() ?? ''),
   }));
 }
+
+const CULINARY_LANGUAGES = new Set<CulinaryUnitLanguage>([
+  'en',
+  'es',
+  'he',
+  'ru',
+  'ar',
+  'de',
+  'fr',
+]);
+
+export function isCulinaryUnitLanguage(value: string | null | undefined): value is CulinaryUnitLanguage {
+  return Boolean(value && CULINARY_LANGUAGES.has(value as CulinaryUnitLanguage));
+}
+
+/** First supported culinary language among candidates (`he-IL` → `he`). */
+export function resolveCulinaryLanguage(
+  ...candidates: (string | null | undefined)[]
+): CulinaryUnitLanguage {
+  for (const candidate of candidates) {
+    const normalized = candidate?.toLowerCase().split(/[-_]/)[0];
+    if (isCulinaryUnitLanguage(normalized)) return normalized;
+  }
+  return 'en';
+}

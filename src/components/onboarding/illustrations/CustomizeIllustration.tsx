@@ -12,9 +12,11 @@ import Animated, {
 
 import { PhoneFrame } from '@/components/onboarding/illustrations/PhoneFrame';
 import { useThemePreference } from '@/hooks/useThemePreference';
+import { useTranslation } from 'react-i18next';
 
 /** Ingredient swap + remix + list — icon-first, no cramped labels. */
 export function CustomizeIllustration() {
+  const { t } = useTranslation();
   const { colors } = useThemePreference();
   const [reduceMotion, setReduceMotion] = useState(false);
   const slide = useSharedValue(0);
@@ -104,10 +106,10 @@ export function CustomizeIllustration() {
           </View>
           <View style={{ ...cardBase, backgroundColor: colors.primarySoft }}>
             <Text style={{ fontSize: 11, fontWeight: '700', color: colors.primary }}>
-              Remix · vegan
+              {t('onboarding.remixVegan')}
             </Text>
             <Text style={{ marginTop: 4, fontSize: 10, color: colors.textSecondary }}>
-              Sign in to transform
+              {t('onboarding.remixSignInHint')}
             </Text>
           </View>
           <View
@@ -118,7 +120,7 @@ export function CustomizeIllustration() {
             }}
           >
             <Text style={{ fontSize: 11, fontWeight: '600', color: colors.text }}>
-              + Shopping list
+              {t('onboarding.shoppingListChip')}
             </Text>
           </View>
         </View>

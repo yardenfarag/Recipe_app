@@ -1,13 +1,14 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 
 import { useLanguagePreference } from '@/hooks/useLanguagePreference';
-import { effectiveSourceLanguage } from '@/lib/appLanguages';
 import { ensureRecipeTranslation } from '@/lib/ensureRecipeTranslation';
 import {
   getGuestRecipeTranslation,
   upsertGuestRecipeTranslation,
 } from '@/lib/guestRecipes';
 import { isRecipeLanguageCode, type RecipeLanguageCode } from '@/lib/recipeLanguages';
+import { resolveRecipeSourceLanguage } from '@/lib/recipeSourceLanguage';
 import {
   fetchRecipeTranslation,
   upsertRecipeTranslation,
@@ -27,6 +28,7 @@ type LocalizedState = {
  * Canonical recipe fields stay untouched; callers persist overlays separately.
  */
 export function useLocalizedRecipe(recipe: ExtractedRecipe | null | undefined, recipeId?: string) {
+  const { t } = useTranslation();
   const { language: preferredLanguage, ready } = useLanguagePreference();
   // Include ingredient/instruction content so swaps & remixes refresh overlays
   // (length alone misses same-count edits that change step text).
@@ -73,7 +75,7 @@ export function useLocalizedRecipe(recipe: ExtractedRecipe | null | undefined, r
       return;
     }
 
-    const source = effectiveSourceLanguage(current.source_language);
+    const source = resolveRecipeSourceLanguage(current);
     const canonical: RecipeTranslationContent = {
       title: current.title,
       ingredients: current.ingredients,
@@ -119,16 +121,21 @@ export function useLocalizedRecipe(recipe: ExtractedRecipe | null | undefined, r
             display: canonical,
             activeLanguage: null,
             translating: false,
-            error: result.message,
+            error:
+              result.code === 'daily_limit'
+                ? t('recipe.translateDailyLimit')
+                : result.message,
           });
           return;
         }
 
+        let persistenceError: string | null = null;
         if (result.status === 'ok' && !result.fromCache) {
           try {
             await persistTranslation(preferredLanguage, result.content);
-          } catch {
-            // Display still works without cache.
+          } catch (error) {
+            persistenceError =
+              error instanceof Error ? error.message : t('recipe.translationSaveFailed');
           }
         }
 
@@ -141,7 +148,7 @@ export function useLocalizedRecipe(recipe: ExtractedRecipe | null | undefined, r
           display: result.content,
           activeLanguage: active,
           translating: false,
-          error: null,
+          error: persistenceError,
         });
       } catch (err) {
         if (id !== runId.current) return;
@@ -149,14 +156,15 @@ export function useLocalizedRecipe(recipe: ExtractedRecipe | null | undefined, r
           display: canonical,
           activeLanguage: null,
           translating: false,
-          error: err instanceof Error ? err.message : "Couldn't translate this recipe.",
+          error: err instanceof Error ? err.message : t('recipe.translateFailedTitle'),
         });
       }
     })();
-  }, [recipeKey, ready, preferredLanguage, loadCached, persistTranslation]);
+  }, [recipeKey, ready, preferredLanguage, loadCached, persistTranslation, t]);
 
   const applyManualTranslation = useCallback(
     async (language: RecipeLanguageCode, content: RecipeTranslationContent) => {
+      await persistTranslation(language, content);
       setState((prev) =>
         prev
           ? {
@@ -173,11 +181,6 @@ export function useLocalizedRecipe(recipe: ExtractedRecipe | null | undefined, r
               error: null,
             },
       );
-      try {
-        await persistTranslation(language, content);
-      } catch {
-        // Non-fatal.
-      }
     },
     [persistTranslation],
   );

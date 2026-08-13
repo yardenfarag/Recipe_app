@@ -186,7 +186,7 @@ export default function RecipeDetailScreen() {
         localizedLanguage={activeLanguage}
         translating={translating}
         onTranslationPersist={(language, content) => {
-          void applyManualTranslation(language, content);
+          return applyManualTranslation(language, content);
         }}
         getCachedTranslation={loadCached}
       />

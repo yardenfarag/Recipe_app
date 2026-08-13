@@ -4,10 +4,10 @@ import { useTranslation } from 'react-i18next';
 import { ActivityIndicator, Pressable, ScrollView, Text, View } from 'react-native';
 
 import { SheetModal } from '@/components/SheetModal';
+import { useRtl } from '@/hooks/useRtl';
 import { useThemePreference } from '@/hooks/useThemePreference';
 import { localizeIngredientUnits } from '@/lib/culinaryUnits';
 import {
-  getRecipeLanguageLabel,
   RECIPE_LANGUAGES,
   RecipeLanguageCode,
 } from '@/lib/recipeLanguages';
@@ -28,7 +28,10 @@ interface RecipeTranslateModalProps {
     language: RecipeLanguageCode,
   ) => Promise<RecipeTranslationContent | null> | RecipeTranslationContent | null;
   onClose: () => void;
-  onApply: (result: TranslatedRecipePayload, language: RecipeLanguageCode) => void;
+  onApply: (
+    result: TranslatedRecipePayload,
+    language: RecipeLanguageCode,
+  ) => void | Promise<void>;
   onShowOriginal: () => void;
 }
 
@@ -49,6 +52,7 @@ export function RecipeTranslateModal({
 }: RecipeTranslateModalProps) {
   const { t } = useTranslation();
   const { colors } = useThemePreference();
+  const { chevronForward } = useRtl();
   const [loadingLanguage, setLoadingLanguage] = useState<RecipeLanguageCode | null>(null);
   const [error, setError] = useState<string | null>(null);
 
@@ -71,7 +75,7 @@ export function RecipeTranslateModal({
     try {
       const cached = (await getCachedTranslation?.(language)) ?? null;
       if (cached) {
-        onApply(
+        await onApply(
           {
             ...cached,
             ingredients: localizeIngredientUnits(cached.ingredients, language),
@@ -90,15 +94,19 @@ export function RecipeTranslateModal({
       });
 
       if (result.status === 'failed' || !result.recipe) {
-        setError(result.message ?? t('recipe.translateFailedTitle'));
+        setError(
+          result.code === 'daily_limit'
+            ? t('recipe.translateDailyLimit')
+            : (result.message ?? t('recipe.translateFailedTitle')),
+        );
         return;
       }
 
-      onApply(result.recipe, language);
+      await onApply(result.recipe, language);
       setError(null);
       onClose();
     } catch {
-      setError(t('recipe.translateFailedTitle'));
+      setError(t('recipe.translationSaveFailed'));
     } finally {
       setLoadingLanguage(null);
     }
@@ -136,12 +144,12 @@ export function RecipeTranslateModal({
             className="mb-3 flex-row items-center justify-between rounded-2xl border px-4 py-3.5 active:opacity-80"
             style={{ borderColor: colors.border, backgroundColor: colors.surface }}
           >
-            <View className="flex-1 pr-3">
+            <View className="flex-1" style={{ paddingEnd: 12 }}>
               <Text className="text-base font-semibold" style={{ color: colors.text }}>
-                Original language
+                {t('recipe.originalLanguage')}
               </Text>
               <Text className="mt-0.5 text-xs" style={{ color: colors.textSecondary }}>
-                Show the recipe as extracted
+                {t('recipe.originalLanguageHint')}
               </Text>
             </View>
             <Ionicons name="arrow-undo-outline" size={18} color={colors.primary} />
@@ -162,20 +170,22 @@ export function RecipeTranslateModal({
                 borderColor: selected ? colors.primary : colors.border,
               }}
             >
-              <View className="flex-1 pr-3">
+              <View className="flex-1" style={{ paddingEnd: 12 }}>
                 <Text className="text-base font-semibold" style={{ color: colors.text }}>
                   {lang.nativeLabel}
                 </Text>
-                <Text className="mt-0.5 text-xs" style={{ color: colors.textSecondary }}>
-                  {getRecipeLanguageLabel(lang.code)}
-                </Text>
+                {t(`languages.${lang.code}`) !== lang.nativeLabel ? (
+                  <Text className="mt-0.5 text-xs" style={{ color: colors.textSecondary }}>
+                    {t(`languages.${lang.code}`)}
+                  </Text>
+                ) : null}
               </View>
               {loading ? (
                 <ActivityIndicator color={colors.primary} />
               ) : selected ? (
                 <Ionicons name="checkmark-circle" size={22} color={colors.primary} />
               ) : (
-                <Ionicons name="chevron-forward" size={18} color={colors.textSecondary} />
+                <Ionicons name={chevronForward} size={18} color={colors.textSecondary} />
               )}
             </Pressable>
           );

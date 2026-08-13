@@ -1,4 +1,5 @@
 import Ionicons from '@expo/vector-icons/Ionicons';
+import type { Href } from 'expo-router';
 import { I18nManager, Platform, Pressable } from 'react-native';
 import { useTranslation } from 'react-i18next';
 
@@ -6,19 +7,23 @@ import { goBackOrHome } from '@/lib/goBackOrHome';
 
 type StackHeaderBackButtonProps = {
   tintColor?: string;
+  fallback?: Href;
 };
 
 /**
  * Explicit stack back control. Avoids relying on the default header back action
  * (GO_BACK), which can no-op on web when history and the stack get out of sync.
  */
-export function StackHeaderBackButton({ tintColor }: StackHeaderBackButtonProps) {
+export function StackHeaderBackButton({
+  tintColor,
+  fallback = '/',
+}: StackHeaderBackButtonProps) {
   const { t } = useTranslation();
   const rtl = I18nManager.isRTL;
 
   return (
     <Pressable
-      onPress={() => goBackOrHome('/')}
+      onPress={() => goBackOrHome(fallback)}
       accessibilityRole="button"
       accessibilityLabel={t('common.back')}
       hitSlop={16}

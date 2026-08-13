@@ -222,14 +222,14 @@ export default function HomeScreen() {
     async (name: string) => {
       if (!renameTarget) return;
       const trimmed = name.trim();
-      if (!trimmed) throw new Error('Recipe name is required.');
+      if (!trimmed) throw new Error(t('library.recipeNameRequired'));
       if (isRecipeNameTaken(recipes, trimmed, renameTarget.id)) {
-        throw new Error('You already have a recipe with that name.');
+        throw new Error(t('library.recipeNameTaken'));
       }
 
       if (renameTarget.id.startsWith('guest-')) {
         const updated = await renameGuestRecipe(renameTarget.id, trimmed);
-        if (!updated) throw new Error('Recipe not found.');
+        if (!updated) throw new Error(t('library.recipeNotFound'));
         patchRecipe(renameTarget.id, {
           title: trimmed,
           display_title: trimmed,
@@ -263,7 +263,7 @@ export default function HomeScreen() {
         translations,
       });
     },
-    [patchRecipe, recipes, renameTarget],
+    [patchRecipe, recipes, renameTarget, t],
   );
 
   const handleConfirmDeleteRecipe = useCallback(async () => {
@@ -315,9 +315,14 @@ export default function HomeScreen() {
           >
             <Ionicons name="checkmark-circle" size={16} color={colors.success} />
             <Text className="flex-1 text-xs font-medium" style={{ color: colors.success }}>
-              Saved to your library
+              {t('library.saved')}
             </Text>
-            <Pressable onPress={() => setSavedBanner(false)} hitSlop={8}>
+            <Pressable
+              onPress={() => setSavedBanner(false)}
+              hitSlop={8}
+              accessibilityRole="button"
+              accessibilityLabel={t('common.dismiss')}
+            >
               <Ionicons name="close" size={16} color={colors.success} />
             </Pressable>
           </View>
@@ -330,11 +335,11 @@ export default function HomeScreen() {
           >
             <Ionicons name="warning-outline" size={16} color={colors.warning} />
             <Text className="flex-1 text-xs" style={{ color: colors.warning }}>
-              Could not refresh — showing saved recipes.
+              {t('library.refreshFailed')}
             </Text>
             <Pressable onPress={() => refresh()} hitSlop={8}>
               <Text className="text-xs font-semibold" style={{ color: colors.primary }}>
-                Retry
+                {t('common.retry')}
               </Text>
             </Pressable>
           </View>
@@ -412,7 +417,7 @@ export default function HomeScreen() {
           <Ionicons name="cloud-offline-outline" size={32} color={colors.danger} />
         </View>
         <Text className="mb-2 text-center text-xl font-bold" style={{ color: colors.text }}>
-          Could not load recipes
+          {t('library.loadFailedTitle')}
         </Text>
         <Text className="mb-6 text-center text-sm leading-5" style={{ color: colors.textSecondary }}>
           {error}
@@ -422,7 +427,7 @@ export default function HomeScreen() {
           className="rounded-[22px] px-6 py-3.5 active:opacity-80"
           style={{ backgroundColor: colors.primary }}
         >
-          <Text className="text-base font-bold text-white">Try again</Text>
+          <Text className="text-base font-bold text-white">{t('common.tryAgainAction')}</Text>
         </Pressable>
       </Screen>
     );
@@ -435,8 +440,8 @@ export default function HomeScreen() {
           <BrandHeader
             size="hero"
             align="center"
-            title="Your kitchen awaits"
-            subtitle="Snap a recipe from a link — keep cooking calm and simple."
+            title={t('library.emptyTitle')}
+            subtitle={t('library.emptyBody')}
           />
 
           <Pressable
@@ -444,7 +449,7 @@ export default function HomeScreen() {
             style={{ backgroundColor: colors.primary }}
             onPress={() => router.push('/add')}
           >
-            <Text className="text-base font-bold text-white">Snap first recipe</Text>
+            <Text className="text-base font-bold text-white">{t('library.snapFirst')}</Text>
           </Pressable>
 
           {!user && (
@@ -453,7 +458,7 @@ export default function HomeScreen() {
               className="mt-5 active:opacity-70"
             >
               <Text className="text-sm font-semibold" style={{ color: colors.primary }}>
-                Sign in to sync recipes
+                {t('library.signInToSync')}
               </Text>
             </Pressable>
           )}
@@ -481,23 +486,23 @@ export default function HomeScreen() {
                 !deferredSearch &&
                 selectedTags.length === 0 &&
                 selectedCollectionId == null
-                  ? 'No favorites yet'
-                  : 'No matches'}
+                  ? t('library.noFavorites')
+                  : t('library.noMatches')}
               </Text>
               <Text className="mb-5 text-center text-sm" style={{ color: colors.textSecondary }}>
                 {favoritesOnly &&
                 !deferredSearch &&
                 selectedTags.length === 0 &&
                 selectedCollectionId == null
-                  ? 'Tap the heart on a recipe to see it here.'
-                  : 'Try a different search, tag, or collection.'}
+                  ? t('library.noFavoritesHint')
+                  : t('library.noMatchesHint')}
               </Text>
               <Pressable
                 onPress={clearFilters}
                 className="rounded-[22px] px-5 py-2.5 active:opacity-80"
                 style={{ backgroundColor: colors.primary }}
               >
-                <Text className="text-sm font-semibold text-white">Clear filters</Text>
+                <Text className="text-sm font-semibold text-white">{t('library.clearFilters')}</Text>
               </Pressable>
             </View>
           ) : null

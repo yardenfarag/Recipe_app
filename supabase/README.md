@@ -51,6 +51,7 @@ npx supabase functions deploy transform-recipe
 npx supabase functions deploy translate-recipe
 npx supabase functions deploy delete-account
 npx supabase functions deploy recipe-share
+npx supabase functions deploy revenuecat-webhook
 ```
 
 ### Recipe share links (`recipe-share` + migration `0017`)
@@ -70,7 +71,28 @@ For the Free / Plus quota + remix-gating change, you only need:
 npx supabase db push
 npx supabase functions deploy extract-recipe
 npx supabase functions deploy transform-recipe
+npx supabase functions deploy revenuecat-webhook
 ```
+
+### Recipe credits rollout (`0018`)
+
+The production rollout commands are:
+
+```bash
+npx supabase db push
+npx supabase functions deploy extract-recipe
+npx supabase functions deploy transform-recipe
+npx supabase functions deploy revenuecat-webhook
+```
+
+Migration `0018` defines credit reservations. Migration `0021` adds compensation
+tracking and, when `pg_cron` is available, schedules
+`select public.refund_stale_extraction_reservations();` every 10 minutes.
+Local and restricted environments skip that schedule. After `npx supabase db push`,
+verify in the production dashboard that the `pinch-refund-stale-extractions` job
+exists (or create the equivalent schedule) and that a stale test reservation is
+refunded. Repository deploy commands do not by themselves prove the scheduler is
+active.
 
 ## Verifying schema
 

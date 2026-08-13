@@ -27,4 +27,9 @@ describe('formatRecipeDuration', () => {
     expect(formatRecipeDuration(0)).toBe('');
     expect(formatRecipeDuration(NaN)).toBe('');
   });
+
+  it('uses localized unit labels when provided', () => {
+    expect(formatRecipeDuration(40, { minutes: 'דק׳', hours: 'שע׳' })).toBe('40 דק׳');
+    expect(formatRecipeDuration(90, { minutes: 'דק׳', hours: 'שע׳' })).toBe('1 שע׳ 30 דק׳');
+  });
 });

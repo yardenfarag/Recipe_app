@@ -25,6 +25,16 @@ export interface CreditReservation {
   snapshot: QuotaSnapshot;
 }
 
+export interface GuestExtractionReservation {
+  reservationId: string;
+  remaining: number;
+}
+
+export interface CompensationResult {
+  confirmed: boolean;
+  error: string | null;
+}
+
 export function currentYearMonthUtc(date = new Date()): string {
   const y = date.getUTCFullYear();
   const m = String(date.getUTCMonth() + 1).padStart(2, '0');
@@ -119,7 +129,7 @@ export async function reserveSignedInExtract(
       snapshot: QuotaSnapshot | null;
     }
 > {
-  const { data, error } = await admin.rpc('reserve_recipe_credit', {
+  let { data, error } = await admin.rpc('reserve_recipe_credit', {
     p_user_id: userId,
     p_year_month: currentYearMonthUtc(),
     p_idempotency_key: idempotencyKey,
@@ -133,11 +143,36 @@ export async function reserveSignedInExtract(
       snapshot: await getQuotaSnapshot(admin, userId),
     };
   }
-  const row = data as {
+  let row = data as {
     code?: string;
     reservation_id?: string;
     source?: string;
+    status?: string;
   } | null;
+  if (row?.status === 'refunded') {
+    const reopened = await admin.rpc('reopen_refunded_recipe_credit', {
+      p_user_id: userId,
+      p_year_month: currentYearMonthUtc(),
+      p_idempotency_key: idempotencyKey,
+      p_free_limit: FREE_MONTHLY_EXTRACT_LIMIT,
+    });
+    data = reopened.data;
+    error = reopened.error;
+    if (error) {
+      console.error('[quotas] reopen_refunded_recipe_credit', error);
+      return {
+        ok: false,
+        code: 'metering_error',
+        snapshot: await getQuotaSnapshot(admin, userId),
+      };
+    }
+    row = data as {
+      code?: string;
+      reservation_id?: string;
+      source?: string;
+      status?: string;
+    } | null;
+  }
   if (row?.code === 'insufficient_credits') {
     return {
       ok: false,
@@ -187,13 +222,68 @@ export async function refundSignedInExtract(
   userId: string,
   reservationId: string,
   reason: string,
-): Promise<boolean> {
+): Promise<CompensationResult> {
   const { data, error } = await admin.rpc('refund_recipe_credit', {
     p_user_id: userId,
     p_reservation_id: reservationId,
     p_reason: reason,
   });
   if (error) console.error('[quotas] refund_recipe_credit', error);
+  if ((!error && data === true) || await signedInReservationIsRefunded(
+    admin,
+    userId,
+    reservationId,
+  )) {
+    return { confirmed: true, error: null };
+  }
+  return {
+    confirmed: false,
+    error: error?.message ?? 'refund_not_confirmed',
+  };
+}
+
+export async function refundSignedInExtractAfterFinalizeFailure(
+  admin: SupabaseClient,
+  userId: string,
+  reservationId: string,
+): Promise<CompensationResult> {
+  const { data, error } = await admin.rpc(
+    'refund_recipe_credit_after_finalize_failure',
+    {
+      p_user_id: userId,
+      p_reservation_id: reservationId,
+    },
+  );
+  if (error) {
+    console.error('[quotas] refund_recipe_credit_after_finalize_failure', error);
+  }
+  if ((!error && data === true) || await signedInReservationIsRefunded(
+    admin,
+    userId,
+    reservationId,
+  )) {
+    return { confirmed: true, error: null };
+  }
+  return {
+    confirmed: false,
+    error: error?.message ?? 'refund_not_confirmed',
+  };
+}
+
+export async function markSignedInExtractCompensationPending(
+  admin: SupabaseClient,
+  userId: string,
+  reservationId: string,
+  reason: string,
+  errorMessage: string | null,
+): Promise<boolean> {
+  const { data, error } = await admin.rpc('mark_recipe_credit_compensation_pending', {
+    p_user_id: userId,
+    p_reservation_id: reservationId,
+    p_reason: reason,
+    p_error: errorMessage,
+  });
+  if (error) console.error('[quotas] mark_recipe_credit_compensation_pending', error);
   return !error && data === true;
 }
 
@@ -221,11 +311,15 @@ export async function getGuestExtractCount(
 export async function reserveGuestExtraction(
   admin: SupabaseClient,
   installId: string,
+  idempotencyKey: string,
 ): Promise<
-  { remaining: number } | { blocked: true; remaining: 0 } | { error: true }
+  | { ok: true; reservation: GuestExtractionReservation }
+  | { blocked: true; remaining: 0 }
+  | { error: true }
 > {
-  const { data, error } = await admin.rpc('reserve_guest_extraction', {
+  const { data, error } = await admin.rpc('reserve_guest_extraction_v2', {
     p_install_id: installId,
+    p_idempotency_key: idempotencyKey,
     p_limit: GUEST_EXTRACT_LIMIT,
   });
 
@@ -234,12 +328,110 @@ export async function reserveGuestExtraction(
     return { error: true as const };
   }
 
-  const newCount = typeof data === 'number' ? data : Number(data);
-  if (!Number.isFinite(newCount) || newCount < 0) {
+  const row = data as {
+    code?: string;
+    reservation_id?: string;
+    remaining?: number;
+  } | null;
+  if (row?.code === 'guest_limit') {
     return { blocked: true, remaining: 0 as const };
   }
+  if (!row?.reservation_id || !Number.isFinite(Number(row.remaining))) {
+    return { error: true as const };
+  }
 
-  return { remaining: GUEST_EXTRACT_LIMIT - newCount };
+  return {
+    ok: true,
+    reservation: {
+      reservationId: row.reservation_id,
+      remaining: Math.max(0, Number(row.remaining)),
+    },
+  };
+}
+
+export async function finalizeGuestExtraction(
+  admin: SupabaseClient,
+  installId: string,
+  reservationId: string,
+): Promise<boolean> {
+  const { data, error } = await admin.rpc('finalize_guest_extraction', {
+    p_install_id: installId,
+    p_reservation_id: reservationId,
+  });
+  if (error) console.error('[quotas] finalizeGuestExtraction', error);
+  return !error && data === true;
+}
+
+export async function refundGuestExtraction(
+  admin: SupabaseClient,
+  installId: string,
+  reservationId: string,
+  reason: string,
+): Promise<CompensationResult> {
+  const { data, error } = await admin.rpc('refund_guest_extraction', {
+    p_install_id: installId,
+    p_reservation_id: reservationId,
+    p_reason: reason,
+  });
+  if (error) console.error('[quotas] refundGuestExtraction', error);
+  if ((!error && data === true) || await guestReservationIsRefunded(
+    admin,
+    installId,
+    reservationId,
+  )) {
+    return { confirmed: true, error: null };
+  }
+  return {
+    confirmed: false,
+    error: error?.message ?? 'refund_not_confirmed',
+  };
+}
+
+export async function markGuestExtractionCompensationPending(
+  admin: SupabaseClient,
+  installId: string,
+  reservationId: string,
+  reason: string,
+  errorMessage: string | null,
+): Promise<boolean> {
+  const { data, error } = await admin.rpc('mark_guest_extraction_compensation_pending', {
+    p_install_id: installId,
+    p_reservation_id: reservationId,
+    p_reason: reason,
+    p_error: errorMessage,
+  });
+  if (error) console.error('[quotas] mark_guest_extraction_compensation_pending', error);
+  return !error && data === true;
+}
+
+async function signedInReservationIsRefunded(
+  admin: SupabaseClient,
+  userId: string,
+  reservationId: string,
+): Promise<boolean> {
+  const { data, error } = await admin
+    .from('credit_reservations')
+    .select('status')
+    .eq('id', reservationId)
+    .eq('user_id', userId)
+    .maybeSingle();
+  if (error) console.error('[quotas] verify signed-in refund', error);
+  return !error && data?.status === 'refunded';
+}
+
+async function guestReservationIsRefunded(
+  admin: SupabaseClient,
+  installId: string,
+  reservationId: string,
+): Promise<boolean> {
+  const { data, error } = await admin
+    .from('guest_extraction_reservations')
+    .select('status')
+    .eq('id', reservationId)
+    .eq('install_id', installId.trim())
+    .maybeSingle();
+  if (error) console.error('[quotas] verify guest refund', error);
+  return !error && data?.status === 'refunded';
 }
 
 export function guestRemainingFromCount(count: number): number {

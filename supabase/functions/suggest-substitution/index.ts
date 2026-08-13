@@ -1,5 +1,12 @@
 import { corsHeaders, jsonResponse } from '../_shared/cors.ts';
 import {
+  currentUtcDate,
+  refundDailyAiUsage,
+  reserveDailyAiUsage,
+} from '../_shared/dailyAiUsage.ts';
+import { createAuthedSupabase } from '../_shared/recipeLookup.ts';
+import { createServiceSupabase } from '../_shared/supabaseAdmin.ts';
+import {
   isSubstitutionLanguageCode,
   rewriteInstructionsForSubstitutionWithGemini,
   suggestSubstitutionsWithGemini,
@@ -13,6 +20,13 @@ const MAX_OTHER_INGREDIENTS = 60;
 const MAX_OTHER_INGREDIENT_CHARS = 160;
 const MAX_INSTRUCTIONS = 80;
 const MAX_INSTRUCTION_CHARS = 2_000;
+const DAILY_SUBSTITUTION_LIMIT = 20;
+
+interface BillingContext {
+  admin: NonNullable<ReturnType<typeof createServiceSupabase>>;
+  userId: string;
+  usageDate: string;
+}
 
 interface RequestBody {
   /** Default: suggest alternatives. `rewrite_instructions` patches steps after apply. */
@@ -46,6 +60,27 @@ Deno.serve(async (req) => {
     return jsonResponse({ error: 'Request payload is too large' }, 400);
   }
 
+  const authHeader = req.headers.get('Authorization');
+  const authed = authHeader ? createAuthedSupabase(authHeader) : null;
+  const {
+    data: { user },
+  } = authed ? await authed.auth.getUser() : { data: { user: null } };
+  if (!user) {
+    return jsonResponse(
+      { status: 'failed', code: 'auth_required', message: 'Sign in to use substitutions.' },
+      401,
+    );
+  }
+  const admin = createServiceSupabase();
+  if (!admin) {
+    return jsonResponse({ status: 'failed', code: 'metering_error', message: 'metering_error' }, 500);
+  }
+  const billing: BillingContext = {
+    admin,
+    userId: user.id,
+    usageDate: currentUtcDate(),
+  };
+
   let body: RequestBody;
   try {
     const rawBody = await req.text();
@@ -59,15 +94,15 @@ Deno.serve(async (req) => {
 
   const mode = body.mode?.trim() || 'suggest';
   if (mode === 'rewrite_instructions') {
-    return handleRewrite(body);
+    return handleRewrite(body, billing);
   }
   if (mode !== 'suggest') {
     return jsonResponse({ error: 'Unsupported mode' }, 400);
   }
-  return handleSuggest(body);
+  return handleSuggest(body, billing);
 });
 
-async function handleSuggest(body: RequestBody): Promise<Response> {
+async function handleSuggest(body: RequestBody, billing: BillingContext): Promise<Response> {
   const parsedIngredient = parseIngredient(body.ingredient);
   if (!parsedIngredient.ok) {
     return jsonResponse({ error: parsedIngredient.error }, 400);
@@ -101,6 +136,8 @@ async function handleSuggest(body: RequestBody): Promise<Response> {
   }
 
   const language = parseLanguage(body.language);
+  const gate = await reserveSubstitutionUsage(billing);
+  if (gate) return gate;
 
   try {
     const alternatives = await suggestSubstitutionsWithGemini({
@@ -111,6 +148,12 @@ async function handleSuggest(body: RequestBody): Promise<Response> {
     });
 
     if (alternatives.length === 0) {
+      await refundDailyAiUsage(
+        billing.admin,
+        billing.userId,
+        'substitution',
+        billing.usageDate,
+      );
       return jsonResponse({
         status: 'failed',
         message: "Couldn't find a good substitute for this ingredient. Try again.",
@@ -120,6 +163,12 @@ async function handleSuggest(body: RequestBody): Promise<Response> {
     return jsonResponse({ status: 'ok', alternatives });
   } catch (err) {
     console.error('suggest-substitution error:', err);
+    await refundDailyAiUsage(
+      billing.admin,
+      billing.userId,
+      'substitution',
+      billing.usageDate,
+    );
     return jsonResponse(
       {
         status: 'failed',
@@ -130,7 +179,7 @@ async function handleSuggest(body: RequestBody): Promise<Response> {
   }
 }
 
-async function handleRewrite(body: RequestBody): Promise<Response> {
+async function handleRewrite(body: RequestBody, billing: BillingContext): Promise<Response> {
   const parsedIngredient = parseIngredient(body.ingredient);
   if (!parsedIngredient.ok) {
     return jsonResponse({ error: parsedIngredient.error }, 400);
@@ -158,6 +207,8 @@ async function handleRewrite(body: RequestBody): Promise<Response> {
   }
 
   const language = parseLanguage(body.language);
+  const gate = await reserveSubstitutionUsage(billing);
+  if (gate) return gate;
 
   try {
     const rewritten = await rewriteInstructionsForSubstitutionWithGemini({
@@ -169,6 +220,12 @@ async function handleRewrite(body: RequestBody): Promise<Response> {
     });
 
     if (rewritten.length === 0) {
+      await refundDailyAiUsage(
+        billing.admin,
+        billing.userId,
+        'substitution',
+        billing.usageDate,
+      );
       return jsonResponse({
         status: 'failed',
         message: "Couldn't update the recipe steps for this swap. Try again.",
@@ -178,6 +235,12 @@ async function handleRewrite(body: RequestBody): Promise<Response> {
     return jsonResponse({ status: 'ok', instructions: rewritten });
   } catch (err) {
     console.error('suggest-substitution rewrite error:', err);
+    await refundDailyAiUsage(
+      billing.admin,
+      billing.userId,
+      'substitution',
+      billing.usageDate,
+    );
     return jsonResponse(
       {
         status: 'failed',
@@ -186,6 +249,27 @@ async function handleRewrite(body: RequestBody): Promise<Response> {
       500,
     );
   }
+}
+
+async function reserveSubstitutionUsage(billing: BillingContext): Promise<Response | null> {
+  const result = await reserveDailyAiUsage(
+    billing.admin,
+    billing.userId,
+    'substitution',
+    DAILY_SUBSTITUTION_LIMIT,
+    billing.usageDate,
+  );
+  if (result === 'ok') return null;
+  if (result === 'limited') {
+    return jsonResponse(
+      { status: 'failed', code: 'daily_limit', message: 'daily_limit' },
+      429,
+    );
+  }
+  return jsonResponse(
+    { status: 'failed', code: 'metering_error', message: 'metering_error' },
+    500,
+  );
 }
 
 function parseLanguage(value: string | undefined) {

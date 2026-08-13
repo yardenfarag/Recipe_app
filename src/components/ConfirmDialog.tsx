@@ -1,6 +1,7 @@
 import { useTranslation } from 'react-i18next';
 import { ActivityIndicator, Modal, Pressable, Text, View } from 'react-native';
 
+import { useRtl } from '@/hooks/useRtl';
 import { useThemePreference } from '@/hooks/useThemePreference';
 
 interface ConfirmDialogProps {
@@ -30,6 +31,7 @@ export function ConfirmDialog({
 }: ConfirmDialogProps) {
   const { t } = useTranslation();
   const { colors } = useThemePreference();
+  const { rtl } = useRtl();
   const resolvedConfirm = confirmLabel ?? t('common.continue');
   const resolvedCancel = cancelLabel ?? t('common.cancel');
 
@@ -42,10 +44,15 @@ export function ConfirmDialog({
     >
       <View
         className="flex-1 items-center justify-center px-6"
-        style={{ backgroundColor: 'rgba(0,0,0,0.45)' }}
+        style={{
+          backgroundColor: 'rgba(0,0,0,0.45)',
+          direction: rtl ? 'rtl' : 'ltr',
+        }}
       >
         <View
           className="w-full max-w-sm rounded-[28px] p-5"
+          accessibilityViewIsModal
+          accessibilityLabel={title}
           style={{
             backgroundColor: colors.surface,
             borderWidth: 1,

@@ -5,14 +5,14 @@ import {
   useContext,
   useEffect,
   useMemo,
+  useRef,
   useState,
   type ReactNode,
 } from 'react';
 
-import { migrateGuestCollectionsToSupabase } from '@/lib/migrateGuestCollections';
-import { migrateGuestRecipesToSupabase } from '@/lib/migrateGuestRecipes';
-import { migrateGuestShoppingListToSupabase } from '@/lib/migrateGuestShoppingList';
+import { migrateGuestDataToSupabase } from '@/lib/migrateGuestData';
 import { clearPurchasesUser, configurePurchases } from '@/lib/purchases';
+import { runSingleFlight } from '@/lib/singleFlight';
 import { supabase } from '@/lib/supabase/client';
 
 export type MigrationStatus = 'idle' | 'running' | 'done' | 'error';
@@ -40,23 +40,21 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [loading, setLoading] = useState(true);
   const [migrationError, setMigrationError] = useState<string | null>(null);
   const [migrationStatus, setMigrationStatus] = useState<MigrationStatus>('idle');
+  const migrationFlights = useRef(new Map<string, Promise<void>>());
 
   const runMigration = useCallback(async (userId: string) => {
-    setMigrationStatus('running');
-    try {
-      const recipeMigration = await migrateGuestRecipesToSupabase(userId);
-      await migrateGuestCollectionsToSupabase(userId, recipeMigration.idMap);
-      await migrateGuestShoppingListToSupabase(userId);
-      setMigrationError(null);
-      setMigrationStatus('done');
-    } catch (err) {
-      setMigrationError(
-        err instanceof Error
-          ? err.message
-          : 'Could not sync your local data. Try again in Settings.',
-      );
-      setMigrationStatus('error');
-    }
+    return runSingleFlight(migrationFlights.current, userId, async () => {
+      setMigrationStatus('running');
+      try {
+        await migrateGuestDataToSupabase(userId);
+        setMigrationError(null);
+        setMigrationStatus('done');
+      } catch (err) {
+        console.error('[guest-migration] sync failed', err);
+        setMigrationError('migration_failed');
+        setMigrationStatus('error');
+      }
+    });
   }, []);
 
   const retryMigration = useCallback(async () => {

@@ -85,24 +85,48 @@ export async function upsertRecipeTranslation(
   languageCode: string,
   content: RecipeTranslationContent,
 ): Promise<void> {
-  const { error } = await supabase.from('recipe_translations').upsert(
-    {
-      recipe_id: recipeId,
-      language_code: languageCode,
-      title: content.title,
-      ingredients: content.ingredients,
-      instructions: content.instructions,
-    },
-    { onConflict: 'recipe_id,language_code' },
-  );
+  let lastError: { code?: string; message: string } | null = null;
 
-  if (error) {
-    if (error.code === 'PGRST205' || error.message.includes('recipe_translations')) {
+  for (let attempt = 0; attempt < 3; attempt += 1) {
+    const { data, error } = await supabase
+      .from('recipe_translations')
+      .upsert(
+        {
+          recipe_id: recipeId,
+          language_code: languageCode,
+          title: content.title,
+          ingredients: content.ingredients,
+          instructions: content.instructions,
+        },
+        { onConflict: 'recipe_id,language_code' },
+      )
+      .select('recipe_id, language_code')
+      .single();
+
+    if (!error && data?.recipe_id === recipeId && data?.language_code === languageCode) {
+      return;
+    }
+
+    lastError = error ?? { message: 'Translation save could not be verified.' };
+    const retryable =
+      !error?.code ||
+      error.code.startsWith('5') ||
+      error.code === 'PGRST000' ||
+      /fetch|network|timeout|connection/i.test(error.message);
+    if (!retryable || attempt === 2) break;
+    await new Promise((resolve) => setTimeout(resolve, 200 * (attempt + 1)));
+  }
+
+  if (lastError) {
+    if (
+      lastError.code === 'PGRST205' ||
+      lastError.message.includes('recipe_translations')
+    ) {
       throw new Error(
         'Recipe translations are not enabled yet — run migration 0014_recipe_translations.sql in Supabase.',
       );
     }
-    throw error;
+    throw new Error(lastError.message);
   }
 }
 

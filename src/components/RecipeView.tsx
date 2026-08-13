@@ -8,31 +8,38 @@ import { MeasurementToggle } from '@/components/MeasurementToggle';
 import { AddToCollectionModal } from '@/components/AddToCollectionModal';
 import { AddToShoppingListModal } from '@/components/AddToShoppingListModal';
 import { CookAlongVideoModal } from '@/components/CookAlongVideoModal';
+import { CostMeter } from '@/components/CostEstimateDisplay';
 import { EditTagsModal } from '@/components/EditTagsModal';
 import { RecipeImage } from '@/components/RecipeImage';
 import { RecipeVideoPanel, type RecipeVideoPanelHandle } from '@/components/RecipeVideoPanel';
 import { RecipeTranslateModal } from '@/components/RecipeTranslateModal';
 import { RecipeVariantModal } from '@/components/RecipeVariantModal';
 import { SubstitutionModal } from '@/components/SubstitutionModal';
+import { RecipeReadingWidth } from '@/constants/theme';
 import { useBreakpoint } from '@/hooks/useBreakpoint';
 import { useCollections } from '@/hooks/useCollections';
+import { useLanguagePreference } from '@/hooks/useLanguagePreference';
 import { useMeasurementPreference } from '@/hooks/useMeasurementPreference';
 import { useShoppingList } from '@/hooks/useShoppingList';
 import { useThemePreference } from '@/hooks/useThemePreference';
 import { setGuestRecipeTags } from '@/lib/guestRecipes';
 import { applyMeasurementSystem } from '@/lib/convertMeasurement';
+import { isRtlAppLanguage } from '@/lib/appLanguages';
+import { resolveCulinaryLanguage } from '@/lib/culinaryUnits';
 import { displayIngredientAmount } from '@/lib/displayIngredientAmount';
+import { COST_I18N_KEYS, costFilledCount } from '@/lib/formatCostEstimate';
 import { formatRecipeDuration } from '@/lib/formatRecipeDuration';
 import { formatVideoTimestamp } from '@/lib/formatVideoTimestamp';
 import { getRecipeVideoInfo } from '@/lib/recipeVideo';
 import { getCalorieDisplay } from '@/lib/recipeCalories';
 import {
-  getRecipeLanguageLabel,
+  isRecipeLanguageCode,
   isRtlRecipeLanguage,
   RecipeLanguageCode,
 } from '@/lib/recipeLanguages';
-import { normalizeRecipeTags } from '@/lib/recipeTags';
-import { getRecipeVariantLabel, RecipeVariantKey } from '@/lib/recipeVariants';
+import { resolveRecipeSourceLanguage } from '@/lib/recipeSourceLanguage';
+import { normalizeRecipeTags, translateRecipeTag } from '@/lib/recipeTags';
+import { RecipeVariantKey } from '@/lib/recipeVariants';
 import { shareRecipe } from '@/lib/shareRecipe';
 import { ExtractedRecipe } from '@/lib/supabase/extractRecipe';
 import { createRecipeShare, RECIPE_SHARE_ENABLED } from '@/lib/supabase/recipeShare';
@@ -100,6 +107,9 @@ interface RecipeViewProps {
   ) => Promise<RecipeTranslationContent | null> | RecipeTranslationContent | null;
 }
 
+/** Stack header on web — used so the side cook-along can fill the remaining viewport. */
+const WEB_RECIPE_HEADER = 64;
+
 /**
  * Full recipe display: compact header, servings scaler, ingredients (with Swap),
  * instructions, remix, and on-demand translation. Shared by preview and detail.
@@ -119,7 +129,8 @@ export function RecipeView({
 }: RecipeViewProps) {
   const { t } = useTranslation();
   const { colors } = useThemePreference();
-  const { isWide } = useBreakpoint();
+  const { isWide, isMediumUp, height: viewportHeight } = useBreakpoint();
+  const { language: appLanguage } = useLanguagePreference();
   const { system: measurementSystem } = useMeasurementPreference();
   const { addFromRecipe } = useShoppingList();
   const {
@@ -181,7 +192,23 @@ export function RecipeView({
   const scaledIngredients = scaleIngredients(baseIngredients, baseServings, servings);
   const swapTarget = swapIndex != null ? scaledIngredients[swapIndex] : null;
   const calorieDisplay = getCalorieDisplay(calories, baseServings, servings);
-  const textDirection = isRtlRecipeLanguage(activeLanguage) ? 'rtl' : 'ltr';
+  const sourceLanguage = resolveRecipeSourceLanguage(recipe);
+  const contentLanguage =
+    activeLanguage ?? (isRecipeLanguageCode(sourceLanguage) ? sourceLanguage : null);
+  const unitLanguage = resolveCulinaryLanguage(activeLanguage, appLanguage);
+  const textDirection = isRtlRecipeLanguage(contentLanguage) ? 'rtl' : 'ltr';
+  const appRtl = isRtlAppLanguage(appLanguage);
+  const contentRtl = textDirection === 'rtl';
+  const recipeRowDirection = contentRtl === appRtl ? 'row' : 'row-reverse';
+  const durationLabels = {
+    minutes: t('recipe.durationMin'),
+    hours: t('recipe.durationHr'),
+  };
+  const costLabels = {
+    $: t(COST_I18N_KEYS.$),
+    $$: t(COST_I18N_KEYS.$$),
+    $$$: t(COST_I18N_KEYS.$$$),
+  } as const;
 
   // Sync auto-localized overlay from parent without rewriting canonical refs.
   useEffect(() => {
@@ -215,7 +242,6 @@ export function RecipeView({
       setBaseInstructions(recipe.instructions);
       setActiveLanguage(null);
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps -- intentional sync on identity of canonical + overlay
   }, [
     recipe.title,
     recipe.servings,
@@ -331,7 +357,10 @@ export function RecipeView({
     translationSourceRef.current = { ...original };
   }
 
-  function handleApplyTranslation(result: TranslatedRecipePayload, language: RecipeLanguageCode) {
+  async function handleApplyTranslation(
+    result: TranslatedRecipePayload,
+    language: RecipeLanguageCode,
+  ) {
     if (!translationSourceRef.current) {
       translationSourceRef.current = {
         title: recipe.title,
@@ -341,15 +370,15 @@ export function RecipeView({
         calories,
       };
     }
-    setTitle(result.title);
-    setBaseIngredients(result.ingredients);
-    setBaseInstructions(result.instructions);
-    setActiveLanguage(language);
-    void onTranslationPersist?.(language, {
+    await onTranslationPersist?.(language, {
       title: result.title,
       ingredients: result.ingredients,
       instructions: result.instructions,
     });
+    setTitle(result.title);
+    setBaseIngredients(result.ingredients);
+    setBaseInstructions(result.instructions);
+    setActiveLanguage(language);
   }
 
   function handleShowOriginalLanguage() {
@@ -417,6 +446,7 @@ export function RecipeView({
   }
 
   const sideCookAlong = isWide && sourceVideo.mode !== 'none';
+  const splitRecipeBody = isWide && !sideCookAlong;
 
   return (
     <View className="flex-1">
@@ -434,7 +464,18 @@ export function RecipeView({
         paddingBottom: 24 + (sideCookAlong ? 0 : cookAlongSheetHeight),
       }}
     >
-      <View className="px-5 pt-4">
+      <View
+        className={isMediumUp ? 'px-6 pt-3 pb-2' : 'px-5 pt-4'}
+        style={
+          isMediumUp && !sideCookAlong
+            ? {
+                width: '100%',
+                maxWidth: splitRecipeBody ? 1040 : RecipeReadingWidth,
+                alignSelf: 'center',
+              }
+            : undefined
+        }
+      >
         {!sideCookAlong && sourceVideo.mode !== 'none' ? (
           <RecipeVideoPanel
             ref={videoPanelRef}
@@ -454,7 +495,7 @@ export function RecipeView({
             <View className="flex-1">
               <View className="flex-row items-start gap-2">
                 <Text
-                  className="flex-1 text-2xl font-bold leading-8"
+                  className={`flex-1 font-bold ${isMediumUp ? 'text-xl leading-7' : 'text-2xl leading-8'}`}
                   style={{ color: colors.text, writingDirection: textDirection }}
                 >
                   {title}
@@ -496,19 +537,38 @@ export function RecipeView({
               </View>
               <View className="mt-3 flex-row flex-wrap gap-2">
                 {calorieDisplay != null && (
-                  <Badge label={`~${calorieDisplay.perServing} cal/serving`} icon="flame-outline" />
+                  <Badge
+                    label={t('recipe.calPerServing', { count: calorieDisplay.perServing })}
+                    icon="flame-outline"
+                  />
                 )}
                 {recipe.estimated_time_minutes != null && (
                   <Badge
-                    label={formatRecipeDuration(recipe.estimated_time_minutes)}
+                    label={formatRecipeDuration(recipe.estimated_time_minutes, durationLabels)}
                     icon="time-outline"
                   />
                 )}
                 {recipe.cost_estimate && (
-                  <Badge label={recipe.cost_estimate} icon="pricetag-outline" />
+                  <Badge
+                    label={costLabels[recipe.cost_estimate]}
+                    leading={
+                      <CostMeter
+                        tier={recipe.cost_estimate}
+                        color={colors.primary}
+                        size={7}
+                      />
+                    }
+                    accessibilityLabel={t('recipe.cost.a11y', {
+                      label: costLabels[recipe.cost_estimate],
+                      count: costFilledCount(recipe.cost_estimate),
+                    })}
+                  />
                 )}
                 {recipe.effort_level && (
-                  <Badge label={recipe.effort_level} icon="fitness-outline" />
+                  <Badge
+                    label={t(`recipe.effort.${recipe.effort_level.toLowerCase()}`)}
+                    icon="fitness-outline"
+                  />
                 )}
               </View>
               {(tags.length > 0 || recipeId) && (
@@ -523,10 +583,10 @@ export function RecipeView({
                       }
                     >
                       <Text
-                        className="text-[11px] font-medium capitalize"
+                        className="text-[11px] font-medium"
                         style={{ color: colors.textSecondary }}
                       >
-                        {tag}
+                        {translateRecipeTag(tag, t)}
                       </Text>
                     </Pressable>
                   ))}
@@ -540,7 +600,7 @@ export function RecipeView({
                         className="text-[11px] font-semibold"
                         style={{ color: colors.primary }}
                       >
-                        {tags.length > 0 ? 'Edit tags' : 'Add tags'}
+                        {tags.length > 0 ? t('tags.editTitle') : t('tags.addTags')}
                       </Text>
                     </Pressable>
                   ) : null}
@@ -603,7 +663,7 @@ export function RecipeView({
           >
             <Text className="text-sm font-semibold" style={{ color: colors.primary }}>
               {t('recipe.showingLanguage', {
-                language: getRecipeLanguageLabel(activeLanguage),
+                language: t(`languages.${activeLanguage}`),
               })}
             </Text>
             <Pressable onPress={handleShowOriginalLanguage} className="mt-2 active:opacity-70">
@@ -620,7 +680,9 @@ export function RecipeView({
             style={{ borderColor: colors.primarySoft, backgroundColor: colors.primarySoft }}
           >
             <Text className="text-sm font-semibold" style={{ color: colors.primary }}>
-              {getRecipeVariantLabel(activeVariant)} version
+              {t('recipe.variantVersion', {
+                variant: t(`recipe.variants.${activeVariant}.label`),
+              })}
             </Text>
             {variantSummary != null && (
               <Text className="mt-1 text-sm leading-5" style={{ color: colors.text }}>
@@ -629,7 +691,7 @@ export function RecipeView({
             )}
             <Pressable onPress={handleRevertVariant} className="mt-2 active:opacity-70">
               <Text className="text-sm font-semibold" style={{ color: colors.accent }}>
-                Revert to original
+                {t('recipe.revertOriginal')}
               </Text>
             </Pressable>
           </View>
@@ -641,7 +703,7 @@ export function RecipeView({
             style={{ borderColor: colors.warningSoft, backgroundColor: colors.warningSoft }}
           >
             <Text className="text-sm font-medium" style={{ color: colors.warning }}>
-              Couldn&apos;t find full details — here&apos;s what we found.
+              {t('recipe.partialExtraction')}
             </Text>
           </View>
         )}
@@ -654,7 +716,7 @@ export function RecipeView({
           >
             <Ionicons name="language-outline" size={18} color={colors.primary} />
             <Text className="text-sm font-bold" style={{ color: colors.text }}>
-              Translate
+              {t('recipe.translate')}
             </Text>
           </Pressable>
           <Pressable
@@ -665,7 +727,7 @@ export function RecipeView({
             <View className="flex-row items-center gap-2">
               <Ionicons name="color-wand-outline" size={18} color={colors.accent} />
               <Text className="text-sm font-bold" style={{ color: colors.text }}>
-                Remix
+                {t('recipe.remix')}
               </Text>
             </View>
           </Pressable>
@@ -684,17 +746,19 @@ export function RecipeView({
           </Pressable>
         ) : null}
 
+        <View className={splitRecipeBody ? 'flex-row items-start gap-6' : undefined}>
+          <View className={splitRecipeBody ? 'min-w-0 flex-1' : undefined}>
         <View
           className="mb-5 flex-row items-center justify-between rounded-3xl border px-4 py-3.5"
           style={{ borderColor: colors.border, backgroundColor: colors.surface }}
         >
           <View>
             <Text className="text-sm font-semibold" style={{ color: colors.text }}>
-              Servings
+              {t('recipe.servings')}
             </Text>
             {calorieDisplay != null && (
               <Text className="mt-0.5 text-xs" style={{ color: colors.textSecondary }}>
-                ≈ {calorieDisplay.total.toLocaleString()} cal total
+                {t('recipe.calTotal', { count: calorieDisplay.total.toLocaleString() })}
               </Text>
             )}
           </View>
@@ -716,7 +780,7 @@ export function RecipeView({
               <MeasurementToggle hint />
             </View>
             <Section
-              title="Ingredients"
+              title={t('recipe.ingredients')}
               count={scaledIngredients.length}
               headerRight={
                 <Pressable
@@ -726,7 +790,7 @@ export function RecipeView({
                 >
                   <Ionicons name="cart-outline" size={14} color={colors.primary} />
                   <Text className="text-xs font-semibold" style={{ color: colors.primary }}>
-                    Add to list
+                    {t('addToList.title')}
                   </Text>
                 </Pressable>
               }
@@ -744,44 +808,49 @@ export function RecipeView({
                   }
                 >
                   <Text
-                    className="flex-1 pr-2 text-base font-medium"
+                    className="min-w-0 flex-1 text-base font-medium"
                     style={{
                       color: colors.text,
                       writingDirection: textDirection,
                       textAlign: textDirection === 'rtl' ? 'right' : 'left',
+                      paddingEnd: 8,
                     }}
                   >
                     {ing.name}
                   </Text>
-                  <Text className="text-sm tabular-nums" style={{ color: colors.textSecondary }}>
-                    {displayIngredientAmount(ing.quantity, ing.unit, {
-                      system: measurementSystem,
-                      language: activeLanguage,
-                    })}
-                  </Text>
-                  <Pressable
-                    className="ml-3 rounded-full px-3 py-1.5"
-                    style={{ backgroundColor: colors.accentSoft }}
-                    onPress={() => setSwapIndex(index)}
-                  >
-                    <Text className="text-xs font-semibold" style={{ color: colors.accent }}>
-                      {t('recipe.swapAction')}
+                  <View className="flex-row items-center gap-3">
+                    <Text className="text-sm tabular-nums" style={{ color: colors.textSecondary }}>
+                      {displayIngredientAmount(ing.quantity, ing.unit, {
+                        system: measurementSystem,
+                        language: unitLanguage,
+                      })}
                     </Text>
-                  </Pressable>
+                    <Pressable
+                      className="rounded-full px-3 py-1.5"
+                      style={{ backgroundColor: colors.accentSoft }}
+                      onPress={() => setSwapIndex(index)}
+                    >
+                      <Text className="text-xs font-semibold" style={{ color: colors.accent }}>
+                        {t('recipe.swapAction')}
+                      </Text>
+                    </Pressable>
+                  </View>
                 </View>
               ))}
             </Section>
           </>
         )}
+          </View>
 
+          <View className={splitRecipeBody ? 'min-w-0 flex-[1.2]' : undefined}>
         {baseInstructions.length > 0 && (
           <Section
-            title="Instructions"
+            title={t('recipe.instructions')}
             count={baseInstructions.length}
             headerRight={
               hasStepTimestamps ? (
                 <Text className="text-[11px] font-medium" style={{ color: colors.textSecondary }}>
-                  Tap a time to jump
+                  {t('recipe.tapTimeToJump')}
                 </Text>
               ) : undefined
             }
@@ -793,7 +862,7 @@ export function RecipeView({
                   index < baseInstructions.length - 1 ? 'border-b' : ''
                 }`}
                 style={{
-                  flexDirection: textDirection === 'rtl' ? 'row-reverse' : 'row',
+                  flexDirection: recipeRowDirection,
                   ...(index < baseInstructions.length - 1
                     ? { borderColor: colors.primarySoft }
                     : null),
@@ -812,7 +881,10 @@ export function RecipeView({
                       className="mb-1.5 flex-row items-center gap-1 self-start rounded-full px-2.5 py-1 active:opacity-80"
                       style={{ backgroundColor: colors.accentSoft }}
                       accessibilityRole="button"
-                      accessibilityLabel={`Jump to step ${step.step} at ${formatVideoTimestamp(step.timestamp_seconds)}`}
+                      accessibilityLabel={t('recipe.jumpToStep', {
+                        step: step.step,
+                        time: formatVideoTimestamp(step.timestamp_seconds),
+                      })}
                     >
                       <Ionicons name="play-circle" size={14} color={colors.accent} />
                       <Text className="text-xs font-bold tabular-nums" style={{ color: colors.accent }}>
@@ -835,6 +907,8 @@ export function RecipeView({
             ))}
           </Section>
         )}
+          </View>
+        </View>
 
         {footer}
       </View>
@@ -843,15 +917,23 @@ export function RecipeView({
       {sideCookAlong ? (
         <View
           style={{
-            width: 360,
+            width: cookAlongOpen ? 440 : 360,
             paddingTop: 16,
             paddingRight: 20,
-            paddingBottom: 20,
+            paddingBottom: 16,
             paddingLeft: 8,
-            alignSelf: 'flex-start',
+            alignSelf: cookAlongOpen ? 'stretch' : 'flex-start',
             // Keep cook-along visible while the recipe scrolls (web).
             position: 'sticky' as 'relative',
-            top: 16,
+            top: cookAlongOpen ? 0 : 16,
+            // Full remaining viewport so Reels / TikTok can play portrait-tall.
+            ...(cookAlongOpen
+              ? {
+                  height: viewportHeight - WEB_RECIPE_HEADER,
+                  maxHeight: viewportHeight - WEB_RECIPE_HEADER,
+                  minHeight: 0,
+                }
+              : null),
           }}
         >
           {cookAlongOpen && recipe.original_url ? (
@@ -916,11 +998,14 @@ export function RecipeView({
             result.alreadyOnList.length === 0
               ? ''
               : result.alreadyOnList.length === 1
-                ? `\n\n${result.alreadyOnList[0]} was already on your list — kept as a separate line.`
-                : `\n\n${result.alreadyOnList.length} items were already on your list — kept as separate lines.`;
+                ? `\n\n${t('recipe.alreadyOnListOne', { name: result.alreadyOnList[0] })}`
+                : `\n\n${t('recipe.alreadyOnListOther', { count: result.alreadyOnList.length })}`;
           Alert.alert(
-            'Added to list',
-            `${selected.length} item${selected.length === 1 ? '' : 's'} added.${dupNote}`,
+            t('recipe.addedToList'),
+            `${t(
+              selected.length === 1 ? 'recipe.addedToListBodyOne' : 'recipe.addedToListBodyOther',
+              { count: selected.length },
+            )}${dupNote}`,
           );
         }}
       />
@@ -999,17 +1084,25 @@ export function RecipeView({
 function Badge({
   label,
   icon,
+  leading,
+  accessibilityLabel,
 }: {
   label: string;
-  icon: keyof typeof Ionicons.glyphMap;
+  icon?: keyof typeof Ionicons.glyphMap;
+  leading?: ReactNode;
+  accessibilityLabel?: string;
 }) {
   const { colors } = useThemePreference();
   return (
     <View
+      accessible={accessibilityLabel != null}
+      accessibilityLabel={accessibilityLabel}
+      accessibilityRole={accessibilityLabel ? 'text' : undefined}
       className="flex-row items-center gap-1.5 rounded-full px-3 py-1.5"
       style={{ backgroundColor: colors.primarySoft }}
     >
-      <Ionicons name={icon} size={12} color={colors.primary} />
+      {leading ??
+        (icon ? <Ionicons name={icon} size={12} color={colors.primary} /> : null)}
       <Text className="text-xs font-semibold" style={{ color: colors.primary }}>
         {label}
       </Text>
@@ -1024,11 +1117,14 @@ function StepperButton({
   icon: 'add' | 'remove';
   onPress: () => void;
 }) {
+  const { t } = useTranslation();
   const { colors } = useThemePreference();
   return (
     <Pressable
       accessibilityRole="button"
-      accessibilityLabel={icon === 'add' ? 'Increase servings' : 'Decrease servings'}
+      accessibilityLabel={
+        icon === 'add' ? t('recipe.increaseServings') : t('recipe.decreaseServings')
+      }
       className="h-9 w-9 items-center justify-center rounded-full active:opacity-80"
       style={{ backgroundColor: colors.primary }}
       onPress={onPress}
@@ -1049,6 +1145,7 @@ function Section({
   children: ReactNode;
   headerRight?: ReactNode;
 }) {
+  const { t } = useTranslation();
   const { colors } = useThemePreference();
   return (
     <View className="mb-5">
@@ -1059,7 +1156,7 @@ function Section({
           </Text>
           {count != null && (
             <Text className="text-sm font-medium" style={{ color: colors.textSecondary }}>
-              {count} {count === 1 ? 'item' : 'items'}
+              {t(count === 1 ? 'recipe.itemCountOne' : 'recipe.itemCountOther', { count })}
             </Text>
           )}
         </View>

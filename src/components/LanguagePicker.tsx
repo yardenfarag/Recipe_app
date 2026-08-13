@@ -1,4 +1,5 @@
 import { Pressable, Text, View } from 'react-native';
+import { useTranslation } from 'react-i18next';
 
 import { useLanguagePreference } from '@/hooks/useLanguagePreference';
 import { useThemePreference } from '@/hooks/useThemePreference';
@@ -15,6 +16,7 @@ type LanguagePickerProps = {
 
 /** Vertical list of app languages for Settings / onboarding. */
 export function LanguagePicker({ skipRtlPrompt = false }: LanguagePickerProps) {
+  const { t } = useTranslation();
   const { language, setLanguage } = useLanguagePreference();
   const { colors } = useThemePreference();
 
@@ -47,9 +49,11 @@ export function LanguagePicker({ skipRtlPrompt = false }: LanguagePickerProps) {
               <Text className="text-sm font-semibold" style={{ color: colors.text }}>
                 {lang.nativeLabel}
               </Text>
-              <Text className="mt-0.5 text-xs" style={{ color: colors.textSecondary }}>
-                {lang.label}
-              </Text>
+              {t(`languages.${lang.code}`) !== lang.nativeLabel ? (
+                <Text className="mt-0.5 text-xs" style={{ color: colors.textSecondary }}>
+                  {t(`languages.${lang.code}`)}
+                </Text>
+              ) : null}
             </View>
             {active ? (
               <Text className="text-xs font-bold" style={{ color: colors.primary }}>

@@ -1,11 +1,11 @@
-import { effectiveSourceLanguage } from '@/lib/appLanguages';
+import { resolveRecipeSourceLanguage } from '@/lib/recipeSourceLanguage';
 import type { Recipe } from '@/types/recipe';
 
 /** Title shown in the library for the user's preferred language. */
 export function recipeDisplayTitle(recipe: Recipe, preferredLanguage: string): string {
   if (recipe.display_title?.trim()) return recipe.display_title.trim();
 
-  const source = effectiveSourceLanguage(recipe.source_language);
+  const source = resolveRecipeSourceLanguage(recipe);
   if (preferredLanguage === source) return recipe.title;
 
   const cached = recipe.translations?.[preferredLanguage]?.title?.trim();
