@@ -3,3 +3,6 @@
 # set longer limits in the Supabase Dashboard if extract hits the default cap.
 # [functions.extract-recipe]
 # verify_jwt = true
+
+[functions.revenuecat-webhook]
+verify_jwt = false

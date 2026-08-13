@@ -3,14 +3,9 @@ import { useCallback, useState } from 'react';
 
 import { useAuth } from '@/hooks/useAuth';
 import { isAdminUser } from '@/lib/admin';
-import { PLUS_SELF_UPGRADE_ENABLED, type SubscriptionStatus } from '@/lib/quotas';
+import { type SubscriptionStatus } from '@/lib/quotas';
 import type { ProfileQuota } from '@/lib/supabase/profile';
-import {
-  activateSubscription,
-  cancelSubscription,
-  fetchProfile,
-  profileQuota,
-} from '@/lib/supabase/profile';
+import { fetchProfile, profileQuota } from '@/lib/supabase/profile';
 
 /**
  * Loads the current signed-in user's profile (avatar, plan, admin)
@@ -55,21 +50,6 @@ export function useProfile() {
     }
   }, [user]);
 
-  const upgradeToPlus = useCallback(async () => {
-    if (!PLUS_SELF_UPGRADE_ENABLED) {
-      throw new Error('Pinch Plus is in development');
-    }
-    if (!user) throw new Error('Sign in required');
-    await activateSubscription(user.id);
-    await refresh();
-  }, [user, refresh]);
-
-  const cancelPlus = useCallback(async () => {
-    if (!user) throw new Error('Sign in required');
-    await cancelSubscription(user.id);
-    await refresh();
-  }, [user, refresh]);
-
   useFocusEffect(
     useCallback(() => {
       refresh();
@@ -84,10 +64,10 @@ export function useProfile() {
     extractsRemaining: quota?.extractsRemaining ?? null,
     freeExtractsRemaining: quota?.freeExtractsRemaining ?? null,
     monthlyExtractsRemaining: quota?.monthlyExtractsRemaining ?? null,
+    purchasedCredits: quota?.purchasedCredits ?? null,
+    totalCredits: quota?.totalCredits ?? null,
     isAdmin,
     loading,
     refresh,
-    upgradeToPlus,
-    cancelPlus,
   };
 }

@@ -3,8 +3,6 @@ import { decode } from 'base64-arraybuffer';
 import {
   currentYearMonthUtc,
   freeExtractsRemaining,
-  isSubscriptionActive,
-  monthlyExtractsRemaining,
   type SubscriptionStatus,
 } from '@/lib/quotas';
 import { supabase } from '@/lib/supabase/client';
@@ -33,25 +31,25 @@ export interface ProfileQuota {
   monthlyExtractsUsed: number;
   monthlyExtractsRemaining: number | null;
   extractsRemaining: number;
+  purchasedCredits: number;
+  totalCredits: number;
 }
 
 export function profileQuota(profile: Profile | null): ProfileQuota | null {
   if (!profile) return null;
-  const subscriptionActive = isSubscriptionActive(
-    profile.subscription_status,
-    profile.subscription_expires_at,
-  );
   const used = profile.monthly_extracts_used;
-  const freeRemaining = subscriptionActive ? 0 : freeExtractsRemaining(used);
-  const monthlyRemaining = subscriptionActive ? monthlyExtractsRemaining(used) : null;
+  const freeRemaining = freeExtractsRemaining(used);
+  const purchasedCredits = Math.max(0, profile.token_balance);
   return {
-    subscriptionStatus: profile.subscription_status,
-    subscriptionActive,
-    freeExtractsUsed: subscriptionActive ? 0 : used,
+    subscriptionStatus: 'free',
+    subscriptionActive: false,
+    freeExtractsUsed: used,
     freeExtractsRemaining: freeRemaining,
     monthlyExtractsUsed: used,
-    monthlyExtractsRemaining: monthlyRemaining,
-    extractsRemaining: subscriptionActive ? (monthlyRemaining ?? 0) : freeRemaining,
+    monthlyExtractsRemaining: null,
+    extractsRemaining: freeRemaining + purchasedCredits,
+    purchasedCredits,
+    totalCredits: freeRemaining + purchasedCredits,
   };
 }
 
@@ -112,41 +110,19 @@ export async function fetchProfile(userId: string): Promise<Profile | null> {
   };
 }
 
-/** Honor-system Pinch Plus until real IAP. Gated by PLUS_SELF_UPGRADE_ENABLED for self-serve. */
-export async function activateSubscription(userId?: string): Promise<SubscriptionStatus> {
-  const id = userId ?? (await supabase.auth.getUser()).data.user?.id;
-  if (!id) throw new Error('Sign in required');
-  const { data, error } = await supabase.rpc('activate_subscription', {
-    p_user_id: id,
-  });
-  if (error) throw error;
-  return data === 'active' ? 'active' : 'active';
-}
-
-export async function cancelSubscription(userId?: string): Promise<SubscriptionStatus> {
-  const id = userId ?? (await supabase.auth.getUser()).data.user?.id;
-  if (!id) throw new Error('Sign in required');
-  const { data, error } = await supabase.rpc('cancel_subscription', {
-    p_user_id: id,
-  });
-  if (error) throw error;
-  return data === 'canceled' || data === 'free' || data === 'active'
-    ? (data as SubscriptionStatus)
-    : 'canceled';
-}
-
-/** Admin: activate Plus for another user. */
-export async function adminSetSubscription(
+/** Admin support adjustment for a user's non-expiring recipe credits. */
+export async function adminAdjustRecipeCredits(
   userId: string,
-  active: boolean,
-): Promise<SubscriptionStatus> {
-  const { data, error } = await supabase.rpc(
-    active ? 'activate_subscription' : 'cancel_subscription',
-    { p_user_id: userId },
-  );
+  amount: number,
+  reason = 'support_adjustment',
+): Promise<number> {
+  const { data, error } = await supabase.rpc('admin_grant_recipe_credits', {
+    p_user_id: userId,
+    p_amount: amount,
+    p_reason: reason,
+  });
   if (error) throw error;
-  if (active) return 'active';
-  return data === 'canceled' ? 'canceled' : 'canceled';
+  return Number(data);
 }
 
 /**

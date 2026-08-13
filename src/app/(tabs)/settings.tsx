@@ -14,6 +14,7 @@ import { Screen } from '@/components/Screen';
 import { SupportTicketModal } from '@/components/SupportTicketModal';
 import { ThemePackPicker } from '@/components/ThemePackPicker';
 import { ThemeToggle } from '@/components/ThemeToggle';
+import { TokenPurchaseSheet } from '@/components/TokenPurchaseSheet';
 import { FormContentWidth } from '@/constants/theme';
 import { useAuth } from '@/hooks/useAuth';
 import { useBreakpoint } from '@/hooks/useBreakpoint';
@@ -22,12 +23,7 @@ import { useThemePreference } from '@/hooks/useThemePreference';
 import { useTranslation } from 'react-i18next';
 import { LEGAL_URLS, openLegalUrl } from '@/lib/legal';
 import { confirmAction, confirmDestructive } from '@/lib/confirmAction';
-import {
-  FREE_EXTRACT_LIMIT,
-  PLUS_MONTHLY_EXTRACT_LIMIT,
-  PLUS_PRICE_DISPLAY,
-  PLUS_SELF_UPGRADE_ENABLED,
-} from '@/lib/quotas';
+import { FREE_MONTHLY_EXTRACT_LIMIT } from '@/lib/quotas';
 import {
   deleteAccount,
   requestAppleAuthorizationCodeForDeletion,
@@ -41,66 +37,18 @@ export default function SettingsScreen() {
   const { user, migrationError, retryMigration } = useAuth();
   const {
     avatarUrl,
-    subscriptionActive,
-    extractsRemaining,
+    freeExtractsRemaining,
+    purchasedCredits,
+    totalCredits,
     isAdmin,
     refresh,
-    upgradeToPlus,
-    cancelPlus,
   } = useProfile();
   const { colors } = useThemePreference();
   const { isMediumUp } = useBreakpoint();
   const [uploading, setUploading] = useState(false);
-  const [planBusy, setPlanBusy] = useState(false);
   const [deleting, setDeleting] = useState(false);
   const [supportOpen, setSupportOpen] = useState(false);
-
-  async function handleUpgrade() {
-    if (!PLUS_SELF_UPGRADE_ENABLED || !user || planBusy) return;
-    const ok = await confirmAction(
-      t('settings.upgradeConfirmTitle'),
-      t('settings.billingNote'),
-      t('common.upgrade'),
-    );
-    if (!ok) return;
-    setPlanBusy(true);
-    try {
-      await upgradeToPlus();
-      Alert.alert(
-        t('settings.upgradeSuccessTitle'),
-        t('settings.upgradeSuccessBody', { limit: PLUS_MONTHLY_EXTRACT_LIMIT }),
-      );
-    } catch (err) {
-      Alert.alert(
-        t('settings.upgradeFailedTitle'),
-        err instanceof Error ? err.message : t('common.tryAgain'),
-      );
-    } finally {
-      setPlanBusy(false);
-    }
-  }
-
-  async function handleCancelPlus() {
-    if (!user || planBusy) return;
-    const ok = await confirmDestructive(
-      t('settings.cancelConfirmTitle'),
-      t('settings.cancelConfirmBody', { limit: FREE_EXTRACT_LIMIT }),
-      t('settings.cancelConfirmAction'),
-    );
-    if (!ok) return;
-    setPlanBusy(true);
-    try {
-      await cancelPlus();
-      Alert.alert(t('settings.cancelSuccessTitle'), t('settings.cancelSuccessBody'));
-    } catch (err) {
-      Alert.alert(
-        t('settings.cancelFailedTitle'),
-        err instanceof Error ? err.message : t('common.tryAgain'),
-      );
-    } finally {
-      setPlanBusy(false);
-    }
-  }
+  const [creditsOpen, setCreditsOpen] = useState(false);
 
   async function handleSignOut() {
     try {
@@ -235,20 +183,7 @@ export default function SettingsScreen() {
     }
   }
 
-  const planLabel = subscriptionActive ? t('settings.planPlus') : t('settings.planFree');
-  const planDetail = subscriptionActive
-    ? extractsRemaining != null
-      ? t('settings.planDetailPlusRemaining', {
-          remaining: extractsRemaining,
-          limit: PLUS_MONTHLY_EXTRACT_LIMIT,
-        })
-      : t('settings.planDetailPlus', { limit: PLUS_MONTHLY_EXTRACT_LIMIT })
-    : extractsRemaining != null
-      ? t('settings.planDetailFreeRemaining', {
-          remaining: extractsRemaining,
-          limit: FREE_EXTRACT_LIMIT,
-        })
-      : t('settings.planDetailFree', { limit: FREE_EXTRACT_LIMIT });
+  const planLabel = t('settings.recipeCredits');
 
   return (
     <Screen dense tabScreen>
@@ -362,52 +297,27 @@ export default function SettingsScreen() {
                 {planLabel}
               </Text>
               <Text className="mb-2 text-sm" style={{ color: colors.accent }}>
-                {planDetail}
+                {t('settings.creditsTotal', { count: totalCredits ?? 0 })}
               </Text>
               <Text className="text-xs leading-5" style={{ color: colors.textSecondary }}>
-                {t('settings.planBlurb', {
-                  price: PLUS_PRICE_DISPLAY,
-                  billingNote: t('settings.billingNote'),
+                {t('settings.creditsFree', {
+                  remaining: freeExtractsRemaining ?? 0,
+                  limit: FREE_MONTHLY_EXTRACT_LIMIT,
                 })}
               </Text>
-              {subscriptionActive ? (
-                <Pressable
-                  className="mt-3 self-start rounded-[18px] px-4 py-2 active:opacity-80"
-                  style={{ backgroundColor: colors.warningSoft }}
-                  onPress={() => void handleCancelPlus()}
-                  disabled={planBusy}
-                >
-                  {planBusy ? (
-                    <ActivityIndicator color={colors.warning} />
-                  ) : (
-                    <Text className="text-sm font-bold" style={{ color: colors.warning }}>
-                      {t('settings.cancelSubscription')}
-                    </Text>
-                  )}
-                </Pressable>
-              ) : PLUS_SELF_UPGRADE_ENABLED ? (
-                <Pressable
-                  className="mt-3 self-start rounded-[18px] px-4 py-2 active:opacity-80"
-                  style={{ backgroundColor: colors.primary }}
-                  onPress={() => void handleUpgrade()}
-                  disabled={planBusy}
-                >
-                  {planBusy ? (
-                    <ActivityIndicator color="#fff" />
-                  ) : (
-                    <Text className="text-sm font-bold text-white">{t('settings.upgrade')}</Text>
-                  )}
-                </Pressable>
-              ) : (
-                <View
-                  className="mt-3 self-start rounded-[18px] px-4 py-2"
-                  style={{ backgroundColor: colors.primarySoft }}
-                >
-                  <Text className="text-sm font-bold" style={{ color: colors.primary }}>
-                    {t('settings.upgradeInDevelopment')}
-                  </Text>
-                </View>
-              )}
+              <Text className="mt-1 text-xs leading-5" style={{ color: colors.textSecondary }}>
+                {t('settings.creditsPurchased', { count: purchasedCredits ?? 0 })}
+              </Text>
+              <Text className="mt-1 text-xs leading-5" style={{ color: colors.textSecondary }}>
+                {t('settings.creditsReset')}
+              </Text>
+              <Pressable
+                className="mt-3 self-start rounded-[18px] px-4 py-2 active:opacity-80"
+                style={{ backgroundColor: colors.primary }}
+                onPress={() => setCreditsOpen(true)}
+              >
+                <Text className="text-sm font-bold text-white">{t('credits.buyAction')}</Text>
+              </Pressable>
             </View>
           ) : null}
 
@@ -544,6 +454,7 @@ export default function SettingsScreen() {
       </ScrollView>
 
       <SupportTicketModal visible={supportOpen} onClose={() => setSupportOpen(false)} />
+      <TokenPurchaseSheet visible={creditsOpen} onClose={() => setCreditsOpen(false)} />
     </Screen>
   );
 }

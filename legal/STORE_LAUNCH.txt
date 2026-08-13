@@ -26,9 +26,9 @@ Enable Pages (one-time, required before the workflow succeeds):
    • Paste or share a video link
    • Get ingredients, steps, time, and effort estimates
    • Scale servings and try substitutions
-   • Free token allowance for AI extracts (paid packs coming later)
+   • 15 free recipe credits each month, with optional non-expiring packs
 
-   Soft launch: no in-app purchases yet.
+   Configure and sandbox-test RevenueCat consumable packs before store submission.
 4. Privacy policy URL: (see above)
 5. Data safety: account email, user content (recipes/avatar), app activity;
    encrypted in transit; deletion in-app (Settings → Delete account) + web URL.

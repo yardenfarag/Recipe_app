@@ -14,13 +14,16 @@ import {
 } from '../_shared/platform.ts';
 import type { PlatformMeta } from '../_shared/platformMeta.ts';
 import { persistSocialThumbnail } from '../_shared/persistThumbnail.ts';
-import { estimateScrapeCredits, FREE_EXTRACT_LIMIT, GUEST_EXTRACT_LIMIT, PLUS_MONTHLY_EXTRACT_LIMIT } from '../_shared/pricing.ts';
+import { estimateScrapeCredits, GUEST_EXTRACT_LIMIT } from '../_shared/pricing.ts';
 import {
   canStartExtract,
+  finalizeSignedInExtract,
   getGuestExtractCount,
   guestRemainingFromCount,
   quotaFields,
   type QuotaSnapshot,
+  type CreditReservation,
+  refundSignedInExtract,
   reserveGuestExtraction,
   reserveSignedInExtract,
 } from '../_shared/quotas.ts';
@@ -48,8 +51,9 @@ type ExtractionStatus = 'full' | 'partial' | 'failed' | 'coming_soon';
  * user's library, otherwise runs the content ladder (description → comments →
  * captions → video) before classifying the result.
  *
- * Guests: 3 lifetime extracts / install (cannot save). Signed-in free: 15 / month.
- * Pinch Plus: 100 / calendar month (UTC). Cached URL re-extract is free.
+ * Guests: 3 lifetime extracts / install (cannot save). Signed-in users receive
+ * 15 monthly credits and can spend non-expiring purchased credits after those.
+ * Cached URL re-extract is free.
  */
 Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') {
@@ -62,12 +66,17 @@ Deno.serve(async (req) => {
   const started = Date.now();
   let url: string;
   let guestInstallId: string | null = null;
+  let requestId = crypto.randomUUID();
   try {
     const body = await req.json();
     url = String(body.url ?? '').trim();
     const rawInstall = body.guest_install_id ?? body.guestInstallId;
     if (typeof rawInstall === 'string' && rawInstall.trim().length >= 8) {
       guestInstallId = rawInstall.trim().slice(0, 128);
+    }
+    const rawRequestId = body.request_id ?? body.requestId;
+    if (typeof rawRequestId === 'string' && rawRequestId.trim().length >= 8) {
+      requestId = rawRequestId.trim().slice(0, 128);
     }
   } catch {
     return jsonResponse({ error: 'Invalid JSON body' }, 400);
@@ -112,6 +121,7 @@ Deno.serve(async (req) => {
   const admin = createServiceSupabase();
   const authHeader = req.headers.get('Authorization');
   let userId: string | null = null;
+  let creditReservation: CreditReservation | null = null;
   let authedClient = authHeader ? createAuthedSupabase(authHeader) : null;
 
   if (authedClient) {
@@ -144,9 +154,9 @@ Deno.serve(async (req) => {
         });
       }
 
-      const gate = await canStartExtract(admin, userId);
-      if (!gate.ok) {
-        const code = gate.code === 'error' ? 'metering_error' : gate.code;
+      const reserved = await reserveSignedInExtract(admin, userId, requestId);
+      if (!reserved.ok) {
+        const code = reserved.code;
         await logUsageEvent(admin, {
           userId,
           action: 'extract',
@@ -154,7 +164,7 @@ Deno.serve(async (req) => {
           status: code,
           tokensCharged: 0,
           durationMs: Date.now() - started,
-          metadata: { ...quotaFields(gate.snapshot) },
+          metadata: { request_id: requestId, ...quotaFields(reserved.snapshot) },
         });
         return jsonResponse(
           {
@@ -162,11 +172,12 @@ Deno.serve(async (req) => {
             platform,
             code,
             message: quotaBlockMessage(code),
-            ...quotaFields(gate.snapshot),
+            ...quotaFields(reserved.snapshot),
           },
           code === 'metering_error' ? 500 : 402,
         );
       }
+      creditReservation = reserved.reservation;
     }
   }
 
@@ -226,6 +237,15 @@ Deno.serve(async (req) => {
     });
 
     if (isVideoTooLong(meta.durationSeconds) && !hasTextSources(meta) && platform !== 'web') {
+      if (userId && creditReservation) {
+        await refundSignedInExtract(
+          admin,
+          userId,
+          creditReservation.reservationId,
+          'video_too_long',
+        );
+        creditReservation = null;
+      }
       await logUsageEvent(admin, {
         userId,
         guestInstallId: userId ? null : guestInstallId,
@@ -275,7 +295,16 @@ Deno.serve(async (req) => {
 
     if (status === 'failed') {
       const rejectedAsTooLong = videoSkippedReason === 'too_long';
-      // Failed finds do not consume free/Plus extract quota (same as guests).
+      if (userId && creditReservation) {
+        await refundSignedInExtract(
+          admin,
+          userId,
+          creditReservation.reservationId,
+          rejectedAsTooLong ? 'video_too_long' : 'no_recipe_found',
+        );
+        creditReservation = null;
+      }
+      // Failed finds do not consume recipe credits (same as guests).
       let snapshot: QuotaSnapshot | null = null;
       if (userId && admin) {
         const gate = await canStartExtract(admin, userId);
@@ -348,12 +377,16 @@ Deno.serve(async (req) => {
       missing_fields: missingFields,
     };
 
-    let snapshot: QuotaSnapshot | null = null;
+    let snapshot: QuotaSnapshot | null = creditReservation?.snapshot ?? null;
 
-    if (userId && admin) {
-      const reserved = await reserveSignedInExtract(admin, userId);
-      if (!reserved.ok) {
-        const code = reserved.code;
+    if (userId && admin && creditReservation) {
+      const finalized = await finalizeSignedInExtract(
+        admin,
+        userId,
+        creditReservation.reservationId,
+      );
+      if (!finalized) {
+        const code = 'metering_error';
         await logUsageEvent(admin, {
           userId,
           action: 'extract',
@@ -365,6 +398,11 @@ Deno.serve(async (req) => {
           tokensCharged: 0,
           durationMs: Date.now() - started,
           errorMessage: code,
+          metadata: {
+            request_id: requestId,
+            reservation_id: creditReservation.reservationId,
+            credit_source: creditReservation.source,
+          },
         });
         return jsonResponse(
           {
@@ -372,12 +410,11 @@ Deno.serve(async (req) => {
             platform,
             code,
             message: quotaBlockMessage(code),
-            ...quotaFields(reserved.snapshot),
+            ...quotaFields(snapshot),
           },
-          code === 'metering_error' ? 500 : 402,
+          500,
         );
       }
-      snapshot = reserved.snapshot;
     } else if (guestInstallId && admin) {
       const charged = await reserveGuestExtraction(admin, guestInstallId);
       if ('error' in charged) {
@@ -420,23 +457,40 @@ Deno.serve(async (req) => {
       extractionSource: source,
       usages,
       scrapecreatorsCredits: scrapeCredits,
-      tokensCharged: 0,
+      tokensCharged: userId ? 1 : 0,
       durationMs: Date.now() - started,
-      metadata: snapshot ? { ...quotaFields(snapshot) } : {},
+      metadata: creditReservation
+        ? {
+            ...quotaFields(snapshot),
+            request_id: requestId,
+            reservation_id: creditReservation.reservationId,
+            credit_source: creditReservation.source,
+          }
+        : {},
     });
 
     return jsonResponse({
       status,
       platform,
       recipe,
-      tokens_charged: 0,
+      tokens_charged: userId ? 1 : 0,
       ...quotaFields(snapshot),
       guest_extracts_remaining: guestRemaining,
     });
   } catch (err) {
     console.error('extract-recipe error:', err);
 
-    // Failed extractions no longer consume guest quota — re-read remaining for the client.
+    if (userId && creditReservation) {
+      await refundSignedInExtract(
+        admin,
+        userId,
+        creditReservation.reservationId,
+        'extraction_error',
+      );
+      creditReservation = null;
+    }
+
+    // Failed extractions do not consume guest quota — re-read remaining for the client.
     if (!userId && guestInstallId && admin) {
       guestRemaining = guestRemainingFromCount(await getGuestExtractCount(admin, guestInstallId));
     }
@@ -529,13 +583,7 @@ function classify(r: GeminiRecipe): {
 }
 
 function quotaBlockMessage(code: string): string {
-  if (code === 'subscription_required') {
-    return `You've used your ${FREE_EXTRACT_LIMIT} free recipe extractions this month. Upgrade to Pinch Plus to keep going.`;
-  }
-  if (code === 'monthly_limit') {
-    return `You've reached your Pinch Plus limit of ${PLUS_MONTHLY_EXTRACT_LIMIT} extractions this month.`;
-  }
-  return 'Could not verify your extraction allowance. Please try again.';
+  return code === 'insufficient_credits' ? 'insufficient_credits' : 'metering_error';
 }
 
 function capitalize(s: string): string {

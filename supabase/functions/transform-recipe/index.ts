@@ -1,5 +1,4 @@
 import { corsHeaders, jsonResponse } from '../_shared/cors.ts';
-import { isSubscriptionActive } from '../_shared/quotas.ts';
 import { createAuthedSupabase } from '../_shared/recipeLookup.ts';
 import { isRecipeVariantKey, transformRecipeWithGemini } from '../_shared/recipeVariant.ts';
 import { createServiceSupabase } from '../_shared/supabaseAdmin.ts';
@@ -12,6 +11,7 @@ const MAX_INSTRUCTIONS = 50;
 const MAX_INGREDIENT_NAME_CHARS = 160;
 const MAX_UNIT_CHARS = 40;
 const MAX_INSTRUCTION_CHARS = 1_000;
+const DAILY_REMIX_LIMIT = 5;
 
 interface RequestBody {
   variant?: string;
@@ -28,7 +28,7 @@ interface RequestBody {
  * POST { variant, recipe } -> { status, recipe?, message? }
  *
  * Adapts a full recipe for a dietary/lifestyle goal (healthier, vegan, etc.).
- * Requires Pinch Plus. Remix is not counted against extract quotas.
+ * Remix is free for signed-in users and bounded by a daily abuse limit.
  */
 Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') {
@@ -76,18 +76,6 @@ Deno.serve(async (req) => {
   const admin = createServiceSupabase();
   if (!admin) {
     return jsonResponse({ status: 'failed', message: 'Server is not configured.' }, 500);
-  }
-
-  const plusActive = await isSubscriptionActive(admin, user.id);
-  if (!plusActive) {
-    return jsonResponse(
-      {
-        status: 'failed',
-        code: 'subscription_required',
-        message: 'Remix is included with Pinch Plus. Upgrade to adapt recipes with AI.',
-      },
-      402,
-    );
   }
 
   let body: RequestBody;
@@ -178,6 +166,33 @@ Deno.serve(async (req) => {
 
   if (ingredients.length === 0) {
     return jsonResponse({ error: 'Recipe must include at least one ingredient' }, 400);
+  }
+
+  const { data: remixCount, error: remixLimitError } = await admin.rpc('reserve_daily_remix', {
+    p_user_id: user.id,
+    p_usage_date: new Date().toISOString().slice(0, 10),
+    p_limit: DAILY_REMIX_LIMIT,
+  });
+  if (remixLimitError) {
+    console.error('[transform-recipe] reserve_daily_remix', remixLimitError);
+    return jsonResponse(
+      {
+        status: 'failed',
+        code: 'metering_error',
+        message: 'metering_error',
+      },
+      500,
+    );
+  }
+  if (Number(remixCount) < 0) {
+    return jsonResponse(
+      {
+        status: 'failed',
+        code: 'daily_limit',
+        message: 'daily_limit',
+      },
+      429,
+    );
   }
 
   try {

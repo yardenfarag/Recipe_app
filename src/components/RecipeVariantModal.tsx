@@ -6,9 +6,7 @@ import { ActivityIndicator, Pressable, ScrollView, Text, View } from 'react-nati
 
 import { SheetModal } from '@/components/SheetModal';
 import { useAuth } from '@/hooks/useAuth';
-import { useProfile } from '@/hooks/useProfile';
 import { useThemePreference } from '@/hooks/useThemePreference';
-import { PLUS_SELF_UPGRADE_ENABLED } from '@/lib/quotas';
 import { RECIPE_VARIANTS, RecipeVariantKey } from '@/lib/recipeVariants';
 import { transformRecipe, TransformedRecipePayload } from '@/lib/supabase/transformRecipe';
 import { Ingredient, Instruction } from '@/types/recipe';
@@ -27,7 +25,7 @@ interface RecipeVariantModalProps {
 /**
  * Sheet for picking a dietary/lifestyle remix (healthier, vegan, etc.).
  * Calls Gemini and lets the user preview + apply the adapted recipe.
- * Pinch Plus only.
+ * Free for signed-in users, with a server-side daily limit.
  */
 export function RecipeVariantModal({
   visible,
@@ -42,9 +40,7 @@ export function RecipeVariantModal({
   const { t } = useTranslation();
   const { colors } = useThemePreference();
   const { user } = useAuth();
-  const { subscriptionActive, upgradeToPlus } = useProfile();
   const [loading, setLoading] = useState(false);
-  const [upgrading, setUpgrading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [preview, setPreview] = useState<{
     variant: RecipeVariantKey;
@@ -52,7 +48,7 @@ export function RecipeVariantModal({
   } | null>(null);
 
   function handleClose() {
-    if (loading || upgrading) return;
+    if (loading) return;
     setError(null);
     setPreview(null);
     onClose();
@@ -65,11 +61,6 @@ export function RecipeVariantModal({
       setError('sign_in');
       return;
     }
-    if (!subscriptionActive) {
-      setError('plus_required');
-      return;
-    }
-
     setLoading(true);
     setError(null);
     setPreview(null);
@@ -86,8 +77,10 @@ export function RecipeVariantModal({
       if (result.status === 'failed' || !result.recipe) {
         if (result.code === 'auth_required') {
           setError('sign_in');
-        } else if (result.code === 'subscription_required') {
-          setError('plus_required');
+        } else if (result.code === 'daily_limit') {
+          setError('daily_limit');
+        } else if (result.code === 'metering_error') {
+          setError(t('recipe.remixFailed'));
         } else {
           setError(result.message ?? t('recipe.remixFailed'));
         }
@@ -99,19 +92,6 @@ export function RecipeVariantModal({
       setError(t('recipe.remixFailed'));
     } finally {
       setLoading(false);
-    }
-  }
-
-  async function handleUpgrade() {
-    if (!PLUS_SELF_UPGRADE_ENABLED || upgrading) return;
-    setUpgrading(true);
-    try {
-      await upgradeToPlus();
-      setError(null);
-    } catch {
-      setError(t('recipe.remixUpgradeFailed'));
-    } finally {
-      setUpgrading(false);
     }
   }
 
@@ -198,32 +178,11 @@ export function RecipeVariantModal({
                   <Text className="text-sm font-bold text-white">{t('settings.signIn')}</Text>
                 </Pressable>
               </>
-            ) : error === 'plus_required' ? (
+            ) : error === 'daily_limit' ? (
               <>
                 <Text className="text-sm" style={{ color: colors.danger }}>
-                  {t('recipe.remixPlusRequired')}
+                  {t('recipe.remixDailyLimit')}
                 </Text>
-                {PLUS_SELF_UPGRADE_ENABLED ? (
-                  <Pressable
-                    onPress={handleUpgrade}
-                    disabled={upgrading}
-                    className="mt-3 self-start rounded-full px-4 py-2 active:opacity-80"
-                    style={{ backgroundColor: colors.primary, opacity: upgrading ? 0.7 : 1 }}
-                  >
-                    <Text className="text-sm font-bold text-white">
-                      {upgrading ? t('recipe.remixUpgrading') : t('settings.upgrade')}
-                    </Text>
-                  </Pressable>
-                ) : (
-                  <View
-                    className="mt-3 self-start rounded-full px-4 py-2"
-                    style={{ backgroundColor: colors.primarySoft }}
-                  >
-                    <Text className="text-sm font-bold" style={{ color: colors.primary }}>
-                      {t('settings.upgradeInDevelopment')}
-                    </Text>
-                  </View>
-                )}
               </>
             ) : (
               <>

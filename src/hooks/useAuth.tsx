@@ -12,6 +12,7 @@ import {
 import { migrateGuestCollectionsToSupabase } from '@/lib/migrateGuestCollections';
 import { migrateGuestRecipesToSupabase } from '@/lib/migrateGuestRecipes';
 import { migrateGuestShoppingListToSupabase } from '@/lib/migrateGuestShoppingList';
+import { clearPurchasesUser, configurePurchases } from '@/lib/purchases';
 import { supabase } from '@/lib/supabase/client';
 
 export type MigrationStatus = 'idle' | 'running' | 'done' | 'error';
@@ -109,6 +110,19 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
     return () => sub.subscription.unsubscribe();
   }, [runMigration]);
+
+  useEffect(() => {
+    if (loading) return;
+    if (session?.user.id) {
+      void configurePurchases(session.user.id).catch((error) => {
+        console.warn('[purchases] configure failed', error);
+      });
+    } else {
+      void clearPurchasesUser().catch((error) => {
+        console.warn('[purchases] logout failed', error);
+      });
+    }
+  }, [loading, session?.user.id]);
 
   const value = useMemo<AuthContextValue>(
     () => ({

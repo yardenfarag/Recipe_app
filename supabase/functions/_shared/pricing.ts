@@ -9,10 +9,10 @@ export const GEMINI_FAST_OUTPUT_USD_PER_M = 1.5;
 /** Conservative ScrapeCreators credit cost from the $47 / 25k pack. */
 export const SCRAPECREATORS_USD_PER_CREDIT = 0.00188;
 
-/** @deprecated Product tokens retired; kept for admin historical labels only. */
-export const TOKEN_COST_EXTRACT = 10;
-/** @deprecated Product tokens retired; remix is Plus-gated, not token-metered. */
-export const TOKEN_COST_REMIX = 5;
+/** One recipe credit funds one successful, uncached extraction. */
+export const TOKEN_COST_EXTRACT = 1;
+/** Remix is free and protected by a daily server-side limit. */
+export const TOKEN_COST_REMIX = 0;
 
 /** Keep in sync with client GUEST_EXTRACTION_LIMIT. */
 export const GUEST_EXTRACT_LIMIT = 3;
@@ -20,11 +20,6 @@ export const GUEST_EXTRACT_LIMIT = 3;
 export const FREE_MONTHLY_EXTRACT_LIMIT = 15;
 /** @deprecated Use FREE_MONTHLY_EXTRACT_LIMIT. */
 export const FREE_EXTRACT_LIMIT = FREE_MONTHLY_EXTRACT_LIMIT;
-/** Calendar-month extracts for Pinch Plus (UTC YYYY-MM). */
-export const PLUS_MONTHLY_EXTRACT_LIMIT = 100;
-/** Display price until real IAP. */
-export const PLUS_PRICE_DISPLAY = '$9.99/mo';
-
 export interface GeminiUsageSnapshot {
   model: string;
   kind: string;

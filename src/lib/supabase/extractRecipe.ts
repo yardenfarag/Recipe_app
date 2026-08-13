@@ -24,6 +24,7 @@ export interface ExtractResult {
     | 'guest_id_required'
     | 'metering_error'
     | 'video_too_long'
+    | 'insufficient_credits'
     | 'insufficient_tokens'
     | string;
   tokens_charged?: number;
@@ -32,6 +33,8 @@ export interface ExtractResult {
   free_extracts_remaining?: number | null;
   monthly_extracts_remaining?: number | null;
   subscription_status?: string | null;
+  purchased_credits?: number | null;
+  total_credits?: number | null;
 }
 
 async function invokeErrorMessage(error: unknown): Promise<{
@@ -42,6 +45,8 @@ async function invokeErrorMessage(error: unknown): Promise<{
   free_extracts_remaining?: number | null;
   monthly_extracts_remaining?: number | null;
   subscription_status?: string | null;
+  purchased_credits?: number | null;
+  total_credits?: number | null;
 }> {
   if (error instanceof FunctionsHttpError) {
     try {
@@ -55,6 +60,8 @@ async function invokeErrorMessage(error: unknown): Promise<{
           free_extracts_remaining: body.free_extracts_remaining,
           monthly_extracts_remaining: body.monthly_extracts_remaining,
           subscription_status: body.subscription_status,
+          purchased_credits: body.purchased_credits,
+          total_credits: body.total_credits,
         };
       }
     } catch {
@@ -76,8 +83,11 @@ async function invokeErrorMessage(error: unknown): Promise<{
  */
 export async function extractRecipe(url: string): Promise<ExtractResult> {
   const guestInstallId = await getInstallId();
+  const requestId =
+    globalThis.crypto?.randomUUID?.() ??
+    `extract-${Date.now()}-${Math.random().toString(36).slice(2, 12)}`;
   const { data, error } = await supabase.functions.invoke<ExtractResult>('extract-recipe', {
-    body: { url, guest_install_id: guestInstallId },
+    body: { url, guest_install_id: guestInstallId, request_id: requestId },
   });
 
   if (error) {
@@ -92,6 +102,8 @@ export async function extractRecipe(url: string): Promise<ExtractResult> {
       free_extracts_remaining: details.free_extracts_remaining,
       monthly_extracts_remaining: details.monthly_extracts_remaining,
       subscription_status: details.subscription_status,
+      purchased_credits: details.purchased_credits,
+      total_credits: details.total_credits,
     };
   }
 

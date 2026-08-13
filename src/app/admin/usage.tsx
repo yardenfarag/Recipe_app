@@ -1,6 +1,7 @@
 import { useFocusEffect } from '@react-navigation/native';
 import { router } from 'expo-router';
 import { useCallback, useState, type ReactNode } from 'react';
+import { useTranslation } from 'react-i18next';
 import {
   ActivityIndicator,
   Alert,
@@ -23,7 +24,7 @@ import {
   type AiUsageEvent,
   type TokenLedgerRow,
 } from '@/lib/supabase/adminUsage';
-import { adminSetSubscription } from '@/lib/supabase/profile';
+import { adminAdjustRecipeCredits } from '@/lib/supabase/profile';
 import {
   closeSupportTicket,
   fetchSupportTickets,
@@ -48,6 +49,7 @@ function fmtWhen(iso: string): string {
 }
 
 export default function AdminUsageScreen() {
+  const { t } = useTranslation();
   const { user } = useAuth();
   const { isAdmin, loading: profileLoading } = useProfile();
   const { colors } = useThemePreference();
@@ -57,6 +59,7 @@ export default function AdminUsageScreen() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [grantUserId, setGrantUserId] = useState('');
+  const [grantAmount, setGrantAmount] = useState('10');
   const [grantBusy, setGrantBusy] = useState(false);
 
   const refresh = useCallback(async () => {
@@ -93,17 +96,21 @@ export default function AdminUsageScreen() {
     }, [profileLoading, user, isAdmin, refresh]),
   );
 
-  async function handleGrant(active: boolean) {
+  async function handleGrant() {
     const id = grantUserId.trim();
-    if (!id || grantBusy) return;
+    const amount = Number.parseInt(grantAmount, 10);
+    if (!id || !Number.isInteger(amount) || amount === 0 || grantBusy) return;
     setGrantBusy(true);
     try {
-      await adminSetSubscription(id, active);
-      Alert.alert(active ? 'Plus granted' : 'Plus revoked', `User ${shortId(id)}`);
+      const balance = await adminAdjustRecipeCredits(id, amount);
+      Alert.alert(
+        t('admin.creditUpdated'),
+        t('admin.creditBalance', { user: shortId(id), balance }),
+      );
       setGrantUserId('');
     } catch (err) {
       Alert.alert(
-        'Could not update plan',
+        t('admin.creditUpdateFailed'),
         err instanceof Error ? err.message : 'Please try again.',
       );
     } finally {
@@ -165,7 +172,7 @@ export default function AdminUsageScreen() {
           Usage & support
         </Text>
         <Text className="mb-4 text-sm" style={{ color: colors.textSecondary }}>
-          Owner-only cost log, tickets, and plan tools. Users can also self-upgrade until IAP.
+          Owner-only cost log, tickets, and recipe-credit tools.
         </Text>
 
         <Pressable
@@ -197,18 +204,12 @@ export default function AdminUsageScreen() {
                 colors={colors}
               />
               <Row label="Free extracts" value={String(ADMIN_PRICE_CARD.freeExtractLimit)} colors={colors} />
-              <Row
-                label="Plus monthly extracts"
-                value={String(ADMIN_PRICE_CARD.plusMonthlyExtractLimit)}
-                colors={colors}
-              />
               <Row label="Guest extracts" value={String(ADMIN_PRICE_CARD.guestExtractLimit)} colors={colors} />
-              <Row label="Plus display price" value={ADMIN_PRICE_CARD.plusPriceDisplay} colors={colors} />
             </Section>
 
-            <Section title="Grant / revoke Plus" colors={colors}>
+            <Section title={t('admin.creditAdjustment')} colors={colors}>
               <Text className="mb-2 text-xs" style={{ color: colors.textSecondary }}>
-                Optional support tool. Paste a profile user id.
+                {t('admin.creditAdjustmentHint')}
               </Text>
               <TextInput
                 className="mb-3 rounded-[14px] px-3 py-2 text-sm"
@@ -225,26 +226,28 @@ export default function AdminUsageScreen() {
                 autoCapitalize="none"
                 autoCorrect={false}
               />
-              <View className="flex-row gap-2">
-                <Pressable
-                  className="rounded-[14px] px-3 py-2"
-                  style={{ backgroundColor: colors.primary }}
-                  onPress={() => void handleGrant(true)}
-                  disabled={grantBusy}
-                >
-                  <Text className="text-xs font-bold text-white">Grant Plus</Text>
-                </Pressable>
-                <Pressable
-                  className="rounded-[14px] px-3 py-2"
-                  style={{ backgroundColor: colors.warningSoft }}
-                  onPress={() => void handleGrant(false)}
-                  disabled={grantBusy}
-                >
-                  <Text className="text-xs font-bold" style={{ color: colors.warning }}>
-                    Revoke Plus
-                  </Text>
-                </Pressable>
-              </View>
+              <TextInput
+                className="mb-3 rounded-[14px] px-3 py-2 text-sm"
+                style={{
+                  color: colors.text,
+                  backgroundColor: colors.background,
+                  borderWidth: 1,
+                  borderColor: colors.frostedBorder,
+                }}
+                placeholder={t('admin.creditAmountPlaceholder')}
+                placeholderTextColor={colors.textSecondary}
+                value={grantAmount}
+                onChangeText={setGrantAmount}
+                keyboardType="number-pad"
+              />
+              <Pressable
+                className="self-start rounded-[14px] px-3 py-2"
+                style={{ backgroundColor: colors.primary }}
+                onPress={() => void handleGrant()}
+                disabled={grantBusy}
+              >
+                <Text className="text-xs font-bold text-white">{t('admin.applyAdjustment')}</Text>
+              </Pressable>
             </Section>
 
             <Section title={`Support tickets (${openTickets.length} open)`} colors={colors}>

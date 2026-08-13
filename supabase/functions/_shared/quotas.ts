@@ -3,7 +3,6 @@ import type { SupabaseClient } from 'https://esm.sh/@supabase/supabase-js@2';
 import {
   FREE_MONTHLY_EXTRACT_LIMIT,
   GUEST_EXTRACT_LIMIT,
-  PLUS_MONTHLY_EXTRACT_LIMIT,
 } from './pricing.ts';
 
 export type SubscriptionStatus = 'free' | 'active' | 'canceled';
@@ -16,6 +15,14 @@ export interface QuotaSnapshot {
   monthlyExtractsUsed: number;
   monthlyExtractsRemaining: number | null;
   extractsRemaining: number;
+  purchasedCredits: number;
+  totalCredits: number;
+}
+
+export interface CreditReservation {
+  reservationId: string;
+  source: 'monthly_free' | 'purchased';
+  snapshot: QuotaSnapshot;
 }
 
 export function currentYearMonthUtc(date = new Date()): string {
@@ -24,27 +31,13 @@ export function currentYearMonthUtc(date = new Date()): string {
   return `${y}-${m}`;
 }
 
-export async function isSubscriptionActive(
-  admin: SupabaseClient,
-  userId: string,
-): Promise<boolean> {
-  const { data, error } = await admin.rpc('is_subscription_active', {
-    p_user_id: userId,
-  });
-  if (error) {
-    console.error('[quotas] isSubscriptionActive', error);
-    return false;
-  }
-  return data === true;
-}
-
 export async function getQuotaSnapshot(
   admin: SupabaseClient,
   userId: string,
 ): Promise<QuotaSnapshot | null> {
   const { data: profile, error } = await admin
     .from('profiles')
-    .select('subscription_status, subscription_expires_at')
+    .select('token_balance')
     .eq('id', userId)
     .maybeSingle();
 
@@ -52,15 +45,6 @@ export async function getQuotaSnapshot(
     console.error('[quotas] getQuotaSnapshot profile', error);
     return null;
   }
-
-  const subscriptionStatus = normalizeSubscriptionStatus(profile.subscription_status);
-  const expiresAt =
-    typeof profile.subscription_expires_at === 'string'
-      ? Date.parse(profile.subscription_expires_at)
-      : null;
-  const subscriptionActive =
-    subscriptionStatus === 'active' &&
-    (expiresAt == null || Number.isNaN(expiresAt) || expiresAt > Date.now());
 
   const yearMonth = currentYearMonthUtc();
   const { data: monthly, error: monthlyError } = await admin
@@ -76,29 +60,24 @@ export async function getQuotaSnapshot(
   const monthlyExtractsUsed =
     typeof monthly?.extract_count === 'number' ? monthly.extract_count : 0;
 
-  const freeExtractsRemaining = subscriptionActive
-    ? 0
-    : Math.max(0, FREE_MONTHLY_EXTRACT_LIMIT - monthlyExtractsUsed);
-  const monthlyExtractsRemaining = subscriptionActive
-    ? Math.max(0, PLUS_MONTHLY_EXTRACT_LIMIT - monthlyExtractsUsed)
-    : null;
+  const freeExtractsRemaining = Math.max(
+    0,
+    FREE_MONTHLY_EXTRACT_LIMIT - monthlyExtractsUsed,
+  );
+  const purchasedCredits =
+    typeof profile.token_balance === 'number' ? Math.max(0, profile.token_balance) : 0;
 
   return {
-    subscriptionStatus,
-    subscriptionActive,
-    freeExtractsUsed: subscriptionActive ? 0 : monthlyExtractsUsed,
+    subscriptionStatus: 'free',
+    subscriptionActive: false,
+    freeExtractsUsed: monthlyExtractsUsed,
     freeExtractsRemaining,
     monthlyExtractsUsed,
-    monthlyExtractsRemaining,
-    extractsRemaining: subscriptionActive
-      ? (monthlyExtractsRemaining ?? 0)
-      : freeExtractsRemaining,
+    monthlyExtractsRemaining: null,
+    extractsRemaining: freeExtractsRemaining + purchasedCredits,
+    purchasedCredits,
+    totalCredits: freeExtractsRemaining + purchasedCredits,
   };
-}
-
-function normalizeSubscriptionStatus(value: unknown): SubscriptionStatus {
-  if (value === 'active' || value === 'canceled') return value;
-  return 'free';
 }
 
 /**
@@ -111,7 +90,7 @@ export async function canStartExtract(
   | { ok: true; snapshot: QuotaSnapshot }
   | {
       ok: false;
-      code: 'subscription_required' | 'monthly_limit' | 'error';
+      code: 'insufficient_credits' | 'error';
       snapshot: QuotaSnapshot | null;
     }
 > {
@@ -119,14 +98,8 @@ export async function canStartExtract(
   if (!snapshot) {
     return { ok: false, code: 'error', snapshot: null };
   }
-  if (snapshot.subscriptionActive) {
-    if ((snapshot.monthlyExtractsRemaining ?? 0) <= 0) {
-      return { ok: false, code: 'monthly_limit', snapshot };
-    }
-    return { ok: true, snapshot };
-  }
-  if (snapshot.freeExtractsRemaining <= 0) {
-    return { ok: false, code: 'subscription_required', snapshot };
+  if (snapshot.totalCredits <= 0) {
+    return { ok: false, code: 'insufficient_credits', snapshot };
   }
   return { ok: true, snapshot };
 }
@@ -137,36 +110,48 @@ export async function canStartExtract(
 export async function reserveSignedInExtract(
   admin: SupabaseClient,
   userId: string,
+  idempotencyKey: string,
 ): Promise<
-  | { ok: true; snapshot: QuotaSnapshot }
+  | { ok: true; reservation: CreditReservation }
   | {
       ok: false;
-      code: 'subscription_required' | 'monthly_limit' | 'metering_error';
+      code: 'insufficient_credits' | 'metering_error';
       snapshot: QuotaSnapshot | null;
     }
 > {
-  const active = await isSubscriptionActive(admin, userId);
-  const limit = active ? PLUS_MONTHLY_EXTRACT_LIMIT : FREE_MONTHLY_EXTRACT_LIMIT;
-  const blockedCode = active ? 'monthly_limit' : 'subscription_required';
-
-  const { data, error } = await admin.rpc('reserve_monthly_extract', {
+  const { data, error } = await admin.rpc('reserve_recipe_credit', {
     p_user_id: userId,
     p_year_month: currentYearMonthUtc(),
-    p_limit: limit,
+    p_idempotency_key: idempotencyKey,
+    p_free_limit: FREE_MONTHLY_EXTRACT_LIMIT,
   });
   if (error) {
-    console.error('[quotas] reserve_monthly_extract', error);
+    console.error('[quotas] reserve_recipe_credit', error);
     return {
       ok: false,
       code: 'metering_error',
       snapshot: await getQuotaSnapshot(admin, userId),
     };
   }
-  const newCount = typeof data === 'number' ? data : Number(data);
-  if (!Number.isFinite(newCount) || newCount < 0) {
+  const row = data as {
+    code?: string;
+    reservation_id?: string;
+    source?: string;
+  } | null;
+  if (row?.code === 'insufficient_credits') {
     return {
       ok: false,
-      code: blockedCode,
+      code: 'insufficient_credits',
+      snapshot: await getQuotaSnapshot(admin, userId),
+    };
+  }
+  if (
+    !row?.reservation_id ||
+    (row.source !== 'monthly_free' && row.source !== 'purchased')
+  ) {
+    return {
+      ok: false,
+      code: 'metering_error',
       snapshot: await getQuotaSnapshot(admin, userId),
     };
   }
@@ -174,7 +159,42 @@ export async function reserveSignedInExtract(
   if (!snapshot) {
     return { ok: false, code: 'metering_error', snapshot: null };
   }
-  return { ok: true, snapshot };
+  return {
+    ok: true,
+    reservation: {
+      reservationId: row.reservation_id,
+      source: row.source,
+      snapshot,
+    },
+  };
+}
+
+export async function finalizeSignedInExtract(
+  admin: SupabaseClient,
+  userId: string,
+  reservationId: string,
+): Promise<boolean> {
+  const { data, error } = await admin.rpc('finalize_recipe_credit', {
+    p_user_id: userId,
+    p_reservation_id: reservationId,
+  });
+  if (error) console.error('[quotas] finalize_recipe_credit', error);
+  return !error && data === true;
+}
+
+export async function refundSignedInExtract(
+  admin: SupabaseClient,
+  userId: string,
+  reservationId: string,
+  reason: string,
+): Promise<boolean> {
+  const { data, error } = await admin.rpc('refund_recipe_credit', {
+    p_user_id: userId,
+    p_reservation_id: reservationId,
+    p_reason: reason,
+  });
+  if (error) console.error('[quotas] refund_recipe_credit', error);
+  return !error && data === true;
 }
 
 export async function getGuestExtractCount(
@@ -233,6 +253,8 @@ export function quotaFields(snapshot: QuotaSnapshot | null | undefined) {
       extracts_remaining: null as number | null,
       free_extracts_remaining: null as number | null,
       monthly_extracts_remaining: null as number | null,
+      purchased_credits: null as number | null,
+      total_credits: null as number | null,
     };
   }
   return {
@@ -240,5 +262,7 @@ export function quotaFields(snapshot: QuotaSnapshot | null | undefined) {
     extracts_remaining: snapshot.extractsRemaining,
     free_extracts_remaining: snapshot.freeExtractsRemaining,
     monthly_extracts_remaining: snapshot.monthlyExtractsRemaining,
+    purchased_credits: snapshot.purchasedCredits,
+    total_credits: snapshot.totalCredits,
   };
 }

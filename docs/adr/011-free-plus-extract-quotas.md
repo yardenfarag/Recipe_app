@@ -1,6 +1,6 @@
 # ADR 011: Free + Pinch Plus extract quotas
 
-**Status:** Accepted  
+**Status:** Superseded by ADR 012
 **Date:** 2026-07-23  
 **Updated:** 2026-08-07  
 **Deciders:** Yarden (product)

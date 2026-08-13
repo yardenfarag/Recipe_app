@@ -4,17 +4,18 @@ import { router } from 'expo-router';
 import { useShareIntentContext } from 'expo-share-intent';
 import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { ActivityIndicator, Alert, Platform, Pressable, Text, TextInput, View } from 'react-native';
+import { Alert, Platform, Pressable, Text, TextInput, View } from 'react-native';
 
 import { BrandHeader } from '@/components/BrandHeader';
 import { Screen } from '@/components/Screen';
 import { SnapExtractingView } from '@/components/SnapExtractingView';
+import { TokenPurchaseSheet } from '@/components/TokenPurchaseSheet';
 import { FormContentWidth } from '@/constants/theme';
 import { useAuth } from '@/hooks/useAuth';
 import { useBreakpoint } from '@/hooks/useBreakpoint';
 import { useProfile } from '@/hooks/useProfile';
 import { useThemePreference } from '@/hooks/useThemePreference';
-import { confirmAction, showNotice } from '@/lib/confirmAction';
+import { confirmAction } from '@/lib/confirmAction';
 import { findExistingGuestRecipe } from '@/lib/findExistingRecipe';
 import {
   getGuestExtractionsRemaining,
@@ -22,17 +23,12 @@ import {
   setGuestExtractionsRemaining,
 } from '@/lib/guestExtractionUsage';
 import { detectPlatform, normalizeSocialUrl } from '@/lib/platformUrls';
-import {
-  FREE_EXTRACT_LIMIT,
-  PLUS_MONTHLY_EXTRACT_LIMIT,
-  PLUS_PRICE_DISPLAY,
-  PLUS_SELF_UPGRADE_ENABLED,
-} from '@/lib/quotas';
+import { FREE_MONTHLY_EXTRACT_LIMIT } from '@/lib/quotas';
 import { setRecipeDraft } from '@/lib/recipeDraft';
 import { extractRecipe } from '@/lib/supabase/extractRecipe';
 
 type Banner =
-  | { kind: 'error' | 'info' | 'limit' | 'subscription' | 'monthly'; message: string }
+  | { kind: 'error' | 'info' | 'limit' | 'credits'; message: string }
   | null;
 
 // Share → Pinch needs native share-intent code (ADR 010); Expo Go can't receive it.
@@ -45,16 +41,14 @@ export default function AddRecipeScreen() {
   const [statusIndex, setStatusIndex] = useState(0);
   const [banner, setBanner] = useState<Banner>(null);
   const [guestExtractsRemaining, setGuestExtractsRemaining] = useState<number | null>(null);
-  const [upgrading, setUpgrading] = useState(false);
+  const [creditsOpen, setCreditsOpen] = useState(false);
   const { hasShareIntent, shareIntent, resetShareIntent } = useShareIntentContext();
   const { user } = useAuth();
   const {
-    subscriptionActive,
-    extractsRemaining,
     freeExtractsRemaining,
-    monthlyExtractsRemaining,
+    purchasedCredits,
+    totalCredits,
     refresh: refreshProfile,
-    upgradeToPlus,
   } = useProfile();
   const { colors } = useThemePreference();
   const { isMediumUp } = useBreakpoint();
@@ -106,31 +100,11 @@ export default function AddRecipeScreen() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [hasShareIntent, shareIntent.webUrl, shareIntent.text]);
 
-  async function handleUpgrade() {
-    if (!PLUS_SELF_UPGRADE_ENABLED || !user || upgrading) return;
-    setUpgrading(true);
-    try {
-      await upgradeToPlus();
-      setBanner(null);
-      Alert.alert(
-        t('settings.upgradeSuccessTitle'),
-        t('settings.upgradeSuccessBody', { limit: PLUS_MONTHLY_EXTRACT_LIMIT }),
-      );
-    } catch (err) {
-      Alert.alert(
-        t('settings.upgradeFailedTitle'),
-        err instanceof Error ? err.message : t('common.tryAgain'),
-      );
-    } finally {
-      setUpgrading(false);
-    }
-  }
-
   async function promptGuestExtractLimit() {
     const title = t('snap.guestLimitTitle');
     const message = t('snap.guestLimitBody', {
       limit: GUEST_EXTRACTION_LIMIT,
-      freeLimit: FREE_EXTRACT_LIMIT,
+      freeLimit: FREE_MONTHLY_EXTRACT_LIMIT,
     });
     setBanner({ kind: 'limit', message });
 
@@ -149,51 +123,11 @@ export default function AddRecipeScreen() {
     ]);
   }
 
-  async function promptFreeExtractLimit() {
-    const title = t('snap.freeLimitTitle');
-    const message = t('snap.freeLimitBody', {
-      limit: FREE_EXTRACT_LIMIT,
-      plusLimit: PLUS_MONTHLY_EXTRACT_LIMIT,
+  function promptCreditLimit() {
+    setBanner({
+      kind: 'credits',
+      message: t('snap.creditLimitBody', { limit: FREE_MONTHLY_EXTRACT_LIMIT }),
     });
-    setBanner({ kind: 'subscription', message });
-
-    if (!PLUS_SELF_UPGRADE_ENABLED) {
-      await showNotice(title, message, t('common.close'));
-      return;
-    }
-
-    const priceLine = t('snap.plusPriceLine', {
-      price: PLUS_PRICE_DISPLAY,
-      billingNote: t('settings.billingNote'),
-    });
-
-    if (Platform.OS === 'web') {
-      const upgrade = await confirmAction(
-        title,
-        `${message}\n\n${priceLine}`,
-        t('settings.upgrade'),
-        t('common.notNow'),
-      );
-      if (upgrade) await handleUpgrade();
-      return;
-    }
-
-    Alert.alert(title, message, [
-      { text: t('common.notNow'), style: 'cancel' },
-      {
-        text: t('settings.upgrade'),
-        onPress: () => {
-          void handleUpgrade();
-        },
-      },
-    ]);
-  }
-
-  async function promptPlusExtractLimit() {
-    const title = t('snap.plusLimitTitle');
-    const message = t('snap.plusLimitBody', { limit: PLUS_MONTHLY_EXTRACT_LIMIT });
-    setBanner({ kind: 'monthly', message });
-    await showNotice(title, message, t('common.close'));
   }
 
   async function handleGetRecipe(overrideUrl?: string) {
@@ -227,20 +161,6 @@ export default function AddRecipeScreen() {
           await promptGuestExtractLimit();
           return;
         }
-      } else if (
-        !subscriptionActive &&
-        freeExtractsRemaining != null &&
-        freeExtractsRemaining <= 0
-      ) {
-        await promptFreeExtractLimit();
-        return;
-      } else if (
-        subscriptionActive &&
-        monthlyExtractsRemaining != null &&
-        monthlyExtractsRemaining <= 0
-      ) {
-        await promptPlusExtractLimit();
-        return;
       }
 
       const result = await extractRecipe(target);
@@ -253,13 +173,12 @@ export default function AddRecipeScreen() {
         await refreshProfile();
       }
 
-      if (result.code === 'subscription_required' || result.code === 'insufficient_tokens') {
-        await promptFreeExtractLimit();
-        return;
-      }
-
-      if (result.code === 'monthly_limit') {
-        await promptPlusExtractLimit();
+      if (
+        result.code === 'insufficient_credits' ||
+        result.code === 'subscription_required' ||
+        result.code === 'insufficient_tokens'
+      ) {
+        promptCreditLimit();
         return;
       }
 
@@ -322,16 +241,11 @@ export default function AddRecipeScreen() {
         ] as const);
 
   const signedInQuotaLabel = (() => {
-    if (!user || extractsRemaining == null) return null;
-    if (subscriptionActive) {
-      return t('snap.plusRemaining', {
-        remaining: extractsRemaining,
-        limit: PLUS_MONTHLY_EXTRACT_LIMIT,
-      });
-    }
-    return t('snap.freeRemaining', {
-      remaining: extractsRemaining,
-      limit: FREE_EXTRACT_LIMIT,
+    if (!user || totalCredits == null) return null;
+    return t('snap.creditsRemaining', {
+      total: totalCredits,
+      free: freeExtractsRemaining ?? 0,
+      purchased: purchasedCredits ?? 0,
     });
   })();
 
@@ -436,38 +350,14 @@ export default function AddRecipeScreen() {
                   <Text className="text-sm font-bold text-white">{t('auth.signUp')}</Text>
                 </Pressable>
               )}
-              {banner.kind === 'subscription' && (
-                <View className="mt-3">
-                  <Text className="mb-2 text-xs" style={{ color: colors.textSecondary }}>
-                    {t('snap.plusPriceLine', {
-                      price: PLUS_PRICE_DISPLAY,
-                      billingNote: t('settings.billingNote'),
-                    })}
-                  </Text>
-                  {PLUS_SELF_UPGRADE_ENABLED ? (
-                    <Pressable
-                      className="self-start rounded-[18px] px-4 py-2"
-                      style={{ backgroundColor: colors.primary }}
-                      onPress={() => void handleUpgrade()}
-                      disabled={upgrading}
-                    >
-                      {upgrading ? (
-                        <ActivityIndicator color="#fff" />
-                      ) : (
-                        <Text className="text-sm font-bold text-white">{t('settings.upgrade')}</Text>
-                      )}
-                    </Pressable>
-                  ) : (
-                    <View
-                      className="self-start rounded-[18px] px-4 py-2"
-                      style={{ backgroundColor: colors.primarySoft }}
-                    >
-                      <Text className="text-sm font-bold" style={{ color: colors.primary }}>
-                        {t('settings.upgradeInDevelopment')}
-                      </Text>
-                    </View>
-                  )}
-                </View>
+              {banner.kind === 'credits' && (
+                <Pressable
+                  className="mt-3 self-start rounded-[18px] px-4 py-2"
+                  style={{ backgroundColor: colors.primary }}
+                  onPress={() => setCreditsOpen(true)}
+                >
+                  <Text className="text-sm font-bold text-white">{t('credits.buyAction')}</Text>
+                </Pressable>
               )}
             </View>
           )}
@@ -502,6 +392,7 @@ export default function AddRecipeScreen() {
             {isExpoGo ? t('snap.shareBodyExpoGo') : t('snap.shareBody')}
           </Text>
         </View>
+        <TokenPurchaseSheet visible={creditsOpen} onClose={() => setCreditsOpen(false)} />
       </View>
     </Screen>
   );
