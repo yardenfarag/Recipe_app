@@ -3,11 +3,11 @@
  */
 
 function parseAdminEmails(): Set<string> {
-  const raw = process.env.EXPO_PUBLIC_ADMIN_EMAILS ?? '';
+  const raw: string = process.env.EXPO_PUBLIC_ADMIN_EMAILS ?? '';
   return new Set(
     raw
       .split(',')
-      .map((email) => email.trim().toLowerCase())
+      .map((email: string) => email.trim().toLowerCase())
       .filter(Boolean),
   );
 }
