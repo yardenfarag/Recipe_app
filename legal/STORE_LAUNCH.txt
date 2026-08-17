@@ -4,7 +4,8 @@ Pinch — soft-launch store checklist (Android first)
 Legal URLs (after GitHub Pages is enabled on this repo):
   Privacy:  https://yardenfarag.github.io/Recipe_app/privacy.html
   Terms:    https://yardenfarag.github.io/Recipe_app/terms.html
-  Delete:   https://yardenfarag.github.io/Recipe_app/delete-account.html
+  Delete account: https://yardenfarag.github.io/Recipe_app/delete-account.html
+  Delete data:    https://yardenfarag.github.io/Recipe_app/delete-data.html
   Support:  yarden.farag@gmail.com
 
 Enable Pages (one-time, required before the workflow succeeds):

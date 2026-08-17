@@ -52,7 +52,7 @@ jobs:
       - name: Merge legal pages into dist
         run: |
           # Keep Expo SPA index.html; preserve existing policy URLs at site root.
-          cp legal/privacy.html legal/terms.html legal/delete-account.html legal/share.html legal/styles.css dist/
+          cp legal/privacy.html legal/terms.html legal/delete-account.html legal/delete-data.html legal/share.html legal/styles.css dist/
           cp legal/index.html dist/legal.html
           touch dist/.nojekyll
           cp dist/index.html dist/404.html

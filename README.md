@@ -59,7 +59,7 @@ The app exports as a static SPA (`web.output: single`) with `experiments.baseUrl
 Workflow: [`.github/workflows/deploy-web.yml`](.github/workflows/deploy-web.yml)
 
 - Builds with `npx expo export -p web`
-- Merges legal HTML (`privacy.html`, `terms.html`, `delete-account.html`, `legal.html`) into `dist/`
+- Merges legal HTML (`privacy.html`, `terms.html`, `delete-account.html`, `delete-data.html`, `legal.html`) into `dist/`
 - Adds `.nojekyll` and `404.html` (SPA fallback)
 - Deploys via GitHub Pages
 
@@ -106,6 +106,7 @@ Details are mirrored in [`.env.example`](.env.example).
 - [Privacy](https://yardenfarag.github.io/Recipe_app/privacy.html)
 - [Terms](https://yardenfarag.github.io/Recipe_app/terms.html)
 - [Delete account](https://yardenfarag.github.io/Recipe_app/delete-account.html)
+- [Delete data](https://yardenfarag.github.io/Recipe_app/delete-data.html)
 - [Legal hub](https://yardenfarag.github.io/Recipe_app/legal.html)
 
 ## Stack

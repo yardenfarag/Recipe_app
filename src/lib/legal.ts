@@ -21,6 +21,7 @@ export const LEGAL_URLS = {
   privacy: `${LEGAL_BASE_URL}/privacy.html`,
   terms: `${LEGAL_BASE_URL}/terms.html`,
   deleteAccount: `${LEGAL_BASE_URL}/delete-account.html`,
+  deleteData: `${LEGAL_BASE_URL}/delete-data.html`,
   supportMailto: `mailto:${SUPPORT_EMAIL}`,
 } as const;
 
