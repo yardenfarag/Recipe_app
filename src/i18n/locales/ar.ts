@@ -22,6 +22,7 @@ export default {
     "buyAction": "شراء رصيد",
     "packRecipes": "{{count}} رصيد وصفات",
     "neverExpire": "لا تنتهي صلاحيته",
+    "bestValue": "الأفضل قيمة",
     "viewPrice": "عرض السعر",
     "loadFailed": "تعذّر تحميل باقات الرصيد. حاول مرة أخرى.",
     "purchaseFailed": "لم تكتمل عملية الشراء. حاول مرة أخرى.",

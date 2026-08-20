@@ -7,7 +7,9 @@ import { SheetModal } from '@/components/SheetModal';
 import { useProfile } from '@/hooks/useProfile';
 import { useThemePreference } from '@/hooks/useThemePreference';
 import {
+  BEST_VALUE_PACK_ID,
   loadCreditPacks,
+  packIsPurchasable,
   purchaseCreditPack,
   purchasesEnabled,
   syncPurchases,
@@ -28,6 +30,7 @@ export function TokenPurchaseSheet({ visible, onClose }: TokenPurchaseSheetProps
   const [busyId, setBusyId] = useState<string | null>(null);
   const [message, setMessage] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const livePurchases = purchasesEnabled();
 
   useEffect(() => {
     if (!visible) return;
@@ -42,6 +45,10 @@ export function TokenPurchaseSheet({ visible, onClose }: TokenPurchaseSheetProps
 
   async function handlePurchase(pack: CreditPack) {
     if (busyId) return;
+    if (!packIsPurchasable(pack)) {
+      if (livePurchases) setError(t('credits.purchaseFailed'));
+      return;
+    }
     setBusyId(pack.id);
     setError(null);
     setMessage(null);
@@ -90,48 +97,59 @@ export function TokenPurchaseSheet({ visible, onClose }: TokenPurchaseSheetProps
         {loading ? (
           <ActivityIndicator className="py-10" color={colors.primary} />
         ) : (
-          packs.map((pack) => (
-            <Pressable
-              key={pack.id}
-              onPress={() => void handlePurchase(pack)}
-              disabled={Boolean(busyId) || !purchasesEnabled()}
-              className="mb-3 flex-row items-center rounded-3xl border p-4 active:opacity-80"
-              style={{
-                borderColor: colors.border,
-                backgroundColor: colors.surface,
-                opacity: purchasesEnabled() ? 1 : 0.55,
-              }}
-            >
-              <View
-                className="me-3 h-11 w-11 items-center justify-center rounded-2xl"
-                style={{ backgroundColor: colors.primarySoft }}
+          packs.map((pack) => {
+            const featured = pack.id === BEST_VALUE_PACK_ID;
+            return (
+              <Pressable
+                key={pack.id}
+                onPress={() => void handlePurchase(pack)}
+                disabled={Boolean(busyId)}
+                accessibilityRole="button"
+                accessibilityState={{ disabled: Boolean(busyId) }}
+                className="mb-3 flex-row items-center rounded-3xl border p-4 active:opacity-80"
+                style={{
+                  borderColor: featured ? colors.primary : colors.border,
+                  backgroundColor: colors.surface,
+                }}
               >
-                <Ionicons name="restaurant-outline" size={22} color={colors.primary} />
-              </View>
-              <View className="flex-1">
-                <Text className="text-base font-bold" style={{ color: colors.text }}>
-                  {t('credits.packRecipes', { count: pack.credits })}
-                </Text>
-                <Text className="mt-0.5 text-xs" style={{ color: colors.textSecondary }}>
-                  {t('credits.neverExpire')}
-                </Text>
-              </View>
-              {busyId === pack.id ? (
-                <ActivityIndicator color={colors.primary} />
-              ) : (
-                <Text className="text-sm font-bold" style={{ color: colors.primary }}>
-                  {pack.price ?? t('credits.viewPrice')}
-                </Text>
-              )}
-            </Pressable>
-          ))
+                <View
+                  className="me-3 h-11 w-11 items-center justify-center rounded-2xl"
+                  style={{ backgroundColor: colors.primarySoft }}
+                >
+                  <Ionicons name="restaurant-outline" size={22} color={colors.primary} />
+                </View>
+                <View className="flex-1">
+                  <View className="flex-row flex-wrap items-center gap-2">
+                    <Text className="text-base font-bold" style={{ color: colors.text }}>
+                      {t('credits.packRecipes', { count: pack.credits })}
+                    </Text>
+                    {featured ? (
+                      <View
+                        className="rounded-full px-2 py-0.5"
+                        style={{ backgroundColor: colors.primarySoft }}
+                      >
+                        <Text className="text-[10px] font-bold" style={{ color: colors.primary }}>
+                          {t('credits.bestValue')}
+                        </Text>
+                      </View>
+                    ) : null}
+                  </View>
+                  <Text className="mt-0.5 text-xs" style={{ color: colors.textSecondary }}>
+                    {t('credits.neverExpire')}
+                  </Text>
+                </View>
+                {busyId === pack.id ? (
+                  <ActivityIndicator color={colors.primary} />
+                ) : (
+                  <Text className="text-sm font-bold" style={{ color: colors.primary }}>
+                    {pack.price}
+                  </Text>
+                )}
+              </Pressable>
+            );
+          })
         )}
 
-        {!purchasesEnabled() ? (
-          <Text className="mt-2 text-sm" style={{ color: colors.textSecondary }}>
-            {t('credits.unavailable')}
-          </Text>
-        ) : null}
         {message ? (
           <Text className="mt-2 text-sm" style={{ color: colors.accent }}>
             {message}
@@ -143,19 +161,21 @@ export function TokenPurchaseSheet({ visible, onClose }: TokenPurchaseSheetProps
           </Text>
         ) : null}
 
-        <Pressable
-          onPress={() => void handleSync()}
-          disabled={Boolean(busyId) || !purchasesEnabled()}
-          className="mt-5 items-center py-3 active:opacity-70"
-        >
-          {busyId === 'sync' ? (
-            <ActivityIndicator color={colors.primary} />
-          ) : (
-            <Text className="text-sm font-semibold" style={{ color: colors.primary }}>
-              {t('credits.syncPurchases')}
-            </Text>
-          )}
-        </Pressable>
+        {livePurchases ? (
+          <Pressable
+            onPress={() => void handleSync()}
+            disabled={Boolean(busyId)}
+            className="mt-5 items-center py-3 active:opacity-70"
+          >
+            {busyId === 'sync' ? (
+              <ActivityIndicator color={colors.primary} />
+            ) : (
+              <Text className="text-sm font-semibold" style={{ color: colors.primary }}>
+                {t('credits.syncPurchases')}
+              </Text>
+            )}
+          </Pressable>
+        ) : null}
       </ScrollView>
     </SheetModal>
   );

@@ -22,6 +22,7 @@ export default {
     "buyAction": "Buy credits",
     "packRecipes": "{{count}} recipe credits",
     "neverExpire": "Never expire",
+    "bestValue": "Best value",
     "viewPrice": "View price",
     "loadFailed": "Couldn’t load credit packs. Try again.",
     "purchaseFailed": "The purchase didn’t complete. Try again.",

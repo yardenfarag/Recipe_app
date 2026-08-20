@@ -6,17 +6,19 @@ import Purchases, {
 } from 'react-native-purchases';
 
 export const CREDIT_PACKS = [
-  { id: 'pinch_credits_10', credits: 10 },
-  { id: 'pinch_credits_30', credits: 30 },
-  { id: 'pinch_credits_100', credits: 100 },
+  { id: 'pinch_credits_10', credits: 10, catalogPrice: '$1.99' },
+  { id: 'pinch_credits_30', credits: 30, catalogPrice: '$4.99' },
+  { id: 'pinch_credits_100', credits: 100, catalogPrice: '$12.99' },
 ] as const;
 
 export type CreditPackId = (typeof CREDIT_PACKS)[number]['id'];
 
+export const BEST_VALUE_PACK_ID: CreditPackId = 'pinch_credits_100';
+
 export interface CreditPack {
   id: CreditPackId;
   credits: number;
-  price: string | null;
+  price: string;
   storePackage?: PurchasesPackage;
 }
 
@@ -30,6 +32,32 @@ function apiKey(): string | undefined {
 
 export function purchasesEnabled(): boolean {
   return process.env.EXPO_PUBLIC_CREDIT_PURCHASES_ENABLED === 'true' && Boolean(apiKey());
+}
+
+type StoreProductRef = {
+  product: { identifier: string; priceString: string };
+};
+
+export function displayCreditPacks(
+  packages: readonly StoreProductRef[] = [],
+): CreditPack[] {
+  return CREDIT_PACKS.map((pack) => {
+    const storePackage = packages.find(
+      (candidate) => candidate.product.identifier === pack.id,
+    ) as PurchasesPackage | undefined;
+    return {
+      id: pack.id,
+      credits: pack.credits,
+      price: storePackage?.product.priceString ?? pack.catalogPrice,
+      storePackage,
+    };
+  });
+}
+
+export function packIsPurchasable(pack: CreditPack): boolean {
+  if (!purchasesEnabled()) return false;
+  if (Platform.OS === 'web') return true;
+  return Boolean(pack.storePackage);
 }
 
 export async function configurePurchases(userId: string): Promise<void> {
@@ -59,28 +87,15 @@ export async function clearPurchasesUser(): Promise<void> {
 }
 
 export async function loadCreditPacks(): Promise<CreditPack[]> {
-  if (!purchasesEnabled()) {
-    return CREDIT_PACKS.map((pack) => ({ ...pack, price: null }));
-  }
-
-  // RevenueCat Billing uses hosted checkout links on web. Native store packages
-  // are loaded from the current RevenueCat offering for localized prices.
-  if (Platform.OS === 'web') {
-    return CREDIT_PACKS.map((pack) => ({ ...pack, price: null }));
+  // Catalog prices keep the paywall screenshot-ready even before StoreKit /
+  // Play Billing products are approved. Live store strings replace them when
+  // the current RevenueCat offering includes the pack.
+  if (!purchasesEnabled() || Platform.OS === 'web') {
+    return displayCreditPacks();
   }
 
   const offerings = await Purchases.getOfferings();
-  const packages = offerings.current?.availablePackages ?? [];
-  return CREDIT_PACKS.map((pack) => {
-    const storePackage = packages.find(
-      (candidate) => candidate.product.identifier === pack.id,
-    );
-    return {
-      ...pack,
-      price: storePackage?.product.priceString ?? null,
-      storePackage,
-    };
-  });
+  return displayCreditPacks(offerings.current?.availablePackages ?? []);
 }
 
 export async function purchaseCreditPack(

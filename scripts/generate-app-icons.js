@@ -36,6 +36,17 @@ async function main() {
     .png()
     .toFile(path.join(images, 'icon.png'));
 
+  // Google Play hi-res icon: 512×512 32-bit PNG (opaque background).
+  const storeDir = path.join(root, 'store');
+  fs.mkdirSync(storeDir, { recursive: true });
+  const cookie320 = await cookiePng(320);
+  await sharp({
+    create: { width: 512, height: 512, channels: 4, background: BG },
+  })
+    .composite([{ input: cookie320, gravity: 'centre' }])
+    .png()
+    .toFile(path.join(storeDir, 'google-play-icon-512.png'));
+
   const cookie720 = await cookiePng(720);
   await sharp({
     create: {

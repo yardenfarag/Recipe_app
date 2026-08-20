@@ -22,6 +22,7 @@ export default {
     "buyAction": "רכישת קרדיטים",
     "packRecipes": "{{count}} קרדיטים למתכונים",
     "neverExpire": "ללא תפוגה",
+    "bestValue": "המשתלם ביותר",
     "viewPrice": "הצגת מחיר",
     "loadFailed": "לא הצלחנו לטעון את החבילות. נסו שוב.",
     "purchaseFailed": "הרכישה לא הושלמה. נסו שוב.",

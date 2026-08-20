@@ -22,6 +22,7 @@ export default {
     "buyAction": "Купить кредиты",
     "packRecipes": "{{count}} кредитов для рецептов",
     "neverExpire": "Не сгорают",
+    "bestValue": "Выгоднее всего",
     "viewPrice": "Посмотреть цену",
     "loadFailed": "Не удалось загрузить пакеты кредитов.",
     "purchaseFailed": "Покупка не завершена. Попробуйте ещё раз.",
