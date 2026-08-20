@@ -6,6 +6,8 @@ export interface SubstitutionAlternative {
   name: string;
   quantity: number;
   unit: string;
+  metric?: Ingredient['metric'];
+  spoons?: Ingredient['spoons'];
   reason: string;
 }
 

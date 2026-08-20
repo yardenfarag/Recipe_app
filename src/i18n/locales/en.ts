@@ -415,7 +415,9 @@ export default {
     "collections": "Collections",
     "allCollections": "All",
     "manageCollection": "Manage {{name}}",
-    "new": "New"
+    "new": "New",
+    "showGrid": "Show as grid",
+    "showList": "Show as list"
   },
   "onboarding": {
     "skip": "Skip",

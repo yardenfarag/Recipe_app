@@ -3,6 +3,8 @@ import { useState } from 'react';
 import { Pressable, ScrollView, Text, TextInput, View } from 'react-native';
 import { useTranslation } from 'react-i18next';
 
+import { LibraryLayoutToggle } from '@/components/LibraryLayoutToggle';
+import type { LibraryLayout } from '@/hooks/useLibraryLayout';
 import { useThemePreference } from '@/hooks/useThemePreference';
 import { RECIPE_SORT_OPTIONS, RecipeSortKey } from '@/lib/recipeListQuery';
 import { translateRecipeTag } from '@/lib/recipeTags';
@@ -31,6 +33,8 @@ interface RecipeLibraryToolbarProps {
   onLongPressCollection?: (id: string) => void;
   onManageCollection?: (id: string) => void;
   onCreateCollection?: () => void;
+  layout?: LibraryLayout;
+  onToggleLayout?: () => void;
 }
 
 export function RecipeLibraryToolbar({
@@ -52,6 +56,8 @@ export function RecipeLibraryToolbar({
   onLongPressCollection,
   onManageCollection,
   onCreateCollection,
+  layout,
+  onToggleLayout,
 }: RecipeLibraryToolbarProps) {
   const { t } = useTranslation();
   const { colors, scheme } = useThemePreference();
@@ -100,7 +106,7 @@ export function RecipeLibraryToolbar({
         )}
       </View>
 
-      <View className="flex-row items-center gap-2">
+      <View className="flex-row flex-wrap items-center gap-2">
         {onToggleFavorites ? (
           <Pressable
             onPress={onToggleFavorites}
@@ -148,14 +154,27 @@ export function RecipeLibraryToolbar({
           ) : null}
         </Pressable>
 
-        <Text
-          className={`text-xs ${isSearchPending ? 'opacity-60' : ''}`}
-          style={{ color: colors.textSecondary, marginStart: 'auto' }}
+        <View
+          className="flex-row items-center gap-2"
+          style={{ marginStart: 'auto', flexShrink: 0 }}
         >
-          {t(resultCount === 1 ? 'library.recipeCountOne' : 'library.recipeCountOther', {
-            count: resultCount,
-          })}
-        </Text>
+          <Text
+            className={`text-xs ${isSearchPending ? 'opacity-60' : ''}`}
+            style={{ color: colors.textSecondary }}
+          >
+            {t(resultCount === 1 ? 'library.recipeCountOne' : 'library.recipeCountOther', {
+              count: resultCount,
+            })}
+          </Text>
+          {layout && onToggleLayout ? (
+            <LibraryLayoutToggle
+              layout={layout}
+              onToggle={onToggleLayout}
+              color={colors.primary}
+              backgroundColor={layout === 'grid' ? colors.primarySoft : inactiveChipBg}
+            />
+          ) : null}
+        </View>
       </View>
 
       {filtersOpen ? (

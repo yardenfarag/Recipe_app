@@ -1,6 +1,6 @@
 import Ionicons from '@expo/vector-icons/Ionicons';
 import { router, useLocalSearchParams } from 'expo-router';
-import { useCallback, useDeferredValue, useEffect, useMemo, useState } from 'react';
+import { useCallback, useDeferredValue, useEffect, useMemo, useRef, useState } from 'react';
 import {
   ActivityIndicator,
   Alert,
@@ -10,6 +10,16 @@ import {
   Text,
   View,
 } from 'react-native';
+import Animated, {
+  Easing,
+  interpolate,
+  useAnimatedStyle,
+  useReducedMotion,
+  useSharedValue,
+  withTiming,
+  withSequence,
+} from 'react-native-reanimated';
+import { scheduleOnRN } from 'react-native-worklets';
 
 import { useTranslation } from 'react-i18next';
 
@@ -22,8 +32,8 @@ import { RecipeLibraryToolbar } from '@/components/RecipeLibraryToolbar';
 import { RecipeListRow } from '@/components/RecipeListRow';
 import { Screen } from '@/components/Screen';
 import { useAuth } from '@/hooks/useAuth';
-import { useBreakpoint } from '@/hooks/useBreakpoint';
 import { useCollections } from '@/hooks/useCollections';
+import { useLibraryLayout } from '@/hooks/useLibraryLayout';
 import { useRecipes } from '@/hooks/useRecipes';
 import { useThemePreference } from '@/hooks/useThemePreference';
 import { removeGuestRecipe, renameGuestRecipe } from '@/lib/guestRecipes';
@@ -61,8 +71,12 @@ export default function HomeScreen() {
     collectionsForRecipe,
   } = useCollections();
   const { colors } = useThemePreference();
-  const { isWide, isMediumUp } = useBreakpoint();
-  const numColumns = isWide ? 3 : isMediumUp ? 2 : 1;
+  const { layout, numColumns, toggleLayout } = useLibraryLayout();
+  const reduceMotion = useReducedMotion();
+  const skipItemEnter = useRef(false);
+  const flipping = useRef(false);
+  const pendingFlipIn = useRef(false);
+  const flipRotation = useSharedValue(0);
   const params = useLocalSearchParams<{
     tag?: string;
     collection?: string;
@@ -152,6 +166,65 @@ export default function HomeScreen() {
       prev.includes(tag) ? prev.filter((t) => t !== tag) : [...prev, tag],
     );
   }, []);
+
+  const endFlip = useCallback(() => {
+    flipping.current = false;
+  }, []);
+
+  const swapLayout = useCallback(() => {
+    pendingFlipIn.current = true;
+    toggleLayout();
+  }, [toggleLayout]);
+
+  const handleToggleLayout = useCallback(() => {
+    if (flipping.current) return;
+    skipItemEnter.current = true;
+    if (reduceMotion) {
+      toggleLayout();
+      return;
+    }
+    flipping.current = true;
+    flipRotation.value = withTiming(
+      90,
+      { duration: 220, easing: Easing.in(Easing.cubic) },
+      (finished) => {
+        'worklet';
+        if (!finished) {
+          scheduleOnRN(endFlip);
+          return;
+        }
+        scheduleOnRN(swapLayout);
+      },
+    );
+  }, [endFlip, flipRotation, reduceMotion, swapLayout, toggleLayout]);
+
+  useEffect(() => {
+    if (!pendingFlipIn.current) return;
+    pendingFlipIn.current = false;
+    flipRotation.value = withSequence(
+      withTiming(-90, { duration: 0 }),
+      withTiming(
+        0,
+        { duration: 400, easing: Easing.bezier(0.22, 1, 0.36, 1) },
+        (finished) => {
+          'worklet';
+          if (finished) scheduleOnRN(endFlip);
+        },
+      ),
+    );
+  }, [endFlip, flipRotation, layout]);
+
+  const flipStyle = useAnimatedStyle(() => {
+    const abs = Math.abs(flipRotation.value);
+    return {
+      opacity: interpolate(abs, [0, 70, 90], [1, 1, 0]),
+      transform: [
+        { perspective: 1400 },
+        { rotateY: `${flipRotation.value}deg` },
+        { scale: interpolate(abs, [0, 90], [1, 0.94]) },
+      ],
+    };
+  });
 
   const openCreateCollection = useCallback(() => {
     setNameDraft('');
@@ -295,6 +368,7 @@ export default function HomeScreen() {
           recipe={item}
           index={index}
           variant={numColumns > 1 ? 'card' : 'row'}
+          animateEnter={!skipItemEnter.current}
           onPress={() => openRecipe(item)}
           onLongPress={numColumns > 1 ? undefined : () => openRecipeMenu(item)}
           onMore={() => openRecipeMenu(item)}
@@ -366,6 +440,8 @@ export default function HomeScreen() {
           onLongPressCollection={handleManageCollection}
           onManageCollection={handleManageCollection}
           onCreateCollection={openCreateCollection}
+          layout={layout}
+          onToggleLayout={handleToggleLayout}
         />
       </View>
     ),
@@ -381,8 +457,10 @@ export default function HomeScreen() {
       error,
       favoritesOnly,
       handleManageCollection,
+      handleToggleLayout,
       handleToggleTag,
       isSearchPending,
+      layout,
       openCreateCollection,
       recipes.length,
       refresh,
@@ -469,56 +547,61 @@ export default function HomeScreen() {
 
   return (
     <Screen tabScreen>
-      <FlatList
-        key={`library-${numColumns}`}
-        data={displayedRecipes}
-        extraData={recipes}
-        keyExtractor={(item) => item.id}
-        numColumns={numColumns}
-        columnWrapperStyle={numColumns > 1 ? { gap: 0, marginBottom: 12 } : undefined}
-        renderItem={renderItem}
-        ListHeaderComponent={listHeader}
-        ListEmptyComponent={
-          hasActiveFilters ? (
-            <View className="items-center px-4 py-10">
-              <Text className="mb-1 text-center text-base font-semibold" style={{ color: colors.text }}>
-                {favoritesOnly &&
-                !deferredSearch &&
-                selectedTags.length === 0 &&
-                selectedCollectionId == null
-                  ? t('library.noFavorites')
-                  : t('library.noMatches')}
-              </Text>
-              <Text className="mb-5 text-center text-sm" style={{ color: colors.textSecondary }}>
-                {favoritesOnly &&
-                !deferredSearch &&
-                selectedTags.length === 0 &&
-                selectedCollectionId == null
-                  ? t('library.noFavoritesHint')
-                  : t('library.noMatchesHint')}
-              </Text>
-              <Pressable
-                onPress={clearFilters}
-                className="rounded-[22px] px-5 py-2.5 active:opacity-80"
-                style={{ backgroundColor: colors.primary }}
-              >
-                <Text className="text-sm font-semibold text-white">{t('library.clearFilters')}</Text>
-              </Pressable>
-            </View>
-          ) : null
-        }
-        contentContainerStyle={{
-          paddingHorizontal: numColumns > 1 ? 14 : 20,
-          paddingBottom: 28,
-          gap: numColumns > 1 ? 0 : 12,
-        }}
-        showsVerticalScrollIndicator={false}
-        keyboardShouldPersistTaps="handled"
-        keyboardDismissMode="on-drag"
-        initialNumToRender={8}
-        maxToRenderPerBatch={10}
-        windowSize={7}
-      />
+      <View className="px-5">{listHeader}</View>
+      <View style={{ flex: 1, minHeight: 0, overflow: 'hidden' }}>
+        <Animated.View collapsable={false} style={[{ flex: 1 }, flipStyle]}>
+          <FlatList
+            key={`library-${numColumns}`}
+            data={displayedRecipes}
+            extraData={recipes}
+            keyExtractor={(item) => item.id}
+            numColumns={numColumns}
+            columnWrapperStyle={numColumns > 1 ? { gap: 0, marginBottom: 12 } : undefined}
+            renderItem={renderItem}
+            ListEmptyComponent={
+              hasActiveFilters ? (
+                <View className="items-center px-4 py-10">
+                  <Text className="mb-1 text-center text-base font-semibold" style={{ color: colors.text }}>
+                    {favoritesOnly &&
+                    !deferredSearch &&
+                    selectedTags.length === 0 &&
+                    selectedCollectionId == null
+                      ? t('library.noFavorites')
+                      : t('library.noMatches')}
+                  </Text>
+                  <Text className="mb-5 text-center text-sm" style={{ color: colors.textSecondary }}>
+                    {favoritesOnly &&
+                    !deferredSearch &&
+                    selectedTags.length === 0 &&
+                    selectedCollectionId == null
+                      ? t('library.noFavoritesHint')
+                      : t('library.noMatchesHint')}
+                  </Text>
+                  <Pressable
+                    onPress={clearFilters}
+                    className="rounded-[22px] px-5 py-2.5 active:opacity-80"
+                    style={{ backgroundColor: colors.primary }}
+                  >
+                    <Text className="text-sm font-semibold text-white">{t('library.clearFilters')}</Text>
+                  </Pressable>
+                </View>
+              ) : null
+            }
+            contentContainerStyle={{
+              paddingHorizontal: numColumns > 1 ? 14 : 20,
+              paddingTop: 4,
+              paddingBottom: 28,
+              gap: numColumns > 1 ? 0 : 12,
+            }}
+            showsVerticalScrollIndicator={false}
+            keyboardShouldPersistTaps="handled"
+            keyboardDismissMode="on-drag"
+            initialNumToRender={8}
+            maxToRenderPerBatch={10}
+            windowSize={7}
+          />
+        </Animated.View>
+      </View>
 
       <RecipeActionsMenu
         visible={menuRecipe != null}

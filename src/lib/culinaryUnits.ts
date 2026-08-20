@@ -303,19 +303,40 @@ export function isKnownCulinaryUnit(unit: string): boolean {
   return Boolean(UNIT_MAP[key]) || COUNT_UNIT_KEYS.has(key);
 }
 
+function localizeUnitField(unit: string, language: CulinaryUnitLanguage, quantity: number): string {
+  return isKnownCulinaryUnit(unit)
+    ? localizeCulinaryUnit(unit, language, quantity)
+    : (unit?.trim() ?? '');
+}
+
 /**
  * Localize ingredient units into a target language.
  * Known units are mapped; freeform units are left as-is.
+ * Dual grams/spoons amounts are localized the same way.
  */
-export function localizeIngredientUnits<T extends { quantity: number; unit: string }>(
-  ingredients: T[],
-  language: CulinaryUnitLanguage,
-): T[] {
+export function localizeIngredientUnits<
+  T extends {
+    quantity: number;
+    unit: string;
+    metric?: { quantity: number; unit: string };
+    spoons?: { quantity: number; unit: string };
+  },
+>(ingredients: T[], language: CulinaryUnitLanguage): T[] {
   return ingredients.map((ing) => ({
     ...ing,
-    unit: isKnownCulinaryUnit(ing.unit)
-      ? localizeCulinaryUnit(ing.unit, language, ing.quantity)
-      : (ing.unit?.trim() ?? ''),
+    unit: localizeUnitField(ing.unit, language, ing.quantity),
+    metric: ing.metric
+      ? {
+          ...ing.metric,
+          unit: localizeUnitField(ing.metric.unit, language, ing.metric.quantity),
+        }
+      : ing.metric,
+    spoons: ing.spoons
+      ? {
+          ...ing.spoons,
+          unit: localizeUnitField(ing.spoons.unit, language, ing.spoons.quantity),
+        }
+      : ing.spoons,
   }));
 }
 

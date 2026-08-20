@@ -23,7 +23,7 @@ import { useMeasurementPreference } from '@/hooks/useMeasurementPreference';
 import { useShoppingList } from '@/hooks/useShoppingList';
 import { useThemePreference } from '@/hooks/useThemePreference';
 import { setGuestRecipeTags } from '@/lib/guestRecipes';
-import { applyMeasurementSystem } from '@/lib/convertMeasurement';
+import { pickIngredientAmount, scaleIngredient, scaleIngredients } from '@/lib/ingredientAmounts';
 import { isRtlAppLanguage } from '@/lib/appLanguages';
 import { resolveCulinaryLanguage } from '@/lib/culinaryUnits';
 import { displayIngredientAmount } from '@/lib/displayIngredientAmount';
@@ -48,20 +48,6 @@ import { SubstitutionAlternative } from '@/lib/supabase/suggestSubstitution';
 import { TranslatedRecipePayload } from '@/lib/supabase/translateRecipe';
 import { TransformedRecipePayload } from '@/lib/supabase/transformRecipe';
 import { Ingredient, Instruction, RecipeTranslationContent } from '@/types/recipe';
-
-/**
- * Scales ingredient quantities from `baseServings` to `target`, rounded to
- * 2 decimals. `baseServings` must be >= 1 — both the DB column and the
- * extraction pipeline guarantee this, but we clamp defensively here too
- * since a divide-by-zero would otherwise silently produce `Infinity`.
- */
-function scaleIngredients(ingredients: Ingredient[], baseServings: number, target: number) {
-  const factor = target / Math.max(1, baseServings);
-  return ingredients.map((i) => ({
-    ...i,
-    quantity: Math.round(i.quantity * factor * 100) / 100,
-  }));
-}
 
 interface RecipeContentSnapshot {
   title: string;
@@ -306,11 +292,16 @@ export function RecipeView({
     setBaseIngredients((prev) =>
       prev.map((ing, i) =>
         i === swapIndex
-          ? {
-              name: alternative.name,
-              unit: alternative.unit,
-              quantity: Math.round(alternative.quantity * factor * 100) / 100,
-            }
+          ? scaleIngredient(
+              {
+                name: alternative.name,
+                unit: alternative.unit,
+                quantity: alternative.quantity,
+                metric: alternative.metric,
+                spoons: alternative.spoons,
+              },
+              factor,
+            )
           : ing,
       ),
     );
@@ -820,7 +811,7 @@ export function RecipeView({
                   </Text>
                   <View className="flex-row items-center gap-3">
                     <Text className="text-sm tabular-nums" style={{ color: colors.textSecondary }}>
-                      {displayIngredientAmount(ing.quantity, ing.unit, {
+                      {displayIngredientAmount(ing, {
                         system: measurementSystem,
                         language: unitLanguage,
                       })}
@@ -986,11 +977,7 @@ export function RecipeView({
         onClose={() => setShoppingListModalOpen(false)}
         onConfirm={async (selected) => {
           const normalized = selected.map((ing) => {
-            const converted = applyMeasurementSystem(
-              ing.quantity,
-              ing.unit,
-              measurementSystem,
-            );
+            const converted = pickIngredientAmount(ing, measurementSystem);
             return { ...ing, quantity: converted.quantity, unit: converted.unit };
           });
           const result = await addFromRecipe(normalized, recipeId);

@@ -3,6 +3,12 @@
 
 import { FetchError } from './errors.ts';
 import {
+  DUAL_INGREDIENT_SCHEMA,
+  MEASUREMENT_RULES,
+  mapDualIngredients,
+  type DualIngredient,
+} from './ingredientAmounts.ts';
+import {
   generateGeminiJson,
   resolveGeminiModel,
   type GeminiPart,
@@ -19,8 +25,8 @@ export type { GeminiUsageSnapshot } from './pricing.ts';
 const TEXT_TIMEOUT_MS = 35_000;
 const VIDEO_TIMEOUT_MS = 120_000;
 const TIMESTAMP_MAP_TIMEOUT_MS = 90_000;
-const TEXT_MAX_OUTPUT_TOKENS = 4_096;
-const VIDEO_MAX_OUTPUT_TOKENS = 4_096;
+const TEXT_MAX_OUTPUT_TOKENS = 6_144;
+const VIDEO_MAX_OUTPUT_TOKENS = 6_144;
 const MAX_DESCRIPTION_CHARS = 10_000;
 const MAX_CAPTIONS_CHARS = 6_000;
 const MAX_COMMENTS = 12;
@@ -51,6 +57,7 @@ Rules:
 - Comments marked "(from the video's creator)" are especially likely to contain the complete recipe.
 - When a structured recipe (schema.org JSON-LD) is present, prefer it over surrounding page chrome (ads, navigation, related posts).
 - Include ingredients with measurements, and step-by-step instructions when present.
+${MEASUREMENT_RULES}
 ${INSTRUCTION_RULES}
 - Estimate a cost tier from 1-3 dollar signs and an effort level when you can infer them.
 ${TIME_RULES}
@@ -67,6 +74,7 @@ Rules:
 - Treat the video and text context as complementary sources — prefer explicit written measurements in text over visual guesses.
 - Comments marked "(from the video's creator)" are especially likely to contain the authoritative recipe.
 - Include ingredients with measurements, and step-by-step instructions.
+${MEASUREMENT_RULES}
 ${INSTRUCTION_RULES}
 - For each instruction, set timestamp_seconds to when that step begins in the video (whole seconds from 0). Omit if unclear.
 - Steps must follow video chronology. Skip sponsor intros — first step may start after 0:15.
@@ -89,15 +97,7 @@ const RECIPE_SCHEMA = {
     servings: { type: 'integer' },
     ingredients: {
       type: 'array',
-      items: {
-        type: 'object',
-        properties: {
-          name: { type: 'string' },
-          quantity: { type: 'number' },
-          unit: { type: 'string' },
-        },
-        required: ['name', 'quantity', 'unit'],
-      },
+      items: DUAL_INGREDIENT_SCHEMA,
     },
     instructions: {
       type: 'array',
@@ -183,7 +183,7 @@ export interface GeminiRecipe {
   source_language: string;
   title: string;
   servings: number;
-  ingredients: { name: string; quantity: number; unit: string }[];
+  ingredients: DualIngredient[];
   instructions: { step: number; text: string; timestamp_seconds?: number }[];
   calories_reasoning?: string;
   calories?: number;
@@ -452,6 +452,7 @@ async function extractRecipeWithVideo(
 function normalizeGeminiRecipe(recipe: GeminiRecipe): GeminiRecipe {
   return {
     ...recipe,
+    ingredients: mapDualIngredients(recipe.ingredients),
     instructions: normalizeInstructions(recipe.instructions ?? []),
   };
 }

@@ -27,7 +27,7 @@ import { useRecipes } from '@/hooks/useRecipes';
 import { useRtl } from '@/hooks/useRtl';
 import { useShoppingList } from '@/hooks/useShoppingList';
 import { useThemePreference } from '@/hooks/useThemePreference';
-import { applyMeasurementSystem } from '@/lib/convertMeasurement';
+import { pickIngredientAmount } from '@/lib/ingredientAmounts';
 import { formatQuantity } from '@/lib/formatQuantity';
 import {
   getDuplicateNameCounts,
@@ -110,11 +110,7 @@ export default function ShoppingListScreen() {
       const payload = selected.map((recipe) => ({
         id: recipe.id,
         ingredients: (recipe.ingredients ?? []).map((ing) => {
-          const converted = applyMeasurementSystem(
-            ing.quantity,
-            ing.unit,
-            measurementSystem,
-          );
+          const converted = pickIngredientAmount(ing, measurementSystem);
           return {
             name: ing.name,
             quantity: converted.quantity,

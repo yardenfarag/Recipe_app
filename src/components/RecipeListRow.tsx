@@ -24,6 +24,8 @@ interface RecipeListRowProps {
   index?: number;
   /** `card` stacks image above title for multi-column grids. */
   variant?: 'row' | 'card';
+  /** Skip enter animation while the parent list is flipping layout. */
+  animateEnter?: boolean;
 }
 
 /** Frosted mist card in the Library list. */
@@ -35,6 +37,7 @@ export const RecipeListRow = memo(function RecipeListRow({
   onToggleFavorite,
   index = 0,
   variant = 'row',
+  animateEnter = true,
 }: RecipeListRowProps) {
   const { t } = useTranslation();
   const { colors } = useThemePreference();
@@ -95,7 +98,9 @@ export const RecipeListRow = memo(function RecipeListRow({
 
   return (
     <Animated.View
-      entering={FadeInDown.delay(Math.min(index * 60, 360)).springify()}
+      entering={
+        animateEnter ? FadeInDown.delay(Math.min(index * 60, 360)).springify() : undefined
+      }
       style={card ? { flex: 1 } : undefined}
     >
       <View

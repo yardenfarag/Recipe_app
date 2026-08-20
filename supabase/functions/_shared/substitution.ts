@@ -1,10 +1,16 @@
 // Ingredient substitution via Gemini's generateContent REST endpoint.
 
 import { generateGeminiJson, sanitizeGeminiText } from './geminiClient.ts';
+import {
+  DUAL_INGREDIENT_SCHEMA,
+  MEASUREMENT_RULES,
+  normalizeDualIngredient,
+  type DualIngredient,
+} from './ingredientAmounts.ts';
 
 const REQUEST_TIMEOUT_MS = 20_000;
 const REWRITE_TIMEOUT_MS = 25_000;
-const MAX_OUTPUT_TOKENS = 1_024;
+const MAX_OUTPUT_TOKENS = 1_536;
 const REWRITE_MAX_OUTPUT_TOKENS = 4_096;
 
 export const SUBSTITUTION_LANGUAGE_CODES = ['en', 'es', 'he', 'ru', 'ar', 'de', 'fr'] as const;
@@ -61,6 +67,7 @@ Rules:
 - Prefer everyday brands/staples: dairy aisle, baking aisle, oils, eggs, common produce, common pantry dry goods.
 - Avoid obscure specialty products, restaurant-only items, or ingredients that usually need ordering online.
 - Adjust quantity/unit so the substitute works in this recipe (not always 1:1).
+${MEASUREMENT_RULES}
 - Fit the dish: use the recipe title and other ingredients so swaps make culinary sense.
 - Write each substitute name and reason in the target language.
 - Keep each reason to one short sentence in plain language.
@@ -77,9 +84,11 @@ const SUBSTITUTION_SCHEMA = {
           name: { type: 'string' },
           quantity: { type: 'number' },
           unit: { type: 'string' },
+          metric: DUAL_INGREDIENT_SCHEMA.properties.metric,
+          spoons: DUAL_INGREDIENT_SCHEMA.properties.spoons,
           reason: { type: 'string' },
         },
-        required: ['name', 'quantity', 'unit', 'reason'],
+        required: ['name', 'quantity', 'unit', 'metric', 'spoons', 'reason'],
       },
     },
   },
@@ -90,6 +99,8 @@ export interface SubstitutionAlternative {
   name: string;
   quantity: number;
   unit: string;
+  metric?: DualIngredient['metric'];
+  spoons?: DualIngredient['spoons'];
   reason: string;
 }
 
@@ -154,12 +165,23 @@ export async function suggestSubstitutionsWithGemini(
     context: 'substitution.ts: suggestSubstitutionsWithGemini',
   });
 
-  return (data.alternatives ?? []).map((alt) => ({
-    name: sanitizeGeminiText(alt.name ?? ''),
-    quantity: Number(alt.quantity),
-    unit: sanitizeGeminiText(alt.unit ?? ''),
-    reason: sanitizeGeminiText(alt.reason ?? ''),
-  }));
+  return (data.alternatives ?? []).map((alt) => {
+    const dual = normalizeDualIngredient({
+      name: alt.name ?? '',
+      quantity: Number(alt.quantity),
+      unit: alt.unit ?? '',
+      metric: alt.metric,
+      spoons: alt.spoons,
+    });
+    return {
+      name: dual.name,
+      quantity: dual.quantity,
+      unit: dual.unit,
+      ...(dual.metric ? { metric: dual.metric } : {}),
+      ...(dual.spoons ? { spoons: dual.spoons } : {}),
+      reason: sanitizeGeminiText(alt.reason ?? ''),
+    };
+  });
 }
 
 /** Patches step text after the user applies a substitute (keeps step count/order). */

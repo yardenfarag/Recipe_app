@@ -180,7 +180,7 @@ export function AddToShoppingListModal({
                   {ing.name}
                 </Text>
                 <Text className="text-sm tabular-nums" style={{ color: colors.textSecondary }}>
-                  {displayIngredientAmount(ing.quantity, ing.unit, {
+                  {displayIngredientAmount(ing, {
                     system: measurementSystem,
                     language: unitLanguage,
                   })}

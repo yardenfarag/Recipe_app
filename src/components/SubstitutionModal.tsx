@@ -130,7 +130,7 @@ export function SubstitutionModal({
               {t('recipe.swapInsteadOf')}
             </Text>
             <Text className="text-lg font-bold" style={{ color: colors.text }}>
-              {displayIngredientAmount(ingredient.quantity, ingredient.unit, {
+              {displayIngredientAmount(ingredient, {
                 system: measurementSystem,
                 language: unitLanguage,
               })}{' '}
@@ -170,7 +170,7 @@ export function SubstitutionModal({
                 style={{ borderColor: colors.border, backgroundColor: colors.background }}
               >
                 <Text className="mb-1 text-base font-bold" style={{ color: colors.text }}>
-                  {displayIngredientAmount(alt.quantity, alt.unit, {
+                  {displayIngredientAmount(alt, {
                     system: measurementSystem,
                     language: unitLanguage,
                   })}{' '}

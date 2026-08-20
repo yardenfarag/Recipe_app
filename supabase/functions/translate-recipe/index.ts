@@ -4,6 +4,7 @@ import {
   refundDailyAiUsage,
   reserveDailyAiUsage,
 } from '../_shared/dailyAiUsage.ts';
+import { parseIngredientAmount } from '../_shared/ingredientAmounts.ts';
 import { createAuthedSupabase } from '../_shared/recipeLookup.ts';
 import { createServiceSupabase } from '../_shared/supabaseAdmin.ts';
 import {
@@ -25,7 +26,13 @@ interface RequestBody {
   target_language?: string;
   recipe?: {
     title?: string;
-    ingredients?: { name?: string; quantity?: number; unit?: string }[];
+    ingredients?: {
+      name?: string;
+      quantity?: number;
+      unit?: string;
+      metric?: { quantity?: number; unit?: string };
+      spoons?: { quantity?: number; unit?: string };
+    }[];
     instructions?: { step?: number; text?: string; timestamp_seconds?: number }[];
   };
 }
@@ -134,11 +141,17 @@ Deno.serve(async (req) => {
 
   const ingredients = (recipe.ingredients ?? [])
     .filter((i) => Boolean(i.name?.trim()) && Number.isFinite(Number(i.quantity)))
-    .map((i) => ({
-      name: i.name!.trim(),
-      quantity: Number(i.quantity),
-      unit: typeof i.unit === 'string' ? i.unit.trim() : '',
-    }));
+    .map((i) => {
+      const metric = parseIngredientAmount(i.metric);
+      const spoons = parseIngredientAmount(i.spoons);
+      return {
+        name: i.name!.trim(),
+        quantity: Number(i.quantity),
+        unit: typeof i.unit === 'string' ? i.unit.trim() : '',
+        ...(metric ? { metric } : {}),
+        ...(spoons ? { spoons } : {}),
+      };
+    });
 
   const instructions = (recipe.instructions ?? [])
     .filter(

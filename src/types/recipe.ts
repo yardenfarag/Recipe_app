@@ -5,10 +5,20 @@ export type ExtractionStatus = 'full' | 'partial';
 /** Which content-ladder rung yielded the recipe (ADR 004). */
 export type ExtractionSource = 'description' | 'comments' | 'captions' | 'video' | 'web';
 
+/** One measured amount, used for grams/spoons toggle values. */
+export interface IngredientAmount {
+  quantity: number;
+  unit: string;
+}
+
 export interface Ingredient {
   name: string;
   quantity: number;
   unit: string;
+  /** Weight (g/kg) for solids or volume (ml/liter) for liquids — set at extraction. */
+  metric?: IngredientAmount;
+  /** Cups / tablespoons / teaspoons (or a count) — set at extraction. */
+  spoons?: IngredientAmount;
 }
 
 export interface Instruction {

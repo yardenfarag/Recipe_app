@@ -69,6 +69,9 @@ function roundCookingQuantity(value: number): number {
 /**
  * Converts imperial / spoon units to grams or milliliters.
  * Count units (cloves, slices, pinch) and unknown units stay as-is.
+ *
+ * Fallback for recipes extracted before dual grams/spoons amounts existed.
+ * Prefer `pickIngredientAmount` so solids are not shown as milliliters.
  */
 export function convertToMetric(
   quantity: number,

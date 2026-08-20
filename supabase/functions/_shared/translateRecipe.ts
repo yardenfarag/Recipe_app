@@ -78,13 +78,25 @@ const TRANSLATE_SCHEMA = {
 export interface TranslateRecipeInput {
   targetLanguage: TranslateLanguageCode;
   title: string;
-  ingredients: { name: string; quantity: number; unit: string }[];
+  ingredients: {
+    name: string;
+    quantity: number;
+    unit: string;
+    metric?: { quantity: number; unit: string };
+    spoons?: { quantity: number; unit: string };
+  }[];
   instructions: { step: number; text: string; timestamp_seconds?: number }[];
 }
 
 export interface TranslatedRecipe {
   title: string;
-  ingredients: { name: string; quantity: number; unit: string }[];
+  ingredients: {
+    name: string;
+    quantity: number;
+    unit: string;
+    metric?: { quantity: number; unit: string };
+    spoons?: { quantity: number; unit: string };
+  }[];
   instructions: { step: number; text: string }[];
   usage?: GeminiUsageSnapshot | null;
 }
@@ -158,6 +170,8 @@ export async function translateRecipeWithGemini(
         input.targetLanguage,
         source.quantity,
       ),
+      ...(source.metric ? { metric: source.metric } : {}),
+      ...(source.spoons ? { spoons: source.spoons } : {}),
     };
   });
 

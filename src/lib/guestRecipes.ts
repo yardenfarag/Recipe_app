@@ -1,6 +1,7 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
 import { DEFAULT_SOURCE_LANGUAGE } from '@/lib/appLanguages';
+import { readIngredientAmount } from '@/lib/ingredientAmounts';
 import { detectPlatform, recipeUrlsMatch } from '@/lib/platformUrls';
 import { recipeContentEquals } from '@/lib/recipeContentEquals';
 import { Recipe, RecipeTranslationContent } from '@/types/recipe';
@@ -311,7 +312,15 @@ function sanitizeIngredients(value: unknown): Recipe['ingredients'] | null {
     const unit = typeof item.unit === 'string' ? item.unit.trim() : null;
     const quantity = readFiniteNumber(item.quantity);
     if (!name || unit === null || quantity === null) return null;
-    ingredients.push({ name, unit, quantity });
+    const metric = readIngredientAmount(item.metric);
+    const spoons = readIngredientAmount(item.spoons);
+    ingredients.push({
+      name,
+      unit,
+      quantity,
+      ...(metric ? { metric } : {}),
+      ...(spoons ? { spoons } : {}),
+    });
   }
   return ingredients;
 }

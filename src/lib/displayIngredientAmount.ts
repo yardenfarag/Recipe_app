@@ -1,20 +1,17 @@
 import { CulinaryUnitLanguage } from '@/lib/culinaryUnits';
-import { applyMeasurementSystem, type MeasurementSystem } from '@/lib/convertMeasurement';
+import { pickIngredientAmount } from '@/lib/ingredientAmounts';
+import { type MeasurementSystem } from '@/lib/convertMeasurement';
 import { formatQuantity } from '@/lib/formatQuantity';
+import type { Ingredient } from '@/types/recipe';
 
-/** Renders an ingredient amount, optionally converted between spoons and metric. */
+/** Renders an ingredient amount, preferring extracted grams/spoons when present. */
 export function displayIngredientAmount(
-  quantity: number,
-  unit: string,
+  ingredient: Pick<Ingredient, 'quantity' | 'unit' | 'metric' | 'spoons'>,
   options?: {
     system?: MeasurementSystem;
     language?: CulinaryUnitLanguage | null;
   },
 ): string {
-  const { quantity: displayQty, unit: displayUnit } = applyMeasurementSystem(
-    quantity,
-    unit,
-    options?.system ?? 'original',
-  );
-  return formatQuantity(displayQty, displayUnit, options?.language);
+  const amount = pickIngredientAmount(ingredient, options?.system ?? 'original');
+  return formatQuantity(amount.quantity, amount.unit, options?.language);
 }

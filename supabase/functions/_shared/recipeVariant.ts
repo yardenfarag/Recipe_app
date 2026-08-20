@@ -5,10 +5,16 @@ import {
   generateGeminiJson,
   sanitizeGeminiText,
 } from './geminiClient.ts';
+import {
+  DUAL_INGREDIENT_SCHEMA,
+  MEASUREMENT_RULES,
+  mapDualIngredients,
+  type DualIngredient,
+} from './ingredientAmounts.ts';
 import type { GeminiUsageSnapshot } from './pricing.ts';
 
 const REQUEST_TIMEOUT_MS = 35_000;
-const MAX_OUTPUT_TOKENS = 4_096;
+const MAX_OUTPUT_TOKENS = 6_144;
 
 export type RecipeVariantKey =
   | 'healthier'
@@ -41,6 +47,7 @@ const SYSTEM_PROMPT = `You are a culinary expert adapting home-cooking recipes f
 Rules:
 - Preserve the spirit of the original dish — this should still feel like the same recipe, adapted.
 - Update ingredients with realistic quantities and units; adjust instructions to match any swaps.
+${MEASUREMENT_RULES}
 - Keep the same number of servings unless a change is required for the variant.
 - calories_reasoning: one short phrase estimating kcal from main ingredients; calories is TOTAL for all servings.
 - Write a concise summary (1–2 sentences) of what you changed.
@@ -51,15 +58,7 @@ const TRANSFORM_SCHEMA = {
   properties: {
     ingredients: {
       type: 'array',
-      items: {
-        type: 'object',
-        properties: {
-          name: { type: 'string' },
-          quantity: { type: 'number' },
-          unit: { type: 'string' },
-        },
-        required: ['name', 'quantity', 'unit'],
-      },
+      items: DUAL_INGREDIENT_SCHEMA,
     },
     instructions: {
       type: 'array',
@@ -84,13 +83,13 @@ export interface TransformRecipeInput {
   variant: RecipeVariantKey;
   title: string;
   servings: number;
-  ingredients: { name: string; quantity: number; unit: string }[];
+  ingredients: DualIngredient[];
   instructions: { step: number; text: string }[];
   calories?: number;
 }
 
 export interface TransformedRecipe {
-  ingredients: { name: string; quantity: number; unit: string }[];
+  ingredients: DualIngredient[];
   instructions: { step: number; text: string }[];
   servings: number;
   calories?: number;
@@ -119,10 +118,12 @@ export async function transformRecipeWithGemini(
   const servings = parsed.servings > 0 ? parsed.servings : input.servings;
 
   return {
-    ingredients: (parsed.ingredients ?? []).map((ing) => ({
+    ingredients: mapDualIngredients(parsed.ingredients).map((ing) => ({
       name: sanitizeGeminiText(ing.name ?? ''),
       quantity: Number(ing.quantity),
       unit: sanitizeGeminiText(ing.unit ?? ''),
+      ...(ing.metric ? { metric: ing.metric } : {}),
+      ...(ing.spoons ? { spoons: ing.spoons } : {}),
     })),
     instructions: (parsed.instructions ?? []).map((step) => ({
       step: Number(step.step),

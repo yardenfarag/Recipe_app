@@ -64,4 +64,22 @@ describe('localizeIngredientUnits', () => {
     expect(result[0].unit).toBe('כוס');
     expect(result[1].unit).toBe('handful');
   });
+
+  it('localizes extracted grams and spoons amounts', () => {
+    const [result] = localizeIngredientUnits(
+      [
+        {
+          name: 'flour',
+          quantity: 1,
+          unit: 'cup',
+          metric: { quantity: 120, unit: 'g' },
+          spoons: { quantity: 1, unit: 'cup' },
+        },
+      ],
+      'he',
+    );
+    expect(result.unit).toBe('כוס');
+    expect(result.metric).toEqual({ quantity: 120, unit: 'גרם' });
+    expect(result.spoons).toEqual({ quantity: 1, unit: 'כוס' });
+  });
 });

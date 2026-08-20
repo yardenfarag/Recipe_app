@@ -264,6 +264,11 @@ function canonicalKey(unit: string): string {
   return ALIASES[normalized] ?? LOCALIZED_TO_CANONICAL[normalized] ?? normalized;
 }
 
+/** Canonical unit key for conversion / localization (cup, g, tbsp, …). */
+export function canonicalUnitKey(unit: string): string {
+  return canonicalKey(unit);
+}
+
 /**
  * Translate a culinary unit into the target language.
  * Returns '' for count placeholders (unit/pc/piece) so UI shows just the number.
