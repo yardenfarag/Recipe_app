@@ -16,7 +16,7 @@ For web, create one identified Web Purchase Link per pack. Pinch appends the sig
 
 ## 2. Deploy the backend while disabled
 
-1. Apply `supabase/migrations/0018_recipe_credits.sql`.
+1. Apply `supabase/migrations/0018_recipe_credits.sql` and `0022_recipe_remix_usage.sql`.
 2. Deploy `extract-recipe`, `transform-recipe`, and `revenuecat-webhook`.
 3. Set Edge Function secrets:
    - `CREDIT_PURCHASES_ENABLED=false`
@@ -45,6 +45,7 @@ For each iOS, Android, and web pack:
 - Delay webhook delivery and verify the UI shows pending fulfillment, then updates after Sync purchases.
 - Spend all 15 monthly credits, verify the next extraction spends one purchased credit, and verify a failed extraction refunds it.
 - Verify cached recipes remain free at a zero balance.
+- Verify remix does not spend credits and blocks after 5 remixes on the same recipe.
 - Verify purchased credits survive month boundaries while the free allowance resets.
 - Verify Hebrew and Arabic purchase sheets remain usable in RTL.
 

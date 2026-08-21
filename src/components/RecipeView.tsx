@@ -1046,6 +1046,8 @@ export function RecipeView({
         ingredients={baseIngredients}
         instructions={baseInstructions}
         calories={calories}
+        recipeId={recipeId && !recipeId.startsWith('guest-') ? recipeId : undefined}
+        originalUrl={recipe.original_url}
         onClose={() => setVariantModalOpen(false)}
         onApply={handleApplyVariant}
       />

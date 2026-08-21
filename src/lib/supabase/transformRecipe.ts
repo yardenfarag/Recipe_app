@@ -20,10 +20,11 @@ export interface TransformRecipeResult {
   variant?: RecipeVariantKey;
   recipe?: TransformedRecipePayload;
   message?: string;
-  code?: 'auth_required' | 'daily_limit' | 'metering_error' | string;
+  code?: 'auth_required' | 'recipe_limit' | 'daily_limit' | 'metering_error' | string;
   tokens_charged?: number;
   token_balance?: number | null;
   tokens_required?: number;
+  remix_limit?: number;
 }
 
 export interface TransformRecipeRequest {
@@ -32,6 +33,8 @@ export interface TransformRecipeRequest {
   ingredients: Ingredient[];
   instructions: Instruction[];
   calories?: number;
+  id?: string;
+  original_url?: string;
 }
 
 async function invokeErrorMessage(error: unknown): Promise<{
@@ -71,7 +74,18 @@ export async function transformRecipe(
   const { data, error } = await supabase.functions.invoke<TransformRecipeResult>(
     'transform-recipe',
     {
-      body: { variant, recipe },
+      body: {
+        variant,
+        recipe: {
+          title: recipe.title,
+          servings: recipe.servings,
+          ingredients: recipe.ingredients,
+          instructions: recipe.instructions,
+          calories: recipe.calories,
+        },
+        recipe_id: recipe.id,
+        original_url: recipe.original_url,
+      },
     },
   );
 

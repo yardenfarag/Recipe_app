@@ -1,6 +1,13 @@
 import { corsHeaders, jsonResponse } from '../_shared/cors.ts';
+import { RECIPE_REMIX_LIMIT } from '../_shared/pricing.ts';
 import { createAuthedSupabase } from '../_shared/recipeLookup.ts';
 import { isRecipeVariantKey, transformRecipeWithGemini } from '../_shared/recipeVariant.ts';
+import {
+  parseRecipeId,
+  parseSourceUrl,
+  refundRecipeRemix,
+  reserveRecipeRemix,
+} from '../_shared/remixUsage.ts';
 import { createServiceSupabase } from '../_shared/supabaseAdmin.ts';
 import { logUsageEvent } from '../_shared/usageLog.ts';
 
@@ -11,11 +18,14 @@ const MAX_INSTRUCTIONS = 50;
 const MAX_INGREDIENT_NAME_CHARS = 160;
 const MAX_UNIT_CHARS = 40;
 const MAX_INSTRUCTION_CHARS = 1_000;
-const DAILY_REMIX_LIMIT = 5;
 
 interface RequestBody {
   variant?: string;
+  recipe_id?: string;
+  original_url?: string;
   recipe?: {
+    id?: string;
+    original_url?: string;
     title?: string;
     servings?: number;
     ingredients?: { name?: string; quantity?: number; unit?: string }[];
@@ -25,10 +35,10 @@ interface RequestBody {
 }
 
 /**
- * POST { variant, recipe } -> { status, recipe?, message? }
+ * POST { variant, recipe, recipe_id?, original_url? } -> { status, recipe?, message? }
  *
  * Adapts a full recipe for a dietary/lifestyle goal (healthier, vegan, etc.).
- * Remix is free for signed-in users and bounded by a daily abuse limit.
+ * Remix is free for signed-in users and capped at RECIPE_REMIX_LIMIT per recipe.
  */
 Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') {
@@ -168,14 +178,20 @@ Deno.serve(async (req) => {
     return jsonResponse({ error: 'Recipe must include at least one ingredient' }, 400);
   }
 
-  const usageDate = new Date().toISOString().slice(0, 10);
-  const { data: remixCount, error: remixLimitError } = await admin.rpc('reserve_daily_remix', {
-    p_user_id: user.id,
-    p_usage_date: usageDate,
-    p_limit: DAILY_REMIX_LIMIT,
-  });
-  if (remixLimitError) {
-    console.error('[transform-recipe] reserve_daily_remix', remixLimitError);
+  const recipeId = parseRecipeId(body.recipe_id) ?? parseRecipeId(recipe.id);
+  const sourceUrl = parseSourceUrl(body.original_url) ?? parseSourceUrl(recipe.original_url);
+  const reserved = await reserveRecipeRemix(admin, user.id, recipeId, sourceUrl);
+  if (reserved === 'identity_required') {
+    return jsonResponse(
+      {
+        status: 'failed',
+        code: 'recipe_identity_required',
+        message: 'recipe_identity_required',
+      },
+      400,
+    );
+  }
+  if (reserved === 'error') {
     return jsonResponse(
       {
         status: 'failed',
@@ -185,12 +201,13 @@ Deno.serve(async (req) => {
       500,
     );
   }
-  if (Number(remixCount) < 0) {
+  if (reserved === 'limited') {
     return jsonResponse(
       {
         status: 'failed',
-        code: 'daily_limit',
-        message: 'daily_limit',
+        code: 'recipe_limit',
+        message: 'recipe_limit',
+        remix_limit: RECIPE_REMIX_LIMIT,
       },
       429,
     );
@@ -207,7 +224,7 @@ Deno.serve(async (req) => {
     });
 
     if (transformed.ingredients.length === 0) {
-      await refundRemixReservation(admin, user.id, usageDate);
+      await refundRecipeRemix(admin, user.id, recipeId, sourceUrl);
       await logUsageEvent(admin, {
         userId: user.id,
         action: 'remix',
@@ -215,7 +232,7 @@ Deno.serve(async (req) => {
         usages: transformed.usage ? [transformed.usage] : [],
         tokensCharged: 0,
         durationMs: Date.now() - started,
-        metadata: { variant },
+        metadata: { variant, recipe_id: recipeId, original_url: sourceUrl },
         errorMessage: 'Empty adapted ingredients',
       });
       return jsonResponse({
@@ -232,7 +249,7 @@ Deno.serve(async (req) => {
       usages: transformed.usage ? [transformed.usage] : [],
       tokensCharged: 0,
       durationMs: Date.now() - started,
-      metadata: { variant },
+      metadata: { variant, recipe_id: recipeId, original_url: sourceUrl },
     });
 
     return jsonResponse({
@@ -243,7 +260,7 @@ Deno.serve(async (req) => {
     });
   } catch (err) {
     console.error('transform-recipe error:', err);
-    await refundRemixReservation(admin, user.id, usageDate);
+    await refundRecipeRemix(admin, user.id, recipeId, sourceUrl);
     await logUsageEvent(admin, {
       userId: user.id,
       action: 'remix',
@@ -251,7 +268,7 @@ Deno.serve(async (req) => {
       tokensCharged: 0,
       durationMs: Date.now() - started,
       errorMessage: err instanceof Error ? err.message.slice(0, 500) : String(err),
-      metadata: { variant },
+      metadata: { variant, recipe_id: recipeId, original_url: sourceUrl },
     });
     return jsonResponse(
       {
@@ -262,18 +279,6 @@ Deno.serve(async (req) => {
     );
   }
 });
-
-async function refundRemixReservation(
-  admin: NonNullable<ReturnType<typeof createServiceSupabase>>,
-  userId: string,
-  usageDate: string,
-): Promise<void> {
-  const { error } = await admin.rpc('refund_daily_remix', {
-    p_user_id: userId,
-    p_usage_date: usageDate,
-  });
-  if (error) console.error('[transform-recipe] refund_daily_remix', error);
-}
 
 function requestIsTooLarge(req: Request, maxBytes: number): boolean {
   const contentLength = Number(req.headers.get('content-length'));

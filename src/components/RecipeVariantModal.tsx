@@ -8,6 +8,7 @@ import { SheetModal } from '@/components/SheetModal';
 import { useAuth } from '@/hooks/useAuth';
 import { useRtl } from '@/hooks/useRtl';
 import { useThemePreference } from '@/hooks/useThemePreference';
+import { RECIPE_REMIX_LIMIT } from '@/lib/quotas';
 import { RECIPE_VARIANTS, RecipeVariantKey } from '@/lib/recipeVariants';
 import { transformRecipe, TransformedRecipePayload } from '@/lib/supabase/transformRecipe';
 import { Ingredient, Instruction } from '@/types/recipe';
@@ -19,6 +20,8 @@ interface RecipeVariantModalProps {
   ingredients: Ingredient[];
   instructions: Instruction[];
   calories?: number;
+  recipeId?: string;
+  originalUrl?: string;
   onClose: () => void;
   onApply: (result: TransformedRecipePayload, variant: RecipeVariantKey) => void;
 }
@@ -26,7 +29,7 @@ interface RecipeVariantModalProps {
 /**
  * Sheet for picking a dietary/lifestyle remix (healthier, vegan, etc.).
  * Calls Gemini and lets the user preview + apply the adapted recipe.
- * Free for signed-in users, with a server-side daily limit.
+ * Free for signed-in users, with a server-side per-recipe limit.
  */
 export function RecipeVariantModal({
   visible,
@@ -35,6 +38,8 @@ export function RecipeVariantModal({
   ingredients,
   instructions,
   calories,
+  recipeId,
+  originalUrl,
   onClose,
   onApply,
 }: RecipeVariantModalProps) {
@@ -74,14 +79,16 @@ export function RecipeVariantModal({
         ingredients,
         instructions,
         calories,
+        id: recipeId,
+        original_url: originalUrl,
       });
 
       if (result.status === 'failed' || !result.recipe) {
         if (result.code === 'auth_required') {
           setError('sign_in');
-        } else if (result.code === 'daily_limit') {
-          setError('daily_limit');
-        } else if (result.code === 'metering_error') {
+        } else if (result.code === 'recipe_limit' || result.code === 'daily_limit') {
+          setError('recipe_limit');
+        } else if (result.code === 'metering_error' || result.code === 'recipe_identity_required') {
           setError(t('recipe.remixFailed'));
         } else {
           setError(result.message ?? t('recipe.remixFailed'));
@@ -116,7 +123,7 @@ export function RecipeVariantModal({
         {!preview && !loading && (
           <>
             <Text className="mb-4 text-sm leading-5" style={{ color: colors.textSecondary }}>
-              {t('recipe.remixHint')}
+              {t('recipe.remixHint', { limit: RECIPE_REMIX_LIMIT })}
             </Text>
 
             {RECIPE_VARIANTS.map((option) => (
@@ -180,10 +187,10 @@ export function RecipeVariantModal({
                   <Text className="text-sm font-bold text-white">{t('settings.signIn')}</Text>
                 </Pressable>
               </>
-            ) : error === 'daily_limit' ? (
+            ) : error === 'recipe_limit' ? (
               <>
                 <Text className="text-sm" style={{ color: colors.danger }}>
-                  {t('recipe.remixDailyLimit')}
+                  {t('recipe.remixRecipeLimit', { limit: RECIPE_REMIX_LIMIT })}
                 </Text>
               </>
             ) : (

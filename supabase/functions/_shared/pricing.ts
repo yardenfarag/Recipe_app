@@ -11,8 +11,10 @@ export const SCRAPECREATORS_USD_PER_CREDIT = 0.00188;
 
 /** One recipe credit funds one successful, uncached extraction. */
 export const TOKEN_COST_EXTRACT = 1;
-/** Remix is free and protected by a daily server-side limit. */
+/** Remix is free and capped per recipe. */
 export const TOKEN_COST_REMIX = 0;
+/** Lifetime free remixes per saved recipe or unsaved source URL. */
+export const RECIPE_REMIX_LIMIT = 5;
 
 /** Keep in sync with client GUEST_EXTRACTION_LIMIT. */
 export const GUEST_EXTRACT_LIMIT = 3;

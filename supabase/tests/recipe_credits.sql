@@ -1,7 +1,7 @@
 begin;
 
 create extension if not exists pgtap with schema extensions;
-select plan(43);
+select plan(53);
 
 insert into auth.users (
   instance_id, id, aud, role, email, encrypted_password,
@@ -409,6 +409,136 @@ select is(
      and usage_date = '2099-01-01'),
   0,
   'remix refund restores daily allowance'
+);
+
+insert into public.recipes (id, user_id, title, original_url)
+values
+  (
+    '20000000-0000-4000-8000-000000000001',
+    '10000000-0000-4000-8000-000000000001',
+    'Soup',
+    'https://example.com/soup'
+  ),
+  (
+    '20000000-0000-4000-8000-000000000002',
+    '10000000-0000-4000-8000-000000000001',
+    'Salad',
+    'https://example.com/salad'
+  );
+
+select is(
+  public.reserve_recipe_remix(
+    '10000000-0000-4000-8000-000000000001',
+    '20000000-0000-4000-8000-000000000001',
+    null,
+    5
+  ),
+  1,
+  'saved-recipe remix usage is reserved'
+);
+select is(
+  public.reserve_recipe_remix(
+    '10000000-0000-4000-8000-000000000001',
+    null,
+    'https://example.com/soup',
+    5
+  ),
+  2,
+  'source URL remix counts against the saved recipe'
+);
+
+select public.reserve_recipe_remix(
+  '10000000-0000-4000-8000-000000000001',
+  '20000000-0000-4000-8000-000000000001',
+  null,
+  5
+)
+from generate_series(3, 5);
+
+select is(
+  public.reserve_recipe_remix(
+    '10000000-0000-4000-8000-000000000001',
+    '20000000-0000-4000-8000-000000000001',
+    null,
+    5
+  ),
+  -1,
+  'sixth remix on the same recipe is blocked'
+);
+select is(
+  public.reserve_recipe_remix(
+    '10000000-0000-4000-8000-000000000001',
+    '20000000-0000-4000-8000-000000000002',
+    null,
+    5
+  ),
+  1,
+  'a different recipe has its own remix allowance'
+);
+select is(
+  public.reserve_recipe_remix(
+    '10000000-0000-4000-8000-000000000001',
+    null,
+    'https://example.com/unsaved-pasta',
+    5
+  ),
+  1,
+  'preview remix usage is reserved by source URL'
+);
+select ok(
+  public.refund_recipe_remix(
+    '10000000-0000-4000-8000-000000000001',
+    '20000000-0000-4000-8000-000000000002',
+    null
+  ),
+  'failed recipe remix reservation can be refunded'
+);
+select is(
+  (select remix_count from public.recipe_remix_usage
+   where user_id = '10000000-0000-4000-8000-000000000001'
+     and recipe_id = '20000000-0000-4000-8000-000000000002'),
+  0,
+  'recipe remix refund restores the per-recipe allowance'
+);
+
+select public.reserve_recipe_remix(
+  '10000000-0000-4000-8000-000000000001',
+  null,
+  'https://example.com/unsaved-pasta',
+  5
+)
+from generate_series(2, 5);
+
+insert into public.recipes (id, user_id, title, original_url)
+values (
+  '20000000-0000-4000-8000-000000000003',
+  '10000000-0000-4000-8000-000000000001',
+  'Pasta',
+  'https://example.com/unsaved-pasta'
+);
+
+select is(
+  (select remix_count from public.recipe_remix_usage
+   where recipe_id = '20000000-0000-4000-8000-000000000003'),
+  5,
+  'saving a preview inherits remix usage from the source URL'
+);
+select is(
+  (select count(*)::int from public.preview_remix_usage
+   where user_id = '10000000-0000-4000-8000-000000000001'
+     and source_url = 'https://example.com/unsaved-pasta'),
+  0,
+  'inherited preview remix usage is removed after save'
+);
+select is(
+  public.reserve_recipe_remix(
+    '10000000-0000-4000-8000-000000000001',
+    '20000000-0000-4000-8000-000000000003',
+    null,
+    5
+  ),
+  -1,
+  'inherited remix usage still enforces the per-recipe cap'
 );
 
 select * from finish();

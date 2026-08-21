@@ -16,7 +16,7 @@ Pinch Plus required users to pay after the free monthly extraction allowance. We
 - Monthly free credits are spent before purchased credits and do not roll over.
 - Purchased credits never expire. RevenueCat validates iOS and Android consumables and hosts web billing; Supabase is the authoritative balance and ledger.
 - Initial packs are 10, 30, and 100 credits. Store offerings provide localized prices.
-- Pinch Plus is retired. AI remix is free for signed-in users with a daily limit of 5.
+- Pinch Plus is retired. AI remix is free for signed-in users, capped at **5 remixes per recipe** (preview usage carries over when the recipe is saved).
 - Legacy balances convert at 10 old product tokens to 1 recipe credit. Existing Plus accounts move to the standard 15-credit monthly allowance.
 
 ## Accounting
@@ -35,4 +35,4 @@ RevenueCat webhooks are authenticated, product IDs are allowlisted server-side, 
 
 ## Rollout
 
-Deploy migration `0018_recipe_credits.sql` and the RevenueCat webhook before enabling the public purchase flag. Configure matching products in App Store Connect, Google Play, and RevenueCat Billing. Schedule `refund_stale_recipe_credits` and monitor grant, refund, and provider-cost telemetry.
+Deploy migration `0018_recipe_credits.sql` and the RevenueCat webhook before enabling the public purchase flag. Deploy `0022_recipe_remix_usage.sql` with the updated `transform-recipe` function so remix metering is per recipe. Configure matching products in App Store Connect, Google Play, and RevenueCat Billing. Schedule `refund_stale_recipe_credits` and monitor grant, refund, and provider-cost telemetry.
