@@ -13,7 +13,8 @@ export type GeminiTier = 'fast' | 'standard';
 
 export type GeminiPart =
   | { text: string }
-  | { fileData: { fileUri: string } };
+  | { fileData: { fileUri: string } }
+  | { imageBase64: string; mimeType?: string };
 
 const DEFAULT_FAST_MODEL = 'gemini-3.1-flash-lite';
 const DEFAULT_STANDARD_MODEL = 'gemini-3.5-flash';
@@ -59,7 +60,7 @@ export async function generateGeminiJson<T>(
 
   const body = {
     systemInstruction: { parts: [{ text: options.systemPrompt }] },
-    contents: [{ role: 'user', parts: options.parts }],
+    contents: [{ role: 'user', parts: options.parts.map(toGeminiNativePart) }],
     generationConfig: {
       responseMimeType: 'application/json',
       responseSchema: options.responseSchema,
@@ -69,7 +70,7 @@ export async function generateGeminiJson<T>(
     },
   };
 
-  const hasFile = options.parts.some((p) => 'fileData' in p);
+  const hasFile = options.parts.some((p) => 'fileData' in p || 'imageBase64' in p);
   console.log('[gemini] start', {
     model,
     tier: options.tier ?? 'standard',
@@ -160,6 +161,17 @@ export async function generateGeminiJson<T>(
   }
 
   return { data, usage, model, durationMs };
+}
+
+function toGeminiNativePart(part: GeminiPart): Record<string, unknown> {
+  if ('text' in part) return { text: part.text };
+  if ('fileData' in part) return { fileData: part.fileData };
+  return {
+    inlineData: {
+      mimeType: part.mimeType?.trim() || 'image/jpeg',
+      data: part.imageBase64,
+    },
+  };
 }
 
 /** Prefer non-thought parts — Gemini may prepend thought / signature parts. */

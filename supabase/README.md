@@ -45,6 +45,9 @@ Deploy all app functions:
 
 ```bash
 npx supabase functions deploy extract-recipe
+npx supabase functions deploy invent-recipe
+npx supabase functions deploy repair-recipe
+npx supabase functions deploy match-fridge
 npx supabase functions deploy backfill-thumbnails
 npx supabase functions deploy suggest-substitution
 npx supabase functions deploy transform-recipe
@@ -131,6 +134,13 @@ npx supabase secrets set YOUTUBE_API_KEY=your_youtube_data_api_key
 npx supabase secrets set GEMINI_FAST_MODEL=gemini-3.1-flash-lite
 # Video extract → 3.5 Flash (stronger multimodal)
 npx supabase secrets set GEMINI_MODEL=gemini-3.5-flash
+
+# Required for text / vision jobs (swap, translate, remix, photo Snap).
+# OPEN_ROUTER_API_KEY is accepted as an alias.
+npx supabase secrets set OPENROUTER_API_KEY=sk-or-v1-your_key
+# Optional model overrides
+# npx supabase secrets set OPENROUTER_FAST_MODEL=google/gemini-2.5-flash-lite
+# npx supabase secrets set OPENROUTER_MODEL=google/gemini-2.5-flash
 
 # Required for Instagram + TikTok extraction (ScrapeCreators)
 npx supabase secrets set SCRAPECREATORS_API_KEY=your_scrapecreators_api_key

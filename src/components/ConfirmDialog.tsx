@@ -10,11 +10,13 @@ interface ConfirmDialogProps {
   message: string;
   confirmLabel?: string;
   cancelLabel?: string;
+  secondaryLabel?: string;
   /** Destructive styling for the confirm button (delete flows). */
   destructive?: boolean;
   loading?: boolean;
   onConfirm: () => void;
   onCancel: () => void;
+  onSecondary?: () => void;
 }
 
 /** Cross-platform confirm dialog — replaces Alert.alert / window.confirm. */
@@ -24,10 +26,12 @@ export function ConfirmDialog({
   message,
   confirmLabel,
   cancelLabel,
+  secondaryLabel,
   destructive = false,
   loading = false,
   onConfirm,
   onCancel,
+  onSecondary,
 }: ConfirmDialogProps) {
   const { t } = useTranslation();
   const { colors } = useThemePreference();
@@ -66,7 +70,7 @@ export function ConfirmDialog({
             {message}
           </Text>
 
-          <View className="mt-5 flex-row gap-2">
+          <View className={`mt-5 gap-2 ${secondaryLabel ? '' : 'flex-row'}`}>
             <Pressable
               onPress={onCancel}
               disabled={loading}
@@ -79,6 +83,20 @@ export function ConfirmDialog({
                 {resolvedCancel}
               </Text>
             </Pressable>
+            {secondaryLabel && onSecondary ? (
+              <Pressable
+                onPress={onSecondary}
+                disabled={loading}
+                className="min-h-[48px] items-center justify-center rounded-[22px] border active:opacity-80"
+                style={{ borderColor: colors.border, backgroundColor: colors.surface }}
+                accessibilityRole="button"
+                accessibilityLabel={secondaryLabel}
+              >
+                <Text className="text-sm font-semibold" style={{ color: colors.text }}>
+                  {secondaryLabel}
+                </Text>
+              </Pressable>
+            ) : null}
             <Pressable
               onPress={onConfirm}
               disabled={loading}

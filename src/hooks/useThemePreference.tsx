@@ -59,12 +59,14 @@ function hexToRgba(hex: string, alpha: number): string {
   return `rgba(${r}, ${g}, ${b}, ${alpha})`;
 }
 
-function applyWebScrollbarTheme(colors: ThemePackColors) {
+function applyWebDocumentTheme(colors: ThemePackColors, scheme: ResolvedScheme) {
   if (Platform.OS !== 'web' || typeof document === 'undefined') return;
   const root = document.documentElement;
+  root.style.colorScheme = scheme;
   root.style.setProperty('--pinch-scrollbar-track', 'transparent');
   root.style.setProperty('--pinch-scrollbar-thumb', hexToRgba(colors.primary, 0.32));
   root.style.setProperty('--pinch-scrollbar-thumb-hover', hexToRgba(colors.primary, 0.55));
+  root.style.setProperty('--pinch-focus-ring', hexToRgba(colors.primary, 0.4));
 }
 
 function applyAppearance(preference: ThemePreference, packId: ThemePackId) {
@@ -75,7 +77,7 @@ function applyAppearance(preference: ThemePreference, packId: ThemePackId) {
   // but body text stuck on light tokens (text-pinch-dark on dark mist).
   nwColorScheme.set(resolved);
   const colors = getThemePackColors(packId, resolved);
-  applyWebScrollbarTheme(colors);
+  applyWebDocumentTheme(colors, resolved);
 
   void (async () => {
     try {

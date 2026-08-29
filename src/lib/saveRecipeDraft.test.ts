@@ -50,7 +50,7 @@ describe('saveRecipeDraft', () => {
       recipe: saved,
       recoveredDuplicate: true,
     });
-    expect(mocks.fetchRecipeByUrl).toHaveBeenCalledWith(draft.original_url);
+    expect(mocks.fetchRecipeByUrl).toHaveBeenCalledWith(draft.original_url, 'extracted');
   });
 
   it('does not hide an unresolvable duplicate', async () => {

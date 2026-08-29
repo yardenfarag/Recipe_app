@@ -5,7 +5,8 @@ export type RecipeVariantKey =
   | 'gluten_free'
   | 'dairy_free'
   | 'low_carb'
-  | 'high_protein';
+  | 'high_protein'
+  | 'custom';
 
 export const RECIPE_VARIANTS: {
   key: RecipeVariantKey;

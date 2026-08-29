@@ -11,7 +11,6 @@ import {
   Platform,
   Pressable,
   Text,
-  TextInput,
   View,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -20,6 +19,7 @@ import { BrandHeader } from '@/components/BrandHeader';
 import { ConfirmDialog } from '@/components/ConfirmDialog';
 import { Screen } from '@/components/Screen';
 import { SelectRecipesForShoppingListModal } from '@/components/SelectRecipesForShoppingListModal';
+import { TextInput } from '@/components/text-input';
 import { useCollections } from '@/hooks/useCollections';
 import { useLanguagePreference } from '@/hooks/useLanguagePreference';
 import { useMeasurementPreference } from '@/hooks/useMeasurementPreference';
@@ -33,6 +33,7 @@ import {
   getDuplicateNameCounts,
   normalizeShoppingName,
 } from '@/lib/shoppingListMerge';
+import { SHOPPING_AISLE_ORDER, shoppingAisleForName } from '@/lib/shoppingAisles';
 import type { ShoppingListItem } from '@/types/shoppingList';
 
 export default function ShoppingListScreen() {
@@ -63,6 +64,7 @@ export default function ShoppingListScreen() {
   const [unit, setUnit] = useState('');
   const [adding, setAdding] = useState(false);
   const [fromRecipesOpen, setFromRecipesOpen] = useState(false);
+  const [addOpen, setAddOpen] = useState(false);
   const [editingItem, setEditingItem] = useState<ShoppingListItem | null>(null);
   const [editName, setEditName] = useState('');
   const [editQuantity, setEditQuantity] = useState('');
@@ -82,6 +84,41 @@ export default function ShoppingListScreen() {
 
   const checkedCount = useMemo(() => items.filter((item) => item.checked).length, [items]);
   const duplicateCounts = useMemo(() => getDuplicateNameCounts(items), [items]);
+
+  type ListRow =
+    | { kind: 'header'; id: string; title: string; count: number }
+    | { kind: 'item'; id: string; item: ShoppingListItem };
+
+  const listRows = useMemo((): ListRow[] => {
+    const rows: ListRow[] = [];
+    const unchecked = items.filter((item) => !item.checked);
+    const checked = items.filter((item) => item.checked);
+    for (const aisle of SHOPPING_AISLE_ORDER) {
+      const group = unchecked.filter((item) => shoppingAisleForName(item.name) === aisle);
+      if (group.length === 0) continue;
+      rows.push({
+        kind: 'header',
+        id: `aisle-${aisle}`,
+        title: t(`list.aisles.${aisle}`),
+        count: group.length,
+      });
+      for (const item of group) {
+        rows.push({ kind: 'item', id: item.id, item });
+      }
+    }
+    if (checked.length > 0) {
+      rows.push({ kind: 'header', id: 'checked', title: t('list.checkedSection'), count: checked.length });
+      for (const item of checked) {
+        rows.push({ kind: 'item', id: item.id, item });
+      }
+    }
+    return rows;
+  }, [items, t]);
+
+  const stickyHeaderIndices = useMemo(
+    () => listRows.flatMap((row, index) => (row.kind === 'header' ? [index] : [])),
+    [listRows],
+  );
 
   const typingDuplicateCount = useMemo(() => {
     const key = normalizeShoppingName(name);
@@ -326,7 +363,28 @@ export default function ShoppingListScreen() {
   }, [clearAll, items.length, t]);
 
   const renderItem = useCallback(
-    ({ item }: { item: ShoppingListItem }) => {
+    ({ item: row }: { item: ListRow }) => {
+      if (row.kind === 'header') {
+        return (
+          <View
+            className="-mx-1 mb-2 mt-3 flex-row items-center justify-between rounded-2xl px-3 py-2.5"
+            style={{ backgroundColor: colors.background }}
+          >
+            <Text className="text-base font-bold" style={{ color: colors.text }}>
+              {row.title}
+            </Text>
+            <View
+              className="min-h-[24px] min-w-[24px] items-center justify-center rounded-full px-2"
+              style={{ backgroundColor: colors.primarySoft }}
+            >
+              <Text className="text-xs font-bold" style={{ color: colors.primary }}>
+                {row.count}
+              </Text>
+            </View>
+          </View>
+        );
+      }
+      const item = row.item;
       const amount =
         item.quantity != null
           ? formatQuantity(item.quantity, item.unit ?? '', appLanguage)
@@ -459,7 +517,7 @@ export default function ShoppingListScreen() {
             {t('list.loadFailedBody')}
           </Text>
           <Pressable
-            className="rounded-[22px] px-6 py-3.5 active:opacity-80"
+            className="rounded-3xl px-6 py-3.5 active:opacity-80"
             style={{ backgroundColor: colors.primary }}
             onPress={() => void refresh()}
           >
@@ -476,30 +534,12 @@ export default function ShoppingListScreen() {
         className="flex-1"
         behavior={Platform.OS === 'ios' ? 'padding' : undefined}
       >
-      <View className="flex-1 px-5 pt-2">
-        <View className="flex-row items-start gap-3">
-          <View className="min-w-0 flex-1">
-            <BrandHeader title={t('list.title')} subtitle={t('list.subtitle')} />
-          </View>
-          {items.length > 0 ? (
-            <Pressable
-              accessibilityRole="button"
-              accessibilityLabel={t('list.clearList')}
-              className="mt-1 flex-row items-center gap-1.5 rounded-2xl px-3 py-2.5 active:opacity-80"
-              style={{ backgroundColor: colors.dangerSoft }}
-              onPress={handleDeleteAll}
-            >
-              <Ionicons name="trash-outline" size={16} color={colors.danger} />
-              <Text className="text-xs font-bold" style={{ color: colors.danger }}>
-                {t('list.clearList')}
-              </Text>
-            </Pressable>
-          ) : null}
-        </View>
+        <View className="flex-1 px-5 pt-2">
+        <BrandHeader title={t('list.title')} />
 
         {error && items.length > 0 && (
           <View
-            className="mt-4 flex-row items-center gap-3 rounded-[18px] px-4 py-3"
+            className="mt-4 flex-row items-center gap-3 rounded-2xl px-4 py-3"
             style={{ backgroundColor: colors.dangerSoft }}
           >
             <Text className="flex-1 text-sm" style={{ color: colors.danger }}>
@@ -516,7 +556,7 @@ export default function ShoppingListScreen() {
         <Pressable
           accessibilityRole="button"
           accessibilityLabel={t('list.fromRecipes')}
-          className="mt-5 flex-row items-center justify-center gap-2 rounded-3xl border px-4 py-3.5 active:opacity-80"
+          className="mt-5 min-h-[44px] flex-row items-center justify-center gap-2 rounded-3xl border px-4 active:opacity-80"
           style={{
             backgroundColor: colors.surface,
             borderColor: colors.frostedBorder,
@@ -529,78 +569,97 @@ export default function ShoppingListScreen() {
           </Text>
         </Pressable>
 
-        <View
-          className="mt-3 gap-2 rounded-3xl border p-3"
-          style={{ backgroundColor: colors.surface, borderColor: colors.frostedBorder }}
+        <Pressable
+          accessibilityRole="button"
+          accessibilityLabel={t('list.addItemToggle')}
+          accessibilityState={{ expanded: addOpen }}
+          className="mt-3 min-h-[44px] flex-row items-center justify-center gap-2 rounded-3xl border px-4 active:opacity-80"
+          style={{
+            backgroundColor: colors.surface,
+            borderColor: colors.frostedBorder,
+          }}
+          onPress={() => setAddOpen((open) => !open)}
         >
-          <TextInput
-            className="rounded-2xl border px-4 py-3 text-base"
-            style={{
-              color: colors.text,
-              borderColor: colors.frostedBorder,
-              backgroundColor: colors.background,
-            }}
-            placeholder={t('list.itemName')}
-            placeholderTextColor={colors.textSecondary}
-            value={name}
-            onChangeText={setName}
-            returnKeyType="next"
-            onSubmitEditing={() => void handleAdd()}
-          />
-          {typingDuplicateCount > 0 ? (
-            <Text className="px-1 text-xs font-medium" style={{ color: colors.warning }}>
-              {t(
-                typingDuplicateCount === 1
-                  ? 'list.typingDuplicateOne'
-                  : 'list.typingDuplicateOther',
-                { count: typingDuplicateCount },
-              )}
-            </Text>
-          ) : null}
-          <View className="flex-row gap-2">
+          <Ionicons name={addOpen ? 'chevron-up' : 'add'} size={18} color={colors.primary} />
+          <Text className="text-sm font-bold" style={{ color: colors.primary }}>
+            {t('list.addItemToggle')}
+          </Text>
+        </Pressable>
+
+        {addOpen ? (
+          <View
+            className="mt-3 gap-2 rounded-3xl border p-3"
+            style={{ backgroundColor: colors.surface, borderColor: colors.frostedBorder }}
+          >
             <TextInput
-              className="w-[30%] rounded-2xl border px-3 py-3 text-base"
+              className="rounded-2xl border px-4 py-3 text-base"
               style={{
                 color: colors.text,
                 borderColor: colors.frostedBorder,
                 backgroundColor: colors.background,
               }}
-              placeholder={t('list.quantityShort')}
+              placeholder={t('list.itemName')}
               placeholderTextColor={colors.textSecondary}
-              value={quantityText}
-              onChangeText={setQuantityText}
-              keyboardType="decimal-pad"
-            />
-            <TextInput
-              className="flex-1 rounded-2xl border px-3 py-3 text-base"
-              style={{
-                color: colors.text,
-                borderColor: colors.frostedBorder,
-                backgroundColor: colors.background,
-              }}
-              placeholder={t('list.unitOptional')}
-              placeholderTextColor={colors.textSecondary}
-              value={unit}
-              onChangeText={setUnit}
-              returnKeyType="done"
+              value={name}
+              onChangeText={setName}
+              returnKeyType="next"
               onSubmitEditing={() => void handleAdd()}
             />
-            <Pressable
-              className="items-center justify-center rounded-2xl px-4 active:opacity-80"
-              style={{ backgroundColor: colors.primary, opacity: adding ? 0.7 : 1 }}
-              disabled={adding}
-              onPress={() => void handleAdd()}
-              accessibilityRole="button"
-              accessibilityLabel={t('list.addItem')}
-            >
-              {adding ? (
-                <ActivityIndicator color="#fff" />
-              ) : (
-                <Ionicons name="add" size={22} color="#fff" />
-              )}
-            </Pressable>
+            {typingDuplicateCount > 0 ? (
+              <Text className="px-1 text-xs font-medium" style={{ color: colors.warning }}>
+                {t(
+                  typingDuplicateCount === 1
+                    ? 'list.typingDuplicateOne'
+                    : 'list.typingDuplicateOther',
+                  { count: typingDuplicateCount },
+                )}
+              </Text>
+            ) : null}
+            <View className="flex-row gap-2">
+              <TextInput
+                className="w-[30%] rounded-2xl border px-3 py-3 text-base"
+                style={{
+                  color: colors.text,
+                  borderColor: colors.frostedBorder,
+                  backgroundColor: colors.background,
+                }}
+                placeholder={t('list.quantityShort')}
+                placeholderTextColor={colors.textSecondary}
+                value={quantityText}
+                onChangeText={setQuantityText}
+                keyboardType="decimal-pad"
+              />
+              <TextInput
+                className="flex-1 rounded-2xl border px-3 py-3 text-base"
+                style={{
+                  color: colors.text,
+                  borderColor: colors.frostedBorder,
+                  backgroundColor: colors.background,
+                }}
+                placeholder={t('list.unitOptional')}
+                placeholderTextColor={colors.textSecondary}
+                value={unit}
+                onChangeText={setUnit}
+                returnKeyType="done"
+                onSubmitEditing={() => void handleAdd()}
+              />
+              <Pressable
+                className="min-h-[44px] items-center justify-center rounded-2xl px-4 active:opacity-80"
+                style={{ backgroundColor: colors.primary, opacity: adding ? 0.7 : 1 }}
+                disabled={adding}
+                onPress={() => void handleAdd()}
+                accessibilityRole="button"
+                accessibilityLabel={t('list.addItem')}
+              >
+                {adding ? (
+                  <ActivityIndicator color="#fff" />
+                ) : (
+                  <Ionicons name="add" size={22} color="#fff" />
+                )}
+              </Pressable>
+            </View>
           </View>
-        </View>
+        ) : null}
 
         {notice ? (
           <View
@@ -643,7 +702,7 @@ export default function ShoppingListScreen() {
               subtitle={t('list.emptyBody')}
             />
             <Pressable
-              className="mt-8 rounded-[22px] px-6 py-3.5 active:opacity-80"
+              className="mt-8 min-h-[44px] items-center justify-center rounded-3xl px-6 active:opacity-80"
               style={{ backgroundColor: colors.primary }}
               onPress={() => router.push('/')}
             >
@@ -654,9 +713,10 @@ export default function ShoppingListScreen() {
           <>
             <FlatList
               className="mt-4 flex-1"
-              data={items}
-              keyExtractor={(item) => item.id}
+              data={listRows}
+              keyExtractor={(row) => row.id}
               renderItem={renderItem}
+              stickyHeaderIndices={stickyHeaderIndices}
               showsVerticalScrollIndicator={false}
               contentContainerStyle={{ paddingBottom: 16 }}
               ListHeaderComponent={
@@ -673,9 +733,9 @@ export default function ShoppingListScreen() {
                 ) : null
               }
             />
-            <View className="pb-3 pt-1">
+            <View className="flex-row gap-2 pb-3 pt-1">
               <Pressable
-                className="items-center rounded-2xl border py-3 active:opacity-80"
+                className="min-h-[44px] flex-1 items-center justify-center rounded-2xl border active:opacity-80"
                 style={{ borderColor: colors.frostedBorder }}
                 onPress={handleClearChecked}
                 disabled={checkedCount === 0}
@@ -685,6 +745,17 @@ export default function ShoppingListScreen() {
                   style={{ color: checkedCount === 0 ? colors.textSecondary : colors.text }}
                 >
                   {t('list.clearChecked')}
+                </Text>
+              </Pressable>
+              <Pressable
+                className="min-h-[44px] flex-1 items-center justify-center rounded-2xl active:opacity-80"
+                style={{ backgroundColor: colors.dangerSoft }}
+                onPress={handleDeleteAll}
+                accessibilityRole="button"
+                accessibilityLabel={t('list.clearList')}
+              >
+                <Text className="text-sm font-semibold" style={{ color: colors.danger }}>
+                  {t('list.clearList')}
                 </Text>
               </Pressable>
             </View>

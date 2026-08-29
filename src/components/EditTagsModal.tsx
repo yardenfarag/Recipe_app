@@ -7,12 +7,12 @@ import {
   Pressable,
   ScrollView,
   Text,
-  TextInput,
   View,
 } from 'react-native';
 import { useTranslation } from 'react-i18next';
 
 import { SheetModal } from '@/components/SheetModal';
+import { TextInput } from '@/components/text-input';
 import { useThemePreference } from '@/hooks/useThemePreference';
 import { normalizeRecipeTags, translateRecipeTag } from '@/lib/recipeTags';
 

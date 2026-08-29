@@ -13,6 +13,7 @@ import { getGuestRecipeById, updateGuestRecipeContent } from '@/lib/guestRecipes
 import { recipeContentEquals } from '@/lib/recipeContentEquals';
 import { toggleRecipeFavorite } from '@/lib/recipeFavorites';
 import { fetchRecipeById, updateRecipeContent } from '@/lib/supabase/recipes';
+import type { RepairedRecipePayload } from '@/lib/supabase/repairRecipe';
 import { Recipe } from '@/types/recipe';
 
 export default function RecipeDetailScreen() {
@@ -136,6 +137,54 @@ export default function RecipeDetailScreen() {
     [id, t],
   );
 
+  const handleRepairApplied = useCallback(
+    (repaired: RepairedRecipePayload) => {
+      const current = recipeRef.current;
+      if (!current || !id) return;
+      const optimistic = {
+        ...current,
+        ...repaired,
+        calories: repaired.calories ?? undefined,
+        estimated_time_minutes: repaired.estimated_time_minutes ?? undefined,
+        cost_estimate: repaired.cost_estimate ?? undefined,
+        effort_level: repaired.effort_level ?? undefined,
+      };
+      setRecipe(optimistic);
+      recipeRef.current = optimistic;
+
+      persistQueue.current = persistQueue.current
+        .then(async () => {
+          const persistable = {
+            title: repaired.title,
+            servings: repaired.servings,
+            ingredients: repaired.ingredients,
+            instructions: repaired.instructions,
+            calories: repaired.calories,
+            extraction_status: repaired.extraction_status,
+            missing_fields: repaired.missing_fields,
+            estimated_time_minutes: repaired.estimated_time_minutes,
+            cost_estimate: repaired.cost_estimate,
+            effort_level: repaired.effort_level,
+            tags: repaired.tags,
+          };
+          const saved = id.startsWith('guest-')
+            ? await updateGuestRecipeContent(id, persistable)
+            : await updateRecipeContent(id, persistable);
+          if (saved) {
+            setRecipe(saved);
+            recipeRef.current = saved;
+          }
+        })
+        .catch((err) => {
+          Alert.alert(
+            t('recipe.saveFailedTitle'),
+            err instanceof Error ? err.message : t('recipe.saveFailedBody'),
+          );
+        });
+    },
+    [id, t],
+  );
+
   if (recipe === undefined) {
     return (
       <Screen className="items-center justify-center" edges={['bottom']}>
@@ -182,6 +231,7 @@ export default function RecipeDetailScreen() {
         isFavorite={recipe.is_favorite === true}
         onToggleFavorite={handleToggleFavorite}
         onContentChange={handleContentChange}
+        onRepairApplied={handleRepairApplied}
         localizedContent={displayContent}
         localizedLanguage={activeLanguage}
         translating={translating}

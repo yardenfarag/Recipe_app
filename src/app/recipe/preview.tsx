@@ -11,7 +11,7 @@ import { useLanguagePreference } from '@/hooks/useLanguagePreference';
 import { useLocalizedRecipe } from '@/hooks/useLocalizedRecipe';
 import { useThemePreference } from '@/hooks/useThemePreference';
 import { DEFAULT_SOURCE_LANGUAGE } from '@/lib/appLanguages';
-import { confirmAction } from '@/lib/confirmAction';
+import { confirmAction, showNotice } from '@/lib/confirmAction';
 import { ensureRecipeTranslation } from '@/lib/ensureRecipeTranslation';
 import { recipeContentEquals } from '@/lib/recipeContentEquals';
 import {
@@ -25,6 +25,7 @@ import { resolveRecipeSourceLanguage } from '@/lib/recipeSourceLanguage';
 import { saveRecipeDraft } from '@/lib/saveRecipeDraft';
 import { supabase } from '@/lib/supabase/client';
 import { ExtractedRecipe } from '@/lib/supabase/extractRecipe';
+import type { RepairedRecipePayload } from '@/lib/supabase/repairRecipe';
 import { upsertRecipeTranslation } from '@/lib/supabase/recipeTranslations';
 import type { RecipeTranslationContent } from '@/types/recipe';
 
@@ -118,6 +119,31 @@ export default function RecipePreviewScreen() {
     },
     [],
   );
+
+  const handleRepairApplied = useCallback((repaired: RepairedRecipePayload) => {
+    setRecipeToSave((prev) => {
+      if (!prev) return prev;
+      const next: ExtractedRecipe = {
+        ...prev,
+        title: repaired.title,
+        servings: repaired.servings,
+        ingredients: repaired.ingredients,
+        instructions: repaired.instructions,
+        calories: repaired.calories,
+        estimated_time_minutes: repaired.estimated_time_minutes,
+        cost_estimate: repaired.cost_estimate,
+        effort_level: repaired.effort_level,
+        extraction_status: repaired.extraction_status,
+        tags: repaired.tags ?? prev.tags,
+        missing_fields: repaired.missing_fields,
+        source_language: repaired.source_language ?? prev.source_language,
+      };
+      void setRecipeDraft(next).catch((error) => {
+        console.warn('[recipe-draft] repair persistence failed', error);
+      });
+      return next;
+    });
+  }, []);
 
   const screenEdges: Edge[] = isWeb ? ['top', 'bottom'] : ['bottom'];
 
@@ -213,7 +239,12 @@ export default function RecipePreviewScreen() {
       } catch (error) {
         console.warn('[recipe-draft] cleanup failed', error);
       }
-      router.replace(recoveredDuplicate ? `/recipe/${saved.id}` : '/?saved=1');
+      if (recoveredDuplicate) {
+        await showNotice(t('recipe.saveFailedTitle'), t('recipe.alreadySaved'));
+        router.replace(`/recipe/${saved.id}`);
+      } else {
+        router.replace('/?saved=1');
+      }
     } catch (err) {
       Alert.alert(
         t('recipe.saveFailedTitle'),
@@ -266,6 +297,7 @@ export default function RecipePreviewScreen() {
       <RecipeView
         recipe={recipeToSave}
         onContentChange={handleContentChange}
+        onRepairApplied={handleRepairApplied}
         localizedContent={displayContent}
         localizedLanguage={activeLanguage}
         translating={translating}

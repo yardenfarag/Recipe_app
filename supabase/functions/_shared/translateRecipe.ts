@@ -4,10 +4,8 @@ import {
   isKnownCulinaryUnit,
   localizeCulinaryUnit,
 } from './culinaryUnits.ts';
-import {
-  generateGeminiJson,
-  sanitizeGeminiText,
-} from './geminiClient.ts';
+import { generateLlmJson } from './llmClient.ts';
+import { sanitizeGeminiText } from './geminiClient.ts';
 import type { GeminiUsageSnapshot } from './pricing.ts';
 import { assertTranslationIdentity } from './translationIntegrity.ts';
 
@@ -126,7 +124,7 @@ export async function translateRecipeWithGemini(
   const targetName = LANGUAGE_NAMES[input.targetLanguage];
   const text = buildTextContext(input, targetName);
 
-  const { data: parsed, usage } = await generateGeminiJson<GeminiTranslatedRecipe>({
+  const { data: parsed, usage } = await generateLlmJson<GeminiTranslatedRecipe>({
     tier: 'fast',
     systemPrompt: SYSTEM_PROMPT,
     parts: [{ text }],

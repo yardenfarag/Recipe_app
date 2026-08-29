@@ -8,6 +8,7 @@ import {
 } from '@/lib/platformUrls';
 import { recipeContentEquals } from '@/lib/recipeContentEquals';
 import { extractYouTubeId, recipeUrlsMatch as youtubeUrlsMatch } from '@/lib/youtube';
+import { recipeMatchesUrlOrigin, type RecipeUrlOrigin } from '@/lib/recipeOrigin';
 import { Recipe } from '@/types/recipe';
 
 /** Recipe fields owned by the client on insert — server generates id/created_at. */
@@ -24,11 +25,15 @@ export async function fetchRecipes(): Promise<Recipe[]> {
 }
 
 /** Finds a saved recipe matching a source URL without loading the full library. */
-export async function fetchRecipeByUrl(url: string): Promise<Recipe | null> {
+export async function fetchRecipeByUrl(
+  url: string,
+  origin: RecipeUrlOrigin = 'extracted',
+): Promise<Recipe | null> {
   const trimmed = url.trim();
   if (!trimmed) return null;
 
   const platform = detectPlatform(trimmed);
+  const matchesOrigin = (row: Recipe) => recipeMatchesUrlOrigin(row, origin);
 
   if (platform === 'youtube') {
     const videoId = extractYouTubeId(trimmed);
@@ -40,8 +45,8 @@ export async function fetchRecipeByUrl(url: string): Promise<Recipe | null> {
         .ilike('original_url', `%${videoId}%`);
 
       if (error) throw error;
-      const match = (data as Recipe[] | null)?.find((row) =>
-        youtubeUrlsMatch(trimmed, row.original_url),
+      const match = (data as Recipe[] | null)?.find(
+        (row) => matchesOrigin(row) && youtubeUrlsMatch(trimmed, row.original_url),
       );
       return match ?? null;
     }
@@ -57,8 +62,8 @@ export async function fetchRecipeByUrl(url: string): Promise<Recipe | null> {
         .ilike('original_url', `%${shortcode}%`);
 
       if (error) throw error;
-      const match = (data as Recipe[] | null)?.find((row) =>
-        recipeUrlsMatch(trimmed, row.original_url, 'instagram'),
+      const match = (data as Recipe[] | null)?.find(
+        (row) => matchesOrigin(row) && recipeUrlsMatch(trimmed, row.original_url, 'instagram'),
       );
       return match ?? null;
     }
@@ -74,8 +79,8 @@ export async function fetchRecipeByUrl(url: string): Promise<Recipe | null> {
         .ilike('original_url', `%${videoId}%`);
 
       if (error) throw error;
-      const match = (data as Recipe[] | null)?.find((row) =>
-        recipeUrlsMatch(trimmed, row.original_url, 'tiktok'),
+      const match = (data as Recipe[] | null)?.find(
+        (row) => matchesOrigin(row) && recipeUrlsMatch(trimmed, row.original_url, 'tiktok'),
       );
       return match ?? null;
     }
@@ -90,8 +95,8 @@ export async function fetchRecipeByUrl(url: string): Promise<Recipe | null> {
       .ilike('original_url', `%${contentId}%`);
 
     if (error) throw error;
-    const match = (data as Recipe[] | null)?.find((row) =>
-      recipeUrlsMatch(trimmed, row.original_url, platform),
+    const match = (data as Recipe[] | null)?.find(
+      (row) => matchesOrigin(row) && recipeUrlsMatch(trimmed, row.original_url, platform),
     );
     if (match) return match;
   }
@@ -99,11 +104,10 @@ export async function fetchRecipeByUrl(url: string): Promise<Recipe | null> {
   const { data, error } = await supabase
     .from('recipes')
     .select('*')
-    .eq('original_url', trimmed)
-    .maybeSingle();
+    .eq('original_url', trimmed);
 
   if (error) throw error;
-  return data as Recipe | null;
+  return (data as Recipe[] | null)?.find(matchesOrigin) ?? null;
 }
 
 export async function fetchRecipeById(id: string): Promise<Recipe | null> {
@@ -120,7 +124,13 @@ export async function saveRecipe(recipe: NewRecipe): Promise<Recipe> {
   const { data: userData, error: userError } = await supabase.auth.getUser();
   if (userError || !userData.user) throw new Error('Must be signed in to save a recipe');
 
-  const { translations: _translations, display_title: _displayTitle, ...persistable } = recipe;
+  const {
+    translations: _translations,
+    display_title: _displayTitle,
+    kitchen_adapted_summary: _kitchenAdapted,
+    kitchen_original: _kitchenOriginal,
+    ...persistable
+  } = recipe;
 
   const { data, error } = await supabase
     .from('recipes')
@@ -174,7 +184,7 @@ export async function setRecipeTags(id: string, tags: string[]): Promise<void> {
   }
 }
 
-/** Persists remix / swap edits on an already-saved recipe (canonical fields only). */
+/** Persists remix / swap / repair edits on an already-saved recipe (canonical fields only). */
 export async function updateRecipeContent(
   id: string,
   content: {
@@ -183,6 +193,12 @@ export async function updateRecipeContent(
     ingredients: Recipe['ingredients'];
     instructions: Recipe['instructions'];
     calories?: number;
+    extraction_status?: Recipe['extraction_status'];
+    missing_fields?: string[];
+    estimated_time_minutes?: number | null;
+    cost_estimate?: Recipe['cost_estimate'] | null;
+    effort_level?: Recipe['effort_level'] | null;
+    tags?: string[];
   },
 ): Promise<Recipe> {
   const existing = await fetchRecipeById(id);
@@ -196,6 +212,14 @@ export async function updateRecipeContent(
       ingredients: content.ingredients,
       instructions: content.instructions,
       calories: content.calories,
+      ...(content.extraction_status ? { extraction_status: content.extraction_status } : {}),
+      ...(content.missing_fields ? { missing_fields: content.missing_fields } : {}),
+      ...(content.estimated_time_minutes !== undefined
+        ? { estimated_time_minutes: content.estimated_time_minutes }
+        : {}),
+      ...(content.cost_estimate !== undefined ? { cost_estimate: content.cost_estimate } : {}),
+      ...(content.effort_level !== undefined ? { effort_level: content.effort_level } : {}),
+      ...(content.tags ? { tags: content.tags } : {}),
     })
     .eq('id', id)
     .select()

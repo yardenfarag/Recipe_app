@@ -1,10 +1,8 @@
 // Full-recipe dietary / lifestyle transforms via Gemini structured output.
 
 import { normalizeStoredCalories } from './calories.ts';
-import {
-  generateGeminiJson,
-  sanitizeGeminiText,
-} from './geminiClient.ts';
+import { generateLlmJson } from './llmClient.ts';
+import { sanitizeGeminiText } from './geminiClient.ts';
 import {
   DUAL_INGREDIENT_SCHEMA,
   MEASUREMENT_RULES,
@@ -80,7 +78,8 @@ const TRANSFORM_SCHEMA = {
 };
 
 export interface TransformRecipeInput {
-  variant: RecipeVariantKey;
+  variant?: RecipeVariantKey;
+  instruction?: string;
   title: string;
   servings: number;
   ingredients: DualIngredient[];
@@ -101,10 +100,12 @@ export interface TransformedRecipe {
 export async function transformRecipeWithGemini(
   input: TransformRecipeInput,
 ): Promise<TransformedRecipe> {
-  const goal = VARIANT_INSTRUCTIONS[input.variant];
+  const goal = input.instruction?.trim()
+    ? `Follow this cook's request exactly, while keeping the dish recognizable: ${input.instruction.trim()}`
+    : VARIANT_INSTRUCTIONS[input.variant ?? 'healthier'];
   const text = buildTextContext(input, goal);
 
-  const { data: parsed, usage } = await generateGeminiJson<TransformedRecipe>({
+  const { data: parsed, usage } = await generateLlmJson<TransformedRecipe>({
     tier: 'fast',
     systemPrompt: SYSTEM_PROMPT,
     parts: [{ text }],

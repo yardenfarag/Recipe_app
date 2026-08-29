@@ -1,4 +1,5 @@
 import { Text, View } from 'react-native';
+import Animated, { FadeIn, FadeOut, LinearTransition, useReducedMotion } from 'react-native-reanimated';
 
 import { CookieMark } from '@/components/CookieMark';
 import { useLanguagePreference } from '@/hooks/useLanguagePreference';
@@ -11,6 +12,8 @@ type BrandHeaderProps = {
   /** Larger cookie mark for empty / hero states. */
   size?: 'default' | 'hero';
   align?: 'left' | 'center';
+  /** When this changes, title and subtitle crossfade instead of snapping. */
+  copyKey?: string;
 };
 
 /** Cookie brand mark + Pinch wordmark + screen title. */
@@ -19,10 +22,13 @@ export function BrandHeader({
   subtitle,
   size = 'default',
   align = 'left',
+  copyKey,
 }: BrandHeaderProps) {
   const { colors } = useThemePreference();
   const { language } = useLanguagePreference();
+  const reduceMotion = useReducedMotion();
   const rtl = isRtlAppLanguage(language);
+  const fadeCopy = Boolean(copyKey) && !reduceMotion;
   const isHero = size === 'hero';
   const centered = align === 'center';
   const textAlign = centered ? ('center' as const) : rtl ? ('right' as const) : ('left' as const);
@@ -64,31 +70,39 @@ export function BrandHeader({
             >
               Pinch
             </Text>
-            <Text
-              className="text-[22px] font-bold tracking-tight"
-              style={{
-                color: colors.text,
-                letterSpacing: rtl ? 0 : -0.4,
-                writingDirection,
-                textAlign,
-                width: '100%',
-              }}
-            >
-              {title}
-            </Text>
-            {subtitle ? (
-              <Text
-                className="mt-0.5 text-[13px]"
-                style={{
-                  color: colors.textSecondary,
-                  writingDirection,
-                  textAlign,
-                  width: '100%',
-                }}
+            <Animated.View layout={fadeCopy ? LinearTransition.duration(280) : undefined}>
+              <Animated.View
+                key={copyKey ?? 'copy'}
+                entering={fadeCopy ? FadeIn.duration(220) : undefined}
+                exiting={fadeCopy ? FadeOut.duration(140) : undefined}
               >
-                {subtitle}
-              </Text>
-            ) : null}
+                <Text
+                  className="text-[22px] font-bold tracking-tight"
+                  style={{
+                    color: colors.text,
+                    letterSpacing: rtl ? 0 : -0.4,
+                    writingDirection,
+                    textAlign,
+                    width: '100%',
+                  }}
+                >
+                  {title}
+                </Text>
+                {subtitle ? (
+                  <Text
+                    className="mt-0.5 text-[13px]"
+                    style={{
+                      color: colors.textSecondary,
+                      writingDirection,
+                      textAlign,
+                      width: '100%',
+                    }}
+                  >
+                    {subtitle}
+                  </Text>
+                ) : null}
+              </Animated.View>
+            </Animated.View>
           </View>
         )}
       </View>

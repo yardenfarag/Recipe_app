@@ -4,6 +4,7 @@ import {
   updateGuestRecipeIdMapping,
 } from '@/lib/guestMigrationJournal';
 import { clearGuestRecipes, getGuestRecipes } from '@/lib/guestRecipes';
+import { recipeUrlOrigin } from '@/lib/recipeOrigin';
 import { supabase } from '@/lib/supabase/client';
 import type { RecipeTranslationContent } from '@/types/recipe';
 
@@ -76,13 +77,16 @@ export async function migrateGuestRecipesToSupabase(
         // A recipe saved separately with the same URL wins; journal the
         // existing id so dependent memberships and provenance remain intact.
         if (recipe.original_url) {
-          const { data: existing, error: existingError } = await supabase
+          const { data: existingRows, error: existingError } = await supabase
             .from('recipes')
-            .select('id')
+            .select('id, extraction_source')
             .eq('user_id', userId)
-            .eq('original_url', recipe.original_url)
-            .maybeSingle();
+            .eq('original_url', recipe.original_url);
           if (existingError) throw existingError;
+          const origin = recipeUrlOrigin(recipe.extraction_source);
+          const existing = (existingRows ?? []).find(
+            (row) => recipeUrlOrigin(row.extraction_source as string | null) === origin,
+          );
           if (existing?.id) {
             const existingId = existing.id as string;
             idMap[recipe.id] = existingId;

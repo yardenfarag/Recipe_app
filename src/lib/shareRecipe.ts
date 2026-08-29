@@ -10,13 +10,18 @@ async function copyText(text: string): Promise<void> {
   throw new Error('Clipboard unavailable');
 }
 
+/** Source video/page URL if the recipe has one to send to friends. */
+export function recipeSourceShareUrl(originalUrl?: string | null): string | null {
+  const url = originalUrl?.trim();
+  return url || null;
+}
+
 /**
  * Mobile: system share sheet (WhatsApp, Messages, Copy, …).
- * Web: copy the Pinch share link only (no share sheet).
+ * Web: copy the URL (no share sheet).
  */
 export async function shareRecipe(options: {
   title: string;
-  /** Pinch share landing URL (`…/share.html?t=…`). */
   url: string;
 }): Promise<ShareRecipeResult> {
   const title = options.title.trim() || 'Recipe';

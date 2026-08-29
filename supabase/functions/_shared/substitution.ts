@@ -1,12 +1,14 @@
 // Ingredient substitution via Gemini's generateContent REST endpoint.
 
-import { generateGeminiJson, sanitizeGeminiText } from './geminiClient.ts';
+import { generateLlmJson } from './llmClient.ts';
+import { sanitizeGeminiText } from './geminiClient.ts';
 import {
   DUAL_INGREDIENT_SCHEMA,
   MEASUREMENT_RULES,
   normalizeDualIngredient,
   type DualIngredient,
 } from './ingredientAmounts.ts';
+import type { GeminiUsageSnapshot } from './pricing.ts';
 
 const REQUEST_TIMEOUT_MS = 20_000;
 const REWRITE_TIMEOUT_MS = 25_000;
@@ -153,8 +155,8 @@ export function isSubstitutionLanguageCode(value: string): value is Substitution
 
 export async function suggestSubstitutionsWithGemini(
   input: SuggestSubstitutionInput,
-): Promise<SubstitutionAlternative[]> {
-  const { data } = await generateGeminiJson<{ alternatives: SubstitutionAlternative[] }>({
+): Promise<{ alternatives: SubstitutionAlternative[]; usage: GeminiUsageSnapshot | null }> {
+  const { data, usage } = await generateLlmJson<{ alternatives: SubstitutionAlternative[] }>({
     tier: 'fast',
     systemPrompt: SYSTEM_PROMPT,
     parts: [{ text: buildTextContext(input) }],
@@ -165,7 +167,8 @@ export async function suggestSubstitutionsWithGemini(
     context: 'substitution.ts: suggestSubstitutionsWithGemini',
   });
 
-  return (data.alternatives ?? []).map((alt) => {
+  return {
+    alternatives: (data.alternatives ?? []).map((alt) => {
     const dual = normalizeDualIngredient({
       name: alt.name ?? '',
       quantity: Number(alt.quantity),
@@ -181,16 +184,18 @@ export async function suggestSubstitutionsWithGemini(
       ...(dual.spoons ? { spoons: dual.spoons } : {}),
       reason: sanitizeGeminiText(alt.reason ?? ''),
     };
-  });
+  }),
+    usage,
+  };
 }
 
 /** Patches step text after the user applies a substitute (keeps step count/order). */
 export async function rewriteInstructionsForSubstitutionWithGemini(
   input: RewriteInstructionsForSubstitutionInput,
-): Promise<{ step: number; text: string }[]> {
-  if (input.instructions.length === 0) return [];
+): Promise<{ instructions: { step: number; text: string }[]; usage: GeminiUsageSnapshot | null }> {
+  if (input.instructions.length === 0) return { instructions: [], usage: null };
 
-  const { data } = await generateGeminiJson<{
+  const { data, usage } = await generateLlmJson<{
     instructions: { step: number; text: string }[];
   }>({
     tier: 'fast',
@@ -203,10 +208,13 @@ export async function rewriteInstructionsForSubstitutionWithGemini(
     context: 'substitution.ts: rewriteInstructionsForSubstitutionWithGemini',
   });
 
-  return (data.instructions ?? []).map((step, index) => ({
+  return {
+    instructions: (data.instructions ?? []).map((step, index) => ({
     step: Number.isFinite(Number(step.step)) ? Number(step.step) : index + 1,
     text: sanitizeGeminiText(step.text ?? ''),
-  }));
+  })),
+    usage,
+  };
 }
 
 function buildTextContext(input: SuggestSubstitutionInput): string {

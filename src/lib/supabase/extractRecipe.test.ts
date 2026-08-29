@@ -65,6 +65,7 @@ describe('extractRecipe request recovery', () => {
     expect(extractionOutcomeIsUncertain('compensation_pending')).toBe(true);
     expect(extractionOutcomeIsUncertain('metering_error')).toBe(true);
     expect(extractionOutcomeIsUncertain('guest_limit')).toBe(false);
+    expect(extractionOutcomeIsUncertain('gate_unavailable')).toBe(false);
   });
 
   it('reuses the durable id in the function request body', async () => {

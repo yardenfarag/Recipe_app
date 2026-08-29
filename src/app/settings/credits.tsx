@@ -21,11 +21,13 @@ export default function CreditSettingsScreen() {
           {t('settings.recipeCredits')}
         </Text>
         <Text className="mb-3 text-sm" style={{ color: colors.accent }}>
-          {t('settings.creditsTotal', { count: totalCredits ?? 0 })}
+          {t('settings.creditsTotal', {
+            count: totalCredits ?? FREE_MONTHLY_EXTRACT_LIMIT,
+          })}
         </Text>
         <Text className="text-xs leading-5" style={{ color: colors.textSecondary }}>
           {t('settings.creditsFree', {
-            remaining: freeExtractsRemaining ?? 0,
+            remaining: freeExtractsRemaining ?? FREE_MONTHLY_EXTRACT_LIMIT,
             limit: FREE_MONTHLY_EXTRACT_LIMIT,
           })}
         </Text>

@@ -301,12 +301,15 @@ Deno.serve(async (req) => {
       : null;
 
   if (originalUrl) {
-    const { data: existingByUrl } = await admin
+    const { data: existingRows } = await admin
       .from('recipes')
-      .select('id')
+      .select('id, extraction_source')
       .eq('user_id', user.id)
-      .eq('original_url', originalUrl)
-      .maybeSingle();
+      .eq('original_url', originalUrl);
+    const wantInvented = snapshot.extraction_source === 'invented';
+    const existingByUrl = (existingRows ?? []).find(
+      (row) => (row.extraction_source === 'invented') === wantInvented,
+    );
 
     if (existingByUrl?.id) {
       await admin.from('recipe_share_claims').upsert({
@@ -330,12 +333,15 @@ Deno.serve(async (req) => {
 
   if (insertError) {
     if (insertError.code === '23505' && originalUrl) {
-      const { data: raced } = await admin
+      const { data: racedRows } = await admin
         .from('recipes')
-        .select('id')
+        .select('id, extraction_source')
         .eq('user_id', user.id)
-        .eq('original_url', originalUrl)
-        .maybeSingle();
+        .eq('original_url', originalUrl);
+      const wantInvented = snapshot.extraction_source === 'invented';
+      const raced = (racedRows ?? []).find(
+        (row) => (row.extraction_source === 'invented') === wantInvented,
+      );
       if (raced?.id) {
         await admin.from('recipe_share_claims').upsert({
           token,

@@ -66,16 +66,20 @@ async function invokeErrorMessage(error: unknown): Promise<{
   return { message: 'Could not reach the recipe adaptation service. Please try again.' };
 }
 
-/** Asks Gemini to adapt a full recipe for a dietary/lifestyle variant. */
+/** Asks the model to adapt a full recipe for a dietary/lifestyle variant or free-text request. */
 export async function transformRecipe(
-  variant: RecipeVariantKey,
+  variant: RecipeVariantKey | 'custom',
   recipe: TransformRecipeRequest,
+  instruction?: string,
+  options?: { kitchenAutoApply?: boolean },
 ): Promise<TransformRecipeResult> {
   const { data, error } = await supabase.functions.invoke<TransformRecipeResult>(
     'transform-recipe',
     {
       body: {
-        variant,
+        ...(variant !== 'custom' ? { variant } : {}),
+        ...(instruction?.trim() ? { instruction: instruction.trim().slice(0, 400) } : {}),
+        ...(options?.kitchenAutoApply ? { kitchen_auto_apply: true } : {}),
         recipe: {
           title: recipe.title,
           servings: recipe.servings,

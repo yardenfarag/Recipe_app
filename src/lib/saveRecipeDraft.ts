@@ -3,6 +3,7 @@ import {
   saveRecipe,
   type NewRecipe,
 } from '@/lib/supabase/recipes';
+import { recipeUrlOrigin } from '@/lib/recipeOrigin';
 import type { Recipe } from '@/types/recipe';
 
 export type DraftSaveResult = {
@@ -19,7 +20,10 @@ export async function saveRecipeDraft(recipe: NewRecipe): Promise<DraftSaveResul
     return { recipe: await saveRecipe(recipe), recoveredDuplicate: false };
   } catch (error) {
     if (!isUniqueViolation(error) || !recipe.original_url?.trim()) throw error;
-    const existing = await fetchRecipeByUrl(recipe.original_url);
+    const existing = await fetchRecipeByUrl(
+      recipe.original_url,
+      recipeUrlOrigin(recipe.extraction_source),
+    );
     if (!existing) throw error;
     return { recipe: existing, recoveredDuplicate: true };
   }

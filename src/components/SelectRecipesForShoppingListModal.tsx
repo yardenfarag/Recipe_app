@@ -7,11 +7,11 @@ import {
   Pressable,
   ScrollView,
   Text,
-  TextInput,
   View,
 } from 'react-native';
 
 import { SheetModal } from '@/components/SheetModal';
+import { TextInput } from '@/components/text-input';
 import { useThemePreference } from '@/hooks/useThemePreference';
 import { filterAndSortRecipes } from '@/lib/recipeListQuery';
 import { translateAppError } from '@/lib/translateAppError';

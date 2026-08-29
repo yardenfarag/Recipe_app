@@ -1,9 +1,10 @@
 import Ionicons from '@expo/vector-icons/Ionicons';
 import { useState } from 'react';
-import { Pressable, ScrollView, Text, TextInput, View } from 'react-native';
+import { Pressable, ScrollView, Text, View } from 'react-native';
 import { useTranslation } from 'react-i18next';
 
 import { LibraryLayoutToggle } from '@/components/LibraryLayoutToggle';
+import { TextInput } from '@/components/text-input';
 import type { LibraryLayout } from '@/hooks/useLibraryLayout';
 import { useThemePreference } from '@/hooks/useThemePreference';
 import { RECIPE_SORT_OPTIONS, RecipeSortKey } from '@/lib/recipeListQuery';
@@ -23,6 +24,9 @@ interface RecipeLibraryToolbarProps {
   isSearchPending?: boolean;
   favoritesOnly?: boolean;
   onToggleFavorites?: () => void;
+  cookTonight?: boolean;
+  onToggleCookTonight?: () => void;
+  onFridgeMatch?: () => void;
   availableTags?: string[];
   selectedTags?: string[];
   onToggleTag?: (tag: string) => void;
@@ -46,6 +50,9 @@ export function RecipeLibraryToolbar({
   isSearchPending,
   favoritesOnly = false,
   onToggleFavorites,
+  cookTonight = false,
+  onToggleCookTonight,
+  onFridgeMatch,
   availableTags = [],
   selectedTags = [],
   onToggleTag,
@@ -74,7 +81,7 @@ export function RecipeLibraryToolbar({
   return (
     <View className="gap-3">
       <View
-        className="flex-row items-center rounded-[20px] px-3.5"
+        className="flex-row items-center rounded-3xl px-3.5"
         style={{
           backgroundColor: colors.frosted,
           borderWidth: 1,
@@ -110,7 +117,7 @@ export function RecipeLibraryToolbar({
         {onToggleFavorites ? (
           <Pressable
             onPress={onToggleFavorites}
-            className="flex-row items-center gap-1.5 rounded-[14px] px-3.5 py-2 active:opacity-80"
+            className="min-h-[44px] flex-row items-center gap-1.5 rounded-2xl px-4 active:opacity-80"
             style={{
               backgroundColor: favoritesOnly ? colors.primary : inactiveChipBg,
             }}
@@ -120,7 +127,7 @@ export function RecipeLibraryToolbar({
           >
             <Ionicons
               name={favoritesOnly ? 'heart' : 'heart-outline'}
-              size={14}
+              size={16}
               color={favoritesOnly ? '#fff' : colors.primary}
             />
             <Text
@@ -132,9 +139,34 @@ export function RecipeLibraryToolbar({
           </Pressable>
         ) : null}
 
+        {onToggleCookTonight ? (
+          <Pressable
+            onPress={onToggleCookTonight}
+            className="min-h-[44px] flex-row items-center gap-1.5 rounded-2xl px-4 active:opacity-80"
+            style={{
+              backgroundColor: cookTonight ? colors.primary : inactiveChipBg,
+            }}
+            accessibilityRole="button"
+            accessibilityState={{ selected: cookTonight }}
+            accessibilityLabel={t('library.cookTonight')}
+          >
+            <Ionicons
+              name={cookTonight ? 'moon' : 'moon-outline'}
+              size={16}
+              color={cookTonight ? '#fff' : colors.primary}
+            />
+            <Text
+              className="text-sm font-semibold"
+              style={{ color: cookTonight ? '#fff' : colors.text }}
+            >
+              {t('library.cookTonight')}
+            </Text>
+          </Pressable>
+        ) : null}
+
         <Pressable
           onPress={() => setFiltersOpen((open) => !open)}
-          className="flex-row items-center gap-1.5 rounded-[14px] px-3.5 py-2 active:opacity-80"
+          className="min-h-[44px] flex-row items-center gap-1.5 rounded-2xl px-4 active:opacity-80"
           style={{
             backgroundColor: filtersOpen || filtersActive ? colors.primarySoft : inactiveChipBg,
           }}
@@ -142,7 +174,7 @@ export function RecipeLibraryToolbar({
           accessibilityState={{ expanded: filtersOpen }}
           accessibilityLabel={t('library.toggleFilters')}
         >
-          <Ionicons name="options-outline" size={14} color={colors.primary} />
+          <Ionicons name="options-outline" size={16} color={colors.primary} />
           <Text className="text-sm font-semibold" style={{ color: colors.primary }}>
             {t('library.filter')}
           </Text>
@@ -158,14 +190,17 @@ export function RecipeLibraryToolbar({
           className="flex-row items-center gap-2"
           style={{ marginStart: 'auto', flexShrink: 0 }}
         >
-          <Text
-            className={`text-xs ${isSearchPending ? 'opacity-60' : ''}`}
-            style={{ color: colors.textSecondary }}
-          >
-            {t(resultCount === 1 ? 'library.recipeCountOne' : 'library.recipeCountOther', {
-              count: resultCount,
-            })}
-          </Text>
+          {onFridgeMatch ? (
+            <Pressable
+              onPress={onFridgeMatch}
+              className="h-11 w-11 items-center justify-center rounded-2xl active:opacity-80"
+              style={{ backgroundColor: inactiveChipBg }}
+              accessibilityRole="button"
+              accessibilityLabel={t('library.fridgeMatch')}
+            >
+              <Ionicons name="nutrition-outline" size={20} color={colors.primary} />
+            </Pressable>
+          ) : null}
           {layout && onToggleLayout ? (
             <LibraryLayoutToggle
               layout={layout}
@@ -176,6 +211,21 @@ export function RecipeLibraryToolbar({
           ) : null}
         </View>
       </View>
+
+      {cookTonight ? (
+        <Text className="text-xs leading-4" style={{ color: colors.textSecondary }}>
+          {t('library.cookTonightRule')}
+        </Text>
+      ) : null}
+
+      <Text
+        className={`text-xs ${isSearchPending ? 'opacity-60' : ''}`}
+        style={{ color: colors.textSecondary }}
+      >
+        {t(resultCount === 1 ? 'library.recipeCountOne' : 'library.recipeCountOther', {
+          count: resultCount,
+        })}
+      </Text>
 
       {filtersOpen ? (
         <View className="gap-3">
@@ -193,7 +243,7 @@ export function RecipeLibraryToolbar({
                   onPress={() => onSortChange(option.key)}
                   accessibilityRole="button"
                   accessibilityState={{ selected: active }}
-                  className="flex-row items-center gap-1.5 rounded-[14px] px-3.5 py-2 active:opacity-80"
+                  className="min-h-[44px] flex-row items-center gap-1.5 rounded-2xl px-4 active:opacity-80"
                   style={{
                     backgroundColor: active ? colors.primary : inactiveChipBg,
                   }}
@@ -245,7 +295,7 @@ export function RecipeLibraryToolbar({
                       onPress={() => onToggleTag?.(tag)}
                       accessibilityRole="button"
                       accessibilityState={{ selected: active }}
-                      className="rounded-[14px] px-3.5 py-2 active:opacity-80"
+                      className="min-h-[44px] rounded-2xl px-4 py-2.5 active:opacity-80"
                       style={{
                         backgroundColor: active ? colors.primary : inactiveChipBg,
                       }}
@@ -278,7 +328,7 @@ export function RecipeLibraryToolbar({
             >
               <Pressable
                 onPress={() => onSelectCollection?.(null)}
-                className="rounded-[14px] px-3.5 py-2 active:opacity-80"
+                className="min-h-[44px] items-center justify-center rounded-2xl px-4 active:opacity-80"
                 style={{
                   backgroundColor: selectedCollectionId == null ? colors.primary : inactiveChipBg,
                 }}
@@ -299,7 +349,7 @@ export function RecipeLibraryToolbar({
                     onLongPress={() => onLongPressCollection?.(collection.id)}
                     accessibilityRole="button"
                     accessibilityState={{ selected: active }}
-                    className="flex-row items-center gap-1.5 rounded-[14px] px-3.5 py-2 active:opacity-80"
+                    className="min-h-[44px] flex-row items-center gap-1.5 rounded-2xl px-4 active:opacity-80"
                     style={{
                       backgroundColor: active ? colors.primary : inactiveChipBg,
                     }}
@@ -339,7 +389,7 @@ export function RecipeLibraryToolbar({
               {onCreateCollection ? (
                 <Pressable
                   onPress={onCreateCollection}
-                  className="flex-row items-center gap-1 rounded-[14px] border px-3.5 py-2 active:opacity-80"
+                  className="min-h-[44px] flex-row items-center gap-1 rounded-2xl border px-4 active:opacity-80"
                   style={{ borderColor: colors.frostedBorder, backgroundColor: inactiveChipBg }}
                 >
                   <Ionicons name="add" size={14} color={colors.primary} />

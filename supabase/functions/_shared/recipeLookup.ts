@@ -13,6 +13,7 @@ export async function findExistingRecipeForUser(
   inputUrl: string,
   platform: Platform,
   videoId: string | null,
+  origin: 'extracted' | 'invented' = 'extracted',
 ): Promise<Record<string, unknown> | null> {
   const { data: recipes, error } = await supabase
     .from('recipes')
@@ -24,15 +25,18 @@ export async function findExistingRecipeForUser(
     return null;
   }
 
+  const wantInvented = origin === 'invented';
   return (
-    recipes.find((recipe) =>
-      recipeUrlsMatch(
+    recipes.find((recipe) => {
+      const invented = recipe.extraction_source === 'invented';
+      if (invented !== wantInvented) return false;
+      return recipeUrlsMatch(
         inputUrl,
         videoId,
         recipe.original_url as string | undefined,
         (recipe.platform as Platform | undefined) ?? platform,
-      ),
-    ) ?? null
+      );
+    }) ?? null
   );
 }
 

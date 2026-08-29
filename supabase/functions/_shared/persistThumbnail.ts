@@ -99,6 +99,85 @@ export async function persistSocialThumbnail(opts: {
   return data.publicUrl;
 }
 
+/** Uploads a user Snap/invent photo so it can be the recipe hero image. */
+export async function persistUploadedPhoto(opts: {
+  imageBase64: string;
+  mimeType?: string;
+}): Promise<string | undefined> {
+  const supabaseUrl = Deno.env.get('SUPABASE_URL');
+  const serviceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY');
+  if (!supabaseUrl || !serviceKey) {
+    console.warn('[persistThumbnail] missing SUPABASE_URL or SERVICE_ROLE_KEY');
+    return undefined;
+  }
+
+  const mime = opts.mimeType?.trim() || 'image/jpeg';
+  const bytes = decodeBase64(opts.imageBase64);
+  if (!bytes || bytes.byteLength < 100) {
+    console.warn('[persistThumbnail] uploaded photo too small');
+    return undefined;
+  }
+
+  const ext = extensionForContentType(mime);
+  const path = `photo/${crypto.randomUUID()}.${ext}`;
+  const supabase = createClient(supabaseUrl, serviceKey);
+  const { error } = await supabase.storage.from('recipe-thumbnails').upload(path, bytes, {
+    contentType: mime.startsWith('image/') ? mime : 'image/jpeg',
+    upsert: false,
+    cacheControl: '31536000',
+  });
+  if (error) {
+    console.warn('[persistThumbnail] photo upload failed', { path, message: error.message });
+    return undefined;
+  }
+
+  const { data } = supabase.storage.from('recipe-thumbnails').getPublicUrl(path);
+  console.log('[persistThumbnail] photo ok', { path, bytes: bytes.byteLength });
+  return data.publicUrl;
+}
+
+/** Downloads a remote image for the cheap food gate (vision). */
+export async function fetchImageAsBase64(opts: {
+  sourceUrl: string;
+  referer?: string;
+}): Promise<{ base64: string; mimeType: string } | null> {
+  const { sourceUrl, referer } = opts;
+  if (!sourceUrl.trim()) return null;
+
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), FETCH_TIMEOUT_MS);
+  try {
+    const headers: Record<string, string> = {
+      Accept: 'image/avif,image/webp,image/apng,image/*,*/*;q=0.8',
+      'User-Agent':
+        'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+    };
+    if (referer) headers.Referer = referer;
+
+    const res = await fetch(sourceUrl, {
+      headers,
+      signal: controller.signal,
+      redirect: 'follow',
+    });
+    if (!res.ok) {
+      console.warn('[persistThumbnail] fetchImageAsBase64 HTTP', { status: res.status });
+      return null;
+    }
+    const contentType = (res.headers.get('content-type') ?? 'image/jpeg').split(';')[0].trim();
+    if (!contentType.startsWith('image/')) return null;
+    const bytes = new Uint8Array(await res.arrayBuffer());
+    if (bytes.byteLength < 100 || bytes.byteLength > 1_800_000) return null;
+    return { base64: encodeBase64(bytes), mimeType: contentType };
+  } catch (err) {
+    console.warn('[persistThumbnail] fetchImageAsBase64 failed', {
+      error: err instanceof Error ? err.message : String(err),
+    });
+    return null;
+  } finally {
+    clearTimeout(timeout);
+  }
+}
+
 function extensionForContentType(contentType: string): string {
   if (contentType.includes('png')) return 'png';
   if (contentType.includes('webp')) return 'webp';
@@ -120,4 +199,24 @@ function safeHost(url: string): string | null {
   } catch {
     return null;
   }
+}
+
+function decodeBase64(value: string): Uint8Array | null {
+  try {
+    const binary = atob(value.replace(/\s/g, ''));
+    const bytes = new Uint8Array(binary.length);
+    for (let i = 0; i < binary.length; i++) bytes[i] = binary.charCodeAt(i);
+    return bytes;
+  } catch {
+    return null;
+  }
+}
+
+function encodeBase64(bytes: Uint8Array): string {
+  let binary = '';
+  const chunk = 0x8000;
+  for (let i = 0; i < bytes.length; i += chunk) {
+    binary += String.fromCharCode(...bytes.subarray(i, i + chunk));
+  }
+  return btoa(binary);
 }

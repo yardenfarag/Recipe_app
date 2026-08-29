@@ -12,7 +12,7 @@ export type ExtractedRecipe = Omit<Recipe, 'id' | 'user_id' | 'created_at'>;
 
 export interface ExtractResult {
   status: ExtractStatus;
-  platform: 'youtube' | 'instagram' | 'tiktok' | 'web' | 'unknown';
+  platform: 'youtube' | 'instagram' | 'tiktok' | 'web' | 'photo' | 'unknown';
   /** Unsaved extraction, or a full saved recipe when `cached` is true. */
   recipe?: ExtractedRecipe | Recipe;
   message?: string;
@@ -28,6 +28,12 @@ export interface ExtractResult {
     | 'insufficient_credits'
     | 'insufficient_tokens'
     | 'compensation_pending'
+    | 'not_food'
+    | 'looks_like_dish'
+    | 'no_recipe'
+    | 'daily_limit'
+    | 'gate_unavailable'
+    | 'invalid_url'
     | string;
   tokens_charged?: number;
   guest_extracts_remaining?: number | null;
@@ -39,6 +45,8 @@ export interface ExtractResult {
   total_credits?: number | null;
   /** Client-side idempotency key; acknowledged only after durable handling. */
   request_id?: string;
+  /** Food-gate dish name when extract should hand off to invent. */
+  dish_guess?: string;
 }
 
 async function invokeErrorMessage(error: unknown): Promise<{
@@ -90,11 +98,46 @@ export function extractionOutcomeIsUncertain(code?: string): boolean {
  * structured result. Does not persist — the caller decides where to save
  * (local guest store or Supabase) per ADR 002.
  */
-export async function extractRecipe(url: string): Promise<ExtractResult> {
+export async function extractRecipe(
+  url: string,
+  opts?: { forceExtract?: boolean },
+): Promise<ExtractResult> {
   const guestInstallId = await getInstallId();
   const requestId = await getOrCreateExtractionRequestId(url);
+  return invokeExtract(requestId, {
+    url,
+    guest_install_id: guestInstallId,
+    request_id: requestId,
+    ...(opts?.forceExtract ? { force_extract: true } : {}),
+  });
+}
+
+/**
+ * Sends a recipe photo (base64) to `extract-recipe`. Same credits as a URL Snap.
+ */
+export async function extractRecipeFromImage(
+  imageBase64: string,
+  mimeType = 'image/jpeg',
+  opts?: { forceExtract?: boolean },
+): Promise<ExtractResult> {
+  const guestInstallId = await getInstallId();
+  const key = `photo:${imageBase64.length}:${imageBase64.slice(0, 64)}`;
+  const requestId = await getOrCreateExtractionRequestId(key);
+  return invokeExtract(requestId, {
+    image_base64: imageBase64,
+    image_mime: mimeType,
+    guest_install_id: guestInstallId,
+    request_id: requestId,
+    ...(opts?.forceExtract ? { force_extract: true } : {}),
+  });
+}
+
+async function invokeExtract(
+  requestId: string,
+  body: Record<string, unknown>,
+): Promise<ExtractResult> {
   const { data, error } = await supabase.functions.invoke<ExtractResult>('extract-recipe', {
-    body: { url, guest_install_id: guestInstallId, request_id: requestId },
+    body,
   });
 
   if (error) {

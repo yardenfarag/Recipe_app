@@ -10,6 +10,7 @@ import { RecipeImage } from '@/components/RecipeImage';
 import { useThemePreference } from '@/hooks/useThemePreference';
 import { COST_I18N_KEYS } from '@/lib/formatCostEstimate';
 import { formatRecipeDuration } from '@/lib/formatRecipeDuration';
+import { recipeIsInvented } from '@/lib/recipeOrigin';
 import { Recipe } from '@/types/recipe';
 
 interface RecipeListRowProps {
@@ -106,8 +107,8 @@ export const RecipeListRow = memo(function RecipeListRow({
       <View
         className={
           card
-            ? 'overflow-hidden rounded-[28px]'
-            : 'flex-row items-center gap-2 rounded-[28px] p-3.5'
+            ? 'overflow-hidden rounded-3xl'
+            : 'flex-row items-center gap-2 rounded-3xl p-3.5'
         }
         style={{
           backgroundColor: colors.frosted,
@@ -141,7 +142,7 @@ export const RecipeListRow = memo(function RecipeListRow({
               className={
                 card
                   ? 'h-36 w-full items-center justify-center'
-                  : 'h-[72px] w-[72px] items-center justify-center rounded-[22px]'
+                  : 'h-[72px] w-[72px] items-center justify-center rounded-3xl'
               }
               style={{ backgroundColor: colors.primarySoft }}
             >
@@ -157,6 +158,16 @@ export const RecipeListRow = memo(function RecipeListRow({
             >
               {recipe.display_title ?? recipe.title}
             </Text>
+            {recipeIsInvented(recipe) ? (
+              <View
+                className="mt-1 self-start rounded-full px-2 py-0.5"
+                style={{ backgroundColor: colors.accentSoft }}
+              >
+                <Text className="text-[10px] font-bold" style={{ color: colors.accent }}>
+                  {t('recipe.inventedChip')}
+                </Text>
+              </View>
+            ) : null}
             {metaParts.length > 0 && (
               <View
                 className={

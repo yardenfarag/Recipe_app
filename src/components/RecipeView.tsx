@@ -2,7 +2,7 @@ import Ionicons from '@expo/vector-icons/Ionicons';
 import { router } from 'expo-router';
 import { type ReactNode, useEffect, useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Alert, Pressable, ScrollView, Text, TouchableOpacity, View } from 'react-native';
+import { ActivityIndicator, Alert, Pressable, ScrollView, Text, TouchableOpacity, View } from 'react-native';
 
 import { MeasurementToggle } from '@/components/MeasurementToggle';
 import { AddToCollectionModal } from '@/components/AddToCollectionModal';
@@ -15,6 +15,7 @@ import { RecipeVideoPanel, type RecipeVideoPanelHandle } from '@/components/Reci
 import { RecipeTranslateModal } from '@/components/RecipeTranslateModal';
 import { RecipeVariantModal } from '@/components/RecipeVariantModal';
 import { SubstitutionModal } from '@/components/SubstitutionModal';
+import { TokenPurchaseSheet } from '@/components/TokenPurchaseSheet';
 import { RecipeReadingWidth } from '@/constants/theme';
 import { useBreakpoint } from '@/hooks/useBreakpoint';
 import { useCollections } from '@/hooks/useCollections';
@@ -22,9 +23,12 @@ import { useLanguagePreference } from '@/hooks/useLanguagePreference';
 import { useMeasurementPreference } from '@/hooks/useMeasurementPreference';
 import { useShoppingList } from '@/hooks/useShoppingList';
 import { useThemePreference } from '@/hooks/useThemePreference';
+import { useAuth } from '@/hooks/useAuth';
 import { setGuestRecipeTags } from '@/lib/guestRecipes';
 import { pickIngredientAmount, scaleIngredient, scaleIngredients } from '@/lib/ingredientAmounts';
 import { isRtlAppLanguage } from '@/lib/appLanguages';
+import { confirmAction } from '@/lib/confirmAction';
+import { clearExtractionRequestId } from '@/lib/extractionRequestId';
 import { resolveCulinaryLanguage } from '@/lib/culinaryUnits';
 import { displayIngredientAmount } from '@/lib/displayIngredientAmount';
 import { COST_I18N_KEYS, costFilledCount } from '@/lib/formatCostEstimate';
@@ -32,6 +36,7 @@ import { formatRecipeDuration } from '@/lib/formatRecipeDuration';
 import { formatVideoTimestamp } from '@/lib/formatVideoTimestamp';
 import { getRecipeVideoInfo } from '@/lib/recipeVideo';
 import { getCalorieDisplay } from '@/lib/recipeCalories';
+import { recipeIsInvented } from '@/lib/recipeOrigin';
 import {
   isRecipeLanguageCode,
   isRtlRecipeLanguage,
@@ -40,10 +45,11 @@ import {
 import { resolveRecipeSourceLanguage } from '@/lib/recipeSourceLanguage';
 import { normalizeRecipeTags, translateRecipeTag } from '@/lib/recipeTags';
 import { RecipeVariantKey } from '@/lib/recipeVariants';
-import { shareRecipe } from '@/lib/shareRecipe';
+import { recipeSourceShareUrl, shareRecipe } from '@/lib/shareRecipe';
 import { ExtractedRecipe } from '@/lib/supabase/extractRecipe';
-import { createRecipeShare, RECIPE_SHARE_ENABLED } from '@/lib/supabase/recipeShare';
 import { setRecipeTags } from '@/lib/supabase/recipes';
+import { repairRecipe, repairRequestKey, settleRepairRecipe } from '@/lib/supabase/repairRecipe';
+import type { RepairedRecipePayload } from '@/lib/supabase/repairRecipe';
 import { SubstitutionAlternative } from '@/lib/supabase/suggestSubstitution';
 import { TranslatedRecipePayload } from '@/lib/supabase/translateRecipe';
 import { TransformedRecipePayload } from '@/lib/supabase/transformRecipe';
@@ -91,6 +97,8 @@ interface RecipeViewProps {
   getCachedTranslation?: (
     language: RecipeLanguageCode,
   ) => Promise<RecipeTranslationContent | null> | RecipeTranslationContent | null;
+  /** Persist a successful partial-recipe repair, including extraction_status. */
+  onRepairApplied?: (recipe: RepairedRecipePayload) => void;
 }
 
 /** Stack header on web — used so the side cook-along can fill the remaining viewport. */
@@ -112,8 +120,10 @@ export function RecipeView({
   translating = false,
   onTranslationPersist,
   getCachedTranslation,
+  onRepairApplied,
 }: RecipeViewProps) {
   const { t } = useTranslation();
+  const { user } = useAuth();
   const { colors } = useThemePreference();
   const { isWide, isMediumUp, height: viewportHeight } = useBreakpoint();
   const { language: appLanguage } = useLanguagePreference();
@@ -125,13 +135,15 @@ export function RecipeView({
     setMembershipsForRecipe,
     collectionsForRecipe,
   } = useCollections();
-  const originalRef = useRef<RecipeContentSnapshot>({
-    title: recipe.title,
-    servings: recipe.servings,
-    ingredients: recipe.ingredients,
-    instructions: recipe.instructions,
-    calories: recipe.calories,
-  });
+  const originalRef = useRef<RecipeContentSnapshot>(
+    recipe.kitchen_original ?? {
+      title: recipe.title,
+      servings: recipe.servings,
+      ingredients: recipe.ingredients,
+      instructions: recipe.instructions,
+      calories: recipe.calories,
+    },
+  );
   /** Untranslated content used as the source for every language switch. */
   const translationSourceRef = useRef<RecipeContentSnapshot | null>({
     title: recipe.title,
@@ -161,8 +173,16 @@ export function RecipeView({
   const [cookAlongOpen, setCookAlongOpen] = useState(false);
   const [cookAlongStartSeconds, setCookAlongStartSeconds] = useState(0);
   const [cookAlongSheetHeight, setCookAlongSheetHeight] = useState(0);
-  const [activeVariant, setActiveVariant] = useState<RecipeVariantKey | null>(null);
-  const [variantSummary, setVariantSummary] = useState<string | null>(null);
+  const [activeVariant, setActiveVariant] = useState<RecipeVariantKey | null>(
+    recipe.kitchen_adapted_summary ? 'custom' : null,
+  );
+  const [variantSummary, setVariantSummary] = useState<string | null>(
+    recipe.kitchen_adapted_summary ?? null,
+  );
+  const [extractionStatus, setExtractionStatus] = useState(recipe.extraction_status);
+  const [repairing, setRepairing] = useState(false);
+  const [creditsOpen, setCreditsOpen] = useState(false);
+  const [kitchenAdapted, setKitchenAdapted] = useState(Boolean(recipe.kitchen_adapted_summary));
   const [activeLanguage, setActiveLanguage] = useState<RecipeLanguageCode | null>(
     localizedLanguage,
   );
@@ -346,6 +366,121 @@ export function RecipeView({
     setVariantSummary(null);
     setActiveLanguage(null);
     translationSourceRef.current = { ...original };
+    setKitchenAdapted(false);
+  }
+
+  async function handleRepair() {
+    if (repairing || extractionStatus !== 'partial' || recipeIsInvented(recipe)) return;
+
+    if (!user) {
+      const signUp = await confirmAction(
+        t('recipe.repairSignInTitle'),
+        t('recipe.repairSignInBody'),
+        t('auth.signUp'),
+        t('common.notNow'),
+      );
+      if (signUp) router.push('/auth?mode=signup&reason=extract');
+      return;
+    }
+
+    setRepairing(true);
+    const canonical = translationSourceRef.current ?? {
+      title: recipe.title,
+      servings: baseServings,
+      ingredients: recipe.ingredients,
+      instructions: recipe.instructions,
+      calories,
+    };
+    const request = {
+      title: canonical.title,
+      servings: canonical.servings,
+      ingredients: canonical.ingredients,
+      instructions: canonical.instructions,
+      calories: canonical.calories,
+      estimated_time_minutes: recipe.estimated_time_minutes,
+      cost_estimate: recipe.cost_estimate,
+      effort_level: recipe.effort_level,
+      tags: recipe.tags,
+      source_language: recipe.source_language,
+      original_url: recipe.original_url,
+    };
+    const requestKey = repairRequestKey(request);
+
+    try {
+      const result = await repairRecipe(request);
+
+      if (result.code === 'insufficient_credits') {
+        setCreditsOpen(true);
+        return;
+      }
+      if (result.code === 'auth_required' || result.code === 'guest_limit' || result.code === 'guest_id_required') {
+        const signUp = await confirmAction(
+          t('recipe.repairSignInTitle'),
+          t('recipe.repairSignInBody'),
+          t('auth.signUp'),
+          t('common.notNow'),
+        );
+        if (signUp) router.push('/auth?mode=signup&reason=extract');
+        return;
+      }
+      if (result.status === 'failed' || !result.recipe) {
+        Alert.alert(
+          t('recipe.repairFailedTitle'),
+          result.code === 'no_improvement'
+            ? t('recipe.repairNoImprovement')
+            : (result.message ?? t('recipe.repairFailed')),
+        );
+        return;
+      }
+
+      const summary = result.summary?.trim() || t('recipe.repairDefaultSummary');
+      const apply = await confirmAction(
+        t('recipe.repairApplyTitle'),
+        t('recipe.repairApplyBody', { summary }),
+        t('recipe.repairApply'),
+        t('common.cancel'),
+      );
+      if (!apply) {
+        if (result.reservation_id) {
+          await settleRepairRecipe('abort', result.reservation_id, result.request_id);
+        }
+        if (result.request_id) await clearExtractionRequestId(requestKey, result.request_id);
+        return;
+      }
+
+      if (result.reservation_id) {
+        const settled = await settleRepairRecipe('commit', result.reservation_id, result.request_id);
+        if (settled.status === 'failed') {
+          await settleRepairRecipe('abort', result.reservation_id, result.request_id);
+          Alert.alert(t('recipe.repairFailedTitle'), t('recipe.repairFailed'));
+          return;
+        }
+      }
+      if (result.request_id) await clearExtractionRequestId(requestKey, result.request_id);
+
+      const next = result.recipe;
+      setTitle(next.title);
+      setBaseServings(next.servings);
+      setBaseIngredients(next.ingredients);
+      setBaseInstructions(next.instructions);
+      setCalories(next.calories ?? undefined);
+      setServings(next.servings);
+      setExtractionStatus(next.extraction_status);
+      setActiveLanguage(null);
+      translationSourceRef.current = {
+        title: next.title,
+        servings: next.servings,
+        ingredients: next.ingredients,
+        instructions: next.instructions,
+        calories: next.calories ?? undefined,
+      };
+      originalRef.current = translationSourceRef.current;
+      onRepairApplied?.(next);
+    } catch {
+      Alert.alert(t('recipe.repairFailedTitle'), t('recipe.repairFailed'));
+    } finally {
+      setRepairing(false);
+    }
   }
 
   async function handleApplyTranslation(
@@ -383,22 +518,15 @@ export function RecipeView({
     setActiveLanguage(null);
   }
 
+  const sourceShareUrl = recipeSourceShareUrl(recipe.original_url);
+
   async function handleShare() {
-    if (!recipeId || recipeId.startsWith('guest-')) {
-      Alert.alert(t('recipe.shareNeedsSaveTitle'), t('recipe.shareNeedsSaveBody'));
-      return;
-    }
+    if (!sourceShareUrl) return;
 
     try {
-      const created = await createRecipeShare(recipeId);
-      if (created.status !== 'ok') {
-        Alert.alert(t('recipe.shareFailedTitle'), created.message || t('common.tryAgain'));
-        return;
-      }
-
       const result = await shareRecipe({
         title,
-        url: created.url,
+        url: sourceShareUrl,
       });
       if (result === 'copied') {
         Alert.alert(t('recipe.linkCopied'));
@@ -456,7 +584,7 @@ export function RecipeView({
       }}
     >
       <View
-        className={isMediumUp ? 'px-6 pt-3 pb-2' : 'px-5 pt-4'}
+        className={isMediumUp ? 'px-5 pt-3 pb-2' : 'px-5 pt-4'}
         style={
           isMediumUp && !sideCookAlong
             ? {
@@ -491,7 +619,7 @@ export function RecipeView({
                 >
                   {title}
                 </Text>
-                {RECIPE_SHARE_ENABLED ? (
+                {sourceShareUrl ? (
                   <TouchableOpacity
                     onPress={() => {
                       void handleShare();
@@ -671,9 +799,11 @@ export function RecipeView({
             style={{ borderColor: colors.primarySoft, backgroundColor: colors.primarySoft }}
           >
             <Text className="text-sm font-semibold" style={{ color: colors.primary }}>
-              {t('recipe.variantVersion', {
-                variant: t(`recipe.variants.${activeVariant}.label`),
-              })}
+              {kitchenAdapted
+                ? t('recipe.kitchenAdapted')
+                : t('recipe.variantVersion', {
+                    variant: t(`recipe.variants.${activeVariant}.label`),
+                  })}
             </Text>
             {variantSummary != null && (
               <Text className="mt-1 text-sm leading-5" style={{ color: colors.text }}>
@@ -688,54 +818,59 @@ export function RecipeView({
           </View>
         )}
 
-        {recipe.extraction_status === 'partial' && (
+        {recipeIsInvented(recipe) ? (
           <View
-            className="mb-4 rounded-2xl border px-4 py-3"
-            style={{ borderColor: colors.warningSoft, backgroundColor: colors.warningSoft }}
+            className="mb-4 rounded-3xl border p-4"
+            style={{ borderColor: colors.accentSoft, backgroundColor: colors.accentSoft }}
+            accessibilityLabel={t('recipe.inventedBanner')}
           >
-            <Text className="text-sm font-medium" style={{ color: colors.warning }}>
-              {t('recipe.partialExtraction')}
+            <Text className="text-sm font-semibold" style={{ color: colors.accent }}>
+              {t('recipe.inventedChip')}
+            </Text>
+            <Text className="mt-1 text-xs leading-4" style={{ color: colors.textSecondary }}>
+              {t('recipe.inventedBanner')}
             </Text>
           </View>
-        )}
-
-        <View className="mb-5 flex-row gap-2.5">
-          <Pressable
-            onPress={() => setTranslateModalOpen(true)}
-            className="flex-1 flex-row items-center justify-center gap-2 rounded-3xl border py-3.5 active:opacity-90"
-            style={{ borderColor: colors.border, backgroundColor: colors.surface }}
-          >
-            <Ionicons name="language-outline" size={18} color={colors.primary} />
-            <Text className="text-sm font-bold" style={{ color: colors.text }}>
-              {t('recipe.translate')}
-            </Text>
-          </Pressable>
-          <Pressable
-            onPress={() => setVariantModalOpen(true)}
-            className="flex-1 items-center justify-center gap-0.5 rounded-3xl border py-3 active:opacity-90"
-            style={{ borderColor: colors.accentSoft, backgroundColor: colors.accentSoft }}
-          >
-            <View className="flex-row items-center gap-2">
-              <Ionicons name="color-wand-outline" size={18} color={colors.accent} />
-              <Text className="text-sm font-bold" style={{ color: colors.text }}>
-                {t('recipe.remix')}
-              </Text>
-            </View>
-          </Pressable>
-        </View>
-
-        {recipeId ? (
-          <Pressable
-            onPress={() => setCollectionModalOpen(true)}
-            className="mb-5 flex-row items-center justify-center gap-2 rounded-3xl border py-3.5 active:opacity-90"
-            style={{ borderColor: colors.border, backgroundColor: colors.surface }}
-          >
-            <Ionicons name="folder-outline" size={18} color={colors.accent} />
-            <Text className="text-sm font-bold" style={{ color: colors.text }}>
-              {t('library.addToCollection')}
-            </Text>
-          </Pressable>
         ) : null}
+
+        {extractionStatus === 'partial' && recipeIsInvented(recipe) ? (
+          <View
+            className="mb-4 rounded-3xl border p-4"
+            style={{ borderColor: colors.warningSoft, backgroundColor: colors.warningSoft }}
+          >
+            <Text className="text-sm font-semibold" style={{ color: colors.warning }}>
+              {t('recipe.inventedPartial')}
+            </Text>
+          </View>
+        ) : null}
+
+        {extractionStatus === 'partial' && !recipeIsInvented(recipe) && (
+          <View
+            className="mb-4 rounded-3xl border p-4"
+            style={{ borderColor: colors.warningSoft, backgroundColor: colors.warningSoft }}
+          >
+            <Text className="text-sm font-semibold" style={{ color: colors.warning }}>
+              {t('recipe.partialExtraction')}
+            </Text>
+            <Text className="mt-1 text-xs leading-4" style={{ color: colors.textSecondary }}>
+              {t('recipe.repairHint')}
+            </Text>
+            <Pressable
+              onPress={() => void handleRepair()}
+              disabled={repairing}
+              className="mt-3 min-h-[44px] items-center justify-center rounded-3xl px-4 active:opacity-80"
+              style={{ backgroundColor: colors.warning }}
+              accessibilityRole="button"
+              accessibilityLabel={t('recipe.repairAction')}
+            >
+              {repairing ? (
+                <ActivityIndicator color="#fff" size="small" />
+              ) : (
+                <Text className="text-sm font-semibold text-white">{t('recipe.repairAction')}</Text>
+              )}
+            </Pressable>
+          </View>
+        )}
 
         <View className={splitRecipeBody ? 'flex-row items-start gap-6' : undefined}>
           <View className={splitRecipeBody ? 'min-w-0 flex-1' : undefined}>
@@ -831,6 +966,44 @@ export function RecipeView({
             </Section>
           </>
         )}
+
+        <View className="mb-5 mt-1 flex-row gap-2">
+          <Pressable
+            onPress={() => setTranslateModalOpen(true)}
+            className="min-h-[44px] min-w-0 flex-1 flex-row items-center justify-center gap-1.5 rounded-2xl border px-2 active:opacity-90"
+            style={{ borderColor: colors.border, backgroundColor: colors.surface }}
+            accessibilityRole="button"
+            accessibilityLabel={t('recipe.translate')}
+          >
+            <Ionicons name="language-outline" size={18} color={colors.primary} />
+            <Text className="text-xs font-bold" style={{ color: colors.text }} numberOfLines={1}>
+              {t('recipe.translate')}
+            </Text>
+          </Pressable>
+          <Pressable
+            onPress={() => setVariantModalOpen(true)}
+            className="min-h-[44px] min-w-0 flex-1 flex-row items-center justify-center gap-1.5 rounded-2xl px-2 active:opacity-90"
+            style={{ backgroundColor: colors.accentSoft }}
+            accessibilityRole="button"
+            accessibilityLabel={t('recipe.remix')}
+          >
+            <Ionicons name="color-wand-outline" size={18} color={colors.accent} />
+            <Text className="text-xs font-bold" style={{ color: colors.text }} numberOfLines={1}>
+              {t('recipe.remix')}
+            </Text>
+          </Pressable>
+          {recipeId ? (
+            <Pressable
+              onPress={() => setCollectionModalOpen(true)}
+              className="min-h-[44px] w-11 items-center justify-center rounded-2xl border active:opacity-90"
+              style={{ borderColor: colors.border, backgroundColor: colors.surface }}
+              accessibilityRole="button"
+              accessibilityLabel={t('library.addToCollection')}
+            >
+              <Ionicons name="folder-outline" size={18} color={colors.accent} />
+            </Pressable>
+          ) : null}
+        </View>
           </View>
 
           <View className={splitRecipeBody ? 'min-w-0 flex-[1.2]' : undefined}>
@@ -1066,6 +1239,8 @@ export function RecipeView({
         onApply={handleApplyTranslation}
         onShowOriginal={handleShowOriginalLanguage}
       />
+
+      <TokenPurchaseSheet visible={creditsOpen} onClose={() => setCreditsOpen(false)} />
     </View>
   );
 }
@@ -1114,7 +1289,7 @@ function StepperButton({
       accessibilityLabel={
         icon === 'add' ? t('recipe.increaseServings') : t('recipe.decreaseServings')
       }
-      className="h-9 w-9 items-center justify-center rounded-full active:opacity-80"
+      className="h-11 w-11 items-center justify-center rounded-full active:opacity-80"
       style={{ backgroundColor: colors.primary }}
       onPress={onPress}
     >

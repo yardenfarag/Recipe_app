@@ -9,7 +9,15 @@ import {
 export interface UsageEventInput {
   userId?: string | null;
   guestInstallId?: string | null;
-  action: 'extract' | 'remix' | 'substitution' | 'translate';
+  action:
+    | 'extract'
+    | 'remix'
+    | 'substitution'
+    | 'translate'
+    | 'repair'
+    | 'fridge_match'
+    | 'invent'
+    | 'content_gate';
   platform?: string | null;
   status: string;
   extractionSource?: string | null;

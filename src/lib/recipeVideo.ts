@@ -38,6 +38,7 @@ const PLATFORM_LABEL: Record<Platform, string> = {
   instagram: 'Instagram',
   tiktok: 'TikTok',
   web: 'Website',
+  photo: 'Photo',
   unknown: 'Video',
 };
 
@@ -52,10 +53,20 @@ export function getRecipeVideoInfo(
   sourceVideoUrl?: string | null,
 ): RecipeVideoInfo {
   const url = originalUrl?.trim() ?? '';
-  if (!url) return { mode: 'none', url: '', platform: 'unknown' };
+  if (!url) {
+    return {
+      mode: 'none',
+      url: '',
+      platform: platformHint === 'photo' ? 'photo' : 'unknown',
+    };
+  }
 
   const platform =
     platformHint && platformHint !== 'unknown' ? platformHint : detectPlatform(url);
+
+  if (platform === 'photo') {
+    return { mode: 'none', url: '', platform: 'photo' };
+  }
 
   if (platform === 'web') {
     const embedded = sourceVideoUrl?.trim();

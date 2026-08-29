@@ -1,3 +1,4 @@
+import { migrateGuestKitchenToCloud } from '@/lib/supabase/kitchen';
 import { migrateGuestCollectionsToSupabase } from '@/lib/migrateGuestCollections';
 import {
   finalizeGuestRecipeMigration,
@@ -10,5 +11,6 @@ export async function migrateGuestDataToSupabase(userId: string): Promise<void> 
   const recipeMigration = await migrateGuestRecipesToSupabase(userId);
   await migrateGuestCollectionsToSupabase(userId, recipeMigration.idMap);
   await migrateGuestShoppingListToSupabase(userId, recipeMigration.idMap);
+  await migrateGuestKitchenToCloud(userId);
   await finalizeGuestRecipeMigration(userId);
 }

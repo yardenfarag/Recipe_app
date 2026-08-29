@@ -9,12 +9,12 @@ import {
   Pressable,
   ScrollView,
   Text,
-  TextInput,
   View,
 } from 'react-native';
 import { useTranslation } from 'react-i18next';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
+import { TextInput } from '@/components/text-input';
 import { useThemePreference } from '@/hooks/useThemePreference';
 import { getPasswordStrength, validatePassword } from '@/lib/authValidation';
 import { consumePasswordRecoveryUrl, updatePassword } from '@/lib/supabase/auth';

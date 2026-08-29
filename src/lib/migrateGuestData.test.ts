@@ -19,6 +19,9 @@ vi.mock('@/lib/migrateGuestCollections', () => ({
 vi.mock('@/lib/migrateGuestShoppingList', () => ({
   migrateGuestShoppingListToSupabase: mocks.shoppingList,
 }));
+vi.mock('@/lib/supabase/kitchen', () => ({
+  migrateGuestKitchenToCloud: vi.fn().mockResolvedValue(undefined),
+}));
 
 describe('migrateGuestDataToSupabase', () => {
   const idMap = { 'guest-recipe-1': 'cloud-recipe-1' };

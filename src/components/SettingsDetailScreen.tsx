@@ -31,7 +31,7 @@ export function SettingsDetailScreen({ children }: SettingsDetailScreenProps) {
           }
         >
           <View
-            className="rounded-[24px] border p-5"
+            className="overflow-hidden rounded-3xl border p-5"
             style={{ backgroundColor: colors.frosted, borderColor: colors.frostedBorder }}
           >
             {children}

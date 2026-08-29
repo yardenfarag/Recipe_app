@@ -1,4 +1,4 @@
-export type Platform = 'youtube' | 'instagram' | 'tiktok' | 'web' | 'unknown';
+export type Platform = 'youtube' | 'instagram' | 'tiktok' | 'web' | 'photo' | 'unknown';
 
 /** Which platforms have live extraction (ADR 003 staged rollout). */
 export const LIVE_PLATFORMS: Platform[] = ['youtube', 'instagram', 'tiktok', 'web'];

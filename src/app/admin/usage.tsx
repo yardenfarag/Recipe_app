@@ -8,11 +8,11 @@ import {
   Pressable,
   ScrollView,
   Text,
-  TextInput,
   View,
 } from 'react-native';
 
 import { Screen } from '@/components/Screen';
+import { TextInput } from '@/components/text-input';
 import { useAuth } from '@/hooks/useAuth';
 import { useProfile } from '@/hooks/useProfile';
 import { useThemePreference } from '@/hooks/useThemePreference';
@@ -20,6 +20,7 @@ import { ADMIN_PRICE_CARD } from '@/lib/quotas';
 import {
   fetchAdminTokenLedger,
   fetchAdminUsageEvents,
+  formatUsageAction,
   summarizeUsage,
   type AiUsageEvent,
   type TokenLedgerRow,
@@ -314,7 +315,7 @@ export default function AdminUsageScreen() {
                       colors={colors}
                       cells={[
                         fmtWhen(event.created_at),
-                        event.action,
+                        formatUsageAction(event.action),
                         event.status,
                         event.platform ?? '—',
                         event.extraction_source ?? '—',

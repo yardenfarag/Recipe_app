@@ -26,6 +26,7 @@ import { useTranslation } from 'react-i18next';
 import { AddToCollectionModal } from '@/components/AddToCollectionModal';
 import { BrandHeader } from '@/components/BrandHeader';
 import { ConfirmDialog } from '@/components/ConfirmDialog';
+import { FridgeMatchModal } from '@/components/FridgeMatchModal';
 import { NameEditModal } from '@/components/NameEditModal';
 import { RecipeActionsMenu } from '@/components/RecipeActionsMenu';
 import { RecipeLibraryToolbar } from '@/components/RecipeLibraryToolbar';
@@ -37,6 +38,7 @@ import { useLibraryLayout } from '@/hooks/useLibraryLayout';
 import { useRecipes } from '@/hooks/useRecipes';
 import { useThemePreference } from '@/hooks/useThemePreference';
 import { removeGuestRecipe, renameGuestRecipe } from '@/lib/guestRecipes';
+import { rankCookTonight } from '@/lib/cookTonight';
 import {
   filterAndSortRecipes,
   isRecipeLibraryFiltered,
@@ -89,6 +91,8 @@ export default function HomeScreen() {
   const [selectedTags, setSelectedTags] = useState<string[]>([]);
   const [selectedCollectionId, setSelectedCollectionId] = useState<string | null>(null);
   const [favoritesOnly, setFavoritesOnly] = useState(false);
+  const [cookTonight, setCookTonight] = useState(false);
+  const [fridgeOpen, setFridgeOpen] = useState(false);
   const [savedBanner, setSavedBanner] = useState(false);
   const [nameModal, setNameModal] = useState<CollectionNameModalState>(null);
   const [nameDraft, setNameDraft] = useState('');
@@ -145,13 +149,21 @@ export default function HomeScreen() {
       selectedTags,
       recipeIdAllowlist: collectionAllowlist,
     });
+    if (cookTonight) {
+      return rankCookTonight(filtered, {
+        maxMinutes: 45,
+        maxEffort: 'Medium',
+        favoritesOnly,
+      });
+    }
     if (!favoritesOnly) return filtered;
     return filtered.filter((r) => r.is_favorite === true);
-  }, [recipes, deferredSearch, sort, selectedTags, collectionAllowlist, favoritesOnly]);
+  }, [recipes, deferredSearch, sort, selectedTags, collectionAllowlist, favoritesOnly, cookTonight]);
 
   const hasActiveFilters =
     isRecipeLibraryFiltered(deferredSearch, sort, selectedTags, selectedCollectionId) ||
-    favoritesOnly;
+    favoritesOnly ||
+    cookTonight;
 
   const clearFilters = useCallback(() => {
     setSearch('');
@@ -159,6 +171,7 @@ export default function HomeScreen() {
     setSelectedTags([]);
     setSelectedCollectionId(null);
     setFavoritesOnly(false);
+    setCookTonight(false);
   }, []);
 
   const handleToggleTag = useCallback((tag: string) => {
@@ -419,7 +432,7 @@ export default function HomeScreen() {
           </View>
         )}
 
-        <BrandHeader title={t('library.title')} subtitle={t('library.subtitle')} />
+        <BrandHeader title={t('library.title')} />
 
         <RecipeLibraryToolbar
           search={search}
@@ -430,6 +443,9 @@ export default function HomeScreen() {
           isSearchPending={isSearchPending}
           favoritesOnly={favoritesOnly}
           onToggleFavorites={() => setFavoritesOnly((v) => !v)}
+          cookTonight={cookTonight}
+          onToggleCookTonight={() => setCookTonight((v) => !v)}
+          onFridgeMatch={() => setFridgeOpen(true)}
           availableTags={availableTags}
           selectedTags={selectedTags}
           onToggleTag={handleToggleTag}
@@ -470,6 +486,7 @@ export default function HomeScreen() {
       selectedTags,
       sort,
       t,
+      cookTonight,
     ],
   );
 
@@ -502,7 +519,7 @@ export default function HomeScreen() {
         </Text>
         <Pressable
           onPress={() => refresh()}
-          className="rounded-[22px] px-6 py-3.5 active:opacity-80"
+          className="rounded-3xl px-6 py-3.5 active:opacity-80"
           style={{ backgroundColor: colors.primary }}
         >
           <Text className="text-base font-bold text-white">{t('common.tryAgainAction')}</Text>
@@ -523,7 +540,7 @@ export default function HomeScreen() {
           />
 
           <Pressable
-            className="mt-8 w-full items-center rounded-[22px] py-4 active:opacity-80"
+            className="mt-8 w-full items-center rounded-3xl py-4 active:opacity-80"
             style={{ backgroundColor: colors.primary }}
             onPress={() => router.push('/add')}
           >
@@ -562,24 +579,28 @@ export default function HomeScreen() {
               hasActiveFilters ? (
                 <View className="items-center px-4 py-10">
                   <Text className="mb-1 text-center text-base font-semibold" style={{ color: colors.text }}>
-                    {favoritesOnly &&
-                    !deferredSearch &&
-                    selectedTags.length === 0 &&
-                    selectedCollectionId == null
-                      ? t('library.noFavorites')
-                      : t('library.noMatches')}
+                    {cookTonight
+                      ? t('library.noCookTonight')
+                      : favoritesOnly &&
+                          !deferredSearch &&
+                          selectedTags.length === 0 &&
+                          selectedCollectionId == null
+                        ? t('library.noFavorites')
+                        : t('library.noMatches')}
                   </Text>
                   <Text className="mb-5 text-center text-sm" style={{ color: colors.textSecondary }}>
-                    {favoritesOnly &&
-                    !deferredSearch &&
-                    selectedTags.length === 0 &&
-                    selectedCollectionId == null
-                      ? t('library.noFavoritesHint')
-                      : t('library.noMatchesHint')}
+                    {cookTonight
+                      ? t('library.noCookTonightHint')
+                      : favoritesOnly &&
+                          !deferredSearch &&
+                          selectedTags.length === 0 &&
+                          selectedCollectionId == null
+                        ? t('library.noFavoritesHint')
+                        : t('library.noMatchesHint')}
                   </Text>
                   <Pressable
                     onPress={clearFilters}
-                    className="rounded-[22px] px-5 py-2.5 active:opacity-80"
+                    className="min-h-[44px] items-center justify-center rounded-3xl px-5 active:opacity-80"
                     style={{ backgroundColor: colors.primary }}
                   >
                     <Text className="text-sm font-semibold text-white">{t('library.clearFilters')}</Text>
@@ -588,7 +609,7 @@ export default function HomeScreen() {
               ) : null
             }
             contentContainerStyle={{
-              paddingHorizontal: numColumns > 1 ? 14 : 20,
+              paddingHorizontal: 20,
               paddingTop: 4,
               paddingBottom: 28,
               gap: numColumns > 1 ? 0 : 12,
@@ -726,6 +747,11 @@ export default function HomeScreen() {
             </Pressable>
           ) : null
         }
+      />
+      <FridgeMatchModal
+        visible={fridgeOpen}
+        recipes={recipes}
+        onClose={() => setFridgeOpen(false)}
       />
     </Screen>
   );

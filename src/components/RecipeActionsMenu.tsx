@@ -42,7 +42,7 @@ export function RecipeActionsMenu({
       >
         <Pressable
           onPress={(e) => e.stopPropagation?.()}
-          className="rounded-[28px] border px-2 py-2"
+          className="rounded-3xl border px-2 py-2"
           style={{
             backgroundColor: colors.surface,
             borderColor: colors.frostedBorder,
@@ -88,7 +88,7 @@ export function RecipeActionsMenu({
 
           <Pressable
             onPress={onClose}
-            className="mt-1 min-h-[48px] items-center justify-center rounded-[22px] active:opacity-80"
+            className="mt-1 min-h-[48px] items-center justify-center rounded-3xl active:opacity-80"
             style={{ backgroundColor: colors.primarySoft }}
             accessibilityRole="button"
             accessibilityLabel={t('common.cancel')}
@@ -119,7 +119,7 @@ function MenuRow({
   return (
     <Pressable
       onPress={onPress}
-      className="min-h-[52px] flex-row items-center gap-3 rounded-[22px] px-3 active:opacity-80"
+      className="min-h-[52px] flex-row items-center gap-3 rounded-3xl px-3 active:opacity-80"
       accessibilityRole="button"
       accessibilityLabel={label}
     >

@@ -19,6 +19,7 @@ export interface YouTubeComment {
 
 export interface YouTubeMeta {
   description?: string;
+  title?: string;
   /** Best available thumbnail from the Data API snippet, when YOUTUBE_API_KEY is set. */
   thumbnailUrl?: string;
   /** Plain-text captions/transcript when available (via YouTube player metadata). */
@@ -74,7 +75,7 @@ export async function fetchYouTubeMeta(videoId: string): Promise<YouTubeMeta> {
   // independent network calls, so fetch them concurrently — resolving
   // which comments are from the creator happens afterward, once we know
   // channelId, rather than blocking one fetch on the other.
-  const [{ description, channelId, thumbnailUrl, durationSeconds }, rawComments] = await Promise.all([
+  const [{ description, title, channelId, thumbnailUrl, durationSeconds }, rawComments] = await Promise.all([
     fetchVideoSnippet(videoId, apiKey),
     fetchTopComments(videoId, apiKey),
   ]);
@@ -91,6 +92,7 @@ export async function fetchYouTubeMeta(videoId: string): Promise<YouTubeMeta> {
 
   return {
     description,
+    title,
     thumbnailUrl,
     captions: player.captions,
     durationSeconds: durationSeconds ?? player.durationSeconds,
@@ -103,6 +105,7 @@ async function fetchVideoSnippet(
   apiKey: string,
 ): Promise<{
   description?: string;
+  title?: string;
   channelId?: string;
   thumbnailUrl?: string;
   durationSeconds?: number;
@@ -121,6 +124,7 @@ async function fetchVideoSnippet(
     const snippet = item?.snippet;
     return {
       description: snippet?.description ?? undefined,
+      title: typeof snippet?.title === 'string' ? snippet.title : undefined,
       channelId: snippet?.channelId,
       thumbnailUrl: pickBestApiThumbnail(snippet?.thumbnails),
       durationSeconds: parseYouTubeIsoDuration(item?.contentDetails?.duration),

@@ -11,6 +11,7 @@
   --pinch-scrollbar-track: transparent;
   --pinch-scrollbar-thumb: rgba(123, 107, 154, 0.35);
   --pinch-scrollbar-thumb-hover: rgba(123, 107, 154, 0.55);
+  --pinch-focus-ring: rgba(123, 107, 154, 0.4);
 }
 
 * {
@@ -41,4 +42,35 @@
 
 *::-webkit-scrollbar-corner {
   background: transparent;
+}
+
+/**
+ * Web form controls: browsers paint an opaque Field fill behind the value and a
+ * thick :focus outline. Keep the typed text on a clear surface and use a
+ * themed, low-contrast ring instead (--pinch-focus-ring is set from ThemeProvider).
+ */
+input,
+textarea {
+  background-color: transparent;
+  background-image: none;
+  color-scheme: inherit;
+  outline: none;
+}
+
+input:focus-visible,
+textarea:focus-visible {
+  outline: none !important;
+  /* box-shadow follows border-radius; outline stays a sharp rectangle. */
+  box-shadow: 0 0 0 2px var(--pinch-focus-ring, rgba(123, 107, 154, 0.4));
+}
+
+input:-webkit-autofill,
+input:-webkit-autofill:hover,
+input:-webkit-autofill:focus,
+textarea:-webkit-autofill,
+textarea:-webkit-autofill:hover,
+textarea:-webkit-autofill:focus {
+  -webkit-text-fill-color: inherit;
+  caret-color: inherit;
+  transition: background-color 99999s ease-out 0s;
 }

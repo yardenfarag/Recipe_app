@@ -29,6 +29,7 @@ const PLATFORM_ICON: Record<Platform, keyof typeof Ionicons.glyphMap> = {
   instagram: 'logo-instagram',
   tiktok: 'logo-tiktok',
   web: 'globe-outline',
+  photo: 'camera-outline',
   unknown: 'play-circle-outline',
 };
 

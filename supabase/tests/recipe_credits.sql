@@ -1,7 +1,7 @@
 begin;
 
 create extension if not exists pgtap with schema extensions;
-select plan(53);
+select plan(55);
 
 insert into auth.users (
   instance_id, id, aud, role, email, encrypted_password,
@@ -27,6 +27,24 @@ select ok(
     where id = '10000000-0000-4000-8000-000000000001'
   ),
   'signup creates a credit profile'
+);
+select is(
+  (select token_balance from public.profiles
+   where id = '10000000-0000-4000-8000-000000000001'),
+  0,
+  'signup starts with no purchased credits'
+);
+
+delete from public.profiles
+where id = '10000000-0000-4000-8000-000000000001';
+select public.ensure_user_profile('10000000-0000-4000-8000-000000000001');
+select ok(
+  exists (
+    select 1 from public.profiles
+    where id = '10000000-0000-4000-8000-000000000001'
+      and token_balance = 0
+  ),
+  'ensure_user_profile recreates a missing signup profile'
 );
 
 update public.profiles
@@ -539,6 +557,56 @@ select is(
   ),
   -1,
   'inherited remix usage still enforces the per-recipe cap'
+);
+
+select is(
+  public.reserve_daily_ai_usage(
+    '10000000-0000-4000-8000-000000000001',
+    'fridge_match',
+    '2099-01-02',
+    8
+  ),
+  1,
+  'fridge match daily usage starts at one'
+);
+select is(
+  public.reserve_guest_daily_ai_usage(
+    'install-fridge-test',
+    'fridge_match',
+    '2099-01-02',
+    3
+  ),
+  1,
+  'guest fridge match daily usage starts at one'
+);
+select ok(
+  public.refund_guest_daily_ai_usage(
+    'install-fridge-test',
+    'fridge_match',
+    '2099-01-02'
+  ),
+  'guest fridge match usage can be refunded'
+);
+
+select is(
+  public.reserve_daily_ai_usage(
+    '10000000-0000-4000-8000-000000000001',
+    'content_gate',
+    '2099-01-03',
+    40
+  ),
+  1,
+  'content gate daily usage starts at one'
+);
+select is(
+  public.reserve_guest_daily_ai_usage(
+    'install-gate-test',
+    'content_gate',
+    '2099-01-03',
+    12
+  ),
+  1,
+  'guest content gate daily usage starts at one'
 );
 
 select * from finish();

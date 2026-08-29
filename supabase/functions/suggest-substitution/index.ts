@@ -11,6 +11,7 @@ import {
   rewriteInstructionsForSubstitutionWithGemini,
   suggestSubstitutionsWithGemini,
 } from '../_shared/substitution.ts';
+import { logUsageEvent } from '../_shared/usageLog.ts';
 
 const MAX_BODY_BYTES = 24_000;
 const MAX_RECIPE_TITLE_CHARS = 200;
@@ -136,11 +137,12 @@ async function handleSuggest(body: RequestBody, billing: BillingContext): Promis
   }
 
   const language = parseLanguage(body.language);
+  const started = Date.now();
   const gate = await reserveSubstitutionUsage(billing);
   if (gate) return gate;
 
   try {
-    const alternatives = await suggestSubstitutionsWithGemini({
+    const { alternatives, usage } = await suggestSubstitutionsWithGemini({
       ingredient: parsedIngredient.value,
       recipeTitle,
       otherIngredients: (body.other_ingredients ?? []).map((item) => item.trim()),
@@ -154,12 +156,28 @@ async function handleSuggest(body: RequestBody, billing: BillingContext): Promis
         'substitution',
         billing.usageDate,
       );
+      await logUsageEvent(billing.admin, {
+        userId: billing.userId,
+        action: 'substitution',
+        status: 'failed',
+        tokensCharged: 0,
+        durationMs: Date.now() - started,
+        errorMessage: 'No alternatives',
+      });
       return jsonResponse({
         status: 'failed',
         message: "Couldn't find a good substitute for this ingredient. Try again.",
       });
     }
 
+    await logUsageEvent(billing.admin, {
+      userId: billing.userId,
+      action: 'substitution',
+      status: 'ok',
+      usages: usage ? [usage] : [],
+      tokensCharged: 0,
+      durationMs: Date.now() - started,
+    });
     return jsonResponse({ status: 'ok', alternatives });
   } catch (err) {
     console.error('suggest-substitution error:', err);
@@ -207,11 +225,12 @@ async function handleRewrite(body: RequestBody, billing: BillingContext): Promis
   }
 
   const language = parseLanguage(body.language);
+  const started = Date.now();
   const gate = await reserveSubstitutionUsage(billing);
   if (gate) return gate;
 
   try {
-    const rewritten = await rewriteInstructionsForSubstitutionWithGemini({
+    const { instructions: rewritten, usage } = await rewriteInstructionsForSubstitutionWithGemini({
       ingredient: parsedIngredient.value,
       alternative: parsedAlternative.value,
       instructions: instructions.value,
@@ -226,12 +245,30 @@ async function handleRewrite(body: RequestBody, billing: BillingContext): Promis
         'substitution',
         billing.usageDate,
       );
+      await logUsageEvent(billing.admin, {
+        userId: billing.userId,
+        action: 'substitution',
+        status: 'failed',
+        tokensCharged: 0,
+        durationMs: Date.now() - started,
+        errorMessage: 'Empty rewrite',
+        metadata: { mode: 'rewrite_instructions' },
+      });
       return jsonResponse({
         status: 'failed',
         message: "Couldn't update the recipe steps for this swap. Try again.",
       });
     }
 
+    await logUsageEvent(billing.admin, {
+      userId: billing.userId,
+      action: 'substitution',
+      status: 'ok',
+      usages: usage ? [usage] : [],
+      tokensCharged: 0,
+      durationMs: Date.now() - started,
+      metadata: { mode: 'rewrite_instructions' },
+    });
     return jsonResponse({ status: 'ok', instructions: rewritten });
   } catch (err) {
     console.error('suggest-substitution rewrite error:', err);

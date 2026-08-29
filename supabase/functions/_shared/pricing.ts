@@ -22,6 +22,14 @@ export const GUEST_EXTRACT_LIMIT = 3;
 export const FREE_MONTHLY_EXTRACT_LIMIT = 15;
 /** @deprecated Use FREE_MONTHLY_EXTRACT_LIMIT. */
 export const FREE_EXTRACT_LIMIT = FREE_MONTHLY_EXTRACT_LIMIT;
+/** Free fridge-match vision calls per UTC day (signed-in). */
+export const FRIDGE_MATCH_DAILY_LIMIT = 8;
+/** Free fridge-match vision calls per UTC day (guest install). */
+export const GUEST_FRIDGE_MATCH_DAILY_LIMIT = 3;
+/** Cheap food-gate classifies per UTC day (signed-in). */
+export const CONTENT_GATE_DAILY_LIMIT = 40;
+/** Cheap food-gate classifies per UTC day (guest install). */
+export const GUEST_CONTENT_GATE_DAILY_LIMIT = 12;
 export interface GeminiUsageSnapshot {
   model: string;
   kind: string;
@@ -32,7 +40,19 @@ export interface GeminiUsageSnapshot {
 }
 
 export function geminiRatesForModel(model: string): { input: number; output: number } {
-  if (model.toLowerCase().includes('flash-lite')) {
+  const id = model.toLowerCase();
+  if (id.includes('openrouter') || id.includes('/')) {
+    if (id.includes('flash-lite') || id.includes('gpt-4.1-mini') || id.includes('flash-lite')) {
+      return { input: 0.05, output: 0.2 };
+    }
+    if (id.includes('gemini-2.5-flash') || id.includes('gemini-2.0-flash')) {
+      return { input: 0.3, output: 2.5 };
+    }
+    if (id.includes('claude')) {
+      return { input: 3.0, output: 15.0 };
+    }
+  }
+  if (id.includes('flash-lite')) {
     return { input: GEMINI_FAST_INPUT_USD_PER_M, output: GEMINI_FAST_OUTPUT_USD_PER_M };
   }
   return { input: GEMINI_INPUT_USD_PER_M, output: GEMINI_OUTPUT_USD_PER_M };

@@ -1,7 +1,13 @@
 import { normalizeStoredCalories } from '../_shared/calories.ts';
 import { corsHeaders, jsonResponse } from '../_shared/cors.ts';
 import { FetchError } from '../_shared/errors.ts';
-import { extractRecipeWithLadder, GeminiRecipe } from '../_shared/gemini.ts';
+import { classifyGeminiRecipe } from '../_shared/classifyRecipe.ts';
+import {
+  buildContentGateInput,
+  runContentGate,
+  shouldSkipThinSocialGate,
+} from '../_shared/contentGate.ts';
+import { extractRecipeFromImage, extractRecipeWithLadder, GeminiRecipe } from '../_shared/gemini.ts';
 import { fetchInstagramMeta } from '../_shared/instagram.ts';
 import {
   canonicalInstagramUrl,
@@ -13,7 +19,7 @@ import {
   youTubeThumbnail,
 } from '../_shared/platform.ts';
 import type { PlatformMeta } from '../_shared/platformMeta.ts';
-import { persistSocialThumbnail } from '../_shared/persistThumbnail.ts';
+import { persistSocialThumbnail, persistUploadedPhoto } from '../_shared/persistThumbnail.ts';
 import { estimateScrapeCredits, GUEST_EXTRACT_LIMIT } from '../_shared/pricing.ts';
 import {
   canStartExtract,
@@ -70,12 +76,32 @@ Deno.serve(async (req) => {
   }
 
   const started = Date.now();
-  let url: string;
+  let url = '';
+  let imageBase64: string | null = null;
+  let imageMime = 'image/jpeg';
   let guestInstallId: string | null = null;
   let requestId = crypto.randomUUID();
+  let forceExtract = false;
   try {
     const body = await req.json();
     url = String(body.url ?? '').trim();
+    const rawImage = body.image_base64 ?? body.imageBase64;
+    if (typeof rawImage === 'string' && rawImage.trim().length > 80) {
+      const trimmed = rawImage.trim();
+      const dataUrl = trimmed.match(/^data:(image\/[a-zA-Z0-9.+-]+);base64,(.+)$/);
+      if (dataUrl) {
+        imageMime = dataUrl[1];
+        imageBase64 = dataUrl[2];
+      } else {
+        imageBase64 = trimmed.replace(/\s/g, '');
+        if (typeof body.image_mime === 'string' && body.image_mime.startsWith('image/')) {
+          imageMime = body.image_mime;
+        }
+      }
+      if (imageBase64.length > 2_000_000) {
+        return jsonResponse({ error: 'Image is too large. Try a smaller photo.' }, 400);
+      }
+    }
     const rawInstall = body.guest_install_id ?? body.guestInstallId;
     if (typeof rawInstall === 'string' && rawInstall.trim().length >= 8) {
       guestInstallId = rawInstall.trim().slice(0, 128);
@@ -84,18 +110,19 @@ Deno.serve(async (req) => {
     if (typeof rawRequestId === 'string' && rawRequestId.trim().length >= 8) {
       requestId = rawRequestId.trim().slice(0, 128);
     }
+    forceExtract = body.force_extract === true || body.forceExtract === true;
   } catch {
     return jsonResponse({ error: 'Invalid JSON body' }, 400);
   }
 
-  if (!url) {
-    return jsonResponse({ error: 'Missing "url" in request body' }, 400);
+  if (!url && !imageBase64) {
+    return jsonResponse({ error: 'Missing "url" or "image_base64" in request body' }, 400);
   }
 
-  const platform = detectPlatform(url);
+  const platform: Platform = imageBase64 ? 'photo' : detectPlatform(url);
 
   // ADR 003 — staged rollout: reject non-live platforms with a clear message.
-  if (!LIVE_PLATFORMS.includes(platform)) {
+  if (platform !== 'photo' && !LIVE_PLATFORMS.includes(platform)) {
     return jsonResponse({
       status: 'coming_soon' as ExtractionStatus,
       platform,
@@ -106,7 +133,7 @@ Deno.serve(async (req) => {
     });
   }
 
-  const contentId = extractVideoIdForPlatform(url, platform);
+  const contentId = platform === 'photo' ? null : extractVideoIdForPlatform(url, platform);
 
   if (platform === 'youtube' && !contentId) {
     return jsonResponse({
@@ -138,7 +165,7 @@ Deno.serve(async (req) => {
     } = await authedClient.auth.getUser();
     userId = user?.id ?? null;
 
-    if (userId && admin) {
+    if (userId && admin && platform !== 'photo') {
       const existing = await findExistingRecipeForUser(authedClient, url, platform, contentId);
       if (existing) {
         await logUsageEvent(admin, {
@@ -151,41 +178,16 @@ Deno.serve(async (req) => {
           metadata: { cached: true },
         });
 
-        const gate = await canStartExtract(admin, userId);
+        const quota = await canStartExtract(admin, userId);
         return jsonResponse({
           status: existing.extraction_status ?? 'full',
           platform,
           recipe: existing,
           cached: true,
           tokens_charged: 0,
-          ...quotaFields(gate.snapshot),
+          ...quotaFields(quota.snapshot),
         });
       }
-
-      const reserved = await reserveSignedInExtract(admin, userId, requestId);
-      if (!reserved.ok) {
-        const code = reserved.code;
-        await logUsageEvent(admin, {
-          userId,
-          action: 'extract',
-          platform,
-          status: code,
-          tokensCharged: 0,
-          durationMs: Date.now() - started,
-          metadata: { request_id: requestId, ...quotaFields(reserved.snapshot) },
-        });
-        return jsonResponse(
-          {
-            status: 'failed' as ExtractionStatus,
-            platform,
-            code,
-            message: quotaBlockMessage(code),
-            ...quotaFields(reserved.snapshot),
-          },
-          code === 'metering_error' ? 500 : 402,
-        );
-      }
-      creditReservation = reserved.reservation;
     }
   }
 
@@ -214,133 +216,225 @@ Deno.serve(async (req) => {
         401,
       );
     }
+  }
 
-    const reserved = await reserveGuestExtraction(admin, guestInstallId, requestId);
-    if ('error' in reserved) {
+  try {
+    console.log('[extract-recipe] start', {
+      platform,
+      url: url || null,
+      hasImage: Boolean(imageBase64),
+      contentId,
+      userId: Boolean(userId),
+    });
+
+    let gemini: GeminiRecipe;
+    let source: 'description' | 'comments' | 'captions' | 'video' | 'web' | 'photo';
+    let usages: import('../_shared/pricing.ts').GeminiUsageSnapshot[] = [];
+    let usedInstagramVideoDownload = false;
+    let videoSkippedReason: 'too_long' | undefined;
+    let scrapeCredits = 0;
+    let imageUrl: string | null = null;
+    let sourceVideoUrl: string | null = null;
+    let originalUrl: string | null = null;
+    let durationSeconds: number | undefined;
+    let meta: PlatformMeta | null = null;
+
+    if (platform !== 'photo') {
+      meta = await fetchPlatformMeta(platform, url, contentId);
+      console.log('[extract-recipe] meta ready', {
+        platform,
+        contentId: meta.contentId ?? contentId,
+        hasDescription: Boolean(meta.description?.trim()),
+        descriptionLen: meta.description?.trim().length ?? 0,
+        comments: meta.topComments.length,
+        hasCaptions: Boolean(meta.captions?.trim()),
+        hasVideoUrl: Boolean(meta.videoUrl),
+        videoUrlHost: meta.videoUrl ? safeHost(meta.videoUrl) : null,
+        hasThumbnail: Boolean(meta.thumbnailUrl),
+        durationSeconds: meta.durationSeconds ?? null,
+      });
+    }
+
+    if (!admin) {
       return jsonResponse(
         {
           status: 'failed' as ExtractionStatus,
           platform,
           code: 'metering_error',
-          message: 'Could not verify your free extraction allowance. Please try again.',
+          message: quotaBlockMessage('metering_error'),
         },
         500,
       );
     }
-    if ('blocked' in reserved) {
-      await logUsageEvent(admin, {
-        guestInstallId,
-        action: 'extract',
-        platform,
-        status: 'guest_limit',
-        tokensCharged: 0,
-        durationMs: Date.now() - started,
-      });
-      return jsonResponse(
-        {
-          status: 'failed' as ExtractionStatus,
-          platform,
-          code: 'guest_limit',
-          message: `You've used your ${GUEST_EXTRACT_LIMIT} free recipe extractions. Sign up to keep going.`,
-          guest_extracts_remaining: 0,
-        },
-        429,
-      );
-    }
-    guestReservation = reserved.reservation;
-    guestRemaining = guestReservation.remaining;
-  }
 
-  try {
-    console.log('[extract-recipe] start', { platform, url, contentId, userId: Boolean(userId) });
+    const tooLongNoText =
+      platform !== 'photo' &&
+      platform !== 'web' &&
+      isVideoTooLong(meta?.durationSeconds) &&
+      !hasTextSources(meta ?? { topComments: [] });
 
-    const meta = await fetchPlatformMeta(platform, url, contentId);
-    console.log('[extract-recipe] meta ready', {
+    const skipGate = shouldSkipThinSocialGate({
       platform,
-      contentId: meta.contentId ?? contentId,
-      hasDescription: Boolean(meta.description?.trim()),
-      descriptionLen: meta.description?.trim().length ?? 0,
-      comments: meta.topComments.length,
-      hasCaptions: Boolean(meta.captions?.trim()),
-      hasVideoUrl: Boolean(meta.videoUrl),
-      videoUrlHost: meta.videoUrl ? safeHost(meta.videoUrl) : null,
-      hasThumbnail: Boolean(meta.thumbnailUrl),
-      durationSeconds: meta.durationSeconds ?? null,
+      imageBase64,
+      contentId,
+      meta,
     });
 
-    if (isVideoTooLong(meta.durationSeconds) && !hasTextSources(meta) && platform !== 'web') {
-      if (userId && creditReservation) {
-        const refunded = await compensateSignedInExtract(
-          admin,
+    let gateKind: import('../_shared/contentGate.ts').ContentKind = 'mixed';
+    let dishGuess = '';
+
+    if (!skipGate) {
+      const gate = await runContentGate({
+        admin,
+        userId,
+        guestInstallId,
+        input: buildContentGateInput({
+          imageBase64,
+          mimeType: imageMime,
+          platform,
+          contentId,
+          meta,
+          youtubeThumbnailUrl: contentId ? youTubeThumbnail(contentId) : null,
+        }),
+      });
+
+      if (gate.status === 'limited') {
+        await logUsageEvent(admin, {
           userId,
-          creditReservation,
-          'video_too_long',
+          guestInstallId: userId ? null : guestInstallId,
+          action: 'content_gate',
+          platform,
+          status: 'daily_limit',
+          tokensCharged: 0,
+          durationMs: Date.now() - started,
+        });
+        return jsonResponse(
+          {
+            status: 'failed' as ExtractionStatus,
+            platform,
+            code: 'daily_limit',
+            message: 'daily_limit',
+          },
+          429,
         );
-        compensationPending = !refunded;
-        if (refunded) creditReservation = null;
-      } else if (guestInstallId && guestReservation) {
-        const refunded = await compensateGuestExtraction(
-          admin,
-          guestInstallId,
-          guestReservation,
-          'video_too_long',
-        );
-        compensationPending = !refunded;
-        if (refunded) {
-          guestReservation = null;
-          guestRemaining = guestRemainingFromCount(await getGuestExtractCount(admin, guestInstallId));
-        }
       }
+      if (gate.status === 'error') {
+        await logUsageEvent(admin, {
+          userId,
+          guestInstallId: userId ? null : guestInstallId,
+          action: 'content_gate',
+          platform,
+          status: 'error',
+          tokensCharged: 0,
+          durationMs: Date.now() - started,
+          errorMessage: gate.error.slice(0, 500),
+        });
+        return jsonResponse(
+          {
+            status: 'failed' as ExtractionStatus,
+            platform,
+            code: 'gate_unavailable',
+            message: 'Could not check if this is food. Please try again.',
+          },
+          503,
+        );
+      }
+
+      gateKind = gate.kind;
+      dishGuess = gate.dishGuess;
+
       await logUsageEvent(admin, {
         userId,
         guestInstallId: userId ? null : guestInstallId,
-        action: 'extract',
+        action: 'content_gate',
         platform,
-        status: 'video_too_long',
+        status: gate.kind === 'unrelated' ? 'rejected' : 'ok',
+        usages: gate.usage ? [gate.usage] : [],
         tokensCharged: 0,
         durationMs: Date.now() - started,
-        errorMessage: `duration_seconds=${meta.durationSeconds}`,
-        metadata: compensationMetadata(creditReservation, guestReservation, compensationPending),
-      });
-      if (compensationPending) {
-        return compensationPendingResponse(platform, guestRemaining, creditReservation);
-      }
-      return jsonResponse({
-        status: 'failed' as ExtractionStatus,
-        platform,
-        code: 'video_too_long',
-        message: `This video is longer than ${formatMaxVideoDurationLabel()}. Try a shorter clip with the recipe in the caption or comments.`,
-        guest_extracts_remaining: guestRemaining,
+        metadata: { kind: gate.kind, dish_guess: gate.dishGuess, job: 'extract' },
       });
     }
 
-    const {
-      recipe: gemini,
-      source,
-      usages,
-      usedInstagramVideoDownload,
-      videoSkippedReason,
-    } = await extractRecipeWithLadder({
-      platform,
-      sourceUrl: url,
-      // Web pages: recipe lives in HTML/JSON-LD — don't multimodal the embed for extraction.
-      videoUrl: platform === 'web' ? undefined : meta.videoUrl,
-      durationSeconds: platform === 'web' ? undefined : meta.durationSeconds,
-      description: meta.description,
-      captions: meta.captions,
-      topComments: meta.topComments,
-    });
+    if (gateKind === 'unrelated') {
+      return jsonResponse({
+        status: 'failed' as ExtractionStatus,
+        platform,
+        code: 'not_food',
+        message: imageBase64
+          ? 'We can only Snap food, drinks, and recipes. Try a photo of the dish or a recipe card.'
+          : "That doesn't look like food or a recipe. Try a cooking video, a food photo, or a recipe page.",
+        tokens_charged: 0,
+      });
+    }
 
-    console.log('[extract-recipe] ladder done', {
-      source,
-      foundRecipe: gemini.found_recipe,
-      title: gemini.title?.slice(0, 80),
-      ingredients: gemini.ingredients?.length ?? 0,
-      instructions: gemini.instructions?.length ?? 0,
+    if (!forceExtract && (gateKind === 'plated_dish' || tooLongNoText)) {
+      return jsonResponse({
+        status: 'failed' as ExtractionStatus,
+        platform,
+        code: 'looks_like_dish',
+        dish_guess: dishGuess,
+        message:
+          tooLongNoText && gateKind !== 'plated_dish'
+            ? `This video is longer than ${formatMaxVideoDurationLabel()} and has no recipe in the caption. We can guess a home version.`
+            : 'This looks like a dish, not a written recipe.',
+        tokens_charged: 0,
+      });
+    }
+
+    const reserved = await reserveExtractCredits({
+      admin,
+      userId,
+      guestInstallId,
+      requestId,
+      platform,
+      started,
     });
+    if (reserved.response) return reserved.response;
+    creditReservation = reserved.creditReservation;
+    guestReservation = reserved.guestReservation;
+    guestRemaining = reserved.guestRemaining;
+
+    if (platform === 'photo' && imageBase64) {
+      const fromImage = await extractRecipeFromImage({
+        imageBase64,
+        mimeType: imageMime,
+      });
+      gemini = fromImage.recipe;
+      if (fromImage.usage) usages = [fromImage.usage];
+      source = 'photo';
+      originalUrl = null;
+    } else {
+      const ladder = await extractRecipeWithLadder({
+        platform,
+        sourceUrl: url,
+        videoUrl: platform === 'web' ? undefined : meta?.videoUrl,
+        durationSeconds: platform === 'web' ? undefined : meta?.durationSeconds,
+        description: meta?.description,
+        captions: meta?.captions,
+        topComments: meta?.topComments ?? [],
+      });
+      gemini = ladder.recipe;
+      source = ladder.source;
+      usages = ladder.usages;
+      usedInstagramVideoDownload = ladder.usedInstagramVideoDownload === true;
+      videoSkippedReason = ladder.videoSkippedReason;
+      scrapeCredits = estimateScrapeCredits(platform, usedInstagramVideoDownload);
+      const resolvedContentId = meta?.contentId ?? contentId;
+      imageUrl = await resolveThumbnail(platform, resolvedContentId, meta ?? { topComments: [] });
+      sourceVideoUrl = platform === 'web' ? meta?.videoUrl ?? null : null;
+      originalUrl = canonicalOriginalUrl(platform, resolvedContentId, url);
+      durationSeconds = meta?.durationSeconds;
+      console.log('[extract-recipe] ladder done', {
+        source,
+        foundRecipe: gemini.found_recipe,
+        title: gemini.title?.slice(0, 80),
+        ingredients: gemini.ingredients?.length ?? 0,
+        instructions: gemini.instructions?.length ?? 0,
+      });
+    }
 
     const { status, missingFields } = classify(gemini);
-    const scrapeCredits = estimateScrapeCredits(platform, usedInstagramVideoDownload === true);
 
     if (status === 'failed') {
       const rejectedAsTooLong = videoSkippedReason === 'too_long';
@@ -382,7 +476,7 @@ Deno.serve(async (req) => {
         tokensCharged: 0,
         durationMs: Date.now() - started,
         errorMessage: rejectedAsTooLong
-          ? `duration_seconds=${meta.durationSeconds ?? 'unknown'}`
+          ? `duration_seconds=${durationSeconds ?? 'unknown'}`
           : 'No recipe found',
         metadata: compensationMetadata(creditReservation, guestReservation, compensationPending),
       });
@@ -393,10 +487,12 @@ Deno.serve(async (req) => {
       return jsonResponse({
         status,
         platform,
-        code: rejectedAsTooLong ? 'video_too_long' : undefined,
+        code: rejectedAsTooLong ? 'video_too_long' : 'no_recipe',
         message: rejectedAsTooLong
           ? `This video is longer than ${formatMaxVideoDurationLabel()}. Try a shorter clip, or a post with the recipe written in the caption.`
-          : platform === 'web'
+          : platform === 'photo'
+            ? "Couldn't find a recipe in this photo. Try a clearer picture of the ingredients and steps."
+            : platform === 'web'
             ? "Couldn't find a recipe on this page. Try a different link."
             : "Couldn't find a recipe in this video. Try a different link.",
         tokens_charged: 0,
@@ -408,21 +504,17 @@ Deno.serve(async (req) => {
       });
     }
 
-    const resolvedContentId = meta.contentId ?? contentId;
-    const imageUrl = await resolveThumbnail(platform, resolvedContentId, meta);
-    console.log('[extract-recipe] thumbnail', {
-      platform,
-      hasImage: Boolean(imageUrl),
-      imageHost: imageUrl ? safeHost(imageUrl) : null,
-    });
+    if (platform === 'photo' && imageBase64) {
+      imageUrl = (await persistUploadedPhoto({ imageBase64, mimeType: imageMime })) ?? imageUrl;
+    }
 
     const recipe = {
       title: gemini.title,
       source_language: normalizeLanguageCode(gemini.source_language),
-      original_url: canonicalOriginalUrl(platform, resolvedContentId, url),
+      original_url: originalUrl,
       platform,
       image_url: imageUrl,
-      source_video_url: platform === 'web' ? meta.videoUrl ?? null : null,
+      source_video_url: sourceVideoUrl,
       ingredients: gemini.ingredients,
       instructions: gemini.instructions,
       servings: gemini.servings > 0 ? gemini.servings : 1,
@@ -623,6 +715,7 @@ Deno.serve(async (req) => {
         lower.includes('invalid instagram') ||
         lower.includes('scrapecreators request failed') ||
         lower.includes('gemini request failed') ||
+        lower.includes('openrouter request failed') ||
         lower.includes('could not load this webpage') ||
         lower.includes("couldn't read this page") ||
         lower.includes("doesn't look like a recipe webpage") ||
@@ -766,25 +859,7 @@ function classify(r: GeminiRecipe): {
   status: Exclude<ExtractionStatus, 'coming_soon'>;
   missingFields: string[];
 } {
-  const hasTitle = Boolean(r.found_recipe && r.title?.trim());
-  const hasIngredients = r.ingredients?.length > 0;
-  const hasInstructions = r.instructions?.length > 0;
-
-  if (!hasTitle || (!hasIngredients && !hasInstructions)) {
-    return { status: 'failed', missingFields: [] };
-  }
-
-  const missingFields: string[] = [];
-  if (!hasIngredients) missingFields.push('ingredients');
-  if (!hasInstructions) missingFields.push('instructions');
-  if (r.calories == null) missingFields.push('calories');
-  if (r.estimated_time_minutes == null) missingFields.push('estimated_time_minutes');
-  if (!r.cost_estimate) missingFields.push('cost_estimate');
-  if (!r.effort_level) missingFields.push('effort_level');
-
-  // "full" needs title + ingredients + steps (ADR 004). Otherwise partial.
-  const isFull = hasTitle && hasIngredients && hasInstructions;
-  return { status: isFull ? 'full' : 'partial', missingFields };
+  return classifyGeminiRecipe(r);
 }
 
 function quotaBlockMessage(code: string): string {
@@ -801,6 +876,122 @@ function hasTextSources(meta: PlatformMeta): boolean {
     meta.topComments.length > 0 ||
     Boolean(meta.captions?.trim())
   );
+}
+
+async function reserveExtractCredits(opts: {
+  admin: NonNullable<ReturnType<typeof createServiceSupabase>>;
+  userId: string | null;
+  guestInstallId: string | null;
+  requestId: string;
+  platform: Platform;
+  started: number;
+}): Promise<{
+  creditReservation: CreditReservation | null;
+  guestReservation: GuestExtractionReservation | null;
+  guestRemaining: number | null;
+  response?: Response;
+}> {
+  const { admin, userId, guestInstallId, requestId, platform, started } = opts;
+  if (userId) {
+    const reserved = await reserveSignedInExtract(admin, userId, requestId);
+    if (!reserved.ok) {
+      const code = reserved.code;
+      await logUsageEvent(admin, {
+        userId,
+        action: 'extract',
+        platform,
+        status: code,
+        tokensCharged: 0,
+        durationMs: Date.now() - started,
+        metadata: { request_id: requestId, ...quotaFields(reserved.snapshot) },
+      });
+      return {
+        creditReservation: null,
+        guestReservation: null,
+        guestRemaining: null,
+        response: jsonResponse(
+          {
+            status: 'failed' as ExtractionStatus,
+            platform,
+            code,
+            message: quotaBlockMessage(code),
+            ...quotaFields(reserved.snapshot),
+          },
+          code === 'metering_error' ? 500 : 402,
+        ),
+      };
+    }
+    return {
+      creditReservation: reserved.reservation,
+      guestReservation: null,
+      guestRemaining: null,
+    };
+  }
+
+  if (!guestInstallId) {
+    return {
+      creditReservation: null,
+      guestReservation: null,
+      guestRemaining: null,
+      response: jsonResponse(
+        {
+          status: 'failed' as ExtractionStatus,
+          platform,
+          code: 'guest_id_required',
+          message: 'Sign up to extract recipes, or update the app to continue as a guest.',
+        },
+        401,
+      ),
+    };
+  }
+
+  const reserved = await reserveGuestExtraction(admin, guestInstallId, requestId);
+  if ('error' in reserved) {
+    return {
+      creditReservation: null,
+      guestReservation: null,
+      guestRemaining: null,
+      response: jsonResponse(
+        {
+          status: 'failed' as ExtractionStatus,
+          platform,
+          code: 'metering_error',
+          message: 'Could not verify your free extraction allowance. Please try again.',
+        },
+        500,
+      ),
+    };
+  }
+  if ('blocked' in reserved) {
+    await logUsageEvent(admin, {
+      guestInstallId,
+      action: 'extract',
+      platform,
+      status: 'guest_limit',
+      tokensCharged: 0,
+      durationMs: Date.now() - started,
+    });
+    return {
+      creditReservation: null,
+      guestReservation: null,
+      guestRemaining: 0,
+      response: jsonResponse(
+        {
+          status: 'failed' as ExtractionStatus,
+          platform,
+          code: 'guest_limit',
+          message: `You've used your ${GUEST_EXTRACT_LIMIT} free recipe extractions. Sign up to keep going.`,
+          guest_extracts_remaining: 0,
+        },
+        429,
+      ),
+    };
+  }
+  return {
+    creditReservation: null,
+    guestReservation: reserved.reservation,
+    guestRemaining: reserved.reservation.remaining,
+  };
 }
 
 function safeHost(url: string): string | null {

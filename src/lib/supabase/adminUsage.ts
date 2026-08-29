@@ -57,6 +57,14 @@ export async function fetchAdminTokenLedger(limit = 100): Promise<TokenLedgerRow
   return (data ?? []) as TokenLedgerRow[];
 }
 
+export function formatUsageAction(action: string): string {
+  if (action === 'content_gate') return 'Food check';
+  if (action === 'invent') return 'Invent';
+  if (action === 'extract') return 'Extract';
+  if (action === 'remix') return 'Remix';
+  return action;
+}
+
 export function summarizeUsage(events: AiUsageEvent[]) {
   const totals = {
     events: events.length,

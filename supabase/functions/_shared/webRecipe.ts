@@ -62,6 +62,7 @@ export async function fetchWebRecipeMeta(url: string): Promise<WebRecipeMeta> {
 
   return {
     ...EMPTY_PLATFORM_META,
+    title,
     description,
     thumbnailUrl,
     videoUrl,

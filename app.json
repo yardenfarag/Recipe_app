@@ -2,7 +2,7 @@
   "expo": {
     "name": "Pinch",
     "slug": "pinch",
-    "version": "1.0.1",
+    "version": "1.0.2",
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",
     "scheme": "pinch",
@@ -72,17 +72,17 @@
       [
         "expo-image-picker",
         {
-          "photosPermission": "Pinch needs access to your photos so you can set a profile picture.",
-          "cameraPermission": "Pinch needs access to your camera so you can take a profile picture."
+          "photosPermission": "Pinch uses your photos to Snap recipes and match what’s in your fridge.",
+          "cameraPermission": "Pinch uses your camera to Snap recipes and match what’s in your fridge."
         }
       ],
       [
         "expo-build-properties",
         {
           "android": {
-            "compileSdkVersion": 35,
-            "targetSdkVersion": 35,
-            "buildToolsVersion": "35.0.0",
+            "compileSdkVersion": 36,
+            "targetSdkVersion": 36,
+            "buildToolsVersion": "36.0.0",
             "useLegacyPackaging": false,
             "enableMinifyInReleaseBuilds": true,
             "extraProguardRules": "-keepattributes SourceFile,LineNumberTable\n-keepattributes *Annotation*\n-keep class com.swmansion.reanimated.** { *; }\n-keep class com.facebook.react.turbomodule.** { *; }"

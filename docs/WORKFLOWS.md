@@ -1,6 +1,6 @@
 # Pinch — Workflows & Product Guide
 
-**Last updated:** 2026-07-17  
+**Last updated:** 2026-08-29  
 **Audience:** Anyone joining the project, or revisiting after time away.
 
 This document explains **every major workflow** in Pinch: what happens, which pieces of code own it, and **why it exists**. For product vocabulary, see [`GLOSSARY.md`](./GLOSSARY.md). For decision history, see [`adr/`](./adr/).
@@ -60,6 +60,7 @@ Pinch turns a social cooking video into a clean, usable recipe.
 | `/(tabs)/favorites` | **Favorites** | Hearted recipes only |
 | `/(tabs)/add` | **Snap** | Paste URL → “Fork it!” → extraction |
 | `/(tabs)/settings` | **Settings** | Account, avatar, theme, migration retry |
+| `/settings/recipe` | Recipe prefs | Measurements + kitchen profile (diets, swaps, auto-apply) |
 | `/recipe/preview` | **Preview** | Unsaved extraction result + Save |
 | `/recipe/[id]` | **Recipe detail** | Saved recipe (guest id `guest-…` or Supabase uuid) |
 | `/auth` | **Welcome** (modal) | Email / Apple / Google sign-in & sign-up |
@@ -91,6 +92,21 @@ Tabs: `src/components/app-tabs.tsx` (Library, Favorites, Snap, Settings).
 **Why:** This is the product’s primary loop. Paste-URL works in Expo Go; Share Sheet is additive (below).
 
 **Key files:** `add.tsx`, `src/lib/supabase/extractRecipe.ts`, `supabase/functions/extract-recipe/`
+
+### 4.1b Guess the recipe (invent)
+
+**User story:** “I have a photo of a cake / a food TikTok with no recipe. Guess how I’d cook it at home.”
+
+**Flow:**
+
+1. Snap tab → **Guess the recipe** (or Snap a plated dish and confirm the handoff)  
+2. Cheap food gate rejects non-food (`not_food`, no credit)  
+3. `invent-recipe` writes a full home-cook recipe (`extraction_source: invented`)  
+4. Preview shows a persistent “Guessed” banner; save as usual (1 extract credit)
+
+**Why:** Snap must stay faithful extraction. Invent is a separate, labeled guess. See [ADR 014](./adr/014-how-to-cook-this.md).
+
+**Key files:** `add.tsx`, `src/lib/supabase/inventRecipe.ts`, `src/lib/contentGate.ts`, `supabase/functions/invent-recipe/`, `supabase/functions/_shared/contentGate.ts`
 
 ---
 
@@ -313,7 +329,8 @@ Guests use the same shape with ids like `guest-<timestamp>-…` and no `user_id`
 
 | Function | Input | Output | Why it exists |
 |----------|-------|--------|---------------|
-| `extract-recipe` | `{ url }` | `{ status, platform, recipe?, message?, cached? }` | Core Snap pipeline |
+| `extract-recipe` | `{ url }` or `{ image_base64 }` | `{ status, platform, recipe?, message?, cached?, code? }` | Core Snap pipeline; food gate before credit |
+| `invent-recipe` | `{ url }` or `{ image_base64 }` | `{ status, platform, recipe?, code? }` | Guess the recipe — invent after food gate |
 | `suggest-substitution` | ingredient + recipe context | 2–3 alternatives + rationale | Per-ingredient Swap |
 | `transform-recipe` | `{ variant, recipe }` | remixed recipe + summary | Dietary / lifestyle remix |
 | `backfill-thumbnails` | `{ videoIds, recipeIds }` | updated thumbnail URLs | Upgrade legacy YouTube images |

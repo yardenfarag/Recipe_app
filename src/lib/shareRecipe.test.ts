@@ -5,22 +5,32 @@ vi.mock('react-native', () => ({
   Share: { share: vi.fn(), dismissedAction: 'dismissedAction' },
 }));
 
-import { shareRecipe } from '@/lib/shareRecipe';
+import { recipeSourceShareUrl, shareRecipe } from '@/lib/shareRecipe';
+
+describe('recipeSourceShareUrl', () => {
+  it('returns a trimmed source URL', () => {
+    expect(recipeSourceShareUrl(' https://youtu.be/abc ')).toBe('https://youtu.be/abc');
+  });
+
+  it('returns null when there is nothing to share', () => {
+    expect(recipeSourceShareUrl(undefined)).toBeNull();
+    expect(recipeSourceShareUrl('')).toBeNull();
+    expect(recipeSourceShareUrl('   ')).toBeNull();
+  });
+});
 
 describe('shareRecipe', () => {
-  it('copies the Pinch share URL on web', async () => {
+  it('copies the source URL on web', async () => {
     const writeText = vi.fn().mockResolvedValue(undefined);
     vi.stubGlobal('navigator', { clipboard: { writeText } });
 
     const result = await shareRecipe({
       title: 'Pasta',
-      url: 'https://example.com/Recipe_app/share.html?t=abc',
+      url: 'https://youtu.be/abc',
     });
 
     expect(result).toBe('copied');
-    expect(writeText).toHaveBeenCalledWith(
-      'https://example.com/Recipe_app/share.html?t=abc',
-    );
+    expect(writeText).toHaveBeenCalledWith('https://youtu.be/abc');
 
     vi.unstubAllGlobals();
   });

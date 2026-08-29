@@ -41,19 +41,63 @@ export function currentYearMonthUtc(date = new Date()): string {
   return `${y}-${m}`;
 }
 
+async function ensureUserProfile(
+  admin: SupabaseClient,
+  userId: string,
+): Promise<boolean> {
+  const { error } = await admin.rpc('ensure_user_profile', { p_user_id: userId });
+  if (error) {
+    console.error('[quotas] ensure_user_profile', error);
+    return false;
+  }
+  return true;
+}
+
+function parseRpcJson(data: unknown): Record<string, unknown> | null {
+  if (data == null) return null;
+  if (typeof data === 'string') {
+    try {
+      const parsed = JSON.parse(data) as unknown;
+      return parsed && typeof parsed === 'object'
+        ? (parsed as Record<string, unknown>)
+        : null;
+    } catch {
+      return null;
+    }
+  }
+  if (typeof data === 'object') return data as Record<string, unknown>;
+  return null;
+}
+
 export async function getQuotaSnapshot(
   admin: SupabaseClient,
   userId: string,
 ): Promise<QuotaSnapshot | null> {
-  const { data: profile, error } = await admin
+  let { data: profile, error } = await admin
     .from('profiles')
     .select('token_balance')
     .eq('id', userId)
     .maybeSingle();
 
-  if (error || profile == null) {
+  if (error) {
     console.error('[quotas] getQuotaSnapshot profile', error);
     return null;
+  }
+
+  if (profile == null) {
+    const created = await ensureUserProfile(admin, userId);
+    if (!created) return null;
+    const retried = await admin
+      .from('profiles')
+      .select('token_balance')
+      .eq('id', userId)
+      .maybeSingle();
+    if (retried.error) {
+      console.error('[quotas] getQuotaSnapshot profile retry', retried.error);
+      return null;
+    }
+    profile = retried.data;
+    if (profile == null) return null;
   }
 
   const yearMonth = currentYearMonthUtc();
@@ -129,12 +173,19 @@ export async function reserveSignedInExtract(
       snapshot: QuotaSnapshot | null;
     }
 > {
-  let { data, error } = await admin.rpc('reserve_recipe_credit', {
+  const reserveArgs = {
     p_user_id: userId,
     p_year_month: currentYearMonthUtc(),
     p_idempotency_key: idempotencyKey,
     p_free_limit: FREE_MONTHLY_EXTRACT_LIMIT,
-  });
+  };
+  let { data, error } = await admin.rpc('reserve_recipe_credit', reserveArgs);
+  if (error && /profile_not_found/i.test(error.message ?? '')) {
+    await ensureUserProfile(admin, userId);
+    const retried = await admin.rpc('reserve_recipe_credit', reserveArgs);
+    data = retried.data;
+    error = retried.error;
+  }
   if (error) {
     console.error('[quotas] reserve_recipe_credit', error);
     return {
@@ -143,12 +194,7 @@ export async function reserveSignedInExtract(
       snapshot: await getQuotaSnapshot(admin, userId),
     };
   }
-  let row = data as {
-    code?: string;
-    reservation_id?: string;
-    source?: string;
-    status?: string;
-  } | null;
+  let row = parseRpcJson(data);
   if (row?.status === 'refunded') {
     const reopened = await admin.rpc('reopen_refunded_recipe_credit', {
       p_user_id: userId,
@@ -166,12 +212,7 @@ export async function reserveSignedInExtract(
         snapshot: await getQuotaSnapshot(admin, userId),
       };
     }
-    row = data as {
-      code?: string;
-      reservation_id?: string;
-      source?: string;
-      status?: string;
-    } | null;
+    row = parseRpcJson(data);
   }
   if (row?.code === 'insufficient_credits') {
     return {
@@ -180,10 +221,13 @@ export async function reserveSignedInExtract(
       snapshot: await getQuotaSnapshot(admin, userId),
     };
   }
-  if (
-    !row?.reservation_id ||
-    (row.source !== 'monthly_free' && row.source !== 'purchased')
-  ) {
+  const reservationId =
+    typeof row?.reservation_id === 'string' ? row.reservation_id : null;
+  const source =
+    row?.source === 'monthly_free' || row?.source === 'purchased'
+      ? row.source
+      : null;
+  if (!reservationId || !source) {
     return {
       ok: false,
       code: 'metering_error',
@@ -197,8 +241,8 @@ export async function reserveSignedInExtract(
   return {
     ok: true,
     reservation: {
-      reservationId: row.reservation_id,
-      source: row.source,
+      reservationId,
+      source,
       snapshot,
     },
   };

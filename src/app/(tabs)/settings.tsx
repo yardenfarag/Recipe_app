@@ -25,6 +25,7 @@ import { useRtl } from '@/hooks/useRtl';
 import { useThemePreference } from '@/hooks/useThemePreference';
 import { useTranslation } from 'react-i18next';
 import { confirmAction, confirmDestructive } from '@/lib/confirmAction';
+import { FREE_MONTHLY_EXTRACT_LIMIT } from '@/lib/quotas';
 import {
   deleteAccount,
   requestAppleAuthorizationCodeForDeletion,
@@ -72,7 +73,7 @@ function SettingsSection({
         </View>
       </View>
       <View
-        className="overflow-hidden rounded-[24px] border p-5"
+        className="overflow-hidden rounded-3xl border p-5"
         style={{
           backgroundColor: colors.frosted,
           borderColor: danger ? colors.warning : colors.frostedBorder,
@@ -308,10 +309,10 @@ export default function SettingsScreen() {
               : undefined
           }
         >
-          <BrandHeader title={t('settings.title')} subtitle={t('settings.subtitle')} />
+          <BrandHeader title={t('settings.title')} />
 
           <View
-            className="mb-6 mt-6 rounded-[28px] p-5"
+            className="mb-6 mt-6 rounded-3xl p-5"
             style={{
               backgroundColor: colors.frosted,
               borderWidth: 1,
@@ -407,7 +408,9 @@ export default function SettingsScreen() {
             {user ? (
               <SettingsActionRow
                 label={t('settings.plan')}
-                description={t('settings.creditsTotal', { count: totalCredits ?? 0 })}
+                description={t('settings.creditsTotal', {
+                  count: totalCredits ?? FREE_MONTHLY_EXTRACT_LIMIT,
+                })}
                 icon="sparkles-outline"
                 onPress={() => router.push('/settings/credits')}
               />

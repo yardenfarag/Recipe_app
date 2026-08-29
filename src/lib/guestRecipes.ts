@@ -4,6 +4,7 @@ import { DEFAULT_SOURCE_LANGUAGE } from '@/lib/appLanguages';
 import { readIngredientAmount } from '@/lib/ingredientAmounts';
 import { detectPlatform, recipeUrlsMatch } from '@/lib/platformUrls';
 import { recipeContentEquals } from '@/lib/recipeContentEquals';
+import { recipeMatchesUrlOrigin, recipeUrlOrigin } from '@/lib/recipeOrigin';
 import { Recipe, RecipeTranslationContent } from '@/types/recipe';
 
 /** Guests cannot save; sign-up is required to keep recipes. */
@@ -66,6 +67,7 @@ export async function saveGuestRecipe(recipe: NewGuestRecipe): Promise<SaveGuest
       const duplicate = existing.find(
         (saved) =>
           saved.original_url &&
+          recipeMatchesUrlOrigin(saved, recipeUrlOrigin(recipe.extraction_source)) &&
           recipeUrlsMatch(recipe.original_url!, saved.original_url, platform),
       );
       if (duplicate) {
@@ -162,6 +164,12 @@ export async function updateGuestRecipeContent(
     ingredients: Recipe['ingredients'];
     instructions: Recipe['instructions'];
     calories?: number;
+    extraction_status?: Recipe['extraction_status'];
+    missing_fields?: string[];
+    estimated_time_minutes?: number | null;
+    cost_estimate?: Recipe['cost_estimate'] | null;
+    effort_level?: Recipe['effort_level'] | null;
+    tags?: string[];
   },
 ): Promise<Recipe | null> {
   return serializeMutation(async () => {
@@ -177,7 +185,18 @@ export async function updateGuestRecipeContent(
         ingredients: content.ingredients,
         instructions: content.instructions,
         calories: content.calories,
-        // Only drop overlays when canonical text actually changed.
+        ...(content.extraction_status ? { extraction_status: content.extraction_status } : {}),
+        ...(content.missing_fields ? { missing_fields: content.missing_fields } : {}),
+        ...(content.estimated_time_minutes !== undefined
+          ? { estimated_time_minutes: content.estimated_time_minutes ?? undefined }
+          : {}),
+        ...(content.cost_estimate !== undefined
+          ? { cost_estimate: content.cost_estimate ?? undefined }
+          : {}),
+        ...(content.effort_level !== undefined
+          ? { effort_level: content.effort_level ?? undefined }
+          : {}),
+        ...(content.tags ? { tags: content.tags } : {}),
         translations: textChanged ? undefined : recipe.translations,
       };
       return updated;
@@ -277,7 +296,7 @@ function sanitizeStoredRecipe(value: unknown): Recipe | null {
   const translations = sanitizeTranslations(value.translations);
   if (translations) recipe.translations = translations;
 
-  if (['youtube', 'instagram', 'tiktok', 'web', 'unknown'].includes(String(value.platform))) {
+  if (['youtube', 'instagram', 'tiktok', 'web', 'photo', 'unknown'].includes(String(value.platform))) {
     recipe.platform = value.platform as Recipe['platform'];
   }
   if (['$', '$$', '$$$'].includes(String(value.cost_estimate))) {
@@ -286,7 +305,7 @@ function sanitizeStoredRecipe(value: unknown): Recipe | null {
   if (['Easy', 'Medium', 'Hard'].includes(String(value.effort_level))) {
     recipe.effort_level = value.effort_level as Recipe['effort_level'];
   }
-  if (['description', 'comments', 'captions', 'video', 'web'].includes(String(value.extraction_source))) {
+  if (['description', 'comments', 'captions', 'video', 'web', 'photo', 'invented'].includes(String(value.extraction_source))) {
     recipe.extraction_source = value.extraction_source as Recipe['extraction_source'];
   }
   if (typeof value.is_favorite === 'boolean') recipe.is_favorite = value.is_favorite;

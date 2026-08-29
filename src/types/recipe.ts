@@ -1,9 +1,9 @@
 export type EffortLevel = 'Easy' | 'Medium' | 'Hard';
 export type CostEstimate = '$' | '$$' | '$$$';
-export type Platform = 'youtube' | 'instagram' | 'tiktok' | 'web' | 'unknown';
+export type Platform = 'youtube' | 'instagram' | 'tiktok' | 'web' | 'photo' | 'unknown';
 export type ExtractionStatus = 'full' | 'partial';
 /** Which content-ladder rung yielded the recipe (ADR 004). */
-export type ExtractionSource = 'description' | 'comments' | 'captions' | 'video' | 'web';
+export type ExtractionSource = 'description' | 'comments' | 'captions' | 'video' | 'web' | 'photo' | 'invented';
 
 /** One measured amount, used for grams/spoons toggle values. */
 export interface IngredientAmount {
@@ -77,4 +77,14 @@ export interface Recipe {
   translations?: Record<string, RecipeTranslationContent>;
   /** Client-only: preferred-language title for library rows. */
   display_title?: string;
+  /** Client-only: kitchen auto-apply summary on an unsaved extract. */
+  kitchen_adapted_summary?: string;
+  /** Client-only: content before kitchen auto-apply, used to revert. */
+  kitchen_original?: {
+    title: string;
+    servings: number;
+    ingredients: Ingredient[];
+    instructions: Instruction[];
+    calories?: number;
+  };
 }

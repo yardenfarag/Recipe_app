@@ -35,6 +35,21 @@ export interface ProfileQuota {
   totalCredits: number;
 }
 
+const PROFILE_SELECT =
+  'id, email, avatar_url, token_balance, is_admin, token_pack_notify_at, subscription_status, subscription_expires_at, free_extracts_used';
+
+type ProfileRow = {
+  id: string;
+  email: string | null;
+  avatar_url: string | null;
+  token_balance?: number | null;
+  is_admin?: boolean | null;
+  token_pack_notify_at?: string | null;
+  subscription_status?: string | null;
+  subscription_expires_at?: string | null;
+  free_extracts_used?: number | null;
+};
+
 export function profileQuota(profile: Profile | null): ProfileQuota | null {
   if (!profile) return null;
   const used = profile.monthly_extracts_used;
@@ -53,41 +68,7 @@ export function profileQuota(profile: Profile | null): ProfileQuota | null {
   };
 }
 
-export async function fetchProfile(userId: string): Promise<Profile | null> {
-  const yearMonth = currentYearMonthUtc();
-  const [profileResult, monthlyResult] = await Promise.all([
-    supabase
-      .from('profiles')
-      .select(
-        'id, email, avatar_url, token_balance, is_admin, token_pack_notify_at, subscription_status, subscription_expires_at, free_extracts_used',
-      )
-      .eq('id', userId)
-      .single(),
-    supabase
-      .from('extract_usage_monthly')
-      .select('extract_count')
-      .eq('user_id', userId)
-      .eq('year_month', yearMonth)
-      .maybeSingle(),
-  ]);
-
-  if (profileResult.error) {
-    if (profileResult.error.code === 'PGRST116') return null;
-    throw profileResult.error;
-  }
-
-  const row = profileResult.data as {
-    id: string;
-    email: string | null;
-    avatar_url: string | null;
-    token_balance?: number | null;
-    is_admin?: boolean | null;
-    token_pack_notify_at?: string | null;
-    subscription_status?: string | null;
-    subscription_expires_at?: string | null;
-    free_extracts_used?: number | null;
-  };
-
+function mapProfileRow(row: ProfileRow, monthlyExtractsUsed: number): Profile {
   const status = row.subscription_status;
   const subscription_status: SubscriptionStatus =
     status === 'active' || status === 'canceled' ? status : 'free';
@@ -103,11 +84,51 @@ export async function fetchProfile(userId: string): Promise<Profile | null> {
     subscription_expires_at: row.subscription_expires_at ?? null,
     free_extracts_used:
       typeof row.free_extracts_used === 'number' ? row.free_extracts_used : 0,
-    monthly_extracts_used:
-      typeof monthlyResult.data?.extract_count === 'number'
-        ? monthlyResult.data.extract_count
-        : 0,
+    monthly_extracts_used: monthlyExtractsUsed,
   };
+}
+
+async function loadProfileRow(userId: string) {
+  return supabase.from('profiles').select(PROFILE_SELECT).eq('id', userId).maybeSingle();
+}
+
+async function ensureProfileRow(userId: string): Promise<void> {
+  const { error } = await supabase.rpc('ensure_user_profile', { p_user_id: userId });
+  if (error) throw error;
+}
+
+export async function fetchProfile(userId: string): Promise<Profile | null> {
+  const yearMonth = currentYearMonthUtc();
+  let [{ data: profileRow, error: profileError }, monthlyResult] = await Promise.all([
+    loadProfileRow(userId),
+    supabase
+      .from('extract_usage_monthly')
+      .select('extract_count')
+      .eq('user_id', userId)
+      .eq('year_month', yearMonth)
+      .maybeSingle(),
+  ]);
+
+  if (profileError) throw profileError;
+
+  if (!profileRow) {
+    try {
+      await ensureProfileRow(userId);
+    } catch {
+      return null;
+    }
+    const repaired = await loadProfileRow(userId);
+    if (repaired.error) throw repaired.error;
+    profileRow = repaired.data;
+    if (!profileRow) return null;
+  }
+
+  const monthlyExtractsUsed =
+    !monthlyResult.error && typeof monthlyResult.data?.extract_count === 'number'
+      ? monthlyResult.data.extract_count
+      : 0;
+
+  return mapProfileRow(profileRow as ProfileRow, monthlyExtractsUsed);
 }
 
 /** Admin support adjustment for a user's non-expiring recipe credits. */

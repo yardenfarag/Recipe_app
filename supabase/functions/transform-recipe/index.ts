@@ -21,6 +21,8 @@ const MAX_INSTRUCTION_CHARS = 1_000;
 
 interface RequestBody {
   variant?: string;
+  instruction?: string;
+  kitchen_auto_apply?: boolean;
   recipe_id?: string;
   original_url?: string;
   recipe?: {
@@ -99,9 +101,15 @@ Deno.serve(async (req) => {
     return jsonResponse({ error: 'Invalid JSON body' }, 400);
   }
 
-  const variant = body.variant?.trim();
-  if (!variant || !isRecipeVariantKey(variant)) {
-    return jsonResponse({ error: 'Missing or invalid "variant" in request body' }, 400);
+  const instruction = body.instruction?.trim().slice(0, 400) || undefined;
+  const variantRaw = body.variant?.trim();
+  const variant = variantRaw && isRecipeVariantKey(variantRaw) ? variantRaw : undefined;
+  let kitchenAutoApply = body.kitchen_auto_apply === true;
+  if (!instruction && !variant) {
+    return jsonResponse(
+      { error: 'Missing "variant" or "instruction" in request body' },
+      400,
+    );
   }
 
   const recipe = body.recipe;
@@ -178,9 +186,26 @@ Deno.serve(async (req) => {
     return jsonResponse({ error: 'Recipe must include at least one ingredient' }, 400);
   }
 
+  if (kitchenAutoApply) {
+    const { data: kitchenRow } = await admin
+      .from('profiles')
+      .select('kitchen')
+      .eq('id', user.id)
+      .maybeSingle();
+    const kitchen = kitchenRow?.kitchen;
+    kitchenAutoApply = Boolean(
+      kitchen &&
+        typeof kitchen === 'object' &&
+        !Array.isArray(kitchen) &&
+        (kitchen as { autoApplyOnExtract?: unknown }).autoApplyOnExtract === true,
+    );
+  }
+
   const recipeId = parseRecipeId(body.recipe_id) ?? parseRecipeId(recipe.id);
   const sourceUrl = parseSourceUrl(body.original_url) ?? parseSourceUrl(recipe.original_url);
-  const reserved = await reserveRecipeRemix(admin, user.id, recipeId, sourceUrl);
+  const reserved = kitchenAutoApply
+    ? 'ok'
+    : await reserveRecipeRemix(admin, user.id, recipeId, sourceUrl);
   if (reserved === 'identity_required') {
     return jsonResponse(
       {
@@ -216,6 +241,7 @@ Deno.serve(async (req) => {
   try {
     const transformed = await transformRecipeWithGemini({
       variant,
+      instruction,
       title: recipe.title.trim(),
       servings: recipe.servings && recipe.servings > 0 ? recipe.servings : 1,
       ingredients,
@@ -224,7 +250,7 @@ Deno.serve(async (req) => {
     });
 
     if (transformed.ingredients.length === 0) {
-      await refundRecipeRemix(admin, user.id, recipeId, sourceUrl);
+      if (!kitchenAutoApply) await refundRecipeRemix(admin, user.id, recipeId, sourceUrl);
       await logUsageEvent(admin, {
         userId: user.id,
         action: 'remix',
@@ -232,7 +258,12 @@ Deno.serve(async (req) => {
         usages: transformed.usage ? [transformed.usage] : [],
         tokensCharged: 0,
         durationMs: Date.now() - started,
-        metadata: { variant, recipe_id: recipeId, original_url: sourceUrl },
+        metadata: {
+          variant,
+          recipe_id: recipeId,
+          original_url: sourceUrl,
+          kitchen_auto_apply: kitchenAutoApply,
+        },
         errorMessage: 'Empty adapted ingredients',
       });
       return jsonResponse({
@@ -249,18 +280,23 @@ Deno.serve(async (req) => {
       usages: transformed.usage ? [transformed.usage] : [],
       tokensCharged: 0,
       durationMs: Date.now() - started,
-      metadata: { variant, recipe_id: recipeId, original_url: sourceUrl },
+      metadata: {
+        variant,
+        recipe_id: recipeId,
+        original_url: sourceUrl,
+        kitchen_auto_apply: kitchenAutoApply,
+      },
     });
 
     return jsonResponse({
       status: 'ok',
       recipe: recipePayload,
-      variant,
+      variant: variant ?? 'custom',
       tokens_charged: 0,
     });
   } catch (err) {
     console.error('transform-recipe error:', err);
-    await refundRecipeRemix(admin, user.id, recipeId, sourceUrl);
+    if (!kitchenAutoApply) await refundRecipeRemix(admin, user.id, recipeId, sourceUrl);
     await logUsageEvent(admin, {
       userId: user.id,
       action: 'remix',
@@ -268,7 +304,12 @@ Deno.serve(async (req) => {
       tokensCharged: 0,
       durationMs: Date.now() - started,
       errorMessage: err instanceof Error ? err.message.slice(0, 500) : String(err),
-      metadata: { variant, recipe_id: recipeId, original_url: sourceUrl },
+      metadata: {
+        variant,
+        recipe_id: recipeId,
+        original_url: sourceUrl,
+        kitchen_auto_apply: kitchenAutoApply,
+      },
     });
     return jsonResponse(
       {

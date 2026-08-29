@@ -53,7 +53,10 @@ export function SheetModal({
   const dirStyle = { direction: rtl ? ('rtl' as const) : ('ltr' as const) };
 
   const header = (
-    <View className="flex-row items-center justify-between px-5 pb-2 pt-4">
+    <View
+      className="flex-row items-center justify-between pb-2 pt-4"
+      style={{ paddingHorizontal: 20 }}
+    >
       {headerLeft != null ? (
         headerLeft
       ) : showCloseButton ? (
@@ -84,8 +87,13 @@ export function SheetModal({
     return (
       <Modal visible={visible} transparent animationType="fade" onRequestClose={onClose}>
         <View
-          className="flex-1 items-center justify-center px-4 py-8"
-          style={{ backgroundColor: 'rgba(20, 16, 28, 0.48)', ...dirStyle }}
+          className="flex-1 justify-center"
+          style={{
+            backgroundColor: 'rgba(20, 16, 28, 0.48)',
+            paddingHorizontal: 20,
+            paddingVertical: 32,
+            ...dirStyle,
+          }}
         >
           <Pressable
             accessibilityRole="button"
@@ -106,8 +114,9 @@ export function SheetModal({
             style={{
               width: '100%',
               maxWidth,
+              alignSelf: 'center',
               maxHeight: Math.min(windowHeight * 0.88, 760),
-              borderRadius: 28,
+              borderRadius: 24,
               overflow: 'hidden',
               backgroundColor: colors.surface,
               borderWidth: 1,
@@ -116,10 +125,22 @@ export function SheetModal({
               shadowOffset: { width: 0, height: 12 },
               shadowOpacity: 0.18,
               shadowRadius: 28,
+              // RN-web: keep percentage widths inside the card, not the viewport.
+              boxSizing: 'border-box',
             }}
           >
             {header}
-            <View style={{ flexGrow: 1, flexShrink: 1, minHeight: 0 }}>{children}</View>
+            <View
+              style={{
+                width: '100%',
+                flexGrow: 1,
+                flexShrink: 1,
+                minHeight: 0,
+                alignSelf: 'stretch',
+              }}
+            >
+              {children}
+            </View>
             {footer}
           </View>
         </View>

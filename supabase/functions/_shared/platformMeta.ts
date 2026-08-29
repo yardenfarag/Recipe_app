@@ -6,6 +6,8 @@ export interface PostComment {
 
 export interface PlatformMeta {
   description?: string;
+  /** Page or video title when the platform provides one. */
+  title?: string;
   thumbnailUrl?: string;
   /** Transcript / captions text when the scraper provides it. */
   captions?: string;
