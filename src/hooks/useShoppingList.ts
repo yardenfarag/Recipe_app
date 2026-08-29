@@ -101,7 +101,7 @@ export function useShoppingList() {
       return addItems(
         ingredients.map((ing) => ({
           name: ing.name,
-          quantity: Number.isFinite(ing.quantity) ? ing.quantity : null,
+          quantity: Number.isFinite(ing.quantity) && ing.quantity > 0 ? ing.quantity : null,
           unit: ing.unit?.trim() ? ing.unit : null,
           sourceRecipeId: recipeId,
         })),
@@ -126,7 +126,7 @@ export function useShoppingList() {
         for (const ing of recipe.ingredients) {
           incoming.push({
             name: ing.name,
-            quantity: Number.isFinite(ing.quantity) ? ing.quantity : null,
+            quantity: Number.isFinite(ing.quantity) && ing.quantity > 0 ? ing.quantity : null,
             unit: ing.unit?.trim() ? ing.unit : null,
             sourceRecipeId: recipe.id,
           });

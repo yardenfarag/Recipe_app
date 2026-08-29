@@ -81,7 +81,7 @@ export function SnapExtractingView({ statusLines, statusIndex }: SnapExtractingV
     <View
       className="flex-1 items-center justify-center px-8"
       accessibilityRole="progressbar"
-      accessibilityLabel={statusLines[statusIndex]}
+      accessibilityLabel={statusLines[statusIndex % statusLines.length]}
     >
       <View className="mb-10 h-44 w-44 items-center justify-center">
         <Animated.View
@@ -122,7 +122,7 @@ export function SnapExtractingView({ statusLines, statusIndex }: SnapExtractingV
         className="text-center text-xl font-semibold"
         style={{ color: colors.text }}
       >
-        {statusLines[statusIndex]}
+        {statusLines[statusIndex % statusLines.length]}
       </Animated.Text>
     </View>
   );

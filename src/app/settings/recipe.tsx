@@ -10,7 +10,9 @@ import { useRtl } from '@/hooks/useRtl';
 import { useThemePreference } from '@/hooks/useThemePreference';
 import {
   EMPTY_KITCHEN_PROFILE,
+  addPantryStaple,
   loadGuestKitchenProfile,
+  removePantryStaple,
   saveGuestKitchenProfile,
   type KitchenDietKey,
   type KitchenProfile,
@@ -29,6 +31,7 @@ export default function RecipeSettingsScreen() {
   const [saving, setSaving] = useState(false);
   const [swapFrom, setSwapFrom] = useState('');
   const [swapTo, setSwapTo] = useState('');
+  const [pantryDraft, setPantryDraft] = useState('');
   const [error, setError] = useState<string | null>(null);
   const pendingRef = useRef<KitchenProfile | null>(null);
   const savingRef = useRef(false);
@@ -104,6 +107,13 @@ export default function RecipeSettingsScreen() {
     setSwapFrom('');
     setSwapTo('');
     void persist({ ...profile, alwaysSwap });
+  }
+
+  function addPantry() {
+    const next = addPantryStaple(profile, pantryDraft);
+    if (next === profile) return;
+    setPantryDraft('');
+    void persist(next);
   }
 
   if (loading) {
@@ -239,6 +249,56 @@ export default function RecipeSettingsScreen() {
       >
         <Text className="text-sm font-semibold" style={{ color: colors.primary }}>
           {t('settings.kitchenAddSwap')}
+        </Text>
+      </Pressable>
+
+      <View className="mb-6 h-px" style={{ backgroundColor: colors.border }} />
+
+      <Text className="mb-2 text-sm font-semibold" style={{ color: colors.text }}>
+        {t('settings.kitchenPantry')}
+      </Text>
+      <Text className="mb-3 text-xs leading-5" style={{ color: colors.textSecondary }}>
+        {t('settings.kitchenPantryHint')}
+      </Text>
+      {profile.pantryStaples.length === 0 ? (
+        <Text className="mb-3 text-sm" style={{ color: colors.textSecondary }}>
+          {t('settings.kitchenPantryEmpty')}
+        </Text>
+      ) : (
+        profile.pantryStaples.map((staple) => (
+          <View key={staple} className="mb-2 flex-row items-center gap-2">
+            <Text className="flex-1 text-sm" style={{ color: colors.text }}>
+              {staple}
+            </Text>
+            <Pressable
+              onPress={() => void persist(removePantryStaple(profile, staple))}
+              accessibilityLabel={t('common.remove')}
+            >
+              <Text className="text-xs font-semibold" style={{ color: colors.danger }}>
+                {t('common.remove')}
+              </Text>
+            </Pressable>
+          </View>
+        ))
+      )}
+      <View className="mb-3 flex-row gap-2">
+        <TextInput
+          className="min-w-0 flex-1 rounded-2xl border px-3 py-2.5 text-sm"
+          style={{ borderColor: colors.border, color: colors.text, textAlign }}
+          placeholder={t('settings.kitchenPantryPlaceholder')}
+          placeholderTextColor={colors.textSecondary}
+          value={pantryDraft}
+          onChangeText={setPantryDraft}
+          onSubmitEditing={addPantry}
+        />
+      </View>
+      <Pressable
+        onPress={addPantry}
+        className="mb-6 min-h-[44px] items-center justify-center self-start rounded-3xl px-4 active:opacity-80"
+        style={{ backgroundColor: colors.primarySoft }}
+      >
+        <Text className="text-sm font-semibold" style={{ color: colors.primary }}>
+          {t('settings.kitchenPantryAdd')}
         </Text>
       </Pressable>
 

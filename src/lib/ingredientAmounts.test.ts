@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
-import { displayIngredientAmount } from './displayIngredientAmount';
+import { displayIngredientAmount, displayedAmountIsPinch, ingredientAmountIsUnknown } from './displayIngredientAmount';
 import {
   pickIngredientAmount,
   readIngredientAmount,
@@ -80,5 +80,24 @@ describe('displayIngredientAmount', () => {
   it('localizes extracted dual units', () => {
     expect(displayIngredientAmount(flour, { system: 'metric', language: 'he' })).toBe('120 גרם');
     expect(displayIngredientAmount(flour, { system: 'original', language: 'he' })).toBe('1 כוס');
+  });
+
+  it('leaves unknown amounts blank instead of 0', () => {
+    const soy = { name: 'soy sauce', quantity: 0, unit: '' };
+    expect(ingredientAmountIsUnknown(soy)).toBe(true);
+    expect(displayIngredientAmount(soy)).toBe('');
+  });
+
+  it('keeps to-taste as a unit instead of calling it unknown', () => {
+    const salt = { name: 'salt', quantity: 0, unit: 'to taste' };
+    expect(ingredientAmountIsUnknown(salt)).toBe(false);
+    expect(displayIngredientAmount(salt)).toBe('to taste');
+  });
+
+  it('treats a scaled-down teaspoon as a pinch', () => {
+    const salt = { name: 'salt', quantity: 0.05, unit: 'tsp' };
+    expect(displayIngredientAmount(salt)).toBe('a pinch');
+    expect(displayedAmountIsPinch(salt)).toBe(true);
+    expect(displayedAmountIsPinch(flour)).toBe(false);
   });
 });

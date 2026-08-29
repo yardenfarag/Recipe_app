@@ -170,6 +170,8 @@ export async function updateGuestRecipeContent(
     cost_estimate?: Recipe['cost_estimate'] | null;
     effort_level?: Recipe['effort_level'] | null;
     tags?: string[];
+    kitchen_adapted_summary?: string | null;
+    kitchen_original?: Recipe['kitchen_original'] | null;
   },
 ): Promise<Recipe | null> {
   return serializeMutation(async () => {
@@ -197,7 +199,39 @@ export async function updateGuestRecipeContent(
           ? { effort_level: content.effort_level ?? undefined }
           : {}),
         ...(content.tags ? { tags: content.tags } : {}),
+        ...(content.kitchen_adapted_summary !== undefined
+          ? { kitchen_adapted_summary: content.kitchen_adapted_summary ?? undefined }
+          : {}),
+        ...(content.kitchen_original !== undefined
+          ? { kitchen_original: content.kitchen_original ?? undefined }
+          : {}),
         translations: textChanged ? undefined : recipe.translations,
+      };
+      return updated;
+    });
+    if (!updated) return null;
+    await writeGuestRecipes(next);
+    return updated;
+  });
+}
+
+const COOK_NOTE_MAX = 160;
+
+export async function setGuestRecipeCooked(
+  id: string,
+  cooked: { last_cooked_at: string; cook_note?: string | null },
+): Promise<Recipe | null> {
+  const note =
+    typeof cooked.cook_note === 'string' ? cooked.cook_note.trim().slice(0, COOK_NOTE_MAX) : '';
+  return serializeMutation(async () => {
+    const existing = await readGuestRecipes();
+    let updated: Recipe | null = null;
+    const next = existing.map((recipe) => {
+      if (recipe.id !== id) return recipe;
+      updated = {
+        ...recipe,
+        last_cooked_at: cooked.last_cooked_at,
+        cook_note: note || undefined,
       };
       return updated;
     });
@@ -312,6 +346,14 @@ function sanitizeStoredRecipe(value: unknown): Recipe | null {
   if (typeof value.migrated_from_guest === 'boolean') {
     recipe.migrated_from_guest = value.migrated_from_guest;
   }
+  assignString(recipe, 'last_cooked_at', value.last_cooked_at);
+  if (typeof value.cook_note === 'string') {
+    const note = value.cook_note.trim().slice(0, 160);
+    if (note) recipe.cook_note = note;
+  }
+  assignString(recipe, 'kitchen_adapted_summary', value.kitchen_adapted_summary);
+  const kitchenOriginal = sanitizeKitchenOriginal(value.kitchen_original);
+  if (kitchenOriginal) recipe.kitchen_original = kitchenOriginal;
 
   const tags = sanitizeStringArray(value.tags);
   if (tags) recipe.tags = tags;
@@ -319,6 +361,24 @@ function sanitizeStoredRecipe(value: unknown): Recipe | null {
   if (missingFields) recipe.missing_fields = missingFields;
 
   return recipe;
+}
+
+function sanitizeKitchenOriginal(value: unknown): Recipe['kitchen_original'] | undefined {
+  if (!isRecord(value)) return undefined;
+  const title = readString(value.title);
+  const servings = readPositiveNumber(value.servings);
+  const ingredients = sanitizeIngredients(value.ingredients);
+  const instructions = sanitizeInstructions(value.instructions);
+  if (!title || !servings || !ingredients || !instructions) return undefined;
+  const original: NonNullable<Recipe['kitchen_original']> = {
+    title,
+    servings,
+    ingredients,
+    instructions,
+  };
+  const calories = readFiniteNumber(value.calories);
+  if (calories !== null) original.calories = calories;
+  return original;
 }
 
 function sanitizeIngredients(value: unknown): Recipe['ingredients'] | null {

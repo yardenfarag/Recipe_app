@@ -422,6 +422,12 @@ export default function SettingsScreen() {
               onPress={() => router.push('/settings/recipe')}
             />
             <SettingsActionRow
+              label={t('settings.cookbook')}
+              description={t('settings.cookbookHint')}
+              icon="book-outline"
+              onPress={() => router.push('/cookbook')}
+            />
+            <SettingsActionRow
               label={t('settings.appearance')}
               description={t('settings.appearanceHint')}
               icon="color-palette-outline"

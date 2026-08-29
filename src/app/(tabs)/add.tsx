@@ -130,11 +130,12 @@ export default function AddRecipeScreen() {
       setStatusIndex(0);
       return;
     }
+    const lineCount = jobKind === "invent" ? 3 : 4;
     const id = setInterval(() => {
-      setStatusIndex((i) => (i + 1) % 3);
+      setStatusIndex((i) => (i + 1) % lineCount);
     }, 2800);
     return () => clearInterval(id);
-  }, [loading]);
+  }, [loading, jobKind]);
 
   useEffect(() => {
     if (!hasShareIntent) return;
@@ -622,17 +623,20 @@ export default function AddRecipeScreen() {
           t("snap.statusCheckingFood"),
           t("snap.statusReadingPhoto"),
           t("snap.statusIngredients"),
+          t("snap.statusJustAPinch"),
         ] as const)
       : detectPlatform(url) === "web"
         ? ([
             t("snap.statusCheckingFood"),
             t("snap.statusReadingPage"),
             t("snap.statusIngredients"),
+            t("snap.statusJustAPinch"),
           ] as const)
         : ([
             t("snap.statusCheckingFood"),
             t("snap.statusReadingVideo"),
             t("snap.statusIngredients"),
+            t("snap.statusJustAPinch"),
           ] as const);
 
   const signedInQuotaLabel = (() => {

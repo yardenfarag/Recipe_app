@@ -55,6 +55,10 @@ export async function migrateGuestRecipesToSupabase(
       tags: recipe.tags,
       missing_fields: recipe.missing_fields,
       is_favorite: recipe.is_favorite === true,
+      last_cooked_at: recipe.last_cooked_at,
+      cook_note: recipe.cook_note,
+      kitchen_adapted_summary: recipe.kitchen_adapted_summary,
+      kitchen_original: recipe.kitchen_original,
       migrated_from_guest: true,
       source_language: recipe.source_language ?? 'en',
     };

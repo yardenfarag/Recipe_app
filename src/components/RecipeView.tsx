@@ -8,8 +8,11 @@ import { MeasurementToggle } from '@/components/MeasurementToggle';
 import { AddToCollectionModal } from '@/components/AddToCollectionModal';
 import { AddToShoppingListModal } from '@/components/AddToShoppingListModal';
 import { CookAlongVideoModal } from '@/components/CookAlongVideoModal';
+import { CookMode } from '@/components/CookMode';
+import { CookedNoteModal } from '@/components/CookedNoteModal';
 import { CostMeter } from '@/components/CostEstimateDisplay';
 import { EditTagsModal } from '@/components/EditTagsModal';
+import { IngredientAmountText } from '@/components/IngredientAmountText';
 import { RecipeImage } from '@/components/RecipeImage';
 import { RecipeVideoPanel, type RecipeVideoPanelHandle } from '@/components/RecipeVideoPanel';
 import { RecipeTranslateModal } from '@/components/RecipeTranslateModal';
@@ -30,7 +33,8 @@ import { isRtlAppLanguage } from '@/lib/appLanguages';
 import { confirmAction } from '@/lib/confirmAction';
 import { clearExtractionRequestId } from '@/lib/extractionRequestId';
 import { resolveCulinaryLanguage } from '@/lib/culinaryUnits';
-import { displayIngredientAmount } from '@/lib/displayIngredientAmount';
+import { displayIngredientAmount, displayedAmountIsPinch, ingredientAmountIsUnknown, recipeHasUnknownAmounts } from '@/lib/displayIngredientAmount';
+import { formatCookedDate } from '@/lib/formatCookedDate';
 import { COST_I18N_KEYS, costFilledCount } from '@/lib/formatCostEstimate';
 import { formatRecipeDuration } from '@/lib/formatRecipeDuration';
 import { formatVideoTimestamp } from '@/lib/formatVideoTimestamp';
@@ -53,7 +57,7 @@ import type { RepairedRecipePayload } from '@/lib/supabase/repairRecipe';
 import { SubstitutionAlternative } from '@/lib/supabase/suggestSubstitution';
 import { TranslatedRecipePayload } from '@/lib/supabase/translateRecipe';
 import { TransformedRecipePayload } from '@/lib/supabase/transformRecipe';
-import { Ingredient, Instruction, RecipeTranslationContent } from '@/types/recipe';
+import { Ingredient, Instruction, Recipe, RecipeTranslationContent } from '@/types/recipe';
 
 interface RecipeContentSnapshot {
   title: string;
@@ -61,6 +65,8 @@ interface RecipeContentSnapshot {
   ingredients: Ingredient[];
   instructions: Instruction[];
   calories?: number;
+  kitchen_adapted_summary?: string | null;
+  kitchen_original?: Recipe['kitchen_original'] | null;
 }
 
 interface RecipeViewProps {
@@ -99,6 +105,8 @@ interface RecipeViewProps {
   ) => Promise<RecipeTranslationContent | null> | RecipeTranslationContent | null;
   /** Persist a successful partial-recipe repair, including extraction_status. */
   onRepairApplied?: (recipe: RepairedRecipePayload) => void;
+  /** Saved recipes only — persist cooked date and optional note. */
+  onCookedChange?: (cooked: { last_cooked_at: string; cook_note: string }) => void;
 }
 
 /** Stack header on web — used so the side cook-along can fill the remaining viewport. */
@@ -121,6 +129,7 @@ export function RecipeView({
   onTranslationPersist,
   getCachedTranslation,
   onRepairApplied,
+  onCookedChange,
 }: RecipeViewProps) {
   const { t } = useTranslation();
   const { user } = useAuth();
@@ -183,6 +192,10 @@ export function RecipeView({
   const [repairing, setRepairing] = useState(false);
   const [creditsOpen, setCreditsOpen] = useState(false);
   const [kitchenAdapted, setKitchenAdapted] = useState(Boolean(recipe.kitchen_adapted_summary));
+  const [cookModeOpen, setCookModeOpen] = useState(false);
+  const [cookedNoteOpen, setCookedNoteOpen] = useState(false);
+  const [lastCookedAt, setLastCookedAt] = useState(recipe.last_cooked_at);
+  const [cookNote, setCookNote] = useState(recipe.cook_note ?? '');
   const [activeLanguage, setActiveLanguage] = useState<RecipeLanguageCode | null>(
     localizedLanguage,
   );
@@ -225,17 +238,23 @@ export function RecipeView({
       instructions: recipe.instructions,
       calories: recipe.calories,
     };
-    originalRef.current = {
-      title: recipe.title,
-      servings: recipe.servings,
-      ingredients: recipe.ingredients,
-      instructions: recipe.instructions,
-      calories: recipe.calories,
-    };
+    // Keep the pre-adaptation snapshot. Overwriting from live recipe fields
+    // would make "Revert to original" restore the adapted (or remixed) content.
+    if (recipe.kitchen_original) {
+      originalRef.current = {
+        title: recipe.kitchen_original.title,
+        servings: recipe.kitchen_original.servings,
+        ingredients: recipe.kitchen_original.ingredients,
+        instructions: recipe.kitchen_original.instructions,
+        calories: recipe.kitchen_original.calories,
+      };
+    }
     setBaseServings(recipe.servings);
     setCalories(recipe.calories);
     setServings(recipe.servings);
     setTags(recipe.tags ?? []);
+    setLastCookedAt(recipe.last_cooked_at);
+    setCookNote(recipe.cook_note ?? '');
 
     if (localizedContent && localizedLanguage) {
       setTitle(localizedContent.title);
@@ -255,6 +274,9 @@ export function RecipeView({
     recipe.ingredients,
     recipe.instructions,
     recipe.tags,
+    recipe.last_cooked_at,
+    recipe.cook_note,
+    recipe.kitchen_original,
     localizedContent,
     localizedLanguage,
   ]);
@@ -344,6 +366,7 @@ export function RecipeView({
     setServings(result.servings);
     setActiveVariant(variant);
     setVariantSummary(result.summary);
+    setKitchenAdapted(false);
     setActiveLanguage(null);
     translationSourceRef.current = {
       title: canonicalTitle,
@@ -352,6 +375,15 @@ export function RecipeView({
       instructions: result.instructions,
       calories: result.calories,
     };
+    onContentChange?.({
+      title: canonicalTitle,
+      servings: result.servings,
+      ingredients: result.ingredients,
+      instructions: result.instructions,
+      calories: result.calories,
+      kitchen_adapted_summary: null,
+      kitchen_original: null,
+    });
   }
 
   function handleRevertVariant() {
@@ -367,6 +399,11 @@ export function RecipeView({
     setActiveLanguage(null);
     translationSourceRef.current = { ...original };
     setKitchenAdapted(false);
+    onContentChange?.({
+      ...original,
+      kitchen_adapted_summary: null,
+      kitchen_original: null,
+    });
   }
 
   async function handleRepair() {
@@ -520,6 +557,14 @@ export function RecipeView({
 
   const sourceShareUrl = recipeSourceShareUrl(recipe.original_url);
 
+  function stampCooked(openNote: boolean) {
+    if (!onCookedChange) return;
+    const at = new Date().toISOString();
+    setLastCookedAt(at);
+    onCookedChange({ last_cooked_at: at, cook_note: cookNote });
+    if (openNote) setCookedNoteOpen(true);
+  }
+
   async function handleShare() {
     if (!sourceShareUrl) return;
 
@@ -554,6 +599,10 @@ export function RecipeView({
     () => baseInstructions.some((step) => step.timestamp_seconds != null),
     [baseInstructions],
   );
+  const hasUnknownAmounts = recipeHasUnknownAmounts(scaledIngredients, measurementSystem);
+  const cookedDateLabel = lastCookedAt
+    ? formatCookedDate(lastCookedAt, appLanguage)
+    : '';
 
   async function handleStepTimestamp(seconds: number) {
     if (sourceVideo.mode === 'none' || !recipe.original_url) return;
@@ -745,6 +794,45 @@ export function RecipeView({
                       </Text>
                     </Pressable>
                   ))}
+                </View>
+              ) : null}
+              {onCookedChange ? (
+                <View className="mt-3">
+                  {lastCookedAt && cookedDateLabel ? (
+                    <Text className="text-sm leading-5" style={{ color: colors.textSecondary }}>
+                      {cookNote.trim()
+                        ? t('recipe.cookedOnWithNote', { date: cookedDateLabel, note: cookNote.trim() })
+                        : t('recipe.cookedOn', { date: cookedDateLabel })}
+                    </Text>
+                  ) : null}
+                  <View className="mt-2 flex-row flex-wrap gap-2">
+                    <Pressable
+                      onPress={() => stampCooked(!lastCookedAt)}
+                      className="min-h-[40px] items-center justify-center rounded-full px-3.5 active:opacity-80"
+                      style={{ backgroundColor: colors.primarySoft }}
+                      accessibilityRole="button"
+                      accessibilityLabel={
+                        lastCookedAt ? t('recipe.cookedAgain') : t('recipe.cookedAction')
+                      }
+                    >
+                      <Text className="text-xs font-semibold" style={{ color: colors.primary }}>
+                        {lastCookedAt ? t('recipe.cookedAgain') : t('recipe.cookedAction')}
+                      </Text>
+                    </Pressable>
+                    {lastCookedAt ? (
+                      <Pressable
+                        onPress={() => setCookedNoteOpen(true)}
+                        className="min-h-[40px] items-center justify-center rounded-full px-3.5 active:opacity-80"
+                        style={{ backgroundColor: colors.frosted }}
+                        accessibilityRole="button"
+                        accessibilityLabel={t('recipe.cookedNoteTitle')}
+                      >
+                        <Text className="text-xs font-semibold" style={{ color: colors.text }}>
+                          {t('recipe.cookedNoteTitle')}
+                        </Text>
+                      </Pressable>
+                    ) : null}
+                  </View>
                 </View>
               ) : null}
             </View>
@@ -945,12 +1033,20 @@ export function RecipeView({
                     {ing.name}
                   </Text>
                   <View className="flex-row items-center gap-3">
-                    <Text className="text-sm tabular-nums" style={{ color: colors.textSecondary }}>
-                      {displayIngredientAmount(ing, {
+                    <IngredientAmountText
+                      amount={
+                        displayIngredientAmount(ing, {
+                          system: measurementSystem,
+                          language: unitLanguage,
+                        }) || t('recipe.amountUnknown')
+                      }
+                      isPinch={displayedAmountIsPinch(ing, {
                         system: measurementSystem,
-                        language: unitLanguage,
                       })}
-                    </Text>
+                      color={colors.textSecondary}
+                      pinchColor={colors.primary}
+                      writingDirection={textDirection}
+                    />
                     <Pressable
                       className="rounded-full px-3 py-1.5"
                       style={{ backgroundColor: colors.accentSoft }}
@@ -964,6 +1060,11 @@ export function RecipeView({
                 </View>
               ))}
             </Section>
+            {hasUnknownAmounts && !recipeIsInvented(recipe) ? (
+              <Text className="-mt-2 mb-4 px-1 text-xs leading-5" style={{ color: colors.textSecondary }}>
+                {t('recipe.amountsUnknownHint')}
+              </Text>
+            ) : null}
           </>
         )}
 
@@ -1012,11 +1113,27 @@ export function RecipeView({
             title={t('recipe.instructions')}
             count={baseInstructions.length}
             headerRight={
-              hasStepTimestamps ? (
-                <Text className="text-[11px] font-medium" style={{ color: colors.textSecondary }}>
-                  {t('recipe.tapTimeToJump')}
-                </Text>
-              ) : undefined
+              <View className="flex-row items-center gap-2">
+                {baseInstructions.length > 0 ? (
+                  <Pressable
+                    className="flex-row items-center gap-1 rounded-full px-3 py-1.5 active:opacity-80"
+                    style={{ backgroundColor: colors.primarySoft }}
+                    onPress={() => setCookModeOpen(true)}
+                    accessibilityRole="button"
+                    accessibilityLabel={t('recipe.cookMode')}
+                  >
+                    <Ionicons name="restaurant-outline" size={14} color={colors.primary} />
+                    <Text className="text-xs font-semibold" style={{ color: colors.primary }}>
+                      {t('recipe.cookMode')}
+                    </Text>
+                  </Pressable>
+                ) : null}
+                {hasStepTimestamps ? (
+                  <Text className="text-[11px] font-medium" style={{ color: colors.textSecondary }}>
+                    {t('recipe.tapTimeToJump')}
+                  </Text>
+                ) : null}
+              </View>
             }
           >
             {baseInstructions.map((step, index) => (
@@ -1151,7 +1268,12 @@ export function RecipeView({
         onConfirm={async (selected) => {
           const normalized = selected.map((ing) => {
             const converted = pickIngredientAmount(ing, measurementSystem);
-            return { ...ing, quantity: converted.quantity, unit: converted.unit };
+            const unknown = ingredientAmountIsUnknown(ing, measurementSystem);
+            return {
+              ...ing,
+              quantity: unknown ? 0 : converted.quantity,
+              unit: converted.unit,
+            };
           });
           const result = await addFromRecipe(normalized, recipeId);
           const dupNote =
@@ -1241,6 +1363,38 @@ export function RecipeView({
       />
 
       <TokenPurchaseSheet visible={creditsOpen} onClose={() => setCreditsOpen(false)} />
+
+      {cookModeOpen ? (
+        <CookMode
+          visible={cookModeOpen}
+          title={title}
+          instructions={baseInstructions}
+          textDirection={textDirection}
+          onClose={() => setCookModeOpen(false)}
+          onCooked={
+            onCookedChange
+              ? () => {
+                  setCookModeOpen(false);
+                  stampCooked(!lastCookedAt);
+                }
+              : undefined
+          }
+        />
+      ) : null}
+
+      {onCookedChange ? (
+        <CookedNoteModal
+          visible={cookedNoteOpen}
+          initialValue={cookNote}
+          onClose={() => setCookedNoteOpen(false)}
+          onSave={(note) => {
+            const at = lastCookedAt ?? new Date().toISOString();
+            setLastCookedAt(at);
+            setCookNote(note);
+            onCookedChange({ last_cooked_at: at, cook_note: note });
+          }}
+        />
+      ) : null}
     </View>
   );
 }

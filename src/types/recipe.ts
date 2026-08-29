@@ -67,6 +67,10 @@ export interface Recipe {
   migrated_from_guest?: boolean;
   /** Quick-access pin in the library Favorites section. */
   is_favorite?: boolean;
+  /** Last time the user marked this recipe as cooked. */
+  last_cooked_at?: string;
+  /** Optional one-line note from the last cook. */
+  cook_note?: string;
   created_at?: string;
   /** Language of canonical title/ingredients/instructions (ADR 012). */
   source_language?: string;
@@ -77,9 +81,9 @@ export interface Recipe {
   translations?: Record<string, RecipeTranslationContent>;
   /** Client-only: preferred-language title for library rows. */
   display_title?: string;
-  /** Client-only: kitchen auto-apply summary on an unsaved extract. */
+  /** Kitchen auto-apply summary. Survives save so the whisper stays on the recipe. */
   kitchen_adapted_summary?: string;
-  /** Client-only: content before kitchen auto-apply, used to revert. */
+  /** Content before kitchen auto-apply, used to revert. */
   kitchen_original?: {
     title: string;
     servings: number;

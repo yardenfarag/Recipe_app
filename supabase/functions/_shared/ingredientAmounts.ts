@@ -33,7 +33,8 @@ export const DUAL_INGREDIENT_SCHEMA = {
   required: ['name', 'quantity', 'unit', 'metric', 'spoons'],
 };
 
-export const MEASUREMENT_RULES = `- Every ingredient MUST include quantity+unit (as written) AND metric AND spoons.
+export const MEASUREMENT_RULES = `- Every ingredient MUST include quantity+unit (as written) AND metric AND spoons when the source states an amount.
+- If the source does not state an amount, set quantity to 0 and unit to "" (or "to taste" only when the source says to taste). Do not guess grams, cups, or spoons. Leave metric and spoons at quantity 0 as well — do not invent conversions for unknown amounts.
 - quantity + unit: copy the source as written, in the source language. Do not convert this pair.
 - metric and spoons units MUST be canonical English: g, kg, ml, liter, cup, tbsp, tsp, pinch, clove, slice, can, package, stick, or "" for countable pieces (eggs).
 - metric — how a cook using a scale / measuring jug would measure this:
@@ -93,6 +94,10 @@ function isCountLikeUnit(unit: string): boolean {
   return isCountUnit(unit) || COUNT_LIKE.has(key);
 }
 
+function isTasteUnit(unit: string): boolean {
+  return /^(to taste|al gusto|au goût|לפי הטעם|по вкусу|حسب الذوق)$/i.test(unit.trim());
+}
+
 /**
  * Canonicalize dual amounts from Gemini. Count-like items that omitted
  * metric/spoons get the source copied into both so the toggle stays stable.
@@ -106,6 +111,10 @@ export function normalizeDualIngredient(ingredient: DualIngredient): DualIngredi
     quantity: Number.isFinite(quantity) ? quantity : 0,
     unit,
   };
+
+  if (source.quantity <= 0 && !isTasteUnit(source.unit)) {
+    return { name, quantity: 0, unit };
+  }
 
   let metric = parseAmount(ingredient.metric);
   let spoons = parseAmount(ingredient.spoons);

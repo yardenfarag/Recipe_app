@@ -84,6 +84,15 @@ function RootNavigator() {
           <Stack.Screen name="reset-password" options={{ title: t('nav.resetPassword') }} />
           <Stack.Screen name="auth-callback" options={{ headerShown: false }} />
           <Stack.Screen
+            name="cookbook"
+            options={{
+              title: t('nav.cookbook'),
+              headerLeft: (props) => (
+                <StackHeaderBackButton tintColor={props.tintColor} fallback="/" />
+              ),
+            }}
+          />
+          <Stack.Screen
             name="settings/credits"
             options={{
               title: t('settings.plan'),

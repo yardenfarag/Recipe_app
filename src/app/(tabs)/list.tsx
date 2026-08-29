@@ -21,6 +21,7 @@ import { Screen } from '@/components/Screen';
 import { SelectRecipesForShoppingListModal } from '@/components/SelectRecipesForShoppingListModal';
 import { TextInput } from '@/components/text-input';
 import { useCollections } from '@/hooks/useCollections';
+import { useKitchenProfile } from '@/hooks/useKitchenProfile';
 import { useLanguagePreference } from '@/hooks/useLanguagePreference';
 import { useMeasurementPreference } from '@/hooks/useMeasurementPreference';
 import { useRecipes } from '@/hooks/useRecipes';
@@ -28,6 +29,7 @@ import { useRtl } from '@/hooks/useRtl';
 import { useShoppingList } from '@/hooks/useShoppingList';
 import { useThemePreference } from '@/hooks/useThemePreference';
 import { pickIngredientAmount } from '@/lib/ingredientAmounts';
+import { filterPantryStaples } from '@/lib/pantryStaples';
 import { formatQuantity } from '@/lib/formatQuantity';
 import {
   getDuplicateNameCounts,
@@ -51,6 +53,7 @@ export default function ShoppingListScreen() {
     clearChecked,
     clearAll,
   } = useShoppingList();
+  const { pantryStaples, keepStaple } = useKitchenProfile();
   const { recipes } = useRecipes();
   const { collections } = useCollections();
   const { system: measurementSystem } = useMeasurementPreference();
@@ -146,7 +149,7 @@ export default function ShoppingListScreen() {
       const selected = recipes.filter((recipe) => selectedIds.includes(recipe.id));
       const payload = selected.map((recipe) => ({
         id: recipe.id,
-        ingredients: (recipe.ingredients ?? []).map((ing) => {
+        ingredients: filterPantryStaples(recipe.ingredients ?? [], pantryStaples).kept.map((ing) => {
           const converted = pickIngredientAmount(ing, measurementSystem);
           return {
             name: ing.name,
@@ -155,18 +158,27 @@ export default function ShoppingListScreen() {
           };
         }),
       }));
+      const skipped = selected.flatMap((recipe) =>
+        filterPantryStaples(recipe.ingredients ?? [], pantryStaples).skipped,
+      );
 
       const result = await addFromRecipes(payload);
+      const pantryNote =
+        skipped.length === 0
+          ? ''
+          : skipped.length === 1
+            ? `\n\n${t('list.pantrySkippedOne', { name: skipped[0].name })}`
+            : `\n\n${t('list.pantrySkippedOther', { count: skipped.length })}`;
       Alert.alert(
         t('list.fromRecipesSuccessTitle'),
-        t('list.fromRecipesSuccessBody', {
+        `${t('list.fromRecipesSuccessBody', {
           recipes: selected.length,
           added: result.addedCount,
           merged: result.mergedCount,
-        }),
+        })}${pantryNote}`,
       );
     },
-    [addFromRecipes, measurementSystem, recipes, t],
+    [addFromRecipes, measurementSystem, pantryStaples, recipes, t],
   );
 
   const handleAdd = useCallback(async () => {
@@ -463,6 +475,21 @@ export default function ShoppingListScreen() {
               ) : null}
             </View>
           </Pressable>
+          {!item.checked ? (
+          <Pressable
+            accessibilityRole="button"
+            accessibilityLabel={t('list.keepThisLabel', { name: item.name })}
+            className="min-h-[44px] min-w-[44px] items-center justify-center rounded-full active:opacity-70"
+            hitSlop={8}
+            onPress={() => {
+              keepStaple(item.name);
+              void handleRemove(item);
+              setNotice({ message: t('list.pantrySaved', { name: item.name }) });
+            }}
+          >
+            <Ionicons name="home-outline" size={18} color={colors.textSecondary} />
+          </Pressable>
+          ) : null}
           <Pressable
             accessibilityRole="button"
             accessibilityLabel={t('list.editItemLabel', { name: item.name })}
@@ -492,6 +519,7 @@ export default function ShoppingListScreen() {
       handleLongPress,
       handleRemove,
       handleToggle,
+      keepStaple,
       openEdit,
       t,
     ],

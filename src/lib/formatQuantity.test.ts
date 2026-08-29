@@ -1,11 +1,22 @@
 import { describe, expect, it } from 'vitest';
 
 import { localizeCulinaryUnit, localizeIngredientUnits } from './culinaryUnits';
-import { formatQuantity } from './formatQuantity';
+import { formatQuantity, quantityReadsAsPinch } from './formatQuantity';
 
 describe('formatQuantity', () => {
   it('returns "a pinch" for tiny teaspoon amounts', () => {
     expect(formatQuantity(0.05, 'tsp')).toBe('a pinch');
+  });
+
+  it('reads a scaled-down pinch unit as a pinch, not a fraction', () => {
+    expect(formatQuantity(0.5, 'pinch')).toBe('a pinch');
+    expect(formatQuantity(1, 'pinch')).toBe('1 pinch');
+    expect(formatQuantity(2, 'pinches')).toBe('2 pinches');
+  });
+
+  it('localizes the pinch phrase', () => {
+    expect(formatQuantity(0.05, 'tsp', 'es')).toBe('una pizca');
+    expect(formatQuantity(0.05, 'tsp', 'he')).toBe('קמצוץ');
   });
 
   it('snaps decimals to common cooking fractions', () => {
@@ -37,6 +48,15 @@ describe('formatQuantity', () => {
   it('formats metric amounts when the unit is already localized', () => {
     expect(formatQuantity(240, 'מ״ל', 'he')).toBe('240 מ״ל');
     expect(formatQuantity(200, 'גרם', 'he')).toBe('200 גרם');
+  });
+});
+
+describe('quantityReadsAsPinch', () => {
+  it('is true for sub-sixteenth teaspoons and fractional pinches', () => {
+    expect(quantityReadsAsPinch(0.05, 'tsp')).toBe(true);
+    expect(quantityReadsAsPinch(0.5, 'pinch')).toBe(true);
+    expect(quantityReadsAsPinch(1, 'pinch')).toBe(false);
+    expect(quantityReadsAsPinch(0.25, 'cup')).toBe(false);
   });
 });
 

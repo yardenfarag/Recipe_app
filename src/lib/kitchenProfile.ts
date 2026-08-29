@@ -13,13 +13,19 @@ export type KitchenProfile = {
   defaultServings?: number;
   alwaysSwap: KitchenSwap[];
   autoApplyOnExtract: boolean;
+  /** Ingredient names that stay off the shopping list unless added by hand. */
+  pantryStaples: string[];
 };
 
 export const EMPTY_KITCHEN_PROFILE: KitchenProfile = {
   diets: [],
   alwaysSwap: [],
   autoApplyOnExtract: false,
+  pantryStaples: [],
 };
+
+export const MAX_PANTRY_STAPLES = 40;
+const MAX_PANTRY_NAME = 60;
 
 const DIET_KEYS = new Set<string>(RECIPE_VARIANTS.map((v) => v.key));
 
@@ -45,11 +51,42 @@ export function sanitizeKitchenProfile(value: unknown): KitchenProfile {
     typeof servings === 'number' && Number.isInteger(servings) && servings >= 1 && servings <= 24
       ? servings
       : undefined;
+  const pantryStaples = Array.isArray(raw.pantryStaples)
+    ? [
+        ...new Set(
+          raw.pantryStaples.flatMap((item) => {
+            if (typeof item !== 'string') return [];
+            const name = item.trim().slice(0, MAX_PANTRY_NAME);
+            return name ? [name] : [];
+          }),
+        ),
+      ].slice(0, MAX_PANTRY_STAPLES)
+    : [];
   return {
     diets: [...new Set(diets)].slice(0, 4),
     defaultServings,
     alwaysSwap,
     autoApplyOnExtract: raw.autoApplyOnExtract === true,
+    pantryStaples,
+  };
+}
+
+export function addPantryStaple(profile: KitchenProfile, name: string): KitchenProfile {
+  const trimmed = name.trim().slice(0, MAX_PANTRY_NAME);
+  if (!trimmed) return profile;
+  const key = trimmed.toLowerCase();
+  if (profile.pantryStaples.some((item) => item.toLowerCase() === key)) return profile;
+  return {
+    ...profile,
+    pantryStaples: [...profile.pantryStaples, trimmed].slice(0, MAX_PANTRY_STAPLES),
+  };
+}
+
+export function removePantryStaple(profile: KitchenProfile, name: string): KitchenProfile {
+  const key = name.trim().toLowerCase();
+  return {
+    ...profile,
+    pantryStaples: profile.pantryStaples.filter((item) => item.toLowerCase() !== key),
   };
 }
 
@@ -82,7 +119,8 @@ export function kitchenProfileIsEmpty(profile: KitchenProfile): boolean {
     profile.diets.length === 0 &&
     profile.alwaysSwap.length === 0 &&
     profile.defaultServings == null &&
-    profile.autoApplyOnExtract === false
+    profile.autoApplyOnExtract === false &&
+    profile.pantryStaples.length === 0
   );
 }
 

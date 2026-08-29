@@ -106,11 +106,26 @@ export default function RecipePreviewScreen() {
       ingredients: ExtractedRecipe['ingredients'];
       instructions: ExtractedRecipe['instructions'];
       calories?: number;
+      kitchen_adapted_summary?: string | null;
+      kitchen_original?: ExtractedRecipe['kitchen_original'] | null;
     }) => {
       setRecipeToSave((prev) => {
         if (!prev) return prev;
-        if (recipeContentEquals(prev, content)) return prev;
-        const next = { ...prev, ...content };
+        const kitchenTouched = content.kitchen_adapted_summary !== undefined;
+        if (recipeContentEquals(prev, content) && !kitchenTouched) return prev;
+        const {
+          kitchen_adapted_summary: kitchenSummary,
+          kitchen_original: kitchenOriginal,
+          ...rest
+        } = content;
+        const next: ExtractedRecipe = { ...prev, ...rest };
+        if (kitchenSummary === null) {
+          delete next.kitchen_adapted_summary;
+          delete next.kitchen_original;
+        } else if (kitchenSummary !== undefined) {
+          next.kitchen_adapted_summary = kitchenSummary;
+          if (kitchenOriginal) next.kitchen_original = kitchenOriginal;
+        }
         void setRecipeDraft(next).catch((error) => {
           console.warn('[recipe-draft] update persistence failed', error);
         });

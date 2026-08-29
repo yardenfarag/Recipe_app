@@ -29,6 +29,30 @@ const PINCH_THRESHOLD = 1 / 16;
 /** Units small enough that "a pinch" reads naturally in place of a number. */
 const PINCHABLE_UNITS = new Set(['tsp', 'tsps', 'teaspoon', 'teaspoons']);
 
+/** Recipe-voice for a qualitative pinch (not "1 pinch"). */
+const PINCH_PHRASE: Record<CulinaryUnitLanguage, string> = {
+  en: 'a pinch',
+  es: 'una pizca',
+  he: 'קמצוץ',
+  ru: 'щепотка',
+  ar: 'رشة',
+  de: 'eine Prise',
+  fr: 'une pincée',
+};
+
+export function formatPinchPhrase(language?: CulinaryUnitLanguage | null): string {
+  if (!language) return PINCH_PHRASE.en;
+  return PINCH_PHRASE[language] ?? PINCH_PHRASE.en;
+}
+
+/** True when this amount should read as the word pinch, not a fraction. */
+export function quantityReadsAsPinch(quantity: number, unit: string): boolean {
+  if (!Number.isFinite(quantity) || quantity <= 0) return false;
+  const unitKey = canonicalUnitKey(unit);
+  if (unitKey === 'pinch') return quantity < 1;
+  return quantity < PINCH_THRESHOLD && PINCHABLE_UNITS.has(unitKey);
+}
+
 /**
  * Formats a raw decimal ingredient quantity (e.g. `0.13`, from AI extraction
  * or serving-scaling math) the way a recipe actually reads: snapped to the
@@ -59,12 +83,8 @@ export function formatQuantity(
 
   const unitKey = canonicalUnitKey(unit);
 
-  if (quantity < PINCH_THRESHOLD && PINCHABLE_UNITS.has(unitKey)) {
-    if (language && language !== 'en') {
-      const localizedPinch = localizeCulinaryUnit('pinch', language, 1);
-      return localizedPinch || 'a pinch';
-    }
-    return 'a pinch';
+  if (quantityReadsAsPinch(quantity, unit)) {
+    return formatPinchPhrase(language);
   }
 
   // Metric mass/volume reads better as plain decimals ("240 ml"), not cooking fractions.

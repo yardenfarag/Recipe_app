@@ -44,11 +44,12 @@ const TAG_RULES = `- tags: 3–6 short lowercase labels (cuisine, meal, dish typ
 const LANGUAGE_RULE =
   '- source_language: the lowercase ISO 639-1 language code used by the extracted title, ingredients, and instructions (for example en, es, he, ru, ar, de, or fr).';
 
-const INSTRUCTION_RULES = `- Rewrite the source directions as clear, complete, plain-language instructions for a home cook.
+const INSTRUCTION_RULES = `- Write clear, followable home-cook steps without turning them into a lab protocol.
+- Preserve sensory cues, asides, and distinctive wording from the source ("until it smells nutty", "don't walk away") when they are already clear.
 - Preserve every explicit cooking action and keep the steps in the correct order. Split dense directions into separate steps when that makes them easier to follow.
 - Make each step actionable: name what to add or do, where to do it, and include any stated time, temperature, texture, or visual cue.
-- Whenever an ingredient is used, include its stated quantity and unit directly in that instruction (for example, "Add the 80 grams of sugar to the mixing bowl"). Keep the ingredient list and instructions consistent.
-- Never invent a quantity, ingredient, technique, time, temperature, equipment, or missing action. If a detail is absent, write the clearest faithful step possible without adding it.
+- Whenever an ingredient is used, include its stated quantity and unit directly in that instruction only if the source stated it. Keep the ingredient list and instructions consistent.
+- Never invent a quantity, ingredient, technique, time, temperature, equipment, or missing action. If a detail is absent, leave it unstated rather than filling it in.
 - Use short, simple sentences and direct verbs. Avoid vague wording such as "mix everything" when the source identifies the ingredients.`;
 
 const TEXT_SYSTEM_PROMPT = `You are a master chef. Analyze the provided text from a social media post or recipe webpage and extract a precise recipe.

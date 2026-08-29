@@ -7,8 +7,10 @@ import Animated, { FadeInDown } from 'react-native-reanimated';
 import { CookieMark } from '@/components/CookieMark';
 import { CostEstimateDisplay } from '@/components/CostEstimateDisplay';
 import { RecipeImage } from '@/components/RecipeImage';
+import { useLanguagePreference } from '@/hooks/useLanguagePreference';
 import { useThemePreference } from '@/hooks/useThemePreference';
 import { COST_I18N_KEYS } from '@/lib/formatCostEstimate';
+import { formatCookedDate } from '@/lib/formatCookedDate';
 import { formatRecipeDuration } from '@/lib/formatRecipeDuration';
 import { recipeIsInvented } from '@/lib/recipeOrigin';
 import { Recipe } from '@/types/recipe';
@@ -42,6 +44,7 @@ export const RecipeListRow = memo(function RecipeListRow({
 }: RecipeListRowProps) {
   const { t } = useTranslation();
   const { colors } = useThemePreference();
+  const { language } = useLanguagePreference();
   const isFavorite = recipe.is_favorite === true;
 
   const timeLabel =
@@ -95,6 +98,19 @@ export const RecipeListRow = memo(function RecipeListRow({
         />
       ),
     });
+  }
+  if (recipe.last_cooked_at) {
+    const cooked = formatCookedDate(recipe.last_cooked_at, language);
+    if (cooked) {
+      metaParts.push({
+        key: 'cooked',
+        node: (
+          <Text className={metaClass} style={metaStyle}>
+            {t('recipe.cookedShort', { date: cooked })}
+          </Text>
+        ),
+      });
+    }
   }
 
   return (

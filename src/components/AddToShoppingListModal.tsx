@@ -10,11 +10,13 @@ import {
 import { useTranslation } from 'react-i18next';
 
 import { SheetModal } from '@/components/SheetModal';
+import { useKitchenProfile } from '@/hooks/useKitchenProfile';
 import { useLanguagePreference } from '@/hooks/useLanguagePreference';
 import { useMeasurementPreference } from '@/hooks/useMeasurementPreference';
 import { useThemePreference } from '@/hooks/useThemePreference';
 import { resolveCulinaryLanguage } from '@/lib/culinaryUnits';
 import { displayIngredientAmount } from '@/lib/displayIngredientAmount';
+import { isPantryStaple } from '@/lib/pantryStaples';
 import { RecipeLanguageCode } from '@/lib/recipeLanguages';
 import { Ingredient } from '@/types/recipe';
 
@@ -28,7 +30,7 @@ interface AddToShoppingListModalProps {
 
 /**
  * Lets the user pick which scaled ingredients to merge into the shopping list.
- * All ingredients start selected.
+ * Pantry staples start unchecked.
  */
 export function AddToShoppingListModal({
   visible,
@@ -41,6 +43,7 @@ export function AddToShoppingListModal({
   const { colors } = useThemePreference();
   const { language: appLanguage } = useLanguagePreference();
   const { system: measurementSystem } = useMeasurementPreference();
+  const { pantryStaples, keepStaple, stapleSaved } = useKitchenProfile();
   const unitLanguage = resolveCulinaryLanguage(language, appLanguage);
   const [selected, setSelected] = useState<Set<number>>(() => new Set());
   const [saving, setSaving] = useState(false);
@@ -48,10 +51,16 @@ export function AddToShoppingListModal({
 
   useEffect(() => {
     if (!visible) return;
-    setSelected(new Set(ingredients.map((_, index) => index)));
+    setSelected(
+      new Set(
+        ingredients.flatMap((ing, index) =>
+          isPantryStaple(ing.name, pantryStaples) ? [] : [index],
+        ),
+      ),
+    );
     setError(null);
     setSaving(false);
-  }, [visible, ingredients]);
+  }, [visible, ingredients, pantryStaples]);
 
   const selectedCount = selected.size;
   const allSelected = useMemo(
@@ -148,10 +157,16 @@ export function AddToShoppingListModal({
         >
           {ingredients.map((ing, index) => {
             const isOn = selected.has(index);
+            const inPantry = stapleSaved(ing.name);
+            const amount =
+              displayIngredientAmount(ing, {
+                system: measurementSystem,
+                language: unitLanguage,
+              }) || t('recipe.amountUnknown');
             return (
-              <Pressable
+              <View
                 key={`${ing.name}-${index}`}
-                className={`flex-row items-center gap-3 py-3.5 active:opacity-80 ${
+                className={`flex-row items-center gap-2 py-3.5 ${
                   index < ingredients.length - 1 ? 'border-b' : ''
                 }`}
                 style={
@@ -159,33 +174,61 @@ export function AddToShoppingListModal({
                     ? { borderColor: colors.primarySoft }
                     : undefined
                 }
-                onPress={() => toggleIndex(index)}
-                accessibilityRole="checkbox"
-                accessibilityState={{ checked: isOn }}
-                accessibilityLabel={t('addToList.ingredientLabel', { name: ing.name })}
               >
-                <View
-                  className="h-6 w-6 items-center justify-center rounded-md border-2"
-                  style={{
-                    borderColor: isOn ? colors.primary : colors.textSecondary,
-                    backgroundColor: isOn ? colors.primary : 'transparent',
+                <Pressable
+                  className="min-w-0 flex-1 flex-row items-center gap-3 active:opacity-80"
+                  onPress={() => toggleIndex(index)}
+                  accessibilityRole="checkbox"
+                  accessibilityState={{ checked: isOn }}
+                  accessibilityLabel={t('addToList.ingredientLabel', { name: ing.name })}
+                >
+                  <View
+                    className="h-6 w-6 items-center justify-center rounded-md border-2"
+                    style={{
+                      borderColor: isOn ? colors.primary : colors.textSecondary,
+                      backgroundColor: isOn ? colors.primary : 'transparent',
+                    }}
+                  >
+                    {isOn ? <Ionicons name="checkmark" size={14} color="#fff" /> : null}
+                  </View>
+                  <View className="min-w-0 flex-1">
+                    <Text
+                      className="text-base font-medium"
+                      style={{ color: colors.text, paddingEnd: 8 }}
+                    >
+                      {ing.name}
+                    </Text>
+                    {inPantry ? (
+                      <Text className="mt-0.5 text-[11px]" style={{ color: colors.textSecondary }}>
+                        {t('addToList.inPantry')}
+                      </Text>
+                    ) : null}
+                  </View>
+                  <Text className="text-sm tabular-nums" style={{ color: colors.textSecondary }}>
+                    {amount}
+                  </Text>
+                </Pressable>
+                {!inPantry ? (
+                <Pressable
+                  onPress={() => {
+                    keepStaple(ing.name);
+                    setSelected((prev) => {
+                      const next = new Set(prev);
+                      next.delete(index);
+                      return next;
+                    });
                   }}
+                  hitSlop={8}
+                  className="min-h-[40px] justify-center px-1 active:opacity-70"
+                  accessibilityRole="button"
+                  accessibilityLabel={t('addToList.keepThisLabel', { name: ing.name })}
                 >
-                  {isOn ? <Ionicons name="checkmark" size={14} color="#fff" /> : null}
-                </View>
-                <Text
-                  className="flex-1 text-base font-medium"
-                  style={{ color: colors.text, paddingEnd: 8 }}
-                >
-                  {ing.name}
-                </Text>
-                <Text className="text-sm tabular-nums" style={{ color: colors.textSecondary }}>
-                  {displayIngredientAmount(ing, {
-                    system: measurementSystem,
-                    language: unitLanguage,
-                  })}
-                </Text>
-              </Pressable>
+                  <Text className="text-[11px] font-semibold" style={{ color: colors.accent }}>
+                    {t('addToList.keepThis')}
+                  </Text>
+                </Pressable>
+                ) : null}
+              </View>
             );
           })}
         </View>

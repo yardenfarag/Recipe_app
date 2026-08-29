@@ -9,10 +9,10 @@ import { Screen } from '@/components/Screen';
 import { useLocalizedRecipe } from '@/hooks/useLocalizedRecipe';
 import { useThemePreference } from '@/hooks/useThemePreference';
 import { backfillRecipeThumbnails } from '@/lib/backfillRecipeThumbnails';
-import { getGuestRecipeById, updateGuestRecipeContent } from '@/lib/guestRecipes';
+import { getGuestRecipeById, setGuestRecipeCooked, updateGuestRecipeContent } from '@/lib/guestRecipes';
 import { recipeContentEquals } from '@/lib/recipeContentEquals';
 import { toggleRecipeFavorite } from '@/lib/recipeFavorites';
-import { fetchRecipeById, updateRecipeContent } from '@/lib/supabase/recipes';
+import { fetchRecipeById, setRecipeCooked, updateRecipeContent } from '@/lib/supabase/recipes';
 import type { RepairedRecipePayload } from '@/lib/supabase/repairRecipe';
 import { Recipe } from '@/types/recipe';
 
@@ -108,12 +108,24 @@ export default function RecipeDetailScreen() {
       ingredients: Recipe['ingredients'];
       instructions: Recipe['instructions'];
       calories?: number;
+      kitchen_adapted_summary?: string | null;
+      kitchen_original?: Recipe['kitchen_original'] | null;
     }) => {
       const current = recipeRef.current;
       if (!current || !id) return;
-      if (recipeContentEquals(current, content)) return;
+      const kitchenTouched = content.kitchen_adapted_summary !== undefined;
+      if (recipeContentEquals(current, content) && !kitchenTouched) return;
 
-      const optimistic = { ...current, ...content };
+      const { kitchen_adapted_summary: kitchenSummary, kitchen_original: kitchenOriginal, ...rest } =
+        content;
+      const optimistic: Recipe = { ...current, ...rest };
+      if (kitchenSummary === null) {
+        delete optimistic.kitchen_adapted_summary;
+        delete optimistic.kitchen_original;
+      } else if (kitchenSummary !== undefined) {
+        optimistic.kitchen_adapted_summary = kitchenSummary;
+        if (kitchenOriginal) optimistic.kitchen_original = kitchenOriginal;
+      }
       setRecipe(optimistic);
       recipeRef.current = optimistic;
 
@@ -131,6 +143,38 @@ export default function RecipeDetailScreen() {
           Alert.alert(
             t('recipe.saveFailedTitle'),
             err instanceof Error ? err.message : t('recipe.saveFailedBody'),
+          );
+        });
+    },
+    [id, t],
+  );
+
+  const handleCookedChange = useCallback(
+    (cooked: { last_cooked_at: string; cook_note: string }) => {
+      const current = recipeRef.current;
+      if (!current || !id) return;
+      const optimistic = {
+        ...current,
+        last_cooked_at: cooked.last_cooked_at,
+        cook_note: cooked.cook_note || undefined,
+      };
+      setRecipe(optimistic);
+      recipeRef.current = optimistic;
+
+      persistQueue.current = persistQueue.current
+        .then(async () => {
+          const saved = id.startsWith('guest-')
+            ? await setGuestRecipeCooked(id, cooked)
+            : await setRecipeCooked(id, cooked);
+          if (saved) {
+            setRecipe(saved);
+            recipeRef.current = saved;
+          }
+        })
+        .catch((err) => {
+          Alert.alert(
+            t('recipe.cookedSaveFailed'),
+            err instanceof Error ? err.message : t('common.tryAgain'),
           );
         });
     },
@@ -231,6 +275,7 @@ export default function RecipeDetailScreen() {
         isFavorite={recipe.is_favorite === true}
         onToggleFavorite={handleToggleFavorite}
         onContentChange={handleContentChange}
+        onCookedChange={handleCookedChange}
         onRepairApplied={handleRepairApplied}
         localizedContent={displayContent}
         localizedLanguage={activeLanguage}

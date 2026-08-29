@@ -432,7 +432,20 @@ export default function HomeScreen() {
           </View>
         )}
 
-        <BrandHeader title={t('library.title')} />
+        <View className="flex-row items-start gap-3">
+          <View className="min-w-0 flex-1">
+            <BrandHeader title={t('library.title')} />
+          </View>
+          <Pressable
+            onPress={() => router.push('/cookbook')}
+            accessibilityRole="button"
+            accessibilityLabel={t('library.makeCookbook')}
+            className="mt-1 h-11 w-11 items-center justify-center rounded-2xl active:opacity-70"
+            style={{ backgroundColor: colors.primarySoft }}
+          >
+            <Ionicons name="book-outline" size={20} color={colors.primary} />
+          </Pressable>
+        </View>
 
         <RecipeLibraryToolbar
           search={search}
@@ -465,6 +478,7 @@ export default function HomeScreen() {
       availableTags,
       collections,
       colors.primary,
+      colors.primarySoft,
       colors.success,
       colors.successSoft,
       colors.warning,

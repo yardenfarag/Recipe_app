@@ -127,8 +127,6 @@ export async function saveRecipe(recipe: NewRecipe): Promise<Recipe> {
   const {
     translations: _translations,
     display_title: _displayTitle,
-    kitchen_adapted_summary: _kitchenAdapted,
-    kitchen_original: _kitchenOriginal,
     ...persistable
   } = recipe;
 
@@ -199,6 +197,8 @@ export async function updateRecipeContent(
     cost_estimate?: Recipe['cost_estimate'] | null;
     effort_level?: Recipe['effort_level'] | null;
     tags?: string[];
+    kitchen_adapted_summary?: string | null;
+    kitchen_original?: Recipe['kitchen_original'] | null;
   },
 ): Promise<Recipe> {
   const existing = await fetchRecipeById(id);
@@ -220,6 +220,12 @@ export async function updateRecipeContent(
       ...(content.cost_estimate !== undefined ? { cost_estimate: content.cost_estimate } : {}),
       ...(content.effort_level !== undefined ? { effort_level: content.effort_level } : {}),
       ...(content.tags ? { tags: content.tags } : {}),
+      ...(content.kitchen_adapted_summary !== undefined
+        ? { kitchen_adapted_summary: content.kitchen_adapted_summary }
+        : {}),
+      ...(content.kitchen_original !== undefined
+        ? { kitchen_original: content.kitchen_original }
+        : {}),
     })
     .eq('id', id)
     .select()
@@ -232,5 +238,28 @@ export async function updateRecipeContent(
     await supabase.from('recipe_translations').delete().eq('recipe_id', id);
   }
 
+  return data as Recipe;
+}
+
+const COOK_NOTE_MAX = 160;
+
+/** Marks a recipe as cooked (date + optional one-line note). */
+export async function setRecipeCooked(
+  id: string,
+  cooked: { last_cooked_at: string; cook_note?: string | null },
+): Promise<Recipe> {
+  const note =
+    typeof cooked.cook_note === 'string' ? cooked.cook_note.trim().slice(0, COOK_NOTE_MAX) : '';
+  const { data, error } = await supabase
+    .from('recipes')
+    .update({
+      last_cooked_at: cooked.last_cooked_at,
+      cook_note: note || null,
+    })
+    .eq('id', id)
+    .select()
+    .single();
+
+  if (error) throw error;
   return data as Recipe;
 }
