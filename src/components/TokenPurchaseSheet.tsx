@@ -22,12 +22,15 @@ interface TokenPurchaseSheetProps {
   onClose: () => void;
   /** Where the person was when the credit sheet opened. */
   trigger?: PaywallTrigger;
+  /** Refreshes the screen that is showing the balance. */
+  onPurchased?: () => void;
 }
 
 export function TokenPurchaseSheet({
   visible,
   onClose,
   trigger = 'out_of_credits',
+  onPurchased,
 }: TokenPurchaseSheetProps) {
   const { t } = useTranslation();
   const { colors } = useThemePreference();
@@ -73,9 +76,16 @@ export function TokenPurchaseSheet({
           : t('credits.purchasePending'),
       );
       await refresh();
+      onPurchased?.();
       if (result === 'purchased') {
-        setTimeout(() => void refresh(), 1_500);
-        setTimeout(() => void refresh(), 4_000);
+        setTimeout(() => {
+          void refresh();
+          onPurchased?.();
+        }, 1_500);
+        setTimeout(() => {
+          void refresh();
+          onPurchased?.();
+        }, 4_000);
       }
     } catch {
       setError(t('credits.purchaseFailed'));
@@ -91,6 +101,7 @@ export function TokenPurchaseSheet({
     try {
       await syncPurchases();
       await refresh();
+      onPurchased?.();
       setMessage(t('credits.syncComplete'));
     } catch {
       setError(t('credits.syncFailed'));

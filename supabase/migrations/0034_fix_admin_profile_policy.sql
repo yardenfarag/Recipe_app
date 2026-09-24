@@ -1,6 +1,6 @@
--- Admins can list every profile and delete an account from the app.
--- is_current_user_admin() is security definer so the check does not re-enter
--- profiles row-level security (a policy that selects profiles from itself loops).
+-- Replaces the profiles admin policy if it was created as a self-query.
+-- That form loops inside row-level security and fails every admin read,
+-- including the AI cost log.
 
 create or replace function public.is_current_user_admin()
 returns boolean
@@ -17,6 +17,8 @@ $$;
 
 revoke all on function public.is_current_user_admin() from public;
 grant execute on function public.is_current_user_admin() to authenticated;
+
+drop policy if exists "Admins read all profiles" on public.profiles;
 
 create policy "Admins read all profiles"
   on public.profiles
@@ -52,6 +54,8 @@ $$;
 
 revoke all on function public.admin_delete_user(uuid) from public;
 grant execute on function public.admin_delete_user(uuid) to authenticated;
+
+drop policy if exists "Admins read purchase grants" on public.purchase_credit_grants;
 
 create policy "Admins read purchase grants"
   on public.purchase_credit_grants

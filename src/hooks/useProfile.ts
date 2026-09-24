@@ -3,7 +3,7 @@ import { useCallback, useState } from 'react';
 
 import { useAuth } from '@/hooks/useAuth';
 import { isAdminUser } from '@/lib/admin';
-import { FREE_MONTHLY_EXTRACT_LIMIT, type SubscriptionStatus } from '@/lib/quotas';
+import { type SubscriptionStatus } from '@/lib/quotas';
 import type { ProfileQuota } from '@/lib/supabase/profile';
 import { fetchProfile, profileQuota } from '@/lib/supabase/profile';
 
@@ -56,20 +56,16 @@ export function useProfile() {
     }, [refresh]),
   );
 
-  const signedIn = Boolean(user);
-
   return {
     avatarUrl,
     quota,
     subscriptionStatus,
     subscriptionActive: quota?.subscriptionActive ?? false,
-    extractsRemaining:
-      quota?.extractsRemaining ?? (signedIn ? FREE_MONTHLY_EXTRACT_LIMIT : null),
-    freeExtractsRemaining:
-      quota?.freeExtractsRemaining ?? (signedIn ? FREE_MONTHLY_EXTRACT_LIMIT : null),
+    extractsRemaining: quota?.extractsRemaining ?? null,
+    freeExtractsRemaining: quota?.freeExtractsRemaining ?? null,
     monthlyExtractsRemaining: quota?.monthlyExtractsRemaining ?? null,
-    purchasedCredits: quota?.purchasedCredits ?? (signedIn ? 0 : null),
-    totalCredits: quota?.totalCredits ?? (signedIn ? FREE_MONTHLY_EXTRACT_LIMIT : null),
+    purchasedCredits: quota?.purchasedCredits ?? null,
+    totalCredits: quota?.totalCredits ?? null,
     isAdmin,
     loading,
     refresh,

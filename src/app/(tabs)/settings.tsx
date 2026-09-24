@@ -25,7 +25,6 @@ import { useRtl } from '@/hooks/useRtl';
 import { useThemePreference } from '@/hooks/useThemePreference';
 import { useTranslation } from 'react-i18next';
 import { confirmAction, confirmDestructive } from '@/lib/confirmAction';
-import { FREE_MONTHLY_EXTRACT_LIMIT } from '@/lib/quotas';
 import {
   deleteAccount,
   requestAppleAuthorizationCodeForDeletion,
@@ -408,9 +407,11 @@ export default function SettingsScreen() {
             {user ? (
               <SettingsActionRow
                 label={t('settings.plan')}
-                description={t('settings.creditsTotal', {
-                  count: totalCredits ?? FREE_MONTHLY_EXTRACT_LIMIT,
-                })}
+                description={
+                  totalCredits == null
+                    ? undefined
+                    : t('settings.creditsTotal', { count: totalCredits })
+                }
                 icon="sparkles-outline"
                 onPress={() => router.push('/settings/credits')}
               />

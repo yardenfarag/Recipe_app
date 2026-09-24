@@ -16,6 +16,7 @@ import { TextInput } from '@/components/text-input';
 import { useAuth } from '@/hooks/useAuth';
 import { useProfile } from '@/hooks/useProfile';
 import { useThemePreference } from '@/hooks/useThemePreference';
+import { errorText } from '@/lib/errorText';
 import { ADMIN_PRICE_CARD } from '@/lib/quotas';
 import {
   fetchAdminTokenLedger,
@@ -80,7 +81,7 @@ export default function AdminUsageScreen() {
       setLedger(ledgerRows);
       setTickets(ticketRows);
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Could not load admin usage.');
+      setError(errorText(err, 'Could not load admin usage.'));
     } finally {
       setLoading(false);
     }

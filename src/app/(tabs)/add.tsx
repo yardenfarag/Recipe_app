@@ -854,6 +854,7 @@ export default function AddRecipeScreen() {
         <TokenPurchaseSheet
           visible={creditsOpen}
           onClose={() => setCreditsOpen(false)}
+          onPurchased={() => refreshProfile()}
         />
         <ConfirmDialog
           visible={inventOffer != null}

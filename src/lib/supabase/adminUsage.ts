@@ -105,6 +105,38 @@ export async function fetchAdminFailures(since?: string, limit = 2000): Promise<
   }));
 }
 
+export type AdminPurchase = {
+  id: string;
+  email: string | null;
+  provider: string;
+  productId: string;
+  credits: number;
+  createdAt: string;
+};
+
+export async function fetchAdminPurchases(since?: string, limit = 200): Promise<AdminPurchase[]> {
+  let query = supabase
+    .from('purchase_credit_grants')
+    .select('id, provider, product_id, credits, created_at, profiles(email)')
+    .order('created_at', { ascending: false })
+    .limit(limit);
+  if (since) query = query.gte('created_at', since);
+  const { data, error } = await query;
+  if (error) throw error;
+  return (data ?? []).map((row) => {
+    const profile = row.profiles as { email?: string | null } | { email?: string | null }[] | null;
+    const email = Array.isArray(profile) ? (profile[0]?.email ?? null) : (profile?.email ?? null);
+    return {
+      id: String(row.id),
+      email,
+      provider: String(row.provider),
+      productId: String(row.product_id),
+      credits: Number(row.credits) || 0,
+      createdAt: String(row.created_at),
+    };
+  });
+}
+
 export async function fetchAdminTokenLedger(limit = 100): Promise<TokenLedgerRow[]> {
   const { data, error } = await supabase
     .from('token_ledger')

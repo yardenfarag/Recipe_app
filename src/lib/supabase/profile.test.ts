@@ -1,6 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
-import { fetchProfile, profileQuota, type Profile } from '@/lib/supabase/profile';
+import { fetchProfile, profileQuota, readCreditBalance, type Profile } from '@/lib/supabase/profile';
 
 const mocks = vi.hoisted(() => {
   const maybeSingle = vi.fn();
@@ -36,6 +36,12 @@ function profile(overrides: Partial<Profile> = {}): Profile {
 }
 
 describe('profile recipe credits', () => {
+  it('reads a purchased balance that arrived as text', () => {
+    expect(readCreditBalance('200')).toBe(200);
+    expect(readCreditBalance(200)).toBe(200);
+    expect(readCreditBalance(null)).toBe(0);
+  });
+
   it('combines monthly free and purchased credits', () => {
     expect(
       profileQuota(profile({ monthly_extracts_used: 5, token_balance: 7 })),

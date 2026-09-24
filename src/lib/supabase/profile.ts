@@ -70,6 +70,12 @@ export function profileQuota(profile: Profile | null): ProfileQuota | null {
   };
 }
 
+export function readCreditBalance(value: unknown): number {
+  const parsed = typeof value === 'number' ? value : typeof value === 'string' ? Number(value) : NaN;
+  if (!Number.isFinite(parsed)) return 0;
+  return Math.max(0, Math.trunc(parsed));
+}
+
 function mapProfileRow(row: ProfileRow, monthlyExtractsUsed: number): Profile {
   const status = row.subscription_status;
   const subscription_status: SubscriptionStatus =
@@ -79,7 +85,7 @@ function mapProfileRow(row: ProfileRow, monthlyExtractsUsed: number): Profile {
     id: row.id,
     email: row.email,
     avatar_url: row.avatar_url,
-    token_balance: typeof row.token_balance === 'number' ? row.token_balance : 0,
+    token_balance: readCreditBalance(row.token_balance),
     is_admin: row.is_admin === true,
     token_pack_notify_at: row.token_pack_notify_at ?? null,
     subscription_status,

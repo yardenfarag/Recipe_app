@@ -15,7 +15,13 @@ import {
   type InsightSummary,
   type RankedItem,
 } from '@/lib/adminInsights';
-import { fetchAdminFailures, fetchAdminProductEvents } from '@/lib/supabase/adminUsage';
+import {
+  fetchAdminFailures,
+  fetchAdminProductEvents,
+  fetchAdminPurchases,
+  type AdminPurchase,
+} from '@/lib/supabase/adminUsage';
+import { errorText } from '@/lib/errorText';
 
 function fmtWhen(iso: string): string {
   try {
@@ -42,6 +48,7 @@ function InsightsBody() {
   const [summary, setSummary] = useState<InsightSummary | null>(null);
   const [failures, setFailures] = useState<ReturnType<typeof summarizeFailures> | null>(null);
   const [costUsd, setCostUsd] = useState(0);
+  const [purchases, setPurchases] = useState<AdminPurchase[]>([]);
   const [range, setRange] = useState<InsightRange>(14);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -51,15 +58,17 @@ function InsightsBody() {
     setLoading(true);
     try {
       const since = insightSince(range);
-      const [events, usage] = await Promise.all([
+      const [events, usage, purchaseRows] = await Promise.all([
         fetchAdminProductEvents(since),
         fetchAdminFailures(since),
+        fetchAdminPurchases(since),
       ]);
       setSummary(summarizeInsights(events, new Date(), range));
       setFailures(summarizeFailures(usage));
+      setPurchases(purchaseRows);
       setCostUsd(usage.reduce((sum, row) => sum + row.total_cost_usd, 0));
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Could not load insights.');
+      setError(errorText(err, 'Could not load insights.'));
     } finally {
       setLoading(false);
     }
@@ -126,6 +135,11 @@ function InsightsBody() {
               <Stat label="Guest installs" value={String(summary.guestInstalls)} colors={colors} />
               <Stat label="AI failures" value={String(failures.failed)} colors={colors} />
               <Stat label="AI cost" value={`$${costUsd.toFixed(2)}`} colors={colors} />
+              <Stat
+                label="Credits sold"
+                value={String(purchases.reduce((sum, row) => sum + row.credits, 0))}
+                colors={colors}
+              />
             </View>
 
             <Card title={`Last ${range} days`} colors={colors}>
@@ -169,6 +183,20 @@ function InsightsBody() {
               {failures.byMessage.map((item) => (
                 <MessageRow key={item.label} item={item} colors={colors} />
               ))}
+            </Card>
+
+            <Card title="Purchases" colors={colors}>
+              <EventTable
+                header={['When', 'Account', 'Credits', 'Product', 'Provider']}
+                rows={purchases.map((row) => [
+                  fmtWhen(row.createdAt),
+                  row.email ?? '—',
+                  String(row.credits),
+                  row.productId,
+                  row.provider,
+                ])}
+                colors={colors}
+              />
             </Card>
 
             <Card title="Recent activity" colors={colors}>

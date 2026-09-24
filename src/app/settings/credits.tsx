@@ -11,7 +11,7 @@ import { FREE_MONTHLY_EXTRACT_LIMIT } from '@/lib/quotas';
 export default function CreditSettingsScreen() {
   const { t } = useTranslation();
   const { colors } = useThemePreference();
-  const { freeExtractsRemaining, purchasedCredits, totalCredits } = useProfile();
+  const { freeExtractsRemaining, purchasedCredits, totalCredits, refresh } = useProfile();
   const [creditsOpen, setCreditsOpen] = useState(false);
 
   return (
@@ -20,20 +20,22 @@ export default function CreditSettingsScreen() {
         <Text className="mb-1 text-3xl font-bold" style={{ color: colors.text }}>
           {t('settings.recipeCredits')}
         </Text>
-        <Text className="mb-3 text-sm" style={{ color: colors.accent }}>
-          {t('settings.creditsTotal', {
-            count: totalCredits ?? FREE_MONTHLY_EXTRACT_LIMIT,
-          })}
-        </Text>
-        <Text className="text-xs leading-5" style={{ color: colors.textSecondary }}>
-          {t('settings.creditsFree', {
-            remaining: freeExtractsRemaining ?? FREE_MONTHLY_EXTRACT_LIMIT,
-            limit: FREE_MONTHLY_EXTRACT_LIMIT,
-          })}
-        </Text>
-        <Text className="mt-1 text-xs leading-5" style={{ color: colors.textSecondary }}>
-          {t('settings.creditsPurchased', { count: purchasedCredits ?? 0 })}
-        </Text>
+        {totalCredits == null ? null : (
+          <>
+            <Text className="mb-3 text-sm" style={{ color: colors.accent }}>
+              {t('settings.creditsTotal', { count: totalCredits })}
+            </Text>
+            <Text className="text-xs leading-5" style={{ color: colors.textSecondary }}>
+              {t('settings.creditsFree', {
+                remaining: freeExtractsRemaining ?? 0,
+                limit: FREE_MONTHLY_EXTRACT_LIMIT,
+              })}
+            </Text>
+            <Text className="mt-1 text-xs leading-5" style={{ color: colors.textSecondary }}>
+              {t('settings.creditsPurchased', { count: purchasedCredits ?? 0 })}
+            </Text>
+          </>
+        )}
         <Text className="mt-1 text-xs leading-5" style={{ color: colors.textSecondary }}>
           {t('settings.creditsReset')}
         </Text>
@@ -50,6 +52,7 @@ export default function CreditSettingsScreen() {
         visible={creditsOpen}
         trigger="settings"
         onClose={() => setCreditsOpen(false)}
+        onPurchased={() => refresh()}
       />
     </>
   );

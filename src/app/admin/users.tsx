@@ -7,6 +7,7 @@ import { Screen } from '@/components/Screen';
 import { TextInput } from '@/components/text-input';
 import { useAuth } from '@/hooks/useAuth';
 import { useThemePreference } from '@/hooks/useThemePreference';
+import { errorText } from '@/lib/errorText';
 import { FREE_MONTHLY_EXTRACT_LIMIT } from '@/lib/quotas';
 import { confirmAction, showNotice } from '@/lib/confirmAction';
 import { adminDeleteUser, fetchAdminPeople, type AdminPerson } from '@/lib/supabase/adminPeople';
@@ -36,7 +37,7 @@ function UsersBody() {
     try {
       setPeople(await fetchAdminPeople());
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Could not load people.');
+      setError(errorText(err, 'Could not load people.'));
     } finally {
       setLoading(false);
     }
