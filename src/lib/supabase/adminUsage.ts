@@ -46,6 +46,65 @@ export async function fetchAdminUsageEvents(limit = 100): Promise<AiUsageEvent[]
   return (data ?? []) as AiUsageEvent[];
 }
 
+export async function fetchAdminProductEvents(since?: string, limit = 2000): Promise<
+  {
+    name: string;
+    properties: Record<string, unknown>;
+    created_at: string;
+    user_id: string | null;
+    guest_install_id: string | null;
+  }[]
+> {
+  let query = supabase
+    .from('product_events')
+    .select('name, properties, created_at, user_id, guest_install_id')
+    .order('created_at', { ascending: false })
+    .limit(limit);
+  if (since) query = query.gte('created_at', since);
+  const { data, error } = await query;
+  if (error) throw error;
+  return (data ?? []).map((row) => ({
+    name: String(row.name),
+    properties:
+      row.properties && typeof row.properties === 'object' && !Array.isArray(row.properties)
+        ? (row.properties as Record<string, unknown>)
+        : {},
+    created_at: String(row.created_at),
+    user_id: row.user_id ?? null,
+    guest_install_id: row.guest_install_id ?? null,
+  }));
+}
+
+export async function fetchAdminFailures(since?: string, limit = 2000): Promise<
+  {
+    action: string;
+    status: string;
+    platform: string | null;
+    extraction_source: string | null;
+    error_message: string | null;
+    total_cost_usd: number;
+    created_at: string;
+  }[]
+> {
+  let query = supabase
+    .from('ai_usage_events')
+    .select('action, status, platform, extraction_source, error_message, total_cost_usd, created_at')
+    .order('created_at', { ascending: false })
+    .limit(limit);
+  if (since) query = query.gte('created_at', since);
+  const { data, error } = await query;
+  if (error) throw error;
+  return (data ?? []).map((row) => ({
+    action: String(row.action),
+    status: String(row.status),
+    platform: row.platform ?? null,
+    extraction_source: row.extraction_source ?? null,
+    error_message: row.error_message ?? null,
+    total_cost_usd: Number(row.total_cost_usd) || 0,
+    created_at: String(row.created_at),
+  }));
+}
+
 export async function fetchAdminTokenLedger(limit = 100): Promise<TokenLedgerRow[]> {
   const { data, error } = await supabase
     .from('token_ledger')

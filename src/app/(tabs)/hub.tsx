@@ -1,7 +1,16 @@
 import Ionicons from '@expo/vector-icons/Ionicons';
 import { router } from 'expo-router';
-import { useMemo, useState } from 'react';
-import { ActivityIndicator, FlatList, Pressable, ScrollView, Text, View } from 'react-native';
+import { useCallback, useMemo, useState } from 'react';
+import {
+  ActivityIndicator,
+  FlatList,
+  Pressable,
+  ScrollView,
+  Text,
+  View,
+  type NativeScrollEvent,
+  type NativeSyntheticEvent,
+} from 'react-native';
 import { useTranslation } from 'react-i18next';
 
 import { BrandHeader } from '@/components/BrandHeader';
@@ -24,6 +33,7 @@ export default function CookingHubScreen() {
     loading,
     loadingMore,
     error,
+    total,
     search,
     setSearch,
     selectedTags,
@@ -42,6 +52,15 @@ export default function CookingHubScreen() {
   const filtersActive = selectedTags.length > 0 || sort !== 'popular';
   const [filtersOpen, setFiltersOpen] = useState(filtersActive);
   const hasQuery = Boolean(search.trim());
+
+  const handleListScroll = useCallback(
+    (event: NativeSyntheticEvent<NativeScrollEvent>) => {
+      const { contentOffset, contentSize, layoutMeasurement } = event.nativeEvent;
+      const remaining = contentSize.height - contentOffset.y - layoutMeasurement.height;
+      if (remaining < 480) loadMore();
+    },
+    [loadMore],
+  );
 
   if (loading && cards.length === 0) {
     return (
@@ -148,8 +167,8 @@ export default function CookingHubScreen() {
         </View>
 
         <Text className="text-xs" style={{ color: colors.textSecondary }}>
-          {t(cards.length === 1 ? 'library.recipeCountOne' : 'library.recipeCountOther', {
-            count: cards.length,
+          {t((total || cards.length) === 1 ? 'library.recipeCountOne' : 'library.recipeCountOther', {
+            count: total || cards.length,
           })}
         </Text>
 
@@ -260,12 +279,13 @@ export default function CookingHubScreen() {
               />
             </View>
           )}
+          style={{ flex: 1 }}
+          onScroll={handleListScroll}
+          scrollEventThrottle={160}
           onEndReached={loadMore}
-          onEndReachedThreshold={0.4}
+          onEndReachedThreshold={0.5}
           ListFooterComponent={
-            loadingMore ? (
-              <ActivityIndicator className="py-4" color={colors.primary} />
-            ) : null
+            loadingMore ? <ActivityIndicator className="py-4" color={colors.primary} /> : null
           }
           ListEmptyComponent={
             <View className="items-center px-6 py-12">

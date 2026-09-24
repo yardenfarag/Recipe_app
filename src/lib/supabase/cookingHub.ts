@@ -32,13 +32,13 @@ function mapCard(row: RecipeCard): RecipeCard {
 
 export async function fetchHubCards(
   options: FetchHubCardsOptions = {},
-): Promise<{ cards: RecipeCard[]; hasMore: boolean }> {
+): Promise<{ cards: RecipeCard[]; hasMore: boolean; total: number }> {
   const limit = options.limit ?? PAGE_SIZE;
   const offset = options.offset ?? 0;
   const search = options.search ? sanitizeSearch(options.search) : '';
   const sort = options.sort ?? 'popular';
 
-  let query = supabase.from('recipe_cards').select('*');
+  let query = supabase.from('recipe_cards').select('*', { count: 'exact' });
 
   if (options.platform && options.platform !== 'all' && isHubPlatform(options.platform)) {
     query = query.eq('platform', options.platform);
@@ -58,11 +58,12 @@ export async function fetchHubCards(
       .order('created_at', { ascending: false });
   }
 
-  const { data, error } = await query.range(offset, offset + limit - 1);
+  const { data, error, count } = await query.range(offset, offset + limit - 1);
   if (error) throw error;
 
   const cards = ((data ?? []) as RecipeCard[]).map(mapCard);
-  return { cards, hasMore: cards.length === limit };
+  const total = typeof count === 'number' ? count : offset + cards.length;
+  return { cards, hasMore: offset + cards.length < total, total };
 }
 
 export async function fetchHubCard(id: string): Promise<RecipeCard | null> {

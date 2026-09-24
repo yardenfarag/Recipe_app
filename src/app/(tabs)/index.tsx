@@ -9,6 +9,8 @@ import {
   Pressable,
   Text,
   View,
+  type NativeScrollEvent,
+  type NativeSyntheticEvent,
 } from 'react-native';
 import Animated, {
   Easing,
@@ -61,7 +63,18 @@ type CollectionNameModalState =
 
 export default function HomeScreen() {
   const { t } = useTranslation();
-  const { recipes, loading, error, refresh, patchRecipe, toggleFavorite } = useRecipes();
+  const {
+    recipes,
+    loading,
+    loadingMore,
+    total,
+    error,
+    refresh,
+    loadMore,
+    ensureAllLoaded,
+    patchRecipe,
+    toggleFavorite,
+  } = useRecipes({ pageSize: 40 });
   const {
     collections,
     createCollection,
@@ -162,6 +175,19 @@ export default function HomeScreen() {
     isRecipeLibraryFiltered(deferredSearch, sort, selectedTags, selectedCollectionId) ||
     favoritesOnly ||
     cookTonight;
+
+  useEffect(() => {
+    if (hasActiveFilters) void ensureAllLoaded();
+  }, [ensureAllLoaded, hasActiveFilters]);
+
+  const handleListScroll = useCallback(
+    (event: NativeSyntheticEvent<NativeScrollEvent>) => {
+      const { contentOffset, contentSize, layoutMeasurement } = event.nativeEvent;
+      const remaining = contentSize.height - contentOffset.y - layoutMeasurement.height;
+      if (remaining < 480) loadMore();
+    },
+    [loadMore],
+  );
 
   const clearFilters = useCallback(() => {
     setSearch('');
@@ -450,13 +476,15 @@ export default function HomeScreen() {
           onSearchChange={setSearch}
           sort={sort}
           onSortChange={setSort}
-          resultCount={displayedRecipes.length}
+          resultCount={hasActiveFilters ? displayedRecipes.length : total || displayedRecipes.length}
           isSearchPending={isSearchPending}
           favoritesOnly={favoritesOnly}
           onToggleFavorites={() => setFavoritesOnly((v) => !v)}
           cookTonight={cookTonight}
           onToggleCookTonight={() => setCookTonight((v) => !v)}
-          onFridgeMatch={() => setFridgeOpen(true)}
+          onFridgeMatch={() => {
+            void ensureAllLoaded().then(() => setFridgeOpen(true));
+          }}
           availableTags={availableTags}
           selectedTags={selectedTags}
           onToggleTag={handleToggleTag}
@@ -482,8 +510,10 @@ export default function HomeScreen() {
       colors.warning,
       colors.warningSoft,
       displayedRecipes.length,
+      ensureAllLoaded,
       error,
       favoritesOnly,
+      hasActiveFilters,
       handleManageCollection,
       handleToggleLayout,
       handleToggleTag,
@@ -499,6 +529,7 @@ export default function HomeScreen() {
       sort,
       t,
       cookTonight,
+      total,
     ],
   );
 
@@ -576,6 +607,14 @@ export default function HomeScreen() {
             numColumns={numColumns}
             columnWrapperStyle={numColumns > 1 ? { gap: 0, marginBottom: 12 } : undefined}
             renderItem={renderItem}
+            style={{ flex: 1 }}
+            onScroll={handleListScroll}
+            scrollEventThrottle={160}
+            onEndReached={loadMore}
+            onEndReachedThreshold={0.5}
+            ListFooterComponent={
+              loadingMore ? <ActivityIndicator className="py-4" color={colors.primary} /> : null
+            }
             ListEmptyComponent={
               hasActiveFilters ? (
                 <View className="items-center px-4 py-10">

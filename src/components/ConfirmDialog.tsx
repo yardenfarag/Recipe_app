@@ -1,5 +1,5 @@
 import { useTranslation } from 'react-i18next';
-import { ActivityIndicator, Modal, Pressable, Text, View } from 'react-native';
+import { ActivityIndicator, Modal, Pressable, ScrollView, Text, useWindowDimensions, View } from 'react-native';
 
 import { useRtl } from '@/hooks/useRtl';
 import { useThemePreference } from '@/hooks/useThemePreference';
@@ -36,8 +36,10 @@ export function ConfirmDialog({
   const { t } = useTranslation();
   const { colors } = useThemePreference();
   const { rtl } = useRtl();
+  const { height: windowHeight } = useWindowDimensions();
   const resolvedConfirm = confirmLabel ?? t('common.continue');
   const resolvedCancel = cancelLabel ?? t('common.cancel');
+  const stacked = Boolean(secondaryLabel && onSecondary);
 
   return (
     <Modal
@@ -54,67 +56,76 @@ export function ConfirmDialog({
         }}
       >
         <View
-          className="w-full max-w-sm rounded-[28px] p-5"
+          className="w-full max-w-sm overflow-hidden rounded-[28px]"
           accessibilityViewIsModal
           accessibilityLabel={title}
           style={{
             backgroundColor: colors.surface,
             borderWidth: 1,
             borderColor: colors.frostedBorder,
+            maxHeight: windowHeight - 48,
+            flexShrink: 0,
           }}
         >
-          <Text className="text-lg font-bold" style={{ color: colors.text }}>
-            {title}
-          </Text>
-          <Text className="mt-2 text-sm leading-5" style={{ color: colors.textSecondary }}>
-            {message}
-          </Text>
+          <ScrollView
+            bounces={false}
+            contentContainerClassName="p-5"
+            keyboardShouldPersistTaps="handled"
+            style={{ flexGrow: 0 }}
+          >
+            <Text className="text-lg font-bold" style={{ color: colors.text }}>
+              {title}
+            </Text>
+            <Text className="mt-2 text-sm leading-5" style={{ color: colors.textSecondary }}>
+              {message}
+            </Text>
 
-          <View className={`mt-5 gap-2 ${secondaryLabel ? '' : 'flex-row'}`}>
-            <Pressable
-              onPress={onCancel}
-              disabled={loading}
-              className="min-h-[48px] flex-1 items-center justify-center rounded-[22px] active:opacity-80"
-              style={{ backgroundColor: colors.primarySoft }}
-              accessibilityRole="button"
-              accessibilityLabel={resolvedCancel}
-            >
-              <Text className="text-sm font-semibold" style={{ color: colors.text }}>
-                {resolvedCancel}
-              </Text>
-            </Pressable>
-            {secondaryLabel && onSecondary ? (
+            <View className={stacked ? 'mt-5 gap-2' : 'mt-5 flex-row gap-2'}>
               <Pressable
-                onPress={onSecondary}
+                onPress={onCancel}
                 disabled={loading}
-                className="min-h-[48px] items-center justify-center rounded-[22px] border active:opacity-80"
-                style={{ borderColor: colors.border, backgroundColor: colors.surface }}
+                className={`min-h-[48px] items-center justify-center rounded-[22px] px-4 py-3 active:opacity-80 ${stacked ? 'w-full' : 'min-w-0 flex-1'}`}
+                style={{ backgroundColor: colors.primarySoft }}
                 accessibilityRole="button"
-                accessibilityLabel={secondaryLabel}
+                accessibilityLabel={resolvedCancel}
               >
-                <Text className="text-sm font-semibold" style={{ color: colors.text }}>
-                  {secondaryLabel}
+                <Text className="text-center text-sm font-semibold" style={{ color: colors.text }}>
+                  {resolvedCancel}
                 </Text>
               </Pressable>
-            ) : null}
-            <Pressable
-              onPress={onConfirm}
-              disabled={loading}
-              className="min-h-[48px] flex-1 items-center justify-center rounded-[22px] active:opacity-80"
-              style={{
-                backgroundColor: destructive ? colors.danger : colors.primary,
-                opacity: loading ? 0.7 : 1,
-              }}
-              accessibilityRole="button"
-              accessibilityLabel={resolvedConfirm}
-            >
-              {loading ? (
-                <ActivityIndicator color="#fff" />
-              ) : (
-                <Text className="text-sm font-bold text-white">{resolvedConfirm}</Text>
-              )}
-            </Pressable>
-          </View>
+              {stacked ? (
+                <Pressable
+                  onPress={onSecondary}
+                  disabled={loading}
+                  className="min-h-[48px] w-full items-center justify-center rounded-[22px] border px-4 py-3 active:opacity-80"
+                  style={{ borderColor: colors.border, backgroundColor: colors.surface }}
+                  accessibilityRole="button"
+                  accessibilityLabel={secondaryLabel}
+                >
+                  <Text className="text-center text-sm font-semibold" style={{ color: colors.text }}>
+                    {secondaryLabel}
+                  </Text>
+                </Pressable>
+              ) : null}
+              <Pressable
+                onPress={onConfirm}
+                disabled={loading}
+                className={`min-h-[48px] items-center justify-center rounded-[22px] px-4 py-3 active:opacity-80 ${stacked ? 'w-full' : 'min-w-0 flex-1'}`}
+                style={{
+                  backgroundColor: destructive ? colors.danger : colors.primary,
+                  opacity: loading ? 0.7 : 1,
+                }}
+                accessibilityRole="button"
+                accessibilityLabel={resolvedConfirm}
+              >
+                {loading ? (
+                  <ActivityIndicator color="#fff" />
+                ) : (
+                  <Text className="text-center text-sm font-bold text-white">{resolvedConfirm}</Text>
+                )}
+              </Pressable>
+            </View>
+          </ScrollView>
         </View>
       </View>
     </Modal>

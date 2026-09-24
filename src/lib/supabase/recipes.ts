@@ -14,6 +14,8 @@ import { Recipe } from '@/types/recipe';
 /** Recipe fields owned by the client on insert — server generates id/created_at. */
 export type NewRecipe = Omit<Recipe, 'id' | 'created_at' | 'user_id'>;
 
+const DEFAULT_PAGE_SIZE = 40;
+
 export async function fetchRecipes(): Promise<Recipe[]> {
   const { data, error } = await supabase
     .from('recipes')
@@ -22,6 +24,22 @@ export async function fetchRecipes(): Promise<Recipe[]> {
 
   if (error) throw error;
   return data as Recipe[];
+}
+
+export async function fetchRecipesPage(
+  offset = 0,
+  limit = DEFAULT_PAGE_SIZE,
+): Promise<{ recipes: Recipe[]; total: number }> {
+  const { data, error, count } = await supabase
+    .from('recipes')
+    .select('*', { count: 'exact' })
+    .order('created_at', { ascending: false })
+    .range(offset, offset + limit - 1);
+
+  if (error) throw error;
+  const recipes = (data ?? []) as Recipe[];
+  const total = typeof count === 'number' ? count : offset + recipes.length;
+  return { recipes, total };
 }
 
 /** Finds a saved recipe matching a source URL without loading the full library. */

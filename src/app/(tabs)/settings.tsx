@@ -454,8 +454,18 @@ export default function SettingsScreen() {
                 {t('settings.adminBody')}
               </Text>
               <SettingsActionRow
-                label={t('settings.adminTitle')}
+                label={t('settings.adminInsights')}
                 icon="analytics-outline"
+                onPress={() => router.push('/admin/insights')}
+              />
+              <SettingsActionRow
+                label={t('settings.adminPeople')}
+                icon="people-outline"
+                onPress={() => router.push('/admin/users')}
+              />
+              <SettingsActionRow
+                label={t('settings.adminUsage')}
+                icon="receipt-outline"
                 onPress={() => router.push('/admin/usage')}
                 last
               />

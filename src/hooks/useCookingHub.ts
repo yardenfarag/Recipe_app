@@ -13,6 +13,7 @@ export function useCookingHub() {
   const [loadingMore, setLoadingMore] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [hasMore, setHasMore] = useState(false);
+  const [total, setTotal] = useState(0);
   const [search, setSearch] = useState('');
   const [debouncedSearch, setDebouncedSearch] = useState('');
   const [selectedTags, setSelectedTags] = useState<string[]>([]);
@@ -38,10 +39,14 @@ export function useCookingHub() {
         });
         setCards((prev) => (appending ? [...prev, ...result.cards] : result.cards));
         setHasMore(result.hasMore);
+        setTotal(result.total);
         setError(null);
       } catch (err) {
         setError(err instanceof Error ? err.message : 'Could not load the Cooking Hub.');
-        if (!appending) setCards([]);
+        if (!appending) {
+          setCards([]);
+          setTotal(0);
+        }
       } finally {
         setLoading(false);
         setLoadingMore(false);
@@ -75,6 +80,7 @@ export function useCookingHub() {
     loadingMore,
     error,
     hasMore,
+    total,
     search,
     setSearch,
     selectedTags,
