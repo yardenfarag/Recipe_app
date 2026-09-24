@@ -30,6 +30,7 @@ function profile(overrides: Partial<Profile> = {}): Profile {
     subscription_expires_at: null,
     free_extracts_used: 0,
     monthly_extracts_used: 0,
+    contribute_to_hub: true,
     ...overrides,
   };
 }

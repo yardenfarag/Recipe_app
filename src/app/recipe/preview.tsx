@@ -10,10 +10,12 @@ import { StackHeaderBackButton } from '@/components/StackHeaderBackButton';
 import { useLanguagePreference } from '@/hooks/useLanguagePreference';
 import { useLocalizedRecipe } from '@/hooks/useLocalizedRecipe';
 import { useThemePreference } from '@/hooks/useThemePreference';
+import { captureRecipeSaved } from '@/lib/analytics';
 import { DEFAULT_SOURCE_LANGUAGE } from '@/lib/appLanguages';
-import { confirmAction, showNotice } from '@/lib/confirmAction';
+import { showNotice } from '@/lib/confirmAction';
 import { ensureRecipeTranslation } from '@/lib/ensureRecipeTranslation';
 import { recipeContentEquals } from '@/lib/recipeContentEquals';
+import { recipeIsInvented } from '@/lib/recipeOrigin';
 import {
   clearRecipeDraft,
   getRecipeDraft,
@@ -222,26 +224,14 @@ export default function RecipePreviewScreen() {
       const { data: userData } = await supabase.auth.getUser();
 
       if (!userData.user) {
-        if (Platform.OS === 'web') {
-          const signUp = await confirmAction(
-            t('recipe.guestLimitTitle'),
-            t('recipe.guestLimitBody'),
-            t('auth.signUp'),
-          );
-          if (signUp) router.push('/auth?mode=signup&reason=save_limit');
-          return;
-        }
-        Alert.alert(t('recipe.guestLimitTitle'), t('recipe.guestLimitBody'), [
-          { text: t('common.notNow'), style: 'cancel' },
-          {
-            text: t('auth.signUp'),
-            onPress: () => router.push('/auth?mode=signup&reason=save_limit'),
-          },
-        ]);
+        router.push('/auth?mode=signup&reason=save_limit');
         return;
       }
 
       const { recipe: saved, recoveredDuplicate } = await saveRecipeDraft(canonical);
+      if (!recoveredDuplicate) {
+        captureRecipeSaved({ from: recipeIsInvented(canonical) ? 'invent' : 'extract' });
+      }
       if (translation && isRecipeLanguageCode(translation.language)) {
         try {
           await upsertRecipeTranslation(saved.id, translation.language, translation.content);

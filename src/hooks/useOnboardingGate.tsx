@@ -5,8 +5,7 @@ import { useOnboarding } from '@/hooks/useOnboarding';
 
 /**
  * Keeps first-run onboarding as a one-time gate: incomplete installs stay on
- * `/onboarding`; completed installs never return there.
- * Share intents are owned by ShareIntentRouter (skip redirect while on Snap).
+ * `/onboarding` or the account screen; completed installs never return there.
  */
 export function OnboardingGate() {
   const { ready, completed } = useOnboarding();
@@ -17,10 +16,13 @@ export function OnboardingGate() {
     if (!ready) return;
 
     const onOnboarding = segments[0] === 'onboarding' || pathname === '/onboarding';
-    const onSnap = pathname === '/add' || segments.some((segment) => String(segment) === 'add');
+    const onAuth =
+      segments[0] === 'auth' ||
+      segments[0] === 'auth-callback' ||
+      pathname === '/auth' ||
+      pathname.startsWith('/auth-callback');
 
-    // Let ShareIntentRouter own first-open shares — do not yank away from Snap.
-    if (!completed && !onOnboarding && !onSnap) {
+    if (!completed && !onOnboarding && !onAuth) {
       router.replace('/onboarding');
       return;
     }

@@ -25,7 +25,6 @@ export type { GeminiUsageSnapshot } from './pricing.ts';
 /** Text extract is simple structured IO — use Flash-Lite. Video needs standard Flash. */
 const TEXT_TIMEOUT_MS = 35_000;
 const VIDEO_TIMEOUT_MS = 120_000;
-const TIMESTAMP_MAP_TIMEOUT_MS = 90_000;
 const TEXT_MAX_OUTPUT_TOKENS = 6_144;
 const VIDEO_MAX_OUTPUT_TOKENS = 6_144;
 const MAX_DESCRIPTION_CHARS = 10_000;
@@ -152,32 +151,6 @@ export const RECIPE_SCHEMA = {
   ],
 };
 
-const TIMESTAMP_MAP_PROMPT = `You map recipe steps to timestamps in a cooking video.
-
-Rules:
-- Watch the video and find when each listed step BEGINS (seconds from the start).
-- Match step numbers exactly to the provided list.
-- Include only steps with a clear visual or spoken moment.
-- Return ONLY data matching the schema.`;
-
-const TIMESTAMP_MAP_SCHEMA = {
-  type: 'object',
-  properties: {
-    steps: {
-      type: 'array',
-      items: {
-        type: 'object',
-        properties: {
-          step: { type: 'integer' },
-          timestamp_seconds: { type: 'integer' },
-        },
-        required: ['step', 'timestamp_seconds'],
-      },
-    },
-  },
-  required: ['steps'],
-};
-
 export type ExtractionSource =
   | 'description'
   | 'comments'
@@ -277,28 +250,51 @@ function textExtractionSource(
   return 'description';
 }
 
-async function attachTimestampsIfNeeded(
-  input: ExtractInput,
-  recipe: GeminiRecipe,
-  source: ExtractionSource,
-  usages: GeminiUsageSnapshot[],
-): Promise<GeminiRecipe> {
-  const shouldMapTimestamps =
-    recipe.instructions.length > 0 &&
-    input.platform !== 'web' &&
-    !isVideoTooLong(input.durationSeconds) &&
-    source !== 'captions' &&
-    source !== 'web';
-  if (!shouldMapTimestamps) return recipe;
-  const mapped = await tryMapInstructionTimestamps(input, recipe.instructions, usages);
-  return { ...recipe, instructions: mapped.instructions };
+export type EarlyTextExtract =
+  | { ok: true; result: { recipe: GeminiRecipe; usage: GeminiUsageSnapshot | null } }
+  | { ok: false; timedOut: boolean; error: unknown };
+
+/** Starts the text rung so it can overlap the content gate. Null when there is no text. */
+export function beginTextExtraction(input: ExtractInput): Promise<EarlyTextExtract> | null {
+  const hasDescription = Boolean(input.description?.trim());
+  const hasComments = input.topComments.length > 0;
+  const hasCaptions = Boolean(input.captions?.trim());
+  if (!hasDescription && !hasComments && !hasCaptions) return null;
+
+  console.log('[gemini] text step start', { timeoutMs: TEXT_TIMEOUT_MS, early: true });
+  const textStarted = Date.now();
+  return extractRecipeFromText(
+    input,
+    { description: hasDescription, comments: hasComments, captions: hasCaptions },
+    TEXT_TIMEOUT_MS,
+  ).then(
+    (result) => {
+      console.log('[gemini] text step done', {
+        ms: Date.now() - textStarted,
+        early: true,
+        found: geminiFoundRecipe(result.recipe),
+        full: isFullGeminiRecipe(result.recipe),
+      });
+      return { ok: true as const, result };
+    },
+    (error) => {
+      console.error('[gemini] text step failed', {
+        ms: Date.now() - textStarted,
+        error: error instanceof Error ? error.message : String(error),
+      });
+      return { ok: false as const, timedOut: isGeminiTimeout(error), error };
+    },
+  );
 }
 
 /**
  * Content ladder (cheapest first): all text sources in one call, then video.
  * Partial text results still try video so missing steps can be filled (ADR 013).
  */
-export async function extractRecipeWithLadder(input: ExtractInput): Promise<LadderResult> {
+export async function extractRecipeWithLadder(
+  input: ExtractInput,
+  options?: { pendingText?: Promise<EarlyTextExtract> | null },
+): Promise<LadderResult> {
   const hasDescription = Boolean(input.description?.trim());
   const hasComments = input.topComments.length > 0;
   const hasCaptions = Boolean(input.captions?.trim());
@@ -322,18 +318,36 @@ export async function extractRecipeWithLadder(input: ExtractInput): Promise<Ladd
   });
 
   if (hasAnyText) {
-    console.log('[gemini] text step start', { timeoutMs: TEXT_TIMEOUT_MS });
     const textStarted = Date.now();
-    try {
-      const fromText = await extractRecipeFromText(
-        input,
-        {
-          description: hasDescription,
-          comments: hasComments,
-          captions: hasCaptions,
-        },
-        TEXT_TIMEOUT_MS,
-      );
+    let fromText: { recipe: GeminiRecipe; usage: GeminiUsageSnapshot | null } | null = null;
+    if (options?.pendingText) {
+      const settled = await options.pendingText;
+      if (!settled.ok) {
+        if (!settled.timedOut) throw settled.error;
+      } else {
+        fromText = settled.result;
+      }
+    } else {
+      console.log('[gemini] text step start', { timeoutMs: TEXT_TIMEOUT_MS });
+      try {
+        fromText = await extractRecipeFromText(
+          input,
+          {
+            description: hasDescription,
+            comments: hasComments,
+            captions: hasCaptions,
+          },
+          TEXT_TIMEOUT_MS,
+        );
+      } catch (err) {
+        console.error('[gemini] text step failed', {
+          ms: Date.now() - textStarted,
+          error: err instanceof Error ? err.message : String(err),
+        });
+        if (!isGeminiTimeout(err)) throw err;
+      }
+    }
+    if (fromText) {
       if (fromText.usage) usages.push(fromText.usage);
       console.log('[gemini] text step done', {
         ms: Date.now() - textStarted,
@@ -346,21 +360,15 @@ export async function extractRecipeWithLadder(input: ExtractInput): Promise<Ladd
       });
       if (geminiFoundRecipe(fromText.recipe)) {
         const source = textExtractionSource(input, hasCaptions, hasComments);
-        let recipe = normalizeGeminiRecipe(fromText.recipe);
+        const recipe = normalizeGeminiRecipe(fromText.recipe);
         if (isFullGeminiRecipe(recipe)) {
-          recipe = await attachTimestampsIfNeeded(input, recipe, source, usages);
+          // A second video pass only to attach step timestamps blocks the response
+          // for up to 90s after the recipe is already complete.
           return { recipe, source, usages };
         }
         textCandidate = { recipe, source };
         console.log('[gemini] text step partial — trying video before returning');
       }
-    } catch (err) {
-      console.error('[gemini] text step failed', {
-        ms: Date.now() - textStarted,
-        error: err instanceof Error ? err.message : String(err),
-      });
-      // Fall through to video / empty rather than surface a raw timeout to the user.
-      if (!isGeminiTimeout(err)) throw err;
     }
   } else {
     console.log('[gemini] skipping text step — no description/comments/captions');
@@ -674,91 +682,6 @@ function normalizeInstructions(
     }
     return normalized;
   });
-}
-
-async function resolvePlayableVideoUri(input: ExtractInput): Promise<string | null> {
-  let videoUri = input.videoUrl?.trim();
-  if (!videoUri) return null;
-
-  if (input.platform === 'instagram' && isInstagramCdnUrl(videoUri)) {
-    try {
-      const hosted = await resolveInstagramVideoForGemini(input.sourceUrl);
-      if (hosted && !isInstagramCdnUrl(hosted)) {
-        videoUri = hosted;
-      } else {
-        return null;
-      }
-    } catch {
-      return null;
-    }
-  }
-
-  return videoUri;
-}
-
-async function tryMapInstructionTimestamps(
-  input: ExtractInput,
-  instructions: GeminiRecipe['instructions'],
-  usages: GeminiUsageSnapshot[],
-): Promise<{ instructions: GeminiRecipe['instructions'] }> {
-  const videoUri = await resolvePlayableVideoUri(input);
-  if (!videoUri) {
-    return { instructions };
-  }
-
-  try {
-    const mapped = await mapInstructionTimestampsFromVideo(input, instructions, videoUri);
-    if (mapped.usage) usages.push(mapped.usage);
-    return { instructions: mapped.instructions };
-  } catch (err) {
-    console.error('[gemini] timestamp map failed', {
-      error: err instanceof Error ? err.message : String(err),
-    });
-    return { instructions };
-  }
-}
-
-async function mapInstructionTimestampsFromVideo(
-  input: ExtractInput,
-  instructions: GeminiRecipe['instructions'],
-  videoUri: string,
-): Promise<{ instructions: GeminiRecipe['instructions']; usage: GeminiUsageSnapshot | null }> {
-  const stepList = instructions.map((step) => `${step.step}. ${step.text}`).join('\n');
-  const prompt = `Find when each recipe step below begins in the video.\n\n--- STEPS ---\n${stepList}`;
-
-  console.log('[gemini] timestamp map start', {
-    platform: input.platform,
-    steps: instructions.length,
-    videoHost: safeUrlHost(videoUri),
-  });
-
-  const { data, usage } = await generateLlmJson<{ steps: { step: number; timestamp_seconds: number }[] }>({
-    tier: 'standard',
-    systemPrompt: TIMESTAMP_MAP_PROMPT,
-    parts: [{ fileData: { fileUri: videoUri } }, { text: prompt }],
-    responseSchema: TIMESTAMP_MAP_SCHEMA,
-    timeoutMs: TIMESTAMP_MAP_TIMEOUT_MS,
-    maxOutputTokens: 1_024,
-    kind: 'timestamp_map',
-    context: 'gemini.ts: mapInstructionTimestampsFromVideo',
-  });
-
-  const byStep = new Map<number, number>();
-  for (const row of data.steps ?? []) {
-    const step = Number(row.step);
-    const seconds = Number(row.timestamp_seconds);
-    if (Number.isFinite(step) && Number.isFinite(seconds) && seconds >= 0) {
-      byStep.set(step, Math.round(seconds));
-    }
-  }
-
-  return {
-    instructions: instructions.map((inst) => {
-      const timestamp = byStep.get(inst.step);
-      return timestamp != null ? { ...inst, timestamp_seconds: timestamp } : inst;
-    }),
-    usage,
-  };
 }
 
 async function callGemini(

@@ -132,7 +132,8 @@ export function recipeUrlsMatch(
   return canonicalizeUrlForCompare(inputUrl) === canonicalizeUrlForCompare(storedUrl);
 }
 
-function canonicalizeUrlForCompare(url: string): string {
+/** Stable compare form: no hash, no tracking params, no www, no trailing slash. */
+export function canonicalizeUrlForCompare(url: string): string {
   try {
     const u = new URL(url.trim());
     u.hash = '';

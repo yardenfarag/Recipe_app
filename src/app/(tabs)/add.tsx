@@ -30,12 +30,11 @@ import { useLanguagePreference } from "@/hooks/useLanguagePreference";
 import { useProfile } from "@/hooks/useProfile";
 import { useRtl } from "@/hooks/useRtl";
 import { useThemePreference } from "@/hooks/useThemePreference";
-import { confirmAction, showNotice } from "@/lib/confirmAction";
+import { showNotice } from "@/lib/confirmAction";
 import { isFoodGateReject, shouldOfferInvent } from "@/lib/contentGate";
 import { clearExtractionRequestId } from "@/lib/extractionRequestId";
 import { findExistingGuestRecipe } from "@/lib/findExistingRecipe";
 import {
-  GUEST_EXTRACTION_LIMIT,
   getGuestExtractionsRemaining,
   setGuestExtractionsRemaining,
 } from "@/lib/guestExtractionUsage";
@@ -46,6 +45,10 @@ import {
 } from "@/lib/pickCompressedImage";
 import { detectPlatform, normalizeSocialUrl } from "@/lib/platformUrls";
 import { FREE_MONTHLY_EXTRACT_LIMIT } from "@/lib/quotas";
+import {
+  captureRecipeExtracted,
+  type RecipeEntrySource,
+} from "@/lib/analytics";
 import { setRecipeDraft } from "@/lib/recipeDraft";
 import { recipeIsInvented } from "@/lib/recipeOrigin";
 import type {
@@ -70,8 +73,8 @@ type Banner = {
 } | null;
 
 type InventFollowUp =
-  | { kind: "photo"; base64: string; mimeType: string }
-  | { kind: "url"; url: string };
+  | { kind: "photo"; base64: string; mimeType: string; source: RecipeEntrySource }
+  | { kind: "url"; url: string; source: RecipeEntrySource };
 
 // Share → Pinch needs native share-intent code (ADR 010); Expo Go can't receive it.
 const isExpoGo =
@@ -85,9 +88,7 @@ export default function AddRecipeScreen() {
   const [loading, setLoading] = useState(false);
   const [statusIndex, setStatusIndex] = useState(0);
   const [banner, setBanner] = useState<Banner>(null);
-  const [guestExtractsRemaining, setGuestExtractsRemaining] = useState<
-    number | null
-  >(null);
+  const [, setGuestExtractsRemaining] = useState<number | null>(null);
   const [extractingPhoto, setExtractingPhoto] = useState(false);
   const [jobKind, setJobKind] = useState<"extract" | "invent">("extract");
   const [creditsOpen, setCreditsOpen] = useState(false);
@@ -159,7 +160,7 @@ export default function AddRecipeScreen() {
     resetShareIntent();
     if (sharedUrl) {
       setUrl(sharedUrl);
-      void handleGetRecipe(sharedUrl, "extract");
+      void handleGetRecipe(sharedUrl, "extract", "share");
     } else {
       setBanner({
         kind: "error",
@@ -169,32 +170,8 @@ export default function AddRecipeScreen() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [hasShareIntent, shareIntent.webUrl, shareIntent.text, shareIntent.files]);
 
-  async function promptGuestExtractLimit() {
-    const title = t("snap.guestLimitTitle");
-    const message = t("snap.guestLimitBody", {
-      limit: GUEST_EXTRACTION_LIMIT,
-      freeLimit: FREE_MONTHLY_EXTRACT_LIMIT,
-    });
-    setBanner({ kind: "limit", message });
-
-    if (Platform.OS === "web") {
-      const signUp = await confirmAction(
-        title,
-        message,
-        t("auth.signUp"),
-        t("common.notNow"),
-      );
-      if (signUp) router.push("/auth?mode=signup&reason=extract_limit");
-      return;
-    }
-
-    Alert.alert(title, message, [
-      { text: t("common.notNow"), style: "cancel" },
-      {
-        text: t("auth.signUp"),
-        onPress: () => router.push("/auth?mode=signup&reason=extract_limit"),
-      },
-    ]);
+  function promptGuestExtractLimit() {
+    router.push("/auth?mode=signup&reason=extract_limit");
   }
 
   function promptCreditLimit() {
@@ -207,6 +184,7 @@ export default function AddRecipeScreen() {
   async function applyExtractResult(
     result: ExtractResult,
     requestKey: string,
+    source: RecipeEntrySource,
     followUp?: InventFollowUp,
   ): Promise<boolean> {
     if (
@@ -235,6 +213,11 @@ export default function AddRecipeScreen() {
       result.code === "insufficient_tokens"
     ) {
       promptCreditLimit();
+      return false;
+    }
+
+    if (result.code === "auth_required" || result.code === "guest_id_required") {
+      router.push("/auth?mode=signup&reason=extract_limit");
       return false;
     }
 
@@ -313,6 +296,10 @@ export default function AddRecipeScreen() {
     }
 
     let recipeToPreview: ExtractedRecipe = result.recipe;
+    captureRecipeExtracted({
+      source,
+      mode: recipeIsInvented(recipeToPreview) ? "invent" : "extract",
+    });
     if (
       user &&
       recipeToPreview.ingredients.length > 0 &&
@@ -387,6 +374,7 @@ export default function AddRecipeScreen() {
   async function runPhotoInvent(
     base64: string,
     mimeType: string,
+    source: RecipeEntrySource,
     alreadyGated = false,
   ): Promise<boolean> {
     setBanner(null);
@@ -398,7 +386,7 @@ export default function AddRecipeScreen() {
         alreadyGated,
       });
       const key = `invent-photo:${base64.length}:${base64.slice(0, 64)}`;
-      return applyExtractResult(result, key);
+      return applyExtractResult(result, key, source);
     } catch {
       setBanner({ kind: "error", message: t("snap.inventFailed") });
       return false;
@@ -410,6 +398,7 @@ export default function AddRecipeScreen() {
 
   async function runUrlInvent(
     target: string,
+    source: RecipeEntrySource,
     alreadyGated = false,
   ): Promise<boolean> {
     setBanner(null);
@@ -417,7 +406,7 @@ export default function AddRecipeScreen() {
     setLoading(true);
     try {
       const result = await inventRecipe(target, language, { alreadyGated });
-      return applyExtractResult(result, `invent:${target}`);
+      return applyExtractResult(result, `invent:${target}`, source);
     } catch {
       setBanner({ kind: "error", message: t("snap.inventFailed") });
       return false;
@@ -426,25 +415,25 @@ export default function AddRecipeScreen() {
     }
   }
 
+  function requireAccount(): boolean {
+    if (user) return true;
+    router.push("/auth?mode=signup&reason=extract_limit");
+    return false;
+  }
+
   async function runPhotoExtract(
     base64: string,
     mimeType: string,
+    source: RecipeEntrySource,
     intent: SnapIntent = mode,
   ) {
     if (loading) return;
-    if (!user) {
-      const remaining = await getGuestExtractionsRemaining();
-      setGuestExtractsRemaining(remaining);
-      if (remaining <= 0) {
-        await promptGuestExtractLimit();
-        return;
-      }
-    }
+    if (!requireAccount()) return;
 
     setBanner(null);
     setExtractingPhoto(true);
     if (intent === "invent") {
-      await runPhotoInvent(base64, mimeType);
+      await runPhotoInvent(base64, mimeType, source);
       return;
     }
 
@@ -453,10 +442,11 @@ export default function AddRecipeScreen() {
     try {
       const result = await extractRecipeFromImage(base64, mimeType);
       const key = `photo:${base64.length}:${base64.slice(0, 64)}`;
-      await applyExtractResult(result, key, {
+      await applyExtractResult(result, key, source, {
         kind: "photo",
         base64,
         mimeType,
+        source,
       });
     } catch {
       setBanner({ kind: "error", message: t("snap.genericError") });
@@ -472,7 +462,7 @@ export default function AddRecipeScreen() {
       setBanner({ kind: "error", message: t("snap.invalidShareImage") });
       return;
     }
-    await runPhotoExtract(image.base64, image.mimeType, "extract");
+    await runPhotoExtract(image.base64, image.mimeType, "share", "extract");
   }
 
   async function handlePickPhoto(source: "camera" | "library") {
@@ -485,7 +475,7 @@ export default function AddRecipeScreen() {
       readFailedBody: t("snap.photoTooLarge"),
     });
     if (!image) return;
-    await runPhotoExtract(image.base64, image.mimeType);
+    await runPhotoExtract(image.base64, image.mimeType, source);
   }
 
   function handlePhotoEntry() {
@@ -513,6 +503,7 @@ export default function AddRecipeScreen() {
   async function handleGetRecipe(
     overrideUrl?: string,
     intent: SnapIntent = mode,
+    source: RecipeEntrySource = "url",
   ) {
     if (loading) return;
     const target = normalizeSocialUrl(overrideUrl ?? url);
@@ -523,6 +514,8 @@ export default function AddRecipeScreen() {
       });
       return;
     }
+
+    if (!requireAccount()) return;
 
     setBanner(null);
     setUrl(target);
@@ -549,14 +542,18 @@ export default function AddRecipeScreen() {
       }
 
       if (intent === "invent") {
-        await runUrlInvent(target);
+        await runUrlInvent(target, source);
         return;
       }
 
       setJobKind("extract");
       setLoading(true);
       const result = await extractRecipe(target);
-      await applyExtractResult(result, target, { kind: "url", url: target });
+      await applyExtractResult(result, target, source, {
+        kind: "url",
+        url: target,
+        source,
+      });
     } catch {
       setBanner({ kind: "error", message: t("snap.genericError") });
     } finally {
@@ -572,11 +569,12 @@ export default function AddRecipeScreen() {
       await runPhotoInvent(
         offer.followUp.base64,
         offer.followUp.mimeType,
+        offer.followUp.source,
         true,
       );
       return;
     }
-    await runUrlInvent(offer.followUp.url, true);
+    await runUrlInvent(offer.followUp.url, offer.followUp.source, true);
   }
 
   async function extractAnywayFromOffer() {
@@ -595,12 +593,17 @@ export default function AddRecipeScreen() {
           { forceExtract: true },
         );
         const key = `photo:${offer.followUp.base64.length}:${offer.followUp.base64.slice(0, 64)}`;
-        await applyExtractResult(result, key, offer.followUp);
+        await applyExtractResult(result, key, offer.followUp.source, offer.followUp);
       } else {
         const result = await extractRecipe(offer.followUp.url, {
           forceExtract: true,
         });
-        await applyExtractResult(result, offer.followUp.url, offer.followUp);
+        await applyExtractResult(
+          result,
+          offer.followUp.url,
+          offer.followUp.source,
+          offer.followUp,
+        );
       }
     } catch {
       setBanner({ kind: "error", message: t("snap.genericError") });
@@ -612,32 +615,23 @@ export default function AddRecipeScreen() {
 
   const canSubmit = Boolean(url.trim());
   const inventing = jobKind === "invent";
+  const readingLine = extractingPhoto
+    ? t("snap.statusReadingPhoto")
+    : detectPlatform(url) === "web"
+      ? t("snap.statusReadingPage")
+      : t("snap.statusReadingVideo");
   const statusLines = inventing
     ? ([
-        t("snap.statusCheckingFood"),
+        readingLine,
         t("snap.statusFiguringDish"),
         t("snap.statusWritingHome"),
       ] as const)
-    : extractingPhoto
-      ? ([
-          t("snap.statusCheckingFood"),
-          t("snap.statusReadingPhoto"),
-          t("snap.statusIngredients"),
-          t("snap.statusJustAPinch"),
-        ] as const)
-      : detectPlatform(url) === "web"
-        ? ([
-            t("snap.statusCheckingFood"),
-            t("snap.statusReadingPage"),
-            t("snap.statusIngredients"),
-            t("snap.statusJustAPinch"),
-          ] as const)
-        : ([
-            t("snap.statusCheckingFood"),
-            t("snap.statusReadingVideo"),
-            t("snap.statusIngredients"),
-            t("snap.statusJustAPinch"),
-          ] as const);
+    : ([
+        readingLine,
+        t("snap.statusIngredients"),
+        t("snap.statusWritingSteps"),
+        t("snap.statusAlmost"),
+      ] as const);
 
   const signedInQuotaLabel = (() => {
     if (!user || totalCredits == null) return null;
@@ -647,17 +641,6 @@ export default function AddRecipeScreen() {
       purchased: purchasedCredits ?? 0,
     });
   })();
-
-  const guestQuotaLabel =
-    guestExtractsRemaining === 1
-      ? t("snap.guestRemainingOne", {
-          remaining: guestExtractsRemaining,
-          limit: GUEST_EXTRACTION_LIMIT,
-        })
-      : t("snap.guestRemaining", {
-          remaining: guestExtractsRemaining ?? 0,
-          limit: GUEST_EXTRACTION_LIMIT,
-        });
 
   if (loading) {
     return (
@@ -724,14 +707,6 @@ export default function AddRecipeScreen() {
           >
             {mode === "invent" ? t("snap.inventUrlLabel") : t("snap.urlLabel")}
           </Animated.Text>
-          {!user && guestExtractsRemaining !== null && (
-            <Text
-              className="mb-2 text-xs font-medium"
-              style={{ color: colors.accent }}
-            >
-              {guestQuotaLabel}
-            </Text>
-          )}
           {signedInQuotaLabel ? (
             <Text
               className="mb-2 text-xs font-medium"
@@ -817,19 +792,6 @@ export default function AddRecipeScreen() {
               >
                 {banner.message}
               </Text>
-              {banner.kind === "limit" && (
-                <Pressable
-                  className="mt-3 self-start rounded-2xl px-4 py-2"
-                  style={{ backgroundColor: colors.primary }}
-                  onPress={() =>
-                    router.push("/auth?mode=signup&reason=extract_limit")
-                  }
-                >
-                  <Text className="text-sm font-bold text-white">
-                    {t("auth.signUp")}
-                  </Text>
-                </Pressable>
-              )}
               {banner.kind === "credits" && (
                 <Pressable
                   className="mt-3 self-start rounded-2xl px-4 py-2"

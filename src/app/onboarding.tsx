@@ -5,17 +5,15 @@ import { View } from 'react-native';
 import { OnboardingPager } from '@/components/onboarding/OnboardingPager';
 import { Screen } from '@/components/Screen';
 import { useLanguagePreference } from '@/hooks/useLanguagePreference';
-import { useOnboarding } from '@/hooks/useOnboarding';
 import type { AppLanguageCode } from '@/lib/appLanguages';
 import { promptRtlReloadIfNeeded } from '@/lib/rtlLayout';
 
 /**
- * One-time first-open onboarding. Completing or skipping sets a persistent
- * install flag; RTL reload (if language crossed LTR/RTL) is deferred until exit.
+ * First-run preferences, then the account screen. Onboarding stays incomplete
+ * until sign-up or sign-in creates a session.
  */
 export default function OnboardingScreen() {
   const { language, ready: languageReady } = useLanguagePreference();
-  const { completeOnboarding } = useOnboarding();
   const languageAtStart = useRef<AppLanguageCode | null>(null);
 
   useEffect(() => {
@@ -24,21 +22,16 @@ export default function OnboardingScreen() {
     }
   }, [languageReady, language]);
 
-  async function finish(destination: 'snap' | 'library') {
+  function continueToAccount() {
     const baseline = languageAtStart.current ?? language;
-    await completeOnboarding();
     promptRtlReloadIfNeeded(baseline, language);
-    router.replace(destination === 'snap' ? '/add' : '/(tabs)');
-  }
-
-  async function skip() {
-    await finish('snap');
+    router.push('/auth?mode=signup&reason=onboarding');
   }
 
   return (
     <Screen edges={['top', 'left', 'right', 'bottom']} dense>
       <View className="flex-1 px-5 pb-2 pt-3">
-        <OnboardingPager onFinish={finish} onSkip={skip} />
+        <OnboardingPager onAccount={continueToAccount} />
       </View>
     </Screen>
   );

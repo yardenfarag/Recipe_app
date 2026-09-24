@@ -75,7 +75,10 @@ export async function classifyContent(
   let imageBase64 = input.imageBase64?.trim() || null;
   let mimeType = input.mimeType ?? 'image/jpeg';
 
-  if (!imageBase64 && input.thumbnailUrl?.trim()) {
+  const textLen = (input.title?.trim().length ?? 0) + (input.description?.trim().length ?? 0);
+  // A caption or page already gives the classifier enough to work with.
+  // Downloading a thumbnail and sending it as vision adds a round trip.
+  if (!imageBase64 && input.thumbnailUrl?.trim() && textLen < 280) {
     const fetched = await fetchImageAsBase64({
       sourceUrl: input.thumbnailUrl,
       referer: input.thumbnailReferer ?? undefined,

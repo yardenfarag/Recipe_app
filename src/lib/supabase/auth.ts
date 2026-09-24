@@ -11,9 +11,9 @@ import { supabase } from '@/lib/supabase/client';
 WebBrowser.maybeCompleteAuthSession();
 
 /**
- * Returns `needsConfirmation: true` when the project has email confirmation
- * enabled — in that case no session is created until the user clicks the link
- * in their inbox. For fast MVP testing, disable "Confirm email" in
+ * Returns `needsConfirmation: true` only when the project still requires a
+ * confirmation link. Leave "Confirm email" off so sign-up returns a session
+ * in the same step, the same way Google and Apple do.
  * Supabase → Authentication → Providers → Email.
  */
 export async function signUpWithEmail(

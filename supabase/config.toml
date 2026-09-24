@@ -6,3 +6,6 @@
 
 [functions.revenuecat-webhook]
 verify_jwt = false
+
+[auth.email]
+enable_confirmations = false

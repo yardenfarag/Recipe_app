@@ -21,6 +21,7 @@ export interface Profile {
   /** @deprecated Lifetime counter; Free/Plus both use monthly_extracts_used. */
   free_extracts_used: number;
   monthly_extracts_used: number;
+  contribute_to_hub: boolean;
 }
 
 export interface ProfileQuota {
@@ -36,7 +37,7 @@ export interface ProfileQuota {
 }
 
 const PROFILE_SELECT =
-  'id, email, avatar_url, token_balance, is_admin, token_pack_notify_at, subscription_status, subscription_expires_at, free_extracts_used';
+  'id, email, avatar_url, token_balance, is_admin, token_pack_notify_at, subscription_status, subscription_expires_at, free_extracts_used, contribute_to_hub';
 
 type ProfileRow = {
   id: string;
@@ -48,6 +49,7 @@ type ProfileRow = {
   subscription_status?: string | null;
   subscription_expires_at?: string | null;
   free_extracts_used?: number | null;
+  contribute_to_hub?: boolean | null;
 };
 
 export function profileQuota(profile: Profile | null): ProfileQuota | null {
@@ -85,6 +87,7 @@ function mapProfileRow(row: ProfileRow, monthlyExtractsUsed: number): Profile {
     free_extracts_used:
       typeof row.free_extracts_used === 'number' ? row.free_extracts_used : 0,
     monthly_extracts_used: monthlyExtractsUsed,
+    contribute_to_hub: row.contribute_to_hub !== false,
   };
 }
 

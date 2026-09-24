@@ -18,6 +18,7 @@ import {
   type KitchenProfile,
   type KitchenSwap,
 } from '@/lib/kitchenProfile';
+import { fetchContributeToHub, setContributeToHub } from '@/lib/supabase/cookingHub';
 import { fetchCloudKitchenProfile, saveCloudKitchenProfile } from '@/lib/supabase/kitchen';
 import { RECIPE_VARIANTS } from '@/lib/recipeVariants';
 
@@ -27,6 +28,7 @@ export default function RecipeSettingsScreen() {
   const { textAlign } = useRtl();
   const { user } = useAuth();
   const [profile, setProfile] = useState<KitchenProfile>(EMPTY_KITCHEN_PROFILE);
+  const [contributeToHub, setContributeToHubState] = useState(true);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [swapFrom, setSwapFrom] = useState('');
@@ -43,6 +45,15 @@ export default function RecipeSettingsScreen() {
         ? await fetchCloudKitchenProfile(user.id)
         : await loadGuestKitchenProfile();
       setProfile(next);
+      if (user) {
+        try {
+          setContributeToHubState(await fetchContributeToHub(user.id));
+        } catch {
+          setContributeToHubState(true);
+        }
+      } else {
+        setContributeToHubState(true);
+      }
     } catch {
       setProfile(EMPTY_KITCHEN_PROFILE);
     } finally {
@@ -303,6 +314,46 @@ export default function RecipeSettingsScreen() {
       </Pressable>
 
       <View className="mb-6 h-px" style={{ backgroundColor: colors.border }} />
+
+      {user ? (
+        <>
+          <Text className="mb-2 text-sm font-semibold" style={{ color: colors.text }}>
+            {t('hub.title')}
+          </Text>
+          <Pressable
+            onPress={() => {
+              const next = !contributeToHub;
+              setContributeToHubState(next);
+              void setContributeToHub(user.id, next).catch(() => {
+                setContributeToHubState(!next);
+                setError(t('settings.kitchenSaveFailed'));
+              });
+            }}
+            className="mb-6 flex-row items-center justify-between rounded-3xl border px-4 py-3.5 active:opacity-80"
+            style={{ borderColor: colors.border, backgroundColor: colors.surface }}
+            accessibilityRole="switch"
+            accessibilityState={{ checked: contributeToHub }}
+          >
+            <View className="mr-3 min-w-0 flex-1">
+              <Text className="text-sm font-semibold" style={{ color: colors.text }}>
+                {t('settings.contributeToHub')}
+              </Text>
+              <Text className="mt-1 text-xs leading-5" style={{ color: colors.textSecondary }}>
+                {t('settings.contributeToHubHint')}
+              </Text>
+            </View>
+            <View
+              className="h-6 w-11 rounded-full p-0.5"
+              style={{ backgroundColor: contributeToHub ? colors.primary : colors.border }}
+            >
+              <View
+                className="h-5 w-5 rounded-full bg-white"
+                style={{ alignSelf: contributeToHub ? 'flex-end' : 'flex-start' }}
+              />
+            </View>
+          </Pressable>
+        </>
+      ) : null}
 
       <Text className="mb-2 text-sm font-semibold" style={{ color: colors.text }}>
         {t('settings.kitchenAfterSnap')}

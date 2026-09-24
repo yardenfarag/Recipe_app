@@ -1,80 +1,66 @@
-import { useState, type ReactNode } from 'react';
+import { useState } from 'react';
 import { Pressable, ScrollView, Text, View } from 'react-native';
 import { useTranslation } from 'react-i18next';
 
-import { BrandHeader } from '@/components/BrandHeader';
 import { LanguagePicker } from '@/components/LanguagePicker';
+import { MeasurementToggle } from '@/components/MeasurementToggle';
 import { OnboardingProgress } from '@/components/onboarding/OnboardingProgress';
-import { OnboardingSlide } from '@/components/onboarding/OnboardingSlide';
-import { CollectionsIllustration } from '@/components/onboarding/illustrations/CollectionsIllustration';
-import { CustomizeIllustration } from '@/components/onboarding/illustrations/CustomizeIllustration';
-import { ReadyIllustration } from '@/components/onboarding/illustrations/ReadyIllustration';
-import { SaveIllustration } from '@/components/onboarding/illustrations/SaveIllustration';
-import { ShareIllustration } from '@/components/onboarding/illustrations/ShareIllustration';
+import { OnboardingVision } from '@/components/onboarding/OnboardingVision';
+import { ThemePackPicker } from '@/components/ThemePackPicker';
+import { ThemeToggle } from '@/components/ThemeToggle';
+import { useKitchenProfile } from '@/hooks/useKitchenProfile';
 import { useThemePreference } from '@/hooks/useThemePreference';
+import type { KitchenDietKey } from '@/lib/kitchenProfile';
+import { RECIPE_VARIANTS, type RecipeVariantKey } from '@/lib/recipeVariants';
 
-const TEACHING_COUNT = 4;
-/** Language + teaching + ready */
-export const ONBOARDING_STEP_COUNT = TEACHING_COUNT + 2;
+/** Vision, then language, look, measurements, and an optional diet. */
+const QUESTION_STEP_COUNT = 4;
+export const ONBOARDING_STEP_COUNT = QUESTION_STEP_COUNT + 1;
 
 type OnboardingPagerProps = {
-  onFinish: (destination: 'snap' | 'library') => void;
-  onSkip: () => void;
+  onAccount: () => void;
 };
 
-type TeachingSlide = {
-  titleKey: string;
-  bodyKey: string;
-  illustration: ReactNode;
-};
-
-/** Full first-run pager: language → teaching beats → ready CTA. */
-export function OnboardingPager({ onFinish, onSkip }: OnboardingPagerProps) {
+/** First-run preferences. Each answer is saved as they tap, and they can change it in Settings. */
+export function OnboardingPager({ onAccount }: OnboardingPagerProps) {
   const { t } = useTranslation();
   const { colors } = useThemePreference();
+  const { profile, persist } = useKitchenProfile();
   const [step, setStep] = useState(0);
+  const [diets, setDiets] = useState<KitchenDietKey[]>(profile.diets);
 
-  const teachingSlides: TeachingSlide[] = [
-    {
-      titleKey: 'onboarding.shareTitle',
-      bodyKey: 'onboarding.shareBody',
-      illustration: <ShareIllustration />,
-    },
-    {
-      titleKey: 'onboarding.saveTitle',
-      bodyKey: 'onboarding.saveBody',
-      illustration: <SaveIllustration />,
-    },
-    {
-      titleKey: 'onboarding.collectionsTitle',
-      bodyKey: 'onboarding.collectionsBody',
-      illustration: <CollectionsIllustration />,
-    },
-    {
-      titleKey: 'onboarding.customizeTitle',
-      bodyKey: 'onboarding.customizeBody',
-      illustration: <CustomizeIllustration />,
-    },
-  ];
-
-  const isLanguage = step === 0;
-  const isReady = step === ONBOARDING_STEP_COUNT - 1;
-  const canSkip = step > 0 && !isReady;
-  const progressIndex = step;
+  const isVision = step === 0;
+  const isLanguage = step === 1;
+  const isLook = step === 2;
+  const isMeasure = step === 3;
+  const isCook = step === 4;
 
   function goNext() {
-    if (step < ONBOARDING_STEP_COUNT - 1) {
-      setStep((s) => s + 1);
-    }
+    setStep((current) => Math.min(current + 1, ONBOARDING_STEP_COUNT - 1));
+  }
+
+  function toggleDiet(key: RecipeVariantKey) {
+    if (key === 'custom') return;
+    setDiets((current) => {
+      const diet = key as KitchenDietKey;
+      if (current.includes(diet)) return current.filter((item) => item !== diet);
+      return [...current, diet].slice(0, 4);
+    });
+  }
+
+  async function finishCook(nextDiets: KitchenDietKey[]) {
+    await persist({ ...profile, diets: nextDiets, autoApplyOnExtract: false });
+    onAccount();
   }
 
   return (
     <View className="flex-1">
+      {isVision ? null : (
       <View className="mb-1 flex-row items-center justify-between px-1">
         <View className="min-h-[28px] min-w-[64px] flex-1">
-          {canSkip ? (
+          {isCook ? (
             <Pressable
-              onPress={onSkip}
+              onPress={() => void finishCook([])}
               accessibilityRole="button"
               accessibilityLabel={t('onboarding.skip')}
               className="self-start py-1 active:opacity-70"
@@ -86,94 +72,135 @@ export function OnboardingPager({ onFinish, onSkip }: OnboardingPagerProps) {
             </Pressable>
           ) : null}
         </View>
-        <OnboardingProgress count={ONBOARDING_STEP_COUNT} index={progressIndex} />
+        <OnboardingProgress count={QUESTION_STEP_COUNT} index={step - 1} />
         <View className="min-w-[64px] flex-1" />
       </View>
+      )}
 
-      <View className="flex-1">
+      <ScrollView
+        className="flex-1"
+        contentContainerStyle={{ flexGrow: 1, paddingBottom: 8 }}
+        showsVerticalScrollIndicator={false}
+        keyboardShouldPersistTaps="handled"
+      >
+        {isVision ? <OnboardingVision /> : null}
+
         {isLanguage ? (
-          <ScrollView
-            className="flex-1"
-            contentContainerStyle={{ flexGrow: 1, paddingBottom: 8 }}
-            showsVerticalScrollIndicator={false}
-            keyboardShouldPersistTaps="handled"
-          >
-            <View className="mb-5 pt-3">
-              <BrandHeader
-                title={t('onboarding.welcomeTitle')}
-                subtitle={t('onboarding.welcomeSubtitle')}
-                size="hero"
-                align="center"
-              />
-            </View>
-            <View className="gap-2">
-              <Text className="mb-1 text-sm font-semibold" style={{ color: colors.text }}>
-                {t('onboarding.languageLabel')}
-              </Text>
-              <LanguagePicker skipRtlPrompt />
-            </View>
-          </ScrollView>
+          <>
+            <Text className="mb-1 pt-3 text-2xl font-bold" style={{ color: colors.text }}>
+              {t('onboarding.welcomeSubtitle')}
+            </Text>
+            <Text className="mb-4 text-sm leading-5" style={{ color: colors.textSecondary }}>
+              {t('onboarding.languageLabel')}
+            </Text>
+            <LanguagePicker skipRtlPrompt />
+          </>
         ) : null}
 
-        {!isLanguage && !isReady
-          ? teachingSlides.map((slide, index) => {
-              const slideStep = index + 1;
-              if (step !== slideStep) return null;
-              return (
-                <OnboardingSlide
-                  key={slide.titleKey}
-                  stepKey={slideStep}
-                  title={t(slide.titleKey)}
-                  body={t(slide.bodyKey)}
-                  illustration={slide.illustration}
-                />
-              );
-            })
-          : null}
-
-        {isReady ? (
-          <OnboardingSlide
-            stepKey="ready"
-            title={t('onboarding.readyTitle')}
-            body={t('onboarding.readyBody')}
-            illustration={<ReadyIllustration />}
-          />
+        {isLook ? (
+          <>
+            <Text className="mb-1 pt-3 text-2xl font-bold" style={{ color: colors.text }}>
+              {t('onboarding.lookTitle')}
+            </Text>
+            <Text className="mb-4 text-sm leading-5" style={{ color: colors.textSecondary }}>
+              {t('onboarding.lookSubtitle')}
+            </Text>
+            <ThemeToggle />
+            <View className="mt-4">
+              <ThemePackPicker />
+            </View>
+          </>
         ) : null}
-      </View>
+
+        {isMeasure ? (
+          <>
+            <Text className="mb-1 pt-3 text-2xl font-bold" style={{ color: colors.text }}>
+              {t('onboarding.measureTitle')}
+            </Text>
+            <Text className="mb-4 text-sm leading-5" style={{ color: colors.textSecondary }}>
+              {t('onboarding.measureSubtitle')}
+            </Text>
+            <MeasurementToggle hint />
+          </>
+        ) : null}
+
+        {isCook ? (
+          <>
+            <Text className="mb-1 pt-3 text-2xl font-bold" style={{ color: colors.text }}>
+              {t('onboarding.cookTitle')}
+            </Text>
+            <Text className="mb-4 text-sm leading-5" style={{ color: colors.textSecondary }}>
+              {t('onboarding.cookSubtitle')}
+            </Text>
+            <View className="flex-row flex-wrap gap-2">
+              {RECIPE_VARIANTS.map((variant) => {
+                const active = diets.includes(variant.key as KitchenDietKey);
+                return (
+                  <Pressable
+                    key={variant.key}
+                    onPress={() => toggleDiet(variant.key)}
+                    accessibilityRole="button"
+                    accessibilityState={{ selected: active }}
+                    className="min-h-[44px] items-center justify-center rounded-2xl px-4 active:opacity-80"
+                    style={{ backgroundColor: active ? colors.primary : colors.frosted }}
+                  >
+                    <Text className="text-sm font-semibold" style={{ color: active ? '#fff' : colors.text }}>
+                      {t(`recipe.variants.${variant.key}.label`)}
+                    </Text>
+                  </Pressable>
+                );
+              })}
+            </View>
+          </>
+        ) : null}
+
+        {!isVision && !isLanguage ? (
+          <Text className="mt-4 text-xs leading-5" style={{ color: colors.textSecondary }}>
+            {t('onboarding.changeLater')}
+          </Text>
+        ) : null}
+      </ScrollView>
 
       <View className="gap-3 pt-4">
-        {isReady ? (
-          <>
-            <Pressable
-              onPress={() => onFinish('snap')}
-              accessibilityRole="button"
-              className="items-center rounded-[18px] px-4 py-3.5 active:opacity-80"
-              style={{ backgroundColor: colors.primary }}
-            >
-              <Text className="text-[15px] font-bold text-white">{t('onboarding.ctaSnap')}</Text>
-            </Pressable>
-            <Pressable
-              onPress={() => onFinish('library')}
-              accessibilityRole="button"
-              className="items-center py-2 active:opacity-70"
-            >
-              <Text className="text-sm font-semibold" style={{ color: colors.textSecondary }}>
-                {t('onboarding.ctaLibrary')}
-              </Text>
-            </Pressable>
-          </>
+        {isCook && diets.length === 0 ? (
+          <Pressable
+            onPress={() => void finishCook([])}
+            accessibilityRole="button"
+            className="items-center rounded-[18px] px-4 py-3.5 active:opacity-80"
+            style={{ backgroundColor: colors.primary }}
+          >
+            <Text className="text-[15px] font-bold text-white">{t('onboarding.cookEverything')}</Text>
+          </Pressable>
         ) : (
           <Pressable
-            onPress={goNext}
+            onPress={() => {
+              if (isCook) void finishCook(diets);
+              else goNext();
+            }}
             accessibilityRole="button"
             className="items-center rounded-[18px] px-4 py-3.5 active:opacity-80"
             style={{ backgroundColor: colors.primary }}
           >
             <Text className="text-[15px] font-bold text-white">
-              {isLanguage ? t('onboarding.continue') : t('onboarding.next')}
+              {isVision
+                ? t('onboarding.visionCta')
+                : isCook || isLanguage
+                  ? t('onboarding.continue')
+                  : t('onboarding.next')}
             </Text>
           </Pressable>
         )}
+        {isCook && diets.length > 0 ? (
+          <Pressable
+            onPress={() => void finishCook([])}
+            accessibilityRole="button"
+            className="items-center py-2 active:opacity-70"
+          >
+            <Text className="text-sm font-semibold" style={{ color: colors.textSecondary }}>
+              {t('onboarding.cookEverything')}
+            </Text>
+          </Pressable>
+        ) : null}
       </View>
     </View>
   );

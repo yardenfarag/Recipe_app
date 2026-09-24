@@ -1,7 +1,11 @@
 import { corsHeaders, jsonResponse } from '../_shared/cors.ts';
 import { RECIPE_REMIX_LIMIT } from '../_shared/pricing.ts';
 import { createAuthedSupabase } from '../_shared/recipeLookup.ts';
-import { isRecipeVariantKey, transformRecipeWithGemini } from '../_shared/recipeVariant.ts';
+import {
+  isRecipeVariantKey,
+  remixInstructionIsRelated,
+  transformRecipeWithGemini,
+} from '../_shared/recipeVariant.ts';
 import {
   parseRecipeId,
   parseSourceUrl,
@@ -199,6 +203,34 @@ Deno.serve(async (req) => {
         !Array.isArray(kitchen) &&
         (kitchen as { autoApplyOnExtract?: unknown }).autoApplyOnExtract === true,
     );
+  }
+
+  if (instruction && !kitchenAutoApply) {
+    try {
+      const related = await remixInstructionIsRelated(instruction, {
+        title: recipe.title.trim(),
+        ingredients,
+      });
+      if (!related) {
+        return jsonResponse(
+          {
+            status: 'failed',
+            code: 'instruction_unrelated',
+            message: 'instruction_unrelated',
+          },
+          400,
+        );
+      }
+    } catch (err) {
+      console.error('remix relatedness check failed:', err);
+      return jsonResponse(
+        {
+          status: 'failed',
+          message: 'Something went wrong adapting the recipe. Please try again.',
+        },
+        500,
+      );
+    }
   }
 
   const recipeId = parseRecipeId(body.recipe_id) ?? parseRecipeId(recipe.id);

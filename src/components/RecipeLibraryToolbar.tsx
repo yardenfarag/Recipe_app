@@ -90,7 +90,7 @@ export function RecipeLibraryToolbar({
       >
         <Ionicons name="search-outline" size={18} color={colors.textSecondary} />
         <TextInput
-          className="flex-1 px-3 py-3.5 text-base"
+          className="pinch-plain-focus flex-1 px-3 py-3.5 text-base"
           style={{ color: colors.text }}
           placeholder={t('library.searchPlaceholder')}
           placeholderTextColor={colors.textSecondary}

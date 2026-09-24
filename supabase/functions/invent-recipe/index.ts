@@ -198,17 +198,15 @@ Deno.serve(async (req) => {
 
   let guestRemaining: number | null = null;
   if (!userId) {
-    if (!guestInstallId || !admin) {
-      return jsonResponse(
-        {
-          status: 'failed' as JobStatus,
-          platform,
-          code: 'guest_id_required',
-          message: 'Sign up to invent recipes, or update the app to continue as a guest.',
-        },
-        401,
-      );
-    }
+    return jsonResponse(
+      {
+        status: 'failed' as JobStatus,
+        platform,
+        code: 'auth_required',
+        message: 'Sign up to invent recipes.',
+      },
+      401,
+    );
   }
 
   try {

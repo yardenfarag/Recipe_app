@@ -5,7 +5,6 @@ import { ActivityIndicator, Alert, Platform, Pressable, ScrollView, Text, View }
 import { useTranslation } from 'react-i18next';
 
 import { SheetModal } from '@/components/SheetModal';
-import { useAuth } from '@/hooks/useAuth';
 import { useThemePreference } from '@/hooks/useThemePreference';
 import { pickCompressedRecipeImage } from '@/lib/pickCompressedImage';
 import { buildFridgeCatalog } from '@/lib/fridgeCatalog';
@@ -21,7 +20,6 @@ type FridgeMatchModalProps = {
 export function FridgeMatchModal({ visible, recipes, onClose }: FridgeMatchModalProps) {
   const { t } = useTranslation();
   const { colors } = useThemePreference();
-  const { user } = useAuth();
   const libraryEmpty = recipes.length === 0;
   const [loading, setLoading] = useState(false);
   const [matches, setMatches] = useState<FridgeMatchRow[] | null>(null);
@@ -132,20 +130,6 @@ export function FridgeMatchModal({ visible, recipes, onClose }: FridgeMatchModal
             >
               <Text className="text-sm font-bold text-white">{t('library.snapFirst')}</Text>
             </Pressable>
-            {!user ? (
-              <Pressable
-                onPress={() => {
-                  handleClose();
-                  router.push('/auth?mode=signin&reason=sync');
-                }}
-                className="min-h-[44px] items-center justify-center rounded-3xl active:opacity-80"
-                style={{ alignSelf: 'stretch' }}
-              >
-                <Text className="text-sm font-semibold" style={{ color: colors.primary }}>
-                  {t('settings.signIn')}
-                </Text>
-              </Pressable>
-            ) : null}
           </View>
         ) : null}
         {error === 'limited' ? (

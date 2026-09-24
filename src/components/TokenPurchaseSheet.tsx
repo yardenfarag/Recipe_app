@@ -4,6 +4,7 @@ import { useTranslation } from 'react-i18next';
 import { ActivityIndicator, Pressable, ScrollView, Text, View } from 'react-native';
 
 import { SheetModal } from '@/components/SheetModal';
+import { capturePaywallViewed, type PaywallTrigger } from '@/lib/analytics';
 import { useProfile } from '@/hooks/useProfile';
 import { useThemePreference } from '@/hooks/useThemePreference';
 import {
@@ -19,9 +20,15 @@ import {
 interface TokenPurchaseSheetProps {
   visible: boolean;
   onClose: () => void;
+  /** Where the person was when the credit sheet opened. */
+  trigger?: PaywallTrigger;
 }
 
-export function TokenPurchaseSheet({ visible, onClose }: TokenPurchaseSheetProps) {
+export function TokenPurchaseSheet({
+  visible,
+  onClose,
+  trigger = 'out_of_credits',
+}: TokenPurchaseSheetProps) {
   const { t } = useTranslation();
   const { colors } = useThemePreference();
   const { refresh } = useProfile();
@@ -31,6 +38,11 @@ export function TokenPurchaseSheet({ visible, onClose }: TokenPurchaseSheetProps
   const [message, setMessage] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const livePurchases = purchasesEnabled();
+
+  useEffect(() => {
+    if (!visible) return;
+    capturePaywallViewed(trigger);
+  }, [trigger, visible]);
 
   useEffect(() => {
     if (!visible) return;

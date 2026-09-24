@@ -7,7 +7,13 @@ import {
   runContentGate,
   shouldSkipThinSocialGate,
 } from '../_shared/contentGate.ts';
-import { extractRecipeFromImage, extractRecipeWithLadder, GeminiRecipe } from '../_shared/gemini.ts';
+import {
+  beginTextExtraction,
+  extractRecipeFromImage,
+  extractRecipeWithLadder,
+  type ExtractInput,
+  GeminiRecipe,
+} from '../_shared/gemini.ts';
 import { fetchInstagramMeta } from '../_shared/instagram.ts';
 import {
   canonicalInstagramUrl,
@@ -51,6 +57,13 @@ import { logUsageEvent } from '../_shared/usageLog.ts';
 import { formatMaxVideoDurationLabel, isVideoTooLong } from '../_shared/videoLimits.ts';
 import { fetchWebRecipeMeta } from '../_shared/webRecipe.ts';
 import { fetchYouTubeMeta } from '../_shared/youtube.ts';
+import {
+  findRecipeCard,
+  hubCardToExtractRecipe,
+  publishRecipeCard,
+  touchRecipeCardHit,
+  userContributesToHub,
+} from '../_shared/recipeCards.ts';
 
 // Response contract consumed by the app (mirrors ExtractionResult in ADR 004).
 type ExtractionStatus = 'full' | 'partial' | 'failed' | 'coming_soon';
@@ -189,6 +202,19 @@ Deno.serve(async (req) => {
         });
       }
     }
+
+    if (admin && !forceExtract && platform !== 'photo') {
+      const hubCard = await findRecipeCard(admin, platform, url, contentId);
+      if (hubCard) {
+        return await recipeCardHitResponse({
+          admin,
+          card: hubCard,
+          platform,
+          userId,
+          started,
+        });
+      }
+    }
   }
 
   if (userId && !admin) {
@@ -205,17 +231,15 @@ Deno.serve(async (req) => {
 
   let guestRemaining: number | null = null;
   if (!userId) {
-    if (!guestInstallId || !admin) {
-      return jsonResponse(
-        {
-          status: 'failed' as ExtractionStatus,
-          platform,
-          code: 'guest_id_required',
-          message: 'Sign up to extract recipes, or update the app to continue as a guest.',
-        },
-        401,
-      );
-    }
+    return jsonResponse(
+      {
+        status: 'failed' as ExtractionStatus,
+        platform,
+        code: 'auth_required',
+        message: 'Sign up to extract recipes.',
+      },
+      401,
+    );
   }
 
   try {
@@ -253,6 +277,20 @@ Deno.serve(async (req) => {
         hasThumbnail: Boolean(meta.thumbnailUrl),
         durationSeconds: meta.durationSeconds ?? null,
       });
+
+      const resolvedId = meta.contentId ?? contentId;
+      if (admin && !forceExtract && resolvedId && resolvedId !== contentId) {
+        const hubCard = await findRecipeCard(admin, platform, url, resolvedId);
+        if (hubCard) {
+          return await recipeCardHitResponse({
+            admin,
+            card: hubCard,
+            platform,
+            userId,
+            started,
+          });
+        }
+      }
     }
 
     if (!admin) {
@@ -272,6 +310,21 @@ Deno.serve(async (req) => {
       platform !== 'web' &&
       isVideoTooLong(meta?.durationSeconds) &&
       !hasTextSources(meta ?? { topComments: [] });
+
+    const ladderInput: ExtractInput | null =
+      platform === 'photo'
+        ? null
+        : {
+            platform,
+            sourceUrl: url,
+            videoUrl: platform === 'web' ? undefined : meta?.videoUrl,
+            durationSeconds: platform === 'web' ? undefined : meta?.durationSeconds,
+            description: meta?.description,
+            captions: meta?.captions,
+            topComments: meta?.topComments ?? [],
+          };
+    // Overlap the text model call with the food check. Video stays behind the gate.
+    const pendingText = ladderInput ? beginTextExtraction(ladderInput) : null;
 
     const skipGate = shouldSkipThinSocialGate({
       platform,
@@ -405,15 +458,7 @@ Deno.serve(async (req) => {
       source = 'photo';
       originalUrl = null;
     } else {
-      const ladder = await extractRecipeWithLadder({
-        platform,
-        sourceUrl: url,
-        videoUrl: platform === 'web' ? undefined : meta?.videoUrl,
-        durationSeconds: platform === 'web' ? undefined : meta?.durationSeconds,
-        description: meta?.description,
-        captions: meta?.captions,
-        topComments: meta?.topComments ?? [],
-      });
+      const ladder = await extractRecipeWithLadder(ladderInput!, { pendingText });
       gemini = ladder.recipe;
       source = ladder.source;
       usages = ladder.usages;
@@ -653,6 +698,17 @@ Deno.serve(async (req) => {
         : {},
     });
 
+    if (status === 'full' && admin) {
+      const contribute = userId ? await userContributesToHub(admin, userId) : true;
+      if (contribute) {
+        try {
+          await publishRecipeCard(admin, recipe, meta?.contentId ?? contentId);
+        } catch (error) {
+          console.error('[extract-recipe] hub publish failed', error);
+        }
+      }
+    }
+
     return jsonResponse({
       status,
       platform,
@@ -864,6 +920,40 @@ function classify(r: GeminiRecipe): {
 
 function quotaBlockMessage(code: string): string {
   return code === 'insufficient_credits' ? 'insufficient_credits' : 'metering_error';
+}
+
+async function recipeCardHitResponse(opts: {
+  admin: NonNullable<ReturnType<typeof createServiceSupabase>>;
+  card: Record<string, unknown>;
+  platform: Platform;
+  userId: string | null;
+  started: number;
+}): Promise<Response> {
+  const { admin, card, platform, userId, started } = opts;
+  const cardId = typeof card.id === 'string' ? card.id : null;
+  if (cardId) {
+    void touchRecipeCardHit(admin, cardId);
+  }
+
+  await logUsageEvent(admin, {
+    userId,
+    action: 'extract',
+    platform,
+    status: 'cached',
+    tokensCharged: 0,
+    durationMs: Date.now() - started,
+    metadata: { from_hub: true },
+  });
+
+  const quota = userId ? await canStartExtract(admin, userId) : null;
+  return jsonResponse({
+    status: typeof card.extraction_status === 'string' ? card.extraction_status : 'full',
+    platform,
+    recipe: hubCardToExtractRecipe(card),
+    from_hub: true,
+    tokens_charged: 0,
+    ...quotaFields(quota?.snapshot ?? null),
+  });
 }
 
 function capitalize(s: string): string {

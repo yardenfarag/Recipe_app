@@ -32,7 +32,6 @@ import { RecipeActionsMenu } from '@/components/RecipeActionsMenu';
 import { RecipeLibraryToolbar } from '@/components/RecipeLibraryToolbar';
 import { RecipeListRow } from '@/components/RecipeListRow';
 import { Screen } from '@/components/Screen';
-import { useAuth } from '@/hooks/useAuth';
 import { useCollections } from '@/hooks/useCollections';
 import { useLibraryLayout } from '@/hooks/useLibraryLayout';
 import { useRecipes } from '@/hooks/useRecipes';
@@ -62,7 +61,6 @@ type CollectionNameModalState =
 
 export default function HomeScreen() {
   const { t } = useTranslation();
-  const { user } = useAuth();
   const { recipes, loading, error, refresh, patchRecipe, toggleFavorite } = useRecipes();
   const {
     collections,
@@ -560,17 +558,6 @@ export default function HomeScreen() {
           >
             <Text className="text-base font-bold text-white">{t('library.snapFirst')}</Text>
           </Pressable>
-
-          {!user && (
-            <Pressable
-              onPress={() => router.push('/auth?mode=signin&reason=sync')}
-              className="mt-5 active:opacity-70"
-            >
-              <Text className="text-sm font-semibold" style={{ color: colors.primary }}>
-                {t('library.signInToSync')}
-              </Text>
-            </Pressable>
-          )}
         </View>
       </Screen>
     );

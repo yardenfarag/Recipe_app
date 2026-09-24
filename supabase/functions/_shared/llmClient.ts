@@ -96,6 +96,8 @@ export async function generateOpenRouterJson<T>(
       { role: 'user', content: userContent },
     ],
     max_tokens: options.maxOutputTokens,
+    // Gemini defaults to thinking, which adds seconds before any JSON comes back.
+    reasoning: { effort: options.tier === 'standard' ? 'low' : 'none' },
     response_format: {
       type: 'json_schema',
       json_schema: {

@@ -18,6 +18,9 @@ import { CookieMark } from '@/components/CookieMark';
 import { TextInput } from '@/components/text-input';
 import { AuthCardWidth } from '@/constants/theme';
 import { useBreakpoint } from '@/hooks/useBreakpoint';
+import { useLanguagePreference } from '@/hooks/useLanguagePreference';
+import { useOnboarding } from '@/hooks/useOnboarding';
+import { captureOnboardingCompleted } from '@/lib/analytics';
 import { useThemePreference } from '@/hooks/useThemePreference';
 import {
   getPasswordStrength,
@@ -37,7 +40,7 @@ import {
 
 type Mode = 'signin' | 'signup' | 'forgot';
 type WaitingFor = 'confirm' | 'reset' | null;
-type AuthReason = 'extract_limit' | 'save_limit' | 'sync' | 'shared_recipe' | undefined;
+type AuthReason = 'extract_limit' | 'save_limit' | 'sync' | 'shared_recipe' | 'hub_recipe' | 'onboarding' | undefined;
 
 function parseMode(value: string | string[] | undefined): Mode {
   const raw = Array.isArray(value) ? value[0] : value;
@@ -50,7 +53,9 @@ function parseReason(value: string | string[] | undefined): AuthReason {
     raw === 'extract_limit' ||
     raw === 'save_limit' ||
     raw === 'sync' ||
-    raw === 'shared_recipe'
+    raw === 'shared_recipe' ||
+    raw === 'hub_recipe' ||
+    raw === 'onboarding'
   ) {
     return raw;
   }
@@ -127,6 +132,8 @@ export default function AuthScreen() {
   const [isAppleAvailable, setIsAppleAvailable] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const { colors, scheme } = useThemePreference();
+  const { completeOnboarding } = useOnboarding();
+  const { language } = useLanguagePreference();
 
   useEffect(() => {
     setMode(initialMode);
@@ -136,7 +143,13 @@ export default function AuthScreen() {
     isAppleAuthAvailable().then(setIsAppleAvailable);
   }, []);
 
-  function done() {
+  async function done() {
+    if (reason === 'onboarding') {
+      captureOnboardingCompleted({ locale: language, platform: Platform.OS });
+      await completeOnboarding();
+      router.replace('/add');
+      return;
+    }
     if (router.canGoBack()) router.back();
     else router.replace('/');
   }
@@ -243,9 +256,13 @@ export default function AuthScreen() {
         ? t('auth.reasonSave')
         : reason === 'sync'
           ? t('auth.reasonSync')
-          : reason === 'shared_recipe'
+          :     reason === 'shared_recipe'
             ? t('auth.reasonShared')
-            : mode === 'signup'
+            : reason === 'hub_recipe'
+              ? t('auth.reasonHub')
+            : reason === 'onboarding'
+              ? t('auth.reasonOnboarding')
+              : mode === 'signup'
               ? t('auth.signupSubtitle')
               : mode === 'forgot'
                 ? t('auth.forgotSubtitle')
@@ -339,6 +356,15 @@ export default function AuthScreen() {
             onChangeText={(value) => {
               setEmail(value);
               if (error) setError(null);
+            }}
+            onBlur={() => {
+              const normalized = normalizeEmail(email);
+              if (!normalized) return;
+              if (!isValidEmail(normalized)) {
+                setError(t('auth.validEmail'));
+                return;
+              }
+              if (error === t('auth.validEmail')) setError(null);
             }}
             autoCapitalize="none"
             autoCorrect={false}

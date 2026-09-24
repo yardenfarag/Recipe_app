@@ -18,7 +18,7 @@ const TAB_BAR_CONTENT_HEIGHT = 56;
  * property 'displayName' of undefined). Stick to the stable `Tabs` API
  * until that's resolved upstream.
  *
- * Order: Library · Snap · List · Settings (Snap centered among four).
+ * Order: Library · Hub · Snap · List · Settings.
  * Favorites lives as a Library filter — tab hidden via href: null.
  * On wide viewports, bottom tabs hide and WebSidebar takes over.
  */
@@ -58,6 +58,19 @@ export default function AppTabs() {
           tabBarIcon: ({ color, size, focused }) => (
             <Ionicons
               name={focused ? 'book' : 'book-outline'}
+              size={size}
+              color={color}
+            />
+          ),
+        }}
+      />
+      <Tabs.Screen
+        name="hub"
+        options={{
+          title: t('tabs.hub'),
+          tabBarIcon: ({ color, size, focused }) => (
+            <Ionicons
+              name={focused ? 'compass' : 'compass-outline'}
               size={size}
               color={color}
             />

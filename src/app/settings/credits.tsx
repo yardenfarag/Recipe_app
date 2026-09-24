@@ -46,7 +46,11 @@ export default function CreditSettingsScreen() {
           <Text className="text-sm font-bold text-white">{t('credits.buyAction')}</Text>
         </Pressable>
       </SettingsDetailScreen>
-      <TokenPurchaseSheet visible={creditsOpen} onClose={() => setCreditsOpen(false)} />
+      <TokenPurchaseSheet
+        visible={creditsOpen}
+        trigger="settings"
+        onClose={() => setCreditsOpen(false)}
+      />
     </>
   );
 }

@@ -18,6 +18,8 @@ export interface ExtractResult {
   message?: string;
   /** True when the URL was already in the user's library — no extraction ran. */
   cached?: boolean;
+  /** True when the recipe came from the Cooking Hub cache (unsaved, no credit). */
+  from_hub?: boolean;
   code?:
     | 'subscription_required'
     | 'monthly_limit'

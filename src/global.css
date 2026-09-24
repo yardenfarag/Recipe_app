@@ -64,6 +64,14 @@ textarea:focus-visible {
   box-shadow: 0 0 0 2px var(--pinch-focus-ring, rgba(123, 107, 154, 0.4));
 }
 
+input.pinch-plain-focus:focus,
+input.pinch-plain-focus:focus-visible,
+textarea.pinch-plain-focus:focus,
+textarea.pinch-plain-focus:focus-visible {
+  outline: none !important;
+  box-shadow: none !important;
+}
+
 input:-webkit-autofill,
 input:-webkit-autofill:hover,
 input:-webkit-autofill:focus,

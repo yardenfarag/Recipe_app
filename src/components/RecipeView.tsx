@@ -410,13 +410,7 @@ export function RecipeView({
     if (repairing || extractionStatus !== 'partial' || recipeIsInvented(recipe)) return;
 
     if (!user) {
-      const signUp = await confirmAction(
-        t('recipe.repairSignInTitle'),
-        t('recipe.repairSignInBody'),
-        t('auth.signUp'),
-        t('common.notNow'),
-      );
-      if (signUp) router.push('/auth?mode=signup&reason=extract');
+      router.push('/auth?mode=signup&reason=extract');
       return;
     }
 
@@ -451,13 +445,7 @@ export function RecipeView({
         return;
       }
       if (result.code === 'auth_required' || result.code === 'guest_limit' || result.code === 'guest_id_required') {
-        const signUp = await confirmAction(
-          t('recipe.repairSignInTitle'),
-          t('recipe.repairSignInBody'),
-          t('auth.signUp'),
-          t('common.notNow'),
-        );
-        if (signUp) router.push('/auth?mode=signup&reason=extract');
+        router.push('/auth?mode=signup&reason=extract');
         return;
       }
       if (result.status === 'failed' || !result.recipe) {

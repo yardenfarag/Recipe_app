@@ -9,7 +9,7 @@ import { useThemePreference } from '@/hooks/useThemePreference';
 
 type NavItem = {
   href: Href;
-  labelKey: 'tabs.library' | 'tabs.snap' | 'tabs.list' | 'tabs.settings';
+  labelKey: 'tabs.library' | 'tabs.hub' | 'tabs.snap' | 'tabs.list' | 'tabs.settings';
   icon: keyof typeof Ionicons.glyphMap;
   iconFocused: keyof typeof Ionicons.glyphMap;
   match: (path: string) => boolean;
@@ -22,6 +22,13 @@ const NAV_ITEMS: NavItem[] = [
     icon: 'book-outline',
     iconFocused: 'book',
     match: (path) => path === '/' || path.startsWith('/favorites') || path === '',
+  },
+  {
+    href: '/hub',
+    labelKey: 'tabs.hub',
+    icon: 'compass-outline',
+    iconFocused: 'compass',
+    match: (path) => path === '/hub' || path.startsWith('/hub/'),
   },
   {
     href: '/add',

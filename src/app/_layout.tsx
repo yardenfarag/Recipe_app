@@ -75,6 +75,15 @@ function RootNavigator() {
             }}
           />
           <Stack.Screen
+            name="hub/[id]"
+            options={{
+              title: t('hub.recipeTitle'),
+              headerLeft: (props) => (
+                <StackHeaderBackButton tintColor={props.tintColor} fallback="/hub" />
+              ),
+            }}
+          />
+          <Stack.Screen
             name="auth"
             options={{
               title: t('nav.welcome'),

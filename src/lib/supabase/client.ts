@@ -3,8 +3,14 @@ import 'react-native-url-polyfill/auto';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { createClient } from '@supabase/supabase-js';
 
-const supabaseUrl = process.env.EXPO_PUBLIC_SUPABASE_URL;
+const supabaseUrl = normalizeSupabaseUrl(process.env.EXPO_PUBLIC_SUPABASE_URL);
 const supabaseKey = process.env.EXPO_PUBLIC_SUPABASE_KEY;
+
+/** Project root only. createClient appends /auth/v1 and /rest/v1 itself. */
+function normalizeSupabaseUrl(raw: string | undefined): string | undefined {
+  if (!raw) return raw;
+  return raw.trim().replace(/\/+$/, '').replace(/\/rest\/v1$/i, '');
+}
 
 if (!supabaseUrl || !supabaseKey) {
   throw new Error(

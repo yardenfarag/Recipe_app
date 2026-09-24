@@ -61,9 +61,10 @@ interface RawComment {
 
 export async function fetchYouTubeMeta(videoId: string): Promise<YouTubeMeta> {
   const apiKey = Deno.env.get('YOUTUBE_API_KEY');
-  const player = await fetchYouTubePlayerMetadata(videoId);
+  const playerPromise = fetchYouTubePlayerMetadata(videoId);
 
   if (!apiKey) {
+    const player = await playerPromise;
     return {
       topComments: [],
       captions: player.captions,
@@ -71,14 +72,13 @@ export async function fetchYouTubeMeta(videoId: string): Promise<YouTubeMeta> {
     };
   }
 
-  // The snippet (for description + channelId) and raw comments are
-  // independent network calls, so fetch them concurrently — resolving
-  // which comments are from the creator happens afterward, once we know
-  // channelId, rather than blocking one fetch on the other.
-  const [{ description, title, channelId, thumbnailUrl, durationSeconds }, rawComments] = await Promise.all([
-    fetchVideoSnippet(videoId, apiKey),
-    fetchTopComments(videoId, apiKey),
-  ]);
+  // Player captions, the snippet, and comments are independent.
+  const [player, { description, title, channelId, thumbnailUrl, durationSeconds }, rawComments] =
+    await Promise.all([
+      playerPromise,
+      fetchVideoSnippet(videoId, apiKey),
+      fetchTopComments(videoId, apiKey),
+    ]);
 
   // Surface the creator's own comment(s) first — that's almost always
   // where the full recipe lives for Shorts/reels, regardless of where the
