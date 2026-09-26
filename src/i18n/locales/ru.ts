@@ -155,6 +155,7 @@ export default {
     "deleteDataGuide": "Удалить данные",
     "reportIssue": "Сообщить о проблеме",
     "emailSupport": "Написать в поддержку",
+    "aboutPinch": "О Pinch",
     "adminTitle": "Админ",
     "adminBody": "Как пользуются Pinch, аккаунты и журнал расходов.",
     "adminInsights": "Активность",

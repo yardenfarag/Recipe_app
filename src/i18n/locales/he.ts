@@ -155,6 +155,7 @@ export default {
     "deleteDataGuide": "מחיקת הנתונים",
     "reportIssue": "דיווח על תקלה",
     "emailSupport": "מייל לתמיכה",
+    "aboutPinch": "על Pinch",
     "adminTitle": "ניהול",
     "adminBody": "איך משתמשים בפינץ', החשבונות, ויומן העלויות.",
     "adminInsights": "פעילות",

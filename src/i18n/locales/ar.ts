@@ -155,6 +155,7 @@ export default {
     "deleteDataGuide": "حذف بياناتك",
     "reportIssue": "الإبلاغ عن مشكلة",
     "emailSupport": "مراسلة الدعم",
+    "aboutPinch": "حول Pinch",
     "adminTitle": "إدارة",
     "adminBody": "كيف يُستخدم بينش، والحسابات، وسجل التكلفة.",
     "adminInsights": "النشاط",
