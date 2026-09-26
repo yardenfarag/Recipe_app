@@ -1,13 +1,15 @@
 import Ionicons from '@expo/vector-icons/Ionicons';
+import { type Href, router } from 'expo-router';
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Pressable, Text, View } from 'react-native';
+import { Platform, Pressable, Text, View } from 'react-native';
 
 import { SettingsDetailScreen } from '@/components/SettingsDetailScreen';
 import { SupportTicketModal } from '@/components/SupportTicketModal';
 import { useAuth } from '@/hooks/useAuth';
 import { useRtl } from '@/hooks/useRtl';
 import { useThemePreference } from '@/hooks/useThemePreference';
+import { openLegalDoc } from '@/components/LegalDocument';
 import { LEGAL_URLS, openLegalUrl } from '@/lib/legal';
 
 type SupportRowProps = {
@@ -57,6 +59,13 @@ export default function SupportSettingsScreen() {
   return (
     <>
       <SettingsDetailScreen>
+        {Platform.OS === 'web' ? (
+          <SupportRow
+            label={t('settings.aboutPinch')}
+            icon="phone-portrait-outline"
+            onPress={() => router.push('/welcome' as Href)}
+          />
+        ) : null}
         {user ? (
           <SupportRow
             label={t('settings.reportIssue')}
@@ -72,17 +81,22 @@ export default function SupportSettingsScreen() {
         <SupportRow
           label={t('settings.privacyPolicy')}
           icon="lock-closed-outline"
-          onPress={() => void openLegalUrl(LEGAL_URLS.privacy)}
+          onPress={() => openLegalDoc('privacy')}
         />
         <SupportRow
           label={t('settings.termsOfUse')}
           icon="document-text-outline"
-          onPress={() => void openLegalUrl(LEGAL_URLS.terms)}
+          onPress={() => openLegalDoc('terms')}
         />
         <SupportRow
-          label={t('settings.deleteAccountWeb')}
+          label={t('settings.deleteAccountGuide')}
+          icon="trash-outline"
+          onPress={() => openLegalDoc('delete-account')}
+        />
+        <SupportRow
+          label={t('settings.deleteDataGuide')}
           icon="globe-outline"
-          onPress={() => void openLegalUrl(LEGAL_URLS.deleteAccount)}
+          onPress={() => openLegalDoc('delete-data')}
           last
         />
       </SettingsDetailScreen>

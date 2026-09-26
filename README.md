@@ -52,18 +52,34 @@ Desktop web (wide viewport). On smaller screens the same flows use bottom tabs i
    npm test
    ```
 
-## Web deploy (GitHub Pages + Actions)
+## Web deploy (GitHub Pages + pinch-app.io)
 
-The app exports as a static SPA (`web.output: single`) with `experiments.baseUrl` set to `/Recipe_app` for project Pages.
+The app exports as a static SPA (`web.output: single`) at the domain root. GitHub still builds the site. Visitors use `https://pinch-app.io`.
 
 Workflow: [`.github/workflows/deploy-web.yml`](.github/workflows/deploy-web.yml)
 
 - Builds with `npx expo export -p web`
 - Merges legal HTML (`privacy.html`, `terms.html`, `delete-account.html`, `delete-data.html`, `legal.html`) into `dist/`
-- Adds `.nojekyll` and `404.html` (SPA fallback)
+- Adds `.nojekyll`, `404.html` (SPA fallback), and a `CNAME` for `pinch-app.io`
 - Deploys via GitHub Pages
 
-Live URL: https://yardenfarag.github.io/Recipe_app
+Live URL: https://pinch-app.io
+
+### Custom domain (GoDaddy)
+
+In the GoDaddy DNS panel for `pinch-app.io`, point the apex at GitHub Pages:
+
+| Host | Type | Value |
+| --- | --- | --- |
+| `@` | A | `185.199.108.153` |
+| `@` | A | `185.199.109.153` |
+| `@` | A | `185.199.110.153` |
+| `@` | A | `185.199.111.153` |
+| `www` | CNAME | `yardenfarag.github.io` |
+
+Remove any GoDaddy parking records on `@` that conflict with those A records. After DNS propagates, GitHub Pages provisions HTTPS. Set those records before the next deploy so `pinch-app.io` is already answering when Pages starts serving it.
+
+If the GitHub Actions variable `EXPO_PUBLIC_LEGAL_BASE_URL` is still the old Pages URL, set it to `https://pinch-app.io`.
 
 ### Secrets & variables to configure
 
@@ -74,7 +90,7 @@ In the GitHub repo: **Settings → Secrets and variables → Actions**
 | `EXPO_PUBLIC_SUPABASE_URL` | Secret | Yes | Same as local `.env` |
 | `EXPO_PUBLIC_SUPABASE_KEY` | Secret | Yes | Publishable/anon key (public in the bundle; still don’t commit it) |
 | `EXPO_PUBLIC_ADMIN_EMAILS` | Secret | No | Comma-separated admin emails |
-| `EXPO_PUBLIC_LEGAL_BASE_URL` | Variable | No | Defaults to the Pages URL |
+| `EXPO_PUBLIC_LEGAL_BASE_URL` | Variable | No | Defaults to `https://pinch-app.io` |
 | `EXPO_PUBLIC_SUPPORT_EMAIL` | Variable | No | Support mailto address |
 
 Also ensure **Settings → Pages → Source** is **GitHub Actions**.
@@ -94,20 +110,20 @@ npm run serve:web
 
 In Supabase → Authentication → URL Configuration, keep mobile `pinch://` entries and also allow:
 
-- `https://yardenfarag.github.io/Recipe_app`
-- `https://yardenfarag.github.io/Recipe_app/auth-callback`
-- `https://yardenfarag.github.io/Recipe_app/reset-password`
+- `https://pinch-app.io`
+- `https://pinch-app.io/auth-callback`
+- `https://pinch-app.io/reset-password`
 - Dev web: `http://localhost:8081/**`
 
 Details are mirrored in [`.env.example`](.env.example).
 
 ## Legal
 
-- [Privacy](https://yardenfarag.github.io/Recipe_app/privacy.html)
-- [Terms](https://yardenfarag.github.io/Recipe_app/terms.html)
-- [Delete account](https://yardenfarag.github.io/Recipe_app/delete-account.html)
-- [Delete data](https://yardenfarag.github.io/Recipe_app/delete-data.html)
-- [Legal hub](https://yardenfarag.github.io/Recipe_app/legal.html)
+- [Privacy](https://pinch-app.io/privacy.html)
+- [Terms](https://pinch-app.io/terms.html)
+- [Delete account](https://pinch-app.io/delete-account.html)
+- [Delete data](https://pinch-app.io/delete-data.html)
+- [Legal hub](https://pinch-app.io/legal.html)
 
 ## Stack
 

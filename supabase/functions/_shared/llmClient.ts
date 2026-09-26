@@ -136,7 +136,7 @@ export async function generateOpenRouterJson<T>(
       headers: {
         Authorization: `Bearer ${apiKey}`,
         'Content-Type': 'application/json',
-        'HTTP-Referer': 'https://yardenfarag.github.io/Recipe_app',
+        'HTTP-Referer': 'https://pinch-app.io',
         'X-Title': 'Pinch',
       },
       body: JSON.stringify(body),

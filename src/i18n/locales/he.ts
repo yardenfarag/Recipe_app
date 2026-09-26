@@ -151,6 +151,8 @@ export default {
     "privacyPolicy": "מדיניות פרטיות",
     "termsOfUse": "תנאי שימוש",
     "deleteAccountWeb": "מחיקת חשבון (באתר)",
+    "deleteAccountGuide": "מחיקת חשבון",
+    "deleteDataGuide": "מחיקת הנתונים",
     "reportIssue": "דיווח על תקלה",
     "emailSupport": "מייל לתמיכה",
     "adminTitle": "ניהול",

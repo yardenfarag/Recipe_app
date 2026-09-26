@@ -1,14 +1,15 @@
 import '../global.css';
 
 import Constants, { ExecutionEnvironment } from 'expo-constants';
-import { Stack } from 'expo-router';
+import { Stack, usePathname } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { ShareIntentProvider } from 'expo-share-intent';
 import { useTranslation } from 'react-i18next';
-import { Platform } from 'react-native';
+import { Platform, View } from 'react-native';
 
 import { ErrorBoundary } from '@/components/ErrorBoundary';
 import { StackHeaderBackButton } from '@/components/StackHeaderBackButton';
+import { WebIntroPage } from '@/components/web-intro/WebIntroPage';
 import { AuthProvider } from '@/hooks/useAuth';
 import { LanguageProvider } from '@/hooks/useLanguagePreference';
 import { MeasurementProvider } from '@/hooks/useMeasurementPreference';
@@ -16,7 +17,9 @@ import { OnboardingProvider, useOnboarding } from '@/hooks/useOnboarding';
 import { OnboardingGate } from '@/hooks/useOnboardingGate';
 import { ShareIntentRouter } from '@/hooks/useShareIntentRouter';
 import { ThemeProvider, useThemePreference } from '@/hooks/useThemePreference';
+import { WebIntroProvider, useWebIntro } from '@/hooks/useWebIntro';
 import { I18nProvider } from '@/i18n';
+import { shouldRedirectToWebIntro } from '@/lib/webIntro';
 
 // expo-share-intent needs native code, so it can't do anything in Expo Go —
 // disabling it there avoids a console warning and pointless listener setup.
@@ -31,12 +34,26 @@ export const unstable_settings = {
 function RootNavigator() {
   const { colors, scheme } = useThemePreference();
   const { t } = useTranslation();
-  const { ready: onboardingReady } = useOnboarding();
+  const pathname = usePathname();
+  const { ready: onboardingReady, completed } = useOnboarding();
+  const { ready: introReady, dismissed } = useWebIntro();
+  const showIntro = shouldRedirectToWebIntro({
+    isWeb: Platform.OS === 'web',
+    ready: onboardingReady && introReady,
+    dismissed,
+    onboardingCompleted: completed,
+    pathname,
+  });
 
   return (
     <>
-      <StatusBar style={scheme === 'dark' ? 'light' : 'dark'} />
-      {onboardingReady ? (
+      <StatusBar style={showIntro || scheme === 'dark' ? 'light' : 'dark'} />
+      {onboardingReady && introReady ? (
+        showIntro ? (
+          <View style={{ flex: 1, backgroundColor: '#070508' }}>
+            <WebIntroPage />
+          </View>
+        ) : (
         <Stack
           screenOptions={{
             headerShadowVisible: false,
@@ -52,6 +69,7 @@ function RootNavigator() {
         >
           <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
           <Stack.Screen name="onboarding" options={{ headerShown: false, animation: 'fade' }} />
+          <Stack.Screen name="welcome" options={{ headerShown: false, animation: 'fade' }} />
           <Stack.Screen
             name="recipe/[id]"
             options={{
@@ -146,10 +164,22 @@ function RootNavigator() {
               ),
             }}
           />
+          <Stack.Screen
+            name="legal/[doc]"
+            options={{
+              headerLeft: (props) => (
+                <StackHeaderBackButton
+                  tintColor={props.tintColor}
+                  fallback={Platform.OS === 'web' ? '/welcome' : '/settings/support'}
+                />
+              ),
+            }}
+          />
           <Stack.Screen name="admin/insights" options={{ title: t('nav.insights') }} />
           <Stack.Screen name="admin/users" options={{ title: t('nav.people') }} />
           <Stack.Screen name="admin/usage" options={{ title: t('nav.usage') }} />
         </Stack>
+        )
       ) : null}
     </>
   );
@@ -165,13 +195,15 @@ export default function RootLayout() {
           <I18nProvider>
             <MeasurementProvider>
               <OnboardingProvider>
-                <ErrorBoundary>
-                  <AuthProvider>
-                    <OnboardingGate />
-                    <ShareIntentRouter />
-                    <RootNavigator />
-                  </AuthProvider>
-                </ErrorBoundary>
+                <WebIntroProvider>
+                  <ErrorBoundary>
+                    <AuthProvider>
+                      <OnboardingGate />
+                      <ShareIntentRouter />
+                      <RootNavigator />
+                    </AuthProvider>
+                  </ErrorBoundary>
+                </WebIntroProvider>
               </OnboardingProvider>
             </MeasurementProvider>
           </I18nProvider>

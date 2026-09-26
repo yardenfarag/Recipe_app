@@ -53,6 +53,56 @@ describe('summarizeInsights', () => {
     expect(summary.days).toHaveLength(14);
     expect(summarizeInsights(events, new Date('2026-09-24T18:00:00.000Z'), 7).days).toHaveLength(7);
     expect(summary.days.at(-1)?.count).toBe(2);
+    expect(summary.webIntro).toEqual({
+      visits: 0,
+      visitors: 0,
+      appStoreClicks: 0,
+      continueClicks: 0,
+    });
+  });
+
+  it('counts web intro visits separately from the people who clicked', () => {
+    const summary = summarizeInsights(
+      [
+        ...events,
+        {
+          name: 'web_intro_viewed',
+          properties: { page: 'intro' },
+          created_at: '2026-09-24T15:00:00.000Z',
+          user_id: null,
+          guest_install_id: 'install-1',
+        },
+        {
+          name: 'web_intro_viewed',
+          properties: { page: 'intro' },
+          created_at: '2026-09-24T16:00:00.000Z',
+          user_id: null,
+          guest_install_id: 'install-1',
+        },
+        {
+          name: 'web_intro_clicked',
+          properties: { action: 'app_store' },
+          created_at: '2026-09-24T16:01:00.000Z',
+          user_id: null,
+          guest_install_id: 'install-1',
+        },
+        {
+          name: 'web_intro_clicked',
+          properties: { action: 'continue' },
+          created_at: '2026-09-24T16:02:00.000Z',
+          user_id: null,
+          guest_install_id: 'install-2',
+        },
+      ],
+      new Date('2026-09-24T18:00:00.000Z'),
+    );
+    expect(summary.webIntro).toEqual({
+      visits: 2,
+      visitors: 1,
+      appStoreClicks: 1,
+      continueClicks: 1,
+    });
+    expect(summary.recent[0]?.detail).toBe('continue');
   });
 });
 

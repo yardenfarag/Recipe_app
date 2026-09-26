@@ -45,7 +45,7 @@ jobs:
           EXPO_PUBLIC_REVENUECAT_WEB_30_URL: ${{ vars.EXPO_PUBLIC_REVENUECAT_WEB_30_URL }}
           EXPO_PUBLIC_REVENUECAT_WEB_100_URL: ${{ vars.EXPO_PUBLIC_REVENUECAT_WEB_100_URL }}
         run: |
-          export EXPO_PUBLIC_LEGAL_BASE_URL="${EXPO_PUBLIC_LEGAL_BASE_URL:-https://yardenfarag.github.io/Recipe_app}"
+          export EXPO_PUBLIC_LEGAL_BASE_URL="${EXPO_PUBLIC_LEGAL_BASE_URL:-https://pinch-app.io}"
           export EXPO_PUBLIC_SUPPORT_EMAIL="${EXPO_PUBLIC_SUPPORT_EMAIL:-yarden.farag@gmail.com}"
           npx expo export -p web
 
@@ -56,6 +56,7 @@ jobs:
           cp legal/index.html dist/legal.html
           touch dist/.nojekyll
           cp dist/index.html dist/404.html
+          printf '%s\n' pinch-app.io > dist/CNAME
 
       - name: Setup Pages
         uses: actions/configure-pages@v5

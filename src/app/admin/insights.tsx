@@ -161,6 +161,19 @@ function InsightsBody() {
               </View>
             </Card>
 
+            <Card title="Web intro" colors={colors}>
+              <View className="flex-row flex-wrap gap-2">
+                <Stat label="Visits" value={String(summary.webIntro.visits)} colors={colors} />
+                <Stat label="Visitors" value={String(summary.webIntro.visitors)} colors={colors} />
+                <Stat label="App Store" value={String(summary.webIntro.appStoreClicks)} colors={colors} />
+                <Stat
+                  label="Continue on the web"
+                  value={String(summary.webIntro.continueClicks)}
+                  colors={colors}
+                />
+              </View>
+            </Card>
+
             <Card title="What people use" colors={colors}>
               <RankList items={summary.byName} empty="No product events yet." colors={colors} format={label} />
             </Card>

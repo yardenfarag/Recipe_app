@@ -27,6 +27,12 @@ export type InsightSummary = {
   saveFrom: RankedItem[];
   paywallTriggers: RankedItem[];
   locales: RankedItem[];
+  webIntro: {
+    visits: number;
+    visitors: number;
+    appStoreClicks: number;
+    continueClicks: number;
+  };
   days: RankedItem[];
   recent: { when: string; name: string; detail: string }[];
 };
@@ -79,6 +85,8 @@ function detailFor(event: InsightEvent): string {
   if (event.name === 'onboarding_completed') {
     return `${prop(properties, 'locale')} · ${prop(properties, 'platform')}`;
   }
+  if (event.name === 'web_intro_viewed') return 'visit';
+  if (event.name === 'web_intro_clicked') return prop(properties, 'action');
   return '';
 }
 
@@ -99,6 +107,13 @@ export function summarizeInsights(
   const saved = events.filter((event) => event.name === 'recipe_saved');
   const paywall = events.filter((event) => event.name === 'paywall_viewed');
   const onboarded = events.filter((event) => event.name === 'onboarding_completed');
+  const introViews = events.filter((event) => event.name === 'web_intro_viewed');
+  const introClicks = events.filter((event) => event.name === 'web_intro_clicked');
+  const introVisitors = new Set<string>();
+  for (const event of introViews) {
+    if (event.user_id) introVisitors.add(`user:${event.user_id}`);
+    else if (event.guest_install_id) introVisitors.add(`guest:${event.guest_install_id}`);
+  }
 
   const days: RankedItem[] = [];
   for (let offset = dayCount - 1; offset >= 0; offset -= 1) {
@@ -122,6 +137,16 @@ export function summarizeInsights(
       paywall.map((event) => ({ label: prop(event.properties ?? {}, 'trigger') })),
     ),
     locales: tally(onboarded.map((event) => ({ label: prop(event.properties ?? {}, 'locale') }))),
+    webIntro: {
+      visits: introViews.length,
+      visitors: introVisitors.size,
+      appStoreClicks: introClicks.filter(
+        (event) => prop(event.properties ?? {}, 'action') === 'app_store',
+      ).length,
+      continueClicks: introClicks.filter(
+        (event) => prop(event.properties ?? {}, 'action') === 'continue',
+      ).length,
+    },
     days,
     recent: [...events]
       .sort((a, b) => b.created_at.localeCompare(a.created_at))

@@ -15,6 +15,7 @@ import { useTranslation } from 'react-i18next';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { CookieMark } from '@/components/CookieMark';
+import { openLegalDoc } from '@/components/LegalDocument';
 import { TextInput } from '@/components/text-input';
 import { AuthCardWidth } from '@/constants/theme';
 import { useBreakpoint } from '@/hooks/useBreakpoint';
@@ -28,7 +29,6 @@ import {
   normalizeEmail,
   validatePassword,
 } from '@/lib/authValidation';
-import { LEGAL_URLS, openLegalUrl } from '@/lib/legal';
 import {
   isAppleAuthAvailable,
   requestPasswordReset,
@@ -563,7 +563,7 @@ export default function AuthScreen() {
         )}
 
         <View className="mt-6 flex-row flex-wrap items-center justify-center gap-x-3 gap-y-2">
-          <Pressable onPress={() => void openLegalUrl(LEGAL_URLS.privacy)} disabled={loading}>
+          <Pressable onPress={() => openLegalDoc('privacy')} disabled={loading}>
             <Text className="text-xs font-medium" style={{ color: colors.textSecondary }}>
               {t('auth.privacy')}
             </Text>
@@ -571,7 +571,7 @@ export default function AuthScreen() {
           <Text className="text-xs" style={{ color: colors.textSecondary }}>
             ·
           </Text>
-          <Pressable onPress={() => void openLegalUrl(LEGAL_URLS.terms)} disabled={loading}>
+          <Pressable onPress={() => openLegalDoc('terms')} disabled={loading}>
             <Text className="text-xs font-medium" style={{ color: colors.textSecondary }}>
               {t('auth.terms')}
             </Text>

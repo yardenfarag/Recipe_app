@@ -1,11 +1,11 @@
 Pinch — soft-launch store checklist (Android first)
 ==================================================
 
-Legal URLs (after GitHub Pages is enabled on this repo):
-  Privacy:  https://yardenfarag.github.io/Recipe_app/privacy.html
-  Terms:    https://yardenfarag.github.io/Recipe_app/terms.html
-  Delete account: https://yardenfarag.github.io/Recipe_app/delete-account.html
-  Delete data:    https://yardenfarag.github.io/Recipe_app/delete-data.html
+Legal URLs:
+  Privacy:  https://pinch-app.io/privacy.html
+  Terms:    https://pinch-app.io/terms.html
+  Delete account: https://pinch-app.io/delete-account.html
+  Delete data:    https://pinch-app.io/delete-data.html
   Support:  yarden.farag@gmail.com
 
 Enable Pages (one-time, required before the workflow succeeds):
@@ -51,7 +51,7 @@ Production Android build finished (AAB):
 2. Privacy nutrition labels matching Data safety; privacy + support URLs
 3. Export compliance: ITSAppUsesNonExemptEncryption = false (app.json)
 4. Screenshots for required devices
-5. iOS production builds: push to master (GitHub Action `EAS Build iOS`) or
+5. iOS production builds: Actions → EAS Build iOS (production) → Run workflow, or
      npx eas-cli build --platform ios --profile production
    First interactive build already created credentials for:
      - com.pinch.myapp (Pinch)

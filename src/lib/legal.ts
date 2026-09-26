@@ -6,11 +6,11 @@ const extra = Constants.expoConfig?.extra as
   | { legalBaseUrl?: string; supportEmail?: string }
   | undefined;
 
-/** Public legal site base (no trailing slash). Policies ship with the web app on GitHub Pages. */
+/** Public legal site base (no trailing slash). Policies ship with the web app. */
 export const LEGAL_BASE_URL = (
   process.env.EXPO_PUBLIC_LEGAL_BASE_URL ??
   extra?.legalBaseUrl ??
-  'https://yardenfarag.github.io/Recipe_app'
+  'https://pinch-app.io'
 ).replace(/\/$/, '');
 
 export const SUPPORT_EMAIL =

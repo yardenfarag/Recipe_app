@@ -151,6 +151,8 @@ export default {
     "privacyPolicy": "Политика конфиденциальности",
     "termsOfUse": "Условия использования",
     "deleteAccountWeb": "Удалить аккаунт (на сайте)",
+    "deleteAccountGuide": "Удалить аккаунт",
+    "deleteDataGuide": "Удалить данные",
     "reportIssue": "Сообщить о проблеме",
     "emailSupport": "Написать в поддержку",
     "adminTitle": "Админ",

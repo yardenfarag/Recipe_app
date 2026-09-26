@@ -151,6 +151,8 @@ export default {
     "privacyPolicy": "Política de privacidad",
     "termsOfUse": "Términos de uso",
     "deleteAccountWeb": "Eliminar cuenta (web)",
+    "deleteAccountGuide": "Eliminar cuenta",
+    "deleteDataGuide": "Eliminar tus datos",
     "reportIssue": "Avisar de un problema",
     "emailSupport": "Escribir a soporte",
     "adminTitle": "Admin",

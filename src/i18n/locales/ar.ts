@@ -151,6 +151,8 @@ export default {
     "privacyPolicy": "سياسة الخصوصية",
     "termsOfUse": "شروط الاستخدام",
     "deleteAccountWeb": "حذف الحساب (من الموقع)",
+    "deleteAccountGuide": "حذف الحساب",
+    "deleteDataGuide": "حذف بياناتك",
     "reportIssue": "الإبلاغ عن مشكلة",
     "emailSupport": "مراسلة الدعم",
     "adminTitle": "إدارة",
