@@ -1,4 +1,3 @@
-import AsyncStorage from '@react-native-async-storage/async-storage';
 import {
   createContext,
   useCallback,
@@ -8,8 +7,6 @@ import {
   useState,
   type ReactNode,
 } from 'react';
-
-import { isWebIntroDismissedValue, WEB_INTRO_DISMISSED_KEY } from '@/lib/webIntro';
 
 type WebIntroContextValue = {
   ready: boolean;
@@ -24,29 +21,11 @@ export function WebIntroProvider({ children }: { children: ReactNode }) {
   const [dismissed, setDismissed] = useState(false);
 
   useEffect(() => {
-    let cancelled = false;
-    (async () => {
-      try {
-        const saved = await AsyncStorage.getItem(WEB_INTRO_DISMISSED_KEY);
-        if (!cancelled) setDismissed(isWebIntroDismissedValue(saved));
-      } catch {
-        // Treat as not dismissed so a first visit still sees the intro.
-      } finally {
-        if (!cancelled) setReady(true);
-      }
-    })();
-    return () => {
-      cancelled = true;
-    };
+    setReady(true);
   }, []);
 
   const dismiss = useCallback(async () => {
     setDismissed(true);
-    try {
-      await AsyncStorage.setItem(WEB_INTRO_DISMISSED_KEY, 'true');
-    } catch {
-      // In-memory flag still lets this session into the app.
-    }
   }, []);
 
   const value = useMemo(() => ({ ready, dismissed, dismiss }), [ready, dismissed, dismiss]);

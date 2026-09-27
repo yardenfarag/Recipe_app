@@ -17,18 +17,17 @@ export function isAppHome(pathname: string): boolean {
 }
 
 /**
- * First-time web visitors see the intro on `/`.
- * People who already continued, or who already finished setup in this browser, go straight in.
+ * The public intro is the web front door on `/`.
+ * Continuing hides it for this visit only. A previous visit, or finishing setup, does not.
  */
 export function shouldRedirectToWebIntro(input: {
   isWeb: boolean;
   ready: boolean;
   dismissed: boolean;
-  onboardingCompleted: boolean;
   pathname: string;
 }): boolean {
   if (!input.isWeb || !input.ready) return false;
-  if (input.dismissed || input.onboardingCompleted) return false;
+  if (input.dismissed) return false;
   return isAppHome(input.pathname);
 }
 

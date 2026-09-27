@@ -7,9 +7,9 @@ import { useWebIntro } from '@/hooks/useWebIntro';
 import { isAppHome } from '@/lib/webIntro';
 
 /**
- * Keeps first-run onboarding as a one-time gate: incomplete installs stay on
- * `/onboarding` or the account screen; completed installs never return there.
- * On web, the public intro owns `/` until the visitor continues.
+ * Incomplete installs stay on `/onboarding` or the account screen.
+ * On native, a finished install leaves `/onboarding`. On web that page stays
+ * open so it can be viewed again. The public intro owns `/` until Continue.
  */
 export function OnboardingGate() {
   const { ready, completed } = useOnboarding();
@@ -29,8 +29,7 @@ export function OnboardingGate() {
       segments[0] === 'auth-callback' ||
       pathname === '/auth' ||
       pathname.startsWith('/auth-callback');
-    const introOwnsHome =
-      Platform.OS === 'web' && !dismissed && !completed && isAppHome(pathname);
+    const introOwnsHome = Platform.OS === 'web' && !dismissed && isAppHome(pathname);
 
     if (introOwnsHome || onWelcome || onLegal) return;
 
@@ -39,7 +38,7 @@ export function OnboardingGate() {
       return;
     }
 
-    if (completed && onOnboarding) {
+    if (completed && onOnboarding && Platform.OS !== 'web') {
       router.replace('/(tabs)');
     }
   }, [ready, completed, introReady, dismissed, pathname, segments]);

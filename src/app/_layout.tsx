@@ -35,13 +35,12 @@ function RootNavigator() {
   const { colors, scheme } = useThemePreference();
   const { t } = useTranslation();
   const pathname = usePathname();
-  const { ready: onboardingReady, completed } = useOnboarding();
+  const { ready: onboardingReady } = useOnboarding();
   const { ready: introReady, dismissed } = useWebIntro();
   const showIntro = shouldRedirectToWebIntro({
     isWeb: Platform.OS === 'web',
     ready: onboardingReady && introReady,
     dismissed,
-    onboardingCompleted: completed,
     pathname,
   });
 

@@ -32,20 +32,15 @@ describe('shouldRedirectToWebIntro', () => {
     isWeb: true,
     ready: true,
     dismissed: false,
-    onboardingCompleted: false,
     pathname: '/',
   };
 
-  it('shows the intro to a new web visitor on the home page', () => {
+  it('shows the intro to a web visitor on the home page', () => {
     expect(shouldRedirectToWebIntro(freshWebHome)).toBe(true);
   });
 
-  it('skips the intro after they continue on the web', () => {
+  it('hides the intro only after they continue during this visit', () => {
     expect(shouldRedirectToWebIntro({ ...freshWebHome, dismissed: true })).toBe(false);
-  });
-
-  it('skips the intro when this browser already finished setup', () => {
-    expect(shouldRedirectToWebIntro({ ...freshWebHome, onboardingCompleted: true })).toBe(false);
   });
 
   it('waits until storage has been read', () => {
