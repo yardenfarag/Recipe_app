@@ -7,8 +7,10 @@ import { SheetModal } from '@/components/SheetModal';
 import { capturePaywallViewed, type PaywallTrigger } from '@/lib/analytics';
 import { useProfile } from '@/hooks/useProfile';
 import { useThemePreference } from '@/hooks/useThemePreference';
+import { openAppStore } from '@/lib/webIntro';
 import {
   BEST_VALUE_PACK_ID,
+  creditPurchasesOfferedHere,
   loadCreditPacks,
   packIsPurchasable,
   purchaseCreditPack,
@@ -41,14 +43,15 @@ export function TokenPurchaseSheet({
   const [message, setMessage] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const livePurchases = purchasesEnabled();
+  const purchasesHere = creditPurchasesOfferedHere();
 
   useEffect(() => {
-    if (!visible) return;
+    if (!visible || !purchasesHere) return;
     capturePaywallViewed(trigger);
-  }, [trigger, visible]);
+  }, [purchasesHere, trigger, visible]);
 
   useEffect(() => {
-    if (!visible) return;
+    if (!visible || !purchasesHere) return;
     setLoading(true);
     setError(null);
     setMessage(null);
@@ -56,7 +59,7 @@ export function TokenPurchaseSheet({
       .then(setPacks)
       .catch(() => setError(t('credits.loadFailed')))
       .finally(() => setLoading(false));
-  }, [t, visible]);
+  }, [purchasesHere, t, visible]);
 
   async function handlePurchase(pack: CreditPack) {
     if (busyId) return;
@@ -108,6 +111,26 @@ export function TokenPurchaseSheet({
     } finally {
       setBusyId(null);
     }
+  }
+
+  if (!purchasesHere) {
+    return (
+      <SheetModal visible={visible} onClose={onClose} title={t('credits.buyTitle')} maxWidth={520}>
+        <ScrollView className="flex-1 px-5 pb-6" showsVerticalScrollIndicator={false}>
+          <Text className="text-sm leading-5" style={{ color: colors.textSecondary }}>
+            {t('credits.webOnlyBody')}
+          </Text>
+          <Pressable
+            className="mt-4 self-start rounded-[18px] px-4 py-2.5 active:opacity-80"
+            style={{ backgroundColor: colors.primary }}
+            onPress={() => void openAppStore()}
+            accessibilityRole="link"
+          >
+            <Text className="text-sm font-bold text-white">{t('credits.webOnlyAction')}</Text>
+          </Pressable>
+        </ScrollView>
+      </SheetModal>
+    );
   }
 
   return (

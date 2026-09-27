@@ -29,6 +29,8 @@ export default {
     "purchasePending": "קיבלנו את הרכישה. היתרה תתעדכן בעוד רגע.",
     "webCheckoutOpened": "התשלום נפתח בחלון אחר. אחרי שתשלמו, עשו סנכרון.",
     "unavailable": "עדיין אי אפשר לקנות קרדיטים בגרסה הזו.",
+    "webOnlyBody": "קניית קרדיטים זמינה באפליקציית Pinch. באתר עדיין אי אפשר לשלם.",
+    "webOnlyAction": "לאפליקציה",
     "syncPurchases": "סנכרון רכישות",
     "syncComplete": "הרכישות סונכרנו.",
     "syncFailed": "לא הצלחנו לסנכרן רכישות. נסו שוב."
@@ -561,6 +563,7 @@ export default {
     "freeRemaining": "נשארו {{remaining}}/{{limit}} מתכונים חינם החודש",
     "creditsRemaining": "{{total}} קרדיטים · {{free}} חינם + {{purchased}} שנקנו",
     "creditLimitBody": "ניצלתם את כל {{limit}} הקרדיטים החינמיים החודש. אפשר לקנות עוד, או לחכות לחידוש החודשי.",
+    "creditLimitBodyWeb": "ניצלתם את כל {{limit}} הקרדיטים החינמיים החודש. אפשר לקנות עוד באפליקציה, או לחכות לחידוש החודשי.",
     "plusRemaining": "נשארו {{remaining}}/{{limit}} מתכוני Plus החודש",
     "guestLimitTitle": "הגעתם למכסה",
     "guestLimitBody": "בלי חשבון אפשר לשלוף {{limit}} מתכונים. נרשמים ומקבלים {{freeLimit}} מתכונים חינם כל חודש — וגם אפשרות לשמור במטבח.",

@@ -3,7 +3,9 @@ import { describe, expect, it } from 'vitest';
 import {
   BEST_VALUE_PACK_ID,
   CREDIT_PACKS,
+  creditPurchasesOfferedOn,
   displayCreditPacks,
+  WEB_CREDIT_PURCHASES_ENABLED,
 } from '@/lib/purchases';
 
 describe('credit pack catalog', () => {
@@ -24,6 +26,13 @@ describe('credit pack catalog', () => {
     expect(packs.map((pack) => pack.price)).toEqual(['₪7.90', '$4.99', '₪49.90']);
     expect(packs[0]?.storePackage?.product.identifier).toBe('pinch_credits_10');
     expect(packs[1]?.storePackage).toBeUndefined();
+  });
+
+  it('keeps credit purchases off the website', () => {
+    expect(WEB_CREDIT_PURCHASES_ENABLED).toBe(false);
+    expect(creditPurchasesOfferedOn('web')).toBe(false);
+    expect(creditPurchasesOfferedOn('ios')).toBe(true);
+    expect(creditPurchasesOfferedOn('android')).toBe(true);
   });
 
   it('marks the 100-credit pack as best value', () => {

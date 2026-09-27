@@ -29,6 +29,8 @@ export default {
     "purchasePending": "Compra recibida. El saldo se actualiza en un momento.",
     "webCheckoutOpened": "El pago se abrió en otra ventana. Sincroniza cuando termines de pagar.",
     "unavailable": "Todavía no se pueden comprar créditos en esta versión.",
+    "webOnlyBody": "Comprar créditos está disponible en la app de Pinch. Esta web todavía no puede cobrar.",
+    "webOnlyAction": "Consigue la app",
     "syncPurchases": "Sincronizar compras",
     "syncComplete": "Compras sincronizadas.",
     "syncFailed": "No se pudieron sincronizar las compras. Inténtalo de nuevo."
@@ -561,6 +563,7 @@ export default {
     "freeRemaining": "Te quedan {{remaining}}/{{limit}} recetas gratis este mes",
     "creditsRemaining": "{{total}} créditos · {{free}} gratis + {{purchased}} comprados",
     "creditLimitBody": "Ya usaste los {{limit}} créditos gratis de este mes. Compra más o espera a que se renueven.",
+    "creditLimitBodyWeb": "Ya usaste los {{limit}} créditos gratis de este mes. Compra más en la app o espera a que se renueven.",
     "plusRemaining": "Te quedan {{remaining}}/{{limit}} recetas Plus este mes",
     "guestLimitTitle": "Llegaste al límite",
     "guestLimitBody": "Sin cuenta puedes sacar {{limit}} recetas. Crea una y tienes {{freeLimit}} recetas gratis al mes, además de poder guardarlas.",

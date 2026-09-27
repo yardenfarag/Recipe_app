@@ -15,6 +15,22 @@ export type CreditPackId = (typeof CREDIT_PACKS)[number]['id'];
 
 export const BEST_VALUE_PACK_ID: CreditPackId = 'pinch_credits_100';
 
+/**
+ * RevenueCat web checkout charges through Stripe. Stripe does not support this
+ * account's country, so the website stays purchase-free. App Store and Play
+ * Store purchases do not use Stripe. Leave this off unless web billing moves
+ * to a processor that can actually charge here.
+ */
+export const WEB_CREDIT_PURCHASES_ENABLED = false;
+
+export function creditPurchasesOfferedOn(platform: typeof Platform.OS): boolean {
+  return platform !== 'web' || WEB_CREDIT_PURCHASES_ENABLED;
+}
+
+export function creditPurchasesOfferedHere(): boolean {
+  return creditPurchasesOfferedOn(Platform.OS);
+}
+
 export interface CreditPack {
   id: CreditPackId;
   credits: number;
@@ -56,7 +72,7 @@ export function displayCreditPacks(
 
 export function packIsPurchasable(pack: CreditPack): boolean {
   if (!purchasesEnabled()) return false;
-  if (Platform.OS === 'web') return true;
+  if (Platform.OS === 'web') return WEB_CREDIT_PURCHASES_ENABLED;
   return Boolean(pack.storePackage);
 }
 
@@ -102,6 +118,9 @@ export async function purchaseCreditPack(
   pack: CreditPack,
 ): Promise<'purchased' | 'cancelled' | 'opened_web_checkout'> {
   if (!purchasesEnabled()) throw new Error('purchases_unavailable');
+  if (Platform.OS === 'web' && !WEB_CREDIT_PURCHASES_ENABLED) {
+    throw new Error('web_checkout_unavailable');
+  }
 
   if (Platform.OS === 'web') {
     const url =

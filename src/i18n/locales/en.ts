@@ -29,6 +29,8 @@ export default {
     "purchasePending": "Purchase received. Your balance will update shortly.",
     "webCheckoutOpened": "Checkout opened in a new window. Sync after payment.",
     "unavailable": "Credit purchases aren’t available in this build yet.",
+    "webOnlyBody": "Buying credits is available in the Pinch app. This website can’t take payments yet.",
+    "webOnlyAction": "Get the app",
     "syncPurchases": "Sync purchases",
     "syncComplete": "Purchases synced.",
     "syncFailed": "Couldn’t sync purchases. Try again."
@@ -561,6 +563,7 @@ export default {
     "freeRemaining": "{{remaining}}/{{limit}} free extractions left this month",
     "creditsRemaining": "{{total}} credits available · {{free}} free + {{purchased}} purchased",
     "creditLimitBody": "You’ve used all {{limit}} free recipe credits this month. Buy more credits now, or wait for the monthly reset.",
+    "creditLimitBodyWeb": "You’ve used all {{limit}} free recipe credits this month. Buy more in the Pinch app, or wait for the monthly reset.",
     "plusRemaining": "{{remaining}}/{{limit}} Plus extractions left this month",
     "guestLimitTitle": "Extraction limit reached",
     "guestLimitBody": "Without an account you can extract {{limit}} recipes. Sign up for {{freeLimit}} free extractions each month — and to save recipes to your library.",

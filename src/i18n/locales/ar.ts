@@ -29,6 +29,8 @@ export default {
     "purchasePending": "وصلنا الدفع. الرصيد يتحدّث خلال لحظات.",
     "webCheckoutOpened": "صفحة الدفع انفتحت في نافذة أخرى. بعد الدفع اعمل مزامنة.",
     "unavailable": "شراء الرصيد غير متاح بعد في هذا الإصدار.",
+    "webOnlyBody": "شراء الرصيد متاح في تطبيق Pinch. الموقع ما يقبل الدفع حالياً.",
+    "webOnlyAction": "حمّل التطبيق",
     "syncPurchases": "مزامنة المشتريات",
     "syncComplete": "تمّت مزامنة المشتريات.",
     "syncFailed": "ما قدرنا نزامن المشتريات. جرّب مرة ثانية."
@@ -561,6 +563,7 @@ export default {
     "freeRemaining": "باقي {{remaining}}/{{limit}} وصفة مجانية هذا الشهر",
     "creditsRemaining": "{{total}} رصيد · {{free}} مجاني + {{purchased}} مشترى",
     "creditLimitBody": "استخدمت كل الـ {{limit}} رصيد المجاني هذا الشهر. اشترِ المزيد أو انتظر التجديد.",
+    "creditLimitBodyWeb": "استخدمت كل الـ {{limit}} رصيد المجاني هذا الشهر. اشترِ المزيد من التطبيق، أو انتظر التجديد.",
     "plusRemaining": "باقي {{remaining}}/{{limit}} وصفة Plus هذا الشهر",
     "guestLimitTitle": "وصلت إلى الحد",
     "guestLimitBody": "بدون حساب يمكنك أخذ {{limit}} وصفات. أنشئ حسابًا لتحصل على {{freeLimit}} وصفة مجانية كل شهر — ولحفظها في مطبخك.",

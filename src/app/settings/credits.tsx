@@ -1,18 +1,21 @@
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Pressable, Text } from 'react-native';
+import { Platform, Pressable, Text } from 'react-native';
 
 import { SettingsDetailScreen } from '@/components/SettingsDetailScreen';
 import { TokenPurchaseSheet } from '@/components/TokenPurchaseSheet';
 import { useProfile } from '@/hooks/useProfile';
 import { useThemePreference } from '@/hooks/useThemePreference';
 import { FREE_MONTHLY_EXTRACT_LIMIT } from '@/lib/quotas';
+import { creditPurchasesOfferedOn } from '@/lib/purchases';
+import { openAppStore } from '@/lib/webIntro';
 
 export default function CreditSettingsScreen() {
   const { t } = useTranslation();
   const { colors } = useThemePreference();
   const { freeExtractsRemaining, purchasedCredits, totalCredits, refresh } = useProfile();
   const [creditsOpen, setCreditsOpen] = useState(false);
+  const purchasesHere = creditPurchasesOfferedOn(Platform.OS);
 
   return (
     <>
@@ -39,14 +42,30 @@ export default function CreditSettingsScreen() {
         <Text className="mt-1 text-xs leading-5" style={{ color: colors.textSecondary }}>
           {t('settings.creditsReset')}
         </Text>
-        <Pressable
-          className="mt-4 self-start rounded-[18px] px-4 py-2.5 active:opacity-80"
-          style={{ backgroundColor: colors.primary }}
-          onPress={() => setCreditsOpen(true)}
-          accessibilityRole="button"
-        >
-          <Text className="text-sm font-bold text-white">{t('credits.buyAction')}</Text>
-        </Pressable>
+        {purchasesHere ? (
+          <Pressable
+            className="mt-4 self-start rounded-[18px] px-4 py-2.5 active:opacity-80"
+            style={{ backgroundColor: colors.primary }}
+            onPress={() => setCreditsOpen(true)}
+            accessibilityRole="button"
+          >
+            <Text className="text-sm font-bold text-white">{t('credits.buyAction')}</Text>
+          </Pressable>
+        ) : (
+          <>
+            <Text className="mt-4 text-sm leading-5" style={{ color: colors.textSecondary }}>
+              {t('credits.webOnlyBody')}
+            </Text>
+            <Pressable
+              className="mt-4 self-start rounded-[18px] px-4 py-2.5 active:opacity-80"
+              style={{ backgroundColor: colors.primary }}
+              onPress={() => void openAppStore()}
+              accessibilityRole="link"
+            >
+              <Text className="text-sm font-bold text-white">{t('credits.webOnlyAction')}</Text>
+            </Pressable>
+          </>
+        )}
       </SettingsDetailScreen>
       <TokenPurchaseSheet
         visible={creditsOpen}

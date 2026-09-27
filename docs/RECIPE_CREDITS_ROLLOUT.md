@@ -12,7 +12,7 @@ Create consumable products with the same IDs in App Store Connect, Google Play, 
 
 Initial price points are $1.99, $4.99, and $12.99 before store localization. Add all products to the current RevenueCat offering. Do not configure them as subscriptions.
 
-For web, create one identified Web Purchase Link per pack. Pinch appends the signed-in Supabase user UUID as `app_user_id`.
+Skip web purchase links. RevenueCat web checkout charges through Stripe, and Stripe does not support this account's country. Website buyers are sent to the mobile app. App Store and Play Store products do not use Stripe.
 
 ## 2. Deploy the backend while disabled
 

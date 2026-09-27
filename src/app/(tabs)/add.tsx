@@ -31,6 +31,8 @@ import { useProfile } from "@/hooks/useProfile";
 import { useRtl } from "@/hooks/useRtl";
 import { useThemePreference } from "@/hooks/useThemePreference";
 import { showNotice } from "@/lib/confirmAction";
+import { creditPurchasesOfferedOn } from "@/lib/purchases";
+import { openAppStore } from "@/lib/webIntro";
 import { isFoodGateReject, shouldOfferInvent } from "@/lib/contentGate";
 import { clearExtractionRequestId } from "@/lib/extractionRequestId";
 import { findExistingGuestRecipe } from "@/lib/findExistingRecipe";
@@ -92,6 +94,7 @@ export default function AddRecipeScreen() {
   const [extractingPhoto, setExtractingPhoto] = useState(false);
   const [jobKind, setJobKind] = useState<"extract" | "invent">("extract");
   const [creditsOpen, setCreditsOpen] = useState(false);
+  const purchasesHere = creditPurchasesOfferedOn(Platform.OS);
   const [inventOffer, setInventOffer] = useState<{
     followUp: InventFollowUp;
     dishGuess?: string;
@@ -177,7 +180,9 @@ export default function AddRecipeScreen() {
   function promptCreditLimit() {
     setBanner({
       kind: "credits",
-      message: t("snap.creditLimitBody", { limit: FREE_MONTHLY_EXTRACT_LIMIT }),
+      message: t(purchasesHere ? "snap.creditLimitBody" : "snap.creditLimitBodyWeb", {
+        limit: FREE_MONTHLY_EXTRACT_LIMIT,
+      }),
     });
   }
 
@@ -796,10 +801,16 @@ export default function AddRecipeScreen() {
                 <Pressable
                   className="mt-3 self-start rounded-2xl px-4 py-2"
                   style={{ backgroundColor: colors.primary }}
-                  onPress={() => setCreditsOpen(true)}
+                  onPress={() => {
+                    if (!purchasesHere) {
+                      void openAppStore();
+                      return;
+                    }
+                    setCreditsOpen(true);
+                  }}
                 >
                   <Text className="text-sm font-bold text-white">
-                    {t("credits.buyAction")}
+                    {purchasesHere ? t("credits.buyAction") : t("credits.webOnlyAction")}
                   </Text>
                 </Pressable>
               )}
