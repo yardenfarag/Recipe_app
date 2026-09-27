@@ -36,7 +36,11 @@
     "web": {
       "output": "single",
       "favicon": "./assets/images/favicon.png",
-      "bundler": "metro"
+      "bundler": "metro",
+      "lang": "en",
+      "name": "Pinch — Save TikTok, Instagram, and YouTube recipes",
+      "shortName": "Pinch",
+      "description": "Pinch turns a TikTok, Instagram, or YouTube cooking video into ingredients, steps, and a shopping list."
     },
     "plugins": [
       "expo-router",

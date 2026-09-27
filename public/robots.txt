@@ -1,0 +1,18 @@
+# Crawl the public site. App screens are the same JavaScript shell.
+User-agent: *
+Disallow: /add
+Disallow: /admin
+Disallow: /auth
+Disallow: /cookbook
+Disallow: /favorites
+Disallow: /hub
+Disallow: /legal/
+Disallow: /list
+Disallow: /onboarding
+Disallow: /recipe
+Disallow: /reset-password
+Disallow: /s/
+Disallow: /settings
+Disallow: /welcome
+
+Sitemap: https://pinch-app.io/sitemap.xml

@@ -1,4 +1,5 @@
 import Ionicons from '@expo/vector-icons/Ionicons';
+import Constants from 'expo-constants';
 import { type Href, router, usePathname } from 'expo-router';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useEffect } from 'react';
@@ -36,6 +37,10 @@ const MUTED = '#C3B0B8';
 const LINE = 'rgba(232, 168, 188, 0.22)';
 const GLASS = 'rgba(255, 255, 255, 0.045)';
 const WELL = 'rgba(196, 91, 122, 0.2)';
+
+/** Matches `expo.web.name` / `expo.web.shortName` in app.json, which the static export writes into index.html. */
+const WEB_TITLE = Constants.expoConfig?.web?.name ?? 'Pinch';
+const APP_TITLE = Constants.expoConfig?.web?.shortName ?? 'Pinch';
 
 const RECIPES = [
   { title: 'Miso butter noodles', meta: '25 min · dinner', swatch: '#E8A0B8' },
@@ -84,7 +89,7 @@ export function WebIntroPage() {
 
   useEffect(() => {
     if (Platform.OS === 'web' && typeof document !== 'undefined') {
-      document.title = 'Pinch — See it. Snap it. Cook it.';
+      document.title = WEB_TITLE;
     }
     captureWebIntroViewed();
   }, []);
@@ -93,7 +98,7 @@ export function WebIntroPage() {
     captureWebIntroClick('continue');
     await dismiss();
     if (Platform.OS === 'web' && typeof document !== 'undefined') {
-      document.title = 'Pinch';
+      document.title = APP_TITLE;
     }
     if (!isAppHome(pathname)) {
       router.replace('/' as Href);
