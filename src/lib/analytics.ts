@@ -1,3 +1,5 @@
+import * as Localization from 'expo-localization';
+
 import { getInstallId } from '@/lib/installId';
 import { supabase } from '@/lib/supabase/client';
 
@@ -19,6 +21,16 @@ function capture(name: ProductEventName, properties: Record<string, string>): vo
   void insertProductEvent(name, properties);
 }
 
+/** Device region, used only when the request has no network country. */
+function deviceCountry(): string | null {
+  try {
+    const code = Localization.getLocales()[0]?.regionCode?.trim().toUpperCase() ?? '';
+    return /^[A-Z]{2}$/.test(code) ? code : null;
+  } catch {
+    return null;
+  }
+}
+
 async function insertProductEvent(
   name: ProductEventName,
   properties: Record<string, string>,
@@ -32,6 +44,7 @@ async function insertProductEvent(
       guest_install_id: guestInstallId,
       name,
       properties,
+      country: deviceCountry(),
     });
     if (error) console.warn('[analytics] insert failed', error.message);
   } catch (error) {

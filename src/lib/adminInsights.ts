@@ -4,6 +4,7 @@ export type InsightEvent = {
   created_at: string;
   user_id: string | null;
   guest_install_id: string | null;
+  country?: string | null;
 };
 
 export type InsightFailure = {
@@ -27,6 +28,7 @@ export type InsightSummary = {
   saveFrom: RankedItem[];
   paywallTriggers: RankedItem[];
   locales: RankedItem[];
+  countries: RankedItem[];
   webIntro: {
     visits: number;
     visitors: number;
@@ -34,7 +36,7 @@ export type InsightSummary = {
     continueClicks: number;
   };
   days: RankedItem[];
-  recent: { when: string; name: string; detail: string }[];
+  recent: { when: string; name: string; country: string; detail: string }[];
 };
 
 export const INSIGHT_RANGES = [7, 14, 30, 90] as const;
@@ -46,6 +48,17 @@ export function insightSince(days: number, now = new Date()): string {
   start.setHours(0, 0, 0, 0);
   start.setDate(start.getDate() - (days - 1));
   return start.toISOString();
+}
+
+/** English name for an ISO country code. Missing codes stay "Unknown". */
+export function countryLabel(code: string | null | undefined): string {
+  const normalized = code?.trim().toUpperCase() ?? '';
+  if (!/^[A-Z]{2}$/.test(normalized)) return 'Unknown';
+  try {
+    return new Intl.DisplayNames(['en'], { type: 'region' }).of(normalized) ?? normalized;
+  } catch {
+    return normalized;
+  }
 }
 
 function prop(properties: Record<string, unknown>, key: string): string {
@@ -137,6 +150,7 @@ export function summarizeInsights(
       paywall.map((event) => ({ label: prop(event.properties ?? {}, 'trigger') })),
     ),
     locales: tally(onboarded.map((event) => ({ label: prop(event.properties ?? {}, 'locale') }))),
+    countries: tally(events.map((event) => ({ label: countryLabel(event.country) }))),
     webIntro: {
       visits: introViews.length,
       visitors: introVisitors.size,
@@ -154,6 +168,7 @@ export function summarizeInsights(
       .map((event) => ({
         when: event.created_at,
         name: event.name,
+        country: countryLabel(event.country),
         detail: detailFor(event),
       })),
   };

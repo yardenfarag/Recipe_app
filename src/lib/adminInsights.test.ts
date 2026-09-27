@@ -48,8 +48,10 @@ describe('summarizeInsights', () => {
     expect(summary.recent[0]).toEqual({
       when: '2026-09-24T13:00:00.000Z',
       name: 'recipe_extracted',
+      country: 'Unknown',
       detail: 'camera · invent',
     });
+    expect(summary.countries).toEqual([{ label: 'Unknown', count: 4 }]);
     expect(summary.days).toHaveLength(14);
     expect(summarizeInsights(events, new Date('2026-09-24T18:00:00.000Z'), 7).days).toHaveLength(7);
     expect(summary.days.at(-1)?.count).toBe(2);
@@ -103,6 +105,24 @@ describe('summarizeInsights', () => {
       continueClicks: 1,
     });
     expect(summary.recent[0]?.detail).toBe('continue');
+  });
+
+  it('ranks events by country name', () => {
+    const summary = summarizeInsights(
+      [
+        { ...events[0], country: 'US' },
+        { ...events[1], country: 'US' },
+        { ...events[2], country: 'IL' },
+        { ...events[3], country: null },
+      ],
+      new Date('2026-09-24T18:00:00.000Z'),
+    );
+    expect(summary.countries).toEqual([
+      { label: 'United States', count: 2 },
+      { label: 'Israel', count: 1 },
+      { label: 'Unknown', count: 1 },
+    ]);
+    expect(summary.recent[0]?.country).toBe('United States');
   });
 });
 

@@ -53,11 +53,12 @@ export async function fetchAdminProductEvents(since?: string, limit = 2000): Pro
     created_at: string;
     user_id: string | null;
     guest_install_id: string | null;
+    country: string | null;
   }[]
 > {
   let query = supabase
     .from('product_events')
-    .select('name, properties, created_at, user_id, guest_install_id')
+    .select('name, properties, created_at, user_id, guest_install_id, country')
     .order('created_at', { ascending: false })
     .limit(limit);
   if (since) query = query.gte('created_at', since);
@@ -72,6 +73,7 @@ export async function fetchAdminProductEvents(since?: string, limit = 2000): Pro
     created_at: String(row.created_at),
     user_id: row.user_id ?? null,
     guest_install_id: row.guest_install_id ?? null,
+    country: typeof row.country === 'string' ? row.country : null,
   }));
 }
 

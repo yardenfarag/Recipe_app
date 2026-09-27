@@ -174,6 +174,9 @@ function InsightsBody() {
               </View>
             </Card>
 
+            <Card title="Countries" colors={colors}>
+              <RankList items={summary.countries} empty="No product events yet." colors={colors} />
+            </Card>
             <Card title="What people use" colors={colors}>
               <RankList items={summary.byName} empty="No product events yet." colors={colors} format={label} />
             </Card>
@@ -214,8 +217,13 @@ function InsightsBody() {
 
             <Card title="Recent activity" colors={colors}>
               <EventTable
-                header={['When', 'Event', 'Detail']}
-                rows={summary.recent.map((row) => [fmtWhen(row.when), label(row.name), row.detail || '—'])}
+                header={['When', 'Event', 'Country', 'Detail']}
+                rows={summary.recent.map((row) => [
+                  fmtWhen(row.when),
+                  label(row.name),
+                  row.country,
+                  row.detail || '—',
+                ])}
                 colors={colors}
               />
             </Card>
