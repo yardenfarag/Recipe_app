@@ -107,6 +107,11 @@ interface RecipeViewProps {
   onRepairApplied?: (recipe: RepairedRecipePayload) => void;
   /** Saved recipes only — persist cooked date and optional note. */
   onCookedChange?: (cooked: { last_cooked_at: string; cook_note: string }) => void;
+  /**
+   * Remix, translate, swap, and repair spend credits and only stick on a library recipe.
+   * Hub previews leave this off so those actions cannot discard work.
+   */
+  allowAdaptations?: boolean;
 }
 
 /** Stack header on web — used so the side cook-along can fill the remaining viewport. */
@@ -130,6 +135,7 @@ export function RecipeView({
   getCachedTranslation,
   onRepairApplied,
   onCookedChange,
+  allowAdaptations = true,
 }: RecipeViewProps) {
   const { t } = useTranslation();
   const { user } = useAuth();
@@ -931,20 +937,22 @@ export function RecipeView({
             <Text className="mt-1 text-xs leading-4" style={{ color: colors.textSecondary }}>
               {t('recipe.repairHint')}
             </Text>
-            <Pressable
-              onPress={() => void handleRepair()}
-              disabled={repairing}
-              className="mt-3 min-h-[44px] items-center justify-center rounded-3xl px-4 active:opacity-80"
-              style={{ backgroundColor: colors.warning }}
-              accessibilityRole="button"
-              accessibilityLabel={t('recipe.repairAction')}
-            >
-              {repairing ? (
-                <ActivityIndicator color="#fff" size="small" />
-              ) : (
-                <Text className="text-sm font-semibold text-white">{t('recipe.repairAction')}</Text>
-              )}
-            </Pressable>
+            {allowAdaptations ? (
+              <Pressable
+                onPress={() => void handleRepair()}
+                disabled={repairing}
+                className="mt-3 min-h-[44px] items-center justify-center rounded-3xl px-4 active:opacity-80"
+                style={{ backgroundColor: colors.warning }}
+                accessibilityRole="button"
+                accessibilityLabel={t('recipe.repairAction')}
+              >
+                {repairing ? (
+                  <ActivityIndicator color="#fff" size="small" />
+                ) : (
+                  <Text className="text-sm font-semibold text-white">{t('recipe.repairAction')}</Text>
+                )}
+              </Pressable>
+            ) : null}
           </View>
         )}
 
@@ -1035,15 +1043,17 @@ export function RecipeView({
                       pinchColor={colors.primary}
                       writingDirection={textDirection}
                     />
-                    <Pressable
-                      className="rounded-full px-3 py-1.5"
-                      style={{ backgroundColor: colors.accentSoft }}
-                      onPress={() => setSwapIndex(index)}
-                    >
-                      <Text className="text-xs font-semibold" style={{ color: colors.accent }}>
-                        {t('recipe.swapAction')}
-                      </Text>
-                    </Pressable>
+                    {allowAdaptations ? (
+                      <Pressable
+                        className="rounded-full px-3 py-1.5"
+                        style={{ backgroundColor: colors.accentSoft }}
+                        onPress={() => setSwapIndex(index)}
+                      >
+                        <Text className="text-xs font-semibold" style={{ color: colors.accent }}>
+                          {t('recipe.swapAction')}
+                        </Text>
+                      </Pressable>
+                    ) : null}
                   </View>
                 </View>
               ))}
@@ -1056,6 +1066,7 @@ export function RecipeView({
           </>
         )}
 
+        {allowAdaptations ? (
         <View className="mb-5 mt-1 flex-row gap-2">
           <Pressable
             onPress={() => setTranslateModalOpen(true)}
@@ -1093,6 +1104,7 @@ export function RecipeView({
             </Pressable>
           ) : null}
         </View>
+        ) : null}
           </View>
 
           <View className={splitRecipeBody ? 'min-w-0 flex-[1.2]' : undefined}>

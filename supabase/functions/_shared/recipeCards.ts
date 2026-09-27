@@ -82,6 +82,7 @@ export function recipeCardCanonicalUrl(
   if (platform === 'youtube' && contentId) return canonicalYouTubeWatchUrl(contentId);
   if (platform === 'instagram' && contentId) return canonicalInstagramUrl(contentId);
   if (platform === 'tiktok' && contentId) return canonicalTikTokUrl(contentId);
+  if (platform === 'web') return canonicalizeUrlForCompare(url);
   return url.trim();
 }
 

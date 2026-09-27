@@ -125,7 +125,22 @@ export async function fetchRecipeByUrl(
     .eq('original_url', trimmed);
 
   if (error) throw error;
-  return (data as Recipe[] | null)?.find(matchesOrigin) ?? null;
+  const exact = (data as Recipe[] | null)?.find(matchesOrigin) ?? null;
+  if (exact || platform !== 'web') return exact;
+
+  const { data: canonicalId, error: canonicalError } = await supabase.rpc('library_recipe_for_url', {
+    p_platform: 'web',
+    p_url: trimmed,
+  });
+  if (canonicalError) {
+    // The canonical lookup ships with migration 0037. Until that is applied, exact URL match stands.
+    if (canonicalError.code === 'PGRST202') return null;
+    throw canonicalError;
+  }
+  if (typeof canonicalId !== 'string' || !canonicalId) return null;
+
+  const canonical = await fetchRecipeById(canonicalId);
+  return canonical && matchesOrigin(canonical) ? canonical : null;
 }
 
 export async function fetchRecipeById(id: string): Promise<Recipe | null> {

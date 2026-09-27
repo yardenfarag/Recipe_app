@@ -1,16 +1,18 @@
 import Ionicons from '@expo/vector-icons/Ionicons';
 import { router } from 'expo-router';
-import { useCallback, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
   ActivityIndicator,
   FlatList,
   Pressable,
+  RefreshControl,
   ScrollView,
   Text,
   View,
   type NativeScrollEvent,
   type NativeSyntheticEvent,
 } from 'react-native';
+import type { TFunction } from 'i18next';
 import { useTranslation } from 'react-i18next';
 
 import { BrandHeader } from '@/components/BrandHeader';
@@ -23,6 +25,32 @@ import { useLibraryLayout } from '@/hooks/useLibraryLayout';
 import { useThemePreference } from '@/hooks/useThemePreference';
 import { recipeCardToListRecipe } from '@/lib/recipeCardMap';
 import { translateRecipeTag } from '@/lib/recipeTags';
+import type { HubPlatform, RecipeCard } from '@/types/recipeCard';
+
+const HUB_PLATFORMS = ['all', 'youtube', 'instagram', 'tiktok', 'web'] as const;
+
+function platformLabelKey(platform: HubPlatform | 'all') {
+  switch (platform) {
+    case 'youtube':
+      return 'hub.platformYoutube';
+    case 'instagram':
+      return 'hub.platformInstagram';
+    case 'tiktok':
+      return 'hub.platformTiktok';
+    case 'web':
+      return 'hub.platformWeb';
+    default:
+      return 'hub.platformAll';
+  }
+}
+
+function hubCardDetail(card: RecipeCard, t: TFunction) {
+  const source = t(platformLabelKey(card.platform));
+  const saves = t(card.save_count === 1 ? 'hub.saveCountOne' : 'hub.saveCountOther', {
+    count: card.save_count,
+  });
+  return `${source} · ${saves}`;
+}
 
 export default function CookingHubScreen() {
   const { t } = useTranslation();
@@ -31,9 +59,12 @@ export default function CookingHubScreen() {
   const {
     cards,
     loading,
+    querying,
+    refreshing,
     loadingMore,
     error,
     total,
+    listEpoch,
     search,
     setSearch,
     selectedTags,
@@ -41,17 +72,30 @@ export default function CookingHubScreen() {
     clearTags,
     sort,
     setSort,
+    platform,
+    setPlatform,
     availableTags,
     refresh,
+    pullRefresh,
     loadMore,
   } = useCookingHub();
   const isDark = scheme === 'dark';
   const inactiveChipBg = isDark ? 'rgba(40,36,48,0.6)' : 'rgba(255,255,255,0.55)';
 
-  const listRecipes = useMemo(() => cards.map(recipeCardToListRecipe), [cards]);
-  const filtersActive = selectedTags.length > 0 || sort !== 'popular';
+  const rows = useMemo(
+    () => cards.map((card) => ({ card, recipe: recipeCardToListRecipe(card) })),
+    [cards],
+  );
+  const listRef = useRef<FlatList<(typeof rows)[number]>>(null);
+  const filtersActive = selectedTags.length > 0 || sort !== 'popular' || platform !== 'all';
   const [filtersOpen, setFiltersOpen] = useState(filtersActive);
   const hasQuery = Boolean(search.trim());
+  const showSearching = loading || querying;
+
+  useEffect(() => {
+    if (listEpoch === 0) return;
+    listRef.current?.scrollToOffset({ offset: 0, animated: false });
+  }, [listEpoch]);
 
   const handleListScroll = useCallback(
     (event: NativeSyntheticEvent<NativeScrollEvent>) => {
@@ -61,40 +105,6 @@ export default function CookingHubScreen() {
     },
     [loadMore],
   );
-
-  if (loading && cards.length === 0) {
-    return (
-      <Screen tabScreen className="items-center justify-center">
-        <ActivityIndicator color={colors.primary} size="large" />
-      </Screen>
-    );
-  }
-
-  if (error && cards.length === 0) {
-    return (
-      <Screen tabScreen className="items-center justify-center px-8">
-        <View
-          className="mb-5 h-16 w-16 items-center justify-center rounded-[22px]"
-          style={{ backgroundColor: colors.dangerSoft }}
-        >
-          <Ionicons name="cloud-offline-outline" size={32} color={colors.danger} />
-        </View>
-        <Text className="mb-2 text-center text-xl font-bold" style={{ color: colors.text }}>
-          {t('hub.loadFailedTitle')}
-        </Text>
-        <Text className="mb-6 text-center text-sm leading-5" style={{ color: colors.textSecondary }}>
-          {error}
-        </Text>
-        <Pressable
-          onPress={() => refresh()}
-          className="rounded-3xl px-6 py-3.5 active:opacity-80"
-          style={{ backgroundColor: colors.primary }}
-        >
-          <Text className="text-base font-bold text-white">{t('common.tryAgainAction')}</Text>
-        </Pressable>
-      </Screen>
-    );
-  }
 
   return (
     <Screen tabScreen className="overflow-hidden">
@@ -167,13 +177,52 @@ export default function CookingHubScreen() {
         </View>
 
         <Text className="text-xs" style={{ color: colors.textSecondary }}>
-          {t((total || cards.length) === 1 ? 'library.recipeCountOne' : 'library.recipeCountOther', {
-            count: total || cards.length,
-          })}
+          {showSearching
+            ? t('hub.searching')
+            : t((total || cards.length) === 1 ? 'library.recipeCountOne' : 'library.recipeCountOther', {
+                count: total || cards.length,
+              })}
         </Text>
+
+        {error && cards.length > 0 ? (
+          <Pressable onPress={() => void refresh()} className="active:opacity-80">
+            <Text className="text-xs font-semibold" style={{ color: colors.danger }}>
+              {error}
+            </Text>
+          </Pressable>
+        ) : null}
 
         {filtersOpen ? (
           <View className="w-full min-w-0 gap-3">
+            <ScrollView
+              horizontal
+              showsHorizontalScrollIndicator={false}
+              style={{ width: '100%' }}
+              contentContainerStyle={{ gap: 8, paddingEnd: 4 }}
+              keyboardShouldPersistTaps="handled"
+            >
+              {HUB_PLATFORMS.map((item) => {
+                const active = platform === item;
+                return (
+                  <Pressable
+                    key={item}
+                    onPress={() => setPlatform(item)}
+                    className="min-h-[44px] items-center justify-center rounded-2xl px-4 active:opacity-80"
+                    style={{ backgroundColor: active ? colors.primary : inactiveChipBg }}
+                    accessibilityRole="button"
+                    accessibilityState={{ selected: active }}
+                  >
+                    <Text
+                      className="text-sm font-semibold"
+                      style={{ color: active ? '#fff' : colors.text }}
+                    >
+                      {t(platformLabelKey(item))}
+                    </Text>
+                  </Pressable>
+                );
+              })}
+            </ScrollView>
+
             <ScrollView
               horizontal
               showsHorizontalScrollIndicator={false}
@@ -264,18 +313,20 @@ export default function CookingHubScreen() {
 
       <View style={{ flex: 1, minHeight: 0, overflow: 'hidden' }}>
         <FlatList
+          ref={listRef}
           key={`hub-${numColumns}`}
-          data={listRecipes}
-          keyExtractor={(item) => item.id}
+          data={rows}
+          keyExtractor={(item) => item.recipe.id}
           numColumns={numColumns}
           columnWrapperStyle={numColumns > 1 ? { gap: 0, marginBottom: 12 } : undefined}
           renderItem={({ item, index }) => (
             <View style={numColumns > 1 ? { flex: 1, paddingHorizontal: 6 } : undefined}>
               <RecipeListRow
-                recipe={item}
+                recipe={item.recipe}
                 index={index}
                 variant={layout === 'grid' ? 'card' : 'row'}
-                onPress={() => router.push(`/hub/${item.id}`)}
+                detail={hubCardDetail(item.card, t)}
+                onPress={() => router.push(`/hub/${item.recipe.id}`)}
               />
             </View>
           )}
@@ -284,38 +335,77 @@ export default function CookingHubScreen() {
           scrollEventThrottle={160}
           onEndReached={loadMore}
           onEndReachedThreshold={0.5}
+          refreshControl={
+            <RefreshControl
+              refreshing={refreshing}
+              onRefresh={() => void pullRefresh()}
+              tintColor={colors.primary}
+              colors={[colors.primary]}
+            />
+          }
           ListFooterComponent={
             loadingMore ? <ActivityIndicator className="py-4" color={colors.primary} /> : null
           }
           ListEmptyComponent={
-            <View className="items-center px-6 py-12">
-              {filtersActive || hasQuery ? (
-                <>
-                  <Text className="mb-1 text-center text-base font-semibold" style={{ color: colors.text }}>
-                    {t('hub.noMatches')}
-                  </Text>
-                  <Text className="text-center text-sm" style={{ color: colors.textSecondary }}>
-                    {t('hub.noMatchesHint')}
-                  </Text>
-                </>
-              ) : (
-                <>
-                  <BrandHeader
-                    size="hero"
-                    align="center"
-                    title={t('hub.emptyTitle')}
-                    subtitle={t('hub.emptyBody')}
-                  />
-                  <Pressable
-                    className="mt-8 w-full items-center rounded-3xl py-4 active:opacity-80"
-                    style={{ backgroundColor: colors.primary }}
-                    onPress={() => router.push('/add')}
-                  >
-                    <Text className="text-base font-bold text-white">{t('hub.snapFirst')}</Text>
-                  </Pressable>
-                </>
-              )}
-            </View>
+            showSearching ? (
+              <View className="items-center py-16">
+                <ActivityIndicator color={colors.primary} size="large" />
+              </View>
+            ) : error ? (
+              <View className="items-center px-6 py-12">
+                <View
+                  className="mb-5 h-16 w-16 items-center justify-center rounded-[22px]"
+                  style={{ backgroundColor: colors.dangerSoft }}
+                >
+                  <Ionicons name="cloud-offline-outline" size={32} color={colors.danger} />
+                </View>
+                <Text className="mb-2 text-center text-xl font-bold" style={{ color: colors.text }}>
+                  {t('hub.loadFailedTitle')}
+                </Text>
+                <Text
+                  className="mb-6 text-center text-sm leading-5"
+                  style={{ color: colors.textSecondary }}
+                >
+                  {error}
+                </Text>
+                <Pressable
+                  onPress={() => void refresh()}
+                  className="rounded-3xl px-6 py-3.5 active:opacity-80"
+                  style={{ backgroundColor: colors.primary }}
+                >
+                  <Text className="text-base font-bold text-white">{t('common.tryAgainAction')}</Text>
+                </Pressable>
+              </View>
+            ) : (
+              <View className="items-center px-6 py-12">
+                {filtersActive || hasQuery ? (
+                  <>
+                    <Text className="mb-1 text-center text-base font-semibold" style={{ color: colors.text }}>
+                      {t('hub.noMatches')}
+                    </Text>
+                    <Text className="text-center text-sm" style={{ color: colors.textSecondary }}>
+                      {t('hub.noMatchesHint')}
+                    </Text>
+                  </>
+                ) : (
+                  <>
+                    <BrandHeader
+                      size="hero"
+                      align="center"
+                      title={t('hub.emptyTitle')}
+                      subtitle={t('hub.emptyBody')}
+                    />
+                    <Pressable
+                      className="mt-8 w-full items-center rounded-3xl py-4 active:opacity-80"
+                      style={{ backgroundColor: colors.primary }}
+                      onPress={() => router.push('/add')}
+                    >
+                      <Text className="text-base font-bold text-white">{t('hub.snapFirst')}</Text>
+                    </Pressable>
+                  </>
+                )}
+              </View>
+            )
           }
           contentContainerStyle={{
             paddingHorizontal: 20,

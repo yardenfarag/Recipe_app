@@ -1,7 +1,7 @@
 begin;
 
 create extension if not exists pgtap with schema extensions;
-select plan(11);
+select plan(16);
 
 insert into auth.users (
   instance_id, id, aud, role, email, encrypted_password,
@@ -113,6 +113,30 @@ select is(
   'invented recipes do not bump hub save_count'
 );
 
+delete from public.recipes
+where user_id = '10000000-0000-4000-8000-000000000011'
+  and original_url = 'https://example.com/hub-pasta'
+  and extraction_source = 'invented';
+
+select is(
+  (select save_count from public.recipe_cards
+   where id = '30000000-0000-4000-8000-000000000001'),
+  1,
+  'deleting an invented recipe does not change hub save_count'
+);
+
+delete from public.recipes
+where user_id = '10000000-0000-4000-8000-000000000011'
+  and original_url = 'https://example.com/hub-pasta'
+  and extraction_source is distinct from 'invented';
+
+select is(
+  (select save_count from public.recipe_cards
+   where id = '30000000-0000-4000-8000-000000000001'),
+  0,
+  'deleting a library extract drops hub save_count'
+);
+
 select public.touch_recipe_card_hit('30000000-0000-4000-8000-000000000001');
 select is(
   (select extract_hit_count from public.recipe_cards
@@ -162,6 +186,30 @@ select is(
   ),
   'youtube:dQw4w9WgXcQ',
   'backfill keys YouTube shorts-style links'
+);
+
+select is(
+  public.recipe_card_canonical_key(
+    'web',
+    'https://example.com/pasta?utm_source=ig&id=5'
+  ),
+  'web:https://example.com/pasta?id=5',
+  'web keys keep a real query param that follows a tracking param'
+);
+
+select is(
+  public.recipe_card_canonical_key('web', 'https://EXAMPLE.com/Recipe'),
+  'web:https://example.com/Recipe',
+  'web keys lowercase the host'
+);
+
+select is(
+  public.recipe_card_canonical_key(
+    'web',
+    'https://www.example.com/soup/?utm_source=ig'
+  ),
+  'web:https://example.com/soup',
+  'web keys drop www, tracking params, and a trailing slash'
 );
 
 insert into public.recipes (

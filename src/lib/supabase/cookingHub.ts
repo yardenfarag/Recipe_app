@@ -13,6 +13,8 @@ export interface FetchHubCardsOptions {
   sort?: HubSort;
   offset?: number;
   limit?: number;
+  /** Exact count is only needed for the first page. Later pages use an extra row. */
+  includeCount?: boolean;
 }
 
 function sanitizeSearch(value: string): string {
@@ -32,13 +34,16 @@ function mapCard(row: RecipeCard): RecipeCard {
 
 export async function fetchHubCards(
   options: FetchHubCardsOptions = {},
-): Promise<{ cards: RecipeCard[]; hasMore: boolean; total: number }> {
+): Promise<{ cards: RecipeCard[]; hasMore: boolean; total: number | null }> {
   const limit = options.limit ?? PAGE_SIZE;
   const offset = options.offset ?? 0;
   const search = options.search ? sanitizeSearch(options.search) : '';
   const sort = options.sort ?? 'popular';
+  const includeCount = options.includeCount ?? offset === 0;
 
-  let query = supabase.from('recipe_cards').select('*', { count: 'exact' });
+  let query = supabase
+    .from('recipe_cards')
+    .select('*', includeCount ? { count: 'exact' } : undefined);
 
   if (options.platform && options.platform !== 'all' && isHubPlatform(options.platform)) {
     query = query.eq('platform', options.platform);
@@ -47,23 +52,48 @@ export async function fetchHubCards(
     query = query.ilike('title', `%${search}%`);
   }
   if (options.tags && options.tags.length > 0) {
-    query = query.contains('tags', options.tags);
+    query = query.overlaps('tags', options.tags);
   }
 
   if (sort === 'newest') {
-    query = query.order('created_at', { ascending: false });
+    query = query.order('created_at', { ascending: false }).order('id', { ascending: true });
   } else {
     query = query
       .order('save_count', { ascending: false })
-      .order('created_at', { ascending: false });
+      .order('created_at', { ascending: false })
+      .order('id', { ascending: true });
   }
 
-  const { data, error, count } = await query.range(offset, offset + limit - 1);
+  // Inclusive range, so this asks for one extra row and the page can tell if more exist.
+  const { data, error, count } = await query.range(offset, offset + limit);
   if (error) throw error;
 
-  const cards = ((data ?? []) as RecipeCard[]).map(mapCard);
-  const total = typeof count === 'number' ? count : offset + cards.length;
-  return { cards, hasMore: offset + cards.length < total, total };
+  const rows = ((data ?? []) as RecipeCard[]).map(mapCard);
+  const hasMore = rows.length > limit;
+  const cards = hasMore ? rows.slice(0, limit) : rows;
+  const total = includeCount && typeof count === 'number' ? count : null;
+  return { cards, hasMore, total };
+}
+
+export async function fetchHubTags(platform: HubPlatform | 'all' = 'all'): Promise<string[]> {
+  const { data, error } = await supabase.rpc('hub_popular_tags', {
+    p_platform: platform === 'all' ? null : platform,
+    p_limit: 12,
+  });
+  if (error) throw error;
+  const rows = (data ?? []) as Array<{ tag?: string } | string>;
+  const tags: string[] = [];
+  for (const row of rows) {
+    const tag = typeof row === 'string' ? row : row.tag;
+    if (tag?.trim()) tags.push(tag);
+  }
+  return tags;
+}
+
+export async function fetchLibraryRecipeForCard(cardId: string): Promise<string | null> {
+  const { data, error } = await supabase.rpc('library_recipe_for_card', { p_card_id: cardId });
+  if (error) throw error;
+  return typeof data === 'string' && data ? data : null;
 }
 
 export async function fetchHubCard(id: string): Promise<RecipeCard | null> {

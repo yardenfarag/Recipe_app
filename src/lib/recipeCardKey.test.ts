@@ -38,6 +38,15 @@ describe('recipeCardCanonicalKey', () => {
         'https://www.example.com/soup/?utm_source=ig&fbclid=1',
       ),
     ).toBe('web:https://example.com/soup');
+    expect(
+      recipeCardCanonicalKey('web', 'https://example.com/pasta?utm_source=ig&id=5'),
+    ).toBe('web:https://example.com/pasta?id=5');
+    expect(recipeCardCanonicalKey('web', 'https://EXAMPLE.com/Recipe')).toBe(
+      'web:https://example.com/Recipe',
+    );
+    expect(recipeCardCanonicalKey('web', 'https://www.example.com')).toBe(
+      'web:https://example.com/',
+    );
   });
 });
 

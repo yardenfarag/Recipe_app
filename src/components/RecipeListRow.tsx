@@ -29,6 +29,8 @@ interface RecipeListRowProps {
   variant?: 'row' | 'card';
   /** Skip enter animation while the parent list is flipping layout. */
   animateEnter?: boolean;
+  /** Secondary line under the title, such as a hub source and save count. */
+  detail?: string;
 }
 
 /** Frosted mist card in the Library list. */
@@ -41,6 +43,7 @@ export const RecipeListRow = memo(function RecipeListRow({
   index = 0,
   variant = 'row',
   animateEnter = true,
+  detail,
 }: RecipeListRowProps) {
   const { t } = useTranslation();
   const { colors } = useThemePreference();
@@ -174,6 +177,11 @@ export const RecipeListRow = memo(function RecipeListRow({
             >
               {recipe.display_title ?? recipe.title}
             </Text>
+            {detail ? (
+              <Text className="text-xs" style={{ color: colors.textSecondary }} numberOfLines={1}>
+                {detail}
+              </Text>
+            ) : null}
             {recipeIsInvented(recipe) ? (
               <View
                 className="mt-1 self-start rounded-full px-2 py-0.5"

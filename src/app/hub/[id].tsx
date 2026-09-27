@@ -10,8 +10,7 @@ import { StackHeaderBackButton } from '@/components/StackHeaderBackButton';
 import { useAuth } from '@/hooks/useAuth';
 import { useThemePreference } from '@/hooks/useThemePreference';
 import { recipeCardToExtracted } from '@/lib/recipeCardMap';
-import { claimHubCard, fetchHubCard } from '@/lib/supabase/cookingHub';
-import { fetchRecipeByUrl } from '@/lib/supabase/recipes';
+import { claimHubCard, fetchHubCard, fetchLibraryRecipeForCard } from '@/lib/supabase/cookingHub';
 import { translateAppError } from '@/lib/translateAppError';
 import type { RecipeCard } from '@/types/recipeCard';
 
@@ -50,9 +49,13 @@ export default function HubRecipeScreen() {
           return;
         }
         setCard(next);
-        if (session?.user && next.original_url) {
-          const existing = await fetchRecipeByUrl(next.original_url);
-          if (!cancelled) setExistingRecipeId(existing?.id ?? null);
+        if (session?.user) {
+          try {
+            const existingId = await fetchLibraryRecipeForCard(next.id);
+            if (!cancelled) setExistingRecipeId(existingId);
+          } catch {
+            if (!cancelled) setExistingRecipeId(null);
+          }
         } else if (!cancelled) {
           setExistingRecipeId(null);
         }
@@ -169,7 +172,7 @@ export default function HubRecipeScreen() {
           {t('hub.attribution')}
         </Text>
       </View>
-      <RecipeView recipe={recipe} />
+      <RecipeView recipe={recipe} allowAdaptations={false} />
     </Screen>
   );
 }
