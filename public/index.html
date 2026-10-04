@@ -5,7 +5,17 @@
     <meta httpEquiv="X-UA-Compatible" content="IE=edge" />
     <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no" />
     <title>%WEB_TITLE%</title>
-    <link rel="canonical" href="https://pinch-app.io/" />
+    <meta name="robots" content="noindex" />
+    <script>
+      // The app lives under /app. Old links (/s/…, /auth-callback, /reset-password…) land on
+      // GitHub Pages' 404.html, which is this shell — move them under /app, keeping query and hash.
+      (function () {
+        var path = window.location.pathname;
+        if (path !== '/app' && path.indexOf('/app/') !== 0) {
+          window.location.replace('/app' + path + window.location.search + window.location.hash);
+        }
+      })();
+    </script>
     <!-- The `react-native-web` recommended style reset: https://necolas.github.io/react-native-web/docs/setup/#root-element -->
     <style id="expo-reset">
       /* These styles make the body full-height */

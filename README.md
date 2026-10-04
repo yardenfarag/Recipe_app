@@ -54,14 +54,16 @@ Desktop web (wide viewport). On smaller screens the same flows use bottom tabs i
 
 ## Web deploy (GitHub Pages + pinch-app.io)
 
-The app exports as a static SPA (`web.output: single`) at the domain root. GitHub still builds the site. Visitors use `https://pinch-app.io`.
+The site root is a hand-written static landing page (`landing/index.html`), so crawlers get real HTML. The Expo app exports as a static SPA (`web.output: single`) under `/app` (`experiments.baseUrl`). GitHub builds the site. Visitors use `https://pinch-app.io`.
 
-Workflow: [`.github/workflows/deploy-web.yml`](.github/workflows/deploy-web.yml)
+Workflow: [`.github/workflows/deploy-web.yml`](.github/workflows/deploy-web.yml) runs `npm run build:web` ([`scripts/build-web-site.mjs`](scripts/build-web-site.mjs)), which:
 
-- Builds with `npx expo export -p web`
-- Merges legal HTML (`privacy.html`, `terms.html`, `delete-account.html`, `delete-data.html`, `legal.html`) into `dist/`
-- Adds `.nojekyll`, `404.html` (SPA fallback), and a `CNAME` for `pinch-app.io`
-- Deploys via GitHub Pages
+- Exports the app with `npx expo export -p web --output-dir dist/app`
+- Writes `landing/index.html` to `dist/index.html`, filling in the Supabase URL and key for its `web_intro_*` analytics
+- Merges legal HTML (`privacy.html`, `terms.html`, `delete-account.html`, `delete-data.html`, `share.html`, `legal.html`) into `dist/`
+- Adds `.nojekyll`, `404.html` (the app shell, so `/app/<route>` deep links load; old root links like `/s/…` and `/auth-callback` redirect to `/app/…`), and a `CNAME` for `pinch-app.io`
+
+Run `npm run build:web` locally to produce the same `dist/`.
 
 Live URL: https://pinch-app.io
 

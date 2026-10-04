@@ -1,0 +1,546 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Pinch — Save TikTok, Instagram, and YouTube recipes</title>
+    <meta
+      name="description"
+      content="Pinch turns a TikTok, Instagram, or YouTube cooking video into ingredients, steps, and a shopping list. Save recipes to your kitchen and cook along with the video."
+    />
+    <link rel="canonical" href="https://pinch-app.io/" />
+    <link rel="icon" type="image/png" href="/favicon.png" />
+    <link rel="apple-touch-icon" href="/icon.png" />
+    <meta name="theme-color" content="#070508" />
+    <meta name="apple-itunes-app" content="app-id=6796310453" />
+
+    <meta property="og:type" content="website" />
+    <meta property="og:site_name" content="Pinch" />
+    <meta property="og:url" content="https://pinch-app.io/" />
+    <meta property="og:title" content="Pinch — Save TikTok, Instagram, and YouTube recipes" />
+    <meta
+      property="og:description"
+      content="Turn a cooking video into ingredients, steps, and a shopping list."
+    />
+    <meta property="og:image" content="https://pinch-app.io/icon.png" />
+    <meta name="twitter:card" content="summary" />
+
+    <script type="application/ld+json">
+      {
+        "@context": "https://schema.org",
+        "@type": "SoftwareApplication",
+        "name": "Pinch",
+        "url": "https://pinch-app.io/",
+        "applicationCategory": "LifestyleApplication",
+        "operatingSystem": "iOS, Web",
+        "description": "Pinch turns a TikTok, Instagram, or YouTube cooking video into ingredients, steps, and a shopping list.",
+        "downloadUrl": "https://apps.apple.com/us/app/pinch-recipe-library/id6796310453",
+        "offers": { "@type": "Offer", "price": "0", "priceCurrency": "USD" }
+      }
+    </script>
+    <script type="application/ld+json">
+      {
+        "@context": "https://schema.org",
+        "@type": "FAQPage",
+        "mainEntity": [
+          {
+            "@type": "Question",
+            "name": "What does Pinch do?",
+            "acceptedAnswer": {
+              "@type": "Answer",
+              "text": "Pinch reads a cooking video from TikTok, Instagram, or YouTube and turns it into a written recipe: ingredients, steps, and a shopping list you can check off at the store."
+            }
+          },
+          {
+            "@type": "Question",
+            "name": "How do I save a recipe from TikTok or Instagram?",
+            "acceptedAnswer": {
+              "@type": "Answer",
+              "text": "Tap Share on the video and pick Pinch, or copy the link and paste it into Pinch. Preview the recipe, then tap save to keep it in your library."
+            }
+          },
+          {
+            "@type": "Question",
+            "name": "Is Pinch free?",
+            "acceptedAnswer": {
+              "@type": "Answer",
+              "text": "Yes. A free account includes 15 recipe extractions every month. If you need more, you can buy recipe credits in the app. Purchased credits never expire."
+            }
+          },
+          {
+            "@type": "Question",
+            "name": "Can I use Pinch without the app?",
+            "acceptedAnswer": {
+              "@type": "Answer",
+              "text": "Yes. Pinch also runs in your browser at pinch-app.io/app. Your library syncs when you sign in with the same account."
+            }
+          },
+          {
+            "@type": "Question",
+            "name": "Which languages does Pinch support?",
+            "acceptedAnswer": {
+              "@type": "Answer",
+              "text": "Pinch is available in English, Spanish, Hebrew, Arabic, and Russian."
+            }
+          }
+        ]
+      }
+    </script>
+
+    <style>
+      :root {
+        --pink: #c45b7a;
+        /* App pink, deepened so white button text passes 4.5:1. */
+        --pink-button: #b24f6d;
+        --pink-bright: #f0a8c4;
+        --night: #070508;
+        --cream: #f7f2f4;
+        --muted: #c3b0b8;
+        --line: rgba(232, 168, 188, 0.22);
+        --glass: rgba(255, 255, 255, 0.045);
+        --well: rgba(196, 91, 122, 0.2);
+        color-scheme: dark;
+        font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", system-ui, Roboto, sans-serif;
+      }
+      * {
+        box-sizing: border-box;
+      }
+      body {
+        margin: 0;
+        min-height: 100vh;
+        color: var(--cream);
+        background:
+          radial-gradient(560px 560px at 0% 0%, rgba(196, 91, 122, 0.28), transparent 70%),
+          radial-gradient(440px 440px at 100% 8%, rgba(240, 168, 196, 0.12), transparent 70%),
+          radial-gradient(420px 420px at 10% 100%, rgba(90, 28, 52, 0.34), transparent 70%),
+          linear-gradient(#140910, var(--night) 42%, #09070a);
+        background-attachment: fixed;
+        line-height: 1.5;
+      }
+      a {
+        color: inherit;
+      }
+      .wrap {
+        max-width: 980px;
+        margin: 0 auto;
+        padding: 0 24px;
+      }
+      header.top {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        gap: 10px;
+        padding-top: 48px;
+        font-size: 22px;
+        font-weight: 700;
+        letter-spacing: -0.4px;
+      }
+      header.top svg {
+        width: 28px;
+        height: 28px;
+        fill: var(--pink);
+      }
+      .hero {
+        text-align: center;
+        max-width: 760px;
+        margin: 0 auto;
+      }
+      h1 {
+        margin: 40px 0 0;
+        font-size: clamp(44px, 8vw, 64px);
+        line-height: 1.1;
+        letter-spacing: -1.6px;
+      }
+      h1 span {
+        color: var(--pink-bright);
+      }
+      .lede {
+        margin: 18px auto 0;
+        max-width: 540px;
+        font-size: 18px;
+        line-height: 28px;
+        color: var(--muted);
+      }
+      .actions {
+        display: flex;
+        flex-wrap: wrap;
+        justify-content: center;
+        gap: 12px;
+        margin-top: 32px;
+      }
+      .btn {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        gap: 10px;
+        min-height: 56px;
+        min-width: 220px;
+        padding: 0 18px;
+        border-radius: 14px;
+        font-weight: 700;
+        font-size: 16px;
+        text-decoration: none;
+      }
+      .btn:hover {
+        opacity: 0.9;
+      }
+      .btn-store {
+        background: #fff;
+        color: #000;
+      }
+      .btn-store svg {
+        width: 22px;
+        height: 22px;
+      }
+      .btn-store small {
+        display: block;
+        font-size: 11px;
+        font-weight: 400;
+        letter-spacing: 0.2px;
+      }
+      .btn-store b {
+        display: block;
+        line-height: 1.1;
+      }
+      .btn-web {
+        background: var(--pink-button);
+        color: #fff;
+      }
+      section {
+        margin-top: 96px;
+      }
+      h2 {
+        margin: 0;
+        text-align: center;
+        font-size: clamp(32px, 5vw, 40px);
+        line-height: 1.15;
+        letter-spacing: -0.8px;
+      }
+      .sub {
+        margin: 12px 0 0;
+        text-align: center;
+        font-size: 17px;
+        color: var(--muted);
+      }
+      .features {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+        gap: 16px;
+        margin: 32px 0 0;
+        padding: 0;
+        list-style: none;
+      }
+      .card {
+        border: 1px solid var(--line);
+        border-radius: 20px;
+        background: var(--glass);
+        padding: 22px;
+      }
+      .card .icon {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        width: 40px;
+        height: 40px;
+        border-radius: 14px;
+        background: var(--well);
+        color: var(--pink-bright);
+        font-size: 20px;
+      }
+      .card h3 {
+        margin: 16px 0 0;
+        font-size: 18px;
+      }
+      .card p {
+        margin: 8px 0 0;
+        font-size: 15px;
+        line-height: 22px;
+        color: var(--muted);
+      }
+      .steps {
+        counter-reset: step;
+        max-width: 640px;
+        margin: 32px auto 0;
+        padding: 0;
+        list-style: none;
+      }
+      .steps li {
+        counter-increment: step;
+        position: relative;
+        padding: 0 0 20px 52px;
+        font-size: 17px;
+        color: var(--muted);
+      }
+      .steps li::before {
+        content: counter(step);
+        position: absolute;
+        left: 0;
+        top: -4px;
+        width: 36px;
+        height: 36px;
+        border-radius: 50%;
+        background: var(--well);
+        color: var(--pink-bright);
+        font-weight: 700;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+      }
+      .steps strong {
+        color: var(--cream);
+      }
+      .faq {
+        max-width: 720px;
+        margin: 32px auto 0;
+        display: grid;
+        gap: 12px;
+      }
+      .faq details {
+        padding: 0;
+      }
+      .faq summary {
+        cursor: pointer;
+        padding: 18px 22px;
+        font-size: 17px;
+        font-weight: 700;
+      }
+      .faq details p {
+        margin: 0;
+        padding: 0 22px 20px;
+        font-size: 15px;
+        line-height: 24px;
+        color: var(--muted);
+      }
+      .cta {
+        text-align: center;
+      }
+      footer {
+        margin: 96px 0 0;
+        padding-bottom: 48px;
+        text-align: center;
+        font-size: 14px;
+        color: var(--muted);
+      }
+      footer nav {
+        display: flex;
+        flex-wrap: wrap;
+        justify-content: center;
+        gap: 8px 20px;
+        margin-bottom: 14px;
+      }
+      footer a {
+        display: inline-block;
+        padding: 6px 2px;
+        font-weight: 600;
+        color: var(--muted);
+        text-decoration: none;
+      }
+      footer a:hover {
+        color: var(--cream);
+      }
+    </style>
+  </head>
+  <body>
+    <header class="top wrap">
+      <svg viewBox="0 0 24 24" aria-hidden="true">
+        <path
+          d="M12,3A9,9 0 0,0 3,12A9,9 0 0,0 12,21A9,9 0 0,0 21,12C21,11.5 20.96,11 20.87,10.5C20.6,10 20,10 20,10H18V9C18,8 17,8 17,8H15V7C15,6 14,6 14,6H13V4C13,3 12,3 12,3M9.5,6A1.5,1.5 0 0,1 11,7.5A1.5,1.5 0 0,1 9.5,9A1.5,1.5 0 0,1 8,7.5A1.5,1.5 0 0,1 9.5,6M6.5,10A1.5,1.5 0 0,1 8,11.5A1.5,1.5 0 0,1 6.5,13A1.5,1.5 0 0,1 5,11.5A1.5,1.5 0 0,1 6.5,10M11.5,11A1.5,1.5 0 0,1 13,12.5A1.5,1.5 0 0,1 11.5,14A1.5,1.5 0 0,1 10,12.5A1.5,1.5 0 0,1 11.5,11M16.5,13A1.5,1.5 0 0,1 18,14.5A1.5,1.5 0 0,1 16.5,16H16.5A1.5,1.5 0 0,1 15,14.5H15A1.5,1.5 0 0,1 16.5,13M11,16A1.5,1.5 0 0,1 12.5,17.5A1.5,1.5 0 0,1 11,19A1.5,1.5 0 0,1 9.5,17.5A1.5,1.5 0 0,1 11,16Z"
+        />
+      </svg>
+      Pinch
+    </header>
+
+    <main class="wrap">
+      <div class="hero">
+        <h1>See it. <span>Snap it.</span> Cook it.</h1>
+        <p class="lede">
+          Share it from TikTok, Instagram, or YouTube. Pinch pulls out the ingredients and steps,
+          then keeps them in your kitchen.
+        </p>
+        <div class="actions">
+          <a
+            class="btn btn-store"
+            data-track="app_store"
+            href="https://apps.apple.com/us/app/pinch-recipe-library/id6796310453"
+          >
+            <svg viewBox="0 0 24 24" aria-hidden="true">
+              <path
+                d="M16.37 12.6c-.02-2.3 1.88-3.4 1.97-3.46-1.07-1.57-2.74-1.78-3.33-1.8-1.42-.15-2.77.83-3.49.83-.72 0-1.83-.81-3.01-.79-1.55.02-2.98.9-3.78 2.29-1.61 2.8-.41 6.94 1.16 9.2.77 1.11 1.68 2.36 2.88 2.31 1.16-.05 1.59-.75 2.99-.75 1.4 0 1.79.75 3.01.72 1.24-.02 2.03-1.13 2.79-2.25.88-1.29 1.24-2.53 1.26-2.6-.03-.01-2.42-.93-2.45-3.7zM14.08 5.85c.64-.77 1.07-1.85.95-2.92-.92.04-2.03.61-2.69 1.38-.59.68-1.11 1.77-.97 2.82 1.03.08 2.07-.52 2.71-1.28z"
+              />
+            </svg>
+            <span><small>Download on the</small><b>App Store</b></span>
+          </a>
+          <a class="btn btn-web" data-track="continue" href="/app/">Continue on the web</a>
+        </div>
+      </div>
+
+      <section aria-labelledby="features">
+        <h2 id="features">From the clip to the counter.</h2>
+        <p class="sub">The recipe, the list, and the video, kept in one kitchen.</p>
+        <ul class="features">
+          <li class="card">
+            <div class="icon" aria-hidden="true">✦</div>
+            <h3>Snap a link</h3>
+            <p>Share from TikTok, Instagram, or YouTube, or paste the link yourself.</p>
+          </li>
+          <li class="card">
+            <div class="icon" aria-hidden="true">❒</div>
+            <h3>Save it to your kitchen</h3>
+            <p>Preview the recipe, tap save, and find it again in your library.</p>
+          </li>
+          <li class="card">
+            <div class="icon" aria-hidden="true">✓</div>
+            <h3>Shopping list</h3>
+            <p>Send the ingredients to a list you can check off at the store.</p>
+          </li>
+          <li class="card">
+            <div class="icon" aria-hidden="true">▶</div>
+            <h3>Cook along</h3>
+            <p>Keep the source video beside the steps while you cook.</p>
+          </li>
+          <li class="card">
+            <div class="icon" aria-hidden="true">❏</div>
+            <h3>Collections</h3>
+            <p>Group recipes for dinner, baking, or easy weeknights.</p>
+          </li>
+        </ul>
+      </section>
+
+      <section aria-labelledby="how">
+        <h2 id="how">How it works</h2>
+        <ol class="steps">
+          <li><strong>Find a recipe video.</strong> On TikTok, Instagram Reels, or YouTube.</li>
+          <li><strong>Share it to Pinch.</strong> Or copy the link and paste it in.</li>
+          <li>
+            <strong>Get the recipe.</strong> Ingredients, steps, and a shopping list, saved to
+            your library.
+          </li>
+        </ol>
+      </section>
+
+      <section aria-labelledby="faq">
+        <h2 id="faq">Questions</h2>
+        <div class="faq">
+          <details class="card" open>
+            <summary>What does Pinch do?</summary>
+            <p>
+              Pinch reads a cooking video from TikTok, Instagram, or YouTube and turns it into a
+              written recipe: ingredients, steps, and a shopping list you can check off at the
+              store.
+            </p>
+          </details>
+          <details class="card">
+            <summary>How do I save a recipe from TikTok or Instagram?</summary>
+            <p>
+              Tap Share on the video and pick Pinch, or copy the link and paste it into Pinch.
+              Preview the recipe, then tap save to keep it in your library.
+            </p>
+          </details>
+          <details class="card">
+            <summary>Is Pinch free?</summary>
+            <p>
+              Yes. A free account includes 15 recipe extractions every month. If you need more,
+              you can buy recipe credits in the app. Purchased credits never expire.
+            </p>
+          </details>
+          <details class="card">
+            <summary>Can I use Pinch without the app?</summary>
+            <p>
+              Yes. Pinch also runs in your browser at
+              <a href="/app/">pinch-app.io/app</a>. Your library syncs when you sign in with the
+              same account.
+            </p>
+          </details>
+          <details class="card">
+            <summary>Which languages does Pinch support?</summary>
+            <p>Pinch is available in English, Spanish, Hebrew, Arabic, and Russian.</p>
+          </details>
+        </div>
+      </section>
+
+      <section class="cta" aria-labelledby="start">
+        <h2 id="start">Your next dinner is already in your feed.</h2>
+        <div class="actions">
+          <a
+            class="btn btn-store"
+            data-track="app_store"
+            href="https://apps.apple.com/us/app/pinch-recipe-library/id6796310453"
+          >
+            <span><small>Download on the</small><b>App Store</b></span>
+          </a>
+          <a class="btn btn-web" data-track="continue" href="/app/">Continue on the web</a>
+        </div>
+      </section>
+    </main>
+
+    <footer class="wrap">
+      <nav aria-label="Legal">
+        <a href="/privacy.html">Privacy</a>
+        <a href="/terms.html">Terms</a>
+        <a href="/legal.html">Legal</a>
+        <a href="mailto:yarden.farag@gmail.com">Support</a>
+      </nav>
+      <p>© <span id="year">2026</span> Pinch</p>
+    </footer>
+
+    <script>
+      (function () {
+        document.getElementById('year').textContent = String(new Date().getFullYear());
+
+        // Same product_events rows the in-app intro used to write (admin Insights → Web intro).
+        // The build fills these in; left as placeholders, tracking is off.
+        var SUPABASE_URL = '__SUPABASE_URL__';
+        var SUPABASE_KEY = '__SUPABASE_KEY__';
+        if (SUPABASE_URL.indexOf('__') === 0 || SUPABASE_KEY.indexOf('__') === 0) return;
+
+        // Shared with the web app's AsyncStorage, so a visitor keeps one guest id.
+        var INSTALL_KEY = 'pinch:install-id';
+        function installId() {
+          try {
+            var id = localStorage.getItem(INSTALL_KEY);
+            if (id && id.length >= 8) return id;
+            id = crypto.randomUUID
+              ? crypto.randomUUID()
+              : 'guest-' + Date.now() + '-' + Math.random().toString(36).slice(2, 12);
+            localStorage.setItem(INSTALL_KEY, id);
+            return id;
+          } catch (e) {
+            return 'guest-' + Date.now() + '-' + Math.random().toString(36).slice(2, 12);
+          }
+        }
+        function country() {
+          var match = /-([A-Za-z]{2})$/.exec(navigator.language || '');
+          return match ? match[1].toUpperCase() : null;
+        }
+        function capture(name, properties) {
+          try {
+            fetch(SUPABASE_URL + '/rest/v1/product_events', {
+              method: 'POST',
+              keepalive: true,
+              headers: {
+                apikey: SUPABASE_KEY,
+                'Content-Type': 'application/json',
+                Prefer: 'return=minimal',
+              },
+              body: JSON.stringify({
+                user_id: null,
+                guest_install_id: installId(),
+                name: name,
+                properties: properties,
+                country: country(),
+              }),
+            }).catch(function () {});
+          } catch (e) {}
+        }
+
+        capture('web_intro_viewed', { page: 'intro' });
+        var links = document.querySelectorAll('[data-track]');
+        for (var i = 0; i < links.length; i++) {
+          links[i].addEventListener('click', function (event) {
+            capture('web_intro_clicked', { action: event.currentTarget.getAttribute('data-track') });
+          });
+        }
+      })();
+    </script>
+  </body>
+</html>

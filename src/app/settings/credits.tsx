@@ -8,7 +8,7 @@ import { useProfile } from '@/hooks/useProfile';
 import { useThemePreference } from '@/hooks/useThemePreference';
 import { FREE_MONTHLY_EXTRACT_LIMIT } from '@/lib/quotas';
 import { creditPurchasesOfferedOn } from '@/lib/purchases';
-import { openAppStore } from '@/lib/webIntro';
+import { openAppStore } from '@/lib/appStore';
 
 export default function CreditSettingsScreen() {
   const { t } = useTranslation();

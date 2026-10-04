@@ -95,6 +95,7 @@
       ]
     ],
     "experiments": {
+      "baseUrl": "/app",
       "typedRoutes": true,
       "reactCompiler": true
     },

@@ -32,7 +32,7 @@ import { useRtl } from "@/hooks/useRtl";
 import { useThemePreference } from "@/hooks/useThemePreference";
 import { showNotice } from "@/lib/confirmAction";
 import { creditPurchasesOfferedOn } from "@/lib/purchases";
-import { openAppStore } from "@/lib/webIntro";
+import { openAppStore } from "@/lib/appStore";
 import { isFoodGateReject, shouldOfferInvent } from "@/lib/contentGate";
 import { clearExtractionRequestId } from "@/lib/extractionRequestId";
 import { findExistingGuestRecipe } from "@/lib/findExistingRecipe";

@@ -1,18 +1,5 @@
-# Crawl the public site. App screens are the same JavaScript shell.
+# The landing page and legal pages are real HTML. The web app under /app is a JavaScript shell.
 User-agent: *
-Disallow: /add
-Disallow: /admin
-Disallow: /auth
-Disallow: /cookbook
-Disallow: /favorites
-Disallow: /hub
-Disallow: /legal/
-Disallow: /list
-Disallow: /onboarding
-Disallow: /recipe
-Disallow: /reset-password
-Disallow: /s/
-Disallow: /settings
-Disallow: /welcome
+Disallow: /app/
 
 Sitemap: https://pinch-app.io/sitemap.xml

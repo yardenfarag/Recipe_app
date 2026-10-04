@@ -32,7 +32,7 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
-      - name: Export Expo web
+      - name: Build site (landing page at /, Expo web app at /app)
         env:
           EXPO_PUBLIC_SUPABASE_URL: ${{ secrets.EXPO_PUBLIC_SUPABASE_URL }}
           EXPO_PUBLIC_SUPABASE_KEY: ${{ secrets.EXPO_PUBLIC_SUPABASE_KEY }}
@@ -47,17 +47,14 @@ jobs:
         run: |
           export EXPO_PUBLIC_LEGAL_BASE_URL="${EXPO_PUBLIC_LEGAL_BASE_URL:-https://pinch-app.io}"
           export EXPO_PUBLIC_SUPPORT_EMAIL="${EXPO_PUBLIC_SUPPORT_EMAIL:-yarden.farag@gmail.com}"
-          npx expo export -p web
+          npm run build:web
 
-      - name: Merge legal pages into dist
+      - name: Check the landing page is real HTML
         run: |
-          # Keep Expo SPA index.html; preserve existing policy URLs at site root.
-          cp legal/privacy.html legal/terms.html legal/delete-account.html legal/delete-data.html legal/share.html legal/styles.css dist/
-          cp public/robots.txt public/sitemap.xml dist/
-          cp legal/index.html dist/legal.html
-          touch dist/.nojekyll
-          cp dist/index.html dist/404.html
-          printf '%s\n' pinch-app.io > dist/CNAME
+          grep -q '<h1>' dist/index.html
+          grep -q 'apps.apple.com' dist/index.html
+          test -f dist/app/index.html
+          test -f dist/404.html
 
       - name: Setup Pages
         uses: actions/configure-pages@v5

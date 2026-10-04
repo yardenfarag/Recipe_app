@@ -7,7 +7,7 @@ import { SheetModal } from '@/components/SheetModal';
 import { capturePaywallViewed, type PaywallTrigger } from '@/lib/analytics';
 import { useProfile } from '@/hooks/useProfile';
 import { useThemePreference } from '@/hooks/useThemePreference';
-import { openAppStore } from '@/lib/webIntro';
+import { openAppStore } from '@/lib/appStore';
 import {
   BEST_VALUE_PACK_ID,
   creditPurchasesOfferedHere,

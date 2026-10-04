@@ -1,15 +1,14 @@
 import '../global.css';
 
 import Constants, { ExecutionEnvironment } from 'expo-constants';
-import { Stack, usePathname } from 'expo-router';
+import { Stack } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { ShareIntentProvider } from 'expo-share-intent';
 import { useTranslation } from 'react-i18next';
-import { Platform, View } from 'react-native';
+import { Platform } from 'react-native';
 
 import { ErrorBoundary } from '@/components/ErrorBoundary';
 import { StackHeaderBackButton } from '@/components/StackHeaderBackButton';
-import { WebIntroPage } from '@/components/web-intro/WebIntroPage';
 import { AuthProvider } from '@/hooks/useAuth';
 import { LanguageProvider } from '@/hooks/useLanguagePreference';
 import { MeasurementProvider } from '@/hooks/useMeasurementPreference';
@@ -17,9 +16,7 @@ import { OnboardingProvider, useOnboarding } from '@/hooks/useOnboarding';
 import { OnboardingGate } from '@/hooks/useOnboardingGate';
 import { ShareIntentRouter } from '@/hooks/useShareIntentRouter';
 import { ThemeProvider, useThemePreference } from '@/hooks/useThemePreference';
-import { WebIntroProvider, useWebIntro } from '@/hooks/useWebIntro';
 import { I18nProvider } from '@/i18n';
-import { shouldRedirectToWebIntro } from '@/lib/webIntro';
 
 // expo-share-intent needs native code, so it can't do anything in Expo Go —
 // disabling it there avoids a console warning and pointless listener setup.
@@ -34,25 +31,12 @@ export const unstable_settings = {
 function RootNavigator() {
   const { colors, scheme } = useThemePreference();
   const { t } = useTranslation();
-  const pathname = usePathname();
   const { ready: onboardingReady } = useOnboarding();
-  const { ready: introReady, dismissed } = useWebIntro();
-  const showIntro = shouldRedirectToWebIntro({
-    isWeb: Platform.OS === 'web',
-    ready: onboardingReady && introReady,
-    dismissed,
-    pathname,
-  });
 
   return (
     <>
-      <StatusBar style={showIntro || scheme === 'dark' ? 'light' : 'dark'} />
-      {onboardingReady && introReady ? (
-        showIntro ? (
-          <View style={{ flex: 1, backgroundColor: '#070508' }}>
-            <WebIntroPage />
-          </View>
-        ) : (
+      <StatusBar style={scheme === 'dark' ? 'light' : 'dark'} />
+      {onboardingReady ? (
         <Stack
           screenOptions={{
             headerShadowVisible: false,
@@ -169,7 +153,7 @@ function RootNavigator() {
               headerLeft: (props) => (
                 <StackHeaderBackButton
                   tintColor={props.tintColor}
-                  fallback={Platform.OS === 'web' ? '/welcome' : '/settings/support'}
+                  fallback={Platform.OS === 'web' ? '/' : '/settings/support'}
                 />
               ),
             }}
@@ -178,7 +162,6 @@ function RootNavigator() {
           <Stack.Screen name="admin/users" options={{ title: t('nav.people') }} />
           <Stack.Screen name="admin/usage" options={{ title: t('nav.usage') }} />
         </Stack>
-        )
       ) : null}
     </>
   );
@@ -194,15 +177,13 @@ export default function RootLayout() {
           <I18nProvider>
             <MeasurementProvider>
               <OnboardingProvider>
-                <WebIntroProvider>
-                  <ErrorBoundary>
-                    <AuthProvider>
-                      <OnboardingGate />
-                      <ShareIntentRouter />
-                      <RootNavigator />
-                    </AuthProvider>
-                  </ErrorBoundary>
-                </WebIntroProvider>
+                <ErrorBoundary>
+                  <AuthProvider>
+                    <OnboardingGate />
+                    <ShareIntentRouter />
+                    <RootNavigator />
+                  </AuthProvider>
+                </ErrorBoundary>
               </OnboardingProvider>
             </MeasurementProvider>
           </I18nProvider>

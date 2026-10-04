@@ -13,9 +13,8 @@ type ProductEventName =
   | 'recipe_extracted'
   | 'recipe_saved'
   | 'paywall_viewed'
-  | 'onboarding_completed'
-  | 'web_intro_viewed'
-  | 'web_intro_clicked';
+  | 'onboarding_completed';
+// web_intro_viewed / web_intro_clicked come from the static landing page (landing/index.html).
 
 function capture(name: ProductEventName, properties: Record<string, string>): void {
   void insertProductEvent(name, properties);
@@ -72,20 +71,4 @@ export function captureOnboardingCompleted(properties: {
   platform: string;
 }): void {
   capture('onboarding_completed', properties);
-}
-
-export type WebIntroClick = 'app_store' | 'continue';
-
-let lastWebIntroViewAt = 0;
-
-/** One row per arrival on the public web intro. A quick remount does not count twice. */
-export function captureWebIntroViewed(): void {
-  const now = Date.now();
-  if (now - lastWebIntroViewAt < 1500) return;
-  lastWebIntroViewAt = now;
-  capture('web_intro_viewed', { page: 'intro' });
-}
-
-export function captureWebIntroClick(action: WebIntroClick): void {
-  capture('web_intro_clicked', { action });
 }
