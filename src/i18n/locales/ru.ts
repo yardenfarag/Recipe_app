@@ -553,6 +553,25 @@ export default {
     "remixSignInHint": "Под ваш вкус",
     "shoppingListChip": "+ Список покупок"
   },
+  "walkthrough": {
+    "progress": "{{current}} из {{total}}",
+    "skip": "Пропустить",
+    "next": "Далее",
+    "done": "Понятно",
+    "snapTitle": "Всё начинается со Snap",
+    "snapBody": "Вставьте ссылку на рецепт или сфотографируйте страницу кулинарной книги или рукописную карточку.",
+    "shareTitle": "Нашли рецепт в TikTok или Instagram?",
+    "shareBody": "Два способа добавить его в Pinch:",
+    "shareDirectTitle": "Поделитесь в Pinch",
+    "shareDirectBody": "Нажмите «Поделиться» и выберите Pinch — как будто отправляете другу в WhatsApp. Извлечение начнётся само.",
+    "shareDirectIosHint": "Не видите Pinch? Нажмите «Ещё» и добавьте его.",
+    "shareDirectWebHint": "Работает в приложении Pinch на телефоне.",
+    "shareCopyTitle": "Или скопируйте ссылку",
+    "shareCopyBody": "Нажмите «Поделиться», затем «Копировать ссылку», и вставьте её в Snap.",
+    "libraryTitle": "Здесь живут ваши рецепты",
+    "libraryBody": "Всё, что вы сохраните, попадает в Библиотеку — готовьте, ищите и раскладывайте по коллекциям.",
+    "illustrationShare": "Поделиться рецептом"
+  },
   "snap": {
     "title": "Забрать рецепт",
     "subtitle": "Вставьте ссылку из YouTube, Instagram, TikTok или с сайта рецептов — или сфотографируйте",

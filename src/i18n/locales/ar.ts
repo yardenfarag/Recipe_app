@@ -553,6 +553,25 @@ export default {
     "remixSignInHint": "معدّلة لك",
     "shoppingListChip": "+ قائمة السوق"
   },
+  "walkthrough": {
+    "progress": "{{current}} من {{total}}",
+    "skip": "تخطٍّ",
+    "next": "التالي",
+    "done": "فهمت",
+    "snapTitle": "كل شيء يبدأ من Snap",
+    "snapBody": "الصق رابط وصفة، أو صوّر صفحة من كتاب طبخ أو بطاقة وصفة مكتوبة بخط اليد.",
+    "shareTitle": "وجدت وصفة على TikTok أو Instagram؟",
+    "shareBody": "طريقتان لإدخالها إلى Pinch:",
+    "shareDirectTitle": "شاركها مع Pinch",
+    "shareDirectBody": "اضغط على مشاركة واختر Pinch، تمامًا كما ترسلها لصديق على WhatsApp. يبدأ الاستخراج تلقائيًا.",
+    "shareDirectIosHint": "لا ترى Pinch؟ اضغط على المزيد وأضفه.",
+    "shareDirectWebHint": "يعمل من تطبيق Pinch على هاتفك.",
+    "shareCopyTitle": "أو انسخ الرابط",
+    "shareCopyBody": "اضغط على مشاركة، ثم نسخ الرابط، والصقه في Snap.",
+    "libraryTitle": "هنا تعيش وصفاتك",
+    "libraryBody": "كل ما تحفظه يصل إلى مكتبتك، جاهزًا للطهي والبحث والترتيب في مجموعات.",
+    "illustrationShare": "مشاركة وصفة"
+  },
   "snap": {
     "title": "خذ وصفة من رابط",
     "subtitle": "الصق رابطًا من YouTube أو Instagram أو TikTok أو موقع وصفات — أو صوّر الوصفة",

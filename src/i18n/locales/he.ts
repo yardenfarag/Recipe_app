@@ -553,6 +553,25 @@ export default {
     "remixSignInHint": "מותאם בשבילכם",
     "shoppingListChip": "+ רשימת קניות"
   },
+  "walkthrough": {
+    "progress": "{{current}} מתוך {{total}}",
+    "skip": "דלג",
+    "next": "הבא",
+    "done": "הבנתי",
+    "snapTitle": "הכול מתחיל ב-Snap",
+    "snapBody": "הדביקו קישור למתכון, או צלמו עמוד מספר בישול או מתכון בכתב יד.",
+    "shareTitle": "מצאתם מתכון בטיקטוק או באינסטגרם?",
+    "shareBody": "שתי דרכים להכניס אותו ל-Pinch:",
+    "shareDirectTitle": "שתפו ל-Pinch",
+    "shareDirectBody": "הקישו על שיתוף ובחרו ב-Pinch, בדיוק כמו ששולחים לחבר בוואטסאפ. החילוץ מתחיל לבד.",
+    "shareDirectIosHint": "לא רואים את Pinch? הקישו על עוד והוסיפו אותו.",
+    "shareDirectWebHint": "עובד מאפליקציית Pinch בטלפון.",
+    "shareCopyTitle": "או העתיקו את הקישור",
+    "shareCopyBody": "הקישו על שיתוף, אחר כך על העתקת קישור, והדביקו ב-Snap.",
+    "libraryTitle": "כאן גרים המתכונים שלכם",
+    "libraryBody": "כל מה שתשמרו מגיע לספרייה, מוכן לבישול, לחיפוש ולסידור באוספים.",
+    "illustrationShare": "שיתוף מתכון"
+  },
   "snap": {
     "title": "שליפת מתכון",
     "subtitle": "מדביקים קישור מ־YouTube, Instagram, TikTok או מאתר מתכונים — או מצלמים",

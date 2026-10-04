@@ -553,6 +553,25 @@ export default {
     "remixSignInHint": "Adaptada para ti",
     "shoppingListChip": "+ Lista de compras"
   },
+  "walkthrough": {
+    "progress": "{{current}} de {{total}}",
+    "skip": "Omitir",
+    "next": "Siguiente",
+    "done": "Entendido",
+    "snapTitle": "Todo empieza en Snap",
+    "snapBody": "Pega el enlace de una receta o haz una foto de un libro de cocina o de una receta escrita a mano.",
+    "shareTitle": "¿Viste una receta en TikTok o Instagram?",
+    "shareBody": "Dos formas de traerla a Pinch:",
+    "shareDirectTitle": "Compártela con Pinch",
+    "shareDirectBody": "Toca Compartir y elige Pinch, como si se la enviaras a un amigo por WhatsApp. La extracción empieza sola.",
+    "shareDirectIosHint": "¿No ves Pinch? Toca Más y añádelo.",
+    "shareDirectWebHint": "Funciona desde la app de Pinch en tu móvil.",
+    "shareCopyTitle": "O copia el enlace",
+    "shareCopyBody": "Toca Compartir, luego Copiar enlace, y pégalo en Snap.",
+    "libraryTitle": "Aquí viven tus recetas",
+    "libraryBody": "Todo lo que guardes llega a tu Biblioteca, listo para cocinar, buscar y ordenar en colecciones.",
+    "illustrationShare": "Compartir receta"
+  },
   "snap": {
     "title": "Sacar una receta",
     "subtitle": "Pega un enlace de YouTube, Instagram, TikTok o de una web de recetas — o saca una foto",

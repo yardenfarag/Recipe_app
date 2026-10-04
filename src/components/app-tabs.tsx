@@ -1,11 +1,13 @@
 import Ionicons from '@expo/vector-icons/Ionicons';
-import { Tabs } from 'expo-router';
+import { Tabs, useSegments } from 'expo-router';
 import { useTranslation } from 'react-i18next';
 import { View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
+import { FirstRunWalkthrough } from '@/components/onboarding/FirstRunWalkthrough';
 import { WebSidebar } from '@/components/WebSidebar';
 import { useBreakpoint } from '@/hooks/useBreakpoint';
+import { useOnboarding } from '@/hooks/useOnboarding';
 import { useThemePreference } from '@/hooks/useThemePreference';
 
 const TAB_BAR_CONTENT_HEIGHT = 56;
@@ -21,6 +23,7 @@ const TAB_BAR_CONTENT_HEIGHT = 56;
  * Order: Library · Hub · Snap · List · Settings.
  * Favorites lives as a Library filter — tab hidden via href: null.
  * On wide viewports, bottom tabs hide and WebSidebar takes over.
+ * Right after onboarding, FirstRunWalkthrough coaches over the bottom tab bar.
  */
 export default function AppTabs() {
   const { t } = useTranslation();
@@ -28,6 +31,10 @@ export default function AppTabs() {
   const insets = useSafeAreaInsets();
   const { isWide } = useBreakpoint();
   const tabBarPaddingBottom = Math.max(insets.bottom, 8);
+  const { walkthroughPending, finishWalkthrough } = useOnboarding();
+  const segments = useSegments();
+  // Tabs stay mounted under pushed screens; only coach while a tab is showing.
+  const showWalkthrough = walkthroughPending && !isWide && segments[0] === '(tabs)';
 
   const tabs = (
     <Tabs
@@ -126,7 +133,18 @@ export default function AppTabs() {
   );
 
   if (!isWide) {
-    return tabs;
+    return (
+      <>
+        {tabs}
+        {showWalkthrough ? (
+          <FirstRunWalkthrough
+            tabBarHeight={TAB_BAR_CONTENT_HEIGHT + tabBarPaddingBottom}
+            tabBarPaddingBottom={tabBarPaddingBottom}
+            onFinish={() => void finishWalkthrough()}
+          />
+        ) : null}
+      </>
+    );
   }
 
   return (

@@ -553,6 +553,25 @@ export default {
     "remixSignInHint": "Adapted for you",
     "shoppingListChip": "+ Shopping list"
   },
+  "walkthrough": {
+    "progress": "{{current}} of {{total}}",
+    "skip": "Skip",
+    "next": "Next",
+    "done": "Got it",
+    "snapTitle": "Snap starts here",
+    "snapBody": "Paste a recipe link, or snap a photo of a cookbook page or a handwritten card.",
+    "shareTitle": "Found a recipe on TikTok or Instagram?",
+    "shareBody": "Two ways to bring it into Pinch:",
+    "shareDirectTitle": "Share it to Pinch",
+    "shareDirectBody": "Tap Share and pick Pinch, just like sending it to a friend on WhatsApp. Extraction starts on its own.",
+    "shareDirectIosHint": "Don’t see Pinch? Tap More and add it.",
+    "shareDirectWebHint": "Works from the Pinch app on your phone.",
+    "shareCopyTitle": "Or copy the link",
+    "shareCopyBody": "Tap Share, then Copy link, and paste it on Snap.",
+    "libraryTitle": "Your recipes live here",
+    "libraryBody": "Everything you save lands in your Library, ready to cook, search, and sort into collections.",
+    "illustrationShare": "Share recipe"
+  },
   "snap": {
     "title": "Snap a recipe",
     "subtitle": "Paste a YouTube, Instagram, TikTok, or recipe website link — or snap a photo",

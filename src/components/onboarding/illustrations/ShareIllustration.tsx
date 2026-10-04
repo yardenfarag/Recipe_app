@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { AccessibilityInfo, Text, View } from 'react-native';
 import Animated, {
   Easing,
@@ -15,6 +16,7 @@ import { useThemePreference } from '@/hooks/useThemePreference';
 
 /** Share sheet card sliding into Pinch. */
 export function ShareIllustration() {
+  const { t } = useTranslation();
   const { colors } = useThemePreference();
   const [reduceMotion, setReduceMotion] = useState(false);
   const offset = useSharedValue(18);
@@ -87,7 +89,7 @@ export function ShareIllustration() {
             ]}
           >
             <Text style={{ fontSize: 11, fontWeight: '700', color: colors.primary }}>
-              Share recipe
+              {t('walkthrough.illustrationShare')}
             </Text>
             <Text style={{ marginTop: 4, fontSize: 10, color: colors.textSecondary }}>
               TikTok · Instagram · YouTube
