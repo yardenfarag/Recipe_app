@@ -1,8 +1,8 @@
 import Ionicons from "@expo/vector-icons/Ionicons";
 import Constants, { ExecutionEnvironment } from "expo-constants";
-import { router } from "expo-router";
+import { router, useFocusEffect } from "expo-router";
 import { useShareIntentContext } from "expo-share-intent";
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { Alert, Platform, Pressable, Text, View } from "react-native";
 import Animated, {
@@ -52,6 +52,7 @@ import {
   type RecipeEntrySource,
 } from "@/lib/analytics";
 import { setRecipeDraft } from "@/lib/recipeDraft";
+import { resolveShareIntentAction } from "@/lib/shareIntentGate";
 import { recipeIsInvented } from "@/lib/recipeOrigin";
 import type {
   ExtractResult,
@@ -78,6 +79,10 @@ type InventFollowUp =
   | { kind: "photo"; base64: string; mimeType: string; source: RecipeEntrySource }
   | { kind: "url"; url: string; source: RecipeEntrySource };
 
+type PendingShare =
+  | { kind: "image"; path: string }
+  | { kind: "url"; url: string };
+
 // Share → Pinch needs native share-intent code (ADR 010); Expo Go can't receive it.
 const isExpoGo =
   Constants.executionEnvironment === ExecutionEnvironment.StoreClient;
@@ -102,7 +107,9 @@ export default function AddRecipeScreen() {
   } | null>(null);
   const { hasShareIntent, shareIntent, resetShareIntent } =
     useShareIntentContext();
-  const { user } = useAuth();
+  const { user, loading: authLoading } = useAuth();
+  const consumedShareRef = useRef<string | null>(null);
+  const pendingShareRef = useRef<PendingShare | null>(null);
   const {
     freeExtractsRemaining,
     purchasedCredits,
@@ -141,37 +148,96 @@ export default function AddRecipeScreen() {
     return () => clearInterval(id);
   }, [loading, jobKind]);
 
-  useEffect(() => {
-    if (!hasShareIntent) return;
+  function runSharedRecipe(share: PendingShare) {
+    if (share.kind === "image") {
+      void handleSharedImage(share.path);
+      return;
+    }
+    setUrl(share.url);
+    void handleGetRecipe(share.url, "extract", "share");
+  }
 
-    const files = shareIntent.files;
-    const imageFile = files?.find((file) =>
-      (file.mimeType ?? "").startsWith("image/"),
-    );
-    if (imageFile?.path) {
-      resetShareIntent();
-      void handleSharedImage(imageFile.path);
+  // Back on Snap still signed out means the guest closed sign-up. Drop the
+  // held share so a much later sign-in doesn't start it out of nowhere.
+  // Declared before the share effect so on mount it runs first and can't
+  // clear a share that was just held.
+  useFocusEffect(
+    useCallback(() => {
+      if (!authLoading && !user) pendingShareRef.current = null;
+    }, [authLoading, user]),
+  );
+
+  useEffect(() => {
+    if (!hasShareIntent) {
+      consumedShareRef.current = null;
       return;
     }
 
+    const files = shareIntent.files;
+    const imagePath = files?.find((file) =>
+      (file.mimeType ?? "").startsWith("image/"),
+    )?.path;
     // Wait until the payload is present — on Android hasShareIntent can flip
     // true a tick before webUrl/text are hydrated; resetting early drops the share.
     const raw = shareIntent.webUrl ?? shareIntent.text ?? "";
-    if (!raw.trim()) return;
+    const shareKey = imagePath ? `image:${imagePath}` : raw.trim();
 
-    const sharedUrl = normalizeSocialUrl(raw);
+    // On a cold start auth is still hydrating, so `user` is null even for a
+    // signed-in user. Wait for it rather than consuming the share into a
+    // sign-up prompt.
+    const action = resolveShareIntentAction({
+      authLoading,
+      signedIn: !!user,
+      hasPayload: !!shareKey,
+    });
+    if (action === "wait") return;
+
+    // resetShareIntent() lands on a later render; don't take the same share twice.
+    if (consumedShareRef.current === shareKey) return;
+    consumedShareRef.current = shareKey;
     resetShareIntent();
-    if (sharedUrl) {
-      setUrl(sharedUrl);
-      void handleGetRecipe(sharedUrl, "extract", "share");
+
+    let share: PendingShare;
+    if (imagePath) {
+      share = { kind: "image", path: imagePath };
     } else {
-      setBanner({
-        kind: "error",
-        message: t("snap.invalidShare"),
-      });
+      const sharedUrl = normalizeSocialUrl(raw);
+      if (!sharedUrl) {
+        setBanner({
+          kind: "error",
+          message: t("snap.invalidShare"),
+        });
+        return;
+      }
+      share = { kind: "url", url: sharedUrl };
     }
+
+    if (action === "require_account") {
+      // Hold the share through sign-up; the effect below resumes it.
+      pendingShareRef.current = share;
+      if (share.kind === "url") setUrl(share.url);
+      requireAccount();
+      return;
+    }
+
+    runSharedRecipe(share);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [hasShareIntent, shareIntent.webUrl, shareIntent.text, shareIntent.files]);
+  }, [
+    hasShareIntent,
+    shareIntent.webUrl,
+    shareIntent.text,
+    shareIntent.files,
+    authLoading,
+    user,
+  ]);
+
+  useEffect(() => {
+    const share = pendingShareRef.current;
+    if (!user || !share) return;
+    pendingShareRef.current = null;
+    runSharedRecipe(share);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [user]);
 
   function promptGuestExtractLimit() {
     router.push("/auth?mode=signup&reason=extract_limit");

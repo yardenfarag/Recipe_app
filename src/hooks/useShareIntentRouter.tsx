@@ -2,6 +2,7 @@ import { router, usePathname } from 'expo-router';
 import { useShareIntentContext } from 'expo-share-intent';
 import { useEffect } from 'react';
 
+import { useAuth } from '@/hooks/useAuth';
 import { useOnboarding } from '@/hooks/useOnboarding';
 
 /**
@@ -15,11 +16,13 @@ export function ShareIntentRouter() {
   const { hasShareIntent } = useShareIntentContext();
   const pathname = usePathname();
   const { ready, completed } = useOnboarding();
+  // Wait for the session to hydrate so Snap sees the real user on cold start.
+  const { loading: authLoading } = useAuth();
 
   useEffect(() => {
-    if (!hasShareIntent || !ready || !completed) return;
+    if (!hasShareIntent || !ready || !completed || authLoading) return;
     if (pathname !== '/add') router.replace('/add');
-  }, [hasShareIntent, ready, completed, pathname]);
+  }, [hasShareIntent, ready, completed, authLoading, pathname]);
 
   return null;
 }
