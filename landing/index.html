@@ -556,7 +556,20 @@
           } catch (e) {}
         }
 
-        capture('web_intro_viewed', { page: 'intro' });
+        // Campaign tags, e.g. from "Share Pinch" in the app.
+        function visitProperties() {
+          var properties = { page: 'intro' };
+          try {
+            var params = new URLSearchParams(window.location.search);
+            ['utm_source', 'utm_medium', 'utm_campaign', 'utm_content'].forEach(function (key) {
+              var value = params.get(key);
+              if (value) properties[key] = value.slice(0, 64);
+            });
+          } catch (e) {}
+          return properties;
+        }
+
+        capture('web_intro_viewed', visitProperties());
         var links = document.querySelectorAll('[data-track]');
         for (var i = 0; i < links.length; i++) {
           links[i].addEventListener('click', function (event) {
