@@ -92,10 +92,15 @@ async function main() {
     .png()
     .toFile(path.join(images, 'splash-icon.png'));
 
-  const favCookie = await cookiePng(36);
-  await sharp({
-    create: { width: 48, height: 48, channels: 4, background: BG },
-  })
+  // Favicon: white cookie on a rounded brand tile, transparent corners.
+  // 96px (a multiple of 48) stays crisp on retina tabs and meets Google's
+  // search-result favicon size rules.
+  const FAV = 96;
+  const favCookie = await cookiePng(64, '#FFFFFF');
+  const favTile = Buffer.from(
+    `<svg xmlns="http://www.w3.org/2000/svg" width="${FAV}" height="${FAV}"><rect width="${FAV}" height="${FAV}" rx="${FAV * 0.25}" fill="${PRIMARY}"/></svg>`,
+  );
+  await sharp(favTile)
     .composite([{ input: favCookie, gravity: 'centre' }])
     .png()
     .toFile(path.join(images, 'favicon.png'));
