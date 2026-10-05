@@ -1,7 +1,6 @@
 import { useState } from 'react';
 import {
   ActivityIndicator,
-  Alert,
   KeyboardAvoidingView,
   Platform,
   Pressable,
@@ -13,6 +12,7 @@ import { useTranslation } from 'react-i18next';
 import { SheetModal } from '@/components/SheetModal';
 import { TextInput } from '@/components/text-input';
 import { useThemePreference } from '@/hooks/useThemePreference';
+import { showNotice } from '@/lib/confirmAction';
 import {
   FEEDBACK_MAX_LENGTH,
   FEEDBACK_MIN_LENGTH,
@@ -38,9 +38,10 @@ export function FeedbackModal({ visible, onClose }: FeedbackModalProps) {
       await submitFeedback({ message, locale: i18n.language ?? null });
       setMessage('');
       onClose();
-      Alert.alert(t('feedback.sentTitle'), t('feedback.sentBody'));
+      void showNotice(t('feedback.sentTitle'), t('feedback.sentBody'));
     } catch (err) {
-      Alert.alert(
+      console.warn('[feedback] submit failed', err);
+      void showNotice(
         t('feedback.sendFailed'),
         err instanceof Error ? err.message : t('common.tryAgain'),
       );
