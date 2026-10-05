@@ -79,5 +79,8 @@ describe('landing page', () => {
     const filled = fillSupabaseConfig(landing, 'https://x.supabase.co/', 'key');
     expect(filled).toContain("var SUPABASE_URL = 'https://x.supabase.co';");
     expect(filled).toContain("var SUPABASE_KEY = 'key';");
+    const padded = fillSupabaseConfig(landing, 'https://x.supabase.co\n', ' key\r\n');
+    expect(padded).toContain("var SUPABASE_URL = 'https://x.supabase.co';");
+    expect(padded).toContain("var SUPABASE_KEY = 'key';");
   });
 });

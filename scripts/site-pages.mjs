@@ -97,7 +97,9 @@ export function buildLanding(landingHtml, contentDir) {
 // The landing page's tracking and support form talk to Supabase with the public key.
 // Left as placeholders, both are off and Support falls back to email.
 export function fillSupabaseConfig(html, url, key) {
-  const supabaseUrl = (url ?? '').replace(/\/$/, '');
-  if (!supabaseUrl || !key) return html;
-  return html.replace('__SUPABASE_URL__', supabaseUrl).replace('__SUPABASE_KEY__', key);
+  // Trimmed: a secret saved with a trailing newline breaks the JS string and blanks the page.
+  const supabaseUrl = (url ?? '').trim().replace(/\/$/, '');
+  const supabaseKey = (key ?? '').trim();
+  if (!supabaseUrl || !supabaseKey) return html;
+  return html.replace('__SUPABASE_URL__', supabaseUrl).replace('__SUPABASE_KEY__', supabaseKey);
 }
