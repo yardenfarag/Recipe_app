@@ -6,7 +6,7 @@
     <title>Pinch: Save Recipes from TikTok, Instagram &amp; YouTube</title>
     <meta
       name="description"
-      content="Pinch is a recipe keeper app that turns TikTok, Instagram, and YouTube cooking videos into written recipes, with ingredients, steps, and a shopping list."
+      content="Pinch is a recipe keeper app that turns TikTok, Instagram, and YouTube cooking videos into written recipes, with ingredients, steps, and a shopping list. It reads the whole video, not just the caption."
     />
     <link rel="canonical" href="https://pinch-app.io/" />
     <link rel="icon" type="image/png" href="/favicon.png" />
@@ -72,7 +72,7 @@
             "name": "Is Pinch free?",
             "acceptedAnswer": {
               "@type": "Answer",
-              "text": "Yes. A free account includes 15 recipe extractions every month. If you need more, you can buy recipe credits in the app. Purchased credits never expire."
+              "text": "Yes. A free account includes 3 recipe credits every month. If you need more, you can buy recipe credits in the app. They never expire, and there's no subscription."
             }
           },
           {
@@ -80,7 +80,15 @@
             "name": "Can I use Pinch without the app?",
             "acceptedAnswer": {
               "@type": "Answer",
-              "text": "Yes. Pinch also runs in your browser at pinch-app.io/app. Your library syncs when you sign in with the same account."
+              "text": "Yes. Pinch also runs in your browser at pinch-app.io/app, including on Android phones. Your library syncs when you sign in with the same account."
+            }
+          },
+          {
+            "@type": "Question",
+            "name": "Can I move my recipes from another app?",
+            "acceptedAnswer": {
+              "@type": "Answer",
+              "text": "Yes, one recipe at a time. Paste the original link, from a website or a video, and Pinch saves it to your library."
             }
           },
           {
@@ -95,265 +103,11 @@
       }
     </script>
 
-    <style>
-      :root {
-        --pink: #c45b7a;
-        /* App pink, deepened so white button text passes 4.5:1. */
-        --pink-button: #b24f6d;
-        --pink-bright: #f0a8c4;
-        --night: #070508;
-        --cream: #f7f2f4;
-        --muted: #c3b0b8;
-        --line: rgba(232, 168, 188, 0.22);
-        --glass: rgba(255, 255, 255, 0.045);
-        --well: rgba(196, 91, 122, 0.2);
-        color-scheme: dark;
-        font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", system-ui, Roboto, sans-serif;
-      }
-      * {
-        box-sizing: border-box;
-      }
-      body {
-        margin: 0;
-        min-height: 100vh;
-        color: var(--cream);
-        background:
-          radial-gradient(560px 560px at 0% 0%, rgba(196, 91, 122, 0.28), transparent 70%),
-          radial-gradient(440px 440px at 100% 8%, rgba(240, 168, 196, 0.12), transparent 70%),
-          radial-gradient(420px 420px at 10% 100%, rgba(90, 28, 52, 0.34), transparent 70%),
-          linear-gradient(#140910, var(--night) 42%, #09070a);
-        background-attachment: fixed;
-        line-height: 1.5;
-      }
-      a {
-        color: inherit;
-      }
-      .wrap {
-        max-width: 980px;
-        margin: 0 auto;
-        padding: 0 24px;
-      }
-      header.top {
-        display: flex;
-        justify-content: center;
-        align-items: center;
-        gap: 10px;
-        padding-top: 48px;
-        font-size: 22px;
-        font-weight: 700;
-        letter-spacing: -0.4px;
-      }
-      header.top svg {
-        width: 28px;
-        height: 28px;
-        fill: var(--pink);
-      }
-      .hero {
-        text-align: center;
-        max-width: 760px;
-        margin: 0 auto;
-      }
-      .tagline {
-        margin: 40px 0 0;
-        font-size: 15px;
-        font-weight: 700;
-        letter-spacing: 0.4px;
-        color: var(--pink-bright);
-      }
-      h1 {
-        margin: 12px 0 0;
-        font-size: clamp(36px, 6.5vw, 56px);
-        line-height: 1.1;
-        letter-spacing: -1.6px;
-      }
-      h1 span {
-        color: var(--pink-bright);
-      }
-      .lede {
-        margin: 18px auto 0;
-        max-width: 540px;
-        font-size: 18px;
-        line-height: 28px;
-        color: var(--muted);
-      }
-      .actions {
-        display: flex;
-        flex-wrap: wrap;
-        justify-content: center;
-        gap: 12px;
-        margin-top: 32px;
-      }
-      .btn {
-        display: inline-flex;
-        align-items: center;
-        justify-content: center;
-        gap: 10px;
-        min-height: 56px;
-        min-width: 220px;
-        padding: 0 18px;
-        border-radius: 14px;
-        font-weight: 700;
-        font-size: 16px;
-        text-decoration: none;
-      }
-      .btn:hover {
-        opacity: 0.9;
-      }
-      .btn-store {
-        background: #fff;
-        color: #000;
-      }
-      .btn-store svg {
-        width: 22px;
-        height: 22px;
-      }
-      .btn-store small {
-        display: block;
-        font-size: 11px;
-        font-weight: 400;
-        letter-spacing: 0.2px;
-      }
-      .btn-store b {
-        display: block;
-        line-height: 1.1;
-      }
-      .btn-web {
-        background: var(--pink-button);
-        color: #fff;
-      }
-      section {
-        margin-top: 96px;
-      }
-      h2 {
-        margin: 0;
-        text-align: center;
-        font-size: clamp(32px, 5vw, 40px);
-        line-height: 1.15;
-        letter-spacing: -0.8px;
-      }
-      .sub {
-        margin: 12px 0 0;
-        text-align: center;
-        font-size: 17px;
-        color: var(--muted);
-      }
-      .features {
-        display: grid;
-        grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
-        gap: 16px;
-        margin: 32px 0 0;
-        padding: 0;
-        list-style: none;
-      }
-      .card {
-        border: 1px solid var(--line);
-        border-radius: 20px;
-        background: var(--glass);
-        padding: 22px;
-      }
-      .card .icon {
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        width: 40px;
-        height: 40px;
-        border-radius: 14px;
-        background: var(--well);
-        color: var(--pink-bright);
-        font-size: 20px;
-      }
-      .card h3 {
-        margin: 16px 0 0;
-        font-size: 18px;
-      }
-      .card p {
-        margin: 8px 0 0;
-        font-size: 15px;
-        line-height: 22px;
-        color: var(--muted);
-      }
-      .steps {
-        counter-reset: step;
-        max-width: 640px;
-        margin: 32px auto 0;
-        padding: 0;
-        list-style: none;
-      }
-      .steps li {
-        counter-increment: step;
-        position: relative;
-        padding: 0 0 20px 52px;
-        font-size: 17px;
-        color: var(--muted);
-      }
-      .steps li::before {
-        content: counter(step);
-        position: absolute;
-        left: 0;
-        top: -4px;
-        width: 36px;
-        height: 36px;
-        border-radius: 50%;
-        background: var(--well);
-        color: var(--pink-bright);
-        font-weight: 700;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-      }
-      .steps strong {
-        color: var(--cream);
-      }
-      .faq {
-        max-width: 720px;
-        margin: 32px auto 0;
-        display: grid;
-        gap: 12px;
-      }
-      .faq details {
-        padding: 0;
-      }
-      .faq summary {
-        cursor: pointer;
-        padding: 18px 22px;
-        font-size: 17px;
-        font-weight: 700;
-      }
-      .faq details p {
-        margin: 0;
-        padding: 0 22px 20px;
-        font-size: 15px;
-        line-height: 24px;
-        color: var(--muted);
-      }
-      .cta {
-        text-align: center;
-      }
-      footer {
-        margin: 96px 0 0;
-        padding-bottom: 48px;
-        text-align: center;
-        font-size: 14px;
-        color: var(--muted);
-      }
-      footer nav {
-        display: flex;
-        flex-wrap: wrap;
-        justify-content: center;
-        gap: 8px 20px;
-        margin-bottom: 14px;
-      }
-      footer a {
-        display: inline-block;
-        padding: 6px 2px;
-        font-weight: 600;
-        color: var(--muted);
-        text-decoration: none;
-      }
-      footer a:hover {
-        color: var(--cream);
-      }
-    </style>
+    <script>
+      // Lets the stylesheet hide scroll-in elements only when the script that reveals them runs.
+      document.documentElement.classList.add('js');
+    </script>
+    <link rel="stylesheet" href="/site.css" />
   </head>
   <body>
     <header class="top wrap">
@@ -367,54 +121,83 @@
 
     <main class="wrap">
       <div class="hero">
-        <p class="tagline">See it. Snap it. Cook it.</p>
-        <h1>Save recipes from <span>TikTok, Instagram &amp; YouTube</span></h1>
-        <p class="lede">
-          Share a cooking video to Pinch. It pulls out the ingredients and steps, builds your
-          shopping list, and keeps the recipe in your kitchen.
+        <p class="tagline reveal">See it. Snap it. Cook it.</p>
+        <h1 class="reveal">Save recipes from <span>TikTok, Instagram &amp; YouTube</span></h1>
+        <p class="lede reveal">
+          Turn any cooking video into a recipe you can actually cook from. Ingredients, steps,
+          and a shopping list, all in one place.
         </p>
-        <div class="actions">
+        <div class="actions reveal">
           <a
-            class="btn btn-store"
+            class="btn btn-store btn-apple"
             data-track="app_store"
             href="https://apps.apple.com/us/app/pinch-recipe-library/id6796310453"
+            aria-label="Download on the App Store"
           >
             <svg viewBox="0 0 24 24" aria-hidden="true">
               <path
                 d="M16.37 12.6c-.02-2.3 1.88-3.4 1.97-3.46-1.07-1.57-2.74-1.78-3.33-1.8-1.42-.15-2.77.83-3.49.83-.72 0-1.83-.81-3.01-.79-1.55.02-2.98.9-3.78 2.29-1.61 2.8-.41 6.94 1.16 9.2.77 1.11 1.68 2.36 2.88 2.31 1.16-.05 1.59-.75 2.99-.75 1.4 0 1.79.75 3.01.72 1.24-.02 2.03-1.13 2.79-2.25.88-1.29 1.24-2.53 1.26-2.6-.03-.01-2.42-.93-2.45-3.7zM14.08 5.85c.64-.77 1.07-1.85.95-2.92-.92.04-2.03.61-2.69 1.38-.59.68-1.11 1.77-.97 2.82 1.03.08 2.07-.52 2.71-1.28z"
               />
             </svg>
-            <span><small>Download on the</small><b>App Store</b></span>
           </a>
           <a class="btn btn-web" data-track="continue" href="/app/">Continue on the web</a>
         </div>
       </div>
 
       <section aria-labelledby="features">
-        <h2 id="features">A recipe organizer for the videos you cook from</h2>
-        <p class="sub">The recipe, the list, and the video, kept in one kitchen.</p>
+        <h2 id="features" class="reveal">A recipe organizer for the videos you cook from</h2>
+        <p class="sub reveal">The recipe, the list, and the video, kept in one kitchen.</p>
         <ul class="features">
-          <li class="card">
+          <li class="card reveal">
             <div class="icon" aria-hidden="true">✦</div>
             <h3>Save TikTok and Instagram recipes</h3>
             <p>Share a TikTok or an Instagram Reel to Pinch, or paste the link yourself.</p>
           </li>
-          <li class="card">
+          <li class="card reveal">
             <div class="icon" aria-hidden="true">▤</div>
             <h3>YouTube video to recipe</h3>
             <p>Get the ingredients and steps written out. No more pausing and rewinding.</p>
           </li>
-          <li class="card">
-            <div class="icon" aria-hidden="true">✓</div>
-            <h3>Recipe to shopping list</h3>
-            <p>Send the ingredients to a list you can check off at the store.</p>
+          <li class="card reveal">
+            <div class="icon" aria-hidden="true">◉</div>
+            <h3>The whole recipe, every time</h3>
+            <p>
+              Even when the amounts are only said out loud or flashed on screen, Pinch writes them
+              down.
+            </p>
           </li>
-          <li class="card">
+          <li class="card reveal">
             <div class="icon" aria-hidden="true">▶</div>
             <h3>Cook along</h3>
-            <p>Keep the source video beside the steps while you cook.</p>
+            <p>Keep the source video beside the steps, or follow a step-by-step cook mode with timers.</p>
           </li>
-          <li class="card">
+          <li class="card reveal">
+            <div class="icon" aria-hidden="true">✓</div>
+            <h3>A shopping list that knows your pantry</h3>
+            <p>
+              Ingredients from several recipes stack into one line, grouped by aisle. Staples you
+              always have stay off.
+            </p>
+          </li>
+          <li class="card reveal">
+            <div class="icon" aria-hidden="true">❄</div>
+            <h3>What's in the fridge?</h3>
+            <p>Snap your fridge and Pinch ranks the recipes you already saved by what you have.</p>
+          </li>
+          <li class="card reveal">
+            <div class="icon" aria-hidden="true">↻</div>
+            <h3>Make it yours</h3>
+            <p>
+              Remix any recipe (healthier, vegetarian, gluten-free, and more), swap an ingredient,
+              scale servings, or translate it.
+            </p>
+          </li>
+          <li class="card reveal">
+            <div class="icon" aria-hidden="true">▣</div>
+            <h3>Websites and cookbooks too</h3>
+            <p>Paste a recipe website link, or snap a cookbook page or a handwritten card.</p>
+          </li>
+          <li class="card reveal">
             <div class="icon" aria-hidden="true">❏</div>
             <h3>Your recipe library</h3>
             <p>Keep every saved recipe in one place and group them for dinner, baking, or easy weeknights.</p>
@@ -423,21 +206,58 @@
       </section>
 
       <section aria-labelledby="how">
-        <h2 id="how">How to save a recipe from a video</h2>
+        <h2 id="how" class="reveal">How to save a recipe from a video</h2>
         <ol class="steps">
-          <li><strong>Find a recipe video.</strong> On TikTok, Instagram Reels, or YouTube.</li>
-          <li><strong>Share it to Pinch.</strong> Or copy the link and paste it in.</li>
-          <li>
+          <li class="reveal"><strong>Find a recipe video.</strong> On TikTok, Instagram Reels, or YouTube.</li>
+          <li class="reveal"><strong>Share it to Pinch.</strong> Or copy the link and paste it in.</li>
+          <li class="reveal">
             <strong>Get the recipe.</strong> Pinch's AI writes out the ingredients and steps, adds
             a shopping list, and saves it to your library.
           </li>
         </ol>
       </section>
 
+      <section aria-labelledby="compare">
+        <h2 id="compare" class="reveal">How Pinch compares</h2>
+        <p class="sub reveal">Built for the recipes that live in videos.</p>
+        <div class="compare-wrap reveal">
+          <div class="table-scroll">
+            <table class="compare">
+              <thead>
+                <tr><th><span hidden>Feature</span></th><th>Pinch</th><th>Paprika</th><th>Mela</th><th>ReciMe</th><th>Samsung Food</th></tr>
+              </thead>
+              <tbody>
+                <tr><td>Save from TikTok, Instagram &amp; YouTube</td><td class="yes">✓</td><td class="no">✗*</td><td class="yes">✓</td><td class="yes">✓</td><td class="na">–</td></tr>
+                <tr><td>Gets recipes that are only said out loud</td><td class="yes">✓</td><td class="no">✗</td><td class="no">✗</td><td class="yes">✓</td><td class="na">–</td></tr>
+                <tr><td>Gets recipes that are only shown on screen</td><td class="yes">✓</td><td class="no">✗</td><td class="no">✗</td><td class="na">–</td><td class="na">–</td></tr>
+                <tr><td>Finds the "recipe in the comments"</td><td class="yes">✓</td><td class="no">✗</td><td class="no">✗</td><td class="na">–</td><td class="na">–</td></tr>
+                <tr><td>Save from recipe websites</td><td class="yes">✓</td><td class="yes">✓</td><td class="yes">✓</td><td class="yes">✓</td><td class="yes">✓</td></tr>
+                <tr><td>Photos of cookbook pages</td><td class="yes">✓</td><td class="no">✗*</td><td class="yes">✓</td><td class="yes">✓</td><td class="yes">✓</td></tr>
+                <tr><td>Shopping list from your recipes</td><td class="yes">✓</td><td class="yes">✓</td><td class="yes">✓</td><td class="yes">✓</td><td class="yes">✓</td></tr>
+                <tr><td>Works in your browser</td><td class="yes">✓</td><td class="no">✗</td><td class="no">✗</td><td class="yes">✓</td><td class="yes">✓</td></tr>
+              </tbody>
+            </table>
+          </div>
+          <p class="footnote">
+            ✓ Yes · ✗ No · – Not mentioned by the app's maker. * Paprika 3. Paprika 4, in beta since
+            September 2026, adds social and photo import. Based on each app's website, help pages,
+            and App Store listing, checked October 2026.
+          </p>
+        </div>
+      </section>
+
+      <section aria-labelledby="guides">
+        <h2 id="guides" class="reveal">Recipe guides</h2>
+        <p class="sub reveal">Save, organize, and shop for the recipes in your feed.</p>
+        <div class="guides">
+          <!-- GUIDES -->
+        </div>
+      </section>
+
       <section aria-labelledby="faq">
-        <h2 id="faq">Frequently asked questions</h2>
+        <h2 id="faq" class="reveal">Frequently asked questions</h2>
         <div class="faq">
-          <details class="card" open>
+          <details class="card reveal" open>
             <summary>What does Pinch do?</summary>
             <p>
               Pinch reads a cooking video from TikTok, Instagram, or YouTube and turns it into a
@@ -445,36 +265,43 @@
               store.
             </p>
           </details>
-          <details class="card">
+          <details class="card reveal">
             <summary>Can Pinch turn a YouTube video into a recipe?</summary>
             <p>
               Yes. Paste a YouTube link and Pinch's AI recipe extractor writes out the ingredients
               and steps, so you don't have to pause and rewind while you cook.
             </p>
           </details>
-          <details class="card">
+          <details class="card reveal">
             <summary>How do I save a recipe from TikTok or Instagram?</summary>
             <p>
               Tap Share on the video and pick Pinch, or copy the link and paste it into Pinch.
               Preview the recipe, then tap save to keep it in your library.
             </p>
           </details>
-          <details class="card">
+          <details class="card reveal">
             <summary>Is Pinch free?</summary>
             <p>
-              Yes. A free account includes 15 recipe extractions every month. If you need more,
-              you can buy recipe credits in the app. Purchased credits never expire.
+              Yes. A free account includes 3 recipe credits every month. If you need more, you can
+              buy recipe credits in the app. They never expire, and there's no subscription.
             </p>
           </details>
-          <details class="card">
+          <details class="card reveal">
             <summary>Can I use Pinch without the app?</summary>
             <p>
               Yes. Pinch also runs in your browser at
-              <a href="/app/">pinch-app.io/app</a>. Your library syncs when you sign in with the
-              same account.
+              <a href="/app/">pinch-app.io/app</a>, including on Android phones. Your library syncs
+              when you sign in with the same account.
             </p>
           </details>
-          <details class="card">
+          <details class="card reveal">
+            <summary>Can I move my recipes from another app?</summary>
+            <p>
+              Yes, one recipe at a time. Paste the original link, from a website or a video, and
+              Pinch saves it to your library.
+            </p>
+          </details>
+          <details class="card reveal">
             <summary>Which languages does Pinch support?</summary>
             <p>Pinch is available in English, Spanish, Hebrew, Arabic, and Russian.</p>
           </details>
@@ -482,14 +309,20 @@
       </section>
 
       <section class="cta" aria-labelledby="start">
-        <h2 id="start">Your next dinner is already in your feed.</h2>
-        <div class="actions">
+        <h2 id="start" class="reveal">Your next dinner is already in your feed.</h2>
+        <p class="sub reveal">3 free recipe credits every month. Extra credits never expire.</p>
+        <div class="actions reveal">
           <a
-            class="btn btn-store"
+            class="btn btn-store btn-apple"
             data-track="app_store"
             href="https://apps.apple.com/us/app/pinch-recipe-library/id6796310453"
+            aria-label="Download on the App Store"
           >
-            <span><small>Download on the</small><b>App Store</b></span>
+            <svg viewBox="0 0 24 24" aria-hidden="true">
+              <path
+                d="M16.37 12.6c-.02-2.3 1.88-3.4 1.97-3.46-1.07-1.57-2.74-1.78-3.33-1.8-1.42-.15-2.77.83-3.49.83-.72 0-1.83-.81-3.01-.79-1.55.02-2.98.9-3.78 2.29-1.61 2.8-.41 6.94 1.16 9.2.77 1.11 1.68 2.36 2.88 2.31 1.16-.05 1.59-.75 2.99-.75 1.4 0 1.79.75 3.01.72 1.24-.02 2.03-1.13 2.79-2.25.88-1.29 1.24-2.53 1.26-2.6-.03-.01-2.42-.93-2.45-3.7zM14.08 5.85c.64-.77 1.07-1.85.95-2.92-.92.04-2.03.61-2.69 1.38-.59.68-1.11 1.77-.97 2.82 1.03.08 2.07-.52 2.71-1.28z"
+              />
+            </svg>
           </a>
           <a class="btn btn-web" data-track="continue" href="/app/">Continue on the web</a>
         </div>
@@ -497,24 +330,150 @@
     </main>
 
     <footer class="wrap">
-      <nav aria-label="Legal">
+      <nav aria-label="Site">
         <a href="/privacy.html">Privacy</a>
         <a href="/terms.html">Terms</a>
         <a href="/legal.html">Legal</a>
-        <a href="mailto:yarden.farag@gmail.com">Support</a>
+        <a id="support-link" href="mailto:yarden.farag@gmail.com">Support</a>
       </nav>
       <p>© <span id="year">2026</span> Pinch</p>
     </footer>
+
+    <dialog class="support" id="support" aria-labelledby="support-title">
+      <form id="support-form" novalidate>
+        <h2 id="support-title">How can we help?</h2>
+        <p>A question, a bug, or an idea. We read every message.</p>
+        <label>
+          Message
+          <textarea name="message" required minlength="2" maxlength="4000"></textarea>
+        </label>
+        <label>
+          Your email (optional, so we can reply)
+          <input type="email" name="email" maxlength="254" autocomplete="email" />
+        </label>
+        <p class="status" role="status" aria-live="polite"></p>
+        <div class="row">
+          <button type="button" class="btn btn-quiet" data-close>Cancel</button>
+          <button type="submit" class="btn btn-web">Send</button>
+        </div>
+      </form>
+    </dialog>
 
     <script>
       (function () {
         document.getElementById('year').textContent = String(new Date().getFullYear());
 
-        // Same product_events rows the in-app intro used to write (admin Insights → Web intro).
-        // The build fills these in; left as placeholders, tracking is off.
+        // Fade sections in as they scroll into view, a few at a time for grids.
+        var reveals = document.querySelectorAll('.reveal');
+        if ('IntersectionObserver' in window) {
+          var observer = new IntersectionObserver(
+            function (entries) {
+              var shown = 0;
+              entries.forEach(function (entry) {
+                if (!entry.isIntersecting) return;
+                entry.target.style.transitionDelay = Math.min(shown, 4) * 90 + 'ms';
+                entry.target.classList.add('is-visible');
+                observer.unobserve(entry.target);
+                shown++;
+              });
+            },
+            { rootMargin: '0px 0px -8% 0px', threshold: 0.1 },
+          );
+          reveals.forEach(function (el) {
+            observer.observe(el);
+          });
+        } else {
+          reveals.forEach(function (el) {
+            el.classList.add('is-visible');
+          });
+        }
+
+        // Links to a guide (#save-tiktok-recipes) open it.
+        function openFromHash() {
+          var target = location.hash && document.getElementById(location.hash.slice(1));
+          if (target && target.tagName === 'DETAILS') {
+            target.open = true;
+            target.classList.add('is-visible');
+          }
+        }
+        window.addEventListener('hashchange', openFromHash);
+        openFromHash();
+
+        // The build fills these in; left as placeholders, tracking is off and Support opens email.
         var SUPABASE_URL = '__SUPABASE_URL__';
         var SUPABASE_KEY = '__SUPABASE_KEY__';
         if (SUPABASE_URL.indexOf('__') === 0 || SUPABASE_KEY.indexOf('__') === 0) return;
+
+        function post(path, body) {
+          return fetch(SUPABASE_URL + path, {
+            method: 'POST',
+            keepalive: true,
+            headers: {
+              apikey: SUPABASE_KEY,
+              'Content-Type': 'application/json',
+              Prefer: 'return=minimal',
+            },
+            body: JSON.stringify(body),
+          });
+        }
+
+        // Support: a message to the feedback table (admin → Usage → Feedback).
+        var dialog = document.getElementById('support');
+        var form = document.getElementById('support-form');
+        var status = form.querySelector('.status');
+        var send = form.querySelector('[type=submit]');
+        function setStatus(text, isError) {
+          status.textContent = text;
+          status.className = 'status' + (isError ? ' error' : '');
+        }
+        if (dialog.showModal) {
+          document.getElementById('support-link').addEventListener('click', function (event) {
+            event.preventDefault();
+            setStatus('');
+            dialog.showModal();
+            form.message.focus();
+          });
+          form.querySelector('[data-close]').addEventListener('click', function () {
+            dialog.close();
+          });
+          dialog.addEventListener('click', function (event) {
+            if (event.target === dialog) dialog.close();
+          });
+          form.addEventListener('submit', function (event) {
+            event.preventDefault();
+            var message = form.message.value.trim();
+            var email = form.email.value.trim();
+            if (message.length < 2) return setStatus('Write a few words first.', true);
+            if (email && !/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email)) {
+              return setStatus('That email doesn’t look right.', true);
+            }
+            send.disabled = true;
+            setStatus('Sending…');
+            post('/rest/v1/rpc/submit_website_feedback', {
+              p_message: message,
+              p_email: email || null,
+              p_locale: navigator.language || null,
+            })
+              .then(function (response) {
+                if (!response.ok) throw new Error(String(response.status));
+                form.reset();
+                setStatus(email ? 'Thanks! We’ll reply by email.' : 'Thanks! We got your message.');
+                setTimeout(function () {
+                  dialog.close();
+                }, 1800);
+              })
+              .catch(function () {
+                setStatus('Couldn’t send. Try again, or email yarden.farag@gmail.com.', true);
+              })
+              .then(function () {
+                send.disabled = false;
+              });
+          });
+        }
+
+        // Same product_events rows the in-app intro used to write (admin Insights → Web intro).
+        // Not from local previews, so testing doesn't skew the numbers.
+        if (location.hostname === 'localhost' || location.hostname === '127.0.0.1') return;
 
         // Shared with the web app's AsyncStorage, so a visitor keeps one guest id.
         var INSTALL_KEY = 'pinch:install-id';
@@ -537,21 +496,12 @@
         }
         function capture(name, properties) {
           try {
-            fetch(SUPABASE_URL + '/rest/v1/product_events', {
-              method: 'POST',
-              keepalive: true,
-              headers: {
-                apikey: SUPABASE_KEY,
-                'Content-Type': 'application/json',
-                Prefer: 'return=minimal',
-              },
-              body: JSON.stringify({
-                user_id: null,
-                guest_install_id: installId(),
-                name: name,
-                properties: properties,
-                country: country(),
-              }),
+            post('/rest/v1/product_events', {
+              user_id: null,
+              guest_install_id: installId(),
+              name: name,
+              properties: properties,
+              country: country(),
             }).catch(function () {});
           } catch (e) {}
         }

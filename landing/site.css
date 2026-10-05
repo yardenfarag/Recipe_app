@@ -1,0 +1,576 @@
+:root {
+  --pink: #c45b7a;
+  /* App pink, deepened so white button text passes 4.5:1. */
+  --pink-button: #b24f6d;
+  --pink-bright: #f0a8c4;
+  --night: #070508;
+  --cream: #f7f2f4;
+  --muted: #c3b0b8;
+  --line: rgba(232, 168, 188, 0.22);
+  --glass: rgba(255, 255, 255, 0.045);
+  --well: rgba(196, 91, 122, 0.2);
+  color-scheme: dark;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", system-ui, Roboto, sans-serif;
+}
+* {
+  box-sizing: border-box;
+}
+body {
+  margin: 0;
+  min-height: 100vh;
+  color: var(--cream);
+  background:
+    radial-gradient(560px 560px at 0% 0%, rgba(196, 91, 122, 0.28), transparent 70%),
+    radial-gradient(440px 440px at 100% 8%, rgba(240, 168, 196, 0.12), transparent 70%),
+    radial-gradient(420px 420px at 10% 100%, rgba(90, 28, 52, 0.34), transparent 70%),
+    linear-gradient(#140910, var(--night) 42%, #09070a);
+  background-attachment: fixed;
+  line-height: 1.5;
+}
+a {
+  color: inherit;
+}
+.wrap {
+  max-width: 980px;
+  margin: 0 auto;
+  padding: 0 24px;
+}
+header.top {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 10px;
+  padding-top: 48px;
+  font-size: 22px;
+  font-weight: 700;
+  letter-spacing: -0.4px;
+}
+header.top svg {
+  width: 28px;
+  height: 28px;
+  fill: var(--pink);
+}
+.hero {
+  text-align: center;
+  max-width: 760px;
+  margin: 0 auto;
+}
+.tagline {
+  margin: 40px 0 0;
+  font-size: 15px;
+  font-weight: 700;
+  letter-spacing: 0.4px;
+  color: var(--pink-bright);
+}
+h1 {
+  margin: 12px 0 0;
+  font-size: clamp(36px, 6.5vw, 56px);
+  line-height: 1.1;
+  letter-spacing: -1.6px;
+}
+h1 span {
+  color: var(--pink-bright);
+}
+.lede {
+  margin: 18px auto 0;
+  max-width: 540px;
+  font-size: 18px;
+  line-height: 28px;
+  color: var(--muted);
+}
+.actions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 12px;
+  margin-top: 32px;
+}
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  min-height: 56px;
+  min-width: 220px;
+  padding: 0 18px;
+  border-radius: 14px;
+  font-weight: 700;
+  font-size: 16px;
+  text-decoration: none;
+}
+.btn:hover {
+  opacity: 0.9;
+}
+.btn-store {
+  background: #fff;
+  color: #000;
+}
+.btn-store svg {
+  width: 22px;
+  height: 22px;
+}
+.btn-store small {
+  display: block;
+  font-size: 11px;
+  font-weight: 400;
+  letter-spacing: 0.2px;
+}
+.btn-store b {
+  display: block;
+  line-height: 1.1;
+}
+.btn-web {
+  background: var(--pink-button);
+  color: #fff;
+}
+section {
+  margin-top: 96px;
+}
+h2 {
+  margin: 0;
+  text-align: center;
+  font-size: clamp(32px, 5vw, 40px);
+  line-height: 1.15;
+  letter-spacing: -0.8px;
+}
+.sub {
+  margin: 12px 0 0;
+  text-align: center;
+  font-size: 17px;
+  color: var(--muted);
+}
+.features {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+  gap: 16px;
+  margin: 32px 0 0;
+  padding: 0;
+  list-style: none;
+}
+.card {
+  border: 1px solid var(--line);
+  border-radius: 20px;
+  background: var(--glass);
+  padding: 22px;
+}
+.card .icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  border-radius: 14px;
+  background: var(--well);
+  color: var(--pink-bright);
+  font-size: 20px;
+}
+.card h3 {
+  margin: 16px 0 0;
+  font-size: 18px;
+}
+.card p {
+  margin: 8px 0 0;
+  font-size: 15px;
+  line-height: 22px;
+  color: var(--muted);
+}
+.steps {
+  counter-reset: step;
+  max-width: 640px;
+  margin: 32px auto 0;
+  padding: 0;
+  list-style: none;
+}
+.steps li {
+  counter-increment: step;
+  position: relative;
+  padding: 0 0 20px 52px;
+  font-size: 17px;
+  color: var(--muted);
+}
+.steps li::before {
+  content: counter(step);
+  position: absolute;
+  left: 0;
+  top: -4px;
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  background: var(--well);
+  color: var(--pink-bright);
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.steps strong {
+  color: var(--cream);
+}
+.faq {
+  max-width: 720px;
+  margin: 32px auto 0;
+  display: grid;
+  gap: 12px;
+}
+.faq details {
+  padding: 0;
+}
+.faq summary {
+  cursor: pointer;
+  padding: 18px 22px;
+  font-size: 17px;
+  font-weight: 700;
+}
+.faq details p {
+  margin: 0;
+  padding: 0 22px 20px;
+  font-size: 15px;
+  line-height: 24px;
+  color: var(--muted);
+}
+.cta {
+  text-align: center;
+}
+footer {
+  margin: 96px 0 0;
+  padding-bottom: 48px;
+  text-align: center;
+  font-size: 14px;
+  color: var(--muted);
+}
+footer nav {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 8px 20px;
+  margin-bottom: 14px;
+}
+footer a {
+  display: inline-block;
+  padding: 6px 2px;
+  font-weight: 600;
+  color: var(--muted);
+  text-decoration: none;
+}
+footer a:hover {
+  color: var(--cream);
+}
+/* `footer.wrap` resets the margin above; keep the gap after the last section. */
+footer.wrap {
+  margin-top: 96px;
+}
+footer button {
+  padding: 6px 2px;
+  border: 0;
+  background: none;
+  font: inherit;
+  font-weight: 600;
+  color: var(--muted);
+  cursor: pointer;
+}
+footer button:hover {
+  color: var(--cream);
+}
+
+/* App Store: the Apple logo alone, the way Apple shows it. */
+.btn-apple {
+  min-width: 0;
+  width: 64px;
+  padding: 0;
+}
+.btn-apple svg {
+  width: 26px;
+  height: 26px;
+}
+
+/* Scroll-in: fade and lift, once. Only with JS, so nothing stays hidden without it. */
+.js .reveal {
+  opacity: 0;
+  transform: translateY(18px);
+  transition:
+    opacity 0.9s cubic-bezier(0.2, 0.6, 0.2, 1),
+    transform 0.9s cubic-bezier(0.2, 0.6, 0.2, 1);
+}
+.js .reveal.is-visible {
+  opacity: 1;
+  transform: none;
+}
+@media (prefers-reduced-motion: reduce) {
+  .js .reveal {
+    opacity: 1;
+    transform: none;
+    transition: none;
+  }
+}
+
+/* Comparison table, Pinch column highlighted. */
+.compare-wrap {
+  max-width: 860px;
+  margin: 32px auto 0;
+}
+.table-scroll {
+  overflow-x: auto;
+  border: 1px solid var(--line);
+  border-radius: 16px;
+}
+table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 15px;
+  line-height: 22px;
+}
+th,
+td {
+  padding: 12px 14px;
+  border-bottom: 1px solid var(--line);
+  text-align: left;
+  vertical-align: top;
+  color: var(--muted);
+}
+th {
+  color: var(--cream);
+  background: var(--glass);
+}
+tr:last-child td {
+  border-bottom: 0;
+}
+td:first-child {
+  font-weight: 700;
+  color: var(--cream);
+}
+table.compare {
+  min-width: 600px;
+}
+.compare th:not(:first-child),
+.compare td:not(:first-child) {
+  width: 13%;
+  text-align: center;
+  vertical-align: middle;
+}
+.compare th:nth-child(2),
+.compare td:nth-child(2) {
+  background: var(--well);
+}
+.compare th:nth-child(2) {
+  color: var(--pink-bright);
+  font-size: 16px;
+}
+.compare td.yes,
+.compare td.no,
+.compare td.na {
+  font-size: 18px;
+  font-weight: 700;
+}
+.compare td.yes {
+  color: #8fd9a8;
+}
+.compare td:nth-child(2).yes {
+  color: var(--pink-bright);
+}
+.compare td.no,
+.compare td.na {
+  color: #8a7880;
+}
+.compare td.na {
+  font-weight: 400;
+}
+.footnote {
+  margin: 12px 0 0;
+  font-size: 13px;
+  line-height: 20px;
+  color: var(--muted);
+}
+.footnote a {
+  color: var(--pink-bright);
+}
+@media (max-width: 560px) {
+  table.compare {
+    min-width: 500px;
+    font-size: 13px;
+    line-height: 18px;
+  }
+  .compare th,
+  .compare td {
+    padding: 10px 6px;
+  }
+  .compare td:first-child {
+    padding-left: 12px;
+  }
+}
+
+/* Guides: closed cards that open into the full article. */
+.guides {
+  max-width: 760px;
+  margin: 32px auto 0;
+  display: grid;
+  gap: 12px;
+}
+.guide summary {
+  cursor: pointer;
+  list-style: none;
+  padding: 22px 56px 22px 22px;
+  position: relative;
+}
+.guide summary::-webkit-details-marker {
+  display: none;
+}
+.guide summary::after {
+  content: "+";
+  position: absolute;
+  top: 18px;
+  right: 22px;
+  font-size: 26px;
+  color: var(--pink-bright);
+  transition: transform 0.3s ease;
+}
+.guide[open] summary::after {
+  transform: rotate(45deg);
+}
+.guide summary h3 {
+  margin: 0;
+  font-size: 19px;
+}
+.guide summary p {
+  margin: 6px 0 0;
+  font-size: 15px;
+  line-height: 22px;
+  color: var(--muted);
+}
+.guide .prose {
+  padding: 0 22px 24px;
+  border-top: 1px solid var(--line);
+}
+.prose {
+  font-size: 16px;
+  line-height: 26px;
+}
+.prose h4 {
+  margin: 32px 0 0;
+  font-size: 20px;
+  letter-spacing: -0.3px;
+}
+.prose h5 {
+  margin: 24px 0 0;
+  font-size: 17px;
+}
+.prose p,
+.prose ul,
+.prose ol {
+  margin: 12px 0 0;
+  color: var(--muted);
+}
+.prose li + li {
+  margin-top: 6px;
+}
+.prose strong {
+  color: var(--cream);
+}
+.prose a {
+  color: var(--pink-bright);
+}
+.prose blockquote {
+  margin: 20px 0 0;
+  padding: 2px 20px 16px;
+  border-left: 3px solid var(--pink);
+  border-radius: 0 14px 14px 0;
+  background: var(--glass);
+}
+.prose .table-scroll {
+  margin-top: 20px;
+}
+.prose table {
+  min-width: 560px;
+}
+
+/* Support dialog. */
+dialog.support {
+  width: min(480px, calc(100vw - 32px));
+  padding: 0;
+  border: 1px solid var(--line);
+  border-radius: 22px;
+  background: #140c11;
+  color: var(--cream);
+}
+dialog.support::backdrop {
+  background: rgba(7, 5, 8, 0.7);
+  backdrop-filter: blur(6px);
+}
+dialog.support[open] {
+  animation: dialog-in 0.35s cubic-bezier(0.2, 0.6, 0.2, 1);
+}
+@keyframes dialog-in {
+  from {
+    opacity: 0;
+    transform: translateY(12px);
+  }
+}
+.support form {
+  display: grid;
+  gap: 14px;
+  padding: 24px;
+}
+.support h2 {
+  text-align: left;
+  font-size: 24px;
+  letter-spacing: -0.4px;
+}
+.support p {
+  margin: 0;
+  font-size: 15px;
+  color: var(--muted);
+}
+.support label {
+  display: grid;
+  gap: 6px;
+  font-size: 14px;
+  font-weight: 600;
+}
+.support textarea,
+.support input {
+  width: 100%;
+  padding: 12px 14px;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  background: var(--glass);
+  color: var(--cream);
+  font: inherit;
+  font-weight: 400;
+}
+.support textarea {
+  min-height: 140px;
+  resize: vertical;
+}
+.support textarea:focus,
+.support input:focus {
+  outline: 2px solid var(--pink-bright);
+  outline-offset: 1px;
+}
+.support .status {
+  min-height: 22px;
+  font-size: 14px;
+}
+.support .status.error {
+  color: #f0a8a8;
+}
+.support .row {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+}
+.support .row .btn {
+  min-width: 0;
+  min-height: 46px;
+  padding: 0 20px;
+  border: 0;
+  font: inherit;
+  font-weight: 700;
+  cursor: pointer;
+}
+.support .btn-quiet {
+  background: transparent;
+  color: var(--muted);
+}
+.support .btn-web:disabled {
+  opacity: 0.6;
+  cursor: default;
+}

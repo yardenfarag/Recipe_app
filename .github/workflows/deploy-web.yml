@@ -49,12 +49,14 @@ jobs:
           export EXPO_PUBLIC_SUPPORT_EMAIL="${EXPO_PUBLIC_SUPPORT_EMAIL:-yarden.farag@gmail.com}"
           npm run build:web
 
-      - name: Check the landing page is real HTML
+      - name: Check the landing page is real HTML, with the guides
         run: |
           grep -q '<h1>' dist/index.html
           grep -q 'apps.apple.com' dist/index.html
           test -f dist/app/index.html
           test -f dist/404.html
+          test -f dist/site.css
+          grep -q 'id="save-tiktok-recipes"' dist/index.html
 
       - name: Setup Pages
         uses: actions/configure-pages@v5

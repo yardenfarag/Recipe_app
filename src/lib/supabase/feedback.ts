@@ -22,6 +22,10 @@ export interface Feedback extends FeedbackContext {
   user_id: string | null;
   message: string;
   created_at: string;
+  /** app: Settings → Send feedback. website: the support form on pinch-app.io. */
+  source: 'app' | 'website';
+  /** Reply-to address from the website form (app feedback uses the profile email). */
+  contact_email: string | null;
   /** Sender's email, via the profiles join (null once the account is deleted). */
   profile: { email: string | null } | null;
 }
@@ -72,7 +76,7 @@ export async function fetchFeedback(limit = 80): Promise<Feedback[]> {
   const { data, error } = await supabase
     .from('feedback')
     .select(
-      'id, user_id, message, app_version, build_number, platform, os_version, device_model, locale, created_at, profile:profiles(email)',
+      'id, user_id, message, app_version, build_number, platform, os_version, device_model, locale, created_at, source, contact_email, profile:profiles(email)',
     )
     .order('created_at', { ascending: false })
     .limit(limit);

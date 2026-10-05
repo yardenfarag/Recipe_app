@@ -323,10 +323,12 @@ export default function AdminUsageScreen() {
                     style={{ borderBottomColor: colors.frostedBorder }}
                   >
                     <Text className="mb-1 text-xs font-semibold" style={{ color: colors.text }}>
-                      {item.profile?.email ?? shortId(item.user_id)} · {fmtWhen(item.created_at)}
+                      {item.profile?.email ?? item.contact_email ?? shortId(item.user_id)} ·{' '}
+                      {fmtWhen(item.created_at)}
                     </Text>
                     <Text className="mb-1 text-xs" style={{ color: colors.textSecondary }}>
                       {[
+                        item.source === 'website' ? 'website form' : null,
                         item.app_version
                           ? `v${item.app_version}${item.build_number ? ` (${item.build_number})` : ''}`
                           : null,
