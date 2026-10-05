@@ -11,6 +11,11 @@
       // GitHub Pages' 404.html, which is this shell — move them under /app, keeping query and hash.
       (function () {
         var path = window.location.pathname;
+        // The old legal hub is gone; its links live in the landing page footer.
+        if (path === '/legal.html') {
+          window.location.replace('/#legal');
+          return;
+        }
         if (path !== '/app' && path.indexOf('/app/') !== 0) {
           window.location.replace('/app' + path + window.location.search + window.location.hash);
         }

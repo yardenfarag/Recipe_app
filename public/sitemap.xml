@@ -1,15 +1,24 @@
 <?xml version="1.0" encoding="UTF-8"?>
+<!-- Bump a page's lastmod when its content changes. -->
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
   <url>
     <loc>https://pinch-app.io/</loc>
+    <lastmod>2026-10-05</lastmod>
   </url>
   <url>
     <loc>https://pinch-app.io/privacy.html</loc>
+    <lastmod>2026-08-17</lastmod>
   </url>
   <url>
     <loc>https://pinch-app.io/terms.html</loc>
+    <lastmod>2026-08-07</lastmod>
   </url>
   <url>
-    <loc>https://pinch-app.io/legal.html</loc>
+    <loc>https://pinch-app.io/delete-account.html</loc>
+    <lastmod>2026-08-17</lastmod>
+  </url>
+  <url>
+    <loc>https://pinch-app.io/delete-data.html</loc>
+    <lastmod>2026-08-17</lastmod>
   </url>
 </urlset>

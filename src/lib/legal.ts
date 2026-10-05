@@ -17,7 +17,6 @@ export const SUPPORT_EMAIL =
   process.env.EXPO_PUBLIC_SUPPORT_EMAIL ?? extra?.supportEmail ?? 'yarden.farag@gmail.com';
 
 export const LEGAL_URLS = {
-  home: `${LEGAL_BASE_URL}/legal.html`,
   privacy: `${LEGAL_BASE_URL}/privacy.html`,
   terms: `${LEGAL_BASE_URL}/terms.html`,
   deleteAccount: `${LEGAL_BASE_URL}/delete-account.html`,

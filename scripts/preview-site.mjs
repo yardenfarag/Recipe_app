@@ -28,7 +28,6 @@ const files = {
   '/sitemap.xml': ['public/sitemap.xml', 'application/xml'],
   '/privacy.html': ['legal/privacy.html', html],
   '/terms.html': ['legal/terms.html', html],
-  '/legal.html': ['legal/index.html', html],
   '/delete-account.html': ['legal/delete-account.html', html],
   '/delete-data.html': ['legal/delete-data.html', html],
   '/share.html': ['legal/share.html', html],

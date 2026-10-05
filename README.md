@@ -60,7 +60,7 @@ Workflow: [`.github/workflows/deploy-web.yml`](.github/workflows/deploy-web.yml)
 
 - Exports the app with `npx expo export -p web --output-dir dist/app`
 - Writes `landing/index.html` to `dist/index.html`, filling in the Supabase URL and key for its `web_intro_*` analytics
-- Merges legal HTML (`privacy.html`, `terms.html`, `delete-account.html`, `delete-data.html`, `share.html`, `legal.html`) into `dist/`
+- Merges legal HTML (`privacy.html`, `terms.html`, `delete-account.html`, `delete-data.html`, `share.html`) into `dist/`
 - Adds `.nojekyll`, `404.html` (the app shell, so `/app/<route>` deep links load; old root links like `/s/…` and `/auth-callback` redirect to `/app/…`), and a `CNAME` for `pinch-app.io`
 
 Run `npm run build:web` locally to produce the same `dist/`.
@@ -125,7 +125,6 @@ Details are mirrored in [`.env.example`](.env.example).
 - [Terms](https://pinch-app.io/terms.html)
 - [Delete account](https://pinch-app.io/delete-account.html)
 - [Delete data](https://pinch-app.io/delete-data.html)
-- [Legal hub](https://pinch-app.io/legal.html)
 
 ## Stack
 

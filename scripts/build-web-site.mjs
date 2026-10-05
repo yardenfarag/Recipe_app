@@ -31,7 +31,6 @@ copy('legal/delete-account.html');
 copy('legal/delete-data.html');
 copy('legal/share.html');
 copy('legal/styles.css');
-copy('legal/index.html', 'legal.html');
 copy('public/robots.txt');
 copy('public/sitemap.xml');
 copy('assets/images/favicon.png');
