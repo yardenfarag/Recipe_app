@@ -6,6 +6,7 @@ import { describe, expect, it } from 'vitest';
 import {
   buildLanding,
   fillSupabaseConfig,
+  GUIDE_LINKS_MARKER,
   GUIDES_MARKER,
   loadGuides,
   markdownToHtml,
@@ -51,8 +52,10 @@ describe('landing page', () => {
     );
     for (const guide of guides) {
       expect(landing).toContain(`<details class="card guide reveal" id="${guide.slug}">`);
+      expect(landing).toContain(`<a href="#${guide.slug}">`);
     }
     expect(landing).not.toContain(GUIDES_MARKER);
+    expect(landing).not.toContain(GUIDE_LINKS_MARKER);
   });
 
   it('only links to anchors on the page, the app, legal pages, or other sites', () => {

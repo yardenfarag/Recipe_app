@@ -1,6 +1,6 @@
 // Renders the guides in content/guides/*.md into the landing page, in place of the
 // <!-- GUIDES --> marker in landing/index.html. Each guide becomes a collapsible card
-// at /#<file name>. Each file starts with a front matter block of `key: value` lines:
+// at /#<file name>, and a footer link in place of <!-- GUIDE LINKS -->. Each file starts with a front matter block of `key: value` lines:
 // title, description (shown on the closed card), and order.
 import { readdirSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
@@ -8,6 +8,7 @@ import { join } from 'node:path';
 import { Marked } from 'marked';
 
 export const GUIDES_MARKER = '<!-- GUIDES -->';
+export const GUIDE_LINKS_MARKER = '<!-- GUIDE LINKS -->';
 const REQUIRED_FIELDS = ['title', 'description', 'order'];
 
 // Guides sit under the page's h2 and the card's h3, so their ## becomes h4.
@@ -77,11 +78,20 @@ ${guide.html}
     .join('\n          ');
 }
 
+export function renderGuideLinks(guides) {
+  return guides
+    .map((guide) => `<a href="#${guide.slug}">${escapeHtml(guide.meta.title)}</a>`)
+    .join('\n          ');
+}
+
 export function buildLanding(landingHtml, contentDir) {
-  if (!landingHtml.includes(GUIDES_MARKER)) {
-    throw new Error(`landing/index.html is missing ${GUIDES_MARKER}`);
+  for (const marker of [GUIDES_MARKER, GUIDE_LINKS_MARKER]) {
+    if (!landingHtml.includes(marker)) throw new Error(`landing/index.html is missing ${marker}`);
   }
-  return landingHtml.replace(GUIDES_MARKER, renderGuides(loadGuides(contentDir)));
+  const guides = loadGuides(contentDir);
+  return landingHtml
+    .replace(GUIDES_MARKER, renderGuides(guides))
+    .replace(GUIDE_LINKS_MARKER, renderGuideLinks(guides));
 }
 
 // The landing page's tracking and support form talk to Supabase with the public key.

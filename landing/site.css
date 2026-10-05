@@ -174,37 +174,142 @@ h2 {
   line-height: 22px;
   color: var(--muted);
 }
+.trust {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 8px 22px;
+  margin: 28px 0 0;
+  padding: 0;
+  list-style: none;
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--muted);
+}
+.trust li::before {
+  content: "✓";
+  margin-right: 7px;
+  color: var(--pink-bright);
+}
+
+/* How it works: three cards, each with a sketch of that screen in the app. */
 .steps {
   counter-reset: step;
-  max-width: 640px;
-  margin: 32px auto 0;
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 36px;
+  margin: 32px 0 0;
   padding: 0;
   list-style: none;
 }
 .steps li {
   counter-increment: step;
   position: relative;
-  padding: 0 0 20px 52px;
-  font-size: 17px;
+}
+.steps li h3::before {
+  content: counter(step) ". ";
+  color: var(--pink-bright);
+}
+/* Arrow in the gap to the next step. */
+.steps li + li::before {
+  content: "→";
+  position: absolute;
+  top: 82px;
+  left: -29px;
+  font-size: 22px;
+  color: var(--pink-bright);
+}
+.mock {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  height: 172px;
+  padding: 14px;
+  border-radius: 14px;
+  background: var(--well);
+  font-size: 13px;
+  line-height: 18px;
+  overflow: hidden;
+}
+.mock-video {
+  position: relative;
+  flex: 1;
+  border-radius: 10px;
+  background: linear-gradient(160deg, #5a1c34, #1d0d15);
+}
+.mock-play {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  font-size: 22px;
+  color: rgba(255, 255, 255, 0.75);
+}
+.mock-share {
+  position: absolute;
+  right: 8px;
+  bottom: 8px;
+  padding: 2px 9px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.16);
+  font-weight: 600;
+}
+.mock-sheet {
+  display: flex;
+  justify-content: space-around;
+  padding: 7px 4px;
+  border-radius: 10px;
+  background: var(--glass);
   color: var(--muted);
 }
-.steps li::before {
-  content: counter(step);
-  position: absolute;
-  left: 0;
-  top: -4px;
-  width: 36px;
-  height: 36px;
-  border-radius: 50%;
-  background: var(--well);
-  color: var(--pink-bright);
+.mock-pick {
   font-weight: 700;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-.steps strong {
   color: var(--cream);
+  text-decoration: underline 2px var(--pink-bright);
+  text-underline-offset: 3px;
+}
+.mock-title {
+  font-size: 15px;
+}
+.mock-label {
+  margin-top: 4px;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.6px;
+  text-transform: uppercase;
+  color: var(--pink-bright);
+}
+.mock-line,
+.mock-check {
+  color: var(--muted);
+}
+.mock-check::before {
+  content: "";
+  display: inline-block;
+  width: 11px;
+  height: 11px;
+  margin-right: 8px;
+  border: 1.5px solid var(--muted);
+  border-radius: 4px;
+  vertical-align: -1px;
+}
+.mock-check.is-done {
+  text-decoration: line-through;
+}
+.mock-check.is-done::before {
+  border-color: var(--pink-bright);
+  background: var(--pink-bright);
+}
+@media (max-width: 760px) {
+  .steps {
+    grid-template-columns: 1fr;
+    max-width: 420px;
+    margin-inline: auto;
+    gap: 16px;
+  }
+  .steps li + li::before {
+    content: none;
+  }
 }
 .faq {
   max-width: 720px;
@@ -234,20 +339,35 @@ h2 {
 footer {
   margin: 96px 0 0;
   padding-bottom: 48px;
-  text-align: center;
   font-size: 14px;
   color: var(--muted);
 }
+.footer-cols {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 28px;
+  padding-top: 36px;
+  border-top: 1px solid var(--line);
+}
 footer nav {
   display: flex;
-  flex-wrap: wrap;
-  justify-content: center;
-  gap: 8px 20px;
-  margin-bottom: 14px;
+  flex-direction: column;
+  align-items: flex-start;
+}
+footer h2 {
+  margin-bottom: 8px;
+  text-align: left;
+  font-size: 15px;
+  letter-spacing: 0;
+  color: var(--cream);
+}
+footer > p {
+  margin: 32px 0 0;
+  text-align: center;
 }
 footer a {
   display: inline-block;
-  padding: 6px 2px;
+  padding: 5px 0;
   font-weight: 600;
   color: var(--muted);
   text-decoration: none;
@@ -339,11 +459,13 @@ td:first-child {
   color: var(--cream);
 }
 table.compare {
-  min-width: 600px;
+  min-width: 760px;
+}
+.compare td:first-child {
+  width: 26%;
 }
 .compare th:not(:first-child),
 .compare td:not(:first-child) {
-  width: 13%;
   text-align: center;
   vertical-align: middle;
 }
@@ -374,6 +496,16 @@ table.compare {
 .compare td.na {
   font-weight: 400;
 }
+/* Platforms and price: short text instead of a mark. */
+.compare tr.text td:not(:first-child) {
+  font-size: 13px;
+  line-height: 18px;
+  vertical-align: top;
+}
+.compare tr.text td:nth-child(2) {
+  color: var(--cream);
+  font-weight: 600;
+}
 .footnote {
   margin: 12px 0 0;
   font-size: 13px;
@@ -383,9 +515,10 @@ table.compare {
 .footnote a {
   color: var(--pink-bright);
 }
+/* Phones: the feature and Pinch columns stay put while the other apps scroll past. */
 @media (max-width: 560px) {
   table.compare {
-    min-width: 500px;
+    min-width: 640px;
     font-size: 13px;
     line-height: 18px;
   }
@@ -393,8 +526,29 @@ table.compare {
   .compare td {
     padding: 10px 6px;
   }
+  .compare th:first-child,
   .compare td:first-child {
+    position: sticky;
+    left: 0;
+    z-index: 1;
+    width: 120px;
+    min-width: 120px;
     padding-left: 12px;
+    background: #110b0f;
+  }
+  .compare th:nth-child(2),
+  .compare td:nth-child(2) {
+    position: sticky;
+    left: 120px;
+    z-index: 1;
+    width: 72px;
+    min-width: 72px;
+    background: #2a1420;
+    box-shadow: 6px 0 8px -6px rgba(0, 0, 0, 0.8);
+  }
+  .compare tr.text td:not(:first-child) {
+    font-size: 12px;
+    line-height: 16px;
   }
 }
 

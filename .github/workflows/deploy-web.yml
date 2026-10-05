@@ -51,7 +51,7 @@ jobs:
 
       - name: Check the landing page is real HTML, with the guides
         run: |
-          grep -q '<h1>' dist/index.html
+          grep -q '<h1[ >]' dist/index.html
           grep -q 'apps.apple.com' dist/index.html
           test -f dist/app/index.html
           test -f dist/404.html

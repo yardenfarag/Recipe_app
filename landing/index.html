@@ -98,6 +98,14 @@
               "@type": "Answer",
               "text": "Pinch is available in English, Spanish, Hebrew, Arabic, and Russian."
             }
+          },
+          {
+            "@type": "Question",
+            "name": "Does Pinch sell my data?",
+            "acceptedAnswer": {
+              "@type": "Answer",
+              "text": "No. Pinch doesn't sell your personal information. The services that help run Pinch, like the AI that writes out your recipes, only process it to operate Pinch."
+            }
           }
         ]
       }
@@ -142,6 +150,11 @@
           </a>
           <a class="btn btn-web" data-track="continue" href="/app/">Continue on the web</a>
         </div>
+        <ul class="trust reveal" aria-label="Why Pinch">
+          <li>3 free recipes every month</li>
+          <li>No subscription</li>
+          <li>iPhone and any browser</li>
+        </ul>
       </div>
 
       <section aria-labelledby="features">
@@ -207,12 +220,54 @@
 
       <section aria-labelledby="how">
         <h2 id="how" class="reveal">How to save a recipe from a video</h2>
+        <p class="sub reveal">From a video in your feed to a list in your hand.</p>
         <ol class="steps">
-          <li class="reveal"><strong>Find a recipe video.</strong> On TikTok, Instagram Reels, or YouTube.</li>
-          <li class="reveal"><strong>Share it to Pinch.</strong> Or copy the link and paste it in.</li>
-          <li class="reveal">
-            <strong>Get the recipe.</strong> Pinch's AI writes out the ingredients and steps, adds
-            a shopping list, and saves it to your library.
+          <li class="card reveal">
+            <div class="mock" aria-hidden="true">
+              <div class="mock-video">
+                <span class="mock-play">▶</span>
+                <span class="mock-share">Share</span>
+              </div>
+              <div class="mock-sheet">
+                <span>Copy link</span>
+                <span class="mock-pick">Pinch</span>
+                <span>Messages</span>
+              </div>
+            </div>
+            <h3>Share the video</h3>
+            <p>
+              Tap Share on a TikTok, Instagram Reel, or YouTube video and pick Pinch. Or copy the
+              link and paste it in.
+            </p>
+          </li>
+          <li class="card reveal">
+            <div class="mock" aria-hidden="true">
+              <b class="mock-title">Creamy tomato pasta</b>
+              <span class="mock-label">Ingredients</span>
+              <span class="mock-line">200 g rigatoni</span>
+              <span class="mock-line">2 cloves garlic</span>
+              <span class="mock-label">Steps</span>
+              <span class="mock-line">1. Boil the pasta…</span>
+            </div>
+            <h3>Get the recipe</h3>
+            <p>
+              Pinch's AI writes out the ingredients and steps, even the ones only said out loud or
+              shown on screen.
+            </p>
+          </li>
+          <li class="card reveal">
+            <div class="mock" aria-hidden="true">
+              <span class="mock-label">Produce</span>
+              <span class="mock-check is-done">2 cloves garlic</span>
+              <span class="mock-check">1 onion</span>
+              <span class="mock-label">Pasta &amp; grains</span>
+              <span class="mock-check">200 g rigatoni</span>
+            </div>
+            <h3>Shop the list</h3>
+            <p>
+              The ingredients go on one shopping list, grouped by aisle. Check them off at the
+              store.
+            </p>
           </li>
         </ol>
       </section>
@@ -224,24 +279,27 @@
           <div class="table-scroll">
             <table class="compare">
               <thead>
-                <tr><th><span hidden>Feature</span></th><th>Pinch</th><th>Paprika</th><th>Mela</th><th>ReciMe</th><th>Samsung Food</th></tr>
+                <tr><th><span hidden>Feature</span></th><th>Pinch</th><th>Osta</th><th>Paprika</th><th>Mela</th><th>ReciMe</th><th>Samsung Food</th></tr>
               </thead>
               <tbody>
-                <tr><td>Save from TikTok, Instagram &amp; YouTube</td><td class="yes">✓</td><td class="no">✗*</td><td class="yes">✓</td><td class="yes">✓</td><td class="na">–</td></tr>
-                <tr><td>Gets recipes that are only said out loud</td><td class="yes">✓</td><td class="no">✗</td><td class="no">✗</td><td class="yes">✓</td><td class="na">–</td></tr>
-                <tr><td>Gets recipes that are only shown on screen</td><td class="yes">✓</td><td class="no">✗</td><td class="no">✗</td><td class="na">–</td><td class="na">–</td></tr>
-                <tr><td>Finds the "recipe in the comments"</td><td class="yes">✓</td><td class="no">✗</td><td class="no">✗</td><td class="na">–</td><td class="na">–</td></tr>
-                <tr><td>Save from recipe websites</td><td class="yes">✓</td><td class="yes">✓</td><td class="yes">✓</td><td class="yes">✓</td><td class="yes">✓</td></tr>
-                <tr><td>Photos of cookbook pages</td><td class="yes">✓</td><td class="no">✗*</td><td class="yes">✓</td><td class="yes">✓</td><td class="yes">✓</td></tr>
-                <tr><td>Shopping list from your recipes</td><td class="yes">✓</td><td class="yes">✓</td><td class="yes">✓</td><td class="yes">✓</td><td class="yes">✓</td></tr>
-                <tr><td>Works in your browser</td><td class="yes">✓</td><td class="no">✗</td><td class="no">✗</td><td class="yes">✓</td><td class="yes">✓</td></tr>
+                <tr><td>Save from TikTok, Instagram &amp; YouTube</td><td class="yes">✓</td><td class="yes">✓</td><td class="no">✗*</td><td class="yes">✓</td><td class="yes">✓</td><td class="yes">✓</td></tr>
+                <tr><td>Reads the video itself: speech and on-screen text</td><td class="yes">✓</td><td class="na">–</td><td class="no">✗</td><td class="no">✗</td><td class="yes">✓</td><td class="na">–</td></tr>
+                <tr><td>Scan cookbook pages and handwritten cards</td><td class="yes">✓</td><td class="yes">✓</td><td class="no">✗*</td><td class="yes">✓</td><td class="yes">✓</td><td class="yes">✓</td></tr>
+                <tr><td>Shopping list that merges ingredients and sorts by aisle</td><td class="yes">✓</td><td class="na">–</td><td class="yes">✓</td><td class="na">–</td><td class="na">–</td><td class="yes">✓</td></tr>
+                <tr><td>Translate a recipe</td><td class="yes">✓</td><td class="na">–</td><td class="no">✗</td><td class="yes">✓</td><td class="na">–</td><td class="na">–</td></tr>
+                <tr><td>Remix with AI: healthier, vegetarian, ingredient swaps</td><td class="yes">✓</td><td class="na">–</td><td class="no">✗</td><td class="no">✗</td><td class="na">–</td><td class="yes">✓</td></tr>
+                <tr><td>Recipes from a photo of your fridge</td><td class="yes">✓</td><td class="na">–</td><td class="no">✗</td><td class="no">✗</td><td class="na">–</td><td class="yes">✓</td></tr>
+                <tr><td>Cooking Hub: browse recipes other cooks saved</td><td class="yes">✓</td><td class="na">–</td><td class="no">✗</td><td class="no">✗</td><td class="na">–</td><td class="yes">✓</td></tr>
+                <tr class="text"><td>Platforms</td><td>iPhone, web<br />(Android soon)</td><td>iPhone, Android, Mac</td><td>iPhone, Android, Mac, Windows</td><td>iPhone, Mac</td><td>iPhone, Android, web</td><td>iPhone, Android, web</td></tr>
+                <tr class="text"><td>Price</td><td>Free, 3 recipes a month. Extra credits, no subscription</td><td>Free with ads, 5 imports a week. $49.99–59.99/yr</td><td>$4.99 one&#8209;time</td><td>$6.99 one&#8209;time</td><td>Free, 5 imports a week. $59.99/yr</td><td>Free. AI features $59.99/yr</td></tr>
               </tbody>
             </table>
           </div>
           <p class="footnote">
-            ✓ Yes · ✗ No · – Not mentioned by the app's maker. * Paprika 3. Paprika 4, in beta since
-            September 2026, adds social and photo import. Based on each app's website, help pages,
-            and App Store listing, checked October 2026.
+            ✓ Yes · ✗ No · – The app's maker doesn't say. * Paprika 3. The Paprika 4 beta adds
+            these, as part of a subscription. Osta's photo scanning, and Samsung Food's AI remix
+            and fridge photo, need their paid plans. Prices are in US dollars. Based on each app's
+            website, help pages, and App Store listing, checked October 2026.
           </p>
         </div>
       </section>
@@ -305,6 +363,14 @@
             <summary>Which languages does Pinch support?</summary>
             <p>Pinch is available in English, Spanish, Hebrew, Arabic, and Russian.</p>
           </details>
+          <details class="card reveal">
+            <summary>Does Pinch sell my data?</summary>
+            <p>
+              No. Pinch doesn't sell your personal information. The services that help run Pinch,
+              like the AI that writes out your recipes, only process it to operate Pinch. Read the
+              <a href="/privacy.html">privacy policy</a>.
+            </p>
+          </details>
         </div>
       </section>
 
@@ -330,12 +396,31 @@
     </main>
 
     <footer class="wrap">
-      <nav aria-label="Site">
-        <a href="/privacy.html">Privacy</a>
-        <a href="/terms.html">Terms</a>
-        <a href="/legal.html">Legal</a>
-        <a id="support-link" href="mailto:yarden.farag@gmail.com">Support</a>
-      </nav>
+      <div class="footer-cols">
+        <nav aria-labelledby="footer-product">
+          <h2 id="footer-product">Pinch</h2>
+          <a href="#features">Features</a>
+          <a href="#how">How it works</a>
+          <a href="#compare">Compare apps</a>
+          <a href="#faq">FAQ</a>
+          <a href="https://apps.apple.com/us/app/pinch-recipe-library/id6796310453">
+            Pinch for iPhone
+          </a>
+          <a href="/app/">Pinch on the web</a>
+        </nav>
+        <nav aria-labelledby="footer-guides">
+          <h2 id="footer-guides">Guides</h2>
+          <!-- GUIDE LINKS -->
+        </nav>
+        <nav aria-labelledby="footer-help">
+          <h2 id="footer-help">Help &amp; legal</h2>
+          <a id="support-link" href="mailto:yarden.farag@gmail.com">Support</a>
+          <a href="/privacy.html">Privacy</a>
+          <a href="/terms.html">Terms</a>
+          <a href="/legal.html">Legal</a>
+          <a href="/delete-account.html">Delete your account</a>
+        </nav>
+      </div>
       <p>© <span id="year">2026</span> Pinch</p>
     </footer>
 
