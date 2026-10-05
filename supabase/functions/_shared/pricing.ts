@@ -19,7 +19,7 @@ export const RECIPE_REMIX_LIMIT = 5;
 /** Keep in sync with client GUEST_EXTRACTION_LIMIT. */
 export const GUEST_EXTRACT_LIMIT = 3;
 /** Calendar-month extracts for signed-in Free users (UTC YYYY-MM). */
-export const FREE_MONTHLY_EXTRACT_LIMIT = 15;
+export const FREE_MONTHLY_EXTRACT_LIMIT = 3;
 /** @deprecated Use FREE_MONTHLY_EXTRACT_LIMIT. */
 export const FREE_EXTRACT_LIMIT = FREE_MONTHLY_EXTRACT_LIMIT;
 /** Free fridge-match vision calls per UTC day (signed-in). */

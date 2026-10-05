@@ -27,7 +27,7 @@ Enable Pages (one-time, required before the workflow succeeds):
    • Paste or share a video link
    • Get ingredients, steps, time, and effort estimates
    • Scale servings and try substitutions
-   • 15 free recipe credits each month, with optional non-expiring packs
+   • 3 free recipe credits each month, with optional non-expiring packs
 
    Configure and sandbox-test RevenueCat consumable packs before store submission.
 4. Privacy policy URL: (see above)
