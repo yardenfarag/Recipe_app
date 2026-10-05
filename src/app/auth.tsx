@@ -30,6 +30,7 @@ import {
   normalizeEmail,
   validatePassword,
 } from '@/lib/authValidation';
+import { savePendingOAuthReason } from '@/lib/pendingOAuth';
 import {
   isAppleAuthAvailable,
   requestPasswordReset,
@@ -244,6 +245,7 @@ export default function AuthScreen() {
     setError(null);
     setLoading(true);
     try {
+      if (Platform.OS === 'web') savePendingOAuthReason(reason);
       const result = await signInWithGoogle();
       if (!result.cancelled) done();
     } catch (err) {

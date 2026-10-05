@@ -164,6 +164,13 @@ export async function signInWithGoogle() {
   if (error) throw friendlyAuthError(error, 'social');
   if (!data.url) throw new Error('Google sign-in could not be started. Please try again.');
 
+  // Web: leave the page and come back to /app/auth-callback, which exchanges the code.
+  // A popup loses window.opener on Google's pages, so it can't report back.
+  if (Platform.OS === 'web') {
+    window.location.assign(data.url);
+    return new Promise<never>(() => {});
+  }
+
   const result = await WebBrowser.openAuthSessionAsync(data.url, redirectTo, {
     showInRecents: true,
   });

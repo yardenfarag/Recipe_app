@@ -1,22 +1,33 @@
 import * as Linking from 'expo-linking';
 import { router } from 'expo-router';
-import { useEffect, useState } from 'react';
-import { ActivityIndicator, Pressable, Text, View } from 'react-native';
+import { useEffect, useRef, useState } from 'react';
+import { ActivityIndicator, Platform, Pressable, Text, View } from 'react-native';
 import { useTranslation } from 'react-i18next';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
+import { useLanguagePreference } from '@/hooks/useLanguagePreference';
+import { useOnboarding } from '@/hooks/useOnboarding';
 import { useThemePreference } from '@/hooks/useThemePreference';
 import { announce } from '@/lib/a11y';
+import { captureOnboardingCompleted } from '@/lib/analytics';
+import { takePendingOAuthReason } from '@/lib/pendingOAuth';
 import { completeOAuthFromCallbackUrl } from '@/lib/supabase/auth';
 
 const CALLBACK_WAIT_MS = 4_000;
 
-/** Handles Google OAuth when Android/iOS opens pinch://auth-callback from the browser. */
+/** Finishes Google OAuth: native opens pinch://auth-callback, web returns to /app/auth-callback. */
 export default function AuthCallbackScreen() {
   const { t } = useTranslation();
   const callbackUrl = Linking.useLinkingURL();
   const { colors } = useThemePreference();
+  const { completeOnboarding } = useOnboarding();
+  const { language } = useLanguagePreference();
   const [error, setError] = useState<string | null>(null);
+  // Read through a ref: re-running the effect would reuse the one-time OAuth code.
+  const onboardingRef = useRef({ completeOnboarding, language });
+  useEffect(() => {
+    onboardingRef.current = { completeOnboarding, language };
+  }, [completeOnboarding, language]);
 
   useEffect(() => {
     let active = true;
@@ -25,7 +36,16 @@ export default function AuthCallbackScreen() {
     async function finishSignIn(url: string) {
       try {
         await completeOAuthFromCallbackUrl(url);
-        if (active) router.replace('/');
+        if (!active) return;
+        // Web: same next step the auth screen takes after an in-page sign-in.
+        if (takePendingOAuthReason() === 'onboarding') {
+          const { completeOnboarding: complete, language: locale } = onboardingRef.current;
+          captureOnboardingCompleted({ locale, platform: Platform.OS });
+          await complete();
+          if (active) router.replace('/add');
+          return;
+        }
+        router.replace('/');
       } catch (err) {
         if (active) {
           const message = err instanceof Error ? err.message : t('auth.callbackFailed');
