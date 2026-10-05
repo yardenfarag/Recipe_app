@@ -48,6 +48,8 @@ export function OnboardingVision() {
     <View className="flex-1 items-center justify-center px-2">
       <Animated.View
         entering={reduceMotion ? undefined : FadeIn.duration(480)}
+        accessible={false}
+        importantForAccessibility="no-hide-descendants"
         className="mb-8 items-center justify-center"
         style={{ width: 168, height: 168 }}
       >
@@ -86,6 +88,7 @@ export function OnboardingVision() {
 
       <Animated.View entering={enter(80)} className="items-center" style={{ maxWidth: 320 }}>
         <Text
+          accessibilityLabel="Pinch"
           className="text-xs font-semibold"
           style={{
             color: colors.textSecondary,
@@ -97,6 +100,7 @@ export function OnboardingVision() {
           PINCH
         </Text>
         <Text
+          accessibilityRole="header"
           className="mt-3 text-center text-[32px] font-bold tracking-tight"
           style={{
             color: colors.text,

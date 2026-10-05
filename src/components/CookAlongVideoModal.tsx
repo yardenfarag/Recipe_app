@@ -15,6 +15,7 @@ import { WebView } from 'react-native-webview';
 
 import { useBreakpoint } from '@/hooks/useBreakpoint';
 import { useThemePreference } from '@/hooks/useThemePreference';
+import { announce, CHROME_MAX_FONT_SCALE } from '@/lib/a11y';
 import {
   buildRecipeVideoWebViewSource,
   getRecipePlatformLabel,
@@ -129,6 +130,10 @@ export function CookAlongVideoModal({
     }
   }, [visible, webSource]);
 
+  useEffect(() => {
+    if (visible && loadError) announce(t('cookAlong.loadFailed'));
+  }, [visible, loadError, t]);
+
   async function openInBrowser() {
     const playUrl = video.url || originalUrl;
     const url =
@@ -162,15 +167,18 @@ export function CookAlongVideoModal({
         onPress={() => void openInBrowser()}
         className="mt-4 rounded-full px-5 py-2.5 active:opacity-80"
         style={{ backgroundColor: colors.primary }}
+        accessibilityRole="link"
       >
-        <Text className="text-sm font-bold text-white">{t('cookAlong.openInBrowser')}</Text>
+        <Text className="text-sm font-bold" style={{ color: colors.onPrimary }}>
+          {t('cookAlong.openInBrowser')}
+        </Text>
       </Pressable>
     </View>
   ) : (
     <>
       {loading ? (
         <View className="absolute inset-0 z-10 items-center justify-center bg-black">
-          <ActivityIndicator color="#fff" size="large" />
+          <ActivityIndicator color="#fff" size="large" accessibilityLabel={t('a11y.loadingVideo')} />
         </View>
       ) : null}
       {isWeb ? (
@@ -246,7 +254,7 @@ export function CookAlongVideoModal({
     <>
       <View className="flex-row items-center justify-between px-4 pb-2 pt-3">
         <View className="flex-1" style={{ paddingEnd: 12 }}>
-          <Text className="text-base font-bold" style={{ color: colors.text }}>
+          <Text className="text-base font-bold" style={{ color: colors.text }} accessibilityRole="header">
             {t('cookAlong.title')}
           </Text>
           <Text className="text-xs" style={{ color: colors.textSecondary }}>
@@ -260,6 +268,7 @@ export function CookAlongVideoModal({
           hitSlop={12}
           className="h-9 w-9 items-center justify-center rounded-full active:opacity-70"
           style={{ backgroundColor: colors.frosted }}
+          accessibilityRole="button"
           accessibilityLabel={t('cookAlong.close')}
         >
           <Ionicons name="close" size={20} color={colors.text} />
@@ -270,6 +279,13 @@ export function CookAlongVideoModal({
         <View className="mb-2 flex-row gap-2 px-4">
           {(['compact', 'medium', 'tall'] as HeightPreset[]).map((preset) => {
             const active = heightPreset === preset;
+            const presetLabel = t(
+              preset === 'compact'
+                ? 'cookAlong.heightCompact'
+                : preset === 'medium'
+                  ? 'cookAlong.heightMedium'
+                  : 'cookAlong.heightTall',
+            );
             return (
               <Pressable
                 key={preset}
@@ -278,18 +294,17 @@ export function CookAlongVideoModal({
                 style={{
                   backgroundColor: active ? colors.primary : colors.frosted,
                 }}
+                hitSlop={{ top: 8, bottom: 8 }}
+                accessibilityRole="button"
+                accessibilityState={{ selected: active }}
+                accessibilityLabel={t('a11y.videoHeight', { size: presetLabel })}
               >
                 <Text
                   className="text-[11px] font-semibold"
-                  style={{ color: active ? '#fff' : colors.textSecondary }}
+                  style={{ color: active ? colors.onPrimary : colors.textSecondary }}
+                  maxFontSizeMultiplier={CHROME_MAX_FONT_SCALE}
                 >
-                  {t(
-                    preset === 'compact'
-                      ? 'cookAlong.heightCompact'
-                      : preset === 'medium'
-                        ? 'cookAlong.heightMedium'
-                        : 'cookAlong.heightTall',
-                  )}
+                  {presetLabel}
                 </Text>
               </Pressable>
             );
@@ -310,9 +325,10 @@ export function CookAlongVideoModal({
       <Pressable
         onPress={() => void openInBrowser()}
         className="mx-4 mt-2 mb-3 flex-row items-center justify-center gap-1.5 py-2 active:opacity-70"
+        accessibilityRole="link"
       >
         <Ionicons name="open-outline" size={16} color={colors.textSecondary} />
-        <Text className="text-xs font-medium" style={{ color: colors.textSecondary }}>
+        <Text className="shrink text-xs font-medium" style={{ color: colors.textSecondary }}>
           {t('cookAlong.openInBrowserHint')}
         </Text>
       </Pressable>
@@ -362,10 +378,13 @@ export function CookAlongVideoModal({
             bottom: 0,
           }}
           onPress={onClose}
+          accessibilityRole="button"
           accessibilityLabel={t('cookAlong.dismiss')}
         />
         <View
           pointerEvents="auto"
+          accessibilityViewIsModal
+          onAccessibilityEscape={onClose}
           style={{
             width: webDialogWidth,
             height: webDialogHeight,
@@ -402,6 +421,7 @@ export function CookAlongVideoModal({
 
       <View
         pointerEvents="auto"
+        onAccessibilityEscape={onClose}
         style={{
           height: totalHeight,
           paddingBottom: insets.bottom,

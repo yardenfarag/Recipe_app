@@ -60,7 +60,11 @@ export function CollectionsIllustration() {
   }));
 
   return (
-    <View style={{ alignItems: 'center', justifyContent: 'center' }}>
+    <View
+      style={{ alignItems: 'center', justifyContent: 'center' }}
+      accessible={false}
+      importantForAccessibility="no-hide-descendants"
+    >
       <PhoneFrame>
         <View style={{ flex: 1, justifyContent: 'center', gap: 10 }}>
           <Text

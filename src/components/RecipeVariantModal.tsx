@@ -9,6 +9,7 @@ import { TextInput } from '@/components/text-input';
 import { useAuth } from '@/hooks/useAuth';
 import { useRtl } from '@/hooks/useRtl';
 import { useThemePreference } from '@/hooks/useThemePreference';
+import { announce } from '@/lib/a11y';
 import { RECIPE_REMIX_LIMIT } from '@/lib/quotas';
 import { RECIPE_VARIANTS, RecipeVariantKey } from '@/lib/recipeVariants';
 import { transformRecipe, TransformedRecipePayload } from '@/lib/supabase/transformRecipe';
@@ -103,19 +104,26 @@ export function RecipeVariantModal({
           router.push('/auth?mode=signup');
         } else if (result.code === 'recipe_limit' || result.code === 'daily_limit') {
           setError('recipe_limit');
+          announce(t('recipe.remixRecipeLimit', { limit: RECIPE_REMIX_LIMIT }));
         } else if (result.code === 'instruction_unrelated') {
           setError(t('recipe.remixUnrelated'));
+          announce(t('recipe.remixUnrelated'));
         } else if (result.code === 'metering_error' || result.code === 'recipe_identity_required') {
           setError(t('recipe.remixFailed'));
+          announce(t('recipe.remixFailed'));
         } else {
-          setError(result.message ?? t('recipe.remixFailed'));
+          const message = result.message ?? t('recipe.remixFailed');
+          setError(message);
+          announce(message);
         }
         return;
       }
 
       setPreview({ variant, recipe: result.recipe });
+      announce(`${t('recipe.remixWhatChanged')}: ${result.recipe.summary}`);
     } catch {
       setError(t('recipe.remixFailed'));
+      announce(t('recipe.remixFailed'));
     } finally {
       setLoading(false);
     }
@@ -164,6 +172,7 @@ export function RecipeVariantModal({
               }}
               placeholder={t('recipe.remixCustomPlaceholder')}
               placeholderTextColor={colors.textSecondary}
+              accessibilityLabel={t('recipe.remixCustomTitle')}
               value={instruction}
               onChangeText={(value) => {
                 setInstruction(value);
@@ -175,6 +184,8 @@ export function RecipeVariantModal({
             <Pressable
               onPress={() => void handleCustomRemix()}
               disabled={!instruction.trim()}
+              accessibilityRole="button"
+              accessibilityState={{ disabled: !instruction.trim() }}
               className="mb-6 items-center rounded-3xl py-3.5"
               style={{
                 backgroundColor: colors.accentSoft,
@@ -197,7 +208,12 @@ export function RecipeVariantModal({
                     : error}
                 </Text>
                 {error !== 'recipe_limit' ? (
-                  <Pressable onPress={() => setError(null)} className="mt-3 active:opacity-70">
+                  <Pressable
+                    onPress={() => setError(null)}
+                    className="mt-3 min-h-[32px] justify-center self-start active:opacity-70"
+                    hitSlop={6}
+                    accessibilityRole="button"
+                  >
                     <Text className="text-sm font-semibold" style={{ color: colors.primary }}>
                       {t('recipe.remixTryAnother')}
                     </Text>
@@ -210,6 +226,7 @@ export function RecipeVariantModal({
               <Pressable
                 key={option.key}
                 onPress={() => handleSelectVariant(option.key)}
+                accessibilityRole="button"
                 className="mb-3 flex-row items-center gap-3.5 rounded-3xl border p-4 active:opacity-90"
                 style={{ borderColor: colors.border, backgroundColor: colors.surface }}
               >
@@ -238,7 +255,7 @@ export function RecipeVariantModal({
         )}
 
         {loading && (
-          <View className="items-center py-16">
+          <View className="items-center py-16" accessibilityLiveRegion="polite">
             <ActivityIndicator color={colors.primary} size="large" />
             <Text className="mt-3 text-sm" style={{ color: colors.textSecondary }}>
               {t('recipe.remixAdapting')}
@@ -251,6 +268,7 @@ export function RecipeVariantModal({
             <View
               className="mb-5 rounded-3xl border p-4"
               style={{ borderColor: colors.border, backgroundColor: colors.surface }}
+              accessible
             >
               <Text className="mb-1 text-xs font-medium" style={{ color: colors.textSecondary }}>
                 {t('recipe.remixWhatChanged')}
@@ -264,13 +282,17 @@ export function RecipeVariantModal({
               className="mb-3 items-center rounded-full py-4 active:opacity-80"
               style={{ backgroundColor: colors.primary }}
               onPress={handleApply}
+              accessibilityRole="button"
             >
-              <Text className="text-base font-bold text-white">{t('recipe.remixUseVersion')}</Text>
+              <Text className="text-base font-bold" style={{ color: colors.onPrimary }}>
+                {t('recipe.remixUseVersion')}
+              </Text>
             </Pressable>
 
             <Pressable
               onPress={() => setPreview(null)}
-              className="items-center py-2 active:opacity-70"
+              accessibilityRole="button"
+              className="min-h-[44px] items-center justify-center py-2 active:opacity-70"
             >
               <Text className="text-sm font-semibold" style={{ color: colors.textSecondary }}>
                 {t('recipe.remixPickDifferent')}

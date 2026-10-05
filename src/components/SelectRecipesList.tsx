@@ -5,6 +5,7 @@ import { FlatList, Pressable, ScrollView, Text, View } from 'react-native';
 
 import { TextInput } from '@/components/text-input';
 import { useThemePreference } from '@/hooks/useThemePreference';
+import { CHROME_MAX_FONT_SCALE } from '@/lib/a11y';
 import { filterAndSortRecipes } from '@/lib/recipeListQuery';
 import type { RecipeCollection } from '@/types/collection';
 import type { Recipe } from '@/types/recipe';
@@ -91,12 +92,15 @@ export function SelectRecipesList({
           borderColor: colors.frostedBorder,
         }}
       >
-        <Ionicons name="search-outline" size={18} color={colors.textSecondary} />
+        <View accessible={false} importantForAccessibility="no-hide-descendants">
+          <Ionicons name="search-outline" size={18} color={colors.textSecondary} />
+        </View>
         <TextInput
           className="flex-1 px-3 py-3.5 text-base"
           style={{ color: colors.text }}
           placeholder={t('list.searchRecipes')}
           placeholderTextColor={colors.textSecondary}
+          accessibilityLabel={t('a11y.searchRecipes')}
           value={search}
           onChangeText={setSearch}
           autoCapitalize="none"
@@ -107,9 +111,10 @@ export function SelectRecipesList({
         {search.length > 0 ? (
           <Pressable
             onPress={() => setSearch('')}
-            hitSlop={8}
+            hitSlop={13}
             className="active:opacity-70"
-            accessibilityLabel={t('common.close')}
+            accessibilityRole="button"
+            accessibilityLabel={t('a11y.clearSearch')}
           >
             <Ionicons name="close-circle" size={18} color={colors.textSecondary} />
           </Pressable>
@@ -134,7 +139,8 @@ export function SelectRecipesList({
           >
             <Text
               className="text-sm font-semibold"
-              style={{ color: selectedCollectionId == null ? '#fff' : colors.text }}
+              style={{ color: selectedCollectionId == null ? colors.onPrimary : colors.text }}
+              maxFontSizeMultiplier={CHROME_MAX_FONT_SCALE}
             >
               {t('list.allCollections')}
             </Text>
@@ -156,7 +162,8 @@ export function SelectRecipesList({
               >
                 <Text
                   className="text-sm font-semibold"
-                  style={{ color: selected ? '#fff' : colors.text }}
+                  style={{ color: selected ? colors.onPrimary : colors.text }}
+                  maxFontSizeMultiplier={CHROME_MAX_FONT_SCALE}
                 >
                   {collection.name}
                 </Text>
@@ -167,15 +174,17 @@ export function SelectRecipesList({
       ) : null}
 
       <View className="mb-2 flex-row items-center justify-between gap-2">
-        <Text className="text-xs font-semibold" style={{ color: colors.textSecondary }}>
+        <Text className="flex-shrink text-xs font-semibold" style={{ color: colors.textSecondary }}>
           {t('list.recipesVisible', { count: displayedRecipes.length })}
         </Text>
         <View className="flex-row items-center gap-3">
           {selectedCount > 0 ? (
             <Pressable
               onPress={() => onChangeSelectedIds([])}
-              hitSlop={6}
+              hitSlop={12}
               className="active:opacity-70"
+              accessibilityRole="button"
+              accessibilityLabel={t('a11y.clearSelectedRecipes')}
             >
               <Text className="text-xs font-bold" style={{ color: colors.textSecondary }}>
                 {t('list.clearSelection')}
@@ -184,9 +193,11 @@ export function SelectRecipesList({
           ) : null}
           <Pressable
             onPress={allVisibleSelected ? deselectVisible : selectAllVisible}
-            hitSlop={6}
+            hitSlop={12}
             className="active:opacity-70"
             disabled={visibleIds.length === 0}
+            accessibilityRole="button"
+            accessibilityState={{ disabled: visibleIds.length === 0 }}
           >
             <Text
               className="text-xs font-bold"
@@ -228,6 +239,13 @@ export function SelectRecipesList({
                   : undefined
               }
               onPress={() => onChangeSelectedIds(toggleOrderedId(selectedIds, item.id))}
+              accessibilityRole="checkbox"
+              accessibilityState={{ checked: isOn }}
+              accessibilityLabel={`${title}, ${
+                ingredientCount === 1
+                  ? t('list.ingredientCountOne', { count: ingredientCount })
+                  : t('list.ingredientCountOther', { count: ingredientCount })
+              }`}
             >
               <View
                 className="h-6 w-6 items-center justify-center rounded-md border-2"
@@ -236,7 +254,7 @@ export function SelectRecipesList({
                   backgroundColor: isOn ? colors.primary : 'transparent',
                 }}
               >
-                {isOn ? <Ionicons name="checkmark" size={14} color="#fff" /> : null}
+                {isOn ? <Ionicons name="checkmark" size={14} color={colors.onPrimary} /> : null}
               </View>
               <View className="min-w-0 flex-1">
                 <Text

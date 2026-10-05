@@ -16,6 +16,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { TextInput } from '@/components/text-input';
 import { useThemePreference } from '@/hooks/useThemePreference';
+import { announce } from '@/lib/a11y';
 import { getPasswordStrength, validatePassword } from '@/lib/authValidation';
 import { consumePasswordRecoveryUrl, updatePassword } from '@/lib/supabase/auth';
 
@@ -86,6 +87,14 @@ export default function ResetPasswordScreen() {
     };
   }, [recoveryUrl, t]);
 
+  useEffect(() => {
+    if (error) announce(error);
+  }, [error]);
+
+  useEffect(() => {
+    if (done) announce(t('resetPassword.updatedTitle'));
+  }, [done, t]);
+
   async function handleUpdatePassword() {
     const validationError = validatePassword(password);
     if (validationError) {
@@ -125,10 +134,16 @@ export default function ResetPasswordScreen() {
           <View
             className="mb-5 h-16 w-16 items-center justify-center rounded-full"
             style={{ backgroundColor: colors.primarySoft }}
+            accessible={false}
+            importantForAccessibility="no-hide-descendants"
           >
             <Ionicons name="checkmark-circle-outline" size={34} color={colors.primary} />
           </View>
-          <Text className="mb-2 text-center text-2xl font-bold" style={{ color: colors.text }}>
+          <Text
+            className="mb-2 text-center text-2xl font-bold"
+            style={{ color: colors.text }}
+            accessibilityRole="header"
+          >
             {t('resetPassword.updatedTitle')}
           </Text>
           <Text className="mb-8 text-center text-base leading-6" style={{ color: colors.textSecondary }}>
@@ -138,8 +153,11 @@ export default function ResetPasswordScreen() {
             className="w-full items-center rounded-full py-4"
             style={{ backgroundColor: colors.primary }}
             onPress={() => router.replace('/')}
+            accessibilityRole="button"
           >
-            <Text className="text-lg font-bold text-white">{t('recipe.goToLibrary')}</Text>
+            <Text className="text-lg font-bold" style={{ color: colors.onPrimary }}>
+              {t('recipe.goToLibrary')}
+            </Text>
           </Pressable>
         </View>
       </SafeAreaView>
@@ -161,17 +179,25 @@ export default function ResetPasswordScreen() {
       <View
         className="mb-6 h-12 w-12 items-center justify-center rounded-2xl"
         style={{ backgroundColor: colors.primarySoft }}
+        accessible={false}
+        importantForAccessibility="no-hide-descendants"
       >
         <Ionicons name="lock-open-outline" size={24} color={colors.primary} />
       </View>
-      <Text className="mb-2 text-2xl font-bold" style={{ color: colors.text }}>
+      <Text
+        className="mb-2 text-2xl font-bold"
+        style={{ color: colors.text }}
+        accessibilityRole="header"
+      >
         {t('resetPassword.chooseTitle')}
       </Text>
       <Text className="mb-6 text-sm leading-5" style={{ color: colors.textSecondary }}>
         {t('resetPassword.chooseHint')}
       </Text>
 
-      {!ready && !error && <ActivityIndicator color={colors.primary} />}
+      {!ready && !error && (
+        <ActivityIndicator color={colors.primary} accessibilityLabel={t('a11y.loading')} />
+      )}
 
       {ready && (
         <>
@@ -180,6 +206,8 @@ export default function ResetPasswordScreen() {
             style={{ borderColor: colors.border, backgroundColor: colors.surface }}
           >
             <TextInput
+              accessibilityLabel={t('resetPassword.newPassword')}
+              accessibilityHint={t('resetPassword.chooseHint')}
               className="flex-1 py-4 text-base"
               style={{ color: colors.text }}
               placeholder={t('resetPassword.newPassword')}
@@ -196,7 +224,7 @@ export default function ResetPasswordScreen() {
             />
             <Pressable
               onPress={() => setShowPassword((value) => !value)}
-              hitSlop={10}
+              hitSlop={12}
               accessibilityRole="button"
               accessibilityLabel={t(showPassword ? 'auth.hidePassword' : 'auth.showPassword')}
             >
@@ -209,7 +237,11 @@ export default function ResetPasswordScreen() {
           </View>
 
           <View className="mb-4">
-            <View className="mb-1.5 flex-row gap-1.5">
+            <View
+              className="mb-1.5 flex-row gap-1.5"
+              accessible={false}
+              importantForAccessibility="no-hide-descendants"
+            >
               {[0, 1, 2].map((index) => {
                 const activeCount = strength === 'strong' ? 3 : strength === 'good' ? 2 : 1;
                 const barColor =
@@ -229,12 +261,17 @@ export default function ResetPasswordScreen() {
                 );
               })}
             </View>
-            <Text className="text-xs" style={{ color: colors.textSecondary }}>
+            <Text
+              className="text-xs"
+              style={{ color: colors.textSecondary }}
+              accessibilityLiveRegion="polite"
+            >
               {t(`auth.strength.${strength}`)}
             </Text>
           </View>
 
           <TextInput
+            accessibilityLabel={t('resetPassword.confirmPassword')}
             className="mb-5 rounded-2xl border px-4 py-4 text-base"
             style={{
               color: colors.text,
@@ -263,6 +300,7 @@ export default function ResetPasswordScreen() {
         <View
           className="mb-5 rounded-2xl border px-4 py-3"
           style={{ borderColor: colors.dangerSoft, backgroundColor: colors.dangerSoft }}
+          accessibilityRole="alert"
         >
           <Text className="text-sm" style={{ color: colors.danger }}>
             {error}
@@ -276,11 +314,19 @@ export default function ResetPasswordScreen() {
           style={{ backgroundColor: canSubmit ? colors.primary : colors.border }}
           onPress={handleUpdatePassword}
           disabled={!canSubmit}
+          accessibilityRole="button"
+          accessibilityLabel={t('resetPassword.update')}
+          accessibilityState={{ disabled: !canSubmit, busy: loading }}
         >
           {loading ? (
-            <ActivityIndicator color="#fff" />
+            <ActivityIndicator color={canSubmit ? colors.onPrimary : colors.textSecondary} />
           ) : (
-            <Text className="text-lg font-bold text-white">{t('resetPassword.update')}</Text>
+            <Text
+              className="text-lg font-bold"
+              style={{ color: canSubmit ? colors.onPrimary : colors.textSecondary }}
+            >
+              {t('resetPassword.update')}
+            </Text>
           )}
         </Pressable>
       )}
@@ -290,6 +336,7 @@ export default function ResetPasswordScreen() {
           className="mt-4 items-center rounded-full border py-3.5"
           style={{ borderColor: colors.border }}
           onPress={() => router.replace('/auth?mode=forgot')}
+          accessibilityRole="button"
         >
           <Text className="text-base font-semibold" style={{ color: colors.text }}>
             {t('resetPassword.requestNewLink')}

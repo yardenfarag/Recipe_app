@@ -110,7 +110,7 @@ export default function HubRecipeScreen() {
     return (
       <Screen edges={screenEdges}>
         <View className="flex-1 items-center justify-center">
-          <ActivityIndicator color={colors.primary} />
+          <ActivityIndicator color={colors.primary} accessibilityLabel={t('a11y.loading')} />
         </View>
       </Screen>
     );
@@ -119,16 +119,22 @@ export default function HubRecipeScreen() {
   if (loadError || !card) {
     return (
       <Screen edges={screenEdges}>
-        <View className="flex-1 items-center justify-center gap-4 px-6">
+        <View
+          className="flex-1 items-center justify-center gap-4 px-6"
+          accessibilityLiveRegion="polite"
+        >
           <Text className="text-center text-base" style={{ color: colors.textSecondary }}>
             {loadError ?? t('hub.notFound')}
           </Text>
           <Pressable
             onPress={() => router.replace('/hub')}
+            accessibilityRole="button"
             className="rounded-full px-5 py-3 active:opacity-80"
             style={{ backgroundColor: colors.primary }}
           >
-            <Text className="text-sm font-bold text-white">{t('hub.backToHub')}</Text>
+            <Text className="text-sm font-bold" style={{ color: colors.onPrimary }}>
+              {t('hub.backToHub')}
+            </Text>
           </Pressable>
         </View>
       </Screen>
@@ -142,7 +148,12 @@ export default function HubRecipeScreen() {
       {isWeb ? (
         <View className="flex-row items-center justify-between px-5 py-3">
           <StackHeaderBackButton fallback="/hub" />
-          <Text className="text-base font-bold" style={{ color: colors.text }} numberOfLines={1}>
+          <Text
+            accessibilityRole="header"
+            className="min-w-0 flex-1 px-2 text-center text-base font-bold"
+            style={{ color: colors.text }}
+            numberOfLines={1}
+          >
             {card.title}
           </Text>
           <View className="w-10" />
@@ -157,13 +168,15 @@ export default function HubRecipeScreen() {
           }
           disabled={claiming}
           accessibilityRole="button"
+          accessibilityLabel={existingRecipeId ? t('hub.openInLibrary') : t('hub.addToLibrary')}
+          accessibilityState={{ disabled: claiming, busy: claiming }}
           className="min-h-12 items-center justify-center rounded-3xl px-5 active:opacity-80 disabled:opacity-60"
           style={{ backgroundColor: colors.primary }}
         >
           {claiming ? (
-            <ActivityIndicator color="#fff" />
+            <ActivityIndicator color={colors.onPrimary} />
           ) : (
-            <Text className="text-sm font-bold text-white">
+            <Text className="text-sm font-bold" style={{ color: colors.onPrimary }}>
               {existingRecipeId ? t('hub.openInLibrary') : t('hub.addToLibrary')}
             </Text>
           )}

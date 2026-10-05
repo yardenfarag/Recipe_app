@@ -1,6 +1,6 @@
 import Ionicons from '@expo/vector-icons/Ionicons';
 import { router } from 'expo-router';
-import { useCallback, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import {
   ActivityIndicator,
@@ -28,6 +28,7 @@ import { useRecipes } from '@/hooks/useRecipes';
 import { useRtl } from '@/hooks/useRtl';
 import { useShoppingList } from '@/hooks/useShoppingList';
 import { useThemePreference } from '@/hooks/useThemePreference';
+import { announce, CHROME_MAX_FONT_SCALE } from '@/lib/a11y';
 import { pickIngredientAmount } from '@/lib/ingredientAmounts';
 import { filterPantryStaples } from '@/lib/pantryStaples';
 import { formatQuantity } from '@/lib/formatQuantity';
@@ -84,6 +85,16 @@ export default function ShoppingListScreen() {
     message: string;
     combineName?: string;
   } | null>(null);
+
+  const showRefreshError = Boolean(error) && items.length > 0;
+  useEffect(() => {
+    if (showRefreshError) announce(t('list.refreshFailed'));
+  }, [showRefreshError, t]);
+
+  const noticeMessage = notice?.message;
+  useEffect(() => {
+    if (noticeMessage) announce(noticeMessage);
+  }, [noticeMessage]);
 
   const checkedCount = useMemo(() => items.filter((item) => item.checked).length, [items]);
   const duplicateCounts = useMemo(() => getDuplicateNameCounts(items), [items]);
@@ -381,15 +392,25 @@ export default function ShoppingListScreen() {
           <View
             className="-mx-1 mb-2 mt-3 flex-row items-center justify-between rounded-2xl px-3 py-2.5"
             style={{ backgroundColor: colors.background }}
+            accessible
+            accessibilityRole="header"
+            accessibilityLabel={`${row.title}, ${t(
+              row.count === 1 ? 'a11y.itemCountOne' : 'a11y.itemCountOther',
+              { count: row.count },
+            )}`}
           >
-            <Text className="text-base font-bold" style={{ color: colors.text }}>
+            <Text className="flex-shrink text-base font-bold" style={{ color: colors.text }}>
               {row.title}
             </Text>
             <View
               className="min-h-[24px] min-w-[24px] items-center justify-center rounded-full px-2"
               style={{ backgroundColor: colors.primarySoft }}
             >
-              <Text className="text-xs font-bold" style={{ color: colors.primary }}>
+              <Text
+                className="text-xs font-bold"
+                style={{ color: colors.primary }}
+                maxFontSizeMultiplier={CHROME_MAX_FONT_SCALE}
+              >
                 {row.count}
               </Text>
             </View>
@@ -405,6 +426,26 @@ export default function ShoppingListScreen() {
             : null;
       const dupCount = duplicateCounts.get(normalizeShoppingName(item.name)) ?? 0;
       const isDuplicate = dupCount > 1;
+      const showDuplicatePrompt = () => {
+        Alert.alert(
+          t('list.duplicateTitle'),
+          t('list.duplicateBody', { name: item.name, count: dupCount }),
+          [
+            { text: t('list.keepSeparate'), style: 'cancel' },
+            {
+              text: t('list.combine'),
+              onPress: () => void handleCombine(item.name),
+            },
+          ],
+        );
+      };
+      const itemA11yLabel = [
+        item.name,
+        amount,
+        isDuplicate ? t('list.alsoListed', { count: dupCount }) : null,
+      ]
+        .filter(Boolean)
+        .join(', ');
 
       return (
         <View
@@ -421,6 +462,17 @@ export default function ShoppingListScreen() {
             className="min-w-0 flex-1 flex-row items-center gap-3 active:opacity-90"
             onPress={() => void handleToggle(item)}
             onLongPress={() => handleLongPress(item)}
+            accessibilityRole="checkbox"
+            accessibilityState={{ checked: item.checked }}
+            accessibilityLabel={itemA11yLabel}
+            accessibilityActions={[
+              { name: 'longpress', label: t('a11y.moreOptions') },
+              ...(isDuplicate ? [{ name: 'combine', label: t('list.combineDuplicates') }] : []),
+            ]}
+            onAccessibilityAction={(event) => {
+              if (event.nativeEvent.actionName === 'longpress') handleLongPress(item);
+              else if (event.nativeEvent.actionName === 'combine') showDuplicatePrompt();
+            }}
           >
             <View
               className="h-6 w-6 items-center justify-center rounded-md border-2"
@@ -429,7 +481,7 @@ export default function ShoppingListScreen() {
                 backgroundColor: item.checked ? colors.primary : 'transparent',
               }}
             >
-              {item.checked ? <Ionicons name="checkmark" size={14} color="#fff" /> : null}
+              {item.checked ? <Ionicons name="checkmark" size={14} color={colors.onPrimary} /> : null}
             </View>
             <View className="min-w-0 flex-1">
               <View className="flex-row flex-wrap items-center gap-2">
@@ -447,22 +499,15 @@ export default function ShoppingListScreen() {
                   <Pressable
                     className="rounded-full px-2 py-0.5"
                     style={{ backgroundColor: colors.warningSoft }}
-                    onPress={() => {
-                      Alert.alert(
-                        t('list.duplicateTitle'),
-                        t('list.duplicateBody', { name: item.name, count: dupCount }),
-                        [
-                          { text: t('list.keepSeparate'), style: 'cancel' },
-                          {
-                            text: t('list.combine'),
-                            onPress: () => void handleCombine(item.name),
-                          },
-                        ],
-                      );
-                    }}
+                    onPress={showDuplicatePrompt}
                     hitSlop={6}
+                    accessibilityRole="button"
                   >
-                    <Text className="text-[11px] font-bold" style={{ color: colors.warning }}>
+                    <Text
+                      className="text-[11px] font-bold"
+                      style={{ color: colors.warning }}
+                      maxFontSizeMultiplier={CHROME_MAX_FONT_SCALE}
+                    >
                       {t('list.alsoListed', { count: dupCount })}
                     </Text>
                   </Pressable>
@@ -537,8 +582,14 @@ export default function ShoppingListScreen() {
     return (
       <Screen tabScreen>
         <View className="flex-1 items-center justify-center px-8 pb-10">
-          <Ionicons name="cloud-offline-outline" size={42} color={colors.textSecondary} />
-          <Text className="mb-2 mt-4 text-center text-2xl font-bold" style={{ color: colors.text }}>
+          <View accessible={false} importantForAccessibility="no-hide-descendants">
+            <Ionicons name="cloud-offline-outline" size={42} color={colors.textSecondary} />
+          </View>
+          <Text
+            className="mb-2 mt-4 text-center text-2xl font-bold"
+            style={{ color: colors.text }}
+            accessibilityRole="header"
+          >
             {t('list.loadFailedTitle')}
           </Text>
           <Text className="mb-6 text-center text-base leading-6" style={{ color: colors.textSecondary }}>
@@ -548,8 +599,11 @@ export default function ShoppingListScreen() {
             className="rounded-3xl px-6 py-3.5 active:opacity-80"
             style={{ backgroundColor: colors.primary }}
             onPress={() => void refresh()}
+            accessibilityRole="button"
           >
-            <Text className="text-base font-bold text-white">{t('common.tryAgainAction')}</Text>
+            <Text className="text-base font-bold" style={{ color: colors.onPrimary }}>
+              {t('common.tryAgainAction')}
+            </Text>
           </Pressable>
         </View>
       </Screen>
@@ -565,7 +619,7 @@ export default function ShoppingListScreen() {
         <View className="flex-1 px-5 pt-2">
         <BrandHeader title={t('list.title')} />
 
-        {error && items.length > 0 && (
+        {showRefreshError && (
           <View
             className="mt-4 flex-row items-center gap-3 rounded-2xl px-4 py-3"
             style={{ backgroundColor: colors.dangerSoft }}
@@ -573,7 +627,12 @@ export default function ShoppingListScreen() {
             <Text className="flex-1 text-sm" style={{ color: colors.danger }}>
               {t('list.refreshFailed')}
             </Text>
-            <Pressable onPress={() => void refresh()} hitSlop={8}>
+            <Pressable
+              onPress={() => void refresh()}
+              hitSlop={12}
+              accessibilityRole="button"
+              className="min-h-[24px] justify-center"
+            >
               <Text className="text-sm font-bold" style={{ color: colors.danger }}>
                 {t('common.retry')}
               </Text>
@@ -628,13 +687,18 @@ export default function ShoppingListScreen() {
               }}
               placeholder={t('list.itemName')}
               placeholderTextColor={colors.textSecondary}
+              accessibilityLabel={t('list.itemName')}
               value={name}
               onChangeText={setName}
               returnKeyType="next"
               onSubmitEditing={() => void handleAdd()}
             />
             {typingDuplicateCount > 0 ? (
-              <Text className="px-1 text-xs font-medium" style={{ color: colors.warning }}>
+              <Text
+                className="px-1 text-xs font-medium"
+                style={{ color: colors.warning }}
+                accessibilityLiveRegion="polite"
+              >
                 {t(
                   typingDuplicateCount === 1
                     ? 'list.typingDuplicateOne'
@@ -653,6 +717,7 @@ export default function ShoppingListScreen() {
                 }}
                 placeholder={t('list.quantityShort')}
                 placeholderTextColor={colors.textSecondary}
+                accessibilityLabel={t('a11y.quantity')}
                 value={quantityText}
                 onChangeText={setQuantityText}
                 keyboardType="decimal-pad"
@@ -666,6 +731,7 @@ export default function ShoppingListScreen() {
                 }}
                 placeholder={t('list.unitOptional')}
                 placeholderTextColor={colors.textSecondary}
+                accessibilityLabel={t('list.unitOptional')}
                 value={unit}
                 onChangeText={setUnit}
                 returnKeyType="done"
@@ -678,11 +744,12 @@ export default function ShoppingListScreen() {
                 onPress={() => void handleAdd()}
                 accessibilityRole="button"
                 accessibilityLabel={t('list.addItem')}
+                accessibilityState={{ disabled: adding, busy: adding }}
               >
                 {adding ? (
-                  <ActivityIndicator color="#fff" />
+                  <ActivityIndicator color={colors.onPrimary} />
                 ) : (
-                  <Ionicons name="add" size={22} color="#fff" />
+                  <Ionicons name="add" size={22} color={colors.onPrimary} />
                 )}
               </Pressable>
             </View>
@@ -694,15 +761,19 @@ export default function ShoppingListScreen() {
             className="mt-3 flex-row items-start gap-2 rounded-2xl px-3.5 py-3"
             style={{ backgroundColor: colors.warningSoft }}
           >
-            <Ionicons name="information-circle" size={18} color={colors.warning} style={{ marginTop: 1 }} />
+            <View accessible={false} importantForAccessibility="no-hide-descendants">
+              <Ionicons name="information-circle" size={18} color={colors.warning} style={{ marginTop: 1 }} />
+            </View>
             <View className="min-w-0 flex-1">
               <Text className="text-sm leading-5" style={{ color: colors.text }}>
                 {notice.message}
               </Text>
               {notice.combineName ? (
                 <Pressable
-                  className="mt-2 self-start active:opacity-70"
+                  className="mt-2 min-h-[32px] justify-center self-start active:opacity-70"
+                  hitSlop={6}
                   onPress={() => void handleCombine(notice.combineName!)}
+                  accessibilityRole="button"
                 >
                   <Text className="text-sm font-bold" style={{ color: colors.warning }}>
                     {t('list.combineOneLine')}
@@ -712,7 +783,7 @@ export default function ShoppingListScreen() {
             </View>
             <Pressable
               onPress={() => setNotice(null)}
-              hitSlop={8}
+              hitSlop={13}
               accessibilityRole="button"
               accessibilityLabel={t('common.dismiss')}
             >
@@ -733,8 +804,11 @@ export default function ShoppingListScreen() {
               className="mt-8 min-h-[44px] items-center justify-center rounded-3xl px-6 active:opacity-80"
               style={{ backgroundColor: colors.primary }}
               onPress={() => router.push('/')}
+              accessibilityRole="button"
             >
-              <Text className="text-base font-bold text-white">{t('list.browseRecipes')}</Text>
+              <Text className="text-base font-bold" style={{ color: colors.onPrimary }}>
+                {t('list.browseRecipes')}
+              </Text>
             </Pressable>
           </View>
         ) : (
@@ -767,6 +841,8 @@ export default function ShoppingListScreen() {
                 style={{ borderColor: colors.frostedBorder }}
                 onPress={handleClearChecked}
                 disabled={checkedCount === 0}
+                accessibilityRole="button"
+                accessibilityState={{ disabled: checkedCount === 0 }}
               >
                 <Text
                   className="text-sm font-semibold"
@@ -801,6 +877,8 @@ export default function ShoppingListScreen() {
         <SafeAreaView
           className="flex-1"
           style={{ backgroundColor: colors.background, direction: rtl ? 'rtl' : 'ltr' }}
+          accessibilityViewIsModal
+          onAccessibilityEscape={() => setEditingItem(null)}
         >
           <KeyboardAvoidingView
             className="flex-1"
@@ -810,13 +888,28 @@ export default function ShoppingListScreen() {
             className="flex-row items-center justify-between border-b px-5 py-4"
             style={{ borderColor: colors.frostedBorder }}
           >
-            <Pressable onPress={() => setEditingItem(null)}>
+            <Pressable
+              onPress={() => setEditingItem(null)}
+              hitSlop={12}
+              accessibilityRole="button"
+            >
               <Text style={{ color: colors.textSecondary }}>{t('common.cancel')}</Text>
             </Pressable>
-            <Text className="text-base font-bold" style={{ color: colors.text }}>
+            <Text
+              className="flex-shrink px-2 text-base font-bold"
+              style={{ color: colors.text }}
+              accessibilityRole="header"
+            >
               {t('list.editItem')}
             </Text>
-            <Pressable onPress={() => void handleSaveEdit()} disabled={savingEdit}>
+            <Pressable
+              onPress={() => void handleSaveEdit()}
+              disabled={savingEdit}
+              hitSlop={12}
+              accessibilityRole="button"
+              accessibilityLabel={t('common.save')}
+              accessibilityState={{ disabled: savingEdit, busy: savingEdit }}
+            >
               {savingEdit ? (
                 <ActivityIndicator color={colors.primary} />
               ) : (
@@ -836,6 +929,7 @@ export default function ShoppingListScreen() {
               }}
               placeholder={t('library.namePlaceholder')}
               placeholderTextColor={colors.textSecondary}
+              accessibilityLabel={t('list.itemName')}
               value={editName}
               onChangeText={setEditName}
             />
@@ -849,6 +943,7 @@ export default function ShoppingListScreen() {
                 }}
                 placeholder={t('list.quantityShort')}
                 placeholderTextColor={colors.textSecondary}
+                accessibilityLabel={t('a11y.quantity')}
                 value={editQuantity}
                 onChangeText={setEditQuantity}
                 keyboardType="decimal-pad"
@@ -862,6 +957,7 @@ export default function ShoppingListScreen() {
                 }}
                 placeholder={t('list.unit')}
                 placeholderTextColor={colors.textSecondary}
+                accessibilityLabel={t('list.unit')}
                 value={editUnit}
                 onChangeText={setEditUnit}
               />

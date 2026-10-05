@@ -6,6 +6,7 @@ import { useTranslation } from 'react-i18next';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { useThemePreference } from '@/hooks/useThemePreference';
+import { announce } from '@/lib/a11y';
 import { completeOAuthFromCallbackUrl } from '@/lib/supabase/auth';
 
 const CALLBACK_WAIT_MS = 4_000;
@@ -27,7 +28,9 @@ export default function AuthCallbackScreen() {
         if (active) router.replace('/');
       } catch (err) {
         if (active) {
-          setError(err instanceof Error ? err.message : t('auth.callbackFailed'));
+          const message = err instanceof Error ? err.message : t('auth.callbackFailed');
+          setError(message);
+          announce(message);
         }
       }
     }
@@ -49,6 +52,7 @@ export default function AuthCallbackScreen() {
           return;
         }
         setError(t('auth.callbackMissing'));
+        announce(t('auth.callbackMissing'));
       })();
     }, CALLBACK_WAIT_MS);
 
@@ -63,22 +67,35 @@ export default function AuthCallbackScreen() {
       <View className="flex-1 items-center justify-center">
         {!error ? (
           <>
-            <ActivityIndicator color={colors.primary} size="large" />
-            <Text className="mt-4 text-base" style={{ color: colors.textSecondary }}>
+            <View accessible={false} importantForAccessibility="no-hide-descendants">
+              <ActivityIndicator color={colors.primary} size="large" />
+            </View>
+            <Text
+              className="mt-4 text-base"
+              style={{ color: colors.textSecondary }}
+              accessibilityLiveRegion="polite"
+            >
               {t('auth.callbackFinishing')}
             </Text>
           </>
         ) : (
           <>
-            <Text className="mb-6 text-center text-base" style={{ color: colors.danger }}>
+            <Text
+              className="mb-6 text-center text-base"
+              style={{ color: colors.danger }}
+              accessibilityRole="alert"
+            >
               {error}
             </Text>
             <Pressable
               className="rounded-full px-6 py-3"
               style={{ backgroundColor: colors.primary }}
               onPress={() => router.replace('/auth')}
+              accessibilityRole="button"
             >
-              <Text className="text-base font-bold text-white">{t('auth.backToSignIn')}</Text>
+              <Text className="text-base font-bold" style={{ color: colors.onPrimary }}>
+                {t('auth.backToSignIn')}
+              </Text>
             </Pressable>
           </>
         )}

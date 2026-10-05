@@ -158,7 +158,12 @@ export default function AdminUsageScreen() {
           <Text className="mb-5 text-center text-sm" style={{ color: colors.textSecondary }}>
             This usage tracker is limited to your account.
           </Text>
-          <Pressable onPress={() => router.back()} className="rounded-[18px] px-5 py-3" style={{ backgroundColor: colors.primarySoft }}>
+          <Pressable
+            onPress={() => router.back()}
+            accessibilityRole="button"
+            className="rounded-[18px] px-5 py-3"
+            style={{ backgroundColor: colors.primarySoft }}
+          >
             <Text style={{ color: colors.primary }} className="font-semibold">
               Go back
             </Text>
@@ -174,7 +179,11 @@ export default function AdminUsageScreen() {
   return (
     <Screen dense>
       <ScrollView className="flex-1" contentContainerStyle={{ paddingBottom: 48, paddingHorizontal: 16 }}>
-        <Text className="mb-1 mt-2 text-2xl font-bold" style={{ color: colors.text }}>
+        <Text
+          className="mb-1 mt-2 text-2xl font-bold"
+          style={{ color: colors.text }}
+          accessibilityRole="header"
+        >
           Usage & support
         </Text>
         <Text className="mb-4 text-sm" style={{ color: colors.textSecondary }}>
@@ -183,6 +192,7 @@ export default function AdminUsageScreen() {
 
         <Pressable
           onPress={() => void refresh()}
+          accessibilityRole="button"
           className="mb-4 self-start rounded-[16px] px-4 py-2 active:opacity-70"
           style={{ backgroundColor: colors.primarySoft }}
         >
@@ -226,6 +236,7 @@ export default function AdminUsageScreen() {
                   borderColor: colors.frostedBorder,
                 }}
                 placeholder="user uuid"
+                accessibilityLabel="User ID"
                 placeholderTextColor={colors.textSecondary}
                 value={grantUserId}
                 onChangeText={setGrantUserId}
@@ -241,6 +252,7 @@ export default function AdminUsageScreen() {
                   borderColor: colors.frostedBorder,
                 }}
                 placeholder={t('admin.creditAmountPlaceholder')}
+                accessibilityLabel={t('admin.creditAmountPlaceholder')}
                 placeholderTextColor={colors.textSecondary}
                 value={grantAmount}
                 onChangeText={setGrantAmount}
@@ -251,8 +263,12 @@ export default function AdminUsageScreen() {
                 style={{ backgroundColor: colors.primary }}
                 onPress={() => void handleGrant()}
                 disabled={grantBusy}
+                accessibilityRole="button"
+                accessibilityState={{ disabled: grantBusy, busy: grantBusy }}
               >
-                <Text className="text-xs font-bold text-white">{t('admin.applyAdjustment')}</Text>
+                <Text className="text-xs font-bold" style={{ color: colors.onPrimary }}>
+                  {t('admin.applyAdjustment')}
+                </Text>
               </Pressable>
             </Section>
 
@@ -282,6 +298,7 @@ export default function AdminUsageScreen() {
                         className="self-start rounded-[12px] px-3 py-1.5"
                         style={{ backgroundColor: colors.primarySoft }}
                         onPress={() => void handleCloseTicket(ticket.id)}
+                        accessibilityRole="button"
                       >
                         <Text className="text-xs font-semibold" style={{ color: colors.primary }}>
                           Mark closed
@@ -417,7 +434,11 @@ function Section({
       className="mb-4 rounded-[22px] p-4"
       style={{ backgroundColor: colors.frosted, borderWidth: 1, borderColor: colors.frostedBorder }}
     >
-      <Text className="mb-3 text-sm font-semibold" style={{ color: colors.text }}>
+      <Text
+        className="mb-3 text-sm font-semibold"
+        style={{ color: colors.text }}
+        accessibilityRole="header"
+      >
         {title}
       </Text>
       {children}

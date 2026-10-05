@@ -12,11 +12,19 @@ export default function AppearanceSettingsScreen() {
 
   return (
     <SettingsDetailScreen>
-      <Text className="mb-3 text-sm font-semibold" style={{ color: colors.text }}>
+      <Text
+        className="mb-3 text-sm font-semibold"
+        style={{ color: colors.text }}
+        accessibilityRole="header"
+      >
         {t('settings.lightDark')}
       </Text>
       <ThemeToggle />
-      <Text className="mb-4 mt-6 text-sm font-semibold" style={{ color: colors.text }}>
+      <Text
+        className="mb-4 mt-6 text-sm font-semibold"
+        style={{ color: colors.text }}
+        accessibilityRole="header"
+      >
         {t('settings.driftTheme')}
       </Text>
       <ThemePackPicker />

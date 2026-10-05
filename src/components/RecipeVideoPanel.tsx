@@ -51,7 +51,7 @@ function PlayBadge({ size }: { size: 'sm' | 'lg' }) {
         elevation: 4,
       }}
     >
-      <Ionicons name="play" size={icon} color="#fff" style={{ marginLeft: 2 }} />
+      <Ionicons name="play" size={icon} color={colors.onPrimary} style={{ marginLeft: 2 }} />
     </View>
   );
 }
@@ -125,9 +125,14 @@ export const RecipeVideoPanel = forwardRef<RecipeVideoPanelHandle, RecipeVideoPa
           className="mb-4 flex-row items-center gap-3.5 overflow-hidden rounded-[22px] border p-3 active:opacity-90"
           style={{ borderColor: colors.frostedBorder, backgroundColor: colors.surface }}
           accessibilityRole="button"
-          accessibilityLabel={t('cookAlong.playInPinch')}
+          accessibilityLabel={`${t('cookAlong.title')}: ${t('cookAlong.playInPinch')}, ${platformLabel}`}
+          accessibilityHint={t('cookAlong.jumpHint')}
         >
-          <View className="relative overflow-hidden rounded-[14px]">
+          <View
+            className="relative overflow-hidden rounded-[14px]"
+            accessible={false}
+            importantForAccessibility="no-hide-descendants"
+          >
             {poster}
             <View className="absolute inset-0 items-center justify-center">
               <PlayBadge size="sm" />
@@ -158,14 +163,14 @@ export const RecipeVideoPanel = forwardRef<RecipeVideoPanelHandle, RecipeVideoPa
           accessibilityState={{ expanded }}
           accessibilityLabel={expanded ? t('cookAlong.hide') : t('cookAlong.show')}
         >
-          <View className="flex-row items-center gap-2.5">
+          <View className="min-w-0 flex-1 flex-row items-center gap-2.5">
             <View
               className="h-9 w-9 items-center justify-center rounded-2xl"
               style={{ backgroundColor: colors.primarySoft }}
             >
               <Ionicons name="play" size={18} color={colors.primary} />
             </View>
-            <View>
+            <View className="min-w-0 flex-1">
               <Text className="text-sm font-bold" style={{ color: colors.text }}>
                 {t('cookAlong.title')}
               </Text>
@@ -182,8 +187,18 @@ export const RecipeVideoPanel = forwardRef<RecipeVideoPanelHandle, RecipeVideoPa
         </Pressable>
 
         {expanded ? (
-          <Pressable onPress={() => onRequestPlay(0)} className="active:opacity-90">
-            <View className="relative">
+          <Pressable
+            onPress={() => onRequestPlay(0)}
+            className="active:opacity-90"
+            accessibilityRole="button"
+            accessibilityLabel={`${t('cookAlong.playInPinch')}, ${platformLabel}`}
+            accessibilityHint={t('cookAlong.playHint')}
+          >
+            <View
+              className="relative"
+              accessible={false}
+              importantForAccessibility="no-hide-descendants"
+            >
               {poster}
               <View className="absolute inset-0 items-center justify-center">
                 <PlayBadge size="lg" />

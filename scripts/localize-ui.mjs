@@ -127,7 +127,7 @@ const english = {
     auto: 'Auto',
     light: 'Light',
     dark: 'Dark',
-    a11y: 'Theme: {{mode}}. Tap to change.',
+    a11y: 'Theme: {{mode}}.',
   },
   measurement: {
     spoons: 'Spoons',

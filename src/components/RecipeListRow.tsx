@@ -9,6 +9,7 @@ import { CostEstimateDisplay } from '@/components/CostEstimateDisplay';
 import { RecipeImage } from '@/components/RecipeImage';
 import { useLanguagePreference } from '@/hooks/useLanguagePreference';
 import { useThemePreference } from '@/hooks/useThemePreference';
+import { CHROME_MAX_FONT_SCALE } from '@/lib/a11y';
 import { COST_I18N_KEYS } from '@/lib/formatCostEstimate';
 import { formatCookedDate } from '@/lib/formatCookedDate';
 import { formatRecipeDuration } from '@/lib/formatRecipeDuration';
@@ -102,19 +103,35 @@ export const RecipeListRow = memo(function RecipeListRow({
       ),
     });
   }
-  if (recipe.last_cooked_at) {
-    const cooked = formatCookedDate(recipe.last_cooked_at, language);
-    if (cooked) {
-      metaParts.push({
-        key: 'cooked',
-        node: (
-          <Text className={metaClass} style={metaStyle}>
-            {t('recipe.cookedShort', { date: cooked })}
-          </Text>
-        ),
-      });
-    }
+  const cookedDate = recipe.last_cooked_at
+    ? formatCookedDate(recipe.last_cooked_at, language)
+    : null;
+  const cookedLabel = cookedDate ? t('recipe.cookedShort', { date: cookedDate }) : null;
+  if (cookedLabel) {
+    metaParts.push({
+      key: 'cooked',
+      node: (
+        <Text className={metaClass} style={metaStyle}>
+          {cookedLabel}
+        </Text>
+      ),
+    });
   }
+
+  const title = recipe.display_title ?? recipe.title;
+  const invented = recipeIsInvented(recipe);
+  // One VoiceOver/TalkBack stop per recipe instead of a fragment per line.
+  const rowLabel = [
+    title,
+    detail,
+    invented ? t('recipe.inventedChip') : null,
+    timeLabel,
+    effortLabel,
+    costLabel,
+    cookedLabel,
+  ]
+    .filter(Boolean)
+    .join(', ');
 
   return (
     <Animated.View
@@ -139,6 +156,14 @@ export const RecipeListRow = memo(function RecipeListRow({
         <Pressable
           onPress={onPress}
           onLongPress={onLongPress}
+          accessibilityRole="button"
+          accessibilityLabel={rowLabel}
+          accessibilityActions={
+            onLongPress ? [{ name: 'longpress', label: t('library.recipeActions') }] : undefined
+          }
+          onAccessibilityAction={(event) => {
+            if (event.nativeEvent.actionName === 'longpress') onLongPress?.();
+          }}
           className={
             card
               ? 'active:opacity-90'
@@ -158,6 +183,8 @@ export const RecipeListRow = memo(function RecipeListRow({
             )
           ) : (
             <View
+              accessible={false}
+              importantForAccessibility="no-hide-descendants"
               className={
                 card
                   ? 'h-36 w-full items-center justify-center'
@@ -175,19 +202,23 @@ export const RecipeListRow = memo(function RecipeListRow({
               style={{ color: colors.text }}
               numberOfLines={card ? 3 : 2}
             >
-              {recipe.display_title ?? recipe.title}
+              {title}
             </Text>
             {detail ? (
               <Text className="text-xs" style={{ color: colors.textSecondary }} numberOfLines={1}>
                 {detail}
               </Text>
             ) : null}
-            {recipeIsInvented(recipe) ? (
+            {invented ? (
               <View
                 className="mt-1 self-start rounded-full px-2 py-0.5"
                 style={{ backgroundColor: colors.accentSoft }}
               >
-                <Text className="text-[10px] font-bold" style={{ color: colors.accent }}>
+                <Text
+                  className="text-[10px] font-bold"
+                  style={{ color: colors.accent }}
+                  maxFontSizeMultiplier={CHROME_MAX_FONT_SCALE}
+                >
                   {t('recipe.inventedChip')}
                 </Text>
               </View>
@@ -197,7 +228,7 @@ export const RecipeListRow = memo(function RecipeListRow({
                 className={
                   card
                     ? 'mt-1 flex-row flex-wrap items-center'
-                    : 'mt-1.5 flex-row items-center overflow-hidden'
+                    : 'mt-1.5 flex-row flex-wrap items-center'
                 }
               >
                 {metaParts.map((part, index) => (
@@ -235,7 +266,9 @@ export const RecipeListRow = memo(function RecipeListRow({
                 style={card ? { backgroundColor: colors.frosted } : undefined}
                 accessibilityRole="button"
                 accessibilityLabel={
-                  isFavorite ? t('library.removeFavorite') : t('library.addFavorite')
+                  isFavorite
+                    ? t('a11y.removeRecipeFromFavorites', { name: title })
+                    : t('a11y.addRecipeToFavorites', { name: title })
                 }
               >
                 <Ionicons
@@ -256,7 +289,7 @@ export const RecipeListRow = memo(function RecipeListRow({
                 className="z-10 min-h-[40px] min-w-[40px] items-center justify-center rounded-full active:opacity-60"
                 style={card ? { backgroundColor: colors.frosted } : undefined}
                 accessibilityRole="button"
-                accessibilityLabel={t('library.recipeActions')}
+                accessibilityLabel={t('a11y.recipeActionsFor', { name: title })}
               >
                 <Ionicons name="ellipsis-vertical" size={18} color={colors.textSecondary} />
               </Pressable>

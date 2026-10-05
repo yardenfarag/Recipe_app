@@ -112,7 +112,7 @@ export function ThemePackPicker() {
   const { packId, setPackId, colors } = useThemePreference();
 
   return (
-    <View className="gap-2.5">
+    <View className="gap-2.5" accessibilityRole="radiogroup">
       {THEME_PACK_ORDER.map((id) => {
         const pack = ThemePacks[id];
         const active = packId === id;
@@ -121,8 +121,9 @@ export function ThemePackPicker() {
           <Pressable
             key={id}
             onPress={() => setPackId(id as ThemePackId)}
-            accessibilityRole="button"
-            accessibilityState={{ selected: active }}
+            accessibilityRole="radio"
+            accessibilityState={{ checked: active }}
+            accessibilityLabel={`${t(`themes.${id}.name`)}, ${t(`themes.${id}.blurb`)}`}
             className="flex-row items-center gap-3 rounded-[18px] px-3.5 py-3 active:opacity-80"
             style={{
               backgroundColor: active ? colors.primarySoft : 'transparent',
@@ -137,6 +138,8 @@ export function ThemePackPicker() {
                 height: 48,
                 backgroundColor: active ? colors.surface : colors.surfaceSoft,
               }}
+              accessible={false}
+              importantForAccessibility="no-hide-descendants"
             >
               <PackIcon id={id} primary={swatchA} accent={swatchB} />
             </View>
@@ -159,6 +162,8 @@ export function ThemePackPicker() {
               <View
                 className="h-2.5 w-2.5 rounded-full"
                 style={{ backgroundColor: colors.primary }}
+                accessible={false}
+                importantForAccessibility="no"
               />
             ) : null}
           </Pressable>

@@ -4,6 +4,7 @@ import { Pressable, Text, View } from 'react-native';
 
 import { useMeasurementPreference } from '@/hooks/useMeasurementPreference';
 import { useThemePreference } from '@/hooks/useThemePreference';
+import { CHROME_MAX_FONT_SCALE } from '@/lib/a11y';
 import type { MeasurementSystem } from '@/lib/convertMeasurement';
 
 const MODES: { id: MeasurementSystem; icon: keyof typeof Ionicons.glyphMap }[] = [
@@ -41,6 +42,9 @@ export function MeasurementToggle({ hint = false }: MeasurementToggleProps) {
               onPress={() => setSystem(mode.id)}
               accessibilityRole="button"
               accessibilityState={{ selected: active }}
+              accessibilityLabel={
+                mode.id === 'metric' ? t('a11y.measureInGrams') : t('a11y.measureInSpoons')
+              }
               className="flex-1 flex-row items-center justify-center gap-1.5 rounded-[14px] px-3 py-2.5"
               style={active ? { backgroundColor: colors.surface } : undefined}
             >
@@ -52,6 +56,7 @@ export function MeasurementToggle({ hint = false }: MeasurementToggleProps) {
               <Text
                 className="text-xs font-semibold"
                 style={{ color: active ? colors.primary : colors.textSecondary }}
+                maxFontSizeMultiplier={CHROME_MAX_FONT_SCALE}
               >
                 {labels[mode.id]}
               </Text>

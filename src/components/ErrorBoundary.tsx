@@ -1,9 +1,10 @@
 import Ionicons from '@expo/vector-icons/Ionicons';
-import { Component, type ErrorInfo, type ReactNode } from 'react';
+import { Component, useEffect, type ErrorInfo, type ReactNode } from 'react';
 import { Pressable, Text, View } from 'react-native';
 import { useTranslation } from 'react-i18next';
 
 import { useThemePreference } from '@/hooks/useThemePreference';
+import { announce } from '@/lib/a11y';
 
 interface Props {
   children: ReactNode;
@@ -17,6 +18,10 @@ function ErrorFallback({ onRetry }: { onRetry: () => void }) {
   const { colors } = useThemePreference();
   const { t } = useTranslation();
 
+  useEffect(() => {
+    announce(`${t('errorBoundary.title')}. ${t('errorBoundary.body')}`);
+  }, [t]);
+
   return (
     <View
       className="flex-1 items-center justify-center px-8"
@@ -25,10 +30,16 @@ function ErrorFallback({ onRetry }: { onRetry: () => void }) {
       <View
         className="mb-5 h-16 w-16 items-center justify-center rounded-full"
         style={{ backgroundColor: colors.primarySoft }}
+        accessible={false}
+        importantForAccessibility="no-hide-descendants"
       >
         <Ionicons name="alert-circle-outline" size={32} color={colors.danger} />
       </View>
-      <Text className="mb-2 text-center text-xl font-bold" style={{ color: colors.text }}>
+      <Text
+        className="mb-2 text-center text-xl font-bold"
+        style={{ color: colors.text }}
+        accessibilityRole="header"
+      >
         {t('errorBoundary.title')}
       </Text>
       <Text className="mb-6 text-center text-sm leading-5" style={{ color: colors.textSecondary }}>
@@ -36,10 +47,13 @@ function ErrorFallback({ onRetry }: { onRetry: () => void }) {
       </Text>
       <Pressable
         onPress={onRetry}
+        accessibilityRole="button"
         className="rounded-full px-6 py-3 active:opacity-80"
         style={{ backgroundColor: colors.primary }}
       >
-        <Text className="text-base font-bold text-white">{t('common.tryAgainAction')}</Text>
+        <Text className="text-base font-bold" style={{ color: colors.onPrimary }}>
+          {t('common.tryAgainAction')}
+        </Text>
       </Pressable>
     </View>
   );

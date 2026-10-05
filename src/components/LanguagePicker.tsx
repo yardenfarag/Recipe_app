@@ -30,33 +30,43 @@ export function LanguagePicker({ skipRtlPrompt = false }: LanguagePickerProps) {
   }
 
   return (
-    <View className="gap-2">
+    <View className="gap-2" accessibilityRole="radiogroup">
       {APP_LANGUAGES.map((lang) => {
         const active = language === lang.code;
+        const translated = t(`languages.${lang.code}`);
+        const showTranslated = translated !== lang.nativeLabel;
         return (
           <Pressable
             key={lang.code}
             onPress={() => handleSelect(lang.code)}
-            accessibilityRole="button"
-            accessibilityState={{ selected: active }}
+            accessibilityRole="radio"
+            accessibilityState={{ checked: active }}
+            accessibilityLabel={
+              showTranslated ? `${lang.nativeLabel}, ${translated}` : lang.nativeLabel
+            }
             className="flex-row items-center justify-between rounded-[18px] border px-4 py-3 active:opacity-80"
             style={{
               backgroundColor: active ? colors.primarySoft : colors.surface,
               borderColor: active ? colors.primary : colors.border,
             }}
           >
-            <View>
+            <View className="min-w-0 flex-1">
               <Text className="text-sm font-semibold" style={{ color: colors.text }}>
                 {lang.nativeLabel}
               </Text>
-              {t(`languages.${lang.code}`) !== lang.nativeLabel ? (
+              {showTranslated ? (
                 <Text className="mt-0.5 text-xs" style={{ color: colors.textSecondary }}>
-                  {t(`languages.${lang.code}`)}
+                  {translated}
                 </Text>
               ) : null}
             </View>
             {active ? (
-              <Text className="text-xs font-bold" style={{ color: colors.primary }}>
+              <Text
+                className="text-xs font-bold"
+                style={{ color: colors.primary }}
+                accessible={false}
+                importantForAccessibility="no"
+              >
                 ✓
               </Text>
             ) : null}

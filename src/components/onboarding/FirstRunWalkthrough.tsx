@@ -1,10 +1,21 @@
 import Ionicons from '@expo/vector-icons/Ionicons';
 import { useState } from 'react';
-import { I18nManager, Modal, Platform, Pressable, Text, View, useWindowDimensions } from 'react-native';
+import {
+  I18nManager,
+  Modal,
+  Platform,
+  Pressable,
+  ScrollView,
+  Text,
+  View,
+  useWindowDimensions,
+} from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useTranslation } from 'react-i18next';
 
 import { ShareIllustration } from '@/components/onboarding/illustrations/ShareIllustration';
 import { useThemePreference } from '@/hooks/useThemePreference';
+import { announce } from '@/lib/a11y';
 import {
   nextWalkthroughStep,
   tabItemFrame,
@@ -34,44 +45,69 @@ export function FirstRunWalkthrough({
 }: FirstRunWalkthroughProps) {
   const { t } = useTranslation();
   const { colors } = useThemePreference();
-  const { width } = useWindowDimensions();
+  const { width, height, fontScale } = useWindowDimensions();
+  const insets = useSafeAreaInsets();
   const [step, setStep] = useState<WalkthroughStep>('snap');
 
   const stepIndex = WALKTHROUGH_STEPS.indexOf(step);
   const isLast = nextWalkthroughStep(step) === null;
   const target = step === 'share' ? null : tabItemFrame(step, width, I18nManager.isRTL);
+  // Keep the card on screen at large text sizes: the copy scrolls, the buttons stay put.
+  const cardMaxHeight = target
+    ? height - insets.top - 16 - tabBarHeight - TOOLTIP_GAP
+    : height - insets.top - insets.bottom - 32;
+  // The share illustration is decoration; drop it when big text needs the room.
+  const showShareIllustration = fontScale <= 1.3;
 
   function goNext() {
     const next = nextWalkthroughStep(step);
-    if (next) setStep(next);
-    else onFinish();
+    if (next) {
+      setStep(next);
+      announce(
+        `${t('a11y.stepOf', {
+          current: WALKTHROUGH_STEPS.indexOf(next) + 1,
+          total: WALKTHROUGH_STEPS.length,
+        })}. ${t(`walkthrough.${next}Title`)}. ${t(`walkthrough.${next}Body`)}`,
+      );
+    } else onFinish();
   }
 
   const card = (
     <View
       accessibilityViewIsModal
+      onAccessibilityEscape={onFinish}
       className="rounded-3xl px-5 pb-4 pt-5"
       style={{
+        maxHeight: cardMaxHeight,
         backgroundColor: colors.surface,
         borderWidth: 1,
         borderColor: colors.frostedBorder,
       }}
     >
-      <Text className="mb-1 text-xs font-semibold" style={{ color: colors.primary }}>
-        {t('walkthrough.progress', { current: stepIndex + 1, total: WALKTHROUGH_STEPS.length })}
-      </Text>
-      <Text
-        accessibilityRole="header"
-        className="mb-1 text-lg font-bold"
-        style={{ color: colors.text }}
-      >
-        {t(`walkthrough.${step}Title`)}
-      </Text>
-      <Text className="text-sm leading-5" style={{ color: colors.textSecondary }}>
-        {t(`walkthrough.${step}Body`)}
-      </Text>
+      <ScrollView style={{ flexGrow: 0 }} bounces={false}>
+        <Text
+          className="mb-1 text-xs font-semibold"
+          style={{ color: colors.primary }}
+          accessibilityLabel={t('a11y.stepOf', {
+            current: stepIndex + 1,
+            total: WALKTHROUGH_STEPS.length,
+          })}
+        >
+          {t('walkthrough.progress', { current: stepIndex + 1, total: WALKTHROUGH_STEPS.length })}
+        </Text>
+        <Text
+          accessibilityRole="header"
+          className="mb-1 text-lg font-bold"
+          style={{ color: colors.text }}
+        >
+          {t(`walkthrough.${step}Title`)}
+        </Text>
+        <Text className="text-sm leading-5" style={{ color: colors.textSecondary }}>
+          {t(`walkthrough.${step}Body`)}
+        </Text>
 
-      {step === 'share' ? <ShareSteps /> : null}
+        {step === 'share' ? <ShareSteps /> : null}
+      </ScrollView>
 
       <View className="mt-4 flex-row items-center justify-between">
         {isLast ? (
@@ -81,7 +117,7 @@ export function FirstRunWalkthrough({
             onPress={onFinish}
             accessibilityRole="button"
             accessibilityLabel={t('walkthrough.skip')}
-            className="py-2 active:opacity-70"
+            className="min-h-[44px] justify-center py-2 active:opacity-70"
             hitSlop={8}
           >
             <Text className="text-sm font-semibold" style={{ color: colors.textSecondary }}>
@@ -95,7 +131,7 @@ export function FirstRunWalkthrough({
           className="min-h-[44px] items-center justify-center rounded-2xl px-5 active:opacity-80"
           style={{ backgroundColor: colors.primary }}
         >
-          <Text className="text-sm font-semibold" style={{ color: '#fff' }}>
+          <Text className="text-sm font-semibold" style={{ color: colors.onPrimary }}>
             {isLast ? t('walkthrough.done') : t('walkthrough.next')}
           </Text>
         </Pressable>
@@ -115,15 +151,25 @@ export function FirstRunWalkthrough({
       {target ? (
         // Tab frames are physical (already mirrored for RTL), so lay out LTR here.
         <View style={{ flex: 1, direction: 'ltr' }}>
-          <View style={{ flex: 1, backgroundColor: colors.overlay }} />
+          <View
+            style={{ flex: 1, backgroundColor: colors.overlay }}
+            accessible={false}
+            importantForAccessibility="no-hide-descendants"
+          />
           {/* Dim the tab bar around the highlighted tab, leaving it bright. */}
-          <View style={{ height: tabBarHeight, flexDirection: 'row' }}>
+          <View
+            style={{ height: tabBarHeight, flexDirection: 'row' }}
+            accessible={false}
+            importantForAccessibility="no-hide-descendants"
+          >
             <View style={{ width: target.left, backgroundColor: colors.overlay }} />
             <View style={{ width: target.width }} />
             <View style={{ flex: 1, backgroundColor: colors.overlay }} />
           </View>
           <View
             pointerEvents="none"
+            accessible={false}
+            importantForAccessibility="no-hide-descendants"
             style={{
               position: 'absolute',
               left: target.left + 4,
@@ -169,9 +215,15 @@ export function FirstRunWalkthrough({
           className="flex-1 justify-center px-5"
           style={{ backgroundColor: colors.overlay }}
         >
-          <View className="mb-4 items-center">
-            <ShareIllustration />
-          </View>
+          {showShareIllustration ? (
+            <View
+              className="mb-4 items-center"
+              accessible={false}
+              importantForAccessibility="no-hide-descendants"
+            >
+              <ShareIllustration />
+            </View>
+          ) : null}
           {card}
         </View>
       )}
@@ -212,6 +264,8 @@ function ShareSteps() {
           <View
             className="h-8 w-8 items-center justify-center rounded-full"
             style={{ backgroundColor: colors.primarySoft }}
+            accessible={false}
+            importantForAccessibility="no-hide-descendants"
           >
             <Ionicons name={option.icon} size={16} color={colors.primary} />
           </View>

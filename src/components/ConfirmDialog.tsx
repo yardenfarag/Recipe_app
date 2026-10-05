@@ -58,7 +58,7 @@ export function ConfirmDialog({
         <View
           className="w-full max-w-sm overflow-hidden rounded-[28px]"
           accessibilityViewIsModal
-          accessibilityLabel={title}
+          onAccessibilityEscape={loading ? undefined : onCancel}
           style={{
             backgroundColor: colors.surface,
             borderWidth: 1,
@@ -73,7 +73,7 @@ export function ConfirmDialog({
             keyboardShouldPersistTaps="handled"
             style={{ flexGrow: 0 }}
           >
-            <Text className="text-lg font-bold" style={{ color: colors.text }}>
+            <Text className="text-lg font-bold" style={{ color: colors.text }} accessibilityRole="header">
               {title}
             </Text>
             <Text className="mt-2 text-sm leading-5" style={{ color: colors.textSecondary }}>
@@ -84,6 +84,7 @@ export function ConfirmDialog({
               <Pressable
                 onPress={onCancel}
                 disabled={loading}
+                accessibilityState={{ disabled: loading }}
                 className={`min-h-[48px] items-center justify-center rounded-[22px] px-4 py-3 active:opacity-80 ${stacked ? 'w-full' : 'min-w-0 flex-1'}`}
                 style={{ backgroundColor: colors.primarySoft }}
                 accessibilityRole="button"
@@ -97,6 +98,7 @@ export function ConfirmDialog({
                 <Pressable
                   onPress={onSecondary}
                   disabled={loading}
+                  accessibilityState={{ disabled: loading }}
                   className="min-h-[48px] w-full items-center justify-center rounded-[22px] border px-4 py-3 active:opacity-80"
                   style={{ borderColor: colors.border, backgroundColor: colors.surface }}
                   accessibilityRole="button"
@@ -117,11 +119,17 @@ export function ConfirmDialog({
                 }}
                 accessibilityRole="button"
                 accessibilityLabel={resolvedConfirm}
+                accessibilityState={{ disabled: loading, busy: loading }}
               >
                 {loading ? (
-                  <ActivityIndicator color="#fff" />
+                  <ActivityIndicator color={destructive ? colors.background : colors.onPrimary} />
                 ) : (
-                  <Text className="text-center text-sm font-bold text-white">{resolvedConfirm}</Text>
+                  <Text
+                    className="text-center text-sm font-bold"
+                    style={{ color: destructive ? colors.background : colors.onPrimary }}
+                  >
+                    {resolvedConfirm}
+                  </Text>
                 )}
               </Pressable>
             </View>

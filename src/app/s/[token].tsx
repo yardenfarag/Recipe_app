@@ -123,10 +123,13 @@ export default function SharedRecipeScreen() {
           </Text>
           <Pressable
             onPress={() => router.replace('/')}
+            accessibilityRole="button"
             className="rounded-full px-5 py-3 active:opacity-80"
             style={{ backgroundColor: colors.primary }}
           >
-            <Text className="font-semibold text-white">{t('recipe.goToLibrary')}</Text>
+            <Text className="font-semibold" style={{ color: colors.onPrimary }}>
+              {t('recipe.goToLibrary')}
+            </Text>
           </Pressable>
         </View>
       </Screen>
@@ -136,7 +139,10 @@ export default function SharedRecipeScreen() {
   if (session?.user && !claimError) {
     return (
       <Screen edges={['bottom']}>
-        <View className="flex-1 items-center justify-center gap-3 px-6">
+        <View
+          className="flex-1 items-center justify-center gap-3 px-6"
+          accessibilityLiveRegion="polite"
+        >
           <ActivityIndicator color={colors.primary} />
           <Text style={{ color: colors.textSecondary }}>{t('recipe.shareClaiming')}</Text>
         </View>
@@ -150,16 +156,21 @@ export default function SharedRecipeScreen() {
         recipe={recipe}
         footer={
           <View className="mt-2 gap-2 pb-4">
-            {claimError ? (
-              <Text className="text-center text-sm" style={{ color: colors.textSecondary }}>
-                {claimError}
-              </Text>
-            ) : null}
+            <View accessibilityLiveRegion="polite">
+              {claimError ? (
+                <Text className="text-center text-sm" style={{ color: colors.textSecondary }}>
+                  {claimError}
+                </Text>
+              ) : null}
+            </View>
             <Pressable
               onPress={() => {
                 void saveToLibrary();
               }}
               disabled={claiming}
+              accessibilityRole="button"
+              accessibilityLabel={session?.user ? t('recipe.shareSave') : t('recipe.shareSignInToSave')}
+              accessibilityState={{ disabled: claiming, busy: claiming }}
               className="items-center rounded-full px-5 py-3.5 active:opacity-80"
               style={{
                 backgroundColor: colors.primary,
@@ -167,9 +178,9 @@ export default function SharedRecipeScreen() {
               }}
             >
               {claiming ? (
-                <ActivityIndicator color="#fff" />
+                <ActivityIndicator color={colors.onPrimary} />
               ) : (
-                <Text className="text-base font-semibold text-white">
+                <Text className="text-base font-semibold" style={{ color: colors.onPrimary }}>
                   {session?.user ? t('recipe.shareSave') : t('recipe.shareSignInToSave')}
                 </Text>
               )}

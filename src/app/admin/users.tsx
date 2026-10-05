@@ -1,6 +1,7 @@
 import { useFocusEffect } from '@react-navigation/native';
 import { useCallback, useMemo, useState } from 'react';
 import { ActivityIndicator, Pressable, ScrollView, Text, View } from 'react-native';
+import { useTranslation } from 'react-i18next';
 
 import { AdminOnly } from '@/components/admin/AdminOnly';
 import { Screen } from '@/components/Screen';
@@ -24,6 +25,7 @@ export default function AdminUsersScreen() {
 function UsersBody() {
   const { user } = useAuth();
   const { colors } = useThemePreference();
+  const { t } = useTranslation();
   const [people, setPeople] = useState<AdminPerson[]>([]);
   const [query, setQuery] = useState('');
   const [loading, setLoading] = useState(true);
@@ -99,7 +101,11 @@ function UsersBody() {
   return (
     <Screen dense>
       <ScrollView className="flex-1" contentContainerStyle={{ paddingBottom: 48, paddingHorizontal: 16 }}>
-        <Text className="mb-1 mt-2 text-2xl font-bold" style={{ color: colors.text }}>
+        <Text
+          className="mb-1 mt-2 text-2xl font-bold"
+          style={{ color: colors.text }}
+          accessibilityRole="header"
+        >
           People
         </Text>
         <Text className="mb-4 text-sm" style={{ color: colors.textSecondary }}>
@@ -114,6 +120,8 @@ function UsersBody() {
             borderColor: colors.frostedBorder,
           }}
           placeholder="Search email"
+          accessibilityLabel="Search email"
+          accessibilityRole="search"
           placeholderTextColor={colors.textSecondary}
           value={query}
           onChangeText={setQuery}
@@ -155,6 +163,7 @@ function UsersBody() {
                     borderColor: colors.frostedBorder,
                   }}
                   placeholder="+10 or -5"
+                  accessibilityLabel={`${t('admin.creditAmountPlaceholder')}, ${person.email ?? person.id}`}
                   placeholderTextColor={colors.textSecondary}
                   value={amounts[person.id] ?? ''}
                   onChangeText={(value) => setAmounts((current) => ({ ...current, [person.id]: value }))}
@@ -165,12 +174,24 @@ function UsersBody() {
                   style={{ backgroundColor: colors.primary, opacity: busyId === person.id ? 0.6 : 1 }}
                   onPress={() => void adjust(person)}
                   disabled={busyId === person.id}
+                  accessibilityRole="button"
+                  accessibilityLabel={`${t('admin.applyAdjustment')}, ${person.email ?? person.id}`}
+                  accessibilityState={{ disabled: busyId === person.id, busy: busyId === person.id }}
                 >
-                  <Text className="text-xs font-bold text-white">Apply</Text>
+                  <Text className="text-xs font-bold" style={{ color: colors.onPrimary }}>
+                    Apply
+                  </Text>
                 </Pressable>
               </View>
               {person.id === user?.id ? null : (
-                <Pressable className="mt-3 self-start" onPress={() => void remove(person)} disabled={busyId === person.id}>
+                <Pressable
+                  className="mt-3 self-start"
+                  onPress={() => void remove(person)}
+                  disabled={busyId === person.id}
+                  hitSlop={8}
+                  accessibilityRole="button"
+                  accessibilityLabel={`Delete account, ${person.email ?? person.id}`}
+                >
                   <Text className="text-xs font-semibold" style={{ color: colors.warning }}>
                     Delete account
                   </Text>

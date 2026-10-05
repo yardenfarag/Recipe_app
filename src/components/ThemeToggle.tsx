@@ -3,6 +3,7 @@ import { useTranslation } from 'react-i18next';
 import { Pressable, Text, View } from 'react-native';
 
 import { useThemePreference, type ThemePreference } from '@/hooks/useThemePreference';
+import { CHROME_MAX_FONT_SCALE } from '@/lib/a11y';
 
 const ICONS: Record<ThemePreference, keyof typeof Ionicons.glyphMap> = {
   system: 'phone-portrait-outline',
@@ -36,7 +37,13 @@ export function ThemeToggle({ compact = false }: ThemeToggleProps) {
         style={{ backgroundColor: colors.primarySoft }}
         hitSlop={8}
       >
-        <Ionicons name={ICONS[preference]} size={20} color={colors.primary} />
+        <Ionicons
+          name={ICONS[preference]}
+          size={20}
+          color={colors.primary}
+          accessible={false}
+          importantForAccessibility="no"
+        />
       </Pressable>
     );
   }
@@ -45,6 +52,7 @@ export function ThemeToggle({ compact = false }: ThemeToggleProps) {
     <View
       className="flex-row rounded-[18px] p-1"
       style={{ backgroundColor: colors.primarySoft }}
+      accessibilityRole="radiogroup"
     >
       {(['system', 'light', 'dark'] as ThemePreference[]).map((mode) => {
         const active = preference === mode;
@@ -52,8 +60,9 @@ export function ThemeToggle({ compact = false }: ThemeToggleProps) {
           <Pressable
             key={mode}
             onPress={() => setPreference(mode)}
-            accessibilityRole="button"
-            accessibilityState={{ selected: active }}
+            accessibilityRole="radio"
+            accessibilityState={{ checked: active }}
+            accessibilityLabel={labels[mode]}
               className="min-w-0 flex-1 flex-row items-center justify-center gap-1 rounded-[14px] px-2 py-2"
             style={active ? { backgroundColor: colors.surface } : undefined}
           >
@@ -61,11 +70,14 @@ export function ThemeToggle({ compact = false }: ThemeToggleProps) {
               name={ICONS[mode]}
               size={16}
               color={active ? colors.primary : colors.textSecondary}
+              accessible={false}
+              importantForAccessibility="no"
             />
             <Text
                 className="min-w-0 text-xs font-semibold"
               style={{ color: active ? colors.primary : colors.textSecondary }}
                 numberOfLines={1}
+                maxFontSizeMultiplier={CHROME_MAX_FONT_SCALE}
             >
               {labels[mode]}
             </Text>

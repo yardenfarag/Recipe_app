@@ -80,16 +80,27 @@ export function SupportTicketModal({ visible, onClose }: SupportTicketModalProps
           {t('support.hint')}
         </Text>
 
-        <Text className="mb-2 text-sm font-semibold" style={{ color: colors.text }}>
+        <Text
+          className="mb-2 text-sm font-semibold"
+          style={{ color: colors.text }}
+          accessibilityRole="header"
+        >
           {t('support.category')}
         </Text>
-        <View className="mb-4 flex-row flex-wrap gap-2">
+        <View
+          className="mb-4 flex-row flex-wrap gap-2"
+          accessibilityRole="radiogroup"
+          accessibilityLabel={t('support.category')}
+        >
           {CATEGORIES.map((item) => {
             const selected = category === item;
             return (
               <Pressable
                 key={item}
                 onPress={() => setCategory(item)}
+                accessibilityRole="radio"
+                accessibilityState={{ checked: selected }}
+                hitSlop={4}
                 className="rounded-full px-3 py-2"
                 style={{
                   backgroundColor: selected ? colors.primarySoft : colors.frosted,
@@ -108,7 +119,11 @@ export function SupportTicketModal({ visible, onClose }: SupportTicketModalProps
           })}
         </View>
 
-        <Text className="mb-2 text-sm font-semibold" style={{ color: colors.text }}>
+        <Text
+          className="mb-2 text-sm font-semibold"
+          style={{ color: colors.text }}
+          accessibilityRole="header"
+        >
           {t('support.whatHappened')}
         </Text>
         <TextInput
@@ -124,6 +139,7 @@ export function SupportTicketModal({ visible, onClose }: SupportTicketModalProps
           value={message}
           onChangeText={setMessage}
           placeholder={t('support.placeholder')}
+          accessibilityLabel={t('support.whatHappened')}
           placeholderTextColor={colors.textSecondary}
           editable={!submitting}
         />
@@ -133,15 +149,24 @@ export function SupportTicketModal({ visible, onClose }: SupportTicketModalProps
           style={{ backgroundColor: colors.primary, opacity: submitting ? 0.6 : 1 }}
           onPress={() => void handleSubmit()}
           disabled={submitting}
+          accessibilityRole="button"
+          accessibilityLabel={t('support.submit')}
+          accessibilityState={{ disabled: submitting, busy: submitting }}
         >
           {submitting ? (
-            <ActivityIndicator color="#fff" />
+            <ActivityIndicator color={colors.onPrimary} />
           ) : (
-            <Text className="text-base font-bold text-white">{t('support.submit')}</Text>
+            <Text className="text-base font-bold" style={{ color: colors.onPrimary }}>
+              {t('support.submit')}
+            </Text>
           )}
         </Pressable>
 
-        <Pressable onPress={onClose} className="items-center py-3 active:opacity-70">
+        <Pressable
+          onPress={onClose}
+          accessibilityRole="button"
+          className="items-center py-3 active:opacity-70"
+        >
           <Text className="text-sm font-semibold" style={{ color: colors.textSecondary }}>
             {t('common.cancel')}
           </Text>

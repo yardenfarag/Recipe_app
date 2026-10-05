@@ -65,12 +65,15 @@ export function LibraryLayoutToggle({
       onPress={onToggle}
       accessibilityRole="button"
       accessibilityLabel={layout === 'list' ? t('library.showGrid') : t('library.showList')}
-      accessibilityState={{ selected: layout === 'grid' }}
       hitSlop={8}
       className="h-11 w-11 items-center justify-center rounded-2xl active:opacity-80"
       style={{ backgroundColor, flexShrink: 0 }}
     >
-      <View className="h-5 w-5 items-center justify-center">
+      <View
+        className="h-5 w-5 items-center justify-center"
+        accessible={false}
+        importantForAccessibility="no-hide-descendants"
+      >
         <Animated.View style={[{ position: 'absolute' }, listFace]}>
           <Ionicons name="grid-outline" size={18} color={color} />
         </Animated.View>

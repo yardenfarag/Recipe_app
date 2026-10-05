@@ -3,7 +3,7 @@ import Constants from 'expo-constants';
 import { Image } from 'expo-image';
 import * as ImagePicker from 'expo-image-picker';
 import { router } from 'expo-router';
-import { type ReactNode, useState } from 'react';
+import { type ReactNode, useEffect, useState } from 'react';
 import {
   ActivityIndicator,
   Alert,
@@ -25,6 +25,7 @@ import { useProfile } from '@/hooks/useProfile';
 import { useRtl } from '@/hooks/useRtl';
 import { useThemePreference } from '@/hooks/useThemePreference';
 import { useTranslation } from 'react-i18next';
+import { announce } from '@/lib/a11y';
 import { captureAppShared } from '@/lib/analytics';
 import { confirmAction, confirmDestructive } from '@/lib/confirmAction';
 import { shareApp } from '@/lib/shareApp';
@@ -60,11 +61,17 @@ function SettingsSection({
         <View
           className="h-8 w-8 items-center justify-center rounded-[12px]"
           style={{ backgroundColor: danger ? colors.warningSoft : colors.primarySoft }}
+          accessible={false}
+          importantForAccessibility="no-hide-descendants"
         >
           <Ionicons name={icon} size={17} color={tone} />
         </View>
         <View className="min-w-0 flex-1">
-          <Text className="text-base font-bold" style={{ color: danger ? tone : colors.text }}>
+          <Text
+            className="text-base font-bold"
+            style={{ color: danger ? tone : colors.text }}
+            accessibilityRole="header"
+          >
             {title}
           </Text>
           {description ? (
@@ -94,6 +101,7 @@ type SettingsActionRowProps = {
   destructive?: boolean;
   last?: boolean;
   disabled?: boolean;
+  busy?: boolean;
   description?: string;
 };
 
@@ -104,6 +112,7 @@ function SettingsActionRow({
   destructive = false,
   last = false,
   disabled = false,
+  busy = false,
   description,
 }: SettingsActionRowProps) {
   const { colors } = useThemePreference();
@@ -115,7 +124,8 @@ function SettingsActionRow({
       onPress={onPress}
       disabled={disabled}
       accessibilityRole="button"
-      accessibilityState={{ disabled }}
+      accessibilityState={{ disabled, busy }}
+      accessibilityLabel={description ? `${label}, ${description}` : label}
       className="min-h-12 flex-row items-center gap-3 py-3 active:opacity-65 disabled:opacity-50"
       style={{
         borderColor: colors.frostedBorder,
@@ -125,6 +135,8 @@ function SettingsActionRow({
       <View
         className="h-9 w-9 items-center justify-center rounded-[14px]"
         style={{ backgroundColor: destructive ? colors.warningSoft : colors.primarySoft }}
+        accessible={false}
+        importantForAccessibility="no-hide-descendants"
       >
         <Ionicons name={icon} size={18} color={destructive ? colors.warning : colors.primary} />
       </View>
@@ -142,6 +154,8 @@ function SettingsActionRow({
         name={chevronForward}
         size={17}
         color={destructive ? colors.warning : colors.textSecondary}
+        accessible={false}
+        importantForAccessibility="no"
       />
     </Pressable>
   );
@@ -161,6 +175,10 @@ export default function SettingsScreen() {
   const [uploading, setUploading] = useState(false);
   const [deleting, setDeleting] = useState(false);
   const [feedbackOpen, setFeedbackOpen] = useState(false);
+
+  useEffect(() => {
+    if (migrationError) announce(t('settings.migrationTitle'));
+  }, [migrationError, t]);
 
   async function handleSignOut() {
     try {
@@ -341,11 +359,14 @@ export default function SettingsScreen() {
                 disabled={uploading}
                 accessibilityRole="button"
                 accessibilityLabel={t('settings.changeAvatarTitle')}
+                accessibilityState={{ disabled: uploading, busy: uploading }}
                 className="relative"
               >
                 <View
                   className="h-[72px] w-[72px] items-center justify-center overflow-hidden rounded-full"
                   style={{ backgroundColor: colors.primarySoft }}
+                  accessible={false}
+                  importantForAccessibility="no-hide-descendants"
                 >
                   {avatarUrl ? (
                     <Image
@@ -366,11 +387,13 @@ export default function SettingsScreen() {
                     borderColor: colors.surface,
                     end: 0,
                   }}
+                  accessible={false}
+                  importantForAccessibility="no-hide-descendants"
                 >
                   {uploading ? (
-                    <ActivityIndicator size="small" color="#fff" />
+                    <ActivityIndicator size="small" color={colors.onPrimary} />
                   ) : (
-                    <Ionicons name="camera" size={12} color="#fff" />
+                    <Ionicons name="camera" size={12} color={colors.onPrimary} />
                   )}
                 </View>
               </Pressable>
@@ -402,7 +425,10 @@ export default function SettingsScreen() {
           </View>
 
           {migrationError ? (
-            <View className="mb-5 rounded-[24px] p-4" style={{ backgroundColor: colors.warningSoft }}>
+            <View
+              className="mb-5 rounded-[24px] p-4"
+              style={{ backgroundColor: colors.warningSoft }}
+            >
               <Text className="mb-1 text-sm font-semibold" style={{ color: colors.warning }}>
                 {t('settings.migrationTitle')}
               </Text>
@@ -415,7 +441,9 @@ export default function SettingsScreen() {
                 className="items-center rounded-[18px] py-3 active:opacity-80"
                 style={{ backgroundColor: colors.primary }}
               >
-                <Text className="text-sm font-bold text-white">{t('settings.migrationRetry')}</Text>
+                <Text className="text-sm font-bold" style={{ color: colors.onPrimary }}>
+                  {t('settings.migrationRetry')}
+                </Text>
               </Pressable>
             </View>
           ) : null}
@@ -517,6 +545,7 @@ export default function SettingsScreen() {
                 onPress={handleDeleteAccount}
                 destructive
                 disabled={deleting}
+                busy={deleting}
                 last
               />
               {deleting ? (
@@ -526,7 +555,9 @@ export default function SettingsScreen() {
           ) : null}
 
           <View className="items-center gap-2 pt-2">
-            <CookieMark size={18} color={colors.textSecondary} />
+            <View accessible={false} importantForAccessibility="no-hide-descendants">
+              <CookieMark size={18} color={colors.textSecondary} />
+            </View>
             <Text className="text-center text-xs" style={{ color: colors.textSecondary }}>
               v{Constants.nativeAppVersion ?? Constants.expoConfig?.version ?? '1.0.0'}
               {Constants.nativeBuildVersion

@@ -929,8 +929,18 @@ export function MistAtmosphere({ children, dense }: MistAtmosphereProps) {
 
   return (
     <View style={styles.root}>
-      <LinearGradient colors={[...colors.mistGradient]} style={StyleSheet.absoluteFill} />
-      <View pointerEvents="none" style={StyleSheet.absoluteFill}>
+      <LinearGradient
+        colors={[...colors.mistGradient]}
+        style={StyleSheet.absoluteFill}
+        accessible={false}
+        importantForAccessibility="no-hide-descendants"
+      />
+      <View
+        pointerEvents="none"
+        style={StyleSheet.absoluteFill}
+        accessible={false}
+        importantForAccessibility="no-hide-descendants"
+      >
         <PackEffects
           key={`${packId}-${Math.round(width)}-${Math.round(height)}`}
           packId={packId}

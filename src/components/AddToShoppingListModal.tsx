@@ -14,6 +14,7 @@ import { useKitchenProfile } from '@/hooks/useKitchenProfile';
 import { useLanguagePreference } from '@/hooks/useLanguagePreference';
 import { useMeasurementPreference } from '@/hooks/useMeasurementPreference';
 import { useThemePreference } from '@/hooks/useThemePreference';
+import { announce, CHROME_MAX_FONT_SCALE } from '@/lib/a11y';
 import { resolveCulinaryLanguage } from '@/lib/culinaryUnits';
 import { displayIngredientAmount } from '@/lib/displayIngredientAmount';
 import { isPantryStaple } from '@/lib/pantryStaples';
@@ -89,6 +90,7 @@ export function AddToShoppingListModal({
     const picked = ingredients.filter((_, index) => selected.has(index));
     if (picked.length === 0) {
       setError(t('addToList.pickOne'));
+      announce(t('addToList.pickOne'));
       return;
     }
 
@@ -98,7 +100,9 @@ export function AddToShoppingListModal({
       await onConfirm(picked);
       onClose();
     } catch (err) {
-      setError(err instanceof Error ? err.message : t('addToList.failed'));
+      const message = err instanceof Error ? err.message : t('addToList.failed');
+      setError(message);
+      announce(message);
     } finally {
       setSaving(false);
     }
@@ -120,11 +124,16 @@ export function AddToShoppingListModal({
             }}
             disabled={saving || selectedCount === 0}
             onPress={() => void handleConfirm()}
+            accessibilityRole="button"
+            accessibilityLabel={t(selectedCount === 1 ? 'addToList.addOne' : 'addToList.addOther', {
+              count: selectedCount,
+            })}
+            accessibilityState={{ disabled: saving || selectedCount === 0, busy: saving }}
           >
             {saving ? (
-              <ActivityIndicator color="#fff" />
+              <ActivityIndicator color={colors.onPrimary} />
             ) : (
-              <Text className="text-sm font-bold text-white">
+              <Text className="text-sm font-bold" style={{ color: colors.onPrimary }}>
                 {t(selectedCount === 1 ? 'addToList.addOne' : 'addToList.addOther', {
                   count: selectedCount,
                 })}
@@ -135,14 +144,14 @@ export function AddToShoppingListModal({
       }
     >
       <View className="flex-row items-center justify-between px-5 pb-3">
-        <Text className="text-sm" style={{ color: colors.textSecondary }}>
+        <Text className="flex-shrink text-sm" style={{ color: colors.textSecondary }}>
           {t('addToList.selected', { selected: selectedCount, total: ingredients.length })}
         </Text>
         <Pressable
           onPress={toggleAll}
-          className="active:opacity-70"
+          className="min-h-[44px] justify-center active:opacity-70"
+          hitSlop={6}
           accessibilityRole="button"
-          accessibilityState={{ selected: allSelected }}
         >
           <Text className="text-sm font-semibold" style={{ color: colors.primary }}>
             {t(allSelected ? 'addToList.deselectAll' : 'addToList.selectAll')}
@@ -180,7 +189,9 @@ export function AddToShoppingListModal({
                   onPress={() => toggleIndex(index)}
                   accessibilityRole="checkbox"
                   accessibilityState={{ checked: isOn }}
-                  accessibilityLabel={t('addToList.ingredientLabel', { name: ing.name })}
+                  accessibilityLabel={[ing.name, amount, inPantry ? t('addToList.inPantry') : null]
+                    .filter(Boolean)
+                    .join(', ')}
                 >
                   <View
                     className="h-6 w-6 items-center justify-center rounded-md border-2"
@@ -189,7 +200,7 @@ export function AddToShoppingListModal({
                       backgroundColor: isOn ? colors.primary : 'transparent',
                     }}
                   >
-                    {isOn ? <Ionicons name="checkmark" size={14} color="#fff" /> : null}
+                    {isOn ? <Ionicons name="checkmark" size={14} color={colors.onPrimary} /> : null}
                   </View>
                   <View className="min-w-0 flex-1">
                     <Text
@@ -204,7 +215,10 @@ export function AddToShoppingListModal({
                       </Text>
                     ) : null}
                   </View>
-                  <Text className="text-sm tabular-nums" style={{ color: colors.textSecondary }}>
+                  <Text
+                    className="flex-shrink text-sm tabular-nums"
+                    style={{ color: colors.textSecondary, maxWidth: '45%' }}
+                  >
                     {amount}
                   </Text>
                 </Pressable>
@@ -219,11 +233,15 @@ export function AddToShoppingListModal({
                     });
                   }}
                   hitSlop={8}
-                  className="min-h-[40px] justify-center px-1 active:opacity-70"
+                  className="min-h-[44px] justify-center px-1 active:opacity-70"
                   accessibilityRole="button"
                   accessibilityLabel={t('addToList.keepThisLabel', { name: ing.name })}
                 >
-                  <Text className="text-[11px] font-semibold" style={{ color: colors.accent }}>
+                  <Text
+                    className="text-[11px] font-semibold"
+                    style={{ color: colors.accent }}
+                    maxFontSizeMultiplier={CHROME_MAX_FONT_SCALE}
+                  >
                     {t('addToList.keepThis')}
                   </Text>
                 </Pressable>

@@ -7,6 +7,7 @@ import { LibraryLayoutToggle } from '@/components/LibraryLayoutToggle';
 import { TextInput } from '@/components/text-input';
 import type { LibraryLayout } from '@/hooks/useLibraryLayout';
 import { useThemePreference } from '@/hooks/useThemePreference';
+import { CHROME_MAX_FONT_SCALE } from '@/lib/a11y';
 import { RECIPE_SORT_OPTIONS, RecipeSortKey } from '@/lib/recipeListQuery';
 import { translateRecipeTag } from '@/lib/recipeTags';
 
@@ -88,8 +89,15 @@ export function RecipeLibraryToolbar({
           borderColor: colors.frostedBorder,
         }}
       >
-        <Ionicons name="search-outline" size={18} color={colors.textSecondary} />
+        <Ionicons
+          name="search-outline"
+          size={18}
+          color={colors.textSecondary}
+          accessible={false}
+          importantForAccessibility="no"
+        />
         <TextInput
+          accessibilityLabel={t('a11y.searchRecipes')}
           className="pinch-plain-focus flex-1 px-3 py-3.5 text-base"
           style={{ color: colors.text }}
           placeholder={t('library.searchPlaceholder')}
@@ -104,8 +112,9 @@ export function RecipeLibraryToolbar({
         {search.length > 0 && (
           <Pressable
             onPress={() => onSearchChange('')}
-            hitSlop={8}
+            hitSlop={13}
             className="active:opacity-70"
+            accessibilityRole="button"
             accessibilityLabel={t('library.clearSearch')}
           >
             <Ionicons name="close-circle" size={18} color={colors.textSecondary} />
@@ -128,11 +137,12 @@ export function RecipeLibraryToolbar({
             <Ionicons
               name={favoritesOnly ? 'heart' : 'heart-outline'}
               size={16}
-              color={favoritesOnly ? '#fff' : colors.primary}
+              color={favoritesOnly ? colors.onPrimary : colors.primary}
             />
             <Text
               className="text-sm font-semibold"
-              style={{ color: favoritesOnly ? '#fff' : colors.text }}
+              style={{ color: favoritesOnly ? colors.onPrimary : colors.text }}
+              maxFontSizeMultiplier={CHROME_MAX_FONT_SCALE}
             >
               {t('library.favorites')}
             </Text>
@@ -153,11 +163,12 @@ export function RecipeLibraryToolbar({
             <Ionicons
               name={cookTonight ? 'moon' : 'moon-outline'}
               size={16}
-              color={cookTonight ? '#fff' : colors.primary}
+              color={cookTonight ? colors.onPrimary : colors.primary}
             />
             <Text
               className="text-sm font-semibold"
-              style={{ color: cookTonight ? '#fff' : colors.text }}
+              style={{ color: cookTonight ? colors.onPrimary : colors.text }}
+              maxFontSizeMultiplier={CHROME_MAX_FONT_SCALE}
             >
               {t('library.cookTonight')}
             </Text>
@@ -173,9 +184,14 @@ export function RecipeLibraryToolbar({
           accessibilityRole="button"
           accessibilityState={{ expanded: filtersOpen }}
           accessibilityLabel={t('library.toggleFilters')}
+          accessibilityValue={filtersActive ? { text: t('a11y.filtersApplied') } : undefined}
         >
           <Ionicons name="options-outline" size={16} color={colors.primary} />
-          <Text className="text-sm font-semibold" style={{ color: colors.primary }}>
+          <Text
+            className="text-sm font-semibold"
+            style={{ color: colors.primary }}
+            maxFontSizeMultiplier={CHROME_MAX_FONT_SCALE}
+          >
             {t('library.filter')}
           </Text>
           {filtersActive ? (
@@ -221,6 +237,7 @@ export function RecipeLibraryToolbar({
       <Text
         className={`text-xs ${isSearchPending ? 'opacity-60' : ''}`}
         style={{ color: colors.textSecondary }}
+        accessibilityLiveRegion="polite"
       >
         {t(resultCount === 1 ? 'library.recipeCountOne' : 'library.recipeCountOther', {
           count: resultCount,
@@ -243,6 +260,9 @@ export function RecipeLibraryToolbar({
                   onPress={() => onSortChange(option.key)}
                   accessibilityRole="button"
                   accessibilityState={{ selected: active }}
+                  accessibilityLabel={t('a11y.sortBy', {
+                    option: t(`library.sort.${option.key}`),
+                  })}
                   className="min-h-[44px] flex-row items-center gap-1.5 rounded-2xl px-4 active:opacity-80"
                   style={{
                     backgroundColor: active ? colors.primary : inactiveChipBg,
@@ -251,11 +271,12 @@ export function RecipeLibraryToolbar({
                   <Ionicons
                     name={option.icon as keyof typeof Ionicons.glyphMap}
                     size={14}
-                    color={active ? '#fff' : colors.primary}
+                    color={active ? colors.onPrimary : colors.primary}
                   />
                   <Text
                     className="text-sm font-semibold"
-                    style={{ color: active ? '#fff' : colors.text }}
+                    style={{ color: active ? colors.onPrimary : colors.text }}
+                    maxFontSizeMultiplier={CHROME_MAX_FONT_SCALE}
                   >
                     {t(`library.sort.${option.key}`)}
                   </Text>
@@ -268,13 +289,20 @@ export function RecipeLibraryToolbar({
             <View className="gap-1.5">
               <View className="flex-row items-center justify-between">
                 <Text
+                  accessibilityRole="header"
                   className="text-xs font-semibold uppercase tracking-wide"
                   style={{ color: colors.textSecondary }}
                 >
                   {t('library.tags')}
                 </Text>
                 {selectedTags.length > 0 && onClearTags ? (
-                  <Pressable onPress={onClearTags} hitSlop={8} className="active:opacity-70">
+                  <Pressable
+                    onPress={onClearTags}
+                    hitSlop={12}
+                    className="active:opacity-70"
+                    accessibilityRole="button"
+                    accessibilityLabel={t('a11y.clearTags')}
+                  >
                     <Text className="text-xs font-semibold" style={{ color: colors.primary }}>
                       {t('common.clear')}
                     </Text>
@@ -302,7 +330,8 @@ export function RecipeLibraryToolbar({
                     >
                       <Text
                         className="text-sm font-semibold"
-                        style={{ color: active ? '#fff' : colors.text }}
+                        style={{ color: active ? colors.onPrimary : colors.text }}
+                        maxFontSizeMultiplier={CHROME_MAX_FONT_SCALE}
                       >
                         {translateRecipeTag(tag, t)}
                       </Text>
@@ -315,6 +344,7 @@ export function RecipeLibraryToolbar({
 
           <View className="gap-1.5">
             <Text
+              accessibilityRole="header"
               className="text-xs font-semibold uppercase tracking-wide"
               style={{ color: colors.textSecondary }}
             >
@@ -328,6 +358,9 @@ export function RecipeLibraryToolbar({
             >
               <Pressable
                 onPress={() => onSelectCollection?.(null)}
+                accessibilityRole="button"
+                accessibilityState={{ selected: selectedCollectionId == null }}
+                accessibilityLabel={t('a11y.allCollections')}
                 className="min-h-[44px] items-center justify-center rounded-2xl px-4 active:opacity-80"
                 style={{
                   backgroundColor: selectedCollectionId == null ? colors.primary : inactiveChipBg,
@@ -335,7 +368,8 @@ export function RecipeLibraryToolbar({
               >
                 <Text
                   className="text-sm font-semibold"
-                  style={{ color: selectedCollectionId == null ? '#fff' : colors.text }}
+                  style={{ color: selectedCollectionId == null ? colors.onPrimary : colors.text }}
+                  maxFontSizeMultiplier={CHROME_MAX_FONT_SCALE}
                 >
                   {t('library.allCollections')}
                 </Text>
@@ -349,6 +383,24 @@ export function RecipeLibraryToolbar({
                     onLongPress={() => onLongPressCollection?.(collection.id)}
                     accessibilityRole="button"
                     accessibilityState={{ selected: active }}
+                    accessibilityLabel={collection.name}
+                    // The nested manage button isn't reachable inside an accessible chip on
+                    // iOS, so expose it as a custom action too.
+                    accessibilityActions={
+                      onManageCollection || onLongPressCollection
+                        ? [
+                            {
+                              name: 'manage',
+                              label: t('library.manageCollection', { name: collection.name }),
+                            },
+                          ]
+                        : undefined
+                    }
+                    onAccessibilityAction={(event) => {
+                      if (event.nativeEvent.actionName !== 'manage') return;
+                      if (onManageCollection) onManageCollection(collection.id);
+                      else onLongPressCollection?.(collection.id);
+                    }}
                     className="min-h-[44px] flex-row items-center gap-1.5 rounded-2xl px-4 active:opacity-80"
                     style={{
                       backgroundColor: active ? colors.primary : inactiveChipBg,
@@ -357,11 +409,12 @@ export function RecipeLibraryToolbar({
                     <Ionicons
                       name="folder-outline"
                       size={14}
-                      color={active ? '#fff' : colors.primary}
+                      color={active ? colors.onPrimary : colors.primary}
                     />
                     <Text
                       className="text-sm font-semibold"
-                      style={{ color: active ? '#fff' : colors.text }}
+                      style={{ color: active ? colors.onPrimary : colors.text }}
+                      maxFontSizeMultiplier={CHROME_MAX_FONT_SCALE}
                     >
                       {collection.name}
                     </Text>
@@ -371,7 +424,8 @@ export function RecipeLibraryToolbar({
                           e.stopPropagation?.();
                           onManageCollection(collection.id);
                         }}
-                        hitSlop={8}
+                        hitSlop={12}
+                        accessibilityRole="button"
                         accessibilityLabel={t('library.manageCollection', {
                           name: collection.name,
                         })}
@@ -379,7 +433,7 @@ export function RecipeLibraryToolbar({
                         <Ionicons
                           name="ellipsis-horizontal"
                           size={14}
-                          color={active ? '#fff' : colors.textSecondary}
+                          color={active ? colors.onPrimary : colors.textSecondary}
                         />
                       </Pressable>
                     ) : null}
@@ -389,11 +443,17 @@ export function RecipeLibraryToolbar({
               {onCreateCollection ? (
                 <Pressable
                   onPress={onCreateCollection}
+                  accessibilityRole="button"
+                  accessibilityLabel={t('library.newCollection')}
                   className="min-h-[44px] flex-row items-center gap-1 rounded-2xl border px-4 active:opacity-80"
                   style={{ borderColor: colors.frostedBorder, backgroundColor: inactiveChipBg }}
                 >
                   <Ionicons name="add" size={14} color={colors.primary} />
-                  <Text className="text-sm font-semibold" style={{ color: colors.primary }}>
+                  <Text
+                    className="text-sm font-semibold"
+                    style={{ color: colors.primary }}
+                    maxFontSizeMultiplier={CHROME_MAX_FONT_SCALE}
+                  >
                     {t('library.new')}
                   </Text>
                 </Pressable>

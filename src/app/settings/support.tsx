@@ -17,16 +17,19 @@ type SupportRowProps = {
   icon: keyof typeof Ionicons.glyphMap;
   onPress: () => void;
   last?: boolean;
+  /** "link" for rows that leave the app (mailto / external URL). */
+  role?: 'button' | 'link';
 };
 
-function SupportRow({ label, icon, onPress, last = false }: SupportRowProps) {
+function SupportRow({ label, icon, onPress, last = false, role = 'button' }: SupportRowProps) {
   const { colors } = useThemePreference();
   const { chevronForward } = useRtl();
 
   return (
     <Pressable
       onPress={onPress}
-      accessibilityRole="button"
+      accessibilityRole={role}
+      accessibilityLabel={label}
       className="min-h-12 flex-row items-center gap-3 py-3 active:opacity-65"
       style={{
         borderColor: colors.frostedBorder,
@@ -36,6 +39,8 @@ function SupportRow({ label, icon, onPress, last = false }: SupportRowProps) {
       <View
         className="h-9 w-9 items-center justify-center rounded-[14px]"
         style={{ backgroundColor: colors.primarySoft }}
+        accessible={false}
+        importantForAccessibility="no-hide-descendants"
       >
         <Ionicons name={icon} size={18} color={colors.primary} />
       </View>
@@ -46,6 +51,8 @@ function SupportRow({ label, icon, onPress, last = false }: SupportRowProps) {
         name={chevronForward}
         size={17}
         color={colors.textSecondary}
+        accessible={false}
+        importantForAccessibility="no"
       />
     </Pressable>
   );
@@ -76,6 +83,7 @@ export default function SupportSettingsScreen() {
         <SupportRow
           label={t('settings.emailSupport')}
           icon="mail-outline"
+          role="link"
           onPress={() => void openLegalUrl(LEGAL_URLS.supportMailto)}
         />
         <SupportRow

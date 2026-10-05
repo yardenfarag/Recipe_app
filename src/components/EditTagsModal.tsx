@@ -14,6 +14,7 @@ import { useTranslation } from 'react-i18next';
 import { SheetModal } from '@/components/SheetModal';
 import { TextInput } from '@/components/text-input';
 import { useThemePreference } from '@/hooks/useThemePreference';
+import { announce } from '@/lib/a11y';
 import { normalizeRecipeTags, translateRecipeTag } from '@/lib/recipeTags';
 
 interface EditTagsModalProps {
@@ -56,7 +57,9 @@ export function EditTagsModal({ visible, tags, onClose, onSave }: EditTagsModalP
       await onSave(normalizeRecipeTags(draft));
       onClose();
     } catch (err) {
-      setError(err instanceof Error ? err.message : t('tags.saveFailed'));
+      const message = err instanceof Error ? err.message : t('tags.saveFailed');
+      setError(message);
+      announce(message);
     } finally {
       setSaving(false);
     }
@@ -70,12 +73,24 @@ export function EditTagsModal({ visible, tags, onClose, onSave }: EditTagsModalP
       maxWidth={480}
       showCloseButton={false}
       headerLeft={
-        <Pressable onPress={onClose} className="active:opacity-70">
+        <Pressable
+          onPress={onClose}
+          className="active:opacity-70"
+          hitSlop={12}
+          accessibilityRole="button"
+        >
           <Text style={{ color: colors.textSecondary }}>{t('common.cancel')}</Text>
         </Pressable>
       }
       headerRight={
-        <Pressable onPress={() => void handleSave()} disabled={saving}>
+        <Pressable
+          onPress={() => void handleSave()}
+          disabled={saving}
+          hitSlop={12}
+          accessibilityRole="button"
+          accessibilityLabel={t('common.save')}
+          accessibilityState={{ disabled: saving, busy: saving }}
+        >
           {saving ? (
             <ActivityIndicator color={colors.primary} />
           ) : (
@@ -102,6 +117,7 @@ export function EditTagsModal({ visible, tags, onClose, onSave }: EditTagsModalP
               onPress={() => removeTag(tag)}
               accessibilityRole="button"
               accessibilityLabel={t('tags.remove', { tag: translateRecipeTag(tag, t) })}
+              hitSlop={6}
               className="flex-row items-center gap-1 rounded-full border px-3 py-1.5 active:opacity-80"
               style={{ borderColor: colors.frostedBorder, backgroundColor: colors.surface }}
             >
@@ -128,6 +144,7 @@ export function EditTagsModal({ visible, tags, onClose, onSave }: EditTagsModalP
             }}
             placeholder={t('tags.addPlaceholder')}
             placeholderTextColor={colors.textSecondary}
+            accessibilityLabel={t('tags.addPlaceholder')}
             value={input}
             onChangeText={setInput}
             autoCapitalize="none"
@@ -135,18 +152,21 @@ export function EditTagsModal({ visible, tags, onClose, onSave }: EditTagsModalP
             onSubmitEditing={addTag}
           />
           <Pressable
-            className="items-center justify-center rounded-2xl px-4 active:opacity-80"
+            className="min-h-[44px] min-w-[44px] items-center justify-center rounded-2xl px-4 active:opacity-80"
             style={{ backgroundColor: colors.primary }}
             onPress={addTag}
             accessibilityRole="button"
             accessibilityLabel={t('tags.add')}
           >
-            <Ionicons name="add" size={22} color="#fff" />
+            <Ionicons name="add" size={22} color={colors.onPrimary} />
           </Pressable>
         </View>
 
         {error ? (
-          <Text className="text-sm" style={{ color: colors.danger }}>
+          <Text
+            className="text-sm"
+            style={{ color: colors.danger }}
+          >
             {error}
           </Text>
         ) : null}

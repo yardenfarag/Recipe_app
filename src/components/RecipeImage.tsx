@@ -12,6 +12,8 @@ type RecipeImageProps = {
   variant?: 'thumb' | 'compact' | 'hero';
   style?: StyleProp<ViewStyle>;
   borderRadius?: number;
+  /** Pass to expose the photo to screen readers; decorative (hidden) by default. */
+  accessibilityLabel?: string;
 };
 
 const VARIANT_DEFAULT_RADIUS = {
@@ -30,12 +32,16 @@ export function RecipeImage({
   variant = 'thumb',
   style,
   borderRadius = VARIANT_DEFAULT_RADIUS[variant],
+  accessibilityLabel,
 }: RecipeImageProps) {
   const { colors } = useThemePreference();
   const [failed, setFailed] = useState(false);
   // Native: zoom past baked-in pillarbox bars. Web: CORS often blanks the
   // image, and 2× scale turns that into a huge empty/dark strip.
   const scale = Platform.OS === 'web' ? 1 : 2;
+  const a11yProps = accessibilityLabel
+    ? { accessible: true, accessibilityRole: 'image' as const, accessibilityLabel }
+    : { accessible: false, importantForAccessibility: 'no-hide-descendants' as const };
 
   useEffect(() => {
     setFailed(false);
@@ -44,6 +50,7 @@ export function RecipeImage({
   if (failed) {
     return (
       <View
+        {...a11yProps}
         style={[
           styles.frame,
           { borderRadius, backgroundColor: colors.primarySoft },
@@ -64,6 +71,7 @@ export function RecipeImage({
 
   return (
     <View
+      {...a11yProps}
       style={[
         styles.frame,
         { borderRadius, backgroundColor: colors.primarySoft },

@@ -52,6 +52,8 @@ export function BrandHeader({
             isHero ? 'mb-1 h-20 w-20 rounded-[28px]' : 'h-11 w-11 rounded-2xl'
           }`}
           style={{ backgroundColor: colors.primarySoft }}
+          accessible={false}
+          importantForAccessibility="no-hide-descendants"
         >
           <CookieMark size={isHero ? 42 : 26} color={colors.primary} />
         </View>
@@ -77,6 +79,7 @@ export function BrandHeader({
                 exiting={fadeCopy ? FadeOut.duration(140) : undefined}
               >
                 <Text
+                  accessibilityRole="header"
                   className="text-[22px] font-bold tracking-tight"
                   style={{
                     color: colors.text,
@@ -121,6 +124,7 @@ export function BrandHeader({
             Pinch
           </Text>
           <Text
+            accessibilityRole="header"
             className="text-[28px] font-bold tracking-tight"
             style={{
               color: colors.text,

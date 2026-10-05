@@ -36,12 +36,18 @@ export function OnboardingSlide({ title, body, illustration, stepKey }: Onboardi
   return (
     <View className="flex-1 items-center justify-center px-1" key={stepKey}>
       <View className="w-full items-center gap-5">
-        <Animated.View entering={enterArt} className="items-center justify-center">
+        <Animated.View
+          entering={enterArt}
+          className="items-center justify-center"
+          accessible={false}
+          importantForAccessibility="no-hide-descendants"
+        >
           {illustration}
         </Animated.View>
         <View className="w-full max-w-[340px] gap-2 px-1">
           <Animated.View entering={enterTitle}>
             <Text
+              accessibilityRole="header"
               className="text-center text-[22px] font-bold leading-[28px]"
               style={{ color: colors.text, letterSpacing: -0.3 }}
             >

@@ -43,7 +43,9 @@ export function AnimatedSplashOverlay() {
           scheduleOnRN(setVisible, false);
         }
       })}
-      style={styles.splashOverlay}>
+      style={styles.splashOverlay}
+      accessible={false}
+      importantForAccessibility="no-hide-descendants">
       {image}
     </Animated.View>
   ) : (
@@ -53,7 +55,9 @@ export function AnimatedSplashOverlay() {
           setAnimate(true);
         });
       }}
-      style={styles.splashOverlay}>
+      style={styles.splashOverlay}
+      accessible={false}
+      importantForAccessibility="no-hide-descendants">
       {image}
     </View>
   );
@@ -97,7 +101,10 @@ const glowKeyframe = new Keyframe({
 
 export function AnimatedIcon() {
   return (
-    <View style={styles.iconContainer}>
+    <View
+      style={styles.iconContainer}
+      accessible={false}
+      importantForAccessibility="no-hide-descendants">
       <Animated.View entering={glowKeyframe.duration(60 * 1000 * 4)} style={styles.glow}>
         <Image style={styles.glow} source={require('@/assets/images/logo-glow.png')} />
       </Animated.View>

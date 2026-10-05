@@ -27,6 +27,7 @@ import { useMeasurementPreference } from '@/hooks/useMeasurementPreference';
 import { useShoppingList } from '@/hooks/useShoppingList';
 import { useThemePreference } from '@/hooks/useThemePreference';
 import { useAuth } from '@/hooks/useAuth';
+import { announce, CHROME_MAX_FONT_SCALE } from '@/lib/a11y';
 import { setGuestRecipeTags } from '@/lib/guestRecipes';
 import { pickIngredientAmount, scaleIngredient, scaleIngredients } from '@/lib/ingredientAmounts';
 import { isRtlAppLanguage } from '@/lib/appLanguages';
@@ -607,6 +608,16 @@ export function RecipeView({
     openCookAlong(seconds);
   }
 
+  useEffect(() => {
+    if (translating) announce(t('recipe.translating'));
+  }, [translating, t]);
+
+  function changeServings(next: number) {
+    const clamped = Math.max(1, next);
+    setServings(clamped);
+    announce(t('cookbook.servings', { count: clamped }));
+  }
+
   const sideCookAlong = isWide && sourceVideo.mode !== 'none';
   const splitRecipeBody = isWide && !sideCookAlong;
 
@@ -659,6 +670,7 @@ export function RecipeView({
                 <Text
                   className={`flex-1 font-bold ${isMediumUp ? 'text-xl leading-7' : 'text-2xl leading-8'}`}
                   style={{ color: colors.text, writingDirection: textDirection }}
+                  accessibilityRole="header"
                 >
                   {title}
                 </Text>
@@ -670,6 +682,7 @@ export function RecipeView({
                     hitSlop={12}
                     activeOpacity={0.6}
                     className="mt-0.5 px-1"
+                    accessibilityRole="button"
                     accessibilityLabel={t('recipe.share')}
                   >
                     <Ionicons
@@ -685,6 +698,8 @@ export function RecipeView({
                     hitSlop={12}
                     activeOpacity={0.6}
                     className="mt-0.5 px-1"
+                    accessibilityRole="button"
+                    accessibilityState={{ selected: isFavorite === true }}
                     accessibilityLabel={
                       isFavorite ? t('library.removeFavorite') : t('library.addFavorite')
                     }
@@ -743,10 +758,15 @@ export function RecipeView({
                       onPress={() =>
                         router.dismissTo({ pathname: '/', params: { tag } })
                       }
+                      accessibilityRole="button"
+                      accessibilityLabel={t('a11y.showRecipesTagged', {
+                        tag: translateRecipeTag(tag, t),
+                      })}
                     >
                       <Text
                         className="text-[11px] font-medium"
                         style={{ color: colors.textSecondary }}
+                        maxFontSizeMultiplier={CHROME_MAX_FONT_SCALE}
                       >
                         {translateRecipeTag(tag, t)}
                       </Text>
@@ -757,10 +777,12 @@ export function RecipeView({
                       className="rounded-full px-2.5 py-1 active:opacity-70"
                       style={{ backgroundColor: colors.primarySoft }}
                       onPress={() => setEditTagsOpen(true)}
+                      accessibilityRole="button"
                     >
                       <Text
                         className="text-[11px] font-semibold"
                         style={{ color: colors.primary }}
+                        maxFontSizeMultiplier={CHROME_MAX_FONT_SCALE}
                       >
                         {tags.length > 0 ? t('tags.editTitle') : t('tags.addTags')}
                       </Text>
@@ -781,9 +803,15 @@ export function RecipeView({
                           params: { collection: collection.id },
                         })
                       }
+                      accessibilityRole="button"
+                      accessibilityLabel={t('a11y.openCollection', { name: collection.name })}
                     >
                       <Ionicons name="folder-outline" size={11} color={colors.accent} />
-                      <Text className="text-[11px] font-medium" style={{ color: colors.accent }}>
+                      <Text
+                        className="text-[11px] font-medium"
+                        style={{ color: colors.accent }}
+                        maxFontSizeMultiplier={CHROME_MAX_FONT_SCALE}
+                      >
                         {collection.name}
                       </Text>
                     </Pressable>
@@ -832,13 +860,20 @@ export function RecipeView({
             </View>
 
             {showSideThumbnail ? (
-              <View className="rounded-2xl border" style={{ borderColor: colors.primarySoft }}>
+              <View
+                className="rounded-2xl border"
+                style={{ borderColor: colors.primarySoft }}
+                accessible={false}
+                importantForAccessibility="no-hide-descendants"
+              >
                 <RecipeImage uri={recipe.image_url!} variant="compact" />
               </View>
             ) : !recipe.image_url ? (
               <View
                 className="h-16 w-16 items-center justify-center rounded-2xl"
                 style={{ backgroundColor: colors.primarySoft }}
+                accessible={false}
+                importantForAccessibility="no-hide-descendants"
               >
                 <Ionicons name="restaurant" size={26} color={colors.primary} />
               </View>
@@ -867,7 +902,11 @@ export function RecipeView({
                 language: t(`languages.${activeLanguage}`),
               })}
             </Text>
-            <Pressable onPress={handleShowOriginalLanguage} className="mt-2 active:opacity-70">
+            <Pressable
+              onPress={handleShowOriginalLanguage}
+              className="mt-2 active:opacity-70"
+              accessibilityRole="button"
+            >
               <Text className="text-sm font-semibold" style={{ color: colors.accent }}>
                 {t('recipe.showOriginal')}
               </Text>
@@ -892,7 +931,11 @@ export function RecipeView({
                 {variantSummary}
               </Text>
             )}
-            <Pressable onPress={handleRevertVariant} className="mt-2 active:opacity-70">
+            <Pressable
+              onPress={handleRevertVariant}
+              className="mt-2 active:opacity-70"
+              accessibilityRole="button"
+            >
               <Text className="text-sm font-semibold" style={{ color: colors.accent }}>
                 {t('recipe.revertOriginal')}
               </Text>
@@ -904,7 +947,8 @@ export function RecipeView({
           <View
             className="mb-4 rounded-3xl border p-4"
             style={{ borderColor: colors.accentSoft, backgroundColor: colors.accentSoft }}
-            accessibilityLabel={t('recipe.inventedBanner')}
+            accessible
+            accessibilityLabel={`${t('recipe.inventedChip')}. ${t('recipe.inventedBanner')}`}
           >
             <Text className="text-sm font-semibold" style={{ color: colors.accent }}>
               {t('recipe.inventedChip')}
@@ -945,11 +989,14 @@ export function RecipeView({
                 style={{ backgroundColor: colors.warning }}
                 accessibilityRole="button"
                 accessibilityLabel={t('recipe.repairAction')}
+                accessibilityState={{ disabled: repairing, busy: repairing }}
               >
                 {repairing ? (
-                  <ActivityIndicator color="#fff" size="small" />
+                  <ActivityIndicator color={colors.background} size="small" />
                 ) : (
-                  <Text className="text-sm font-semibold text-white">{t('recipe.repairAction')}</Text>
+                  <Text className="text-sm font-semibold" style={{ color: colors.background }}>
+                    {t('recipe.repairAction')}
+                  </Text>
                 )}
               </Pressable>
             ) : null}
@@ -962,7 +1009,7 @@ export function RecipeView({
           className="mb-5 flex-row items-center justify-between rounded-3xl border px-4 py-3.5"
           style={{ borderColor: colors.border, backgroundColor: colors.surface }}
         >
-          <View>
+          <View className="min-w-0 flex-1" style={{ paddingEnd: 12 }}>
             <Text className="text-sm font-semibold" style={{ color: colors.text }}>
               {t('recipe.servings')}
             </Text>
@@ -973,14 +1020,27 @@ export function RecipeView({
             )}
           </View>
           <View className="flex-row items-center gap-3">
-            <StepperButton icon="remove" onPress={() => setServings((s) => Math.max(1, s - 1))} />
+            <StepperButton
+              icon="remove"
+              disabled={servings <= 1}
+              onPress={() => changeServings(servings - 1)}
+            />
             <Text
               className="min-w-[28px] text-center text-xl font-bold"
               style={{ color: colors.text }}
+              accessible
+              accessibilityRole="adjustable"
+              accessibilityLabel={t('recipe.servings')}
+              accessibilityValue={{ text: t('cookbook.servings', { count: servings }) }}
+              accessibilityActions={[{ name: 'increment' }, { name: 'decrement' }]}
+              onAccessibilityAction={(event) => {
+                if (event.nativeEvent.actionName === 'increment') changeServings(servings + 1);
+                else if (event.nativeEvent.actionName === 'decrement') changeServings(servings - 1);
+              }}
             >
               {servings}
             </Text>
-            <StepperButton icon="add" onPress={() => setServings((s) => s + 1)} />
+            <StepperButton icon="add" onPress={() => changeServings(servings + 1)} />
           </View>
         </View>
 
@@ -997,15 +1057,26 @@ export function RecipeView({
                   className="flex-row items-center gap-1 rounded-full px-3 py-1.5 active:opacity-80"
                   style={{ backgroundColor: colors.primarySoft }}
                   onPress={() => setShoppingListModalOpen(true)}
+                  accessibilityRole="button"
                 >
                   <Ionicons name="cart-outline" size={14} color={colors.primary} />
-                  <Text className="text-xs font-semibold" style={{ color: colors.primary }}>
+                  <Text
+                    className="text-xs font-semibold"
+                    style={{ color: colors.primary }}
+                    maxFontSizeMultiplier={CHROME_MAX_FONT_SCALE}
+                  >
                     {t('addToList.title')}
                   </Text>
                 </Pressable>
               }
             >
-              {scaledIngredients.map((ing, index) => (
+              {scaledIngredients.map((ing, index) => {
+                const amountLabel =
+                  displayIngredientAmount(ing, {
+                    system: measurementSystem,
+                    language: unitLanguage,
+                  }) || t('recipe.amountUnknown');
+                return (
                 <View
                   key={`${ing.name}-${index}`}
                   className={`flex-row items-center justify-between py-3.5 ${
@@ -1025,17 +1096,14 @@ export function RecipeView({
                       textAlign: textDirection === 'rtl' ? 'right' : 'left',
                       paddingEnd: 8,
                     }}
+                    accessibilityLabel={`${ing.name}, ${amountLabel}`}
                   >
                     {ing.name}
                   </Text>
-                  <View className="flex-row items-center gap-3">
+                  <View className="shrink flex-row items-center gap-3">
                     <IngredientAmountText
-                      amount={
-                        displayIngredientAmount(ing, {
-                          system: measurementSystem,
-                          language: unitLanguage,
-                        }) || t('recipe.amountUnknown')
-                      }
+                      hideFromAccessibility
+                      amount={amountLabel}
                       isPinch={displayedAmountIsPinch(ing, {
                         system: measurementSystem,
                       })}
@@ -1048,15 +1116,23 @@ export function RecipeView({
                         className="rounded-full px-3 py-1.5"
                         style={{ backgroundColor: colors.accentSoft }}
                         onPress={() => setSwapIndex(index)}
+                        hitSlop={6}
+                        accessibilityRole="button"
+                        accessibilityLabel={t('a11y.swapIngredient', { name: ing.name })}
                       >
-                        <Text className="text-xs font-semibold" style={{ color: colors.accent }}>
+                        <Text
+                          className="text-xs font-semibold"
+                          style={{ color: colors.accent }}
+                          maxFontSizeMultiplier={CHROME_MAX_FONT_SCALE}
+                        >
                           {t('recipe.swapAction')}
                         </Text>
                       </Pressable>
                     ) : null}
                   </View>
                 </View>
-              ))}
+                );
+              })}
             </Section>
             {hasUnknownAmounts && !recipeIsInvented(recipe) ? (
               <Text className="-mt-2 mb-4 px-1 text-xs leading-5" style={{ color: colors.textSecondary }}>
@@ -1076,7 +1152,12 @@ export function RecipeView({
             accessibilityLabel={t('recipe.translate')}
           >
             <Ionicons name="language-outline" size={18} color={colors.primary} />
-            <Text className="text-xs font-bold" style={{ color: colors.text }} numberOfLines={1}>
+            <Text
+              className="text-xs font-bold"
+              style={{ color: colors.text }}
+              numberOfLines={1}
+              maxFontSizeMultiplier={CHROME_MAX_FONT_SCALE}
+            >
               {t('recipe.translate')}
             </Text>
           </Pressable>
@@ -1088,7 +1169,12 @@ export function RecipeView({
             accessibilityLabel={t('recipe.remix')}
           >
             <Ionicons name="color-wand-outline" size={18} color={colors.accent} />
-            <Text className="text-xs font-bold" style={{ color: colors.text }} numberOfLines={1}>
+            <Text
+              className="text-xs font-bold"
+              style={{ color: colors.text }}
+              numberOfLines={1}
+              maxFontSizeMultiplier={CHROME_MAX_FONT_SCALE}
+            >
               {t('recipe.remix')}
             </Text>
           </Pressable>
@@ -1123,13 +1209,21 @@ export function RecipeView({
                     accessibilityLabel={t('recipe.cookMode')}
                   >
                     <Ionicons name="restaurant-outline" size={14} color={colors.primary} />
-                    <Text className="text-xs font-semibold" style={{ color: colors.primary }}>
+                    <Text
+                      className="text-xs font-semibold"
+                      style={{ color: colors.primary }}
+                      maxFontSizeMultiplier={CHROME_MAX_FONT_SCALE}
+                    >
                       {t('recipe.cookMode')}
                     </Text>
                   </Pressable>
                 ) : null}
                 {hasStepTimestamps ? (
-                  <Text className="text-[11px] font-medium" style={{ color: colors.textSecondary }}>
+                  <Text
+                    className="text-[11px] font-medium"
+                    style={{ color: colors.textSecondary }}
+                    maxFontSizeMultiplier={CHROME_MAX_FONT_SCALE}
+                  >
                     {t('recipe.tapTimeToJump')}
                   </Text>
                 ) : null}
@@ -1152,10 +1246,18 @@ export function RecipeView({
                 <View
                   className="mt-0.5 h-7 w-7 shrink-0 items-center justify-center rounded-full"
                   style={{ backgroundColor: colors.primary }}
+                  accessible={false}
+                  importantForAccessibility="no-hide-descendants"
                 >
-                  <Text className="text-xs font-bold text-white">{step.step}</Text>
+                  <Text
+                    className="text-xs font-bold"
+                    style={{ color: colors.onPrimary }}
+                    maxFontSizeMultiplier={CHROME_MAX_FONT_SCALE}
+                  >
+                    {step.step}
+                  </Text>
                 </View>
-                <View className="flex-1">
+                <View className="min-w-0 flex-1">
                   {step.timestamp_seconds != null ? (
                     <Pressable
                       onPress={() => void handleStepTimestamp(step.timestamp_seconds!)}
@@ -1168,7 +1270,11 @@ export function RecipeView({
                       })}
                     >
                       <Ionicons name="play-circle" size={14} color={colors.accent} />
-                      <Text className="text-xs font-bold tabular-nums" style={{ color: colors.accent }}>
+                      <Text
+                        className="text-xs font-bold tabular-nums"
+                        style={{ color: colors.accent }}
+                        maxFontSizeMultiplier={CHROME_MAX_FONT_SCALE}
+                      >
                         {formatVideoTimestamp(step.timestamp_seconds)}
                       </Text>
                     </Pressable>
@@ -1180,6 +1286,10 @@ export function RecipeView({
                       writingDirection: textDirection,
                       textAlign: textDirection === 'rtl' ? 'right' : 'left',
                     }}
+                    accessibilityLabel={`${t('recipe.cookModeStep', {
+                      current: index + 1,
+                      total: baseInstructions.length,
+                    })}. ${step.text}`}
                   >
                     {step.text}
                   </Text>
@@ -1421,7 +1531,11 @@ function Badge({
     >
       {leading ??
         (icon ? <Ionicons name={icon} size={12} color={colors.primary} /> : null)}
-      <Text className="text-xs font-semibold" style={{ color: colors.primary }}>
+      <Text
+        className="text-xs font-semibold"
+        style={{ color: colors.primary }}
+        maxFontSizeMultiplier={CHROME_MAX_FONT_SCALE}
+      >
         {label}
       </Text>
     </View>
@@ -1431,9 +1545,11 @@ function Badge({
 function StepperButton({
   icon,
   onPress,
+  disabled = false,
 }: {
   icon: 'add' | 'remove';
   onPress: () => void;
+  disabled?: boolean;
 }) {
   const { t } = useTranslation();
   const { colors } = useThemePreference();
@@ -1443,11 +1559,13 @@ function StepperButton({
       accessibilityLabel={
         icon === 'add' ? t('recipe.increaseServings') : t('recipe.decreaseServings')
       }
+      accessibilityState={{ disabled }}
+      disabled={disabled}
       className="h-11 w-11 items-center justify-center rounded-full active:opacity-80"
-      style={{ backgroundColor: colors.primary }}
+      style={{ backgroundColor: colors.primary, opacity: disabled ? 0.45 : 1 }}
       onPress={onPress}
     >
-      <Ionicons name={icon} size={18} color="#fff" />
+      <Ionicons name={icon} size={18} color={colors.onPrimary} />
     </Pressable>
   );
 }
@@ -1469,7 +1587,7 @@ function Section({
     <View className="mb-5">
       <View className="mb-3 flex-row items-center gap-2">
         <View className="min-w-0 flex-1 flex-row items-baseline gap-2">
-          <Text className="text-lg font-bold" style={{ color: colors.text }}>
+          <Text className="text-lg font-bold" style={{ color: colors.text }} accessibilityRole="header">
             {title}
           </Text>
           {count != null && (

@@ -8,6 +8,7 @@ import { RecipeView } from '@/components/RecipeView';
 import { Screen } from '@/components/Screen';
 import { useLocalizedRecipe } from '@/hooks/useLocalizedRecipe';
 import { useThemePreference } from '@/hooks/useThemePreference';
+import { announce } from '@/lib/a11y';
 import { backfillRecipeThumbnails } from '@/lib/backfillRecipeThumbnails';
 import { getGuestRecipeById, setGuestRecipeCooked, updateGuestRecipeContent } from '@/lib/guestRecipes';
 import { recipeContentEquals } from '@/lib/recipeContentEquals';
@@ -50,6 +51,10 @@ export default function RecipeDetailScreen() {
     }
     if (!translationError) lastTranslationError.current = null;
   }, [translationError, t]);
+
+  useEffect(() => {
+    if (loadError) announce(`${t('recipe.loadFailedTitle')}. ${loadError}`);
+  }, [loadError, t]);
 
   const loadRecipe = useCallback(async () => {
     setLoadError(null);
@@ -232,7 +237,11 @@ export default function RecipeDetailScreen() {
   if (recipe === undefined) {
     return (
       <Screen className="items-center justify-center" edges={['bottom']}>
-        <ActivityIndicator color={colors.primary} size="large" />
+        <ActivityIndicator
+          color={colors.primary}
+          size="large"
+          accessibilityLabel={t('a11y.loadingRecipe')}
+        />
       </Screen>
     );
   }
@@ -240,18 +249,29 @@ export default function RecipeDetailScreen() {
   if (loadError) {
     return (
       <Screen className="items-center justify-center px-6" edges={['bottom']}>
-        <Text className="mb-2 text-center text-base font-semibold" style={{ color: colors.text }}>
+        <Text
+          className="mb-2 text-center text-base font-semibold"
+          style={{ color: colors.text }}
+          accessibilityRole="header"
+        >
           {t('recipe.loadFailedTitle')}
         </Text>
-        <Text className="mb-5 text-center text-sm" style={{ color: colors.textSecondary }}>
+        <Text
+          className="mb-5 text-center text-sm"
+          style={{ color: colors.textSecondary }}
+        >
           {loadError}
         </Text>
         <Pressable
           onPress={() => void loadRecipe()}
           className="rounded-full px-5 py-3 active:opacity-80"
           style={{ backgroundColor: colors.primary }}
+          accessibilityRole="button"
+          accessibilityLabel={t('common.tryAgainAction')}
         >
-          <Text className="text-sm font-bold text-white">{t('common.tryAgain')}</Text>
+          <Text className="text-sm font-bold" style={{ color: colors.onPrimary }}>
+            {t('common.tryAgain')}
+          </Text>
         </Pressable>
       </Screen>
     );

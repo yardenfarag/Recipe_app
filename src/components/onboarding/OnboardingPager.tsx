@@ -10,6 +10,7 @@ import { ThemePackPicker } from '@/components/ThemePackPicker';
 import { ThemeToggle } from '@/components/ThemeToggle';
 import { useKitchenProfile } from '@/hooks/useKitchenProfile';
 import { useThemePreference } from '@/hooks/useThemePreference';
+import { announce } from '@/lib/a11y';
 import type { KitchenDietKey } from '@/lib/kitchenProfile';
 import { RECIPE_VARIANTS, type RecipeVariantKey } from '@/lib/recipeVariants';
 
@@ -35,8 +36,23 @@ export function OnboardingPager({ onAccount }: OnboardingPagerProps) {
   const isMeasure = step === 3;
   const isCook = step === 4;
 
+  const stepTitleKeys = [
+    null,
+    'onboarding.welcomeSubtitle',
+    'onboarding.lookTitle',
+    'onboarding.measureTitle',
+    'onboarding.cookTitle',
+  ] as const;
+
   function goNext() {
-    setStep((current) => Math.min(current + 1, ONBOARDING_STEP_COUNT - 1));
+    const next = Math.min(step + 1, ONBOARDING_STEP_COUNT - 1);
+    setStep(next);
+    const titleKey = stepTitleKeys[next];
+    if (titleKey) {
+      announce(
+        `${t('a11y.stepOf', { current: next, total: QUESTION_STEP_COUNT })}. ${t(titleKey)}`,
+      );
+    }
   }
 
   function toggleDiet(key: RecipeVariantKey) {
@@ -87,7 +103,11 @@ export function OnboardingPager({ onAccount }: OnboardingPagerProps) {
 
         {isLanguage ? (
           <>
-            <Text className="mb-1 pt-3 text-2xl font-bold" style={{ color: colors.text }}>
+            <Text
+              className="mb-1 pt-3 text-2xl font-bold"
+              style={{ color: colors.text }}
+              accessibilityRole="header"
+            >
               {t('onboarding.welcomeSubtitle')}
             </Text>
             <Text className="mb-4 text-sm leading-5" style={{ color: colors.textSecondary }}>
@@ -99,7 +119,11 @@ export function OnboardingPager({ onAccount }: OnboardingPagerProps) {
 
         {isLook ? (
           <>
-            <Text className="mb-1 pt-3 text-2xl font-bold" style={{ color: colors.text }}>
+            <Text
+              className="mb-1 pt-3 text-2xl font-bold"
+              style={{ color: colors.text }}
+              accessibilityRole="header"
+            >
               {t('onboarding.lookTitle')}
             </Text>
             <Text className="mb-4 text-sm leading-5" style={{ color: colors.textSecondary }}>
@@ -114,7 +138,11 @@ export function OnboardingPager({ onAccount }: OnboardingPagerProps) {
 
         {isMeasure ? (
           <>
-            <Text className="mb-1 pt-3 text-2xl font-bold" style={{ color: colors.text }}>
+            <Text
+              className="mb-1 pt-3 text-2xl font-bold"
+              style={{ color: colors.text }}
+              accessibilityRole="header"
+            >
               {t('onboarding.measureTitle')}
             </Text>
             <Text className="mb-4 text-sm leading-5" style={{ color: colors.textSecondary }}>
@@ -126,7 +154,11 @@ export function OnboardingPager({ onAccount }: OnboardingPagerProps) {
 
         {isCook ? (
           <>
-            <Text className="mb-1 pt-3 text-2xl font-bold" style={{ color: colors.text }}>
+            <Text
+              className="mb-1 pt-3 text-2xl font-bold"
+              style={{ color: colors.text }}
+              accessibilityRole="header"
+            >
               {t('onboarding.cookTitle')}
             </Text>
             <Text className="mb-4 text-sm leading-5" style={{ color: colors.textSecondary }}>
@@ -139,12 +171,12 @@ export function OnboardingPager({ onAccount }: OnboardingPagerProps) {
                   <Pressable
                     key={variant.key}
                     onPress={() => toggleDiet(variant.key)}
-                    accessibilityRole="button"
-                    accessibilityState={{ selected: active }}
+                    accessibilityRole="checkbox"
+                    accessibilityState={{ checked: active }}
                     className="min-h-[44px] items-center justify-center rounded-2xl px-4 active:opacity-80"
                     style={{ backgroundColor: active ? colors.primary : colors.frosted }}
                   >
-                    <Text className="text-sm font-semibold" style={{ color: active ? '#fff' : colors.text }}>
+                    <Text className="text-sm font-semibold" style={{ color: active ? colors.onPrimary : colors.text }}>
                       {t(`recipe.variants.${variant.key}.label`)}
                     </Text>
                   </Pressable>
@@ -169,7 +201,9 @@ export function OnboardingPager({ onAccount }: OnboardingPagerProps) {
             className="items-center rounded-[18px] px-4 py-3.5 active:opacity-80"
             style={{ backgroundColor: colors.primary }}
           >
-            <Text className="text-[15px] font-bold text-white">{t('onboarding.cookEverything')}</Text>
+            <Text className="text-[15px] font-bold" style={{ color: colors.onPrimary }}>
+              {t('onboarding.cookEverything')}
+            </Text>
           </Pressable>
         ) : (
           <Pressable
@@ -181,7 +215,7 @@ export function OnboardingPager({ onAccount }: OnboardingPagerProps) {
             className="items-center rounded-[18px] px-4 py-3.5 active:opacity-80"
             style={{ backgroundColor: colors.primary }}
           >
-            <Text className="text-[15px] font-bold text-white">
+            <Text className="text-[15px] font-bold" style={{ color: colors.onPrimary }}>
               {isVision
                 ? t('onboarding.visionCta')
                 : isCook || isLanguage
@@ -194,7 +228,7 @@ export function OnboardingPager({ onAccount }: OnboardingPagerProps) {
           <Pressable
             onPress={() => void finishCook([])}
             accessibilityRole="button"
-            className="items-center py-2 active:opacity-70"
+            className="min-h-[44px] items-center justify-center py-2 active:opacity-70"
           >
             <Text className="text-sm font-semibold" style={{ color: colors.textSecondary }}>
               {t('onboarding.cookEverything')}

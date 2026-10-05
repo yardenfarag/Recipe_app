@@ -39,9 +39,13 @@ export function RecipeActionsMenu({
           direction: rtl ? 'rtl' : 'ltr',
         }}
         onPress={onClose}
+        accessible={false}
       >
         <Pressable
           onPress={(e) => e.stopPropagation?.()}
+          accessible={false}
+          accessibilityViewIsModal
+          onAccessibilityEscape={onClose}
           className="rounded-3xl border px-2 py-2"
           style={{
             backgroundColor: colors.surface,
@@ -60,6 +64,7 @@ export function RecipeActionsMenu({
             className="px-3 pb-2 pt-3 text-xs font-semibold uppercase tracking-wide"
             style={{ color: colors.textSecondary }}
             numberOfLines={1}
+            accessibilityRole="header"
           >
             {recipeTitle}
           </Text>
@@ -124,7 +129,7 @@ function MenuRow({
       accessibilityLabel={label}
     >
       <Ionicons name={icon} size={20} color={iconColor} />
-      <Text className="text-[15px] font-semibold" style={{ color }}>
+      <Text className="min-w-0 flex-1 text-[15px] font-semibold" style={{ color }}>
         {label}
       </Text>
     </Pressable>

@@ -169,7 +169,7 @@ export default function RecipePreviewScreen() {
       <Screen edges={screenEdges}>
         {isWeb ? <WebPreviewToolbar title={t('recipe.preview')} /> : null}
         <View className="flex-1 items-center justify-center">
-          <ActivityIndicator color={colors.primary} />
+          <ActivityIndicator color={colors.primary} accessibilityLabel={t('a11y.loading')} />
         </View>
       </Screen>
     );
@@ -187,8 +187,11 @@ export default function RecipePreviewScreen() {
             onPress={() => router.replace('/')}
             className="rounded-full px-5 py-3 active:opacity-80"
             style={{ backgroundColor: colors.primary }}
+            accessibilityRole="button"
           >
-            <Text className="text-sm font-bold text-white">{t('recipe.goToLibrary')}</Text>
+            <Text className="text-sm font-bold" style={{ color: colors.onPrimary }}>
+              {t('recipe.goToLibrary')}
+            </Text>
           </Pressable>
         </View>
       </Screen>
@@ -289,11 +292,14 @@ export default function RecipePreviewScreen() {
             disabled={saving}
             accessibilityRole="button"
             accessibilityLabel={t('recipe.save')}
+            accessibilityState={{ disabled: saving, busy: saving }}
           >
             {saving ? (
-              <ActivityIndicator color="#fff" />
+              <ActivityIndicator color={colors.onPrimary} />
             ) : (
-              <Text className="text-base font-bold text-white">{t('recipe.save')}</Text>
+              <Text className="text-base font-bold" style={{ color: colors.onPrimary }}>
+                {t('recipe.save')}
+              </Text>
             )}
           </Pressable>
         </View>
@@ -338,6 +344,7 @@ function WebPreviewToolbar({
     >
       <StackHeaderBackButton tintColor={colors.primary} />
       <Text
+        accessibilityRole="header"
         className="min-w-0 flex-1 text-base font-bold"
         numberOfLines={1}
         style={{ color: colors.text }}
@@ -352,11 +359,14 @@ function WebPreviewToolbar({
           disabled={saving}
           accessibilityRole="button"
           accessibilityLabel={saveLabel}
+          accessibilityState={{ disabled: !!saving, busy: !!saving }}
         >
           {saving ? (
-            <ActivityIndicator color="#fff" />
+            <ActivityIndicator color={colors.onPrimary} />
           ) : (
-            <Text className="text-sm font-bold text-white">{saveLabel}</Text>
+            <Text className="text-sm font-bold" style={{ color: colors.onPrimary }}>
+              {saveLabel}
+            </Text>
           )}
         </Pressable>
       ) : null}

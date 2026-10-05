@@ -6,6 +6,7 @@ import { SheetModal } from '@/components/SheetModal';
 import { useLanguagePreference } from '@/hooks/useLanguagePreference';
 import { useMeasurementPreference } from '@/hooks/useMeasurementPreference';
 import { useThemePreference } from '@/hooks/useThemePreference';
+import { announce } from '@/lib/a11y';
 import { resolveCulinaryLanguage } from '@/lib/culinaryUnits';
 import { displayIngredientAmount } from '@/lib/displayIngredientAmount';
 import {
@@ -69,14 +70,18 @@ export function SubstitutionModal({
       .then((result) => {
         if (!isMounted) return;
         if (result.status === 'failed' || !result.alternatives) {
-          setError(result.message ?? t('recipe.swapFailed'));
+          const message = result.message ?? t('recipe.swapFailed');
+          setError(message);
+          announce(message);
           return;
         }
         setAlternatives(result.alternatives);
+        announce(t('a11y.suggestionsReady'));
       })
       .catch(() => {
         if (!isMounted) return;
         setError(t('recipe.swapFailed'));
+        announce(t('recipe.swapFailed'));
       })
       .finally(() => {
         if (isMounted) setLoading(false);
@@ -125,6 +130,7 @@ export function SubstitutionModal({
           <View
             className="mb-5 rounded-3xl border p-4"
             style={{ borderColor: colors.border, backgroundColor: colors.background }}
+            accessible
           >
             <Text className="mb-1 text-xs font-medium" style={{ color: colors.textSecondary }}>
               {t('recipe.swapInsteadOf')}
@@ -140,7 +146,7 @@ export function SubstitutionModal({
         )}
 
         {loading && (
-          <View className="items-center py-12">
+          <View className="items-center py-12" accessibilityLiveRegion="polite">
             <ActivityIndicator color={colors.primary} size="large" />
             <Text className="mt-3 text-sm" style={{ color: colors.textSecondary }}>
               {t('recipe.swapFinding')}
@@ -169,7 +175,11 @@ export function SubstitutionModal({
                 className="mb-3 rounded-3xl border p-4"
                 style={{ borderColor: colors.border, backgroundColor: colors.background }}
               >
-                <Text className="mb-1 text-base font-bold" style={{ color: colors.text }}>
+                <Text
+                  className="mb-1 text-base font-bold"
+                  style={{ color: colors.text }}
+                  accessibilityRole="header"
+                >
                   {displayIngredientAmount(alt, {
                     system: measurementSystem,
                     language: unitLanguage,
@@ -187,16 +197,23 @@ export function SubstitutionModal({
                   }}
                   disabled={disabled}
                   onPress={() => void handleApply(alt)}
+                  accessibilityRole="button"
+                  accessibilityLabel={
+                    isApplying ? t('recipe.swapUpdatingSteps') : t('a11y.useSubstitute', { name: alt.name })
+                  }
+                  accessibilityState={{ disabled, busy: isApplying }}
                 >
                   {isApplying ? (
                     <View className="flex-row items-center gap-2">
-                      <ActivityIndicator color="#fff" size="small" />
-                      <Text className="text-sm font-bold text-white">
+                      <ActivityIndicator color={colors.onPrimary} size="small" />
+                      <Text className="flex-shrink text-sm font-bold" style={{ color: colors.onPrimary }}>
                         {t('recipe.swapUpdatingSteps')}
                       </Text>
                     </View>
                   ) : (
-                    <Text className="text-sm font-bold text-white">{t('recipe.swapUseThis')}</Text>
+                    <Text className="text-sm font-bold" style={{ color: colors.onPrimary }}>
+                      {t('recipe.swapUseThis')}
+                    </Text>
                   )}
                 </Pressable>
               </View>

@@ -85,7 +85,11 @@ function InsightsBody() {
   return (
     <Screen dense>
       <ScrollView className="flex-1" contentContainerStyle={{ paddingBottom: 48, paddingHorizontal: 16 }}>
-        <Text className="mb-1 mt-2 text-2xl font-bold" style={{ color: colors.text }}>
+        <Text
+          className="mb-1 mt-2 text-2xl font-bold"
+          style={{ color: colors.text }}
+          accessibilityRole="header"
+        >
           Insights
         </Text>
         <Text className="mb-4 text-sm" style={{ color: colors.textSecondary }}>
@@ -98,12 +102,14 @@ function InsightsBody() {
               <Pressable
                 key={days}
                 onPress={() => setRange(days)}
+                accessibilityRole="button"
+                accessibilityState={{ selected }}
                 className="rounded-full px-3 py-1.5"
                 style={{ backgroundColor: selected ? colors.primary : colors.primarySoft }}
               >
                 <Text
                   className="text-xs font-semibold"
-                  style={{ color: selected ? '#fff' : colors.primary }}
+                  style={{ color: selected ? colors.onPrimary : colors.primary }}
                 >
                   {days} days
                 </Text>
@@ -112,6 +118,7 @@ function InsightsBody() {
           })}
           <Pressable
             onPress={() => void refresh()}
+            accessibilityRole="button"
             className="rounded-full px-3 py-1.5"
             style={{ backgroundColor: colors.primarySoft }}
           >
@@ -284,7 +291,11 @@ function Card({
       className="mb-4 rounded-[22px] p-4"
       style={{ backgroundColor: colors.frosted, borderWidth: 1, borderColor: colors.frostedBorder }}
     >
-      <Text className="mb-3 text-sm font-semibold" style={{ color: colors.text }}>
+      <Text
+        className="mb-3 text-sm font-semibold"
+        style={{ color: colors.text }}
+        accessibilityRole="header"
+      >
         {title}
       </Text>
       {children}

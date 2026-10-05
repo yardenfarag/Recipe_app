@@ -9,7 +9,11 @@ export function ReadyIllustration() {
   const { colors } = useThemePreference();
 
   return (
-    <View className="items-center justify-center py-6">
+    <View
+      className="items-center justify-center py-6"
+      accessible={false}
+      importantForAccessibility="no-hide-descendants"
+    >
       <Animated.View entering={FadeInDown.springify().damping(14)}>
         <CookieMark size={56} color={colors.primary} />
       </Animated.View>

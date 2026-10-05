@@ -56,6 +56,9 @@ export default function AppTabs() {
           fontSize: 11,
           fontWeight: '600',
         },
+        // The bar has a fixed height; like native UITabBar, keep labels at their
+        // base size (icons + labels are still announced by screen readers).
+        tabBarAllowFontScaling: false,
       }}
     >
       <Tabs.Screen

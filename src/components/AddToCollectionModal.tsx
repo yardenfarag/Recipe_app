@@ -12,6 +12,7 @@ import {
 import { SheetModal } from '@/components/SheetModal';
 import { TextInput } from '@/components/text-input';
 import { useThemePreference } from '@/hooks/useThemePreference';
+import { announce } from '@/lib/a11y';
 import { translateAppError } from '@/lib/translateAppError';
 import type { RecipeCollection } from '@/types/collection';
 
@@ -71,7 +72,9 @@ export function AddToCollectionModal({
       setChecked((prev) => new Set([...prev, created.id]));
       setNewName('');
     } catch (err) {
-      setError(translateAppError(err, t, 'library.couldNotCreateCollection'));
+      const message = translateAppError(err, t, 'library.couldNotCreateCollection');
+      setError(message);
+      announce(message);
     } finally {
       setCreating(false);
     }
@@ -84,7 +87,9 @@ export function AddToCollectionModal({
       await onSave([...checked]);
       onClose();
     } catch (err) {
-      setError(translateAppError(err, t, 'library.couldNotUpdateCollections'));
+      const message = translateAppError(err, t, 'library.couldNotUpdateCollections');
+      setError(message);
+      announce(message);
     } finally {
       setSaving(false);
     }
@@ -97,7 +102,14 @@ export function AddToCollectionModal({
       title={t('library.addToCollection')}
       maxWidth={520}
       headerRight={
-        <Pressable onPress={() => void handleSave()} disabled={saving}>
+        <Pressable
+          onPress={() => void handleSave()}
+          disabled={saving}
+          hitSlop={12}
+          accessibilityRole="button"
+          accessibilityLabel={t('common.save')}
+          accessibilityState={{ disabled: saving, busy: saving }}
+        >
           {saving ? (
             <ActivityIndicator color={colors.primary} />
           ) : (
@@ -133,6 +145,13 @@ export function AddToCollectionModal({
                       : undefined
                   }
                   onPress={() => toggle(collection.id)}
+                  accessibilityRole="checkbox"
+                  accessibilityState={{ checked: isOn }}
+                  accessibilityLabel={`${collection.name}, ${
+                    count === 1
+                      ? t('library.recipeCountOne', { count })
+                      : t('library.recipeCountOther', { count })
+                  }`}
                 >
                   <View
                     className="h-6 w-6 items-center justify-center rounded-md border-2"
@@ -141,7 +160,7 @@ export function AddToCollectionModal({
                       backgroundColor: isOn ? colors.primary : 'transparent',
                     }}
                   >
-                    {isOn ? <Ionicons name="checkmark" size={14} color="#fff" /> : null}
+                    {isOn ? <Ionicons name="checkmark" size={14} color={colors.onPrimary} /> : null}
                   </View>
                   <View className="min-w-0 flex-1">
                     <Text className="text-base font-medium" style={{ color: colors.text }}>
@@ -162,6 +181,7 @@ export function AddToCollectionModal({
         <Text
           className="mb-2 text-xs font-semibold uppercase tracking-wide"
           style={{ color: colors.textSecondary }}
+          accessibilityRole="header"
         >
           {t('library.newCollection')}
         </Text>
@@ -175,21 +195,25 @@ export function AddToCollectionModal({
             }}
             placeholder={t('library.namePlaceholder')}
             placeholderTextColor={colors.textSecondary}
+            accessibilityLabel={t('a11y.newCollectionName')}
             value={newName}
             onChangeText={setNewName}
             returnKeyType="done"
             onSubmitEditing={() => void handleCreate()}
           />
           <Pressable
-            className="items-center justify-center rounded-2xl px-4 active:opacity-80"
+            className="min-h-[44px] min-w-[44px] items-center justify-center rounded-2xl px-4 active:opacity-80"
             style={{ backgroundColor: colors.accent, opacity: creating ? 0.7 : 1 }}
             disabled={creating}
             onPress={() => void handleCreate()}
+            accessibilityRole="button"
+            accessibilityLabel={t('a11y.createCollection')}
+            accessibilityState={{ disabled: creating, busy: creating }}
           >
             {creating ? (
-              <ActivityIndicator color="#fff" />
+              <ActivityIndicator color={colors.onPrimary} />
             ) : (
-              <Ionicons name="add" size={22} color="#fff" />
+              <Ionicons name="add" size={22} color={colors.onPrimary} />
             )}
           </Pressable>
         </View>

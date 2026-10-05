@@ -20,7 +20,11 @@ export default function CreditSettingsScreen() {
   return (
     <>
       <SettingsDetailScreen>
-        <Text className="mb-1 text-3xl font-bold" style={{ color: colors.text }}>
+        <Text
+          accessibilityRole="header"
+          className="mb-1 text-3xl font-bold"
+          style={{ color: colors.text }}
+        >
           {t('settings.recipeCredits')}
         </Text>
         {totalCredits == null ? null : (
@@ -49,7 +53,9 @@ export default function CreditSettingsScreen() {
             onPress={() => setCreditsOpen(true)}
             accessibilityRole="button"
           >
-            <Text className="text-sm font-bold text-white">{t('credits.buyAction')}</Text>
+            <Text className="text-sm font-bold" style={{ color: colors.onPrimary }}>
+              {t('credits.buyAction')}
+            </Text>
           </Pressable>
         ) : (
           <>
@@ -62,7 +68,9 @@ export default function CreditSettingsScreen() {
               onPress={() => void openAppStore()}
               accessibilityRole="link"
             >
-              <Text className="text-sm font-bold text-white">{t('credits.webOnlyAction')}</Text>
+              <Text className="text-sm font-bold" style={{ color: colors.onPrimary }}>
+                {t('credits.webOnlyAction')}
+              </Text>
             </Pressable>
           </>
         )}

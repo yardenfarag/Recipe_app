@@ -21,6 +21,7 @@ export function SettingsGroup({ title, children, danger = false }: SettingsGroup
         <Text
           className="mb-2 px-1 text-xs font-bold uppercase tracking-wide"
           style={{ color: danger ? colors.warning : colors.textSecondary }}
+          accessibilityRole="header"
         >
           {title}
         </Text>
@@ -80,10 +81,12 @@ export function SettingsRow({
       <View
         className="h-9 w-9 items-center justify-center rounded-[14px]"
         style={{ backgroundColor: destructive ? colors.warningSoft : colors.primarySoft }}
+        accessible={false}
+        importantForAccessibility="no-hide-descendants"
       >
         <Ionicons name={icon} size={18} color={destructive ? colors.warning : colors.primary} />
       </View>
-      <Text className="min-w-0 shrink text-sm font-semibold" style={{ color }} numberOfLines={1}>
+      <Text className="min-w-0 shrink text-sm font-semibold" style={{ color }}>
         {label}
       </Text>
       <View className="min-w-0 flex-1 flex-row items-center justify-end gap-1.5">
@@ -101,6 +104,8 @@ export function SettingsRow({
             name={chevronForward}
             size={17}
             color={destructive ? colors.warning : colors.textSecondary}
+            accessible={false}
+            importantForAccessibility="no"
           />
         ) : null}
       </View>

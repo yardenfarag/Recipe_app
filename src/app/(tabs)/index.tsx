@@ -38,6 +38,7 @@ import { useCollections } from '@/hooks/useCollections';
 import { useLibraryLayout } from '@/hooks/useLibraryLayout';
 import { useRecipes } from '@/hooks/useRecipes';
 import { useThemePreference } from '@/hooks/useThemePreference';
+import { announce } from '@/lib/a11y';
 import { removeGuestRecipe, renameGuestRecipe } from '@/lib/guestRecipes';
 import { rankCookTonight } from '@/lib/cookTonight';
 import {
@@ -141,9 +142,15 @@ export default function HomeScreen() {
   useEffect(() => {
     if (params.saved === '1' || params.saved === 'true') {
       setSavedBanner(true);
+      announce(t('library.saved'));
       router.setParams({ saved: undefined });
     }
-  }, [params.saved]);
+  }, [params.saved, t]);
+
+  const showRefreshFailed = Boolean(error) && recipes.length > 0;
+  useEffect(() => {
+    if (showRefreshFailed) announce(t('library.refreshFailed'));
+  }, [showRefreshFailed, t]);
 
   const availableTags = useMemo(() => collectLibraryTags(recipes), [recipes]);
 
@@ -424,13 +431,19 @@ export default function HomeScreen() {
             className="flex-row items-center gap-2 rounded-[20px] px-3.5 py-2.5"
             style={{ backgroundColor: colors.successSoft }}
           >
-            <Ionicons name="checkmark-circle" size={16} color={colors.success} />
+            <Ionicons
+              name="checkmark-circle"
+              size={16}
+              color={colors.success}
+              accessible={false}
+              importantForAccessibility="no"
+            />
             <Text className="flex-1 text-xs font-medium" style={{ color: colors.success }}>
               {t('library.saved')}
             </Text>
             <Pressable
               onPress={() => setSavedBanner(false)}
-              hitSlop={8}
+              hitSlop={14}
               accessibilityRole="button"
               accessibilityLabel={t('common.dismiss')}
             >
@@ -439,16 +452,27 @@ export default function HomeScreen() {
           </View>
         )}
 
-        {error && recipes.length > 0 && (
+        {showRefreshFailed && (
           <View
             className="flex-row items-center gap-2 rounded-[20px] px-3.5 py-2.5"
             style={{ backgroundColor: colors.warningSoft }}
           >
-            <Ionicons name="warning-outline" size={16} color={colors.warning} />
+            <Ionicons
+              name="warning-outline"
+              size={16}
+              color={colors.warning}
+              accessible={false}
+              importantForAccessibility="no"
+            />
             <Text className="flex-1 text-xs" style={{ color: colors.warning }}>
               {t('library.refreshFailed')}
             </Text>
-            <Pressable onPress={() => refresh()} hitSlop={8}>
+            <Pressable
+              onPress={() => refresh()}
+              hitSlop={12}
+              accessibilityRole="button"
+              accessibilityLabel={t('a11y.retryLoadingRecipes')}
+            >
               <Text className="text-xs font-semibold" style={{ color: colors.primary }}>
                 {t('common.retry')}
               </Text>
@@ -511,7 +535,6 @@ export default function HomeScreen() {
       colors.warningSoft,
       displayedRecipes.length,
       ensureAllLoaded,
-      error,
       favoritesOnly,
       hasActiveFilters,
       handleManageCollection,
@@ -520,9 +543,9 @@ export default function HomeScreen() {
       isSearchPending,
       layout,
       openCreateCollection,
-      recipes.length,
       refresh,
       savedBanner,
+      showRefreshFailed,
       search,
       selectedCollectionId,
       selectedTags,
@@ -540,7 +563,11 @@ export default function HomeScreen() {
   if (loading) {
     return (
       <Screen tabScreen className="items-center justify-center">
-        <ActivityIndicator color={colors.primary} size="large" />
+        <ActivityIndicator
+          color={colors.primary}
+          size="large"
+          accessibilityLabel={t('a11y.loadingRecipes')}
+        />
       </Screen>
     );
   }
@@ -551,10 +578,16 @@ export default function HomeScreen() {
         <View
           className="mb-5 h-16 w-16 items-center justify-center rounded-[22px]"
           style={{ backgroundColor: colors.dangerSoft }}
+          accessible={false}
+          importantForAccessibility="no-hide-descendants"
         >
           <Ionicons name="cloud-offline-outline" size={32} color={colors.danger} />
         </View>
-        <Text className="mb-2 text-center text-xl font-bold" style={{ color: colors.text }}>
+        <Text
+          accessibilityRole="header"
+          className="mb-2 text-center text-xl font-bold"
+          style={{ color: colors.text }}
+        >
           {t('library.loadFailedTitle')}
         </Text>
         <Text className="mb-6 text-center text-sm leading-5" style={{ color: colors.textSecondary }}>
@@ -562,10 +595,13 @@ export default function HomeScreen() {
         </Text>
         <Pressable
           onPress={() => refresh()}
+          accessibilityRole="button"
           className="rounded-3xl px-6 py-3.5 active:opacity-80"
           style={{ backgroundColor: colors.primary }}
         >
-          <Text className="text-base font-bold text-white">{t('common.tryAgainAction')}</Text>
+          <Text className="text-base font-bold" style={{ color: colors.onPrimary }}>
+            {t('common.tryAgainAction')}
+          </Text>
         </Pressable>
       </Screen>
     );
@@ -586,8 +622,11 @@ export default function HomeScreen() {
             className="mt-8 w-full items-center rounded-3xl py-4 active:opacity-80"
             style={{ backgroundColor: colors.primary }}
             onPress={() => router.push('/add')}
+            accessibilityRole="button"
           >
-            <Text className="text-base font-bold text-white">{t('library.snapFirst')}</Text>
+            <Text className="text-base font-bold" style={{ color: colors.onPrimary }}>
+              {t('library.snapFirst')}
+            </Text>
           </Pressable>
         </View>
       </Screen>
@@ -613,12 +652,22 @@ export default function HomeScreen() {
             onEndReached={loadMore}
             onEndReachedThreshold={0.5}
             ListFooterComponent={
-              loadingMore ? <ActivityIndicator className="py-4" color={colors.primary} /> : null
+              loadingMore ? (
+                <ActivityIndicator
+                  className="py-4"
+                  color={colors.primary}
+                  accessibilityLabel={t('a11y.loadingMoreRecipes')}
+                />
+              ) : null
             }
             ListEmptyComponent={
               hasActiveFilters ? (
-                <View className="items-center px-4 py-10">
-                  <Text className="mb-1 text-center text-base font-semibold" style={{ color: colors.text }}>
+                <View className="items-center px-4 py-10" accessibilityLiveRegion="polite">
+                  <Text
+                    accessibilityRole="header"
+                    className="mb-1 text-center text-base font-semibold"
+                    style={{ color: colors.text }}
+                  >
                     {cookTonight
                       ? t('library.noCookTonight')
                       : favoritesOnly &&
@@ -640,10 +689,13 @@ export default function HomeScreen() {
                   </Text>
                   <Pressable
                     onPress={clearFilters}
+                    accessibilityRole="button"
                     className="min-h-[44px] items-center justify-center rounded-3xl px-5 active:opacity-80"
                     style={{ backgroundColor: colors.primary }}
                   >
-                    <Text className="text-sm font-semibold text-white">{t('library.clearFilters')}</Text>
+                    <Text className="text-sm font-semibold" style={{ color: colors.onPrimary }}>
+                      {t('library.clearFilters')}
+                    </Text>
                   </Pressable>
                 </View>
               ) : null
@@ -776,6 +828,7 @@ export default function HomeScreen() {
             <Pressable
               className="mt-6 items-center rounded-2xl py-3.5 active:opacity-80"
               style={{ backgroundColor: colors.dangerSoft }}
+              accessibilityRole="button"
               onPress={() => {
                 setDeleteCollectionId(nameModal.id);
                 setNameModal(null);

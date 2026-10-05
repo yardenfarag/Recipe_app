@@ -13,6 +13,7 @@ import Animated, {
 
 import { useRtl } from '@/hooks/useRtl';
 import { useThemePreference } from '@/hooks/useThemePreference';
+import { CHROME_MAX_FONT_SCALE } from '@/lib/a11y';
 
 export type SnapIntent = 'extract' | 'invent';
 
@@ -60,6 +61,8 @@ export function SnapIntentToggle({
   const extractColor = colors.primary;
   const inventColor = colors.accent;
   const idleText = colors.text;
+  // Primary and accent share the same light/dark polarity, so onPrimary reads on both fills.
+  const activeText = colors.onPrimary;
 
   const pillWidth = Math.max(0, (trackWidth - TRACK_PAD * 2) / 2);
 
@@ -84,11 +87,11 @@ export function SnapIntentToggle({
   });
 
   const extractTextStyle = useAnimatedStyle(() => ({
-    color: interpolateColor(progress.value, [0, 1], ['#ffffff', idleText]),
+    color: interpolateColor(progress.value, [0, 1], [activeText, idleText]),
   }));
 
   const inventTextStyle = useAnimatedStyle(() => ({
-    color: interpolateColor(progress.value, [0, 1], [idleText, '#ffffff']),
+    color: interpolateColor(progress.value, [0, 1], [idleText, activeText]),
   }));
 
   return (
@@ -130,6 +133,7 @@ export function SnapIntentToggle({
           numberOfLines={2}
           adjustsFontSizeToFit
           minimumFontScale={0.75}
+          maxFontSizeMultiplier={CHROME_MAX_FONT_SCALE}
           style={[extractTextStyle, { writingDirection: rtl ? 'rtl' : 'ltr' }]}
         >
           {extractLabel}
@@ -147,6 +151,7 @@ export function SnapIntentToggle({
           numberOfLines={2}
           adjustsFontSizeToFit
           minimumFontScale={0.75}
+          maxFontSizeMultiplier={CHROME_MAX_FONT_SCALE}
           style={[inventTextStyle, { writingDirection: rtl ? 'rtl' : 'ltr' }]}
         >
           {inventLabel}

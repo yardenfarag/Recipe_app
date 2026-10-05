@@ -10,6 +10,7 @@ import {
 import { SheetModal } from '@/components/SheetModal';
 import { TextInput } from '@/components/text-input';
 import { useThemePreference } from '@/hooks/useThemePreference';
+import { announce } from '@/lib/a11y';
 import { translateAppError } from '@/lib/translateAppError';
 
 interface NameEditModalProps {
@@ -50,6 +51,7 @@ export function NameEditModal({
     const trimmed = draft.trim();
     if (!trimmed) {
       setError(t('library.nameRequired'));
+      announce(t('library.nameRequired'));
       return;
     }
     setSaving(true);
@@ -58,7 +60,9 @@ export function NameEditModal({
       await onSave(trimmed);
       onClose();
     } catch (err) {
-      setError(translateAppError(err, t, 'library.couldNotSave'));
+      const message = translateAppError(err, t, 'library.couldNotSave');
+      setError(message);
+      announce(message);
     } finally {
       setSaving(false);
     }
@@ -72,12 +76,25 @@ export function NameEditModal({
       maxWidth={480}
       showCloseButton={false}
       headerLeft={
-        <Pressable onPress={onClose} disabled={saving}>
+        <Pressable
+          onPress={onClose}
+          disabled={saving}
+          hitSlop={12}
+          accessibilityRole="button"
+          accessibilityState={{ disabled: saving }}
+        >
           <Text style={{ color: colors.textSecondary }}>{t('common.cancel')}</Text>
         </Pressable>
       }
       headerRight={
-        <Pressable onPress={() => void handleSave()} disabled={saving}>
+        <Pressable
+          onPress={() => void handleSave()}
+          disabled={saving}
+          hitSlop={12}
+          accessibilityRole="button"
+          accessibilityLabel={t('common.save')}
+          accessibilityState={{ disabled: saving, busy: saving }}
+        >
           {saving ? (
             <ActivityIndicator color={colors.primary} />
           ) : (
@@ -98,6 +115,7 @@ export function NameEditModal({
           }}
           placeholder={placeholder ?? t('library.namePlaceholder')}
           placeholderTextColor={colors.textSecondary}
+          accessibilityLabel={title}
           value={draft}
           onChangeText={(text) => {
             setDraft(text);
@@ -108,7 +126,10 @@ export function NameEditModal({
           onSubmitEditing={() => void handleSave()}
         />
         {error ? (
-          <Text className="mt-3 text-sm" style={{ color: colors.danger }}>
+          <Text
+            className="mt-3 text-sm"
+            style={{ color: colors.danger }}
+          >
             {error}
           </Text>
         ) : null}

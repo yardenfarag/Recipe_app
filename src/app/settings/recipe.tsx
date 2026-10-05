@@ -21,6 +21,7 @@ import {
 import { fetchContributeToHub, setContributeToHub } from '@/lib/supabase/cookingHub';
 import { fetchCloudKitchenProfile, saveCloudKitchenProfile } from '@/lib/supabase/kitchen';
 import { RECIPE_VARIANTS } from '@/lib/recipeVariants';
+import { announce } from '@/lib/a11y';
 
 export default function RecipeSettingsScreen() {
   const { t } = useTranslation();
@@ -81,6 +82,7 @@ export default function RecipeSettingsScreen() {
       }
     } catch {
       setError(t('settings.kitchenSaveFailed'));
+      announce(t('settings.kitchenSaveFailed'), { liveRegion: true });
     } finally {
       savingRef.current = false;
       setSaving(false);
@@ -137,7 +139,7 @@ export default function RecipeSettingsScreen() {
 
   return (
     <SettingsDetailScreen>
-      <Text className="mb-3 text-sm font-semibold" style={{ color: colors.text }}>
+      <Text className="mb-3 text-sm font-semibold" style={{ color: colors.text }} accessibilityRole="header">
         {t('settings.measurements')}
       </Text>
       <MeasurementToggle />
@@ -145,14 +147,14 @@ export default function RecipeSettingsScreen() {
         {t('settings.measurementsHint')}
       </Text>
 
-      <Text className="mb-2 mt-8 text-sm font-semibold" style={{ color: colors.text }}>
+      <Text className="mb-2 mt-8 text-sm font-semibold" style={{ color: colors.text }} accessibilityRole="header">
         {t('settings.kitchenHowICook')}
       </Text>
       <Text className="mb-3 text-xs leading-5" style={{ color: colors.textSecondary }}>
         {t('settings.kitchenHint')}
       </Text>
 
-      <Text className="mb-2 text-xs font-semibold uppercase tracking-wide" style={{ color: colors.textSecondary }}>
+      <Text className="mb-2 text-xs font-semibold uppercase tracking-wide" style={{ color: colors.textSecondary }} accessibilityRole="header">
         {t('settings.kitchenDiets')}
       </Text>
       <View className="mb-4 flex-row flex-wrap gap-2">
@@ -167,7 +169,7 @@ export default function RecipeSettingsScreen() {
               accessibilityRole="button"
               accessibilityState={{ selected: active }}
             >
-              <Text className="text-sm font-semibold" style={{ color: active ? '#fff' : colors.text }}>
+              <Text className="text-sm font-semibold" style={{ color: active ? colors.onPrimary : colors.text }}>
                 {t(`recipe.variants.${variant.key}.label`)}
               </Text>
             </Pressable>
@@ -175,31 +177,59 @@ export default function RecipeSettingsScreen() {
         })}
       </View>
 
-      <Text className="mb-2 text-xs font-semibold uppercase tracking-wide" style={{ color: colors.textSecondary }}>
+      <Text className="mb-2 text-xs font-semibold uppercase tracking-wide" style={{ color: colors.textSecondary }} accessibilityRole="header">
         {t('settings.kitchenServings')}
       </Text>
       <View className="mb-2 flex-row items-center gap-3">
         <Pressable
           onPress={() => bumpServings(-1)}
+          disabled={profile.defaultServings == null}
           className="h-11 w-11 items-center justify-center rounded-full active:opacity-80"
           style={{ backgroundColor: colors.frosted }}
+          accessibilityRole="button"
           accessibilityLabel={t('recipe.decreaseServings')}
+          accessibilityState={{ disabled: profile.defaultServings == null }}
         >
           <Text className="text-lg font-bold" style={{ color: colors.text }}>−</Text>
         </Pressable>
-        <Text className="min-w-[28px] text-center text-base font-semibold" style={{ color: colors.text }}>
+        <Text
+          className="min-w-[28px] text-center text-base font-semibold"
+          style={{ color: colors.text }}
+          accessibilityRole="adjustable"
+          accessibilityLabel={t('settings.kitchenServings')}
+          accessibilityValue={{
+            text:
+              profile.defaultServings == null
+                ? t('settings.kitchenServingsOff')
+                : t('settings.kitchenPreviewServings', { count: profile.defaultServings }),
+          }}
+          accessibilityActions={[{ name: 'increment' }, { name: 'decrement' }]}
+          onAccessibilityAction={(event) => {
+            if (event.nativeEvent.actionName === 'increment') bumpServings(1);
+            else if (event.nativeEvent.actionName === 'decrement') bumpServings(-1);
+          }}
+        >
           {profile.defaultServings ?? t('settings.kitchenServingsOff')}
         </Text>
         <Pressable
           onPress={() => bumpServings(1)}
+          disabled={profile.defaultServings === 24}
           className="h-11 w-11 items-center justify-center rounded-full active:opacity-80"
           style={{ backgroundColor: colors.frosted }}
+          accessibilityRole="button"
           accessibilityLabel={t('recipe.increaseServings')}
+          accessibilityState={{ disabled: profile.defaultServings === 24 }}
         >
           <Text className="text-lg font-bold" style={{ color: colors.text }}>+</Text>
         </Pressable>
         {profile.defaultServings != null ? (
-          <Pressable onPress={() => void persist({ ...profile, defaultServings: undefined })}>
+          <Pressable
+            onPress={() => void persist({ ...profile, defaultServings: undefined })}
+            className="min-h-[44px] justify-center"
+            hitSlop={8}
+            accessibilityRole="button"
+            accessibilityLabel={t('a11y.clearDefaultServings')}
+          >
             <Text className="text-xs font-semibold" style={{ color: colors.primary }}>
               {t('common.clear')}
             </Text>
@@ -212,12 +242,16 @@ export default function RecipeSettingsScreen() {
 
       <View className="my-6 h-px" style={{ backgroundColor: colors.border }} />
 
-      <Text className="mb-2 text-sm font-semibold" style={{ color: colors.text }}>
+      <Text className="mb-2 text-sm font-semibold" style={{ color: colors.text }} accessibilityRole="header">
         {t('settings.kitchenAlwaysSwap')}
       </Text>
       {profile.alwaysSwap.map((swap, index) => (
         <View key={`${swap.from}-${swap.to}-${index}`} className="mb-2 flex-row items-center gap-2">
-          <Text className="flex-1 text-sm" style={{ color: colors.text }}>
+          <Text
+            className="flex-1 text-sm"
+            style={{ color: colors.text }}
+            accessibilityLabel={t('a11y.swapFromTo', { from: swap.from, to: swap.to })}
+          >
             {swap.from} → {swap.to}
           </Text>
           <Pressable
@@ -227,7 +261,10 @@ export default function RecipeSettingsScreen() {
                 alwaysSwap: profile.alwaysSwap.filter((_, i) => i !== index),
               })
             }
-            accessibilityLabel={t('common.remove')}
+            className="min-h-[44px] justify-center"
+            hitSlop={8}
+            accessibilityRole="button"
+            accessibilityLabel={t('a11y.removeSwap', { from: swap.from, to: swap.to })}
           >
             <Text className="text-xs font-semibold" style={{ color: colors.danger }}>
               {t('common.remove')}
@@ -240,6 +277,7 @@ export default function RecipeSettingsScreen() {
           className="min-w-0 flex-1 rounded-2xl border px-3 py-2.5 text-sm"
           style={{ borderColor: colors.border, color: colors.text, textAlign }}
           placeholder={t('settings.kitchenSwapFrom')}
+          accessibilityLabel={t('settings.kitchenSwapFrom')}
           placeholderTextColor={colors.textSecondary}
           value={swapFrom}
           onChangeText={setSwapFrom}
@@ -248,6 +286,7 @@ export default function RecipeSettingsScreen() {
           className="min-w-0 flex-1 rounded-2xl border px-3 py-2.5 text-sm"
           style={{ borderColor: colors.border, color: colors.text, textAlign }}
           placeholder={t('settings.kitchenSwapTo')}
+          accessibilityLabel={t('settings.kitchenSwapTo')}
           placeholderTextColor={colors.textSecondary}
           value={swapTo}
           onChangeText={setSwapTo}
@@ -255,6 +294,7 @@ export default function RecipeSettingsScreen() {
       </View>
       <Pressable
         onPress={addSwap}
+        accessibilityRole="button"
         className="mb-6 min-h-[44px] items-center justify-center self-start rounded-3xl px-4 active:opacity-80"
         style={{ backgroundColor: colors.primarySoft }}
       >
@@ -265,7 +305,7 @@ export default function RecipeSettingsScreen() {
 
       <View className="mb-6 h-px" style={{ backgroundColor: colors.border }} />
 
-      <Text className="mb-2 text-sm font-semibold" style={{ color: colors.text }}>
+      <Text className="mb-2 text-sm font-semibold" style={{ color: colors.text }} accessibilityRole="header">
         {t('settings.kitchenPantry')}
       </Text>
       <Text className="mb-3 text-xs leading-5" style={{ color: colors.textSecondary }}>
@@ -283,7 +323,10 @@ export default function RecipeSettingsScreen() {
             </Text>
             <Pressable
               onPress={() => void persist(removePantryStaple(profile, staple))}
-              accessibilityLabel={t('common.remove')}
+              className="min-h-[44px] justify-center"
+              hitSlop={8}
+              accessibilityRole="button"
+              accessibilityLabel={t('a11y.removeItem', { item: staple })}
             >
               <Text className="text-xs font-semibold" style={{ color: colors.danger }}>
                 {t('common.remove')}
@@ -297,6 +340,7 @@ export default function RecipeSettingsScreen() {
           className="min-w-0 flex-1 rounded-2xl border px-3 py-2.5 text-sm"
           style={{ borderColor: colors.border, color: colors.text, textAlign }}
           placeholder={t('settings.kitchenPantryPlaceholder')}
+          accessibilityLabel={t('settings.kitchenPantryPlaceholder')}
           placeholderTextColor={colors.textSecondary}
           value={pantryDraft}
           onChangeText={setPantryDraft}
@@ -305,6 +349,7 @@ export default function RecipeSettingsScreen() {
       </View>
       <Pressable
         onPress={addPantry}
+        accessibilityRole="button"
         className="mb-6 min-h-[44px] items-center justify-center self-start rounded-3xl px-4 active:opacity-80"
         style={{ backgroundColor: colors.primarySoft }}
       >
@@ -317,7 +362,7 @@ export default function RecipeSettingsScreen() {
 
       {user ? (
         <>
-          <Text className="mb-2 text-sm font-semibold" style={{ color: colors.text }}>
+          <Text className="mb-2 text-sm font-semibold" style={{ color: colors.text }} accessibilityRole="header">
             {t('hub.title')}
           </Text>
           <Pressable
@@ -327,12 +372,15 @@ export default function RecipeSettingsScreen() {
               void setContributeToHub(user.id, next).catch(() => {
                 setContributeToHubState(!next);
                 setError(t('settings.kitchenSaveFailed'));
+                announce(t('settings.kitchenSaveFailed'), { liveRegion: true });
               });
             }}
             className="mb-6 flex-row items-center justify-between rounded-3xl border px-4 py-3.5 active:opacity-80"
             style={{ borderColor: colors.border, backgroundColor: colors.surface }}
             accessibilityRole="switch"
             accessibilityState={{ checked: contributeToHub }}
+            accessibilityLabel={t('settings.contributeToHub')}
+            accessibilityHint={t('settings.contributeToHubHint')}
           >
             <View className="mr-3 min-w-0 flex-1">
               <Text className="text-sm font-semibold" style={{ color: colors.text }}>
@@ -345,6 +393,8 @@ export default function RecipeSettingsScreen() {
             <View
               className="h-6 w-11 rounded-full p-0.5"
               style={{ backgroundColor: contributeToHub ? colors.primary : colors.border }}
+              accessible={false}
+              importantForAccessibility="no-hide-descendants"
             >
               <View
                 className="h-5 w-5 rounded-full bg-white"
@@ -355,7 +405,7 @@ export default function RecipeSettingsScreen() {
         </>
       ) : null}
 
-      <Text className="mb-2 text-sm font-semibold" style={{ color: colors.text }}>
+      <Text className="mb-2 text-sm font-semibold" style={{ color: colors.text }} accessibilityRole="header">
         {t('settings.kitchenAfterSnap')}
       </Text>
       <Pressable
@@ -364,6 +414,8 @@ export default function RecipeSettingsScreen() {
         style={{ borderColor: colors.border, backgroundColor: colors.surface }}
         accessibilityRole="switch"
         accessibilityState={{ checked: profile.autoApplyOnExtract }}
+        accessibilityLabel={t('settings.kitchenAutoApply')}
+        accessibilityHint={t('settings.kitchenAutoApplyHint')}
       >
         <View className="mr-3 min-w-0 flex-1">
           <Text className="text-sm font-semibold" style={{ color: colors.text }}>
@@ -376,6 +428,8 @@ export default function RecipeSettingsScreen() {
         <View
           className="h-6 w-11 rounded-full p-0.5"
           style={{ backgroundColor: profile.autoApplyOnExtract ? colors.primary : colors.border }}
+          accessible={false}
+          importantForAccessibility="no-hide-descendants"
         >
           <View
             className="h-5 w-5 rounded-full bg-white"
@@ -399,16 +453,18 @@ export default function RecipeSettingsScreen() {
               .join(' · ')}
       </Text>
 
-      {saving ? (
-        <Text className="mt-3 text-xs" style={{ color: colors.textSecondary }}>
-          {t('common.save')}…
-        </Text>
-      ) : null}
-      {error ? (
-        <Text className="mt-3 text-xs" style={{ color: colors.danger }}>
-          {error}
-        </Text>
-      ) : null}
+      <View accessibilityLiveRegion="polite">
+        {saving ? (
+          <Text className="mt-3 text-xs" style={{ color: colors.textSecondary }}>
+            {t('common.save')}…
+          </Text>
+        ) : null}
+        {error ? (
+          <Text className="mt-3 text-xs" style={{ color: colors.danger }}>
+            {error}
+          </Text>
+        ) : null}
+      </View>
     </SettingsDetailScreen>
   );
 }

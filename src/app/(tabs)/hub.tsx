@@ -23,6 +23,7 @@ import { TextInput } from '@/components/text-input';
 import { useCookingHub } from '@/hooks/useCookingHub';
 import { useLibraryLayout } from '@/hooks/useLibraryLayout';
 import { useThemePreference } from '@/hooks/useThemePreference';
+import { announce, CHROME_MAX_FONT_SCALE } from '@/lib/a11y';
 import { recipeCardToListRecipe } from '@/lib/recipeCardMap';
 import { translateRecipeTag } from '@/lib/recipeTags';
 import type { HubPlatform, RecipeCard } from '@/types/recipeCard';
@@ -92,6 +93,11 @@ export default function CookingHubScreen() {
   const hasQuery = Boolean(search.trim());
   const showSearching = loading || querying;
 
+  const showInlineError = Boolean(error) && cards.length > 0;
+  useEffect(() => {
+    if (error && !showSearching) announce(error);
+  }, [error, showSearching]);
+
   useEffect(() => {
     if (listEpoch === 0) return;
     listRef.current?.scrollToOffset({ offset: 0, animated: false });
@@ -122,8 +128,15 @@ export default function CookingHubScreen() {
             borderColor: colors.frostedBorder,
           }}
         >
-          <Ionicons name="search-outline" size={18} color={colors.textSecondary} />
+          <Ionicons
+            name="search-outline"
+            size={18}
+            color={colors.textSecondary}
+            accessible={false}
+            importantForAccessibility="no"
+          />
           <TextInput
+            accessibilityLabel={t('hub.searchPlaceholder')}
             className="pinch-plain-focus flex-1 px-3 py-3.5 text-base"
             style={{ color: colors.text }}
             value={search}
@@ -138,8 +151,9 @@ export default function CookingHubScreen() {
           {search.length > 0 ? (
             <Pressable
               onPress={() => setSearch('')}
-              hitSlop={8}
+              hitSlop={13}
               className="active:opacity-70"
+              accessibilityRole="button"
               accessibilityLabel={t('library.clearSearch')}
             >
               <Ionicons name="close-circle" size={18} color={colors.textSecondary} />
@@ -157,9 +171,14 @@ export default function CookingHubScreen() {
             accessibilityRole="button"
             accessibilityState={{ expanded: filtersOpen }}
             accessibilityLabel={t('library.toggleFilters')}
+            accessibilityValue={filtersActive ? { text: t('a11y.filtersApplied') } : undefined}
           >
             <Ionicons name="options-outline" size={16} color={colors.primary} />
-            <Text className="text-sm font-semibold" style={{ color: colors.primary }}>
+            <Text
+              className="text-sm font-semibold"
+              style={{ color: colors.primary }}
+              maxFontSizeMultiplier={CHROME_MAX_FONT_SCALE}
+            >
               {t('library.filter')}
             </Text>
             {filtersActive ? (
@@ -176,7 +195,11 @@ export default function CookingHubScreen() {
           </View>
         </View>
 
-        <Text className="text-xs" style={{ color: colors.textSecondary }}>
+        <Text
+          className="text-xs"
+          style={{ color: colors.textSecondary }}
+          accessibilityLiveRegion="polite"
+        >
           {showSearching
             ? t('hub.searching')
             : t((total || cards.length) === 1 ? 'library.recipeCountOne' : 'library.recipeCountOther', {
@@ -184,8 +207,13 @@ export default function CookingHubScreen() {
               })}
         </Text>
 
-        {error && cards.length > 0 ? (
-          <Pressable onPress={() => void refresh()} className="active:opacity-80">
+        {showInlineError ? (
+          <Pressable
+            onPress={() => void refresh()}
+            className="active:opacity-80"
+            accessibilityRole="button"
+            accessibilityHint={t('a11y.tapToRetryHint')}
+          >
             <Text className="text-xs font-semibold" style={{ color: colors.danger }}>
               {error}
             </Text>
@@ -211,10 +239,14 @@ export default function CookingHubScreen() {
                     style={{ backgroundColor: active ? colors.primary : inactiveChipBg }}
                     accessibilityRole="button"
                     accessibilityState={{ selected: active }}
+                    accessibilityLabel={t('a11y.sourceFilter', {
+                      source: t(platformLabelKey(item)),
+                    })}
                   >
                     <Text
                       className="text-sm font-semibold"
-                      style={{ color: active ? '#fff' : colors.text }}
+                      style={{ color: active ? colors.onPrimary : colors.text }}
+                      maxFontSizeMultiplier={CHROME_MAX_FONT_SCALE}
                     >
                       {t(platformLabelKey(item))}
                     </Text>
@@ -236,10 +268,12 @@ export default function CookingHubScreen() {
                 style={{ backgroundColor: sort === 'popular' ? colors.primary : inactiveChipBg }}
                 accessibilityRole="button"
                 accessibilityState={{ selected: sort === 'popular' }}
+                accessibilityLabel={t('a11y.sortBy', { option: t('hub.sortPopular') })}
               >
                 <Text
                   className="text-sm font-semibold"
-                  style={{ color: sort === 'popular' ? '#fff' : colors.text }}
+                  style={{ color: sort === 'popular' ? colors.onPrimary : colors.text }}
+                  maxFontSizeMultiplier={CHROME_MAX_FONT_SCALE}
                 >
                   {t('hub.sortPopular')}
                 </Text>
@@ -250,10 +284,12 @@ export default function CookingHubScreen() {
                 style={{ backgroundColor: sort === 'newest' ? colors.primary : inactiveChipBg }}
                 accessibilityRole="button"
                 accessibilityState={{ selected: sort === 'newest' }}
+                accessibilityLabel={t('a11y.sortBy', { option: t('hub.sortNewest') })}
               >
                 <Text
                   className="text-sm font-semibold"
-                  style={{ color: sort === 'newest' ? '#fff' : colors.text }}
+                  style={{ color: sort === 'newest' ? colors.onPrimary : colors.text }}
+                  maxFontSizeMultiplier={CHROME_MAX_FONT_SCALE}
                 >
                   {t('hub.sortNewest')}
                 </Text>
@@ -264,13 +300,20 @@ export default function CookingHubScreen() {
               <View className="gap-1.5">
                 <View className="flex-row items-center justify-between">
                   <Text
+                    accessibilityRole="header"
                     className="text-xs font-semibold uppercase tracking-wide"
                     style={{ color: colors.textSecondary }}
                   >
                     {t('library.tags')}
                   </Text>
                   {selectedTags.length > 0 ? (
-                    <Pressable onPress={clearTags} hitSlop={8} className="active:opacity-70">
+                    <Pressable
+                      onPress={clearTags}
+                      hitSlop={12}
+                      className="active:opacity-70"
+                      accessibilityRole="button"
+                      accessibilityLabel={t('a11y.clearTags')}
+                    >
                       <Text className="text-xs font-semibold" style={{ color: colors.primary }}>
                         {t('common.clear')}
                       </Text>
@@ -297,7 +340,8 @@ export default function CookingHubScreen() {
                       >
                         <Text
                           className="text-sm font-semibold"
-                          style={{ color: active ? '#fff' : colors.text }}
+                          style={{ color: active ? colors.onPrimary : colors.text }}
+                          maxFontSizeMultiplier={CHROME_MAX_FONT_SCALE}
                         >
                           {translateRecipeTag(tag, t)}
                         </Text>
@@ -344,22 +388,38 @@ export default function CookingHubScreen() {
             />
           }
           ListFooterComponent={
-            loadingMore ? <ActivityIndicator className="py-4" color={colors.primary} /> : null
+            loadingMore ? (
+              <ActivityIndicator
+                className="py-4"
+                color={colors.primary}
+                accessibilityLabel={t('a11y.loadingMoreRecipes')}
+              />
+            ) : null
           }
           ListEmptyComponent={
             showSearching ? (
               <View className="items-center py-16">
-                <ActivityIndicator color={colors.primary} size="large" />
+                <ActivityIndicator
+                  color={colors.primary}
+                  size="large"
+                  accessibilityLabel={t('hub.searching')}
+                />
               </View>
             ) : error ? (
               <View className="items-center px-6 py-12">
                 <View
                   className="mb-5 h-16 w-16 items-center justify-center rounded-[22px]"
                   style={{ backgroundColor: colors.dangerSoft }}
+                  accessible={false}
+                  importantForAccessibility="no-hide-descendants"
                 >
                   <Ionicons name="cloud-offline-outline" size={32} color={colors.danger} />
                 </View>
-                <Text className="mb-2 text-center text-xl font-bold" style={{ color: colors.text }}>
+                <Text
+                  accessibilityRole="header"
+                  className="mb-2 text-center text-xl font-bold"
+                  style={{ color: colors.text }}
+                >
                   {t('hub.loadFailedTitle')}
                 </Text>
                 <Text
@@ -370,17 +430,24 @@ export default function CookingHubScreen() {
                 </Text>
                 <Pressable
                   onPress={() => void refresh()}
+                  accessibilityRole="button"
                   className="rounded-3xl px-6 py-3.5 active:opacity-80"
                   style={{ backgroundColor: colors.primary }}
                 >
-                  <Text className="text-base font-bold text-white">{t('common.tryAgainAction')}</Text>
+                  <Text className="text-base font-bold" style={{ color: colors.onPrimary }}>
+                    {t('common.tryAgainAction')}
+                  </Text>
                 </Pressable>
               </View>
             ) : (
-              <View className="items-center px-6 py-12">
+              <View className="items-center px-6 py-12" accessibilityLiveRegion="polite">
                 {filtersActive || hasQuery ? (
                   <>
-                    <Text className="mb-1 text-center text-base font-semibold" style={{ color: colors.text }}>
+                    <Text
+                      accessibilityRole="header"
+                      className="mb-1 text-center text-base font-semibold"
+                      style={{ color: colors.text }}
+                    >
                       {t('hub.noMatches')}
                     </Text>
                     <Text className="text-center text-sm" style={{ color: colors.textSecondary }}>
@@ -399,8 +466,11 @@ export default function CookingHubScreen() {
                       className="mt-8 w-full items-center rounded-3xl py-4 active:opacity-80"
                       style={{ backgroundColor: colors.primary }}
                       onPress={() => router.push('/add')}
+                      accessibilityRole="button"
                     >
-                      <Text className="text-base font-bold text-white">{t('hub.snapFirst')}</Text>
+                      <Text className="text-base font-bold" style={{ color: colors.onPrimary }}>
+                        {t('hub.snapFirst')}
+                      </Text>
                     </Pressable>
                   </>
                 )}

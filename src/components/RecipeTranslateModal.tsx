@@ -6,6 +6,7 @@ import { ActivityIndicator, Pressable, ScrollView, Text, View } from 'react-nati
 import { SheetModal } from '@/components/SheetModal';
 import { useRtl } from '@/hooks/useRtl';
 import { useThemePreference } from '@/hooks/useThemePreference';
+import { announce } from '@/lib/a11y';
 import { localizeIngredientUnits } from '@/lib/culinaryUnits';
 import {
   RECIPE_LANGUAGES,
@@ -94,11 +95,12 @@ export function RecipeTranslateModal({
       });
 
       if (result.status === 'failed' || !result.recipe) {
-        setError(
+        const message =
           result.code === 'daily_limit'
             ? t('recipe.translateDailyLimit')
-            : (result.message ?? t('recipe.translateFailedTitle')),
-        );
+            : (result.message ?? t('recipe.translateFailedTitle'));
+        setError(message);
+        announce(message);
         return;
       }
 
@@ -107,6 +109,7 @@ export function RecipeTranslateModal({
       onClose();
     } catch {
       setError(t('recipe.translationSaveFailed'));
+      announce(t('recipe.translationSaveFailed'));
     } finally {
       setLoadingLanguage(null);
     }
@@ -131,7 +134,10 @@ export function RecipeTranslateModal({
       </Text>
 
       {error ? (
-        <Text className="mb-3 px-5 text-sm" style={{ color: colors.danger }}>
+        <Text
+          className="mb-3 px-5 text-sm"
+          style={{ color: colors.danger }}
+        >
           {error}
         </Text>
       ) : null}
@@ -141,6 +147,8 @@ export function RecipeTranslateModal({
           <Pressable
             onPress={handleShowOriginal}
             disabled={Boolean(loadingLanguage)}
+            accessibilityRole="button"
+            accessibilityState={{ disabled: Boolean(loadingLanguage) }}
             className="mb-3 flex-row items-center justify-between rounded-2xl border px-4 py-3.5 active:opacity-80"
             style={{ borderColor: colors.border, backgroundColor: colors.surface }}
           >
@@ -164,6 +172,12 @@ export function RecipeTranslateModal({
               key={lang.code}
               onPress={() => void handleSelectLanguage(lang.code)}
               disabled={Boolean(loadingLanguage)}
+              accessibilityRole="radio"
+              accessibilityState={{
+                checked: selected,
+                disabled: Boolean(loadingLanguage),
+                busy: loading,
+              }}
               className="mb-2.5 flex-row items-center justify-between rounded-2xl border px-4 py-3.5 active:opacity-80"
               style={{
                 backgroundColor: selected ? colors.primarySoft : colors.surface,

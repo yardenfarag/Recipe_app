@@ -7,6 +7,8 @@ type IngredientAmountTextProps = {
   color: string;
   pinchColor: string;
   writingDirection?: TextStyle['writingDirection'];
+  /** Set when the row already reads the amount in a composed label. */
+  hideFromAccessibility?: boolean;
 };
 
 /** Amount label that eases into the word pinch when scaling makes it one. */
@@ -16,6 +18,7 @@ export function IngredientAmountText({
   color,
   pinchColor,
   writingDirection,
+  hideFromAccessibility = false,
 }: IngredientAmountTextProps) {
   const reduceMotion = useReducedMotion();
 
@@ -24,6 +27,8 @@ export function IngredientAmountText({
       key={amount}
       entering={reduceMotion ? undefined : FadeIn.duration(220)}
       className="text-sm tabular-nums"
+      accessible={!hideFromAccessibility}
+      importantForAccessibility={hideFromAccessibility ? 'no' : 'auto'}
       style={{
         color: isPinch ? pinchColor : color,
         fontWeight: isPinch ? '600' : '400',

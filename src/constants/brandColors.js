@@ -6,16 +6,16 @@
 // No orange / green accents.
 module.exports = {
   // Soft lilac-slate — primary actions, tabs, accents
-  pinchPrimary: '#7B6B9A',
+  pinchPrimary: '#6D5E8A',
   pinchPrimarySoft: '#E8E2F0',
   // Cool mist blue — secondary accent
-  pinchRose: '#6B849E',
+  pinchRose: '#546980',
   pinchRoseSoft: '#E0E8F0',
   // Surfaces — soft lilac mist (light)
   pinchBg: '#F4F1F8',
   pinchSurface: '#FFFFFF',
   pinchDark: '#2A2634',
-  pinchMuted: '#6E6878',
+  pinchMuted: '#595461',
   // Dark mode counterparts
   pinchBgDark: '#12101A',
   pinchSurfaceDark: '#1E1A28',
@@ -24,7 +24,7 @@ module.exports = {
   pinchRoseDark: '#9BB4D0',
   pinchRoseSoftDark: '#243040',
   pinchTextDark: '#F2F0F6',
-  pinchMutedDark: '#A49AB0',
+  pinchMutedDark: '#B7AFC1',
   // Borders
   pinchBorder: '#E2DCE8',
   pinchBorderDark: '#3A3448',
@@ -36,7 +36,7 @@ module.exports = {
   pinchMistOrbBDark: '#243848',
   pinchMistOrbCDark: '#2C2438',
   // Legacy aliases → primary so stray imports stay on-brand
-  pinchOrange: '#7B6B9A',
-  pinchGreen: '#7B6B9A',
+  pinchOrange: '#6D5E8A',
+  pinchGreen: '#6D5E8A',
   pinchCream: '#F4F1F8',
 };

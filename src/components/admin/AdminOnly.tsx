@@ -1,6 +1,7 @@
 import { router } from 'expo-router';
 import { type ReactNode } from 'react';
 import { ActivityIndicator, Pressable, Text, View } from 'react-native';
+import { useTranslation } from 'react-i18next';
 
 import { Screen } from '@/components/Screen';
 import { useAuth } from '@/hooks/useAuth';
@@ -11,12 +12,13 @@ export function AdminOnly({ children }: { children: ReactNode }) {
   const { user } = useAuth();
   const { isAdmin, loading } = useProfile();
   const { colors } = useThemePreference();
+  const { t } = useTranslation();
 
   if (loading) {
     return (
       <Screen dense>
         <View className="flex-1 items-center justify-center">
-          <ActivityIndicator color={colors.primary} />
+          <ActivityIndicator color={colors.primary} accessibilityLabel={t('a11y.loading')} />
         </View>
       </Screen>
     );
@@ -26,11 +28,16 @@ export function AdminOnly({ children }: { children: ReactNode }) {
     return (
       <Screen dense>
         <View className="flex-1 items-center justify-center px-6">
-          <Text className="mb-3 text-center text-base font-semibold" style={{ color: colors.text }}>
+          <Text
+            className="mb-3 text-center text-base font-semibold"
+            style={{ color: colors.text }}
+            accessibilityRole="header"
+          >
             Admin only
           </Text>
           <Pressable
             onPress={() => router.back()}
+            accessibilityRole="button"
             className="rounded-[18px] px-5 py-3"
             style={{ backgroundColor: colors.primarySoft }}
           >

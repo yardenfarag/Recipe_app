@@ -75,7 +75,8 @@ export function SheetModal({
       <Text
         className="flex-1 px-3 text-center text-base font-bold"
         style={{ color: colors.text }}
-        numberOfLines={1}
+        numberOfLines={2}
+        accessibilityRole="header"
       >
         {title}
       </Text>
@@ -110,6 +111,7 @@ export function SheetModal({
           <View
             pointerEvents="auto"
             accessibilityViewIsModal
+            onAccessibilityEscape={onClose}
             accessibilityLabel={title}
             style={{
               width: '100%',
@@ -159,7 +161,7 @@ export function SheetModal({
         className="flex-1"
         style={{ backgroundColor: colors.background, ...dirStyle }}
         accessibilityViewIsModal
-        accessibilityLabel={title}
+        onAccessibilityEscape={onClose}
       >
         {header}
         <View className="flex-1">{children}</View>

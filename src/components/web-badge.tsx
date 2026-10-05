@@ -22,6 +22,8 @@ export function WebBadge() {
             : require('@/assets/images/expo-badge.png')
         }
         style={styles.badgeImage}
+        accessible={false}
+        importantForAccessibility="no"
       />
     </ThemedView>
   );

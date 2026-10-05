@@ -31,6 +31,8 @@ export function LegalDocumentView({ doc }: { doc: LegalDoc }) {
       >
         <View style={{ maxWidth: 640, width: '100%', alignSelf: 'center' }}>
           <Text
+            accessibilityRole="header"
+            accessibilityLanguage="en"
             style={{
               color: colors.text,
               fontSize: 28,
@@ -60,6 +62,8 @@ export function LegalDocumentView({ doc }: { doc: LegalDoc }) {
                 return (
                   <Text
                     key={index}
+                    accessibilityRole="header"
+                    accessibilityLanguage="en"
                     style={{
                       marginTop: 8,
                       color: colors.text,
@@ -78,7 +82,11 @@ export function LegalDocumentView({ doc }: { doc: LegalDoc }) {
                   <View key={index} style={{ gap: 8 }}>
                     {block.items.map((item, itemIndex) => (
                       <View key={itemIndex} style={{ flexDirection: 'row', gap: 8 }}>
-                        <Text style={{ color: colors.textSecondary, width: 18, textAlign: 'left' }}>
+                        <Text
+                          accessible={false}
+                          importantForAccessibility="no"
+                          style={{ color: colors.textSecondary, width: 18, textAlign: 'left' }}
+                        >
                           {block.kind === 'ol' ? `${itemIndex + 1}.` : '•'}
                         </Text>
                         <RichLine parts={item} />
@@ -116,7 +124,8 @@ export function LegalDocumentView({ doc }: { doc: LegalDoc }) {
               <Text
                 key={item.to}
                 onPress={() => router.push(item.to as Href)}
-                style={{ color: colors.primary, fontSize: 14, fontWeight: '600' }}
+                accessibilityRole="link"
+                style={{ color: colors.primary, fontSize: 14, fontWeight: '600'}}
               >
                 {item.label}
               </Text>
@@ -128,6 +137,7 @@ export function LegalDocumentView({ doc }: { doc: LegalDoc }) {
             Pinch · Support{' '}
             <Text
               onPress={() => void Linking.openURL(`mailto:${SUPPORT_EMAIL}`)}
+              accessibilityRole="link"
               style={{ color: colors.primary, fontWeight: '600' }}
             >
               {SUPPORT_EMAIL}
@@ -143,6 +153,7 @@ function RichLine({ parts }: { parts: Inline[] }) {
   const { colors } = useThemePreference();
   return (
     <Text
+      accessibilityLanguage="en"
       style={{
         flex: 1,
         color: colors.text,
@@ -165,6 +176,7 @@ function RichLine({ parts }: { parts: Inline[] }) {
             <Text
               key={index}
               onPress={() => openLegalTarget(part.to)}
+              accessibilityRole="link"
               style={{ color: colors.primary, fontWeight: '600' }}
             >
               {part.text}

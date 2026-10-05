@@ -41,7 +41,7 @@ export function CookedNoteModal({
       maxWidth={480}
       showCloseButton={false}
       headerLeft={
-        <Pressable onPress={onClose}>
+        <Pressable onPress={onClose} hitSlop={12} accessibilityRole="button">
           <Text style={{ color: colors.textSecondary }}>{t('common.notNow')}</Text>
         </Pressable>
       }
@@ -51,6 +51,8 @@ export function CookedNoteModal({
             onSave(draft.trim());
             onClose();
           }}
+          hitSlop={12}
+          accessibilityRole="button"
         >
           <Text style={{ color: colors.primary, fontWeight: '700' }}>{t('common.save')}</Text>
         </Pressable>
@@ -65,6 +67,7 @@ export function CookedNoteModal({
           onChangeText={(value) => setDraft(value.slice(0, COOK_NOTE_MAX))}
           placeholder={t('recipe.cookedNotePlaceholder')}
           placeholderTextColor={colors.textSecondary}
+          accessibilityLabel={t('recipe.cookedNoteTitle')}
           maxLength={COOK_NOTE_MAX}
           className="min-h-[48px] rounded-2xl border px-4 py-3 text-base"
           style={{ borderColor: colors.border, color: colors.text, textAlign }}

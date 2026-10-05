@@ -5,6 +5,7 @@ import { ActivityIndicator, Pressable, Text, View } from 'react-native';
 import { SelectRecipesList } from '@/components/SelectRecipesList';
 import { SheetModal } from '@/components/SheetModal';
 import { useThemePreference } from '@/hooks/useThemePreference';
+import { announce } from '@/lib/a11y';
 import { translateAppError } from '@/lib/translateAppError';
 import type { RecipeCollection } from '@/types/collection';
 import type { Recipe } from '@/types/recipe';
@@ -45,6 +46,7 @@ export function SelectRecipesForShoppingListModal({
   async function handleConfirm() {
     if (selectedCount === 0) {
       setError(t('list.pickRecipes'));
+      announce(t('list.pickRecipes'));
       return;
     }
 
@@ -54,7 +56,9 @@ export function SelectRecipesForShoppingListModal({
       await onConfirm(selectedIds);
       onClose();
     } catch (err) {
-      setError(translateAppError(err, t, 'list.fromRecipesFailed'));
+      const message = translateAppError(err, t, 'list.fromRecipesFailed');
+      setError(message);
+      announce(message);
     } finally {
       setSaving(false);
     }
@@ -69,7 +73,10 @@ export function SelectRecipesForShoppingListModal({
       footer={
         <View className="border-t px-5 py-4" style={{ borderColor: colors.border }}>
           {error ? (
-            <Text className="mb-3 text-sm" style={{ color: colors.danger }}>
+            <Text
+              className="mb-3 text-sm"
+              style={{ color: colors.danger }}
+            >
               {error}
             </Text>
           ) : null}
@@ -81,11 +88,18 @@ export function SelectRecipesForShoppingListModal({
             }}
             disabled={saving || selectedCount === 0}
             onPress={() => void handleConfirm()}
+            accessibilityRole="button"
+            accessibilityLabel={
+              selectedCount === 1
+                ? t('list.addRecipesOne', { count: selectedCount })
+                : t('list.addRecipesOther', { count: selectedCount })
+            }
+            accessibilityState={{ disabled: saving || selectedCount === 0, busy: saving }}
           >
             {saving ? (
-              <ActivityIndicator color="#fff" />
+              <ActivityIndicator color={colors.onPrimary} />
             ) : (
-              <Text className="text-base font-bold text-white">
+              <Text className="text-base font-bold" style={{ color: colors.onPrimary }}>
                 {selectedCount === 1
                   ? t('list.addRecipesOne', { count: selectedCount })
                   : t('list.addRecipesOther', { count: selectedCount })}

@@ -6,6 +6,7 @@ import { useTranslation } from 'react-i18next';
 
 import { SheetModal } from '@/components/SheetModal';
 import { useThemePreference } from '@/hooks/useThemePreference';
+import { announce } from '@/lib/a11y';
 import { pickCompressedRecipeImage } from '@/lib/pickCompressedImage';
 import { buildFridgeCatalog } from '@/lib/fridgeCatalog';
 import { matchFridge, type FridgeMatchRow } from '@/lib/supabase/matchFridge';
@@ -64,16 +65,25 @@ export function FridgeMatchModal({ visible, recipes, onClose }: FridgeMatchModal
       if (requestGen.current !== gen) return;
       if (result.code === 'daily_limit') {
         setError('limited');
+        announce(t('library.fridgeMatchLimited'));
         return;
       }
       if (result.status !== 'ok') {
         setError('failed');
+        announce(t('library.fridgeMatchFailed'));
         return;
       }
-      setMatches(result.matches ?? []);
+      const found = result.matches ?? [];
+      setMatches(found);
+      announce(
+        found.length === 0
+          ? t('library.fridgeMatchEmptyResults')
+          : t('list.recipesVisible', { count: found.length }),
+      );
     } catch {
       if (requestGen.current !== gen) return;
       setError('failed');
+      announce(t('library.fridgeMatchFailed'));
     } finally {
       if (requestGen.current === gen) setLoading(false);
     }
@@ -117,7 +127,11 @@ export function FridgeMatchModal({ visible, recipes, onClose }: FridgeMatchModal
 
         {libraryEmpty || error === 'empty' ? (
           <View style={{ marginTop: 12, gap: 12 }}>
-            <Text className="text-sm leading-5" style={{ color: colors.warning }}>
+            <Text
+              className="text-sm leading-5"
+              style={{ color: colors.warning }}
+              accessibilityLiveRegion="polite"
+            >
               {t('library.fridgeMatchEmptyLibrary')}
             </Text>
             <Pressable
@@ -127,18 +141,27 @@ export function FridgeMatchModal({ visible, recipes, onClose }: FridgeMatchModal
               }}
               className="min-h-[44px] items-center justify-center rounded-3xl active:opacity-90"
               style={{ backgroundColor: colors.primary, alignSelf: 'stretch' }}
+              accessibilityRole="button"
             >
-              <Text className="text-sm font-bold text-white">{t('library.snapFirst')}</Text>
+              <Text className="text-sm font-bold" style={{ color: colors.onPrimary }}>
+                {t('library.snapFirst')}
+              </Text>
             </Pressable>
           </View>
         ) : null}
         {error === 'limited' ? (
-          <Text className="mt-3 text-sm leading-5" style={{ color: colors.warning }}>
+          <Text
+            className="mt-3 text-sm leading-5"
+            style={{ color: colors.warning }}
+          >
             {t('library.fridgeMatchLimited')}
           </Text>
         ) : null}
         {error === 'failed' ? (
-          <Text className="mt-3 text-sm leading-5" style={{ color: colors.warning }}>
+          <Text
+            className="mt-3 text-sm leading-5"
+            style={{ color: colors.warning }}
+          >
             {t('library.fridgeMatchFailed')}
           </Text>
         ) : null}
@@ -149,30 +172,42 @@ export function FridgeMatchModal({ visible, recipes, onClose }: FridgeMatchModal
             disabled={loading}
             className="mt-3 min-h-[44px] flex-row items-center justify-center rounded-3xl py-3.5 active:opacity-90"
             style={{ backgroundColor: colors.primary, alignSelf: 'stretch', gap: 8 }}
+            accessibilityRole="button"
+            accessibilityLabel={t('library.fridgeMatchSnap')}
+            accessibilityState={{ disabled: loading, busy: loading }}
           >
             {loading ? (
-              <ActivityIndicator color="#fff" />
+              <ActivityIndicator color={colors.onPrimary} />
             ) : (
               <>
                 <Ionicons
                   name={Platform.OS === 'web' ? 'images-outline' : 'camera-outline'}
                   size={18}
-                  color="#fff"
+                  color={colors.onPrimary}
                 />
-                <Text className="text-sm font-bold text-white">{t('library.fridgeMatchSnap')}</Text>
+                <Text className="flex-shrink text-sm font-bold" style={{ color: colors.onPrimary }}>
+                  {t('library.fridgeMatchSnap')}
+                </Text>
               </>
             )}
           </Pressable>
         ) : null}
 
         {loading ? (
-          <Text className="mt-3 text-center text-xs" style={{ color: colors.textSecondary }}>
+          <Text
+            className="mt-3 text-center text-xs"
+            style={{ color: colors.textSecondary }}
+          >
             {t('library.fridgeMatching')}
           </Text>
         ) : null}
 
         {matches && matches.length === 0 ? (
-          <Text className="mt-3 text-sm leading-5" style={{ color: colors.textSecondary }}>
+          <Text
+            className="mt-3 text-sm leading-5"
+            style={{ color: colors.textSecondary }}
+            accessibilityLiveRegion="polite"
+          >
             {t('library.fridgeMatchEmptyResults')}
           </Text>
         ) : null}
@@ -186,6 +221,7 @@ export function FridgeMatchModal({ visible, recipes, onClose }: FridgeMatchModal
                 <Pressable
                   key={match.id}
                   onPress={() => openRecipe(match.id)}
+                  accessibilityRole="button"
                   className="rounded-2xl border px-4 py-3 active:opacity-80"
                   style={{
                     borderColor: colors.border,

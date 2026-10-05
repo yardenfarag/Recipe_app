@@ -4,6 +4,7 @@ import { useTranslation } from 'react-i18next';
 import { ActivityIndicator, Pressable, ScrollView, Text, View } from 'react-native';
 
 import { SheetModal } from '@/components/SheetModal';
+import { CHROME_MAX_FONT_SCALE, announce } from '@/lib/a11y';
 import { capturePaywallViewed, type PaywallTrigger } from '@/lib/analytics';
 import { useProfile } from '@/hooks/useProfile';
 import { useThemePreference } from '@/hooks/useThemePreference';
@@ -60,6 +61,15 @@ export function TokenPurchaseSheet({
       .catch(() => setError(t('credits.loadFailed')))
       .finally(() => setLoading(false));
   }, [purchasesHere, t, visible]);
+
+  // Purchase/sync results appear below the packs without moving focus.
+  useEffect(() => {
+    if (message) announce(message, { liveRegion: true });
+  }, [message]);
+
+  useEffect(() => {
+    if (error) announce(error, { liveRegion: true });
+  }, [error]);
 
   async function handlePurchase(pack: CreditPack) {
     if (busyId) return;
@@ -126,7 +136,9 @@ export function TokenPurchaseSheet({
             onPress={() => void openAppStore()}
             accessibilityRole="link"
           >
-            <Text className="text-sm font-bold text-white">{t('credits.webOnlyAction')}</Text>
+            <Text className="text-sm font-bold" style={{ color: colors.onPrimary }}>
+              {t('credits.webOnlyAction')}
+            </Text>
           </Pressable>
         </ScrollView>
       </SheetModal>
@@ -141,17 +153,30 @@ export function TokenPurchaseSheet({
         </Text>
 
         {loading ? (
-          <ActivityIndicator className="py-10" color={colors.primary} />
+          <ActivityIndicator
+            className="py-10"
+            color={colors.primary}
+            accessibilityLabel={t('a11y.loading')}
+          />
         ) : (
           packs.map((pack) => {
             const featured = pack.id === BEST_VALUE_PACK_ID;
+            const packLabel = [
+              t('credits.packRecipes', { count: pack.credits }),
+              featured ? t('credits.bestValue') : null,
+              t('credits.neverExpire'),
+              pack.price,
+            ]
+              .filter(Boolean)
+              .join(', ');
             return (
               <Pressable
                 key={pack.id}
                 onPress={() => void handlePurchase(pack)}
                 disabled={Boolean(busyId)}
                 accessibilityRole="button"
-                accessibilityState={{ disabled: Boolean(busyId) }}
+                accessibilityLabel={packLabel}
+                accessibilityState={{ disabled: Boolean(busyId), busy: busyId === pack.id }}
                 className="mb-3 flex-row items-center rounded-3xl border p-4 active:opacity-80"
                 style={{
                   borderColor: featured ? colors.primary : colors.border,
@@ -166,7 +191,7 @@ export function TokenPurchaseSheet({
                 </View>
                 <View className="flex-1">
                   <View className="flex-row flex-wrap items-center gap-2">
-                    <Text className="text-base font-bold" style={{ color: colors.text }}>
+                    <Text className="shrink text-base font-bold" style={{ color: colors.text }}>
                       {t('credits.packRecipes', { count: pack.credits })}
                     </Text>
                     {featured ? (
@@ -174,7 +199,11 @@ export function TokenPurchaseSheet({
                         className="rounded-full px-2 py-0.5"
                         style={{ backgroundColor: colors.primarySoft }}
                       >
-                        <Text className="text-[10px] font-bold" style={{ color: colors.primary }}>
+                        <Text
+                          className="text-[10px] font-bold"
+                          style={{ color: colors.primary }}
+                          maxFontSizeMultiplier={CHROME_MAX_FONT_SCALE}
+                        >
                           {t('credits.bestValue')}
                         </Text>
                       </View>
@@ -196,21 +225,26 @@ export function TokenPurchaseSheet({
           })
         )}
 
-        {message ? (
-          <Text className="mt-2 text-sm" style={{ color: colors.accent }}>
-            {message}
-          </Text>
-        ) : null}
-        {error ? (
-          <Text className="mt-2 text-sm" style={{ color: colors.danger }}>
-            {error}
-          </Text>
-        ) : null}
+        <View accessibilityLiveRegion="polite">
+          {message ? (
+            <Text className="mt-2 text-sm" style={{ color: colors.accent }}>
+              {message}
+            </Text>
+          ) : null}
+          {error ? (
+            <Text className="mt-2 text-sm" style={{ color: colors.danger }}>
+              {error}
+            </Text>
+          ) : null}
+        </View>
 
         {livePurchases ? (
           <Pressable
             onPress={() => void handleSync()}
             disabled={Boolean(busyId)}
+            accessibilityRole="button"
+            accessibilityLabel={t('credits.syncPurchases')}
+            accessibilityState={{ disabled: Boolean(busyId), busy: busyId === 'sync' }}
             className="mt-5 items-center py-3 active:opacity-70"
           >
             {busyId === 'sync' ? (

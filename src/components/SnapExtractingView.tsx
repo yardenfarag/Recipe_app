@@ -15,6 +15,7 @@ import Animated, {
 
 import { CookieMark } from '@/components/CookieMark';
 import { useThemePreference } from '@/hooks/useThemePreference';
+import { announce } from '@/lib/a11y';
 
 type SnapExtractingViewProps = {
   statusLines: readonly string[];
@@ -27,6 +28,18 @@ export function SnapExtractingView({ statusLines, statusIndex }: SnapExtractingV
   const [reduceMotion, setReduceMotion] = useState(false);
   const beat = useSharedValue(0);
   const ring = useSharedValue(0);
+  const currentLine = statusLines[statusIndex % statusLines.length];
+  // Speak each status once; the lines loop every few seconds and repeating
+  // them forever would drown out everything else.
+  const [linesSpoken, setLinesSpoken] = useState(0);
+  const speakStatus = linesSpoken < statusLines.length;
+
+  useEffect(() => {
+    if (!speakStatus) return;
+    announce(currentLine, { liveRegion: true });
+    setLinesSpoken((n) => n + 1);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [statusIndex]);
 
   useEffect(() => {
     void AccessibilityInfo.isReduceMotionEnabled().then(setReduceMotion);
@@ -80,10 +93,17 @@ export function SnapExtractingView({ statusLines, statusIndex }: SnapExtractingV
   return (
     <View
       className="flex-1 items-center justify-center px-8"
+      accessible
       accessibilityRole="progressbar"
-      accessibilityLabel={statusLines[statusIndex % statusLines.length]}
+      accessibilityLabel={currentLine}
+      accessibilityState={{ busy: true }}
+      accessibilityLiveRegion={speakStatus ? 'polite' : 'none'}
     >
-      <View className="mb-10 h-44 w-44 items-center justify-center">
+      <View
+        className="mb-10 h-44 w-44 items-center justify-center"
+        accessible={false}
+        importantForAccessibility="no-hide-descendants"
+      >
         <Animated.View
           style={[
             {
@@ -122,7 +142,7 @@ export function SnapExtractingView({ statusLines, statusIndex }: SnapExtractingV
         className="text-center text-xl font-semibold"
         style={{ color: colors.text }}
       >
-        {statusLines[statusIndex % statusLines.length]}
+        {currentLine}
       </Animated.Text>
     </View>
   );

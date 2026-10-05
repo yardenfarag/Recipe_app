@@ -75,6 +75,8 @@ export function WebSidebar() {
         <View
           className="h-10 w-10 items-center justify-center rounded-2xl"
           style={{ backgroundColor: colors.primarySoft }}
+          accessible={false}
+          importantForAccessibility="no-hide-descendants"
         >
           <CookieMark size={22} color={colors.primary} />
         </View>
@@ -83,7 +85,7 @@ export function WebSidebar() {
         </Text>
       </View>
 
-      <View className="gap-1">
+      <View className="gap-1" role="navigation">
         {NAV_ITEMS.map((item) => {
           const focused = item.match(pathname);
           const color = focused ? colors.primary : colors.textSecondary;
@@ -109,7 +111,7 @@ export function WebSidebar() {
                 size={22}
                 color={color}
               />
-              <Text className="text-[15px] font-semibold" style={{ color }}>
+              <Text className="flex-1 text-[15px] font-semibold" style={{ color }}>
                 {t(item.labelKey)}
               </Text>
             </Pressable>

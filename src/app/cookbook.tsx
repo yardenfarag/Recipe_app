@@ -1,7 +1,7 @@
 import Ionicons from '@expo/vector-icons/Ionicons';
 import * as Localization from 'expo-localization';
 import { router } from 'expo-router';
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import {
   ActivityIndicator,
@@ -26,6 +26,7 @@ import { useMeasurementPreference } from '@/hooks/useMeasurementPreference';
 import { useRecipes } from '@/hooks/useRecipes';
 import { useRtl } from '@/hooks/useRtl';
 import { useThemePreference } from '@/hooks/useThemePreference';
+import { announce } from '@/lib/a11y';
 import { isRtlAppLanguage } from '@/lib/appLanguages';
 import {
   buildCookbookHtml,
@@ -57,6 +58,7 @@ export default function CookbookScreen() {
   const [error, setError] = useState<string | null>(null);
   const [successOpen, setSuccessOpen] = useState(false);
   const [errorOpen, setErrorOpen] = useState(false);
+  const stepMounted = useRef(false);
 
   const selectedRecipes = useMemo(
     () =>
@@ -93,10 +95,12 @@ export default function CookbookScreen() {
     setError(null);
     if (step === 0 && !title.trim()) {
       setError(t('cookbook.titleRequired'));
+      announce(t('cookbook.titleRequired'), { liveRegion: true });
       return;
     }
     if (step === 1 && selectedIds.length === 0) {
       setError(t('cookbook.pickRecipes'));
+      announce(t('cookbook.pickRecipes'), { liveRegion: true });
       return;
     }
     setStep((prev) => Math.min(prev + 1, STEPS - 1));
@@ -105,10 +109,12 @@ export default function CookbookScreen() {
   async function handleGenerate() {
     if (selectedRecipes.length === 0) {
       setError(t('cookbook.pickRecipes'));
+      announce(t('cookbook.pickRecipes'), { liveRegion: true });
       return;
     }
 
     setGenerating(true);
+    announce(t('cookbook.generating'));
     setError(null);
     setProgress({ done: 0, total: selectedRecipes.length });
 
@@ -181,6 +187,16 @@ export default function CookbookScreen() {
         ? t('cookbook.pickStepHint')
         : t('cookbook.reviewStepHint');
 
+  // Focus stays on the footer button when the step changes, so read out where we landed.
+  useEffect(() => {
+    if (!stepMounted.current) {
+      stepMounted.current = true;
+      return;
+    }
+    announce(`${t('cookbook.stepOf', { current: step + 1, total: STEPS })}. ${stepTitle}`);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [step]);
+
   if (loading) {
     return (
       <Screen edges={['left', 'right', 'bottom']} dense className="items-center justify-center">
@@ -195,10 +211,16 @@ export default function CookbookScreen() {
         <View
           className="mb-5 h-16 w-16 items-center justify-center rounded-[22px]"
           style={{ backgroundColor: colors.primarySoft }}
+          accessible={false}
+          importantForAccessibility="no-hide-descendants"
         >
           <Ionicons name="book-outline" size={30} color={colors.primary} />
         </View>
-        <Text className="mb-2 text-center text-xl font-bold" style={{ color: colors.text }}>
+        <Text
+          className="mb-2 text-center text-xl font-bold"
+          style={{ color: colors.text }}
+          accessibilityRole="header"
+        >
           {t('cookbook.title')}
         </Text>
         <Text className="mb-6 text-center text-sm leading-5" style={{ color: colors.textSecondary }}>
@@ -206,10 +228,13 @@ export default function CookbookScreen() {
         </Text>
         <Pressable
           onPress={() => router.push('/add')}
+          accessibilityRole="button"
           className="rounded-3xl px-6 py-3.5 active:opacity-80"
           style={{ backgroundColor: colors.primary }}
         >
-          <Text className="text-base font-bold text-white">{t('library.snapFirst')}</Text>
+          <Text className="text-base font-bold" style={{ color: colors.onPrimary }}>
+            {t('library.snapFirst')}
+          </Text>
         </Pressable>
       </Screen>
     );
@@ -235,6 +260,7 @@ export default function CookbookScreen() {
           <Text
             className="mt-1 text-[22px] font-bold tracking-tight"
             style={{ color: colors.text, textAlign }}
+            accessibilityRole="header"
           >
             {stepTitle}
           </Text>
@@ -259,6 +285,7 @@ export default function CookbookScreen() {
                   if (error) setError(null);
                 }}
                 placeholder={t('cookbook.titlePlaceholder')}
+                accessibilityLabel={t('cookbook.titlePlaceholder')}
                 placeholderTextColor={colors.textSecondary}
                 autoCapitalize="sentences"
                 maxLength={80}
@@ -296,17 +323,23 @@ export default function CookbookScreen() {
                       borderColor: colors.frostedBorder,
                     }}
                   >
-                    {recipe.image_url ? (
-                      <RecipeImage uri={recipe.image_url} variant="compact" borderRadius={12} />
-                    ) : (
-                      <View
-                        className="h-12 w-12 items-center justify-center rounded-[12px]"
-                        style={{ backgroundColor: colors.primarySoft }}
-                      >
-                        <Ionicons name="restaurant" size={20} color={colors.primary} />
-                      </View>
-                    )}
-                    <View className="min-w-0 flex-1">
+                    <View accessible={false} importantForAccessibility="no-hide-descendants">
+                      {recipe.image_url ? (
+                        <RecipeImage uri={recipe.image_url} variant="compact" borderRadius={12} />
+                      ) : (
+                        <View
+                          className="h-12 w-12 items-center justify-center rounded-[12px]"
+                          style={{ backgroundColor: colors.primarySoft }}
+                        >
+                          <Ionicons name="restaurant" size={20} color={colors.primary} />
+                        </View>
+                      )}
+                    </View>
+                    <View
+                      className="min-w-0 flex-1"
+                      accessible
+                      accessibilityLabel={`${index + 1}. ${name}`}
+                    >
                       <Text className="text-xs" style={{ color: colors.textSecondary }}>
                         {index + 1}
                       </Text>
@@ -323,7 +356,9 @@ export default function CookbookScreen() {
                         onPress={() => moveSelected(index, -1)}
                         disabled={index === 0}
                         hitSlop={8}
-                        accessibilityLabel={t('cookbook.moveUp')}
+                        accessibilityRole="button"
+                        accessibilityLabel={t('a11y.moveRecipeUp', { name })}
+                        accessibilityState={{ disabled: index === 0 }}
                         className="h-9 w-9 items-center justify-center active:opacity-70 disabled:opacity-30"
                       >
                         <Ionicons name="chevron-up" size={18} color={colors.primary} />
@@ -332,7 +367,9 @@ export default function CookbookScreen() {
                         onPress={() => moveSelected(index, 1)}
                         disabled={index === selectedRecipes.length - 1}
                         hitSlop={8}
-                        accessibilityLabel={t('cookbook.moveDown')}
+                        accessibilityRole="button"
+                        accessibilityLabel={t('a11y.moveRecipeDown', { name })}
+                        accessibilityState={{ disabled: index === selectedRecipes.length - 1 }}
                         className="h-9 w-9 items-center justify-center active:opacity-70 disabled:opacity-30"
                       >
                         <Ionicons name="chevron-down" size={18} color={colors.primary} />
@@ -344,14 +381,16 @@ export default function CookbookScreen() {
             </ScrollView>
           ) : null}
 
-          {error ? (
-            <Text className="mt-2 text-sm" style={{ color: colors.danger }}>
-              {error}
-            </Text>
-          ) : null}
+          <View accessibilityLiveRegion="polite">
+            {error ? (
+              <Text className="mt-2 text-sm" style={{ color: colors.danger }}>
+                {error}
+              </Text>
+            ) : null}
+          </View>
 
           {generating ? (
-            <View className="mt-3 flex-row items-center gap-2">
+            <View className="mt-3 flex-row items-center gap-2" accessibilityLiveRegion="polite">
               <ActivityIndicator color={colors.primary} />
               <Text className="flex-1 text-sm" style={{ color: colors.textSecondary }}>
                 {progress
@@ -372,6 +411,8 @@ export default function CookbookScreen() {
                   setStep((prev) => prev - 1);
                 }}
                 disabled={generating}
+                accessibilityRole="button"
+                accessibilityState={{ disabled: generating }}
                 className="min-h-12 flex-1 items-center justify-center rounded-[18px] active:opacity-70 disabled:opacity-50"
                 style={{ backgroundColor: colors.primarySoft }}
               >
@@ -383,13 +424,16 @@ export default function CookbookScreen() {
             <Pressable
               onPress={() => (step === STEPS - 1 ? void handleGenerate() : goNext())}
               disabled={generating}
+              accessibilityRole="button"
+              accessibilityLabel={step === STEPS - 1 ? t('cookbook.generate') : t('common.continue')}
+              accessibilityState={{ disabled: generating, busy: generating }}
               className="min-h-12 flex-1 items-center justify-center rounded-[18px] active:opacity-80 disabled:opacity-50"
               style={{ backgroundColor: colors.primary }}
             >
               {generating ? (
-                <ActivityIndicator color="#fff" />
+                <ActivityIndicator color={colors.onPrimary} />
               ) : (
-                <Text className="text-base font-bold text-white">
+                <Text className="text-base font-bold" style={{ color: colors.onPrimary }}>
                   {step === STEPS - 1 ? t('cookbook.generate') : t('common.continue')}
                 </Text>
               )}

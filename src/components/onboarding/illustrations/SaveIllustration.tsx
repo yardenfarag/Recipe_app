@@ -68,7 +68,11 @@ export function SaveIllustration() {
   }));
 
   return (
-    <View style={{ alignItems: 'center', justifyContent: 'center' }}>
+    <View
+      style={{ alignItems: 'center', justifyContent: 'center' }}
+      accessible={false}
+      importantForAccessibility="no-hide-descendants"
+    >
       <PhoneFrame>
         <View style={{ flex: 1, gap: 10 }}>
           <View
@@ -121,7 +125,7 @@ export function SaveIllustration() {
                 checkStyle,
               ]}
             >
-              <Text style={{ fontSize: 14, fontWeight: '700', color: '#fff' }}>✓</Text>
+              <Text style={{ fontSize: 14, fontWeight: '700', color: colors.onPrimary }}>✓</Text>
             </Animated.View>
           </View>
         </View>

@@ -30,6 +30,7 @@ import { useLanguagePreference } from "@/hooks/useLanguagePreference";
 import { useProfile } from "@/hooks/useProfile";
 import { useRtl } from "@/hooks/useRtl";
 import { useThemePreference } from "@/hooks/useThemePreference";
+import { announce } from "@/lib/a11y";
 import { showNotice } from "@/lib/confirmAction";
 import { creditPurchasesOfferedOn } from "@/lib/purchases";
 import { openAppStore } from "@/lib/appStore";
@@ -147,6 +148,12 @@ export default function AddRecipeScreen() {
     }, 2800);
     return () => clearInterval(id);
   }, [loading, jobKind]);
+
+  // Errors/notices land on the form after the wait screen unmounts, so focus
+  // doesn't move to them — speak them for VoiceOver/TalkBack.
+  useEffect(() => {
+    if (banner) announce(banner.message);
+  }, [banner]);
 
   function runSharedRecipe(share: PendingShare) {
     if (share.kind === "image") {
@@ -345,6 +352,7 @@ export default function AddRecipeScreen() {
     }
 
     if (result.cached && result.recipe && "id" in result.recipe) {
+      announce(t("a11y.recipeReady"));
       router.push(`/recipe/${result.recipe.id}`);
       setUrl("");
       return true;
@@ -437,6 +445,7 @@ export default function AddRecipeScreen() {
     } catch (error) {
       console.warn("[recipe-draft] persistence failed", error);
     }
+    announce(t("a11y.recipeReady"));
     router.push("/recipe/preview");
     setUrl("");
     return true;
@@ -794,6 +803,8 @@ export default function AddRecipeScreen() {
               name="link-outline"
               size={18}
               color={colors.textSecondary}
+              accessible={false}
+              importantForAccessibility="no"
             />
             <TextInput
               className="flex-1 px-3 py-4 text-base"
@@ -804,6 +815,9 @@ export default function AddRecipeScreen() {
                   : t("snap.urlPlaceholder")
               }
               placeholderTextColor={colors.textSecondary}
+              accessibilityLabel={
+                mode === "invent" ? t("snap.inventUrlLabel") : t("snap.urlLabel")
+              }
               value={url}
               onChangeText={(text) => {
                 setUrl(text);
@@ -825,6 +839,7 @@ export default function AddRecipeScreen() {
               accessibilityLabel={
                 mode === "invent" ? t("snap.modeInvent") : t("tabs.snap")
               }
+              accessibilityState={{ disabled: !canSubmit }}
               className="h-10 w-10 items-center justify-center rounded-full"
               style={{
                 backgroundColor: canSubmit
@@ -838,7 +853,7 @@ export default function AddRecipeScreen() {
               <Ionicons
                 name={mode === "invent" ? "restaurant-outline" : chevronForward}
                 size={18}
-                color={canSubmit ? "#fff" : colors.textSecondary}
+                color={canSubmit ? colors.onPrimary : colors.textSecondary}
               />
             </Pressable>
           </View>
@@ -867,6 +882,7 @@ export default function AddRecipeScreen() {
                 <Pressable
                   className="mt-3 self-start rounded-2xl px-4 py-2"
                   style={{ backgroundColor: colors.primary }}
+                  accessibilityRole={purchasesHere ? "button" : "link"}
                   onPress={() => {
                     if (!purchasesHere) {
                       void openAppStore();
@@ -875,7 +891,10 @@ export default function AddRecipeScreen() {
                     setCreditsOpen(true);
                   }}
                 >
-                  <Text className="text-sm font-bold text-white">
+                  <Text
+                    className="text-sm font-bold"
+                    style={{ color: colors.onPrimary }}
+                  >
                     {purchasesHere ? t("credits.buyAction") : t("credits.webOnlyAction")}
                   </Text>
                 </Pressable>
@@ -887,6 +906,7 @@ export default function AddRecipeScreen() {
             className="min-h-[48px] items-center justify-center rounded-[22px] py-3.5"
             style={{ backgroundColor: colors.surface, overflow: "hidden" }}
             onPress={handlePhotoEntry}
+            accessibilityRole="button"
           >
             <View className="flex-row items-center gap-2">
               <Ionicons
@@ -897,7 +917,7 @@ export default function AddRecipeScreen() {
               <Animated.Text
                 key={`photo-${mode}`}
                 entering={reduceMotion ? undefined : FadeIn.duration(200)}
-                className="text-base font-bold"
+                className="shrink text-base font-bold"
                 style={{ color: colors.text }}
               >
                 {mode === "invent"
@@ -913,9 +933,16 @@ export default function AddRecipeScreen() {
           style={{ backgroundColor: colors.accentSoft, overflow: "hidden" }}
         >
           <View className="mb-1.5 flex-row items-center gap-2">
-            <Ionicons name="share-outline" size={16} color={colors.accent} />
+            <Ionicons
+              name="share-outline"
+              size={16}
+              color={colors.accent}
+              accessible={false}
+              importantForAccessibility="no"
+            />
             <Text
-              className="text-sm font-semibold"
+              accessibilityRole="header"
+              className="flex-1 text-sm font-semibold"
               style={{ color: colors.text }}
             >
               {t("snap.shareTitle")}

@@ -1,5 +1,6 @@
 import { Text, View } from 'react-native';
 
+import { CHROME_MAX_FONT_SCALE } from '@/lib/a11y';
 import { COST_TIER_COUNT, costFilledCount } from '@/lib/formatCostEstimate';
 import { CostEstimate } from '@/types/recipe';
 
@@ -74,7 +75,12 @@ export function CostEstimateDisplay({
       }}
     >
       <CostMeter tier={tier} color={color} size={meterSize} />
-      <Text className={textClassName} numberOfLines={1} style={{ color }}>
+      <Text
+        className={textClassName}
+        numberOfLines={1}
+        style={{ color }}
+        maxFontSizeMultiplier={CHROME_MAX_FONT_SCALE}
+      >
         {label}
       </Text>
     </View>
