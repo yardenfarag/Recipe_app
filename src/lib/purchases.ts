@@ -1,9 +1,5 @@
 import { Linking, Platform } from 'react-native';
-import Purchases, {
-  LOG_LEVEL,
-  PURCHASES_ERROR_CODE,
-  type PurchasesPackage,
-} from 'react-native-purchases';
+import type { PurchasesPackage } from 'react-native-purchases';
 
 export const CREDIT_PACKS = [
   { id: 'pinch_credits_10', credits: 10, catalogPrice: '$1.99' },
@@ -39,6 +35,15 @@ export interface CreditPack {
 }
 
 let configuredUserId: string | null = null;
+
+/**
+ * The SDK is loaded on first use. Its web build is ~850 KB and the website
+ * never talks to it (web checkout is a plain link), so it stays out of the
+ * initial web bundle.
+ */
+function loadSdk() {
+  return import('react-native-purchases');
+}
 
 function apiKey(): string | undefined {
   if (Platform.OS === 'ios') return process.env.EXPO_PUBLIC_REVENUECAT_IOS_API_KEY;
@@ -80,6 +85,13 @@ export async function configurePurchases(userId: string): Promise<void> {
   const key = apiKey();
   if (!key || !purchasesEnabled()) return;
 
+  // Web checkout only needs the user id for its link.
+  if (Platform.OS === 'web') {
+    configuredUserId = userId;
+    return;
+  }
+
+  const { default: Purchases, LOG_LEVEL } = await loadSdk();
   if (__DEV__) Purchases.setLogLevel(LOG_LEVEL.DEBUG);
 
   if (!configuredUserId) {
@@ -95,7 +107,12 @@ export async function configurePurchases(userId: string): Promise<void> {
 
 export async function clearPurchasesUser(): Promise<void> {
   if (!configuredUserId || !purchasesEnabled()) return;
+  if (Platform.OS === 'web') {
+    configuredUserId = null;
+    return;
+  }
   try {
+    const { default: Purchases } = await loadSdk();
     await Purchases.logOut();
   } finally {
     configuredUserId = null;
@@ -110,6 +127,7 @@ export async function loadCreditPacks(): Promise<CreditPack[]> {
     return displayCreditPacks();
   }
 
+  const { default: Purchases } = await loadSdk();
   const offerings = await Purchases.getOfferings();
   return displayCreditPacks(offerings.current?.availablePackages ?? []);
 }
@@ -138,6 +156,7 @@ export async function purchaseCreditPack(
   }
 
   if (!pack.storePackage) throw new Error('store_product_unavailable');
+  const { default: Purchases, PURCHASES_ERROR_CODE } = await loadSdk();
   try {
     await Purchases.purchasePackage(pack.storePackage);
     return 'purchased';
@@ -153,5 +172,6 @@ export async function purchaseCreditPack(
 
 export async function syncPurchases(): Promise<void> {
   if (!purchasesEnabled() || Platform.OS === 'web') return;
+  const { default: Purchases } = await loadSdk();
   await Purchases.syncPurchases();
 }

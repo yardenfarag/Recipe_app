@@ -34,6 +34,42 @@
         flex: 1;
       }
     </style>
+    <style>
+      /* Boot shell: paints right away while the app bundle downloads. React replaces it
+         on first render. Colors match the default theme (src/constants/themes.ts). */
+      body {
+        margin: 0;
+        background: #f4f1f8;
+      }
+      .boot {
+        flex: 1;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font: 700 28px -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, Roboto, sans-serif;
+        letter-spacing: -0.02em;
+        color: #7b6b9a;
+        animation: boot-pulse 1.4s ease-in-out infinite;
+      }
+      @keyframes boot-pulse {
+        50% {
+          opacity: 0.45;
+        }
+      }
+      @media (prefers-color-scheme: dark) {
+        body {
+          background: #12101a;
+        }
+        .boot {
+          color: #b8a8d4;
+        }
+      }
+      @media (prefers-reduced-motion: reduce) {
+        .boot {
+          animation: none;
+        }
+      }
+    </style>
   </head>
 
   <body>
@@ -42,6 +78,6 @@
       You need to enable JavaScript to run this app.
     </noscript>
     <!-- The root element for your Expo app. -->
-    <div id="root"></div>
+    <div id="root"><div class="boot" aria-hidden="true">Pinch</div></div>
   </body>
 </html>

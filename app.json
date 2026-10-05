@@ -43,7 +43,15 @@
       "description": "Pinch turns a TikTok, Instagram, or YouTube cooking video into ingredients, steps, and a shopping list."
     },
     "plugins": [
-      "expo-router",
+      [
+        "expo-router",
+        {
+          "asyncRoutes": {
+            "web": "production",
+            "default": false
+          }
+        }
+      ],
       [
         "expo-splash-screen",
         {
