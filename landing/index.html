@@ -3,10 +3,10 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>Pinch — Save TikTok, Instagram, and YouTube recipes</title>
+    <title>Pinch: Save Recipes from TikTok, Instagram &amp; YouTube</title>
     <meta
       name="description"
-      content="Pinch turns a TikTok, Instagram, or YouTube cooking video into ingredients, steps, and a shopping list. Save recipes to your kitchen and cook along with the video."
+      content="Pinch is a recipe keeper app that turns TikTok, Instagram, and YouTube cooking videos into written recipes, with ingredients, steps, and a shopping list."
     />
     <link rel="canonical" href="https://pinch-app.io/" />
     <link rel="icon" type="image/png" href="/favicon.png" />
@@ -17,7 +17,7 @@
     <meta property="og:type" content="website" />
     <meta property="og:site_name" content="Pinch" />
     <meta property="og:url" content="https://pinch-app.io/" />
-    <meta property="og:title" content="Pinch — Save TikTok, Instagram, and YouTube recipes" />
+    <meta property="og:title" content="Pinch: Save Recipes from TikTok, Instagram &amp; YouTube" />
     <meta
       property="og:description"
       content="Turn a cooking video into ingredients, steps, and a shopping list."
@@ -33,7 +33,7 @@
         "url": "https://pinch-app.io/",
         "applicationCategory": "LifestyleApplication",
         "operatingSystem": "iOS, Web",
-        "description": "Pinch turns a TikTok, Instagram, or YouTube cooking video into ingredients, steps, and a shopping list.",
+        "description": "Pinch is a recipe keeper app that turns TikTok, Instagram, and YouTube cooking videos into written recipes, with ingredients, steps, and a shopping list.",
         "downloadUrl": "https://apps.apple.com/us/app/pinch-recipe-library/id6796310453",
         "offers": { "@type": "Offer", "price": "0", "priceCurrency": "USD" }
       }
@@ -49,6 +49,14 @@
             "acceptedAnswer": {
               "@type": "Answer",
               "text": "Pinch reads a cooking video from TikTok, Instagram, or YouTube and turns it into a written recipe: ingredients, steps, and a shopping list you can check off at the store."
+            }
+          },
+          {
+            "@type": "Question",
+            "name": "Can Pinch turn a YouTube video into a recipe?",
+            "acceptedAnswer": {
+              "@type": "Answer",
+              "text": "Yes. Paste a YouTube link and Pinch's AI recipe extractor writes out the ingredients and steps, so you don't have to pause and rewind while you cook."
             }
           },
           {
@@ -145,9 +153,16 @@
         max-width: 760px;
         margin: 0 auto;
       }
-      h1 {
+      .tagline {
         margin: 40px 0 0;
-        font-size: clamp(44px, 8vw, 64px);
+        font-size: 15px;
+        font-weight: 700;
+        letter-spacing: 0.4px;
+        color: var(--pink-bright);
+      }
+      h1 {
+        margin: 12px 0 0;
+        font-size: clamp(36px, 6.5vw, 56px);
         line-height: 1.1;
         letter-spacing: -1.6px;
       }
@@ -352,10 +367,11 @@
 
     <main class="wrap">
       <div class="hero">
-        <h1>See it. <span>Snap it.</span> Cook it.</h1>
+        <p class="tagline">See it. Snap it. Cook it.</p>
+        <h1>Save recipes from <span>TikTok, Instagram &amp; YouTube</span></h1>
         <p class="lede">
-          Share it from TikTok, Instagram, or YouTube. Pinch pulls out the ingredients and steps,
-          then keeps them in your kitchen.
+          Share a cooking video to Pinch. It pulls out the ingredients and steps, builds your
+          shopping list, and keeps the recipe in your kitchen.
         </p>
         <div class="actions">
           <a
@@ -375,22 +391,22 @@
       </div>
 
       <section aria-labelledby="features">
-        <h2 id="features">From the clip to the counter.</h2>
+        <h2 id="features">A recipe organizer for the videos you cook from</h2>
         <p class="sub">The recipe, the list, and the video, kept in one kitchen.</p>
         <ul class="features">
           <li class="card">
             <div class="icon" aria-hidden="true">✦</div>
-            <h3>Snap a link</h3>
-            <p>Share from TikTok, Instagram, or YouTube, or paste the link yourself.</p>
+            <h3>Save TikTok and Instagram recipes</h3>
+            <p>Share a TikTok or an Instagram Reel to Pinch, or paste the link yourself.</p>
           </li>
           <li class="card">
-            <div class="icon" aria-hidden="true">❒</div>
-            <h3>Save it to your kitchen</h3>
-            <p>Preview the recipe, tap save, and find it again in your library.</p>
+            <div class="icon" aria-hidden="true">▤</div>
+            <h3>YouTube video to recipe</h3>
+            <p>Get the ingredients and steps written out. No more pausing and rewinding.</p>
           </li>
           <li class="card">
             <div class="icon" aria-hidden="true">✓</div>
-            <h3>Shopping list</h3>
+            <h3>Recipe to shopping list</h3>
             <p>Send the ingredients to a list you can check off at the store.</p>
           </li>
           <li class="card">
@@ -400,26 +416,26 @@
           </li>
           <li class="card">
             <div class="icon" aria-hidden="true">❏</div>
-            <h3>Collections</h3>
-            <p>Group recipes for dinner, baking, or easy weeknights.</p>
+            <h3>Your recipe library</h3>
+            <p>Keep every saved recipe in one place and group them for dinner, baking, or easy weeknights.</p>
           </li>
         </ul>
       </section>
 
       <section aria-labelledby="how">
-        <h2 id="how">How it works</h2>
+        <h2 id="how">How to save a recipe from a video</h2>
         <ol class="steps">
           <li><strong>Find a recipe video.</strong> On TikTok, Instagram Reels, or YouTube.</li>
           <li><strong>Share it to Pinch.</strong> Or copy the link and paste it in.</li>
           <li>
-            <strong>Get the recipe.</strong> Ingredients, steps, and a shopping list, saved to
-            your library.
+            <strong>Get the recipe.</strong> Pinch's AI writes out the ingredients and steps, adds
+            a shopping list, and saves it to your library.
           </li>
         </ol>
       </section>
 
       <section aria-labelledby="faq">
-        <h2 id="faq">Questions</h2>
+        <h2 id="faq">Frequently asked questions</h2>
         <div class="faq">
           <details class="card" open>
             <summary>What does Pinch do?</summary>
@@ -427,6 +443,13 @@
               Pinch reads a cooking video from TikTok, Instagram, or YouTube and turns it into a
               written recipe: ingredients, steps, and a shopping list you can check off at the
               store.
+            </p>
+          </details>
+          <details class="card">
+            <summary>Can Pinch turn a YouTube video into a recipe?</summary>
+            <p>
+              Yes. Paste a YouTube link and Pinch's AI recipe extractor writes out the ingredients
+              and steps, so you don't have to pause and rewind while you cook.
             </p>
           </details>
           <details class="card">
