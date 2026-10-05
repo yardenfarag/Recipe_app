@@ -61,6 +61,7 @@
     "eslint": "^9.0.0",
     "eslint-config-expo": "~10.0.0",
     "marked": "^18.0.14",
+    "patch-package": "^8.0.1",
     "prettier-plugin-tailwindcss": "^0.5.14",
     "supabase": "^2.109.1",
     "typescript": "~5.9.2",
@@ -80,7 +81,8 @@
     "lint": "expo lint",
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
-    "test:watch": "vitest"
+    "test:watch": "vitest",
+    "postinstall": "patch-package"
   },
   "private": true
 }
