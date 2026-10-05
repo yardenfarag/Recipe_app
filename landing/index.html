@@ -129,32 +129,42 @@
 
     <main class="wrap">
       <div class="hero">
-        <p class="tagline reveal">See it. Snap it. Cook it.</p>
-        <h1 class="reveal">Save recipes from <span>TikTok, Instagram &amp; YouTube</span></h1>
-        <p class="lede reveal">
-          Turn any cooking video into a recipe you can actually cook from. Ingredients, steps,
-          and a shopping list, all in one place.
-        </p>
-        <div class="actions reveal">
-          <a
-            class="btn btn-store btn-apple"
-            data-track="app_store"
-            href="https://apps.apple.com/us/app/pinch-recipe-library/id6796310453"
-            aria-label="Download on the App Store"
-          >
-            <svg viewBox="0 0 24 24" aria-hidden="true">
-              <path
-                d="M16.37 12.6c-.02-2.3 1.88-3.4 1.97-3.46-1.07-1.57-2.74-1.78-3.33-1.8-1.42-.15-2.77.83-3.49.83-.72 0-1.83-.81-3.01-.79-1.55.02-2.98.9-3.78 2.29-1.61 2.8-.41 6.94 1.16 9.2.77 1.11 1.68 2.36 2.88 2.31 1.16-.05 1.59-.75 2.99-.75 1.4 0 1.79.75 3.01.72 1.24-.02 2.03-1.13 2.79-2.25.88-1.29 1.24-2.53 1.26-2.6-.03-.01-2.42-.93-2.45-3.7zM14.08 5.85c.64-.77 1.07-1.85.95-2.92-.92.04-2.03.61-2.69 1.38-.59.68-1.11 1.77-.97 2.82 1.03.08 2.07-.52 2.71-1.28z"
-              />
-            </svg>
-          </a>
-          <a class="btn btn-web" data-track="continue" href="/app/">Continue on the web</a>
+        <div class="hero-text">
+          <p class="tagline reveal">See it. Snap it. Cook it.</p>
+          <h1 class="reveal">Save recipes from <span>TikTok, Instagram &amp; YouTube</span></h1>
+          <p class="lede reveal">
+            Turn any cooking video into a recipe you can actually cook from.
+            <span class="lede-more">Ingredients, steps, and a shopping list, all in one place.</span>
+          </p>
+          <div class="actions reveal">
+            <a
+              class="btn btn-store btn-apple"
+              data-track="app_store"
+              href="https://apps.apple.com/us/app/pinch-recipe-library/id6796310453"
+              aria-label="Download on the App Store"
+            >
+              <svg viewBox="0 0 24 24" aria-hidden="true">
+                <path
+                  d="M16.37 12.6c-.02-2.3 1.88-3.4 1.97-3.46-1.07-1.57-2.74-1.78-3.33-1.8-1.42-.15-2.77.83-3.49.83-.72 0-1.83-.81-3.01-.79-1.55.02-2.98.9-3.78 2.29-1.61 2.8-.41 6.94 1.16 9.2.77 1.11 1.68 2.36 2.88 2.31 1.16-.05 1.59-.75 2.99-.75 1.4 0 1.79.75 3.01.72 1.24-.02 2.03-1.13 2.79-2.25.88-1.29 1.24-2.53 1.26-2.6-.03-.01-2.42-.93-2.45-3.7zM14.08 5.85c.64-.77 1.07-1.85.95-2.92-.92.04-2.03.61-2.69 1.38-.59.68-1.11 1.77-.97 2.82 1.03.08 2.07-.52 2.71-1.28z"
+                />
+              </svg>
+            </a>
+            <a class="btn btn-web" data-track="continue" href="/app/">Continue on the web</a>
+          </div>
+          <ul class="trust reveal" aria-label="Why Pinch">
+            <li>3 free recipes every month</li>
+            <li>No subscription</li>
+            <li>iPhone and any browser</li>
+          </ul>
         </div>
-        <ul class="trust reveal" aria-label="Why Pinch">
-          <li>3 free recipes every month</li>
-          <li>No subscription</li>
-          <li>iPhone and any browser</li>
-        </ul>
+        <img
+          class="hero-shot reveal"
+          src="/hero-recipe.webp"
+          width="470"
+          height="936"
+          fetchpriority="high"
+          alt="A recipe saved in Pinch: lemon garlic pasta, with its source video, servings, and ingredients."
+        />
       </div>
 
       <section aria-labelledby="features">
@@ -279,7 +289,7 @@
           <div class="table-scroll">
             <table class="compare">
               <thead>
-                <tr><th><span hidden>Feature</span></th><th>Pinch</th><th>Osta</th><th>Paprika</th><th>Mela</th><th>ReciMe</th><th>Samsung Food</th></tr>
+                <tr><th><span class="visually-hidden">Feature</span></th><th>Pinch</th><th>Osta</th><th>Paprika</th><th>Mela</th><th>ReciMe</th><th>Samsung Food</th></tr>
               </thead>
               <tbody>
                 <tr><td>Save from TikTok, Instagram &amp; YouTube</td><td class="yes">✓</td><td class="yes">✓</td><td class="no">✗*</td><td class="yes">✓</td><td class="yes">✓</td><td class="yes">✓</td></tr>

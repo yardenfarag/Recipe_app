@@ -22,6 +22,7 @@ const html = 'text/html; charset=utf-8';
 // Same paths build-web-site.mjs copies into dist/.
 const files = {
   '/site.css': ['landing/site.css', 'text/css; charset=utf-8'],
+  '/hero-recipe.webp': ['landing/hero-recipe.webp', 'image/webp'],
   '/favicon.png': ['assets/images/favicon.png', 'image/png'],
   '/icon.png': ['assets/images/icon.png', 'image/png'],
   '/robots.txt': ['public/robots.txt', 'text/plain; charset=utf-8'],
