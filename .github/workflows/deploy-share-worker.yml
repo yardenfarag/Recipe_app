@@ -1,0 +1,30 @@
+name: Deploy share page worker
+
+on:
+  push:
+    branches: [master, main]
+    paths:
+      - 'workers/share-page/**'
+      - '.github/workflows/deploy-share-worker.yml'
+  workflow_dispatch:
+
+jobs:
+  quality:
+    uses: ./.github/workflows/quality.yml
+
+  deploy:
+    needs: quality
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Deploy to Cloudflare (pinch-app.io/s/*)
+        uses: cloudflare/wrangler-action@v3
+        with:
+          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          workingDirectory: workers/share-page
+          secrets: |
+            SUPABASE_KEY
+        env:
+          SUPABASE_KEY: ${{ secrets.EXPO_PUBLIC_SUPABASE_KEY }}

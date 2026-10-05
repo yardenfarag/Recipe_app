@@ -42,9 +42,9 @@ async function invokeErrorMessage(error: unknown): Promise<{
   return { message: 'Request failed' };
 }
 
-/** HTTPS landing page that opens the app or store. */
+/** HTTPS share page (workers/share-page): recipe preview, then opens the app or store. */
 export function recipeShareLandingUrl(token: string): string {
-  return `${LEGAL_BASE_URL}/share.html?t=${encodeURIComponent(token)}`;
+  return `${LEGAL_BASE_URL}/s/${encodeURIComponent(token)}`;
 }
 
 /** Custom-scheme deep link used by the landing page / installed app. */

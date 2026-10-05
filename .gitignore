@@ -45,3 +45,7 @@ example
 # generated native folders
 /ios
 /android
+
+# Cloudflare Worker local state
+.wrangler/
+.dev.vars
