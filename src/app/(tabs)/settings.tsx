@@ -24,7 +24,9 @@ import { useProfile } from '@/hooks/useProfile';
 import { useRtl } from '@/hooks/useRtl';
 import { useThemePreference } from '@/hooks/useThemePreference';
 import { useTranslation } from 'react-i18next';
+import { captureAppShared } from '@/lib/analytics';
 import { confirmAction, confirmDestructive } from '@/lib/confirmAction';
+import { shareApp } from '@/lib/shareApp';
 import {
   deleteAccount,
   requestAppleAuthorizationCodeForDeletion,
@@ -211,6 +213,19 @@ export default function SettingsScreen() {
       );
     } finally {
       setDeleting(false);
+    }
+  }
+
+  async function handleShareApp() {
+    try {
+      const outcome = await shareApp({
+        title: t('settings.shareAppTitle'),
+        message: t('settings.shareAppMessage'),
+      });
+      captureAppShared({ outcome, platform: Platform.OS });
+      if (outcome === 'copied') Alert.alert(t('settings.shareAppCopied'));
+    } catch {
+      Alert.alert(t('settings.shareAppFailedTitle'), t('common.tryAgain'));
     }
   }
 
@@ -445,6 +460,12 @@ export default function SettingsScreen() {
               description={t('settings.legalSupportHint')}
               icon="help-buoy-outline"
               onPress={() => router.push('/settings/support')}
+            />
+            <SettingsActionRow
+              label={t('settings.shareApp')}
+              description={t('settings.shareAppHint')}
+              icon="share-social-outline"
+              onPress={() => void handleShareApp()}
               last
             />
           </SettingsSection>

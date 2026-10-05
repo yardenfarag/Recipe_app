@@ -8,12 +8,15 @@ export type RecipeEntrySource = 'share' | 'url' | 'camera' | 'library';
 export type RecipeEntryMode = 'extract' | 'invent';
 /** Why the credit purchase sheet opened. */
 export type PaywallTrigger = 'out_of_credits' | 'settings';
+/** What happened after "Share Pinch". */
+export type AppShareOutcome = 'shared' | 'copied' | 'dismissed';
 
 type ProductEventName =
   | 'recipe_extracted'
   | 'recipe_saved'
   | 'paywall_viewed'
-  | 'onboarding_completed';
+  | 'onboarding_completed'
+  | 'app_shared';
 // web_intro_viewed / web_intro_clicked come from the static landing page (landing/index.html).
 
 function capture(name: ProductEventName, properties: Record<string, string>): void {
@@ -71,4 +74,11 @@ export function captureOnboardingCompleted(properties: {
   platform: string;
 }): void {
   capture('onboarding_completed', properties);
+}
+
+export function captureAppShared(properties: {
+  outcome: AppShareOutcome;
+  platform: string;
+}): void {
+  capture('app_shared', properties);
 }

@@ -98,7 +98,13 @@ function detailFor(event: InsightEvent): string {
   if (event.name === 'onboarding_completed') {
     return `${prop(properties, 'locale')} · ${prop(properties, 'platform')}`;
   }
-  if (event.name === 'web_intro_viewed') return 'visit';
+  if (event.name === 'app_shared') {
+    return `${prop(properties, 'outcome')} · ${prop(properties, 'platform')}`;
+  }
+  if (event.name === 'web_intro_viewed') {
+    const source = properties.utm_source;
+    return typeof source === 'string' && source.trim() ? `visit · ${source}` : 'visit';
+  }
   if (event.name === 'web_intro_clicked') return prop(properties, 'action');
   return '';
 }
