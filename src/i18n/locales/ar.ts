@@ -156,6 +156,8 @@ export default {
     "shareAppMessage": "أحفظ الوصفات من تيك توك وإنستغرام ويوتيوب باستخدام Pinch. يستخرج المكونات والخطوات بدلاً منك. جرّبه:",
     "shareAppCopied": "تم نسخ الرابط",
     "shareAppFailedTitle": "تعذّرت المشاركة",
+    "sendFeedback": "إرسال ملاحظات",
+    "sendFeedbackHint": "أخبرنا بما يعجبك أو ما يمكن تحسينه.",
     "privacyPolicy": "سياسة الخصوصية",
     "termsOfUse": "شروط الاستخدام",
     "deleteAccountWeb": "حذف الحساب (من الموقع)",
@@ -758,6 +760,16 @@ export default {
     "submit": "إرسال",
     "sentTitle": "وصلت الرسالة",
     "sentBody": "شكرًا — سنراجعها.",
+    "sendFailed": "الإرسال لم يتم"
+  },
+  "feedback": {
+    "title": "إرسال ملاحظات",
+    "hint": "أفكار، أشياء تعجبك أو تزعجك: نقرأ كل ما ترسله.",
+    "placeholder": "ما الذي يجعل Pinch أفضل لك؟",
+    "deviceNote": "سنرفق إصدار التطبيق وجهازك لنعرف مصدر الملاحظة.",
+    "submit": "إرسال الملاحظات",
+    "sentTitle": "شكرًا!",
+    "sentBody": "وصلتنا ملاحظاتك.",
     "sendFailed": "الإرسال لم يتم"
   },
   "tags": {

@@ -156,6 +156,8 @@ export default {
     "shareAppMessage": "Guardo recetas de TikTok, Instagram y YouTube con Pinch. Saca los ingredientes y los pasos por ti. Pruébalo:",
     "shareAppCopied": "Enlace copiado",
     "shareAppFailedTitle": "No se pudo compartir",
+    "sendFeedback": "Enviar comentarios",
+    "sendFeedbackHint": "Cuéntanos qué te gusta o qué mejorar.",
     "privacyPolicy": "Política de privacidad",
     "termsOfUse": "Términos de uso",
     "deleteAccountWeb": "Eliminar cuenta (web)",
@@ -758,6 +760,16 @@ export default {
     "submit": "Enviar",
     "sentTitle": "Mensaje enviado",
     "sentBody": "Gracias — lo vemos.",
+    "sendFailed": "No se pudo enviar"
+  },
+  "feedback": {
+    "title": "Enviar comentarios",
+    "hint": "Ideas, cosas que te gustan o que te molestan: leemos todo lo que nos envías.",
+    "placeholder": "¿Qué haría Pinch mejor para ti?",
+    "deviceNote": "Incluiremos la versión de la app y tu dispositivo para saber de dónde viene.",
+    "submit": "Enviar comentarios",
+    "sentTitle": "¡Gracias!",
+    "sentBody": "Hemos recibido tus comentarios.",
     "sendFailed": "No se pudo enviar"
   },
   "tags": {

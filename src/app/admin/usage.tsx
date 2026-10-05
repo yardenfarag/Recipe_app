@@ -32,6 +32,7 @@ import {
   fetchSupportTickets,
   type SupportTicket,
 } from '@/lib/supabase/supportTickets';
+import { fetchFeedback, type Feedback } from '@/lib/supabase/feedback';
 
 function usd(value: number): string {
   return `$${value.toFixed(4)}`;
@@ -58,6 +59,7 @@ export default function AdminUsageScreen() {
   const [events, setEvents] = useState<AiUsageEvent[]>([]);
   const [ledger, setLedger] = useState<TokenLedgerRow[]>([]);
   const [tickets, setTickets] = useState<SupportTicket[]>([]);
+  const [feedback, setFeedback] = useState<Feedback[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [grantUserId, setGrantUserId] = useState('');
@@ -72,14 +74,16 @@ export default function AdminUsageScreen() {
     setError(null);
     setLoading(true);
     try {
-      const [usageRows, ledgerRows, ticketRows] = await Promise.all([
+      const [usageRows, ledgerRows, ticketRows, feedbackRows] = await Promise.all([
         fetchAdminUsageEvents(120),
         fetchAdminTokenLedger(80),
         fetchSupportTickets(80),
+        fetchFeedback(80),
       ]);
       setEvents(usageRows);
       setLedger(ledgerRows);
       setTickets(ticketRows);
+      setFeedback(feedbackRows);
     } catch (err) {
       setError(errorText(err, 'Could not load admin usage.'));
     } finally {
@@ -284,6 +288,42 @@ export default function AdminUsageScreen() {
                         </Text>
                       </Pressable>
                     ) : null}
+                  </View>
+                ))
+              )}
+            </Section>
+
+            <Section title={`Feedback (${feedback.length})`} colors={colors}>
+              {feedback.length === 0 ? (
+                <Text className="text-xs" style={{ color: colors.textSecondary }}>
+                  No feedback yet.
+                </Text>
+              ) : (
+                feedback.map((item) => (
+                  <View
+                    key={item.id}
+                    className="mb-3 border-b pb-3"
+                    style={{ borderBottomColor: colors.frostedBorder }}
+                  >
+                    <Text className="mb-1 text-xs font-semibold" style={{ color: colors.text }}>
+                      {item.profile?.email ?? shortId(item.user_id)} · {fmtWhen(item.created_at)}
+                    </Text>
+                    <Text className="mb-1 text-xs" style={{ color: colors.textSecondary }}>
+                      {[
+                        item.app_version
+                          ? `v${item.app_version}${item.build_number ? ` (${item.build_number})` : ''}`
+                          : null,
+                        item.platform,
+                        item.device_model,
+                        item.os_version,
+                        item.locale,
+                      ]
+                        .filter(Boolean)
+                        .join(' · ')}
+                    </Text>
+                    <Text className="text-sm leading-5" style={{ color: colors.text }}>
+                      {item.message}
+                    </Text>
                   </View>
                 ))
               )}

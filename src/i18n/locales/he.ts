@@ -156,6 +156,8 @@ export default {
     "shareAppMessage": "אני שומר/ת מתכונים מטיקטוק, אינסטגרם ויוטיוב עם Pinch. היא מוציאה את המצרכים והשלבים בשבילך. כדאי לנסות:",
     "shareAppCopied": "הקישור הועתק",
     "shareAppFailedTitle": "לא הצלחנו לשתף",
+    "sendFeedback": "שליחת משוב",
+    "sendFeedbackHint": "מה אהבת ומה כדאי לשפר.",
     "privacyPolicy": "מדיניות פרטיות",
     "termsOfUse": "תנאי שימוש",
     "deleteAccountWeb": "מחיקת חשבון (באתר)",
@@ -758,6 +760,16 @@ export default {
     "submit": "שליחה",
     "sentTitle": "הפנייה נשלחה",
     "sentBody": "תודה — נבדוק.",
+    "sendFailed": "השליחה לא הלכה"
+  },
+  "feedback": {
+    "title": "שליחת משוב",
+    "hint": "רעיונות, דברים שאהבת או שמציקים לך: אנחנו קוראים הכול.",
+    "placeholder": "מה היה עושה את Pinch טובה יותר בשבילך?",
+    "deviceNote": "נצרף את גרסת האפליקציה והמכשיר כדי שנדע מאיפה זה הגיע.",
+    "submit": "שליחת משוב",
+    "sentTitle": "תודה!",
+    "sentBody": "המשוב שלך הגיע אלינו.",
     "sendFailed": "השליחה לא הלכה"
   },
   "tags": {

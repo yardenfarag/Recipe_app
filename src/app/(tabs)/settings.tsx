@@ -16,6 +16,7 @@ import {
 
 import { BrandHeader } from '@/components/BrandHeader';
 import { CookieMark } from '@/components/CookieMark';
+import { FeedbackModal } from '@/components/FeedbackModal';
 import { Screen } from '@/components/Screen';
 import { FormContentWidth } from '@/constants/theme';
 import { useAuth } from '@/hooks/useAuth';
@@ -159,6 +160,7 @@ export default function SettingsScreen() {
   const { isMediumUp } = useBreakpoint();
   const [uploading, setUploading] = useState(false);
   const [deleting, setDeleting] = useState(false);
+  const [feedbackOpen, setFeedbackOpen] = useState(false);
 
   async function handleSignOut() {
     try {
@@ -461,6 +463,14 @@ export default function SettingsScreen() {
               icon="help-buoy-outline"
               onPress={() => router.push('/settings/support')}
             />
+            {user ? (
+              <SettingsActionRow
+                label={t('settings.sendFeedback')}
+                description={t('settings.sendFeedbackHint')}
+                icon="chatbox-ellipses-outline"
+                onPress={() => setFeedbackOpen(true)}
+              />
+            ) : null}
             <SettingsActionRow
               label={t('settings.shareApp')}
               description={t('settings.shareAppHint')}
@@ -527,6 +537,7 @@ export default function SettingsScreen() {
         </View>
       </ScrollView>
 
+      <FeedbackModal visible={feedbackOpen} onClose={() => setFeedbackOpen(false)} />
     </Screen>
   );
 }

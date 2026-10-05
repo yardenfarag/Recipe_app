@@ -156,6 +156,8 @@ export default {
     "shareAppMessage": "I save recipes from TikTok, Instagram and YouTube with Pinch. It pulls out the ingredients and steps for you. Try it:",
     "shareAppCopied": "Link copied",
     "shareAppFailedTitle": "Couldn’t share",
+    "sendFeedback": "Send feedback",
+    "sendFeedbackHint": "Tell us what you like or what to improve.",
     "privacyPolicy": "Privacy Policy",
     "termsOfUse": "Terms of Use",
     "deleteAccountWeb": "Delete account (web)",
@@ -758,6 +760,16 @@ export default {
     "submit": "Submit ticket",
     "sentTitle": "Ticket sent",
     "sentBody": "Thanks — we’ll look into it.",
+    "sendFailed": "Could not send"
+  },
+  "feedback": {
+    "title": "Send feedback",
+    "hint": "Ideas, likes, annoyances: we read everything you send.",
+    "placeholder": "What would make Pinch better for you?",
+    "deviceNote": "We’ll include your app version and device so we know where it came from.",
+    "submit": "Send feedback",
+    "sentTitle": "Thanks!",
+    "sentBody": "Your feedback reached us.",
     "sendFailed": "Could not send"
   },
   "tags": {
