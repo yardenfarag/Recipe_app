@@ -19,7 +19,8 @@ const OPENROUTER_URL = 'https://openrouter.ai/api/v1/chat/completions';
 
 const DEFAULT_FAST_MODEL = 'google/gemini-2.5-flash-lite';
 const DEFAULT_STANDARD_MODEL = 'google/gemini-2.5-flash';
-const DEFAULT_FAST_FALLBACKS = 'google/gemini-2.0-flash,openai/gpt-4.1-mini';
+// OpenRouter rejects the whole request if any slug here is retired, so keep these live.
+const DEFAULT_FAST_FALLBACKS = 'openai/gpt-4.1-mini';
 const DEFAULT_STANDARD_FALLBACKS =
   'google/gemini-2.5-flash,anthropic/claude-sonnet-4';
 
