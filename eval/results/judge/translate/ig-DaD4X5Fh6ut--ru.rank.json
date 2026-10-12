@@ -1,0 +1,44 @@
+{
+  "caseId": "ig-DaD4X5Fh6ut--ru",
+  "judge": "google/gemini-3.1-pro-preview",
+  "letters": {
+    "A": "openai/gpt-6.1-sol@low",
+    "B": "anthropic/claude-sonnet-5.5@low",
+    "C": "openai/gpt-6-luna",
+    "D": "native:gemini-3.1-flash-lite"
+  },
+  "verdict": {
+    "candidates": [
+      {
+        "letter": "A",
+        "accuracy": 5,
+        "quality": 4,
+        "issues": "Grammatical case mismatches in the ingredient list (nouns are left in the nominative case after measurements, e.g., '1 стакан коричневый сахар' instead of 'коричневого сахара')."
+      },
+      {
+        "letter": "B",
+        "accuracy": 4,
+        "quality": 3,
+        "issues": "Leftover English word ('until до') in step 1. Grammatical case mismatches in the ingredient list."
+      },
+      {
+        "letter": "C",
+        "accuracy": 5,
+        "quality": 4,
+        "issues": "Grammatical case mismatches in the ingredient list. The title uses 'кусочками', which slightly conflates 'chips' and 'chunks' compared to the source."
+      },
+      {
+        "letter": "D",
+        "accuracy": 4,
+        "quality": 4,
+        "issues": "Added an unprompted Celsius conversion. Dropped the word 'white' in step 4 ('шоколадные капли' instead of 'капли белого шоколада'). Grammatical case mismatches in the ingredient list."
+      }
+    ],
+    "ranking": [
+      "A",
+      "C",
+      "D",
+      "B"
+    ]
+  }
+}

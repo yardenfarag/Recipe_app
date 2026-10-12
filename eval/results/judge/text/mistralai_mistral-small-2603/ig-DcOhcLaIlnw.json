@@ -1,0 +1,99 @@
+{
+  "ingredients": [
+    {
+      "ref_index": 0,
+      "status": "ok"
+    },
+    {
+      "ref_index": 1,
+      "status": "ok"
+    },
+    {
+      "ref_index": 2,
+      "status": "ok"
+    },
+    {
+      "ref_index": 3,
+      "status": "ok"
+    },
+    {
+      "ref_index": 4,
+      "status": "wrong_quantity"
+    },
+    {
+      "ref_index": 5,
+      "status": "missing"
+    },
+    {
+      "ref_index": 6,
+      "status": "missing"
+    },
+    {
+      "ref_index": 7,
+      "status": "ok"
+    },
+    {
+      "ref_index": 8,
+      "status": "ok"
+    },
+    {
+      "ref_index": 9,
+      "status": "ok"
+    },
+    {
+      "ref_index": 10,
+      "status": "ok"
+    },
+    {
+      "ref_index": 11,
+      "status": "ok"
+    },
+    {
+      "ref_index": 12,
+      "status": "ok"
+    },
+    {
+      "ref_index": 13,
+      "status": "ok"
+    },
+    {
+      "ref_index": 14,
+      "status": "ok"
+    },
+    {
+      "ref_index": 15,
+      "status": "missing"
+    },
+    {
+      "ref_index": 16,
+      "status": "missing"
+    },
+    {
+      "ref_index": 17,
+      "status": "ok"
+    },
+    {
+      "ref_index": 18,
+      "status": "ok"
+    },
+    {
+      "ref_index": 19,
+      "status": "ok"
+    },
+    {
+      "ref_index": 20,
+      "status": "missing"
+    },
+    {
+      "ref_index": 21,
+      "status": "missing"
+    },
+    {
+      "ref_index": 22,
+      "status": "ok"
+    }
+  ],
+  "extra_ingredients": [],
+  "steps_score": 4,
+  "note": "Salt and pepper are omitted throughout, olive oil (שמ״ז) is listed with no amount instead of 1 tbsp, and the steps use olive oil in the wrong place."
+}

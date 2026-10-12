@@ -1,0 +1,44 @@
+{
+  "caseId": "ig-DbTZcdDJWNH--he",
+  "judge": "google/gemini-3.1-pro-preview",
+  "letters": {
+    "A": "anthropic/claude-sonnet-5.5@low",
+    "B": "openai/gpt-6.1-sol@low",
+    "C": "native:gemini-3.1-flash-lite",
+    "D": "openai/gpt-6-luna"
+  },
+  "verdict": {
+    "candidates": [
+      {
+        "letter": "A",
+        "accuracy": 4,
+        "quality": 3,
+        "issues": "Contains a typo ('רודדים' instead of 'מרדדים'). 'סוכר גרנולרי' is a literal translation of granulated sugar; 'סוכר לבן' is the standard Hebrew term."
+      },
+      {
+        "letter": "B",
+        "accuracy": 5,
+        "quality": 5,
+        "issues": "Excellent translation. Uses natural phrasing, correct culinary terminology ('קורצים עיגולים'), and adapts 'granulated sugar' perfectly."
+      },
+      {
+        "letter": "C",
+        "accuracy": 5,
+        "quality": 5,
+        "issues": "Very good, professional translation using the imperative plural form. Dropped the Fahrenheit temperatures, which is actually excellent for Israeli localization, though technically an omission."
+      },
+      {
+        "letter": "D",
+        "accuracy": 4,
+        "quality": 4,
+        "issues": "'סוכר גבישי' is a bit unnatural in this context (usually just 'סוכר' or 'סוכר לבן' is used). 'לשו פנימה בהדרגה' is slightly literal."
+      }
+    ],
+    "ranking": [
+      "B",
+      "C",
+      "D",
+      "A"
+    ]
+  }
+}

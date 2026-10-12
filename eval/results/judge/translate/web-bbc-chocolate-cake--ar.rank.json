@@ -1,0 +1,44 @@
+{
+  "caseId": "web-bbc-chocolate-cake--ar",
+  "judge": "google/gemini-3.1-pro-preview",
+  "letters": {
+    "A": "anthropic/claude-sonnet-5.5@low",
+    "B": "openai/gpt-6.1-sol@low",
+    "C": "openai/gpt-6-luna",
+    "D": "native:gemini-3.1-flash-lite"
+  },
+  "verdict": {
+    "candidates": [
+      {
+        "letter": "A",
+        "accuracy": 4,
+        "quality": 3,
+        "issues": "Unnatural translation for self-raising flour ('طحين ذاتي النمو'). Grammatical errors with numbers and gender ('تخرج السيخ نظيفة')."
+      },
+      {
+        "letter": "B",
+        "accuracy": 5,
+        "quality": 5,
+        "issues": "Minor number/noun agreement issues in the ingredients list (e.g., '2 ملاعق' instead of 'ملعقتان'), but excellent adaptation of culinary terms like 'عود اختبار' for skewer."
+      },
+      {
+        "letter": "C",
+        "accuracy": 5,
+        "quality": 4,
+        "issues": "Good translation overall, though transliterating caster sugar as 'كاستر' is less descriptive than B's approach. Same minor number agreement issues in ingredients."
+      },
+      {
+        "letter": "D",
+        "accuracy": 4,
+        "quality": 3,
+        "issues": "Omitted the gas mark 5 oven temperature. Mixed gender in instructions ('اهرسي' vs 'سخن')."
+      }
+    ],
+    "ranking": [
+      "B",
+      "C",
+      "A",
+      "D"
+    ]
+  }
+}

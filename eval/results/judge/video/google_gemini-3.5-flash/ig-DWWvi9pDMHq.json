@@ -1,0 +1,43 @@
+{
+  "ingredients": [
+    {
+      "ref_index": 0,
+      "status": "wrong_quantity"
+    },
+    {
+      "ref_index": 1,
+      "status": "wrong_quantity"
+    },
+    {
+      "ref_index": 2,
+      "status": "ok"
+    },
+    {
+      "ref_index": 3,
+      "status": "wrong_quantity"
+    },
+    {
+      "ref_index": 4,
+      "status": "wrong_quantity"
+    },
+    {
+      "ref_index": 5,
+      "status": "wrong_quantity"
+    },
+    {
+      "ref_index": 6,
+      "status": "missing"
+    },
+    {
+      "ref_index": 7,
+      "status": "wrong_quantity"
+    },
+    {
+      "ref_index": 8,
+      "status": "wrong_quantity"
+    }
+  ],
+  "extra_ingredients": [],
+  "steps_score": 3,
+  "note": "Most quantities are missing, vanilla is omitted, cornstarch became flour, and the oven temperature, bake time and fridge chilling are absent."
+}

@@ -1,0 +1,39 @@
+{
+  "ingredients": [
+    {
+      "ref_index": 0,
+      "status": "ok"
+    },
+    {
+      "ref_index": 1,
+      "status": "ok"
+    },
+    {
+      "ref_index": 2,
+      "status": "ok"
+    },
+    {
+      "ref_index": 3,
+      "status": "ok"
+    },
+    {
+      "ref_index": 4,
+      "status": "ok"
+    },
+    {
+      "ref_index": 5,
+      "status": "ok"
+    },
+    {
+      "ref_index": 6,
+      "status": "ok"
+    },
+    {
+      "ref_index": 7,
+      "status": "ok"
+    }
+  ],
+  "extra_ingredients": [],
+  "steps_score": 4,
+  "note": "Steps omit the instruction not to stir the dough after resting."
+}

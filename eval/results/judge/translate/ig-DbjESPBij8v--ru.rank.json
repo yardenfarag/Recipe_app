@@ -1,0 +1,44 @@
+{
+  "caseId": "ig-DbjESPBij8v--ru",
+  "judge": "google/gemini-3.1-pro-preview",
+  "letters": {
+    "A": "openai/gpt-6-luna",
+    "B": "native:gemini-3.1-flash-lite",
+    "C": "openai/gpt-6.1-sol@low",
+    "D": "anthropic/claude-sonnet-5.5@low"
+  },
+  "verdict": {
+    "candidates": [
+      {
+        "letter": "A",
+        "accuracy": 5,
+        "quality": 5,
+        "issues": "Very good translation. 'Сушёный чеснок' is the most idiomatic translation for garlic powder. The phrasing in the final step ('хрустящей текстуры') is slightly wordy but acceptable."
+      },
+      {
+        "letter": "B",
+        "accuracy": 5,
+        "quality": 3,
+        "issues": "Uses 'выпекайте' which is typically used for dough/pastries, not meat (should be 'запекайте'). 'Желаемые кусочки' is an awkward phrasing. 'Порошок паприки' is less idiomatic than 'молотая паприка'."
+      },
+      {
+        "letter": "C",
+        "accuracy": 5,
+        "quality": 5,
+        "issues": "Excellent, highly idiomatic translation. The final instruction ('до золотистой хрустящей корочки') sounds perfectly natural for a Russian recipe."
+      },
+      {
+        "letter": "D",
+        "accuracy": 5,
+        "quality": 4,
+        "issues": "Missed the capitalization emphasis in the title ('БЕЗ'). 'На нужные кусочки' is a slightly awkward translation for 'desired pieces'."
+      }
+    ],
+    "ranking": [
+      "C",
+      "A",
+      "D",
+      "B"
+    ]
+  }
+}

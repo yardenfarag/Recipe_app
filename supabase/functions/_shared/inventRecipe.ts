@@ -40,6 +40,7 @@ Rules:
 - Prefer common supermarket ingredients and standard home techniques. Do not claim this is the original chef's recipe.
 - If the content is not food, a drink, or a recipe, set found_recipe to false and leave other fields empty.
 ${MEASUREMENT_RULES}
+- You are writing this recipe, so you are its source: give EVERY ingredient a realistic quantity, unit, metric and spoons. The "set quantity to 0" rule above is for extraction only; use 0 only for "to taste" items.
 ${TIME_RULES}
 ${CALORIE_RULES}
 ${TAG_RULES}

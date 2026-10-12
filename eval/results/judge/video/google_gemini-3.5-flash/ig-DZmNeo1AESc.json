@@ -1,0 +1,45 @@
+{
+  "ingredients": [
+    {
+      "ref_index": 0,
+      "status": "wrong_quantity"
+    },
+    {
+      "ref_index": 1,
+      "status": "wrong_quantity"
+    },
+    {
+      "ref_index": 2,
+      "status": "wrong_quantity"
+    },
+    {
+      "ref_index": 3,
+      "status": "wrong_quantity"
+    },
+    {
+      "ref_index": 4,
+      "status": "wrong_quantity"
+    },
+    {
+      "ref_index": 5,
+      "status": "wrong_quantity"
+    },
+    {
+      "ref_index": 6,
+      "status": "missing"
+    },
+    {
+      "ref_index": 7,
+      "status": "wrong_quantity"
+    },
+    {
+      "ref_index": 8,
+      "status": "wrong_quantity"
+    }
+  ],
+  "extra_ingredients": [
+    "olive oil"
+  ],
+  "steps_score": 3,
+  "note": "All quantities are missing, cinnamon is omitted, and the bake temperature and time are absent."
+}

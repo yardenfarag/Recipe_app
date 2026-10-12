@@ -1,0 +1,44 @@
+{
+  "caseId": "ig-Dd0Xk6ZBq6p--ru",
+  "judge": "google/gemini-3.1-pro-preview",
+  "letters": {
+    "A": "anthropic/claude-sonnet-5.5@low",
+    "B": "native:gemini-3.1-flash-lite",
+    "C": "openai/gpt-6.1-sol@low",
+    "D": "openai/gpt-6-luna"
+  },
+  "verdict": {
+    "candidates": [
+      {
+        "letter": "A",
+        "accuracy": 5,
+        "quality": 4,
+        "issues": "Like all candidates, fails to use the correct genitive case for ingredients after units of measurement (e.g., should be '150 г сливочного масла', not '150 г сливочное масло'). The instructions are naturally phrased and use good culinary terminology ('сформованное печенье', 'вмешайте'). Correctly uses '2 крупных яйца'."
+      },
+      {
+        "letter": "B",
+        "accuracy": 5,
+        "quality": 3,
+        "issues": "Grammar issues in the ingredient list (lack of genitive case). Unnatural agreement in '2 крупные яйца' (should be 'крупных'). Relies on the anglicism 'опционально' instead of the more natural 'по желанию'."
+      },
+      {
+        "letter": "C",
+        "accuracy": 5,
+        "quality": 4,
+        "issues": "Grammar issues in the ingredient list (lack of genitive case). Unnatural agreement in '2 крупные яйца'. 'Мука общего назначения' is a literal translation; 'пшеничная мука' or 'мука высшего сорта' is more common in Russian recipes."
+      },
+      {
+        "letter": "D",
+        "accuracy": 5,
+        "quality": 4,
+        "issues": "Grammar issues in the ingredient list (lack of genitive case). Unnatural agreement in '2 крупные яйца'. The instructions flow well and read naturally."
+      }
+    ],
+    "ranking": [
+      "A",
+      "D",
+      "C",
+      "B"
+    ]
+  }
+}

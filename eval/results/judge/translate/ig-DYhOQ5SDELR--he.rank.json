@@ -1,0 +1,44 @@
+{
+  "caseId": "ig-DYhOQ5SDELR--he",
+  "judge": "google/gemini-3.1-pro-preview",
+  "letters": {
+    "A": "openai/gpt-6-luna",
+    "B": "openai/gpt-6.1-sol@low",
+    "C": "native:gemini-3.1-flash-lite",
+    "D": "anthropic/claude-sonnet-5.5@low"
+  },
+  "verdict": {
+    "candidates": [
+      {
+        "letter": "A",
+        "accuracy": 5,
+        "quality": 4,
+        "issues": "Literal decimal '0.5 כפיות' instead of the natural 'חצי כפית'. Pluralization of chicken breasts ('2 חזה עוף' instead of '2 חזות עוף'). Otherwise, reads well."
+      },
+      {
+        "letter": "B",
+        "accuracy": 5,
+        "quality": 5,
+        "issues": "Also uses the literal '0.5 כפיות', but the overall phrasing is the most natural and idiomatic (e.g., using 'מטגנים' instead of 'מבשלים' for skillet cooking, and 'ברתיחה עדינה' for simmer)."
+      },
+      {
+        "letter": "C",
+        "accuracy": 4,
+        "quality": 3,
+        "issues": "Redundant wording in ingredients ('אריזות חבילות'). Uses the singular masculine imperative (בשל, סנן), which is less standard for modern Hebrew recipes than the plural present tense. Awkward translation for fragrant ('עליית ריח טוב')."
+      },
+      {
+        "letter": "D",
+        "accuracy": 4,
+        "quality": 3,
+        "issues": "Spelling mistake ('קובייות' instead of 'קוביות'). Awkward translation of creamy in the title ('שמנתי'). Unnecessary addition in the ingredients ('להגשה'). Colloquial phrasing ('נהיה מבושל לגמרי')."
+      }
+    ],
+    "ranking": [
+      "B",
+      "A",
+      "D",
+      "C"
+    ]
+  }
+}

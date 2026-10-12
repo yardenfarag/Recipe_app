@@ -1,0 +1,44 @@
+{
+  "caseId": "ig-DbqcKjxoYnj--he",
+  "judge": "google/gemini-3.1-pro-preview",
+  "letters": {
+    "A": "native:gemini-3.1-flash-lite",
+    "B": "openai/gpt-6.1-sol@low",
+    "C": "anthropic/claude-sonnet-5.5@low",
+    "D": "openai/gpt-6-luna"
+  },
+  "verdict": {
+    "candidates": [
+      {
+        "letter": "A",
+        "accuracy": 5,
+        "quality": 4,
+        "issues": "Uses the imperative form which is acceptable but less common than present tense plural in modern Hebrew recipes. Translates 'peaks' literally to 'פסגות' instead of the more idiomatic 'קצף'."
+      },
+      {
+        "letter": "B",
+        "accuracy": 5,
+        "quality": 4,
+        "issues": "Uses standard present tense plural verbs, which is great. However, it translates vanilla 'seeds' to 'זרעים' (instead of the standard 'גרגירים') and 'peaks' to 'פסגות' (instead of 'קצף')."
+      },
+      {
+        "letter": "C",
+        "accuracy": 4,
+        "quality": 3,
+        "issues": "Leaves the English word 'pasta' instead of translating 'paste' to 'מחית'. Unnecessarily includes literal English translations in parentheses like '(שמנת כפולה)'."
+      },
+      {
+        "letter": "D",
+        "accuracy": 5,
+        "quality": 4,
+        "issues": "Uses the imperative form (less common but acceptable). Like A and B, it translates 'peaks' literally to 'פסגות' instead of 'קצף'."
+      }
+    ],
+    "ranking": [
+      "B",
+      "D",
+      "A",
+      "C"
+    ]
+  }
+}

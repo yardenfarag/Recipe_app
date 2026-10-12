@@ -69,7 +69,8 @@ ${LANGUAGE_RULE}
 - Do NOT invent instructions if none are present — return what you found and leave instructions empty instead.
 - Return ONLY data matching the schema.`;
 
-const VIDEO_SYSTEM_PROMPT = `You are a master chef. Analyze the provided social media video together with any text context and extract a precise recipe.
+// Exported for eval/ (video rung with an inline video).
+export const VIDEO_SYSTEM_PROMPT = `You are a master chef. Analyze the provided social media video together with any text context and extract a precise recipe.
 
 Rules:
 - Treat the video and text context as complementary sources — prefer explicit written measurements in text over visual guesses.
@@ -729,7 +730,7 @@ function truncate(text: string, maxChars: number): string {
   return `${trimmed.slice(0, maxChars)}…`;
 }
 
-function buildTextContext(input: ExtractInput, sections: TextSections): string {
+export function buildTextContext(input: ExtractInput, sections: TextSections): string {
   const parts: string[] = [];
   parts.push('Extract the recipe from the sources below.');
 

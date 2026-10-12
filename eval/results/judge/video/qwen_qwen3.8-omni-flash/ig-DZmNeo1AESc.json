@@ -1,0 +1,43 @@
+{
+  "ingredients": [
+    {
+      "ref_index": 0,
+      "status": "wrong_quantity"
+    },
+    {
+      "ref_index": 1,
+      "status": "wrong_quantity"
+    },
+    {
+      "ref_index": 2,
+      "status": "wrong_quantity"
+    },
+    {
+      "ref_index": 3,
+      "status": "wrong_quantity"
+    },
+    {
+      "ref_index": 4,
+      "status": "wrong_quantity"
+    },
+    {
+      "ref_index": 5,
+      "status": "wrong_quantity"
+    },
+    {
+      "ref_index": 6,
+      "status": "missing"
+    },
+    {
+      "ref_index": 7,
+      "status": "wrong_quantity"
+    },
+    {
+      "ref_index": 8,
+      "status": "wrong_quantity"
+    }
+  ],
+  "extra_ingredients": [],
+  "steps_score": 4,
+  "note": "All quantities are missing, cinnamon is omitted, and the oven temperature is wrong (200° instead of 180°)."
+}
