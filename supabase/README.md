@@ -141,6 +141,8 @@ npx supabase secrets set OPENROUTER_API_KEY=sk-or-v1-your_key
 # Optional model overrides
 # npx supabase secrets set OPENROUTER_FAST_MODEL=google/gemini-2.5-flash-lite
 # npx supabase secrets set OPENROUTER_MODEL=google/gemini-2.5-flash
+# npx supabase secrets set JEV_MODEL=typesafe/jev-1.13   # extract gate + remix relatedness
+
 
 # Required for Instagram + TikTok extraction (ScrapeCreators)
 npx supabase secrets set SCRAPECREATORS_API_KEY=your_scrapecreators_api_key

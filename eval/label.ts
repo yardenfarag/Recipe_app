@@ -3,20 +3,13 @@
 
 import { buildTextContext } from '../supabase/functions/_shared/gemini.ts';
 import type { ExtractInput } from '../supabase/functions/_shared/gemini.ts';
+import { EXTRACT_ROUTES } from '../supabase/functions/_shared/jev.ts';
 import { type ImageCase, imagePath, type PostCase, postPath, type PostSnapshot } from './fetch.ts';
 import { chatJson, dataUrl, exists, pool, PRIVATE, readJson, readJsonOr, ROOT, writeJson } from './lib.ts';
 
 export const REFERENCE_MODEL = 'anthropic/claude-opus-5.5';
 
-export const ROUTES = {
-  full_recipe_in_text:
-    'The text already holds a usable recipe: an ingredient list with amounts and method steps.',
-  partial:
-    'The text holds part of a recipe (ingredients without amounts, or ingredients without steps). The video may fill the gaps.',
-  needs_video:
-    'A cooking or food post whose text has no usable recipe. The recipe can only come from watching the video.',
-  no_recipe: 'Not a recipe at all: a review, meme, vlog, product promo, or a post with no cookable content.',
-} as const;
+export const ROUTES = EXTRACT_ROUTES;
 export type Route = keyof typeof ROUTES;
 
 export type Reference = {

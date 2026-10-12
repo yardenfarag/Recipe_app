@@ -13,6 +13,7 @@ import {
   type GeminiRecipe,
 } from '../supabase/functions/_shared/gemini.ts';
 import type { GenerateGeminiJsonResult } from '../supabase/functions/_shared/geminiClient.ts';
+import { EXTRACT_ROUTE_INSTRUCTIONS } from '../supabase/functions/_shared/jev.ts';
 import { inventRecipeFromImage, inventRecipeWithLadder } from '../supabase/functions/_shared/inventRecipe.ts';
 import { generateLlmJson, setEvalHook } from '../supabase/functions/_shared/llmClient.ts';
 import { estimateGeminiCostUsd } from '../supabase/functions/_shared/pricing.ts';
@@ -198,8 +199,7 @@ async function buildCases(task: Task, model: string): Promise<Case[]> {
   }
 }
 
-const ROUTE_INSTRUCTIONS =
-  'This is the text of a social media cooking post (description, top comments, transcript). Before spending a slow extraction call, decide where the recipe can come from.';
+const ROUTE_INSTRUCTIONS = EXTRACT_ROUTE_INSTRUCTIONS;
 
 // Jev and chat results don't pass through generateLlmJson, so they report cost themselves.
 type DirectResult = { output: unknown; ms: number; costUsd: number; servedModel: string };

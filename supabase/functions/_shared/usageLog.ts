@@ -17,11 +17,14 @@ export interface UsageEventInput {
     | 'repair'
     | 'fridge_match'
     | 'invent'
-    | 'content_gate';
+    | 'content_gate'
+    | 'extract_gate';
   platform?: string | null;
   status: string;
   extractionSource?: string | null;
   usages?: GeminiUsageSnapshot[];
+  /** A call that reports its own cost (Jev) instead of token counts. */
+  pricedCall?: { model: string; costUsd: number; promptTokens: number };
   scrapecreatorsCredits?: number;
   tokensCharged?: number;
   durationMs?: number | null;
@@ -38,7 +41,9 @@ export async function logUsageEvent(
   const summed = sumGeminiUsages(input.usages ?? []);
   const scrapecreatorsCredits = input.scrapecreatorsCredits ?? 0;
   const scrapecreatorsCostUsd = estimateScrapeCreatorsCostUsd(scrapecreatorsCredits);
-  const totalCostUsd = summed.geminiCostUsd + scrapecreatorsCostUsd;
+  const priced = input.pricedCall;
+  const llmCostUsd = summed.geminiCostUsd + (priced?.costUsd ?? 0);
+  const totalCostUsd = llmCostUsd + scrapecreatorsCostUsd;
 
   const row = {
     user_id: input.userId ?? null,
@@ -47,12 +52,12 @@ export async function logUsageEvent(
     platform: input.platform ?? null,
     status: input.status,
     extraction_source: input.extractionSource ?? null,
-    model: summed.model,
-    prompt_tokens: summed.promptTokens,
+    model: summed.model ?? priced?.model ?? null,
+    prompt_tokens: summed.promptTokens + (priced?.promptTokens ?? 0),
     output_tokens: summed.outputTokens,
     thinking_tokens: summed.thinkingTokens,
-    total_tokens: summed.totalTokens,
-    gemini_cost_usd: roundUsd(summed.geminiCostUsd),
+    total_tokens: summed.totalTokens + (priced?.promptTokens ?? 0),
+    gemini_cost_usd: roundUsd(llmCostUsd),
     scrapecreators_credits: scrapecreatorsCredits,
     scrapecreators_cost_usd: roundUsd(scrapecreatorsCostUsd),
     total_cost_usd: roundUsd(totalCostUsd),

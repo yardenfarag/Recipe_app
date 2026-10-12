@@ -294,7 +294,12 @@ export function beginTextExtraction(input: ExtractInput): Promise<EarlyTextExtra
  */
 export async function extractRecipeWithLadder(
   input: ExtractInput,
-  options?: { pendingText?: Promise<EarlyTextExtract> | null },
+  options?: {
+    /** Resolves to null when the caller chose not to start the text call early. */
+    pendingText?: Promise<EarlyTextExtract | null> | null;
+    /** The extract gate said the text has no recipe: go straight to video. */
+    skipText?: boolean;
+  },
 ): Promise<LadderResult> {
   const hasDescription = Boolean(input.description?.trim());
   const hasComments = input.topComments.length > 0;
@@ -316,13 +321,14 @@ export async function extractRecipeWithLadder(
     videoUrlHost: input.videoUrl ? safeUrlHost(input.videoUrl) : null,
     durationSeconds: input.durationSeconds ?? null,
     videoTooLong: isVideoTooLong(input.durationSeconds),
+    skipText: options?.skipText === true,
   });
 
-  if (hasAnyText) {
+  if (hasAnyText && !options?.skipText) {
     const textStarted = Date.now();
     let fromText: { recipe: GeminiRecipe; usage: GeminiUsageSnapshot | null } | null = null;
-    if (options?.pendingText) {
-      const settled = await options.pendingText;
+    const settled = options?.pendingText ? await options.pendingText : null;
+    if (settled) {
       if (!settled.ok) {
         if (!settled.timedOut) throw settled.error;
       } else {
@@ -371,6 +377,8 @@ export async function extractRecipeWithLadder(
         console.log('[gemini] text step partial — trying video before returning');
       }
     }
+  } else if (hasAnyText) {
+    console.log('[gemini] skipping text step — extract gate routed to video');
   } else {
     console.log('[gemini] skipping text step — no description/comments/captions');
   }
