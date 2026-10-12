@@ -24,6 +24,30 @@ const DEFAULT_FAST_FALLBACKS = 'openai/gpt-4.1-mini';
 const DEFAULT_STANDARD_FALLBACKS =
   'google/gemini-2.5-flash,anthropic/claude-sonnet-4';
 
+/**
+ * Eval-only (eval/run.ts): pin each call to one model with no fallbacks, so a
+ * result belongs to exactly that model. `native:<model>` calls Gemini directly.
+ * Never set in Edge Functions.
+ */
+export type LlmEvalHook = {
+  model: () => string | null;
+  /** Overrides the tier's reasoning effort (some models reject 'none'). */
+  reasoning?: () => string | null;
+  /** OpenRouter provider slugs to skip (`provider.ignore`). */
+  ignoreProviders?: () => string[] | null;
+  onResult?: (result: GenerateGeminiJsonResult<unknown>) => void;
+};
+
+let evalHook: LlmEvalHook | null = null;
+
+export function setEvalHook(hook: LlmEvalHook | null): void {
+  evalHook = hook;
+}
+
+function evalModel(): string | null {
+  return evalHook?.model() ?? null;
+}
+
 export function resolveOpenRouterApiKey(): string | undefined {
   const key =
     Deno.env.get('OPENROUTER_API_KEY')?.trim() ||
@@ -41,6 +65,7 @@ export function resolveOpenRouterModel(
 }
 
 function resolveFallbacks(tier: GenerateGeminiJsonOptions['tier'] = 'standard'): string[] {
+  if (evalModel()) return [];
   const raw =
     tier === 'fast'
       ? Deno.env.get('OPENROUTER_FAST_FALLBACKS')?.trim() || DEFAULT_FAST_FALLBACKS
@@ -70,10 +95,14 @@ function partsToOpenRouterContent(
       content.push({ type: 'text', text: part.text });
     } else if ('imageBase64' in part) {
       const mime = part.mimeType?.trim() || 'image/jpeg';
-      content.push({
-        type: 'image_url',
-        image_url: { url: `data:${mime};base64,${part.imageBase64}` },
-      });
+      const url = `data:${mime};base64,${part.imageBase64}`;
+      content.push(
+        mime.startsWith('video/')
+          ? { type: 'video_url', video_url: { url } }
+          : { type: 'image_url', image_url: { url } },
+      );
+    } else if ('fileData' in part) {
+      content.push({ type: 'video_url', video_url: { url: part.fileData.fileUri } });
     }
   }
   if (content.length === 1 && content[0].type === 'text') {
@@ -86,7 +115,7 @@ export async function generateOpenRouterJson<T>(
   options: GenerateGeminiJsonOptions,
   apiKey: string,
 ): Promise<GenerateGeminiJsonResult<T>> {
-  const model = options.model ?? resolveOpenRouterModel(options.tier ?? 'standard');
+  const model = evalModel() ?? options.model ?? resolveOpenRouterModel(options.tier ?? 'standard');
   const fallbacks = resolveFallbacks(options.tier ?? 'standard');
   const userContent = partsToOpenRouterContent(options.parts);
 
@@ -98,7 +127,9 @@ export async function generateOpenRouterJson<T>(
     ],
     max_tokens: options.maxOutputTokens,
     // Gemini defaults to thinking, which adds seconds before any JSON comes back.
-    reasoning: { effort: options.tier === 'standard' ? 'low' : 'none' },
+    reasoning: {
+      effort: evalHook?.reasoning?.() ?? (options.tier === 'standard' ? 'low' : 'none'),
+    },
     response_format: {
       type: 'json_schema',
       json_schema: {
@@ -110,6 +141,9 @@ export async function generateOpenRouterJson<T>(
     provider: {
       allow_fallbacks: true,
       data_collection: 'deny',
+      // Eval: skip hosts that would silently ignore response_format.
+      ...(evalModel() ? { require_parameters: true } : {}),
+      ...(evalHook?.ignoreProviders?.()?.length ? { ignore: evalHook.ignoreProviders() } : {}),
     },
   };
   if (fallbacks.length > 0) {
@@ -185,6 +219,7 @@ export async function generateOpenRouterJson<T>(
       prompt_tokens?: number;
       completion_tokens?: number;
       total_tokens?: number;
+      cost?: number;
       completion_tokens_details?: { reasoning_tokens?: number };
     };
   };
@@ -234,7 +269,14 @@ export async function generateOpenRouterJson<T>(
       promptTokenCount + candidatesTokenCount,
   };
 
-  return { data, usage, model: usedModel, durationMs };
+  const costUsd = Number(payload.usage?.cost);
+  return {
+    data,
+    usage,
+    model: usedModel,
+    durationMs,
+    ...(Number.isFinite(costUsd) ? { costUsd } : {}),
+  };
 }
 
 /**
@@ -245,6 +287,17 @@ export async function generateLlmJson<T>(
   options: GenerateGeminiJsonOptions,
 ): Promise<GenerateGeminiJsonResult<T>> {
   const openRouterKey = resolveOpenRouterApiKey();
+  const pinned = evalModel();
+  if (pinned) {
+    if (!pinned.startsWith('native:') && !openRouterKey) {
+      throw new AppError(options.context, 'OPENROUTER_API_KEY is not configured');
+    }
+    const result = pinned.startsWith('native:')
+      ? await generateGeminiJson<T>({ ...options, model: pinned.slice('native:'.length) })
+      : await generateOpenRouterJson<T>(options, openRouterKey!);
+    evalHook?.onResult?.(result);
+    return result;
+  }
   if (openRouterKey && !hasFileUriPart(options.parts)) {
     try {
       return await generateOpenRouterJson<T>(options, openRouterKey);

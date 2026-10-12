@@ -1,0 +1,44 @@
+{
+  "caseId": "ig-DYwzTorRr5---he",
+  "judge": "google/gemini-3.1-pro-preview",
+  "letters": {
+    "A": "openai/gpt-6-luna",
+    "B": "openai/gpt-6.1-sol@low",
+    "C": "anthropic/claude-sonnet-5.5@low",
+    "D": "native:gemini-3.1-flash-lite"
+  },
+  "verdict": {
+    "candidates": [
+      {
+        "letter": "A",
+        "accuracy": 4,
+        "quality": 3,
+        "issues": "Mistranslated 'chocolate chips' as 'chopped dark chocolate' (שוקולד קצוץ). Uses the imperative mood for instructions, which is less natural for modern Hebrew recipes than the present plural (מחממים, ממיסים, etc.). '0.25 כפיות' should ideally be written as '1/4 כפית' or 'רבע כפית'."
+      },
+      {
+        "letter": "B",
+        "accuracy": 5,
+        "quality": 5,
+        "issues": "Very natural phrasing overall, using the standard present plural for instructions. 'מקטעים' is acceptable for intervals, though 'פולסים' is often used. '0.25 כפיות' is slightly awkward compared to 'רבע כפית', but it retains the original number format accurately."
+      },
+      {
+        "letter": "C",
+        "accuracy": 5,
+        "quality": 4,
+        "issues": "Translates 'granulated sugar' redundantly as 'סוכר לבן גרגירי'. Translates 'intervals' literally as 'מרווחים' (gaps/spaces), which sounds like pauses in heating rather than bursts of heating. Same issue with '0.25 כפיות'."
+      },
+      {
+        "letter": "D",
+        "accuracy": 4,
+        "quality": 3,
+        "issues": "Uses 'גביעי' for cups, which usually implies goblets or ice cream cones, sounding unnatural for brownie cups. Uses imperative mood for instructions instead of standard present plural. Uses 'מרווחים' for intervals."
+      }
+    ],
+    "ranking": [
+      "B",
+      "C",
+      "D",
+      "A"
+    ]
+  }
+}

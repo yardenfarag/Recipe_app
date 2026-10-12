@@ -1,0 +1,28 @@
+{
+  "ingredients": [
+    {
+      "ref_index": 0,
+      "status": "wrong_quantity"
+    },
+    {
+      "ref_index": 1,
+      "status": "wrong_quantity"
+    },
+    {
+      "ref_index": 2,
+      "status": "wrong_quantity"
+    },
+    {
+      "ref_index": 3,
+      "status": "ok"
+    }
+  ],
+  "extra_ingredients": [
+    "0.5 כף שמן",
+    "0 להגשה סירופ מייפל",
+    "0 לקישוט בננה פרוסה",
+    "0 לקישוט אוכמניות"
+  ],
+  "steps_score": 3,
+  "note": "The candidate swaps the cheese for skyr yogurt, halves the flour and milk, and adds garnishes and oil that are not in the reference."
+}

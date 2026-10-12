@@ -1,0 +1,44 @@
+{
+  "caseId": "ig-DYKLtTEsi8G--ar",
+  "judge": "google/gemini-3.1-pro-preview",
+  "letters": {
+    "A": "native:gemini-3.1-flash-lite",
+    "B": "openai/gpt-6-luna",
+    "C": "anthropic/claude-sonnet-5.5@low",
+    "D": "openai/gpt-6.1-sol@low"
+  },
+  "verdict": {
+    "candidates": [
+      {
+        "letter": "A",
+        "accuracy": 5,
+        "quality": 3,
+        "issues": "Literal translation of '1 drops' leads to grammatical error in Arabic (1 قطرات). '0.25 ملاعق' is clunky; 'ربع ملعقة' would be much more natural."
+      },
+      {
+        "letter": "B",
+        "accuracy": 5,
+        "quality": 4,
+        "issues": "Translates 'scoopable' very naturally ('eaten with a spoon'). Keeps the clunky '0.25 ملاعق صغيرة' instead of 'ربع ملعقة صغيرة'. Uses feminine imperatives which is acceptable but passive or verbal noun is more standard in Arabic recipes."
+      },
+      {
+        "letter": "C",
+        "accuracy": 4,
+        "quality": 3,
+        "issues": "Mistranslates 'Granulated sugar' as 'سكر ناعم' (which implies powdered/caster sugar). Retains the clunky '0.25 ملاعق'."
+      },
+      {
+        "letter": "D",
+        "accuracy": 5,
+        "quality": 4,
+        "issues": "Literal translation 'كريمة مزدوجة' for double cream. Retains '0.25 ملاعق صغيرة'. Otherwise, uses standard passive voice for instructions and a natural translation for the title."
+      }
+    ],
+    "ranking": [
+      "D",
+      "B",
+      "A",
+      "C"
+    ]
+  }
+}

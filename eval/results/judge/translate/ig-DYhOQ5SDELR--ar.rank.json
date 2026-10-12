@@ -1,0 +1,44 @@
+{
+  "caseId": "ig-DYhOQ5SDELR--ar",
+  "judge": "google/gemini-3.1-pro-preview",
+  "letters": {
+    "A": "anthropic/claude-sonnet-5.5@low",
+    "B": "native:gemini-3.1-flash-lite",
+    "C": "openai/gpt-6-luna",
+    "D": "openai/gpt-6.1-sol@low"
+  },
+  "verdict": {
+    "candidates": [
+      {
+        "letter": "A",
+        "accuracy": 5,
+        "quality": 4,
+        "issues": "Minor grammatical issues with number-noun agreement (e.g., '0.5 ملاعق' instead of '0.5 ملعقة'). Uses feminine imperative which is acceptable but less standard than masculine or passive forms in published recipes."
+      },
+      {
+        "letter": "B",
+        "accuracy": 4,
+        "quality": 3,
+        "issues": "Contains a noticeable typo with a repeated word ('عبوات عبوات'). Same minor grammatical issues with number-noun agreement as Candidate A."
+      },
+      {
+        "letter": "C",
+        "accuracy": 5,
+        "quality": 4,
+        "issues": "Awkward phrasing by mixing a digit with a dual form ('2 صدرا دجاج'). Standard masculine imperative is used nicely in the instructions."
+      },
+      {
+        "letter": "D",
+        "accuracy": 5,
+        "quality": 5,
+        "issues": "Very natural phrasing and title. Minor number-noun agreement issues due to retaining the source digits (e.g., '0.5 ملاعق'), but overall the most professional and fluent translation."
+      }
+    ],
+    "ranking": [
+      "D",
+      "A",
+      "C",
+      "B"
+    ]
+  }
+}

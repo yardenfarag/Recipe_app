@@ -1,0 +1,39 @@
+{
+  "ingredients": [
+    {
+      "ref_index": 0,
+      "status": "wrong_quantity"
+    },
+    {
+      "ref_index": 1,
+      "status": "ok"
+    },
+    {
+      "ref_index": 2,
+      "status": "ok"
+    },
+    {
+      "ref_index": 3,
+      "status": "wrong_quantity"
+    },
+    {
+      "ref_index": 4,
+      "status": "wrong_quantity"
+    },
+    {
+      "ref_index": 5,
+      "status": "ok"
+    },
+    {
+      "ref_index": 6,
+      "status": "wrong_quantity"
+    },
+    {
+      "ref_index": 7,
+      "status": "ok"
+    }
+  ],
+  "extra_ingredients": [],
+  "steps_score": 4,
+  "note": "Several quantities are wrong (chicken 3 units vs 1 kg, honey, garlic, pepper), and the method omits the 220° temperature and the cooling step."
+}

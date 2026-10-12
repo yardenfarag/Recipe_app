@@ -1,0 +1,44 @@
+{
+  "caseId": "web-bbc-chocolate-cake--he",
+  "judge": "google/gemini-3.1-pro-preview",
+  "letters": {
+    "A": "anthropic/claude-sonnet-5.5@low",
+    "B": "openai/gpt-6.1-sol@low",
+    "C": "openai/gpt-6-luna",
+    "D": "native:gemini-3.1-flash-lite"
+  },
+  "verdict": {
+    "candidates": [
+      {
+        "letter": "A",
+        "accuracy": 4,
+        "quality": 3,
+        "issues": "Mistranslates 'plus extra for the tins' as 'ועוד לשומן התבניות' ('to the fat of the tins' instead of 'לשימון', to grease). Transliterates 'caster sugar' as 'קסטור' which is less common in Hebrew than 'סוכר דק'. Uses '0.5 כפיות' instead of 'חצי כפית'."
+      },
+      {
+        "letter": "B",
+        "accuracy": 5,
+        "quality": 5,
+        "issues": "Excellent translation. Uses natural phrasing and standard recipe conventions (present plural verbs). Translates 'caster sugar' correctly as 'סוכר דק' and adapts 'sandwich tins' well. The only minor issue is '0.5 כפיות' instead of 'חצי כפית'."
+      },
+      {
+        "letter": "C",
+        "accuracy": 4,
+        "quality": 4,
+        "issues": "Translates 'caster sugar' as 'סוכר קנים' (cane sugar), which is not necessarily accurate as caster refers to the fine texture. Uses imperative verbs which is acceptable but slightly less standard than present plural. '0.5 כפיות' should be 'חצי כפית'."
+      },
+      {
+        "letter": "D",
+        "accuracy": 5,
+        "quality": 4,
+        "issues": "Generally accurate, but phrasing is sometimes a bit literal (e.g., 'בתוספת מעט נוסף לתבניות' instead of 'ועוד קצת לשימון'). Uses '0.5 כפיות' instead of the more natural 'חצי כפית'."
+      }
+    ],
+    "ranking": [
+      "B",
+      "D",
+      "C",
+      "A"
+    ]
+  }
+}

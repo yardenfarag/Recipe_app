@@ -1,0 +1,44 @@
+{
+  "caseId": "ig-DYwzTorRr5---ru",
+  "judge": "google/gemini-3.1-pro-preview",
+  "letters": {
+    "A": "openai/gpt-6.1-sol@low",
+    "B": "anthropic/claude-sonnet-5.5@low",
+    "C": "openai/gpt-6-luna",
+    "D": "native:gemini-3.1-flash-lite"
+  },
+  "verdict": {
+    "candidates": [
+      {
+        "letter": "A",
+        "accuracy": 4,
+        "quality": 2,
+        "issues": "Leftover English/weird hybrid word ('формочки- rameкина'). Ingredients use nominative case instead of genitive after quantities (e.g., '35 г соленое сливочное масло' instead of 'соленого сливочного масла'), which feels like machine translation."
+      },
+      {
+        "letter": "B",
+        "accuracy": 5,
+        "quality": 4,
+        "issues": "Ingredients use the nominative case instead of the genitive case after measurements. Otherwise, the instructions are translated very naturally and accurately."
+      },
+      {
+        "letter": "C",
+        "accuracy": 4,
+        "quality": 3,
+        "issues": "Ingredients use the nominative case. 'Смажьте жиром' is a very literal and unappetizing translation for 'grease' in a baking context (usually 'смажьте маслом'). Added 'пышной' (fluffy) which was not in the source."
+      },
+      {
+        "letter": "D",
+        "accuracy": 4,
+        "quality": 4,
+        "issues": "Ingredients use the nominative case. Translated 'brown sugar' as 'тростниковый сахар' (cane sugar). 'Всыпьте муку' translates to 'pour in flour' rather than the specific mixing action of 'fold in' (вмешайте)."
+      }
+    ],
+    "ranking": [
+      "B",
+      "D",
+      "C",
+      "A"
+    ]
+  }
+}

@@ -1,0 +1,44 @@
+{
+  "caseId": "ig-DbjESPBij8v--he",
+  "judge": "google/gemini-3.1-pro-preview",
+  "letters": {
+    "A": "anthropic/claude-sonnet-5.5@low",
+    "B": "openai/gpt-6.1-sol@low",
+    "C": "native:gemini-3.1-flash-lite",
+    "D": "openai/gpt-6-luna"
+  },
+  "verdict": {
+    "candidates": [
+      {
+        "letter": "A",
+        "accuracy": 4,
+        "quality": 3,
+        "issues": "Contains a grammatical error in a construct state ('פפריקה אבקה' instead of 'אבקת פפריקה'). Uses 'מצופה' instead of the idiomatic 'מרופדת' for lining a baking tray, and 'אופציונלי' rather than 'לא חובה'."
+      },
+      {
+        "letter": "B",
+        "accuracy": 5,
+        "quality": 5,
+        "issues": "Excellent translation. Uses imperative verbs correctly and consistently, with natural and accurate culinary terminology."
+      },
+      {
+        "letter": "C",
+        "accuracy": 4,
+        "quality": 3,
+        "issues": "Translates 'crushed' as 'טחון' (ground), which alters the intended texture. Uses the English loanword 'קריספי' instead of the Hebrew 'פריך', and 'אופציונלי' instead of 'לא חובה'."
+      },
+      {
+        "letter": "D",
+        "accuracy": 5,
+        "quality": 4,
+        "issues": "Generally very good, but uses the English loanword 'קריספי' in the title rather than the standard Hebrew 'פריך'."
+      }
+    ],
+    "ranking": [
+      "B",
+      "D",
+      "A",
+      "C"
+    ]
+  }
+}

@@ -1,0 +1,44 @@
+{
+  "caseId": "ig-DblBUBTSdUT--he",
+  "judge": "google/gemini-3.1-pro-preview",
+  "letters": {
+    "A": "openai/gpt-6.1-sol@low",
+    "B": "openai/gpt-6-luna",
+    "C": "native:gemini-3.1-flash-lite",
+    "D": "anthropic/claude-sonnet-5.5@low"
+  },
+  "verdict": {
+    "candidates": [
+      {
+        "letter": "A",
+        "accuracy": 5,
+        "quality": 4,
+        "issues": "Uses 'מזגו' instead of the more culinary-appropriate 'צקו' or 'יוצקים' for batter. The translation for air fryer ('מכשיר טיגון באוויר חם') is correct but a bit clunky."
+      },
+      {
+        "letter": "B",
+        "accuracy": 5,
+        "quality": 5,
+        "issues": "Very natural phrasing overall. Adding the explanation for 'ramekin' ('כלי אפייה אישי') and translating 'Top with...' creatively and idiomatically ('צפו... ופזרו מעל...') makes it read like a native recipe, though 'מזגו' is again slightly less professional than 'צקו'."
+      },
+      {
+        "letter": "C",
+        "accuracy": 4,
+        "quality": 4,
+        "issues": "Uses 'צקו', which is the best term for pouring batter. However, translating 'Air fry' as 'בשלו' (cook) is inaccurate for this appliance/method."
+      },
+      {
+        "letter": "D",
+        "accuracy": 5,
+        "quality": 3,
+        "issues": "Uses the present plural tense which is highly idiomatic for Hebrew recipes, but uses 'שופכים' (spill/pour) instead of 'יוצקים', and 'מטגן אוויר' is a very unnatural, literal translation of 'air fryer'."
+      }
+    ],
+    "ranking": [
+      "B",
+      "A",
+      "C",
+      "D"
+    ]
+  }
+}

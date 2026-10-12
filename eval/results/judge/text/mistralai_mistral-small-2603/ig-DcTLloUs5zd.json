@@ -1,0 +1,27 @@
+{
+  "ingredients": [
+    {
+      "ref_index": 0,
+      "status": "ok"
+    },
+    {
+      "ref_index": 1,
+      "status": "ok"
+    },
+    {
+      "ref_index": 2,
+      "status": "wrong_quantity"
+    },
+    {
+      "ref_index": 3,
+      "status": "wrong_quantity"
+    },
+    {
+      "ref_index": 4,
+      "status": "wrong_quantity"
+    }
+  ],
+  "extra_ingredients": [],
+  "steps_score": 5,
+  "note": "Invented amounts of 1 for kaşar, yağ and tuz, which have no stated quantity."
+}

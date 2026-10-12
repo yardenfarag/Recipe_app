@@ -1,0 +1,44 @@
+{
+  "caseId": "ig-Da4URnslOZM--ar",
+  "judge": "google/gemini-3.1-pro-preview",
+  "letters": {
+    "A": "openai/gpt-6.1-sol@low",
+    "B": "anthropic/claude-sonnet-5.5@low",
+    "C": "native:gemini-3.1-flash-lite",
+    "D": "openai/gpt-6-luna"
+  },
+  "verdict": {
+    "candidates": [
+      {
+        "letter": "A",
+        "accuracy": 5,
+        "quality": 5,
+        "issues": "Very good translation. 'مقسمة للاستخدام على مراحل' is slightly wordy but accurately conveys 'divided' in this context."
+      },
+      {
+        "letter": "B",
+        "accuracy": 4,
+        "quality": 3,
+        "issues": "Translates 'trimmed' as 'مقشّر' (peeled), which is incorrect for meat. Transliterates 'Dutch oven' as 'دوتش أوفن' instead of translating it. The phrase 'الطبقة اللامعة داكنة ولامعة' is somewhat repetitive."
+      },
+      {
+        "letter": "C",
+        "accuracy": 5,
+        "quality": 5,
+        "issues": "Excellent translation. Phrasing is highly natural for culinary contexts in Arabic (e.g., 'مُنظف من الدهون', 'عكس اتجاه الأنسجة')."
+      },
+      {
+        "letter": "D",
+        "accuracy": 5,
+        "quality": 4,
+        "issues": "Uses 'التزجيج' for 'glaze', which is a literal translation mostly used for ceramics or glass, rather than food (better translated as 'طبقة الصلصة' or 'التغليفة')."
+      }
+    ],
+    "ranking": [
+      "C",
+      "A",
+      "D",
+      "B"
+    ]
+  }
+}

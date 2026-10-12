@@ -1,0 +1,44 @@
+{
+  "caseId": "ig-DYwzTorRr5---ar",
+  "judge": "google/gemini-3.1-pro-preview",
+  "letters": {
+    "A": "openai/gpt-6-luna",
+    "B": "native:gemini-3.1-flash-lite",
+    "C": "anthropic/claude-sonnet-5.5@low",
+    "D": "openai/gpt-6.1-sol@low"
+  },
+  "verdict": {
+    "candidates": [
+      {
+        "letter": "A",
+        "accuracy": 5,
+        "quality": 4,
+        "issues": "Uses '0.25 ملاعق صغيرة' which is grammatically incorrect in Arabic (should be 'ربع ملعقة صغيرة'). 'سكر حبيبي' is acceptable but 'سكر حبيبات' is more standard."
+      },
+      {
+        "letter": "B",
+        "accuracy": 4,
+        "quality": 3,
+        "issues": "Added 'تدريجياً' (gradually) which is not in the source text. 'باهت اللون' is not the best culinary term for pale batter (فاتح is better). Shares the '0.25 ملاعق صغيرة' grammatical issue."
+      },
+      {
+        "letter": "C",
+        "accuracy": 4,
+        "quality": 2,
+        "issues": "Literal and incorrect culinary translations: used 'شاحب اللون' (used for a pale face, not food) and 'اطوِ الدقيق' (literal translation of 'fold', should be 'قلّب برفق'). Added 'بالزبدة أو الزيت'. Shares the '0.25 ملاعق' issue."
+      },
+      {
+        "letter": "D",
+        "accuracy": 5,
+        "quality": 4,
+        "issues": "Best overall phrasing and properly translates 'fold in' as 'قلّب برفق بحركات طيّ'. However, it shares the machine-translation artifact '0.25 ملاعق صغيرة' instead of the natural 'ربع ملعقة صغيرة'."
+      }
+    ],
+    "ranking": [
+      "D",
+      "A",
+      "B",
+      "C"
+    ]
+  }
+}

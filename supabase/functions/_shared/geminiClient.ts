@@ -45,6 +45,8 @@ export interface GenerateGeminiJsonResult<T> {
   usage: GeminiUsageSnapshot;
   model: string;
   durationMs: number;
+  /** USD cost reported by OpenRouter (`usage.cost`). Unset for native Gemini. */
+  costUsd?: number;
 }
 
 export async function generateGeminiJson<T>(

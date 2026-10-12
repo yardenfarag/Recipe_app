@@ -1,0 +1,44 @@
+{
+  "caseId": "ig-DbjESPBij8v--ar",
+  "judge": "google/gemini-3.1-pro-preview",
+  "letters": {
+    "A": "native:gemini-3.1-flash-lite",
+    "B": "anthropic/claude-sonnet-5.5@low",
+    "C": "openai/gpt-6-luna",
+    "D": "openai/gpt-6.1-sol@low"
+  },
+  "verdict": {
+    "candidates": [
+      {
+        "letter": "A",
+        "accuracy": 4,
+        "quality": 4,
+        "issues": "Used '1 بيض' instead of the correct singular '1 بيضة'. Translated 'crushed' as 'مطحونة' (ground to a powder), which is not ideal for cornflakes."
+      },
+      {
+        "letter": "B",
+        "accuracy": 5,
+        "quality": 4,
+        "issues": "Slight grammatical mismatch in the final step ('يصبح لونها ذهبيًا ومقرمشة' mixes a noun phrase predicate with an adjective predicate)."
+      },
+      {
+        "letter": "C",
+        "accuracy": 4,
+        "quality": 5,
+        "issues": "Translated 'crushed' as 'مطحونة' (ground to a powder) instead of crushed/crumbled ('مفتتة' or 'مجروشة'). Otherwise, reads very naturally."
+      },
+      {
+        "letter": "D",
+        "accuracy": 5,
+        "quality": 5,
+        "issues": "None. Excellent word choices ('مفتتة' accurately describes crushed cornflakes, and 'طبقة التغليف' is perfectly idiomatic)."
+      }
+    ],
+    "ranking": [
+      "D",
+      "C",
+      "B",
+      "A"
+    ]
+  }
+}

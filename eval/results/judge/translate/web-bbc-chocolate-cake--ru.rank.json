@@ -1,0 +1,44 @@
+{
+  "caseId": "web-bbc-chocolate-cake--ru",
+  "judge": "google/gemini-3.1-pro-preview",
+  "letters": {
+    "A": "openai/gpt-6-luna",
+    "B": "anthropic/claude-sonnet-5.5@low",
+    "C": "native:gemini-3.1-flash-lite",
+    "D": "openai/gpt-6.1-sol@low"
+  },
+  "verdict": {
+    "candidates": [
+      {
+        "letter": "A",
+        "accuracy": 5,
+        "quality": 4,
+        "issues": "The ingredients list uses the nominative case instead of the genitive case after quantities (e.g., '200 г золотистый мелкий сахар' instead of '200 г золотистого мелкого сахара'), which sounds slightly unnatural in Russian recipes. Otherwise, the instructions are well-translated."
+      },
+      {
+        "letter": "B",
+        "accuracy": 4,
+        "quality": 4,
+        "issues": "Same grammatical issue in the ingredients list (lack of genitive case). Translates 'chocolate shards' as 'шоколадная стружка' (chocolate shavings), which is inaccurate as shards are larger pieces or fragments."
+      },
+      {
+        "letter": "C",
+        "accuracy": 4,
+        "quality": 4,
+        "issues": "Omitted the 'gas 5' oven temperature in the first step. Has the same genitive case issue in the ingredients list. Unnecessarily added '(стружку)' in the final step, which conflicts with making shards/pieces."
+      },
+      {
+        "letter": "D",
+        "accuracy": 5,
+        "quality": 4,
+        "issues": "Shares the same grammatical flaw in the ingredients list (lack of genitive case) as the other candidates, but the instructions feature the most idiomatic phrasing and correct culinary terminology among all versions."
+      }
+    ],
+    "ranking": [
+      "D",
+      "A",
+      "B",
+      "C"
+    ]
+  }
+}

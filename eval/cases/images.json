@@ -1,0 +1,338 @@
+[
+  {
+    "id": "card-pound-cake-hw",
+    "title": "File:Pound cake recipe card - Handwritten 2024-05-21 103943 page 1.jpg",
+    "use": "photo",
+    "handwritten": true,
+    "license": "CC BY-SA 4.0"
+  },
+  {
+    "id": "card-orange-cake-hw",
+    "title": "File:Orange cake - Handwritten 2024-05-21 103943 page 1.jpg",
+    "use": "photo",
+    "handwritten": true,
+    "license": "CC BY-SA 4.0"
+  },
+  {
+    "id": "card-gingerbread-hw",
+    "title": "File:Spicy Gingerbread (Shirley G.) Handwritten 2024-05-21 103943 page 1.jpg",
+    "use": "photo",
+    "handwritten": true,
+    "license": "CC BY-SA 4.0"
+  },
+  {
+    "id": "card-apple-cake",
+    "title": "File:Apple cake recipe card - Michigan circa 1950.jpg",
+    "use": "photo",
+    "license": "CC BY-SA 4.0"
+  },
+  {
+    "id": "card-lemon-sponge",
+    "title": "File:Lemon sponge cake recipe card - Michigan circa 1950.jpg",
+    "use": "photo",
+    "license": "CC BY-SA 4.0"
+  },
+  {
+    "id": "card-pedernales-chili",
+    "title": "File:Recipe Card for Pedernales River Chili - DPLA - 3d1051a803e0ab4b9f54b5aada0409ed.jpg",
+    "use": "photo",
+    "license": "Public domain"
+  },
+  {
+    "id": "card-red-velvet",
+    "title": "File:Original Red Velvet Recipe Card.jpg",
+    "use": "photo",
+    "license": "Public domain"
+  },
+  {
+    "id": "card-aunt-ruth-pound-cake",
+    "title": "File:Aunt Ruth pound cake recipe.jpg",
+    "use": "photo",
+    "license": "CC BY-SA 3.0"
+  },
+  {
+    "id": "page-camp-soul-food-36",
+    "title": "File:CAMP Soul Food Recipes cookbook, ca. 1968 - DPLA - c9f65d52291124518dde22de5215dd85 (page 36).jpg",
+    "use": "photo",
+    "license": "No restrictions"
+  },
+  {
+    "id": "screenshot-wikibooks-hamburger",
+    "title": "File:Wikibooks hamburger recipe.png",
+    "use": "photo",
+    "license": "CC BY-SA 4.0"
+  },
+  {
+    "id": "gate-food-shakshuka",
+    "query": "shakshuka",
+    "use": "gate",
+    "food": true,
+    "title": "File:Shakshuka by Calliopejen1.jpg",
+    "license": "CC BY-SA 3.0"
+  },
+  {
+    "id": "gate-food-hummus",
+    "query": "hummus plate",
+    "use": "gate",
+    "food": true,
+    "title": "File:Hummus plate ni.jpg",
+    "license": "CC BY-SA 4.0"
+  },
+  {
+    "id": "gate-food-sushi",
+    "query": "sushi platter",
+    "use": "gate",
+    "food": true,
+    "title": "File:Sushi platter, Nikko, Japan.jpg",
+    "license": "CC BY-SA 4.0"
+  },
+  {
+    "id": "gate-food-pizza",
+    "query": "margherita pizza",
+    "use": "gate",
+    "food": true,
+    "title": "File:Margherita Originale.JPG",
+    "license": "CC BY-SA 3.0"
+  },
+  {
+    "id": "gate-food-ramen",
+    "query": "ramen bowl",
+    "use": "gate",
+    "food": true,
+    "title": "File:Ramen Bowl 2.jpg",
+    "license": "CC BY 4.0"
+  },
+  {
+    "id": "gate-food-pancakes",
+    "query": "pancakes stack",
+    "use": "gate",
+    "food": true,
+    "title": "File:Foodiesfeed.com pouring-honey-on-pancakes-with-walnuts.jpg",
+    "license": "CC0"
+  },
+  {
+    "id": "gate-food-falafel",
+    "query": "falafel pita",
+    "use": "gate",
+    "food": true,
+    "title": "File:Hummus, falafel, pita bread, and mafrouka at Agasi, Lajpat Nagar (July 2025).jpg",
+    "license": "CC0"
+  },
+  {
+    "id": "gate-food-carbonara",
+    "query": "spaghetti carbonara",
+    "use": "gate",
+    "food": true,
+    "title": "File:Espaguetis carbonara.jpg",
+    "license": "CC BY-SA 4.0"
+  },
+  {
+    "id": "gate-food-chocolate-cake",
+    "query": "chocolate cake slice",
+    "use": "gate",
+    "food": true,
+    "title": "File:Piece of chocolate cake on a white plate decorated with chocolate sauce.jpg",
+    "license": "CC0"
+  },
+  {
+    "id": "gate-food-smoothie",
+    "query": "fruit smoothie glass",
+    "use": "gate",
+    "food": true,
+    "title": "File:Fresh fruit smoothie being poured into a glass.jpg",
+    "license": "CC BY 2.0"
+  },
+  {
+    "id": "gate-food-burger",
+    "query": "hamburger with fries",
+    "use": "gate",
+    "food": true,
+    "title": "File:Homemade hamburger with french fries in Argentina.jpg",
+    "license": "CC BY-SA 3.0"
+  },
+  {
+    "id": "gate-food-salad",
+    "query": "greek salad",
+    "use": "gate",
+    "food": true,
+    "title": "File:Greek salad and Tzatziki.jpg",
+    "license": "CC BY-SA 4.0"
+  },
+  {
+    "id": "gate-food-person-holding-plate",
+    "query": "woman holding a plate of food smiling",
+    "use": "gate",
+    "food": true,
+    "title": "File:Half-length portrait of a Polynesian woman holding a food platter (AM 75207-1).jpg",
+    "license": "CC BY 4.0"
+  },
+  {
+    "id": "gate-food-cocktail",
+    "query": "mojito cocktail",
+    "use": "gate",
+    "food": true,
+    "title": "File:Fresh Mojito Premium.jpg",
+    "license": "CC BY-SA 4.0"
+  },
+  {
+    "id": "gate-food-raw-vegetables",
+    "query": "vegetables on cutting board",
+    "use": "gate",
+    "food": true,
+    "title": "File:Vegetables on Cutting Board.jpg",
+    "license": "CC0"
+  },
+  {
+    "id": "gate-food-bread-loaf",
+    "query": "sourdough bread loaf",
+    "use": "gate",
+    "food": true,
+    "title": "File:Herculaneum loaf 2.jpg",
+    "license": "CC BY 4.0"
+  },
+  {
+    "id": "gate-food-cookies",
+    "query": "chocolate chip cookies",
+    "use": "gate",
+    "food": true,
+    "title": "File:6cookies.JPG",
+    "license": "GFDL 1.2"
+  },
+  {
+    "id": "gate-food-card-apple-cake",
+    "title": "File:Apple cake recipe card - Michigan circa 1950.jpg",
+    "use": "gate",
+    "food": true,
+    "license": "CC BY-SA 4.0"
+  },
+  {
+    "id": "gate-food-cookbook-page",
+    "title": "File:CAMP Soul Food Recipes cookbook, ca. 1968 - DPLA - c9f65d52291124518dde22de5215dd85 (page 26).jpg",
+    "use": "gate",
+    "food": true,
+    "license": "No restrictions"
+  },
+  {
+    "id": "gate-food-street-food-stall",
+    "query": "street food stall cooking",
+    "use": "gate",
+    "food": true,
+    "title": "File:Gas street food stall can make almost anything.JPG",
+    "license": "CC BY 3.0"
+  },
+  {
+    "id": "gate-not-cat",
+    "query": "domestic cat portrait",
+    "use": "gate",
+    "food": false,
+    "title": "File:Felis catus-cat on snow.jpg",
+    "license": "CC BY-SA 3.0"
+  },
+  {
+    "id": "gate-not-landscape",
+    "query": "mountain lake landscape",
+    "use": "gate",
+    "food": false,
+    "title": "File:Mountains in snow, Mountain lake, Chola Valley, Nepal, Himalayas.jpg",
+    "license": "CC BY 4.0"
+  },
+  {
+    "id": "gate-not-car",
+    "query": "sports car",
+    "use": "gate",
+    "food": false,
+    "title": "File:Porsche 911, 70 Years Porsche Sports Car, Berlin (1X7A3904).jpg",
+    "license": "CC BY-SA 4.0"
+  },
+  {
+    "id": "gate-not-portrait",
+    "query": "portrait of a woman smiling",
+    "use": "gate",
+    "food": false,
+    "title": "File:Water reflection of a smiling woman planting rice.jpg",
+    "license": "CC BY-SA 4.0"
+  },
+  {
+    "id": "gate-not-laptop",
+    "query": "laptop on desk",
+    "use": "gate",
+    "food": false,
+    "title": "File:Laptop on desk book stacks (Unsplash).jpg",
+    "license": "CC0"
+  },
+  {
+    "id": "gate-not-hammer-diy",
+    "query": "woodworking tools workbench",
+    "use": "gate",
+    "food": false,
+    "title": "File:Woodworking Tools at the Women's Woodshop in Minneapolis, MN.jpg",
+    "license": "CC BY-SA 4.0"
+  },
+  {
+    "id": "gate-not-sneakers",
+    "query": "sneakers shoes product",
+    "use": "gate",
+    "food": false,
+    "title": "File:HK clothing NIKE brand Vaporfly Next sneakers white n silver shoes October 2022 Px3 03.jpg",
+    "license": "CC BY-SA 4.0"
+  },
+  {
+    "id": "gate-not-empty-kitchen",
+    "query": "empty modern kitchen interior",
+    "use": "gate",
+    "food": false,
+    "title": "File:De luxe illustrated catalogue of the modern paintings forming the private collection of the late John H. Converse of Philadelphia (1911) (14767040811).jpg",
+    "license": "No restrictions"
+  },
+  {
+    "id": "gate-not-tax-form",
+    "query": "tax form document",
+    "use": "gate",
+    "food": false,
+    "title": "File:USSR 1928-11-27 registered cover foreign exchange tax reverse.jpg",
+    "license": "Public domain"
+  },
+  {
+    "id": "gate-not-dog",
+    "query": "dog running grass",
+    "use": "gate",
+    "food": false,
+    "title": "File:FBI dog dolce running.jpg",
+    "license": "Public domain"
+  },
+  {
+    "id": "invent-photo-moussaka",
+    "query": "moussaka",
+    "use": "invent",
+    "title": "File:Мусака од компири.jpg",
+    "license": "CC BY-SA 4.0"
+  },
+  {
+    "id": "invent-photo-pad-thai",
+    "query": "pad thai",
+    "use": "invent",
+    "title": "File:Phat Thai kung Chang Khien street stall.jpg",
+    "license": "CC BY-SA 3.0"
+  },
+  {
+    "id": "invent-photo-sabich",
+    "query": "sabich",
+    "use": "invent",
+    "title": "File:Sabich.jpg",
+    "license": "CC BY-SA 3.0"
+  },
+  {
+    "id": "invent-photo-tiramisu",
+    "query": "tiramisu",
+    "use": "invent",
+    "title": "File:Dolce Tiramisù monoporzione.jpg",
+    "license": "CC BY 4.0"
+  },
+  {
+    "id": "invent-photo-bibimbap",
+    "query": "bibimbap",
+    "use": "invent",
+    "title": "File:Bokkeum Bibimbap and Little Piggy Bao Bun by Bao Bun Brighton.jpg",
+    "license": "CC0"
+  }
+]

@@ -1,0 +1,44 @@
+{
+  "caseId": "ig-DbqcKjxoYnj--ar",
+  "judge": "google/gemini-3.1-pro-preview",
+  "letters": {
+    "A": "native:gemini-3.1-flash-lite",
+    "B": "anthropic/claude-sonnet-5.5@low",
+    "C": "openai/gpt-6.1-sol@low",
+    "D": "openai/gpt-6-luna"
+  },
+  "verdict": {
+    "candidates": [
+      {
+        "letter": "A",
+        "accuracy": 4,
+        "quality": 4,
+        "issues": "Translates 'single cream' as whipping cream ('كريمة خفق سائلة') which is technically inaccurate. Slightly simplifies 'soft-medium peaks' in step 5."
+      },
+      {
+        "letter": "B",
+        "accuracy": 4,
+        "quality": 3,
+        "issues": "Uses English transliterations for culinary terms ('دوبل كريم', 'سينغل كريم', 'سبرينغ فورم'). Contains grammatical errors with awkward conjugations like 'اطويي'."
+      },
+      {
+        "letter": "C",
+        "accuracy": 5,
+        "quality": 5,
+        "issues": "No major issues. Excellent use of Arabic culinary terminology (e.g., 'كريمة خفيفة', 'كريمة كثيفة', 'قلّب برفق' for fold in). Reads very naturally."
+      },
+      {
+        "letter": "D",
+        "accuracy": 5,
+        "quality": 4,
+        "issues": "Very good overall, but translates 'spread' as 'طبقة' (layer) rather than a spreadable cream/paste in the ingredients list."
+      }
+    ],
+    "ranking": [
+      "C",
+      "D",
+      "A",
+      "B"
+    ]
+  }
+}
