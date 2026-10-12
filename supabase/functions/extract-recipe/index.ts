@@ -474,11 +474,14 @@ Deno.serve(async (req) => {
         errorMessage: 'extract_gate: no_recipe',
         metadata: { request_id: requestId, extract_route: extractRoute },
       });
+      // looks_like_dish, not no_recipe: shipped apps only offer "Extract anyway"
+      // (force_extract, which skips Jev) for that code, so a misroute has a way out.
       return jsonResponse({
         status: 'failed' as ExtractionStatus,
         platform,
-        code: 'no_recipe',
-        message: "Couldn't find a recipe in this video. Try a different link.",
+        code: 'looks_like_dish',
+        dish_guess: dishGuess,
+        message: "Couldn't find a recipe in this post's text.",
         tokens_charged: 0,
         ...quotaFields((await canStartExtract(admin, userId)).snapshot),
       });
