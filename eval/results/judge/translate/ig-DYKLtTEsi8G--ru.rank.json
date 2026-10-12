@@ -1,0 +1,44 @@
+{
+  "caseId": "ig-DYKLtTEsi8G--ru",
+  "judge": "google/gemini-3.1-pro-preview",
+  "letters": {
+    "A": "openai/gpt-6-luna",
+    "B": "openai/gpt-6.1-sol@low",
+    "C": "anthropic/claude-sonnet-5.5@low",
+    "D": "native:gemini-3.1-flash-lite"
+  },
+  "verdict": {
+    "candidates": [
+      {
+        "letter": "A",
+        "accuracy": 5,
+        "quality": 4,
+        "issues": "Title 'с тестом для печенья' (with cookie dough) is slightly less accurate than 'из теста' (made of cookie dough)."
+      },
+      {
+        "letter": "B",
+        "accuracy": 5,
+        "quality": 5,
+        "issues": "Uses the fully spelled out 'грамм' instead of the standard abbreviation 'г', but the translation is very natural and the title is the most accurate."
+      },
+      {
+        "letter": "C",
+        "accuracy": 4,
+        "quality": 4,
+        "issues": "Title translates 'cookie' as 'из печенья', which implies it's made from already baked cookies rather than cookie dough. 'Черпать ложкой' is slightly less natural than 'есть ложкой'."
+      },
+      {
+        "letter": "D",
+        "accuracy": 3,
+        "quality": 3,
+        "issues": "Omitted 'scoopable' from the title entirely. Grammatical error in ingredients ('1 капли' instead of '1 капля')."
+      }
+    ],
+    "ranking": [
+      "B",
+      "A",
+      "C",
+      "D"
+    ]
+  }
+}

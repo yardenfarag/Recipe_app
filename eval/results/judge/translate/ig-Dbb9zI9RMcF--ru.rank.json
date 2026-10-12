@@ -1,0 +1,44 @@
+{
+  "caseId": "ig-Dbb9zI9RMcF--ru",
+  "judge": "google/gemini-3.1-pro-preview",
+  "letters": {
+    "A": "native:gemini-3.1-flash-lite",
+    "B": "anthropic/claude-sonnet-5.5@low",
+    "C": "openai/gpt-6-luna",
+    "D": "openai/gpt-6.1-sol@low"
+  },
+  "verdict": {
+    "candidates": [
+      {
+        "letter": "A",
+        "accuracy": 4,
+        "quality": 3,
+        "issues": "Fails to use the genitive case for ingredients after units of measurement (e.g., '1 ч. л. соль' instead of 'соли'). Contains a typo ('паххта'). Drops Fahrenheit temperatures in step 4."
+      },
+      {
+        "letter": "B",
+        "accuracy": 5,
+        "quality": 3,
+        "issues": "Fails to use the genitive case for ingredients after units of measurement. Phrasing like 'предельной хрустящести' sounds slightly unnatural."
+      },
+      {
+        "letter": "C",
+        "accuracy": 5,
+        "quality": 4,
+        "issues": "Fails to use the genitive case for ingredients after units of measurement. Otherwise, the instructions are translated naturally and accurately."
+      },
+      {
+        "letter": "D",
+        "accuracy": 5,
+        "quality": 4,
+        "issues": "Like the others, fails to inflect ingredient names after measurements (uses nominative instead of genitive case). However, it has the most natural instruction phrasing, correctly translating 'brush' as 'с помощью кисточки' and 'Italian seasoning' as 'смесь итальянских трав'."
+      }
+    ],
+    "ranking": [
+      "D",
+      "C",
+      "B",
+      "A"
+    ]
+  }
+}

@@ -1,0 +1,44 @@
+{
+  "caseId": "ig-Da4URnslOZM--he",
+  "judge": "google/gemini-3.1-pro-preview",
+  "letters": {
+    "A": "openai/gpt-6-luna",
+    "B": "openai/gpt-6.1-sol@low",
+    "C": "native:gemini-3.1-flash-lite",
+    "D": "anthropic/claude-sonnet-5.5@low"
+  },
+  "verdict": {
+    "candidates": [
+      {
+        "letter": "A",
+        "accuracy": 4,
+        "quality": 4,
+        "issues": "Adds 'marinade' to the title which is not in the source. Uses the literal 'מחולק' for 'divided', which is not standard in Hebrew culinary terms. '0.5 כפיות' should ideally be 'חצי כפית'."
+      },
+      {
+        "letter": "B",
+        "accuracy": 5,
+        "quality": 5,
+        "issues": "Excellent translation. Uses natural present-tense phrasing standard in Hebrew recipes. 'לשימוש בשלבים' is a perfect idiomatic translation for 'divided'. Only minor issue is '0.5 כפיות' instead of 'חצי כפית'."
+      },
+      {
+        "letter": "C",
+        "accuracy": 4,
+        "quality": 4,
+        "issues": "Drops Fahrenheit temperatures. Groups the garlic with the sliced onion ('הבצל והשום הפרוסים'), implying the garlic is sliced rather than minced. Uses 'מחולק' for 'divided'."
+      },
+      {
+        "letter": "D",
+        "accuracy": 3,
+        "quality": 3,
+        "issues": "Severe mistranslation in step 7: 'מנקדים' (which means to punctuate, vowelize, or dot) is used for 'Spoon'. Transliterates Dutch oven as 'סיר דאץ' אובן' instead of using the Hebrew term."
+      }
+    ],
+    "ranking": [
+      "B",
+      "A",
+      "C",
+      "D"
+    ]
+  }
+}

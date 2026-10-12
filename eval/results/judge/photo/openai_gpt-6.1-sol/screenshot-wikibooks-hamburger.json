@@ -1,0 +1,43 @@
+{
+  "ingredients": [
+    {
+      "ref_index": 0,
+      "status": "ok"
+    },
+    {
+      "ref_index": 1,
+      "status": "ok"
+    },
+    {
+      "ref_index": 2,
+      "status": "ok"
+    },
+    {
+      "ref_index": 3,
+      "status": "ok"
+    },
+    {
+      "ref_index": 4,
+      "status": "ok"
+    }
+  ],
+  "extra_ingredients": [
+    "Garlic (optional seasoning)",
+    "Onion flakes (optional seasoning)",
+    "Soy sauce (optional seasoning)",
+    "Worcestershire sauce (optional seasoning)",
+    "Olive oil (optional seasoning)",
+    "Hot sauce (optional seasoning)",
+    "Juice from pickled beet (optional seasoning)",
+    "Relish (optional topping)",
+    "Sliced pickles (optional topping)",
+    "Ketchup (optional topping)",
+    "Mayonnaise (optional topping)",
+    "Mustard (optional topping)",
+    "Ranch dressing (optional topping)",
+    "Tomato (optional topping)",
+    "Onion (optional topping)"
+  ],
+  "steps_score": 4,
+  "note": "The candidate invents pickled beet juice and drops the 2 tsp hot sauce amount; it also lists optional seasonings and toppings as separate ingredients."
+}

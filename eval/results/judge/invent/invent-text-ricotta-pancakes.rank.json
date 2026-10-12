@@ -1,0 +1,36 @@
+{
+  "caseId": "invent-text-ricotta-pancakes",
+  "judge": "google/gemini-3.1-pro-preview",
+  "letters": {
+    "A": "openai/gpt-6-luna",
+    "B": "openai/gpt-6.1-sol@low",
+    "C": "google/gemini-2.5-flash"
+  },
+  "verdict": {
+    "candidates": [
+      {
+        "letter": "A",
+        "accuracy": 5,
+        "quality": 5,
+        "issues": "None. A well-written recipe with good proportions and clear instructions."
+      },
+      {
+        "letter": "B",
+        "accuracy": 5,
+        "quality": 5,
+        "issues": "None. Excellent handling of divided ingredients and very thorough, professional instructions."
+      },
+      {
+        "letter": "C",
+        "accuracy": 5,
+        "quality": 4,
+        "issues": "Calls for a 'lightly oiled griddle' but no oil or extra butter is provided in the ingredient list. The ratio of ricotta (0.5 cup) to flour (1.5 cups) is also a bit low for true ricotta pancakes, which might make them less rich."
+      }
+    ],
+    "ranking": [
+      "B",
+      "A",
+      "C"
+    ]
+  }
+}

@@ -1,0 +1,433 @@
+{
+  "Text extract (20 posts)": [
+    {
+      "model": "openai/gpt-6-luna",
+      "n": 20,
+      "call errors": 0,
+      "schema ok": "100%",
+      "p50": "0.7 s",
+      "p95": "0.9 s",
+      "$/call": "$0.00055",
+      "ingredient recall": "100%",
+      "amount accuracy": "98%",
+      "extra items/recipe": "0.3",
+      "steps (1–5)": "4.8"
+    },
+    {
+      "model": "mistralai/mistral-small-2603",
+      "n": 20,
+      "call errors": 0,
+      "schema ok": "100%",
+      "p50": "0.7 s",
+      "p95": "1.0 s",
+      "$/call": "$0.00085",
+      "ingredient recall": "94%",
+      "amount accuracy": "88%",
+      "extra items/recipe": "0.2",
+      "steps (1–5)": "4.5"
+    },
+    {
+      "model": "qwen/qwen3.8-flash",
+      "n": 20,
+      "call errors": 0,
+      "schema ok": "100%",
+      "p50": "1.2 s",
+      "p95": "2.0 s",
+      "$/call": "$0.00092",
+      "ingredient recall": "99%",
+      "amount accuracy": "96%",
+      "extra items/recipe": "0.1",
+      "steps (1–5)": "4.6"
+    },
+    {
+      "model": "native:gemini-3.1-flash-lite",
+      "n": 20,
+      "call errors": 0,
+      "schema ok": "100%",
+      "p50": "7.8 s",
+      "p95": "12.1 s",
+      "$/call": "$0.0027",
+      "ingredient recall": "95%",
+      "amount accuracy": "93%",
+      "extra items/recipe": "0.0",
+      "steps (1–5)": "4.5"
+    }
+  ],
+  "Text extract, Hebrew posts only": [
+    {
+      "model": "openai/gpt-6-luna",
+      "n": 6,
+      "call errors": 0,
+      "schema ok": "100%",
+      "p50": "0.8 s",
+      "p95": "0.9 s",
+      "$/call": "$0.00056",
+      "ingredient recall": "100%",
+      "amount accuracy": "95%",
+      "extra items/recipe": "0.3",
+      "steps (1–5)": "4.8"
+    },
+    {
+      "model": "mistralai/mistral-small-2603",
+      "n": 6,
+      "call errors": 0,
+      "schema ok": "100%",
+      "p50": "0.5 s",
+      "p95": "0.7 s",
+      "$/call": "$0.00097",
+      "ingredient recall": "91%",
+      "amount accuracy": "81%",
+      "extra items/recipe": "0.3",
+      "steps (1–5)": "4.2"
+    },
+    {
+      "model": "qwen/qwen3.8-flash",
+      "n": 6,
+      "call errors": 0,
+      "schema ok": "100%",
+      "p50": "1.2 s",
+      "p95": "2.0 s",
+      "$/call": "$0.00095",
+      "ingredient recall": "96%",
+      "amount accuracy": "91%",
+      "extra items/recipe": "0.0",
+      "steps (1–5)": "4.5"
+    },
+    {
+      "model": "native:gemini-3.1-flash-lite",
+      "n": 6,
+      "call errors": 0,
+      "schema ok": "100%",
+      "p50": "7.6 s",
+      "p95": "11.0 s",
+      "$/call": "$0.0028",
+      "ingredient recall": "93%",
+      "amount accuracy": "89%",
+      "extra items/recipe": "0.0",
+      "steps (1–5)": "4.7"
+    }
+  ],
+  "Photo extract (10 cards, 3 handwritten)": [
+    {
+      "model": "anthropic/claude-sonnet-5.5",
+      "n": 10,
+      "call errors": 0,
+      "schema ok": "100%",
+      "p50": "2.8 s",
+      "p95": "2.9 s",
+      "$/call": "$0.0200",
+      "ingredient recall": "100%",
+      "amount accuracy": "98%",
+      "extra items/recipe": "0.1",
+      "steps (1–5)": "4.8"
+    },
+    {
+      "model": "openai/gpt-6.1-sol",
+      "n": 10,
+      "call errors": 0,
+      "schema ok": "100%",
+      "p50": "1.0 s",
+      "p95": "2.2 s",
+      "$/call": "$0.0144",
+      "ingredient recall": "100%",
+      "amount accuracy": "98%",
+      "extra items/recipe": "1.8",
+      "steps (1–5)": "4.8"
+    },
+    {
+      "model": "openai/gpt-6-luna",
+      "n": 10,
+      "call errors": 0,
+      "schema ok": "100%",
+      "p50": "1.1 s",
+      "p95": "3.4 s",
+      "$/call": "$0.00089",
+      "ingredient recall": "100%",
+      "amount accuracy": "97%",
+      "extra items/recipe": "1.5",
+      "steps (1–5)": "4.4"
+    },
+    {
+      "model": "google/gemini-2.5-flash",
+      "n": 10,
+      "call errors": 0,
+      "schema ok": "100%",
+      "p50": "2.9 s",
+      "p95": "5.2 s",
+      "$/call": "$0.0066",
+      "ingredient recall": "100%",
+      "amount accuracy": "97%",
+      "extra items/recipe": "0.2",
+      "steps (1–5)": "4.7"
+    }
+  ],
+  "Video extract, video only, no caption (15 Reels)": [
+    {
+      "model": "qwen/qwen3.8-omni-flash",
+      "n": 15,
+      "call errors": 2,
+      "schema ok": "27%",
+      "p50": "62.5 s",
+      "p95": "127.7 s",
+      "$/call": "$0.0052",
+      "ingredient recall": "51%",
+      "amount accuracy": "13%",
+      "extra items/recipe": "0.8",
+      "steps (1–5)": "2.5"
+    },
+    {
+      "model": "xiaomi/mimo-v2.6-flash",
+      "n": 15,
+      "call errors": 3,
+      "schema ok": "80%",
+      "p50": "5.3 s",
+      "p95": "14.5 s",
+      "$/call": "$0.0026",
+      "ingredient recall": "39%",
+      "amount accuracy": "5%",
+      "extra items/recipe": "1.0",
+      "steps (1–5)": "2.3"
+    },
+    {
+      "model": "google/gemini-3.5-flash",
+      "n": 15,
+      "call errors": 0,
+      "schema ok": "100%",
+      "p50": "8.0 s",
+      "p95": "13.5 s",
+      "$/call": "$0.0264",
+      "ingredient recall": "59%",
+      "amount accuracy": "10%",
+      "extra items/recipe": "0.4",
+      "steps (1–5)": "2.8"
+    }
+  ],
+  "Translate (15 recipes × he/ar/ru)": [
+    {
+      "model": "anthropic/claude-sonnet-5.5@low",
+      "n": 45,
+      "call errors": 0,
+      "schema ok": "100%",
+      "p50": "1.1 s",
+      "p95": "1.7 s",
+      "$/call": "$0.0145",
+      "accuracy (1–5)": "4.20",
+      "quality (1–5)": "3.40",
+      "avg rank": "3.18",
+      "ranked #1": "11%"
+    },
+    {
+      "model": "openai/gpt-6.1-sol@low",
+      "n": 45,
+      "call errors": 0,
+      "schema ok": "100%",
+      "p50": "0.6 s",
+      "p95": "0.8 s",
+      "$/call": "$0.0092",
+      "accuracy (1–5)": "4.93",
+      "quality (1–5)": "4.42",
+      "avg rank": "1.56",
+      "ranked #1": "62%"
+    },
+    {
+      "model": "openai/gpt-6-luna",
+      "n": 45,
+      "call errors": 0,
+      "schema ok": "100%",
+      "p50": "0.6 s",
+      "p95": "0.9 s",
+      "$/call": "$0.00044",
+      "accuracy (1–5)": "4.71",
+      "quality (1–5)": "4.04",
+      "avg rank": "2.24",
+      "ranked #1": "18%"
+    },
+    {
+      "model": "native:gemini-3.1-flash-lite",
+      "n": 45,
+      "call errors": 0,
+      "schema ok": "100%",
+      "p50": "8.4 s",
+      "p95": "20.3 s",
+      "$/call": "$0.0019",
+      "accuracy (1–5)": "4.31",
+      "quality (1–5)": "3.76",
+      "avg rank": "3.02",
+      "ranked #1": "9%"
+    }
+  ],
+  "Translate, Hebrew only": [
+    {
+      "model": "anthropic/claude-sonnet-5.5@low",
+      "n": 15,
+      "call errors": 0,
+      "schema ok": "100%",
+      "p50": "1.3 s",
+      "p95": "3.2 s",
+      "$/call": "$0.0146",
+      "accuracy (1–5)": "4.00",
+      "quality (1–5)": "3.13",
+      "avg rank": "3.47",
+      "ranked #1": "0%"
+    },
+    {
+      "model": "openai/gpt-6.1-sol@low",
+      "n": 15,
+      "call errors": 0,
+      "schema ok": "100%",
+      "p50": "0.6 s",
+      "p95": "0.9 s",
+      "$/call": "$0.0091",
+      "accuracy (1–5)": "5.00",
+      "quality (1–5)": "4.60",
+      "avg rank": "1.27",
+      "ranked #1": "80%"
+    },
+    {
+      "model": "openai/gpt-6-luna",
+      "n": 15,
+      "call errors": 0,
+      "schema ok": "100%",
+      "p50": "0.6 s",
+      "p95": "1.2 s",
+      "$/call": "$0.00045",
+      "accuracy (1–5)": "4.60",
+      "quality (1–5)": "4.07",
+      "avg rank": "2.27",
+      "ranked #1": "20%"
+    },
+    {
+      "model": "native:gemini-3.1-flash-lite",
+      "n": 15,
+      "call errors": 0,
+      "schema ok": "100%",
+      "p50": "8.8 s",
+      "p95": "10.9 s",
+      "$/call": "$0.0019",
+      "accuracy (1–5)": "4.27",
+      "quality (1–5)": "3.73",
+      "avg rank": "3.00",
+      "ranked #1": "0%"
+    }
+  ],
+  "Invent (5 photos, 5 text)": [
+    {
+      "model": "anthropic/claude-sonnet-5.5@low",
+      "n": 10,
+      "call errors": 1,
+      "schema ok": "90%",
+      "p50": "3.0 s",
+      "p95": "5.5 s",
+      "$/call": "$0.0249",
+      "accuracy (1–5)": "4.11",
+      "quality (1–5)": "4.44",
+      "avg rank": "2.44",
+      "ranked #1": "30%"
+    },
+    {
+      "model": "openai/gpt-6.1-sol@low",
+      "n": 10,
+      "call errors": 0,
+      "schema ok": "100%",
+      "p50": "0.6 s",
+      "p95": "1.9 s",
+      "$/call": "$0.0157",
+      "accuracy (1–5)": "3.70",
+      "quality (1–5)": "4.60",
+      "avg rank": "1.90",
+      "ranked #1": "30%"
+    },
+    {
+      "model": "openai/gpt-6-luna",
+      "n": 10,
+      "call errors": 0,
+      "schema ok": "100%",
+      "p50": "0.7 s",
+      "p95": "2.7 s",
+      "$/call": "$0.00082",
+      "accuracy (1–5)": "3.80",
+      "quality (1–5)": "4.40",
+      "avg rank": "2.70",
+      "ranked #1": "20%"
+    },
+    {
+      "model": "google/gemini-2.5-flash",
+      "n": 10,
+      "call errors": 0,
+      "schema ok": "100%",
+      "p50": "2.4 s",
+      "p95": "9.1 s",
+      "$/call": "$0.0069",
+      "accuracy (1–5)": "3.60",
+      "quality (1–5)": "4.00",
+      "avg rank": "2.80",
+      "ranked #1": "20%"
+    }
+  ],
+  "Content gate (20 food, 10 not)": [
+    {
+      "model": "mistralai/mistral-small-2603",
+      "n": 30,
+      "call errors": 0,
+      "schema ok": "100%",
+      "p50": "1.6 s",
+      "p95": "2.3 s",
+      "$/call": "$0.00028",
+      "accuracy": "97%",
+      "food rejected": 1,
+      "non-food let through": 0
+    },
+    {
+      "model": "openai/gpt-5.4-nano",
+      "n": 30,
+      "call errors": 0,
+      "schema ok": "100%",
+      "p50": "1.1 s",
+      "p95": "2.2 s",
+      "$/call": "$0.00040",
+      "accuracy": "93%",
+      "food rejected": 2,
+      "non-food let through": 0
+    },
+    {
+      "model": "native:gemini-3.1-flash-lite",
+      "n": 30,
+      "call errors": 0,
+      "schema ok": "100%",
+      "p50": "5.2 s",
+      "p95": "9.5 s",
+      "$/call": "$0.00035",
+      "accuracy": "100%",
+      "food rejected": 0,
+      "non-food let through": 0
+    }
+  ],
+  "Extract gate (30 posts, 10 Hebrew)": [
+    {
+      "model": "jev:typesafe/jev-1.13",
+      "n": 30,
+      "call errors": 0,
+      "schema ok": "100%",
+      "p50": "0.3 s",
+      "p95": "1.0 s",
+      "$/call": "$0.00004",
+      "route accuracy": "93%",
+      "Hebrew accuracy": "90%",
+      "recipe → no_recipe": 0,
+      "full → needs_video": 0
+    },
+    {
+      "model": "openai/gpt-6-luna",
+      "n": 30,
+      "call errors": 0,
+      "schema ok": "100%",
+      "p50": "1.1 s",
+      "p95": "1.9 s",
+      "$/call": "$0.00006",
+      "route accuracy": "87%",
+      "Hebrew accuracy": "90%",
+      "recipe → no_recipe": 0,
+      "full → needs_video": 0
+    }
+  ]
+}

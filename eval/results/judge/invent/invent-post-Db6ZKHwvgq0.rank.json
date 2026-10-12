@@ -1,0 +1,44 @@
+{
+  "caseId": "invent-post-Db6ZKHwvgq0",
+  "judge": "google/gemini-3.1-pro-preview",
+  "letters": {
+    "A": "openai/gpt-6.1-sol@low",
+    "B": "google/gemini-2.5-flash",
+    "C": "anthropic/claude-sonnet-5.5@low",
+    "D": "openai/gpt-6-luna"
+  },
+  "verdict": {
+    "candidates": [
+      {
+        "letter": "A",
+        "accuracy": 1,
+        "quality": 5,
+        "issues": "The prompt asked to extract the recipe from the text, but the text does not contain a recipe (it explicitly asks users to comment to receive it). The candidate completely hallucinated a recipe."
+      },
+      {
+        "letter": "B",
+        "accuracy": 1,
+        "quality": 5,
+        "issues": "Failed to recognize that the source text contains no recipe. Hallucinated the entire recipe."
+      },
+      {
+        "letter": "C",
+        "accuracy": 1,
+        "quality": 5,
+        "issues": "Hallucinated a recipe since the provided text does not actually include one."
+      },
+      {
+        "letter": "D",
+        "accuracy": 1,
+        "quality": 5,
+        "issues": "Provided a hallucinated recipe instead of stating that the recipe cannot be extracted from the provided sources."
+      }
+    ],
+    "ranking": [
+      "A",
+      "B",
+      "C",
+      "D"
+    ]
+  }
+}

@@ -1,0 +1,44 @@
+{
+  "caseId": "ig-DYhOQ5SDELR--ru",
+  "judge": "google/gemini-3.1-pro-preview",
+  "letters": {
+    "A": "openai/gpt-6.1-sol@low",
+    "B": "anthropic/claude-sonnet-5.5@low",
+    "C": "native:gemini-3.1-flash-lite",
+    "D": "openai/gpt-6-luna"
+  },
+  "verdict": {
+    "candidates": [
+      {
+        "letter": "A",
+        "accuracy": 4,
+        "quality": 3,
+        "issues": "Random capitalization in ingredients. Lack of case agreement between quantities and nouns in the ingredient list (e.g., '1 стакан Жирные сливки' instead of 'жирных сливок'). The final instruction is translated very loosely and wordy."
+      },
+      {
+        "letter": "B",
+        "accuracy": 4,
+        "quality": 2,
+        "issues": "Lack of case agreement in ingredients ('4 зубчики', '1 стакан жирные сливки'). Literal translation 'на один укус' (bite-sized). Typo in instructions: 'туширьте' instead of 'тушите'. Unnatural final sentence ('Подавайте горячим и сливочным')."
+      },
+      {
+        "letter": "C",
+        "accuracy": 4,
+        "quality": 4,
+        "issues": "Correctly uses genitive case for ingredient measurements, which reads much more naturally, though it has a duplicated word ('упаковки упаковки') and kept '0.5 небольшая луковица' in nominative. Omits 'and creamy' in the final instruction, but this makes the phrasing much more natural in Russian."
+      },
+      {
+        "letter": "D",
+        "accuracy": 4,
+        "quality": 3,
+        "issues": "Lack of case agreement in the ingredient list ('2 ст. л. сливочное масло', '1 стакан жирные сливки'). Literal and awkward translation of the final instruction ('Подавайте горячим и сливочным')."
+      }
+    ],
+    "ranking": [
+      "C",
+      "D",
+      "A",
+      "B"
+    ]
+  }
+}

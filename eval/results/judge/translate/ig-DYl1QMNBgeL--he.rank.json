@@ -1,0 +1,44 @@
+{
+  "caseId": "ig-DYl1QMNBgeL--he",
+  "judge": "google/gemini-3.1-pro-preview",
+  "letters": {
+    "A": "openai/gpt-6-luna",
+    "B": "native:gemini-3.1-flash-lite",
+    "C": "anthropic/claude-sonnet-5.5@low",
+    "D": "openai/gpt-6.1-sol@low"
+  },
+  "verdict": {
+    "candidates": [
+      {
+        "letter": "A",
+        "accuracy": 5,
+        "quality": 4,
+        "issues": "Uses imperative plural, which is acceptable but less standard than present tense plural in modern Hebrew recipes. '0.333 כוסות' and '0.5 כפיות' are awkward literal translations of the numeric format (usually 'שליש כוס' and 'חצי כפית'). 'בצל חום' is a literal translation of brown onion, normally referred to as 'בצל לבן' or 'בצל יבש' in Israel."
+      },
+      {
+        "letter": "B",
+        "accuracy": 4,
+        "quality": 3,
+        "issues": "Contains a severe spelling error: 'טבלו' (dipped) instead of 'תבלו' (seasoned). Also uses the literal '0.333 כוסות' and '0.5 כפיות'."
+      },
+      {
+        "letter": "C",
+        "accuracy": 3,
+        "quality": 3,
+        "issues": "Left an English word untranslated ('pasta עגבניות' instead of 'רסק עגבניות'). The title phrasing 'פסטה בשר חזה' is slightly awkward."
+      },
+      {
+        "letter": "D",
+        "accuracy": 5,
+        "quality": 5,
+        "issues": "Uses the standard present tense plural phrasing ('מייבשים', 'מחממים'), making it read very naturally. It accurately translates slow cooker terms ('עוצמה נמוכה'). Still has the awkward literal '0.333 כוסות' and 'בצל חום', but handles the instructions best."
+      }
+    ],
+    "ranking": [
+      "D",
+      "A",
+      "B",
+      "C"
+    ]
+  }
+}

@@ -1,0 +1,44 @@
+{
+  "caseId": "invent-photo-bibimbap",
+  "judge": "google/gemini-3.1-pro-preview",
+  "letters": {
+    "A": "openai/gpt-6-luna",
+    "B": "google/gemini-2.5-flash",
+    "C": "openai/gpt-6.1-sol@low",
+    "D": "anthropic/claude-sonnet-5.5@low"
+  },
+  "verdict": {
+    "candidates": [
+      {
+        "letter": "A",
+        "accuracy": 2,
+        "quality": 3,
+        "issues": "Completely misses the rice bowl which takes up half the image. The bao meat in the photo appears shredded/braised rather than thinly sliced like bulgogi."
+      },
+      {
+        "letter": "B",
+        "accuracy": 2,
+        "quality": 4,
+        "issues": "Fails to include the prominent rice bowl shown in the photo. The bao recipe is well-written, but the meat in the picture looks more like shredded beef or shoulder rather than pork belly slices."
+      },
+      {
+        "letter": "C",
+        "accuracy": 2,
+        "quality": 4,
+        "issues": "Misses the large rice bowl in the image, focusing only on the plate. The bao recipe itself is very good and accurately reflects the shredded braised meat and edamame slaw on the plate."
+      },
+      {
+        "letter": "D",
+        "accuracy": 5,
+        "quality": 4,
+        "issues": "The only candidate to include both dishes shown in the photo. Minor issue: the instructions specify '150 g' eggplant while the ingredients list '1 small eggplant', and the slaw in the photo contains green cabbage too."
+      }
+    ],
+    "ranking": [
+      "D",
+      "C",
+      "B",
+      "A"
+    ]
+  }
+}

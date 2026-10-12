@@ -42,8 +42,11 @@ export interface GeminiUsageSnapshot {
 export function geminiRatesForModel(model: string): { input: number; output: number } {
   const id = model.toLowerCase();
   if (id.includes('openrouter') || id.includes('/')) {
-    if (id.includes('flash-lite') || id.includes('gpt-4.1-mini') || id.includes('flash-lite')) {
-      return { input: 0.05, output: 0.2 };
+    if (id.includes('gpt-4.1-mini')) {
+      return { input: 0.4, output: 1.6 };
+    }
+    if (id.includes('flash-lite')) {
+      return { input: 0.1, output: 0.4 };
     }
     if (id.includes('gemini-2.5-flash') || id.includes('gemini-2.0-flash')) {
       return { input: 0.3, output: 2.5 };

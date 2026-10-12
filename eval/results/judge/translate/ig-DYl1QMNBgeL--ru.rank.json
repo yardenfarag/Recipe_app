@@ -1,0 +1,44 @@
+{
+  "caseId": "ig-DYl1QMNBgeL--ru",
+  "judge": "google/gemini-3.1-pro-preview",
+  "letters": {
+    "A": "openai/gpt-6-luna",
+    "B": "openai/gpt-6.1-sol@low",
+    "C": "native:gemini-3.1-flash-lite",
+    "D": "anthropic/claude-sonnet-5.5@low"
+  },
+  "verdict": {
+    "candidates": [
+      {
+        "letter": "A",
+        "accuracy": 5,
+        "quality": 3,
+        "issues": "Grammar error: '3 зубчики' instead of '3 зубчика'. Uses 'макароны' instead of 'паста', which sounds a bit less modern for this type of dish. Ingredient list lacks proper genitive cases (e.g., '1.2 кг говяжья грудинка' instead of 'говяжьей грудинки'), though this is common in machine translation."
+      },
+      {
+        "letter": "B",
+        "accuracy": 5,
+        "quality": 4,
+        "issues": "Grammar error: '3 зубчики' instead of '3 зубчика'. Uses 'медленноварка' which is accurate, though 'мультиварка' is more culturally common in Russian kitchens. Ingredient list lacks proper genitive cases."
+      },
+      {
+        "letter": "C",
+        "accuracy": 4,
+        "quality": 3,
+        "issues": "Grammar error: '3 зубчики' instead of '3 зубчика'. Literal translation 'коричневый лук' instead of 'репчатый лук'. Translates 'high [setting]' as 'быстрый' (fast) instead of 'сильный' or 'высокий'. Added 'бумажным полотенцем' (paper towel) which is not in the source, though culturally appropriate."
+      },
+      {
+        "letter": "D",
+        "accuracy": 4,
+        "quality": 4,
+        "issues": "Correctly uses '3 зубчика'. Added 'бумажным полотенцем' (paper towel) which wasn't in the source text. Translated 'slow cooker' as 'мультиварка', which is functionally acceptable but technically a different appliance. Ingredient list lacks proper genitive cases after quantities."
+      }
+    ],
+    "ranking": [
+      "D",
+      "B",
+      "A",
+      "C"
+    ]
+  }
+}

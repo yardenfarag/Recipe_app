@@ -1,0 +1,57 @@
+{
+  "ingredients": [
+    {
+      "ref_index": 0,
+      "status": "ok"
+    },
+    {
+      "ref_index": 1,
+      "status": "ok"
+    },
+    {
+      "ref_index": 2,
+      "status": "ok"
+    },
+    {
+      "ref_index": 3,
+      "status": "ok"
+    },
+    {
+      "ref_index": 4,
+      "status": "ok"
+    },
+    {
+      "ref_index": 5,
+      "status": "ok"
+    },
+    {
+      "ref_index": 6,
+      "status": "ok"
+    },
+    {
+      "ref_index": 7,
+      "status": "ok"
+    },
+    {
+      "ref_index": 8,
+      "status": "ok"
+    },
+    {
+      "ref_index": 9,
+      "status": "ok"
+    },
+    {
+      "ref_index": 10,
+      "status": "ok"
+    },
+    {
+      "ref_index": 11,
+      "status": "ok"
+    }
+  ],
+  "extra_ingredients": [
+    "180 g Kinder/Bueno spread, upper amount for the centers"
+  ],
+  "steps_score": 5,
+  "note": "The candidate split the 150–180 g spread range into a duplicate line for the upper amount."
+}

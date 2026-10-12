@@ -1,0 +1,44 @@
+{
+  "caseId": "ig-DYl1QMNBgeL--ar",
+  "judge": "google/gemini-3.1-pro-preview",
+  "letters": {
+    "A": "anthropic/claude-sonnet-5.5@low",
+    "B": "openai/gpt-6-luna",
+    "C": "openai/gpt-6.1-sol@low",
+    "D": "native:gemini-3.1-flash-lite"
+  },
+  "verdict": {
+    "candidates": [
+      {
+        "letter": "A",
+        "accuracy": 5,
+        "quality": 4,
+        "issues": "Overall very good. Uses 'الطباخ البطيء' which is acceptable. '0.5 ملاعق صغيرة' and '0.333 أكواب' are grammatically awkward in Arabic due to the literal preservation of decimal numbers, but acceptable for strict format."
+      },
+      {
+        "letter": "B",
+        "accuracy": 5,
+        "quality": 5,
+        "issues": "Excellent translation. Phrasing is natural and accurate. Preserves the decimal formatting while keeping the text as idiomatic as possible."
+      },
+      {
+        "letter": "C",
+        "accuracy": 5,
+        "quality": 4,
+        "issues": "Uses 'قدر الطهي البطيء' which is a great translation for slow cooker. However, '1 بصل بني' uses the collective noun 'بصل' instead of the singular 'بصلة'."
+      },
+      {
+        "letter": "D",
+        "accuracy": 4,
+        "quality": 4,
+        "issues": "Translates 'Season to taste' as 'أضف الملح حسب الرغبة' (Add salt to taste) which is slightly restrictive compared to seasoning. Also uses the collective noun 'بصل' instead of 'بصلة'."
+      }
+    ],
+    "ranking": [
+      "B",
+      "A",
+      "C",
+      "D"
+    ]
+  }
+}

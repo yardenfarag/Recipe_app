@@ -1,0 +1,44 @@
+{
+  "caseId": "ig-DZxC3yBOPul--ar",
+  "judge": "google/gemini-3.1-pro-preview",
+  "letters": {
+    "A": "openai/gpt-6-luna",
+    "B": "native:gemini-3.1-flash-lite",
+    "C": "anthropic/claude-sonnet-5.5@low",
+    "D": "openai/gpt-6.1-sol@low"
+  },
+  "verdict": {
+    "candidates": [
+      {
+        "letter": "A",
+        "accuracy": 4,
+        "quality": 3,
+        "issues": "Translates 'flaky sea salt' as 'coarse sea salt'. The units are kept in the plural form after decimals (0.5 أكواب instead of 0.5 كوب), which sounds robotic. Uses masculine pronouns in the last step which can refer to the pan or mixture, but sounds slightly unnatural when referring to the brownies."
+      },
+      {
+        "letter": "B",
+        "accuracy": 4,
+        "quality": 4,
+        "issues": "Also translates 'flaky' as 'coarse' (خشن). Has the same robotic unit agreement issue (0.5 أكواب). However, the pronouns in the final instruction naturally refer back to the brownies/pan."
+      },
+      {
+        "letter": "C",
+        "accuracy": 3,
+        "quality": 3,
+        "issues": "Mistranslates 'flaky sea salt' as 'peeled sea salt' (ملح البحر المقشر). Retains the same robotic pluralization of units after decimals."
+      },
+      {
+        "letter": "D",
+        "accuracy": 5,
+        "quality": 4,
+        "issues": "Best translation for 'flaky sea salt' (رقائق الملح البحري). Explicitly mentions 'brownies' in the last step to make the pronoun references perfectly clear. Still has the minor machine-translation quirk with unit plurals (0.5 أكواب)."
+      }
+    ],
+    "ranking": [
+      "D",
+      "B",
+      "A",
+      "C"
+    ]
+  }
+}

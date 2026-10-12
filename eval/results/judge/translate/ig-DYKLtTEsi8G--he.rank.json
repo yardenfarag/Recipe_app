@@ -1,0 +1,44 @@
+{
+  "caseId": "ig-DYKLtTEsi8G--he",
+  "judge": "google/gemini-3.1-pro-preview",
+  "letters": {
+    "A": "openai/gpt-6-luna",
+    "B": "anthropic/claude-sonnet-5.5@low",
+    "C": "openai/gpt-6.1-sol@low",
+    "D": "native:gemini-3.1-flash-lite"
+  },
+  "verdict": {
+    "candidates": [
+      {
+        "letter": "A",
+        "accuracy": 5,
+        "quality": 5,
+        "issues": "Very natural translation. Title is slightly long but descriptive and idiomatic. 'בחום של 170-180' is a great way to handle the missing 'degrees' from the source. '0.25 כפיות' would be better as 'רבע כפית', but it matches the source formatting."
+      },
+      {
+        "letter": "B",
+        "accuracy": 4,
+        "quality": 3,
+        "issues": "Incorrect pluralization ('1 טיפות'). 'סוכר גרגירי' is less idiomatic than 'סוכר לבן'. The word 'לגריפה' in the title sounds awkward and industrial rather than culinary."
+      },
+      {
+        "letter": "C",
+        "accuracy": 5,
+        "quality": 4,
+        "issues": "Retaining the slash in 'שמנת עשירה/שמנת מתוקה' is too literal; 'שמנת מתוקה' alone is the standard culinary equivalent in Israel. Title and instructions are good."
+      },
+      {
+        "letter": "D",
+        "accuracy": 4,
+        "quality": 4,
+        "issues": "Incorrect pluralization ('1 טיפות'). Includes a slash in the cream translation, though 'שמנת מתוקה להקצפה' without the slash would have been perfect. Title adaptation is nice and creative."
+      }
+    ],
+    "ranking": [
+      "A",
+      "C",
+      "D",
+      "B"
+    ]
+  }
+}

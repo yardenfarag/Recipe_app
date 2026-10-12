@@ -1,0 +1,44 @@
+{
+  "caseId": "ig-DaD4X5Fh6ut--ar",
+  "judge": "google/gemini-3.1-pro-preview",
+  "letters": {
+    "A": "anthropic/claude-sonnet-5.5@low",
+    "B": "native:gemini-3.1-flash-lite",
+    "C": "openai/gpt-6.1-sol@low",
+    "D": "openai/gpt-6-luna"
+  },
+  "verdict": {
+    "candidates": [
+      {
+        "letter": "A",
+        "accuracy": 4,
+        "quality": 3,
+        "issues": "Translates 'granulated sugar' as 'سكر ناعم' (powdered sugar). Uses the literal 'اطوي' for 'fold in', which sounds unnatural in Arabic culinary contexts. Employs awkward literal number/unit agreement (0.5 أكواب)."
+      },
+      {
+        "letter": "B",
+        "accuracy": 3,
+        "quality": 3,
+        "issues": "Misinterprets 'scoop' as 'قطعي' (cut/slice). Translates 'centers' as 'الأطراف المركزية' (central edges), which is contradictory and confusing. Awkward literal fractions."
+      },
+      {
+        "letter": "C",
+        "accuracy": 5,
+        "quality": 5,
+        "issues": "Minor issue with literal decimal fractions (0.5 أكواب instead of نصف كوب) typical of machine translation, but otherwise excellent culinary vocabulary and natural phrasing."
+      },
+      {
+        "letter": "D",
+        "accuracy": 5,
+        "quality": 4,
+        "issues": "Translates 'fold in' simply as 'قلّب' (stir/mix), missing the gentle folding action. Same literal decimal fraction formatting as the others."
+      }
+    ],
+    "ranking": [
+      "C",
+      "D",
+      "A",
+      "B"
+    ]
+  }
+}

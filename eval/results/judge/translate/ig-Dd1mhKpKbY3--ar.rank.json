@@ -1,0 +1,44 @@
+{
+  "caseId": "ig-Dd1mhKpKbY3--ar",
+  "judge": "google/gemini-3.1-pro-preview",
+  "letters": {
+    "A": "openai/gpt-6.1-sol@low",
+    "B": "native:gemini-3.1-flash-lite",
+    "C": "anthropic/claude-sonnet-5.5@low",
+    "D": "openai/gpt-6-luna"
+  },
+  "verdict": {
+    "candidates": [
+      {
+        "letter": "A",
+        "accuracy": 5,
+        "quality": 5,
+        "issues": "Uses masculine imperatives, which is acceptable and grammatically correct, though feminine is often preferred in Arabic cooking contexts."
+      },
+      {
+        "letter": "B",
+        "accuracy": 5,
+        "quality": 4,
+        "issues": "Slight redundancy in step 4 ('بأوراق المافن الورقية' which literally means 'with paper muffin papers'). Otherwise, excellent use of feminine imperatives."
+      },
+      {
+        "letter": "C",
+        "accuracy": 5,
+        "quality": 5,
+        "issues": "No major issues. Excellent phrasing, uses feminine imperatives which is very natural for Arabic recipes, and avoids the redundancy seen in candidate B."
+      },
+      {
+        "letter": "D",
+        "accuracy": 5,
+        "quality": 5,
+        "issues": "Uses masculine imperatives. 'ألواح' (bars) is acceptable, though 'أصابع' (fingers) is sometimes preferred for Kinder Bueno."
+      }
+    ],
+    "ranking": [
+      "C",
+      "A",
+      "D",
+      "B"
+    ]
+  }
+}

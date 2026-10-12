@@ -1,0 +1,44 @@
+{
+  "caseId": "invent-photo-moussaka",
+  "judge": "google/gemini-3.1-pro-preview",
+  "letters": {
+    "A": "openai/gpt-6-luna",
+    "B": "openai/gpt-6.1-sol@low",
+    "C": "google/gemini-2.5-flash",
+    "D": "anthropic/claude-sonnet-5.5@low"
+  },
+  "verdict": {
+    "candidates": [
+      {
+        "letter": "A",
+        "accuracy": 2,
+        "quality": 5,
+        "issues": "The visual evidence in the image (a bright yellow hue, likely from turmeric or egg yolks, and visible bits of dark minced meat beneath the potatoes) is completely missing from this standard potato gratin recipe."
+      },
+      {
+        "letter": "B",
+        "accuracy": 2,
+        "quality": 5,
+        "issues": "Like candidate A, this lacks the ground meat and yellow egg/spice custard clearly visible in the photo."
+      },
+      {
+        "letter": "C",
+        "accuracy": 3,
+        "quality": 5,
+        "issues": "Accounts for the yellow custard-like appearance with an egg mixture, but misses the ground meat that can be seen under the potato layers."
+      },
+      {
+        "letter": "D",
+        "accuracy": 5,
+        "quality": 5,
+        "issues": "None. This recipe perfectly matches the visual cues in the image, accounting for the ground meat base, the bright yellow turmeric-laced custard, and the layered potato topping."
+      }
+    ],
+    "ranking": [
+      "D",
+      "C",
+      "A",
+      "B"
+    ]
+  }
+}

@@ -1,0 +1,44 @@
+{
+  "caseId": "ig-DblBUBTSdUT--ar",
+  "judge": "google/gemini-3.1-pro-preview",
+  "letters": {
+    "A": "native:gemini-3.1-flash-lite",
+    "B": "openai/gpt-6-luna",
+    "C": "openai/gpt-6.1-sol@low",
+    "D": "anthropic/claude-sonnet-5.5@low"
+  },
+  "verdict": {
+    "candidates": [
+      {
+        "letter": "A",
+        "accuracy": 5,
+        "quality": 5,
+        "issues": "None. Very natural and smooth translation. Using 'قالب صغير' (small mold) for ramekin is a good functional translation for readers who might not know what a ramekin is."
+      },
+      {
+        "letter": "B",
+        "accuracy": 5,
+        "quality": 4,
+        "issues": "Translating 'Lava Cake' as 'كيك كيندر سائل' (Liquid Kinder Cake) is not standard; 'لافا' or 'مولتن' is more commonly used in the Arab world."
+      },
+      {
+        "letter": "C",
+        "accuracy": 5,
+        "quality": 5,
+        "issues": "None. Excellent translation. The use of 'رامكين' is accurate, and the phrasing is very professional."
+      },
+      {
+        "letter": "D",
+        "accuracy": 5,
+        "quality": 4,
+        "issues": "The phrase 'كعكة كيندر اللافا' sounds slightly awkward compared to 'كيكة لافا كيندر'. 'مدهون بقليل من الدهن' is a bit literal; 'الزيت' or 'الزبدة' is usually preferred in culinary contexts."
+      }
+    ],
+    "ranking": [
+      "C",
+      "A",
+      "D",
+      "B"
+    ]
+  }
+}

@@ -1,0 +1,44 @@
+{
+  "caseId": "ig-DZxC3yBOPul--ru",
+  "judge": "google/gemini-3.1-pro-preview",
+  "letters": {
+    "A": "openai/gpt-6-luna",
+    "B": "openai/gpt-6.1-sol@low",
+    "C": "anthropic/claude-sonnet-5.5@low",
+    "D": "native:gemini-3.1-flash-lite"
+  },
+  "verdict": {
+    "candidates": [
+      {
+        "letter": "A",
+        "accuracy": 4,
+        "quality": 3,
+        "issues": "All ingredients are in the nominative case rather than the required genitive case after quantities (e.g., should be 'сливочного масла', 'сахара', etc.). Did not convert 350 Fahrenheit to Celsius (175°C), which is crucial for Russian readers."
+      },
+      {
+        "letter": "B",
+        "accuracy": 4,
+        "quality": 3,
+        "issues": "The title 'Брауни с плотной влажной текстурой' is overly long and descriptive rather than a natural recipe name. Same grammatical issues in the ingredient list (lack of genitive case) and no temperature conversion."
+      },
+      {
+        "letter": "C",
+        "accuracy": 4,
+        "quality": 3,
+        "issues": "Left the inches symbol '8”' instead of translating to cm or spelling out 'дюймов'. 'Хлопьевидная морская соль' sounds unnatural compared to 'морская соль в хлопьях'. Same ingredient grammar and temperature issues."
+      },
+      {
+        "letter": "D",
+        "accuracy": 4,
+        "quality": 3,
+        "issues": "Uses 'до полного растворения' (until dissolved) instead of melted; chocolate melts rather than dissolves. Same ingredient grammar and temperature issues."
+      }
+    ],
+    "ranking": [
+      "A",
+      "D",
+      "B",
+      "C"
+    ]
+  }
+}

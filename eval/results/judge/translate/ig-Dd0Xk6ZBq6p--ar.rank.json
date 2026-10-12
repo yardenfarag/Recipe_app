@@ -1,0 +1,44 @@
+{
+  "caseId": "ig-Dd0Xk6ZBq6p--ar",
+  "judge": "google/gemini-3.1-pro-preview",
+  "letters": {
+    "A": "anthropic/claude-sonnet-5.5@low",
+    "B": "openai/gpt-6.1-sol@low",
+    "C": "native:gemini-3.1-flash-lite",
+    "D": "openai/gpt-6-luna"
+  },
+  "verdict": {
+    "candidates": [
+      {
+        "letter": "A",
+        "accuracy": 3,
+        "quality": 4,
+        "issues": "Mistranslates 'granulated sugar' as 'سكر ناعم' (powdered/caster sugar) and 'heavy cream' as 'كريمة طازجة للطبخ' (fresh cooking cream), which changes the recipe's components."
+      },
+      {
+        "letter": "B",
+        "accuracy": 5,
+        "quality": 5,
+        "issues": "Translates 'centers' as 'الحشوة' (filling) in step 9, which is contextually fine but slightly less precise than referring to the center of the cookie itself."
+      },
+      {
+        "letter": "C",
+        "accuracy": 4,
+        "quality": 4,
+        "issues": "Mistranslates 'centers' in step 9 as 'الأطراف الداخلية' (inner edges), which is contradictory. Awkward word order in 'كريمة بوينو اختيارية منزلية الصنع'."
+      },
+      {
+        "letter": "D",
+        "accuracy": 5,
+        "quality": 5,
+        "issues": "Minor issue: translates 'gooey' as 'لزجاً' (sticky/viscous), which is acceptable but 'ذائباً' or 'سائلاً' might sound slightly more appetizing in a culinary context, though meaning is preserved."
+      }
+    ],
+    "ranking": [
+      "D",
+      "B",
+      "C",
+      "A"
+    ]
+  }
+}
