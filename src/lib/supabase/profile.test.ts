@@ -112,7 +112,7 @@ describe('fetchProfile', () => {
     mocks.from.mockImplementation(() => ({ select: mocks.select }));
   });
 
-  it('treats a missing monthly usage row as the full 15-credit allowance', async () => {
+  it('treats a missing monthly usage row as the full monthly allowance', async () => {
     mocks.maybeSingle
       .mockResolvedValueOnce({ data: profileRow, error: null })
       .mockResolvedValueOnce({ data: null, error: null });

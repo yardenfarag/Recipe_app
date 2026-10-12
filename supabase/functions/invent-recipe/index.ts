@@ -20,7 +20,8 @@ import {
 } from '../_shared/platform.ts';
 import type { PlatformMeta } from '../_shared/platformMeta.ts';
 import { persistSocialThumbnail, persistUploadedPhoto, fetchImageAsBase64 } from '../_shared/persistThumbnail.ts';
-import { estimateScrapeCredits, GUEST_EXTRACT_LIMIT } from '../_shared/pricing.ts';
+import { estimateScrapeCredits, EXTRACT_ATTEMPT_DAILY_LIMIT } from '../_shared/pricing.ts';
+import { reserveDailyAiUsage } from '../_shared/dailyAiUsage.ts';
 import {
   canStartExtract,
   finalizeSignedInExtract,
@@ -36,7 +37,6 @@ import {
   refundGuestExtraction,
   refundSignedInExtract,
   refundSignedInExtractAfterFinalizeFailure,
-  reserveGuestExtraction,
   reserveSignedInExtract,
 } from '../_shared/quotas.ts';
 import { createAuthedSupabase, extractVideoIdForPlatform, findExistingRecipeForUser } from '../_shared/recipeLookup.ts';
@@ -219,15 +219,61 @@ Deno.serve(async (req) => {
     let usedInstagramVideoDownload = false;
     let videoSkippedReason: 'too_long' | undefined;
 
-    if (platform !== 'photo') {
-      meta = await fetchPlatformMeta(platform, url, contentId);
-    }
-
-    if (!admin) {
+    if (!admin || !userId) {
       return jsonResponse(
         { status: 'failed' as JobStatus, platform, code: 'metering_error', message: 'metering_error' },
         500,
       );
+    }
+    const billingAdmin = admin;
+    const signedInUserId = userId;
+    const reservedEarly = await reserveSignedInExtract(billingAdmin, signedInUserId, requestId);
+    if (!reservedEarly.ok) {
+      return jsonResponse(
+        {
+          status: 'failed' as JobStatus,
+          platform,
+          code: reservedEarly.code,
+          message: quotaBlockMessage(reservedEarly.code),
+          ...quotaFields(reservedEarly.snapshot),
+        },
+        quotaHttpStatus(reservedEarly.code),
+      );
+    }
+    creditReservation = reservedEarly.reservation;
+
+    const releaseCredit = async (reason: string) => {
+      if (!creditReservation) return;
+      const refunded = await refundSignedInExtract(
+        billingAdmin,
+        signedInUserId,
+        creditReservation.reservationId,
+        reason,
+      );
+      if (refunded.confirmed) creditReservation = null;
+    };
+
+    const attempt = await reserveDailyAiUsage(
+      billingAdmin,
+      signedInUserId,
+      'extract_attempt',
+      EXTRACT_ATTEMPT_DAILY_LIMIT,
+    );
+    if (attempt !== 'ok') {
+      await releaseCredit(attempt === 'limited' ? 'daily_attempt_limit' : 'attempt_meter_error');
+      return jsonResponse(
+        {
+          status: 'failed' as JobStatus,
+          platform,
+          code: attempt === 'limited' ? 'daily_limit' : 'metering_error',
+          message: attempt === 'limited' ? 'daily_limit' : 'metering_error',
+        },
+        attempt === 'limited' ? 429 : 500,
+      );
+    }
+
+    if (platform !== 'photo') {
+      meta = await fetchPlatformMeta(platform, url, contentId);
     }
 
     const skipGate =
@@ -264,6 +310,7 @@ Deno.serve(async (req) => {
       });
 
       if (gate.status === 'limited') {
+        await releaseCredit('content_gate_limited');
         await logUsageEvent(admin, {
           userId,
           guestInstallId: userId ? null : guestInstallId,
@@ -284,6 +331,7 @@ Deno.serve(async (req) => {
         );
       }
       if (gate.status === 'error') {
+        await releaseCredit('content_gate_error');
         await logUsageEvent(admin, {
           userId,
           guestInstallId: userId ? null : guestInstallId,
@@ -322,6 +370,7 @@ Deno.serve(async (req) => {
     }
 
     if (gateKind === 'unrelated') {
+      await releaseCredit('not_food');
       return jsonResponse({
         status: 'failed' as JobStatus,
         platform,
@@ -346,50 +395,6 @@ Deno.serve(async (req) => {
           imageMime = fetched.mimeType;
         }
       }
-    }
-
-    if (userId) {
-      const reserved = await reserveSignedInExtract(admin, userId, requestId);
-      if (!reserved.ok) {
-        return jsonResponse(
-          {
-            status: 'failed' as JobStatus,
-            platform,
-            code: reserved.code,
-            message: quotaBlockMessage(reserved.code),
-            ...quotaFields(reserved.snapshot),
-          },
-          reserved.code === 'metering_error' ? 500 : 402,
-        );
-      }
-      creditReservation = reserved.reservation;
-    } else if (guestInstallId) {
-      const reserved = await reserveGuestExtraction(admin, guestInstallId, requestId);
-      if ('error' in reserved) {
-        return jsonResponse(
-          {
-            status: 'failed' as JobStatus,
-            platform,
-            code: 'metering_error',
-            message: 'Could not verify your free extraction allowance. Please try again.',
-          },
-          500,
-        );
-      }
-      if ('blocked' in reserved) {
-        return jsonResponse(
-          {
-            status: 'failed' as JobStatus,
-            platform,
-            code: 'guest_limit',
-            message: `You've used your ${GUEST_EXTRACT_LIMIT} free recipe extractions. Sign up to keep going.`,
-            guest_extracts_remaining: 0,
-          },
-          429,
-        );
-      }
-      guestReservation = reserved.reservation;
-      guestRemaining = guestReservation.remaining;
     }
 
     let gemini;
@@ -699,7 +704,22 @@ function compensationPendingResponse(
 }
 
 function quotaBlockMessage(code: string): string {
-  return code === 'insufficient_credits' ? 'insufficient_credits' : 'metering_error';
+  if (
+    code === 'insufficient_credits' ||
+    code === 'already_completed' ||
+    code === 'in_progress' ||
+    code === 'daily_limit'
+  ) {
+    return code;
+  }
+  return 'metering_error';
+}
+
+function quotaHttpStatus(code: string): number {
+  if (code === 'metering_error') return 500;
+  if (code === 'already_completed' || code === 'in_progress') return 409;
+  if (code === 'daily_limit') return 429;
+  return 402;
 }
 
 function capitalize(s: string): string {

@@ -18,7 +18,11 @@ import { generateLlmJson } from './llmClient.ts';
 import { isInstagramCdnUrl, resolveInstagramVideoForGemini } from './instagram.ts';
 import type { Platform } from './platform.ts';
 import type { GeminiUsageSnapshot } from './pricing.ts';
-import { formatMaxVideoDurationLabel, isVideoTooLong } from './videoLimits.ts';
+import {
+  formatMaxVideoDurationLabel,
+  isVideoDurationAllowed,
+  isVideoTooLong,
+} from './videoLimits.ts';
 
 export type { GeminiUsageSnapshot } from './pricing.ts';
 
@@ -386,10 +390,9 @@ export async function extractRecipeWithLadder(
     return { recipe: textCandidate.recipe, source: textCandidate.source, usages };
   }
 
-  console.log('[gemini] video step start');
-  if (isVideoTooLong(input.durationSeconds)) {
-    console.log('[gemini] video step skipped — duration over limit', {
-      durationSeconds: input.durationSeconds,
+  if (!isVideoDurationAllowed(input.durationSeconds)) {
+    console.log('[gemini] video step skipped — duration missing or over limit', {
+      durationSeconds: input.durationSeconds ?? null,
       limitLabel: formatMaxVideoDurationLabel(),
     });
     if (textCandidate) {
@@ -400,10 +403,13 @@ export async function extractRecipeWithLadder(
       source: 'video',
       usages,
       usedInstagramVideoDownload,
-      videoSkippedReason: 'too_long',
+      ...(isVideoTooLong(input.durationSeconds)
+        ? { videoSkippedReason: 'too_long' as const }
+        : {}),
     };
   }
 
+  console.log('[gemini] video step start');
   try {
     const fromVideo = await extractRecipeWithVideo(input);
     if (fromVideo.usage) usages.push(fromVideo.usage);

@@ -14,6 +14,7 @@ import { migrateGuestDataToSupabase } from '@/lib/migrateGuestData';
 import { clearPurchasesUser, configurePurchases } from '@/lib/purchases';
 import { runSingleFlight } from '@/lib/singleFlight';
 import { supabase } from '@/lib/supabase/client';
+import { sendWelcomeEmailIfNeeded } from '@/lib/supabase/welcomeEmail';
 
 export type MigrationStatus = 'idle' | 'running' | 'done' | 'error';
 
@@ -78,6 +79,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         const userId = data.session.user.id;
         setTimeout(() => {
           void runMigration(userId);
+          void sendWelcomeEmailIfNeeded(userId);
         }, 0);
       })
       .catch(() => {
@@ -97,6 +99,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         const userId = nextSession.user.id;
         setTimeout(() => {
           void runMigration(userId);
+          void sendWelcomeEmailIfNeeded(userId);
         }, 0);
       }
 

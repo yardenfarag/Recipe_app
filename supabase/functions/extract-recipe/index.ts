@@ -26,7 +26,8 @@ import {
 } from '../_shared/platform.ts';
 import type { PlatformMeta } from '../_shared/platformMeta.ts';
 import { persistSocialThumbnail, persistUploadedPhoto } from '../_shared/persistThumbnail.ts';
-import { estimateScrapeCredits, GUEST_EXTRACT_LIMIT } from '../_shared/pricing.ts';
+import { estimateScrapeCredits, EXTRACT_ATTEMPT_DAILY_LIMIT, GUEST_EXTRACT_LIMIT } from '../_shared/pricing.ts';
+import { reserveDailyAiUsage } from '../_shared/dailyAiUsage.ts';
 import {
   canStartExtract,
   finalizeSignedInExtract,
@@ -263,6 +264,64 @@ Deno.serve(async (req) => {
     let durationSeconds: number | undefined;
     let meta: PlatformMeta | null = null;
 
+    // Hold a credit before any paid scrape or model call. A zero-balance
+    // account, or a replay of a request id, stops here.
+    if (!admin || !userId) {
+      return jsonResponse(
+        {
+          status: 'failed' as ExtractionStatus,
+          platform,
+          code: 'metering_error',
+          message: quotaBlockMessage('metering_error'),
+        },
+        500,
+      );
+    }
+    const billingAdmin = admin;
+    const signedInUserId = userId;
+    const reservedEarly = await reserveExtractCredits({
+      admin: billingAdmin,
+      userId: signedInUserId,
+      guestInstallId,
+      requestId,
+      platform,
+      started,
+    });
+    if (reservedEarly.response) return reservedEarly.response;
+    creditReservation = reservedEarly.creditReservation;
+    guestReservation = reservedEarly.guestReservation;
+    guestRemaining = reservedEarly.guestRemaining;
+
+    const releaseCredit = async (reason: string) => {
+      if (!creditReservation) return;
+      const refunded = await refundSignedInExtract(
+        billingAdmin,
+        signedInUserId,
+        creditReservation.reservationId,
+        reason,
+      );
+      if (refunded.confirmed) creditReservation = null;
+    };
+
+    const attempt = await reserveDailyAiUsage(
+      billingAdmin,
+      signedInUserId,
+      'extract_attempt',
+      EXTRACT_ATTEMPT_DAILY_LIMIT,
+    );
+    if (attempt !== 'ok') {
+      await releaseCredit(attempt === 'limited' ? 'daily_attempt_limit' : 'attempt_meter_error');
+      return jsonResponse(
+        {
+          status: 'failed' as ExtractionStatus,
+          platform,
+          code: attempt === 'limited' ? 'daily_limit' : 'metering_error',
+          message: attempt === 'limited' ? 'daily_limit' : quotaBlockMessage('metering_error'),
+        },
+        attempt === 'limited' ? 429 : 500,
+      );
+    }
+
     if (platform !== 'photo') {
       meta = await fetchPlatformMeta(platform, url, contentId);
       console.log('[extract-recipe] meta ready', {
@@ -282,6 +341,7 @@ Deno.serve(async (req) => {
       if (admin && !forceExtract && resolvedId && resolvedId !== contentId) {
         const hubCard = await findRecipeCard(admin, platform, url, resolvedId);
         if (hubCard) {
+          await releaseCredit('hub_cache');
           return await recipeCardHitResponse({
             admin,
             card: hubCard,
@@ -291,18 +351,6 @@ Deno.serve(async (req) => {
           });
         }
       }
-    }
-
-    if (!admin) {
-      return jsonResponse(
-        {
-          status: 'failed' as ExtractionStatus,
-          platform,
-          code: 'metering_error',
-          message: quotaBlockMessage('metering_error'),
-        },
-        500,
-      );
     }
 
     const tooLongNoText =
@@ -323,9 +371,6 @@ Deno.serve(async (req) => {
             captions: meta?.captions,
             topComments: meta?.topComments ?? [],
           };
-    // Overlap the text model call with the food check. Video stays behind the gate.
-    const pendingText = ladderInput ? beginTextExtraction(ladderInput) : null;
-
     const skipGate = shouldSkipThinSocialGate({
       platform,
       imageBase64,
@@ -352,6 +397,7 @@ Deno.serve(async (req) => {
       });
 
       if (gate.status === 'limited') {
+        await releaseCredit('content_gate_limited');
         await logUsageEvent(admin, {
           userId,
           guestInstallId: userId ? null : guestInstallId,
@@ -372,6 +418,7 @@ Deno.serve(async (req) => {
         );
       }
       if (gate.status === 'error') {
+        await releaseCredit('content_gate_error');
         await logUsageEvent(admin, {
           userId,
           guestInstallId: userId ? null : guestInstallId,
@@ -410,6 +457,7 @@ Deno.serve(async (req) => {
     }
 
     if (gateKind === 'unrelated') {
+      await releaseCredit('not_food');
       return jsonResponse({
         status: 'failed' as ExtractionStatus,
         platform,
@@ -422,6 +470,7 @@ Deno.serve(async (req) => {
     }
 
     if (!forceExtract && (gateKind === 'plated_dish' || tooLongNoText)) {
+      await releaseCredit(tooLongNoText ? 'video_too_long' : 'looks_like_dish');
       return jsonResponse({
         status: 'failed' as ExtractionStatus,
         platform,
@@ -435,18 +484,8 @@ Deno.serve(async (req) => {
       });
     }
 
-    const reserved = await reserveExtractCredits({
-      admin,
-      userId,
-      guestInstallId,
-      requestId,
-      platform,
-      started,
-    });
-    if (reserved.response) return reserved.response;
-    creditReservation = reserved.creditReservation;
-    guestReservation = reserved.guestReservation;
-    guestRemaining = reserved.guestRemaining;
+    // Text model starts only after the credit is held and the food check passed.
+    const pendingText = ladderInput ? beginTextExtraction(ladderInput) : null;
 
     if (platform === 'photo' && imageBase64) {
       const fromImage = await extractRecipeFromImage({
@@ -919,7 +958,22 @@ function classify(r: GeminiRecipe): {
 }
 
 function quotaBlockMessage(code: string): string {
-  return code === 'insufficient_credits' ? 'insufficient_credits' : 'metering_error';
+  if (
+    code === 'insufficient_credits' ||
+    code === 'already_completed' ||
+    code === 'in_progress' ||
+    code === 'daily_limit'
+  ) {
+    return code;
+  }
+  return 'metering_error';
+}
+
+function quotaHttpStatus(code: string): number {
+  if (code === 'metering_error') return 500;
+  if (code === 'already_completed' || code === 'in_progress') return 409;
+  if (code === 'daily_limit') return 429;
+  return 402;
 }
 
 async function recipeCardHitResponse(opts: {
@@ -1007,7 +1061,7 @@ async function reserveExtractCredits(opts: {
             message: quotaBlockMessage(code),
             ...quotaFields(reserved.snapshot),
           },
-          code === 'metering_error' ? 500 : 402,
+          quotaHttpStatus(code),
         ),
       };
     }

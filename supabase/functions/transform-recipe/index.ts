@@ -1,5 +1,6 @@
 import { corsHeaders, jsonResponse } from '../_shared/cors.ts';
-import { RECIPE_REMIX_LIMIT } from '../_shared/pricing.ts';
+import { currentUtcDate, reserveDailyAiUsage } from '../_shared/dailyAiUsage.ts';
+import { RECIPE_REMIX_LIMIT, REMIX_DAILY_LIMIT } from '../_shared/pricing.ts';
 import { createAuthedSupabase } from '../_shared/recipeLookup.ts';
 import {
   isRecipeVariantKey,
@@ -202,6 +203,31 @@ Deno.serve(async (req) => {
         typeof kitchen === 'object' &&
         !Array.isArray(kitchen) &&
         (kitchen as { autoApplyOnExtract?: unknown }).autoApplyOnExtract === true,
+    );
+  }
+
+  const dailyRemix = await reserveDailyAiUsage(
+    admin,
+    user.id,
+    'remix',
+    REMIX_DAILY_LIMIT,
+    currentUtcDate(),
+  );
+  if (dailyRemix === 'limited') {
+    return jsonResponse(
+      {
+        status: 'failed',
+        code: 'daily_limit',
+        message: 'daily_limit',
+        remix_daily_limit: REMIX_DAILY_LIMIT,
+      },
+      429,
+    );
+  }
+  if (dailyRemix === 'error') {
+    return jsonResponse(
+      { status: 'failed', code: 'metering_error', message: 'metering_error' },
+      500,
     );
   }
 

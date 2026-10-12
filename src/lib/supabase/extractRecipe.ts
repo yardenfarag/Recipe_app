@@ -90,9 +90,16 @@ async function invokeErrorMessage(error: unknown): Promise<{
   return { message: 'Could not reach the extraction service. Please try again.' };
 }
 
-/** True when a retry must reuse the same request id to avoid a second charge. */
+/**
+ * True when a retry must reuse the same request id.
+ * `in_progress` means another call with this id is already doing the paid work.
+ */
 export function extractionOutcomeIsUncertain(code?: string): boolean {
-  return code === 'compensation_pending' || code === 'metering_error';
+  return (
+    code === 'compensation_pending' ||
+    code === 'metering_error' ||
+    code === 'in_progress'
+  );
 }
 
 /**

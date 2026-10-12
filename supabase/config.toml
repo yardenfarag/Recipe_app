@@ -7,5 +7,8 @@
 [functions.revenuecat-webhook]
 verify_jwt = false
 
+[functions.public-recipe]
+verify_jwt = false
+
 [auth.email]
 enable_confirmations = false

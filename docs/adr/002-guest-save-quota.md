@@ -20,7 +20,7 @@ Pinch needs an auth strategy for Phase 2. Requiring sign-up before the first Sna
 
 ## Decision (2026-08-07)
 
-Guests may still **extract up to 3 recipes** per install (server `guest_usage`), but **cannot save**. Tapping Save always prompts sign up / log in. Signed-in Free users get 15 extractions / month and can save; Plus gets 100 / month.
+Guests may still **extract up to 3 recipes** per install (server `guest_usage`), but **cannot save**. Tapping Save always prompts sign up / log in. Signed-in users get the monthly free allowance in ADR 012 and can save.
 
 Local guest recipe storage + migration helpers remain for any recipes already saved before this change.
 
