@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 
 import {
+  isVideoDurationAllowed,
   isVideoTooLong,
   MAX_VIDEO_DURATION_SECONDS,
   normalizeDurationSeconds,
@@ -15,6 +16,10 @@ describe('videoLimits', () => {
     expect(isVideoTooLong(181)).toBe(true);
     expect(isVideoTooLong(180)).toBe(false);
     expect(isVideoTooLong(undefined)).toBe(false);
+    expect(isVideoDurationAllowed(180)).toBe(true);
+    expect(isVideoDurationAllowed(181)).toBe(false);
+    expect(isVideoDurationAllowed(undefined)).toBe(false);
+    expect(isVideoDurationAllowed(0)).toBe(false);
   });
 
   it('parses YouTube ISO durations', () => {

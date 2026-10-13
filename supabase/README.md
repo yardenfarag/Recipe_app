@@ -55,7 +55,24 @@ npx supabase functions deploy translate-recipe
 npx supabase functions deploy delete-account
 npx supabase functions deploy recipe-share
 npx supabase functions deploy revenuecat-webhook
+npx supabase functions deploy welcome-email
+npx supabase functions deploy public-recipe
 ```
+
+### Public recipe pages (`public-recipe` + migration `0041`)
+
+Each Cooking Hub card gets a stable slug and an HTML page: ingredients, steps, a servings scaler, and cook mode. The page links to the original post and does not include the creator’s photo or video. Pages stay out of Google until the function secret `PUBLIC_RECIPE_INDEX=true`.
+
+```bash
+npx supabase db push
+npx supabase functions deploy public-recipe --no-verify-jwt
+```
+
+A page is then available at:
+
+`https://ccobefeofhnncpgifxel.supabase.co/functions/v1/public-recipe/<slug>`
+
+To serve that as `https://r.pinch-app.io/<slug>`, deploy `cloudflare/recipe-pages.js` and point the `r` DNS record at the worker. Set `SUPABASE_FUNCTION_URL` to the function URL above. Leave `pinch-app.io` on GitHub Pages.
 
 ### Recipe share links (`recipe-share` + migration `0017`)
 
@@ -170,6 +187,23 @@ curl -X POST \
 
 Expected: JSON with `status: "full"` and a `recipe` object. Try Instagram Reel or
 TikTok URLs once `SCRAPECREATORS_API_KEY` is set in Supabase secrets.
+
+## Welcome email
+
+New accounts get one email explaining the 3 free recipe credits each month and that extra credits can be bought in the app. Accounts that already exist when migration `0041_welcome_email.sql` is applied are marked sent, so they are not mailed.
+
+The app calls `welcome-email` on sign-in. The function claims the send, asks Resend to deliver it, and records success. A failed send is released so the next app open can try again.
+
+```bash
+npx supabase db push
+npx supabase functions deploy welcome-email
+npx supabase secrets set RESEND_API_KEY=re_your_key
+npx supabase secrets set WELCOME_EMAIL_FROM="Pinch <hello@pinch-app.io>"
+npx supabase secrets set WELCOME_APP_URL=https://pinch-app.io
+npx supabase secrets set WELCOME_SUPPORT_EMAIL=you@example.com
+```
+
+In Resend, verify `pinch-app.io` and add the SPF and DKIM records it gives you. Until `RESEND_API_KEY` and `WELCOME_EMAIL_FROM` are set, signup still works and the email is retried on a later open.
 
 ## What's next (later Phase 2 steps)
 

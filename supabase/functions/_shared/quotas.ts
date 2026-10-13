@@ -169,7 +169,7 @@ export async function reserveSignedInExtract(
   | { ok: true; reservation: CreditReservation }
   | {
       ok: false;
-      code: 'insufficient_credits' | 'metering_error';
+      code: 'insufficient_credits' | 'metering_error' | 'already_completed' | 'in_progress';
       snapshot: QuotaSnapshot | null;
     }
 > {
@@ -218,6 +218,17 @@ export async function reserveSignedInExtract(
     return {
       ok: false,
       code: 'insufficient_credits',
+      snapshot: await getQuotaSnapshot(admin, userId),
+    };
+  }
+  // `fresh: false` is a replay of a key that already reserved a credit.
+  // Running the model again would bill the provider without a new charge.
+  // Missing `fresh` (database not migrated yet) keeps the previous behavior.
+  const reservationStatus = typeof row?.status === 'string' ? row.status : null;
+  if (row?.fresh === false && (reservationStatus === 'finalized' || reservationStatus === 'reserved')) {
+    return {
+      ok: false,
+      code: reservationStatus === 'finalized' ? 'already_completed' : 'in_progress',
       snapshot: await getQuotaSnapshot(admin, userId),
     };
   }

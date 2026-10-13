@@ -9,6 +9,19 @@ export function isVideoTooLong(durationSeconds: number | null | undefined): bool
   );
 }
 
+/**
+ * Gemini is billed by video length. Only send a video when the length is
+ * known and inside the cap. A missing duration is not treated as short.
+ */
+export function isVideoDurationAllowed(durationSeconds: number | null | undefined): boolean {
+  return (
+    typeof durationSeconds === 'number' &&
+    Number.isFinite(durationSeconds) &&
+    durationSeconds > 0 &&
+    durationSeconds <= MAX_VIDEO_DURATION_SECONDS
+  );
+}
+
 export function formatMaxVideoDurationLabel(): string {
   return '3 minutes';
 }

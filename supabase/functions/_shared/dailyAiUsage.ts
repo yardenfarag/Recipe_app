@@ -1,6 +1,12 @@
 import type { SupabaseClient } from 'https://esm.sh/@supabase/supabase-js@2';
 
-export type DailyAiAction = 'substitution' | 'translation' | 'fridge_match' | 'content_gate';
+export type DailyAiAction =
+  | 'substitution'
+  | 'translation'
+  | 'fridge_match'
+  | 'content_gate'
+  | 'remix'
+  | 'extract_attempt';
 
 export function currentUtcDate(date = new Date()): string {
   return date.toISOString().slice(0, 10);

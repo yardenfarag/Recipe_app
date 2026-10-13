@@ -12,7 +12,11 @@ import { FetchError } from './errors.ts';
 import { generateLlmJson } from './llmClient.ts';
 import { isInstagramCdnUrl, resolveInstagramVideoForGemini } from './instagram.ts';
 import type { GeminiUsageSnapshot } from './pricing.ts';
-import { formatMaxVideoDurationLabel, isVideoTooLong } from './videoLimits.ts';
+import {
+  formatMaxVideoDurationLabel,
+  isVideoDurationAllowed,
+  isVideoTooLong,
+} from './videoLimits.ts';
 
 const TEXT_TIMEOUT_MS = 45_000;
 const VIDEO_TIMEOUT_MS = 120_000;
@@ -126,9 +130,9 @@ export async function inventRecipeWithLadder(
     };
   }
 
-  if (isVideoTooLong(input.durationSeconds)) {
-    console.log('[invent] video skipped — too long', {
-      durationSeconds: input.durationSeconds,
+  if (!isVideoDurationAllowed(input.durationSeconds)) {
+    console.log('[invent] video skipped — duration missing or over limit', {
+      durationSeconds: input.durationSeconds ?? null,
       limitLabel: formatMaxVideoDurationLabel(),
     });
     if (textCandidate) return { recipe: textCandidate, source: 'description', usages };
@@ -136,7 +140,9 @@ export async function inventRecipeWithLadder(
       recipe: EMPTY_RECIPE,
       source: 'video',
       usages,
-      videoSkippedReason: 'too_long',
+      ...(isVideoTooLong(input.durationSeconds)
+        ? { videoSkippedReason: 'too_long' as const }
+        : {}),
     };
   }
 

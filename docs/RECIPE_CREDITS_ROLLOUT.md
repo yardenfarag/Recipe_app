@@ -43,7 +43,7 @@ For each iOS, Android, and web pack:
 - Complete checkout and verify one ledger entry and the expected balance.
 - Redeliver the same RevenueCat webhook and verify the balance does not change.
 - Delay webhook delivery and verify the UI shows pending fulfillment, then updates after Sync purchases.
-- Spend all 15 monthly credits, verify the next extraction spends one purchased credit, and verify a failed extraction refunds it.
+- Spend all 3 monthly credits, verify the next extraction spends one purchased credit, and verify a failed extraction refunds it.
 - Verify cached recipes remain free at a zero balance.
 - Verify remix does not spend credits and blocks after 5 remixes on the same recipe.
 - Verify purchased credits survive month boundaries while the free allowance resets.

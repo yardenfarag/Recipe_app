@@ -64,6 +64,8 @@ describe('extractRecipe request recovery', () => {
   it('treats compensation and metering failures as uncertain charges', () => {
     expect(extractionOutcomeIsUncertain('compensation_pending')).toBe(true);
     expect(extractionOutcomeIsUncertain('metering_error')).toBe(true);
+    expect(extractionOutcomeIsUncertain('in_progress')).toBe(true);
+    expect(extractionOutcomeIsUncertain('already_completed')).toBe(false);
     expect(extractionOutcomeIsUncertain('guest_limit')).toBe(false);
     expect(extractionOutcomeIsUncertain('gate_unavailable')).toBe(false);
   });
