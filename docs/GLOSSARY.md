@@ -21,7 +21,7 @@ The AI pipeline that converts raw social-media content (description, transcript,
 _Avoid_: Parsing, scraping (use "scraping" only for the server-side content-fetch step)
 
 **Content ladder**:
-The ordered sources the Edge Function fetches before calling Gemini: video transcript → post description → top 10 comments.
+The order the Edge Function tries sources in: all text first (description, top comments, captions) in one model call, then the video only if the text gave a partial recipe.
 _Avoid_: Scrape order, fetch pipeline
 
 **Partial result**:
@@ -57,7 +57,7 @@ _Avoid_: Price, budget
 ## Technical
 
 **Edge Function**:
-A Supabase serverless function that handles URL scraping and Gemini API calls. Keeps API keys off the client.
+A Supabase serverless function that handles URL scraping and AI model calls (through OpenRouter, one model per task; ADR 015). Keeps API keys off the client.
 _Avoid_: Backend, server (use those in conversation; "Edge Function" in architecture docs)
 
 **Development build**:
@@ -85,3 +85,7 @@ _Avoid_: Phase, sprint
 **Coming soon state**:
 The UX shown when a user Snaps a URL from a platform not yet supported — clear message, no fake data.
 _Avoid_: Error screen, unsupported error
+
+**Task model**:
+The AI model a task `kind` runs on, set in `TASK_MODELS` (`supabase/functions/_shared/llmClient.ts`) with a fallback and a reasoning effort. Override one task with the `OPENROUTER_MODEL_<KIND>` secret (ADR 015).
+_Avoid_: Tier (the old fast/standard split)

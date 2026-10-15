@@ -1,5 +1,7 @@
 # Pinch: best LLM per AI task (PIN-28)
 
+> **Status (15 Oct 2026):** shipped. The "Final model per task" table below is live as `TASK_MODELS` in `supabase/functions/_shared/llmClient.ts` (PIN-45, [ADR 015](../adr/015-per-task-models.md)). Native Gemini is gone; video runs on Gemini 3.5 Flash through OpenRouter. The production numbers further down describe the old two-tier router.
+
 > Researched 6 October 2026. Model prices, context sizes, input types and structured-output support come from OpenRouter's live model API on that date. Speed figures come from Artificial Analysis, often measured at high reasoning effort, so treat them as rough. Production numbers come from `ai_usage_events` (20 Jul to 6 Oct 2026) and Edge Function logs. The shortlist was tested on real Pinch inputs in PIN-44. See [Eval results (PIN-44)](#eval-results-pin-44) for the final model per task, which **reverses the video decision**: Gemini stays for video.
 
 ## Executive conclusion

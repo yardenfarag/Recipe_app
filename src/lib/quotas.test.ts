@@ -25,8 +25,7 @@ describe('recipe credits', () => {
     expect(freeExtractsRemaining(4)).toBe(0);
   });
 
-  it('matches researched Gemini list rates', () => {
-    expect(ADMIN_PRICE_CARD.geminiInputUsdPerM).toBe(1.5);
-    expect(ADMIN_PRICE_CARD.geminiOutputUsdPerM).toBe(9);
+  it('keeps the ScrapeCreators credit rate in sync with the server', () => {
+    expect(ADMIN_PRICE_CARD.scrapecreatorsUsdPerCredit).toBe(0.00188);
   });
 });
