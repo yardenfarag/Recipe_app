@@ -1,0 +1,1186 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex">
+<title>Pinch developer guide</title>
+<meta name="description" content="How Pinch works (app, backend, database, AI), how to run it on your PC and phone, what access you need, and how we work.">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath fill='%23B8A8D4' d='M12,3A9,9 0 0,0 3,12A9,9 0 0,0 12,21A9,9 0 0,0 21,12C21,11.5 20.96,11 20.87,10.5C20.6,10 20,10 20,10H18V9C18,8 17,8 17,8H15V7C15,6 14,6 14,6H13V4C13,3 12,3 12,3Z'/%3E%3Ccircle cx='9.5' cy='7.5' r='1.5' fill='%2312101A' fill-opacity='.6'/%3E%3Ccircle cx='6.5' cy='11.5' r='1.5' fill='%2312101A' fill-opacity='.6'/%3E%3Ccircle cx='11.5' cy='12.5' r='1.5' fill='%2312101A' fill-opacity='.6'/%3E%3Ccircle cx='16.5' cy='14.5' r='1.5' fill='%2312101A' fill-opacity='.6'/%3E%3Ccircle cx='11' cy='17.5' r='1.5' fill='%2312101A' fill-opacity='.6'/%3E%3C/svg%3E">
+<style>
+/* Pinch "Mist Drift" dark tokens, from src/constants/brandColors.js */
+:root{
+  --bg:#12101A; --surface:#1E1A28; --primary:#B8A8D4; --primary-soft:#2E2838;
+  --blue:#9BB4D0; --blue-soft:#243040; --text:#F2F0F6; --muted:#B7AFC1; --border:#3A3448;
+  --orb-a:#352848; --orb-b:#243848; --orb-c:#2C2438;
+  --ok:#9CCDB0; --warn:#E3C27A; --bad:#E39A9A;
+  --font:-apple-system,BlinkMacSystemFont,"Segoe UI",system-ui,Roboto,"Helvetica Neue",Arial,sans-serif;
+  --mono:ui-monospace,SFMono-Regular,Menlo,Consolas,"Liberation Mono",monospace;
+  color-scheme:dark;
+}
+*{box-sizing:border-box}
+html{scroll-behavior:smooth;scroll-padding-top:20px}
+body{margin:0;font-family:var(--font);background:var(--bg);color:var(--text);line-height:1.55;font-size:16px;-webkit-font-smoothing:antialiased}
+a{color:var(--primary);overflow-wrap:anywhere}
+a:hover{color:#D3C8E8}
+:focus-visible{outline:2px solid var(--blue);outline-offset:3px;border-radius:6px}
+code,kbd,pre{font-family:var(--mono)}
+code{overflow-wrap:anywhere;background:var(--primary-soft);color:#E6DDF5;padding:.12em .4em;border-radius:6px;font-size:.88em}
+pre{background:#0D0B13;border:1px solid var(--border);border-radius:12px;padding:14px 16px;overflow:auto;font-size:13.5px;line-height:1.6;position:relative;margin:12px 0}
+pre code{background:none;padding:0;color:#E6E1F0;font-size:inherit}
+pre .c{color:#8B8398}
+h1,h2,h3,h4{line-height:1.25;letter-spacing:-.01em;margin:0}
+h1{font-size:34px;margin:6px 0 8px}
+h2{font-size:26px;margin:0 0 8px}
+h3{font-size:19px;margin:28px 0 8px;color:#E9E3F5}
+h4{font-size:16px;margin:18px 0 6px;color:var(--primary)}
+p{margin:8px 0}
+ul,ol{padding-left:22px;margin:6px 0}
+li{margin:4px 0}
+strong{color:#fff}
+table{width:100%;border-collapse:collapse;font-size:14.5px;margin:10px 0;background:var(--surface);border:1px solid var(--border);border-radius:12px;overflow:hidden}
+thead th{text-align:left;background:var(--primary-soft);color:#E9E3F5;font-weight:600;padding:9px 12px;border-bottom:1px solid var(--border)}
+tbody td{padding:8px 12px;border-bottom:1px solid var(--border);vertical-align:top}
+tbody tr:last-child td{border-bottom:0}
+.table-wrap{overflow-x:auto;border-radius:12px}
+.table-wrap table{margin:0;min-width:560px}
+td.k{white-space:nowrap;color:#E9E3F5;font-weight:600}
+@media (max-width:700px){td.k{white-space:normal}table{display:block;overflow-x:auto}}
+
+/* mist background */
+.mist{position:fixed;inset:0;z-index:-1;overflow:hidden;pointer-events:none;background:
+  radial-gradient(700px 700px at -5% -5%, rgba(53,40,72,.7), transparent 70%),
+  radial-gradient(600px 600px at 105% 10%, rgba(36,56,72,.6), transparent 70%),
+  radial-gradient(640px 640px at 20% 110%, rgba(44,36,56,.75), transparent 70%), var(--bg)}
+.orb{position:absolute;border-radius:50%;filter:blur(40px);opacity:.5;animation:drift 18s ease-in-out infinite alternate}
+.orb.a{width:420px;height:420px;background:var(--orb-a);left:-120px;top:8%}
+.orb.b{width:360px;height:360px;background:var(--orb-b);right:-100px;top:35%;animation-duration:23s}
+.orb.c{width:300px;height:300px;background:var(--orb-c);left:35%;bottom:-120px;animation-duration:27s}
+@keyframes drift{from{transform:translate(0,0)}to{transform:translate(24px,-30px)}}
+@media (prefers-reduced-motion:reduce){.orb{animation:none}html{scroll-behavior:auto}}
+
+/* layout */
+.shell{display:grid;grid-template-columns:240px minmax(0,1fr);gap:36px;max-width:1220px;margin:0 auto;padding:0 24px 80px}
+nav.side{position:sticky;top:0;align-self:start;height:100vh;overflow:auto;padding:26px 0 40px;scrollbar-width:thin}
+nav.side .brand{display:flex;align-items:center;gap:10px;font-weight:700;font-size:17px;padding:4px 10px 16px;color:#fff}
+nav.side a.item{display:flex;align-items:center;gap:10px;padding:7px 10px;border-radius:10px;color:var(--muted);text-decoration:none;font-size:14px}
+nav.side a.item:hover{background:rgba(255,255,255,.04);color:var(--text)}
+nav.side a.item.active{background:var(--primary-soft);color:#fff}
+nav.side a.item .n{font-family:var(--mono);font-size:11px;color:var(--primary);width:20px;flex:0 0 20px}
+nav.side .foot{margin-top:18px;padding:12px 10px;font-size:12.5px;color:var(--muted);border-top:1px solid var(--border)}
+main{min-width:0}
+section.block{padding:38px 0 12px;border-bottom:1px solid var(--border)}
+section.block:last-of-type{border-bottom:0}
+.kicker{font-size:12px;letter-spacing:.12em;text-transform:uppercase;color:var(--blue);font-weight:600;margin-bottom:6px}
+.intro{color:#D9D3E3;max-width:800px}
+
+/* boxes */
+.grid{display:grid;gap:12px;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));margin:12px 0}
+.card{background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:14px 16px}
+.card h4{margin:0 0 6px;color:#fff;font-size:15px}
+.card p,.card li{font-size:14.5px;color:#D0CAD9}
+.card ul{margin:4px 0 0}
+.note{border-left:3px solid var(--primary);background:var(--primary-soft);border-radius:0 12px 12px 0;padding:10px 14px;margin:14px 0;font-size:15px}
+.note.blue{border-color:var(--blue);background:var(--blue-soft)}
+.note.warn{border-color:var(--warn);background:rgba(227,194,122,.09)}
+.note.bad{border-color:var(--bad);background:rgba(227,154,154,.09)}
+.tag{display:inline-block;font-size:11.5px;font-weight:600;letter-spacing:.03em;padding:2px 8px;border-radius:999px;background:var(--blue-soft);color:var(--blue);vertical-align:middle;white-space:nowrap}
+.tag.ok{background:rgba(156,205,176,.14);color:var(--ok)}
+.tag.warn{background:rgba(227,194,122,.14);color:var(--warn)}
+.tag.bad{background:rgba(227,154,154,.14);color:var(--bad)}
+.tag.p{background:var(--primary-soft);color:var(--primary)}
+
+/* checklists */
+.check{list-style:none;padding:0;margin:10px 0}
+.check li{display:flex;gap:12px;align-items:flex-start;padding:9px 12px;border:1px solid var(--border);background:var(--surface);border-radius:10px;margin:6px 0}
+.check li input{margin-top:5px;accent-color:var(--primary);width:16px;height:16px;flex:0 0 16px}
+.check li label{cursor:pointer;flex:1;font-size:15px}
+.check li.done label{color:var(--muted);text-decoration:line-through}
+.check small{display:block;color:var(--muted);font-size:13px;margin-top:2px}
+
+/* numbered steps */
+.steps{counter-reset:s;list-style:none;padding:0;margin:12px 0}
+.steps>li{counter-increment:s;position:relative;padding:0 0 16px 44px}
+.steps>li::before{content:counter(s);position:absolute;left:0;top:0;width:30px;height:30px;border-radius:50%;background:var(--primary-soft);color:var(--primary);display:flex;align-items:center;justify-content:center;font-weight:700;font-size:13px;border:1px solid rgba(184,168,212,.35)}
+.steps>li::after{content:"";position:absolute;left:14.5px;top:32px;bottom:0;width:1px;background:var(--border)}
+.steps>li:last-child::after{display:none}
+.steps>li>b{display:block;color:#fff;margin-bottom:2px;font-size:15.5px}
+.steps>li>span,.steps>li>p{color:#D0CAD9;font-size:14.5px}
+.steps .branch{margin:6px 0 0;display:flex;flex-wrap:wrap;gap:6px}
+.steps .branch span{font-size:12.5px;border:1px solid var(--border);border-radius:8px;padding:3px 8px;color:var(--muted)}
+.steps .branch span b{color:var(--text);font-weight:600}
+.steps .branch span.free b{color:var(--ok)}
+.steps .branch span.stop b{color:var(--bad)}
+.steps .branch span.credit b{color:var(--warn)}
+
+/* horizontal flow */
+.flow{display:flex;flex-wrap:wrap;align-items:stretch;gap:8px;margin:12px 0}
+.flow .node{flex:1 1 150px;background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:10px 12px;font-size:13.5px;min-width:140px}
+.flow .node b{display:block;color:#fff;font-size:14px}
+.flow .node.p{border-color:rgba(184,168,212,.5)}
+.flow .node.ok{border-color:rgba(156,205,176,.5)}
+.flow .node.bad{border-color:rgba(227,154,154,.5)}
+.flow .arrow{align-self:center;color:var(--primary);font-size:20px;padding:0 2px}
+@media (max-width:640px){.flow .arrow{display:none}}
+
+/* diagram */
+.diagram{background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:14px;margin:14px 0;overflow-x:auto}
+.diagram svg{display:block;width:100%;height:auto;min-width:760px}
+.diagram .legend{display:flex;flex-wrap:wrap;gap:14px;font-size:13px;color:var(--muted);padding:10px 4px 0}
+.diagram .legend i{display:inline-block;width:12px;height:12px;border-radius:3px;margin-right:6px;vertical-align:-1px}
+
+/* misc */
+.copy{position:absolute;top:8px;right:8px;border:1px solid var(--border);background:var(--surface);color:var(--muted);font:12px var(--font);padding:4px 9px;border-radius:8px;cursor:pointer}
+.copy:hover{color:#fff;border-color:var(--primary)}
+.swatches{display:flex;flex-wrap:wrap;gap:10px;margin:10px 0}
+.sw{width:112px;border:1px solid var(--border);border-radius:10px;overflow:hidden;background:var(--surface);font-size:12px}
+.sw i{display:block;height:40px}
+.sw span{display:block;padding:6px 8px;color:var(--muted)}
+.sw span b{display:block;color:var(--text);font-weight:600;font-family:var(--mono);font-size:11.5px}
+details{border:1px solid var(--border);border-radius:12px;background:var(--surface);padding:0 16px;margin:10px 0}
+details summary{cursor:pointer;padding:12px 0;font-weight:600;color:#E9E3F5;list-style:none;display:flex;align-items:center;gap:8px}
+details summary::before{content:"▸";color:var(--primary);transition:transform .15s}
+details[open] summary::before{transform:rotate(90deg)}
+details>*:not(summary){margin-bottom:12px}
+.footer{color:var(--muted);font-size:13.5px;padding:26px 0 0;display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+
+@media (max-width:980px){
+  .shell{grid-template-columns:minmax(0,1fr);gap:0;padding:0 18px 60px}
+  nav.side{position:static;height:auto;padding:16px 0 6px}
+  nav.side .list{display:flex;flex-wrap:wrap;gap:6px}
+  nav.side a.item{padding:6px 10px;border:1px solid var(--border);font-size:13px}
+  nav.side a.item .n{display:none}
+  nav.side .foot{display:none}
+  h1{font-size:28px} h2{font-size:23px}
+}
+@media print{
+  .mist,nav.side,.copy{display:none}
+  body{background:#fff;color:#111}
+  .shell{display:block;max-width:none;padding:0}
+  .card,table,pre,details,.diagram,.check li,.flow .node{border-color:#ccc;background:#fff;color:#111}
+  a{color:#4a3f6b}
+}
+</style>
+</head>
+<body>
+<div class="mist" aria-hidden="true"><div class="orb a"></div><div class="orb b"></div><div class="orb c"></div></div>
+
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <defs>
+    <symbol id="cookie" viewBox="0 0 24 24">
+      <path d="M12,3A9,9 0 0,0 3,12A9,9 0 0,0 12,21A9,9 0 0,0 21,12C21,11.5 20.96,11 20.87,10.5C20.6,10 20,10 20,10H18V9C18,8 17,8 17,8H15V7C15,6 14,6 14,6H13V4C13,3 12,3 12,3Z" fill="currentColor"/>
+      <circle cx="9.5" cy="7.5" r="1.5" fill="#12101A" fill-opacity=".55"/>
+      <circle cx="6.5" cy="11.5" r="1.5" fill="#12101A" fill-opacity=".5"/>
+      <circle cx="11.5" cy="12.5" r="1.5" fill="#12101A" fill-opacity=".55"/>
+      <circle cx="16.5" cy="14.5" r="1.5" fill="#12101A" fill-opacity=".45"/>
+      <circle cx="11" cy="17.5" r="1.5" fill="#12101A" fill-opacity=".5"/>
+    </symbol>
+  </defs>
+</svg>
+
+<div class="shell">
+<nav class="side" aria-label="Sections">
+  <div class="brand"><svg width="24" height="24" style="color:var(--primary)"><use href="#cookie"/></svg> Pinch dev guide</div>
+  <div class="list">
+    <a class="item" href="#start"><span class="n">0</span>Start here</a>
+    <a class="item" href="#product"><span class="n">1</span>What the app does</a>
+    <a class="item" href="#map"><span class="n">2</span>System overview</a>
+    <a class="item" href="#frontend"><span class="n">3</span>Frontend</a>
+    <a class="item" href="#backend"><span class="n">4</span>Backend (Edge Functions)</a>
+    <a class="item" href="#database"><span class="n">5</span>Database</a>
+    <a class="item" href="#ai"><span class="n">6</span>AI pipeline and models</a>
+    <a class="item" href="#setup"><span class="n">7</span>Run it on PC and phone</a>
+    <a class="item" href="#access"><span class="n">8</span>Access and .env</a>
+    <a class="item" href="#workflow"><span class="n">9</span>Linear, Git, CI, deploys</a>
+    <a class="item" href="#skills"><span class="n">10</span>Agent skills</a>
+    <a class="item" href="#gotchas"><span class="n">11</span>Docs vs code</a>
+    <a class="item" href="#firstweek"><span class="n">12</span>First week</a>
+    <a class="item" href="#glossary"><span class="n">13</span>Glossary and reading list</a>
+  </div>
+  <div class="foot">Updated 15 Oct 2026 from <code>master</code> at commit <code>9f5a60a</code> (PIN-45 merged).<br>Source: <code>docs/onboarding/index.html</code></div>
+</nav>
+
+<main>
+
+<!-- 0 START -->
+<section class="block" id="start" style="padding-top:30px">
+  <div class="kicker">0 · Start here</div>
+  <h1><svg width="30" height="30" style="color:var(--primary);vertical-align:-5px"><use href="#cookie"/></svg> Pinch developer guide</h1>
+  <p class="intro">This page explains how Pinch is built and how we work on it. It was written for a developer joining the project. It is a reference, not a tutorial: skim it once, then come back to the section you need.</p>
+
+  <table>
+    <tbody>
+      <tr><td class="k">What Pinch is</td><td>A mobile and web app. You give it a cooking video link (TikTok, Instagram, YouTube), a recipe web page, or a photo of a recipe card. It returns a structured recipe (ingredients, steps, servings, time) and saves it to your library. You can then scale servings, swap ingredients, translate, build a shopping list, and cook along with the video.</td></tr>
+      <tr><td class="k">App</td><td>Expo SDK 54 (React Native), Expo Router, NativeWind (Tailwind), i18next. One codebase for iOS, Android, web.</td></tr>
+      <tr><td class="k">Backend</td><td>Supabase: Postgres with Row Level Security, Auth, Storage, and 11 Edge Functions written in TypeScript for Deno.</td></tr>
+      <tr><td class="k">AI</td><td>Every model call goes through OpenRouter, one model per task: GPT-6 Luna for text, Claude Sonnet 5.5 for photos, GPT-6.1 Sol for translation, Gemini 3.5 Flash for video, Jev for the gates. See <a href="#ai">section 6</a>.</td></tr>
+      <tr><td class="k">Website</td><td>pinch-app.io on GitHub Pages (static landing page plus the web app under <code>/app</code>), with a Cloudflare worker for shared-recipe pages.</td></tr>
+      <tr><td class="k">Work tracking</td><td>Linear workspace <code>pinch-recipe</code>, team key <code>PIN</code>. GitHub PRs into <code>master</code>. EAS for store builds.</td></tr>
+      <tr><td class="k">Repo</td><td><a href="https://github.com/yardenfarag/Recipe_app">github.com/yardenfarag/Recipe_app</a> (public)</td></tr>
+    </tbody>
+  </table>
+
+  <h3>Opening this guide</h3>
+  <ul>
+    <li>Double-click <code>docs/onboarding/index.html</code> in your file browser.</li>
+    <li>Or from the repo root: <code>open docs/onboarding/index.html</code> (macOS) or <code>start docs\onboarding\index.html</code> (Windows).</li>
+    <li>Or ask Claude Code or Cursor for the "cookie tour".</li>
+  </ul>
+
+  <h3>Suggested order</h3>
+  <ol>
+    <li>Read sections 1 and 2 (about 15 minutes).</li>
+    <li>Do section 7 and get the app running on your phone with Expo Go.</li>
+    <li>Do the access checklist in section 8 with Yarden, and install the agent skills (section 10).</li>
+    <li>Read sections 3 to 6 with the code open.</li>
+    <li>Read section 11 before you trust anything in <code>docs/</code>.</li>
+  </ol>
+</section>
+
+<!-- 1 PRODUCT -->
+<section class="block" id="product">
+  <div class="kicker">1 · What the app does</div>
+  <h2>Features and the money model</h2>
+
+  <h3>The main flow</h3>
+  <div class="flow">
+    <div class="node p"><b>1. Snap</b>User pastes a link, shares one from another app, or takes a photo.</div><div class="arrow">→</div>
+    <div class="node"><b>2. Extract</b>Edge Function fetches the post and asks a model for recipe JSON.</div><div class="arrow">→</div>
+    <div class="node"><b>3. Preview, save</b>User sees the result, can adjust it, then saves it to the <code>recipes</code> table.</div><div class="arrow">→</div>
+    <div class="node ok"><b>4. Use it</b>Shopping list, cook mode, cook-along video, translate, remix.</div>
+  </div>
+
+  <h3>Features by tab</h3>
+  <table>
+    <thead><tr><th>Tab / screen</th><th>What the user can do</th><th>Code</th></tr></thead>
+    <tbody>
+      <tr><td class="k">Library</td><td>See saved recipes. Search, sort, filter by tag or collection, favorites, list or grid view, export a PDF cookbook.</td><td><code>src/app/(tabs)/index.tsx</code></td></tr>
+      <tr><td class="k">Hub</td><td>Browse public, anonymous recipe cards shared by other users. Save one to your library.</td><td><code>src/app/(tabs)/hub.tsx</code></td></tr>
+      <tr><td class="k">Snap</td><td>Paste a URL or pick a photo. Two modes: <b>Extract</b> (copy the recipe faithfully) and <b>Guess the recipe</b> (invent a recipe for a dish photo).</td><td><code>src/app/(tabs)/add.tsx</code></td></tr>
+      <tr><td class="k">List</td><td>Shopping list built from recipes, grouped by aisle, with check-off.</td><td><code>src/app/(tabs)/list.tsx</code></td></tr>
+      <tr><td class="k">Settings</td><td>Account, credits, theme, language, units, kitchen profile, support, admin screens.</td><td><code>src/app/(tabs)/settings.tsx</code></td></tr>
+      <tr><td class="k">Recipe</td><td>Scale servings, swap an ingredient (AI), remix (vegan, high protein, free text), translate, cook mode with timers, video panel, mark as cooked.</td><td><code>src/app/recipe/[id].tsx</code>, <code>src/components/RecipeView.tsx</code></td></tr>
+    </tbody>
+  </table>
+
+  <h3>Money model</h3>
+  <ul>
+    <li>No subscription.</li>
+    <li>Every signed-in user gets <b>3 free extract credits per calendar month (UTC)</b>.</li>
+    <li>More credits are bought as one-time packs: 10, 30 or 100. Purchased credits never expire.</li>
+    <li>Purchases go through RevenueCat. They are <b>switched off</b> right now (<code>EXPO_PUBLIC_CREDIT_PURCHASES_ENABLED=false</code>).</li>
+  </ul>
+  <table>
+    <thead><tr><th>Action</th><th>Cost</th><th>Limit</th></tr></thead>
+    <tbody>
+      <tr><td>Extract (URL or photo), success</td><td>1 credit</td><td>Credits</td></tr>
+      <tr><td>Guess the recipe (invent), success</td><td>1 credit</td><td>Credits</td></tr>
+      <tr><td>Repair a partial recipe, if it actually improved</td><td>1 credit</td><td>Credits</td></tr>
+      <tr><td>Extract that failed, was already in your library, or was found in the Hub</td><td>Free</td><td></td></tr>
+      <tr><td>Remix</td><td>Free</td><td>5 per recipe</td></tr>
+      <tr><td>Swap an ingredient</td><td>Free</td><td>20 per day</td></tr>
+      <tr><td>Translate</td><td>Free</td><td>10 per day</td></tr>
+      <tr><td>Fridge match (photo of fridge)</td><td>Free</td><td>8 per day</td></tr>
+    </tbody>
+  </table>
+  <p>Where the numbers live: <code>src/lib/quotas.ts</code> (app) and <code>supabase/functions/_shared/pricing.ts</code> (server). Both must match.</p>
+</section>
+
+<!-- 2 MAP -->
+<section class="block" id="map">
+  <div class="kicker">2 · System overview</div>
+  <h2>What talks to what</h2>
+
+  <div class="diagram" role="img" aria-label="Architecture diagram. The Pinch app on iOS, Android and web talks to Supabase (Auth, Postgres, Storage, Edge Functions). Edge Functions call OpenRouter, Gemini, ScrapeCreators and YouTube. RevenueCat calls a webhook. pinch-app.io runs on GitHub Pages with a Cloudflare worker for share links.">
+    <svg viewBox="0 0 1180 640" xmlns="http://www.w3.org/2000/svg" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Roboto,sans-serif">
+      <defs>
+        <marker id="arr" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#B8A8D4"/></marker>
+        <marker id="arrb" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#9BB4D0"/></marker>
+        <marker id="arrw" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#E3C27A"/></marker>
+      </defs>
+      <style>
+        .box{fill:#241F30;stroke:#3A3448;stroke-width:1.2;rx:14}.box.p{stroke:#B8A8D4}.box.b{stroke:#9BB4D0}.box.y{stroke:#E3C27A}
+        .t{fill:#F2F0F6;font-size:15px;font-weight:600}.s{fill:#B7AFC1;font-size:12px}.l{fill:#D9D3E3;font-size:11.5px}
+        .zone{fill:none;stroke:#3A3448;stroke-dasharray:5 5;rx:18}.zt{fill:#9BB4D0;font-size:11px;letter-spacing:.12em;font-weight:600}
+        .edge{fill:none;stroke:#B8A8D4;stroke-width:1.6;marker-end:url(#arr)}.edge.two{marker-start:url(#arr)}.edge.b{stroke:#9BB4D0;marker-end:url(#arrb)}.edge.y{stroke:#E3C27A;marker-end:url(#arrw)}
+      </style>
+      <rect class="zone" x="20" y="40" width="250" height="560"/><text class="zt" x="36" y="30">APP (one codebase)</text>
+      <rect class="box p" x="40" y="70" width="210" height="150"/>
+      <text class="t" x="60" y="98">Pinch app</text><text class="s" x="60" y="118">Expo SDK 54 · Expo Router</text><text class="s" x="60" y="136">React Native · NativeWind</text>
+      <text class="l" x="60" y="166">iOS · Android</text><text class="l" x="60" y="186">Web at pinch-app.io/app</text><text class="s" x="60" y="206">src/app · src/lib · src/hooks</text>
+      <rect class="box" x="40" y="250" width="210" height="96"/>
+      <text class="t" x="60" y="278">Share sheet</text><text class="s" x="60" y="298">expo-share-intent</text><text class="s" x="60" y="316">"Share to Pinch" from other apps</text><text class="s" x="60" y="334">dev build only, not Expo Go</text>
+      <rect class="box" x="40" y="376" width="210" height="80"/>
+      <text class="t" x="60" y="404">Local storage</text><text class="s" x="60" y="424">AsyncStorage: session,</text><text class="s" x="60" y="442">preferences, draft, request ids</text>
+      <rect class="box" x="40" y="486" width="210" height="96"/>
+      <text class="t" x="60" y="514">RevenueCat SDK</text><text class="s" x="60" y="534">react-native-purchases</text><text class="s" x="60" y="552">credit packs 10 / 30 / 100</text><text class="s" x="60" y="570">(off until the flag is true)</text>
+      <rect class="zone" x="330" y="40" width="420" height="560"/><text class="zt" x="346" y="30">SUPABASE · project ccobefeofhnncpgifxel (eu-central-1)</text>
+      <rect class="box b" x="350" y="70" width="180" height="80"/>
+      <text class="t" x="368" y="98">Auth</text><text class="s" x="368" y="118">email · Apple · Google</text><text class="s" x="368" y="136">PKCE, JWT to the app</text>
+      <rect class="box b" x="550" y="70" width="180" height="80"/>
+      <text class="t" x="568" y="98">Storage</text><text class="s" x="568" y="118">avatars (public)</text><text class="s" x="568" y="136">recipe-thumbnails (public)</text>
+      <rect class="box b" x="350" y="176" width="380" height="140"/>
+      <text class="t" x="368" y="204">Postgres 17 + Row Level Security</text>
+      <text class="s" x="368" y="226">profiles · recipes · recipe_translations · collections</text>
+      <text class="s" x="368" y="244">shopping_list_items · recipe_cards (Hub) · recipe_shares</text>
+      <text class="s" x="368" y="262">credit_reservations · extract_usage_monthly · token_ledger</text>
+      <text class="s" x="368" y="280">ai_usage_events · product_events · feedback · support_tickets</text>
+      <text class="s" x="368" y="300">40 migrations · RPCs for credits · pg_cron refund job</text>
+      <rect class="box p" x="350" y="342" width="380" height="240"/>
+      <text class="t" x="368" y="370">Edge Functions (Deno, TypeScript)</text>
+      <text class="s" x="368" y="390">supabase/functions/* · API keys live here, never in the app</text>
+      <text class="l" x="368" y="418">extract-recipe · invent-recipe · repair-recipe</text>
+      <text class="l" x="368" y="438">transform-recipe (remix) · suggest-substitution</text>
+      <text class="l" x="368" y="458">translate-recipe · match-fridge · backfill-thumbnails</text>
+      <text class="l" x="368" y="478">recipe-share · delete-account · revenuecat-webhook</text>
+      <text class="s" x="368" y="508">_shared/llmClient.ts picks the AI provider per call</text>
+      <text class="s" x="368" y="526">_shared/quotas.ts reserves / finalizes / refunds credits</text>
+      <text class="s" x="368" y="544">_shared/usageLog.ts logs every AI call to ai_usage_events</text>
+      <text class="s" x="368" y="566">Deployed by hand: npx supabase functions deploy &lt;name&gt;</text>
+      <rect class="zone" x="810" y="40" width="350" height="560"/><text class="zt" x="826" y="30">OUTSIDE SERVICES</text>
+      <rect class="box y" x="830" y="70" width="310" height="92"/>
+      <text class="t" x="848" y="98">OpenRouter</text><text class="s" x="848" y="118">text extract · vision · translate · remix · swap · gates</text><text class="s" x="848" y="136">+ Jev decisions API (typesafe/jev-1.13)</text><text class="s" x="848" y="152">one API key; Luna · Sonnet 5.5 · Sol · Mistral Small · Gemini 3.5 Flash</text>
+      <rect class="box y" x="830" y="180" width="310" height="64"/>
+      <text class="t" x="848" y="208">Video via OpenRouter too</text><text class="s" x="848" y="228">YouTube by URL; IG/TikTok clips downloaded, sent inline (≤20 MB)</text>
+      <rect class="box y" x="830" y="262" width="310" height="64"/>
+      <text class="t" x="848" y="290">ScrapeCreators</text><text class="s" x="848" y="310">Instagram and TikTok post data, video download</text>
+      <rect class="box y" x="830" y="344" width="310" height="64"/>
+      <text class="t" x="848" y="372">YouTube Data API + Innertube</text><text class="s" x="848" y="392">description, top comments, captions, thumbnails</text>
+      <rect class="box y" x="830" y="426" width="310" height="64"/>
+      <text class="t" x="848" y="454">RevenueCat</text><text class="s" x="848" y="474">calls revenuecat-webhook, which grants credits</text>
+      <rect class="box" x="830" y="508" width="310" height="74"/>
+      <text class="t" x="848" y="536">pinch-app.io</text><text class="s" x="848" y="556">GitHub Pages: landing + /app (auto on push to master)</text><text class="s" x="848" y="572">Cloudflare worker renders /s/&lt;token&gt; share pages</text>
+      <path class="edge two" d="M250 100 C 300 100, 300 105, 350 105"/>
+      <path class="edge two" d="M250 150 C 300 150, 300 240, 350 240"/><text class="s" x="262" y="232">CRUD via RLS</text>
+      <path class="edge" d="M250 200 C 300 200, 300 420, 350 420"/><text class="s" x="262" y="405">functions.invoke</text>
+      <path class="edge" d="M250 86 C 290 86, 500 50, 560 70"/>
+      <path class="edge two b" d="M540 342 C 540 330, 540 328, 540 316"/>
+      <path class="edge b" d="M700 342 C 700 330, 640 170, 640 150"/>
+      <path class="edge y" d="M730 430 C 790 430, 790 116, 830 116"/>
+            <path class="edge y" d="M730 470 C 790 470, 790 294, 830 294"/>
+      <path class="edge y" d="M730 490 C 790 490, 790 376, 830 376"/>
+      <path class="edge y" d="M830 458 C 790 458, 790 530, 730 530"/>
+      <path class="edge" d="M250 534 C 300 534, 300 612, 980 612 C 1010 612, 1010 500, 1000 490" stroke-dasharray="4 4"/>
+      <text class="s" x="560" y="628">purchase: app → RevenueCat → webhook → credits in profiles.token_balance</text>
+      <path class="edge b" d="M830 560 C 780 560, 770 560, 730 560" stroke-dasharray="4 4"/>
+    </svg>
+    <div class="legend"><span><i style="background:#B8A8D4"></i>app calls</span><span><i style="background:#9BB4D0"></i>inside Supabase</span><span><i style="background:#E3C27A"></i>outside services (paid APIs; keys are Supabase secrets)</span><span>dashed = indirect</span></div>
+  </div>
+
+  <h3>Three rules</h3>
+  <table>
+    <tbody>
+      <tr><td class="k">1. App ↔ database directly</td><td>For normal data (recipes, lists, collections) the app uses the Supabase JS client. Row Level Security makes this safe: every policy checks <code>user_id = auth.uid()</code>.</td></tr>
+      <tr><td class="k">2. Secrets and money go through Edge Functions</td><td>AI calls, scraping, credits, account deletion. The app only holds the Supabase URL and the publishable key.</td></tr>
+      <tr><td class="k">3. Edge Functions do not save recipes</td><td>They return JSON. The app shows a preview and the user saves. "Extracted" and "saved" are two different events.</td></tr>
+    </tbody>
+  </table>
+
+  <h3>Example: one Snap, end to end</h3>
+  <ol>
+    <li>User pastes <code>https://www.instagram.com/reel/ABC123/</code> and taps "Fork it!".</li>
+    <li>App calls <code>supabase.functions.invoke('extract-recipe', { body: { url, request_id } })</code> (<code>src/lib/supabase/extractRecipe.ts</code>).</li>
+    <li>The function checks the user's library and the Hub. Miss. It fetches the post from ScrapeCreators, runs the gates, reserves 1 credit, calls the model, classifies the result.</li>
+    <li>Response: <code>{ status: 'full', platform: 'instagram', recipe: {...}, tokens_charged: 1, total_credits: 2 }</code>.</li>
+    <li>App stores the recipe as a draft in AsyncStorage and opens <code>/recipe/preview</code>.</li>
+    <li>User taps Save. App inserts into <code>recipes</code> through RLS (<code>src/lib/supabase/recipes.ts</code>).</li>
+  </ol>
+</section>
+
+<!-- 3 FRONTEND -->
+<section class="block" id="frontend">
+  <div class="kicker">3 · Frontend</div>
+  <h2>The app</h2>
+
+  <table>
+    <thead><tr><th>Tool</th><th>What it does for us</th><th>Note</th></tr></thead>
+    <tbody>
+      <tr><td class="k">Expo SDK 54</td><td>Dev server, Expo Go, cloud builds (EAS), native modules (camera, share, image picker).</td><td><code>AGENTS.md</code> says to read the v57 docs. We are on <b>54</b>. Use <a href="https://docs.expo.dev/versions/v54.0.0/">docs.expo.dev/versions/v54.0.0</a>.</td></tr>
+      <tr><td class="k">Expo Router</td><td>File-based navigation. A file in <code>src/app/</code> is a screen. <code>(tabs)/</code> is the tab bar. <code>recipe/[id].tsx</code> is a dynamic route.</td><td>Typed routes are on.</td></tr>
+      <tr><td class="k">NativeWind v4</td><td>Tailwind classes on React Native components.</td><td>Example: <code>&lt;View className="bg-pinch-surface rounded-2xl p-4"&gt;</code>. Colors come from <code>src/constants/brandColors.js</code>.</td></tr>
+      <tr><td class="k">i18next</td><td>Translations.</td><td>Example: <code>const { t } = useTranslation(); t('list.refreshFailed')</code>. Locale files: <code>src/i18n/locales/{en,es,he,ru,ar}.ts</code>.</td></tr>
+      <tr><td class="k">Supabase JS</td><td>Auth, database, storage, function calls.</td><td>One client in <code>src/lib/supabase/client.ts</code>.</td></tr>
+      <tr><td class="k">Vitest</td><td>Unit tests.</td><td>Tests sit next to the file: <code>formatQuantity.ts</code> and <code>formatQuantity.test.ts</code>.</td></tr>
+    </tbody>
+  </table>
+
+  <h3>Folders</h3>
+  <table>
+    <thead><tr><th>Folder</th><th>Contents</th></tr></thead>
+    <tbody>
+      <tr><td class="k"><code>src/app/</code></td><td>Screens. <code>_layout.tsx</code> is the root. It nests the providers in this order: theme → language → i18n → measurement units → onboarding → error boundary → auth → share intent → navigator.</td></tr>
+      <tr><td class="k"><code>src/components/</code></td><td>UI pieces. The important one is <code>RecipeView.tsx</code>, used by both the preview and the saved recipe screen. Modals: <code>SubstitutionModal</code>, <code>RecipeVariantModal</code> (remix), <code>RecipeTranslateModal</code>, <code>FridgeMatchModal</code>. <code>CookieMark.tsx</code> is the logo.</td></tr>
+      <tr><td class="k"><code>src/hooks/</code></td><td>State. <code>useAuth</code>, <code>useRecipes</code>, <code>useShoppingList</code>, <code>useCollections</code>, <code>useCookingHub</code>, <code>useProfile</code>, preference hooks (theme, language, units), gates (<code>useOnboardingGate</code>, <code>useShareIntentRouter</code>).</td></tr>
+      <tr><td class="k"><code>src/lib/</code></td><td>Pure functions with tests: formatting, unit conversion, quotas, draft handling, analytics, PDF cookbook, URL parsing.</td></tr>
+      <tr><td class="k"><code>src/lib/supabase/</code></td><td>All Supabase access. One file per topic. Edge Function clients are named after the function: <code>extractRecipe.ts</code>, <code>transformRecipe.ts</code>, <code>translateRecipe.ts</code>, and so on.</td></tr>
+      <tr><td class="k"><code>src/constants/</code></td><td><code>brandColors.js</code> (hex values), <code>theme.ts</code> (spacing, radius, widths), <code>themes.ts</code> (7 theme packs).</td></tr>
+      <tr><td class="k"><code>src/i18n/</code>, <code>src/types/</code></td><td>Translations; TypeScript types. <code>types/recipe.ts</code> mirrors the <code>recipes</code> table.</td></tr>
+      <tr><td class="k"><code>landing/</code>, <code>legal/</code>, <code>public/</code></td><td>The static website (hand-written HTML, a separate pink palette), legal pages, robots.txt and sitemap.</td></tr>
+      <tr><td class="k"><code>assets/</code></td><td>Icons, splash screen, store graphics.</td></tr>
+    </tbody>
+  </table>
+
+  <h3>Screens</h3>
+  <div class="table-wrap"><table>
+    <thead><tr><th>Route</th><th>Purpose</th></tr></thead>
+    <tbody>
+      <tr><td><code>(tabs)/index</code></td><td>Library</td></tr>
+      <tr><td><code>(tabs)/hub</code>, <code>hub/[id]</code></td><td>Hub list and card detail</td></tr>
+      <tr><td><code>(tabs)/add</code></td><td>Snap. Calls <code>extract-recipe</code> or <code>invent-recipe</code>.</td></tr>
+      <tr><td><code>(tabs)/list</code></td><td>Shopping list</td></tr>
+      <tr><td><code>(tabs)/settings</code>, <code>settings/*</code></td><td>Settings hub; credits, recipe prefs, appearance, language, support</td></tr>
+      <tr><td><code>recipe/preview</code></td><td>Unsaved extraction result, read from the draft in AsyncStorage</td></tr>
+      <tr><td><code>recipe/[id]</code></td><td>Saved recipe</td></tr>
+      <tr><td><code>onboarding</code>, <code>welcome</code>, <code>auth</code>, <code>auth-callback</code>, <code>reset-password</code></td><td>First run and sign-in (email, Apple on iOS, Google via browser)</td></tr>
+      <tr><td><code>s/[token]</code></td><td>Opens a shared recipe and copies it into your library</td></tr>
+      <tr><td><code>cookbook</code></td><td>PDF export of the library</td></tr>
+      <tr><td><code>admin/insights</code>, <code>admin/users</code>, <code>admin/usage</code></td><td>Admin only (<code>profiles.is_admin</code> or email allowlist)</td></tr>
+      <tr><td><code>+native-intent.ts</code></td><td>Turns a share-extension deep link into <code>/add</code></td></tr>
+    </tbody>
+  </table></div>
+
+  <h3>How state and data work</h3>
+  <table>
+    <tbody>
+      <tr><td class="k">Session</td><td>Stored in AsyncStorage by the Supabase client. <code>useAuth()</code> gives you <code>user</code> and <code>loading</code>.</td></tr>
+      <tr><td class="k">Sign-in required</td><td><code>useOnboardingGate</code> sends new installs to <code>/onboarding</code> and signed-out users to <code>/auth</code>. Old docs describe a guest mode; it is switched off.</td></tr>
+      <tr><td class="k">Recipes</td><td><code>useRecipes</code> fetches pages from the <code>recipes</code> table and refetches when the screen gets focus. There is no cache library yet (TanStack Query is planned, PIN-40).</td></tr>
+      <tr><td class="k">Snap call</td><td>One blocking <code>functions.invoke</code>. The app sends a <code>request_id</code> (one per URL, kept in AsyncStorage) so a retry cannot be charged twice. The rotating status text while waiting is a 2.8 s timer, not progress from the server.</td></tr>
+      <tr><td class="k">Share sheet</td><td>Another app shares a URL to Pinch. <code>+native-intent.ts</code> rewrites it to <code>/add</code>, the Snap screen reads it and starts automatically. Only works in a dev or production build.</td></tr>
+      <tr><td class="k">Analytics</td><td><code>src/lib/analytics.ts</code> inserts rows into <code>product_events</code>. Events: <code>recipe_extracted</code>, <code>recipe_saved</code>, <code>paywall_viewed</code>, <code>onboarding_completed</code>, <code>app_shared</code>. No third-party SDK.</td></tr>
+      <tr><td class="k">Purchases</td><td><code>src/lib/purchases.ts</code> wraps RevenueCat. Only configured when the flag is true and a platform key is set.</td></tr>
+    </tbody>
+  </table>
+
+  <h3>Example: the Recipe type</h3>
+  <p>From <code>src/types/recipe.ts</code>. Ingredients and instructions are JSONB columns in Postgres.</p>
+  <pre><code>interface Recipe {
+  id: string;
+  user_id?: string;
+  title: string;
+  original_url?: string;
+  platform?: 'youtube' | 'instagram' | 'tiktok' | 'web' | 'photo' | 'unknown';
+  image_url?: string;
+  ingredients: { name: string; quantity: number; unit: string; metric?: {...}; spoons?: {...} }[];
+  instructions: { step: number; text: string; timestamp_seconds?: number }[];
+  servings: number;
+  calories?: number;
+  estimated_time_minutes?: number;
+  cost_estimate?: '$' | '$$' | '$$$';
+  effort_level?: 'Easy' | 'Medium' | 'Hard';
+  extraction_status: 'full' | 'partial';
+  extraction_source?: 'description' | 'comments' | 'captions' | 'video' | 'web' | 'photo' | 'invented';
+  missing_fields?: string[];
+  tags?: string[];
+  is_favorite?: boolean;
+  source_language?: string;
+  last_cooked_at?: string;
+  cook_note?: string;
+}</code></pre>
+
+  <h3>Example: adding a translated string</h3>
+  <ol>
+    <li>Add the key to <b>all five</b> files in <code>src/i18n/locales/</code>, same path, same placeholders:
+      <pre><code><span class="c">// en.ts</span>
+"list": { "combineFailed": "Couldn’t combine {{count}} items." }
+<span class="c">// he.ts, es.ts, ru.ts, ar.ts: same key, translated text, same {{count}}</span></code></pre></li>
+    <li>Use it: <code>t('list.combineFailed', { count: 3 })</code>.</li>
+    <li>Run <code>npm test</code>. <code>src/i18n/locales.test.ts</code> fails if a key is missing in one locale.</li>
+    <li>Check Hebrew or Arabic once: they are right-to-left.</li>
+  </ol>
+
+  <h3>Design tokens</h3>
+  <p>Palette name: Mist Drift. Lilac and mist blue, no orange or green. Values are in <code>src/constants/brandColors.js</code>. In components, read colors from <code>useThemePreference().colors</code> because the user can pick one of 7 theme packs.</p>
+  <div class="swatches">
+    <div class="sw"><i style="background:#B8A8D4"></i><span><b>#B8A8D4</b>primary, dark</span></div>
+    <div class="sw"><i style="background:#6D5E8A"></i><span><b>#6D5E8A</b>primary, light</span></div>
+    <div class="sw"><i style="background:#9BB4D0"></i><span><b>#9BB4D0</b>accent, dark</span></div>
+    <div class="sw"><i style="background:#12101A"></i><span><b>#12101A</b>bg, dark</span></div>
+    <div class="sw"><i style="background:#1E1A28"></i><span><b>#1E1A28</b>surface, dark</span></div>
+    <div class="sw"><i style="background:#F2F0F6"></i><span><b>#F2F0F6</b>text, dark</span></div>
+    <div class="sw"><i style="background:#B7AFC1"></i><span><b>#B7AFC1</b>muted, dark</span></div>
+    <div class="sw"><i style="background:#F4F1F8"></i><span><b>#F4F1F8</b>bg, light</span></div>
+  </div>
+  <ul>
+    <li>Spacing: 4, 8, 16, 24, 32, 64. Radius: 10, 16, 22, 28. System fonts only.</li>
+    <li>Wide screens hide the tab bar and show <code>WebSidebar</code>. Breakpoints: <code>useBreakpoint</code>.</li>
+    <li>The logo is a cookie (<code>CookieMark.tsx</code>, <code>assets/images/cookie-icon.svg</code>). No wordmark in the UI.</li>
+  </ul>
+
+  <div class="note warn"><b>Rules that apply to every PR</b> (<code>.cursor/rules/cross-platform-i18n.mdc</code>)<br>
+    1. A feature must work on iOS, Android and web.<br>
+    2. No hardcoded user-facing strings. Every string goes through <code>t()</code> and exists in all five locale files.</div>
+
+  <h3>Files to read first</h3>
+  <ol>
+    <li><code>src/app/_layout.tsx</code></li>
+    <li><code>src/components/app-tabs.tsx</code></li>
+    <li><code>src/app/(tabs)/add.tsx</code></li>
+    <li><code>src/lib/supabase/extractRecipe.ts</code></li>
+    <li><code>src/components/RecipeView.tsx</code></li>
+  </ol>
+</section>
+
+<!-- 4 BACKEND -->
+<section class="block" id="backend">
+  <div class="kicker">4 · Backend</div>
+  <h2>Edge Functions</h2>
+  <p class="intro">Edge Functions are small TypeScript HTTP handlers that Supabase runs on Deno. They hold the API keys, do the AI work and manage credits. Each one has a matching client file in <code>src/lib/supabase/</code>. All of them are POST with JSON bodies. All verify the user's JWT except the RevenueCat webhook.</p>
+
+  <div class="table-wrap"><table>
+    <thead><tr><th>Function</th><th>What it does</th><th>Cost to user</th><th>Client file</th></tr></thead>
+    <tbody>
+      <tr><td class="k">extract-recipe</td><td>The Snap pipeline. Input: <code>{ url }</code> or <code>{ image_base64, image_mime }</code>, plus <code>request_id</code>. Output: <code>{ status, platform, recipe?, code?, ...credit balances }</code>. Checks library and Hub caches, runs gates, reserves a credit, runs the content ladder, classifies, publishes full results to the Hub.</td><td>1 credit on success</td><td><code>extractRecipe.ts</code></td></tr>
+      <tr><td class="k">invent-recipe</td><td>"Guess the recipe". Same inputs. Writes a plausible home-cook recipe from a dish photo or post. Result has <code>extraction_source: 'invented'</code>.</td><td>1 credit on success</td><td><code>inventRecipe.ts</code></td></tr>
+      <tr><td class="k">repair-recipe</td><td>Fills missing ingredients or steps on a <code>partial</code> recipe. Two calls: generate (credit held), then <code>{ action: 'commit' | 'abort', reservation_id }</code>.</td><td>1 credit only if it improved</td><td><code>repairRecipe.ts</code></td></tr>
+      <tr><td class="k">transform-recipe</td><td>Remix. Input: <code>{ variant }</code> (healthier, vegan, vegetarian, gluten_free, dairy_free, low_carb, high_protein) or <code>{ instruction }</code> (free text, max 400 chars, checked for relatedness first) plus the recipe. Also used for kitchen auto-apply.</td><td>Free, 5 per recipe</td><td><code>transformRecipe.ts</code></td></tr>
+      <tr><td class="k">suggest-substitution</td><td>Swap one ingredient: returns 2 to 3 alternatives. Second mode <code>rewrite_instructions</code> rewrites the steps after the swap.</td><td>Free, 20/day</td><td><code>suggestSubstitution.ts</code></td></tr>
+      <tr><td class="k">translate-recipe</td><td>Translates title, ingredients and steps into en, es, he, ru, ar, de or fr. The app caches the result in <code>recipe_translations</code>.</td><td>Free, 10/day</td><td><code>translateRecipe.ts</code></td></tr>
+      <tr><td class="k">match-fridge</td><td>Fridge photo plus the user's recipe list (up to 80) → ranked "you can cook this".</td><td>Free, 8/day</td><td><code>matchFridge.ts</code></td></tr>
+      <tr><td class="k">backfill-thumbnails</td><td>Replaces low-quality old YouTube thumbnails.</td><td>Free</td><td><code>backfillRecipeThumbnails.ts</code></td></tr>
+      <tr><td class="k">recipe-share</td><td>Share links. Actions: <code>create</code> (token + snapshot), <code>get</code> (public read), <code>claim</code> (copy into your library).</td><td>Free</td><td><code>recipeShare.ts</code>, also the Cloudflare worker</td></tr>
+      <tr><td class="k">delete-account</td><td>Revokes the Apple token, deletes avatars, deletes the auth user. Foreign keys cascade the rest.</td><td></td><td><code>auth.ts</code></td></tr>
+      <tr><td class="k">revenuecat-webhook</td><td>Called by RevenueCat after a purchase. Checks a shared secret header, then grants credits once per event id.</td><td></td><td>Not called by the app</td></tr>
+    </tbody>
+  </table></div>
+
+  <div class="note blue"><b>Not in master yet:</b> PR #4 (branch <code>cost-guards-welcome-public-recipe</code>) adds <code>public-recipe</code> and <code>welcome-email</code> functions and migrations 0041 to 0044. <code>public-recipe</code> is already deployed in production. Ask Yarden before touching that area.</div>
+
+  <h3>Shared code: <code>supabase/functions/_shared/</code></h3>
+  <table>
+    <thead><tr><th>File</th><th>What it does</th></tr></thead>
+    <tbody>
+      <tr><td class="k">llmClient.ts</td><td>The one entry point for AI: <code>generateLlmJson()</code>. <code>TASK_MODELS</code> maps each task <code>kind</code> to a primary model, fallbacks and reasoning effort. Sends the JSON schema, records OpenRouter's exact cost. Read this first.</td></tr>
+      <tr><td class="k">gemini.ts</td><td>Extraction prompts, the content ladder (<code>extractRecipeWithLadder</code>), photo extraction, repair. The file name is historical; every call goes through <code>llmClient.ts</code>.</td></tr>
+      <tr><td class="k">videoInput.ts</td><td>Turns a video URL into something OpenRouter accepts: YouTube URLs pass through, Instagram and TikTok clips are downloaded and sent inline as base64 (20 MB cap).</td></tr>
+      <tr><td class="k">jev.ts</td><td>The extract gate (PIN-46). A cheap typed decision before the expensive extraction.</td></tr>
+      <tr><td class="k">contentGate.ts</td><td>"Is this food?" classifier with a daily cap.</td></tr>
+      <tr><td class="k">classifyRecipe.ts</td><td>Decides <code>full</code>, <code>partial</code> or <code>failed</code>.</td></tr>
+      <tr><td class="k">quotas.ts, pricing.ts, dailyAiUsage.ts</td><td>Credit reserve / finalize / refund, daily caps, limits, cost per model.</td></tr>
+      <tr><td class="k">youtube.ts, instagram.ts, tiktok.ts, webRecipe.ts, scrapecreators.ts</td><td>Fetch the post. YouTube: Data API plus Innertube captions. Instagram and TikTok: ScrapeCreators. Web: direct fetch, prefers schema.org JSON-LD, blocks private IPs.</td></tr>
+      <tr><td class="k">usageLog.ts</td><td>Writes one row to <code>ai_usage_events</code> per AI call (tokens, USD, model). Feeds the admin usage screen.</td></tr>
+      <tr><td class="k">recipeCards.ts, persistThumbnail.ts</td><td>Hub publishing; re-hosting Instagram and TikTok thumbnails in Storage because their CDN URLs expire.</td></tr>
+      <tr><td class="k">translateRecipe.ts, substitution.ts, recipeVariant.ts, inventRecipe.ts, fridgeMatch.ts</td><td>Prompts and schemas for those tasks.</td></tr>
+    </tbody>
+  </table>
+
+  <h3 id="credits">Credits: reserve, finalize, refund</h3>
+  <div class="flow">
+    <div class="node p"><b>1. Reserve</b><code>reserve_recipe_credit(user, month, request_id)</code>. Free pool first, then purchased. Same <code>request_id</code> returns the same reservation.</div><div class="arrow">→</div>
+    <div class="node"><b>2. Work</b>Content ladder runs (5 to 60 s).</div><div class="arrow">→</div>
+    <div class="node ok"><b>3a. Finalize</b>Result is full or partial → <code>finalize_recipe_credit</code>.</div>
+    <div class="node bad"><b>3b. Refund</b>Failed, no recipe, video too long, any error → <code>refund_recipe_credit</code>. If the refund itself fails → <code>compensation_pending</code>.</div><div class="arrow">→</div>
+    <div class="node"><b>Safety net</b>pg_cron job <code>pinch-refund-stale-extractions</code> runs every 10 min and refunds reservations older than 30 min.</div>
+  </div>
+  <ul>
+    <li>SQL: migrations <code>0018</code>, <code>0019</code>, <code>0021</code>.</li>
+    <li>Tests: <code>supabase/tests/recipe_credits.sql</code> (pgTAP, 55 assertions). Run them if you touch billing.</li>
+  </ul>
+
+  <h3>Secrets (set in Supabase, never in the app or GitHub Actions)</h3>
+  <div class="table-wrap"><table>
+    <thead><tr><th>Secret</th><th>Needed</th><th>Used for</th></tr></thead>
+    <tbody>
+      <tr><td><code>OPENROUTER_API_KEY</code></td><td><span class="tag bad">required</span></td><td>Every model call: text, vision, video, and the Jev gate</td></tr>
+      <tr><td><code>SCRAPECREATORS_API_KEY</code></td><td><span class="tag bad">required</span></td><td>Instagram and TikTok</td></tr>
+      <tr><td><code>YOUTUBE_API_KEY</code></td><td><span class="tag">optional</span></td><td>YouTube description, comments, best thumbnail. Captions work without it.</td></tr>
+      <tr><td><code>REVENUECAT_WEBHOOK_AUTH</code>, <code>CREDIT_PURCHASES_ENABLED</code></td><td><span class="tag">purchases</span></td><td>Webhook secret and kill switch</td></tr>
+      <tr><td><code>APPLE_CLIENT_ID</code>, <code>APPLE_TEAM_ID</code>, <code>APPLE_KEY_ID</code>, <code>APPLE_PRIVATE_KEY</code></td><td><span class="tag">optional</span></td><td>Revoke Sign in with Apple on account deletion</td></tr>
+      <tr><td><code>OPENROUTER_MODEL_&lt;KIND&gt;</code>, <code>OPENROUTER_FALLBACKS_&lt;KIND&gt;</code>, <code>OPENROUTER_REASONING_&lt;KIND&gt;</code>, <code>JEV_MODEL</code></td><td><span class="tag">optional</span></td><td>Per-task overrides, e.g. <code>OPENROUTER_MODEL_TEXT</code>. Defaults are <code>TASK_MODELS</code> in <code>llmClient.ts</code>. The old <code>GEMINI_*</code> and <code>OPENROUTER_MODEL</code> secrets are no longer read.</td></tr>
+    </tbody>
+  </table></div>
+
+  <h3>Commands</h3>
+  <pre><button class="copy" data-copy>Copy</button><code><span class="c"># The Supabase CLI is a dev dependency. Always use npx.</span>
+npx supabase login
+npx supabase link --project-ref ccobefeofhnncpgifxel
+
+<span class="c"># Migrations</span>
+npx supabase db push --dry-run
+npx supabase db push
+
+<span class="c"># Deploy one function (manual; there is no CI for this)</span>
+npx supabase functions deploy extract-recipe
+
+<span class="c"># Set a secret</span>
+npx supabase secrets set OPENROUTER_API_KEY=sk-or-v1-...
+
+<span class="c"># Smoke test</span>
+curl -X POST 'https://ccobefeofhnncpgifxel.supabase.co/functions/v1/extract-recipe' \
+  -H "Authorization: Bearer &lt;user JWT&gt;" -H "Content-Type: application/json" \
+  -d '{"url":"https://www.youtube.com/watch?v=VIDEO_ID"}'</code></pre>
+
+  <h3>Tests</h3>
+  <table>
+    <tbody>
+      <tr><td class="k">Vitest</td><td><code>npm test</code>. Covers <code>src/**</code>, <code>workers/**</code>, <code>scripts/**</code>. Edge Functions are excluded (Deno). Some shared logic is mirrored in <code>src/lib</code> so it can be tested, for example <code>recipeCompleteness.ts</code> mirrors <code>classifyRecipe.ts</code>. Keep both in sync.</td></tr>
+      <tr><td class="k">Deno</td><td><code>npx deno test -A --no-lock --env-file=.env supabase/functions/_shared/llmClient_test.ts supabase/functions/_shared/jev_test.ts</code>. The router test includes a live check that every default model slug still exists on OpenRouter.</td></tr>
+      <tr><td class="k">pgTAP</td><td><code>supabase/tests/*.sql</code>: credits, billing recovery, Hub. Run with <code>npx supabase test db</code> against a local stack.</td></tr>
+      <tr><td class="k">CI</td><td>Runs Vitest, typecheck, lint and a web export. Not Deno, not pgTAP.</td></tr>
+    </tbody>
+  </table>
+</section>
+
+<!-- 5 DATABASE -->
+<section class="block" id="database">
+  <div class="kicker">5 · Database</div>
+  <h2>Postgres with Row Level Security</h2>
+  <ul>
+    <li>One Supabase project: <code>recipe_app</code>, ref <code>ccobefeofhnncpgifxel</code>, region eu-central-1, Postgres 17.</li>
+    <li>40 numbered migrations in <code>supabase/migrations/</code>. Never edit an old one; add <code>0041_&lt;name&gt;.sql</code>.</li>
+    <li>RLS is on for every table. User tables: <code>auth.uid() = user_id</code>. Billing tables have no client policies; only Edge Functions touch them with the service role.</li>
+    <li>Dashboard: <a href="https://supabase.com/dashboard/project/ccobefeofhnncpgifxel">supabase.com/dashboard/project/ccobefeofhnncpgifxel</a>.</li>
+  </ul>
+
+  <h3>Tables</h3>
+  <div class="table-wrap"><table>
+    <thead><tr><th>Group</th><th>Table</th><th>Purpose and key columns</th></tr></thead>
+    <tbody>
+      <tr><td rowspan="2" class="k">Core</td><td><code>profiles</code></td><td>One row per auth user, created by trigger. <code>email</code>, <code>avatar_url</code>, <code>is_admin</code>, <code>token_balance</code> (purchased credits), <code>subscription_status</code> (legacy), <code>kitchen</code> (JSON: diets, pantry, auto-apply).</td></tr>
+      <tr><td><code>recipes</code></td><td>See the Recipe type in section 3. Unique on (user_id, original_url, origin).</td></tr>
+      <tr><td rowspan="4" class="k">Library</td><td><code>recipe_translations</code></td><td>Cached translations. Primary key (recipe_id, language_code).</td></tr>
+      <tr><td><code>collections</code></td><td>Named groups, unique lower(name) per user.</td></tr>
+      <tr><td><code>collection_recipes</code></td><td>Join table.</td></tr>
+      <tr><td><code>shopping_list_items</code></td><td>Items with <code>source_recipe_ids</code>.</td></tr>
+      <tr><td rowspan="3" class="k">Hub and sharing</td><td><code>recipe_cards</code></td><td>Public anonymous cards keyed by canonical URL, with save counts. Readable by everyone. Triggers publish eligible saves.</td></tr>
+      <tr><td><code>recipe_shares</code></td><td>Opaque token plus a snapshot of the recipe.</td></tr>
+      <tr><td><code>recipe_share_claims</code></td><td>Who claimed which share.</td></tr>
+      <tr><td rowspan="6" class="k">Billing and metering</td><td><code>extract_usage_monthly</code></td><td>Free credits used per user per month.</td></tr>
+      <tr><td><code>credit_reservations</code></td><td>One row per reserve, with status and compensation fields.</td></tr>
+      <tr><td><code>purchase_credit_grants</code></td><td>One row per RevenueCat event (idempotency).</td></tr>
+      <tr><td><code>token_ledger</code></td><td>Every balance change.</td></tr>
+      <tr><td><code>recipe_remix_usage</code>, <code>preview_remix_usage</code></td><td>Remix counts per recipe (saved or still in preview).</td></tr>
+      <tr><td><code>ai_usage_daily</code>, <code>guest_ai_usage_daily</code></td><td>Daily caps for translate, swap, fridge match, content gate.</td></tr>
+      <tr><td rowspan="4" class="k">Ops</td><td><code>ai_usage_events</code></td><td>Every AI call: action, model, tokens, USD cost, metadata.</td></tr>
+      <tr><td><code>product_events</code></td><td>Analytics events, with country from the Cloudflare header.</td></tr>
+      <tr><td><code>feedback</code></td><td>In-app and website feedback.</td></tr>
+      <tr><td><code>support_tickets</code></td><td>Support requests.</td></tr>
+      <tr><td class="k">Storage</td><td><code>avatars</code>, <code>recipe-thumbnails</code></td><td>Both public buckets.</td></tr>
+    </tbody>
+  </table></div>
+
+  <h3>Patterns</h3>
+  <table>
+    <tbody>
+      <tr><td class="k">RPC functions</td><td>Anything that must be atomic is a <code>security definer</code> plpgsql function: <code>reserve_recipe_credit</code>, <code>finalize_recipe_credit</code>, <code>refund_recipe_credit</code>, <code>grant_purchased_credits</code>, <code>reserve_daily_ai_usage</code>, <code>claim_recipe_card</code>, <code>ensure_user_profile</code>, <code>is_current_user_admin</code>.</td></tr>
+      <tr><td class="k">Triggers</td><td>Create profile on sign-up; copy remix usage from preview to saved recipe; bump and drop Hub save counts; stamp country on product events.</td></tr>
+      <tr><td class="k">Idempotency</td><td>Unique (user, url, origin) on recipes. <code>request_id</code> on credit reservations. Event id on purchase grants.</td></tr>
+      <tr><td class="k">Types</td><td><code>src/types/*.ts</code> are written by hand. When you add a column, update the type. Generated types are planned (PIN-32).</td></tr>
+    </tbody>
+  </table>
+
+  <details>
+    <summary>Migration list 0001 to 0040</summary>
+    <div class="table-wrap"><table>
+      <tbody>
+        <tr><td>0001</td><td>profiles, recipes, RLS, sign-up trigger</td><td>0021</td><td>Stale reservation refunds and pg_cron job</td></tr>
+        <tr><td>0002</td><td>Avatar bucket</td><td>0022</td><td>Remix usage per recipe and preview</td></tr>
+        <tr><td>0003</td><td>Extraction source, calorie reasoning</td><td>0023</td><td>Ensure every sign-up has a profile</td></tr>
+        <tr><td>0004</td><td>Favorites</td><td>0024</td><td>Photo platform</td></tr>
+        <tr><td>0005</td><td>Unique URL per user</td><td>0025</td><td>Kitchen profile, fridge-match caps</td></tr>
+        <tr><td>0006</td><td>Thumbnail bucket</td><td>0026</td><td>Invent and content-gate daily caps</td></tr>
+        <tr><td>0007</td><td>Time reasoning</td><td>0027</td><td>Unique (user, url, origin)</td></tr>
+        <tr><td>0008</td><td>Tags</td><td>0028</td><td>Cooked date, note, kitchen-adapted copy</td></tr>
+        <tr><td>0009</td><td>Tokens, usage events, admin flag</td><td>0029</td><td>product_events</td></tr>
+        <tr><td>0010</td><td>Shopping list</td><td>0030</td><td>Cooking Hub cards</td></tr>
+        <tr><td>0011</td><td>Collections</td><td>0031</td><td>Backfill Hub cards</td></tr>
+        <tr><td>0012</td><td>Token pack notify</td><td>0032</td><td>Publish to Hub on save</td></tr>
+        <tr><td>0013</td><td>Subscription quotas, support tickets</td><td>0033</td><td>Admin people, delete user</td></tr>
+        <tr><td>0014</td><td>Recipe translations</td><td>0034</td><td>Fix recursive admin policy</td></tr>
+        <tr><td>0015</td><td>Web recipes</td><td>0035</td><td>Web intro events</td></tr>
+        <tr><td>0016</td><td>Monthly free quotas</td><td>0036</td><td>Event country</td></tr>
+        <tr><td>0017</td><td>Recipe shares</td><td>0037</td><td>Hub fixes, trigram search</td></tr>
+        <tr><td>0018</td><td>Recipe credits</td><td>0038</td><td>app_shared event</td></tr>
+        <tr><td>0019</td><td>Billing safety, daily AI caps</td><td>0039</td><td>Feedback table</td></tr>
+        <tr><td>0020</td><td>Guest data integrity</td><td>0040</td><td>Website feedback</td></tr>
+      </tbody>
+    </table></div>
+  </details>
+</section>
+
+<!-- 6 AI -->
+<section class="block" id="ai">
+  <div class="kicker">6 · AI pipeline and models</div>
+  <h2>What runs when you Snap, and which model answers</h2>
+
+  <h3>The extract-recipe pipeline</h3>
+  <ol class="steps">
+    <li><b>Detect the platform</b><span>youtube, instagram, tiktok, web, or photo. Anything else returns <code>coming_soon</code>. File: <code>_shared/platform.ts</code>.</span></li>
+    <li><b>Library cache</b><span>User already saved this URL? Return it.</span><div class="branch"><span class="free"><b>free</b> · <code>cached: true</code></span></div></li>
+    <li><b>Hub cache</b><span>Another user extracted this URL and allowed Hub publishing? Return that card.</span><div class="branch"><span class="free"><b>free</b> · <code>from_hub: true</code></span><span>skipped when <code>force_extract</code> is set</span></div></li>
+    <li><b>Require sign-in</b><span>No session → <code>401 auth_required</code>.</span></li>
+    <li><b>Fetch the post</b><span>YouTube: description, top 10 comments (creator first), captions, duration. Instagram and TikTok: ScrapeCreators. Web: the page, preferring schema.org JSON-LD.</span><div class="branch"><span>limits: 10,000 chars description · 6,000 chars captions · 12 comments</span></div></li>
+    <li><b>Two gates, in parallel with an early text extraction</b>
+      <table>
+        <tbody>
+          <tr><td class="k">Jev extract gate</td><td>Asks Jev to choose one of <code>full_recipe_in_text</code>, <code>partial</code>, <code>needs_video</code>, <code>no_recipe</code> from the text. About 0.3 s. Only trusted above 0.75 confidence. On error or low confidence, the normal ladder runs. PIN-46.</td></tr>
+          <tr><td class="k">Content gate</td><td>"Is this food?" <code>unrelated</code> → <code>not_food</code>, no credit. A plated dish, or a video over 3 minutes with no text → <code>looks_like_dish</code> with a <code>dish_guess</code>, so the app can offer "Guess the recipe" or "Extract anyway".</td></tr>
+        </tbody>
+      </table>
+      <div class="branch"><span class="stop"><b>not_food</b> · no credit</span><span class="stop"><b>looks_like_dish</b> · no credit</span><span><b>needs_video</b> → skip the text call</span></div></li>
+    <li><b>Reserve one credit</b><span><code>reserve_recipe_credit</code> with the app's <code>request_id</code>. Not enough credits → <code>402 insufficient_credits</code>, app shows the paywall.</span><div class="branch"><span class="credit"><b>1 credit held</b></span></div></li>
+    <li><b>Content ladder, cheapest first</b>
+      <table>
+        <tbody>
+          <tr><td class="k">Rung 1: text</td><td>One call with all text sources together. If the result is full (title, ingredients and steps), stop here. If partial, keep it and continue.</td></tr>
+          <tr><td class="k">Rung 2: video</td><td>Only if there is a video shorter than 3 minutes. The clip is downloaded in the function and sent inline (20 MB cap). If Instagram's CDN refuses, a ScrapeCreators-hosted copy is fetched instead. The model gets the video plus all the text.</td></tr>
+          <tr><td class="k">Winner</td><td>The more complete result. Score: title 1, ingredients 2, steps 2.</td></tr>
+          <tr><td class="k">Photos</td><td>Skip the ladder. One vision call.</td></tr>
+        </tbody>
+      </table>
+      <div class="branch"><span>file: <code>_shared/gemini.ts</code> → <code>extractRecipeWithLadder</code></span><span>video over 180 s → <code>video_too_long</code></span></div></li>
+    <li><b>Classify</b><span><code>full</code>, <code>partial</code> (with <code>missing_fields</code>), or <code>failed</code>.</span><div class="branch"><span class="credit"><b>full or partial → finalize credit</b></span><span class="free"><b>failed → refund</b></span></div></li>
+    <li><b>Return</b><span>Re-host the thumbnail in Storage, publish a full result to the Hub unless the user opted out, log usage to <code>ai_usage_events</code>, return JSON. The app opens Preview. Saving is the app's job.</span></li>
+  </ol>
+
+  <h3>How a model gets picked</h3>
+  <ul>
+    <li>Every AI call goes through <code>generateLlmJson()</code> in <code>supabase/functions/_shared/llmClient.ts</code>.</li>
+    <li>Each call has a <code>kind</code>. <code>TASK_MODELS[kind]</code> gives the primary model, the fallback list (sent as <code>models[]</code>, OpenRouter tries them in order) and the reasoning effort.</li>
+    <li>Override per task with Supabase secrets: <code>OPENROUTER_MODEL_&lt;KIND&gt;</code>, <code>OPENROUTER_FALLBACKS_&lt;KIND&gt;</code>, <code>OPENROUTER_REASONING_&lt;KIND&gt;</code>.</li>
+    <li>Every request sets <code>require_parameters: true</code> (skip hosts that ignore the JSON schema) and, for Anthropic models, <code>ignore: ['azure']</code> (Azure's filter truncates the JSON).</li>
+    <li>Video also goes through OpenRouter. YouTube links are passed as a URL; other clips are sent inline as base64, because OpenRouter does not fetch arbitrary MP4 URLs.</li>
+    <li>The Jev gate uses OpenRouter's decisions endpoint, not chat completions. It has no fallback; on error the normal ladder runs.</li>
+  </ul>
+
+  <h3>Model per task</h3>
+  <p>These are the defaults in <code>TASK_MODELS</code> (PIN-45, ADR 015), chosen by the PIN-44 eval in <code>docs/research/05-llm-per-task.md</code>. The "before" column is what the two-tier router did until October 2026, kept so old <code>ai_usage_events</code> rows make sense.</p>
+  <div class="table-wrap"><table style="min-width:960px">
+    <thead><tr><th>Task (<code>kind</code>)</th><th>Before PIN-45</th><th>Now: primary, fallback, reasoning</th><th>Why that choice</th></tr></thead>
+    <tbody>
+      <tr><td class="k" style="white-space:normal">Extract gate<br><code>extract_gate</code></td><td>Jev (PIN-46)</td><td>Jev <code>typesafe/jev-1.13</code>, no fallback (fails open)</td><td>Typed yes/no and pick-one answers, about 0.3 s, almost free. 93% route accuracy in the eval and zero real recipes rejected. Fails open.</td></tr>
+      <tr><td class="k">Content gate<br><code>content_gate</code></td><td><code>gemini-2.5-flash-lite</code></td><td><code>mistralai/mistral-small-2603</code> → <code>openai/gpt-5.4-nano</code>, none</td><td>Runs before any credit, so it must be fast and cheap. Mistral Small: 97% accuracy at 1.6 s vs 5.2 s today.</td></tr>
+      <tr><td class="k">Text extract<br><code>text</code></td><td><code>gemini-2.5-flash-lite</code></td><td><code>openai/gpt-6-luna</code> → <code>qwen/qwen3.8-flash</code>, none</td><td>Luna: 100% ingredient recall, 98% amounts, 0.7 s median vs 7.8 s today, a fifth of the cost.</td></tr>
+      <tr><td class="k">Remix, swap, fridge match<br><code>transform</code>, <code>substitution</code>, <code>fridge_match</code></td><td><code>gemini-2.5-flash-lite</code></td><td><code>openai/gpt-6-luna</code> → <code>qwen/qwen3.8-flash</code>, none</td><td>Interactive and free, so speed matters most. Follows the text-extract result.</td></tr>
+      <tr><td class="k">Translate<br><code>translate</code></td><td><code>gemini-2.5-flash-lite</code></td><td><code>openai/gpt-6.1-sol</code> → <code>openai/gpt-6-luna</code>, low</td><td>Sol ranked first in 62% of cases and 80% of Hebrew cases. Sonnet was last on Hebrew. Translations are cached, so each is paid once.</td></tr>
+      <tr><td class="k">Invent from text<br><code>invent_text</code></td><td><code>gemini-2.5-flash-lite</code></td><td><code>openai/gpt-6.1-sol</code> → <code>openai/gpt-6-luna</code>, low</td><td>Sol ranked first on text prompts after the invent prompt fix.</td></tr>
+      <tr><td class="k">Photo extract, repair, invent from photo<br><code>photo</code>, <code>repair</code>, <code>invent_photo</code></td><td><code>gemini-2.5-flash</code></td><td><code>anthropic/claude-sonnet-5.5</code> → <code>openai/gpt-6.1-sol</code>, low, Azure skipped</td><td>Handwritten recipe cards and dish photos need the strongest vision model. Sonnet: 100% recall, fewest invented items, and the only model that named every dish in a photo. The user pays a credit, so accuracy wins over cost.</td></tr>
+      <tr><td class="k">Video extract, invent from video<br><code>video</code>, <code>invent_video</code></td><td><code>gemini-3.5-flash</code> via Google's API</td><td><code>google/gemini-3.5-flash</code> → <code>qwen/qwen3.8-omni-flash</code>, low, through OpenRouter</td><td>Gemini is the only model that answered all 15 test clips, in 8 s. Qwen took 62 s median and wrapped the JSON in an array. Video stays on Gemini; only the route changes.</td></tr>
+      <tr><td class="k">Remix relatedness</td><td>Jev (PIN-46)</td><td>Jev yes/no → <code>openai/gpt-6-luna</code></td><td>A yes/no question over text is exactly what Jev is for. Stops unrelated instructions from using a remix.</td></tr>
+      <tr><td class="k">Calories, time, cost tier, effort, tags, metric and spoon amounts</td><td colspan="2">Not separate calls. They are fields in the extraction JSON schema and come from whichever model extracted the recipe.</td><td>Cost is stored as <code>$</code>, <code>$$</code>, <code>$$$</code> and shown per region on the client.</td></tr>
+    </tbody>
+  </table></div>
+
+  <h3>Things to know when you change a model</h3>
+  <ul>
+    <li>Change the default in <code>TASK_MODELS</code>, or set an <code>OPENROUTER_MODEL_&lt;KIND&gt;</code> secret for a quick production experiment.</li>
+    <li>Sonnet 5.5 and GPT-6.1 Sol reject <code>reasoning: none</code> with <code>400 Reasoning is mandatory</code>. Give them <code>low</code>.</li>
+    <li>Qwen often wraps the JSON in an array; the router unwraps a top-level array when the schema wants an object.</li>
+    <li>Cost per call comes from OpenRouter's <code>usage.cost</code> and lands in <code>ai_usage_events.gemini_cost_usd</code> (column name is historical). The rate table in <code>pricing.ts</code> is only a fallback.</li>
+    <li>Run the router tests, then redeploy all seven model-calling functions together (<code>supabase/README.md</code>, "Per-task models").</li>
+    <li>Rerun the eval when a default changes and keep <code>eval/models.ts</code> in step.</li>
+  </ul>
+
+  <div class="note warn"><b>Known pitfall.</b> OpenRouter rejects the <i>whole</i> request if any slug in <code>models[]</code> has been retired. A retired <code>google/gemini-2.0-flash</code> slug silently pushed every fast call to the Gemini fallback for weeks (fixed in commit <code>5ed0b00</code>). If you change a model list, check the slug at <code>openrouter.ai/api/v1/models</code>.</div>
+
+  <h3>The eval harness (<code>eval/</code>)</h3>
+  <ul>
+    <li>Re-runs the production task functions with one pinned model and no fallbacks, then grades with a judge model.</li>
+    <li>Use it before changing a prompt or a default model. Results go in <code>eval/results/summary.md</code>.</li>
+    <li>Needs <code>OPENROUTER_API_KEY</code> and <code>SCRAPECREATORS_API_KEY</code> in <code>.env</code>. A full run cost about $7.</li>
+  </ul>
+  <pre><button class="copy" data-copy>Copy</button><code>npx -y deno run -A --no-lock --env-file=.env eval/cli.ts run --task=text --models=openai/gpt-6-luna --limit=3
+npx -y deno run -A --no-lock --env-file=.env eval/cli.ts judge
+npx -y deno run -A --no-lock --env-file=.env eval/cli.ts report</code></pre>
+
+  <h3>Where to look</h3>
+  <ul>
+    <li>Code: <code>_shared/llmClient.ts</code>, <code>_shared/videoInput.ts</code>, <code>_shared/gemini.ts</code>, <code>_shared/jev.ts</code>, <code>_shared/contentGate.ts</code>, <code>_shared/classifyRecipe.ts</code>.</li>
+    <li>Decisions: <code>docs/adr/015-per-task-models.md</code> (current routing), <code>docs/adr/013</code> (credits and caps), <code>docs/adr/014</code> (invent), <code>docs/research/05-llm-per-task.md</code> (the eval), Linear PIN-28, PIN-44, PIN-45, PIN-46.</li>
+    <li>Live numbers: Settings → Admin → Usage in the app, or <code>select * from ai_usage_events order by created_at desc</code>.</li>
+  </ul>
+</section>
+
+<!-- 7 SETUP -->
+<section class="block" id="setup">
+  <div class="kicker">7 · Run it on PC and phone</div>
+  <h2>Local development</h2>
+  <p class="intro">Goal: the app running on your own phone, reloading as you edit. Expo Go makes this about 15 minutes. You do not need Xcode or Android Studio for day one, and you do not need any AI key: your local app talks to the real Supabase project, which already has the secrets and the deployed functions.</p>
+
+  <h3>Step 1. Install on your PC (Windows or Mac)</h3>
+  <ul class="check" id="chk-tools">
+    <li><input type="checkbox" id="t1"><label for="t1"><b>Node.js 22 LTS</b> from <a href="https://nodejs.org">nodejs.org</a>. CI uses Node 22. Check: <code>node -v</code>.<small>Windows: also install Git for Windows and use PowerShell or its terminal. Mac: <code>brew install node@22 git</code>.</small></label></li>
+    <li><input type="checkbox" id="t2"><label for="t2"><b>Git</b> and a GitHub account with write access to <a href="https://github.com/yardenfarag/Recipe_app">yardenfarag/Recipe_app</a>.</label></li>
+    <li><input type="checkbox" id="t3"><label for="t3"><b>VS Code</b> or Cursor, with the <b>Expo Tools</b> extension (<code>expo.vscode-expo-tools</code>), ESLint, Prettier.</label></li>
+    <li><input type="checkbox" id="t4"><label for="t4"><b>An Expo account</b> at <a href="https://expo.dev/signup">expo.dev</a> (free).</label></li>
+    <li><input type="checkbox" id="t5"><label for="t5"><b>Claude Code</b> (or Cursor) with <b>Matt Pocock's skills</b> and the <b>Linear MCP</b>.<small>Claude Code: <code>claude plugins install mattpocock-skills</code>. Cursor or Codex: <code>npx skills@latest add mattpocock/skills</code>. Check with <code>/ask-matt</code>. Why and how: <a href="#skills">section 10</a>.</small></label></li>
+  </ul>
+
+  <h3>Step 2. Clone and install</h3>
+  <pre><button class="copy" data-copy>Copy</button><code>git clone https://github.com/yardenfarag/Recipe_app.git
+cd Recipe_app
+npm install            <span class="c"># also runs patch-package (we patch expo-router)</span>
+cp .env.example .env   <span class="c"># PowerShell: Copy-Item .env.example .env</span></code></pre>
+
+  <h3>Step 3. Fill in <code>.env</code></h3>
+  <p>The app throws on start if the first two are missing. Yarden sends the values privately. <code>.env</code> is git-ignored.</p>
+  <div class="table-wrap"><table>
+    <thead><tr><th>Variable</th><th>Needed</th><th>Value</th></tr></thead>
+    <tbody>
+      <tr><td><code>EXPO_PUBLIC_SUPABASE_URL</code></td><td><span class="tag bad">yes</span></td><td><code>https://ccobefeofhnncpgifxel.supabase.co</code></td></tr>
+      <tr><td><code>EXPO_PUBLIC_SUPABASE_KEY</code></td><td><span class="tag bad">yes</span></td><td>The publishable (anon) key from the Supabase dashboard → Project Settings → API. It is public by design; RLS protects the data.</td></tr>
+      <tr><td><code>EXPO_PUBLIC_ADMIN_EMAILS</code></td><td><span class="tag">optional</span></td><td>Your email, to see Settings → Admin. Yarden also sets <code>profiles.is_admin = true</code> for you.</td></tr>
+      <tr><td><code>EXPO_PUBLIC_LEGAL_BASE_URL</code>, <code>EXPO_PUBLIC_SUPPORT_EMAIL</code></td><td><span class="tag">optional</span></td><td>Defaults: <code>https://pinch-app.io</code>, Yarden's email.</td></tr>
+      <tr><td><code>EXPO_PUBLIC_CREDIT_PURCHASES_ENABLED</code></td><td><span class="tag">leave</span></td><td><code>false</code>. Purchases stay off in development.</td></tr>
+      <tr><td><code>OPENROUTER_*</code>, <code>SCRAPECREATORS_*</code></td><td><span class="tag">not for the app</span></td><td>Server-side only. Needed locally only for the eval harness or for running Edge Functions on your machine.</td></tr>
+    </tbody>
+  </table></div>
+
+  <h3 id="setup-phone">Step 4. Run on your phone with Expo Go</h3>
+  <table>
+    <thead><tr><th></th><th>Android</th><th>iPhone</th></tr></thead>
+    <tbody>
+      <tr><td class="k">Install</td><td>Expo Go from the Play Store. Sign in with your Expo account.</td><td>Expo Go from the App Store.</td></tr>
+      <tr><td class="k">Scan the QR code</td><td>Inside Expo Go: "Scan QR code".</td><td>With the normal Camera app. Tap the banner; it opens Expo Go.</td></tr>
+    </tbody>
+  </table>
+  <ol>
+    <li>Phone and PC on the same Wi‑Fi.</li>
+    <li>Start the dev server:
+      <pre><button class="copy" data-copy>Copy</button><code>npm start
+<span class="c"># expo-dev-client is installed, so Metro targets a dev build by default.</span>
+<span class="c"># Press  s  in the terminal to switch to Expo Go, then scan the QR code.</span>
+<span class="c"># Or start in Expo Go mode directly:</span>
+npx expo start --go
+<span class="c"># Wi-Fi blocked (office, university)? Use a tunnel:</span>
+npx expo start --go --tunnel</code></pre></li>
+    <li>Scan the QR code. The JS bundle downloads and Pinch opens.</li>
+    <li>Edit a string in <code>src/app/(tabs)/add.tsx</code>. The phone updates within a second. Shake the phone for the dev menu.</li>
+    <li>Sign up inside the app with email and password (email confirmation is off). Google sign-in works too.</li>
+  </ol>
+
+  <h3>What works where</h3>
+  <table>
+    <thead><tr><th>Feature</th><th>Expo Go</th><th>Dev build</th></tr></thead>
+    <tbody>
+      <tr><td>All screens, Library, Hub, List, Settings, themes, languages</td><td><span class="tag ok">yes</span></td><td><span class="tag ok">yes</span></td></tr>
+      <tr><td>Snap by URL, photo Snap, Guess the recipe, Remix, Swap, Translate, Fridge match</td><td><span class="tag ok">yes</span></td><td><span class="tag ok">yes</span></td></tr>
+      <tr><td>Email and Google sign-in</td><td><span class="tag ok">yes</span></td><td><span class="tag ok">yes</span></td></tr>
+      <tr><td>Share from TikTok / Instagram / YouTube into Pinch</td><td><span class="tag bad">no</span></td><td><span class="tag ok">yes</span></td></tr>
+      <tr><td>Apple sign-in, in-app purchases</td><td><span class="tag bad">no</span></td><td><span class="tag ok">yes</span></td></tr>
+    </tbody>
+  </table>
+
+  <h3>Step 5 (when you need the share sheet). Development build with EAS</h3>
+  <p>A dev build is a custom Expo Go compiled with our native modules. You install it once; JS still reloads from <code>npm start</code>. Builds run in Expo's cloud, so Windows is fine. Android needs no paid account. iOS needs an Apple Developer team seat and your device registered.</p>
+  <pre><button class="copy" data-copy>Copy</button><code>npm install -g eas-cli
+eas login                                            <span class="c"># after Yarden adds you to the "yardenfa" Expo account</span>
+eas build --profile development --platform android   <span class="c"># 10 to 20 min; install the APK from the link</span>
+eas build --profile development --platform ios       <span class="c"># needs Apple team access</span>
+npm start                                            <span class="c"># scan the QR with the dev build instead of Expo Go</span></code></pre>
+  <p>Profiles are in <code>eas.json</code>: <code>development</code>, <code>preview</code>, <code>production</code>. Background: <code>docs/adr/009-dev-build-tooling.md</code>.</p>
+
+  <h3>Web and the checks you run before a PR</h3>
+  <pre><button class="copy" data-copy>Copy</button><code>npm run web          <span class="c"># http://localhost:8081</span>
+npm test             <span class="c"># vitest</span>
+npm run typecheck    <span class="c"># tsc --noEmit</span>
+npm run lint         <span class="c"># expo lint</span>
+npm run build:web    <span class="c"># same build CI does for pinch-app.io, output in dist/</span></code></pre>
+
+  <details>
+    <summary>Optional: run the backend locally (Supabase CLI and Docker)</summary>
+    <p>Only needed when you change a migration or an Edge Function. Standard Supabase CLI workflow; the repo does not document it yet.</p>
+    <pre><button class="copy" data-copy>Copy</button><code>npx supabase start                                               <span class="c"># local Postgres, Auth, Studio</span>
+npx supabase functions serve --env-file ./supabase/.env.local     <span class="c"># your own AI keys in that file</span>
+npx supabase test db                                             <span class="c"># pgTAP tests in supabase/tests/</span></code></pre>
+  </details>
+</section>
+
+<!-- 8 ACCESS -->
+<section class="block" id="access">
+  <div class="kicker">8 · Access and .env</div>
+  <h2>What you need from Yarden</h2>
+  <ul class="check" id="chk-access">
+    <li><input type="checkbox" id="a1"><label for="a1"><b>GitHub</b>: write access to <a href="https://github.com/yardenfarag/Recipe_app">yardenfarag/Recipe_app</a>.<small>The repo is public, so reading works already. Write access is for pushing branches and opening PRs. Do not push to <code>master</code> directly.</small></label></li>
+    <li><input type="checkbox" id="a2"><label for="a2"><b><code>.env</code> values</b>: Supabase URL and publishable key.<small>Sent privately. Then sign up in the app and ask Yarden to set <code>is_admin = true</code> on your profile.</small></label></li>
+    <li><input type="checkbox" id="a3"><label for="a3"><b>Linear</b>: invite to <a href="https://linear.app/pinch-recipe">linear.app/pinch-recipe</a>, team PIN.</label></li>
+    <li><input type="checkbox" id="a4"><label for="a4"><b>Supabase</b>: invite to the organization that owns project <code>recipe_app</code>.<small>Needed for logs, SQL editor, Auth users, function deploys and secrets. Real users are in this database; treat it as production.</small></label></li>
+    <li><input type="checkbox" id="a5"><label for="a5"><b>Expo / EAS</b>: member of the <code>yardenfa</code> account.<small>For dev builds and production env vars (EAS builds read env from the Expo dashboard, not <code>.env</code>). <span class="tag">later</span></small></label></li>
+    <li><input type="checkbox" id="a6"><label for="a6"><b>Apple Developer team, Google Play Console</b>.<small>Only for iOS dev builds, TestFlight and store releases. <span class="tag">later</span></small></label></li>
+    <li><input type="checkbox" id="a7"><label for="a7"><b>OpenRouter and ScrapeCreators keys</b>.<small>Only for the eval harness or local Edge Functions. Ask for a separate key with a spending cap. <span class="tag">later</span></small></label></li>
+    <li><input type="checkbox" id="a8"><label for="a8"><b>Cloudflare, RevenueCat, GoDaddy DNS</b>.<small>Yarden only, unless you work on the share-page worker or billing. <span class="tag">later</span></small></label></li>
+  </ul>
+
+  <h3>Links</h3>
+  <table>
+    <tbody>
+      <tr><td class="k">GitHub</td><td><a href="https://github.com/yardenfarag/Recipe_app">github.com/yardenfarag/Recipe_app</a>. PRs and Actions (CI, web deploy, EAS builds).</td></tr>
+      <tr><td class="k">Linear</td><td><a href="https://linear.app/pinch-recipe">linear.app/pinch-recipe</a>. Team PIN.</td></tr>
+      <tr><td class="k">Supabase</td><td><a href="https://supabase.com/dashboard/project/ccobefeofhnncpgifxel">dashboard → recipe_app</a>. Tables, SQL, Auth, function logs, secrets.</td></tr>
+      <tr><td class="k">Expo</td><td><a href="https://expo.dev/accounts/yardenfa">expo.dev/accounts/yardenfa</a>. EAS builds, env vars, credentials. Project id <code>58f56906-4b2d-49ca-9e87-a706b5d7cf1f</code>.</td></tr>
+      <tr><td class="k">Live site and stores</td><td><a href="https://pinch-app.io">pinch-app.io</a>, <a href="https://pinch-app.io/app">/app</a>. App Store id 6796310453. Play package <code>com.pinch.myapp</code>.</td></tr>
+      <tr><td class="k">Expo docs</td><td><a href="https://docs.expo.dev/versions/v54.0.0/">docs.expo.dev/versions/v54.0.0</a></td></tr>
+    </tbody>
+  </table>
+</section>
+
+<!-- 9 WORKFLOW -->
+<section class="block" id="workflow">
+  <div class="kicker">9 · Linear, Git, CI, deploys</div>
+  <h2>How we work</h2>
+
+  <h3>Linear</h3>
+  <ul>
+    <li>Workspace <a href="https://linear.app/pinch-recipe">pinch-recipe</a>, one team, key <b>PIN</b>. Issues are <code>PIN-&lt;number&gt;</code>.</li>
+    <li>Pick an issue, assign yourself, set it to In Progress. Write findings and decisions as comments on the issue.</li>
+    <li>Every open issue has an <b>Approach</b> label (<code>wayfinder</code>, <code>grill-with-docs</code>, <code>research</code>, <code>prototype</code>, <code>wizard</code>, <code>implement</code>). It says which skill to start with. See <a href="#approach">section 10</a>.</li>
+    <li>Copy the branch name from the issue (there is a button). Use it as-is.</li>
+    <li>If you find work that has no issue, create one first, even a one-liner.</li>
+    <li>When the PR merges, set the issue to Done.</li>
+  </ul>
+  <table>
+    <thead><tr><th>Project</th><th>Priority</th><th>About</th></tr></thead>
+    <tbody>
+      <tr><td>Android share bug</td><td><span class="tag bad">Urgent</span></td><td>Shared URL opened Snap but did not auto-extract on cold start (PIN-5, done).</td></tr>
+      <tr><td>Website SEO (pinch-app.io)</td><td><span class="tag warn">High</span></td><td>Make the site crawlable and rank for recipe-keeper keywords.</td></tr>
+      <tr><td>Website design refresh</td><td><span class="tag warn">High</span></td><td>Landing hero, conversion flow, trust signals, mobile and accessibility.</td></tr>
+      <tr><td>App Store Optimization</td><td><span class="tag warn">High</span></td><td>Store descriptions (done) and screenshots (PIN-19, in progress).</td></tr>
+      <tr><td>In-app growth and UX</td><td><span class="tag">Medium</span></td><td>Share Pinch, walkthrough, feedback, accessibility.</td></tr>
+      <tr><td>Architecture: backend and state management</td><td><span class="tag">Medium</span></td><td>Generated DB types (PIN-32), shared contracts (PIN-33), split the big functions (PIN-34), tests and CI (PIN-35), staging (PIN-36), TanStack Query (PIN-40).</td></tr>
+      <tr><td>AI</td><td></td><td>PIN-28 research, PIN-44 eval and PIN-46 Jev gate and PIN-45 per-task models done. Next: PIN-48 runtime model routing, PIN-53 translation quality.</td></tr>
+      <tr><td>Platform and ops (no project yet)</td><td><span class="tag warn">High</span></td><td>PIN-47 own R2 bucket, PIN-51 release flow for web, iOS and Android, PIN-54 security audit, PIN-49 admin dashboard, PIN-50 docs, PIN-52 web to Next.js.</td></tr>
+    </tbody>
+  </table>
+
+  <h3>Git</h3>
+  <table>
+    <tbody>
+      <tr><td class="k">Default branch</td><td><code>master</code>. Never commit to it directly.</td></tr>
+      <tr><td class="k">Branch name</td><td><code>&lt;github-user&gt;/pin-&lt;N&gt;-&lt;slug&gt;</code><br>Example: <code>yardenfarag/pin-46-add-a-jev-worth-extracting-gate-before-text-extraction</code></td></tr>
+      <tr><td class="k">Commit message</td><td>One or two full sentences about the user-visible effect, ending with the ticket.<br>Example: <i>Route extracts through a Jev gate before the slow text call: needs_video skips straight to video, no_recipe fails before a credit is reserved (PIN-46).</i></td></tr>
+      <tr><td class="k">PR</td><td>Into <code>master</code>. Title like the commit. Body: what changed, how you tested it and on which platforms, screenshots for UI. The PIN key in the title links it to Linear.</td></tr>
+      <tr><td class="k">Review</td><td>Yarden reviews. Keep a PR small enough to read in 15 minutes.</td></tr>
+    </tbody>
+  </table>
+
+  <h3>What happens after a merge</h3>
+  <table>
+    <thead><tr><th>Thing</th><th>Automatic?</th><th>How</th></tr></thead>
+    <tbody>
+      <tr><td>Checks on every PR</td><td><span class="tag ok">yes</span></td><td><code>.github/workflows/quality.yml</code>: <code>npm test</code>, <code>typecheck</code>, <code>lint</code>, <code>export:web</code>. Node 22.</td></tr>
+      <tr><td>Website (landing and /app)</td><td><span class="tag ok">yes</span></td><td><code>deploy-web.yml</code> on push to <code>master</code> → GitHub Pages → pinch-app.io.</td></tr>
+      <tr><td>Share-page worker</td><td><span class="tag ok">yes</span></td><td><code>deploy-share-worker.yml</code>, only when <code>workers/share-page/**</code> changed.</td></tr>
+      <tr><td>Edge Functions</td><td><span class="tag bad">no</span></td><td><code>npx supabase functions deploy &lt;name&gt;</code> by hand after merging. Easy to forget.</td></tr>
+      <tr><td>Migrations</td><td><span class="tag bad">no</span></td><td><code>npx supabase db push</code> by hand.</td></tr>
+      <tr><td>Store builds</td><td><span class="tag bad">manual</span></td><td>Actions → "EAS Build Android/iOS (production)" → Run workflow, or <code>eas build</code> locally. Needs the <code>EXPO_TOKEN</code> secret.</td></tr>
+    </tbody>
+  </table>
+
+  <h3>Definition of done</h3>
+  <ul>
+    <li>Works on iOS, Android and web. The PR says which you tested.</li>
+    <li>All strings through <code>t()</code>, keys in all five locale files. Hebrew or Arabic checked once.</li>
+    <li><code>npm test</code>, <code>npm run typecheck</code>, <code>npm run lint</code> pass. New logic in <code>src/lib</code> has a test next to it.</li>
+    <li>If you changed an Edge Function: deployed and checked in the app or with curl. If you changed billing SQL: pgTAP tests pass.</li>
+    <li>If you changed a user flow: a short entry in <code>docs/WORKFLOWS.md</code>. If you made a non-obvious decision: a short ADR in <code>docs/adr/</code>.</li>
+    <li>Linear issue set to Done.</li>
+  </ul>
+
+  <h3>AI coding tools</h3>
+  <p>We use Claude Code and Cursor. The repo configures them: <code>AGENTS.md</code> and <code>CLAUDE.md</code> (project instructions), <code>.cursor/rules/</code> (always-on rules), <code>.agents/skills/</code> (pinned skills listed in <code>skills-lock.json</code>). Install the full skill set yourself (setup step 1); <a href="#skills">section 10</a> explains which skills we use and why. Decisions live in <code>docs/adr/</code>, vocabulary in <code>docs/GLOSSARY.md</code>.</p>
+</section>
+
+<!-- 10 SKILLS -->
+<section class="block" id="skills">
+  <div class="kicker">10 · Agent skills</div>
+  <h2>How we work with the agent</h2>
+  <p class="intro">Most Pinch work is done with an AI agent (Claude Code or Cursor). We drive it with <a href="https://github.com/mattpocock/skills">Matt Pocock's skills</a>: short, slash-command playbooks like <code>/grill-with-docs</code> or <code>/tdd</code>. Install them before you take your first ticket.</p>
+
+  <h3>Why this matters</h3>
+  <table>
+    <tbody>
+      <tr><td class="k">The agent builds the wrong thing</td><td>Usually it misunderstood the ticket. <code>/grill-with-docs</code> makes it interview you before it writes code, so the gaps show up in conversation instead of in review.</td></tr>
+      <tr><td class="k">It forgets between sessions</td><td>The grilling writes what it learns to <code>CONTEXT.md</code> (our shared words: Snap, credit, gate, ladder) and to ADRs in <code>docs/adr/</code>. The next session, and the next person, start from that.</td></tr>
+      <tr><td class="k">The code doesn't work</td><td><code>/tdd</code> and <code>/implement</code> work red, green, refactor, one slice at a time, and end with <code>/code-review</code> against our standards and the ticket.</td></tr>
+      <tr><td class="k">Work is too big for one session</td><td><code>/wayfinder</code> and <code>/to-tickets</code> split it into tickets small enough for one fresh session each, with blocking links in Linear.</td></tr>
+      <tr><td class="k">Two people, one way of working</td><td>When we both use the same skills, tickets, specs and PRs look the same, and either of us can pick up the other's work. The Approach label on every ticket only works if you have the skills.</td></tr>
+    </tbody>
+  </table>
+
+  <h3>Where to get them</h3>
+  <div class="table-wrap"><table>
+    <thead><tr><th>Agent</th><th>Install</th><th>Notes</th></tr></thead>
+    <tbody>
+      <tr><td class="k">Claude Code</td><td><code>claude plugins install mattpocock-skills</code><br>or inside a session: <code>/plugin install mattpocock-skills</code></td><td>Recommended. Official marketplace plugin, updates on its own.</td></tr>
+      <tr><td class="k">Cursor, Codex, others</td><td><code>npx skills@latest add mattpocock/skills</code></td><td>Copies skill files into the repo. A few are already pinned in <code>.agents/skills/</code> (<code>skills-lock.json</code>).</td></tr>
+      <tr><td class="k">Linear MCP</td><td>Connect Linear in your agent's MCP / connectors settings.</td><td>So the agent can read tickets, comment, and create child tickets.</td></tr>
+    </tbody>
+  </table></div>
+  <ul>
+    <li>Pick one install method per agent. Installing both into Claude Code shows every skill twice.</li>
+    <li>Check it worked: type <code>/ask-matt</code>. It recommends a skill for whatever you describe.</li>
+    <li>Source and docs: <a href="https://github.com/mattpocock/skills">github.com/mattpocock/skills</a>. Our guide: <code>docs/WORKING-ON-TICKETS.md</code>.</li>
+  </ul>
+
+  <h3>The skills we use</h3>
+  <div class="table-wrap"><table>
+    <thead><tr><th>Skill</th><th>What it does</th><th>When we use it</th></tr></thead>
+    <tbody>
+      <tr><td><code>/grill-with-docs</code></td><td>Interviews you about a plan until it's clear, and records terms and decisions in <code>CONTEXT.md</code> and ADRs.</td><td>Start of most features and every architecture decision.</td></tr>
+      <tr><td><code>/wayfinder</code></td><td>Turns a big, unclear effort into a map ticket with child decision tickets in Linear, then resolves them one by one.</td><td>Multi-session work: Next.js move, security audit, model routing.</td></tr>
+      <tr><td><code>/research</code></td><td>Reads primary sources (official docs, APIs, pricing) and writes a cited note to <code>docs/research/</code>.</td><td>Before picking a vendor, model or library.</td></tr>
+      <tr><td><code>/prototype</code></td><td>Builds throwaway code to answer one question: several UI variants, or a runnable state model.</td><td>When you need to see it to decide.</td></tr>
+      <tr><td><code>/to-spec</code>, <code>/to-tickets</code></td><td>Turn the conversation into a spec, then into small tickets with blocking edges in Linear.</td><td>Right after grilling, in the same session.</td></tr>
+      <tr><td><code>/implement</code></td><td>Builds a ticket, driving <code>/tdd</code>, and finishes with <code>/code-review</code>.</td><td>Any ticket labelled <code>implement</code>.</td></tr>
+      <tr><td><code>/tdd</code></td><td>Red, green, refactor, one vertical slice at a time.</td><td>Logic in <code>src/lib</code>, Edge Function domain code, RLS tests.</td></tr>
+      <tr><td><code>/diagnosing-bugs</code></td><td>Reproduce first, then hypothesise, instrument, fix, and add a regression test.</td><td>Anything broken, failing or slow.</td></tr>
+      <tr><td><code>/code-review</code></td><td>Reviews a branch on two axes: our standards, and whether it does what the ticket asked.</td><td>Before opening a PR, and when reviewing each other's.</td></tr>
+      <tr><td><code>/wizard</code></td><td>Writes a step-by-step script for things only a human can do in a dashboard.</td><td>Cloudflare, store consoles, rotating secrets.</td></tr>
+      <tr><td><code>/codebase-design</code>, <code>/improve-codebase-architecture</code></td><td>Find where module boundaries should go and keep modules deep and testable.</td><td>Architecture project (PIN-29, PIN-30).</td></tr>
+      <tr><td><code>/handoff</code></td><td>Writes the session down so a fresh session or a teammate can continue.</td><td>Ending a session mid-task.</td></tr>
+    </tbody>
+  </table></div>
+
+  <h3 id="approach">How to approach a ticket</h3>
+  <p>Every open Linear issue has one <b>Approach</b> label. Start a fresh agent session, give it the ticket id (e.g. <code>PIN-49</code>), and run the skill the label names.</p>
+  <div class="table-wrap"><table>
+    <thead><tr><th>Approach label</th><th>Use it when</th><th>Start with, then</th></tr></thead>
+    <tbody>
+      <tr><td><span class="tag p">wayfinder</span></td><td>Big and foggy, more than one session, several linked decisions.</td><td><code>/wayfinder</code> turns the ticket into a map of decision tickets. Work one per session.</td></tr>
+      <tr><td><span class="tag p">grill-with-docs</span></td><td>Scope is clear, decisions aren't.</td><td><code>/grill-with-docs</code> (writes <code>CONTEXT.md</code> and ADRs), then <code>/to-spec</code> → <code>/to-tickets</code>, or <code>/implement</code> if it's small.</td></tr>
+      <tr><td><span class="tag">research</span></td><td>Need facts from docs, APIs or vendors first.</td><td><code>/research</code> writes a cited file to <code>docs/research/</code>.</td></tr>
+      <tr><td><span class="tag warn">prototype</span></td><td>Need to see or run it to decide.</td><td><code>/prototype</code> throwaway variants, pick one, then <code>/implement</code>.</td></tr>
+      <tr><td><span class="tag warn">wizard</span></td><td>Mostly human steps in dashboards (Cloudflare, stores, secrets).</td><td>Agent does the code part, <code>/wizard</code> generates a guided script for the rest.</td></tr>
+      <tr><td><span class="tag ok">implement</span></td><td>Already specced, done-when is clear.</td><td><code>/implement</code> drives <code>/tdd</code> and ends with <code>/code-review</code>.</td></tr>
+    </tbody>
+  </table></div>
+  <ul>
+    <li>Not sure? Type <code>/ask-matt</code> and describe the situation.</li>
+    <li>Something broken or slow: <code>/diagnosing-bugs</code>. Ending a session mid-task: <code>/handoff</code>.</li>
+    <li>Keep the grill, spec and tickets in one session; start each <code>/implement</code> fresh.</li>
+    <li>If the label turns out wrong, change it and comment why. New tickets get an Approach label when you create them.</li>
+  </ul>
+
+  <p>One-time repo setup (Yarden, once): run <code>/setup-matt-pocock-skills</code>, choose Linear (workspace <code>pinch-recipe</code>, team <code>PIN</code>), keep single-context docs, and commit <code>docs/agents/</code>. Nobody else needs to run it.</p>
+</section>
+
+<!-- 11 GOTCHAS -->
+<section class="block" id="gotchas">
+  <div class="kicker">11 · Docs vs code</div>
+  <h2>Where the written docs are behind the code</h2>
+  <p class="intro">Checked on 15 Oct 2026 against <code>master</code>. The code column is the truth. Fixing any row is a good first PR.</p>
+  <div class="table-wrap"><table>
+    <thead><tr><th>Topic</th><th>Docs say</th><th>Code does</th></tr></thead>
+    <tbody>
+      <tr><td class="k">Guest mode</td><td>ADR 002, WORKFLOWS.md: guests get 3 extractions and 3 saves</td><td>Sign-in is required. <code>extract-recipe</code> and <code>invent-recipe</code> return <code>auth_required</code>. Only <code>match-fridge</code> still accepts a guest id. Guest code is left over.</td></tr>
+      <tr><td class="k">Free credits</td><td>ADR 012 and migration 0016: 15 per month</td><td>3 per month (<code>FREE_MONTHLY_EXTRACT_LIMIT</code>).</td></tr>
+      <tr><td class="k">Pinch Plus</td><td>ADR 011: Free 3 / Plus 100 per month</td><td>Retired. Credits only (ADR 012 recipe credits).</td></tr>
+      <tr><td class="k">Expo docs version</td><td><code>AGENTS.md</code>: v57</td><td>SDK 54.</td></tr>
+      <tr><td class="k">Content ladder</td><td>ADR 004: video first, all sources in one prompt</td><td>Text first; video only if text is partial and the clip is under 3 minutes.</td></tr>
+      <tr><td class="k">Models per task</td><td>ADR 013 and older notes: two tiers on Gemini Flash, video on Google's API</td><td>One model per task through OpenRouter (ADR 015, PIN-45). Read <code>TASK_MODELS</code> in <code>llmClient.ts</code>.</td></tr>
+      <tr><td class="k">WORKFLOWS.md</td><td>4 tabs, migrations to 0005, Gemini only</td><td>5 tabs, 40 migrations, OpenRouter and Gemini. Use it for the "why", not the "what".</td></tr>
+      <tr><td class="k">RevenueCat events</td><td>RECIPE_CREDITS_ROLLOUT.md: only <code>NON_RENEWING_PURCHASE</code></td><td>Also <code>INITIAL_PURCHASE</code> and events with no type.</td></tr>
+      <tr><td class="k">Function deploys</td><td>(nothing)</td><td>Manual. A branch <code>deploy-edge-functions-workflow</code> exists locally with a GitHub Action for it, not merged.</td></tr>
+    </tbody>
+  </table></div>
+
+  <h3>Small things that cost an hour</h3>
+  <ul>
+    <li><code>npm start</code> targets a dev build. Press <kbd>s</kbd> for Expo Go.</li>
+    <li>Web runs at <code>localhost:8081</code>. The expo-router patch keeps the <code>/app</code> base path in development.</li>
+    <li>Edge Functions are excluded from <code>tsconfig.json</code> and Vitest. They are Deno.</li>
+    <li>Video clips are downloaded inside the function and sent to the model inline. Instagram's CDN normally allows this; the paid ScrapeCreators hosted copy (about 10 extra credits) is only a fallback.</li>
+    <li>Migrations 0031, 0032 and 0037 say "paste in the SQL editor" in their header. Read the header before <code>db push</code>.</li>
+    <li>Tabs use the stable <code>Tabs</code>. The native-tabs experiment crashes with NativeWind.</li>
+  </ul>
+</section>
+
+<!-- 12 FIRST WEEK -->
+<section class="block" id="firstweek">
+  <div class="kicker">12 · First week</div>
+  <h2>Suggested plan</h2>
+  <table>
+    <tbody>
+      <tr><td class="k">Day 1</td><td>Sections 1, 2, 7, 8. App on your phone. Sign up, Snap a YouTube link, save it, add it to the shopping list. In the Supabase dashboard find your rows in <code>recipes</code> and <code>ai_usage_events</code>.</td></tr>
+      <tr><td class="k">Day 2</td><td>Read the spine: <code>_layout.tsx</code> → <code>add.tsx</code> → <code>extractRecipe.ts</code> → <code>extract-recipe/index.ts</code> → <code>gemini.ts</code> → <code>llmClient.ts</code> → <code>RecipeView.tsx</code>. Keep section 6 open.</td></tr>
+      <tr><td class="k">Day 3</td><td>First PR, docs only: fix one row of the table in section 11. Learn the branch → PR → CI loop with no risk. Do it with the agent and an <code>implement</code> approach so you try the skills on something small.</td></tr>
+      <tr><td class="k">Day 4</td><td>First UI PR: a Medium issue from "In-app growth and UX". Three platforms, five locales, screenshots in the PR.</td></tr>
+      <tr><td class="k">Day 5</td><td>Pick an area to own with Yarden: web SEO and design, the architecture project, or AI.</td></tr>
+    </tbody>
+  </table>
+
+  <h3>Good first issues by interest</h3>
+  <table>
+    <tbody>
+      <tr><td class="k">Product UI</td><td>"In-app growth and UX" project. All in <code>src/</code>, testable in Expo Go.</td></tr>
+      <tr><td class="k">Web</td><td>SEO and design refresh: <code>landing/</code>, <code>legal/</code>, <code>scripts/build-web-site.mjs</code>. Deploys on merge, so feedback is fast.</td></tr>
+      <tr><td class="k">Backend and AI</td><td>PIN-34 splitting <code>extract-recipe</code>, PIN-35 backend tests in CI, or a rerun of the eval against the new defaults.</td></tr>
+      <tr><td class="k">Data</td><td>PIN-32 generated Supabase types; pgTAP coverage for the Hub; an admin insights chart.</td></tr>
+    </tbody>
+  </table>
+</section>
+
+<!-- 13 GLOSSARY -->
+<section class="block" id="glossary">
+  <div class="kicker">13 · Glossary and reading list</div>
+  <h2>Terms</h2>
+  <table>
+    <tbody>
+      <tr><td class="k">Snap</td><td>Sending a link or photo to Pinch to get a recipe. Not "scan" or "import".</td></tr>
+      <tr><td class="k">Fork it!</td><td>The button that starts a Snap.</td></tr>
+      <tr><td class="k">Extraction</td><td>The pipeline from raw post to recipe JSON. "Scraping" is only the fetch step.</td></tr>
+      <tr><td class="k">Content ladder</td><td>The order of sources: text (description, comments, captions) first, then video.</td></tr>
+      <tr><td class="k">Partial result</td><td>A recipe missing ingredients or steps. Saveable; can be repaired for a credit.</td></tr>
+      <tr><td class="k">Guess the recipe / invent</td><td>A labelled AI guess from a dish photo or a post with no recipe.</td></tr>
+      <tr><td class="k">Gate</td><td>A cheap check before expensive work: content gate (is it food?) and Jev extract gate (is there a recipe in the text?).</td></tr>
+      <tr><td class="k">Credit</td><td>One successful extraction, invention or repair upgrade. 3 free per month, then packs.</td></tr>
+      <tr><td class="k">Remix</td><td>Whole-recipe transformation (vegan, high protein, free text). Free, 5 per recipe.</td></tr>
+      <tr><td class="k">Swap / substitution</td><td>Replace one ingredient. "Swap" in UI text, "substitution" in code.</td></tr>
+      <tr><td class="k">Hub</td><td>Public anonymous recipe cards. Also a free extraction cache.</td></tr>
+      <tr><td class="k">Kitchen profile</td><td>User's diets, swaps and pantry in <code>profiles.kitchen</code>. Can auto-apply on extract.</td></tr>
+      <tr><td class="k">Dev build</td><td>Our own native binary from EAS (share sheet, Apple sign-in, purchases). Expo Go is the generic sandbox.</td></tr>
+      <tr><td class="k">TASK_MODELS</td><td>The map in <code>llmClient.ts</code> from task <code>kind</code> to primary model, fallbacks and reasoning effort (ADR 015).</td></tr>
+      <tr><td class="k">ADR</td><td>Architecture Decision Record in <code>docs/adr/</code>.</td></tr>
+    </tbody>
+  </table>
+
+  <h3>Reading list, in order</h3>
+  <ol>
+    <li><code>README.md</code>: quick start, web deploy, secrets.</li>
+    <li><code>docs/GLOSSARY.md</code></li>
+    <li><code>docs/WORKFLOWS.md</code>: each flow with what, why and key files. Partly out of date (section 11).</li>
+    <li><code>supabase/README.md</code>: operations.</li>
+    <li><code>docs/adr/001</code>, <code>015</code>, <code>013</code>, <code>014</code>, <code>012-recipe-credits</code>.</li>
+    <li><code>docs/research/05-llm-per-task.md</code>.</li>
+    <li><code>docs/plan/LINEAR-BACKLOG.md</code>.</li>
+  </ol>
+
+  <div class="footer">
+    <svg width="16" height="16" style="color:var(--primary)"><use href="#cookie"/></svg>
+    <span>If something here is wrong, fix it in a PR. Source: <code>docs/onboarding/index.html</code>.</span>
+  </div>
+</section>
+
+</main>
+</div>
+
+<script>
+(function(){
+  var links=[].slice.call(document.querySelectorAll('nav.side a.item'));
+  var map={};links.forEach(function(a){map[a.getAttribute('href').slice(1)]=a});
+  var sections=[].slice.call(document.querySelectorAll('main section[id]'));
+  if('IntersectionObserver' in window){
+    var io=new IntersectionObserver(function(es){
+      es.forEach(function(e){if(e.isIntersecting){links.forEach(function(a){a.classList.remove('active')});var a=map[e.target.id];if(a)a.classList.add('active')}});
+    },{rootMargin:'-20% 0px -70% 0px',threshold:0});
+    sections.forEach(function(s){io.observe(s)});
+  }
+})();
+document.querySelectorAll('pre button.copy').forEach(function(b){
+  b.addEventListener('click',function(){
+    var code=b.parentElement.querySelector('code');
+    var text=code.innerText.split('\n').map(function(l){return l.replace(/\s+#.*$/,'')}).filter(function(l){return l.trim()&&!l.trim().startsWith('#')}).join('\n');
+    navigator.clipboard&&navigator.clipboard.writeText(text).then(function(){b.textContent='Copied';setTimeout(function(){b.textContent='Copy'},1200)});
+  });
+});
+document.querySelectorAll('.check input[type=checkbox]').forEach(function(c){
+  var k='pinch-onboarding:'+c.id;
+  try{if(localStorage.getItem(k)==='1'){c.checked=true;c.parentElement.classList.add('done')}}catch(e){}
+  c.addEventListener('change',function(){
+    c.parentElement.classList.toggle('done',c.checked);
+    try{localStorage.setItem(k,c.checked?'1':'0')}catch(e){}
+  });
+});
+</script>
+</body>
+</html>
