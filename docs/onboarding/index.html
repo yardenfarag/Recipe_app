@@ -197,7 +197,7 @@ details>*:not(summary){margin-bottom:12px}
     <a class="item" href="#firstweek"><span class="n">12</span>First week</a>
     <a class="item" href="#glossary"><span class="n">13</span>Glossary and reading list</a>
   </div>
-  <div class="foot">Updated 15 Oct 2026 from <code>master</code> at commit <code>9f5a60a</code> (PIN-45 merged).<br>Source: <code>docs/onboarding/index.html</code></div>
+  <div class="foot">Updated 15 Oct 2026 from <code>master</code> at commit <code>8928af6</code>. Per-task models are live in production.<br>Source: <code>docs/onboarding/index.html</code></div>
 </nav>
 
 <main>
@@ -602,6 +602,15 @@ npx supabase db push
 <span class="c"># Deploy one function (manual; there is no CI for this)</span>
 npx supabase functions deploy extract-recipe
 
+<span class="c"># Anything in _shared/ changed? Deploy every function that imports it.</span>
+<span class="c"># The seven model-calling functions all share llmClient.ts and usageLog.ts:</span>
+for f in extract-recipe invent-recipe repair-recipe match-fridge suggest-substitution transform-recipe translate-recipe; do
+  npx supabase functions deploy $f
+done
+
+<span class="c"># Is production current? Compare each function's "updated at" with your merge.</span>
+npx supabase functions list
+
 <span class="c"># Set a secret</span>
 npx supabase secrets set OPENROUTER_API_KEY=sk-or-v1-...
 
@@ -744,7 +753,7 @@ curl -X POST 'https://ccobefeofhnncpgifxel.supabase.co/functions/v1/extract-reci
   </ul>
 
   <h3>Model per task</h3>
-  <p>These are the defaults in <code>TASK_MODELS</code> (PIN-45, ADR 015), chosen by the PIN-44 eval in <code>docs/research/05-llm-per-task.md</code>. The "before" column is what the two-tier router did until October 2026, kept so old <code>ai_usage_events</code> rows make sense.</p>
+  <p>Live in production since 15 Oct 2026. These are the defaults in <code>TASK_MODELS</code> (PIN-45, ADR 015), chosen by the PIN-44 eval in <code>docs/research/05-llm-per-task.md</code>. The "before" column is what the two-tier router did until October 2026, kept so old <code>ai_usage_events</code> rows make sense.</p>
   <div class="table-wrap"><table style="min-width:960px">
     <thead><tr><th>Task (<code>kind</code>)</th><th>Before PIN-45</th><th>Now: primary, fallback, reasoning</th><th>Why that choice</th></tr></thead>
     <tbody>
@@ -962,7 +971,8 @@ npx supabase test db                                             <span class="c"
       <tr><td>Share-page worker</td><td><span class="tag ok">yes</span></td><td><code>deploy-share-worker.yml</code>, only when <code>workers/share-page/**</code> changed.</td></tr>
       <tr><td>Edge Functions</td><td><span class="tag bad">no</span></td><td><code>npx supabase functions deploy &lt;name&gt;</code> by hand after merging. Easy to forget.</td></tr>
       <tr><td>Migrations</td><td><span class="tag bad">no</span></td><td><code>npx supabase db push</code> by hand.</td></tr>
-      <tr><td>Store builds</td><td><span class="tag bad">manual</span></td><td>Actions → "EAS Build Android/iOS (production)" → Run workflow, or <code>eas build</code> locally. Needs the <code>EXPO_TOKEN</code> secret.</td></tr>
+      <tr><td>Store builds</td><td><span class="tag bad">manual</span></td><td>Bump <code>version</code> in <code>app.json</code> and <code>package.json</code> for a new store release (build numbers auto-increment). Then Actions → "EAS Build Android/iOS (production)" → Run workflow, or <code>eas build</code> locally. Uses the <code>EXPO_TOKEN</code> secret.</td></tr>
+      <tr><td>Store submission</td><td><span class="tag bad">manual</span></td><td>The build workflows only build. Submit with <code>eas submit --platform android --latest</code> (Play internal track) and <code>--platform ios</code> (TestFlight), after <code>eas login</code>, or from expo.dev. Promote to production in Play Console and App Store Connect.</td></tr>
     </tbody>
   </table>
 
@@ -1068,9 +1078,9 @@ npx supabase test db                                             <span class="c"
       <tr><td class="k">Expo docs version</td><td><code>AGENTS.md</code>: v57</td><td>SDK 54.</td></tr>
       <tr><td class="k">Content ladder</td><td>ADR 004: video first, all sources in one prompt</td><td>Text first; video only if text is partial and the clip is under 3 minutes.</td></tr>
       <tr><td class="k">Models per task</td><td>ADR 013 and older notes: two tiers on Gemini Flash, video on Google's API</td><td>One model per task through OpenRouter (ADR 015, PIN-45). Read <code>TASK_MODELS</code> in <code>llmClient.ts</code>.</td></tr>
-      <tr><td class="k">WORKFLOWS.md</td><td>4 tabs, migrations to 0005, Gemini only</td><td>5 tabs, 40 migrations, OpenRouter and Gemini. Use it for the "why", not the "what".</td></tr>
+      <tr><td class="k">WORKFLOWS.md</td><td>4 tabs, migrations to 0005</td><td>5 tabs, 40 migrations. The AI parts were updated in October; the screen and table lists were not. Use it for the "why", not the "what".</td></tr>
       <tr><td class="k">RevenueCat events</td><td>RECIPE_CREDITS_ROLLOUT.md: only <code>NON_RENEWING_PURCHASE</code></td><td>Also <code>INITIAL_PURCHASE</code> and events with no type.</td></tr>
-      <tr><td class="k">Function deploys</td><td>(nothing)</td><td>Manual. A branch <code>deploy-edge-functions-workflow</code> exists locally with a GitHub Action for it, not merged.</td></tr>
+      <tr><td class="k">Function deploys</td><td>(nothing)</td><td>Manual, and merging does not deploy. In October production ran a two-week-old build without anyone noticing, so PIN-28, PIN-46 and PIN-45 were merged but not live. After a backend merge, deploy, then check <code>npx supabase functions list</code> or the model names in <code>ai_usage_events</code>. A branch <code>deploy-edge-functions-workflow</code> with a GitHub Action for this exists, not merged.</td></tr>
     </tbody>
   </table></div>
 
