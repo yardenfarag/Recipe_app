@@ -2,6 +2,12 @@
 
 Pinch turns recipe videos and links into a calm, cookable kitchen on your phone — and now on the web too. Paste a URL from YouTube, Instagram, TikTok, or the web; Pinch extracts ingredients and steps, saves them to your library, and helps you shop and cook along.
 
+## New developer? Start here
+
+Open **[`docs/onboarding/index.html`](docs/onboarding/index.html)** in a browser: double-click it, or run `open docs/onboarding/index.html` (macOS) or `start docs\onboarding\index.html` (Windows). It covers the architecture, the AI model per task, running the app on your PC and phone, the access you need, and how we work.
+
+Or ask the AI agent in this repo (Claude Code, Cursor) for the **cookie tour** and it opens the guide for you.
+
 ## Why Pinch
 
 - **Snap from a link** — extract a structured recipe instead of scrubbing a video
