@@ -11,6 +11,7 @@ import {
   View,
 } from 'react-native';
 
+import { AiCostDashboard } from '@/components/admin/AiCostDashboard';
 import { Screen } from '@/components/Screen';
 import { TextInput } from '@/components/text-input';
 import { useAuth } from '@/hooks/useAuth';
@@ -18,11 +19,11 @@ import { useProfile } from '@/hooks/useProfile';
 import { useThemePreference } from '@/hooks/useThemePreference';
 import { errorText } from '@/lib/errorText';
 import { ADMIN_PRICE_CARD } from '@/lib/quotas';
+import { formatTokens, shortModelName } from '@/lib/aiCostSummary';
 import {
   fetchAdminTokenLedger,
   fetchAdminUsageEvents,
   formatUsageAction,
-  summarizeUsage,
   type AiUsageEvent,
   type TokenLedgerRow,
 } from '@/lib/supabase/adminUsage';
@@ -65,6 +66,7 @@ export default function AdminUsageScreen() {
   const [grantUserId, setGrantUserId] = useState('');
   const [grantAmount, setGrantAmount] = useState('10');
   const [grantBusy, setGrantBusy] = useState(false);
+  const [costRefreshKey, setCostRefreshKey] = useState(0);
 
   const refresh = useCallback(async () => {
     if (!user || !isAdmin) {
@@ -73,6 +75,7 @@ export default function AdminUsageScreen() {
     }
     setError(null);
     setLoading(true);
+    setCostRefreshKey((k) => k + 1);
     try {
       const [usageRows, ledgerRows, ticketRows, feedbackRows] = await Promise.all([
         fetchAdminUsageEvents(120),
@@ -173,7 +176,6 @@ export default function AdminUsageScreen() {
     );
   }
 
-  const totals = summarizeUsage(events);
   const openTickets = tickets.filter((t) => t.status === 'open');
 
   return (
@@ -211,9 +213,9 @@ export default function AdminUsageScreen() {
           <ActivityIndicator color={colors.primary} />
         ) : (
           <>
-            <Section title="Price card" colors={colors}>
-              <Row label="Gemini input" value={`${ADMIN_PRICE_CARD.geminiInputUsdPerM}/M`} colors={colors} />
-              <Row label="Gemini output (+thinking)" value={`${ADMIN_PRICE_CARD.geminiOutputUsdPerM}/M`} colors={colors} />
+            <AiCostDashboard refreshKey={costRefreshKey} />
+
+            <Section title="Limits & rates" colors={colors}>
               <Row
                 label="ScrapeCreators credit"
                 value={usd(ADMIN_PRICE_CARD.scrapecreatorsUsdPerCredit)}
@@ -348,25 +350,11 @@ export default function AdminUsageScreen() {
               )}
             </Section>
 
-            <Section title={`Totals (last ${events.length} events)`} colors={colors}>
-              <Row label="Provider cost" value={usd(totals.totalCostUsd)} colors={colors} />
-              <Row label="Gemini" value={usd(totals.geminiCostUsd)} colors={colors} />
-              <Row label="ScrapeCreators" value={usd(totals.scrapecreatorsCostUsd)} colors={colors} />
-              <Row label="Tokens charged (legacy)" value={String(totals.tokensCharged)} colors={colors} />
-              <Row label="Extracts / remixes" value={`${totals.extracts} / ${totals.remixes}`} colors={colors} />
-              <Row label="Cached / failed" value={`${totals.cached} / ${totals.failed}`} colors={colors} />
-              <Row
-                label="Gemini tokens in/out"
-                value={`${totals.promptTokens} / ${totals.outputTokens}`}
-                colors={colors}
-              />
-            </Section>
-
             <Section title="AI usage log" colors={colors}>
               <ScrollView horizontal showsHorizontalScrollIndicator>
                 <View>
                   <TableHeader
-                    cells={['When', 'Action', 'Status', 'Plat', 'Src', 'Tok$', 'SC$', 'Tot$', 'Chg', 'ms']}
+                    cells={['When', 'Action', 'Status', 'Model', 'In', 'Out', 'Plat', 'Src', 'Model$', 'SC$', 'Tot$', 'ms']}
                     colors={colors}
                   />
                   {events.map((event) => (
@@ -377,12 +365,14 @@ export default function AdminUsageScreen() {
                         fmtWhen(event.created_at),
                         formatUsageAction(event.action),
                         event.status,
+                        event.model ? shortModelName(event.model) : '—',
+                        formatTokens(event.prompt_tokens || 0),
+                        formatTokens((event.output_tokens || 0) + (event.thinking_tokens || 0)),
                         event.platform ?? '—',
                         event.extraction_source ?? '—',
                         usd(Number(event.gemini_cost_usd) || 0),
                         usd(Number(event.scrapecreators_cost_usd) || 0),
                         usd(Number(event.total_cost_usd) || 0),
-                        String(event.tokens_charged),
                         event.duration_ms != null ? String(event.duration_ms) : '—',
                       ]}
                     />

@@ -787,7 +787,7 @@ npx -y deno run -A --no-lock --env-file=.env eval/cli.ts report</code></pre>
   <ul>
     <li>Code: <code>_shared/llmClient.ts</code>, <code>_shared/videoInput.ts</code>, <code>_shared/gemini.ts</code>, <code>_shared/jev.ts</code>, <code>_shared/contentGate.ts</code>, <code>_shared/classifyRecipe.ts</code>.</li>
     <li>Decisions: <code>docs/adr/015-per-task-models.md</code> (current routing), <code>docs/adr/013</code> (credits and caps), <code>docs/adr/014</code> (invent), <code>docs/research/05-llm-per-task.md</code> (the eval), Linear PIN-28, PIN-44, PIN-45, PIN-46.</li>
-    <li>Live numbers: Settings → Admin → Usage in the app, or <code>select * from ai_usage_events order by created_at desc</code>.</li>
+    <li>Live numbers: Settings → Admin → Usage in the app. The "AI cost" panel shows cost, calls and tokens per model, per task and per action for the last 24 hours, 7 or 30 days. Each <code>ai_usage_events</code> row stores its per-call breakdown in <code>metadata.llm_calls</code>, so you can also query it directly.</li>
   </ul>
 </section>
 

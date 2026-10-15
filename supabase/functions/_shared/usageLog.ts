@@ -1,6 +1,7 @@
 import type { SupabaseClient } from 'https://esm.sh/@supabase/supabase-js@2';
 
 import {
+  estimateGeminiCostUsd,
   estimateScrapeCreatorsCostUsd,
   sumGeminiUsages,
   type GeminiUsageSnapshot,
@@ -45,6 +46,33 @@ export async function logUsageEvent(
   const llmCostUsd = summed.geminiCostUsd + (priced?.costUsd ?? 0);
   const totalCostUsd = llmCostUsd + scrapecreatorsCostUsd;
 
+  // One entry per model call, so the admin dashboard can attribute cost and
+  // tokens to each model even when an extract made several calls.
+  const llmCalls = [
+    ...(input.usages ?? []).map((u) => ({
+      kind: u.kind,
+      model: u.model,
+      prompt_tokens: u.promptTokenCount,
+      output_tokens: u.candidatesTokenCount,
+      thinking_tokens: u.thoughtsTokenCount,
+      cost_usd: roundUsd(estimateGeminiCostUsd(u)),
+      cost_source: typeof u.costUsd === 'number' ? 'openrouter' : 'rate_table',
+    })),
+    ...(priced
+      ? [
+          {
+            kind: input.action,
+            model: priced.model,
+            prompt_tokens: priced.promptTokens,
+            output_tokens: 0,
+            thinking_tokens: 0,
+            cost_usd: roundUsd(priced.costUsd),
+            cost_source: 'openrouter',
+          },
+        ]
+      : []),
+  ];
+
   const row = {
     user_id: input.userId ?? null,
     guest_install_id: input.guestInstallId ?? null,
@@ -64,7 +92,7 @@ export async function logUsageEvent(
     tokens_charged: input.tokensCharged ?? 0,
     duration_ms: input.durationMs ?? null,
     error_message: input.errorMessage ?? null,
-    metadata: input.metadata ?? {},
+    metadata: llmCalls.length > 0 ? { ...(input.metadata ?? {}), llm_calls: llmCalls } : (input.metadata ?? {}),
   };
 
   const { data, error } = await admin.from('ai_usage_events').insert(row).select('id').maybeSingle();
