@@ -112,7 +112,7 @@ select tablename, rowsecurity from pg_tables where schemaname = 'public';
 ## Edge Function: `extract-recipe` (Step 2b)
 
 Takes `{ url }`, detects the platform, fetches metadata (YouTube Data API / ScrapeCreators for
-Instagram & TikTok), runs the Gemini content ladder, and returns structured JSON.
+Instagram & TikTok), runs the content ladder (text first, then video) through OpenRouter, and returns structured JSON.
 Returns `{ status, platform, recipe?, message? }`.
 
 `status` is one of `full` | `partial` | `failed` | `coming_soon` (see ADR 003/004).
@@ -122,30 +122,45 @@ Supabase) per ADR 002.
 ### Secrets
 
 ```bash
-# Required — Gemini API key (server-side only, never shipped to the app)
-npx supabase secrets set GEMINI_API_KEY=your_gemini_key
-
-# Optional — enriches extraction with description + top 10 comments (ADR 004).
-# Without it, extraction still works from the video alone.
-npx supabase secrets set YOUTUBE_API_KEY=your_youtube_data_api_key
-
-# Optional — override models (defaults shown)
-# Text / translate / remix / swap → Flash-Lite (fast + cheap)
-npx supabase secrets set GEMINI_FAST_MODEL=gemini-3.1-flash-lite
-# Video extract → 3.5 Flash (stronger multimodal)
-npx supabase secrets set GEMINI_MODEL=gemini-3.5-flash
-
-# Required for text / vision jobs (swap, translate, remix, photo Snap).
+# Required — every model call (text, vision, video, Jev) goes through OpenRouter.
 # OPEN_ROUTER_API_KEY is accepted as an alias.
 npx supabase secrets set OPENROUTER_API_KEY=sk-or-v1-your_key
-# Optional model overrides
-# npx supabase secrets set OPENROUTER_FAST_MODEL=google/gemini-2.5-flash-lite
-# npx supabase secrets set OPENROUTER_MODEL=google/gemini-2.5-flash
-# npx supabase secrets set JEV_MODEL=typesafe/jev-1.13   # extract gate + remix relatedness
-
 
 # Required for Instagram + TikTok extraction (ScrapeCreators)
 npx supabase secrets set SCRAPECREATORS_API_KEY=your_scrapecreators_api_key
+
+# Optional — enriches YouTube extraction with description + top 10 comments (ADR 004).
+npx supabase secrets set YOUTUBE_API_KEY=your_youtube_data_api_key
+
+# Optional — per-task model overrides. <KIND> is the upper-cased task kind:
+# TEXT, VIDEO, PHOTO, REPAIR, INVENT_TEXT, INVENT_PHOTO, INVENT_VIDEO, TRANSLATE,
+# TRANSFORM, SUBSTITUTION, FRIDGE_MATCH, CONTENT_GATE, REMIX_RELATED.
+# Defaults are TASK_MODELS in functions/_shared/llmClient.ts (ADR 015).
+# npx supabase secrets set OPENROUTER_MODEL_TEXT=openai/gpt-6-luna
+# npx supabase secrets set OPENROUTER_FALLBACKS_TEXT=qwen/qwen3.8-flash   # comma list, or "none"
+# npx supabase secrets set OPENROUTER_REASONING_TEXT=none                 # none | low | medium
+# npx supabase secrets set JEV_MODEL=typesafe/jev-1.13   # extract gate + remix relatedness
+```
+
+`GEMINI_API_KEY`, `GEMINI_MODEL`, `GEMINI_FAST_MODEL`, `OPENROUTER_MODEL`, `OPENROUTER_FAST_MODEL`,
+`OPENROUTER_FALLBACKS` and `OPENROUTER_FAST_FALLBACKS` are no longer read. Unset them after the
+PIN-45 deploy: `npx supabase secrets unset GEMINI_API_KEY GEMINI_MODEL GEMINI_FAST_MODEL OPENROUTER_MODEL OPENROUTER_FAST_MODEL OPENROUTER_FALLBACKS OPENROUTER_FAST_FALLBACKS`.
+
+### Per-task models (PIN-45)
+
+Every function that calls a model shares `functions/_shared/llmClient.ts`. Deploy all of them together
+when the router changes:
+
+```bash
+for f in extract-recipe invent-recipe repair-recipe match-fridge suggest-substitution transform-recipe translate-recipe; do
+  npx supabase functions deploy $f
+done
+```
+
+Check the default slugs still exist on OpenRouter before deploying (a retired slug fails the whole request):
+
+```bash
+npx deno test -A --no-lock --env-file=.env supabase/functions/_shared/llmClient_test.ts
 ```
 
 Optional Apple token-revoke secrets (iOS account deletion, TN3194):

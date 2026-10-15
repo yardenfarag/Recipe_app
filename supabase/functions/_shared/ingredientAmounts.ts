@@ -2,7 +2,7 @@
 // does not have to guess densities (cups of flour → grams, not milliliters).
 
 import { canonicalUnitKey, isCountUnit, isKnownCulinaryUnit } from './culinaryUnits.ts';
-import { sanitizeGeminiText } from './geminiClient.ts';
+import { sanitizeGeminiText } from './llmClient.ts';
 
 export const INGREDIENT_AMOUNT_SCHEMA = {
   type: 'object',

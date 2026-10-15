@@ -27,7 +27,7 @@ Pinch turns a social cooking video into a clean, usable recipe.
 | Mobile app | **Expo SDK 54** + Expo Router | Cross-platform iOS/Android; file-based screens; Expo Go for fast iteration |
 | UI | **React Native** + **NativeWind v4** | Familiar React patterns; Tailwind-style styling |
 | Backend / DB | **Supabase** (Postgres + Auth + Storage + Edge Functions) | Auth, RLS-protected recipes, serverless AI pipeline without a custom server |
-| AI | **Google Gemini** (Flash-class model) | Structured JSON recipe extraction, substitutions, dietary remixes |
+| AI | **OpenRouter**, one model per task (ADR 015) | GPT-6 Luna for text, Claude Sonnet 5.5 for photos, GPT-6.1 Sol for translate, Gemini 3.5 Flash for video, Jev for gates |
 | Platform metadata | **YouTube Data API** (optional) + **ScrapeCreators** (IG/TikTok) | Gemini cannot reliably scrape social URLs alone; keys must stay server-side |
 | Local guest data | **AsyncStorage** | Try the product before signing up (ADR 002) |
 | Share-into-app | **expo-share-intent** (dev build) | “Share → Pinch” from other apps (ADR 010); disabled in Expo Go |
@@ -335,7 +335,7 @@ Guests use the same shape with ids like `guest-<timestamp>-…` and no `user_id`
 | `transform-recipe` | `{ variant, recipe }` | remixed recipe + summary | Dietary / lifestyle remix |
 | `backfill-thumbnails` | `{ videoIds, recipeIds }` | updated thumbnail URLs | Upgrade legacy YouTube images |
 
-Secrets (server only): `GEMINI_API_KEY`, optional `YOUTUBE_API_KEY`, `SCRAPECREATORS_API_KEY`, optional `GEMINI_MODEL`. Setup: [`supabase/README.md`](../supabase/README.md).
+Secrets (server only): `OPENROUTER_API_KEY`, `SCRAPECREATORS_API_KEY`, optional `YOUTUBE_API_KEY`, optional per-task `OPENROUTER_MODEL_<KIND>` overrides (ADR 015). Setup: [`supabase/README.md`](../supabase/README.md).
 
 ---
 

@@ -4,7 +4,7 @@ Reruns the PIN-28 model shortlist on real Pinch inputs through the **production 
 
 ## Run
 
-Needs `OPENROUTER_API_KEY`, `GEMINI_API_KEY` and `SCRAPECREATORS_API_KEY` in the repo `.env`. Deno runs through npx.
+Needs `OPENROUTER_API_KEY` and `SCRAPECREATORS_API_KEY` in the repo `.env` (native Gemini is gone since PIN-45). Deno runs through npx.
 
 ```bash
 deno() { npx -y deno run -A --no-lock --env-file=.env eval/cli.ts "$@"; }
@@ -25,7 +25,7 @@ Each step skips work that's already on disk. Pass `--force` to redo it. A full r
 | `cases/images.json` | yes | Wikimedia Commons files (title + license) for photo, content gate and invent |
 | `cases/gate.json` | yes | Extract-gate cases: full post, description-only variant, or a hand-written non-recipe caption |
 | `cases/invent.json` | yes | Invent prompts |
-| `models.ts` | yes | Shortlist per task. The last entry is what production runs today. `model@low` pins the reasoning effort |
+| `models.ts` | yes | Shortlist per task. Production defaults are `TASK_MODELS` in `supabase/functions/_shared/llmClient.ts`. `model@low` pins the reasoning effort |
 | `private/` | no | Post snapshots, videos, images, reference labels |
 | `results/raw/` | no | One JSON per call, holding the output, latency, tokens and cost |
 | `results/judge/` | yes | Judge verdicts |

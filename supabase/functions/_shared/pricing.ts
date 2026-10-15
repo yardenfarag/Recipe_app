@@ -37,31 +37,42 @@ export interface GeminiUsageSnapshot {
   candidatesTokenCount: number;
   thoughtsTokenCount: number;
   totalTokenCount: number;
+  /** Exact USD cost from OpenRouter's `usage.cost`. Preferred over the rate table. */
+  costUsd?: number;
 }
+
+/**
+ * USD per 1M tokens, used only when OpenRouter did not return `usage.cost`.
+ * Rates from OpenRouter's model API, 6 Oct 2026 (docs/research/05-llm-per-task.md).
+ */
+const OPENROUTER_RATES: Array<{ match: string; input: number; output: number }> = [
+  { match: 'gpt-6.1-sol', input: 2.0, output: 10.0 },
+  { match: 'gpt-6-luna', input: 0.1, output: 0.5 },
+  { match: 'gpt-5.4-nano', input: 0.2, output: 1.25 },
+  { match: 'gpt-4.1-mini', input: 0.4, output: 1.6 },
+  { match: 'claude-sonnet-5.5', input: 2.0, output: 10.0 },
+  { match: 'claude', input: 3.0, output: 15.0 },
+  { match: 'mistral-small', input: 0.15, output: 0.6 },
+  { match: 'qwen3.8-omni-flash', input: 0.15, output: 0.47 },
+  { match: 'qwen3.8-flash', input: 0.15, output: 0.47 },
+  { match: 'gemini-3.5-flash-lite', input: 0.3, output: 2.5 },
+  { match: 'gemini-3.5-flash', input: GEMINI_INPUT_USD_PER_M, output: GEMINI_OUTPUT_USD_PER_M },
+  { match: 'flash-lite', input: 0.1, output: 0.4 },
+  { match: 'gemini-2.5-flash', input: 0.3, output: 2.5 },
+];
 
 export function geminiRatesForModel(model: string): { input: number; output: number } {
   const id = model.toLowerCase();
-  if (id.includes('openrouter') || id.includes('/')) {
-    if (id.includes('gpt-4.1-mini')) {
-      return { input: 0.4, output: 1.6 };
-    }
-    if (id.includes('flash-lite')) {
-      return { input: 0.1, output: 0.4 };
-    }
-    if (id.includes('gemini-2.5-flash') || id.includes('gemini-2.0-flash')) {
-      return { input: 0.3, output: 2.5 };
-    }
-    if (id.includes('claude')) {
-      return { input: 3.0, output: 15.0 };
-    }
-  }
-  if (id.includes('flash-lite')) {
-    return { input: GEMINI_FAST_INPUT_USD_PER_M, output: GEMINI_FAST_OUTPUT_USD_PER_M };
+  for (const rate of OPENROUTER_RATES) {
+    if (id.includes(rate.match)) return { input: rate.input, output: rate.output };
   }
   return { input: GEMINI_INPUT_USD_PER_M, output: GEMINI_OUTPUT_USD_PER_M };
 }
 
 export function estimateGeminiCostUsd(usage: GeminiUsageSnapshot): number {
+  if (typeof usage.costUsd === 'number' && Number.isFinite(usage.costUsd)) {
+    return Math.max(0, usage.costUsd);
+  }
   const rates = geminiRatesForModel(usage.model);
   const input = usage.promptTokenCount;
   // Google bills thinking tokens at the output rate.

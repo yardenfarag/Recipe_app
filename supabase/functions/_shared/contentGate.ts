@@ -107,7 +107,6 @@ export async function classifyContent(
   parts.push({ text });
 
   const { data, usage } = await generateLlmJson<{ kind?: string; dish_guess?: string }>({
-    tier: 'fast',
     systemPrompt: SYSTEM_PROMPT,
     parts,
     responseSchema: SCHEMA,
