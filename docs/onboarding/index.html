@@ -192,11 +192,12 @@ details>*:not(summary){margin-bottom:12px}
     <a class="item" href="#setup"><span class="n">7</span>Run it on PC and phone</a>
     <a class="item" href="#access"><span class="n">8</span>Access and .env</a>
     <a class="item" href="#workflow"><span class="n">9</span>Linear, Git, CI, deploys</a>
-    <a class="item" href="#gotchas"><span class="n">10</span>Docs vs code</a>
-    <a class="item" href="#firstweek"><span class="n">11</span>First week</a>
-    <a class="item" href="#glossary"><span class="n">12</span>Glossary and reading list</a>
+    <a class="item" href="#skills"><span class="n">10</span>Agent skills</a>
+    <a class="item" href="#gotchas"><span class="n">11</span>Docs vs code</a>
+    <a class="item" href="#firstweek"><span class="n">12</span>First week</a>
+    <a class="item" href="#glossary"><span class="n">13</span>Glossary and reading list</a>
   </div>
-  <div class="foot">Updated 15 Oct 2026 from <code>master</code> at commit <code>5339c86</code> plus the PIN-45 branch.<br>Source: <code>docs/onboarding/index.html</code></div>
+  <div class="foot">Updated 15 Oct 2026 from <code>master</code> at commit <code>9f5a60a</code> (PIN-45 merged).<br>Source: <code>docs/onboarding/index.html</code></div>
 </nav>
 
 <main>
@@ -219,13 +220,20 @@ details>*:not(summary){margin-bottom:12px}
     </tbody>
   </table>
 
+  <h3>Opening this guide</h3>
+  <ul>
+    <li>Double-click <code>docs/onboarding/index.html</code> in your file browser.</li>
+    <li>Or from the repo root: <code>open docs/onboarding/index.html</code> (macOS) or <code>start docs\onboarding\index.html</code> (Windows).</li>
+    <li>Or ask Claude Code or Cursor for the "cookie tour".</li>
+  </ul>
+
   <h3>Suggested order</h3>
   <ol>
     <li>Read sections 1 and 2 (about 15 minutes).</li>
     <li>Do section 7 and get the app running on your phone with Expo Go.</li>
-    <li>Do the access checklist in section 8 with Yarden.</li>
+    <li>Do the access checklist in section 8 with Yarden, and install the agent skills (section 10).</li>
     <li>Read sections 3 to 6 with the code open.</li>
-    <li>Read section 10 before you trust anything in <code>docs/</code>.</li>
+    <li>Read section 11 before you trust anything in <code>docs/</code>.</li>
   </ol>
 </section>
 
@@ -795,6 +803,7 @@ npx -y deno run -A --no-lock --env-file=.env eval/cli.ts report</code></pre>
     <li><input type="checkbox" id="t2"><label for="t2"><b>Git</b> and a GitHub account with write access to <a href="https://github.com/yardenfarag/Recipe_app">yardenfarag/Recipe_app</a>.</label></li>
     <li><input type="checkbox" id="t3"><label for="t3"><b>VS Code</b> or Cursor, with the <b>Expo Tools</b> extension (<code>expo.vscode-expo-tools</code>), ESLint, Prettier.</label></li>
     <li><input type="checkbox" id="t4"><label for="t4"><b>An Expo account</b> at <a href="https://expo.dev/signup">expo.dev</a> (free).</label></li>
+    <li><input type="checkbox" id="t5"><label for="t5"><b>Claude Code</b> (or Cursor) with <b>Matt Pocock's skills</b> and the <b>Linear MCP</b>.<small>Claude Code: <code>claude plugins install mattpocock-skills</code>. Cursor or Codex: <code>npx skills@latest add mattpocock/skills</code>. Check with <code>/ask-matt</code>. Why and how: <a href="#skills">section 10</a>.</small></label></li>
   </ul>
 
   <h3>Step 2. Clone and install</h3>
@@ -914,6 +923,7 @@ npx supabase test db                                             <span class="c"
   <ul>
     <li>Workspace <a href="https://linear.app/pinch-recipe">pinch-recipe</a>, one team, key <b>PIN</b>. Issues are <code>PIN-&lt;number&gt;</code>.</li>
     <li>Pick an issue, assign yourself, set it to In Progress. Write findings and decisions as comments on the issue.</li>
+    <li>Every open issue has an <b>Approach</b> label (<code>wayfinder</code>, <code>grill-with-docs</code>, <code>research</code>, <code>prototype</code>, <code>wizard</code>, <code>implement</code>). It says which skill to start with. See <a href="#approach">section 10</a>.</li>
     <li>Copy the branch name from the issue (there is a button). Use it as-is.</li>
     <li>If you find work that has no issue, create one first, even a one-liner.</li>
     <li>When the PR merges, set the issue to Done.</li>
@@ -927,7 +937,8 @@ npx supabase test db                                             <span class="c"
       <tr><td>App Store Optimization</td><td><span class="tag warn">High</span></td><td>Store descriptions (done) and screenshots (PIN-19, in progress).</td></tr>
       <tr><td>In-app growth and UX</td><td><span class="tag">Medium</span></td><td>Share Pinch, walkthrough, feedback, accessibility.</td></tr>
       <tr><td>Architecture: backend and state management</td><td><span class="tag">Medium</span></td><td>Generated DB types (PIN-32), shared contracts (PIN-33), split the big functions (PIN-34), tests and CI (PIN-35), staging (PIN-36), TanStack Query (PIN-40).</td></tr>
-      <tr><td>AI</td><td></td><td>PIN-28 research, PIN-44 eval and PIN-46 Jev gate done. PIN-45 per-task models in review.</td></tr>
+      <tr><td>AI</td><td></td><td>PIN-28 research, PIN-44 eval and PIN-46 Jev gate and PIN-45 per-task models done. Next: PIN-48 runtime model routing, PIN-53 translation quality.</td></tr>
+      <tr><td>Platform and ops (no project yet)</td><td><span class="tag warn">High</span></td><td>PIN-47 own R2 bucket, PIN-51 release flow for web, iOS and Android, PIN-54 security audit, PIN-49 admin dashboard, PIN-50 docs, PIN-52 web to Next.js.</td></tr>
     </tbody>
   </table>
 
@@ -966,12 +977,86 @@ npx supabase test db                                             <span class="c"
   </ul>
 
   <h3>AI coding tools</h3>
-  <p>We use Claude Code and Cursor. The repo configures them: <code>AGENTS.md</code> and <code>CLAUDE.md</code> (project instructions), <code>.cursor/rules/</code> (always-on rules), <code>.agents/skills/</code> (pinned skills listed in <code>skills-lock.json</code>). Decisions live in <code>docs/adr/</code>, vocabulary in <code>docs/GLOSSARY.md</code>.</p>
+  <p>We use Claude Code and Cursor. The repo configures them: <code>AGENTS.md</code> and <code>CLAUDE.md</code> (project instructions), <code>.cursor/rules/</code> (always-on rules), <code>.agents/skills/</code> (pinned skills listed in <code>skills-lock.json</code>). Install the full skill set yourself (setup step 1); <a href="#skills">section 10</a> explains which skills we use and why. Decisions live in <code>docs/adr/</code>, vocabulary in <code>docs/GLOSSARY.md</code>.</p>
 </section>
 
-<!-- 10 GOTCHAS -->
+<!-- 10 SKILLS -->
+<section class="block" id="skills">
+  <div class="kicker">10 · Agent skills</div>
+  <h2>How we work with the agent</h2>
+  <p class="intro">Most Pinch work is done with an AI agent (Claude Code or Cursor). We drive it with <a href="https://github.com/mattpocock/skills">Matt Pocock's skills</a>: short, slash-command playbooks like <code>/grill-with-docs</code> or <code>/tdd</code>. Install them before you take your first ticket.</p>
+
+  <h3>Why this matters</h3>
+  <table>
+    <tbody>
+      <tr><td class="k">The agent builds the wrong thing</td><td>Usually it misunderstood the ticket. <code>/grill-with-docs</code> makes it interview you before it writes code, so the gaps show up in conversation instead of in review.</td></tr>
+      <tr><td class="k">It forgets between sessions</td><td>The grilling writes what it learns to <code>CONTEXT.md</code> (our shared words: Snap, credit, gate, ladder) and to ADRs in <code>docs/adr/</code>. The next session, and the next person, start from that.</td></tr>
+      <tr><td class="k">The code doesn't work</td><td><code>/tdd</code> and <code>/implement</code> work red, green, refactor, one slice at a time, and end with <code>/code-review</code> against our standards and the ticket.</td></tr>
+      <tr><td class="k">Work is too big for one session</td><td><code>/wayfinder</code> and <code>/to-tickets</code> split it into tickets small enough for one fresh session each, with blocking links in Linear.</td></tr>
+      <tr><td class="k">Two people, one way of working</td><td>When we both use the same skills, tickets, specs and PRs look the same, and either of us can pick up the other's work. The Approach label on every ticket only works if you have the skills.</td></tr>
+    </tbody>
+  </table>
+
+  <h3>Where to get them</h3>
+  <div class="table-wrap"><table>
+    <thead><tr><th>Agent</th><th>Install</th><th>Notes</th></tr></thead>
+    <tbody>
+      <tr><td class="k">Claude Code</td><td><code>claude plugins install mattpocock-skills</code><br>or inside a session: <code>/plugin install mattpocock-skills</code></td><td>Recommended. Official marketplace plugin, updates on its own.</td></tr>
+      <tr><td class="k">Cursor, Codex, others</td><td><code>npx skills@latest add mattpocock/skills</code></td><td>Copies skill files into the repo. A few are already pinned in <code>.agents/skills/</code> (<code>skills-lock.json</code>).</td></tr>
+      <tr><td class="k">Linear MCP</td><td>Connect Linear in your agent's MCP / connectors settings.</td><td>So the agent can read tickets, comment, and create child tickets.</td></tr>
+    </tbody>
+  </table></div>
+  <ul>
+    <li>Pick one install method per agent. Installing both into Claude Code shows every skill twice.</li>
+    <li>Check it worked: type <code>/ask-matt</code>. It recommends a skill for whatever you describe.</li>
+    <li>Source and docs: <a href="https://github.com/mattpocock/skills">github.com/mattpocock/skills</a>. Our guide: <code>docs/WORKING-ON-TICKETS.md</code>.</li>
+  </ul>
+
+  <h3>The skills we use</h3>
+  <div class="table-wrap"><table>
+    <thead><tr><th>Skill</th><th>What it does</th><th>When we use it</th></tr></thead>
+    <tbody>
+      <tr><td><code>/grill-with-docs</code></td><td>Interviews you about a plan until it's clear, and records terms and decisions in <code>CONTEXT.md</code> and ADRs.</td><td>Start of most features and every architecture decision.</td></tr>
+      <tr><td><code>/wayfinder</code></td><td>Turns a big, unclear effort into a map ticket with child decision tickets in Linear, then resolves them one by one.</td><td>Multi-session work: Next.js move, security audit, model routing.</td></tr>
+      <tr><td><code>/research</code></td><td>Reads primary sources (official docs, APIs, pricing) and writes a cited note to <code>docs/research/</code>.</td><td>Before picking a vendor, model or library.</td></tr>
+      <tr><td><code>/prototype</code></td><td>Builds throwaway code to answer one question: several UI variants, or a runnable state model.</td><td>When you need to see it to decide.</td></tr>
+      <tr><td><code>/to-spec</code>, <code>/to-tickets</code></td><td>Turn the conversation into a spec, then into small tickets with blocking edges in Linear.</td><td>Right after grilling, in the same session.</td></tr>
+      <tr><td><code>/implement</code></td><td>Builds a ticket, driving <code>/tdd</code>, and finishes with <code>/code-review</code>.</td><td>Any ticket labelled <code>implement</code>.</td></tr>
+      <tr><td><code>/tdd</code></td><td>Red, green, refactor, one vertical slice at a time.</td><td>Logic in <code>src/lib</code>, Edge Function domain code, RLS tests.</td></tr>
+      <tr><td><code>/diagnosing-bugs</code></td><td>Reproduce first, then hypothesise, instrument, fix, and add a regression test.</td><td>Anything broken, failing or slow.</td></tr>
+      <tr><td><code>/code-review</code></td><td>Reviews a branch on two axes: our standards, and whether it does what the ticket asked.</td><td>Before opening a PR, and when reviewing each other's.</td></tr>
+      <tr><td><code>/wizard</code></td><td>Writes a step-by-step script for things only a human can do in a dashboard.</td><td>Cloudflare, store consoles, rotating secrets.</td></tr>
+      <tr><td><code>/codebase-design</code>, <code>/improve-codebase-architecture</code></td><td>Find where module boundaries should go and keep modules deep and testable.</td><td>Architecture project (PIN-29, PIN-30).</td></tr>
+      <tr><td><code>/handoff</code></td><td>Writes the session down so a fresh session or a teammate can continue.</td><td>Ending a session mid-task.</td></tr>
+    </tbody>
+  </table></div>
+
+  <h3 id="approach">How to approach a ticket</h3>
+  <p>Every open Linear issue has one <b>Approach</b> label. Start a fresh agent session, give it the ticket id (e.g. <code>PIN-49</code>), and run the skill the label names.</p>
+  <div class="table-wrap"><table>
+    <thead><tr><th>Approach label</th><th>Use it when</th><th>Start with, then</th></tr></thead>
+    <tbody>
+      <tr><td><span class="tag p">wayfinder</span></td><td>Big and foggy, more than one session, several linked decisions.</td><td><code>/wayfinder</code> turns the ticket into a map of decision tickets. Work one per session.</td></tr>
+      <tr><td><span class="tag p">grill-with-docs</span></td><td>Scope is clear, decisions aren't.</td><td><code>/grill-with-docs</code> (writes <code>CONTEXT.md</code> and ADRs), then <code>/to-spec</code> → <code>/to-tickets</code>, or <code>/implement</code> if it's small.</td></tr>
+      <tr><td><span class="tag">research</span></td><td>Need facts from docs, APIs or vendors first.</td><td><code>/research</code> writes a cited file to <code>docs/research/</code>.</td></tr>
+      <tr><td><span class="tag warn">prototype</span></td><td>Need to see or run it to decide.</td><td><code>/prototype</code> throwaway variants, pick one, then <code>/implement</code>.</td></tr>
+      <tr><td><span class="tag warn">wizard</span></td><td>Mostly human steps in dashboards (Cloudflare, stores, secrets).</td><td>Agent does the code part, <code>/wizard</code> generates a guided script for the rest.</td></tr>
+      <tr><td><span class="tag ok">implement</span></td><td>Already specced, done-when is clear.</td><td><code>/implement</code> drives <code>/tdd</code> and ends with <code>/code-review</code>.</td></tr>
+    </tbody>
+  </table></div>
+  <ul>
+    <li>Not sure? Type <code>/ask-matt</code> and describe the situation.</li>
+    <li>Something broken or slow: <code>/diagnosing-bugs</code>. Ending a session mid-task: <code>/handoff</code>.</li>
+    <li>Keep the grill, spec and tickets in one session; start each <code>/implement</code> fresh.</li>
+    <li>If the label turns out wrong, change it and comment why. New tickets get an Approach label when you create them.</li>
+  </ul>
+
+  <p>One-time repo setup (Yarden, once): run <code>/setup-matt-pocock-skills</code>, choose Linear (workspace <code>pinch-recipe</code>, team <code>PIN</code>), keep single-context docs, and commit <code>docs/agents/</code>. Nobody else needs to run it.</p>
+</section>
+
+<!-- 11 GOTCHAS -->
 <section class="block" id="gotchas">
-  <div class="kicker">10 · Docs vs code</div>
+  <div class="kicker">11 · Docs vs code</div>
   <h2>Where the written docs are behind the code</h2>
   <p class="intro">Checked on 15 Oct 2026 against <code>master</code>. The code column is the truth. Fixing any row is a good first PR.</p>
   <div class="table-wrap"><table>
@@ -1000,15 +1085,15 @@ npx supabase test db                                             <span class="c"
   </ul>
 </section>
 
-<!-- 11 FIRST WEEK -->
+<!-- 12 FIRST WEEK -->
 <section class="block" id="firstweek">
-  <div class="kicker">11 · First week</div>
+  <div class="kicker">12 · First week</div>
   <h2>Suggested plan</h2>
   <table>
     <tbody>
       <tr><td class="k">Day 1</td><td>Sections 1, 2, 7, 8. App on your phone. Sign up, Snap a YouTube link, save it, add it to the shopping list. In the Supabase dashboard find your rows in <code>recipes</code> and <code>ai_usage_events</code>.</td></tr>
       <tr><td class="k">Day 2</td><td>Read the spine: <code>_layout.tsx</code> → <code>add.tsx</code> → <code>extractRecipe.ts</code> → <code>extract-recipe/index.ts</code> → <code>gemini.ts</code> → <code>llmClient.ts</code> → <code>RecipeView.tsx</code>. Keep section 6 open.</td></tr>
-      <tr><td class="k">Day 3</td><td>First PR, docs only: fix one row of the table in section 10. Learn the branch → PR → CI loop with no risk.</td></tr>
+      <tr><td class="k">Day 3</td><td>First PR, docs only: fix one row of the table in section 11. Learn the branch → PR → CI loop with no risk. Do it with the agent and an <code>implement</code> approach so you try the skills on something small.</td></tr>
       <tr><td class="k">Day 4</td><td>First UI PR: a Medium issue from "In-app growth and UX". Three platforms, five locales, screenshots in the PR.</td></tr>
       <tr><td class="k">Day 5</td><td>Pick an area to own with Yarden: web SEO and design, the architecture project, or AI.</td></tr>
     </tbody>
@@ -1025,9 +1110,9 @@ npx supabase test db                                             <span class="c"
   </table>
 </section>
 
-<!-- 12 GLOSSARY -->
+<!-- 13 GLOSSARY -->
 <section class="block" id="glossary">
-  <div class="kicker">12 · Glossary and reading list</div>
+  <div class="kicker">13 · Glossary and reading list</div>
   <h2>Terms</h2>
   <table>
     <tbody>
@@ -1053,7 +1138,7 @@ npx supabase test db                                             <span class="c"
   <ol>
     <li><code>README.md</code>: quick start, web deploy, secrets.</li>
     <li><code>docs/GLOSSARY.md</code></li>
-    <li><code>docs/WORKFLOWS.md</code>: each flow with what, why and key files. Partly out of date (section 10).</li>
+    <li><code>docs/WORKFLOWS.md</code>: each flow with what, why and key files. Partly out of date (section 11).</li>
     <li><code>supabase/README.md</code>: operations.</li>
     <li><code>docs/adr/001</code>, <code>015</code>, <code>013</code>, <code>014</code>, <code>012-recipe-credits</code>.</li>
     <li><code>docs/research/05-llm-per-task.md</code>.</li>
