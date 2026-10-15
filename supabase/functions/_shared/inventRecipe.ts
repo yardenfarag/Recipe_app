@@ -9,9 +9,9 @@ import {
   type LadderResult,
 } from './gemini.ts';
 import { FetchError } from './errors.ts';
-import { generateLlmJson } from './llmClient.ts';
-import { isInstagramCdnUrl, resolveInstagramVideoForGemini } from './instagram.ts';
+import { generateLlmJson, type LlmPart } from './llmClient.ts';
 import type { GeminiUsageSnapshot } from './pricing.ts';
+import { resolveVideoPart } from './videoInput.ts';
 import { formatMaxVideoDurationLabel, isVideoTooLong } from './videoLimits.ts';
 
 const TEXT_TIMEOUT_MS = 45_000;
@@ -67,7 +67,6 @@ export async function inventRecipeFromImage(input: {
   language?: string;
 }): Promise<{ recipe: GeminiRecipe; usage: GeminiUsageSnapshot | null }> {
   const { data, usage, durationMs } = await generateLlmJson<GeminiRecipe>({
-    tier: 'standard',
     systemPrompt: INVENT_RULES,
     parts: [
       {
@@ -176,11 +175,10 @@ async function inventFromParts(
   language: string,
   timeoutMs: number,
   kind: 'text' | 'video',
-  extraParts: Array<{ fileData: { fileUri: string } }> = [],
+  extraParts: LlmPart[] = [],
 ): Promise<{ recipe: GeminiRecipe; usage: GeminiUsageSnapshot | null }> {
   const textContext = buildInventContext(input);
   const { data, usage } = await generateLlmJson<GeminiRecipe>({
-    tier: kind === 'video' ? 'standard' : 'fast',
     systemPrompt: INVENT_RULES,
     parts: [
       ...extraParts,
@@ -205,30 +203,22 @@ async function inventWithVideo(
   usage: GeminiUsageSnapshot | null;
   usedInstagramVideoDownload?: boolean;
 }> {
-  let videoUri = input.videoUrl?.trim();
-  if (!videoUri) {
+  if (!input.videoUrl?.trim()) {
     return inventFromParts(input, language, TEXT_TIMEOUT_MS, 'text');
   }
 
-  let usedInstagramVideoDownload = false;
-  if (input.platform === 'instagram' && isInstagramCdnUrl(videoUri)) {
-    try {
-      const hosted = await resolveInstagramVideoForGemini(input.sourceUrl);
-      if (hosted && !isInstagramCdnUrl(hosted)) {
-        videoUri = hosted;
-        usedInstagramVideoDownload = true;
-      } else {
-        return { recipe: EMPTY_RECIPE, usage: null, usedInstagramVideoDownload };
-      }
-    } catch {
-      return { recipe: EMPTY_RECIPE, usage: null, usedInstagramVideoDownload };
-    }
+  const video = await resolveVideoPart(input);
+  if (!video.part) {
+    console.log('[invent] skipping video — no usable video', { reason: video.reason });
+    return {
+      recipe: EMPTY_RECIPE,
+      usage: null,
+      usedInstagramVideoDownload: video.usedInstagramVideoDownload,
+    };
   }
 
-  const result = await inventFromParts(input, language, VIDEO_TIMEOUT_MS, 'video', [
-    { fileData: { fileUri: videoUri } },
-  ]);
-  return { ...result, usedInstagramVideoDownload };
+  const result = await inventFromParts(input, language, VIDEO_TIMEOUT_MS, 'video', [video.part]);
+  return { ...result, usedInstagramVideoDownload: video.usedInstagramVideoDownload };
 }
 
 function buildInventContext(input: ExtractInput): string {

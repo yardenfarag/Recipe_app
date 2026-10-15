@@ -97,7 +97,7 @@ In the GitHub repo: **Settings → Secrets and variables → Actions**
 
 Also ensure **Settings → Pages → Source** is **GitHub Actions**.
 
-Do **not** put Edge Function secrets (`GEMINI_*`, YouTube, ScrapeCreators, Apple revoke keys) in this workflow — those stay in Supabase. See [`supabase/README.md`](supabase/README.md).
+Do **not** put Edge Function secrets (`OPENROUTER_*`, YouTube, ScrapeCreators, Apple revoke keys) in this workflow — those stay in Supabase. See [`supabase/README.md`](supabase/README.md).
 
 `EXPO_TOKEN` remains for EAS iOS/Android builds only.
 

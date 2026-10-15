@@ -1,6 +1,6 @@
 # ADR 013: OpenRouter routing + photo Snap
 
-**Status:** Accepted
+**Status:** Accepted. Routing and the native Gemini video path are superseded by [ADR 015](./015-per-task-models.md) (PIN-45); the credit, repair, fridge-match and auto-apply rules below still stand.
 **Date:** 2026-08-29
 **Deciders:** Yarden (product)
 

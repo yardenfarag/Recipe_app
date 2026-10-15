@@ -12,10 +12,9 @@ import {
   VIDEO_SYSTEM_PROMPT,
   type GeminiRecipe,
 } from '../supabase/functions/_shared/gemini.ts';
-import type { GenerateGeminiJsonResult } from '../supabase/functions/_shared/geminiClient.ts';
 import { EXTRACT_ROUTE_INSTRUCTIONS } from '../supabase/functions/_shared/jev.ts';
 import { inventRecipeFromImage, inventRecipeWithLadder } from '../supabase/functions/_shared/inventRecipe.ts';
-import { generateLlmJson, setEvalHook } from '../supabase/functions/_shared/llmClient.ts';
+import { generateLlmJson, type GenerateLlmJsonResult, setEvalHook } from '../supabase/functions/_shared/llmClient.ts';
 import { estimateGeminiCostUsd } from '../supabase/functions/_shared/pricing.ts';
 import {
   translateRecipeWithGemini,
@@ -53,13 +52,12 @@ export type RunRecord = {
 export const rawPath = (task: string, model: string, caseId: string) =>
   `${RESULTS}raw/${task}/${slug(model)}/${caseId}.json`;
 
-type CallStore = { model: string; reasoning: string | null; results: GenerateGeminiJsonResult<unknown>[] };
+type CallStore = { model: string; reasoning: string | null; results: GenerateLlmJsonResult<unknown>[] };
 const calls = new AsyncLocalStorage<CallStore>();
 setEvalHook({
   model: () => calls.getStore()?.model ?? null,
   reasoning: () => calls.getStore()?.reasoning ?? null,
-  // Azure's content filter truncates Sonnet 5.5 mid-JSON (finish_reason content_filter, 12 Oct).
-  ignoreProviders: () => (calls.getStore()?.model.startsWith('anthropic/') ? ['azure'] : null),
+  // llmClient already skips Azure for anthropic/* models.
   onResult: (result) => calls.getStore()?.results.push(result),
 });
 
@@ -170,7 +168,6 @@ async function buildCases(task: Task, model: string): Promise<Case[]> {
         run: async () => {
           // Video only, no caption or comments: this measures what the model gets from the clip.
           const { data } = await generateLlmJson<GeminiRecipe>({
-            tier: 'standard',
             systemPrompt: VIDEO_SYSTEM_PROMPT,
             parts: [
               { imageBase64: await fileBase64(videoPath(p.id)), mimeType: 'video/mp4' },

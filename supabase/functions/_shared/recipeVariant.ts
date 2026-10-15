@@ -2,7 +2,7 @@
 
 import { normalizeStoredCalories } from './calories.ts';
 import { generateLlmJson } from './llmClient.ts';
-import { sanitizeGeminiText } from './geminiClient.ts';
+import { sanitizeGeminiText } from './llmClient.ts';
 import {
   DUAL_INGREDIENT_SCHEMA,
   MEASUREMENT_RULES,
@@ -148,7 +148,6 @@ export async function remixInstructionIsRelated(
     console.error('[recipeVariant] Jev relatedness failed, falling back to the LLM', err);
   }
   const { data } = await generateLlmJson<{ related?: boolean }>({
-    tier: 'fast',
     systemPrompt: RELATED_SYSTEM_PROMPT,
     parts: [
       {
@@ -173,7 +172,6 @@ export async function transformRecipeWithGemini(
   const text = buildTextContext(input, goal);
 
   const { data: parsed, usage } = await generateLlmJson<TransformedRecipe>({
-    tier: 'fast',
     systemPrompt: SYSTEM_PROMPT,
     parts: [{ text }],
     responseSchema: TRANSFORM_SCHEMA,

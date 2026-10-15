@@ -1,41 +1,132 @@
 /**
- * OpenRouter (text / vision) with Gemini fallback.
+ * One door to every LLM call: OpenRouter chat completions with a JSON schema.
  *
- * Video `fileData.fileUri` stays on native Gemini — OpenRouter does not
- * replace that path (ADR 013).
+ * Each task `kind` has its own primary model, fallback list and reasoning
+ * effort (TASK_MODELS). OpenRouter runs the fallbacks server-side via
+ * `models[]`. Video goes through OpenRouter too, as a YouTube URL or a
+ * base64 clip (ADR 015). There is no direct Gemini path any more.
  */
 
 import { AppError, FetchError } from './errors.ts';
-import {
-  generateGeminiJson,
-  type GenerateGeminiJsonOptions,
-  type GenerateGeminiJsonResult,
-  type GeminiPart,
-} from './geminiClient.ts';
 import { parseLlmJsonText } from './llmJson.ts';
 import type { GeminiUsageSnapshot } from './pricing.ts';
 
 const OPENROUTER_URL = 'https://openrouter.ai/api/v1/chat/completions';
 
-const DEFAULT_FAST_MODEL = 'google/gemini-2.5-flash-lite';
-const DEFAULT_STANDARD_MODEL = 'google/gemini-2.5-flash';
-// OpenRouter rejects the whole request if any slug here is retired, so keep these live.
-const DEFAULT_FAST_FALLBACKS = 'openai/gpt-4.1-mini';
-const DEFAULT_STANDARD_FALLBACKS =
-  'google/gemini-2.5-flash,anthropic/claude-sonnet-4';
+export type LlmPart =
+  | { text: string }
+  /** A URL the provider fetches itself. Only YouTube URLs work on OpenRouter. */
+  | { fileData: { fileUri: string } }
+  /** Inline image or video (mimeType video/* becomes a video_url data URL). */
+  | { imageBase64: string; mimeType?: string };
+
+/** @deprecated Name kept for import stability; same shape as LlmPart. */
+export type GeminiPart = LlmPart;
+
+export type ReasoningEffort = 'none' | 'low' | 'medium';
+
+/** Every `kind` that calls generateLlmJson. Keep in sync with TASK_MODELS. */
+export type LlmTaskKind =
+  | 'text'
+  | 'video'
+  | 'photo'
+  | 'repair'
+  | 'invent_text'
+  | 'invent_photo'
+  | 'invent_video'
+  | 'translate'
+  | 'transform'
+  | 'substitution'
+  | 'fridge_match'
+  | 'content_gate'
+  | 'remix_related';
+
+export interface TaskModelConfig {
+  model: string;
+  /** Tried by OpenRouter, in order, when `model` fails. Every slug must be live. */
+  fallbacks: string[];
+  /** Sonnet 5.5 and GPT-6.1 Sol reject `none` ("Reasoning is mandatory"). */
+  reasoning: ReasoningEffort;
+}
+
+const LUNA = 'openai/gpt-6-luna';
+const SOL = 'openai/gpt-6.1-sol';
+const SONNET = 'anthropic/claude-sonnet-5.5';
+const QWEN_FLASH = 'qwen/qwen3.8-flash';
+const QWEN_OMNI = 'qwen/qwen3.8-omni-flash';
+const MISTRAL_SMALL = 'mistralai/mistral-small-2603';
+const NANO = 'openai/gpt-5.4-nano';
+const GEMINI_FLASH = 'google/gemini-3.5-flash';
+
+/**
+ * Picks from the PIN-44 eval (docs/research/05-llm-per-task.md, "Final model
+ * per task"). Remix, substitution, fridge match and repair were not in the
+ * eval; they follow the closest tested task.
+ */
+export const TASK_MODELS: Record<LlmTaskKind, TaskModelConfig> = {
+  text: { model: LUNA, fallbacks: [QWEN_FLASH], reasoning: 'none' },
+  transform: { model: LUNA, fallbacks: [QWEN_FLASH], reasoning: 'none' },
+  substitution: { model: LUNA, fallbacks: [QWEN_FLASH], reasoning: 'none' },
+  fridge_match: { model: LUNA, fallbacks: [QWEN_FLASH], reasoning: 'none' },
+  remix_related: { model: LUNA, fallbacks: [QWEN_FLASH], reasoning: 'none' },
+  photo: { model: SONNET, fallbacks: [SOL], reasoning: 'low' },
+  repair: { model: SONNET, fallbacks: [SOL], reasoning: 'low' },
+  invent_photo: { model: SONNET, fallbacks: [SOL], reasoning: 'low' },
+  translate: { model: SOL, fallbacks: [LUNA], reasoning: 'low' },
+  invent_text: { model: SOL, fallbacks: [LUNA], reasoning: 'low' },
+  content_gate: { model: MISTRAL_SMALL, fallbacks: [NANO], reasoning: 'none' },
+  video: { model: GEMINI_FLASH, fallbacks: [QWEN_OMNI], reasoning: 'low' },
+  invent_video: { model: GEMINI_FLASH, fallbacks: [QWEN_OMNI], reasoning: 'low' },
+};
+
+/** Models that must not reach a given OpenRouter provider. */
+const PROVIDER_IGNORE: Array<{ test: (model: string) => boolean; ignore: string[] }> = [
+  // Azure's content filter cuts Sonnet 5.5 off mid-JSON (finish_reason content_filter, 12 Oct 2026).
+  { test: (m) => m.startsWith('anthropic/'), ignore: ['azure'] },
+];
+
+export interface GenerateLlmJsonOptions {
+  /** Picks the row in TASK_MODELS. Unknown kinds fall back via `tier`. */
+  kind: string;
+  /** @deprecated Only used when `kind` is not in TASK_MODELS: fast → text, standard → photo. */
+  tier?: 'fast' | 'standard';
+  /** Pin a model for this one call (tests / special cases). Fallbacks still apply. */
+  model?: string;
+  systemPrompt: string;
+  parts: LlmPart[];
+  responseSchema: Record<string, unknown>;
+  timeoutMs: number;
+  maxOutputTokens: number;
+  /** Error context prefix, e.g. "translateRecipe.ts: translateRecipeWithGemini". */
+  context: string;
+}
+
+/** @deprecated Name kept for import stability. */
+export type GenerateGeminiJsonOptions = GenerateLlmJsonOptions;
+
+export interface GenerateLlmJsonResult<T> {
+  data: T;
+  usage: GeminiUsageSnapshot;
+  model: string;
+  durationMs: number;
+  /** USD cost reported by OpenRouter (`usage.cost`). */
+  costUsd?: number;
+}
+
+/** @deprecated Name kept for import stability. */
+export type GenerateGeminiJsonResult<T> = GenerateLlmJsonResult<T>;
 
 /**
  * Eval-only (eval/run.ts): pin each call to one model with no fallbacks, so a
- * result belongs to exactly that model. `native:<model>` calls Gemini directly.
- * Never set in Edge Functions.
+ * result belongs to exactly that model. Never set in Edge Functions.
  */
 export type LlmEvalHook = {
   model: () => string | null;
-  /** Overrides the tier's reasoning effort (some models reject 'none'). */
+  /** Overrides the task's reasoning effort. */
   reasoning?: () => string | null;
-  /** OpenRouter provider slugs to skip (`provider.ignore`). */
+  /** Extra OpenRouter provider slugs to skip (`provider.ignore`). */
   ignoreProviders?: () => string[] | null;
-  onResult?: (result: GenerateGeminiJsonResult<unknown>) => void;
+  onResult?: (result: GenerateLlmJsonResult<unknown>) => void;
 };
 
 let evalHook: LlmEvalHook | null = null;
@@ -55,30 +146,69 @@ export function resolveOpenRouterApiKey(): string | undefined {
   return key || undefined;
 }
 
-export function resolveOpenRouterModel(
-  tier: GenerateGeminiJsonOptions['tier'] = 'standard',
-): string {
-  if (tier === 'fast') {
-    return Deno.env.get('OPENROUTER_FAST_MODEL')?.trim() || DEFAULT_FAST_MODEL;
-  }
-  return Deno.env.get('OPENROUTER_MODEL')?.trim() || DEFAULT_STANDARD_MODEL;
+function isTaskKind(kind: string): kind is LlmTaskKind {
+  return Object.prototype.hasOwnProperty.call(TASK_MODELS, kind);
 }
 
-function resolveFallbacks(tier: GenerateGeminiJsonOptions['tier'] = 'standard'): string[] {
-  if (evalModel()) return [];
-  const raw =
-    tier === 'fast'
-      ? Deno.env.get('OPENROUTER_FAST_FALLBACKS')?.trim() || DEFAULT_FAST_FALLBACKS
-      : Deno.env.get('OPENROUTER_FALLBACKS')?.trim() || DEFAULT_STANDARD_FALLBACKS;
-  const primary = resolveOpenRouterModel(tier);
-  return raw
+function envKeyFor(kind: string): string {
+  return kind.toUpperCase().replace(/[^A-Z0-9]/g, '_');
+}
+
+function splitModels(raw: string | undefined): string[] | null {
+  const list = (raw ?? '')
     .split(',')
     .map((s) => s.trim())
-    .filter((s) => s.length > 0 && s !== primary);
+    .filter((s) => s.length > 0);
+  return list.length > 0 ? list : null;
 }
 
-function hasFileUriPart(parts: GeminiPart[]): boolean {
-  return parts.some((p) => 'fileData' in p);
+/**
+ * Model config for a task, after env overrides:
+ * `OPENROUTER_MODEL_<KIND>` (primary), `OPENROUTER_FALLBACKS_<KIND>` (comma
+ * list, `none` to disable) and `OPENROUTER_REASONING_<KIND>`.
+ */
+export function resolveTaskModel(kind: string, tier?: 'fast' | 'standard'): TaskModelConfig {
+  let base: TaskModelConfig;
+  if (isTaskKind(kind)) {
+    base = TASK_MODELS[kind];
+  } else {
+    console.warn('[llm] unknown kind, using tier default', { kind, tier: tier ?? 'standard' });
+    base = tier === 'fast' ? TASK_MODELS.text : TASK_MODELS.photo;
+  }
+  const suffix = envKeyFor(kind);
+  const model = Deno.env.get(`OPENROUTER_MODEL_${suffix}`)?.trim() || base.model;
+  const rawFallbacks = Deno.env.get(`OPENROUTER_FALLBACKS_${suffix}`)?.trim();
+  const fallbacks =
+    rawFallbacks?.toLowerCase() === 'none'
+      ? []
+      : (splitModels(rawFallbacks) ?? base.fallbacks).filter((m) => m !== model);
+  const rawReasoning = Deno.env.get(`OPENROUTER_REASONING_${suffix}`)?.trim().toLowerCase();
+  const reasoning: ReasoningEffort =
+    rawReasoning === 'none' || rawReasoning === 'low' || rawReasoning === 'medium'
+      ? rawReasoning
+      : base.reasoning;
+  return { model, fallbacks, reasoning };
+}
+
+/** Every slug the defaults can send to OpenRouter. The live-slug test checks these. */
+export function defaultModelSlugs(): string[] {
+  const slugs = new Set<string>();
+  for (const config of Object.values(TASK_MODELS)) {
+    slugs.add(config.model);
+    config.fallbacks.forEach((m) => slugs.add(m));
+  }
+  return [...slugs].sort();
+}
+
+function providerIgnoreFor(models: string[]): string[] {
+  const ignore = new Set<string>();
+  for (const model of models) {
+    for (const rule of PROVIDER_IGNORE) {
+      if (rule.test(model)) rule.ignore.forEach((p) => ignore.add(p));
+    }
+  }
+  evalHook?.ignoreProviders?.()?.forEach((p) => ignore.add(p));
+  return [...ignore];
 }
 
 function schemaName(kind: string): string {
@@ -86,8 +216,8 @@ function schemaName(kind: string): string {
   return cleaned || 'result';
 }
 
-function partsToOpenRouterContent(
-  parts: GeminiPart[],
+export function partsToOpenRouterContent(
+  parts: LlmPart[],
 ): string | Array<Record<string, unknown>> {
   const content: Array<Record<string, unknown>> = [];
   for (const part of parts) {
@@ -111,12 +241,44 @@ function partsToOpenRouterContent(
   return content;
 }
 
+/**
+ * Qwen wraps the object in a one-element array on most video answers. When
+ * the schema asks for an object, take the first object inside the array.
+ */
+export function unwrapTopLevelArray<T>(data: unknown, schema: Record<string, unknown>): T {
+  if (Array.isArray(data) && schema.type === 'object') {
+    const first = data.find((item) => item && typeof item === 'object' && !Array.isArray(item));
+    if (first) return first as T;
+  }
+  return data as T;
+}
+
+function contentToText(rawContent: unknown): string {
+  if (typeof rawContent === 'string') return parseLlmJsonText(rawContent);
+  if (Array.isArray(rawContent)) {
+    return parseLlmJsonText(
+      rawContent
+        .map((part) =>
+          part && typeof part === 'object' && 'text' in part
+            ? String((part as { text?: string }).text ?? '')
+            : '',
+        )
+        .join(''),
+    );
+  }
+  return '';
+}
+
 export async function generateOpenRouterJson<T>(
-  options: GenerateGeminiJsonOptions,
+  options: GenerateLlmJsonOptions,
   apiKey: string,
-): Promise<GenerateGeminiJsonResult<T>> {
-  const model = evalModel() ?? options.model ?? resolveOpenRouterModel(options.tier ?? 'standard');
-  const fallbacks = resolveFallbacks(options.tier ?? 'standard');
+): Promise<GenerateLlmJsonResult<T>> {
+  const task = resolveTaskModel(options.kind, options.tier);
+  const pinned = evalModel();
+  const model = pinned ?? options.model ?? task.model;
+  const fallbacks = pinned ? [] : task.fallbacks.filter((m) => m !== model);
+  const reasoning = evalHook?.reasoning?.() ?? task.reasoning;
+  const ignore = providerIgnoreFor([model, ...fallbacks]);
   const userContent = partsToOpenRouterContent(options.parts);
 
   const body: Record<string, unknown> = {
@@ -126,10 +288,7 @@ export async function generateOpenRouterJson<T>(
       { role: 'user', content: userContent },
     ],
     max_tokens: options.maxOutputTokens,
-    // Gemini defaults to thinking, which adds seconds before any JSON comes back.
-    reasoning: {
-      effort: evalHook?.reasoning?.() ?? (options.tier === 'standard' ? 'low' : 'none'),
-    },
+    reasoning: { effort: reasoning },
     response_format: {
       type: 'json_schema',
       json_schema: {
@@ -141,23 +300,31 @@ export async function generateOpenRouterJson<T>(
     provider: {
       allow_fallbacks: true,
       data_collection: 'deny',
-      // Eval: skip hosts that would silently ignore response_format.
-      ...(evalModel() ? { require_parameters: true } : {}),
-      ...(evalHook?.ignoreProviders?.()?.length ? { ignore: evalHook.ignoreProviders() } : {}),
+      // Skip hosts that would silently ignore response_format.
+      require_parameters: true,
+      ...(ignore.length > 0 ? { ignore } : {}),
     },
   };
   if (fallbacks.length > 0) {
     body.models = fallbacks;
   }
 
-  const hasImage = options.parts.some((p) => 'imageBase64' in p);
+  const hasImage = options.parts.some(
+    (p) => 'imageBase64' in p && !(p.mimeType ?? '').startsWith('video/'),
+  );
+  const hasVideo = options.parts.some(
+    (p) => 'fileData' in p || ('imageBase64' in p && (p.mimeType ?? '').startsWith('video/')),
+  );
   console.log('[openrouter] start', {
     model,
     fallbacks,
+    reasoning,
+    ignore,
     kind: options.kind,
     timeoutMs: options.timeoutMs,
     maxOutputTokens: options.maxOutputTokens,
     hasImage,
+    hasVideo,
   });
 
   const controller = new AbortController();
@@ -214,7 +381,8 @@ export async function generateOpenRouterJson<T>(
 
   const payload = (await res.json()) as {
     model?: string;
-    choices?: { message?: { content?: unknown } }[];
+    provider?: string;
+    choices?: { message?: { content?: unknown }; finish_reason?: string; native_finish_reason?: string }[];
     usage?: {
       prompt_tokens?: number;
       completion_tokens?: number;
@@ -227,37 +395,42 @@ export async function generateOpenRouterJson<T>(
   const usedModel = typeof payload.model === 'string' && payload.model.trim()
     ? payload.model.trim()
     : model;
-  const rawContent = payload.choices?.[0]?.message?.content;
-  const jsonText =
-    typeof rawContent === 'string'
-      ? parseLlmJsonText(rawContent)
-      : Array.isArray(rawContent)
-        ? parseLlmJsonText(
-            rawContent
-              .map((part) =>
-                part && typeof part === 'object' && 'text' in part
-                  ? String((part as { text?: string }).text ?? '')
-                  : '',
-              )
-              .join(''),
-          )
-        : '';
+  const choice = payload.choices?.[0];
+  const jsonText = contentToText(choice?.message?.content);
 
   if (!jsonText) {
-    throw new AppError(options.context, 'OpenRouter returned no content');
+    // A refusal or content filter shows up here, not as an HTTP error.
+    console.error('[openrouter] empty content', {
+      model: usedModel,
+      provider: payload.provider,
+      kind: options.kind,
+      finishReason: choice?.finish_reason,
+      nativeFinishReason: choice?.native_finish_reason,
+    });
+    throw new AppError(options.context, 'OpenRouter returned no content', {
+      model: usedModel,
+      finishReason: choice?.finish_reason ?? 'unknown',
+    });
   }
 
   let data: T;
   try {
-    data = JSON.parse(jsonText) as T;
+    data = unwrapTopLevelArray<T>(JSON.parse(jsonText), options.responseSchema);
   } catch {
-    throw new AppError(options.context, 'OpenRouter returned invalid JSON');
+    console.error('[openrouter] invalid JSON', {
+      model: usedModel,
+      kind: options.kind,
+      finishReason: choice?.finish_reason,
+      head: jsonText.slice(0, 120),
+    });
+    throw new AppError(options.context, 'OpenRouter returned invalid JSON', { model: usedModel });
   }
 
   const promptTokenCount = Number(payload.usage?.prompt_tokens ?? 0) || 0;
   const candidatesTokenCount = Number(payload.usage?.completion_tokens ?? 0) || 0;
   const thoughtsTokenCount =
     Number(payload.usage?.completion_tokens_details?.reasoning_tokens ?? 0) || 0;
+  const costUsd = Number(payload.usage?.cost);
   const usage: GeminiUsageSnapshot = {
     model: usedModel,
     kind: options.kind,
@@ -267,9 +440,9 @@ export async function generateOpenRouterJson<T>(
     totalTokenCount:
       Number(payload.usage?.total_tokens ?? 0) ||
       promptTokenCount + candidatesTokenCount,
+    ...(Number.isFinite(costUsd) ? { costUsd } : {}),
   };
 
-  const costUsd = Number(payload.usage?.cost);
   return {
     data,
     usage,
@@ -279,36 +452,20 @@ export async function generateOpenRouterJson<T>(
   };
 }
 
-/**
- * Text and image jobs prefer OpenRouter when a key is set. Video file URIs
- * always use native Gemini. OpenRouter failures fall back to Gemini.
- */
+/** Calls OpenRouter with the task's model and fallbacks. */
 export async function generateLlmJson<T>(
-  options: GenerateGeminiJsonOptions,
-): Promise<GenerateGeminiJsonResult<T>> {
+  options: GenerateLlmJsonOptions,
+): Promise<GenerateLlmJsonResult<T>> {
   const openRouterKey = resolveOpenRouterApiKey();
-  const pinned = evalModel();
-  if (pinned) {
-    if (!pinned.startsWith('native:') && !openRouterKey) {
-      throw new AppError(options.context, 'OPENROUTER_API_KEY is not configured');
-    }
-    const result = pinned.startsWith('native:')
-      ? await generateGeminiJson<T>({ ...options, model: pinned.slice('native:'.length) })
-      : await generateOpenRouterJson<T>(options, openRouterKey!);
-    evalHook?.onResult?.(result);
-    return result;
+  if (!openRouterKey) {
+    throw new AppError(options.context, 'OPENROUTER_API_KEY is not configured');
   }
-  if (openRouterKey && !hasFileUriPart(options.parts)) {
-    try {
-      return await generateOpenRouterJson<T>(options, openRouterKey);
-    } catch (err) {
-      const geminiKey = Deno.env.get('GEMINI_API_KEY')?.trim();
-      if (!geminiKey) throw err;
-      console.error('[llm] OpenRouter failed, falling back to Gemini', {
-        kind: options.kind,
-        error: err instanceof Error ? err.message : String(err),
-      });
-    }
-  }
-  return generateGeminiJson<T>(options);
+  const result = await generateOpenRouterJson<T>(options, openRouterKey);
+  evalHook?.onResult?.(result);
+  return result;
+}
+
+/** Models occasionally emit U+0000 inside accented words under structured output. */
+export function sanitizeGeminiText(value: string): string {
+  return value.replace(/\u0000/g, '');
 }

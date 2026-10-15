@@ -1,7 +1,7 @@
 // Ingredient substitution via Gemini's generateContent REST endpoint.
 
 import { generateLlmJson } from './llmClient.ts';
-import { sanitizeGeminiText } from './geminiClient.ts';
+import { sanitizeGeminiText } from './llmClient.ts';
 import {
   DUAL_INGREDIENT_SCHEMA,
   MEASUREMENT_RULES,
@@ -157,7 +157,6 @@ export async function suggestSubstitutionsWithGemini(
   input: SuggestSubstitutionInput,
 ): Promise<{ alternatives: SubstitutionAlternative[]; usage: GeminiUsageSnapshot | null }> {
   const { data, usage } = await generateLlmJson<{ alternatives: SubstitutionAlternative[] }>({
-    tier: 'fast',
     systemPrompt: SYSTEM_PROMPT,
     parts: [{ text: buildTextContext(input) }],
     responseSchema: SUBSTITUTION_SCHEMA,
@@ -198,7 +197,6 @@ export async function rewriteInstructionsForSubstitutionWithGemini(
   const { data, usage } = await generateLlmJson<{
     instructions: { step: number; text: string }[];
   }>({
-    tier: 'fast',
     systemPrompt: REWRITE_SYSTEM_PROMPT,
     parts: [{ text: buildRewriteContext(input) }],
     responseSchema: REWRITE_SCHEMA,
