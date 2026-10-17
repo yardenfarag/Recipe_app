@@ -73,10 +73,12 @@ export function SnapIntentToggle({
 
   const thumbStyle = useAnimatedStyle(() => {
     if (pillWidth <= 0) return { opacity: 0 };
+    // Thumb is pinned to the logical start (under Extract), so it only ever
+    // slides toward Invent: right in LTR, left in RTL.
     const translateX = interpolate(
       progress.value,
       [0, 1],
-      rtl ? [pillWidth, 0] : [0, pillWidth],
+      [0, rtl ? -pillWidth : pillWidth],
     );
     return {
       opacity: 1,
@@ -100,6 +102,10 @@ export function SnapIntentToggle({
       accessibilityRole="tablist"
       style={{
         flexDirection: 'row',
+        // Pin the track to the app language, not I18nManager: after a language
+        // switch the native flag lags until a cold start, and `left` may get
+        // swapped to `right` depending on it.
+        direction: rtl ? 'rtl' : 'ltr',
         borderRadius: TRACK_RADIUS,
         overflow: 'hidden',
         backgroundColor: colors.background,
@@ -114,7 +120,7 @@ export function SnapIntentToggle({
               position: 'absolute',
               top: TRACK_PAD,
               bottom: TRACK_PAD,
-              left: TRACK_PAD,
+              start: TRACK_PAD,
               borderRadius: PILL_RADIUS,
             },
             thumbStyle,
