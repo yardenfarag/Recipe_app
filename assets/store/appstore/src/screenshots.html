@@ -1,0 +1,334 @@
+<!doctype html>
+<html>
+<head>
+<meta charset="utf-8">
+<link rel="stylesheet" href="shared.css">
+<style>
+  /* One continuous 6-frame panorama, 1206 x 2622 per frame. render.sh picks a frame via #frame=N&w=..&h=.. */
+  #stage { position: absolute; left: 0; top: 0; width: 7236px; height: 2622px; transform-origin: 0 0;
+    background:
+      radial-gradient(1400px 1100px at 300px 300px, #2a2140 0%, transparent 70%),
+      radial-gradient(1600px 1200px at 3600px 2400px, #1f2a3c 0%, transparent 70%),
+      radial-gradient(1400px 1200px at 6600px 600px, #2e2238 0%, transparent 70%),
+      linear-gradient(180deg, #17131f, #110e17);
+  }
+  .frame { position: absolute; top: 0; width: 1206px; height: 2622px; }
+  .copy { position: absolute; left: 96px; right: 96px; top: 190px; }
+  .copy .headline { margin-top: 44px; }
+  .copy .sub { margin-top: 40px; max-width: 900px; }
+  svg.trail { position: absolute; left: 0; top: 0; pointer-events: none; }
+  .tilt-l { transform: rotate(-6deg); }
+  .tilt-r { transform: rotate(5deg); }
+  .row { display: flex; align-items: center; gap: 22px; }
+  .muted { color: var(--muted); }
+  .sparkle { position: absolute; }
+  body.play .headline { font-size: 116px; }
+  body.play .copy .sub { margin-top: 30px; font-size: 38px; }
+  body.play .phone { border-radius: 84px; }
+  body.play .phone .screen { border-radius: 70px; }
+  body.play .phone .island { width: 44px; height: 44px; top: 32px; border-radius: 50%; }
+</style>
+</head>
+<body>
+<div id="stage">
+
+  <!-- atmosphere -->
+  <div class="orb" style="left:-200px; top:900px; width:900px; height:900px; background:#6d5e8a"></div>
+  <div class="orb" style="left:1700px; top:1500px; width:1000px; height:1000px; background:#c45c7a; opacity:.28"></div>
+  <div class="orb" style="left:3000px; top:300px; width:900px; height:900px; background:#546980; opacity:.45"></div>
+  <div class="orb" style="left:4500px; top:1600px; width:1100px; height:900px; background:#6d5e8a; opacity:.45"></div>
+  <div class="orb" style="left:6100px; top:1300px; width:1000px; height:1000px; background:#c45c7a; opacity:.3"></div>
+
+  <!-- the flowing dotted "pinch trail" that runs through every frame -->
+  <svg class="trail" width="7236" height="2622" viewBox="0 0 7236 2622">
+    <defs>
+      <linearGradient id="tg" x1="0" x2="1"><stop offset="0" stop-color="#e27c9b"/><stop offset=".5" stop-color="#b8a8d4"/><stop offset="1" stop-color="#e27c9b"/></linearGradient>
+    </defs>
+    <path d="M -100 2200 C 400 2500, 800 1900, 1300 2150 S 2200 2600, 2600 2280 S 3300 1900, 3700 2350 S 4600 2550, 5000 2250 S 5700 2050, 6100 2480 S 7000 2560, 7400 2450"
+      fill="none" stroke="url(#tg)" stroke-width="8" stroke-linecap="round" stroke-dasharray="2 34" opacity=".75"/>
+  </svg>
+
+  <div class="food" data-food="lemon" data-bg="transparent" style="position:absolute; left:1060px; top:2280px; width:300px; height:300px; transform:rotate(-18deg); background:none"></div>
+  <div class="food" data-food="cookie" data-bg="transparent" style="position:absolute; left:3440px; top:2330px; width:360px; height:360px; transform:rotate(12deg)"></div>
+  <div class="food" data-food="lemon" data-bg="transparent" style="position:absolute; left:5900px; top:2420px; width:240px; height:240px; transform:rotate(30deg)"></div>
+
+  <!-- ================= FRAME 1 — hook ================= -->
+  <section class="frame" style="left:0">
+    <div class="copy">
+      <div class="eyebrow">Pinch · Recipe keeper</div>
+      <h1 class="headline">Saw it on TikTok?<br><em>Now it's dinner.</em></h1>
+    </div>
+
+    <!-- the video -->
+    <div class="tilt-l" style="position:absolute; left:130px; top:880px; width:540px; height:960px; border-radius:56px; overflow:hidden; box-shadow:0 60px 120px rgba(0,0,0,.6); border:4px solid #2c2638">
+      <div class="food" data-food="pasta" data-bg="#3a2a26" style="position:absolute; inset:0"></div>
+      <div style="position:absolute; inset:0; background:linear-gradient(180deg, rgba(0,0,0,.35), transparent 30%, transparent 55%, rgba(0,0,0,.8))"></div>
+      <div style="position:absolute; left:50%; top:46%; transform:translate(-50%,-50%); width:150px; height:150px; border-radius:50%; background:rgba(255,255,255,.22); backdrop-filter:blur(10px); display:grid; place-items:center">
+        <svg width="56" height="64" viewBox="0 0 56 64"><path d="M6 4 L52 32 L6 60 Z" fill="#fff" stroke="#fff" stroke-width="6" stroke-linejoin="round"/></svg>
+      </div>
+      <div style="position:absolute; right:28px; top:520px; display:flex; flex-direction:column; gap:34px; align-items:center; font:700 26px var(--sans)">
+        <div style="text-align:center"><svg width="62" height="56" viewBox="0 0 24 22"><path d="M12 21 C-6 9 4 -4 12 4 C20 -4 30 9 12 21Z" fill="#fff"/></svg><div>1.2M</div></div>
+        <div style="text-align:center"><svg width="60" height="56" viewBox="0 0 24 22"><path d="M2 2 h20 v13 h-11 l-6 5 v-5 h-3z" fill="#fff"/></svg><div>8.4K</div></div>
+      </div>
+      <div style="position:absolute; left:34px; bottom:70px; right:130px">
+        <div style="font:700 32px var(--sans)">@lena.cooks</div>
+        <div style="font:500 28px/1.35 var(--sans); margin-top:10px; opacity:.9">15-min lemon garlic pasta — you NEED this</div>
+      </div>
+      <div style="position:absolute; left:0; right:0; bottom:0; height:8px; background:rgba(255,255,255,.25)"><div style="width:38%; height:100%; background:#fff"></div></div>
+    </div>
+
+    <!-- the recipe it became -->
+    <div class="card tilt-r" style="position:absolute; left:520px; top:1300px; width:610px; padding:44px 46px; background:#f6f1f3; border-color:#fff; color:#2a2634">
+      <div class="row" style="gap:16px">
+        <svg width="46" height="46" viewBox="0 0 24 24"><path fill="#c45c7a" d="M12,3A9,9 0 0,0 3,12A9,9 0 0,0 12,21A9,9 0 0,0 21,12C21,11.5 20.96,11 20.87,10.5C20.6,10 20,10 20,10H18V9C18,8 17,8 17,8H15V7C15,6 14,6 14,6H13V4C13,3 12,3 12,3M9.5,6A1.5,1.5 0 0,1 11,7.5A1.5,1.5 0 0,1 9.5,9A1.5,1.5 0 0,1 8,7.5A1.5,1.5 0 0,1 9.5,6M6.5,10A1.5,1.5 0 0,1 8,11.5A1.5,1.5 0 0,1 6.5,13A1.5,1.5 0 0,1 5,11.5A1.5,1.5 0 0,1 6.5,10M11.5,11A1.5,1.5 0 0,1 13,12.5A1.5,1.5 0 0,1 11.5,14A1.5,1.5 0 0,1 10,12.5A1.5,1.5 0 0,1 11.5,11M16.5,13A1.5,1.5 0 0,1 18,14.5A1.5,1.5 0 0,1 16.5,16H16.5A1.5,1.5 0 0,1 15,14.5H15A1.5,1.5 0 0,1 16.5,13M11,16A1.5,1.5 0 0,1 12.5,17.5A1.5,1.5 0 0,1 11,19A1.5,1.5 0 0,1 9.5,17.5A1.5,1.5 0 0,1 11,16Z"/></svg>
+        <span style="font:700 26px var(--sans); letter-spacing:.14em; text-transform:uppercase; color:#c45c7a">Saved to Pinch</span>
+      </div>
+      <div style="font:700 56px/1.05 var(--serif); margin-top:22px">Lemon garlic pasta</div>
+      <div class="row" style="gap:12px; margin-top:22px; font:600 24px var(--sans); color:#6d5e8a">
+        <span style="background:#e8e2f0; padding:10px 20px; border-radius:99px">25 min</span>
+        <span style="background:#e8e2f0; padding:10px 20px; border-radius:99px">Easy</span>
+        <span style="background:#e8e2f0; padding:10px 20px; border-radius:99px">Serves 4</span>
+      </div>
+      <div style="margin-top:30px; display:flex; flex-direction:column; gap:22px; font:500 32px var(--sans)">
+        <div class="row" style="justify-content:space-between"><span>spaghetti</span><span style="color:#595461">400 g</span></div>
+        <div style="height:2px; background:#e2dce8"></div>
+        <div class="row" style="justify-content:space-between"><span>garlic cloves</span><span style="color:#595461">4</span></div>
+        <div style="height:2px; background:#e2dce8"></div>
+        <div class="row" style="justify-content:space-between"><span>lemon</span><span style="color:#595461">1</span></div>
+        <div style="height:2px; background:#e2dce8"></div>
+        <div class="row" style="justify-content:space-between"><span>parmesan</span><span style="color:#595461">40 g</span></div>
+      </div>
+    </div>
+
+    <!-- sparkle burst between them -->
+    <svg class="sparkle" style="left:520px; top:1080px" width="150" height="150" viewBox="0 0 24 24"><path d="M12 0 C13 8 16 11 24 12 C16 13 13 16 12 24 C11 16 8 13 0 12 C8 11 11 8 12 0Z" fill="#e27c9b"/></svg>
+    <svg class="sparkle" style="left:680px; top:1010px" width="60" height="60" viewBox="0 0 24 24"><path d="M12 0 C13 8 16 11 24 12 C16 13 13 16 12 24 C11 16 8 13 0 12 C8 11 11 8 12 0Z" fill="#b8a8d4"/></svg>
+
+    <div style="position:absolute; left:96px; right:96px; top:2330px; display:flex; flex-wrap:wrap; gap:18px">
+      <span class="pill">TikTok</span><span class="pill">Instagram</span><span class="pill">YouTube</span><span class="pill">Any recipe site</span>
+    </div>
+  </section>
+
+  <!-- ================= FRAME 2 — whole video ================= -->
+  <section class="frame" style="left:1206px">
+    <div class="copy">
+      <div class="eyebrow">Smart extraction</div>
+      <h1 class="headline">Reads the<br>whole video.</h1>
+      <p class="sub">Not just the caption. Every pinch, splash and sneaky “just a bit more”.</p>
+    </div>
+
+    <div class="phone" style="left:283px; top:1000px; transform:scale(1.13); transform-origin:50% 0">
+      <div class="island"></div>
+      <div class="screen">
+        <div class="statusbar"><span>9:41</span><span class="icons"><i class="bar" style="height:14px"></i><i class="bar" style="height:18px"></i><i class="bar" style="height:22px"></i><i class="bar" style="height:26px"></i></span></div>
+        <div style="padding:18px 6px 0">
+          <div style="font:600 24px var(--sans); color:var(--muted)">Pinch</div>
+          <div style="font:700 50px var(--sans); margin-top:4px">Snap a recipe</div>
+          <div class="card" style="margin-top:30px; border-radius:36px; overflow:hidden; box-shadow:none">
+            <div class="food" data-food="shakshuka" data-bg="#3a2622" style="height:300px"></div>
+            <div style="padding:24px 28px">
+              <div style="font:700 30px var(--sans)">Weeknight shakshuka</div>
+              <div style="font:500 24px var(--sans); color:var(--muted); margin-top:6px">youtube.com · 6:12</div>
+              <div style="height:10px; border-radius:6px; background:#2e2838; margin-top:22px; overflow:hidden"><div style="width:72%; height:100%; background:linear-gradient(90deg,#b8a8d4,#e27c9b)"></div></div>
+              <div style="font:600 24px var(--sans); color:var(--lilac); margin-top:14px">Watching the video… 72%</div>
+            </div>
+          </div>
+          <div style="font:700 32px var(--sans); margin:34px 0 18px">Found so far</div>
+          <div style="display:flex; flex-direction:column; gap:14px">
+            <div class="card row" style="padding:22px 26px; border-radius:28px; box-shadow:none; justify-content:space-between"><span style="font:600 30px var(--sans)">crushed tomatoes</span><span class="muted" style="font:500 26px var(--sans)">800 g</span></div>
+            <div class="card row" style="padding:22px 26px; border-radius:28px; box-shadow:none; justify-content:space-between"><span style="font:600 30px var(--sans)">eggs</span><span class="muted" style="font:500 26px var(--sans)">6</span></div>
+            <div class="card row" style="padding:22px 26px; border-radius:28px; box-shadow:none; justify-content:space-between; opacity:.5"><span style="font:600 30px var(--sans)">smoked paprika</span><span class="muted" style="font:500 26px var(--sans)">1 tsp</span></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- floating "heard it" callouts -->
+    <div class="card" style="position:absolute; left:60px; top:1820px; padding:26px 32px; border-radius:32px; transform:rotate(-4deg); background:#2b2539">
+      <div style="font:600 24px var(--sans); color:var(--mist)">Heard at 2:41</div>
+      <div style="font:600 34px/1.25 var(--serif); font-style:italic; margin-top:8px">“…and a good<br>pinch of cumin”</div>
+    </div>
+    <div class="pill rose" style="position:absolute; left:770px; top:1600px; transform:rotate(5deg); font-size:32px; padding:20px 34px; box-shadow:0 30px 60px rgba(0,0,0,.4)">+ 1 tsp cumin</div>
+  </section>
+
+  <!-- ================= FRAME 3 — make it yours ================= -->
+  <section class="frame" style="left:2412px">
+    <div class="copy">
+      <div class="eyebrow">Your kitchen, your rules</div>
+      <h1 class="headline">Scale it.<br>Swap it.<br><em>Remix it.</em></h1>
+    </div>
+
+    <!-- servings -->
+    <div class="card" style="position:absolute; left:96px; top:1020px; width:640px; padding:40px 44px; transform:rotate(-3deg)">
+      <div style="font:700 36px var(--sans)">Servings</div>
+      <div style="font:500 26px var(--sans); color:var(--muted); margin-top:6px">Everything recalculates</div>
+      <div class="row" style="margin-top:30px; gap:40px">
+        <div style="width:96px; height:96px; border-radius:50%; background:#3a3448; display:grid; place-items:center; font:300 64px var(--sans)">−</div>
+        <div style="font:700 110px var(--serif)">8</div>
+        <div style="width:96px; height:96px; border-radius:50%; background:var(--lilac); color:#1d1828; display:grid; place-items:center; font:400 64px var(--sans)">+</div>
+        <div style="font:600 30px var(--sans); color:var(--muted)">was 4</div>
+      </div>
+    </div>
+
+    <!-- swap -->
+    <div class="card" style="position:absolute; left:400px; top:1470px; width:700px; padding:38px 44px; transform:rotate(3deg); background:#f6f1f3; color:#2a2634; border-color:#fff">
+      <div class="row" style="justify-content:space-between">
+        <span style="font:700 26px var(--sans); letter-spacing:.14em; text-transform:uppercase; color:#546980">Swap</span>
+        <span style="font:600 24px var(--sans); color:#595461">out of butter?</span>
+      </div>
+      <div class="row" style="margin-top:24px; gap:22px; font:700 44px var(--serif)">
+        <span style="text-decoration:line-through; text-decoration-thickness:4px; color:#9a93a5">butter</span>
+        <svg width="60" height="30" viewBox="0 0 60 30"><path d="M2 15 H52 M40 4 L54 15 L40 26" stroke="#c45c7a" stroke-width="5" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        <span>olive oil</span>
+      </div>
+      <div style="font:500 28px var(--sans); color:#595461; margin-top:14px">Use ¾ the amount · 3 tbsp</div>
+    </div>
+
+    <!-- remix -->
+    <div style="position:absolute; left:96px; top:1960px; display:flex; flex-direction:column; gap:22px; transform:rotate(-2deg)">
+      <div class="pill lilac" style="font-size:36px; padding:26px 40px; box-shadow:0 30px 60px rgba(0,0,0,.4)">
+        <svg width="40" height="40" viewBox="0 0 24 24"><path d="M12 0 C13 8 16 11 24 12 C16 13 13 16 12 24 C11 16 8 13 0 12 C8 11 11 8 12 0Z" fill="#1d1828"/></svg>
+        Remix: make it vegan
+      </div>
+      <div class="row" style="gap:18px">
+        <span class="pill">Gluten-free</span><span class="pill">Vegetarian</span><span class="pill">Healthier</span>
+      </div>
+    </div>
+
+    <!-- translate -->
+    <div class="card" style="position:absolute; left:650px; top:2200px; padding:26px 34px; border-radius:32px; transform:rotate(4deg); background:#243040; border-color:#33465c">
+      <div style="font:600 24px var(--sans); color:var(--mist)">Translate</div>
+      <div style="font:700 34px var(--sans); margin-top:6px">EN · ES · HE · AR · RU</div>
+    </div>
+  </section>
+
+  <!-- ================= FRAME 4 — the list ================= -->
+  <section class="frame" style="left:3618px">
+    <div class="copy">
+      <div class="eyebrow">Shopping list</div>
+      <h1 class="headline">The list<br><em>writes itself.</em></h1>
+      <p class="sub">Add a recipe, get the groceries. Check things off in the aisle.</p>
+    </div>
+
+    <div class="phone" style="left:283px; top:1000px; transform:scale(1.13); transform-origin:50% 0">
+      <div class="island"></div>
+      <div class="screen">
+        <div class="statusbar"><span>9:41</span><span class="icons"><i class="bar" style="height:14px"></i><i class="bar" style="height:18px"></i><i class="bar" style="height:22px"></i><i class="bar" style="height:26px"></i></span></div>
+        <div style="padding:18px 6px 0">
+          <div style="font:600 24px var(--sans); color:var(--muted)">Pinch</div>
+          <div style="font:700 50px var(--sans); margin-top:4px">List</div>
+          <div style="font:600 22px var(--sans); color:var(--muted); letter-spacing:.08em; margin:30px 0 16px">5 LEFT · 2 CHECKED</div>
+          <div id="list" style="display:flex; flex-direction:column; gap:14px"></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="card row" style="position:absolute; left:610px; top:1380px; padding:26px 32px; border-radius:32px; transform:rotate(4deg); background:#f6f1f3; color:#2a2634; border-color:#fff; gap:20px">
+      <div style="width:64px; height:64px; border-radius:50%; background:#c45c7a; display:grid; place-items:center">
+        <svg width="34" height="34" viewBox="0 0 24 24"><path d="M3 4h2l2.5 11h11L21 7H7" stroke="#fff" stroke-width="2.4" fill="none" stroke-linecap="round" stroke-linejoin="round"/><circle cx="9" cy="19.5" r="1.6" fill="#fff"/><circle cx="17" cy="19.5" r="1.6" fill="#fff"/></svg>
+      </div>
+      <div><div style="font:700 30px var(--sans)">7 items added</div><div style="font:500 24px var(--sans); color:#595461">from 2 recipes</div></div>
+    </div>
+  </section>
+
+  <!-- ================= FRAME 5 — cook along ================= -->
+  <section class="frame" style="left:4824px">
+    <div class="copy">
+      <div class="eyebrow">Cook along</div>
+      <h1 class="headline">No more<br><em>pause, rewind,</em><br>pause.</h1>
+      <p class="sub">Clear steps you can follow. Tap a step to jump to that moment in the video.</p>
+    </div>
+
+    <div id="steps" style="position:absolute; left:96px; right:96px; top:1240px; display:flex; flex-direction:column; gap:30px"></div>
+
+    <div class="pill" style="position:absolute; left:96px; top:2290px; font-size:30px; padding:18px 30px; background:#243040; border-color:#33465c">
+      <svg width="34" height="34" viewBox="0 0 24 24"><circle cx="12" cy="12" r="5" fill="#9bb4d0"/><g stroke="#9bb4d0" stroke-width="2.2" stroke-linecap="round"><path d="M12 1v3M12 20v3M1 12h3M20 12h3M4.2 4.2l2.1 2.1M17.7 17.7l2.1 2.1M4.2 19.8l2.1-2.1M17.7 6.3l2.1-2.1"/></g></svg>
+      Screen stays on while you cook
+    </div>
+  </section>
+
+  <!-- ================= FRAME 6 — library + close ================= -->
+  <section class="frame" style="left:6030px">
+    <div class="copy">
+      <div class="eyebrow">Your library</div>
+      <h1 class="headline">Every recipe<br>you loved,<br><em>in one place.</em></h1>
+    </div>
+
+    <div id="grid" style="position:absolute; left:96px; right:96px; top:1050px; display:grid; grid-template-columns:1fr 1fr; gap:30px"></div>
+
+    <div style="position:absolute; left:96px; right:96px; top:2190px; display:flex; align-items:center; gap:30px">
+      <img src="../../../images/icon.png" style="width:150px; height:150px; border-radius:36px; box-shadow:0 20px 50px rgba(0,0,0,.5)">
+      <div>
+        <div style="font:700 52px var(--serif)">Pinch</div>
+        <div style="font:500 30px var(--sans); color:var(--muted); margin-top:6px">Free recipes every month. No subscription.</div>
+      </div>
+    </div>
+  </section>
+</div>
+
+<script>
+  // ---- list rows ----
+  const items = [['dark chocolate','200 g',0],['garlic','1 head',0],['lemons','3',0],['spaghetti','400 g',0],['tahini','1 jar',0],['cucumbers','2',1],['parmesan','40 g',1]];
+  document.getElementById('list').innerHTML = items.map(([n,q,on]) => `
+    <div class="card row" style="padding:22px 26px; border-radius:28px; box-shadow:none; ${on?'opacity:.45':''}">
+      <span class="check ${on?'on':''}"></span>
+      <div><div style="font:600 30px var(--sans); ${on?'text-decoration:line-through':''}">${n}</div><div class="muted" style="font:500 24px var(--sans); margin-top:4px">${q}</div></div>
+    </div>`).join('');
+
+  // ---- cook-along steps ----
+  const steps = [['0:48','Boil the spaghetti in well salted water until al dente.',0],['2:15','Gently fry the garlic in olive oil until fragrant, not brown.',1],['3:30','Toss with lemon zest, juice, parmesan and a splash of pasta water.',0]];
+  document.getElementById('steps').innerHTML = steps.map(([t,s,active],i) => `
+    <div class="card" style="padding:40px 44px; display:flex; gap:34px; align-items:flex-start; ${active?'background:#2b2539; border-color:#b8a8d4; transform:scale(1.04) rotate(-1.5deg)':'opacity:.8'}">
+      <div style="flex:none; width:84px; height:84px; border-radius:50%; background:${active?'#e27c9b':'#3a3448'}; color:#fff; display:grid; place-items:center; font:700 40px var(--serif)">${i+1}</div>
+      <div>
+        <div style="font:500 40px/1.3 var(--sans)">${s}</div>
+        <div class="pill" style="margin-top:22px; font-size:26px; padding:10px 22px; ${active?'background:#b8a8d4; color:#1d1828; border-color:transparent':''}">
+          <svg width="20" height="22" viewBox="0 0 56 64"><path d="M6 4 L52 32 L6 60 Z" fill="currentColor"/></svg> ${t}
+        </div>
+      </div>
+    </div>`).join('');
+
+  // ---- library grid ----
+  const recipes = [['cookie','Chewy chocolate cookies','40 min','#f3d9c4'],['pasta','Lemon garlic pasta','25 min','#f6e7d8'],['ramen','Weeknight miso ramen','30 min','#e0e8f0'],['salad','Sesame cucumber salad','15 min','#dbe8dc']];
+  document.getElementById('grid').innerHTML = recipes.map(([f,n,t,bg],i) => `
+    <div class="card" style="border-radius:44px; overflow:hidden; ${i===1?'transform:rotate(2deg) translateY(30px)':''}${i===2?'transform:rotate(-2deg)':''}">
+      <div class="food" data-food="${f}" data-bg="${bg}" style="height:330px"></div>
+      <div style="padding:26px 30px 32px">
+        <div style="font:700 34px/1.15 var(--sans)">${n}</div>
+        <div class="muted" style="font:500 26px var(--sans); margin-top:10px">${t} · Easy</div>
+      </div>
+    </div>`).join('');
+
+  // ---- frame selection ----
+  const p = new URLSearchParams(location.hash.slice(1));
+  const f = +(p.get('frame') || 0), w = +(p.get('w') || 1206), h = +(p.get('h') || 2622);
+  const stage = document.getElementById('stage');
+
+  // Google Play (#play): 9:16 frames are shorter, so the design height drops to 2144 and each frame's
+  // artwork is lifted and shrunk under its headline. Phones get an Android punch-hole camera.
+  const play = p.has('play');
+  const H = play ? 2144 : 2622;
+  if (play) {
+    document.body.classList.add('play');
+    stage.style.height = H + 'px';
+    // per frame: [copy top, where the art starts in the iPhone layout, where it starts here, art scale]
+    const fit = [[120, 850, 560, .82], [120, 1000, 720, .8], [120, 980, 640, .8], [120, 1000, 640, .8], [120, 1220, 820, .8], [120, 1030, 640, .8]];
+    document.querySelectorAll('.frame').forEach((frame, i) => {
+      const [copyTop, from, to, k] = fit[i];
+      frame.style.height = H + 'px';
+      frame.querySelector('.copy').style.top = copyTop + 'px';
+      const art = document.createElement('div');
+      art.style.cssText = `position:absolute; left:0; top:0; width:1206px; height:2622px; transform-origin:50% ${from}px; transform:translateY(${to - from}px) scale(${k})`;
+      [...frame.children].filter(c => !c.classList.contains('copy')).forEach(c => art.appendChild(c));
+      frame.appendChild(art);
+    });
+    stage.querySelectorAll(':scope > svg.trail, :scope > .food').forEach(el => el.style.translate = '0 -500px');
+  }
+
+  const s = p.has('pano') ? 1 : Math.max(w / 1206, h / H);
+  const yOff = (h - H * s) / 2;
+  if (!p.has('pano')) stage.style.transform = `translate(${-f * 1206 * s + (w - 1206 * s) / 2}px, ${yOff}px) scale(${s})`;
+</script>
+<script src="food.js"></script>
+</body>
+</html>
