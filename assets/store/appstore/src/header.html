@@ -1,0 +1,111 @@
+<!doctype html>
+<html>
+<head>
+<meta charset="utf-8">
+<link rel="stylesheet" href="shared.css">
+<style>
+  /* Content is designed on a 3840 x 1646 (21:9) stage. For the 5244 x 2950 universal asset the stage is
+     scaled to fit the area both crops keep (21:9 header band ∩ 3:2 search card), and the backdrop fills the rest. */
+  body { width: 100vw; height: 100vh; position: relative;
+    background:
+      radial-gradient(40% 60% at 22% 40%, #2c2242 0%, transparent 70%),
+      radial-gradient(45% 60% at 80% 70%, #1f2a3c 0%, transparent 70%),
+      linear-gradient(180deg, #17131f, #110e17);
+  }
+  .orb { filter: blur(220px); }
+  #stage { position: absolute; left: 50%; top: 50%; width: 3840px; height: 1646px; transform-origin: 50% 50%; }
+  .copy { position: absolute; left: 330px; top: 430px; width: 1500px; }
+  .headline { font-size: 220px; line-height: .98; margin-top: 60px; }
+  .eyebrow { font-size: 44px; }
+  .eyebrow::before { width: 80px; height: 4px; }
+  .sub { font-size: 60px; margin-top: 60px; }
+  .card { border-radius: 60px; }
+  /* Google Play feature graphic (#feature): shown small, so drop the sub line and go bigger on the rest */
+  body.feature .sub { display: none; }
+  body.feature .copy { top: 300px; width: 1700px; }
+  body.feature .eyebrow { font-size: 72px; gap: 28px; }
+  body.feature .eyebrow::before { width: 110px; height: 6px; }
+  body.feature .headline { font-size: 248px; margin-top: 70px; }
+</style>
+</head>
+<body>
+<div class="orb" style="left:10%; top:20%; width:30%; height:50%; background:#6d5e8a; opacity:.5"></div>
+<div class="orb" style="left:55%; top:45%; width:30%; height:50%; background:#c45c7a; opacity:.3"></div>
+<div class="orb" style="left:70%; top:0%; width:25%; height:40%; background:#546980; opacity:.4"></div>
+
+<div id="stage">
+  <svg style="position:absolute; left:-1000px; top:0" width="5840" height="1646" viewBox="0 0 5840 1646">
+    <defs><linearGradient id="tg" x1="0" x2="1"><stop offset="0" stop-color="#e27c9b"/><stop offset=".5" stop-color="#b8a8d4"/><stop offset="1" stop-color="#e27c9b"/></linearGradient></defs>
+    <path d="M0 1560 C 800 1720, 1400 1420, 2200 1520 S 3600 1700, 4300 1300 S 5300 1100, 5840 1350" fill="none" stroke="url(#tg)" stroke-width="10" stroke-linecap="round" stroke-dasharray="2 44" opacity=".7"/>
+  </svg>
+
+  <div class="copy">
+    <div class="eyebrow">Pinch · Recipe keeper</div>
+    <h1 class="headline">Saw it on TikTok?<br><em>Now it's dinner.</em></h1>
+    <p class="sub">Any cooking video, turned into a recipe you can actually cook.</p>
+  </div>
+
+  <!-- video -->
+  <div style="position:absolute; left:1980px; top:180px; width:700px; height:1240px; border-radius:72px; overflow:hidden; transform:rotate(-7deg); box-shadow:0 80px 160px rgba(0,0,0,.6); border:5px solid #2c2638">
+    <div class="food" data-food="pasta" data-bg="#3a2a26" style="position:absolute; inset:0"></div>
+    <div style="position:absolute; inset:0; background:linear-gradient(180deg, rgba(0,0,0,.3), transparent 30%, transparent 55%, rgba(0,0,0,.8))"></div>
+    <div style="position:absolute; left:50%; top:46%; transform:translate(-50%,-50%); width:190px; height:190px; border-radius:50%; background:rgba(255,255,255,.22); display:grid; place-items:center">
+      <svg width="70" height="80" viewBox="0 0 56 64"><path d="M6 4 L52 32 L6 60 Z" fill="#fff" stroke="#fff" stroke-width="6" stroke-linejoin="round"/></svg>
+    </div>
+    <div style="position:absolute; left:44px; bottom:84px; right:60px">
+      <div style="font:700 40px var(--sans)">@lena.cooks</div>
+      <div style="font:500 34px/1.35 var(--sans); margin-top:12px; opacity:.9">15-min lemon garlic pasta — you NEED this</div>
+    </div>
+    <div style="position:absolute; left:0; right:0; bottom:0; height:10px; background:rgba(255,255,255,.25)"><div style="width:38%; height:100%; background:#fff"></div></div>
+  </div>
+
+  <svg style="position:absolute; left:2620px; top:330px" width="200" height="200" viewBox="0 0 24 24"><path d="M12 0 C13 8 16 11 24 12 C16 13 13 16 12 24 C11 16 8 13 0 12 C8 11 11 8 12 0Z" fill="#e27c9b"/></svg>
+  <svg style="position:absolute; left:2830px; top:250px" width="80" height="80" viewBox="0 0 24 24"><path d="M12 0 C13 8 16 11 24 12 C16 13 13 16 12 24 C11 16 8 13 0 12 C8 11 11 8 12 0Z" fill="#b8a8d4"/></svg>
+
+  <!-- recipe -->
+  <div class="card" style="position:absolute; left:2560px; top:560px; width:820px; padding:60px 64px; transform:rotate(4deg); background:#f6f1f3; border-color:#fff; color:#2a2634">
+    <div class="row" style="display:flex; align-items:center; gap:20px">
+      <img src="../../../images/icon.png" style="width:64px; height:64px; border-radius:16px">
+      <span style="font:700 34px var(--sans); letter-spacing:.14em; text-transform:uppercase; color:#c45c7a">Saved to Pinch</span>
+    </div>
+    <div style="font:700 80px/1.05 var(--serif); margin-top:30px">Lemon garlic pasta</div>
+    <div style="display:flex; gap:16px; margin-top:30px; font:600 32px var(--sans); color:#6d5e8a">
+      <span style="background:#e8e2f0; padding:12px 26px; border-radius:99px">25 min</span>
+      <span style="background:#e8e2f0; padding:12px 26px; border-radius:99px">Easy</span>
+      <span style="background:#e8e2f0; padding:12px 26px; border-radius:99px">Serves 4</span>
+    </div>
+    <div style="margin-top:40px; display:flex; flex-direction:column; gap:26px; font:500 42px var(--sans)">
+      <div style="display:flex; justify-content:space-between"><span>spaghetti</span><span style="color:#595461">400 g</span></div>
+      <div style="height:2px; background:#e2dce8"></div>
+      <div style="display:flex; justify-content:space-between"><span>garlic cloves</span><span style="color:#595461">4</span></div>
+      <div style="height:2px; background:#e2dce8"></div>
+      <div style="display:flex; justify-content:space-between"><span>lemon</span><span style="color:#595461">1</span></div>
+    </div>
+  </div>
+
+  <!-- list toast -->
+  <div class="card" style="position:absolute; left:3120px; top:240px; padding:34px 44px; border-radius:44px; transform:rotate(-4deg); display:flex; align-items:center; gap:26px">
+    <div style="width:84px; height:84px; border-radius:50%; background:#c45c7a; display:grid; place-items:center">
+      <svg width="44" height="44" viewBox="0 0 24 24"><path d="M3 4h2l2.5 11h11L21 7H7" stroke="#fff" stroke-width="2.4" fill="none" stroke-linecap="round" stroke-linejoin="round"/><circle cx="9" cy="19.5" r="1.6" fill="#fff"/><circle cx="17" cy="19.5" r="1.6" fill="#fff"/></svg>
+    </div>
+    <div><div style="font:700 40px var(--sans)">5 items added</div><div style="font:500 32px var(--sans); color:var(--muted)">to your list</div></div>
+  </div>
+
+  <div class="food" data-food="lemon" data-bg="transparent" style="position:absolute; left:3420px; top:1180px; width:320px; height:320px; transform:rotate(-20deg)"></div>
+  <div class="food" data-food="cookie" data-bg="transparent" style="position:absolute; left:1700px; top:1220px; width:300px; height:300px; transform:rotate(14deg)"></div>
+</div>
+
+<script>
+  const p = new URLSearchParams(location.hash.slice(1));
+  if (p.has('feature')) document.body.classList.add('feature');
+  const w = +(p.get('w') || 3840), h = +(p.get('h') || 1646);
+  // Visible-in-every-crop box: 21:9 band of the canvas, intersected with a centred 3:2 crop.
+  // Header-only (21:9) shows everything; the 16:9 universal asset also gets cropped to 3:2 for search.
+  const universal = w / h < 2;
+  const safeW = universal ? Math.min(w, h * 1.5) : w, safeH = Math.min(h, w * 9 / 21);
+  const s = Math.min(safeW / 3840, safeH / 1646);
+  document.getElementById('stage').style.transform = `translate(-50%, -50%) scale(${s})`;
+</script>
+<script src="food.js"></script>
+</body>
+</html>
