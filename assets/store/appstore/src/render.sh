@@ -1,5 +1,5 @@
 #!/bin/bash
-# Renders the App Store screenshots + header art to ../ with headless Chrome. Usage: ./render.sh
+# Renders the App Store screenshots + header art to ../ (and the site share image to landing/) with headless Chrome. Usage: ./render.sh
 set -e
 cd "$(dirname "$0")"
 SRC="$PWD"; OUT="$(cd .. && pwd)"
@@ -25,4 +25,7 @@ mkdir -p "$OUT/header"
 shot "file://$SRC/header.html#w=3840&h=1646" 3840 1646 "$OUT/header/header-3840x1646.png"
 shot "file://$SRC/header.html#w=5244&h=2950" 5244 2950 "$OUT/header/universal-5244x2950.png"
 shot "file://$SRC/header.html#feature=1&w=1024&h=500" 1024 500 "$OUT/google-play-feature-graphic-1024x500.png"
+# Link-preview (Open Graph) image for pinch-app.io, as a JPEG to stay well under WhatsApp's 300 KB limit
+shot "file://$SRC/header.html#feature=1&w=1200&h=630" 1200 630 /tmp/pinch-og-image.png
+sips -s format jpeg -s formatOptions 85 /tmp/pinch-og-image.png --out "$OUT/../../../landing/og-image.jpg" >/dev/null
 echo done

@@ -62,7 +62,7 @@ describe('landing page', () => {
     const ids = new Set([...landing.matchAll(/id="([^"]+)"/g)].map(([, id]) => id));
     for (const [, href] of landing.matchAll(/href="([^"]+)"/g)) {
       if (href.startsWith('#')) expect(ids, `missing anchor ${href}`).toContain(href.slice(1));
-      else expect(href).toMatch(/^(https:|mailto:|\/app\/$|\/[a-z-]+\.(html|png|css)$)/);
+      else expect(href).toMatch(/^(https:|mailto:|\/app\/$|\/[a-z-]+\.(html|png|css|json)$)/);
     }
   });
 
@@ -72,6 +72,15 @@ describe('landing page', () => {
       .find((data) => data['@type'] === 'FAQPage');
     const visible = [...landing.matchAll(/<summary>([^<]+)<\/summary>/g)].map(([, q]) => q);
     expect(faq.mainEntity.map((q) => q.name)).toEqual(visible);
+  });
+
+  it('points the share image and manifest icons at files the build copies', () => {
+    const build = readFileSync(join(root, 'scripts/build-web-site.mjs'), 'utf8');
+    const manifest = JSON.parse(readFileSync(join(root, 'landing/manifest.json'), 'utf8'));
+    const ogImage = landing.match(/property="og:image" content="https:\/\/pinch-app\.io\/([^"]+)"/)[1];
+    for (const file of [ogImage, 'manifest.json', ...manifest.icons.map((icon) => icon.src.slice(1))]) {
+      expect(build).toContain(`copy('landing/${file}');`);
+    }
   });
 
   it('fills in Supabase settings only when both are set', () => {
