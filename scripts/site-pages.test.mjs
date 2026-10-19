@@ -66,10 +66,42 @@ describe('landing page', () => {
     }
   });
 
+  const structuredData = [
+    ...landing.matchAll(/<script type="application\/ld\+json">([\s\S]*?)<\/script>/g),
+  ].map(([, json]) => JSON.parse(json));
+  const graph = structuredData.flatMap((data) => data['@graph'] ?? [data]);
+  const byType = (type) => graph.filter((node) => node['@type'] === type);
+  const appStoreUrl = landing.match(/class="btn btn-store btn-apple"[\s\S]*?href="([^"]+)"/)[1];
+
+  it('describes the iPhone app with a free offer and its App Store listing', () => {
+    const [organization] = byType('Organization');
+    const [app] = byType('MobileApplication');
+    expect(app).toMatchObject({
+      name: 'Pinch',
+      operatingSystem: 'iOS',
+      applicationCategory: 'LifestyleApplication',
+      applicationSubCategory: 'Food & Drink',
+      installUrl: appStoreUrl,
+      offers: { '@type': 'Offer', price: '0', priceCurrency: 'USD' },
+      publisher: { '@id': organization['@id'] },
+    });
+    expect(app.sameAs).toContain(appStoreUrl);
+    expect(byType('WebApplication')[0]).toMatchObject({
+      url: 'https://pinch-app.io/app/',
+      publisher: { '@id': organization['@id'] },
+    });
+  });
+
+  it('names Pinch as an organization with a logo the build copies', () => {
+    const [organization] = byType('Organization');
+    expect(organization).toMatchObject({ name: 'Pinch', url: 'https://pinch-app.io/' });
+    const build = readFileSync(join(root, 'scripts/build-web-site.mjs'), 'utf8');
+    const logo = organization.logo.match(/^https:\/\/pinch-app\.io\/([^/]+)$/)[1];
+    expect(build).toContain(`copy('landing/${logo}');`);
+  });
+
   it('keeps the FAQ structured data in step with the visible questions', () => {
-    const faq = [...landing.matchAll(/<script type="application\/ld\+json">([\s\S]*?)<\/script>/g)]
-      .map(([, json]) => JSON.parse(json))
-      .find((data) => data['@type'] === 'FAQPage');
+    const [faq] = byType('FAQPage');
     const visible = [...landing.matchAll(/<summary>([^<]+)<\/summary>/g)].map(([, q]) => q);
     expect(faq.mainEntity.map((q) => q.name)).toEqual(visible);
   });

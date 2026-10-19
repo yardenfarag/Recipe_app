@@ -35,14 +35,43 @@
     <script type="application/ld+json">
       {
         "@context": "https://schema.org",
-        "@type": "SoftwareApplication",
-        "name": "Pinch",
-        "url": "https://pinch-app.io/",
-        "applicationCategory": "LifestyleApplication",
-        "operatingSystem": "iOS, Web",
-        "description": "Pinch is a recipe keeper app that turns TikTok, Instagram, and YouTube cooking videos into written recipes, with ingredients, steps, and a shopping list.",
-        "downloadUrl": "https://apps.apple.com/us/app/pinch-recipe-library/id6796310453",
-        "offers": { "@type": "Offer", "price": "0", "priceCurrency": "USD" }
+        "@graph": [
+          {
+            "@type": "Organization",
+            "@id": "https://pinch-app.io/#organization",
+            "name": "Pinch",
+            "url": "https://pinch-app.io/",
+            "logo": "https://pinch-app.io/icon-512.png",
+            "sameAs": ["https://apps.apple.com/us/app/pinch-recipe-library/id6796310453"]
+          },
+          {
+            "@type": "MobileApplication",
+            "@id": "https://pinch-app.io/#ios-app",
+            "name": "Pinch",
+            "url": "https://pinch-app.io/",
+            "description": "Pinch is a recipe keeper app that turns TikTok, Instagram, and YouTube cooking videos into written recipes, with ingredients, steps, and a shopping list.",
+            "operatingSystem": "iOS",
+            "applicationCategory": "LifestyleApplication",
+            "applicationSubCategory": "Food & Drink",
+            "image": "https://pinch-app.io/icon-512.png",
+            "installUrl": "https://apps.apple.com/us/app/pinch-recipe-library/id6796310453",
+            "sameAs": ["https://apps.apple.com/us/app/pinch-recipe-library/id6796310453"],
+            "inLanguage": ["en", "es", "he", "ar", "ru"],
+            "offers": { "@type": "Offer", "price": "0", "priceCurrency": "USD" },
+            "publisher": { "@id": "https://pinch-app.io/#organization" }
+          },
+          {
+            "@type": "WebApplication",
+            "@id": "https://pinch-app.io/#web-app",
+            "name": "Pinch",
+            "url": "https://pinch-app.io/app/",
+            "operatingSystem": "Any",
+            "browserRequirements": "Requires JavaScript",
+            "applicationCategory": "LifestyleApplication",
+            "offers": { "@type": "Offer", "price": "0", "priceCurrency": "USD" },
+            "publisher": { "@id": "https://pinch-app.io/#organization" }
+          }
+        ]
       }
     </script>
     <script type="application/ld+json">
