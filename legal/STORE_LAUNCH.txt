@@ -53,7 +53,7 @@ Production Android build finished (AAB):
 6. TestFlight smoke: Apple Sign-In, share sheet, Settings → Delete account
 7. Store listing: name, subtitle, promotional text, keywords, and description
    from "Store listing copy" below. The name only changes with a new version.
-8. Submit for review. Notes: AI extraction from public social URLs; 3 free
+8. Submit for review. Notes: AI extraction from public social URLs; 5 free
    recipe credits a month plus consumable credit packs; account deletion in Settings.
 9. eas.json submit.production.ios.ascAppId is set (6796310453).
 
@@ -67,7 +67,7 @@ App Store only:
    Name (≤30):     Pinch: Video Recipe Organizer
    Subtitle (≤30): Save TikTok & YouTube Recipes
    Promotional text (≤170):
-   Turn the cooking videos you save into recipes you can cook from: ingredients, steps, and a shopping list grouped by aisle. 3 free recipes every month.
+   Turn the cooking videos you save into recipes you can cook from: ingredients, steps, and a shopping list grouped by aisle. 5 free recipes every month.
    Keywords (≤100, no spaces, no words already in the name or subtitle):
    instagram,reels,extractor,ai,shopping,list,grocery,cookbook,scan,keeper,meal,translate,fridge,pantry
 
@@ -107,7 +107,7 @@ Full description (both stores, ≤4000):
    Keep every saved recipe in one place and group them for dinner, baking, or easy weeknights. Sign in and your library syncs between your phone and the web at pinch-app.io.
 
    FREE TO START, NO SUBSCRIPTION
-   Every account gets 3 free recipe credits each month. Need more? Buy a credit pack in the app. Credits never expire, and there's no subscription.
+   Every account gets 5 free recipe credits each month. Need more? Buy a credit pack in the app. Credits never expire, and there's no subscription.
 
    PRIVATE BY DEFAULT
    Pinch doesn't sell your personal information. You can delete your account and data at any time in Settings.

@@ -73,7 +73,7 @@ An extraction run without an account (up to 3 per install). Guests cannot save; 
 _Avoid_: Anonymous recipe, temp save
 
 **Extract quota**:
-Monthly signed-in limits: Free 3 / month, Pinch Plus 100 / month (UTC). Guests: 3 lifetime extracts per install.
+Signed-in users get 5 free extracts per UTC calendar month, then spend purchased recipe credits (Pinch Plus is retired). Guests can't extract.
 _Avoid_: Free trial, save quota
 
 ## Platforms
