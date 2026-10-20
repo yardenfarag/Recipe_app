@@ -1,6 +1,13 @@
 # Recipe credits rollout
 
-Keep purchases disabled until every step below is complete.
+## Status (2026-10-20)
+
+- **iOS:** purchases are live. Credit packs can be bought in the App Store build.
+- **Android:** not live yet. The app isn't in the Play production track, so the Android steps below are still open.
+- **Web:** no purchases. Buyers are sent to the mobile apps (see §1).
+- **Free allowance:** 5 recipe credits per signed-in user per UTC month (`FREE_MONTHLY_EXTRACT_LIMIT`); guests get 3 lifetime extracts per install.
+
+Keep purchases disabled on a platform until every step below is complete for it.
 
 ## 1. Create store products
 
@@ -43,7 +50,7 @@ For each iOS, Android, and web pack:
 - Complete checkout and verify one ledger entry and the expected balance.
 - Redeliver the same RevenueCat webhook and verify the balance does not change.
 - Delay webhook delivery and verify the UI shows pending fulfillment, then updates after Sync purchases.
-- Spend all 15 monthly credits, verify the next extraction spends one purchased credit, and verify a failed extraction refunds it.
+- Spend all 5 monthly free credits (`FREE_MONTHLY_EXTRACT_LIMIT`), verify the next extraction spends one purchased credit, and verify a failed extraction refunds it.
 - Verify cached recipes remain free at a zero balance.
 - Verify remix does not spend credits and blocks after 5 remixes on the same recipe.
 - Verify purchased credits survive month boundaries while the free allowance resets.

@@ -77,7 +77,7 @@ type ExtractionStatus = 'full' | 'partial' | 'failed' | 'coming_soon';
  * captions → video) before classifying the result.
  *
  * Guests: 3 lifetime extracts / install (cannot save). Signed-in users receive
- * 3 monthly credits and can spend non-expiring purchased credits after those.
+ * 5 monthly credits and can spend non-expiring purchased credits after those.
  * Cached URL re-extract is free.
  */
 Deno.serve(async (req) => {

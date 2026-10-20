@@ -49,7 +49,7 @@ Once it is saved you can:
 - **Send the ingredients to your shopping list**, grouped by aisle.
 - **Sort it into a collection** with recipes saved from Instagram, YouTube, and recipe websites.
 
-A free Pinch account includes 3 recipe credits a month, and you can buy more credits that never expire.
+A free Pinch account includes 5 recipe credits a month, and you can buy more credits that never expire.
 
 > **Tip:** Keep your TikTok favorites for inspiration, and save the recipes you actually plan to cook to Pinch. That way your "to cook" list stays short and every recipe in it is ready to use.
 
