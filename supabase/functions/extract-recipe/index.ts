@@ -76,7 +76,7 @@ type ExtractionStatus = 'full' | 'partial' | 'failed' | 'coming_soon';
  * user's library, otherwise runs the content ladder (description → comments →
  * captions → video) before classifying the result.
  *
- * Guests: 3 lifetime extracts / install (cannot save). Signed-in users receive
+ * Guests get `auth_required` and must sign up first. Signed-in users receive
  * 5 monthly credits and can spend non-expiring purchased credits after those.
  * Cached URL re-extract is free.
  */

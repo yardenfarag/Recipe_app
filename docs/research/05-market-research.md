@@ -52,7 +52,7 @@ The "save a recipe from a TikTok/Reel" niche is real and crowded. At least six f
 | **Mela** | Premium Apple organizer | One-time/paid | Beautiful, iCloud sync | Apple-only, no social-video AI |
 | **Samsung Food (Whisk)** | Big-tech adjacent | Free + paid tier | Huge recipe database, distribution via Samsung devices | No confirmed social-video extraction, generic |
 | **Social Spork, Recaipy, RecipeAI** | Web converters | Free/cheap | Zero-install | No library, shopping list, or cook mode |
-| **Pinch** | New entrant | 5 free extractions/month (raised from 3 on 2026-10-20); credit packs 10/$1.99, 30/$4.99, 100/$12.99 (live on iOS, Android pending) | **No subscription**, full web app + mobile, RTL + 5 languages, remix/substitutions, cook-along video, cached recipes free | Free tier (3/month) as stingy as Pluck's, no brand or reviews yet, purchases not live, web can't sell credits (no Stripe in the account's country), costly on Instagram video fallback |
+| **Pinch** | New entrant | 5 free extractions/month for signed-in users (raised from 3 on 2026-10-20; guests must sign up first); credit packs 10/$1.99, 30/$4.99, 100/$12.99 (live on iOS, Android pending) | **No subscription**, full web app + mobile, RTL + 5 languages, remix/substitutions, cook-along video, cached recipes free | Free tier (3/month) as stingy as Pluck's, no brand or reviews yet, purchases not live, web can't sell credits (no Stripe in the account's country), costly on Instagram video fallback |
 
 **Competitive insights**
 1. **Everyone has converged on the same feature set:** link/share-sheet import, AI extraction, library, grocery list, meal planner. Extraction quality is table stakes and hard to show in marketing.

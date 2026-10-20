@@ -16,7 +16,7 @@ export const TOKEN_COST_REMIX = 0;
 /** Lifetime free remixes per saved recipe or unsaved source URL. */
 export const RECIPE_REMIX_LIMIT = 5;
 
-/** Keep in sync with client GUEST_EXTRACTION_LIMIT. */
+/** Unused: guests can't extract (extract-recipe/invent-recipe return auth_required). */
 export const GUEST_EXTRACT_LIMIT = 3;
 /** Calendar-month extracts for signed-in Free users (UTC YYYY-MM). */
 export const FREE_MONTHLY_EXTRACT_LIMIT = 5;

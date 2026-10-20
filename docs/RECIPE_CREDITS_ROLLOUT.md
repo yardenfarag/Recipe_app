@@ -5,7 +5,7 @@
 - **iOS:** purchases are live. Credit packs can be bought in the App Store build.
 - **Android:** not live yet. The app isn't in the Play production track, so the Android steps below are still open.
 - **Web:** no purchases. Buyers are sent to the mobile apps (see §1).
-- **Free allowance:** 5 recipe credits per signed-in user per UTC month (`FREE_MONTHLY_EXTRACT_LIMIT`); guests get 3 lifetime extracts per install.
+- **Free allowance:** 5 recipe credits per signed-in user per UTC month (`FREE_MONTHLY_EXTRACT_LIMIT`). Guests can't extract; the app and `extract-recipe` / `invent-recipe` require sign-up or log-in first.
 
 Keep purchases disabled on a platform until every step below is complete for it.
 

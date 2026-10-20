@@ -1,6 +1,6 @@
 /** Recipe-credit limits shared by client quota displays. */
 
-/** Lifetime guest extracts per install (guests cannot save). */
+/** Unused: guests can't extract; Snap requires sign-up / log-in first. */
 export const GUEST_EXTRACTION_LIMIT = 3;
 /** Calendar-month extracts for signed-in Free users (UTC YYYY-MM). */
 export const FREE_MONTHLY_EXTRACT_LIMIT = 5;
