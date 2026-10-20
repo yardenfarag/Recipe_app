@@ -1,0 +1,45 @@
+{
+  "ingredients": [
+    {
+      "ref_index": 0,
+      "status": "wrong_quantity"
+    },
+    {
+      "ref_index": 1,
+      "status": "wrong_quantity"
+    },
+    {
+      "ref_index": 2,
+      "status": "wrong_quantity"
+    },
+    {
+      "ref_index": 3,
+      "status": "wrong_quantity"
+    },
+    {
+      "ref_index": 4,
+      "status": "missing"
+    },
+    {
+      "ref_index": 5,
+      "status": "missing"
+    },
+    {
+      "ref_index": 6,
+      "status": "wrong_quantity"
+    },
+    {
+      "ref_index": 7,
+      "status": "missing"
+    },
+    {
+      "ref_index": 8,
+      "status": "missing"
+    }
+  ],
+  "extra_ingredients": [
+    "flour"
+  ],
+  "steps_score": 2,
+  "note": "The candidate gives no amounts, swaps the gluten-free cornstarch for flour, and leaves out the brown sugar, salt, cocoa, oven temperature, bake time and chilling step."
+}

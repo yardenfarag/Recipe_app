@@ -1,0 +1,44 @@
+{
+  "caseId": "ig-Da4URnslOZM--ru",
+  "judge": "google/gemini-3.1-pro-preview",
+  "letters": {
+    "A": "openai/gpt-6.1-sol@low",
+    "B": "anthropic/claude-sonnet-5.5@low",
+    "C": "native:gemini-3.1-flash-lite",
+    "D": "openai/gpt-6-luna"
+  },
+  "verdict": {
+    "candidates": [
+      {
+        "letter": "A",
+        "accuracy": 5,
+        "quality": 4,
+        "issues": "Grammatical errors in the ingredients list with noun cases after numbers (e.g., '4 зубчики' instead of '4 зубчика', '1 стакан говяжий бульон' instead of '1 стакан говяжьего бульона'). Switches between 'стакан' in ingredients and 'чашку' in instructions."
+      },
+      {
+        "letter": "B",
+        "accuracy": 4,
+        "quality": 3,
+        "issues": "Translates 'cumin' as 'тмин' (caraway), which is a common mistake but changes the flavor profile completely; it should be 'кумин' or 'зира'. Same grammatical case errors in the ingredients list. Phrasing in step 4 ('когда её проколют вилкой') is awkward."
+      },
+      {
+        "letter": "C",
+        "accuracy": 5,
+        "quality": 4,
+        "issues": "Same grammatical case errors in the ingredients list. Uses 'обваляйте' (roll in) in step 2, which is unnatural for a large piece of meat; 'натрите' or 'обмажьте' would be better."
+      },
+      {
+        "letter": "D",
+        "accuracy": 5,
+        "quality": 5,
+        "issues": "Same grammatical case errors in the ingredients list ('4 зубчики'). Switches to 'чашку' in step 5 instead of 'стакан'. However, it has the most natural, idiomatic phrasing in the instructions (e.g., 'зачищенная от лишнего жира', 'промокните насухо', 'в неё легко будет входить вилка')."
+      }
+    ],
+    "ranking": [
+      "D",
+      "A",
+      "C",
+      "B"
+    ]
+  }
+}

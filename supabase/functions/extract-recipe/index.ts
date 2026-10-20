@@ -16,6 +16,14 @@ import {
 } from '../_shared/gemini.ts';
 import { fetchInstagramMeta } from '../_shared/instagram.ts';
 import {
+  appliedExtractRoute,
+  decideExtractRoute,
+  type ExtractGateDecision,
+  type ExtractRoute,
+  shouldRunExtractGate,
+  skipsTextStep,
+} from '../_shared/jev.ts';
+import {
   canonicalInstagramUrl,
   canonicalTikTokUrl,
   canonicalYouTubeWatchUrl,
@@ -323,8 +331,19 @@ Deno.serve(async (req) => {
             captions: meta?.captions,
             topComments: meta?.topComments ?? [],
           };
+    // Jev routes the post (~0.3 s) before the slow text call, alongside the food check.
+    // Any error or low-confidence answer leaves today's ladder unchanged.
+    const extractGate =
+      ladderInput && shouldRunExtractGate(ladderInput) ? decideExtractRoute(ladderInput) : null;
     // Overlap the text model call with the food check. Video stays behind the gate.
-    const pendingText = ladderInput ? beginTextExtraction(ladderInput) : null;
+    const pendingText = ladderInput
+      ? (extractGate ?? Promise.resolve(null)).then((decision) => {
+          const route = appliedExtractRoute(decision);
+          if (route === 'no_recipe' && !forceExtract) return null;
+          if (skipsTextStep(route, ladderInput)) return null;
+          return beginTextExtraction(ladderInput);
+        })
+      : null;
 
     const skipGate = shouldSkipThinSocialGate({
       platform,
@@ -409,6 +428,15 @@ Deno.serve(async (req) => {
       });
     }
 
+    let extractRoute: ExtractRoute | null = null;
+    let skipText = false;
+    if (extractGate && ladderInput) {
+      const decision = await extractGate;
+      extractRoute = appliedExtractRoute(decision);
+      skipText = skipsTextStep(extractRoute, ladderInput);
+      await logExtractGate(admin, { decision, userId, platform, requestId, skipText, forceExtract });
+    }
+
     if (gateKind === 'unrelated') {
       return jsonResponse({
         status: 'failed' as ExtractionStatus,
@@ -435,6 +463,30 @@ Deno.serve(async (req) => {
       });
     }
 
+    if (extractRoute === 'no_recipe' && !forceExtract) {
+      await logUsageEvent(admin, {
+        userId,
+        action: 'extract',
+        platform,
+        status: 'failed',
+        tokensCharged: 0,
+        durationMs: Date.now() - started,
+        errorMessage: 'extract_gate: no_recipe',
+        metadata: { request_id: requestId, extract_route: extractRoute },
+      });
+      // looks_like_dish, not no_recipe: shipped apps only offer "Extract anyway"
+      // (force_extract, which skips Jev) for that code, so a misroute has a way out.
+      return jsonResponse({
+        status: 'failed' as ExtractionStatus,
+        platform,
+        code: 'looks_like_dish',
+        dish_guess: dishGuess,
+        message: "Couldn't find a recipe in this post's text.",
+        tokens_charged: 0,
+        ...quotaFields((await canStartExtract(admin, userId)).snapshot),
+      });
+    }
+
     const reserved = await reserveExtractCredits({
       admin,
       userId,
@@ -458,7 +510,7 @@ Deno.serve(async (req) => {
       source = 'photo';
       originalUrl = null;
     } else {
-      const ladder = await extractRecipeWithLadder(ladderInput!, { pendingText });
+      const ladder = await extractRecipeWithLadder(ladderInput!, { pendingText, skipText });
       gemini = ladder.recipe;
       source = ladder.source;
       usages = ladder.usages;
@@ -523,7 +575,10 @@ Deno.serve(async (req) => {
         errorMessage: rejectedAsTooLong
           ? `duration_seconds=${durationSeconds ?? 'unknown'}`
           : 'No recipe found',
-        metadata: compensationMetadata(creditReservation, guestReservation, compensationPending),
+        metadata: {
+          ...compensationMetadata(creditReservation, guestReservation, compensationPending),
+          ...extractRouteMetadata(extractGate, extractRoute, requestId),
+        },
       });
 
       if (compensationPending) {
@@ -688,14 +743,17 @@ Deno.serve(async (req) => {
       scrapecreatorsCredits: scrapeCredits,
       tokensCharged: userId ? 1 : 0,
       durationMs: Date.now() - started,
-      metadata: creditReservation
-        ? {
-            ...quotaFields(snapshot),
-            request_id: requestId,
-            reservation_id: creditReservation.reservationId,
-            credit_source: creditReservation.source,
-          }
-        : {},
+      metadata: {
+        ...(creditReservation
+          ? {
+              ...quotaFields(snapshot),
+              request_id: requestId,
+              reservation_id: creditReservation.reservationId,
+              credit_source: creditReservation.source,
+            }
+          : {}),
+        ...extractRouteMetadata(extractGate, extractRoute, requestId),
+      },
     });
 
     if (status === 'full' && admin) {
@@ -876,6 +934,54 @@ async function compensateGuestExtraction(
     error: result.error,
   });
   return false;
+}
+
+async function logExtractGate(
+  admin: NonNullable<ReturnType<typeof createServiceSupabase>>,
+  opts: {
+    decision: ExtractGateDecision;
+    userId: string;
+    platform: Platform;
+    requestId: string;
+    skipText: boolean;
+    forceExtract: boolean;
+  },
+): Promise<void> {
+  const { decision, userId, platform, requestId, skipText, forceExtract } = opts;
+  await logUsageEvent(admin, {
+    userId,
+    action: 'extract_gate',
+    platform,
+    status: decision.ok ? (decision.confident ? decision.route : 'low_confidence') : 'error',
+    pricedCall: decision.ok
+      ? { model: decision.model, costUsd: decision.costUsd, promptTokens: decision.inputTokens }
+      : undefined,
+    tokensCharged: 0,
+    durationMs: decision.ms,
+    errorMessage: decision.ok ? null : decision.error.slice(0, 500),
+    metadata: {
+      request_id: requestId,
+      ...(decision.ok
+        ? {
+            route: decision.route,
+            confidence: decision.confidence,
+            probabilities: decision.probabilities,
+            applied: decision.confident,
+          }
+        : { applied: false }),
+      skipped_text: skipText,
+      force_extract: forceExtract,
+    },
+  });
+}
+
+/** Ties the extract row to its gate row, so misroutes show up next to the outcome. */
+function extractRouteMetadata(
+  gate: Promise<ExtractGateDecision> | null,
+  route: ExtractRoute | null,
+  requestId: string,
+): Record<string, unknown> {
+  return gate ? { request_id: requestId, extract_route: route } : {};
 }
 
 function compensationMetadata(

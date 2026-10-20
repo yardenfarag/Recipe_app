@@ -1,0 +1,44 @@
+{
+  "caseId": "ig-DbqcKjxoYnj--ru",
+  "judge": "google/gemini-3.1-pro-preview",
+  "letters": {
+    "A": "openai/gpt-6.1-sol@low",
+    "B": "anthropic/claude-sonnet-5.5@low",
+    "C": "native:gemini-3.1-flash-lite",
+    "D": "openai/gpt-6-luna"
+  },
+  "verdict": {
+    "candidates": [
+      {
+        "letter": "A",
+        "accuracy": 5,
+        "quality": 4,
+        "issues": "Ingredients are capitalized, which is unnatural in Russian. Grammatical cases in the ingredient list are not always adjusted (e.g., '250 г Печенье' instead of '250 г печенья'). Imperial units (9 inches) were not converted to metric."
+      },
+      {
+        "letter": "B",
+        "accuracy": 4,
+        "quality": 3,
+        "issues": "Left English culinary terms in parentheses in the ingredient list ('double cream', 'single cream'). Mistranslated 'white chocolate spread' as just 'white chocolate'. Did not convert inches to centimeters."
+      },
+      {
+        "letter": "C",
+        "accuracy": 5,
+        "quality": 5,
+        "issues": "Very good adaptation of culinary terms ('сливки 10-20%' for single cream) and conversion of imperial units to metric in the text. Minor grammatical case mismatch in the ingredient list ('250 г печенье' instead of 'печенья'), likely due to keeping the source structure."
+      },
+      {
+        "letter": "D",
+        "accuracy": 4,
+        "quality": 4,
+        "issues": "Capitalized ingredient names. Translated 'single cream' simply as 'сливки', losing the distinction. In the instructions, translated 'warm' (тёплый) as 'горячий' (hot). Did not convert inches to metric."
+      }
+    ],
+    "ranking": [
+      "C",
+      "A",
+      "D",
+      "B"
+    ]
+  }
+}

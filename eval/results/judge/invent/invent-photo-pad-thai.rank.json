@@ -1,0 +1,44 @@
+{
+  "caseId": "invent-photo-pad-thai",
+  "judge": "google/gemini-3.1-pro-preview",
+  "letters": {
+    "A": "openai/gpt-6.1-sol@low",
+    "B": "google/gemini-2.5-flash",
+    "C": "anthropic/claude-sonnet-5.5@low",
+    "D": "openai/gpt-6-luna"
+  },
+  "verdict": {
+    "candidates": [
+      {
+        "letter": "A",
+        "accuracy": 4,
+        "quality": 5,
+        "issues": "A solid recipe that correctly plates the raw garnishes on the side as pictured, but it misses the firm tofu chunks that are visible in the photo."
+      },
+      {
+        "letter": "B",
+        "accuracy": 4,
+        "quality": 3,
+        "issues": "Misses the tofu visible in the image. The instructions contain distracting automated-text artifacts like '2 (2 clove)' and '1 (1)'."
+      },
+      {
+        "letter": "C",
+        "accuracy": 5,
+        "quality": 5,
+        "issues": "No major issues. It accurately includes the diced firm tofu visible in the photo and plates the fresh garnishes on the side."
+      },
+      {
+        "letter": "D",
+        "accuracy": 4,
+        "quality": 5,
+        "issues": "Omits the firm tofu shown in the image and includes soy sauce, which is a less traditional addition to Pad Thai sauce."
+      }
+    ],
+    "ranking": [
+      "C",
+      "A",
+      "D",
+      "B"
+    ]
+  }
+}

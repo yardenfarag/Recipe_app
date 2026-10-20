@@ -11,9 +11,8 @@ export const FREE_EXTRACT_LIMIT = FREE_MONTHLY_EXTRACT_LIMIT;
 export type SubscriptionStatus = 'free' | 'active' | 'canceled';
 
 /** Gemini 3.5 Flash list prices used for admin cost tracking. */
+/** Model rates are per model now; the cost dashboard derives them from logged calls. */
 export const ADMIN_PRICE_CARD = {
-  geminiInputUsdPerM: 1.5,
-  geminiOutputUsdPerM: 9.0,
   scrapecreatorsUsdPerCredit: 0.00188,
   freeExtractLimit: FREE_MONTHLY_EXTRACT_LIMIT,
   guestExtractLimit: GUEST_EXTRACTION_LIMIT,

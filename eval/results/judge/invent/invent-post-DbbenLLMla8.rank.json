@@ -1,0 +1,44 @@
+{
+  "caseId": "invent-post-DbbenLLMla8",
+  "judge": "google/gemini-3.1-pro-preview",
+  "letters": {
+    "A": "openai/gpt-6.1-sol@low",
+    "B": "google/gemini-2.5-flash",
+    "C": "anthropic/claude-sonnet-5.5@low",
+    "D": "openai/gpt-6-luna"
+  },
+  "verdict": {
+    "candidates": [
+      {
+        "letter": "A",
+        "accuracy": 5,
+        "quality": 5,
+        "issues": "None. Very clear instructions, accurate ingredient ratios, and providing both weight and volume measurements is a nice touch."
+      },
+      {
+        "letter": "B",
+        "accuracy": 4,
+        "quality": 2,
+        "issues": "The dough has a very high ratio of butter to flour (1 cup to 2 cups), which will make rolling it out difficult without extensive chilling. Furthermore, creating a crimped sandwich cookie and then rolling the entire assembled, delicate sandwich in a cinnamon-sugar mixture is awkward and likely to break the seal or mash the edges."
+      },
+      {
+        "letter": "C",
+        "accuracy": 5,
+        "quality": 4,
+        "issues": "The dough might be slightly dry and crumbly since it uses a full 2.25 cups of flour to only 1/2 cup of butter and 1 egg. Additionally, 8 oz of cream cheese divided among only 12 cookies makes for very large fillings that might be difficult to completely seal within the dough."
+      },
+      {
+        "letter": "D",
+        "accuracy": 5,
+        "quality": 5,
+        "issues": "None. Ratios for the cookie dough are very reliable (similar to a standard chocolate chip cookie base but tailored for churro flavors), and the instructions for stuffing and baking are clear."
+      }
+    ],
+    "ranking": [
+      "A",
+      "D",
+      "C",
+      "B"
+    ]
+  }
+}

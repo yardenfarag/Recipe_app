@@ -1,0 +1,57 @@
+{
+  "ingredients": [
+    {
+      "ref_index": 0,
+      "status": "wrong_quantity"
+    },
+    {
+      "ref_index": 1,
+      "status": "wrong_quantity"
+    },
+    {
+      "ref_index": 2,
+      "status": "wrong_quantity"
+    },
+    {
+      "ref_index": 3,
+      "status": "wrong_quantity"
+    },
+    {
+      "ref_index": 4,
+      "status": "wrong_quantity"
+    },
+    {
+      "ref_index": 5,
+      "status": "wrong_quantity"
+    },
+    {
+      "ref_index": 6,
+      "status": "wrong_quantity"
+    },
+    {
+      "ref_index": 7,
+      "status": "missing"
+    },
+    {
+      "ref_index": 8,
+      "status": "missing"
+    },
+    {
+      "ref_index": 9,
+      "status": "missing"
+    },
+    {
+      "ref_index": 10,
+      "status": "wrong_quantity"
+    },
+    {
+      "ref_index": 11,
+      "status": "ok"
+    }
+  ],
+  "extra_ingredients": [
+    "hazelnuts"
+  ],
+  "steps_score": 2,
+  "note": "All quantities are missing, baking soda, baking powder and salt are omitted, hazelnuts are invented, and the method invents melting butter while omitting the freezing, temperature and timing details."
+}

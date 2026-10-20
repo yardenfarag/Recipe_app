@@ -37,6 +37,10 @@ copy('assets/images/favicon.png');
 copy('assets/images/icon.png');
 copy('landing/site.css');
 copy('landing/hero-recipe.webp');
+copy('landing/og-image.jpg');
+copy('landing/manifest.json');
+copy('landing/icon-192.png');
+copy('landing/icon-512.png');
 copy('dist/app/index.html', '404.html');
 
 const landing = buildLanding(readFileSync(join(root, 'landing/index.html'), 'utf8'), join(root, 'content'));

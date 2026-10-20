@@ -1,0 +1,44 @@
+{
+  "caseId": "ig-DaD4X5Fh6ut--he",
+  "judge": "google/gemini-3.1-pro-preview",
+  "letters": {
+    "A": "openai/gpt-6-luna",
+    "B": "native:gemini-3.1-flash-lite",
+    "C": "openai/gpt-6.1-sol@low",
+    "D": "anthropic/claude-sonnet-5.5@low"
+  },
+  "verdict": {
+    "candidates": [
+      {
+        "letter": "A",
+        "accuracy": 4,
+        "quality": 4,
+        "issues": "Uses 'עמילן תירס' instead of the much more common 'קורנפלור'. The verb 'מקרימים' is culinary slang; 'מקציפים' is more standard. Translating 'chocolate chips' to 'שבבי שוקולד' is okay but 'שוקולד צ'יפס' is the standard Israeli term. Retains '0.5' instead of writing 'חצי'."
+      },
+      {
+        "letter": "B",
+        "accuracy": 4,
+        "quality": 3,
+        "issues": "Uses the imperative plural (e.g., 'קרמו', 'הוסיפו'), which is less standard for modern Hebrew recipes (present plural or infinitive is preferred). 'קרמו' is especially awkward in Hebrew for creaming butter. Retains '0.5'."
+      },
+      {
+        "letter": "C",
+        "accuracy": 5,
+        "quality": 4,
+        "issues": "Excellent overall flow and natural phrasing, using standard terms like 'קורנפלור' and 'מקציפים'. The only minor issue is retaining '0.5' instead of writing 'חצי', which is an artifact of the source but could be localized better."
+      },
+      {
+        "letter": "D",
+        "accuracy": 3,
+        "quality": 2,
+        "issues": "Contains a typo: 'קרטק עוגיות' instead of 'קורצן עוגיות'. 'סוכר גרגירי' is an overly literal translation for regular white sugar. 'בקושי מעורבב' is an awkward translation of 'just combined'. Uses imperative plural."
+      }
+    ],
+    "ranking": [
+      "C",
+      "A",
+      "B",
+      "D"
+    ]
+  }
+}

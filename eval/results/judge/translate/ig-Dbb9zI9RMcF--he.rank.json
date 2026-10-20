@@ -1,0 +1,44 @@
+{
+  "caseId": "ig-Dbb9zI9RMcF--he",
+  "judge": "google/gemini-3.1-pro-preview",
+  "letters": {
+    "A": "anthropic/claude-sonnet-5.5@low",
+    "B": "openai/gpt-6-luna",
+    "C": "native:gemini-3.1-flash-lite",
+    "D": "openai/gpt-6.1-sol@low"
+  },
+  "verdict": {
+    "candidates": [
+      {
+        "letter": "A",
+        "accuracy": 4,
+        "quality": 3,
+        "issues": "Uses English transliteration 'באטרמילק' instead of 'רוויון', and literal translation 'עמילן תירס' instead of the standard 'קורנפלור'. Grammatical error in '4 שיניים שום' (should be שיני שום)."
+      },
+      {
+        "letter": "B",
+        "accuracy": 5,
+        "quality": 4,
+        "issues": "Uses the standard culinary terms 'רוויון' and 'קורנפלור'. Grammatical error in '4 שיניים שום' (should be שיני שום). Instructions flow naturally."
+      },
+      {
+        "letter": "C",
+        "accuracy": 4,
+        "quality": 4,
+        "issues": "Typographical error in the ingredients: '4 שיניים שיני שום' (duplication). Leaves English 'buttermilk' in parentheses unnecessarily. Otherwise, the translation is solid."
+      },
+      {
+        "letter": "D",
+        "accuracy": 5,
+        "quality": 4,
+        "issues": "Very good use of terminology and phrasing, but shares the same grammatical issue '4 שיניים שום' instead of '4 שיני שום'. Very natural instructions."
+      }
+    ],
+    "ranking": [
+      "D",
+      "B",
+      "C",
+      "A"
+    ]
+  }
+}

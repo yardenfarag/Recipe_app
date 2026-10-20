@@ -60,7 +60,6 @@ export async function matchFridgeToCatalog(input: {
   const catalogText = JSON.stringify(input.catalog);
 
   const { data, usage } = await generateLlmJson<{ matches?: FridgeMatchRow[] }>({
-    tier: 'fast',
     systemPrompt: SYSTEM_PROMPT,
     parts: [
       {

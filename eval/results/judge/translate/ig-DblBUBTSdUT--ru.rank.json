@@ -1,0 +1,44 @@
+{
+  "caseId": "ig-DblBUBTSdUT--ru",
+  "judge": "google/gemini-3.1-pro-preview",
+  "letters": {
+    "A": "native:gemini-3.1-flash-lite",
+    "B": "openai/gpt-6.1-sol@low",
+    "C": "anthropic/claude-sonnet-5.5@low",
+    "D": "openai/gpt-6-luna"
+  },
+  "verdict": {
+    "candidates": [
+      {
+        "letter": "A",
+        "accuracy": 5,
+        "quality": 4,
+        "issues": "Ingredients list lacks genitive case (e.g., '15 г муки' instead of '15 г мука'). Ramekin translated as 'форма для запекания' which is slightly broad, but acceptable. 'Сверху выложите оставшееся тесто' is a good translation for 'Cover with the remaining batter'."
+      },
+      {
+        "letter": "B",
+        "accuracy": 5,
+        "quality": 5,
+        "issues": "Uses genitive nominative case in ingredients (same as A, which is common in machine translation, but natively genitive is better: 15 г муки). 'порционную формочку' is a very good translation for ramekin. 'Шоколадный фондан' is an excellent localization for Lava Cake."
+      },
+      {
+        "letter": "C",
+        "accuracy": 5,
+        "quality": 4,
+        "issues": "Same issue with ingredient cases. 'для центра' instead of 'для начинки' is a bit literal."
+      },
+      {
+        "letter": "D",
+        "accuracy": 4,
+        "quality": 3,
+        "issues": "Translated 'Air fry' as 'Готовьте во фритюрнице', which means deep fryer. Air fryer is 'аэрогриль'. Case issues in ingredients."
+      }
+    ],
+    "ranking": [
+      "B",
+      "C",
+      "A",
+      "D"
+    ]
+  }
+}

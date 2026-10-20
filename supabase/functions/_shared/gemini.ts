@@ -1,5 +1,5 @@
-// Gemini extraction via the generateContent REST endpoint.
-// Uses structured output (responseSchema) so we get valid JSON without parsing prose.
+// Recipe extraction prompts and the content ladder. Every model call goes through
+// llmClient.ts (OpenRouter, per-task models) with a JSON schema.
 
 import { FetchError } from './errors.ts';
 import {
@@ -8,21 +8,15 @@ import {
   mapDualIngredients,
   type DualIngredient,
 } from './ingredientAmounts.ts';
-import {
-  resolveGeminiModel,
-  type GeminiPart,
-  type GeminiTier,
-} from './geminiClient.ts';
 import { filledFieldsSummary } from './classifyRecipe.ts';
-import { generateLlmJson } from './llmClient.ts';
-import { isInstagramCdnUrl, resolveInstagramVideoForGemini } from './instagram.ts';
+import { generateLlmJson, resolveTaskModel, type LlmPart } from './llmClient.ts';
 import type { Platform } from './platform.ts';
 import type { GeminiUsageSnapshot } from './pricing.ts';
+import { resolveVideoPart } from './videoInput.ts';
 import { formatMaxVideoDurationLabel, isVideoTooLong } from './videoLimits.ts';
 
 export type { GeminiUsageSnapshot } from './pricing.ts';
 
-/** Text extract is simple structured IO — use Flash-Lite. Video needs standard Flash. */
 const TEXT_TIMEOUT_MS = 35_000;
 const VIDEO_TIMEOUT_MS = 120_000;
 const TEXT_MAX_OUTPUT_TOKENS = 6_144;
@@ -69,7 +63,8 @@ ${LANGUAGE_RULE}
 - Do NOT invent instructions if none are present — return what you found and leave instructions empty instead.
 - Return ONLY data matching the schema.`;
 
-const VIDEO_SYSTEM_PROMPT = `You are a master chef. Analyze the provided social media video together with any text context and extract a precise recipe.
+// Exported for eval/ (video rung with an inline video).
+export const VIDEO_SYSTEM_PROMPT = `You are a master chef. Analyze the provided social media video together with any text context and extract a precise recipe.
 
 Rules:
 - Treat the video and text context as complementary sources — prefer explicit written measurements in text over visual guesses.
@@ -293,7 +288,12 @@ export function beginTextExtraction(input: ExtractInput): Promise<EarlyTextExtra
  */
 export async function extractRecipeWithLadder(
   input: ExtractInput,
-  options?: { pendingText?: Promise<EarlyTextExtract> | null },
+  options?: {
+    /** Resolves to null when the caller chose not to start the text call early. */
+    pendingText?: Promise<EarlyTextExtract | null> | null;
+    /** The extract gate said the text has no recipe: go straight to video. */
+    skipText?: boolean;
+  },
 ): Promise<LadderResult> {
   const hasDescription = Boolean(input.description?.trim());
   const hasComments = input.topComments.length > 0;
@@ -305,8 +305,8 @@ export async function extractRecipeWithLadder(
 
   console.log('[gemini] ladder start', {
     platform: input.platform,
-    fastModel: resolveGeminiModel('fast'),
-    standardModel: resolveGeminiModel('standard'),
+    textModel: resolveTaskModel('text').model,
+    videoModel: resolveTaskModel('video').model,
     hasDescription,
     descriptionLen: input.description?.trim().length ?? 0,
     comments: input.topComments.length,
@@ -315,13 +315,14 @@ export async function extractRecipeWithLadder(
     videoUrlHost: input.videoUrl ? safeUrlHost(input.videoUrl) : null,
     durationSeconds: input.durationSeconds ?? null,
     videoTooLong: isVideoTooLong(input.durationSeconds),
+    skipText: options?.skipText === true,
   });
 
-  if (hasAnyText) {
+  if (hasAnyText && !options?.skipText) {
     const textStarted = Date.now();
     let fromText: { recipe: GeminiRecipe; usage: GeminiUsageSnapshot | null } | null = null;
-    if (options?.pendingText) {
-      const settled = await options.pendingText;
+    const settled = options?.pendingText ? await options.pendingText : null;
+    if (settled) {
       if (!settled.ok) {
         if (!settled.timedOut) throw settled.error;
       } else {
@@ -370,6 +371,8 @@ export async function extractRecipeWithLadder(
         console.log('[gemini] text step partial — trying video before returning');
       }
     }
+  } else if (hasAnyText) {
+    console.log('[gemini] skipping text step — extract gate routed to video');
   } else {
     console.log('[gemini] skipping text step — no description/comments/captions');
   }
@@ -481,7 +484,6 @@ export async function extractRecipeFromImage(input: {
   mimeType?: string;
 }): Promise<{ recipe: GeminiRecipe; usage: GeminiUsageSnapshot | null }> {
   const { data: recipe, usage, durationMs } = await generateLlmJson<GeminiRecipe>({
-    tier: 'standard',
     systemPrompt: IMAGE_SYSTEM_PROMPT,
     parts: [
       {
@@ -564,7 +566,6 @@ export async function repairPartialRecipe(input: {
   const { data, usage, durationMs } = await generateLlmJson<
     GeminiRecipe & { filled_summary?: string }
   >({
-    tier: 'standard',
     systemPrompt: REPAIR_SYSTEM_PROMPT,
     parts: [
       {
@@ -602,59 +603,39 @@ async function extractRecipeWithVideo(
     captions: true,
   });
 
-  let videoUri = input.videoUrl?.trim();
-  if (!videoUri) {
+  if (!input.videoUrl?.trim()) {
     console.log('[gemini] video step — no videoUrl, falling back to text-only');
     return callGemini(TEXT_SYSTEM_PROMPT, [{ text: textContext }], TEXT_TIMEOUT_MS, 'text');
   }
 
-  let usedInstagramVideoDownload = false;
-
-  // Instagram CDN URLs hang Gemini forever — only use hosted (download_media) URLs.
-  if (input.platform === 'instagram') {
-    if (isInstagramCdnUrl(videoUri)) {
-      console.log('[gemini] resolving hosted Instagram video for Gemini', {
-        cdnHost: safeUrlHost(videoUri),
-      });
-      const resolveStarted = Date.now();
-      try {
-        const hosted = await resolveInstagramVideoForGemini(input.sourceUrl);
-        console.log('[gemini] hosted Instagram video resolve done', {
-          ms: Date.now() - resolveStarted,
-          gotHosted: Boolean(hosted),
-          hostedHost: hosted ? safeUrlHost(hosted) : null,
-          stillCdn: hosted ? isInstagramCdnUrl(hosted) : null,
-        });
-        if (hosted && !isInstagramCdnUrl(hosted)) {
-          videoUri = hosted;
-          usedInstagramVideoDownload = true;
-        } else {
-          console.log('[gemini] skipping multimodal — no Gemini-fetchable Instagram video');
-          return { recipe: EMPTY_RECIPE, usage: null, usedInstagramVideoDownload };
-        }
-      } catch (err) {
-        console.error('[gemini] hosted Instagram video resolve failed', {
-          ms: Date.now() - resolveStarted,
-          error: err instanceof Error ? err.message : String(err),
-        });
-        return { recipe: EMPTY_RECIPE, usage: null, usedInstagramVideoDownload };
-      }
-    }
+  const resolveStarted = Date.now();
+  const video = await resolveVideoPart(input);
+  if (!video.part) {
+    console.log('[gemini] skipping multimodal — no usable video', {
+      reason: video.reason,
+      ms: Date.now() - resolveStarted,
+    });
+    return {
+      recipe: EMPTY_RECIPE,
+      usage: null,
+      usedInstagramVideoDownload: video.usedInstagramVideoDownload,
+    };
   }
 
   console.log('[gemini] multimodal call', {
     timeoutMs: VIDEO_TIMEOUT_MS,
-    videoHost: safeUrlHost(videoUri),
-    isCdn: isInstagramCdnUrl(videoUri),
+    inline: 'imageBase64' in video.part,
+    bytes: video.bytes,
+    resolveMs: Date.now() - resolveStarted,
   });
 
   const result = await callGemini(
     VIDEO_SYSTEM_PROMPT,
-    [{ fileData: { fileUri: videoUri } }, { text: textContext }],
+    [video.part, { text: textContext }],
     VIDEO_TIMEOUT_MS,
     'video',
   );
-  return { ...result, usedInstagramVideoDownload };
+  return { ...result, usedInstagramVideoDownload: video.usedInstagramVideoDownload };
 }
 
 export function normalizeGeminiRecipe(recipe: GeminiRecipe): GeminiRecipe {
@@ -686,13 +667,11 @@ function normalizeInstructions(
 
 async function callGemini(
   systemPrompt: string,
-  parts: GeminiPart[],
+  parts: LlmPart[],
   timeoutMs: number,
   kind: 'text' | 'video',
 ): Promise<{ recipe: GeminiRecipe; usage: GeminiUsageSnapshot | null }> {
-  const tier: GeminiTier = kind === 'video' ? 'standard' : 'fast';
-  const { data: recipe, usage, durationMs } = await generateLlmJson<GeminiRecipe>({
-    tier,
+  const { data: recipe, usage, durationMs, model } = await generateLlmJson<GeminiRecipe>({
     systemPrompt,
     parts,
     responseSchema: RECIPE_SCHEMA,
@@ -704,7 +683,7 @@ async function callGemini(
 
   console.log('[gemini] callGemini ok', {
     kind,
-    tier,
+    model,
     ms: durationMs,
     usage,
   });
@@ -729,7 +708,7 @@ function truncate(text: string, maxChars: number): string {
   return `${trimmed.slice(0, maxChars)}…`;
 }
 
-function buildTextContext(input: ExtractInput, sections: TextSections): string {
+export function buildTextContext(input: ExtractInput, sections: TextSections): string {
   const parts: string[] = [];
   parts.push('Extract the recipe from the sources below.');
 

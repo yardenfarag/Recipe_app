@@ -18,18 +18,11 @@ Enable Pages (one-time, required before the workflow succeeds):
 
 --- Play Console ---
 1. Create app: Pinch / package com.pinch.myapp
-2. Store listing short description (≤80 chars):
-   Snap recipes from social videos — clean ingredients, steps, and smart swaps.
-3. Full description:
-   Pinch turns TikTok, Instagram, and YouTube cooking videos into structured
-   recipes you can save, scale, remix, and shop for.
-
-   • Paste or share a video link
-   • Get ingredients, steps, time, and effort estimates
-   • Scale servings and try substitutions
-   • 5 free recipe credits each month, with optional non-expiring packs
-
-   Configure and sandbox-test RevenueCat consumable packs before store submission.
+2. Store listing (full description shared with the App Store; see "Store listing copy" below):
+   App name (≤30):          Pinch: Save Recipes from Video
+   Short description (≤80): Turn TikTok, Instagram & YouTube videos into recipes and a shopping list.
+   Full description (≤4000): the shared full description below.
+3. Configure and sandbox-test RevenueCat consumable packs before store submission.
 4. Privacy policy URL: (see above)
 5. Data safety: account email, user content (recipes/avatar), app activity;
    encrypted in transit; deletion in-app (Settings → Delete account) + web URL.
@@ -58,9 +51,68 @@ Production Android build finished (AAB):
      - com.pinch.myapp.share-extension (ShareExtension)
    Then: eas submit / TestFlight.
 6. TestFlight smoke: Apple Sign-In, share sheet, Settings → Delete account
-7. Submit for review. Notes: AI extraction from public social URLs; free tokens;
-   no IAP yet; account deletion in Settings.
-8. eas.json submit.production.ios.ascAppId is set (6796310453).
+7. Store listing: name, subtitle, promotional text, keywords, and description
+   from "Store listing copy" below. The name only changes with a new version.
+8. Submit for review. Notes: AI extraction from public social URLs; 5 free
+   recipe credits a month plus consumable credit packs; account deletion in Settings.
+9. eas.json submit.production.ios.ascAppId is set (6796310453).
+
+--- Store listing copy (Play Store + App Store) ---
+Keywords (PIN-10): recipe keeper app, recipe organizer app, save recipes from
+TikTok, save Instagram recipes, YouTube video to recipe, AI recipe extractor,
+recipe to shopping list. Feature claims match landing/index.html; change both
+together. Screenshots: assets/store/phone (library, recipe, snap, list).
+
+App Store only:
+   Name (≤30):     Pinch: Video Recipe Organizer
+   Subtitle (≤30): Save TikTok & YouTube Recipes
+   Promotional text (≤170):
+   Turn the cooking videos you save into recipes you can cook from: ingredients, steps, and a shopping list grouped by aisle. 5 free recipes every month.
+   Keywords (≤100, no spaces, no words already in the name or subtitle):
+   instagram,reels,extractor,ai,shopping,list,grocery,cookbook,scan,keeper,meal,translate,fridge,pantry
+
+Full description (both stores, ≤4000):
+   Save recipes from TikTok, Instagram & YouTube, and actually cook them.
+
+   Pinch is a recipe keeper app for the recipes in your feed. Share a cooking video to Pinch and its AI recipe extractor writes out the ingredients and steps, then puts them on a shopping list. No more pausing, rewinding, and screenshotting.
+
+   READS THE WHOLE VIDEO, NOT JUST THE CAPTION
+   Most creators say the amounts out loud or flash them on screen. Pinch watches the video, listens to it, and reads the on-screen text, so you get the whole recipe, every time.
+
+   SAVE RECIPES FROM ANYWHERE
+   • Save TikTok recipes and Instagram Reels: tap Share and pick Pinch, or paste the link
+   • YouTube video to recipe: ingredients and steps, written out
+   • Recipe websites: paste a link and skip the life story
+   • Cookbooks and handwritten cards: snap a photo of the page
+
+   A RECIPE TO SHOPPING LIST IN ONE TAP
+   • Ingredients from several recipes merge into one line each
+   • Grouped by aisle, so you shop the store once
+   • Staples you always have stay off the list
+
+   COOK ALONG
+   • Keep the source video right beside the steps
+   • Step-by-step cook mode with built-in timers
+   • Scale servings up or down and the amounts follow
+
+   MAKE IT YOURS
+   • Remix any recipe with AI: healthier, vegetarian, gluten-free, and more
+   • Swap an ingredient and the steps update to match
+   • What's in the fridge? Snap it, and Pinch ranks your saved recipes by what you have
+
+   A RECIPE ORGANIZER THAT SPEAKS YOUR LANGUAGE
+   Use Pinch in English, Spanish, Hebrew, Arabic, or Russian, with full right-to-left support for Hebrew and Arabic. Saved a recipe from a video in another language? Translate it into any of those, or into German or French, in one tap.
+
+   YOUR RECIPE LIBRARY, EVERYWHERE
+   Keep every saved recipe in one place and group them for dinner, baking, or easy weeknights. Sign in and your library syncs between your phone and the web at pinch-app.io.
+
+   FREE TO START, NO SUBSCRIPTION
+   Every account gets 5 free recipe credits each month. Need more? Buy a credit pack in the app. Credits never expire, and there's no subscription.
+
+   PRIVATE BY DEFAULT
+   Pinch doesn't sell your personal information. You can delete your account and data at any time in Settings.
+
+   See it. Snap it. Cook it.
 
 Apple revoke secrets (before iOS production):
   npx supabase secrets set APPLE_CLIENT_ID=com.pinch.myapp

@@ -1,0 +1,12 @@
+[
+  { "id": "invent-photo-moussaka", "image": "invent-photo-moussaka", "language": "en" },
+  { "id": "invent-photo-pad-thai", "image": "invent-photo-pad-thai", "language": "en" },
+  { "id": "invent-photo-sabich", "image": "invent-photo-sabich", "language": "he" },
+  { "id": "invent-photo-tiramisu", "image": "invent-photo-tiramisu", "language": "en" },
+  { "id": "invent-photo-bibimbap", "image": "invent-photo-bibimbap", "language": "en" },
+  { "id": "invent-post-DbbenLLMla8", "post": "ig-DbbenLLMla8", "language": "en" },
+  { "id": "invent-post-Db6ZKHwvgq0", "post": "ig-Db6ZKHwvgq0", "language": "en" },
+  { "id": "invent-text-shakshuka-he", "text": "שקשוקה עם פטה ותרד לארוחת בוקר של שישי 🍳", "language": "he" },
+  { "id": "invent-text-gochujang-cauliflower", "text": "Crispy gochujang cauliflower bites, sticky and spicy 🌶️ better than takeout", "language": "en" },
+  { "id": "invent-text-ricotta-pancakes", "text": "Weekend brunch: lemon ricotta pancakes with blueberry compote 🍋", "language": "en" }
+]

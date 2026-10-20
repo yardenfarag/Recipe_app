@@ -1,0 +1,44 @@
+{
+  "caseId": "ig-Dbb9zI9RMcF--ar",
+  "judge": "google/gemini-3.1-pro-preview",
+  "letters": {
+    "A": "openai/gpt-6.1-sol@low",
+    "B": "anthropic/claude-sonnet-5.5@low",
+    "C": "native:gemini-3.1-flash-lite",
+    "D": "openai/gpt-6-luna"
+  },
+  "verdict": {
+    "candidates": [
+      {
+        "letter": "A",
+        "accuracy": 5,
+        "quality": 5,
+        "issues": "Very good translation with natural culinary phrasing. 'لبن مخيض' is correct for buttermilk, though 'لبن رائب' is more commonly used in Arab kitchens."
+      },
+      {
+        "letter": "B",
+        "accuracy": 4,
+        "quality": 3,
+        "issues": "Contains untranslated/leftover English words in the ingredients list, including a typo ('بtruttermilk' and 'paprika'). The use of feminine imperatives is acceptable, but the leftover English is a major issue."
+      },
+      {
+        "letter": "C",
+        "accuracy": 5,
+        "quality": 4,
+        "issues": "Good translation. Phrasing is slightly less elegant than D, but completely accurate and clear."
+      },
+      {
+        "letter": "D",
+        "accuracy": 5,
+        "quality": 5,
+        "issues": "Excellent, highly natural translation. The vocabulary choices ('لبن رائب', 'ماء مخلل الخيار') and phrasing of the instructions are very idiomatic."
+      }
+    ],
+    "ranking": [
+      "D",
+      "A",
+      "C",
+      "B"
+    ]
+  }
+}

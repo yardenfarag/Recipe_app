@@ -1,6 +1,6 @@
 # Pinch — Workflows & Product Guide
 
-**Last updated:** 2026-08-29  
+**Last updated:** 2026-10-15  
 **Audience:** Anyone joining the project, or revisiting after time away.
 
 This document explains **every major workflow** in Pinch: what happens, which pieces of code own it, and **why it exists**. For product vocabulary, see [`GLOSSARY.md`](./GLOSSARY.md). For decision history, see [`adr/`](./adr/).
@@ -12,7 +12,7 @@ This document explains **every major workflow** in Pinch: what happens, which pi
 Pinch turns a social cooking video into a clean, usable recipe.
 
 1. User pastes (or shares) a YouTube / Instagram / TikTok link  
-2. A Supabase Edge Function fetches platform content and asks Gemini to extract a structured recipe  
+2. A Supabase Edge Function fetches platform content and asks an AI model (through OpenRouter, ADR 015) to extract a structured recipe  
 3. User previews, optionally remixes (scale servings, swap ingredients, dietary variants), then saves  
 4. Saved recipes live in a personal library — locally for guests, in Supabase when signed in  
 
@@ -27,8 +27,8 @@ Pinch turns a social cooking video into a clean, usable recipe.
 | Mobile app | **Expo SDK 54** + Expo Router | Cross-platform iOS/Android; file-based screens; Expo Go for fast iteration |
 | UI | **React Native** + **NativeWind v4** | Familiar React patterns; Tailwind-style styling |
 | Backend / DB | **Supabase** (Postgres + Auth + Storage + Edge Functions) | Auth, RLS-protected recipes, serverless AI pipeline without a custom server |
-| AI | **Google Gemini** (Flash-class model) | Structured JSON recipe extraction, substitutions, dietary remixes |
-| Platform metadata | **YouTube Data API** (optional) + **ScrapeCreators** (IG/TikTok) | Gemini cannot reliably scrape social URLs alone; keys must stay server-side |
+| AI | **OpenRouter**, one model per task (ADR 015) | GPT-6 Luna for text, Claude Sonnet 5.5 for photos, GPT-6.1 Sol for translate, Gemini 3.5 Flash for video, Jev for gates |
+| Platform metadata | **YouTube Data API** (optional) + **ScrapeCreators** (IG/TikTok) | Models cannot reliably fetch social URLs alone; keys must stay server-side |
 | Local guest data | **AsyncStorage** | Try the product before signing up (ADR 002) |
 | Share-into-app | **expo-share-intent** (dev build) | “Share → Pinch” from other apps (ADR 010); disabled in Expo Go |
 
@@ -46,8 +46,8 @@ Pinch turns a social cooking video into a clean, usable recipe.
 
 **Why extraction is server-side (ADR 001):**
 
-1. Social platforms need dedicated fetchers — Gemini URL context is not enough  
-2. API keys (Gemini, YouTube, ScrapeCreators) must never ship in the app  
+1. Social platforms need dedicated fetchers — a model's own URL fetching is not enough  
+2. API keys (OpenRouter, YouTube, ScrapeCreators) must never ship in the app  
 3. Client-side scraping hits CORS / ToS walls  
 
 ---
@@ -139,7 +139,7 @@ Tabs: `src/components/app-tabs.tsx` (Library, Favorites, Snap, Settings).
 5. **Fetch platform meta:**
    - YouTube: Data API (description, comments) + thumbnail helpers  
    - Instagram / TikTok: ScrapeCreators  
-6. Run **content ladder** with Gemini (ADR 004): description → comments → captions → video context  
+6. Run the **content ladder** (ADR 004, ADR 015): one text call with description, comments and captions; then a video call only if the text was partial and the clip is under 3 minutes  
 7. **Classify:** `full` | `partial` | `failed`  
 8. Return structured recipe JSON (**does not save** — client owns persistence)
 
@@ -262,7 +262,7 @@ Shared UI: `RecipeView` (preview + detail).
 - **Signed in:** Edge Function looks up by canonical URL / platform id (`recipeLookup`, unique URL migration `0005`)  
 - **Guest:** `findExistingGuestRecipe` before calling extract  
 
-**Why:** Saves money (Gemini/API), time, and library clutter.
+**Why:** Saves money (model and scraping calls), time, and library clutter.
 
 ---
 
@@ -335,7 +335,7 @@ Guests use the same shape with ids like `guest-<timestamp>-…` and no `user_id`
 | `transform-recipe` | `{ variant, recipe }` | remixed recipe + summary | Dietary / lifestyle remix |
 | `backfill-thumbnails` | `{ videoIds, recipeIds }` | updated thumbnail URLs | Upgrade legacy YouTube images |
 
-Secrets (server only): `GEMINI_API_KEY`, optional `YOUTUBE_API_KEY`, `SCRAPECREATORS_API_KEY`, optional `GEMINI_MODEL`. Setup: [`supabase/README.md`](../supabase/README.md).
+Secrets (server only): `OPENROUTER_API_KEY`, `SCRAPECREATORS_API_KEY`, optional `YOUTUBE_API_KEY`, optional per-task `OPENROUTER_MODEL_<KIND>` overrides (ADR 015). Setup: [`supabase/README.md`](../supabase/README.md).
 
 ---
 
@@ -371,7 +371,7 @@ Save #4 as guest → “Free limit reached” → Sign up → migration runs →
 
 ### C. Signed-in re-snap
 
-Paste a URL already in the library → Edge Function returns `cached` → opens the existing recipe (no Gemini spend).
+Paste a URL already in the library → Edge Function returns `cached` → opens the existing recipe (no model spend).
 
 ### D. Share from another app (dev build)
 

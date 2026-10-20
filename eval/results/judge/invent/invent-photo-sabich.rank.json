@@ -1,0 +1,44 @@
+{
+  "caseId": "invent-photo-sabich",
+  "judge": "google/gemini-3.1-pro-preview",
+  "letters": {
+    "A": "openai/gpt-6-luna",
+    "B": "openai/gpt-6.1-sol@low",
+    "C": "anthropic/claude-sonnet-5.5@low",
+    "D": "google/gemini-2.5-flash"
+  },
+  "verdict": {
+    "candidates": [
+      {
+        "letter": "A",
+        "accuracy": 5,
+        "quality": 5,
+        "issues": "None. The recipe perfectly matches the visual elements of the image, including the artichoke hearts and pan-fried chicken/eggplant chunks. The instructions are clear, coherent, and utilize all ingredients."
+      },
+      {
+        "letter": "B",
+        "accuracy": 3,
+        "quality": 4,
+        "issues": "Includes meta-text ('המנה בתמונה נראית כמו...') in the instructions which breaks the recipe format. Hard-boiled eggs and pickles are missing from the image, and the pale slices look more like artichoke than potato."
+      },
+      {
+        "letter": "C",
+        "accuracy": 2,
+        "quality": 4,
+        "issues": "Inaccurate to the image (no hard-boiled eggs or hummus visible). The recipe itself is functional, but lacks a bit of detail regarding pan size for frying."
+      },
+      {
+        "letter": "D",
+        "accuracy": 2,
+        "quality": 4,
+        "issues": "The chicken in the image does not appear to be breaded schnitzel, and potatoes are not clearly depicted. The recipe method is decent but the ingredient list uses '0 לפי הטעם' which is poorly formatted."
+      }
+    ],
+    "ranking": [
+      "A",
+      "B",
+      "C",
+      "D"
+    ]
+  }
+}

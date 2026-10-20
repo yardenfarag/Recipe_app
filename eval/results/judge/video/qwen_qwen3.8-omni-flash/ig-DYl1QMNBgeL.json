@@ -1,0 +1,63 @@
+{
+  "ingredients": [
+    {
+      "ref_index": 0,
+      "status": "wrong_quantity"
+    },
+    {
+      "ref_index": 1,
+      "status": "missing"
+    },
+    {
+      "ref_index": 2,
+      "status": "missing"
+    },
+    {
+      "ref_index": 3,
+      "status": "missing"
+    },
+    {
+      "ref_index": 4,
+      "status": "ok"
+    },
+    {
+      "ref_index": 5,
+      "status": "wrong_quantity"
+    },
+    {
+      "ref_index": 6,
+      "status": "wrong_quantity"
+    },
+    {
+      "ref_index": 7,
+      "status": "wrong_quantity"
+    },
+    {
+      "ref_index": 8,
+      "status": "missing"
+    },
+    {
+      "ref_index": 9,
+      "status": "wrong_quantity"
+    },
+    {
+      "ref_index": 10,
+      "status": "ok"
+    },
+    {
+      "ref_index": 11,
+      "status": "wrong_quantity"
+    },
+    {
+      "ref_index": 12,
+      "status": "missing"
+    },
+    {
+      "ref_index": 13,
+      "status": "missing"
+    }
+  ],
+  "extra_ingredients": [],
+  "steps_score": 2,
+  "note": "The candidate appears to describe a different recipe: it omits the searing step, wine, seasoning and garnish, and most of its quantities differ."
+}

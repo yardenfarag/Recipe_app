@@ -1,0 +1,44 @@
+{
+  "caseId": "invent-photo-tiramisu",
+  "judge": "google/gemini-3.1-pro-preview",
+  "letters": {
+    "A": "google/gemini-2.5-flash",
+    "B": "anthropic/claude-sonnet-5.5@low",
+    "C": "openai/gpt-6-luna",
+    "D": "openai/gpt-6.1-sol@low"
+  },
+  "verdict": {
+    "candidates": [
+      {
+        "letter": "A",
+        "accuracy": 5,
+        "quality": 5,
+        "issues": "None. This is a solid traditional recipe that astutely offers instructions for the individual, rustic plating style seen in the photo."
+      },
+      {
+        "letter": "B",
+        "accuracy": 4,
+        "quality": 5,
+        "issues": "A well-written classic recipe, but it assumes the dessert is assembled in a large dish rather than the individual plating clearly shown in the image."
+      },
+      {
+        "letter": "C",
+        "accuracy": 4,
+        "quality": 2,
+        "issues": "Major structural flaw: the instructions say to 'fold in 180 ml heavy cream' without whipping it first. Folding liquid cream into the mascarpone and egg whites will destroy the volume and result in a runny soup."
+      },
+      {
+        "letter": "D",
+        "accuracy": 5,
+        "quality": 4,
+        "issues": "Using cornstarch-thickened milk makes this more of a pastry cream than a classic tiramisu zabaglione, but the step-by-step assembly matches the photo perfectly."
+      }
+    ],
+    "ranking": [
+      "A",
+      "D",
+      "B",
+      "C"
+    ]
+  }
+}

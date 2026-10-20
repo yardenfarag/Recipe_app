@@ -44,7 +44,7 @@ const DOCS: Record<LegalDocId, LegalDoc> = {
   privacy: {
     id: 'privacy',
     title: 'Privacy Policy',
-    meta: 'Last updated: July 22, 2026',
+    meta: 'Last updated: October 15, 2026',
     blocks: [
       {
         kind: 'card',
@@ -81,7 +81,12 @@ const DOCS: Record<LegalDocId, LegalDoc> = {
         kind: 'ul',
         items: [
           [strong('Supabase'), text(' — authentication, database, and file storage.')],
-          [strong('Google Gemini'), text(' — AI recipe generation from content we fetch.')],
+          [
+            strong('OpenRouter'),
+            text(
+              ' — routes AI requests (reading recipes from posts, videos and photos, translation, remixes, substitutions) to the model providers OpenAI, Anthropic, Google, Mistral, Alibaba (Qwen) and TypeSafe. We ask OpenRouter to use only providers that do not store or train on request data.',
+            ),
+          ],
           [strong('ScrapeCreators'), text(' — metadata for some Instagram/TikTok URLs.')],
           [strong('Apple / Google'), text(' — optional sign-in providers.')],
           [strong('YouTube Data API'), text(' — optional metadata for YouTube links.')],

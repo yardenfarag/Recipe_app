@@ -1,0 +1,44 @@
+{
+  "caseId": "ig-Dd0Xk6ZBq6p--he",
+  "judge": "google/gemini-3.1-pro-preview",
+  "letters": {
+    "A": "anthropic/claude-sonnet-5.5@low",
+    "B": "native:gemini-3.1-flash-lite",
+    "C": "openai/gpt-6.1-sol@low",
+    "D": "openai/gpt-6-luna"
+  },
+  "verdict": {
+    "candidates": [
+      {
+        "letter": "A",
+        "accuracy": 4,
+        "quality": 3,
+        "issues": "Uses literal translations like 'קמח לכל מטרה' (instead of קמח לבן or רב-תכליתי), 'חמאה לא מלוחה' (instead of ללא מלח), and the transliterated 'אופציונלי' instead of the standard 'לא חובה'. Phrasing like 'לפני שמזיזים אותן' is a bit unnatural for a recipe."
+      },
+      {
+        "letter": "B",
+        "accuracy": 5,
+        "quality": 4,
+        "issues": "Uses the imperative form, which is acceptable but less common than present-plural in Hebrew recipes. Still uses the transliterated 'אופציונלי'. 'לפני הזזתן' is a bit clunky and formal."
+      },
+      {
+        "letter": "C",
+        "accuracy": 5,
+        "quality": 5,
+        "issues": "Excellent translation. Uses standard Hebrew recipe conventions (present-plural verbs), translates 'optional' correctly to 'לא חובה', and captures culinary terms perfectly (e.g., 'נימוח' for gooey, 'קרום דק' for light crust)."
+      },
+      {
+        "letter": "D",
+        "accuracy": 4,
+        "quality": 4,
+        "issues": "Translates 'light crust' literally as 'קרום בהיר' (light-colored) instead of 'קרום דק' (delicate/thin). Uses 'אופציונלי' and 'קמח לכל מטרה' which are less idiomatic than Candidate C's choices."
+      }
+    ],
+    "ranking": [
+      "C",
+      "B",
+      "D",
+      "A"
+    ]
+  }
+}

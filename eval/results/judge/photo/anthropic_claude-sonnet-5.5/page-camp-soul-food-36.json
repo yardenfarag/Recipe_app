@@ -1,0 +1,37 @@
+{
+  "ingredients": [
+    {
+      "ref_index": 0,
+      "status": "ok"
+    },
+    {
+      "ref_index": 1,
+      "status": "ok"
+    },
+    {
+      "ref_index": 2,
+      "status": "ok"
+    },
+    {
+      "ref_index": 3,
+      "status": "ok"
+    },
+    {
+      "ref_index": 4,
+      "status": "ok"
+    },
+    {
+      "ref_index": 5,
+      "status": "ok"
+    },
+    {
+      "ref_index": 6,
+      "status": "ok"
+    }
+  ],
+  "extra_ingredients": [
+    "1 unbaked pie shell"
+  ],
+  "steps_score": 5,
+  "note": "The candidate lists the pie shell as an extra ingredient, although the reference only mentions it in the steps."
+}

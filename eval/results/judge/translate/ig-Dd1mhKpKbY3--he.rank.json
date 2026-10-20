@@ -1,0 +1,44 @@
+{
+  "caseId": "ig-Dd1mhKpKbY3--he",
+  "judge": "google/gemini-3.1-pro-preview",
+  "letters": {
+    "A": "openai/gpt-6.1-sol@low",
+    "B": "openai/gpt-6-luna",
+    "C": "native:gemini-3.1-flash-lite",
+    "D": "anthropic/claude-sonnet-5.5@low"
+  },
+  "verdict": {
+    "candidates": [
+      {
+        "letter": "A",
+        "accuracy": 5,
+        "quality": 4,
+        "issues": "Leaves the brand name in English rather than transliterating it, which is slightly less natural for a local recipe. Uses the imperative tense, which is acceptable but less common than present-tense plural in modern Hebrew recipes."
+      },
+      {
+        "letter": "B",
+        "accuracy": 5,
+        "quality": 5,
+        "issues": "Very well translated. Transliterates the brand name nicely and uses excellent culinary terminology ('עטרות נייר' for muffin cases). Uses the imperative, which is formal but perfectly correct."
+      },
+      {
+        "letter": "C",
+        "accuracy": 4,
+        "quality": 4,
+        "issues": "Mistranslates 'Spoon' as 'הזליפו' (pipe/drizzle), which is inaccurate. Leaves the brand name in English."
+      },
+      {
+        "letter": "D",
+        "accuracy": 4,
+        "quality": 4,
+        "issues": "Uses the present plural tense ('מכינים', 'מוסיפים'), which is the most natural and idiomatic style for Hebrew recipes. However, uses 'מועכים' (mash) instead of 'מרסקים' (crush) for making crumbs, and 'נייר מאפינס' is a slightly clunky term compared to standard terms like 'מנג'טים' or 'עטרות נייר'."
+      }
+    ],
+    "ranking": [
+      "B",
+      "D",
+      "A",
+      "C"
+    ]
+  }
+}

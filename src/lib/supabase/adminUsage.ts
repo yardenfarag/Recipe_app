@@ -1,3 +1,4 @@
+import { parseLlmCalls, type AiCostRow } from '@/lib/aiCostSummary';
 import { supabase } from '@/lib/supabase/client';
 
 export interface AiUsageEvent {
@@ -152,39 +153,53 @@ export async function fetchAdminTokenLedger(limit = 100): Promise<TokenLedgerRow
 
 export function formatUsageAction(action: string): string {
   if (action === 'content_gate') return 'Food check';
+  if (action === 'extract_gate') return 'Jev gate';
   if (action === 'invent') return 'Invent';
   if (action === 'extract') return 'Extract';
   if (action === 'remix') return 'Remix';
   return action;
 }
 
-export function summarizeUsage(events: AiUsageEvent[]) {
-  const totals = {
-    events: events.length,
-    geminiCostUsd: 0,
-    scrapecreatorsCostUsd: 0,
-    totalCostUsd: 0,
-    tokensCharged: 0,
-    promptTokens: 0,
-    outputTokens: 0,
-    extracts: 0,
-    remixes: 0,
-    cached: 0,
-    failed: 0,
-  };
+const COST_PAGE_SIZE = 1000;
+/** Hard cap so a busy month can't stall the admin screen. */
+export const COST_ROW_CAP = 10_000;
 
-  for (const event of events) {
-    totals.geminiCostUsd += Number(event.gemini_cost_usd) || 0;
-    totals.scrapecreatorsCostUsd += Number(event.scrapecreators_cost_usd) || 0;
-    totals.totalCostUsd += Number(event.total_cost_usd) || 0;
-    totals.tokensCharged += event.tokens_charged || 0;
-    totals.promptTokens += event.prompt_tokens || 0;
-    totals.outputTokens += event.output_tokens || 0;
-    if (event.action === 'extract') totals.extracts += 1;
-    if (event.action === 'remix') totals.remixes += 1;
-    if (event.status === 'cached') totals.cached += 1;
-    if (event.status === 'failed' || event.status === 'error') totals.failed += 1;
+/**
+ * Every usage event since `sinceIso`, newest first, for the cost dashboard.
+ * Pulls only the per-call breakdown out of `metadata`, not the whole blob.
+ */
+export async function fetchAdminCostRows(
+  sinceIso: string,
+): Promise<{ rows: AiCostRow[]; truncated: boolean }> {
+  const rows: AiCostRow[] = [];
+  for (let from = 0; from < COST_ROW_CAP; from += COST_PAGE_SIZE) {
+    const { data, error } = await supabase
+      .from('ai_usage_events')
+      .select(
+        'action, status, model, prompt_tokens, output_tokens, thinking_tokens, gemini_cost_usd, scrapecreators_cost_usd, total_cost_usd, duration_ms, created_at, llm_calls:metadata->llm_calls',
+      )
+      .gte('created_at', sinceIso)
+      .order('created_at', { ascending: false })
+      .range(from, from + COST_PAGE_SIZE - 1);
+    if (error) throw error;
+    const page = data ?? [];
+    for (const r of page as Record<string, unknown>[]) {
+      rows.push({
+        action: String(r.action),
+        status: String(r.status),
+        model: typeof r.model === 'string' ? r.model : null,
+        prompt_tokens: Number(r.prompt_tokens) || 0,
+        output_tokens: Number(r.output_tokens) || 0,
+        thinking_tokens: Number(r.thinking_tokens) || 0,
+        gemini_cost_usd: Number(r.gemini_cost_usd) || 0,
+        scrapecreators_cost_usd: Number(r.scrapecreators_cost_usd) || 0,
+        total_cost_usd: Number(r.total_cost_usd) || 0,
+        duration_ms: r.duration_ms == null ? null : Number(r.duration_ms),
+        llm_calls: parseLlmCalls(r.llm_calls),
+        created_at: String(r.created_at),
+      });
+    }
+    if (page.length < COST_PAGE_SIZE) return { rows, truncated: false };
   }
-
-  return totals;
+  return { rows, truncated: true };
 }

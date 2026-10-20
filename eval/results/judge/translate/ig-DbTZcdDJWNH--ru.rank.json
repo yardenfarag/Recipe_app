@@ -1,0 +1,44 @@
+{
+  "caseId": "ig-DbTZcdDJWNH--ru",
+  "judge": "google/gemini-3.1-pro-preview",
+  "letters": {
+    "A": "native:gemini-3.1-flash-lite",
+    "B": "openai/gpt-6-luna",
+    "C": "openai/gpt-6.1-sol@low",
+    "D": "anthropic/claude-sonnet-5.5@low"
+  },
+  "verdict": {
+    "candidates": [
+      {
+        "letter": "A",
+        "accuracy": 4,
+        "quality": 4,
+        "issues": "Dropped the Fahrenheit temperature in step 6. Added 'экстракт' to vanilla. Uses nominative case for adjectives after the number 2 ('2 крупные яйца' instead of the more standard '2 крупных яйца'). '1 лимонная цедра' is a literal translation of '1 Zest of lemon' and sounds slightly unnatural."
+      },
+      {
+        "letter": "B",
+        "accuracy": 5,
+        "quality": 4,
+        "issues": "Translated Nutella to Cyrillic, which is acceptable but retaining the brand name in Latin is often preferred. '2 крупные яйца' is grammatically permissible but '2 крупных яйца' is more standard. '1 цедра лимона' is slightly clunky for 'цедра 1 лимона'."
+      },
+      {
+        "letter": "C",
+        "accuracy": 5,
+        "quality": 4,
+        "issues": "Capitalizes the first letter of every ingredient name, which is not standard in Russian typography. Retains brand names correctly. Added 'в масле' which clarifies the frying process."
+      },
+      {
+        "letter": "D",
+        "accuracy": 5,
+        "quality": 5,
+        "issues": "Uses the grammatically correct '2 крупных яйца'. 'Хлебная мука' is understandable, though 'хлебопекарная мука' is the standard industry term. The addition of 'во фритюре' is excellent for natural culinary style. '1 цедра лимона' should ideally be 'цедра 1 лимона'."
+      }
+    ],
+    "ranking": [
+      "D",
+      "B",
+      "C",
+      "A"
+    ]
+  }
+}

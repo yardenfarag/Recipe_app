@@ -1,0 +1,44 @@
+{
+  "caseId": "ig-DbTZcdDJWNH--ar",
+  "judge": "google/gemini-3.1-pro-preview",
+  "letters": {
+    "A": "openai/gpt-6.1-sol@low",
+    "B": "openai/gpt-6-luna",
+    "C": "native:gemini-3.1-flash-lite",
+    "D": "anthropic/claude-sonnet-5.5@low"
+  },
+  "verdict": {
+    "candidates": [
+      {
+        "letter": "A",
+        "accuracy": 5,
+        "quality": 5,
+        "issues": "No major issues. The phrasing is natural and precise."
+      },
+      {
+        "letter": "B",
+        "accuracy": 5,
+        "quality": 4,
+        "issues": "Writing '2 بيضتان كبيرتان' is slightly redundant in Arabic since the dual form already indicates two. 'سكر حبيبي' sounds a bit literal compared to 'سكر حبيبات'."
+      },
+      {
+        "letter": "C",
+        "accuracy": 5,
+        "quality": 5,
+        "issues": "Excellent adaptation. Translating 'neutral oil' to 'زيت نباتي' (vegetable oil) is very natural and practical in Arabic cooking, and adding 'في زيت ساخن' (in hot oil) in the frying step improves readability."
+      },
+      {
+        "letter": "D",
+        "accuracy": 4,
+        "quality": 4,
+        "issues": "Translates 'granulated sugar' as 'سكر ناعم' which usually implies caster or powdered sugar, rather than granulated. 'Zest' is translated as 'قشر' (peel) instead of 'بشر' or 'برش' (zest). Uses redundant '2 بيضتان'."
+      }
+    ],
+    "ranking": [
+      "C",
+      "A",
+      "B",
+      "D"
+    ]
+  }
+}
