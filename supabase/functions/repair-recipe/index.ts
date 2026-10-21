@@ -8,7 +8,6 @@ import { repairPartialRecipe, type GeminiRecipe } from '../_shared/gemini.ts';
 import { fetchInstagramMeta } from '../_shared/instagram.ts';
 import {
   detectPlatform,
-  extractVideoIdForPlatform,
   type Platform,
 } from '../_shared/platform.ts';
 import type { PlatformMeta } from '../_shared/platformMeta.ts';
@@ -25,7 +24,7 @@ import {
   refundSignedInExtractAfterFinalizeFailure,
   reserveSignedInExtract,
 } from '../_shared/quotas.ts';
-import { createAuthedSupabase } from '../_shared/recipeLookup.ts';
+import { createAuthedSupabase, extractVideoIdForPlatform } from '../_shared/recipeLookup.ts';
 import { createServiceSupabase } from '../_shared/supabaseAdmin.ts';
 import { normalizeRecipeTags } from '../_shared/tags.ts';
 import { fetchTikTokMeta } from '../_shared/tiktok.ts';
