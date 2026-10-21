@@ -11,7 +11,7 @@ Pinch Plus required users to pay after the free monthly extraction allowance. We
 ## Decision
 
 - Guests keep 3 lifetime extractions per install and must sign in to save recipes. (Later removed: guests can't extract at all and are sent to sign up / log in first.)
-- Every signed-in user receives 15 recipe credits per UTC calendar month. (Lowered to 3 in September 2026, then set to 5 in October 2026; see `FREE_MONTHLY_EXTRACT_LIMIT`.)
+- Every signed-in user receives 15 recipe credits per UTC calendar month. (Lowered to 3 in September 2026, then set to 5 in October 2026 and kept there by ADR 016; see `FREE_MONTHLY_EXTRACT_LIMIT`.)
 - One successful, uncached extraction costs one credit. Failed and cached extractions are free.
 - Monthly free credits are spent before purchased credits and do not roll over.
 - Purchased credits never expire. RevenueCat validates iOS and Android consumables and hosts web billing; Supabase is the authoritative balance and ledger.
