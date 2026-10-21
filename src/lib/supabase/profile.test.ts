@@ -46,26 +46,26 @@ describe('profile recipe credits', () => {
     expect(
       profileQuota(profile({ monthly_extracts_used: 1, token_balance: 7 })),
     ).toMatchObject({
-      freeExtractsRemaining: 4,
+      freeExtractsRemaining: 9,
       purchasedCredits: 7,
-      totalCredits: 11,
-      extractsRemaining: 11,
+      totalCredits: 16,
+      extractsRemaining: 16,
       subscriptionActive: false,
     });
   });
 
   it('gives a new signed-in account the full monthly allowance', () => {
     expect(profileQuota(profile())).toMatchObject({
-      freeExtractsRemaining: 5,
+      freeExtractsRemaining: 10,
       purchasedCredits: 0,
-      totalCredits: 5,
-      extractsRemaining: 5,
+      totalCredits: 10,
+      extractsRemaining: 10,
     });
   });
 
   it('falls back to purchased credits after the monthly allowance', () => {
     expect(
-      profileQuota(profile({ monthly_extracts_used: 5, token_balance: 3 })),
+      profileQuota(profile({ monthly_extracts_used: 10, token_balance: 3 })),
     ).toMatchObject({
       freeExtractsRemaining: 0,
       purchasedCredits: 3,
@@ -85,8 +85,8 @@ describe('profile recipe credits', () => {
     ).toMatchObject({
       subscriptionStatus: 'free',
       subscriptionActive: false,
-      freeExtractsRemaining: 3,
-      totalCredits: 4,
+      freeExtractsRemaining: 8,
+      totalCredits: 9,
     });
   });
 });

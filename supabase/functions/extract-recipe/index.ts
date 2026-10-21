@@ -85,7 +85,7 @@ type ExtractionStatus = 'full' | 'partial' | 'failed' | 'coming_soon';
  * captions → video) before classifying the result.
  *
  * Guests get `auth_required` and must sign up first. Signed-in users receive
- * 5 monthly credits and can spend non-expiring purchased credits after those.
+ * 10 monthly credits and can spend non-expiring purchased credits after those.
  * Cached URL re-extract is free.
  */
 Deno.serve(async (req) => {
