@@ -1,15 +1,17 @@
 import Ionicons from '@expo/vector-icons/Ionicons';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import {
+  BackHandler,
   I18nManager,
-  Modal,
   Platform,
   Pressable,
   ScrollView,
+  StyleSheet,
   Text,
   View,
   useWindowDimensions,
 } from 'react-native';
+import Animated, { FadeIn, FadeOut, useReducedMotion } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useTranslation } from 'react-i18next';
 
@@ -33,10 +35,18 @@ type FirstRunWalkthroughProps = {
 
 const TOOLTIP_GAP = 14;
 const ARROW_SIZE = 14;
+/** Largest spotlight circle around a tab (icon + label). */
+const SPOTLIGHT_MAX = 64;
+const RING_GAP = 3;
 
 /**
  * Coach marks over the tab bar after first-run onboarding: Snap, sharing from
  * TikTok or Instagram, then the Library. Skippable from every step.
+ *
+ * Rendered as an in-tree overlay, not a native `Modal`: it mounts right as the
+ * auth modal dismisses, and iOS can't present a second modal mid-dismissal —
+ * the walkthrough never showed but its window still swallowed every touch, so
+ * new users were stuck until they relaunched the app.
  */
 export function FirstRunWalkthrough({
   tabBarHeight,
@@ -47,7 +57,17 @@ export function FirstRunWalkthrough({
   const { colors } = useThemePreference();
   const { width, height, fontScale } = useWindowDimensions();
   const insets = useSafeAreaInsets();
+  const reduceMotion = useReducedMotion();
   const [step, setStep] = useState<WalkthroughStep>('snap');
+
+  // Android back skips the tour, as the Modal's onRequestClose used to.
+  useEffect(() => {
+    const sub = BackHandler.addEventListener('hardwareBackPress', () => {
+      onFinish();
+      return true;
+    });
+    return () => sub.remove();
+  }, [onFinish]);
 
   const stepIndex = WALKTHROUGH_STEPS.indexOf(step);
   const isLast = nextWalkthroughStep(step) === null;
@@ -139,44 +159,50 @@ export function FirstRunWalkthrough({
     </View>
   );
 
+  // Circle centred on the tab's icon + label (the bar has 6pt top padding).
+  const spotlight = target ? Math.min(target.width - 6, SPOTLIGHT_MAX) : 0;
+  const centerX = target ? target.left + target.width / 2 : 0;
+  const centerFromBottom = tabBarPaddingBottom + (tabBarHeight - tabBarPaddingBottom - 6) / 2;
+  // A thick round border dims everything except a clean circular hole.
+  const dimBorder = width + height;
+
   return (
-    <Modal
-      transparent
-      visible
-      animationType="fade"
-      statusBarTranslucent
-      navigationBarTranslucent
-      onRequestClose={onFinish}
+    <Animated.View
+      entering={reduceMotion ? undefined : FadeIn.duration(220)}
+      exiting={reduceMotion ? undefined : FadeOut.duration(160)}
+      style={[StyleSheet.absoluteFill, { zIndex: 1000, elevation: 1000 }]}
+      // Swallow touches so the app underneath can't be used mid-tour.
+      onStartShouldSetResponder={() => true}
     >
       {target ? (
         // Tab frames are physical (already mirrored for RTL), so lay out LTR here.
-        <View style={{ flex: 1, direction: 'ltr' }}>
-          <View
-            style={{ flex: 1, backgroundColor: colors.overlay }}
-            accessible={false}
-            importantForAccessibility="no-hide-descendants"
-          />
-          {/* Dim the tab bar around the highlighted tab, leaving it bright. */}
-          <View
-            style={{ height: tabBarHeight, flexDirection: 'row' }}
-            accessible={false}
-            importantForAccessibility="no-hide-descendants"
-          >
-            <View style={{ width: target.left, backgroundColor: colors.overlay }} />
-            <View style={{ width: target.width }} />
-            <View style={{ flex: 1, backgroundColor: colors.overlay }} />
-          </View>
+        <View style={{ flex: 1, direction: 'ltr', overflow: 'hidden' }}>
           <View
             pointerEvents="none"
             accessible={false}
             importantForAccessibility="no-hide-descendants"
             style={{
               position: 'absolute',
-              left: target.left + 4,
-              width: target.width - 8,
-              bottom: tabBarPaddingBottom - 2,
-              height: tabBarHeight - tabBarPaddingBottom,
-              borderRadius: 16,
+              left: centerX - spotlight / 2 - dimBorder,
+              bottom: centerFromBottom - spotlight / 2 - dimBorder,
+              width: spotlight + dimBorder * 2,
+              height: spotlight + dimBorder * 2,
+              borderRadius: spotlight / 2 + dimBorder,
+              borderWidth: dimBorder,
+              borderColor: colors.overlay,
+            }}
+          />
+          <View
+            pointerEvents="none"
+            accessible={false}
+            importantForAccessibility="no-hide-descendants"
+            style={{
+              position: 'absolute',
+              left: centerX - spotlight / 2 - RING_GAP,
+              bottom: centerFromBottom - spotlight / 2 - RING_GAP,
+              width: spotlight + RING_GAP * 2,
+              height: spotlight + RING_GAP * 2,
+              borderRadius: spotlight / 2 + RING_GAP,
               borderWidth: 2,
               borderColor: colors.primary,
             }}
@@ -195,7 +221,7 @@ export function FirstRunWalkthrough({
                 position: 'absolute',
                 bottom: -ARROW_SIZE / 2,
                 left: clamp(
-                  target.left + target.width / 2 - 16 - ARROW_SIZE / 2,
+                  centerX - 16 - ARROW_SIZE / 2,
                   20,
                   width - 32 - 20 - ARROW_SIZE,
                 ),
@@ -227,7 +253,7 @@ export function FirstRunWalkthrough({
           {card}
         </View>
       )}
-    </Modal>
+    </Animated.View>
   );
 }
 
