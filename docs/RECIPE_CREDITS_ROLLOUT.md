@@ -17,7 +17,7 @@ Create consumable products with the same IDs in App Store Connect, Google Play, 
 - `pinch_credits_30` — 30 recipe credits
 - `pinch_credits_100` — 100 recipe credits
 
-Initial price points are $1.99, $4.99, and $12.99 before store localization. Add all products to the current RevenueCat offering. Do not configure them as subscriptions.
+Initial price points are $1.99, $4.99, and $7.99 before store localization. Add all products to the current RevenueCat offering. Do not configure them as subscriptions.
 
 Skip web purchase links. RevenueCat web checkout charges through Stripe, and Stripe does not support this account's country. Website buyers are sent to the mobile app. App Store and Play Store products do not use Stripe.
 
