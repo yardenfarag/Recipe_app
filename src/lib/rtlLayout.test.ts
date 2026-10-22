@@ -1,4 +1,7 @@
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
+
+// The real `expo` entry opens a dev-server socket on import.
+vi.mock('expo', () => ({ reloadAppAsync: vi.fn() }));
 
 import { languageChangeNeedsReload } from '@/lib/rtlLayout';
 

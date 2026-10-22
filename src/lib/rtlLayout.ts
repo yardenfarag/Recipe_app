@@ -1,4 +1,5 @@
-import { Alert, DevSettings, I18nManager, Platform } from 'react-native';
+import { reloadAppAsync } from 'expo';
+import { Alert, I18nManager, Platform } from 'react-native';
 
 import type { AppLanguageCode } from '@/lib/appLanguages';
 import { isRtlAppLanguage } from '@/lib/appLanguages';
@@ -28,26 +29,15 @@ export function applyRtlFlag(language: AppLanguageCode) {
 }
 
 export function reloadForRtl(): void {
-  if (__DEV__ && DevSettings?.reload) {
-    DevSettings.reload();
-    return;
-  }
   if (Platform.OS === 'web' && typeof window !== 'undefined') {
     window.location.reload();
     return;
   }
-  // Production native: user can background/reopen; Alert already explained why.
+  // Works in release builds too, unlike DevSettings.reload.
+  void reloadAppAsync('Switch layout direction');
 }
 
-export function promptRtlReloadIfNeeded(
-  previous: AppLanguageCode,
-  next: AppLanguageCode,
-): void {
-  applyRtlFlag(next);
-  if (!languageChangeNeedsReload(previous, next)) return;
-  // Web mirrors immediately via `document.dir` + the root `direction` style.
-  if (Platform.OS === 'web') return;
-
+function showRtlReloadAlert(): void {
   Alert.alert(
     i18n.t('settings.rtlReloadTitle'),
     i18n.t('settings.rtlReloadBody'),
@@ -59,4 +49,26 @@ export function promptRtlReloadIfNeeded(
       },
     ],
   );
+}
+
+export function promptRtlReloadIfNeeded(
+  previous: AppLanguageCode,
+  next: AppLanguageCode,
+): void {
+  applyRtlFlag(next);
+  if (!languageChangeNeedsReload(previous, next)) return;
+  // Web mirrors immediately via `document.dir` + the root `direction` style.
+  if (Platform.OS === 'web') return;
+  showRtlReloadAlert();
+}
+
+/**
+ * Prompts only when the running layout direction doesn't match `language`.
+ * Compares against the native flag, so it stays quiet after the reload.
+ */
+export function promptRtlReloadIfLayoutMismatch(language: AppLanguageCode): void {
+  applyRtlFlag(language);
+  if (Platform.OS === 'web') return;
+  if (isRtlAppLanguage(language) === I18nManager.isRTL) return;
+  showRtlReloadAlert();
 }
