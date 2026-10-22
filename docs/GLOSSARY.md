@@ -24,6 +24,10 @@ _Avoid_: Parsing, scraping (use "scraping" only for the server-side content-fetc
 The order the Edge Function tries sources in: all text first (description, top comments, captions) in one model call, then the video only if the text gave a partial recipe.
 _Avoid_: Scrape order, fetch pipeline
 
+**Appliance**:
+A piece of kitchen equipment a recipe uses (oven, blender, stand mixer…), from a fixed list of keys. Each one on a recipe is marked **required** (no workaround) or **optional** (helps, but there's a workaround). A recipe's appliance list is either "not analysed" (older recipes; nothing shown) or a list, which may be empty. See ADR 017.
+_Avoid_: Tools, gadgets, equipment (in code)
+
 **Partial result**:
 An extraction outcome where some recipe fields are present (e.g. ingredients but no steps). Shown with an incomplete banner; still saveable.
 _Avoid_: Incomplete recipe, half extraction
