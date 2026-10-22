@@ -85,9 +85,25 @@ type AlternativeKey = 'by_hand' | 'pre_ground' | 'cut_to_check';
 - Items with `origin: 'tip'` are suggestions the source didn't mention (e.g. a meat thermometer for a steak). They are optional only, at most 2 per recipe, limited to benefit tools in the catalog, and labelled "Pinch tip" in the UI, the same way "Guess the recipe" is labelled as an AI guess.
 - The data shape supports tips from day one. **Whether tips are switched on is Yarden's product call,** because it bends the ticket's acceptance criterion "doesn't invent appliances". Until they decide, tips stay off and only `source` items are produced.
 
-### 6. Still open
+### 6. A separate `appliances` task, run on the final recipe
 
-- Where extraction fills it: inside the shared `RECIPE_SCHEMA`, or a separate cheap task kind run on the final recipe (which would also cover remix, repair and backfill).
+- New task kind `appliances` in `TASK_MODELS` (`_shared/llmClient.ts`): `openai/gpt-6-luna`, falling back to `qwen/qwen3.8-flash`, reasoning `none`. It is called through `generateLlmJson()`.
+- **Input:** the finished recipe, trimmed to the title, ingredient names and numbered step text (no amounts, metric or spoon values). **Output:** the item list from decision 2. The JSON schema lists the catalog keys as an `enum`, so the model can only answer with known keys.
+- **Where it runs:** on the server, after the recipe is final and before the Hub publish, in extract-recipe, invent-recipe, repair-recipe and transform-recipe (remix and kitchen auto-apply). One implementation covers all flows and a later backfill.
+- **Fails soft:** an error, timeout or invalid output gives `appliances = NULL` ("not analysed"). The recipe is still returned. Extraction status and credits are never affected.
+- **Cost controls:**
+  - Library and Hub cache hits reuse the stored list, so no call is made.
+  - Remix reruns it only when the steps changed.
+  - There is no retry beyond the router's single fallback.
+  - Each call is logged to `ai_usage_events` with action `appliances`.
+- **Cost estimate** (production data, 2026-10-22):
+  - Saved recipes average about 1,600 characters (p90 about 2,700), so input is about 1,100–1,600 tokens including the prompt and schema, and output about 150–250 tokens.
+  - At Luna's $0.10 / $0.50 per million tokens, that is about **$0.0003 per recipe**, roughly the same as the content gate ($0.00026) and about 10% of an extraction ($0.0024 average over the last 30 days).
+  - Expected latency is under a second.
+- **Rejected:** adding `appliances` to the shared `RECIPE_SCHEMA`. It would change the output of five models (requiring a full eval rerun) and make every extraction schema heavier. It would also leave remixed recipes with stale appliances and give older recipes no path to get them.
+
+### 7. Still open
+
 - The exact required-vs-optional rule, and the prompt wording for "clearly implied" that doesn't conflict with `gemini.ts` lines 45 and 513.
 - Backfill of existing recipes: none, or lazy with a daily cap.
 - How "no invention" is measured (eval fixtures, precision and recall).
