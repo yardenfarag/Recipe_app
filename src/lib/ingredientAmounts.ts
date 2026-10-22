@@ -40,6 +40,32 @@ export function pickIngredientAmount(
   return applyMeasurementSystem(ingredient.quantity, ingredient.unit, system);
 }
 
+/**
+ * Fills missing grams/spoons on translated ingredients from the source recipe.
+ * Translations saved before dual amounts existed lack them, so the toggle fell
+ * back to unit conversion and showed solids in ml. Dual amounts use canonical
+ * English units, so they carry over across languages unchanged.
+ */
+export function withSourceAmounts<T extends Ingredient>(
+  translated: T[],
+  source: Pick<Ingredient, 'quantity' | 'metric' | 'spoons'>[],
+): T[] {
+  if (translated.length !== source.length) return translated;
+  return translated.map((ingredient, index) => {
+    const original = source[index];
+    // Same position but a different amount means the cache is stale — leave it.
+    if (original.quantity !== ingredient.quantity) return ingredient;
+    const metric = isValidIngredientAmount(ingredient.metric) ? ingredient.metric : original.metric;
+    const spoons = isValidIngredientAmount(ingredient.spoons) ? ingredient.spoons : original.spoons;
+    if (metric === ingredient.metric && spoons === ingredient.spoons) return ingredient;
+    return {
+      ...ingredient,
+      ...(isValidIngredientAmount(metric) ? { metric } : {}),
+      ...(isValidIngredientAmount(spoons) ? { spoons } : {}),
+    };
+  });
+}
+
 export function scaleQuantity(quantity: number, factor: number): number {
   return Math.round(quantity * factor * 100) / 100;
 }

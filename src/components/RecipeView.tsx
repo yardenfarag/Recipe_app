@@ -29,6 +29,7 @@ import { useThemePreference } from '@/hooks/useThemePreference';
 import { useAuth } from '@/hooks/useAuth';
 import { announce, CHROME_MAX_FONT_SCALE } from '@/lib/a11y';
 import { setGuestRecipeTags } from '@/lib/guestRecipes';
+import { convertStepAmounts } from '@/lib/convertStepAmounts';
 import { pickIngredientAmount, scaleIngredient, scaleIngredients } from '@/lib/ingredientAmounts';
 import { isRtlAppLanguage } from '@/lib/appLanguages';
 import { confirmAction } from '@/lib/confirmAction';
@@ -223,6 +224,15 @@ export function RecipeView({
     activeLanguage ?? (isRecipeLanguageCode(sourceLanguage) ? sourceLanguage : null);
   const unitLanguage = resolveCulinaryLanguage(activeLanguage, appLanguage);
   const textDirection = isRtlRecipeLanguage(contentLanguage) ? 'rtl' : 'ltr';
+  // Steps quote amounts too ("3 tbsp butter") — show them in the chosen system.
+  const displayInstructions = useMemo(
+    () =>
+      baseInstructions.map((step) => ({
+        ...step,
+        text: convertStepAmounts(step.text, baseIngredients, measurementSystem, unitLanguage),
+      })),
+    [baseInstructions, baseIngredients, measurementSystem, unitLanguage],
+  );
   const appRtl = isRtlAppLanguage(appLanguage);
   const contentRtl = textDirection === 'rtl';
   const recipeRowDirection = contentRtl === appRtl ? 'row' : 'row-reverse';
@@ -1230,7 +1240,7 @@ export function RecipeView({
               </View>
             }
           >
-            {baseInstructions.map((step, index) => (
+            {displayInstructions.map((step, index) => (
               <View
                 key={`${step.step}-${index}`}
                 className={`flex-row gap-3 py-3.5 ${
@@ -1478,7 +1488,7 @@ export function RecipeView({
         <CookMode
           visible={cookModeOpen}
           title={title}
-          instructions={baseInstructions}
+          instructions={displayInstructions}
           textDirection={textDirection}
           onClose={() => setCookModeOpen(false)}
           onCooked={
