@@ -297,6 +297,23 @@ export function isCountUnit(unit: string): boolean {
   return COUNT_UNIT_KEYS.has(canonicalKey(unit));
 }
 
+/**
+ * Every written form of a unit (canonical key, English aliases, localized
+ * singular/plural) with its canonical key — for spotting amounts in prose.
+ */
+export function culinaryUnitSurfaceForms(): { form: string; key: string }[] {
+  const forms = new Map<string, string>();
+  for (const [canonical, langs] of Object.entries(UNIT_MAP)) {
+    forms.set(canonical, canonical);
+    for (const formsForLang of Object.values(langs)) {
+      if (formsForLang.one) forms.set(formsForLang.one, canonical);
+      if (formsForLang.other) forms.set(formsForLang.other, canonical);
+    }
+  }
+  for (const [alias, canonical] of Object.entries(ALIASES)) forms.set(alias, canonical);
+  return [...forms].map(([form, key]) => ({ form, key }));
+}
+
 /** True when the unit is in UNIT_MAP (or a count placeholder). */
 export function isKnownCulinaryUnit(unit: string): boolean {
   const key = canonicalKey(unit);

@@ -1,4 +1,5 @@
 import { localizeIngredientUnits } from '@/lib/culinaryUnits';
+import { withSourceAmounts } from '@/lib/ingredientAmounts';
 import { resolveRecipeSourceLanguage } from '@/lib/recipeSourceLanguage';
 import { translateRecipe } from '@/lib/supabase/translateRecipe';
 import type { Ingredient, Instruction, RecipeTranslationContent } from '@/types/recipe';
@@ -63,10 +64,15 @@ export async function ensureRecipeTranslation(options: {
   const language = options.targetLanguage;
 
   if (options.cached) {
-    // Older caches may still hold source-language units — normalize on read.
+    // Older caches may still hold source-language units and lack grams/spoons
+    // amounts — normalize on read.
+    const cached = {
+      ...options.cached,
+      ingredients: withSourceAmounts(options.cached.ingredients, canonical.ingredients),
+    };
     return {
       status: 'ok',
-      content: withLocalizedUnits(options.cached, language),
+      content: withLocalizedUnits(cached, language),
       fromCache: true,
     };
   }

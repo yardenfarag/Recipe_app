@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest';
+import type { Ingredient } from '@/types/recipe';
 
 import { displayIngredientAmount, displayedAmountIsPinch, ingredientAmountIsUnknown } from './displayIngredientAmount';
 import {
@@ -6,6 +7,7 @@ import {
   readIngredientAmount,
   scaleIngredient,
   scaleIngredients,
+  withSourceAmounts,
 } from './ingredientAmounts';
 
 const flour = {
@@ -99,5 +101,25 @@ describe('displayIngredientAmount', () => {
     expect(displayIngredientAmount(salt)).toBe('a pinch');
     expect(displayedAmountIsPinch(salt)).toBe(true);
     expect(displayedAmountIsPinch(flour)).toBe(false);
+  });
+});
+
+describe('withSourceAmounts', () => {
+  it('backfills grams from the source onto translations saved without them', () => {
+    const translated: Ingredient[] = [{ name: 'קמח', quantity: 1, unit: 'כוס' }];
+    const [ingredient] = withSourceAmounts(translated, [flour]);
+    expect(pickIngredientAmount(ingredient, 'metric')).toEqual({ quantity: 120, unit: 'g' });
+    expect(ingredient.name).toBe('קמח');
+  });
+
+  it('keeps amounts the translation already has', () => {
+    const translated = [{ ...flour, name: 'קמח', metric: { quantity: 125, unit: 'g' } }];
+    expect(withSourceAmounts(translated, [flour])[0].metric).toEqual({ quantity: 125, unit: 'g' });
+  });
+
+  it('leaves stale translations alone when ingredients no longer line up', () => {
+    const translated: Ingredient[] = [{ name: 'קמח', quantity: 2, unit: 'כוס' }];
+    expect(withSourceAmounts(translated, [flour])[0].metric).toBeUndefined();
+    expect(withSourceAmounts(translated, [flour, milk])).toBe(translated);
   });
 });

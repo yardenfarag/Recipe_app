@@ -1,4 +1,6 @@
 import { displayIngredientAmount } from '@/lib/displayIngredientAmount';
+import { convertStepAmounts } from '@/lib/convertStepAmounts';
+import { withSourceAmounts } from '@/lib/ingredientAmounts';
 import { formatRecipeDuration } from '@/lib/formatRecipeDuration';
 import { resolveCulinaryLanguage } from '@/lib/culinaryUnits';
 import type { MeasurementSystem } from '@/lib/convertMeasurement';
@@ -96,8 +98,9 @@ export function toCookbookHtmlRecipe(
   const translation = recipe.translations?.[options.language];
   const title =
     recipe.display_title?.trim() || translation?.title?.trim() || recipe.title;
-  const ingredients =
-    translation?.ingredients?.length ? translation.ingredients : recipe.ingredients;
+  const ingredients = translation?.ingredients?.length
+    ? withSourceAmounts(translation.ingredients, recipe.ingredients)
+    : recipe.ingredients;
   const instructions =
     translation?.instructions?.length ? translation.instructions : recipe.instructions;
   const culinary = resolveCulinaryLanguage(options.language);
@@ -120,7 +123,7 @@ export function toCookbookHtmlRecipe(
     })),
     instructions: instructions.map((step, index) => ({
       step: step.step || index + 1,
-      text: step.text,
+      text: convertStepAmounts(step.text, ingredients, options.measurementSystem, culinary),
     })),
   };
 }
