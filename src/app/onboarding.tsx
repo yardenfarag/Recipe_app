@@ -1,30 +1,21 @@
 import { router } from 'expo-router';
-import { useEffect, useRef } from 'react';
 import { View } from 'react-native';
 
 import { OnboardingPager } from '@/components/onboarding/OnboardingPager';
 import { Screen } from '@/components/Screen';
 import { useLanguagePreference } from '@/hooks/useLanguagePreference';
-import type { AppLanguageCode } from '@/lib/appLanguages';
-import { promptRtlReloadIfNeeded } from '@/lib/rtlLayout';
+import { promptRtlReloadIfLayoutMismatch } from '@/lib/rtlLayout';
 
 /**
  * First-run preferences, then the account screen. Onboarding stays incomplete
  * until sign-up or sign-in creates a session.
  */
 export default function OnboardingScreen() {
-  const { language, ready: languageReady } = useLanguagePreference();
-  const languageAtStart = useRef<AppLanguageCode | null>(null);
-
-  useEffect(() => {
-    if (languageReady && languageAtStart.current === null) {
-      languageAtStart.current = language;
-    }
-  }, [languageReady, language]);
+  const { language } = useLanguagePreference();
 
   function continueToAccount() {
-    const baseline = languageAtStart.current ?? language;
-    promptRtlReloadIfNeeded(baseline, language);
+    // Second chance if they chose "Later" on the language step.
+    promptRtlReloadIfLayoutMismatch(language);
     router.push('/auth?mode=signup&reason=onboarding');
   }
 

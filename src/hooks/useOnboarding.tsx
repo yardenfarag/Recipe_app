@@ -12,6 +12,7 @@ import {
 import {
   isOnboardingCompleteValue,
   ONBOARDING_COMPLETE_KEY,
+  ONBOARDING_STEP_KEY,
 } from '@/lib/onboardingStorage';
 import { isWalkthroughPendingValue, WALKTHROUGH_STATE_KEY } from '@/lib/walkthroughStorage';
 
@@ -64,6 +65,7 @@ export function OnboardingProvider({ children }: { children: ReactNode }) {
         [ONBOARDING_COMPLETE_KEY, 'true'],
         [WALKTHROUGH_STATE_KEY, 'pending'],
       ]);
+      await AsyncStorage.removeItem(ONBOARDING_STEP_KEY);
     } catch {
       // Still keep in-memory completed so this session is not stuck.
     }

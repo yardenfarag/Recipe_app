@@ -1208,6 +1208,7 @@ export function RecipeView({
           <Section
             title={t('recipe.instructions')}
             count={baseInstructions.length}
+            countKind="steps"
             headerRight={
               <View className="flex-row items-center gap-2">
                 {baseInstructions.length > 0 ? (
@@ -1583,11 +1584,13 @@ function StepperButton({
 function Section({
   title,
   count,
+  countKind = 'ingredients',
   children,
   headerRight,
 }: {
   title: string;
   count?: number;
+  countKind?: 'ingredients' | 'steps';
   children: ReactNode;
   headerRight?: ReactNode;
 }) {
@@ -1602,7 +1605,9 @@ function Section({
           </Text>
           {count != null && (
             <Text className="text-sm font-medium" style={{ color: colors.textSecondary }}>
-              {t(count === 1 ? 'recipe.itemCountOne' : 'recipe.itemCountOther', { count })}
+              {countKind === 'steps'
+                ? t(count === 1 ? 'recipe.stepCountOne' : 'recipe.stepCountOther', { count })
+                : t(count === 1 ? 'recipe.itemCountOne' : 'recipe.itemCountOther', { count })}
             </Text>
           )}
         </View>
