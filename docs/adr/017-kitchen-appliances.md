@@ -1,6 +1,6 @@
 # ADR 017: Kitchen appliances on each recipe
 
-**Status:** Proposed (design in progress)
+**Status:** Accepted by Harel. Open questions for Yarden are listed at the end.
 **Date:** 2026-10-22
 **Deciders:** Harel (implementation), Yarden (product)
 **Tickets:** PIN-26
@@ -140,9 +140,28 @@ type AlternativeKey = 'by_hand' | 'pre_ground' | 'cut_to_check';
 - It is run by hand once, after the migration and functions are deployed. It is kept as a function so it can be re-run when the catalog grows.
 - **Rejected:** no backfill (the feature looks broken for existing users), and lazy fill-on-open (a new endpoint, race conditions, and a section that pops in after load, for a saving of about 6 cents).
 
-### 9. Still open
+### 9. Build slices, deploy order and tests
 
-- Rollout and deploy order (migration, functions, app), and the testing plan per slice.
+| # | Slice | Tests |
+|---|---|---|
+| 1 | Catalog and types: `src/lib/applianceCatalog.ts`, the `RecipeAppliance` type, a sanitizer (drops unknown keys and items citing missing steps), mirrored in `_shared` | Vitest unit tests, plus a parity test between the app and `_shared` copies |
+| 2 | Migration `0044`: nullable `appliances jsonb` + check constraint on `recipes` and `recipe_cards`; the Hub publish trigger and share snapshot carry the field | pgTAP: NULL and `[]` accepted, non-array rejected, Hub copy keeps the field |
+| 3 | Backend: `appliances` task kind, prompt, enum schema, wired into extract, invent, repair and transform; fail-soft; usage logging | Deno tests (invalid output → NULL, error → NULL), plus the 30-recipe eval against decision 7's targets |
+| 4 | App data path: save, preview draft, Hub card mapping, remix | Vitest: the field saves and round-trips, and rows without it load unchanged |
+| 5 | UI: `<ApplianceIcon>`, the "What you'll need" section, the step sheet, the card line; strings in all five locales | Component tests (`@testing-library/react-native`, `await render(...)`) in LTR (en) and RTL (he): groups, benefit and alternative labels, mirroring, `[]` state, NULL renders nothing. `locales.test.ts` checks keys. Manual check on iOS, Android and web |
+| 6 | `backfill-appliances` admin function | Deno tests: non-admin → 403, only NULL rows touched, re-run is a no-op |
+
+**Deploy order:**
+1. Apply the migration in production. The column is unused, so it's safe for current builds.
+2. Deploy the four functions. They return `appliances`, and current builds ignore it.
+3. Merge the app PR. Web deploys automatically, and the column already exists.
+4. Run the backfill once.
+5. Store builds follow the normal release flow.
+
+**PRs:** three small, stacked PRs, each reviewable in about 15 minutes:
+1. ADR, catalog and migration (slices 1–2)
+2. Backend, eval and backfill (slices 3 and 6)
+3. App data path and UI (slices 4–5)
 
 ### Questions for Yarden
 
