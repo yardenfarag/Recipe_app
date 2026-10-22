@@ -102,11 +102,39 @@ type AlternativeKey = 'by_hand' | 'pre_ground' | 'cut_to_check';
   - Expected latency is under a second.
 - **Rejected:** adding `appliances` to the shared `RECIPE_SCHEMA`. It would change the output of five models (requiring a full eval rerun) and make every extraction schema heavier. It would also leave remixed recipes with stale appliances and give older recipes no path to get them.
 
-### 7. Still open
+### 7. Required vs optional, and how "no invention" is measured
 
-- The exact required-vs-optional rule, and the prompt wording for "clearly implied" that doesn't conflict with `gemini.ts` lines 45 and 513.
+**Required:** a step cannot be done without it and there is no reasonable home workaround.
+- "Bake at 180°C" → oven.
+- "Blend until smooth" → blender. If the source doesn't say which kind, the item is `blender` with `alternative: immersion_blender`.
+- "Churn in an ice cream maker" → ice cream maker.
+
+**Optional:** it helps, but a home cook can manage without it. It always carries a `benefit` and, where one exists, an `alternative`.
+- Stand mixer → less effort, or by hand.
+- Mortar and pestle → richer flavor, or pre-ground spices.
+- Meat thermometer → juicier meat, or cut to check.
+
+**Not listed:**
+- Everyday basics.
+- Equipment mentioned only in commentary ("I love my air fryer") and not in a step.
+- Anything the model would have to guess.
+
+**Rules for the model:**
+1. Every item cites a step whose text names it or clearly implies it. Clear implications: a temperature with bake or roast → oven; "blend until smooth" → blender; "pressure cook" → pressure cooker; "whip to stiff peaks" → mixer (optional); "grind" → mortar or spice grinder; simmer, boil, sauté or pan-fry → stovetop.
+2. **If unsure, leave it out.** A missing chip is a small gap; a wrong chip costs trust.
+3. When a step offers two appliances ("bake, or air fry at 200°C"), the first is the item and the second is its `alternative`.
+
+**The extraction prompts are unchanged.** The rule "never invent … equipment" in `gemini.ts` (lines 45 and 513) keeps the extraction from adding equipment to steps. The `appliances` task only reads the final steps, so the two rules don't conflict.
+
+**Measurement:**
+- An eval set in `eval/` of about 30 real recipes with hand-labelled appliances. It covers bake, blend, grill, slow and pressure cooking, no-cook, and traps (equipment only in commentary, "or" alternatives, Hebrew sources).
+- Targets before merge: **precision ≥ 95%**, **recall ≥ 85%**, **required/optional correct ≥ 90%**.
+- The sanitizer also drops, in code, any item whose cited steps don't exist.
+
+### 8. Still open
+
 - Backfill of existing recipes: none, or lazy with a daily cap.
-- How "no invention" is measured (eval fixtures, precision and recall).
+- Rollout and deploy order (migration, functions, app), and the testing plan per slice.
 
 ### Questions for Yarden
 
