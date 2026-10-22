@@ -27,15 +27,75 @@ The ticket was written on 2026-10-04, before per-task models (ADR 015). Facts th
 - **No index yet.** Filtering by appliance is a follow-up. Add a GIN index when that query ships.
 - Rejected: a normalized `recipe_appliances` table. It is cleaner for filtering, but the Hub publish trigger, share snapshots and the save path would all need extra joins or writes, for a small list that is never read on its own.
 
-### 2. Open questions (to be decided)
+### 2. Item shape: structured, translatable, grounded in steps
 
-- Item shape: free-text `note` vs a structured alternative (translation cost).
-- Where extraction fills it: inside the shared `RECIPE_SCHEMA`, or a separate cheap task run on the final recipe (also covers remix, repair and backfill).
-- Required vs optional: the rule the model follows, and how "clearly implied" is worded without breaking the no-invention rule.
-- The controlled list of appliance keys and their icons.
-- UI placement in `RecipeView` and the list cards.
+```ts
+type RecipeAppliance = {
+  key: ApplianceKey;                 // from the catalog (decision 3)
+  required: boolean;
+  benefit?: BenefitKey;              // optional items only: why it's worth using
+  alternative?: ApplianceKey | AlternativeKey; // the workaround
+  steps: number[];                   // instruction step numbers that use it
+  origin: 'source' | 'tip';          // decision 5
+};
+
+type BenefitKey =
+  | 'richer_flavor' | 'smoother_texture' | 'juicier_meat' | 'crispier'
+  | 'more_precise' | 'faster' | 'less_effort' | 'even_cooking';
+
+type AlternativeKey = 'by_hand' | 'pre_ground' | 'cut_to_check';
+```
+
+- **No free text.** Every value is a key that renders through `t()` in all five locales, so appliances never need `translate-recipe` or a model call, and cached `recipe_translations` rows stay valid. Rejected: the ticket's `note?: string`, which comes back in the source language and would need translating and caching.
+- **Steps are the grounding.** A `source` item must cite at least one existing step. The sanitizer drops items whose steps don't exist. This makes "don't invent appliances" a check in code, and lets the UI say *"used in step 3"*.
+- **Lists are closed but extendable.** Benefit and alternative keys are small fixed sets. Adding one means adding a key and five translations, with no migration.
+
+### 3. One appliance catalog, grown from real data
+
+- A single source of truth, `src/lib/applianceCatalog.ts`, mirrored in `supabase/functions/_shared/` with a parity test (the same pattern as `recipeCompleteness.ts` ↔ `classifyRecipe.ts`).
+- Each entry: `key`, `category`, `tier` (`basic` | `special`), `icon`, and multilingual `aliases` (en, es, he, ru, ar, plus brand names like "KitchenAid" or "Instant Pot") that map the model's wording to a key.
+- First version (about 33 entries):
+
+| Category | Keys |
+|---|---|
+| Heat | stovetop, oven, microwave, toaster, grill, air_fryer, deep_fryer |
+| Slow and pressure | slow_cooker, pressure_cooker, rice_cooker, sous_vide |
+| Blend and mix | blender, immersion_blender, food_processor, stand_mixer, hand_mixer, spice_grinder |
+| Tools | mortar_and_pestle, meat_thermometer, kitchen_scale, zester, mandoline, cast_iron_pan, dutch_oven, wok, springform_pan, pizza_stone |
+| Specialist | ice_cream_maker, waffle_maker, juicer, dehydrator, smoker |
+
+- **Never listed:** everyday basics everyone owns (knife, pot, frying pan, bowl, cutting board). They would be noise.
+- **Tier:** `basic` (stovetop, oven, microwave) vs `special` (everything else). The recipe screen shows both, with basic items smaller. List cards show only special required items.
+- **Growth from data:** a name the model returns that matches no key or alias is dropped from the recipe and logged in `ai_usage_events.metadata` (`unmatched_appliances`). The catalog grows from what users actually snap.
+- **Icons:** one `<ApplianceIcon>` component. It uses MaterialCommunityIcons where a glyph exists (blender, microwave, stove, toaster, grill, rice, thermometer, scale, kettle) and about 8 custom `react-native-svg` icons in the same line style where none does (oven, food processor, stand mixer, air fryer, pressure cooker, slow cooker, deep fryer, sous vide). Any icon can be swapped in one place.
+
+### 4. User experience
+
+- **Placement:** a "What you'll need" section directly under the recipe header, before ingredients, because the value is knowing before you start. It lives in its own component, not inline in `RecipeView.tsx`.
+- **Two groups:** **Required** (solid chips) and **Makes it better** (muted chips with the benefit and the workaround, e.g. "Mortar & pestle · Richer flavor · or use ground spices").
+- **Tap a chip** to open a small sheet showing which step uses it.
+- **Empty states:** `[]` shows "No special equipment". `NULL` shows nothing.
+- **Library cards:** only special required items, e.g. "Needs: air fryer".
+- **RTL:** the row and chip contents mirror through `useRtl()`, and it is checked in Hebrew and Arabic.
+- **Follow-up ("My kitchen"):** the catalog keys are the ones a future owned-appliances setting will store, so chips can later show ✓ or ⚠. `sanitizeKitchenProfile` will need extending then.
+
+### 5. Pinch tips (shape now, switch pending Yarden)
+
+- Items with `origin: 'source'` follow the no-invention rule strictly: only what the source says or a step clearly implies.
+- Items with `origin: 'tip'` are suggestions the source didn't mention (e.g. a meat thermometer for a steak). They are optional only, at most 2 per recipe, limited to benefit tools in the catalog, and labelled "Pinch tip" in the UI, the same way "Guess the recipe" is labelled as an AI guess.
+- The data shape supports tips from day one. **Whether tips are switched on is Yarden's product call,** because it bends the ticket's acceptance criterion "doesn't invent appliances". Until they decide, tips stay off and only `source` items are produced.
+
+### 6. Still open
+
+- Where extraction fills it: inside the shared `RECIPE_SCHEMA`, or a separate cheap task kind run on the final recipe (which would also cover remix, repair and backfill).
+- The exact required-vs-optional rule, and the prompt wording for "clearly implied" that doesn't conflict with `gemini.ts` lines 45 and 513.
 - Backfill of existing recipes: none, or lazy with a daily cap.
 - How "no invention" is measured (eval fixtures, precision and recall).
+
+### Questions for Yarden
+
+1. Pinch tips (decision 5): on, off, or later?
+2. Migration number: master is at 0043, and open PR #4 also claimed 0041–0044. Is 0044 free for this?
 
 ## Consequences
 
