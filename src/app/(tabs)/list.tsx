@@ -129,9 +129,14 @@ export default function ShoppingListScreen() {
     return rows;
   }, [items, t]);
 
+  // FlatList counts ListHeaderComponent (the progress line, shown once something
+  // is checked) as row 0, so sticky indices shift by one — otherwise the last
+  // item of the previous aisle sticks instead of the aisle header.
+  const listHeaderOffset = checkedCount > 0 ? 1 : 0;
   const stickyHeaderIndices = useMemo(
-    () => listRows.flatMap((row, index) => (row.kind === 'header' ? [index] : [])),
-    [listRows],
+    () =>
+      listRows.flatMap((row, index) => (row.kind === 'header' ? [index + listHeaderOffset] : [])),
+    [listRows, listHeaderOffset],
   );
 
   const typingDuplicateCount = useMemo(() => {
