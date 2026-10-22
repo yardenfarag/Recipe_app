@@ -131,9 +131,17 @@ type AlternativeKey = 'by_hand' | 'pre_ground' | 'cut_to_check';
 - Targets before merge: **precision ≥ 95%**, **recall ≥ 85%**, **required/optional correct ≥ 90%**.
 - The sanitizer also drops, in code, any item whose cited steps don't exist.
 
-### 8. Still open
+### 8. One-time admin backfill of existing rows
 
-- Backfill of existing recipes: none, or lazy with a daily cap.
+- Production on 2026-10-22: 105 recipes (10 users) and 89 Hub cards. At about $0.0003 a row, backfilling all 194 costs **about $0.06**.
+- A new Edge Function, `backfill-appliances`, is **admin-only**. It checks the caller with `is_current_user_admin()` and returns 403 otherwise. It then uses the service role, because it covers every user's recipes and the Hub. This differs from `backfill-thumbnails`, which runs per user under RLS.
+- It processes rows `WHERE appliances IS NULL` in batches of 20, `recipes` then `recipe_cards`. It is idempotent: a re-run only touches rows that are still NULL. A failed call leaves the row NULL for the next run.
+- It costs users no credits. Calls are logged to `ai_usage_events` with action `appliances_backfill`.
+- It is run by hand once, after the migration and functions are deployed. It is kept as a function so it can be re-run when the catalog grows.
+- **Rejected:** no backfill (the feature looks broken for existing users), and lazy fill-on-open (a new endpoint, race conditions, and a section that pops in after load, for a saving of about 6 cents).
+
+### 9. Still open
+
 - Rollout and deploy order (migration, functions, app), and the testing plan per slice.
 
 ### Questions for Yarden
