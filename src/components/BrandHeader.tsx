@@ -58,7 +58,9 @@ export function BrandHeader({
           <CookieMark size={isHero ? 42 : 26} color={colors.primary} />
         </View>
         {!isHero && (
-          <View className="min-w-0 flex-1" style={{ alignItems: blockAlign }}>
+          // Stretch (not flex-start) so the title block is bounded by the row and
+          // wraps — a shrink-wrapped block lets long RTL subtitles run off-screen.
+          <View className="min-w-0 flex-1" style={{ alignItems: 'stretch' }}>
             {/* Brand stays Latin / LTR, but sits on the reading-start side. */}
             <Text
               className="text-[11px] font-semibold"

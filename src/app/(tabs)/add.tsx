@@ -119,7 +119,8 @@ export default function AddRecipeScreen() {
   } = useProfile();
   const { colors } = useThemePreference();
   const { isMediumUp } = useBreakpoint();
-  const { chevronForward } = useRtl();
+  const { chevronForward, textAlign, writingDirection } = useRtl();
+  const rtlText = { textAlign, writingDirection };
   const intentProgress = useSnapIntentProgress(mode);
   const reduceMotion = useReducedMotion();
 
@@ -773,7 +774,7 @@ export default function AddRecipeScreen() {
               entering={reduceMotion ? undefined : FadeIn.duration(220)}
               exiting={reduceMotion ? undefined : FadeOut.duration(140)}
               className="mb-3 text-xs leading-5"
-              style={{ color: colors.textSecondary }}
+              style={{ color: colors.textSecondary, ...rtlText }}
             >
               {t("snap.inventDisclaimer")}
             </Animated.Text>
@@ -783,14 +784,14 @@ export default function AddRecipeScreen() {
             key={`url-label-${mode}`}
             entering={reduceMotion ? undefined : FadeIn.duration(200)}
             className="mb-2 text-sm font-semibold"
-            style={{ color: colors.text }}
+            style={{ color: colors.text, ...rtlText }}
           >
             {mode === "invent" ? t("snap.inventUrlLabel") : t("snap.urlLabel")}
           </Animated.Text>
           {signedInQuotaLabel ? (
             <Text
               className="mb-2 text-xs font-medium"
-              style={{ color: colors.accent }}
+              style={{ color: colors.accent, ...rtlText }}
             >
               {signedInQuotaLabel}
             </Text>
@@ -808,7 +809,7 @@ export default function AddRecipeScreen() {
             />
             <TextInput
               className="flex-1 px-3 py-4 text-base"
-              style={{ color: colors.text }}
+              style={{ color: colors.text, textAlign }}
               placeholder={
                 mode === "invent"
                   ? t("snap.inventUrlPlaceholder")
@@ -874,6 +875,7 @@ export default function AddRecipeScreen() {
                 style={{
                   color:
                     banner.kind === "error" ? colors.danger : colors.primary,
+                  ...rtlText,
                 }}
               >
                 {banner.message}
@@ -943,14 +945,14 @@ export default function AddRecipeScreen() {
             <Text
               accessibilityRole="header"
               className="flex-1 text-sm font-semibold"
-              style={{ color: colors.text }}
+              style={{ color: colors.text, ...rtlText }}
             >
               {t("snap.shareTitle")}
             </Text>
           </View>
           <Text
             className="text-xs leading-5"
-            style={{ color: colors.textSecondary }}
+            style={{ color: colors.textSecondary, ...rtlText }}
           >
             {isExpoGo ? t("snap.shareBodyExpoGo") : t("snap.shareBody")}
           </Text>
