@@ -88,14 +88,15 @@ type AlternativeKey = 'by_hand' | 'pre_ground' | 'cut_to_check';
 ### 6. A separate `appliances` task, run on the final recipe
 
 - New task kind `appliances` in `TASK_MODELS` (`_shared/llmClient.ts`): `openai/gpt-6-luna`, falling back to `qwen/qwen3.8-flash`, reasoning `none`. It is called through `generateLlmJson()`.
-- **Input:** the finished recipe, trimmed to the title, ingredient names and numbered step text (no amounts, metric or spoon values). **Output:** the item list from decision 2. The JSON schema lists the catalog keys as an `enum`, so the model can only answer with known keys.
+- **Input:** the finished recipe, trimmed to the title, ingredient names and numbered step text (no amounts, metric or spoon values). **Output:** the item list from decision 2. The JSON schema lists the catalog keys as an `enum`. The router sends schemas with `strict: false`, so the enum guides the model but does not bind it; `sanitizeRecipeAppliances` is what guarantees only known keys are kept. Code: `supabase/functions/_shared/recipeAppliances.ts` (`deriveRecipeAppliances`).
 - **Where it runs:** on the server, after the recipe is final and before the Hub publish, in extract-recipe, invent-recipe, repair-recipe and transform-recipe (remix and kitchen auto-apply). One implementation covers all flows and a later backfill.
 - **Fails soft:** an error, timeout or invalid output gives `appliances = NULL` ("not analysed"). The recipe is still returned. Extraction status and credits are never affected.
 - **Cost controls:**
   - Library and Hub cache hits reuse the stored list, so no call is made.
   - Remix reruns it only when the steps changed.
   - There is no retry beyond the router's single fallback.
-  - Each call is logged to `ai_usage_events` with action `appliances`.
+  - Each call is added to the parent event's `usages` (extract, invent, repair, remix), so its cost shows in that row's `metadata.llm_calls` with `kind: 'appliances'` and the Snap's total stays in one row. Names the model lists as `unlisted` that match no alias go to `metadata.unmatched_appliances`.
+  - Tips are controlled by the `APPLIANCE_TIPS_ENABLED` secret (off unless `true`), so turning them on needs no code change.
 - **Cost estimate** (production data, 2026-10-22):
   - Saved recipes average about 1,600 characters (p90 about 2,700), so input is about 1,100–1,600 tokens including the prompt and schema, and output about 150–250 tokens.
   - At Luna's $0.10 / $0.50 per million tokens, that is about **$0.0003 per recipe**, roughly the same as the content gate ($0.00026) and about 10% of an extraction ($0.0024 average over the last 30 days).
