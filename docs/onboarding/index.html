@@ -596,6 +596,7 @@ npx supabase login
 npx supabase link --project-ref ccobefeofhnncpgifxel
 
 <span class="c"># Migrations</span>
+npx supabase migration new &lt;name&gt;   <span class="c"># creates &lt;timestamp&gt;_&lt;name&gt;.sql</span>
 npx supabase db push --dry-run
 npx supabase db push
 
@@ -636,7 +637,7 @@ curl -X POST 'https://ccobefeofhnncpgifxel.supabase.co/functions/v1/extract-reci
   <h2>Postgres with Row Level Security</h2>
   <ul>
     <li>One Supabase project: <code>recipe_app</code>, ref <code>ccobefeofhnncpgifxel</code>, region eu-central-1, Postgres 17.</li>
-    <li>40 numbered migrations in <code>supabase/migrations/</code>. Never edit an old one; add <code>0041_&lt;name&gt;.sql</code>.</li>
+    <li>Migrations live in <code>supabase/migrations/</code>. Never edit an old one. 0001 to 0043 are numbered; every new one gets a UTC timestamp from <code>npx supabase migration new &lt;name&gt;</code> (e.g. <code>20261022150000_recipe_appliances.sql</code>), so two branches can't claim the same number. <code>scripts/migrations.test.mjs</code> fails CI on a new 4-digit number or a duplicate version.</li>
     <li>RLS is on for every table. User tables: <code>auth.uid() = user_id</code>. Billing tables have no client policies; only Edge Functions touch them with the service role.</li>
     <li>Dashboard: <a href="https://supabase.com/dashboard/project/ccobefeofhnncpgifxel">supabase.com/dashboard/project/ccobefeofhnncpgifxel</a>.</li>
   </ul>
