@@ -52,22 +52,22 @@ type AlternativeKey = 'by_hand' | 'pre_ground' | 'cut_to_check';
 
 ### 3. One appliance catalog, grown from real data
 
-- A single source of truth, `src/lib/applianceCatalog.ts`, mirrored in `supabase/functions/_shared/` with a parity test (the same pattern as `recipeCompleteness.ts` ↔ `classifyRecipe.ts`).
-- Each entry: `key`, `category`, `tier` (`basic` | `special`), `icon`, and multilingual `aliases` (en, es, he, ru, ar, plus brand names like "KitchenAid" or "Instant Pot") that map the model's wording to a key.
-- First version (about 33 entries):
+- One module, `src/lib/appliances.ts` (catalog, types, sanitizer). It has a byte-identical copy at `supabase/functions/_shared/appliances.ts` for the Edge Functions, and `src/lib/appliances.test.ts` fails if the two differ. The module has no imports, so it runs in both Hermes and Deno.
+- Each entry: `key`, `category`, `tier` (`basic` | `special`), and multilingual `aliases` (en, es, he, ru, ar, plus brand names like "KitchenAid" or "Instant Pot") that map the model's wording to a key.
+- First version (32 entries):
 
 | Category | Keys |
 |---|---|
 | Heat | stovetop, oven, microwave, toaster, grill, air_fryer, deep_fryer |
 | Slow and pressure | slow_cooker, pressure_cooker, rice_cooker, sous_vide |
 | Blend and mix | blender, immersion_blender, food_processor, stand_mixer, hand_mixer, spice_grinder |
-| Tools | mortar_and_pestle, meat_thermometer, kitchen_scale, zester, mandoline, cast_iron_pan, dutch_oven, wok, springform_pan, pizza_stone |
+| Tools | mortar_and_pestle, kitchen_thermometer, kitchen_scale, zester, mandoline, cast_iron_pan, dutch_oven, wok, springform_pan, pizza_stone |
 | Specialist | ice_cream_maker, waffle_maker, juicer, dehydrator, smoker |
 
 - **Never listed:** everyday basics everyone owns (knife, pot, frying pan, bowl, cutting board). They would be noise.
 - **Tier:** `basic` (stovetop, oven, microwave) vs `special` (everything else). The recipe screen shows both, with basic items smaller. List cards show only special required items.
 - **Growth from data:** a name the model returns that matches no key or alias is dropped from the recipe and logged in `ai_usage_events.metadata` (`unmatched_appliances`). The catalog grows from what users actually snap.
-- **Icons:** one `<ApplianceIcon>` component. It uses MaterialCommunityIcons where a glyph exists (blender, microwave, stove, toaster, grill, rice, thermometer, scale, kettle) and about 8 custom `react-native-svg` icons in the same line style where none does (oven, food processor, stand mixer, air fryer, pressure cooker, slow cooker, deep fryer, sous vide). Any icon can be swapped in one place.
+- **Icons** are UI-only, so they are not in the shared catalog. One `<ApplianceIcon>` component maps every key to an icon (a `Record<ApplianceKey, …>`, so a missing icon is a type error). It uses MaterialCommunityIcons where a glyph exists (blender, microwave, stove, toaster, grill, rice, thermometer, scale, kettle) and about 8 custom `react-native-svg` icons in the same line style where none does (oven, food processor, stand mixer, air fryer, pressure cooker, slow cooker, deep fryer, sous vide). Any icon can be swapped in one place.
 
 ### 4. User experience
 
@@ -144,7 +144,7 @@ type AlternativeKey = 'by_hand' | 'pre_ground' | 'cut_to_check';
 
 | # | Slice | Tests |
 |---|---|---|
-| 1 | Catalog and types: `src/lib/applianceCatalog.ts`, the `RecipeAppliance` type, a sanitizer (drops unknown keys and items citing missing steps), mirrored in `_shared` | Vitest unit tests, plus a parity test between the app and `_shared` copies |
+| 1 | Catalog and types: `src/lib/appliances.ts`, the `RecipeAppliance` type, a sanitizer (drops unknown keys and items citing missing steps), with a byte-identical copy in `_shared` | Vitest unit tests, plus a parity test between the app and `_shared` copies |
 | 2 | Migration `0044`: nullable `appliances jsonb` + check constraint on `recipes` and `recipe_cards`; the Hub publish trigger and share snapshot carry the field | pgTAP: NULL and `[]` accepted, non-array rejected, Hub copy keeps the field |
 | 3 | Backend: `appliances` task kind, prompt, enum schema, wired into extract, invent, repair and transform; fail-soft; usage logging | Deno tests (invalid output → NULL, error → NULL), plus the 30-recipe eval against decision 7's targets |
 | 4 | App data path: save, preview draft, Hub card mapping, remix | Vitest: the field saves and round-trips, and rows without it load unchanged |
