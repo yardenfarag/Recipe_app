@@ -8,7 +8,7 @@
 
 ## Executive summary
 
-The "save a recipe from a TikTok/Reel" niche is real and crowded. At least six funded or well-made apps (ReciMe, Pluck, Honeydew, Flavorish, FoodiePrep, Nutrola) already sell the same core promise, so extraction by itself does not set Pinch apart. Pinch has two real advantages. It charges per use rather than by subscription, which almost no one else offers. And it fully supports right-to-left languages (Hebrew, Arabic), which no competitor appears to. Its free tier is a weakness today: 3 extractions a month (`FREE_MONTHLY_EXTRACT_LIMIT`), tied with Pluck for the smallest in the niche. The no-subscription pitch only lands if the free tier grows to roughly 10–15 (also proposed in PIN-56). The biggest risks are the platforms themselves: Instagram/TikTok access through ScrapeCreators is a single point of failure, and a stress-case video fallback loses money on every extraction (see `04-token-economics.md`). Recommended focus: market Pinch as **"the recipe saver without a subscription"** and lead with RTL/multilingual markets, where the subscription incumbents are weakest.
+The "save a recipe from a TikTok/Reel" niche is real and crowded. At least six funded or well-made apps (ReciMe, Pluck, Honeydew, Flavorish, FoodiePrep, Nutrola) already sell the same core promise, so extraction by itself does not set Pinch apart. Pinch has two real advantages. It charges per use rather than by subscription, which almost no one else offers. And it fully supports right-to-left languages (Hebrew, Arabic), which no competitor appears to. Its free tier was a weakness when this was written: 3 extractions a month (`FREE_MONTHLY_EXTRACT_LIMIT`), tied with Pluck for the smallest in the niche. This review proposed growing it to roughly 10–15 (also proposed in PIN-56); it went to 5 (PIN-58), then 10 (PIN-57, ADR 016). The biggest risks are the platforms themselves: Instagram/TikTok access through ScrapeCreators is a single point of failure, and a stress-case video fallback loses money on every extraction (see `04-token-economics.md`). Recommended focus: market Pinch as **"the recipe saver without a subscription"** and lead with RTL/multilingual markets, where the subscription incumbents are weakest.
 
 ## Market overview
 
@@ -52,13 +52,13 @@ The "save a recipe from a TikTok/Reel" niche is real and crowded. At least six f
 | **Mela** | Premium Apple organizer | One-time/paid | Beautiful, iCloud sync | Apple-only, no social-video AI |
 | **Samsung Food (Whisk)** | Big-tech adjacent | Free + paid tier | Huge recipe database, distribution via Samsung devices | No confirmed social-video extraction, generic |
 | **Social Spork, Recaipy, RecipeAI** | Web converters | Free/cheap | Zero-install | No library, shopping list, or cook mode |
-| **Pinch** | New entrant | 5 free extractions/month for signed-in users (raised from 3 on 2026-10-20; guests must sign up first); credit packs 10/$1.99, 30/$4.99, 100/$12.99 (live on iOS, Android pending) | **No subscription**, full web app + mobile, RTL + 5 languages, remix/substitutions, cook-along video, cached recipes free | Free tier (3/month) as stingy as Pluck's, no brand or reviews yet, purchases not live, web can't sell credits (no Stripe in the account's country), costly on Instagram video fallback |
+| **Pinch** | New entrant | 10 free extractions/month for signed-in users (raised from 3 to 5 on 2026-10-20, then to 10 on 2026-10-21; guests must sign up first); credit packs 10/$1.99, 30/$4.99, 100/$12.99 (live on iOS, Android pending) | **No subscription**, full web app + mobile, RTL + 5 languages, remix/substitutions, cook-along video, cached recipes free | No brand or reviews yet, purchases not live, web can't sell credits (no Stripe in the account's country), costly on Instagram video fallback |
 
 **Competitive insights**
 1. **Everyone has converged on the same feature set:** link/share-sheet import, AI extraction, library, grocery list, meal planner. Extraction quality is table stakes and hard to show in marketing.
-2. **Pricing is almost all subscription,** at $40–60 a year or $3–12 a month. Pinch's credits are a real structural difference: at $0.13–0.20 per recipe, a casual user who saves 3 recipes a month pays nothing (inside the free 3). A user saving 10 a month pays ~$15–24 a year, well under ReciMe. A heavy user saving 30 a month pays ~$47–72 a year, about ReciMe's price.
+2. **Pricing is almost all subscription,** at $40–60 a year or $3–12 a month. Pinch's credits are a real structural difference: at $0.13–0.20 per recipe, a casual user who saves 10 recipes a month pays nothing (inside the free 10). A user saving 20 a month pays for 10 of them, ~$16–24 a year, well under ReciMe. A heavy user saving 30 a month pays ~$31–48 a year, still under ReciMe's price.
 3. **Competitors win on SEO,** not product. Pluck and Honeydew publish many "X vs Y" and "best recipe app 2026" pages, which make up most of the search results for this space. Pinch's landing page has three how-to guides but no competitor comparison pages.
-4. **Free-tier stinginess is the top user pain point** that shows up across reviews. Pinch's current 3/month doesn't exploit this. Raising it to 10–15 would.
+4. **Free-tier stinginess is the top user pain point** that shows up across reviews. Pinch's 3/month when this was written didn't exploit this. It's now 10 (ADR 016), twice ReciMe's and Flavorish's.
 5. **No competitor shows meaningful RTL or Hebrew/Arabic support.** That is uncontested ground.
 
 ## Market opportunities
@@ -116,8 +116,8 @@ The "save a recipe from a TikTok/Reel" niche is real and crowded. At least six f
 
 ## Recommended next steps
 
-- [x] Free tier raised from 3 to 5 a month (PIN-58, 2026-10-20). Still to do: rewrite the landing hero and store subtitle around "no subscription".
-- [ ] Ship credit purchases (finish `docs/RECIPE_CREDITS_ROLLOUT.md`, which still says 15 free) so the positioning is true on day one.
+- [x] Free tier raised from 3 to 5 a month (PIN-58, 2026-10-20), then to 10 (PIN-57, ADR 016, 2026-10-21). Still to do: rewrite the landing hero and store subtitle around "no subscription".
+- [ ] Ship credit purchases (finish `docs/RECIPE_CREDITS_ROLLOUT.md`) so the positioning is true on day one.
 - [ ] Add 3 competitor comparison pages to the site (ReciMe alternative, Paprika for Android, Pluck vs Pinch).
 - [ ] Localize store listings in Hebrew and Arabic; plan an Israel-first soft launch to build reviews.
 - [ ] Meter video-fallback frequency for 2–4 weeks and decide whether video extractions cost 2 credits.

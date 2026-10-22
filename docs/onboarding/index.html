@@ -266,7 +266,7 @@ details>*:not(summary){margin-bottom:12px}
   <h3>Money model</h3>
   <ul>
     <li>No subscription.</li>
-    <li>Every signed-in user gets <b>5 free extract credits per calendar month (UTC)</b>.</li>
+    <li>Every signed-in user gets <b>10 free extract credits per calendar month (UTC)</b>.</li>
     <li>More credits are bought as one-time packs: 10, 30 or 100. Purchased credits never expire.</li>
     <li>Purchases go through RevenueCat. They are <b>switched off</b> right now (<code>EXPO_PUBLIC_CREDIT_PURCHASES_ENABLED=false</code>).</li>
   </ul>
@@ -1073,7 +1073,7 @@ npx supabase test db                                             <span class="c"
     <thead><tr><th>Topic</th><th>Docs say</th><th>Code does</th></tr></thead>
     <tbody>
       <tr><td class="k">Guest mode</td><td>ADR 002, WORKFLOWS.md: guests get 3 extractions and 3 saves</td><td>Sign-in is required. <code>extract-recipe</code> and <code>invent-recipe</code> return <code>auth_required</code>. Only <code>match-fridge</code> still accepts a guest id. Guest code is left over.</td></tr>
-      <tr><td class="k">Free credits</td><td>ADR 012 and migration 0016: 15 per month</td><td>3 per month (<code>FREE_MONTHLY_EXTRACT_LIMIT</code>).</td></tr>
+      <tr><td class="k">Free credits</td><td>ADR 012 and migration 0016: 15 per month</td><td>10 per month (<code>FREE_MONTHLY_EXTRACT_LIMIT</code>, ADR 016).</td></tr>
       <tr><td class="k">Pinch Plus</td><td>ADR 011: Free 3 / Plus 100 per month</td><td>Retired. Credits only (ADR 012 recipe credits).</td></tr>
       <tr><td class="k">Expo docs version</td><td><code>AGENTS.md</code>: v57</td><td>SDK 54.</td></tr>
       <tr><td class="k">Content ladder</td><td>ADR 004: video first, all sources in one prompt</td><td>Text first; video only if text is partial and the clip is under 3 minutes.</td></tr>
@@ -1133,7 +1133,7 @@ npx supabase test db                                             <span class="c"
       <tr><td class="k">Partial result</td><td>A recipe missing ingredients or steps. Saveable; can be repaired for a credit.</td></tr>
       <tr><td class="k">Guess the recipe / invent</td><td>A labelled AI guess from a dish photo or a post with no recipe.</td></tr>
       <tr><td class="k">Gate</td><td>A cheap check before expensive work: content gate (is it food?) and Jev extract gate (is there a recipe in the text?).</td></tr>
-      <tr><td class="k">Credit</td><td>One successful extraction, invention or repair upgrade. 5 free per month, then packs.</td></tr>
+      <tr><td class="k">Credit</td><td>One successful extraction, invention or repair upgrade. 10 free per month, then packs.</td></tr>
       <tr><td class="k">Remix</td><td>Whole-recipe transformation (vegan, high protein, free text). Free, 5 per recipe.</td></tr>
       <tr><td class="k">Swap / substitution</td><td>Replace one ingredient. "Swap" in UI text, "substitution" in code.</td></tr>
       <tr><td class="k">Hub</td><td>Public anonymous recipe cards. Also a free extraction cache.</td></tr>

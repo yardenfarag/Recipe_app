@@ -3,7 +3,7 @@
 /** Unused: guests can't extract; Snap requires sign-up / log-in first. */
 export const GUEST_EXTRACTION_LIMIT = 3;
 /** Calendar-month extracts for signed-in Free users (UTC YYYY-MM). */
-export const FREE_MONTHLY_EXTRACT_LIMIT = 5;
+export const FREE_MONTHLY_EXTRACT_LIMIT = 10;
 /** Lifetime free remixes per saved recipe or unsaved source URL. */
 export const RECIPE_REMIX_LIMIT = 5;
 /** @deprecated Use FREE_MONTHLY_EXTRACT_LIMIT — free is monthly now. */
