@@ -13,7 +13,7 @@ describe('credit pack catalog', () => {
     expect(displayCreditPacks()).toEqual([
       { id: 'pinch_credits_10', credits: 10, price: '$1.99', storePackage: undefined },
       { id: 'pinch_credits_30', credits: 30, price: '$4.99', storePackage: undefined },
-      { id: 'pinch_credits_100', credits: 100, price: '$12.99', storePackage: undefined },
+      { id: 'pinch_credits_100', credits: 100, price: '$7.99', storePackage: undefined },
     ]);
   });
 

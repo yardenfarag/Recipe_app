@@ -4,7 +4,7 @@ import type { PurchasesPackage } from 'react-native-purchases';
 export const CREDIT_PACKS = [
   { id: 'pinch_credits_10', credits: 10, catalogPrice: '$1.99' },
   { id: 'pinch_credits_30', credits: 30, catalogPrice: '$4.99' },
-  { id: 'pinch_credits_100', credits: 100, catalogPrice: '$12.99' },
+  { id: 'pinch_credits_100', credits: 100, catalogPrice: '$7.99' },
 ] as const;
 
 export type CreditPackId = (typeof CREDIT_PACKS)[number]['id'];
