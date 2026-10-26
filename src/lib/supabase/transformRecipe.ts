@@ -1,5 +1,6 @@
 import { FunctionsHttpError } from '@supabase/supabase-js';
 
+import type { RecipeAppliance } from '@/lib/appliances';
 import { supabase } from '@/lib/supabase/client';
 import { RecipeVariantKey } from '@/lib/recipeVariants';
 import { Ingredient, Instruction } from '@/types/recipe';
@@ -11,6 +12,11 @@ export interface TransformedRecipePayload {
   calories?: number;
   calories_reasoning?: string;
   summary: string;
+  /**
+   * Present only when the remix changed the steps (ADR 017): the new list, or null if it could not
+   * be analysed. Absent = keep the recipe's current appliances.
+   */
+  appliances?: RecipeAppliance[] | null;
 }
 
 export type TransformRecipeStatus = 'ok' | 'failed';
