@@ -17,6 +17,15 @@ deno report           # writes eval/results/summary.md
 
 Each step skips work that's already on disk. Pass `--force` to redo it. A full run cost $7.18 on 6 Oct 2026 ($2.67 candidates, the rest references and judges).
 
+## Appliances (PIN-26)
+
+```bash
+deno appliances --runs=3            # 32 Hebrew/English cases through the production appliances task
+deno appliances --only=he           # one language; --only=<id part> for single cases; --model=<slug> to try another model
+```
+
+Scored in code against hand labels in `cases/appliances.json` (no judge). Writes `results/appliances.md`. Targets are in ADR 017. A 3-run pass costs well under a cent. The scorer has its own tests: `npx -y deno test -A --no-lock eval/appliances_test.ts`.
+
 ## Layout
 
 | Path | In git | What |
@@ -25,6 +34,7 @@ Each step skips work that's already on disk. Pass `--force` to redo it. A full r
 | `cases/images.json` | yes | Wikimedia Commons files (title + license) for photo, content gate and invent |
 | `cases/gate.json` | yes | Extract-gate cases: full post, description-only variant, or a hand-written non-recipe caption |
 | `cases/invent.json` | yes | Invent prompts |
+| `cases/appliances.json` | yes | Appliances cases with hand labels (PIN-26) |
 | `models.ts` | yes | Shortlist per task. Production defaults are `TASK_MODELS` in `supabase/functions/_shared/llmClient.ts`. `model@low` pins the reasoning effort |
 | `private/` | no | Post snapshots, videos, images, reference labels |
 | `results/raw/` | no | One JSON per call, holding the output, latency, tokens and cost |

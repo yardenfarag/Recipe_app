@@ -1,3 +1,4 @@
+import { recipeAppliancesOf } from '../_shared/appliances.ts';
 import { corsHeaders, jsonResponse } from '../_shared/cors.ts';
 import { createAuthedSupabase } from '../_shared/recipeLookup.ts';
 import { createServiceSupabase } from '../_shared/supabaseAdmin.ts';
@@ -33,6 +34,8 @@ interface RecipeSnapshot {
   source_language?: string | null;
   calories_reasoning?: string | null;
   time_reasoning?: string | null;
+  /** ADR 017. Absent in shares created before PIN-26, which read as "not analysed". */
+  appliances?: unknown;
 }
 
 function generateToken(): string {
@@ -73,6 +76,7 @@ function snapshotFromRecipe(row: Record<string, unknown>): RecipeSnapshot {
     source_language: typeof row.source_language === 'string' ? row.source_language : 'en',
     calories_reasoning: typeof row.calories_reasoning === 'string' ? row.calories_reasoning : null,
     time_reasoning: typeof row.time_reasoning === 'string' ? row.time_reasoning : null,
+    appliances: recipeAppliancesOf(row),
   };
 }
 
@@ -95,7 +99,13 @@ function publicSnapshot(snapshot: RecipeSnapshot) {
     tags: snapshot.tags ?? undefined,
     missing_fields: snapshot.missing_fields ?? undefined,
     source_language: snapshot.source_language ?? undefined,
+    appliances: snapshotAppliances(snapshot),
   };
+}
+
+/** Snapshots are stored JSON, so clean the list again on the way out. */
+function snapshotAppliances(snapshot: RecipeSnapshot) {
+  return recipeAppliancesOf(snapshot);
 }
 
 function insertRowFromSnapshot(userId: string, snapshot: RecipeSnapshot) {
@@ -120,6 +130,7 @@ function insertRowFromSnapshot(userId: string, snapshot: RecipeSnapshot) {
     source_language: snapshot.source_language ?? 'en',
     calories_reasoning: snapshot.calories_reasoning ?? null,
     time_reasoning: snapshot.time_reasoning ?? null,
+    appliances: snapshotAppliances(snapshot),
     is_favorite: false,
     migrated_from_guest: false,
   };

@@ -1,0 +1,939 @@
+{
+  "about": "PIN-26 appliances eval (ADR 017 decision 7). Hand-labelled by Harel + Claude on 2026-10-23; review before trusting the numbers. expect: one entry per appliance the recipe must list; any_of lists keys that are equally right; required is true, false, or \"either\" when both readings are fair. also_ok: keys that are not wrong if listed (not counted for or against). tips_ok: Pinch tips that fit this recipe; any other kept tip counts as a tip that does not fit.",
+  "cases": [
+    {
+      "id": "en-smoothie",
+      "lang": "en",
+      "title": "Banana smoothie",
+      "ingredients": [
+        "banana",
+        "milk",
+        "honey",
+        "ice"
+      ],
+      "steps": [
+        "Add the banana, milk, honey and ice to a blender.",
+        "Blend until smooth and serve cold."
+      ],
+      "expect": [
+        {
+          "any_of": [
+            "blender"
+          ],
+          "required": true
+        }
+      ],
+      "also_ok": [
+        "immersion_blender"
+      ],
+      "tips_ok": []
+    },
+    {
+      "id": "en-greek-salad",
+      "lang": "en",
+      "title": "Greek salad",
+      "ingredients": [
+        "cucumber",
+        "tomatoes",
+        "red onion",
+        "feta",
+        "olive oil",
+        "oregano"
+      ],
+      "steps": [
+        "Chop the cucumber, tomatoes and onion.",
+        "Toss with olive oil and oregano, then top with feta."
+      ],
+      "expect": [],
+      "also_ok": [],
+      "tips_ok": []
+    },
+    {
+      "id": "en-trap-air-fryer-chatter",
+      "lang": "en",
+      "title": "Crispy roast potatoes",
+      "ingredients": [
+        "potatoes",
+        "olive oil",
+        "salt",
+        "rosemary"
+      ],
+      "steps": [
+        "I love my new air fryer, but today we use the oven: heat it to 220°C.",
+        "Toss the potatoes in oil, salt and rosemary.",
+        "Roast for 40 minutes, turning once."
+      ],
+      "expect": [
+        {
+          "any_of": [
+            "oven"
+          ],
+          "required": true
+        }
+      ],
+      "also_ok": [],
+      "tips_ok": []
+    },
+    {
+      "id": "en-choc-chip-cookies",
+      "lang": "en",
+      "title": "Chocolate chip cookies",
+      "ingredients": [
+        "butter",
+        "brown sugar",
+        "egg",
+        "flour",
+        "chocolate chips"
+      ],
+      "steps": [
+        "Preheat the oven to 180°C.",
+        "Cream the butter and sugar until light and fluffy.",
+        "Beat in the egg, then fold in the flour and chocolate chips.",
+        "Bake for 11 minutes until golden at the edges."
+      ],
+      "expect": [
+        {
+          "any_of": [
+            "oven"
+          ],
+          "required": true
+        },
+        {
+          "any_of": [
+            "stand_mixer",
+            "hand_mixer"
+          ],
+          "required": false
+        }
+      ],
+      "also_ok": [],
+      "tips_ok": [
+        "kitchen_scale"
+      ]
+    },
+    {
+      "id": "en-pancakes",
+      "lang": "en",
+      "title": "Fluffy pancakes",
+      "ingredients": [
+        "flour",
+        "milk",
+        "egg",
+        "baking powder",
+        "butter"
+      ],
+      "steps": [
+        "Whisk the flour, baking powder, milk and egg into a smooth batter.",
+        "Heat a little butter in a frying pan over medium heat.",
+        "Cook ladlefuls of batter until bubbles form, then flip and cook 1 minute more."
+      ],
+      "expect": [
+        {
+          "any_of": [
+            "stovetop"
+          ],
+          "required": true
+        }
+      ],
+      "also_ok": [],
+      "tips_ok": []
+    },
+    {
+      "id": "en-instant-pot-chili",
+      "lang": "en",
+      "title": "Instant Pot chili",
+      "ingredients": [
+        "ground beef",
+        "onion",
+        "kidney beans",
+        "crushed tomatoes",
+        "chili powder"
+      ],
+      "steps": [
+        "Set the Instant Pot to sauté and brown the beef and onion.",
+        "Add the beans, tomatoes and spices.",
+        "Pressure cook on high for 15 minutes, then release naturally."
+      ],
+      "expect": [
+        {
+          "any_of": [
+            "pressure_cooker"
+          ],
+          "required": true
+        }
+      ],
+      "also_ok": [],
+      "tips_ok": []
+    },
+    {
+      "id": "en-slow-cooker-pulled-pork",
+      "lang": "en",
+      "title": "Slow cooker pulled pork",
+      "ingredients": [
+        "pork shoulder",
+        "barbecue sauce",
+        "onion",
+        "brown sugar"
+      ],
+      "steps": [
+        "Rub the pork with sugar and spices.",
+        "Place on the sliced onion in the slow cooker and pour over half the sauce.",
+        "Cook on low for 8 hours, then shred with two forks and stir in the rest of the sauce."
+      ],
+      "expect": [
+        {
+          "any_of": [
+            "slow_cooker"
+          ],
+          "required": true
+        }
+      ],
+      "also_ok": [],
+      "tips_ok": []
+    },
+    {
+      "id": "en-air-fryer-wings",
+      "lang": "en",
+      "title": "Air fryer chicken wings",
+      "ingredients": [
+        "chicken wings",
+        "baking powder",
+        "salt",
+        "hot sauce"
+      ],
+      "steps": [
+        "Pat the wings dry and toss with baking powder and salt.",
+        "Air fry at 200°C for 22 minutes, shaking halfway.",
+        "Toss in hot sauce and serve."
+      ],
+      "expect": [
+        {
+          "any_of": [
+            "air_fryer"
+          ],
+          "required": true
+        }
+      ],
+      "also_ok": [],
+      "tips_ok": [
+        "kitchen_thermometer"
+      ]
+    },
+    {
+      "id": "en-tomato-soup-stick-blender",
+      "lang": "en",
+      "title": "Tomato soup",
+      "ingredients": [
+        "tomatoes",
+        "onion",
+        "vegetable stock",
+        "cream"
+      ],
+      "steps": [
+        "Soften the onion in a pot over medium heat.",
+        "Add the tomatoes and stock and simmer for 20 minutes.",
+        "Purée with a stick blender until smooth, then stir in the cream."
+      ],
+      "expect": [
+        {
+          "any_of": [
+            "stovetop"
+          ],
+          "required": true
+        },
+        {
+          "any_of": [
+            "immersion_blender",
+            "blender"
+          ],
+          "required": true
+        }
+      ],
+      "also_ok": [],
+      "tips_ok": []
+    },
+    {
+      "id": "en-pesto",
+      "lang": "en",
+      "title": "Basil pesto",
+      "ingredients": [
+        "basil",
+        "pine nuts",
+        "garlic",
+        "parmesan",
+        "olive oil"
+      ],
+      "steps": [
+        "Pulse the basil, pine nuts and garlic in a food processor.",
+        "With the motor running, pour in the olive oil.",
+        "Stir in the parmesan."
+      ],
+      "expect": [
+        {
+          "any_of": [
+            "food_processor",
+            "blender"
+          ],
+          "required": "either"
+        }
+      ],
+      "also_ok": [
+        "mortar_and_pestle"
+      ],
+      "tips_ok": []
+    },
+    {
+      "id": "en-cheesecake",
+      "lang": "en",
+      "title": "New York cheesecake",
+      "ingredients": [
+        "digestive biscuits",
+        "butter",
+        "cream cheese",
+        "sugar",
+        "eggs"
+      ],
+      "steps": [
+        "Heat the oven to 160°C and line a springform pan.",
+        "Press the biscuit and butter base into the springform pan.",
+        "Beat the cream cheese, sugar and eggs until smooth and pour over the base.",
+        "Bake for 55 minutes, then cool in the oven with the door ajar."
+      ],
+      "expect": [
+        {
+          "any_of": [
+            "oven"
+          ],
+          "required": true
+        },
+        {
+          "any_of": [
+            "springform_pan"
+          ],
+          "required": "either"
+        }
+      ],
+      "also_ok": [
+        "stand_mixer",
+        "hand_mixer"
+      ],
+      "tips_ok": [
+        "kitchen_scale"
+      ]
+    },
+    {
+      "id": "en-steak-cast-iron",
+      "lang": "en",
+      "title": "Pan-seared ribeye",
+      "ingredients": [
+        "ribeye steak",
+        "salt",
+        "butter",
+        "thyme"
+      ],
+      "steps": [
+        "Heat a cast-iron skillet until smoking hot.",
+        "Sear the steak 3 minutes per side until medium-rare.",
+        "Baste with butter and thyme, then rest for 5 minutes."
+      ],
+      "expect": [
+        {
+          "any_of": [
+            "stovetop"
+          ],
+          "required": true
+        },
+        {
+          "any_of": [
+            "cast_iron_pan"
+          ],
+          "required": "either"
+        }
+      ],
+      "also_ok": [],
+      "tips_ok": [
+        "kitchen_thermometer"
+      ]
+    },
+    {
+      "id": "en-vanilla-ice-cream",
+      "lang": "en",
+      "title": "Vanilla ice cream",
+      "ingredients": [
+        "milk",
+        "cream",
+        "egg yolks",
+        "sugar",
+        "vanilla"
+      ],
+      "steps": [
+        "Heat the milk and cream in a saucepan until steaming.",
+        "Whisk into the yolks and sugar, return to the pan and stir until it coats a spoon.",
+        "Chill overnight, then churn in an ice cream maker."
+      ],
+      "expect": [
+        {
+          "any_of": [
+            "stovetop"
+          ],
+          "required": true
+        },
+        {
+          "any_of": [
+            "ice_cream_maker"
+          ],
+          "required": true
+        }
+      ],
+      "also_ok": [],
+      "tips_ok": [
+        "kitchen_thermometer"
+      ]
+    },
+    {
+      "id": "en-waffles",
+      "lang": "en",
+      "title": "Belgian waffles",
+      "ingredients": [
+        "flour",
+        "milk",
+        "eggs",
+        "butter",
+        "sugar"
+      ],
+      "steps": [
+        "Heat the waffle iron.",
+        "Mix the batter until just combined.",
+        "Cook in the waffle iron until golden and crisp."
+      ],
+      "expect": [
+        {
+          "any_of": [
+            "waffle_maker"
+          ],
+          "required": true
+        }
+      ],
+      "also_ok": [],
+      "tips_ok": []
+    },
+    {
+      "id": "en-sous-vide-salmon",
+      "lang": "en",
+      "title": "Sous vide salmon",
+      "ingredients": [
+        "salmon fillets",
+        "lemon",
+        "dill",
+        "olive oil"
+      ],
+      "steps": [
+        "Set the sous vide water bath to 52°C.",
+        "Seal the salmon with lemon and dill in a bag and cook for 40 minutes.",
+        "Sear skin side down in a hot pan for 1 minute."
+      ],
+      "expect": [
+        {
+          "any_of": [
+            "sous_vide"
+          ],
+          "required": true
+        },
+        {
+          "any_of": [
+            "stovetop"
+          ],
+          "required": "either"
+        }
+      ],
+      "also_ok": [],
+      "tips_ok": []
+    },
+    {
+      "id": "en-mug-cake",
+      "lang": "en",
+      "title": "Microwave mug cake",
+      "ingredients": [
+        "flour",
+        "cocoa",
+        "sugar",
+        "milk",
+        "oil"
+      ],
+      "steps": [
+        "Stir everything together in a large mug.",
+        "Microwave on high for 90 seconds and eat warm."
+      ],
+      "expect": [
+        {
+          "any_of": [
+            "microwave"
+          ],
+          "required": true
+        }
+      ],
+      "also_ok": [],
+      "tips_ok": []
+    },
+    {
+      "id": "en-overnight-oats",
+      "lang": "en",
+      "title": "Overnight oats",
+      "ingredients": [
+        "rolled oats",
+        "milk",
+        "yogurt",
+        "chia seeds",
+        "berries"
+      ],
+      "steps": [
+        "Stir the oats, milk, yogurt and chia together in a jar.",
+        "Refrigerate overnight and top with berries."
+      ],
+      "expect": [],
+      "also_ok": [],
+      "tips_ok": []
+    },
+    {
+      "id": "en-guacamole-molcajete",
+      "lang": "en",
+      "title": "Guacamole",
+      "ingredients": [
+        "avocados",
+        "lime",
+        "onion",
+        "jalapeño",
+        "cilantro",
+        "salt"
+      ],
+      "steps": [
+        "Grind the onion, jalapeño and salt to a paste in a molcajete.",
+        "Add the avocados and mash, leaving some chunks.",
+        "Season with lime and cilantro."
+      ],
+      "expect": [
+        {
+          "any_of": [
+            "mortar_and_pestle"
+          ],
+          "required": "either"
+        }
+      ],
+      "also_ok": [],
+      "tips_ok": []
+    },
+    {
+      "id": "en-rice-cooker",
+      "lang": "en",
+      "title": "Perfect jasmine rice",
+      "ingredients": [
+        "jasmine rice",
+        "water",
+        "salt"
+      ],
+      "steps": [
+        "Rinse the rice until the water runs clear.",
+        "Cook in a rice cooker with the water and salt, or in a covered pot on the stove for 15 minutes.",
+        "Rest for 10 minutes and fluff."
+      ],
+      "expect": [
+        {
+          "any_of": [
+            "rice_cooker",
+            "stovetop"
+          ],
+          "required": "either"
+        }
+      ],
+      "also_ok": [
+        "rice_cooker",
+        "stovetop"
+      ],
+      "tips_ok": []
+    },
+    {
+      "id": "en-no-knead-bread",
+      "lang": "en",
+      "title": "No-knead bread",
+      "ingredients": [
+        "500 g bread flour",
+        "yeast",
+        "salt",
+        "water"
+      ],
+      "steps": [
+        "Mix the flour, yeast, salt and water into a shaggy dough and leave for 12 hours.",
+        "Heat the oven to 240°C with a Dutch oven inside.",
+        "Bake the dough in the Dutch oven, covered for 30 minutes, then uncovered for 15."
+      ],
+      "expect": [
+        {
+          "any_of": [
+            "oven"
+          ],
+          "required": true
+        },
+        {
+          "any_of": [
+            "dutch_oven"
+          ],
+          "required": "either"
+        }
+      ],
+      "also_ok": [],
+      "tips_ok": [
+        "kitchen_scale",
+        "kitchen_thermometer"
+      ]
+    },
+    {
+      "id": "he-shakshuka",
+      "lang": "he",
+      "title": "שקשוקה",
+      "ingredients": [
+        "ביצים",
+        "עגבניות",
+        "בצל",
+        "פלפל אדום",
+        "כמון",
+        "גרעיני כוסברה"
+      ],
+      "steps": [
+        "מחממים שמן במחבת גדולה על אש בינונית.",
+        "מוסיפים בצל ופלפל ומטגנים 5 דקות.",
+        "כותשים כמון וגרעיני כוסברה במכתש ומוסיפים לרוטב עם העגבניות.",
+        "שוברים את הביצים לתוך הרוטב ומבשלים מכוסה 8 דקות."
+      ],
+      "expect": [
+        {
+          "any_of": [
+            "stovetop"
+          ],
+          "required": true
+        },
+        {
+          "any_of": [
+            "mortar_and_pestle",
+            "spice_grinder"
+          ],
+          "required": false
+        }
+      ],
+      "also_ok": [],
+      "tips_ok": []
+    },
+    {
+      "id": "he-chocolate-cake",
+      "lang": "he",
+      "title": "עוגת שוקולד",
+      "ingredients": [
+        "חמאה",
+        "סוכר",
+        "ביצים",
+        "קמח",
+        "קקאו"
+      ],
+      "steps": [
+        "מחממים תנור ל-180 מעלות.",
+        "מקציפים חמאה וסוכר במיקסר עד לקבלת תערובת אוורירית.",
+        "מוסיפים ביצים, קמח וקקאו ומערבבים.",
+        "אופים 35 דקות."
+      ],
+      "expect": [
+        {
+          "any_of": [
+            "oven"
+          ],
+          "required": true
+        },
+        {
+          "any_of": [
+            "stand_mixer",
+            "hand_mixer"
+          ],
+          "required": false
+        }
+      ],
+      "also_ok": [],
+      "tips_ok": [
+        "kitchen_scale"
+      ]
+    },
+    {
+      "id": "he-steak",
+      "lang": "he",
+      "title": "סטייק אנטריקוט",
+      "ingredients": [
+        "אנטריקוט",
+        "מלח גס",
+        "פלפל שחור"
+      ],
+      "steps": [
+        "מתבלים את הסטייק במלח גס.",
+        "צורבים במחבת לוהטת 3 דקות מכל צד עד מדיום רייר.",
+        "נותנים לנוח 5 דקות ופורסים."
+      ],
+      "expect": [
+        {
+          "any_of": [
+            "stovetop"
+          ],
+          "required": true
+        }
+      ],
+      "also_ok": [
+        "cast_iron_pan"
+      ],
+      "tips_ok": [
+        "kitchen_thermometer"
+      ]
+    },
+    {
+      "id": "he-hummus",
+      "lang": "he",
+      "title": "חומוס ביתי",
+      "ingredients": [
+        "גרגרי חומוס",
+        "טחינה גולמית",
+        "לימון",
+        "שום",
+        "מלח"
+      ],
+      "steps": [
+        "משרים את הגרגרים לילה שלם.",
+        "מבשלים אותם בסיר עם מים כשעתיים עד שהם רכים מאוד.",
+        "טוחנים במעבד מזון עם הטחינה, הלימון והשום עד לקבלת ממרח חלק."
+      ],
+      "expect": [
+        {
+          "any_of": [
+            "stovetop"
+          ],
+          "required": true
+        },
+        {
+          "any_of": [
+            "food_processor",
+            "blender"
+          ],
+          "required": true
+        }
+      ],
+      "also_ok": [
+        "pressure_cooker"
+      ],
+      "tips_ok": []
+    },
+    {
+      "id": "he-schnitzel",
+      "lang": "he",
+      "title": "שניצל עוף",
+      "ingredients": [
+        "חזה עוף",
+        "ביצים",
+        "פירורי לחם",
+        "שמן לטיגון"
+      ],
+      "steps": [
+        "מרדדים את החזה לעובי אחיד.",
+        "טובלים בביצה ואז בפירורי לחם.",
+        "מטגנים במחבת עם שמן עמוק כ-3 דקות מכל צד עד הזהבה."
+      ],
+      "expect": [
+        {
+          "any_of": [
+            "stovetop"
+          ],
+          "required": true
+        }
+      ],
+      "also_ok": [
+        "deep_fryer"
+      ],
+      "tips_ok": [
+        "kitchen_thermometer"
+      ]
+    },
+    {
+      "id": "he-israeli-salad",
+      "lang": "he",
+      "title": "סלט ישראלי",
+      "ingredients": [
+        "מלפפונים",
+        "עגבניות",
+        "בצל סגול",
+        "שמן זית",
+        "לימון"
+      ],
+      "steps": [
+        "חותכים את הירקות לקוביות קטנות.",
+        "מתבלים בשמן זית, לימון ומלח ומערבבים."
+      ],
+      "expect": [],
+      "also_ok": [],
+      "tips_ok": []
+    },
+    {
+      "id": "he-malabi",
+      "lang": "he",
+      "title": "מלבי",
+      "ingredients": [
+        "חלב",
+        "קורנפלור",
+        "סוכר",
+        "מי ורדים",
+        "סירופ פטל"
+      ],
+      "steps": [
+        "ממיסים את הקורנפלור בחלק מהחלב.",
+        "מביאים את שאר החלב והסוכר לרתיחה בסיר, מוסיפים את התערובת ומערבבים עד שמסמיך.",
+        "מוסיפים מי ורדים, יוצקים לכוסות ומקררים 4 שעות."
+      ],
+      "expect": [
+        {
+          "any_of": [
+            "stovetop"
+          ],
+          "required": true
+        }
+      ],
+      "also_ok": [],
+      "tips_ok": []
+    },
+    {
+      "id": "he-air-fryer-fries",
+      "lang": "he",
+      "title": "צ'יפס באייר פרייר",
+      "ingredients": [
+        "תפוחי אדמה",
+        "שמן זית",
+        "פפריקה",
+        "מלח"
+      ],
+      "steps": [
+        "חותכים את תפוחי האדמה לרצועות ומייבשים היטב.",
+        "מערבבים עם שמן, פפריקה ומלח.",
+        "מטגנים באייר פרייר ב-200 מעלות 18 דקות, מנערים באמצע."
+      ],
+      "expect": [
+        {
+          "any_of": [
+            "air_fryer"
+          ],
+          "required": true
+        }
+      ],
+      "also_ok": [],
+      "tips_ok": []
+    },
+    {
+      "id": "he-cholent",
+      "lang": "he",
+      "title": "חמין",
+      "ingredients": [
+        "בשר בקר",
+        "תפוחי אדמה",
+        "שעועית",
+        "גריסים",
+        "ביצים"
+      ],
+      "steps": [
+        "מסדרים בסיר הבישול האיטי את השעועית, הגריסים, הבשר ותפוחי האדמה.",
+        "מכסים במים ומתבלים.",
+        "מבשלים בסיר הבישול האיטי על חום נמוך כל הלילה, או בתנור ב-100 מעלות."
+      ],
+      "expect": [
+        {
+          "any_of": [
+            "slow_cooker",
+            "oven"
+          ],
+          "required": "either"
+        }
+      ],
+      "also_ok": [
+        "slow_cooker",
+        "oven"
+      ],
+      "tips_ok": []
+    },
+    {
+      "id": "he-tahini-cookies",
+      "lang": "he",
+      "title": "עוגיות טחינה",
+      "ingredients": [
+        "טחינה גולמית",
+        "חמאה",
+        "סוכר",
+        "קמח"
+      ],
+      "steps": [
+        "מחממים תנור ל-170 מעלות.",
+        "לשים את כל החומרים לבצק רך ביד.",
+        "יוצרים כדורים, משטחים ואופים 15 דקות."
+      ],
+      "expect": [
+        {
+          "any_of": [
+            "oven"
+          ],
+          "required": true
+        }
+      ],
+      "also_ok": [],
+      "tips_ok": [
+        "kitchen_scale"
+      ]
+    },
+    {
+      "id": "he-lemonade-juicer",
+      "lang": "he",
+      "title": "לימונדה עם נענע",
+      "ingredients": [
+        "לימונים",
+        "סוכר",
+        "מים",
+        "נענע"
+      ],
+      "steps": [
+        "סוחטים את הלימונים במסחטה.",
+        "מערבבים את המיץ עם מים, סוכר ונענע.",
+        "מגישים קר עם קרח."
+      ],
+      "expect": [],
+      "also_ok": [
+        "juicer"
+      ],
+      "tips_ok": [],
+      "note": "Relabelled after the first run: מסחטה usually means a manual citrus press, a basic tool, so leaving it out is correct; listing juicer is also accepted."
+    },
+    {
+      "id": "he-trap-air-fryer-chatter",
+      "lang": "he",
+      "title": "עוף בתנור",
+      "ingredients": [
+        "כרעי עוף",
+        "שום",
+        "פפריקה",
+        "שמן זית"
+      ],
+      "steps": [
+        "ראיתי שכולם עושים את זה באייר פרייר, אבל אני מעדיפה תנור: מחממים ל-200 מעלות.",
+        "משרים את העוף בתיבול לשעה.",
+        "צולים 50 דקות עד שהעור פריך."
+      ],
+      "expect": [
+        {
+          "any_of": [
+            "oven"
+          ],
+          "required": true
+        }
+      ],
+      "also_ok": [],
+      "tips_ok": [
+        "kitchen_thermometer"
+      ]
+    }
+  ]
+}

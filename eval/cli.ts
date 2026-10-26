@@ -1,6 +1,7 @@
 // PIN-44 eval entry point. See eval/README.md.
-//   npx deno run -A --no-lock --env-file=.env eval/cli.ts <fetch|label|run|judge|report> [flags]
+//   npx deno run -A --no-lock --env-file=.env eval/cli.ts <fetch|label|run|judge|report|appliances> [flags]
 
+import { appliancesCommand } from './appliances.ts';
 import { fetchCommand } from './fetch.ts';
 import { labelCommand } from './label.ts';
 import { judgeCommand } from './judge.ts';
@@ -14,6 +15,7 @@ const commands: Record<string, (args: string[]) => Promise<void>> = {
   run: runCommand,
   judge: judgeCommand,
   report: reportCommand,
+  appliances: appliancesCommand,
 };
 
 const fn = commands[command ?? ''];

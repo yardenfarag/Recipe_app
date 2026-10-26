@@ -39,7 +39,8 @@ export type LlmTaskKind =
   | 'substitution'
   | 'fridge_match'
   | 'content_gate'
-  | 'remix_related';
+  | 'remix_related'
+  | 'appliances';
 
 export interface TaskModelConfig {
   model: string;
@@ -69,6 +70,8 @@ export const TASK_MODELS: Record<LlmTaskKind, TaskModelConfig> = {
   substitution: { model: LUNA, fallbacks: [QWEN_FLASH], reasoning: 'none' },
   fridge_match: { model: LUNA, fallbacks: [QWEN_FLASH], reasoning: 'none' },
   remix_related: { model: LUNA, fallbacks: [QWEN_FLASH], reasoning: 'none' },
+  // Classification over the final recipe text (ADR 017). Not in the PIN-44 eval; follows text.
+  appliances: { model: LUNA, fallbacks: [QWEN_FLASH], reasoning: 'none' },
   photo: { model: SONNET, fallbacks: [SOL], reasoning: 'low' },
   repair: { model: SONNET, fallbacks: [SOL], reasoning: 'low' },
   invent_photo: { model: SONNET, fallbacks: [SOL], reasoning: 'low' },
