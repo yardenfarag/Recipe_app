@@ -39,6 +39,7 @@ import {
   reserveGuestExtraction,
   reserveSignedInExtract,
 } from '../_shared/quotas.ts';
+import { appliancesForRecipe } from '../_shared/recipeAppliances.ts';
 import { createAuthedSupabase, extractVideoIdForPlatform, findExistingRecipeForUser } from '../_shared/recipeLookup.ts';
 import { createServiceSupabase } from '../_shared/supabaseAdmin.ts';
 import { normalizeRecipeTags } from '../_shared/tags.ts';
@@ -493,6 +494,9 @@ Deno.serve(async (req) => {
       imageUrl = (await persistUploadedPhoto({ imageBase64, mimeType: imageMime })) ?? imageUrl;
     }
 
+    // ADR 017: never throws; a failure saves as "not analysed" (null).
+    const { appliances, metadata: applianceMetadata } = await appliancesForRecipe(gemini, usages);
+
     const recipe = {
       title: gemini.title,
       source_language: normalizeLanguageCode(gemini.source_language) || language,
@@ -516,6 +520,7 @@ Deno.serve(async (req) => {
       time_reasoning: gemini.time_reasoning?.trim() || null,
       tags: normalizeRecipeTags(gemini.tags),
       missing_fields: missingFields,
+      appliances,
     };
 
     let snapshot: QuotaSnapshot | null = creditReservation?.snapshot ?? null;
@@ -579,6 +584,7 @@ Deno.serve(async (req) => {
       scrapecreatorsCredits: scrapeCredits,
       tokensCharged: userId ? 1 : 0,
       durationMs: Date.now() - started,
+      metadata: applianceMetadata,
     });
 
     return jsonResponse({

@@ -24,6 +24,7 @@ import {
   refundSignedInExtractAfterFinalizeFailure,
   reserveSignedInExtract,
 } from '../_shared/quotas.ts';
+import { appliancesForRecipe } from '../_shared/recipeAppliances.ts';
 import { createAuthedSupabase, extractVideoIdForPlatform } from '../_shared/recipeLookup.ts';
 import { createServiceSupabase } from '../_shared/supabaseAdmin.ts';
 import { normalizeRecipeTags } from '../_shared/tags.ts';
@@ -238,6 +239,10 @@ Deno.serve(async (req) => {
       });
     }
 
+    // Repair can add or rewrite steps, so appliances are derived from the repaired recipe (ADR 017).
+    const usages = repaired.usage ? [repaired.usage] : [];
+    const { appliances, metadata: applianceMetadata } = await appliancesForRecipe(after, usages);
+
     const recipe = {
       title: after.title,
       source_language: normalizeLanguageCode(after.source_language),
@@ -256,6 +261,7 @@ Deno.serve(async (req) => {
       time_reasoning: after.time_reasoning?.trim() || null,
       tags: normalizeRecipeTags(after.tags?.length ? after.tags : current.tags),
       missing_fields: classified.missingFields,
+      appliances,
     };
 
     const snapshot = (await canStartExtract(admin, userId)).snapshot;
@@ -264,13 +270,14 @@ Deno.serve(async (req) => {
       action: 'repair',
       platform,
       status: 'preview',
-      usages: repaired.usage ? [repaired.usage] : [],
+      usages,
       tokensCharged: 0,
       durationMs: Date.now() - started,
       metadata: {
         request_id: requestId,
         reservation_id: creditReservation.reservationId,
         upgraded: true,
+        ...applianceMetadata,
       },
     });
 
