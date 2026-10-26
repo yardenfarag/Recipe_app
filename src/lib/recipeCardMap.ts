@@ -20,6 +20,7 @@ export function recipeCardToExtracted(card: RecipeCard): ExtractedRecipe {
     extraction_source: card.extraction_source ?? undefined,
     tags: card.tags ?? [],
     source_language: card.source_language ?? 'en',
+    appliances: card.appliances ?? null,
   };
 }
 
@@ -42,6 +43,7 @@ export function recipeCardToListRecipe(card: RecipeCard): Recipe {
     extraction_source: card.extraction_source ?? undefined,
     tags: card.tags ?? [],
     source_language: card.source_language ?? 'en',
+    appliances: card.appliances ?? null,
     created_at: card.created_at,
   };
 }

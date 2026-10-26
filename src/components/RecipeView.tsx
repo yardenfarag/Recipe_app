@@ -11,6 +11,7 @@ import { CookAlongVideoModal } from '@/components/CookAlongVideoModal';
 import { CookMode } from '@/components/CookMode';
 import { CookedNoteModal } from '@/components/CookedNoteModal';
 import { CostMeter } from '@/components/CostEstimateDisplay';
+import { RecipeAppliances } from '@/components/RecipeAppliances';
 import { EditTagsModal } from '@/components/EditTagsModal';
 import { IngredientAmountText } from '@/components/IngredientAmountText';
 import { RecipeImage } from '@/components/RecipeImage';
@@ -52,6 +53,7 @@ import { resolveRecipeSourceLanguage } from '@/lib/recipeSourceLanguage';
 import { normalizeRecipeTags, translateRecipeTag } from '@/lib/recipeTags';
 import { RecipeVariantKey } from '@/lib/recipeVariants';
 import { recipeSourceShareUrl, shareRecipe } from '@/lib/shareRecipe';
+import { recipeAppliancesOf } from '@/lib/appliances';
 import { ExtractedRecipe } from '@/lib/supabase/extractRecipe';
 import { setRecipeTags } from '@/lib/supabase/recipes';
 import { repairRecipe, repairRequestKey, settleRepairRecipe } from '@/lib/supabase/repairRecipe';
@@ -69,6 +71,8 @@ interface RecipeContentSnapshot {
   calories?: number;
   kitchen_adapted_summary?: string | null;
   kitchen_original?: Recipe['kitchen_original'] | null;
+  /** ADR 017. Only set when a remix or revert changes them; absent = leave as stored. */
+  appliances?: Recipe['appliances'];
 }
 
 interface RecipeViewProps {
@@ -159,7 +163,13 @@ export function RecipeView({
       ingredients: recipe.ingredients,
       instructions: recipe.instructions,
       calories: recipe.calories,
+      appliances: recipe.appliances,
     },
+  );
+  /** ADR 017: cleaned against the canonical steps; null = not analysed (section hidden). */
+  const appliances = useMemo(
+    () => recipeAppliancesOf({ appliances: recipe.appliances, instructions: recipe.instructions }),
+    [recipe.appliances, recipe.instructions],
   );
   /** Untranslated content used as the source for every language switch. */
   const translationSourceRef = useRef<RecipeContentSnapshot | null>({
@@ -264,6 +274,7 @@ export function RecipeView({
         ingredients: recipe.kitchen_original.ingredients,
         instructions: recipe.kitchen_original.instructions,
         calories: recipe.kitchen_original.calories,
+        appliances: recipe.kitchen_original.appliances,
       };
     }
     setBaseServings(recipe.servings);
@@ -400,6 +411,8 @@ export function RecipeView({
       calories: result.calories,
       kitchen_adapted_summary: null,
       kitchen_original: null,
+      // The server only sends appliances when the remix changed the steps (ADR 017).
+      ...(result.appliances !== undefined ? { appliances: result.appliances } : {}),
     });
   }
 
@@ -1012,6 +1025,12 @@ export function RecipeView({
             ) : null}
           </View>
         )}
+
+        <RecipeAppliances
+          appliances={appliances}
+          instructions={displayInstructions}
+          stepDirection={textDirection}
+        />
 
         <View className={splitRecipeBody ? 'flex-row items-start gap-6' : undefined}>
           <View className={splitRecipeBody ? 'min-w-0 flex-1' : undefined}>

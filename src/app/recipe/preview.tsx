@@ -110,6 +110,8 @@ export default function RecipePreviewScreen() {
       calories?: number;
       kitchen_adapted_summary?: string | null;
       kitchen_original?: ExtractedRecipe['kitchen_original'] | null;
+      /** Only present when a remix or revert changes them (ADR 017). */
+      appliances?: ExtractedRecipe['appliances'];
     }) => {
       setRecipeToSave((prev) => {
         if (!prev) return prev;
@@ -154,6 +156,7 @@ export default function RecipePreviewScreen() {
         tags: repaired.tags ?? prev.tags,
         missing_fields: repaired.missing_fields,
         source_language: repaired.source_language ?? prev.source_language,
+        ...(repaired.appliances !== undefined ? { appliances: repaired.appliances } : {}),
       };
       void setRecipeDraft(next).catch((error) => {
         console.warn('[recipe-draft] repair persistence failed', error);
