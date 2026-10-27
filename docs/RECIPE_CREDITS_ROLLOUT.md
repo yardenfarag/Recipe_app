@@ -1,9 +1,9 @@
 # Recipe credits rollout
 
-## Status (2026-10-20)
+## Status (2026-10-27)
 
 - **iOS:** purchases are live. Credit packs can be bought in the App Store build.
-- **Android:** not live yet. The app isn't in the Play production track, so the Android steps below are still open.
+- **Android:** purchases are live. The app is in the Play production track, and build 30 (1.0.8) has the RevenueCat Android key. A Play purchase of `pinch_credits_30` was granted through the webhook on 2026-10-27. Accounts on Play Console's License testing list always get test orders ("test card, always approves", RevenueCat environment `SANDBOX`), even when installed from production. Use an account that isn't on that list to see a real charge.
 - **Web:** no purchases. Buyers are sent to the mobile apps (see §1).
 - **Free allowance:** 10 recipe credits per signed-in user per UTC month (`FREE_MONTHLY_EXTRACT_LIMIT`). Guests can't extract; the app and `extract-recipe` / `invent-recipe` require sign-up or log-in first.
 

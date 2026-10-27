@@ -72,10 +72,19 @@ describe('landing page', () => {
   const graph = structuredData.flatMap((data) => data['@graph'] ?? [data]);
   const byType = (type) => graph.filter((node) => node['@type'] === type);
   const appStoreUrl = landing.match(/class="btn btn-store btn-apple"[\s\S]*?href="([^"]+)"/)[1];
+  const playStoreUrl = landing.match(/class="btn btn-store btn-play"[\s\S]*?href="([^"]+)"/)[1];
 
-  it('describes the iPhone app with a free offer and its App Store listing', () => {
+  it('describes the iPhone and Android apps with a free offer and their store listings', () => {
     const [organization] = byType('Organization');
-    const [app] = byType('MobileApplication');
+    const [app, androidApp] = byType('MobileApplication');
+    expect(androidApp).toMatchObject({
+      operatingSystem: 'Android',
+      installUrl: playStoreUrl,
+      offers: { '@type': 'Offer', price: '0', priceCurrency: 'USD' },
+      publisher: { '@id': organization['@id'] },
+    });
+    expect(playStoreUrl).toBe('https://play.google.com/store/apps/details?id=com.pinch.myapp');
+    expect(organization.sameAs).toEqual(expect.arrayContaining([appStoreUrl, playStoreUrl]));
     expect(app).toMatchObject({
       name: 'Pinch',
       operatingSystem: 'iOS',

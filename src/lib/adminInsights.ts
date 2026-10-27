@@ -33,6 +33,7 @@ export type InsightSummary = {
     visits: number;
     visitors: number;
     appStoreClicks: number;
+    playStoreClicks: number;
     continueClicks: number;
   };
   days: RankedItem[];
@@ -162,6 +163,9 @@ export function summarizeInsights(
       visitors: introVisitors.size,
       appStoreClicks: introClicks.filter(
         (event) => prop(event.properties ?? {}, 'action') === 'app_store',
+      ).length,
+      playStoreClicks: introClicks.filter(
+        (event) => prop(event.properties ?? {}, 'action') === 'play_store',
       ).length,
       continueClicks: introClicks.filter(
         (event) => prop(event.properties ?? {}, 'action') === 'continue',

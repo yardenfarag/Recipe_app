@@ -197,7 +197,7 @@ details>*:not(summary){margin-bottom:12px}
     <a class="item" href="#firstweek"><span class="n">12</span>First week</a>
     <a class="item" href="#glossary"><span class="n">13</span>Glossary and reading list</a>
   </div>
-  <div class="foot">Updated 15 Oct 2026 from <code>master</code> at commit <code>8928af6</code>. Per-task models are live in production.<br>Source: <code>docs/onboarding/index.html</code></div>
+  <div class="foot">Updated 27 Oct 2026 from <code>master</code> at commit <code>9198366</code>. Pinch is live on the App Store and Google Play.<br>Source: <code>docs/onboarding/index.html</code></div>
 </nav>
 
 <main>
@@ -212,6 +212,7 @@ details>*:not(summary){margin-bottom:12px}
     <tbody>
       <tr><td class="k">What Pinch is</td><td>A mobile and web app. You give it a cooking video link (TikTok, Instagram, YouTube), a recipe web page, or a photo of a recipe card. It returns a structured recipe (ingredients, steps, servings, time) and saves it to your library. You can then scale servings, swap ingredients, translate, build a shopping list, and cook along with the video.</td></tr>
       <tr><td class="k">App</td><td>Expo SDK 54 (React Native), Expo Router, NativeWind (Tailwind), i18next. One codebase for iOS, Android, web.</td></tr>
+      <tr><td class="k">Where it ships</td><td><a href="https://apps.apple.com/us/app/pinch-recipe-library/id6796310453">App Store</a> and <a href="https://play.google.com/store/apps/details?id=com.pinch.myapp">Google Play</a> (both in production), plus the web app at <a href="https://pinch-app.io/app">pinch-app.io/app</a>.</td></tr>
       <tr><td class="k">Backend</td><td>Supabase: Postgres with Row Level Security, Auth, Storage, and 11 Edge Functions written in TypeScript for Deno.</td></tr>
       <tr><td class="k">AI</td><td>Every model call goes through OpenRouter, one model per task: GPT-6 Luna for text, Claude Sonnet 5.5 for photos, GPT-6.1 Sol for translation, Gemini 3.5 Flash for video, Jev for the gates. See <a href="#ai">section 6</a>.</td></tr>
       <tr><td class="k">Website</td><td>pinch-app.io on GitHub Pages (static landing page plus the web app under <code>/app</code>), with a Cloudflare worker for shared-recipe pages.</td></tr>
@@ -268,7 +269,7 @@ details>*:not(summary){margin-bottom:12px}
     <li>No subscription.</li>
     <li>Every signed-in user gets <b>10 free extract credits per calendar month (UTC)</b>.</li>
     <li>More credits are bought as one-time packs: 10, 30 or 100. Purchased credits never expire.</li>
-    <li>Purchases go through RevenueCat. They are <b>switched off</b> right now (<code>EXPO_PUBLIC_CREDIT_PURCHASES_ENABLED=false</code>).</li>
+    <li>Purchases go through RevenueCat. They are <b>live on iOS and Android</b>. Accounts on Play Console's License testing list always get free test orders, so test real charges with another account. The website never sells credits; it sends buyers to the store for their device.</li>
   </ul>
   <table>
     <thead><tr><th>Action</th><th>Cost</th><th>Limit</th></tr></thead>
@@ -313,7 +314,7 @@ details>*:not(summary){margin-bottom:12px}
       <rect class="box" x="40" y="376" width="210" height="80"/>
       <text class="t" x="60" y="404">Local storage</text><text class="s" x="60" y="424">AsyncStorage: session,</text><text class="s" x="60" y="442">preferences, draft, request ids</text>
       <rect class="box" x="40" y="486" width="210" height="96"/>
-      <text class="t" x="60" y="514">RevenueCat SDK</text><text class="s" x="60" y="534">react-native-purchases</text><text class="s" x="60" y="552">credit packs 10 / 30 / 100</text><text class="s" x="60" y="570">(off until the flag is true)</text>
+      <text class="t" x="60" y="514">RevenueCat SDK</text><text class="s" x="60" y="534">react-native-purchases</text><text class="s" x="60" y="552">credit packs 10 / 30 / 100</text><text class="s" x="60" y="570">(live on iOS and Android)</text>
       <rect class="zone" x="330" y="40" width="420" height="560"/><text class="zt" x="346" y="30">SUPABASE · project ccobefeofhnncpgifxel (eu-central-1)</text>
       <rect class="box b" x="350" y="70" width="180" height="80"/>
       <text class="t" x="368" y="98">Auth</text><text class="s" x="368" y="118">email · Apple · Google</text><text class="s" x="368" y="136">PKCE, JWT to the app</text>
@@ -918,7 +919,7 @@ npx supabase test db                                             <span class="c"
       <tr><td class="k">Linear</td><td><a href="https://linear.app/pinch-recipe">linear.app/pinch-recipe</a>. Team PIN.</td></tr>
       <tr><td class="k">Supabase</td><td><a href="https://supabase.com/dashboard/project/ccobefeofhnncpgifxel">dashboard → recipe_app</a>. Tables, SQL, Auth, function logs, secrets.</td></tr>
       <tr><td class="k">Expo</td><td><a href="https://expo.dev/accounts/yardenfa">expo.dev/accounts/yardenfa</a>. EAS builds, env vars, credentials. Project id <code>58f56906-4b2d-49ca-9e87-a706b5d7cf1f</code>.</td></tr>
-      <tr><td class="k">Live site and stores</td><td><a href="https://pinch-app.io">pinch-app.io</a>, <a href="https://pinch-app.io/app">/app</a>. App Store id 6796310453. Play package <code>com.pinch.myapp</code>.</td></tr>
+      <tr><td class="k">Live site and stores</td><td><a href="https://pinch-app.io">pinch-app.io</a>, <a href="https://pinch-app.io/app">/app</a>. <a href="https://apps.apple.com/us/app/pinch-recipe-library/id6796310453">App Store</a> id 6796310453. <a href="https://play.google.com/store/apps/details?id=com.pinch.myapp">Google Play</a> package <code>com.pinch.myapp</code>.</td></tr>
       <tr><td class="k">Expo docs</td><td><a href="https://docs.expo.dev/versions/v54.0.0/">docs.expo.dev/versions/v54.0.0</a></td></tr>
     </tbody>
   </table>
@@ -973,7 +974,7 @@ npx supabase test db                                             <span class="c"
       <tr><td>Edge Functions</td><td><span class="tag bad">no</span></td><td><code>npx supabase functions deploy &lt;name&gt;</code> by hand after merging. Easy to forget.</td></tr>
       <tr><td>Migrations</td><td><span class="tag bad">no</span></td><td><code>npx supabase db push</code> by hand.</td></tr>
       <tr><td>Store builds</td><td><span class="tag bad">manual</span></td><td>Bump <code>version</code> in <code>app.json</code> and <code>package.json</code> for a new store release (build numbers auto-increment). Then Actions → "EAS Build Android/iOS (production)" → Run workflow, or <code>eas build</code> locally. Uses the <code>EXPO_TOKEN</code> secret.</td></tr>
-      <tr><td>Store submission</td><td><span class="tag bad">manual</span></td><td>The build workflows only build. Submit with <code>eas submit --platform android --latest</code> (Play internal track) and <code>--platform ios</code> (TestFlight), after <code>eas login</code>, or from expo.dev. Promote to production in Play Console and App Store Connect.</td></tr>
+      <tr><td>Store submission</td><td><span class="tag bad">manual</span></td><td>The build workflows only build. Submit with <code>eas submit --platform android --latest</code> (lands on the Play <b>internal</b> track, set in <code>eas.json</code>) and <code>--platform ios</code> (TestFlight), after <code>eas login</code>, or from expo.dev. Smoke-test the internal build, then in Play Console promote it to <b>Production</b> (Test and release → Production → Create new release → add from library) with release notes, and submit the iOS build for review in App Store Connect. Both stores are live, so every release goes through review.</td></tr>
     </tbody>
   </table>
 
