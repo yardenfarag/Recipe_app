@@ -1,6 +1,9 @@
 import { describe, expect, it } from 'vitest';
 
-import { creditPurchaseDecision } from '../../supabase/functions/_shared/revenuecatPurchase';
+import {
+  creditPurchaseDecision,
+  purchaseEventSummary,
+} from '../../supabase/functions/_shared/revenuecatPurchase';
 
 const paidPack = {
   app_user_id: '6757bcb0-ba2b-4e56-a3cb-1f53ee036b9e',
@@ -50,6 +53,32 @@ describe('creditPurchaseDecision', () => {
     ).toEqual({ action: 'ignore' });
     expect(creditPurchaseDecision({ ...paidPack, product_id: 'pinch_plus' })).toEqual({
       action: 'ignore',
+    });
+  });
+});
+
+describe('purchaseEventSummary', () => {
+  it('reads the identifying fields from the wrapped webhook body', () => {
+    expect(
+      purchaseEventSummary({ event: { ...paidPack, id: 'evt_1', app_user_id: 'not-a-uuid' } }),
+    ).toEqual({
+      event_id: 'evt_1',
+      transaction_id: paidPack.transaction_id,
+      product_id: 'pinch_credits_100',
+      app_user_id: 'not-a-uuid',
+      store: 'APP_STORE',
+      environment: 'PRODUCTION',
+    });
+  });
+
+  it('returns nulls for a body that is not an event', () => {
+    expect(purchaseEventSummary('nope')).toEqual({
+      event_id: null,
+      transaction_id: null,
+      product_id: null,
+      app_user_id: null,
+      store: null,
+      environment: null,
     });
   });
 });
