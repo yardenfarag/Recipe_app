@@ -116,7 +116,7 @@ The "save a recipe from a TikTok/Reel" niche is real and crowded. At least six f
 
 ## Recommended next steps
 
-- [x] Free tier raised from 3 to 5 a month (PIN-58, 2026-10-20), then to 10 (PIN-57, ADR 016, 2026-10-21). Still to do: rewrite the landing hero and store subtitle around "no subscription".
+- [x] Free tier raised from 3 to 5 a month (PIN-58, 2026-10-20), then to 10 (PIN-57, ADR 016, 2026-10-21). The landing hero and store listing copy now lead with "no subscription" (PIN-59).
 - [ ] Ship credit purchases (finish `docs/RECIPE_CREDITS_ROLLOUT.md`) so the positioning is true on day one.
 - [ ] Add 3 competitor comparison pages to the site (ReciMe alternative, Paprika for Android, Pluck vs Pinch).
 - [ ] Localize store listings in Hebrew and Arabic; plan an Israel-first soft launch to build reviews.

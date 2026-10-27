@@ -26,7 +26,7 @@ Enable Pages (one-time, required before the workflow succeeds):
 1. Create app: Pinch / package com.pinch.myapp
 2. Store listing (full description shared with the App Store; see "Store listing copy" below):
    App name (≤30):          Pinch: Save Recipes from Video
-   Short description (≤80): Turn TikTok, Instagram & YouTube videos into recipes and a shopping list.
+   Short description (≤80): Save TikTok, Instagram & YouTube recipes. 10 free a month. No subscription.
    Full description (≤4000): the shared full description below.
 3. Configure and sandbox-test RevenueCat consumable packs before store submission.
 4. Privacy policy URL: (see above)
@@ -67,18 +67,23 @@ Production Android build finished (AAB):
 Keywords (PIN-10): recipe keeper app, recipe organizer app, save recipes from
 TikTok, save Instagram recipes, YouTube video to recipe, AI recipe extractor,
 recipe to shopping list. Feature claims match landing/index.html; change both
-together. Screenshots: assets/store/phone (library, recipe, snap, list).
+together. Positioning (PIN-59): "the recipe saver without a subscription" leads
+the subtitle, short description, promotional text and the description's first
+lines. Store copy leaves out dollar prices because the stores localize them;
+the landing page quotes "from $0.08 a recipe" (the 100-credit pack). Screenshots: assets/store/phone (library, recipe, snap, list).
 
 App Store only:
    Name (≤30):     Pinch: Video Recipe Organizer
-   Subtitle (≤30): Save TikTok & YouTube Recipes
+   Subtitle (≤30): Recipe Saver, No Subscription
    Promotional text (≤170):
-   Turn the cooking videos you save into recipes you can cook from: ingredients, steps, and a shopping list grouped by aisle. 10 free recipes every month.
+   Save recipes from TikTok, Instagram & YouTube without a subscription. 10 free recipes every month, then buy credits only if you need more. No trial, no auto-renew.
    Keywords (≤100, no spaces, no words already in the name or subtitle):
-   instagram,reels,extractor,ai,shopping,list,grocery,cookbook,scan,keeper,meal,translate,fridge,pantry
+   tiktok,youtube,instagram,reels,extractor,ai,shopping,list,grocery,cookbook,scan,keeper,meal,fridge
 
 Full description (both stores, ≤4000):
-   Save recipes from TikTok, Instagram & YouTube, and actually cook them.
+   The recipe saver without a subscription. Save recipes from TikTok, Instagram & YouTube, and actually cook them.
+
+   10 free recipes every month. Need more? Buy credits only when you want them. No trial, no auto-renew, and your recipes are always yours.
 
    Pinch is a recipe keeper app for the recipes in your feed. Share a cooking video to Pinch and its AI recipe extractor writes out the ingredients and steps, then puts them on a shopping list. No more pausing, rewinding, and screenshotting.
 
@@ -112,8 +117,11 @@ Full description (both stores, ≤4000):
    YOUR RECIPE LIBRARY, EVERYWHERE
    Keep every saved recipe in one place and group them for dinner, baking, or easy weeknights. Sign in and your library syncs between your phone and the web at pinch-app.io.
 
-   FREE TO START, NO SUBSCRIPTION
-   Every account gets 10 free recipe credits each month. Need more? Buy a credit pack in the app. Credits never expire, and there's no subscription.
+   NO SUBSCRIPTION. PAY ONLY FOR WHAT YOU SAVE
+   Every account gets 10 free recipe credits each month. Need more? Buy a credit pack in the app. Credits never expire, and there's no subscription, so there's no trial to cancel and nothing renews.
+
+   YOUR RECIPES ARE ALWAYS YOURS
+   Credits are only used when Pinch reads a new recipe. Everything you've saved stays in your library to cook and shop from, whether or not you ever buy credits. Export your recipes as a printable PDF cookbook any time.
 
    PRIVATE BY DEFAULT
    Pinch doesn't sell your personal information. You can delete your account and data at any time in Settings.
