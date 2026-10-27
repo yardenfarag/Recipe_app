@@ -69,8 +69,7 @@ TikTok, save Instagram recipes, YouTube video to recipe, AI recipe extractor,
 recipe to shopping list. Feature claims match landing/index.html; change both
 together. Positioning (PIN-59): "the recipe saver without a subscription" leads
 the subtitle, short description, promotional text and the description's first
-lines. Store copy leaves out dollar prices because the stores localize them;
-the landing page quotes "from $0.08 a recipe" (the 100-credit pack). Screenshots: assets/store/phone (library, recipe, snap, list).
+lines. Store copy leaves out dollar prices because the stores localize them. Screenshots: assets/store/phone (library, recipe, snap, list).
 
 App Store only:
    Name (≤30):     Pinch: Video Recipe Organizer
