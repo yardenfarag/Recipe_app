@@ -1,4 +1,5 @@
 import { parseLlmCalls, type AiCostRow } from '@/lib/aiCostSummary';
+import { parseCreditHealth, type CreditHealth } from '@/lib/creditHealth';
 import { supabase } from '@/lib/supabase/client';
 
 export interface AiUsageEvent {
@@ -138,6 +139,12 @@ export async function fetchAdminPurchases(since?: string, limit = 200): Promise<
       createdAt: String(row.created_at),
     };
   });
+}
+
+export async function fetchCreditHealth(): Promise<CreditHealth> {
+  const { data, error } = await supabase.rpc('admin_credit_health');
+  if (error) throw error;
+  return parseCreditHealth(data);
 }
 
 export async function fetchAdminTokenLedger(limit = 100): Promise<TokenLedgerRow[]> {

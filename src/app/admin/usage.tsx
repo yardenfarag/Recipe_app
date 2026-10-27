@@ -20,9 +20,11 @@ import { useThemePreference } from '@/hooks/useThemePreference';
 import { errorText } from '@/lib/errorText';
 import { ADMIN_PRICE_CARD } from '@/lib/quotas';
 import { formatTokens, shortModelName } from '@/lib/aiCostSummary';
+import { creditHealthWarnings, type CreditHealth } from '@/lib/creditHealth';
 import {
   fetchAdminTokenLedger,
   fetchAdminUsageEvents,
+  fetchCreditHealth,
   formatUsageAction,
   type AiUsageEvent,
   type TokenLedgerRow,
@@ -61,6 +63,8 @@ export default function AdminUsageScreen() {
   const [ledger, setLedger] = useState<TokenLedgerRow[]>([]);
   const [tickets, setTickets] = useState<SupportTicket[]>([]);
   const [feedback, setFeedback] = useState<Feedback[]>([]);
+  const [health, setHealth] = useState<CreditHealth | null>(null);
+  const [healthError, setHealthError] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [grantUserId, setGrantUserId] = useState('');
@@ -77,12 +81,19 @@ export default function AdminUsageScreen() {
     setLoading(true);
     setCostRefreshKey((k) => k + 1);
     try {
-      const [usageRows, ledgerRows, ticketRows, feedbackRows] = await Promise.all([
+      const [usageRows, ledgerRows, ticketRows, feedbackRows, healthReport] = await Promise.all([
         fetchAdminUsageEvents(120),
         fetchAdminTokenLedger(80),
         fetchSupportTickets(80),
         fetchFeedback(80),
+        // A health failure shouldn't hide the rest of the screen.
+        fetchCreditHealth().catch((err: unknown) => {
+          setHealthError(errorText(err, 'Could not load credit health.'));
+          return null;
+        }),
       ]);
+      if (healthReport) setHealthError(null);
+      setHealth(healthReport);
       setEvents(usageRows);
       setLedger(ledgerRows);
       setTickets(ticketRows);
@@ -213,6 +224,8 @@ export default function AdminUsageScreen() {
           <ActivityIndicator color={colors.primary} />
         ) : (
           <>
+            <CreditHealthSection health={health} error={healthError} colors={colors} />
+
             <AiCostDashboard refreshKey={costRefreshKey} />
 
             <Section title="Limits & rates" colors={colors}>
@@ -409,6 +422,90 @@ export default function AdminUsageScreen() {
         )}
       </ScrollView>
     </Screen>
+  );
+}
+
+function CreditHealthSection({
+  health,
+  error,
+  colors,
+}: {
+  health: CreditHealth | null;
+  error: string | null;
+  colors: ReturnType<typeof useThemePreference>['colors'];
+}) {
+  if (!health) {
+    return (
+      <Section title="Credits health" colors={colors}>
+        <Text className="text-xs" style={{ color: error ? colors.danger : colors.textSecondary }}>
+          {error ?? 'No report yet.'}
+        </Text>
+      </Section>
+    );
+  }
+  const warnings = creditHealthWarnings(health);
+  const { purchases, reservations, webhook, refundJob, extraction } = health;
+  const pct = (n: number) =>
+    extraction.count7d ? `${Math.round((n / extraction.count7d) * 100)}%` : '—';
+
+  return (
+    <Section title="Credits health" colors={colors}>
+      {warnings.length === 0 ? (
+        <Text className="mb-3 text-xs font-semibold" style={{ color: colors.primary }}>
+          All clear.
+        </Text>
+      ) : (
+        warnings.map((warning) => (
+          <Text key={warning} className="mb-1.5 text-xs font-semibold" style={{ color: colors.danger }}>
+            {warning}
+          </Text>
+        ))
+      )}
+      <Row label="Purchases (24h / 7d)" value={`${purchases.last24h} / ${purchases.last7d}`} colors={colors} />
+      <Row label="Credits sold (7d)" value={String(purchases.credits7d)} colors={colors} />
+      {purchases.byStore7d.map((row) => (
+        <Row
+          key={`${row.store}-${row.environment}`}
+          label={`  ${row.store} · ${row.environment}`}
+          value={String(row.count)}
+          colors={colors}
+        />
+      ))}
+      <Row
+        label="Last purchase"
+        value={purchases.lastAt ? fmtWhen(purchases.lastAt) : '—'}
+        colors={colors}
+      />
+      <Row
+        label="Stuck / awaiting refund"
+        value={`${reservations.stuck} / ${reservations.pendingCompensation}`}
+        colors={colors}
+      />
+      <Row label="Refunded (24h)" value={String(reservations.refunded24h)} colors={colors} />
+      <Row
+        label="Refund job last run"
+        value={
+          refundJob.lastRunAt ? `${fmtWhen(refundJob.lastRunAt)} · ${refundJob.lastStatus ?? '?'}` : '—'
+        }
+        colors={colors}
+      />
+      <Row
+        label="Webhook failures (24h / 7d / unresolved)"
+        value={`${webhook.failures24h} / ${webhook.failures7d} / ${webhook.unresolved7d}`}
+        colors={colors}
+      />
+      {webhook.lastFailureAt ? (
+        <Row
+          label="Last webhook failure"
+          value={`${fmtWhen(webhook.lastFailureAt)} · ${webhook.lastFailureReason ?? '?'}`}
+          colors={colors}
+        />
+      ) : null}
+      <Row label="Extractions (7d)" value={String(extraction.count7d)} colors={colors} />
+      <Row label="Failed (7d)" value={pct(extraction.failed7d)} colors={colors} />
+      <Row label="Video fallback (7d)" value={pct(extraction.video7d)} colors={colors} />
+      <Row label="p95 cost (7d)" value={usd(extraction.p95CostUsd7d)} colors={colors} />
+    </Section>
   );
 }
 
