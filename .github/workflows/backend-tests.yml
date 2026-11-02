@@ -1,0 +1,47 @@
+name: Backend tests
+
+# Database (pgTAP) and Edge Function (Deno) tests (PIN-35). The DB tests hold
+# the RLS, storage and grant regressions from the PIN-54 security audit.
+on:
+  pull_request:
+    paths:
+      - 'supabase/**'
+      - '.github/workflows/backend-tests.yml'
+  workflow_dispatch:
+
+concurrency:
+  group: backend-tests-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  db:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Supabase CLI
+        uses: supabase/setup-cli@v1
+        with:
+          version: 2.109.1
+
+      # Storage, auth and REST stay up: the tests use storage.objects and auth.users.
+      - name: Start Supabase
+        run: supabase start -x studio,imgproxy,inbucket,realtime,edge-runtime,logflare,vector,supavisor
+
+      - name: Database tests
+        run: supabase test db
+
+  functions:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Deno
+        uses: denoland/setup-deno@v2
+        with:
+          deno-version: v2.x
+
+      - name: Edge Function tests
+        run: deno test -A --no-lock supabase/functions/

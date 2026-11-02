@@ -233,19 +233,20 @@ values (
   'description'
 );
 
-select is(
-  public.backfill_recipe_cards() >= 1,
-  true,
-  'backfill inserts eligible public extracts'
-);
-
+-- Since 0032, saving publishes the card, so the backfill finds nothing new.
 select ok(
   exists (
     select 1 from public.recipe_cards
     where canonical_key = 'youtube:abcdefghijk'
       and title = 'Backfill Soup'
   ),
-  'backfill creates a hub card from a library extract'
+  'saving a public extract publishes its hub card'
+);
+
+select is(
+  public.backfill_recipe_cards(),
+  0,
+  'backfill skips extracts already published on save'
 );
 
 select * from finish();

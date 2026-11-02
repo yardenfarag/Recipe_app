@@ -1,6 +1,12 @@
 Pinch — soft-launch store checklist (Android first)
 ==================================================
 
+Status (2026-10-27): both stores are live in production.
+  App Store:   https://apps.apple.com/us/app/pinch-recipe-library/id6796310453
+  Google Play: https://play.google.com/store/apps/details?id=com.pinch.myapp
+The checklist below is kept as a record of the launch.
+Credit purchases are live on both stores; see docs/RECIPE_CREDITS_ROLLOUT.md.
+
 Legal URLs:
   Privacy:  https://pinch-app.io/privacy.html
   Terms:    https://pinch-app.io/terms.html

@@ -35,16 +35,13 @@ export function useProfile() {
       setQuota(profileQuota(profile));
       setSubscriptionStatus(profile?.subscription_status ?? 'free');
       setIsAdmin(
-        isAdminUser({
-          email: user.email ?? profile?.email,
-          isAdmin: profile?.is_admin,
-        }),
+        isAdminUser({ isAdmin: profile?.is_admin }),
       );
     } catch {
       setAvatarUrl(null);
       setQuota(null);
       setSubscriptionStatus(null);
-      setIsAdmin(isAdminUser({ email: user.email }));
+      setIsAdmin(false);
     } finally {
       setLoading(false);
     }

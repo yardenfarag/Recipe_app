@@ -8,6 +8,7 @@ import {
   percentile,
   shortModelName,
   summarizeAiCost,
+  summarizeImports,
   type AiCostRow,
 } from '@/lib/aiCostSummary';
 
@@ -25,6 +26,10 @@ function row(overrides: Partial<AiCostRow> = {}): AiCostRow {
     duration_ms: null,
     llm_calls: null,
     created_at: '2026-10-15T12:00:00Z',
+    platform: null,
+    extraction_source: null,
+    video_downloaded: null,
+    video_duration_seconds: null,
     ...overrides,
   };
 }
@@ -155,6 +160,47 @@ describe('summarizeAiCost', () => {
     const empty = summarizeAiCost([]);
     expect(empty.costPerRecipeUsd).toBeNull();
     expect(empty.byModel).toEqual([]);
+  });
+});
+
+describe('summarizeImports', () => {
+  const ig = { action: 'extract', platform: 'instagram' } as const;
+  const s = summarizeImports([
+    row({ ...ig, extraction_source: 'comments', total_cost_usd: 0.004 }),
+    row({ ...ig, extraction_source: 'comments', total_cost_usd: 0.002 }),
+    row({ ...ig, extraction_source: 'description', status: 'partial', total_cost_usd: 0.003 }),
+    row({ ...ig, extraction_source: 'video', total_cost_usd: 0.03, video_duration_seconds: 40, video_downloaded: false }),
+    row({ ...ig, extraction_source: 'video', total_cost_usd: 0.09, video_duration_seconds: 120, video_downloaded: true }),
+    row({ ...ig, extraction_source: 'video', status: 'failed', total_cost_usd: 0.01 }),
+    row({ ...ig, extraction_source: null, status: 'cached', total_cost_usd: 0 }),
+    row({ action: 'invent', status: 'full', total_cost_usd: 1 }),
+  ]);
+
+  it('counts the video fallback rate over successful imports only', () => {
+    expect(s.imports).toBe(5);
+    expect(s.videoImports).toBe(2);
+    expect(s.videoShare).toBeCloseTo(0.4);
+    expect(s.videoDownloads).toBe(1);
+  });
+
+  it('charges failed attempts to the cost per import', () => {
+    expect(s.blendedCostUsd).toBeCloseTo(0.139 / 5);
+    expect(s.videoCostPerImportUsd).toBeCloseTo(0.13 / 2);
+    expect(s.textCostPerImportUsd).toBeCloseTo(0.009 / 3);
+  });
+
+  it('reports video length and a line per platform and step', () => {
+    expect(s.videoDurationP50).toBe(40);
+    expect(s.videoDurationP95).toBe(120);
+    const video = s.bySource.find((l) => l.source === 'video')!;
+    expect(video).toMatchObject({ platform: 'instagram', imports: 2, failed: 1, maxCostUsd: 0.09 });
+    expect(video.costPerImportUsd).toBeCloseTo(0.065);
+    expect(s.bySource.some((l) => l.source === 'none')).toBe(false);
+  });
+
+  it('handles a window without imports', () => {
+    const empty = summarizeImports([row({ action: 'remix' })]);
+    expect(empty).toMatchObject({ imports: 0, videoShare: null, blendedCostUsd: null, bySource: [] });
   });
 });
 

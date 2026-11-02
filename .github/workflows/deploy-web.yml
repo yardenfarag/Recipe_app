@@ -36,7 +36,6 @@ jobs:
         env:
           EXPO_PUBLIC_SUPABASE_URL: ${{ secrets.EXPO_PUBLIC_SUPABASE_URL }}
           EXPO_PUBLIC_SUPABASE_KEY: ${{ secrets.EXPO_PUBLIC_SUPABASE_KEY }}
-          EXPO_PUBLIC_ADMIN_EMAILS: ${{ secrets.EXPO_PUBLIC_ADMIN_EMAILS }}
           EXPO_PUBLIC_LEGAL_BASE_URL: ${{ vars.EXPO_PUBLIC_LEGAL_BASE_URL }}
           EXPO_PUBLIC_SUPPORT_EMAIL: ${{ vars.EXPO_PUBLIC_SUPPORT_EMAIL }}
           EXPO_PUBLIC_CREDIT_PURCHASES_ENABLED: ${{ vars.EXPO_PUBLIC_CREDIT_PURCHASES_ENABLED }}
@@ -53,6 +52,7 @@ jobs:
         run: |
           grep -q '<h1[ >]' dist/index.html
           grep -q 'apps.apple.com' dist/index.html
+          grep -q 'play.google.com' dist/index.html
           test -f dist/app/index.html
           test -f dist/404.html
           test -f dist/site.css

@@ -63,6 +63,11 @@ export function FridgeMatchModal({ visible, recipes, onClose }: FridgeMatchModal
         buildFridgeCatalog(recipes),
       );
       if (requestGen.current !== gen) return;
+      if (result.code === 'auth_required') {
+        handleClose();
+        router.push('/auth?mode=signup&reason=sync');
+        return;
+      }
       if (result.code === 'daily_limit') {
         setError('limited');
         announce(t('library.fridgeMatchLimited'));

@@ -472,13 +472,15 @@ footer button:hover {
   color: var(--cream);
 }
 
-/* App Store: the Apple logo alone, the way Apple shows it. */
-.btn-apple {
+/* App Store and Google Play: the store logo alone, the way Apple shows it. */
+.btn-apple,
+.btn-play {
   min-width: 0;
   width: 64px;
   padding: 0;
 }
-.btn-apple svg {
+.btn-apple svg,
+.btn-play svg {
   width: 26px;
   height: 26px;
 }

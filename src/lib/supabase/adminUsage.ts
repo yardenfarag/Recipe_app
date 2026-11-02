@@ -1,4 +1,5 @@
 import { parseLlmCalls, type AiCostRow } from '@/lib/aiCostSummary';
+import { parseCreditHealth, type CreditHealth } from '@/lib/creditHealth';
 import { supabase } from '@/lib/supabase/client';
 
 export interface AiUsageEvent {
@@ -140,6 +141,12 @@ export async function fetchAdminPurchases(since?: string, limit = 200): Promise<
   });
 }
 
+export async function fetchCreditHealth(): Promise<CreditHealth> {
+  const { data, error } = await supabase.rpc('admin_credit_health');
+  if (error) throw error;
+  return parseCreditHealth(data);
+}
+
 export async function fetchAdminTokenLedger(limit = 100): Promise<TokenLedgerRow[]> {
   const { data, error } = await supabase
     .from('token_ledger')
@@ -176,7 +183,7 @@ export async function fetchAdminCostRows(
     const { data, error } = await supabase
       .from('ai_usage_events')
       .select(
-        'action, status, model, prompt_tokens, output_tokens, thinking_tokens, gemini_cost_usd, scrapecreators_cost_usd, total_cost_usd, duration_ms, created_at, llm_calls:metadata->llm_calls',
+        'action, status, platform, extraction_source, model, prompt_tokens, output_tokens, thinking_tokens, gemini_cost_usd, scrapecreators_cost_usd, total_cost_usd, duration_ms, created_at, llm_calls:metadata->llm_calls, video_downloaded:metadata->video_downloaded, video_duration_seconds:metadata->video_duration_seconds',
       )
       .gte('created_at', sinceIso)
       .order('created_at', { ascending: false })
@@ -197,6 +204,13 @@ export async function fetchAdminCostRows(
         duration_ms: r.duration_ms == null ? null : Number(r.duration_ms),
         llm_calls: parseLlmCalls(r.llm_calls),
         created_at: String(r.created_at),
+        platform: typeof r.platform === 'string' ? r.platform : null,
+        extraction_source: typeof r.extraction_source === 'string' ? r.extraction_source : null,
+        video_downloaded: typeof r.video_downloaded === 'boolean' ? r.video_downloaded : null,
+        video_duration_seconds:
+          typeof r.video_duration_seconds === 'number' && Number.isFinite(r.video_duration_seconds)
+            ? r.video_duration_seconds
+            : null,
       });
     }
     if (page.length < COST_PAGE_SIZE) return { rows, truncated: false };

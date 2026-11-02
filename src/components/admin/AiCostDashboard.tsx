@@ -8,6 +8,7 @@ import {
   formatUsd,
   shortModelName,
   summarizeAiCost,
+  summarizeImports,
   type AiCostRow,
 } from '@/lib/aiCostSummary';
 import { errorText } from '@/lib/errorText';
@@ -23,7 +24,8 @@ type Column = { label: string; width: number; align?: 'left' | 'right' };
 
 /**
  * Owner-only AI spend: totals, then cost and tokens per model, per task kind
- * and per user-facing action. Reads `ai_usage_events` for the chosen window.
+ * and per user-facing action, then imports by extraction step (PIN-62).
+ * Reads `ai_usage_events` for the chosen window.
  */
 export function AiCostDashboard({ refreshKey }: { refreshKey: number }) {
   const { t } = useTranslation();
@@ -57,6 +59,7 @@ export function AiCostDashboard({ refreshKey }: { refreshKey: number }) {
   }, [windowKey, refreshKey, t]);
 
   const summary = useMemo(() => summarizeAiCost(rows), [rows]);
+  const imports = useMemo(() => summarizeImports(rows), [rows]);
 
   const windows: { key: WindowKey; label: string }[] = [
     { key: '24h', label: t('admin.cost.window24h') },
@@ -209,10 +212,69 @@ export function AiCostDashboard({ refreshKey }: { refreshKey: number }) {
               a.p95Ms == null ? '—' : String(a.p95Ms),
             ])}
           />
+
+          {imports.bySource.length > 0 ? (
+            <>
+              <SubHeader title={t('admin.cost.importsTitle')} colors={colors} />
+              <Text className="mb-2 text-xs" style={{ color: colors.textSecondary }}>
+                {t('admin.cost.importsHint')}
+              </Text>
+              <View className="mb-4 flex-row flex-wrap gap-2">
+                <Tile
+                  label={t('admin.cost.videoShare')}
+                  value={
+                    imports.videoShare == null
+                      ? '—'
+                      : `${Math.round(imports.videoShare * 100)}% (${imports.videoImports}/${imports.imports})`
+                  }
+                  colors={colors}
+                  strong
+                />
+                <Tile label={t('admin.cost.blendedPerImport')} value={usdOrDash(imports.blendedCostUsd)} colors={colors} />
+                <Tile label={t('admin.cost.textPerImport')} value={usdOrDash(imports.textCostPerImportUsd)} colors={colors} />
+                <Tile label={t('admin.cost.videoPerImport')} value={usdOrDash(imports.videoCostPerImportUsd)} colors={colors} />
+                <Tile label={t('admin.cost.videoDownloads')} value={String(imports.videoDownloads)} colors={colors} />
+                <Tile
+                  label={t('admin.cost.videoLength')}
+                  value={
+                    imports.videoDurationP50 == null
+                      ? '—'
+                      : `${imports.videoDurationP50}s / ${imports.videoDurationP95}s`
+                  }
+                  colors={colors}
+                />
+              </View>
+              <CostTable
+                colors={colors}
+                columns={[
+                  { label: t('admin.cost.colPlatform'), width: 80 },
+                  { label: t('admin.cost.colStep'), width: 90 },
+                  { label: t('admin.cost.colImports'), width: 60, align: 'right' },
+                  { label: t('admin.cost.colFailed'), width: 56, align: 'right' },
+                  { label: t('admin.cost.colCost'), width: 70, align: 'right' },
+                  { label: t('admin.cost.colPerImport'), width: 80, align: 'right' },
+                  { label: t('admin.cost.colMax'), width: 70, align: 'right' },
+                ]}
+                rows={imports.bySource.map((line) => [
+                  line.platform,
+                  line.source,
+                  String(line.imports),
+                  String(line.failed),
+                  formatUsd(line.costUsd),
+                  usdOrDash(line.costPerImportUsd),
+                  formatUsd(line.maxCostUsd),
+                ])}
+              />
+            </>
+          ) : null}
         </>
       )}
     </View>
   );
+}
+
+function usdOrDash(value: number | null): string {
+  return value == null ? '—' : formatUsd(value);
 }
 
 function Tile({ label, value, colors, strong }: { label: string; value: string; colors: Colors; strong?: boolean }) {

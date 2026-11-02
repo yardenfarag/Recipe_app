@@ -97,7 +97,6 @@ In the GitHub repo: **Settings → Secrets and variables → Actions**
 | --- | --- | --- | --- |
 | `EXPO_PUBLIC_SUPABASE_URL` | Secret | Yes | Same as local `.env` |
 | `EXPO_PUBLIC_SUPABASE_KEY` | Secret | Yes | Publishable/anon key (public in the bundle; still don’t commit it) |
-| `EXPO_PUBLIC_ADMIN_EMAILS` | Secret | No | Comma-separated admin emails |
 | `EXPO_PUBLIC_LEGAL_BASE_URL` | Variable | No | Defaults to `https://pinch-app.io` |
 | `EXPO_PUBLIC_SUPPORT_EMAIL` | Variable | No | Support mailto address |
 

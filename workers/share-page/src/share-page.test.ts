@@ -1,7 +1,7 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
 import { handleShareRequest } from './index';
-import { formatIngredient, recipeJsonLd, renderSharePage, shareDescription, type SharedRecipe } from './render';
+import { APP_STORE_URL, formatIngredient, PLAY_STORE_URL, recipeJsonLd, renderSharePage, shareDescription, type SharedRecipe } from './render';
 
 const env = { SUPABASE_URL: 'https://example.supabase.co/', SUPABASE_KEY: 'sb_publishable_test' };
 const TOKEN = 'AbCdEfGhIjKlMnOpQrStUv_-';
@@ -79,6 +79,12 @@ describe('render', () => {
     const html = renderSharePage({ ...recipe, image_url: 'http://insecure.example.com/x.jpg' }, TOKEN);
     expect(html).toContain('<meta property="og:image" content="https://pinch-app.io/icon.png" />');
     expect(html).not.toContain('class="hero"');
+  });
+
+  it('links to both app stores', () => {
+    const html = renderSharePage(recipe, TOKEN);
+    expect(html).toContain(`href="${APP_STORE_URL}"`);
+    expect(html).toContain(`href="${PLAY_STORE_URL}"`);
   });
 });
 

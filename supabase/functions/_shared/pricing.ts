@@ -22,6 +22,8 @@ export const GUEST_EXTRACT_LIMIT = 3;
 export const FREE_MONTHLY_EXTRACT_LIMIT = 10;
 /** @deprecated Use FREE_MONTHLY_EXTRACT_LIMIT. */
 export const FREE_EXTRACT_LIMIT = FREE_MONTHLY_EXTRACT_LIMIT;
+/** Remix calls per signed-in user per UTC day, including kitchen auto-apply. */
+export const REMIX_DAILY_LIMIT = 40;
 /** Free fridge-match vision calls per UTC day (signed-in). */
 export const FRIDGE_MATCH_DAILY_LIMIT = 8;
 /** Free fridge-match vision calls per UTC day (guest install). */

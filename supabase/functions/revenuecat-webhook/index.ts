@@ -1,6 +1,18 @@
 import { corsHeaders, jsonResponse } from '../_shared/cors.ts';
-import { creditPurchaseDecision } from '../_shared/revenuecatPurchase.ts';
+import { creditPurchaseDecision, purchaseEventSummary } from '../_shared/revenuecatPurchase.ts';
 import { createServiceSupabase } from '../_shared/supabaseAdmin.ts';
+
+/** Best effort: the admin credit health report counts these. */
+async function recordFailure(body: unknown, reason: string, error?: unknown): Promise<void> {
+  const admin = createServiceSupabase();
+  if (!admin) return;
+  const { error: insertError } = await admin.from('purchase_webhook_failures').insert({
+    ...purchaseEventSummary(body),
+    reason,
+    error: error ? String((error as { message?: unknown }).message ?? error).slice(0, 500) : null,
+  });
+  if (insertError) console.error('[revenuecat-webhook] could not record failure', insertError);
+}
 
 Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') {
@@ -11,28 +23,32 @@ Deno.serve(async (req) => {
   }
 
   const expectedAuth = Deno.env.get('REVENUECAT_WEBHOOK_AUTH');
-  if (!expectedAuth || req.headers.get('Authorization') !== expectedAuth) {
+  if (!expectedAuth || !(await secretMatches(req.headers.get('Authorization'), expectedAuth))) {
     return jsonResponse({ error: 'Unauthorized' }, 401);
-  }
-  if (Deno.env.get('CREDIT_PURCHASES_ENABLED') !== 'true') {
-    // Non-2xx asks RevenueCat to retry instead of silently losing a purchase
-    // that arrived during a staged deployment.
-    return jsonResponse({ received: false, grants_enabled: false }, 503);
   }
 
   let body: unknown;
   try {
     body = await req.json();
   } catch {
+    await recordFailure(null, 'invalid_json');
     return jsonResponse({ error: 'Invalid JSON body' }, 400);
   }
 
   const decision = creditPurchaseDecision(body);
+  if (Deno.env.get('CREDIT_PURCHASES_ENABLED') !== 'true') {
+    // Non-2xx asks RevenueCat to retry instead of silently losing a purchase
+    // that arrived during a staged deployment.
+    if (decision.action !== 'ignore') await recordFailure(body, 'grants_disabled');
+    return jsonResponse({ received: false, grants_enabled: false }, 503);
+  }
+
   if (decision.action === 'ignore') {
     return jsonResponse({ received: true, ignored: true });
   }
   if (decision.action === 'retry') {
     console.error('[revenuecat-webhook] credit purchase cannot be granted yet');
+    await recordFailure(body, 'invalid_purchase_event');
     return jsonResponse({ error: 'Invalid purchase event' }, 500);
   }
 
@@ -56,8 +72,25 @@ Deno.serve(async (req) => {
 
   if (error) {
     console.error('[revenuecat-webhook] grant failed', error);
+    await recordFailure(body, 'grant_failed', error);
     return jsonResponse({ error: 'Credit grant failed' }, 500);
   }
 
   return jsonResponse({ received: true, balance: Number(data) });
 });
+
+/**
+ * Compares the shared secret in constant time. Hashing both sides first makes
+ * the lengths equal, so neither the length nor a matching prefix leaks.
+ */
+async function secretMatches(given: string | null, expected: string): Promise<boolean> {
+  const encoder = new TextEncoder();
+  const [a, b] = await Promise.all(
+    [given ?? '', expected].map((value) => crypto.subtle.digest('SHA-256', encoder.encode(value))),
+  );
+  const x = new Uint8Array(a);
+  const y = new Uint8Array(b);
+  let diff = 0;
+  for (let i = 0; i < x.length; i++) diff |= x[i] ^ y[i];
+  return diff === 0;
+}

@@ -174,6 +174,11 @@ function InsightsBody() {
                 <Stat label="Visitors" value={String(summary.webIntro.visitors)} colors={colors} />
                 <Stat label="App Store" value={String(summary.webIntro.appStoreClicks)} colors={colors} />
                 <Stat
+                  label="Google Play"
+                  value={String(summary.webIntro.playStoreClicks)}
+                  colors={colors}
+                />
+                <Stat
                   label="Continue on the web"
                   value={String(summary.webIntro.continueClicks)}
                   colors={colors}

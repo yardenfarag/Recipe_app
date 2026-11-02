@@ -66,7 +66,7 @@ npx supabase db push
 npx supabase functions deploy recipe-share
 ```
 
-After the app is on the stores, set App Store / Play URLs in `legal/share.html` (`APP_STORE_URL` / `PLAY_STORE_URL`).
+The App Store and Google Play URLs are set in `legal/share.html` (`APP_STORE_URL` / `PLAY_STORE_URL`) and `workers/share-page/src/render.ts`.
 
 For the Free / Plus quota + remix-gating change, you only need:
 
