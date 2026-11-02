@@ -490,7 +490,7 @@ Deno.serve(async (req) => {
     }
 
     if (platform === 'photo' && imageBase64) {
-      imageUrl = (await persistUploadedPhoto({ imageBase64, mimeType: imageMime })) ?? imageUrl;
+      imageUrl = (await persistUploadedPhoto({ imageBase64, mimeType: imageMime, userId })) ?? imageUrl;
     }
 
     const recipe = {

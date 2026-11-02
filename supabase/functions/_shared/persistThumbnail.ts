@@ -99,10 +99,14 @@ export async function persistSocialThumbnail(opts: {
   return data.publicUrl;
 }
 
-/** Uploads a user Snap/invent photo so it can be the recipe hero image. */
+/**
+ * Uploads a user Snap/invent photo so it can be the recipe hero image. Photos
+ * live under `photo/<user id>/` so delete-account can find and remove them.
+ */
 export async function persistUploadedPhoto(opts: {
   imageBase64: string;
   mimeType?: string;
+  userId: string | null;
 }): Promise<string | undefined> {
   const supabaseUrl = Deno.env.get('SUPABASE_URL');
   const serviceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY');
@@ -119,7 +123,7 @@ export async function persistUploadedPhoto(opts: {
   }
 
   const ext = extensionForContentType(mime);
-  const path = `photo/${crypto.randomUUID()}.${ext}`;
+  const path = `photo/${opts.userId ?? 'guest'}/${crypto.randomUUID()}.${ext}`;
   const supabase = createClient(supabaseUrl, serviceKey);
   const { error } = await supabase.storage.from('recipe-thumbnails').upload(path, bytes, {
     contentType: mime.startsWith('image/') ? mime : 'image/jpeg',
