@@ -233,20 +233,18 @@ values (
   'description'
 );
 
--- Since 0032, saving publishes the card, so the backfill finds nothing new.
+-- Since PIN-67, only extract-recipe publishes cards; a save never creates one.
 select ok(
-  exists (
+  not exists (
     select 1 from public.recipe_cards
     where canonical_key = 'youtube:abcdefghijk'
-      and title = 'Backfill Soup'
   ),
-  'saving a public extract publishes its hub card'
+  'saving a public extract does not publish a hub card'
 );
 
-select is(
-  public.backfill_recipe_cards(),
-  0,
-  'backfill skips extracts already published on save'
+select ok(
+  not has_function_privilege('authenticated', 'public.backfill_recipe_cards()', 'execute'),
+  'clients cannot run the hub backfill, which publishes from saved rows'
 );
 
 select * from finish();

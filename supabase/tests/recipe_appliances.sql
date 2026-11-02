@@ -3,7 +3,7 @@ begin;
 create extension if not exists pgtap with schema extensions;
 select plan(16);
 
--- Two users: one saves recipes (publishes to the Hub), one claims Hub cards.
+-- Two users: one saves recipes, one claims Hub cards.
 insert into auth.users (
   instance_id, id, aud, role, email, encrypted_password,
   email_confirmed_at, raw_app_meta_data, raw_user_meta_data, created_at, updated_at
@@ -78,23 +78,32 @@ select throws_ok(
   'hub cards reject a non-list too'
 );
 
--- Publishing to the Hub on save
+-- Saving never writes Hub card content (PIN-67): extract-recipe publishes cards server-side.
 
 insert into public.recipes (user_id, title, original_url, platform, ingredients, instructions,
                             extraction_status, extraction_source, appliances)
-values ('10000000-0000-4000-8000-000000000261', 'Blender Soup', 'https://example.com/blender-soup', 'web',
+values ('10000000-0000-4000-8000-000000000261', 'Unpublished Soup', 'https://example.com/unpublished-soup', 'web',
         '[{"name":"tomato","quantity":4,"unit":""},{"name":"salt","quantity":1,"unit":"tsp"}]'::jsonb,
         '[{"step":1,"text":"Simmer"},{"step":2,"text":"Blend until smooth"}]'::jsonb,
         'full', 'web',
-        '[{"key":"stovetop","required":true,"steps":[1],"origin":"source"},{"key":"blender","required":true,"steps":[2],"origin":"source"}]'::jsonb);
+        '[{"key":"blender","required":true,"steps":[2],"origin":"source"}]'::jsonb);
 
 select is(
-  (select appliances from public.recipe_cards where canonical_key = 'web:https://example.com/blender-soup'),
-  '[{"key":"stovetop","required":true,"steps":[1],"origin":"source"},{"key":"blender","required":true,"steps":[2],"origin":"source"}]'::jsonb,
-  'saving a public extract publishes its appliances to the new hub card'
+  (select count(*)::int from public.recipe_cards where canonical_key = 'web:https://example.com/unpublished-soup'),
+  0,
+  'saving a public extract does not create a hub card'
 );
 
--- An existing card without appliances (published before this migration) gets them from the next save.
+-- The card extract-recipe published for Blender Soup, for the claim tests below.
+insert into public.recipe_cards (canonical_key, canonical_url, original_url, platform, title,
+                                 ingredients, instructions, servings, extraction_status, extraction_source, appliances)
+values ('web:https://example.com/blender-soup', 'https://example.com/blender-soup',
+        'https://example.com/blender-soup', 'web', 'Blender Soup',
+        '[{"name":"tomato","quantity":4,"unit":""},{"name":"salt","quantity":1,"unit":"tsp"}]'::jsonb,
+        '[{"step":1,"text":"Simmer"},{"step":2,"text":"Blend until smooth"}]'::jsonb, 1, 'full', 'web',
+        '[{"key":"stovetop","required":true,"steps":[1],"origin":"source"},{"key":"blender","required":true,"steps":[2],"origin":"source"}]'::jsonb);
+
+-- A card without appliances stays that way after a save; only the server fills it.
 insert into public.recipe_cards (id, canonical_key, canonical_url, original_url, platform, title,
                                  ingredients, instructions, servings, extraction_status, extraction_source)
 values ('30000000-0000-4000-8000-000000000261', 'web:https://example.com/old-card',
@@ -111,22 +120,14 @@ values ('10000000-0000-4000-8000-000000000261', 'Old Card', 'https://example.com
 
 select is(
   (select appliances from public.recipe_cards where id = '30000000-0000-4000-8000-000000000261'),
-  '[{"key":"oven","required":true,"steps":[1],"origin":"source"}]'::jsonb,
-  'a hub card with no appliances is filled by the next save'
+  null,
+  'a save does not fill appliances on a hub card'
 );
 
--- A card that already has appliances keeps them: one user's save can't rewrite the public card.
-insert into public.recipes (user_id, title, original_url, platform, ingredients, instructions,
-                            extraction_status, extraction_source, appliances)
-values ('10000000-0000-4000-8000-000000000262', 'Old Card', 'https://example.com/old-card', 'web',
-        '[{"name":"a","quantity":1,"unit":""},{"name":"b","quantity":1,"unit":""}]'::jsonb,
-        '[{"step":1,"text":"Bake"},{"step":2,"text":"Serve"}]'::jsonb,
-        'full', 'web', '[]'::jsonb);
-
 select is(
-  (select appliances from public.recipe_cards where id = '30000000-0000-4000-8000-000000000261'),
-  '[{"key":"oven","required":true,"steps":[1],"origin":"source"}]'::jsonb,
-  'a later save does not overwrite appliances already on a hub card'
+  (select save_count from public.recipe_cards where id = '30000000-0000-4000-8000-000000000261'),
+  1,
+  'a save still counts towards the existing hub card'
 );
 
 -- Claiming a Hub card
