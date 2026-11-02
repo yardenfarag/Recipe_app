@@ -6,6 +6,7 @@
 import { FetchError } from './errors.ts';
 import { EMPTY_PLATFORM_META, type PlatformMeta } from './platformMeta.ts';
 import { extractYouTubeId } from './platform.ts';
+import { safeFetch } from './safeFetch.ts';
 
 const FETCH_TIMEOUT_MS = 18_000;
 const MAX_HTML_CHARS = 600_000;
@@ -21,8 +22,6 @@ export interface WebRecipeMeta extends PlatformMeta {
 
 /** Fetches a public recipe page and normalizes it for the Gemini text ladder. */
 export async function fetchWebRecipeMeta(url: string): Promise<WebRecipeMeta> {
-  assertPublicHttpUrl(url);
-
   const html = await fetchHtml(url);
   const jsonLd = extractJsonLdBlocks(html);
   const recipeLd = findRecipeJsonLd(jsonLd);
@@ -70,43 +69,12 @@ export async function fetchWebRecipeMeta(url: string): Promise<WebRecipeMeta> {
   };
 }
 
-/** Rejects localhost / private network targets before server-side fetch. */
-export function assertPublicHttpUrl(url: string): void {
-  let parsed: URL;
-  try {
-    parsed = new URL(url);
-  } catch {
-    throw new FetchError('webRecipe.ts: assertPublicHttpUrl', 'Invalid URL', { url });
-  }
-
-  if (parsed.protocol !== 'http:' && parsed.protocol !== 'https:') {
-    throw new FetchError('webRecipe.ts: assertPublicHttpUrl', 'URL must be http(s)', { url });
-  }
-
-  const host = parsed.hostname.toLowerCase().replace(/^\[|\]$/g, '');
-  if (
-    host === 'localhost' ||
-    host.endsWith('.localhost') ||
-    host.endsWith('.local') ||
-    host === '0.0.0.0' ||
-    host === '::1' ||
-    isPrivateIp(host)
-  ) {
-    throw new FetchError(
-      'webRecipe.ts: assertPublicHttpUrl',
-      'That link is not a public webpage.',
-      { url },
-    );
-  }
-}
-
 async function fetchHtml(url: string): Promise<string> {
   const controller = new AbortController();
   const timeout = setTimeout(() => controller.abort(), FETCH_TIMEOUT_MS);
   let res: Response;
   try {
-    res = await fetch(url, {
-      redirect: 'follow',
+    res = await safeFetch(url, {
       signal: controller.signal,
       headers: {
         Accept: 'text/html,application/xhtml+xml;q=0.9,*/*;q=0.8',
@@ -115,6 +83,7 @@ async function fetchHtml(url: string): Promise<string> {
       },
     });
   } catch (err) {
+    if (err instanceof FetchError) throw err;
     const timedOut = err instanceof Error && err.name === 'AbortError';
     throw new FetchError('webRecipe.ts: fetchHtml', 'Could not load this webpage', {
       url,
@@ -400,25 +369,6 @@ function isHttpUrl(value: string): boolean {
   } catch {
     return false;
   }
-}
-
-function isPrivateIp(host: string): boolean {
-  if (/^\d{1,3}(\.\d{1,3}){3}$/.test(host)) {
-    const parts = host.split('.').map(Number);
-    const [a, b] = parts;
-    if (a === 10 || a === 127 || a === 0) return true;
-    if (a === 169 && b === 254) return true;
-    if (a === 192 && b === 168) return true;
-    if (a === 172 && b >= 16 && b <= 31) return true;
-  }
-  // IPv6 unique-local / link-local (simplified).
-  if (host.includes(':')) {
-    const lower = host.toLowerCase();
-    if (lower.startsWith('fc') || lower.startsWith('fd') || lower.startsWith('fe80')) {
-      return true;
-    }
-  }
-  return false;
 }
 
 function escapeRegExp(value: string): string {
