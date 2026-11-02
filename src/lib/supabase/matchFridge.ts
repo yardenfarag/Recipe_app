@@ -18,7 +18,7 @@ export type MatchFridgeResult = {
   status: 'ok' | 'failed';
   matches?: FridgeMatchRow[];
   message?: string;
-  code?: 'daily_limit' | 'empty_library' | 'guest_id_required' | 'metering_error' | string;
+  code?: 'auth_required' | 'daily_limit' | 'empty_library' | 'metering_error' | string;
 };
 
 export async function matchFridge(

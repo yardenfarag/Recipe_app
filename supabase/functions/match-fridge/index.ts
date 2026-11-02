@@ -2,15 +2,10 @@ import { corsHeaders, jsonResponse } from '../_shared/cors.ts';
 import {
   currentUtcDate,
   refundDailyAiUsage,
-  refundGuestDailyAiUsage,
   reserveDailyAiUsage,
-  reserveGuestDailyAiUsage,
 } from '../_shared/dailyAiUsage.ts';
 import { matchFridgeToCatalog, type FridgeCatalogItem } from '../_shared/fridgeMatch.ts';
-import {
-  FRIDGE_MATCH_DAILY_LIMIT,
-  GUEST_FRIDGE_MATCH_DAILY_LIMIT,
-} from '../_shared/pricing.ts';
+import { FRIDGE_MATCH_DAILY_LIMIT } from '../_shared/pricing.ts';
 import { createAuthedSupabase } from '../_shared/recipeLookup.ts';
 import { createServiceSupabase } from '../_shared/supabaseAdmin.ts';
 import { logUsageEvent } from '../_shared/usageLog.ts';
@@ -103,23 +98,21 @@ Deno.serve(async (req) => {
   if (!admin) {
     return jsonResponse({ status: 'failed', code: 'metering_error', message: 'metering_error' }, 500);
   }
-  if (!userId && !guestInstallId) {
+  if (!userId) {
     return jsonResponse(
-      { status: 'failed', code: 'guest_id_required', message: 'guest_id_required' },
+      { status: 'failed', code: 'auth_required', message: 'Sign in to match your fridge.' },
       401,
     );
   }
 
   const usageDate = currentUtcDate();
-  const reserved = userId
-    ? await reserveDailyAiUsage(admin, userId, 'fridge_match', FRIDGE_MATCH_DAILY_LIMIT, usageDate)
-    : await reserveGuestDailyAiUsage(
-        admin,
-        guestInstallId!,
-        'fridge_match',
-        GUEST_FRIDGE_MATCH_DAILY_LIMIT,
-        usageDate,
-      );
+  const reserved = await reserveDailyAiUsage(
+    admin,
+    userId,
+    'fridge_match',
+    FRIDGE_MATCH_DAILY_LIMIT,
+    usageDate,
+  );
 
   if (reserved === 'error') {
     return jsonResponse({ status: 'failed', code: 'metering_error', message: 'metering_error' }, 500);
@@ -162,11 +155,7 @@ Deno.serve(async (req) => {
     return jsonResponse({ status: 'ok', matches: result.matches });
   } catch (err) {
     console.error('[match-fridge] error', err);
-    if (userId) {
-      await refundDailyAiUsage(admin, userId, 'fridge_match', usageDate);
-    } else if (guestInstallId) {
-      await refundGuestDailyAiUsage(admin, guestInstallId, 'fridge_match', usageDate);
-    }
+    await refundDailyAiUsage(admin, userId, 'fridge_match', usageDate);
     await logUsageEvent(admin, {
       userId,
       guestInstallId: userId ? null : guestInstallId,

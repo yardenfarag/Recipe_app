@@ -25,6 +25,7 @@ import {
   reserveSignedInExtract,
 } from '../_shared/quotas.ts';
 import { createAuthedSupabase, extractVideoIdForPlatform } from '../_shared/recipeLookup.ts';
+import { openJson, sealJson } from '../_shared/sealedPayload.ts';
 import { createServiceSupabase } from '../_shared/supabaseAdmin.ts';
 import { normalizeRecipeTags } from '../_shared/tags.ts';
 import { fetchTikTokMeta } from '../_shared/tiktok.ts';
@@ -48,6 +49,8 @@ interface RepairIngredient {
 interface RequestBody {
   action?: string;
   reservation_id?: string;
+  /** The `sealed_recipe` from generate, handed back on commit. */
+  sealed_recipe?: string;
   original_url?: string;
   guest_install_id?: string;
   guestInstallId?: string;
@@ -147,6 +150,7 @@ Deno.serve(async (req) => {
       userId,
       action,
       reservationId: settleReservationId,
+      sealedRecipe: typeof body.sealed_recipe === 'string' ? body.sealed_recipe : null,
       requestId,
       started,
     });
@@ -274,9 +278,15 @@ Deno.serve(async (req) => {
       },
     });
 
+    // The recipe stays sealed until commit finalizes the credit, so aborting
+    // can't keep the repair for free.
     return jsonResponse({
       status: classified.status,
-      recipe,
+      sealed_recipe: await sealJson(
+        recipe,
+        repairSealContext(userId, creditReservation.reservationId),
+        sealingSecret(),
+      ),
       summary: repaired.filledSummary,
       filled_fields: beforeClass.missingFields.filter(
         (field) => !classified.missingFields.includes(field),
@@ -321,10 +331,11 @@ async function settleRepairCredit(opts: {
   userId: string;
   action: 'commit' | 'abort';
   reservationId: string;
+  sealedRecipe: string | null;
   requestId: string;
   started: number;
 }): Promise<Response> {
-  const { admin, userId, action, reservationId, requestId, started } = opts;
+  const { admin, userId, action, reservationId, sealedRecipe, requestId, started } = opts;
   const snapshot = (await canStartExtract(admin, userId)).snapshot;
 
   if (action === 'abort') {
@@ -378,6 +389,20 @@ async function settleRepairCredit(opts: {
     });
   }
 
+  const recipe = sealedRecipe
+    ? await openJson<Record<string, unknown>>(
+        sealedRecipe,
+        repairSealContext(userId, reservationId),
+        sealingSecret(),
+      )
+    : null;
+  if (!recipe) {
+    return jsonResponse(
+      { status: 'failed', code: 'sealed_recipe_required', message: 'Missing repaired recipe.' },
+      400,
+    );
+  }
+
   const finalized = await finalizeSignedInExtract(admin, userId, reservationId);
   if (!finalized) {
     const compensated = await refundSignedInExtractAfterFinalizeFailure(
@@ -429,9 +454,19 @@ async function settleRepairCredit(opts: {
   return jsonResponse({
     status: 'ok',
     action: 'commit',
+    recipe,
     tokens_charged: 1,
     ...quotaFields(after ?? snapshot),
   });
+}
+
+function repairSealContext(userId: string, reservationId: string): string {
+  return `repair:${userId}:${reservationId}`;
+}
+
+/** createServiceSupabase() already returned non-null, so the key is set. */
+function sealingSecret(): string {
+  return Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? '';
 }
 
 function requestIsTooLarge(req: Request, maxBytes: number): boolean {
