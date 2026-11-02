@@ -4,6 +4,7 @@ import { createAuthedSupabase } from '../_shared/recipeLookup.ts';
 import { createServiceSupabase } from '../_shared/supabaseAdmin.ts';
 
 const AVATAR_BUCKET = 'avatars';
+const THUMBNAIL_BUCKET = 'recipe-thumbnails';
 const MAX_BODY_BYTES = 4_000;
 
 interface RequestBody {
@@ -13,8 +14,9 @@ interface RequestBody {
 
 /**
  * POST { apple_authorization_code? }
- * Deletes the caller's account: avatars → Apple revoke (best effort) → auth user.
- * Cascades wipe profiles, recipes, collections, shopping list, token ledger.
+ * Deletes the caller's account: Apple revoke (best effort) → avatars and Snap
+ * photos → personal rows that don't cascade → auth user. The cascade wipes
+ * profiles, recipes, collections, shopping list, token ledger and shares.
  */
 Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') {
@@ -87,6 +89,16 @@ Deno.serve(async (req) => {
     console.error('Avatar cleanup error:', err);
   }
 
+  await removeUserPhotos(admin, user.id);
+
+  // Support tickets, feedback, analytics and webhook failures don't cascade.
+  // Stop here if they can't be erased, so the user can retry.
+  const { error: eraseError } = await admin.rpc('erase_user_personal_data', { p_user_id: user.id });
+  if (eraseError) {
+    console.error('erase_user_personal_data failed:', eraseError);
+    return jsonResponse({ error: 'Could not delete account. Please try again.' }, 500);
+  }
+
   const { error: deleteError } = await admin.auth.admin.deleteUser(user.id);
   if (deleteError) {
     console.error('deleteUser failed:', deleteError);
@@ -95,3 +107,42 @@ Deno.serve(async (req) => {
 
   return jsonResponse({ ok: true });
 });
+
+/**
+ * Snap/invent photos live at `photo/<user id>/…`. Older uploads sit directly
+ * under `photo/`, so those are found through the user's recipes instead.
+ */
+async function removeUserPhotos(
+  admin: NonNullable<ReturnType<typeof createServiceSupabase>>,
+  userId: string,
+): Promise<void> {
+  try {
+    const paths = new Set<string>();
+
+    const { data: files, error: listError } = await admin.storage
+      .from(THUMBNAIL_BUCKET)
+      .list(`photo/${userId}`, { limit: 1000 });
+    if (listError) console.error('Photo list failed:', listError);
+    for (const file of files ?? []) paths.add(`photo/${userId}/${file.name}`);
+
+    const { data: recipes, error: recipeError } = await admin
+      .from('recipes')
+      .select('image_url')
+      .eq('user_id', userId)
+      .like('image_url', `%/${THUMBNAIL_BUCKET}/photo/%`);
+    if (recipeError) console.error('Photo recipe lookup failed:', recipeError);
+    for (const row of recipes ?? []) {
+      const marker = `/${THUMBNAIL_BUCKET}/`;
+      const url = typeof row.image_url === 'string' ? row.image_url : '';
+      const path = url.slice(url.indexOf(marker) + marker.length).split('?')[0];
+      if (path.startsWith('photo/')) paths.add(decodeURIComponent(path));
+    }
+
+    if (paths.size > 0) {
+      const { error: removeError } = await admin.storage.from(THUMBNAIL_BUCKET).remove([...paths]);
+      if (removeError) console.error('Photo remove failed:', removeError);
+    }
+  } catch (err) {
+    console.error('Photo cleanup error:', err);
+  }
+}

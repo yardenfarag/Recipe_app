@@ -5,7 +5,7 @@ import { createServiceSupabase } from '../_shared/supabaseAdmin.ts';
 const MAX_BODY_BYTES = 32_000;
 const TOKEN_BYTES = 18;
 
-type ShareAction = 'create' | 'get' | 'claim';
+type ShareAction = 'create' | 'get' | 'claim' | 'revoke';
 
 interface RequestBody {
   action?: ShareAction;
@@ -146,7 +146,7 @@ Deno.serve(async (req) => {
   }
 
   const action = body.action;
-  if (action !== 'create' && action !== 'get' && action !== 'claim') {
+  if (action !== 'create' && action !== 'get' && action !== 'claim' && action !== 'revoke') {
     return jsonResponse({ error: 'Invalid action' }, 400);
   }
 
@@ -192,6 +192,27 @@ Deno.serve(async (req) => {
   } = await authed.auth.getUser();
   if (userError || !user) {
     return jsonResponse({ error: 'Unauthorized' }, 401);
+  }
+
+  // Stops a link (by token) or every link to a recipe (by recipe_id). Only the
+  // sharer can revoke; another user's token matches no rows.
+  if (action === 'revoke') {
+    const token = typeof body.token === 'string' ? body.token.trim() : '';
+    const recipeId = typeof body.recipe_id === 'string' ? body.recipe_id.trim() : '';
+    if (!token && !recipeId) return jsonResponse({ error: 'Missing token or recipe_id' }, 400);
+
+    let query = admin
+      .from('recipe_shares')
+      .update({ revoked_at: new Date().toISOString() })
+      .eq('created_by', user.id)
+      .is('revoked_at', null);
+    query = token ? query.eq('token', token) : query.eq('source_recipe_id', recipeId);
+    const { data, error } = await query.select('token');
+    if (error) {
+      console.error('recipe-share revoke failed:', error);
+      return jsonResponse({ error: 'Could not revoke share' }, 500);
+    }
+    return jsonResponse({ status: 'ok', revoked: data?.length ?? 0 });
   }
 
   if (action === 'create') {
