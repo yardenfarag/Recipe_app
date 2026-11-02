@@ -7,5 +7,9 @@
 [functions.revenuecat-webhook]
 verify_jwt = false
 
+# Called by pg_cron with x-sweep-secret instead of a user JWT.
+[functions.sweep-orphan-photos]
+verify_jwt = false
+
 [auth.email]
 enable_confirmations = false

@@ -3,6 +3,7 @@
 
 export const SITE_URL = 'https://pinch-app.io';
 export const APP_STORE_URL = 'https://apps.apple.com/us/app/pinch-recipe-library/id6796310453';
+export const PLAY_STORE_URL = 'https://play.google.com/store/apps/details?id=com.pinch.myapp';
 const FALLBACK_IMAGE = `${SITE_URL}/icon.png`;
 
 /** Fields of the `recipe-share` "get" response that the page uses. */
@@ -204,6 +205,7 @@ function actionButtons(token: string): string {
   return `      <div class="actions">
         <a class="btn btn-primary" href="pinch://s/${encoded}">Open in Pinch</a>
         <a class="btn btn-secondary" href="${APP_STORE_URL}">Download on the App Store</a>
+        <a class="btn btn-secondary" href="${PLAY_STORE_URL}">Get it on Google Play</a>
         <a class="btn btn-secondary" href="/app/s/${encoded}">Continue in browser</a>
       </div>`;
 }

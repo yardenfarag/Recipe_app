@@ -313,7 +313,11 @@ export default function SettingsScreen() {
       }
 
       setUploading(true);
-      const fileExt = asset.uri.split('.').pop()?.toLowerCase() ?? 'jpg';
+      // Web gives a data: URI, so prefer the picker's mime type over the path.
+      const fileExt =
+        asset.mimeType?.split('/')[1]?.toLowerCase() ??
+        asset.uri.split('.').pop()?.toLowerCase() ??
+        'jpg';
       await uploadAvatar(user.id, asset.base64, fileExt);
       await refresh();
     } catch (err) {

@@ -1,5 +1,6 @@
 import { corsHeaders, jsonResponse } from '../_shared/cors.ts';
-import { RECIPE_REMIX_LIMIT } from '../_shared/pricing.ts';
+import { currentUtcDate, refundDailyAiUsage, reserveDailyAiUsage } from '../_shared/dailyAiUsage.ts';
+import { RECIPE_REMIX_LIMIT, REMIX_DAILY_LIMIT } from '../_shared/pricing.ts';
 import { appliancesForRecipe, stepsChanged } from '../_shared/recipeAppliances.ts';
 import { createAuthedSupabase } from '../_shared/recipeLookup.ts';
 import {
@@ -206,6 +207,28 @@ Deno.serve(async (req) => {
     );
   }
 
+  // Kitchen auto-apply skips the per-recipe limit and users set the flag
+  // themselves, so every remix also counts against a daily cap (PIN-54).
+  const usageDate = currentUtcDate();
+  const dailyRemix = await reserveDailyAiUsage(admin, user.id, 'remix', REMIX_DAILY_LIMIT, usageDate);
+  if (dailyRemix === 'limited') {
+    return jsonResponse(
+      {
+        status: 'failed',
+        code: 'daily_limit',
+        message: 'daily_limit',
+        remix_daily_limit: REMIX_DAILY_LIMIT,
+      },
+      429,
+    );
+  }
+  if (dailyRemix === 'error') {
+    return jsonResponse(
+      { status: 'failed', code: 'metering_error', message: 'metering_error' },
+      500,
+    );
+  }
+
   if (instruction && !kitchenAutoApply) {
     try {
       const related = await remixInstructionIsRelated(instruction, {
@@ -213,6 +236,7 @@ Deno.serve(async (req) => {
         ingredients,
       });
       if (!related) {
+        await refundDailyAiUsage(admin, user.id, 'remix', usageDate);
         return jsonResponse(
           {
             status: 'failed',
@@ -224,6 +248,7 @@ Deno.serve(async (req) => {
       }
     } catch (err) {
       console.error('remix relatedness check failed:', err);
+      await refundDailyAiUsage(admin, user.id, 'remix', usageDate);
       return jsonResponse(
         {
           status: 'failed',
@@ -240,6 +265,7 @@ Deno.serve(async (req) => {
     ? 'ok'
     : await reserveRecipeRemix(admin, user.id, recipeId, sourceUrl);
   if (reserved === 'identity_required') {
+    await refundDailyAiUsage(admin, user.id, 'remix', usageDate);
     return jsonResponse(
       {
         status: 'failed',
@@ -250,6 +276,7 @@ Deno.serve(async (req) => {
     );
   }
   if (reserved === 'error') {
+    await refundDailyAiUsage(admin, user.id, 'remix', usageDate);
     return jsonResponse(
       {
         status: 'failed',
@@ -260,6 +287,7 @@ Deno.serve(async (req) => {
     );
   }
   if (reserved === 'limited') {
+    await refundDailyAiUsage(admin, user.id, 'remix', usageDate);
     return jsonResponse(
       {
         status: 'failed',
@@ -283,6 +311,7 @@ Deno.serve(async (req) => {
     });
 
     if (transformed.ingredients.length === 0) {
+      await refundDailyAiUsage(admin, user.id, 'remix', usageDate);
       if (!kitchenAutoApply) await refundRecipeRemix(admin, user.id, recipeId, sourceUrl);
       await logUsageEvent(admin, {
         userId: user.id,
@@ -341,6 +370,7 @@ Deno.serve(async (req) => {
     });
   } catch (err) {
     console.error('transform-recipe error:', err);
+    await refundDailyAiUsage(admin, user.id, 'remix', usageDate);
     if (!kitchenAutoApply) await refundRecipeRemix(admin, user.id, recipeId, sourceUrl);
     await logUsageEvent(admin, {
       userId: user.id,

@@ -478,7 +478,7 @@ export function RecipeView({
         router.push('/auth?mode=signup&reason=extract');
         return;
       }
-      if (result.status === 'failed' || !result.recipe) {
+      if (result.status === 'failed' || !result.sealed_recipe || !result.reservation_id) {
         Alert.alert(
           t('recipe.repairFailedTitle'),
           result.code === 'no_improvement'
@@ -503,17 +503,21 @@ export function RecipeView({
         return;
       }
 
-      if (result.reservation_id) {
-        const settled = await settleRepairRecipe('commit', result.reservation_id, result.request_id);
-        if (settled.status === 'failed') {
-          await settleRepairRecipe('abort', result.reservation_id, result.request_id);
-          Alert.alert(t('recipe.repairFailedTitle'), t('recipe.repairFailed'));
-          return;
-        }
+      // The server releases the repaired recipe only once the credit is committed.
+      const settled = await settleRepairRecipe(
+        'commit',
+        result.reservation_id,
+        result.request_id,
+        result.sealed_recipe,
+      );
+      if (settled.status === 'failed' || !settled.recipe) {
+        await settleRepairRecipe('abort', result.reservation_id, result.request_id);
+        Alert.alert(t('recipe.repairFailedTitle'), t('recipe.repairFailed'));
+        return;
       }
       if (result.request_id) await clearExtractionRequestId(requestKey, result.request_id);
 
-      const next = result.recipe;
+      const next = settled.recipe;
       setTitle(next.title);
       setBaseServings(next.servings);
       setBaseIngredients(next.ingredients);

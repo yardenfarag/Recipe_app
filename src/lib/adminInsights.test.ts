@@ -59,6 +59,7 @@ describe('summarizeInsights', () => {
       visits: 0,
       visitors: 0,
       appStoreClicks: 0,
+      playStoreClicks: 0,
       continueClicks: 0,
     });
   });
@@ -90,6 +91,13 @@ describe('summarizeInsights', () => {
         },
         {
           name: 'web_intro_clicked',
+          properties: { action: 'play_store' },
+          created_at: '2026-09-24T16:01:30.000Z',
+          user_id: null,
+          guest_install_id: 'install-1',
+        },
+        {
+          name: 'web_intro_clicked',
           properties: { action: 'continue' },
           created_at: '2026-09-24T16:02:00.000Z',
           user_id: null,
@@ -102,6 +110,7 @@ describe('summarizeInsights', () => {
       visits: 2,
       visitors: 1,
       appStoreClicks: 1,
+      playStoreClicks: 1,
       continueClicks: 1,
     });
     expect(summary.recent[0]?.detail).toBe('continue');

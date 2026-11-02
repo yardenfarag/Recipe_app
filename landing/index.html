@@ -42,7 +42,7 @@
             "name": "Pinch",
             "url": "https://pinch-app.io/",
             "logo": "https://pinch-app.io/icon-512.png",
-            "sameAs": ["https://apps.apple.com/us/app/pinch-recipe-library/id6796310453"]
+            "sameAs": ["https://apps.apple.com/us/app/pinch-recipe-library/id6796310453", "https://play.google.com/store/apps/details?id=com.pinch.myapp"]
           },
           {
             "@type": "MobileApplication",
@@ -56,6 +56,22 @@
             "image": "https://pinch-app.io/icon-512.png",
             "installUrl": "https://apps.apple.com/us/app/pinch-recipe-library/id6796310453",
             "sameAs": ["https://apps.apple.com/us/app/pinch-recipe-library/id6796310453"],
+            "inLanguage": ["en", "es", "he", "ar", "ru"],
+            "offers": { "@type": "Offer", "price": "0", "priceCurrency": "USD" },
+            "publisher": { "@id": "https://pinch-app.io/#organization" }
+          },
+          {
+            "@type": "MobileApplication",
+            "@id": "https://pinch-app.io/#android-app",
+            "name": "Pinch",
+            "url": "https://pinch-app.io/",
+            "description": "Pinch is a recipe keeper app that turns TikTok, Instagram, and YouTube cooking videos into written recipes, with ingredients, steps, and a shopping list.",
+            "operatingSystem": "Android",
+            "applicationCategory": "LifestyleApplication",
+            "applicationSubCategory": "Food & Drink",
+            "image": "https://pinch-app.io/icon-512.png",
+            "installUrl": "https://play.google.com/store/apps/details?id=com.pinch.myapp",
+            "sameAs": ["https://play.google.com/store/apps/details?id=com.pinch.myapp"],
             "inLanguage": ["en", "es", "he", "ar", "ru"],
             "offers": { "@type": "Offer", "price": "0", "priceCurrency": "USD" },
             "publisher": { "@id": "https://pinch-app.io/#organization" }
@@ -116,7 +132,7 @@
             "name": "Can I use Pinch without the app?",
             "acceptedAnswer": {
               "@type": "Answer",
-              "text": "Yes. Pinch also runs in your browser at pinch-app.io/app, including on Android phones. Your library syncs when you sign in with the same account."
+              "text": "Yes. Pinch also runs in your browser at pinch-app.io/app. Your library syncs when you sign in with the same account."
             }
           },
           {
@@ -185,12 +201,22 @@
                 />
               </svg>
             </a>
+            <a
+              class="btn btn-store btn-play"
+              data-track="play_store"
+              href="https://play.google.com/store/apps/details?id=com.pinch.myapp"
+              aria-label="Get it on Google Play"
+            >
+              <svg viewBox="0 0 24 24" aria-hidden="true">
+                <path d="M3 20.5v-17c0-.59.34-1.11.84-1.35L13.69 12l-9.85 9.85c-.5-.25-.84-.76-.84-1.35zm13.81-5.38L6.05 21.34l8.49-8.49 2.27 2.27zm3.35-4.31c.34.27.59.69.59 1.19s-.22.9-.57 1.18l-2.29 1.32-2.5-2.5 2.5-2.5 2.27 1.31zM6.05 2.66l10.76 6.22-2.27 2.27-8.49-8.49z" />
+              </svg>
+            </a>
             <a class="btn btn-web" data-track="continue" href="/app/">Continue on the web</a>
           </div>
           <ul class="trust reveal" aria-label="Why Pinch">
             <li>10 free recipes every month</li>
             <li>No subscription</li>
-            <li>iPhone and any browser</li>
+            <li>iPhone, Android and any browser</li>
           </ul>
         </div>
         <img
@@ -336,7 +362,7 @@
                 <tr><td>Remix with AI: healthier, vegetarian, ingredient swaps</td><td class="yes">✓</td><td class="na">–</td><td class="no">✗</td><td class="no">✗</td><td class="na">–</td><td class="yes">✓</td></tr>
                 <tr><td>Recipes from a photo of your fridge</td><td class="yes">✓</td><td class="na">–</td><td class="no">✗</td><td class="no">✗</td><td class="na">–</td><td class="yes">✓</td></tr>
                 <tr><td>Cooking Hub: browse recipes other cooks saved</td><td class="yes">✓</td><td class="na">–</td><td class="no">✗</td><td class="no">✗</td><td class="na">–</td><td class="yes">✓</td></tr>
-                <tr class="text"><td>Platforms</td><td>iPhone, web<br />(Android soon)</td><td>iPhone, Android, Mac</td><td>iPhone, Android, Mac, Windows</td><td>iPhone, Mac</td><td>iPhone, Android, web</td><td>iPhone, Android, web</td></tr>
+                <tr class="text"><td>Platforms</td><td>iPhone, Android, web</td><td>iPhone, Android, Mac</td><td>iPhone, Android, Mac, Windows</td><td>iPhone, Mac</td><td>iPhone, Android, web</td><td>iPhone, Android, web</td></tr>
                 <tr class="text"><td>Price</td><td>Free, 10 recipes a month. Extra credits, no subscription</td><td>Free with ads, 5 imports a week. $49.99–59.99/yr</td><td>$4.99 one&#8209;time</td><td>$6.99 one&#8209;time</td><td>Free, 5 imports a week. $59.99/yr</td><td>Free. AI features $59.99/yr</td></tr>
               </tbody>
             </table>
@@ -394,8 +420,8 @@
             <summary>Can I use Pinch without the app?</summary>
             <p>
               Yes. Pinch also runs in your browser at
-              <a href="/app/">pinch-app.io/app</a>, including on Android phones. Your library syncs
-              when you sign in with the same account.
+              <a href="/app/">pinch-app.io/app</a>. Your library syncs when you sign in with the
+              same account.
             </p>
           </details>
           <details class="card reveal">
@@ -436,6 +462,16 @@
               />
             </svg>
           </a>
+          <a
+            class="btn btn-store btn-play"
+            data-track="play_store"
+            href="https://play.google.com/store/apps/details?id=com.pinch.myapp"
+            aria-label="Get it on Google Play"
+          >
+            <svg viewBox="0 0 24 24" aria-hidden="true">
+              <path d="M3 20.5v-17c0-.59.34-1.11.84-1.35L13.69 12l-9.85 9.85c-.5-.25-.84-.76-.84-1.35zm13.81-5.38L6.05 21.34l8.49-8.49 2.27 2.27zm3.35-4.31c.34.27.59.69.59 1.19s-.22.9-.57 1.18l-2.29 1.32-2.5-2.5 2.5-2.5 2.27 1.31zM6.05 2.66l10.76 6.22-2.27 2.27-8.49-8.49z" />
+            </svg>
+          </a>
           <a class="btn btn-web" data-track="continue" href="/app/">Continue on the web</a>
         </div>
       </section>
@@ -452,6 +488,7 @@
           <a href="https://apps.apple.com/us/app/pinch-recipe-library/id6796310453">
             Pinch for iPhone
           </a>
+          <a href="https://play.google.com/store/apps/details?id=com.pinch.myapp">Pinch for Android</a>
           <a href="/app/">Pinch on the web</a>
         </nav>
         <nav aria-labelledby="footer-guides">

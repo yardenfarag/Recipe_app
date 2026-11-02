@@ -1,8 +1,11 @@
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
 
 import type { Platform } from './platform.ts';
+import { readBodyCapped, safeFetch } from './safeFetch.ts';
 
 const FETCH_TIMEOUT_MS = 12_000;
+/** Matches the recipe-thumbnails bucket's file_size_limit. */
+const MAX_THUMBNAIL_BYTES = 10 * 1024 * 1024;
 
 /**
  * Downloads a social CDN thumbnail with the right Referer and uploads it to
@@ -31,7 +34,7 @@ export async function persistSocialThumbnail(opts: {
 
   let res: Response;
   try {
-    res = await fetch(sourceUrl, {
+    res = await safeFetch(sourceUrl, {
       headers: {
         Referer: referer,
         Accept: 'image/avif,image/webp,image/apng,image/*,*/*;q=0.8',
@@ -39,7 +42,6 @@ export async function persistSocialThumbnail(opts: {
           'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
       },
       signal: controller.signal,
-      redirect: 'follow',
     });
   } catch (err) {
     console.warn('[persistThumbnail] fetch failed', {
@@ -67,7 +69,11 @@ export async function persistSocialThumbnail(opts: {
     return undefined;
   }
 
-  const bytes = new Uint8Array(await res.arrayBuffer());
+  const bytes = await readBodyCapped(res, MAX_THUMBNAIL_BYTES);
+  if (!bytes) {
+    console.warn('[persistThumbnail] image too large', { host: safeHost(sourceUrl) });
+    return undefined;
+  }
   if (bytes.byteLength < 100) {
     console.warn('[persistThumbnail] image too small', { bytes: bytes.byteLength });
     return undefined;
@@ -99,10 +105,14 @@ export async function persistSocialThumbnail(opts: {
   return data.publicUrl;
 }
 
-/** Uploads a user Snap/invent photo so it can be the recipe hero image. */
+/**
+ * Uploads a user Snap/invent photo so it can be the recipe hero image. Photos
+ * live under `photo/<user id>/` so delete-account can find and remove them.
+ */
 export async function persistUploadedPhoto(opts: {
   imageBase64: string;
   mimeType?: string;
+  userId: string | null;
 }): Promise<string | undefined> {
   const supabaseUrl = Deno.env.get('SUPABASE_URL');
   const serviceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY');
@@ -119,7 +129,7 @@ export async function persistUploadedPhoto(opts: {
   }
 
   const ext = extensionForContentType(mime);
-  const path = `photo/${crypto.randomUUID()}.${ext}`;
+  const path = `photo/${opts.userId ?? 'guest'}/${crypto.randomUUID()}.${ext}`;
   const supabase = createClient(supabaseUrl, serviceKey);
   const { error } = await supabase.storage.from('recipe-thumbnails').upload(path, bytes, {
     contentType: mime.startsWith('image/') ? mime : 'image/jpeg',
@@ -154,10 +164,9 @@ export async function fetchImageAsBase64(opts: {
     };
     if (referer) headers.Referer = referer;
 
-    const res = await fetch(sourceUrl, {
+    const res = await safeFetch(sourceUrl, {
       headers,
       signal: controller.signal,
-      redirect: 'follow',
     });
     if (!res.ok) {
       console.warn('[persistThumbnail] fetchImageAsBase64 HTTP', { status: res.status });
@@ -165,8 +174,8 @@ export async function fetchImageAsBase64(opts: {
     }
     const contentType = (res.headers.get('content-type') ?? 'image/jpeg').split(';')[0].trim();
     if (!contentType.startsWith('image/')) return null;
-    const bytes = new Uint8Array(await res.arrayBuffer());
-    if (bytes.byteLength < 100 || bytes.byteLength > 1_800_000) return null;
+    const bytes = await readBodyCapped(res, 1_800_000);
+    if (!bytes || bytes.byteLength < 100) return null;
     return { base64: encodeBase64(bytes), mimeType: contentType };
   } catch (err) {
     console.warn('[persistThumbnail] fetchImageAsBase64 failed', {

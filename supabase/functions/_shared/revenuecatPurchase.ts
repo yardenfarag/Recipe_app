@@ -44,6 +44,28 @@ function eventRecord(body: unknown): Record<string, unknown> {
   return record;
 }
 
+export interface PurchaseEventSummary {
+  event_id: string | null;
+  transaction_id: string | null;
+  product_id: string | null;
+  app_user_id: string | null;
+  store: string | null;
+  environment: string | null;
+}
+
+/** The identifying fields of a webhook body, for recording a failed delivery. */
+export function purchaseEventSummary(body: unknown): PurchaseEventSummary {
+  const event = eventRecord(body);
+  return {
+    event_id: text(event.id) || null,
+    transaction_id: text(event.transaction_id) || text(event.original_transaction_id) || null,
+    product_id: text(event.product_id) || null,
+    app_user_id: text(event.app_user_id) || null,
+    store: text(event.store) || null,
+    environment: text(event.environment) || null,
+  };
+}
+
 /**
  * Decide whether a RevenueCat webhook should grant recipe credits.
  * A known credit pack is granted from NON_RENEWING_PURCHASE, INITIAL_PURCHASE,
