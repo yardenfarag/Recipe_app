@@ -44,4 +44,5 @@ jobs:
           deno-version: v2.x
 
       - name: Edge Function tests
-        run: deno test -A --no-lock supabase/functions/
+        # --config keeps Deno off the repo-root package.json, which would make it look for npm types in a node_modules CI never installs.
+        run: deno test -A --no-lock --config supabase/functions/deno.json supabase/functions/

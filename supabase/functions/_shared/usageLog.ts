@@ -19,7 +19,8 @@ export interface UsageEventInput {
     | 'fridge_match'
     | 'invent'
     | 'content_gate'
-    | 'extract_gate';
+    | 'extract_gate'
+    | 'appliances_backfill';
   platform?: string | null;
   status: string;
   extractionSource?: string | null;

@@ -9,6 +9,8 @@ import {
 } from './platform.ts';
 import type { SupabaseClient } from 'https://esm.sh/@supabase/supabase-js@2';
 
+import { recipeAppliancesOf } from './appliances.ts';
+
 export type HubPlatform = 'youtube' | 'instagram' | 'tiktok' | 'web';
 
 export interface HubRecipeSnapshot {
@@ -28,6 +30,8 @@ export interface HubRecipeSnapshot {
   extraction_source?: string | null;
   tags?: string[] | null;
   source_language?: string | null;
+  /** ADR 017: null = not analysed. */
+  appliances?: unknown;
 }
 
 function canonicalizeUrlForCompare(url: string): string {
@@ -128,6 +132,7 @@ export function hubCardToExtractRecipe(card: Record<string, unknown>): HubRecipe
       typeof card.extraction_source === 'string' ? card.extraction_source : null,
     tags: Array.isArray(card.tags) ? (card.tags as string[]) : [],
     source_language: typeof card.source_language === 'string' ? card.source_language : 'en',
+    appliances: recipeAppliancesOf(card),
   };
 }
 
@@ -188,12 +193,13 @@ export async function publishRecipeCard(
     extraction_source: recipe.extraction_source ?? null,
     tags: recipe.tags ?? [],
     source_language: recipe.source_language ?? 'en',
+    appliances: recipe.appliances ?? null,
     updated_at: new Date().toISOString(),
   };
 
   const { data: existing, error: existingError } = await admin
     .from('recipe_cards')
-    .select('id, extraction_status, image_url')
+    .select('id, extraction_status, image_url, appliances')
     .eq('canonical_key', key)
     .maybeSingle();
 
@@ -210,11 +216,17 @@ export async function publishRecipeCard(
 
   const shouldReplace = existing.extraction_status !== 'full';
   const shouldFillImage = !existing.image_url && row.image_url;
-  if (!shouldReplace && !shouldFillImage) return;
+  // Like the image: fill appliances on a card that has none, never overwrite (matches the recipe_appliances migration).
+  const shouldFillAppliances = existing.appliances == null && row.appliances != null;
+  if (!shouldReplace && !shouldFillImage && !shouldFillAppliances) return;
+
+  const fill: Record<string, unknown> = { updated_at: row.updated_at };
+  if (shouldFillImage) fill.image_url = row.image_url;
+  if (shouldFillAppliances) fill.appliances = row.appliances;
 
   const { error } = await admin
     .from('recipe_cards')
-    .update(shouldReplace ? row : { image_url: row.image_url, updated_at: row.updated_at })
+    .update(shouldReplace ? row : fill)
     .eq('id', existing.id);
   if (error) console.error('[recipe-cards] update failed', error);
 }
