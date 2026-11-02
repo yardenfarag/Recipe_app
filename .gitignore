@@ -30,9 +30,9 @@ yarn-error.*
 .DS_Store
 *.pem
 
-# local env files
-.env
-.env*.local
+# local env files (only the template is tracked)
+.env*
+!.env.example
 
 # typescript
 *.tsbuildinfo
