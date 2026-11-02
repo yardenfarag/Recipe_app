@@ -1,5 +1,6 @@
 import { FunctionsHttpError } from '@supabase/supabase-js';
 
+import type { RecipeAppliance } from '@/lib/appliances';
 import { getOrCreateExtractionRequestId } from '@/lib/extractionRequestId';
 import { supabase } from '@/lib/supabase/client';
 import type { CostEstimate, EffortLevel, Ingredient, Instruction } from '@/types/recipe';
@@ -19,6 +20,8 @@ export interface RepairedRecipePayload {
   source_language?: string;
   tags?: string[];
   missing_fields?: string[];
+  /** Derived from the repaired steps (ADR 017). null = not analysed. */
+  appliances?: RecipeAppliance[] | null;
 }
 
 export interface RepairRecipeResult {

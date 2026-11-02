@@ -115,6 +115,8 @@ export default function RecipeDetailScreen() {
       calories?: number;
       kitchen_adapted_summary?: string | null;
       kitchen_original?: Recipe['kitchen_original'] | null;
+      /** Only present when a remix or revert changes them (ADR 017). */
+      appliances?: Recipe['appliances'];
     }) => {
       const current = recipeRef.current;
       if (!current || !id) return;
@@ -215,6 +217,7 @@ export default function RecipeDetailScreen() {
             cost_estimate: repaired.cost_estimate,
             effort_level: repaired.effort_level,
             tags: repaired.tags,
+            appliances: repaired.appliances,
           };
           const saved = id.startsWith('guest-')
             ? await updateGuestRecipeContent(id, persistable)

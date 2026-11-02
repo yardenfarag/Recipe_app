@@ -4,12 +4,15 @@ import { useTranslation } from 'react-i18next';
 import { Pressable, Text, View } from 'react-native';
 import Animated, { FadeInDown } from 'react-native-reanimated';
 
+import { ApplianceIcon } from '@/components/ApplianceIcon';
 import { CookieMark } from '@/components/CookieMark';
 import { CostEstimateDisplay } from '@/components/CostEstimateDisplay';
 import { RecipeImage } from '@/components/RecipeImage';
 import { useLanguagePreference } from '@/hooks/useLanguagePreference';
 import { useThemePreference } from '@/hooks/useThemePreference';
 import { CHROME_MAX_FONT_SCALE } from '@/lib/a11y';
+import { applianceNameKey, cardApplianceKeys } from '@/lib/applianceDisplay';
+import { recipeAppliancesOf } from '@/lib/appliances';
 import { COST_I18N_KEYS } from '@/lib/formatCostEstimate';
 import { formatCookedDate } from '@/lib/formatCookedDate';
 import { formatRecipeDuration } from '@/lib/formatRecipeDuration';
@@ -118,6 +121,13 @@ export const RecipeListRow = memo(function RecipeListRow({
     });
   }
 
+  // ADR 017: only special, required appliances from the recipe; never basics or Pinch tips.
+  const neededKeys = cardApplianceKeys(recipeAppliancesOf(recipe));
+  const needsLabel =
+    neededKeys.length > 0
+      ? t('appliances.needs', { names: neededKeys.map((key) => t(applianceNameKey(key))).join(', ') })
+      : null;
+
   const title = recipe.display_title ?? recipe.title;
   const invented = recipeIsInvented(recipe);
   // One VoiceOver/TalkBack stop per recipe instead of a fragment per line.
@@ -129,6 +139,7 @@ export const RecipeListRow = memo(function RecipeListRow({
     effortLabel,
     costLabel,
     cookedLabel,
+    needsLabel,
   ]
     .filter(Boolean)
     .join(', ');
@@ -243,6 +254,14 @@ export const RecipeListRow = memo(function RecipeListRow({
                 ))}
               </View>
             )}
+            {needsLabel ? (
+              <View testID="recipe-row-needs" className="mt-1 flex-row items-center gap-1">
+                <ApplianceIcon appliance={neededKeys[0]} size={card ? 12 : 14} color={colors.textSecondary} />
+                <Text className={metaClass} style={metaStyle} numberOfLines={1}>
+                  {needsLabel}
+                </Text>
+              </View>
+            ) : null}
           </View>
         </Pressable>
 

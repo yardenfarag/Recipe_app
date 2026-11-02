@@ -1,3 +1,5 @@
+import type { RecipeAppliance } from '@/lib/appliances';
+
 export type EffortLevel = 'Easy' | 'Medium' | 'Hard';
 export type CostEstimate = '$' | '$$' | '$$$';
 export type Platform = 'youtube' | 'instagram' | 'tiktok' | 'web' | 'photo' | 'unknown';
@@ -90,5 +92,12 @@ export interface Recipe {
     ingredients: Ingredient[];
     instructions: Instruction[];
     calories?: number;
+    /** Absent in snapshots saved before PIN-26. */
+    appliances?: RecipeAppliance[] | null;
   };
+  /**
+   * Kitchen appliances (ADR 017). null or absent = not analysed (show nothing); [] = none needed.
+   * Read it through recipeAppliancesOf() so it is always cleaned against the steps.
+   */
+  appliances?: RecipeAppliance[] | null;
 }

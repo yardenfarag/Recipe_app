@@ -411,6 +411,10 @@ export default function AddRecipeScreen() {
               ingredients: adapted.recipe.ingredients,
               instructions: adapted.recipe.instructions,
               calories: adapted.recipe.calories,
+              // ADR 017: present only when the adaptation changed the steps.
+              ...(adapted.recipe.appliances !== undefined
+                ? { appliances: adapted.recipe.appliances }
+                : {}),
               kitchen_adapted_summary: adapted.recipe.summary,
               kitchen_original: {
                 title: result.recipe.title,
@@ -418,6 +422,7 @@ export default function AddRecipeScreen() {
                 ingredients: result.recipe.ingredients,
                 instructions: result.recipe.instructions,
                 calories: result.recipe.calories,
+                appliances: result.recipe.appliances,
               },
             };
           } else {

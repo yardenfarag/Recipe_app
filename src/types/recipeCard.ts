@@ -1,3 +1,4 @@
+import type { RecipeAppliance } from '@/lib/appliances';
 import type {
   CostEstimate,
   EffortLevel,
@@ -29,6 +30,8 @@ export interface RecipeCard {
   extraction_source?: ExtractionSource | null;
   tags: string[];
   source_language?: string | null;
+  /** ADR 017. null or absent = not analysed. */
+  appliances?: RecipeAppliance[] | null;
   save_count: number;
   extract_hit_count: number;
   created_at: string;

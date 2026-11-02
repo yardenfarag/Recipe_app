@@ -215,51 +215,58 @@ export async function setRecipeTags(id: string, tags: string[]): Promise<void> {
   }
 }
 
+export type RecipeContentUpdate = {
+  title: string;
+  servings: number;
+  ingredients: Recipe['ingredients'];
+  instructions: Recipe['instructions'];
+  calories?: number;
+  extraction_status?: Recipe['extraction_status'];
+  missing_fields?: string[];
+  estimated_time_minutes?: number | null;
+  cost_estimate?: Recipe['cost_estimate'] | null;
+  effort_level?: Recipe['effort_level'] | null;
+  tags?: string[];
+  kitchen_adapted_summary?: string | null;
+  kitchen_original?: Recipe['kitchen_original'] | null;
+  /** ADR 017. undefined = leave the stored list alone; null = not analysed; [] = none needed. */
+  appliances?: Recipe['appliances'];
+};
+
+/** The `recipes` columns an update writes. Optional fields are only written when provided. */
+export function recipeContentUpdateRow(content: RecipeContentUpdate): Record<string, unknown> {
+  return {
+    title: content.title,
+    servings: content.servings,
+    ingredients: content.ingredients,
+    instructions: content.instructions,
+    calories: content.calories,
+    ...(content.extraction_status ? { extraction_status: content.extraction_status } : {}),
+    ...(content.missing_fields ? { missing_fields: content.missing_fields } : {}),
+    ...(content.estimated_time_minutes !== undefined
+      ? { estimated_time_minutes: content.estimated_time_minutes }
+      : {}),
+    ...(content.cost_estimate !== undefined ? { cost_estimate: content.cost_estimate } : {}),
+    ...(content.effort_level !== undefined ? { effort_level: content.effort_level } : {}),
+    ...(content.tags ? { tags: content.tags } : {}),
+    ...(content.kitchen_adapted_summary !== undefined
+      ? { kitchen_adapted_summary: content.kitchen_adapted_summary }
+      : {}),
+    ...(content.kitchen_original !== undefined
+      ? { kitchen_original: content.kitchen_original }
+      : {}),
+    ...(content.appliances !== undefined ? { appliances: content.appliances } : {}),
+  };
+}
+
 /** Persists remix / swap / repair edits on an already-saved recipe (canonical fields only). */
-export async function updateRecipeContent(
-  id: string,
-  content: {
-    title: string;
-    servings: number;
-    ingredients: Recipe['ingredients'];
-    instructions: Recipe['instructions'];
-    calories?: number;
-    extraction_status?: Recipe['extraction_status'];
-    missing_fields?: string[];
-    estimated_time_minutes?: number | null;
-    cost_estimate?: Recipe['cost_estimate'] | null;
-    effort_level?: Recipe['effort_level'] | null;
-    tags?: string[];
-    kitchen_adapted_summary?: string | null;
-    kitchen_original?: Recipe['kitchen_original'] | null;
-  },
-): Promise<Recipe> {
+export async function updateRecipeContent(id: string, content: RecipeContentUpdate): Promise<Recipe> {
   const existing = await fetchRecipeById(id);
   const textChanged = !existing || !recipeContentEquals(existing, content);
 
   const { data, error } = await supabase
     .from('recipes')
-    .update({
-      title: content.title,
-      servings: content.servings,
-      ingredients: content.ingredients,
-      instructions: content.instructions,
-      calories: content.calories,
-      ...(content.extraction_status ? { extraction_status: content.extraction_status } : {}),
-      ...(content.missing_fields ? { missing_fields: content.missing_fields } : {}),
-      ...(content.estimated_time_minutes !== undefined
-        ? { estimated_time_minutes: content.estimated_time_minutes }
-        : {}),
-      ...(content.cost_estimate !== undefined ? { cost_estimate: content.cost_estimate } : {}),
-      ...(content.effort_level !== undefined ? { effort_level: content.effort_level } : {}),
-      ...(content.tags ? { tags: content.tags } : {}),
-      ...(content.kitchen_adapted_summary !== undefined
-        ? { kitchen_adapted_summary: content.kitchen_adapted_summary }
-        : {}),
-      ...(content.kitchen_original !== undefined
-        ? { kitchen_original: content.kitchen_original }
-        : {}),
-    })
+    .update(recipeContentUpdateRow(content))
     .eq('id', id)
     .select()
     .single();
