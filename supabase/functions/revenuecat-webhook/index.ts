@@ -23,7 +23,7 @@ Deno.serve(async (req) => {
   }
 
   const expectedAuth = Deno.env.get('REVENUECAT_WEBHOOK_AUTH');
-  if (!expectedAuth || req.headers.get('Authorization') !== expectedAuth) {
+  if (!expectedAuth || !(await secretMatches(req.headers.get('Authorization'), expectedAuth))) {
     return jsonResponse({ error: 'Unauthorized' }, 401);
   }
 
@@ -78,3 +78,19 @@ Deno.serve(async (req) => {
 
   return jsonResponse({ received: true, balance: Number(data) });
 });
+
+/**
+ * Compares the shared secret in constant time. Hashing both sides first makes
+ * the lengths equal, so neither the length nor a matching prefix leaks.
+ */
+async function secretMatches(given: string | null, expected: string): Promise<boolean> {
+  const encoder = new TextEncoder();
+  const [a, b] = await Promise.all(
+    [given ?? '', expected].map((value) => crypto.subtle.digest('SHA-256', encoder.encode(value))),
+  );
+  const x = new Uint8Array(a);
+  const y = new Uint8Array(b);
+  let diff = 0;
+  for (let i = 0; i < x.length; i++) diff |= x[i] ^ y[i];
+  return diff === 0;
+}
