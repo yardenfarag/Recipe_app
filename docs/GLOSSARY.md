@@ -24,6 +24,18 @@ _Avoid_: Parsing, scraping (use "scraping" only for the server-side content-fetc
 The order the Edge Function tries sources in: all text first (description, top comments, captions) in one model call, then the video only if the text gave a partial recipe.
 _Avoid_: Scrape order, fetch pipeline
 
+**Appliance**:
+A piece of kitchen equipment a recipe uses, from the fixed **appliance catalog**: machines (oven, blender, stand mixer…) and tools that change the result (mortar and pestle, meat thermometer, kitchen scale…). Everyday basics (knife, pot, bowl) are never listed. Each one on a recipe is **required** (no workaround) or **optional** (shown under "Makes it better", with a **benefit** and a workaround), and points to the step that uses it. A recipe's appliance list is either "not analysed" (older recipes; nothing shown) or a list, which may be empty. See ADR 017.
+_Avoid_: Gadgets, equipment (in code)
+
+**Benefit**:
+Why an optional appliance is worth using, from a fixed list (richer flavor, smoother texture, juicier meat, crispier…). Shown next to optional appliances.
+_Avoid_: Reason, note
+
+**Pinch tip**:
+An optional appliance the source didn't mention, suggested by Pinch because it improves the result (e.g. a meat thermometer for steak). Always labelled as a tip. Whether tips are switched on is a product decision (ADR 017).
+_Avoid_: Recommendation, suggestion (in UI copy)
+
 **Partial result**:
 An extraction outcome where some recipe fields are present (e.g. ingredients but no steps). Shown with an incomplete banner; still saveable.
 _Avoid_: Incomplete recipe, half extraction
