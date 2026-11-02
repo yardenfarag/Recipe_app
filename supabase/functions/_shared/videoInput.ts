@@ -11,6 +11,7 @@
 import { isInstagramCdnUrl, resolveInstagramVideoForGemini } from './instagram.ts';
 import type { LlmPart } from './llmClient.ts';
 import type { Platform } from './platform.ts';
+import { safeFetch } from './safeFetch.ts';
 
 /** Inline video cap. Qwen rejects ~16 MB clips with 413; Gemini's inline limit is 20 MB. */
 export const MAX_INLINE_VIDEO_BYTES = 20_000_000;
@@ -73,7 +74,7 @@ export async function downloadVideoAsPart(
   try {
     const headers: Record<string, string> = { 'User-Agent': USER_AGENT, Accept: 'video/*,*/*;q=0.8' };
     if (options.referer) headers.Referer = options.referer;
-    const res = await fetch(url, { headers, signal: controller.signal, redirect: 'follow' });
+    const res = await safeFetch(url, { headers, signal: controller.signal });
     if (!res.ok) {
       console.warn('[video] download HTTP error', { host: safeHost(url), status: res.status });
       return { part: null, reason: 'download_failed' };

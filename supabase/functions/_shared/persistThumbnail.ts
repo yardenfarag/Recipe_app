@@ -1,6 +1,7 @@
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
 
 import type { Platform } from './platform.ts';
+import { safeFetch } from './safeFetch.ts';
 
 const FETCH_TIMEOUT_MS = 12_000;
 
@@ -31,7 +32,7 @@ export async function persistSocialThumbnail(opts: {
 
   let res: Response;
   try {
-    res = await fetch(sourceUrl, {
+    res = await safeFetch(sourceUrl, {
       headers: {
         Referer: referer,
         Accept: 'image/avif,image/webp,image/apng,image/*,*/*;q=0.8',
@@ -39,7 +40,6 @@ export async function persistSocialThumbnail(opts: {
           'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
       },
       signal: controller.signal,
-      redirect: 'follow',
     });
   } catch (err) {
     console.warn('[persistThumbnail] fetch failed', {
@@ -154,10 +154,9 @@ export async function fetchImageAsBase64(opts: {
     };
     if (referer) headers.Referer = referer;
 
-    const res = await fetch(sourceUrl, {
+    const res = await safeFetch(sourceUrl, {
       headers,
       signal: controller.signal,
-      redirect: 'follow',
     });
     if (!res.ok) {
       console.warn('[persistThumbnail] fetchImageAsBase64 HTTP', { status: res.status });
