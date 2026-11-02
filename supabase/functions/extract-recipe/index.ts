@@ -821,28 +821,7 @@ Deno.serve(async (req) => {
       return compensationPendingResponse(platform, guestRemaining, creditReservation);
     }
     if (err instanceof FetchError) {
-      const lower = err.message.toLowerCase();
-      const message =
-        lower.includes('not publicly accessible') ||
-        lower.includes('too many requests') ||
-        lower.includes('not found') ||
-        lower.includes('invalid instagram') ||
-        lower.includes('scrapecreators request failed') ||
-        lower.includes('gemini request failed') ||
-        lower.includes('openrouter request failed') ||
-        lower.includes('could not load this webpage') ||
-        lower.includes("couldn't read this page") ||
-        lower.includes("doesn't look like a recipe webpage") ||
-        lower.includes('webpage returned an error')
-          ? err.message.includes('ScrapeCreators request failed')
-            ? 'Instagram took too long to respond — try again.'
-            : err.message.includes('timedOut=true')
-              ? 'Recipe extraction timed out — try again in a moment.'
-              : err.message
-          : platform === 'web'
-            ? "Couldn't load this page — try again."
-            : "Couldn't load this video — try again.";
-
+      const message = fetchErrorMessage(err.message, platform);
       return jsonResponse(
         {
           status: 'failed' as ExtractionStatus,
@@ -1257,4 +1236,26 @@ async function resolveThumbnail(
   }
 
   return meta.thumbnailUrl ?? null;
+}
+
+/**
+ * A fixed, user-facing message for an upstream failure. FetchError messages
+ * carry the failing URL, status and the provider's raw error, which stay in
+ * the logs only (PIN-54).
+ */
+function fetchErrorMessage(raw: string, platform: string): string {
+  const lower = raw.toLowerCase();
+  if (lower.includes('timedout=true')) return 'Recipe extraction timed out — try again in a moment.';
+  if (lower.includes('scrapecreators request failed')) return 'Instagram took too long to respond — try again.';
+  if (lower.includes('too many requests')) return 'Too many requests right now — try again in a minute.';
+  if (lower.includes('not publicly accessible')) return "This post isn't public, so Pinch can't read it.";
+  if (lower.includes('invalid instagram')) return "That doesn't look like a valid Instagram link.";
+  if (lower.includes('not a public webpage')) return 'That link is not a public webpage.';
+  if (lower.includes("doesn't look like a recipe webpage")) return "That link doesn't look like a recipe webpage.";
+  if (lower.includes("couldn't read this page")) return "Couldn't find a recipe on this page.";
+  if (lower.includes('not found')) return "We couldn't find that post or page.";
+  if (lower.includes('gemini request failed') || lower.includes('openrouter request failed')) {
+    return 'Recipe extraction failed — try again in a moment.';
+  }
+  return platform === 'web' ? "Couldn't load this page — try again." : "Couldn't load this video — try again.";
 }

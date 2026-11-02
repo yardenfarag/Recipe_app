@@ -34,7 +34,6 @@ jobs:
         env:
           EXPO_PUBLIC_SUPABASE_URL: https://placeholder.supabase.co
           EXPO_PUBLIC_SUPABASE_KEY: ci-placeholder
-          EXPO_PUBLIC_ADMIN_EMAILS: ''
           EXPO_PUBLIC_LEGAL_BASE_URL: https://example.com
           EXPO_PUBLIC_SUPPORT_EMAIL: support@example.com
           EXPO_PUBLIC_CREDIT_PURCHASES_ENABLED: 'false'

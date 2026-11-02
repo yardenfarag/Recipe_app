@@ -3,7 +3,7 @@
 import { assert, assertEquals, assertFalse, assertRejects } from 'jsr:@std/assert@1';
 
 import { FetchError } from './errors.ts';
-import { assertPublicHttpUrl, isNonPublicIp, NOT_PUBLIC_MESSAGE, safeFetch } from './safeFetch.ts';
+import { assertPublicHttpUrl, isNonPublicIp, NOT_PUBLIC_MESSAGE, readBodyCapped, safeFetch } from './safeFetch.ts';
 
 const publicDns = () => Promise.resolve(['93.184.216.34']);
 
@@ -113,4 +113,9 @@ Deno.test('safeFetch follows public redirects, resolving relative locations', as
   } finally {
     globalThis.fetch = realFetch;
   }
+});
+
+Deno.test('readBodyCapped returns the body under the cap and null over it', async () => {
+  assertEquals(await readBodyCapped(new Response('hello'), 10), new TextEncoder().encode('hello'));
+  assertEquals(await readBodyCapped(new Response('x'.repeat(11)), 10), null);
 });

@@ -11,7 +11,7 @@
 import { isInstagramCdnUrl, resolveInstagramVideoForGemini } from './instagram.ts';
 import type { LlmPart } from './llmClient.ts';
 import type { Platform } from './platform.ts';
-import { safeFetch } from './safeFetch.ts';
+import { readBodyCapped, safeFetch } from './safeFetch.ts';
 
 /** Inline video cap. Qwen rejects ~16 MB clips with 413; Gemini's inline limit is 20 MB. */
 export const MAX_INLINE_VIDEO_BYTES = 20_000_000;
@@ -85,9 +85,10 @@ export async function downloadVideoAsPart(
       return { part: null, reason: 'too_large' };
     }
     const contentType = (res.headers.get('content-type') ?? '').split(';')[0].trim().toLowerCase();
-    const bytes = new Uint8Array(await res.arrayBuffer());
-    if (bytes.byteLength > maxBytes) {
-      console.warn('[video] download too large after read', { host: safeHost(url), bytes: bytes.byteLength });
+    // content-length can be missing or wrong, so stop reading at the cap.
+    const bytes = await readBodyCapped(res, maxBytes);
+    if (!bytes) {
+      console.warn('[video] download too large while reading', { host: safeHost(url), maxBytes });
       return { part: null, reason: 'too_large' };
     }
     if (bytes.byteLength < 1_000) {

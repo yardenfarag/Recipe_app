@@ -1,6 +1,6 @@
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
 import { corsHeaders, jsonResponse } from '../_shared/cors.ts';
-import { extractYouTubeId, needsThumbnailBackfill } from '../_shared/platform.ts';
+import { extractYouTubeId, needsThumbnailBackfill, youTubeThumbnail } from '../_shared/platform.ts';
 import { resolveYouTubeThumbnailUrl } from '../_shared/youtube.ts';
 
 const MAX_VIDEO_IDS = 20;
@@ -14,7 +14,9 @@ interface RequestBody {
 
 /**
  * POST { videoIds, recipeIds? } — backfill thumbnails for specific recipes.
- * POST { videoIds } (no user) — resolve-only for guest/local recipes.
+ * POST { videoIds } (no user) — resolve-only for guest/local recipes. Guests get
+ * YouTube's standard thumbnail URL without an API call, so an anonymous script
+ * can't spend the YouTube quota that extraction depends on (PIN-54).
  */
 Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') {
@@ -72,7 +74,7 @@ Deno.serve(async (req) => {
     return jsonResponse({ error: 'Missing videoIds for guest backfill' }, 400);
   }
 
-  const thumbnails = await resolveThumbnails(videoIds);
+  const thumbnails = guestThumbnails(videoIds);
   return jsonResponse({ updated: [], thumbnails });
 });
 
@@ -147,9 +149,6 @@ async function backfillUserRecipesByVideoIds(
   return updated;
 }
 
-async function resolveThumbnails(videoIds: string[]): Promise<Record<string, string>> {
-  const entries = await Promise.all(
-    videoIds.map(async (videoId) => [videoId, await resolveYouTubeThumbnailUrl(videoId)] as const),
-  );
-  return Object.fromEntries(entries);
+function guestThumbnails(videoIds: string[]): Record<string, string> {
+  return Object.fromEntries(videoIds.map((videoId) => [videoId, youTubeThumbnail(videoId)]));
 }

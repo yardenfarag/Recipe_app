@@ -1,9 +1,11 @@
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
 
 import type { Platform } from './platform.ts';
-import { safeFetch } from './safeFetch.ts';
+import { readBodyCapped, safeFetch } from './safeFetch.ts';
 
 const FETCH_TIMEOUT_MS = 12_000;
+/** Matches the recipe-thumbnails bucket's file_size_limit. */
+const MAX_THUMBNAIL_BYTES = 10 * 1024 * 1024;
 
 /**
  * Downloads a social CDN thumbnail with the right Referer and uploads it to
@@ -67,7 +69,11 @@ export async function persistSocialThumbnail(opts: {
     return undefined;
   }
 
-  const bytes = new Uint8Array(await res.arrayBuffer());
+  const bytes = await readBodyCapped(res, MAX_THUMBNAIL_BYTES);
+  if (!bytes) {
+    console.warn('[persistThumbnail] image too large', { host: safeHost(sourceUrl) });
+    return undefined;
+  }
   if (bytes.byteLength < 100) {
     console.warn('[persistThumbnail] image too small', { bytes: bytes.byteLength });
     return undefined;
@@ -168,8 +174,8 @@ export async function fetchImageAsBase64(opts: {
     }
     const contentType = (res.headers.get('content-type') ?? 'image/jpeg').split(';')[0].trim();
     if (!contentType.startsWith('image/')) return null;
-    const bytes = new Uint8Array(await res.arrayBuffer());
-    if (bytes.byteLength < 100 || bytes.byteLength > 1_800_000) return null;
+    const bytes = await readBodyCapped(res, 1_800_000);
+    if (!bytes || bytes.byteLength < 100) return null;
     return { base64: encodeBase64(bytes), mimeType: contentType };
   } catch (err) {
     console.warn('[persistThumbnail] fetchImageAsBase64 failed', {

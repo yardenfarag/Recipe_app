@@ -1,25 +1,8 @@
 /**
- * Admin access: email allowlist (EXPO_PUBLIC_ADMIN_EMAILS) and/or profiles.is_admin.
+ * Admin access comes from profiles.is_admin, the same flag every admin RPC and
+ * RLS policy checks. There is no email allowlist: anything in EXPO_PUBLIC_*
+ * ships in the public bundle (PIN-54).
  */
-
-function parseAdminEmails(): Set<string> {
-  const raw: string = process.env.EXPO_PUBLIC_ADMIN_EMAILS ?? '';
-  return new Set(
-    raw
-      .split(',')
-      .map((email: string) => email.trim().toLowerCase())
-      .filter(Boolean),
-  );
-}
-
-export function isAdminEmail(email: string | null | undefined): boolean {
-  if (!email) return false;
-  return parseAdminEmails().has(email.trim().toLowerCase());
-}
-
-export function isAdminUser(opts: {
-  email?: string | null;
-  isAdmin?: boolean | null;
-}): boolean {
-  return opts.isAdmin === true || isAdminEmail(opts.email);
+export function isAdminUser(opts: { isAdmin?: boolean | null }): boolean {
+  return opts.isAdmin === true;
 }
