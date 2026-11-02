@@ -578,6 +578,7 @@ Deno.serve(async (req) => {
         metadata: {
           ...compensationMetadata(creditReservation, guestReservation, compensationPending),
           ...extractRouteMetadata(extractGate, extractRoute, requestId),
+          ...videoMetadata(durationSeconds, usedInstagramVideoDownload),
         },
       });
 
@@ -753,6 +754,7 @@ Deno.serve(async (req) => {
             }
           : {}),
         ...extractRouteMetadata(extractGate, extractRoute, requestId),
+        ...videoMetadata(durationSeconds, usedInstagramVideoDownload),
       },
     });
 
@@ -961,6 +963,15 @@ function extractRouteMetadata(
   requestId: string,
 ): Record<string, unknown> {
   return gate ? { request_id: requestId, extract_route: route } : {};
+}
+
+/** PIN-62: what a video import cost us depends on its length and whether we had to download it. */
+function videoMetadata(durationSeconds: number | undefined, videoDownloaded: boolean): Record<string, unknown> {
+  return {
+    video_duration_seconds:
+      typeof durationSeconds === 'number' && Number.isFinite(durationSeconds) ? Math.round(durationSeconds) : null,
+    video_downloaded: videoDownloaded,
+  };
 }
 
 function compensationMetadata(

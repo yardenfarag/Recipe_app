@@ -30,6 +30,12 @@ export interface AiCostRow {
   duration_ms: number | null;
   llm_calls: LlmCallRecord[] | null;
   created_at: string;
+  platform: string | null;
+  /** The ladder step that produced the recipe: description, comments, captions, video, web, photo. */
+  extraction_source: string | null;
+  /** Logged since PIN-62; null on older rows. */
+  video_downloaded: boolean | null;
+  video_duration_seconds: number | null;
 }
 
 export interface ModelCostLine {
@@ -274,6 +280,96 @@ export function summarizeAiCost(rows: AiCostRow[]): AiCostSummary {
     byModel,
     byTask,
     byAction,
+  };
+}
+
+export interface ImportSourceLine {
+  platform: string;
+  source: string;
+  imports: number;
+  failed: number;
+  costUsd: number;
+  /** Cost of every attempt on this step divided by the recipes it produced. */
+  costPerImportUsd: number | null;
+  maxCostUsd: number;
+}
+
+export interface ImportSummary {
+  /** Extracts that returned a recipe (full or partial), hub cache hits excluded. */
+  imports: number;
+  videoImports: number;
+  /** Share of imports that needed the video step, 0..1; null when there are none. */
+  videoShare: number | null;
+  /** Imports that had to download the video file (the expensive Instagram path). */
+  videoDownloads: number;
+  /** All extract spend, failed attempts included, divided by imports. */
+  blendedCostUsd: number | null;
+  videoCostPerImportUsd: number | null;
+  textCostPerImportUsd: number | null;
+  videoDurationP50: number | null;
+  videoDurationP95: number | null;
+  bySource: ImportSourceLine[];
+}
+
+/**
+ * PIN-62: how often an import falls back to the video step and what that does
+ * to the cost per import. Cache hits are left out because they cost nothing.
+ */
+export function summarizeImports(rows: AiCostRow[]): ImportSummary {
+  const sources = new Map<string, Omit<ImportSourceLine, 'costPerImportUsd'>>();
+  let imports = 0;
+  let videoImports = 0;
+  let videoDownloads = 0;
+  let totalCostUsd = 0;
+  let videoCostUsd = 0;
+  let textCostUsd = 0;
+  const videoDurations: number[] = [];
+
+  for (const row of rows) {
+    if (row.action !== 'extract' || row.status === 'cached') continue;
+    const cost = num(row.total_cost_usd);
+    const ok = RECIPE_STATUSES.has(row.status);
+    const isVideo = row.extraction_source === 'video';
+    totalCostUsd += cost;
+    if (isVideo) videoCostUsd += cost;
+    else textCostUsd += cost;
+
+    if (ok) {
+      imports += 1;
+      if (isVideo) {
+        videoImports += 1;
+        if (row.video_duration_seconds != null && Number.isFinite(row.video_duration_seconds)) {
+          videoDurations.push(row.video_duration_seconds);
+        }
+      }
+      if (row.video_downloaded) videoDownloads += 1;
+    }
+
+    const platform = row.platform ?? 'unknown';
+    const source = row.extraction_source ?? 'none';
+    const key = `${platform}:${source}`;
+    const line = sources.get(key) ?? { platform, source, imports: 0, failed: 0, costUsd: 0, maxCostUsd: 0 };
+    if (ok) line.imports += 1;
+    else line.failed += 1;
+    line.costUsd += cost;
+    line.maxCostUsd = Math.max(line.maxCostUsd, cost);
+    sources.set(key, line);
+  }
+
+  const textImports = imports - videoImports;
+  return {
+    imports,
+    videoImports,
+    videoShare: imports > 0 ? videoImports / imports : null,
+    videoDownloads,
+    blendedCostUsd: imports > 0 ? totalCostUsd / imports : null,
+    videoCostPerImportUsd: videoImports > 0 ? videoCostUsd / videoImports : null,
+    textCostPerImportUsd: textImports > 0 ? textCostUsd / textImports : null,
+    videoDurationP50: percentile(videoDurations, 50),
+    videoDurationP95: percentile(videoDurations, 95),
+    bySource: [...sources.values()]
+      .map((line) => ({ ...line, costPerImportUsd: line.imports > 0 ? line.costUsd / line.imports : null }))
+      .sort((a, b) => b.costUsd - a.costUsd || b.imports - a.imports),
   };
 }
 
