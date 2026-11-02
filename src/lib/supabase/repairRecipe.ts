@@ -46,6 +46,8 @@ export interface RepairRecipeResult {
   request_id?: string;
   reservation_id?: string;
   pending_credit?: boolean;
+  /** Opaque copy of the repaired recipe; hand it back on commit to get `recipe`. */
+  sealed_recipe?: string;
 }
 
 export interface RepairRecipeRequest {
@@ -142,12 +144,14 @@ export async function settleRepairRecipe(
   action: 'commit' | 'abort',
   reservationId: string,
   requestId?: string,
+  sealedRecipe?: string,
 ): Promise<RepairRecipeResult> {
   const { data, error } = await supabase.functions.invoke<RepairRecipeResult>('repair-recipe', {
     body: {
       action,
       reservation_id: reservationId,
       request_id: requestId,
+      sealed_recipe: action === 'commit' ? sealedRecipe : undefined,
     },
   });
 
