@@ -290,7 +290,8 @@ function generateGuestId(): string {
   return `guest-${Date.now()}-${Math.random().toString(36).slice(2, 10)}`;
 }
 
-function sanitizeStoredRecipe(value: unknown): Recipe | null {
+/** Validates an untrusted recipe record (guest storage, backup files). Returns null when unusable. */
+export function sanitizeStoredRecipe(value: unknown): Recipe | null {
   if (!isRecord(value)) return null;
 
   const id = readString(value.id);
