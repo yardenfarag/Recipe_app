@@ -27,7 +27,14 @@ import { useThemePreference } from '@/hooks/useThemePreference';
 import { useTranslation } from 'react-i18next';
 import { announce } from '@/lib/a11y';
 import { captureAppShared } from '@/lib/analytics';
-import { confirmAction, confirmDestructive } from '@/lib/confirmAction';
+import { confirmAction, confirmDestructive, showNotice } from '@/lib/confirmAction';
+import {
+  parseRecipeBackup,
+  recipeBackupFileName,
+  RecipeBackupError,
+  type ParsedRecipeBackup,
+} from '@/lib/recipeBackup';
+import { pickRecipeBackupFile, saveRecipeBackupFile } from '@/lib/recipeBackupFile';
 import { shareApp } from '@/lib/shareApp';
 import {
   deleteAccount,
@@ -36,6 +43,14 @@ import {
   userHasAppleIdentity,
 } from '@/lib/supabase/auth';
 import { uploadAvatar } from '@/lib/supabase/profile';
+import { fetchRecipeBackup, restoreRecipeBackup } from '@/lib/supabase/recipeBackup';
+
+const RESTORE_ERROR_KEYS = {
+  not_json: 'settings.restoreNotBackup',
+  not_backup: 'settings.restoreNotBackup',
+  newer_version: 'settings.restoreNewerVersion',
+  too_large: 'settings.restoreTooLarge',
+} as const;
 
 type SettingsSectionProps = {
   title: string;
@@ -175,6 +190,7 @@ export default function SettingsScreen() {
   const [uploading, setUploading] = useState(false);
   const [deleting, setDeleting] = useState(false);
   const [feedbackOpen, setFeedbackOpen] = useState(false);
+  const [backupBusy, setBackupBusy] = useState<'export' | 'restore' | null>(null);
 
   useEffect(() => {
     if (migrationError) announce(t('settings.migrationTitle'));
@@ -246,6 +262,76 @@ export default function SettingsScreen() {
       if (outcome === 'copied') Alert.alert(t('settings.shareAppCopied'));
     } catch {
       Alert.alert(t('settings.shareAppFailedTitle'), t('common.tryAgain'));
+    }
+  }
+
+  async function handleDownloadRecipes() {
+    if (!user || backupBusy) return;
+    setBackupBusy('export');
+    try {
+      const backup = await fetchRecipeBackup();
+      if (backup.recipes.length === 0) {
+        await showNotice(t('settings.backupEmptyTitle'), t('settings.backupEmptyBody'));
+        return;
+      }
+      await saveRecipeBackupFile(JSON.stringify(backup, null, 2), recipeBackupFileName());
+    } catch (err) {
+      await showNotice(
+        t('settings.backupFailedTitle'),
+        err instanceof Error ? err.message : t('common.tryAgain'),
+      );
+    } finally {
+      setBackupBusy(null);
+    }
+  }
+
+  async function handleRestoreRecipes() {
+    if (!user || backupBusy) return;
+
+    let backup: ParsedRecipeBackup;
+    try {
+      const text = await pickRecipeBackupFile();
+      if (text == null) return;
+      backup = parseRecipeBackup(text);
+    } catch (err) {
+      await showNotice(
+        t('settings.restoreFailedTitle'),
+        err instanceof RecipeBackupError
+          ? t(RESTORE_ERROR_KEYS[err.code])
+          : err instanceof Error
+            ? err.message
+            : t('common.tryAgain'),
+      );
+      return;
+    }
+
+    if (backup.recipes.length === 0) {
+      await showNotice(t('settings.restoreFailedTitle'), t('settings.restoreEmpty'));
+      return;
+    }
+
+    const ok = await confirmAction(
+      t('settings.restoreConfirmTitle'),
+      t('settings.restoreConfirmBody', { count: backup.recipes.length }),
+      t('settings.restoreConfirm'),
+      t('common.cancel'),
+    );
+    if (!ok) return;
+
+    setBackupBusy('restore');
+    try {
+      const result = await restoreRecipeBackup(backup);
+      const body = t('settings.restoreDoneBody', { added: result.added, skipped: result.skipped });
+      await showNotice(
+        t('settings.restoreDoneTitle'),
+        result.invalid > 0
+          ? `${body} ${t('settings.restoreInvalidNote', { count: result.invalid })}`
+          : body,
+      );
+    } catch {
+      await showNotice(t('settings.restoreFailedTitle'), t('settings.restoreFailedBody'));
+    } finally {
+      setBackupBusy(null);
     }
   }
 
@@ -511,6 +597,35 @@ export default function SettingsScreen() {
               last
             />
           </SettingsSection>
+
+          {user ? (
+            <SettingsSection
+              title={t('settings.yourRecipes')}
+              icon="archive-outline"
+              description={t('settings.yourRecipesHint')}
+            >
+              <SettingsActionRow
+                label={t('settings.backupDownload')}
+                description={t('settings.backupDownloadHint')}
+                icon="download-outline"
+                onPress={() => void handleDownloadRecipes()}
+                disabled={backupBusy !== null}
+                busy={backupBusy === 'export'}
+              />
+              <SettingsActionRow
+                label={t('settings.backupRestore')}
+                description={t('settings.backupRestoreHint')}
+                icon="cloud-upload-outline"
+                onPress={() => void handleRestoreRecipes()}
+                disabled={backupBusy !== null}
+                busy={backupBusy === 'restore'}
+                last
+              />
+              {backupBusy ? (
+                <ActivityIndicator className="mt-2" color={colors.primary} />
+              ) : null}
+            </SettingsSection>
+          ) : null}
 
           {isAdmin ? (
             <SettingsSection title={t('settings.adminTitle')} icon="shield-checkmark-outline">
