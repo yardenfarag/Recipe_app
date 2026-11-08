@@ -1,6 +1,9 @@
 // Shared helpers for the PIN-44 LLM eval. Run everything through eval/cli.ts.
 
-export const ROOT = new URL('.', import.meta.url).pathname;
+import { fileURLToPath } from 'node:url';
+
+// fileURLToPath, not .pathname: on Windows .pathname is /C:/..., which Deno can't open.
+export const ROOT = fileURLToPath(new URL('.', import.meta.url)).replaceAll('\\', '/');
 export const PRIVATE = `${ROOT}private/`;
 export const RESULTS = `${ROOT}results/`;
 
