@@ -340,7 +340,7 @@ details>*:not(summary){margin-bottom:12px}
       <text class="s" x="368" y="566">Deployed by hand: npx supabase functions deploy &lt;name&gt;</text>
       <rect class="zone" x="810" y="40" width="350" height="560"/><text class="zt" x="826" y="30">OUTSIDE SERVICES</text>
       <rect class="box y" x="830" y="70" width="310" height="92"/>
-      <text class="t" x="848" y="98">OpenRouter</text><text class="s" x="848" y="118">text extract · vision · translate · remix · swap · gates</text><text class="s" x="848" y="136">+ Jev decisions API (typesafe/jev-1.13)</text><text class="s" x="848" y="152">one API key; Luna · Sonnet 5.5 · Sol · Mistral Small · Gemini 3.5 Flash</text>
+      <text class="t" x="848" y="98">OpenRouter</text><text class="s" x="848" y="118">text extract · vision · translate · remix · swap · gates</text><text class="s" x="848" y="136">+ Decisions API (gpt-6-luna-decisions)</text><text class="s" x="848" y="152">one API key; Luna · Sonnet 5.5 · Sol · Mistral Small · Gemini 3.5 Flash</text>
       <rect class="box y" x="830" y="180" width="310" height="64"/>
       <text class="t" x="848" y="208">Video via OpenRouter too</text><text class="s" x="848" y="228">YouTube by URL; IG/TikTok clips downloaded, sent inline (≤20 MB)</text>
       <rect class="box y" x="830" y="262" width="310" height="64"/>
@@ -759,7 +759,7 @@ curl -X POST 'https://ccobefeofhnncpgifxel.supabase.co/functions/v1/extract-reci
   <div class="table-wrap"><table style="min-width:960px">
     <thead><tr><th>Task (<code>kind</code>)</th><th>Before PIN-45</th><th>Now: primary, fallback, reasoning</th><th>Why that choice</th></tr></thead>
     <tbody>
-      <tr><td class="k" style="white-space:normal">Extract gate<br><code>extract_gate</code></td><td>Jev (PIN-46)</td><td>Jev <code>typesafe/jev-1.13</code>, no fallback (fails open)</td><td>Typed yes/no and pick-one answers, about 0.3 s, almost free. 93% route accuracy in the eval and zero real recipes rejected. Fails open.</td></tr>
+      <tr><td class="k" style="white-space:normal">Extract gate<br><code>extract_gate</code></td><td>Jev (PIN-46)</td><td><code>openai/gpt-6-luna-decisions</code> via the Decisions API, no fallback (fails open)</td><td>Typed yes/no and pick-one answers, about 0.4 s, almost free. 100% route accuracy in the November rerun (Jev 1.13: 97%) and zero real recipes rejected. Fails open.</td></tr>
       <tr><td class="k">Content gate<br><code>content_gate</code></td><td><code>gemini-2.5-flash-lite</code></td><td><code>mistralai/mistral-small-2603</code> → <code>openai/gpt-5.4-nano</code>, none</td><td>Runs before any credit, so it must be fast and cheap. Mistral Small: 97% accuracy at 1.6 s vs 5.2 s today.</td></tr>
       <tr><td class="k">Text extract<br><code>text</code></td><td><code>gemini-2.5-flash-lite</code></td><td><code>openai/gpt-6-luna</code> → <code>qwen/qwen3.8-flash</code>, none</td><td>Luna: 100% ingredient recall, 98% amounts, 0.7 s median vs 7.8 s today, a fifth of the cost.</td></tr>
       <tr><td class="k">Remix, swap, fridge match<br><code>transform</code>, <code>substitution</code>, <code>fridge_match</code></td><td><code>gemini-2.5-flash-lite</code></td><td><code>openai/gpt-6-luna</code> → <code>qwen/qwen3.8-flash</code>, none</td><td>Interactive and free, so speed matters most. Follows the text-extract result.</td></tr>

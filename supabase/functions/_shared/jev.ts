@@ -1,10 +1,12 @@
 /**
- * TypeSafe Jev through OpenRouter's Decisions API (PIN-46).
+ * Typed decisions through OpenRouter's Decisions API (PIN-46). Named after
+ * TypeSafe Jev, the first model behind it; the default is now GPT-6 Luna
+ * Decisions, which tied or beat Jev 1.13 and 1.14 in the 2026-11-08 eval rerun.
  *
- * Jev returns typed decisions instead of text: a Choice (one option plus
- * probabilities) or a Noul (probability of yes). Text only, 32K context,
- * $0.042 per 1M input tokens, output free. Every caller fails open: on an
- * error or a low-confidence answer it runs the path it ran before Jev.
+ * Decisions models return a Choice (one option plus probabilities) or a Noul
+ * (probability of yes), not text. Luna Decisions: $0.10 per 1M input tokens,
+ * output free, 1M context. Every caller fails open: on an error or a
+ * low-confidence answer it runs the path it ran before the gate.
  */
 
 import { buildTextContext, type ExtractInput } from './gemini.ts';
@@ -12,8 +14,8 @@ import { resolveOpenRouterApiKey } from './llmClient.ts';
 import { isVideoTooLong } from './videoLimits.ts';
 
 const DECISIONS_URL = 'https://openrouter.ai/api/alpha/decisions';
-const DEFAULT_JEV_MODEL = 'typesafe/jev-1.13';
-// p95 was 1.0 s in the PIN-44 eval. Past this, today's ladder is the faster bet.
+const DEFAULT_JEV_MODEL = 'openai/gpt-6-luna-decisions';
+// p95 was 0.6 s for Luna Decisions (1.0 s for Jev 1.13) in the eval. Past this, today's ladder is the faster bet.
 const JEV_TIMEOUT_MS = 3_000;
 
 export type JevQuestion =

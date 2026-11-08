@@ -74,7 +74,12 @@ Generated 2026-10-12 by `eval/cli.ts report`. Ingredient matching by `anthropic/
 
 ## Extract gate (30 posts, 10 Hebrew)
 
+Rerun 2026-11-08 on a fresh post snapshot with fresh Opus route labels, so these rows are not comparable to the 12 Oct ones they replace (Jev 1.13 then: 93%).
+
+
 | model | n | call errors | schema ok | p50 | p95 | $/call | route accuracy | Hebrew accuracy | recipe → no_recipe | full → needs_video |
 | --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: |
-| `jev:typesafe/jev-1.13` | 30 | 0 | 100% | 0.3 s | 1.0 s | $0.00004 | 93% | 90% | 0 | 0 |
-| `openai/gpt-6-luna` | 30 | 0 | 100% | 1.1 s | 1.9 s | $0.00006 | 87% | 90% | 0 | 0 |
+| `jev:typesafe/jev-1.13` | 30 | 0 | 100% | 0.3 s | 1.1 s | $0.00004 | 97% | 100% | 0 | 0 |
+| `jev:typesafe/jev-1.14` | 30 | 0 | 100% | 0.2 s | 0.5 s | $0.00004 | 93% | 100% | 0 | 0 |
+| `jev:openai/gpt-6-luna-decisions` | 30 | 0 | 100% | 0.4 s | 0.6 s | $0.00006 | 100% | 100% | 0 | 0 |
+| `openai/gpt-6-luna` | 30 | 0 | 100% | 1.0 s | 1.6 s | $0.00006 | 93% | 100% | 0 | 0 |

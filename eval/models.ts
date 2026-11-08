@@ -10,7 +10,7 @@ export const TASK_MODELS = {
   content_gate: ['mistralai/mistral-small-2603', 'openai/gpt-5.4-nano', 'google/gemini-2.5-flash-lite'],
   video: ['qwen/qwen3.8-omni-flash', 'xiaomi/mimo-v2.6-flash', 'google/gemini-3.5-flash'],
   // `jev:` goes through the Decisions API; the chat model is a baseline.
-  extract_gate: ['jev:typesafe/jev-1.13', 'openai/gpt-6-luna'],
+  extract_gate: ['jev:typesafe/jev-1.13', 'jev:typesafe/jev-1.14', 'jev:openai/gpt-6-luna-decisions', 'openai/gpt-6-luna'],
 } as const;
 
 export type Task = keyof typeof TASK_MODELS;
