@@ -44,11 +44,15 @@ export type HubPublishableRecipe = {
   instructions?: unknown[] | null;
 };
 
-/** Public URL extracts only — never invented, photo, or partial cards. */
+/** Public URL extracts only — never invented, photo, written (ADR 018), or partial cards. */
 export function canPublishHubRecipe(recipe: HubPublishableRecipe): boolean {
   if (!isHubPlatform(recipe.platform ?? null)) return false;
   if (recipe.extraction_status !== 'full') return false;
-  if (recipe.extraction_source === 'invented' || recipe.extraction_source === 'photo') {
+  if (
+    recipe.extraction_source === 'invented' ||
+    recipe.extraction_source === 'photo' ||
+    recipe.extraction_source === 'manual'
+  ) {
     return false;
   }
   if (!recipe.title?.trim()) return false;

@@ -76,9 +76,64 @@ describe('buildRecipeBackup', () => {
     expect(parsed.recipes[0]).toMatchObject({ id: 'r1', tags: ['eggs'] });
     expect(parsed.collections).toEqual([{ name: 'Brunch', recipe_ids: ['r1'] }]);
   });
+
+  it('round-trips a written recipe with its locked fields, but never what was recalculating', () => {
+    const backup = buildRecipeBackup({
+      recipes: [
+        recipe({
+          extraction_source: 'manual',
+          platform: 'unknown',
+          calories: 900,
+          effort_level: 'Easy',
+          locked_fields: ['calories', 'effort_level'],
+          recalc_pending: ['tags', 'ingredient_amounts'],
+          recalc_started_at: '2026-11-08T12:00:00.000Z',
+        }),
+      ],
+      collections: [],
+      translations: {},
+    });
+
+    const parsed = parseRecipeBackup(JSON.stringify(backup));
+    expect(parsed.invalid).toBe(0);
+    expect(parsed.recipes[0]).toMatchObject({
+      extraction_source: 'manual',
+      platform: 'unknown',
+      calories: 900,
+      effort_level: 'Easy',
+      locked_fields: ['calories', 'effort_level'],
+    });
+    expect(parsed.recipes[0]).not.toHaveProperty('original_url');
+    expect(parsed.recipes[0]).not.toHaveProperty('recalc_pending');
+    expect(parsed.recipes[0]).not.toHaveProperty('recalc_started_at');
+  });
 });
 
 describe('parseRecipeBackup', () => {
+  it('drops unknown locked fields and recalculation state from a hand-made file', () => {
+    const parsed = parseRecipeBackup(
+      backupText([
+        {
+          ...recipe({ extraction_source: 'manual' }),
+          locked_fields: ['calories', 'title', 'calories', 7],
+          recalc_pending: ['calories'],
+          recalc_started_at: '2026-11-08T12:00:00.000Z',
+        },
+        { ...recipe({ id: 'r2', title: 'Soup' }), locked_fields: ['servings'] },
+      ]),
+    );
+    // A non-string entry makes the whole list unusable, like tags.
+    expect(parsed.recipes[0].extraction_source).toBe('manual');
+    expect(parsed.recipes[0]).not.toHaveProperty('locked_fields');
+    expect(parsed.recipes[0]).not.toHaveProperty('recalc_pending');
+    expect(parsed.recipes[1]).not.toHaveProperty('locked_fields');
+
+    const clean = parseRecipeBackup(
+      backupText([{ ...recipe(), locked_fields: ['tags', 'title', 'tags'] }]),
+    );
+    expect(clean.recipes[0].locked_fields).toEqual(['tags']);
+  });
+
   it.each([
     ['not_json', 'not json at all'],
     ['not_backup', JSON.stringify({ recipes: [] })],
@@ -140,6 +195,18 @@ describe('planRecipeRestore', () => {
         recipe({ id: 'b2', ingredients: [{ name: 'Eggs', quantity: 6, unit: '' }] }),
       ],
       [recipe({ id: 'lib-1' })],
+    );
+    expect(plan.existingIds).toEqual({ b1: 'lib-1' });
+    expect(plan.toAdd.map((r) => r.id)).toEqual(['b2']);
+  });
+
+  it('matches a written recipe (no URL) by title and ingredients, never by origin', () => {
+    const plan = planRecipeRestore(
+      [
+        recipe({ id: 'b1', extraction_source: 'manual', platform: 'unknown' }),
+        recipe({ id: 'b2', extraction_source: 'manual', title: "Grandma's soup" }),
+      ],
+      [recipe({ id: 'lib-1', extraction_source: 'manual', platform: 'unknown' })],
     );
     expect(plan.existingIds).toEqual({ b1: 'lib-1' });
     expect(plan.toAdd.map((r) => r.id)).toEqual(['b2']);

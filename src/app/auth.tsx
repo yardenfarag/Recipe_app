@@ -42,7 +42,15 @@ import {
 
 type Mode = 'signin' | 'signup' | 'forgot';
 type WaitingFor = 'confirm' | 'reset' | null;
-type AuthReason = 'extract_limit' | 'save_limit' | 'sync' | 'shared_recipe' | 'hub_recipe' | 'onboarding' | undefined;
+type AuthReason =
+  | 'extract_limit'
+  | 'save_limit'
+  | 'sync'
+  | 'shared_recipe'
+  | 'hub_recipe'
+  | 'onboarding'
+  | 'edit'
+  | undefined;
 
 function parseMode(value: string | string[] | undefined): Mode {
   const raw = Array.isArray(value) ? value[0] : value;
@@ -57,7 +65,8 @@ function parseReason(value: string | string[] | undefined): AuthReason {
     raw === 'sync' ||
     raw === 'shared_recipe' ||
     raw === 'hub_recipe' ||
-    raw === 'onboarding'
+    raw === 'onboarding' ||
+    raw === 'edit'
   ) {
     return raw;
   }
@@ -273,6 +282,8 @@ export default function AuthScreen() {
               ? t('auth.reasonHub')
             : reason === 'onboarding'
               ? t('auth.reasonOnboarding')
+            : reason === 'edit'
+              ? t('auth.reasonEdit')
               : mode === 'signup'
               ? t('auth.signupSubtitle')
               : mode === 'forgot'

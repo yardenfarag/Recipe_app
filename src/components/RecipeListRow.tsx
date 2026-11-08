@@ -16,7 +16,7 @@ import { recipeAppliancesOf } from '@/lib/appliances';
 import { COST_I18N_KEYS } from '@/lib/formatCostEstimate';
 import { formatCookedDate } from '@/lib/formatCookedDate';
 import { formatRecipeDuration } from '@/lib/formatRecipeDuration';
-import { recipeIsInvented } from '@/lib/recipeOrigin';
+import { recipeOriginChip } from '@/lib/recipeOrigin';
 import { Recipe } from '@/types/recipe';
 
 interface RecipeListRowProps {
@@ -129,12 +129,18 @@ export const RecipeListRow = memo(function RecipeListRow({
       : null;
 
   const title = recipe.display_title ?? recipe.title;
-  const invented = recipeIsInvented(recipe);
+  const originChip = recipeOriginChip(recipe);
+  const originLabel =
+    originChip === 'invented'
+      ? t('recipe.inventedChip')
+      : originChip === 'written'
+        ? t('recipeEditor.originChip')
+        : null;
   // One VoiceOver/TalkBack stop per recipe instead of a fragment per line.
   const rowLabel = [
     title,
     detail,
-    invented ? t('recipe.inventedChip') : null,
+    originLabel,
     timeLabel,
     effortLabel,
     costLabel,
@@ -220,17 +226,19 @@ export const RecipeListRow = memo(function RecipeListRow({
                 {detail}
               </Text>
             ) : null}
-            {invented ? (
+            {originLabel ? (
               <View
                 className="mt-1 self-start rounded-full px-2 py-0.5"
-                style={{ backgroundColor: colors.accentSoft }}
+                style={{
+                  backgroundColor: originChip === 'written' ? colors.primarySoft : colors.accentSoft,
+                }}
               >
                 <Text
                   className="text-[10px] font-bold"
-                  style={{ color: colors.accent }}
+                  style={{ color: originChip === 'written' ? colors.primary : colors.accent }}
                   maxFontSizeMultiplier={CHROME_MAX_FONT_SCALE}
                 >
-                  {t('recipe.inventedChip')}
+                  {originLabel}
                 </Text>
               </View>
             ) : null}

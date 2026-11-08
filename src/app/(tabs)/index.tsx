@@ -34,12 +34,14 @@ import { RecipeActionsMenu } from '@/components/RecipeActionsMenu';
 import { RecipeLibraryToolbar } from '@/components/RecipeLibraryToolbar';
 import { RecipeListRow } from '@/components/RecipeListRow';
 import { Screen } from '@/components/Screen';
+import { useAuth } from '@/hooks/useAuth';
 import { useCollections } from '@/hooks/useCollections';
 import { useLibraryLayout } from '@/hooks/useLibraryLayout';
 import { useRecipes } from '@/hooks/useRecipes';
 import { useThemePreference } from '@/hooks/useThemePreference';
 import { announce } from '@/lib/a11y';
 import { removeGuestRecipe, renameGuestRecipe } from '@/lib/guestRecipes';
+import { openRecipeEditor } from '@/lib/openRecipeEditor';
 import { rankCookTonight } from '@/lib/cookTonight';
 import {
   filterAndSortRecipes,
@@ -85,6 +87,7 @@ export default function HomeScreen() {
     collectionsForRecipe,
   } = useCollections();
   const { colors } = useThemePreference();
+  const { user } = useAuth();
   const { layout, numColumns, toggleLayout } = useLibraryLayout();
   const reduceMotion = useReducedMotion();
   const skipItemEnter = useRef(false);
@@ -628,6 +631,15 @@ export default function HomeScreen() {
               {t('library.snapFirst')}
             </Text>
           </Pressable>
+          <Pressable
+            className="mt-3 min-h-[44px] items-center justify-center px-4 active:opacity-70"
+            onPress={() => openRecipeEditor({ signedIn: Boolean(user) })}
+            accessibilityRole="button"
+          >
+            <Text className="text-center text-sm font-semibold" style={{ color: colors.primary }}>
+              {t('recipeEditor.entry.libraryEmptyLink')}
+            </Text>
+          </Pressable>
         </View>
       </Screen>
     );
@@ -724,6 +736,12 @@ export default function HomeScreen() {
           if (!menuRecipe) return;
           setCollectionRecipe(menuRecipe);
           setMenuRecipe(null);
+        }}
+        onEdit={() => {
+          if (!menuRecipe) return;
+          const recipeId = menuRecipe.id;
+          setMenuRecipe(null);
+          openRecipeEditor({ signedIn: Boolean(user), recipeId });
         }}
         onRename={() => {
           if (!menuRecipe) return;

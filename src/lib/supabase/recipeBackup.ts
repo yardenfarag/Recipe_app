@@ -104,6 +104,9 @@ function restoreRow(recipe: Recipe, userId: string): Record<string, unknown> {
     translations: _translations,
     display_title: _displayTitle,
     migrated_from_guest: _migrated,
+    // A restored recipe starts with nothing recalculating (ADR 018), whatever the file says.
+    recalc_pending: _recalcPending,
+    recalc_started_at: _recalcStartedAt,
     ...persistable
   } = recipe;
   return {

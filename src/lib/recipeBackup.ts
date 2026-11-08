@@ -61,6 +61,9 @@ const BACKUP_RECIPE_FIELDS = [
   'kitchen_adapted_summary',
   'kitchen_original',
   'appliances',
+  // ADR 018: hand-set fields stay hand-set after a restore. recalc_pending and recalc_started_at
+  // are left out on purpose: a restored recipe starts with nothing recalculating.
+  'locked_fields',
   'translations',
 ] as const satisfies readonly (keyof Recipe)[];
 

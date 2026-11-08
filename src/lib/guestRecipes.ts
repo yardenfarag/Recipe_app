@@ -5,7 +5,7 @@ import { readIngredientAmount } from '@/lib/ingredientAmounts';
 import { detectPlatform, recipeUrlsMatch } from '@/lib/platformUrls';
 import { recipeContentEquals } from '@/lib/recipeContentEquals';
 import { recipeMatchesUrlOrigin, recipeUrlOrigin } from '@/lib/recipeOrigin';
-import { Recipe, RecipeTranslationContent } from '@/types/recipe';
+import { LOCKABLE_FIELDS, type LockedField, Recipe, RecipeTranslationContent } from '@/types/recipe';
 
 /** Guests cannot save; sign-up is required to keep recipes. */
 export const GUEST_RECIPE_LIMIT = 0;
@@ -340,7 +340,7 @@ export function sanitizeStoredRecipe(value: unknown): Recipe | null {
   if (['Easy', 'Medium', 'Hard'].includes(String(value.effort_level))) {
     recipe.effort_level = value.effort_level as Recipe['effort_level'];
   }
-  if (['description', 'comments', 'captions', 'video', 'web', 'photo', 'invented'].includes(String(value.extraction_source))) {
+  if (['description', 'comments', 'captions', 'video', 'web', 'photo', 'invented', 'manual'].includes(String(value.extraction_source))) {
     recipe.extraction_source = value.extraction_source as Recipe['extraction_source'];
   }
   if (typeof value.is_favorite === 'boolean') recipe.is_favorite = value.is_favorite;
@@ -360,6 +360,12 @@ export function sanitizeStoredRecipe(value: unknown): Recipe | null {
   if (tags) recipe.tags = tags;
   const missingFields = sanitizeStringArray(value.missing_fields);
   if (missingFields) recipe.missing_fields = missingFields;
+  // ADR 018: fields the user set by hand. Never recalc_pending: a copy starts with nothing pending.
+  const lockable = new Set<string>(LOCKABLE_FIELDS);
+  const locked = sanitizeStringArray(value.locked_fields)?.filter((field): field is LockedField =>
+    lockable.has(field),
+  );
+  if (locked && locked.length > 0) recipe.locked_fields = [...new Set(locked)];
 
   return recipe;
 }

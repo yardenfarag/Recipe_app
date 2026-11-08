@@ -109,6 +109,33 @@ describe('RecipeAppliances: states', () => {
   });
 });
 
+describe('RecipeAppliances: recalculating after a hand edit (ADR 018)', () => {
+  it('keeps showing the current list with "Updating…" until the new one arrives', async () => {
+    await render(<RecipeAppliances appliances={[OVEN]} instructions={STEPS_EN} updating />);
+    expect(screen.getByText('Oven')).toBeTruthy();
+    expect(screen.getByText('Updating…')).toBeTruthy();
+  });
+
+  it('shows the section with "Updating…" for a written recipe that has no list yet', async () => {
+    await render(<RecipeAppliances appliances={null} instructions={STEPS_EN} updating />);
+    expect(screen.getByText("What you'll need")).toBeTruthy();
+    expect(screen.getByText('Updating…')).toBeTruthy();
+    expect(screen.queryByTestId('appliances-none')).toBeNull();
+  });
+
+  it('says "Updating…" in Hebrew, right to left', async () => {
+    await inLanguage('he');
+    await render(<RecipeAppliances appliances={[OVEN]} instructions={STEPS_HE} updating />);
+    const note = screen.getByText('מתעדכן…');
+    expect(flat(note.props.style)).toMatchObject({ writingDirection: 'rtl', textAlign: 'right' });
+  });
+
+  it('shows no "Updating…" when nothing is recalculating', async () => {
+    await render(<RecipeAppliances appliances={[OVEN]} instructions={STEPS_EN} />);
+    expect(screen.queryByTestId('appliances-updating')).toBeNull();
+  });
+});
+
 describe('RecipeAppliances: English, left to right', () => {
   it('groups required and "Makes it better" items with benefits, workarounds and the tip label', async () => {
     await render(<RecipeAppliances appliances={ALL} instructions={STEPS_EN} />);
