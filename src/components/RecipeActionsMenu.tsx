@@ -11,6 +11,8 @@ interface RecipeActionsMenuProps {
   recipeTitle: string;
   onClose: () => void;
   onAddToCollection: () => void;
+  /** Opens Edit recipe (ADR 018). Left out, the row is hidden. */
+  onEdit?: () => void;
   onRename: () => void;
   onDelete: () => void;
 }
@@ -21,6 +23,7 @@ export function RecipeActionsMenu({
   recipeTitle,
   onClose,
   onAddToCollection,
+  onEdit,
   onRename,
   onDelete,
 }: RecipeActionsMenuProps) {
@@ -76,6 +79,15 @@ export function RecipeActionsMenu({
             iconColor={colors.primary}
             onPress={onAddToCollection}
           />
+          {onEdit ? (
+            <MenuRow
+              icon="create-outline"
+              label={t('recipeEditor.titleEdit')}
+              color={colors.text}
+              iconColor={colors.primary}
+              onPress={onEdit}
+            />
+          ) : null}
           <MenuRow
             icon="pencil-outline"
             label={t('library.rename')}

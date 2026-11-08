@@ -27,19 +27,41 @@ type RecipeAppliancesProps = {
    * English app shows its steps right-to-left. Labels follow the app (useRtl).
    */
   stepDirection?: 'rtl' | 'ltr';
+  /**
+   * A hand edit is recalculating the list (ADR 018). The current list keeps showing, with
+   * "Updating…" beside the title; with no list yet (a written recipe), only the title and that.
+   */
+  updating?: boolean;
 };
 
 /** "What you'll need" (ADR 017 decision 4): Required, then "Makes it better" with benefits and tips. */
-export function RecipeAppliances({ appliances, instructions, stepDirection }: RecipeAppliancesProps) {
+export function RecipeAppliances({
+  appliances,
+  instructions,
+  stepDirection,
+  updating = false,
+}: RecipeAppliancesProps) {
   const { t } = useTranslation();
   const { colors } = useThemePreference();
   const { textAlign, writingDirection } = useRtl();
   const [open, setOpen] = useState<RecipeAppliance | null>(null);
 
-  if (appliances === null) return null;
+  if (appliances === null && !updating) return null;
 
-  const { required, better } = groupAppliances(appliances);
+  const { required, better } = groupAppliances(appliances ?? []);
   const textStyle = { textAlign, writingDirection };
+  const updatingNote = updating ? (
+    <Text
+      testID="appliances-updating"
+      className="text-xs font-medium"
+      style={[{ color: colors.textSecondary }, textStyle]}
+      accessibilityLabel={`${t('appliances.title')}, ${t('recipeEditor.updating')}`}
+      accessibilityState={{ busy: true }}
+      maxFontSizeMultiplier={CHROME_MAX_FONT_SCALE}
+    >
+      {t('recipeEditor.updating')}
+    </Text>
+  ) : null;
   const stepStyle = stepDirection
     ? { writingDirection: stepDirection, textAlign: stepDirection === 'rtl' ? ('right' as const) : ('left' as const) }
     : textStyle;
@@ -107,14 +129,15 @@ export function RecipeAppliances({ appliances, instructions, stepDirection }: Re
   return (
     <View className="mb-5" testID="recipe-appliances">
       <Text
-        className="mb-3 text-lg font-bold"
+        className={updating ? 'mb-0.5 text-lg font-bold' : 'mb-3 text-lg font-bold'}
         style={[{ color: colors.text }, textStyle]}
         accessibilityRole="header"
       >
         {t('appliances.title')}
       </Text>
+      {updatingNote ? <View className="mb-3">{updatingNote}</View> : null}
 
-      {appliances.length === 0 ? (
+      {appliances?.length === 0 ? (
         <Text testID="appliances-none" className="text-sm" style={[{ color: colors.textSecondary }, textStyle]}>
           {t('appliances.none')}
         </Text>

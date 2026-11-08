@@ -157,6 +157,55 @@ describe('restoreRecipeBackup', () => {
     );
   });
 
+  it('restores a written recipe with its locked fields and nothing recalculating', async () => {
+    mocks.fetchRecipesPage.mockResolvedValue({ recipes: [], total: 0 });
+    const written = recipe({
+      title: "Grandma's soup",
+      extraction_source: 'manual',
+      platform: 'unknown',
+      calories: 900,
+      locked_fields: ['calories'],
+      recalc_pending: ['tags'],
+      recalc_started_at: '2026-11-08T12:00:00.000Z',
+    });
+
+    await expect(
+      restoreRecipeBackup({ recipes: [written], collections: [], invalid: 0 }),
+    ).resolves.toMatchObject({ added: 1, skipped: 0 });
+
+    const row = mocks.insertRecipe.mock.calls[0][0];
+    expect(row).toMatchObject({
+      title: "Grandma's soup",
+      extraction_source: 'manual',
+      platform: 'unknown',
+      calories: 900,
+      locked_fields: ['calories'],
+    });
+    expect(row).not.toHaveProperty('original_url');
+    expect(row).not.toHaveProperty('recalc_pending');
+    expect(row).not.toHaveProperty('recalc_started_at');
+  });
+
+  it('skips a written recipe already in the library by its title and ingredients', async () => {
+    mocks.fetchRecipesPage.mockResolvedValue({
+      recipes: [recipe({ id: 'lib-1', extraction_source: 'manual' })],
+      total: 1,
+    });
+
+    await expect(
+      restoreRecipeBackup({
+        recipes: [recipe({ id: 'b1', extraction_source: 'manual' })],
+        collections: [{ name: 'Brunch', recipe_ids: ['b1'] }],
+        invalid: 0,
+      }),
+    ).resolves.toMatchObject({ added: 0, skipped: 1 });
+    expect(mocks.insertRecipe).not.toHaveBeenCalled();
+    expect(mocks.upsertMemberships).toHaveBeenCalledWith(
+      [{ collection_id: 'col-1', recipe_id: 'lib-1' }],
+      expect.anything(),
+    );
+  });
+
   it('stops on an unexpected insert error so the restore can be re-run', async () => {
     mocks.fetchRecipesPage.mockResolvedValue({ recipes: [], total: 0 });
     mocks.insertRecipe.mockResolvedValue({ data: null, error: new Error('network down') });

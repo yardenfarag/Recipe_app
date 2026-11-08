@@ -42,6 +42,7 @@ import {
   setGuestExtractionsRemaining,
 } from "@/lib/guestExtractionUsage";
 import { kitchenInstruction } from "@/lib/kitchenProfile";
+import { openRecipeEditor } from "@/lib/openRecipeEditor";
 import {
   fileUriToBase64,
   pickCompressedRecipeImage,
@@ -932,6 +933,46 @@ export default function AddRecipeScreen() {
                   : t("snap.photoAction")}
               </Animated.Text>
             </View>
+          </Pressable>
+
+          {/* Write a recipe (ADR 018) opens its own screen, so it sits beside Snap and Guess
+              rather than inside the intent toggle, and reads the same in either mode. */}
+          <Pressable
+            className="mt-3 min-h-[48px] flex-row items-center gap-3 rounded-[22px] px-4 py-3 active:opacity-80"
+            style={{ backgroundColor: colors.surface, overflow: "hidden" }}
+            onPress={() => openRecipeEditor({ signedIn: Boolean(user) })}
+            accessibilityRole="button"
+            accessibilityLabel={t("recipeEditor.entry.write")}
+            accessibilityHint={t("recipeEditor.entry.writeHint")}
+          >
+            <Ionicons
+              name="create-outline"
+              size={18}
+              color={colors.primary}
+              accessible={false}
+              importantForAccessibility="no"
+            />
+            <View className="min-w-0 flex-1">
+              <Text
+                className="text-base font-bold"
+                style={{ color: colors.text, ...rtlText }}
+              >
+                {t("recipeEditor.entry.write")}
+              </Text>
+              <Text
+                className="mt-0.5 text-xs leading-4"
+                style={{ color: colors.textSecondary, ...rtlText }}
+              >
+                {t("recipeEditor.entry.writeHint")}
+              </Text>
+            </View>
+            <Ionicons
+              name={chevronForward}
+              size={16}
+              color={colors.textSecondary}
+              accessible={false}
+              importantForAccessibility="no"
+            />
           </Pressable>
         </Animated.View>
 

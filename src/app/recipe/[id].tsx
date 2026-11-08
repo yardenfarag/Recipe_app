@@ -6,10 +6,13 @@ import { useTranslation } from 'react-i18next';
 
 import { RecipeView } from '@/components/RecipeView';
 import { Screen } from '@/components/Screen';
+import { useAuth } from '@/hooks/useAuth';
 import { useLocalizedRecipe } from '@/hooks/useLocalizedRecipe';
+import { useRecipeRecalc } from '@/hooks/useRecipeRecalc';
 import { useThemePreference } from '@/hooks/useThemePreference';
 import { announce } from '@/lib/a11y';
 import { backfillRecipeThumbnails } from '@/lib/backfillRecipeThumbnails';
+import { openRecipeEditor } from '@/lib/openRecipeEditor';
 import { getGuestRecipeById, setGuestRecipeCooked, updateGuestRecipeContent } from '@/lib/guestRecipes';
 import { recipeContentEquals } from '@/lib/recipeContentEquals';
 import { toggleRecipeFavorite } from '@/lib/recipeFavorites';
@@ -26,6 +29,13 @@ export default function RecipeDetailScreen() {
   const { colors } = useThemePreference();
   const recipeRef = useRef<Recipe | null>(null);
   const persistQueue = useRef(Promise.resolve());
+  const { user } = useAuth();
+
+  // ADR 018: fields a hand edit is recalculating show "Updating…" until the new values land.
+  const updatingFields = useRecipeRecalc(recipe, (next) => {
+    setRecipe(next);
+    recipeRef.current = next;
+  });
 
   const {
     displayContent,
@@ -300,6 +310,8 @@ export default function RecipeDetailScreen() {
         onContentChange={handleContentChange}
         onCookedChange={handleCookedChange}
         onRepairApplied={handleRepairApplied}
+        updatingFields={updatingFields}
+        onEdit={() => openRecipeEditor({ signedIn: Boolean(user), recipeId: recipe.id })}
         localizedContent={displayContent}
         localizedLanguage={activeLanguage}
         translating={translating}
