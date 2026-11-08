@@ -35,10 +35,14 @@ export interface EstimateInput {
   amountRows: number[];
 }
 
-/** Only the fields that came back valid. A field missing here failed and stays pending. */
+/**
+ * The fields the call settled. A field missing here failed and stays pending for a retry.
+ * Calories and time can settle as null: the model answered, but with no estimate or one outside
+ * the database range (an estimate outside its range is no estimate). Retrying would only repeat it.
+ */
 export interface EstimateValues {
-  calories?: { calories: number; reasoning: string | null };
-  estimated_time_minutes?: { minutes: number; reasoning: string | null };
+  calories?: { calories: number | null; reasoning: string | null };
+  estimated_time_minutes?: { minutes: number | null; reasoning: string | null };
   effort_level?: EffortLevel;
   cost_estimate?: CostEstimate;
   tags?: string[];
@@ -137,16 +141,16 @@ export async function estimateRecipeFields(
     context: 'recipeEstimates.ts: estimateRecipeFields',
   });
 
-  if (fields.has('calories') && typeof data.calories === 'number') {
-    const total = normalizeStoredCalories(data.calories, input.servings);
-    const fitted = fitRecipeToLimits({ calories: total }).calories;
-    if (typeof fitted === 'number') values.calories = { calories: fitted, reasoning: reasoning(data.calories_reasoning) };
+  if (fields.has('calories')) {
+    const total = typeof data.calories === 'number' ? normalizeStoredCalories(data.calories, input.servings) : null;
+    const fitted = total === null ? null : fitRecipeToLimits({ calories: total }).calories ?? null;
+    values.calories = { calories: fitted, reasoning: reasoning(data.calories_reasoning) };
   }
-  if (fields.has('estimated_time_minutes') && typeof data.estimated_time_minutes === 'number') {
-    const minutes = fitRecipeToLimits({ estimated_time_minutes: data.estimated_time_minutes }).estimated_time_minutes;
-    if (typeof minutes === 'number') {
-      values.estimated_time_minutes = { minutes, reasoning: reasoning(data.time_reasoning) };
-    }
+  if (fields.has('estimated_time_minutes')) {
+    const minutes = typeof data.estimated_time_minutes === 'number'
+      ? fitRecipeToLimits({ estimated_time_minutes: data.estimated_time_minutes }).estimated_time_minutes ?? null
+      : null;
+    values.estimated_time_minutes = { minutes, reasoning: reasoning(data.time_reasoning) };
   }
   if (fields.has('effort_level') && (data.effort_level === 'Easy' || data.effort_level === 'Medium' || data.effort_level === 'Hard')) {
     values.effort_level = data.effort_level;
