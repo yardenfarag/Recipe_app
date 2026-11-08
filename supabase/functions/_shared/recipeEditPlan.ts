@@ -529,8 +529,8 @@ function failingRow(result: JevResult, key: string): number | null {
 function blockReasons(result: JevResult, items: ContentItems): RecipeEditBlockReason[] {
   const reasons: RecipeEditBlockReason[] = [];
   // A whole-recipe reason has no index (see RecipeEditBlockReason).
-  if (items.wholeRecipe && noulFails(result, 'recipe_is_recipe')) reasons.push({ field: 'ingredients', code: 'not_recipe' });
-  if (items.wholeRecipe && noulFails(result, 'recipe_is_safe')) reasons.push({ field: 'ingredients', code: 'unsafe' });
+  if (items.wholeRecipe && noulFails(result, 'recipe_is_recipe')) reasons.push({ field: 'recipe', code: 'not_recipe' });
+  if (items.wholeRecipe && noulFails(result, 'recipe_is_safe')) reasons.push({ field: 'recipe', code: 'unsafe' });
   if (items.title && noulFails(result, 'title_is_recipe')) reasons.push({ field: 'title', code: 'not_recipe' });
   if (items.title && noulFails(result, 'title_is_clean')) reasons.push({ field: 'title', code: 'spam' });
   const rows: Array<[string, 'ingredients' | 'instructions', RecipeEditBlockReason['code'], number[]]> = [

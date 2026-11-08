@@ -100,11 +100,18 @@ Deno.serve(async (req) => {
     const imageUrl = await photoColumn(request.content, user.id);
     if (imageUrl === false) return failed('server_error', "Couldn't save the photo.", 500);
 
-    // Fields an earlier save left pending are carried into this one.
+    // Also recalculated, whatever Jev said:
+    // - fields an earlier save left pending;
+    // - fields the user just reset to Pinch's estimate (locked before, unlocked now);
+    // - amounts for any row without grams/spoons (the editor drops them from changed rows).
     const locked = new Set<string>(request.locked_fields);
+    const unlocked = asArray<RecalcField>(existing?.locked_fields).filter((field) => !locked.has(field));
+    const amountsMissing = rowsMissingAmounts(storedEditContent(request.content).ingredients).length > 0;
     const pending = orderedFields([
       ...plan.recalculate,
       ...asArray<RecalcField>(existing?.recalc_pending),
+      ...unlocked,
+      ...(amountsMissing ? (['ingredient_amounts'] as RecalcField[]) : []),
     ]).filter((field) => !locked.has(field));
 
     const reservation = pending.length ? await reserve(admin, user.id) : null;
@@ -137,6 +144,11 @@ async function retry(admin: Admin, userId: string, recipeId: string): Promise<Re
   const locked = new Set(asArray<string>(row.locked_fields));
   const pending = orderedFields(asArray<RecalcField>(row.recalc_pending)).filter((field) => !locked.has(field));
   if (!pending.length) return respond({ status: 'saved', recipe: row, recalculating: [], recalculation: 'none' });
+  // A run that is still going isn't restarted: that would spend a second unit of the daily cap
+  // and make the running results stale (two devices, or a quick reopen).
+  if (runIsFresh(row.recalc_started_at)) {
+    return respond({ status: 'saved', recipe: row, recalculating: pending, recalculation: 'started' });
+  }
 
   const reservation = await reserve(admin, userId);
   const startedAt = reservation.ok ? new Date().toISOString() : null;
@@ -277,6 +289,15 @@ function beforeOf(row: Row) {
 
 function asArray<T>(value: unknown): T[] {
   return Array.isArray(value) ? (value as T[]) : [];
+}
+
+/** Same window the app uses to show "Updating…" (2 minutes). */
+const FRESH_RUN_MS = 2 * 60 * 1000;
+
+function runIsFresh(startedAt: unknown): boolean {
+  if (typeof startedAt !== 'string') return false;
+  const age = Date.now() - Date.parse(startedAt);
+  return Number.isFinite(age) && age >= 0 && age < FRESH_RUN_MS;
 }
 
 function orderedFields(fields: RecalcField[]): RecalcField[] {

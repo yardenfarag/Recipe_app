@@ -207,8 +207,8 @@ Deno.test('values exactly at each limit are accepted', async () => {
 
 Deno.test('a written recipe is blocked with a reason for each part that fails', async () => {
   const cases: Array<[Overrides, Reason]> = [
-    [{ recipe_is_recipe: noul(0.05) }, { field: 'ingredients', code: 'not_recipe' }],
-    [{ recipe_is_safe: noul(0.02) }, { field: 'ingredients', code: 'unsafe' }],
+    [{ recipe_is_recipe: noul(0.05) }, { field: 'recipe', code: 'not_recipe' }],
+    [{ recipe_is_safe: noul(0.02) }, { field: 'recipe', code: 'unsafe' }],
     [{ title_is_recipe: noul(0.1) }, { field: 'title', code: 'not_recipe' }],
     [{ title_is_clean: noul(0.01) }, { field: 'title', code: 'spam' }],
     [{ ingredients_not_recipe: pick(2) }, { field: 'ingredients', index: 1, code: 'not_recipe' }],

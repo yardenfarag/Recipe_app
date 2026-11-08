@@ -74,6 +74,8 @@ export type SaveRecipeEditRequest =
 
 /** Fields a hard limit or the content check can point at. */
 export type RecipeEditField =
+  /** The whole recipe (a written recipe that isn't a recipe, or isn't safe). Never has an index. */
+  | 'recipe'
   | 'title'
   | 'photo'
   | 'servings'

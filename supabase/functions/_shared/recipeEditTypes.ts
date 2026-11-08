@@ -91,6 +91,8 @@ export type SaveRecipeEditRequest =
   | { mode: 'retry'; recipe_id: string; app_language: string };
 
 export type RecipeEditField =
+  /** The whole recipe (a written recipe that isn't a recipe, or isn't safe). Never has an index. */
+  | 'recipe'
   | 'title'
   | 'photo'
   | 'servings'
