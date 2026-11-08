@@ -9,7 +9,7 @@ import {
 import { recipeContentEquals } from '@/lib/recipeContentEquals';
 import { extractYouTubeId, recipeUrlsMatch as youtubeUrlsMatch } from '@/lib/youtube';
 import { recipeMatchesUrlOrigin, type RecipeUrlOrigin } from '@/lib/recipeOrigin';
-import { Recipe } from '@/types/recipe';
+import { LockedField, Recipe } from '@/types/recipe';
 
 /** Recipe fields owned by the client on insert — server generates id/created_at. */
 export type NewRecipe = Omit<Recipe, 'id' | 'created_at' | 'user_id'>;
@@ -203,8 +203,16 @@ export async function setRecipeFavorite(id: string, isFavorite: boolean): Promis
   }
 }
 
+/**
+ * Saves tags the user set by hand. They are locked (ADR 018), so a background recalculation from
+ * an earlier edit never overwrites them; "Reset to Pinch's estimate" in the editor unlocks them.
+ */
 export async function setRecipeTags(id: string, tags: string[]): Promise<void> {
-  const { error } = await supabase.from('recipes').update({ tags }).eq('id', id);
+  const { data: current } = await supabase.from('recipes').select('locked_fields').eq('id', id).single();
+  const locked = (current as Pick<Recipe, 'locked_fields'> | null)?.locked_fields ?? [];
+  const locked_fields: LockedField[] = locked.includes('tags') ? locked : [...locked, 'tags'];
+
+  const { error } = await supabase.from('recipes').update({ tags, locked_fields }).eq('id', id);
   if (error) {
     if (error.message.includes('tags') || error.code === 'PGRST204') {
       throw new Error(

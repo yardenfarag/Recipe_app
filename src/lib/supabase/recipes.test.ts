@@ -1,6 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
-import { recipeContentUpdateRow, saveRecipe, updateRecipeContent } from '@/lib/supabase/recipes';
+import { recipeContentUpdateRow, saveRecipe, setRecipeTags, updateRecipeContent } from '@/lib/supabase/recipes';
 import type { Recipe } from '@/types/recipe';
 
 const mocks = vi.hoisted(() => {
@@ -85,6 +85,25 @@ describe('updateRecipeContent', () => {
     mocks.results.recipes = { data: { id: 'r1', ...base }, error: null };
     await updateRecipeContent('r1', base);
     expect(updatePayload()).not.toHaveProperty('appliances');
+  });
+});
+
+describe('setRecipeTags', () => {
+  it('locks tags set by hand, so a background recalculation never overwrites them (ADR 018)', async () => {
+    mocks.results.recipes = { data: { locked_fields: ['calories'] }, error: null };
+    await setRecipeTags('r1', ['soup', 'winter']);
+    expect(updatePayload()).toEqual({ tags: ['soup', 'winter'], locked_fields: ['calories', 'tags'] });
+  });
+
+  it('keeps tags locked once, and works for a recipe with no locks yet', async () => {
+    mocks.results.recipes = { data: { locked_fields: ['tags'] }, error: null };
+    await setRecipeTags('r1', ['soup']);
+    expect(updatePayload().locked_fields).toEqual(['tags']);
+
+    mocks.calls.length = 0;
+    mocks.results.recipes = { data: {}, error: null };
+    await setRecipeTags('r1', ['soup']);
+    expect(updatePayload().locked_fields).toEqual(['tags']);
   });
 });
 
