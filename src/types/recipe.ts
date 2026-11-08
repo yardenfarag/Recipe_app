@@ -4,8 +4,37 @@ export type EffortLevel = 'Easy' | 'Medium' | 'Hard';
 export type CostEstimate = '$' | '$$' | '$$$';
 export type Platform = 'youtube' | 'instagram' | 'tiktok' | 'web' | 'photo' | 'unknown';
 export type ExtractionStatus = 'full' | 'partial';
-/** Which content-ladder rung yielded the recipe (ADR 004). */
-export type ExtractionSource = 'description' | 'comments' | 'captions' | 'video' | 'web' | 'photo' | 'invented';
+/** Which content-ladder rung yielded the recipe (ADR 004). 'manual' = a written recipe (ADR 018). */
+export type ExtractionSource =
+  | 'description'
+  | 'comments'
+  | 'captions'
+  | 'video'
+  | 'web'
+  | 'photo'
+  | 'invented'
+  | 'manual';
+
+/**
+ * AI-derived fields a user can set by hand (ADR 018). A locked field is never recalculated
+ * until the user resets it. Matches the recipes_locked_fields_known CHECK.
+ */
+export const LOCKABLE_FIELDS = [
+  'calories',
+  'estimated_time_minutes',
+  'effort_level',
+  'cost_estimate',
+  'tags',
+  'appliances',
+] as const;
+export type LockedField = (typeof LOCKABLE_FIELDS)[number];
+
+/**
+ * What a save can recalculate in the background (ADR 018): every lockable field, plus the
+ * metric/spoons amounts of changed ingredient rows. Matches the recipes_recalc_pending_known CHECK.
+ */
+export const RECALC_FIELDS = [...LOCKABLE_FIELDS, 'ingredient_amounts'] as const;
+export type RecalcField = (typeof RECALC_FIELDS)[number];
 
 /** One measured amount, used for grams/spoons toggle values. */
 export interface IngredientAmount {
@@ -100,4 +129,13 @@ export interface Recipe {
    * Read it through recipeAppliancesOf() so it is always cleaned against the steps.
    */
   appliances?: RecipeAppliance[] | null;
+  /** AI-derived fields the user set by hand (ADR 018). Absent on guest and older rows = none. */
+  locked_fields?: LockedField[];
+  /**
+   * Fields a save is recalculating in the background (ADR 018). Each is removed as its new
+   * value is written; one left here after a failure is retried the next time the recipe opens.
+   */
+  recalc_pending?: RecalcField[];
+  /** When the current recalculation started. With recalc_pending, tells "Updating…" from stale. */
+  recalc_started_at?: string | null;
 }
