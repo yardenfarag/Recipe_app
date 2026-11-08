@@ -17,7 +17,7 @@ Two production facts shaped the design. OpenRouter rejects the whole request whe
 
 | `kind` | Primary | Fallback | Reasoning |
 |---|---|---|---|
-| `text`, `transform`, `substitution`, `fridge_match`, `remix_related` | `openai/gpt-6-luna` | `qwen/qwen3.8-flash` | none |
+| `text`, `transform`, `substitution`, `fridge_match`, `remix_related`, `appliances`, `recipe_estimates` | `openai/gpt-6-luna` | `qwen/qwen3.8-flash` | none |
 | `photo`, `repair`, `invent_photo` | `anthropic/claude-sonnet-5.5` | `openai/gpt-6.1-sol` | low |
 | `translate`, `invent_text` | `openai/gpt-6.1-sol` | `openai/gpt-6-luna` | low |
 | `content_gate` | `mistralai/mistral-small-2603` | `openai/gpt-5.4-nano` | none |

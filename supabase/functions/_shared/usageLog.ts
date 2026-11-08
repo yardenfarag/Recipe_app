@@ -20,7 +20,11 @@ export interface UsageEventInput {
     | 'invent'
     | 'content_gate'
     | 'extract_gate'
-    | 'appliances_backfill';
+    | 'appliances_backfill'
+    /** save-recipe-edit's Jev call: ok, blocked or jev_failed (PIN-79). */
+    | 'recipe_edit_check'
+    /** save-recipe-edit's background recalculation (PIN-79). */
+    | 'recipe_edit_recalc';
   platform?: string | null;
   status: string;
   extractionSource?: string | null;

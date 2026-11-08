@@ -68,6 +68,8 @@ Cost per call uses the average production token counts above.
 | Video extract / invent (`video`) | `qwen/qwen3.8-omni-flash` | `xiaomi/mimo-v2.6-flash` | ~$0.01 | **Decision: replace Gemini with Qwen.** See below |
 | Extract gate (new, `extract_gate`) | `typesafe/jev-1.13` | none (fail open → run text extract) | ~$0.00006 | See "Jev decision gates" |
 | Remix relatedness (`remix_related`) | `typesafe/jev-1.13` | `openai/gpt-6-luna` | ~$0.00001 | A yes/no question about text, which is what Jev is built for |
+| Recipe edit check (`recipe_edit_check`, PIN-79) | `openai/gpt-6-luna-decisions` (Decisions API) | none (fails open: save on the hard limits) | ~$0.0001 | One call per save: the content check over the changed parts, a yes/no per AI field the edit might affect, and the language of a written recipe. Not a `TASK_MODELS` kind |
+| Recipe estimates after an edit (`recipe_estimates`, PIN-79) | `openai/gpt-6-luna` | `qwen/qwen3.8-flash` | ~$0.0005 (est.) | Calories, time, effort, cost, tags and metric/spoons for a hand-edited or written recipe. Not in the eval; these fields came from the Luna text extract, so it follows `text` |
 
 Price check: GPT-6 Luna ($0.10 / $0.50) is the cheap OpenAI tier. There is no 6.1 Luna. `gpt-6.1-sol` costs $2 / $10, 20× more.
 

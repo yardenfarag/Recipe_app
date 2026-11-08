@@ -26,14 +26,14 @@ const MAX_CAPTIONS_CHARS = 6_000;
 const MAX_COMMENTS = 12;
 const MAX_COMMENT_CHARS = 500;
 
-const CALORIE_RULES = `- calories_reasoning: one short phrase naming the main caloric ingredients and confirming calories is TOTAL for all servings.
+export const CALORIE_RULES = `- calories_reasoning: one short phrase naming the main caloric ingredients and confirming calories is TOTAL for all servings.
 - calories: combined kcal for ALL portions at the stated servings (not per-portion). Example: 12 cookies ≈150 kcal each → servings=12, calories=1800.
 - servings: equal portions the recipe yields (usually 1–12). Do not confuse grams or item counts with servings unless each item is one portion.`;
 
-const TIME_RULES = `- time_reasoning: one short phrase (prep + cook/bake + waits).
+export const TIME_RULES = `- time_reasoning: one short phrase (prep + cook/bake + waits).
 - estimated_time_minutes: TOTAL wall-clock minutes until ready — include oven and mandatory waits, not just hands-on time. Example: mix 15 + chill 30 + bake 12 + cool 5 → 62.`;
 
-const TAG_RULES = `- tags: 3–6 short lowercase labels (cuisine, meal, dish type, method, traits). Example: ["dessert","cookies","baked","american"]. No hashtags or invented diet claims.`;
+export const TAG_RULES = `- tags: 3–6 short lowercase labels (cuisine, meal, dish type, method, traits). Example: ["dessert","cookies","baked","american"]. No hashtags or invented diet claims.`;
 const LANGUAGE_RULE =
   '- source_language: the lowercase ISO 639-1 language code used by the extracted title, ingredients, and instructions (for example en, es, he, ru, ar, de, or fr).';
 
