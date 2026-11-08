@@ -8,13 +8,21 @@ Canonical language for the Pinch recipe-snapping app. All specs, ADRs, and code 
 The act of sending a social-media video URL to Pinch so the app can extract a structured recipe from it.
 _Avoid_: Scan, import, capture
 
-**Fork it!**:
-The primary action button on the Add Recipe screen that kicks off URL processing and AI extraction.
-_Avoid_: Extract, Process, Go
+**Snap screen**:
+The tab where a user Snaps a URL, snaps a photo, or asks Pinch to guess a recipe.
+_Avoid_: Add Recipe screen, Fork it!
 
 **Recipe Library**:
-The user's personal gallery of saved, AI-extracted recipes stored in Supabase.
+The user's personal gallery of saved recipes: snapped, guessed, or written by hand.
 _Avoid_: Cookbook, Collection, Feed
+
+**Edit recipe**:
+Changing a saved recipe by hand. It's free and never spends recipe credits. The edit stays private: it never changes the recipe's Hub card, and the recipe keeps where it came from.
+_Avoid_: Manual remix, modify
+
+**Write a recipe**:
+Typing a recipe in from scratch, with no URL, photo or AI guess. The result is a **written recipe**: it has no source and never appears in the Hub. Free, like Edit recipe.
+_Avoid_: Add recipe, manual import, create
 
 **Extraction**:
 The AI pipeline that converts raw social-media content (description, transcript, comments) into a structured recipe JSON object.
