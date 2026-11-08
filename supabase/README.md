@@ -139,7 +139,7 @@ npx supabase secrets set YOUTUBE_API_KEY=your_youtube_data_api_key
 # npx supabase secrets set OPENROUTER_MODEL_TEXT=openai/gpt-6-luna
 # npx supabase secrets set OPENROUTER_FALLBACKS_TEXT=qwen/qwen3.8-flash   # comma list, or "none"
 # npx supabase secrets set OPENROUTER_REASONING_TEXT=none                 # none | low | medium
-# npx supabase secrets set JEV_MODEL=typesafe/jev-1.13   # extract gate + remix relatedness
+# npx supabase secrets set JEV_MODEL=openai/gpt-6-luna-decisions   # extract gate + remix relatedness
 ```
 
 `GEMINI_API_KEY`, `GEMINI_MODEL`, `GEMINI_FAST_MODEL`, `OPENROUTER_MODEL`, `OPENROUTER_FAST_MODEL`,

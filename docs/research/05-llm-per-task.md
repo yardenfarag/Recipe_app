@@ -161,6 +161,10 @@ Compare 2 to 3 models per task and log JSON validity, p50/p95 latency and cost a
 | | `xiaomi/mimo-v2.6-flash` | 39% / 5%, 3 of 15 calls empty | 5.3 / 14.5 s | $0.003 | Drop: lowest recall |
 | Extract gate (30, 10 Hebrew) | `typesafe/jev-1.13` | 93% route accuracy (Hebrew 90%), 0 recipes routed to `no_recipe` | 0.3 / 1.0 s | $0.00004 | **Ship (PIN-46)** |
 | | `openai/gpt-6-luna` (baseline) | 87% (Hebrew 90%), 0 recipes routed to `no_recipe` | 1.1 / 1.9 s | $0.00006 | |
+| Extract gate rerun, 2026-11-08 (fresh snapshot and labels) | `openai/gpt-6-luna-decisions` | 100% (Hebrew 100%), 0 recipes routed to `no_recipe` | 0.4 / 0.6 s | $0.00006 | **Ship** |
+| | `typesafe/jev-1.13` | 97% (Hebrew 100%) | 0.3 / 1.1 s | $0.00004 | Replaced |
+| | `typesafe/jev-1.14` | 93% (Hebrew 100%); both misses below the 0.75 bar | 0.2 / 0.5 s | $0.00004 | |
+| | `openai/gpt-6-luna` (chat baseline) | 93%, confidence always 1.0 so the bar can't catch misses | 1.0 / 1.6 s | $0.00006 | |
 
 ### Final model per task (for PIN-45)
 
@@ -173,7 +177,7 @@ Compare 2 to 3 models per task and log JSON validity, p50/p95 latency and cost a
 | `invent_text` | `openai/gpt-6.1-sol` | `openai/gpt-6-luna` | **low** (Sol rejects `none`) |
 | `content_gate` | `mistralai/mistral-small-2603` | `openai/gpt-5.4-nano` | none |
 | `video`, `invent_video` | `google/gemini-3.5-flash` via OpenRouter `video_url` | `qwen/qwen3.8-omni-flash` (unwrap a top-level array; allow about 2 min) | low |
-| `extract_gate` (new) | `typesafe/jev-1.13` | none (fail open) | — |
+| `extract_gate` (new) | `openai/gpt-6-luna-decisions` (was `typesafe/jev-1.13` until 2026-11-08) | none (fail open) | — |
 
 Remix, substitution, fridge match and repair weren't in the eval. They follow their closest tested task.
 
