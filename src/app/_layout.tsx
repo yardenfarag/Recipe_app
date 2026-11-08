@@ -60,6 +60,8 @@ function RootNavigator() {
               headerLeft: (props) => <StackHeaderBackButton tintColor={props.tintColor} />,
             }}
           />
+          {/* Edit recipe / Write a recipe (PIN-79). The screen sets its own Cancel and Save. */}
+          <Stack.Screen name="recipe/edit" options={{ headerBackVisible: false }} />
           <Stack.Screen
             name="recipe/preview"
             options={{
