@@ -2,7 +2,8 @@ import type { TFunction } from 'i18next';
 
 /**
  * Normalize user/AI tags for storage: lowercase, trim, collapse whitespace,
- * drop empties/hashtags, dedupe, cap at 8.
+ * drop empties/hashtags, dedupe, cap at 8. Each tag is at most 30 characters,
+ * the database limit (PIN-79).
  */
 export function normalizeRecipeTags(tags: string[] | null | undefined): string[] {
   if (!tags?.length) return [];
@@ -11,12 +12,12 @@ export function normalizeRecipeTags(tags: string[] | null | undefined): string[]
   const out: string[] = [];
 
   for (const raw of tags) {
-    const tag = raw
+    const cleaned = raw
       .trim()
       .toLowerCase()
       .replace(/^#+/, '')
-      .replace(/\s+/g, ' ')
-      .slice(0, 40);
+      .replace(/\s+/g, ' ');
+    const tag = Array.from(cleaned).slice(0, 30).join('').trim();
     if (!tag || seen.has(tag)) continue;
     seen.add(tag);
     out.push(tag);

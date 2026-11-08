@@ -25,7 +25,7 @@ values
 insert into public.recipes (user_id, title, original_url, platform, image_url, ingredients, instructions)
 values ('10000000-0000-4000-8000-000000000081', 'Used photo', null, 'photo',
         'https://x.supabase.co/storage/v1/object/public/recipe-thumbnails/photo/u/sweep-used.jpg',
-        '[]', '[]');
+        '[{"name":"egg","quantity":1,"unit":""}]', '[{"step":1,"text":"Boil"}]');
 
 insert into public.recipe_shares (token, created_by, snapshot)
 values ('sweep-test-token', '10000000-0000-4000-8000-000000000081',

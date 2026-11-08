@@ -29,6 +29,7 @@ import { createAuthedSupabase, extractVideoIdForPlatform } from '../_shared/reci
 import { openJson, sealJson } from '../_shared/sealedPayload.ts';
 import { createServiceSupabase } from '../_shared/supabaseAdmin.ts';
 import { normalizeRecipeTags } from '../_shared/tags.ts';
+import { fitRecipeToLimits } from '../_shared/recipeLimits.ts';
 import { fetchTikTokMeta } from '../_shared/tiktok.ts';
 import { logUsageEvent } from '../_shared/usageLog.ts';
 import { fetchWebRecipeMeta } from '../_shared/webRecipe.ts';
@@ -247,7 +248,7 @@ Deno.serve(async (req) => {
     const usages = repaired.usage ? [repaired.usage] : [];
     const { appliances, metadata: applianceMetadata } = await appliancesForRecipe(after, usages);
 
-    const recipe = {
+    const recipe = fitRecipeToLimits({
       title: after.title,
       source_language: normalizeLanguageCode(after.source_language),
       ingredients: after.ingredients,
@@ -266,7 +267,7 @@ Deno.serve(async (req) => {
       tags: normalizeRecipeTags(after.tags?.length ? after.tags : current.tags),
       missing_fields: classified.missingFields,
       appliances,
-    };
+    });
 
     const snapshot = (await canStartExtract(admin, userId)).snapshot;
     await logUsageEvent(admin, {

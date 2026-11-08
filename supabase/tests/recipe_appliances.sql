@@ -26,7 +26,7 @@ select col_is_null('public', 'recipes', 'appliances', 'recipes.appliances is nul
 
 insert into public.recipes (user_id, title, ingredients, instructions, extraction_status)
 values ('10000000-0000-4000-8000-000000000261', 'Old-style save',
-        '[]'::jsonb, '[{"step":1,"text":"Mix"}]'::jsonb, 'full');
+        '[{"name":"egg","quantity":1,"unit":""}]'::jsonb, '[{"step":1,"text":"Mix"}]'::jsonb, 'full');
 
 select is(
   (select appliances from public.recipes where title = 'Old-style save'),
@@ -36,34 +36,34 @@ select is(
 
 select lives_ok(
   $$insert into public.recipes (user_id, title, ingredients, instructions, extraction_status, appliances)
-    values ('10000000-0000-4000-8000-000000000261', 'Salad', '[]', '[{"step":1,"text":"Toss"}]', 'full', '[]')$$,
+    values ('10000000-0000-4000-8000-000000000261', 'Salad', '[{"name":"egg","quantity":1,"unit":""}]', '[{"step":1,"text":"Toss"}]', 'full', '[]')$$,
   'an empty list is accepted (analysed, needs nothing)'
 );
 
 select throws_ok(
   $$insert into public.recipes (user_id, title, ingredients, instructions, extraction_status, appliances)
-    values ('10000000-0000-4000-8000-000000000261', 'Bad object', '[]', '[]', 'full', '{"key":"oven"}')$$,
+    values ('10000000-0000-4000-8000-000000000261', 'Bad object', '[{"name":"egg","quantity":1,"unit":""}]', '[{"step":1,"text":"Boil"}]', 'full', '{"key":"oven"}')$$,
   '23514', null,
   'an object instead of a list is rejected'
 );
 
 select throws_ok(
   $$insert into public.recipes (user_id, title, ingredients, instructions, extraction_status, appliances)
-    values ('10000000-0000-4000-8000-000000000261', 'Bad string', '[]', '[]', 'full', '"oven"')$$,
+    values ('10000000-0000-4000-8000-000000000261', 'Bad string', '[{"name":"egg","quantity":1,"unit":""}]', '[{"step":1,"text":"Boil"}]', 'full', '"oven"')$$,
   '23514', null,
   'a string instead of a list is rejected'
 );
 
 select lives_ok(
   $$insert into public.recipes (user_id, title, ingredients, instructions, extraction_status, appliances)
-    select '10000000-0000-4000-8000-000000000261', 'Twelve', '[]', '[]', 'full',
+    select '10000000-0000-4000-8000-000000000261', 'Twelve', '[{"name":"egg","quantity":1,"unit":""}]', '[{"step":1,"text":"Boil"}]', 'full',
            (select jsonb_agg(jsonb_build_object('key', 'oven')) from generate_series(1, 12))$$,
   'twelve items are accepted'
 );
 
 select throws_ok(
   $$insert into public.recipes (user_id, title, ingredients, instructions, extraction_status, appliances)
-    select '10000000-0000-4000-8000-000000000261', 'Thirteen', '[]', '[]', 'full',
+    select '10000000-0000-4000-8000-000000000261', 'Thirteen', '[{"name":"egg","quantity":1,"unit":""}]', '[{"step":1,"text":"Boil"}]', 'full',
            (select jsonb_agg(jsonb_build_object('key', 'oven')) from generate_series(1, 13))$$,
   '23514', null,
   'more than twelve items are rejected'
@@ -154,7 +154,7 @@ insert into public.recipe_cards (id, canonical_key, canonical_url, original_url,
                                  ingredients, instructions, servings, extraction_status, extraction_source)
 values ('30000000-0000-4000-8000-000000000262', 'web:https://example.com/unanalysed',
         'https://example.com/unanalysed', 'https://example.com/unanalysed', 'web', 'Unanalysed',
-        '[]'::jsonb, '[]'::jsonb, 1, 'full', 'web');
+        '[{"name":"egg","quantity":1,"unit":""}]'::jsonb, '[{"step":1,"text":"Boil"}]'::jsonb, 1, 'full', 'web');
 
 create temp table claimed_unanalysed as
 select public.claim_recipe_card('30000000-0000-4000-8000-000000000262') as id;

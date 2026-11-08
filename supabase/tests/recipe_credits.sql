@@ -429,19 +429,23 @@ select is(
   'remix refund restores daily allowance'
 );
 
-insert into public.recipes (id, user_id, title, original_url)
+insert into public.recipes (id, user_id, title, original_url, ingredients, instructions)
 values
   (
     '20000000-0000-4000-8000-000000000001',
     '10000000-0000-4000-8000-000000000001',
     'Soup',
-    'https://example.com/soup'
+    'https://example.com/soup',
+    '[{"name":"egg","quantity":1,"unit":""}]',
+    '[{"step":1,"text":"Boil"}]'
   ),
   (
     '20000000-0000-4000-8000-000000000002',
     '10000000-0000-4000-8000-000000000001',
     'Salad',
-    'https://example.com/salad'
+    'https://example.com/salad',
+    '[{"name":"egg","quantity":1,"unit":""}]',
+    '[{"step":1,"text":"Boil"}]'
   );
 
 select is(
@@ -527,12 +531,14 @@ select public.reserve_recipe_remix(
 )
 from generate_series(2, 5);
 
-insert into public.recipes (id, user_id, title, original_url)
+insert into public.recipes (id, user_id, title, original_url, ingredients, instructions)
 values (
   '20000000-0000-4000-8000-000000000003',
   '10000000-0000-4000-8000-000000000001',
   'Pasta',
-  'https://example.com/unsaved-pasta'
+  'https://example.com/unsaved-pasta',
+  '[{"name":"egg","quantity":1,"unit":""}]',
+  '[{"step":1,"text":"Boil"}]'
 );
 
 select is(

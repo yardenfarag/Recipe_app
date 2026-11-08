@@ -85,7 +85,7 @@ select is(
 -- Deleting a recipe revokes its share links.
 insert into public.recipes (id, user_id, title, original_url, platform, ingredients, instructions)
 values ('20000000-0000-4000-8000-000000000071', '10000000-0000-4000-8000-000000000072',
-        'Shared soup', 'https://example.com/shared-soup', 'web', '[]', '[]');
+        'Shared soup', 'https://example.com/shared-soup', 'web', '[{"name":"egg","quantity":1,"unit":""}]', '[{"step":1,"text":"Boil"}]');
 insert into public.recipe_shares (token, created_by, source_recipe_id, snapshot)
 values ('erasure-test-token', '10000000-0000-4000-8000-000000000072',
         '20000000-0000-4000-8000-000000000071', '{"title":"Shared soup"}');
