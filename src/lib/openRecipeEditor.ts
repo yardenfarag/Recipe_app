@@ -6,7 +6,7 @@ import { router } from 'expo-router';
  */
 export function openRecipeEditor({ signedIn, recipeId }: { signedIn: boolean; recipeId?: string }) {
   if (!signedIn || recipeId?.startsWith('guest-')) {
-    router.push('/auth?mode=signup&reason=edit_recipe');
+    router.push('/auth?mode=signup&reason=edit');
     return;
   }
   if (recipeId) {

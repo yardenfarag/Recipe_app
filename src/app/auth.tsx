@@ -49,7 +49,7 @@ type AuthReason =
   | 'shared_recipe'
   | 'hub_recipe'
   | 'onboarding'
-  | 'edit_recipe'
+  | 'edit'
   | undefined;
 
 function parseMode(value: string | string[] | undefined): Mode {
@@ -66,7 +66,7 @@ function parseReason(value: string | string[] | undefined): AuthReason {
     raw === 'shared_recipe' ||
     raw === 'hub_recipe' ||
     raw === 'onboarding' ||
-    raw === 'edit_recipe'
+    raw === 'edit'
   ) {
     return raw;
   }
@@ -282,7 +282,7 @@ export default function AuthScreen() {
               ? t('auth.reasonHub')
             : reason === 'onboarding'
               ? t('auth.reasonOnboarding')
-            : reason === 'edit_recipe'
+            : reason === 'edit'
               ? t('auth.reasonEdit')
               : mode === 'signup'
               ? t('auth.signupSubtitle')
