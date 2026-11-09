@@ -1,6 +1,6 @@
 import Ionicons from '@expo/vector-icons/Ionicons';
 import { type ComponentProps, type ReactNode } from 'react';
-import { Pressable, Text, View, type TextStyle } from 'react-native';
+import { type LayoutChangeEvent, Pressable, Text, View, type TextStyle } from 'react-native';
 import { useTranslation } from 'react-i18next';
 
 import { TextInput, type TextInputProps } from '@/components/text-input';
@@ -15,10 +15,19 @@ export function useEditorMessage() {
     message ? t(message.key, message.params as Record<string, unknown> | undefined) : null;
 }
 
-export function EditorSection({ title, children }: { title: string; children: ReactNode }) {
+export function EditorSection({
+  title,
+  children,
+  onLayout,
+}: {
+  title: string;
+  children: ReactNode;
+  onLayout?: (event: LayoutChangeEvent) => void;
+}) {
   const { colors } = useThemePreference();
   return (
     <View
+      onLayout={onLayout}
       className="mb-4 rounded-[24px] border p-4"
       style={{ borderColor: colors.frostedBorder, backgroundColor: colors.frosted }}
     >

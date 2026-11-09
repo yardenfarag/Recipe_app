@@ -55,7 +55,7 @@ export async function runRecipeRecalculation(opts: {
   recipe: Row;
   fields: RecalcField[];
   startedAt: string;
-  mode: 'edit' | 'write' | 'retry';
+  mode: 'edit' | 'write' | 'import' | 'retry';
 }): Promise<void> {
   const { admin, userId, recipe, fields, startedAt } = opts;
   const recipeId = String(recipe.id);

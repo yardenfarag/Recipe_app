@@ -638,6 +638,10 @@ export default {
     "illustrationShare": "مشاركة وصفة"
   },
   "snap": {
+    "partialTitle": "لم نجد الوصفة كاملة",
+    "partialMissingSteps": "وجدنا المكونات، لكن لم نجد الخطوات. هل تريد إضافة الخطوات بنفسك؟ هذا الاستيراد مجاني.",
+    "partialMissingIngredients": "وجدنا الخطوات، لكن لم نجد المكونات. هل تريد إضافة المكونات بنفسك؟ هذا الاستيراد مجاني.",
+    "partialFillIn": "سأكملها بنفسي",
     "title": "خذ وصفة من رابط",
     "subtitle": "الصق رابطًا من YouTube أو Instagram أو TikTok أو موقع وصفات — أو صوّر الوصفة",
     "urlLabel": "رابط الوصفة",
@@ -1158,6 +1162,9 @@ export default {
   "recipeEditor": {
     "titleEdit": "تعديل الوصفة",
     "titleWrite": "اكتب وصفة",
+    "titleImport": "أكمل الوصفة",
+    "importMissingSteps": "المصدر لا يذكر الخطوات. أضفها أدناه، ثم اضغط حفظ.",
+    "importMissingIngredients": "المصدر لا يذكر المكونات. أضفها أدناه، ثم اضغط حفظ.",
     "save": "حفظ",
     "cancel": "إلغاء",
     "saving": "جارٍ الحفظ…",

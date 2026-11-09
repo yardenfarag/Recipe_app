@@ -88,7 +88,7 @@ type ExtractionStatus = 'full' | 'partial' | 'failed' | 'coming_soon';
  *
  * Guests get `auth_required` and must sign up first. Signed-in users receive
  * 10 monthly credits and can spend non-expiring purchased credits after those.
- * Cached URL re-extract is free.
+ * Cached URL re-extract is free, and so is a partial result (ADR 019).
  */
 Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') {
@@ -611,8 +611,14 @@ Deno.serve(async (req) => {
       imageUrl = (await persistUploadedPhoto({ imageBase64, mimeType: imageMime, userId })) ?? imageUrl;
     }
 
+    // ADR 019: a partial import is free and goes to the editor, whose Save recalculates
+    // appliances, so don't spend a model call on them here.
+    const isPartial = status === 'partial';
+
     // ADR 017: never throws; a failure saves as "not analysed" (null).
-    const { appliances, metadata: applianceMetadata } = await appliancesForRecipe(gemini, usages);
+    const { appliances, metadata: applianceMetadata } = isPartial
+      ? { appliances: null, metadata: {} }
+      : await appliancesForRecipe(gemini, usages);
 
     const recipe = fitRecipeToLimits({
       title: gemini.title,
@@ -642,7 +648,39 @@ Deno.serve(async (req) => {
 
     let snapshot: QuotaSnapshot | null = creditReservation?.snapshot ?? null;
 
-    if (userId && admin && creditReservation) {
+    if (isPartial) {
+      // ADR 019: a partial import never costs a credit or a guest import, like a failed find.
+      if (userId && creditReservation) {
+        const refunded = await compensateSignedInExtract(admin, userId, creditReservation, 'partial_import');
+        compensationPending = !refunded;
+        if (refunded) creditReservation = null;
+      } else if (guestInstallId && guestReservation) {
+        const refunded = await compensateGuestExtraction(admin, guestInstallId, guestReservation, 'partial_import');
+        compensationPending = !refunded;
+        if (refunded) guestReservation = null;
+      }
+      if (compensationPending) {
+        await logUsageEvent(admin, {
+          userId,
+          guestInstallId: userId ? null : guestInstallId,
+          action: 'extract',
+          platform,
+          status: 'compensation_pending',
+          extractionSource: source,
+          usages,
+          scrapecreatorsCredits: scrapeCredits,
+          tokensCharged: 0,
+          durationMs: Date.now() - started,
+          errorMessage: 'partial_import',
+          metadata: compensationMetadata(creditReservation, guestReservation, compensationPending),
+        });
+        return compensationPendingResponse(platform, guestRemaining, creditReservation);
+      }
+      if (userId && admin) snapshot = (await canStartExtract(admin, userId)).snapshot;
+      if (!userId && guestInstallId && admin) {
+        guestRemaining = guestRemainingFromCount(await getGuestExtractCount(admin, guestInstallId));
+      }
+    } else if (userId && admin && creditReservation) {
       const finalized = await finalizeSignedInExtract(
         admin,
         userId,
@@ -748,7 +786,7 @@ Deno.serve(async (req) => {
       extractionSource: source,
       usages,
       scrapecreatorsCredits: scrapeCredits,
-      tokensCharged: userId ? 1 : 0,
+      tokensCharged: userId && !isPartial ? 1 : 0,
       durationMs: Date.now() - started,
       metadata: {
         ...(creditReservation
@@ -780,7 +818,7 @@ Deno.serve(async (req) => {
       status,
       platform,
       recipe,
-      tokens_charged: userId ? 1 : 0,
+      tokens_charged: userId && !isPartial ? 1 : 0,
       ...quotaFields(snapshot),
       guest_extracts_remaining: guestRemaining,
     });

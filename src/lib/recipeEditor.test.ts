@@ -9,6 +9,7 @@ import {
   buildSaveRequest,
   canSave,
   createEditorState,
+  createImportEditorState,
   errorsFromBlockReasons,
   errorsFromLimitErrors,
   hasChanges,
@@ -76,7 +77,7 @@ function recipe(overrides: Partial<Recipe> = {}): Recipe {
   };
 }
 
-function save(state: RecipeEditorState): Extract<SaveRecipeEditRequest, { mode: 'edit' | 'write' }> {
+function save(state: RecipeEditorState): Exclude<SaveRecipeEditRequest, { mode: 'retry' }> {
   const result = buildSaveRequest(state, 'en');
   if (!result.ok) throw new Error(`unexpected errors: ${JSON.stringify(result.errors)}`);
   if (result.request.mode === 'retry') throw new Error('unexpected retry');
@@ -750,5 +751,68 @@ describe('server results', () => {
     expect(errors.fields.title).toBeUndefined();
     errors = withoutError(errors, { stepRow: state.steps[0].id });
     expect(errors.stepRows).toEqual({});
+  });
+});
+
+describe('finishing a partial import (ADR 019)', () => {
+  function partialDraft() {
+    const { id: _id, user_id: _user, created_at: _created, ...draft } = recipe({
+      instructions: [],
+      appliances: null,
+      extraction_status: 'partial',
+      extraction_source: 'description',
+      source_language: 'en',
+      source_video_url: undefined,
+    });
+    return draft;
+  }
+
+  it('opens as an unsaved import with one empty step to type in', () => {
+    const state = createImportEditorState(partialDraft());
+    expect(state.mode).toBe('import');
+    expect(state.recipeId).toBeNull();
+    expect(state.written).toBe(false);
+    expect(state.missing).toEqual(['instructions']);
+    expect(state.ingredients.map((row) => row.name)).toEqual(['tomato', 'olive oil', 'salt']);
+    expect(state.steps).toHaveLength(1);
+    expect(state.steps[0].text).toBe('');
+    expect(lockedFields(state)).toEqual([]);
+  });
+
+  it("can't be saved until the missing steps are added", () => {
+    let state = createImportEditorState(partialDraft());
+    expect(canSave(state)).toBe(false);
+    expect(needsDiscardConfirm(state)).toBe(false);
+    state = updateStep(state, state.steps[0].id, 'Simmer for 20 minutes.');
+    expect(canSave(state)).toBe(true);
+    expect(needsDiscardConfirm(state)).toBe(true);
+  });
+
+  it('sends an import request that keeps the source', () => {
+    let state = createImportEditorState(partialDraft());
+    state = updateStep(state, state.steps[0].id, 'Simmer for 20 minutes.');
+    const request = save(state);
+    expect(request.mode).toBe('import');
+    if (request.mode !== 'import') return;
+    expect(request.source).toEqual({
+      original_url: 'https://www.youtube.com/watch?v=abc',
+      platform: 'youtube',
+      extraction_source: 'description',
+      image_url: 'https://example.com/soup.jpg',
+      source_video_url: null,
+      source_language: 'en',
+    });
+    expect(request.content.instructions).toEqual([{ step: 1, text: 'Simmer for 20 minutes.' }]);
+    // Untouched rows keep their grams and spoons.
+    expect(request.content.ingredients[0].metric).toEqual({ quantity: 600, unit: 'g' });
+    expect(request.locked_fields).toEqual([]);
+  });
+
+  it('starts with an empty ingredient row when the ingredients are missing', () => {
+    const state = createImportEditorState({ ...partialDraft(), ingredients: [], instructions: recipe().instructions });
+    expect(state.missing).toEqual(['ingredients']);
+    expect(state.ingredients).toHaveLength(1);
+    expect(state.ingredients[0].name).toBe('');
+    expect(state.steps).toHaveLength(3);
   });
 });
