@@ -1185,9 +1185,10 @@ export default {
       "source": "Источник"
     },
     "placeholders": {
+      "quantity": "1",
       "title": "Название рецепта",
       "ingredientName": "например, морковь",
-      "unit": "например, г",
+      "unit": "г",
       "step": "Опишите этот шаг",
       "tag": "Добавьте тег",
       "cookNote": "Напоминание на следующий раз"

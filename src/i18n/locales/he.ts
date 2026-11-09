@@ -1185,9 +1185,10 @@ export default {
       "source": "מקור"
     },
     "placeholders": {
+      "quantity": "1",
       "title": "שם המתכון",
       "ingredientName": "למשל גזר",
-      "unit": "למשל גרם",
+      "unit": "גרם",
       "step": "תארו את השלב הזה",
       "tag": "הוספת תגית",
       "cookNote": "תזכורת לפעם הבאה"

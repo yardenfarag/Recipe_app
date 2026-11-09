@@ -31,7 +31,7 @@ export function IngredientRowEditor({ row, handle, errors, format, onChange, onD
         <EditorInput
           value={row.quantity}
           onChangeText={(quantity) => onChange({ quantity })}
-          placeholder={t('recipeEditor.fields.quantity')}
+          placeholder={t('recipeEditor.placeholders.quantity')}
           accessibilityLabel={t('recipeEditor.fields.quantity')}
           keyboardType={AMOUNT_KEYBOARD}
           invalid={Boolean(errors?.quantity)}

@@ -1185,9 +1185,10 @@ export default {
       "source": "Origen"
     },
     "placeholders": {
+      "quantity": "1",
       "title": "Nombre de la receta",
       "ingredientName": "p. ej., zanahoria",
-      "unit": "p. ej., g",
+      "unit": "g",
       "step": "Describe este paso",
       "tag": "Añade una etiqueta",
       "cookNote": "Un recordatorio para la próxima vez"

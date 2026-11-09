@@ -1185,9 +1185,10 @@ export default {
       "source": "Source"
     },
     "placeholders": {
+      "quantity": "1",
       "title": "Recipe name",
       "ingredientName": "e.g. carrot",
-      "unit": "e.g. g",
+      "unit": "g",
       "step": "Describe this step",
       "tag": "Add a tag",
       "cookNote": "A reminder for next time"

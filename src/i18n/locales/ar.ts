@@ -1185,9 +1185,10 @@ export default {
       "source": "المصدر"
     },
     "placeholders": {
+      "quantity": "1",
       "title": "اسم الوصفة",
       "ingredientName": "مثلًا: جزر",
-      "unit": "مثلًا: غ",
+      "unit": "غ",
       "step": "اشرح هذه الخطوة",
       "tag": "أضف وسمًا",
       "cookNote": "تذكير للمرة الجاية"
