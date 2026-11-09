@@ -40,7 +40,8 @@ export type LlmTaskKind =
   | 'fridge_match'
   | 'content_gate'
   | 'remix_related'
-  | 'appliances';
+  | 'appliances'
+  | 'recipe_estimates';
 
 export interface TaskModelConfig {
   model: string;
@@ -72,6 +73,9 @@ export const TASK_MODELS: Record<LlmTaskKind, TaskModelConfig> = {
   remix_related: { model: LUNA, fallbacks: [QWEN_FLASH], reasoning: 'none' },
   // Classification over the final recipe text (ADR 017). Not in the PIN-44 eval; follows text.
   appliances: { model: LUNA, fallbacks: [QWEN_FLASH], reasoning: 'none' },
+  // Calories, time, effort, cost, tags and metric/spoons after a hand edit (PIN-79). Not in the
+  // PIN-44 eval; these fields came from the text extract on Luna, so it follows text.
+  recipe_estimates: { model: LUNA, fallbacks: [QWEN_FLASH], reasoning: 'none' },
   photo: { model: SONNET, fallbacks: [SOL], reasoning: 'low' },
   repair: { model: SONNET, fallbacks: [SOL], reasoning: 'low' },
   invent_photo: { model: SONNET, fallbacks: [SOL], reasoning: 'low' },

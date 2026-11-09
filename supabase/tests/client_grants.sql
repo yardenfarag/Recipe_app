@@ -80,7 +80,7 @@ select lives_ok(
   $$
     insert into public.recipes (user_id, title, original_url, platform, ingredients, instructions)
     values ('10000000-0000-4000-8000-000000000051', 'Grant test', 'https://example.com/grant-test',
-            'web', '[]'::jsonb, '[]'::jsonb)
+            'web', '[{"name":"egg","quantity":1,"unit":""}]'::jsonb, '[{"step":1,"text":"Boil"}]'::jsonb)
   $$,
   'signed-in users can still save recipes (insert triggers fire)'
 );

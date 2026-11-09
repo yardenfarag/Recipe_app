@@ -74,4 +74,11 @@ describe('canPublishHubRecipe', () => {
     expect(canPublishHubRecipe({ ...full, ingredients: [{ name: 'pasta' }] })).toBe(false);
     expect(canPublishHubRecipe({ ...full, title: '  ' })).toBe(false);
   });
+
+  it('never publishes a written recipe, even one carrying a URL', () => {
+    expect(
+      canPublishHubRecipe({ ...full, extraction_source: 'manual', original_url: null, platform: 'unknown' }),
+    ).toBe(false);
+    expect(canPublishHubRecipe({ ...full, extraction_source: 'manual' })).toBe(false);
+  });
 });

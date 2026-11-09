@@ -2,6 +2,7 @@ import { corsHeaders, jsonResponse } from '../_shared/cors.ts';
 import { currentUtcDate, refundDailyAiUsage, reserveDailyAiUsage } from '../_shared/dailyAiUsage.ts';
 import { RECIPE_REMIX_LIMIT, REMIX_DAILY_LIMIT } from '../_shared/pricing.ts';
 import { appliancesForRecipe, stepsChanged } from '../_shared/recipeAppliances.ts';
+import { fitRecipeToLimits } from '../_shared/recipeLimits.ts';
 import { createAuthedSupabase } from '../_shared/recipeLookup.ts';
 import {
   isRecipeVariantKey,
@@ -334,14 +335,18 @@ Deno.serve(async (req) => {
       });
     }
 
-    const { usage: _usage, ...remixed } = transformed;
+    const { usage: _usage, ...unfitted } = transformed;
+    // The app writes this straight to the recipe, so it must fit the database limits (PIN-79).
+    // An out-of-range calorie estimate is dropped, and the app keeps none.
+    const fitted = fitRecipeToLimits(unfitted);
+    const remixed = { ...fitted, calories: fitted.calories ?? undefined };
     const usages = transformed.usage ? [transformed.usage] : [];
     // ADR 017: only re-derive when the steps changed. When `appliances` is left out of the
     // response, the app keeps the recipe's current list.
     let recipePayload: typeof remixed & { appliances?: unknown } = remixed;
     let applianceMetadata: Record<string, unknown> = {};
-    if (stepsChanged(instructions, transformed.instructions)) {
-      const derived = await appliancesForRecipe(transformed, usages);
+    if (stepsChanged(instructions, remixed.instructions)) {
+      const derived = await appliancesForRecipe(remixed, usages);
       recipePayload = { ...remixed, appliances: derived.appliances };
       applianceMetadata = derived.metadata;
     }

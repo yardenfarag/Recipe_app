@@ -25,6 +25,7 @@ import { useBreakpoint } from '@/hooks/useBreakpoint';
 import { useCollections } from '@/hooks/useCollections';
 import { useLanguagePreference } from '@/hooks/useLanguagePreference';
 import { useMeasurementPreference } from '@/hooks/useMeasurementPreference';
+import { useRtl } from '@/hooks/useRtl';
 import { useShoppingList } from '@/hooks/useShoppingList';
 import { useThemePreference } from '@/hooks/useThemePreference';
 import { useAuth } from '@/hooks/useAuth';
@@ -43,7 +44,7 @@ import { formatRecipeDuration } from '@/lib/formatRecipeDuration';
 import { formatVideoTimestamp } from '@/lib/formatVideoTimestamp';
 import { getRecipeVideoInfo } from '@/lib/recipeVideo';
 import { getCalorieDisplay } from '@/lib/recipeCalories';
-import { recipeIsInvented } from '@/lib/recipeOrigin';
+import { recipeHasSource, recipeIsInvented } from '@/lib/recipeOrigin';
 import {
   isRecipeLanguageCode,
   isRtlRecipeLanguage,
@@ -61,7 +62,13 @@ import type { RepairedRecipePayload } from '@/lib/supabase/repairRecipe';
 import { SubstitutionAlternative } from '@/lib/supabase/suggestSubstitution';
 import { TranslatedRecipePayload } from '@/lib/supabase/translateRecipe';
 import { TransformedRecipePayload } from '@/lib/supabase/transformRecipe';
-import { Ingredient, Instruction, Recipe, RecipeTranslationContent } from '@/types/recipe';
+import {
+  Ingredient,
+  Instruction,
+  type RecalcField,
+  Recipe,
+  RecipeTranslationContent,
+} from '@/types/recipe';
 
 interface RecipeContentSnapshot {
   title: string;
@@ -114,14 +121,20 @@ interface RecipeViewProps {
   /** Saved recipes only — persist cooked date and optional note. */
   onCookedChange?: (cooked: { last_cooked_at: string; cook_note: string }) => void;
   /**
-   * Remix, translate, swap, and repair spend credits and only stick on a library recipe.
+   * Remix, translate, swap, and repair only stick on a library recipe. Repair spends a credit;
+   * remix (TOKEN_COST_REMIX = 0), translate and swap are free, within daily caps.
    * Hub previews leave this off so those actions cannot discard work.
    */
   allowAdaptations?: boolean;
+  /** Saved recipes only: opens Edit recipe (ADR 018). Shows a pencil next to the title. */
+  onEdit?: () => void;
+  /** Fields a hand edit is recalculating in the background: shown as "Updating…" (ADR 018). */
+  updatingFields?: readonly RecalcField[];
 }
 
 /** Stack header on web — used so the side cook-along can fill the remaining viewport. */
 const WEB_RECIPE_HEADER = 64;
+const NO_FIELDS: readonly RecalcField[] = [];
 
 /**
  * Full recipe display: compact header, servings scaler, ingredients (with Swap),
@@ -142,6 +155,8 @@ export function RecipeView({
   onRepairApplied,
   onCookedChange,
   allowAdaptations = true,
+  onEdit,
+  updatingFields = NO_FIELDS,
 }: RecipeViewProps) {
   const { t } = useTranslation();
   const { user } = useAuth();
@@ -229,6 +244,8 @@ export function RecipeView({
   const scaledIngredients = scaleIngredients(baseIngredients, baseServings, servings);
   const swapTarget = swapIndex != null ? scaledIngredients[swapIndex] : null;
   const calorieDisplay = getCalorieDisplay(calories, baseServings, servings);
+  const isUpdating = (field: RecalcField) => updatingFields.includes(field);
+  const updatingLabel = t('recipeEditor.updating');
   const sourceLanguage = resolveRecipeSourceLanguage(recipe);
   const contentLanguage =
     activeLanguage ?? (isRecipeLanguageCode(sourceLanguage) ? sourceLanguage : null);
@@ -281,6 +298,18 @@ export function RecipeView({
     setCalories(recipe.calories);
     setServings(recipe.servings);
     setTags(recipe.tags ?? []);
+    // An edit can complete a partial recipe: the banner follows the refreshed row.
+    setExtractionStatus(recipe.extraction_status);
+    // A hand edit clears the kitchen snapshot (ADR 018), so "Revert" goes with it.
+    if (!recipe.kitchen_adapted_summary && !recipe.kitchen_original) {
+      setKitchenAdapted((wasAdapted) => {
+        if (wasAdapted) {
+          setActiveVariant(null);
+          setVariantSummary(null);
+        }
+        return false;
+      });
+    }
     setLastCookedAt(recipe.last_cooked_at);
     setCookNote(recipe.cook_note ?? '');
 
@@ -302,6 +331,8 @@ export function RecipeView({
     recipe.ingredients,
     recipe.instructions,
     recipe.tags,
+    recipe.extraction_status,
+    recipe.kitchen_adapted_summary,
     recipe.last_cooked_at,
     recipe.cook_note,
     recipe.kitchen_original,
@@ -437,7 +468,7 @@ export function RecipeView({
   }
 
   async function handleRepair() {
-    if (repairing || extractionStatus !== 'partial' || recipeIsInvented(recipe)) return;
+    if (repairing || extractionStatus !== 'partial' || !recipeHasSource(recipe)) return;
 
     if (!user) {
       router.push('/auth?mode=signup&reason=extract');
@@ -701,6 +732,18 @@ export function RecipeView({
                 >
                   {title}
                 </Text>
+                {onEdit != null ? (
+                  <TouchableOpacity
+                    onPress={onEdit}
+                    hitSlop={12}
+                    activeOpacity={0.6}
+                    className="mt-0.5 px-1"
+                    accessibilityRole="button"
+                    accessibilityLabel={t('recipeEditor.titleEdit')}
+                  >
+                    <Ionicons name="create-outline" size={24} color={colors.textSecondary} />
+                  </TouchableOpacity>
+                ) : null}
                 {sourceShareUrl ? (
                   <TouchableOpacity
                     onPress={() => {
@@ -740,19 +783,37 @@ export function RecipeView({
                 )}
               </View>
               <View className="mt-3 flex-row flex-wrap gap-2">
-                {calorieDisplay != null && (
+                {isUpdating('calories') ? (
+                  <UpdatingBadge
+                    icon="flame-outline"
+                    label={updatingLabel}
+                    field={t('recipeEditor.fields.calories')}
+                  />
+                ) : calorieDisplay != null ? (
                   <Badge
                     label={t('recipe.calPerServing', { count: calorieDisplay.perServing })}
                     icon="flame-outline"
                   />
-                )}
-                {recipe.estimated_time_minutes != null && (
+                ) : null}
+                {isUpdating('estimated_time_minutes') ? (
+                  <UpdatingBadge
+                    icon="time-outline"
+                    label={updatingLabel}
+                    field={t('recipeEditor.fields.time')}
+                  />
+                ) : recipe.estimated_time_minutes != null ? (
                   <Badge
                     label={formatRecipeDuration(recipe.estimated_time_minutes, durationLabels)}
                     icon="time-outline"
                   />
-                )}
-                {recipe.cost_estimate && (
+                ) : null}
+                {isUpdating('cost_estimate') ? (
+                  <UpdatingBadge
+                    icon="wallet-outline"
+                    label={updatingLabel}
+                    field={t('recipeEditor.fields.cost')}
+                  />
+                ) : recipe.cost_estimate && (
                   <Badge
                     label={costLabels[recipe.cost_estimate]}
                     leading={
@@ -768,14 +829,20 @@ export function RecipeView({
                     })}
                   />
                 )}
-                {recipe.effort_level && (
+                {isUpdating('effort_level') ? (
+                  <UpdatingBadge
+                    icon="fitness-outline"
+                    label={updatingLabel}
+                    field={t('recipeEditor.fields.effort')}
+                  />
+                ) : recipe.effort_level ? (
                   <Badge
                     label={t(`recipe.effort.${recipe.effort_level.toLowerCase()}`)}
                     icon="fitness-outline"
                   />
-                )}
+                ) : null}
               </View>
-              {(tags.length > 0 || recipeId) && (
+              {(tags.length > 0 || recipeId || isUpdating('tags')) && (
                 <View className="mt-2.5 flex-row flex-wrap items-center gap-1.5">
                   {tags.map((tag) => (
                     <Pressable
@@ -799,6 +866,13 @@ export function RecipeView({
                       </Text>
                     </Pressable>
                   ))}
+                  {isUpdating('tags') ? (
+                    <UpdatingText
+                      label={updatingLabel}
+                      field={t('recipeEditor.fields.tags')}
+                      className="px-1 text-[11px] font-medium"
+                    />
+                  ) : null}
                   {recipeId ? (
                     <Pressable
                       className="rounded-full px-2.5 py-1 active:opacity-70"
@@ -997,7 +1071,7 @@ export function RecipeView({
           </View>
         ) : null}
 
-        {extractionStatus === 'partial' && !recipeIsInvented(recipe) && (
+        {extractionStatus === 'partial' && recipeHasSource(recipe) && (
           <View
             className="mb-4 rounded-3xl border p-4"
             style={{ borderColor: colors.warningSoft, backgroundColor: colors.warningSoft }}
@@ -1034,6 +1108,7 @@ export function RecipeView({
           appliances={appliances}
           instructions={displayInstructions}
           stepDirection={textDirection}
+          updating={isUpdating('appliances')}
         />
 
         <View className={splitRecipeBody ? 'flex-row items-start gap-6' : undefined}>
@@ -1081,6 +1156,13 @@ export function RecipeView({
           <>
             <View className="mb-4">
               <MeasurementToggle hint />
+              {isUpdating('ingredient_amounts') ? (
+                <UpdatingText
+                  label={updatingLabel}
+                  field={t('recipeEditor.fields.quantity')}
+                  className="mt-1.5 px-1 text-xs font-medium"
+                />
+              ) : null}
             </View>
             <Section
               title={t('recipe.ingredients')}
@@ -1134,6 +1216,14 @@ export function RecipeView({
                     {ing.name}
                   </Text>
                   <View className="shrink flex-row items-center gap-3">
+                    {isUpdating('ingredient_amounts') && !ing.metric && !ing.spoons ? (
+                      // The server cleared this row's grams/spoons; the written amount shows meanwhile.
+                      <UpdatingText
+                        label={updatingLabel}
+                        field={ing.name}
+                        className="text-[11px] font-medium"
+                      />
+                    ) : null}
                     <IngredientAmountText
                       hideFromAccessibility
                       amount={amountLabel}
@@ -1167,7 +1257,7 @@ export function RecipeView({
                 );
               })}
             </Section>
-            {hasUnknownAmounts && !recipeIsInvented(recipe) ? (
+            {hasUnknownAmounts && recipeHasSource(recipe) ? (
               <Text className="-mt-2 mb-4 px-1 text-xs leading-5" style={{ color: colors.textSecondary }}>
                 {t('recipe.amountsUnknownHint')}
               </Text>
@@ -1573,6 +1663,56 @@ function Badge({
         {label}
       </Text>
     </View>
+  );
+}
+
+/** A meta badge whose value is being recalculated (ADR 018): same pill, "Updating…" in place of the value. */
+function UpdatingBadge({
+  icon,
+  label,
+  field,
+}: {
+  icon: keyof typeof Ionicons.glyphMap;
+  label: string;
+  /** What is updating, for screen readers ("Calories, Updating…"). */
+  field: string;
+}) {
+  const { colors } = useThemePreference();
+  return (
+    <View
+      accessible
+      accessibilityRole="text"
+      accessibilityLabel={`${field}, ${label}`}
+      accessibilityState={{ busy: true }}
+      className="flex-row items-center gap-1.5 rounded-full px-3 py-1.5"
+      style={{ backgroundColor: colors.primarySoft, opacity: 0.75 }}
+    >
+      <Ionicons name={icon} size={12} color={colors.primary} />
+      <Text
+        className="text-xs font-semibold"
+        style={{ color: colors.primary }}
+        maxFontSizeMultiplier={CHROME_MAX_FONT_SCALE}
+      >
+        {label}
+      </Text>
+    </View>
+  );
+}
+
+/** "Updating…" next to a value that keeps showing until the recalculated one arrives. */
+function UpdatingText({ label, field, className }: { label: string; field: string; className: string }) {
+  const { colors } = useThemePreference();
+  const { textAlign, writingDirection } = useRtl();
+  return (
+    <Text
+      className={className}
+      style={{ color: colors.textSecondary, textAlign, writingDirection }}
+      accessibilityLabel={`${field}, ${label}`}
+      accessibilityState={{ busy: true }}
+      maxFontSizeMultiplier={CHROME_MAX_FONT_SCALE}
+    >
+      {label}
+    </Text>
   );
 }
 

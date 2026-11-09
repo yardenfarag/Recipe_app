@@ -306,6 +306,7 @@ export default {
     "reasonSync": "Inicia sesión para tener las recetas en todos tus dispositivos.",
     "reasonShared": "Crea una cuenta gratis para guardar esta receta en tu cocina.",
     "reasonHub": "Crea una cuenta gratis para guardar recetas del Cooking Hub.",
+    "reasonEdit": "Crea una cuenta gratis para editar tus recetas y escribir las tuyas.",
     "signupSubtitle": "Guarda recetas y tenlas en todos tus dispositivos.",
     "forgotSubtitle": "Escribe tu correo y te mandamos un enlace para cambiar la contraseña.",
     "signinSubtitle": "Entra para ver tus recetas.",
@@ -1153,5 +1154,115 @@ export default {
       "pre_ground": "especias molidas",
       "cut_to_check": "cortar para comprobar"
     }
+  },
+  "recipeEditor": {
+    "titleEdit": "Editar receta",
+    "titleWrite": "Escribir una receta",
+    "save": "Guardar",
+    "cancel": "Cancelar",
+    "saving": "Guardando…",
+    "sections": {
+      "basics": "Lo básico",
+      "ingredients": "Ingredientes",
+      "steps": "Pasos",
+      "details": "Detalles"
+    },
+    "fields": {
+      "title": "Título",
+      "photo": "Foto",
+      "servings": "Porciones",
+      "ingredientName": "Ingrediente",
+      "quantity": "Cantidad",
+      "unit": "Unidad",
+      "step": "Paso {{n}}",
+      "time": "Tiempo de cocción (minutos)",
+      "calories": "Calorías",
+      "effort": "Dificultad",
+      "cost": "Costo estimado",
+      "tags": "Etiquetas",
+      "appliances": "Utensilios",
+      "cookNote": "Nota de cocina",
+      "source": "Origen"
+    },
+    "placeholders": {
+      "quantity": "1",
+      "title": "Nombre de la receta",
+      "ingredientName": "p. ej., zanahoria",
+      "unit": "g",
+      "step": "Describe este paso",
+      "tag": "Añade una etiqueta",
+      "cookNote": "Un recordatorio para la próxima vez"
+    },
+    "photo": {
+      "add": "Añadir foto",
+      "replace": "Cambiar foto",
+      "remove": "Quitar foto",
+      "camera": "Hacer una foto",
+      "library": "Elegir de la galería"
+    },
+    "add": {
+      "ingredient": "+ Añadir ingrediente",
+      "step": "+ Añadir paso",
+      "tag": "+ Añadir etiqueta",
+      "appliance": "+ Añadir utensilio"
+    },
+    "deleteRow": "Eliminar",
+    "reorderHint": "Mantén pulsado y arrastra para reordenar",
+    "appliance": {
+      "required": "Imprescindible",
+      "optional": "Opcional",
+      "pickTitle": "Elige un utensilio"
+    },
+    "locked": {
+      "setByYou": "Puesto por ti",
+      "reset": "Volver a la estimación de Pinch"
+    },
+    "sourceWritten": "Escrita por ti",
+    "discard": {
+      "title": "¿Descartar los cambios?",
+      "message": "Se perderán tus cambios. ¿Seguro?",
+      "confirm": "Descartar",
+      "keepEditing": "Seguir editando"
+    },
+    "errors": {
+      "required": "Este campo es obligatorio.",
+      "tooLong": "Usa menos de {{max}} caracteres.",
+      "tooMany": "Puedes añadir hasta {{max}}.",
+      "outOfRange": "Escribe un número del {{min}} al {{max}}.",
+      "needIngredient": "Añade al menos un ingrediente.",
+      "needStep": "Añade al menos un paso."
+    },
+    "blocked": {
+      "title": "Pinch todavía no puede guardar esto",
+      "notRecipe": {
+        "recipe": "Esto no parece una receta que se pueda cocinar.",
+        "title": "El título no parece el nombre de una receta.",
+        "ingredient": "El ingrediente {{n}} no parece algo con lo que se pueda cocinar.",
+        "step": "El paso {{n}} no parece un paso de cocina."
+      },
+      "unsafe": {
+        "recipe": "Esta receta no parece segura para comer.",
+        "ingredient": "El ingrediente {{n}} no parece seguro para comer.",
+        "step": "El paso {{n}} no parece seguro."
+      },
+      "spam": {
+        "recipe": "Quita los enlaces, anuncios o palabras ofensivas de esta receta.",
+        "title": "Quita los enlaces, anuncios o palabras ofensivas del título.",
+        "ingredient": "Quita los enlaces, anuncios o palabras ofensivas del ingrediente {{n}}.",
+        "step": "Quita los enlaces, anuncios o palabras ofensivas del paso {{n}}.",
+        "tags": "Quita los enlaces, anuncios o palabras ofensivas de las etiquetas.",
+        "cookNote": "Quita los enlaces, anuncios o palabras ofensivas de la nota de cocina."
+      }
+    },
+    "saveFailed": "No se pudo guardar tu receta. Tus cambios siguen aquí, así que inténtalo de nuevo.",
+    "limited": "Guardada. Pinch actualizará sus estimaciones mañana.",
+    "entry": {
+      "edit": "Editar",
+      "write": "Escribir una receta",
+      "writeHint": "Escribe una receta de familia o una que te sepas de memoria",
+      "libraryEmptyLink": "O escribe tú una receta"
+    },
+    "updating": "Actualizando…",
+    "originChip": "Escrita"
   }
 } as const;

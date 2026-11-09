@@ -306,6 +306,7 @@ export default {
     "reasonSync": "Sign in to sync recipes across your devices.",
     "reasonShared": "Create a free account to save this shared recipe to your kitchen.",
     "reasonHub": "Create a free account to save recipes from the Cooking Hub.",
+    "reasonEdit": "Create a free account to edit your recipes and write your own.",
     "signupSubtitle": "Save recipes and sync them across devices.",
     "forgotSubtitle": "Enter your email and we’ll send you a secure reset link.",
     "signinSubtitle": "Sign in to access your recipe library.",
@@ -1153,5 +1154,115 @@ export default {
       "pre_ground": "ground spices",
       "cut_to_check": "cut to check"
     }
+  },
+  "recipeEditor": {
+    "titleEdit": "Edit recipe",
+    "titleWrite": "Write a recipe",
+    "save": "Save",
+    "cancel": "Cancel",
+    "saving": "Saving…",
+    "sections": {
+      "basics": "Basics",
+      "ingredients": "Ingredients",
+      "steps": "Steps",
+      "details": "Details"
+    },
+    "fields": {
+      "title": "Title",
+      "photo": "Photo",
+      "servings": "Servings",
+      "ingredientName": "Ingredient",
+      "quantity": "Amount",
+      "unit": "Unit",
+      "step": "Step {{n}}",
+      "time": "Cook time (minutes)",
+      "calories": "Calories",
+      "effort": "Effort level",
+      "cost": "Cost estimate",
+      "tags": "Tags",
+      "appliances": "Appliances",
+      "cookNote": "Cook note",
+      "source": "Source"
+    },
+    "placeholders": {
+      "quantity": "1",
+      "title": "Recipe name",
+      "ingredientName": "e.g. carrot",
+      "unit": "g",
+      "step": "Describe this step",
+      "tag": "Add a tag",
+      "cookNote": "A reminder for next time"
+    },
+    "photo": {
+      "add": "Add photo",
+      "replace": "Replace photo",
+      "remove": "Remove photo",
+      "camera": "Take a photo",
+      "library": "Choose from library"
+    },
+    "add": {
+      "ingredient": "+ Add ingredient",
+      "step": "+ Add step",
+      "tag": "+ Add tag",
+      "appliance": "+ Add appliance"
+    },
+    "deleteRow": "Delete",
+    "reorderHint": "Long-press and drag to reorder",
+    "appliance": {
+      "required": "Required",
+      "optional": "Optional",
+      "pickTitle": "Choose an appliance"
+    },
+    "locked": {
+      "setByYou": "Set by you",
+      "reset": "Reset to Pinch's estimate"
+    },
+    "sourceWritten": "Written by you",
+    "discard": {
+      "title": "Discard changes?",
+      "message": "Your changes will be lost. Are you sure?",
+      "confirm": "Discard",
+      "keepEditing": "Keep editing"
+    },
+    "errors": {
+      "required": "This is required.",
+      "tooLong": "Keep this under {{max}} characters.",
+      "tooMany": "You can add up to {{max}}.",
+      "outOfRange": "Enter a number from {{min}} to {{max}}.",
+      "needIngredient": "Add at least one ingredient.",
+      "needStep": "Add at least one step."
+    },
+    "blocked": {
+      "title": "Pinch can't save this yet",
+      "notRecipe": {
+        "recipe": "This doesn't look like a recipe you can cook.",
+        "title": "The title doesn't look like a recipe name.",
+        "ingredient": "Ingredient {{n}} doesn't look like something you can cook with.",
+        "step": "Step {{n}} doesn't look like a cooking step."
+      },
+      "unsafe": {
+        "recipe": "This recipe doesn't look safe to eat.",
+        "ingredient": "Ingredient {{n}} doesn't look safe to eat.",
+        "step": "Step {{n}} doesn't look safe."
+      },
+      "spam": {
+        "recipe": "Remove links, ads or offensive words from this recipe.",
+        "title": "Remove links, ads or offensive words from the title.",
+        "ingredient": "Remove links, ads or offensive words from ingredient {{n}}.",
+        "step": "Remove links, ads or offensive words from step {{n}}.",
+        "tags": "Remove links, ads or offensive words from the tags.",
+        "cookNote": "Remove links, ads or offensive words from the cook note."
+      }
+    },
+    "saveFailed": "Couldn't save your recipe. Your changes are still here, so try again.",
+    "limited": "Saved. Pinch will update its estimates tomorrow.",
+    "entry": {
+      "edit": "Edit",
+      "write": "Write a recipe",
+      "writeHint": "Type in a family recipe or one you know by heart",
+      "libraryEmptyLink": "Or write a recipe yourself"
+    },
+    "updating": "Updating…",
+    "originChip": "Written"
   }
 } as const;

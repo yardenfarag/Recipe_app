@@ -5,6 +5,7 @@ import {
   reserveDailyAiUsage,
 } from '../_shared/dailyAiUsage.ts';
 import { createAuthedSupabase } from '../_shared/recipeLookup.ts';
+import { fitRecipeToLimits } from '../_shared/recipeLimits.ts';
 import { createServiceSupabase } from '../_shared/supabaseAdmin.ts';
 import {
   isSubstitutionLanguageCode,
@@ -269,7 +270,9 @@ async function handleRewrite(body: RequestBody, billing: BillingContext): Promis
       durationMs: Date.now() - started,
       metadata: { mode: 'rewrite_instructions' },
     });
-    return jsonResponse({ status: 'ok', instructions: rewritten });
+    // The app writes these steps to the recipe, so they must fit the database limits (PIN-79).
+    const fitted = fitRecipeToLimits({ instructions: rewritten }).instructions;
+    return jsonResponse({ status: 'ok', instructions: fitted });
   } catch (err) {
     console.error('suggest-substitution rewrite error:', err);
     await refundDailyAiUsage(

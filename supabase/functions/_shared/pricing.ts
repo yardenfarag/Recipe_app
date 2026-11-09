@@ -24,6 +24,11 @@ export const FREE_MONTHLY_EXTRACT_LIMIT = 10;
 export const FREE_EXTRACT_LIMIT = FREE_MONTHLY_EXTRACT_LIMIT;
 /** Remix calls per signed-in user per UTC day, including kitchen auto-apply. */
 export const REMIX_DAILY_LIMIT = 40;
+/**
+ * Recipe saves per signed-in user per UTC day that recalculate AI estimates after a hand edit or
+ * a written recipe (PIN-79, ADR 018). Free; past the cap the content still saves.
+ */
+export const RECIPE_EDIT_DAILY_LIMIT = 40;
 /** Free fridge-match vision calls per UTC day (signed-in). */
 export const FRIDGE_MATCH_DAILY_LIMIT = 8;
 /** Free fridge-match vision calls per UTC day (guest install). */

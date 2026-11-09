@@ -14,8 +14,9 @@ values
   ('00000000-0000-0000-0000-000000000000', '10000000-0000-4000-8000-000000000092',
    'authenticated', 'authenticated', 'rls-b@pinch.invalid', '', now(), '{}', '{}', now(), now());
 
-insert into public.recipes (id, user_id, title)
-values ('20000000-0000-4000-8000-000000000091', '10000000-0000-4000-8000-000000000091', 'A soup');
+insert into public.recipes (id, user_id, title, ingredients, instructions)
+values ('20000000-0000-4000-8000-000000000091', '10000000-0000-4000-8000-000000000091', 'A soup',
+        '[{"name":"egg","quantity":1,"unit":""}]', '[{"step":1,"text":"Boil"}]');
 insert into public.collections (id, user_id, name)
 values ('30000000-0000-4000-8000-000000000091', '10000000-0000-4000-8000-000000000091', 'A list');
 insert into public.collection_recipes (collection_id, recipe_id)

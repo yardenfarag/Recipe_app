@@ -26,6 +26,18 @@ const milk = {
   spoons: { quantity: 1, unit: 'cup' },
 };
 
+describe('a hand-edited row while its amounts recalculate (ADR 018)', () => {
+  // The server drops metric/spoons from changed rows until the new ones are written.
+  const edited: Ingredient = { name: 'carrot', quantity: 300, unit: 'g' };
+
+  it('shows the written amount in either system', () => {
+    expect(displayIngredientAmount(edited, { system: 'metric' })).toBe('300 g');
+    expect(displayIngredientAmount(edited, { system: 'original' })).not.toBe('');
+    expect(ingredientAmountIsUnknown(edited, 'metric')).toBe(false);
+    expect(ingredientAmountIsUnknown(edited, 'original')).toBe(false);
+  });
+});
+
 describe('pickIngredientAmount', () => {
   it('uses extracted grams for solids instead of converting cups to ml', () => {
     expect(pickIngredientAmount(flour, 'metric')).toEqual({ quantity: 120, unit: 'g' });

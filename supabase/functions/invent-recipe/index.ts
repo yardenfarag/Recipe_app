@@ -43,6 +43,7 @@ import { appliancesForRecipe } from '../_shared/recipeAppliances.ts';
 import { createAuthedSupabase, extractVideoIdForPlatform, findExistingRecipeForUser } from '../_shared/recipeLookup.ts';
 import { createServiceSupabase } from '../_shared/supabaseAdmin.ts';
 import { normalizeRecipeTags } from '../_shared/tags.ts';
+import { fitRecipeToLimits } from '../_shared/recipeLimits.ts';
 import { fetchTikTokMeta } from '../_shared/tiktok.ts';
 import { logUsageEvent } from '../_shared/usageLog.ts';
 import { isVideoTooLong } from '../_shared/videoLimits.ts';
@@ -497,7 +498,7 @@ Deno.serve(async (req) => {
     // ADR 017: never throws; a failure saves as "not analysed" (null).
     const { appliances, metadata: applianceMetadata } = await appliancesForRecipe(gemini, usages);
 
-    const recipe = {
+    const recipe = fitRecipeToLimits({
       title: gemini.title,
       source_language: normalizeLanguageCode(gemini.source_language) || language,
       original_url: originalUrl,
@@ -521,7 +522,7 @@ Deno.serve(async (req) => {
       tags: normalizeRecipeTags(gemini.tags),
       missing_fields: missingFields,
       appliances,
-    };
+    });
 
     let snapshot: QuotaSnapshot | null = creditReservation?.snapshot ?? null;
     if (userId && creditReservation) {

@@ -1,6 +1,18 @@
 import { describe, expect, it } from 'vitest';
 
-import { recipeTagI18nKey, translateRecipeTag } from '@/lib/recipeTags';
+import { normalizeRecipeTags, recipeTagI18nKey, translateRecipeTag } from '@/lib/recipeTags';
+
+describe('normalizeRecipeTags', () => {
+  it('keeps each tag within the 30-character database limit', () => {
+    expect(normalizeRecipeTags([`#${'Mediterranean '.repeat(3)}`])).toEqual([
+      'mediterranean mediterranean me',
+    ]);
+  });
+
+  it('never splits an emoji when cutting a tag', () => {
+    expect(normalizeRecipeTags([`${'t'.repeat(29)}🥕🥕`])).toEqual([`${'t'.repeat(29)}🥕`]);
+  });
+});
 
 describe('recipeTagI18nKey', () => {
   it('normalizes spaces, hyphens, and punctuation', () => {

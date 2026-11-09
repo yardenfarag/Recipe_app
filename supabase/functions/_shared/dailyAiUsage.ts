@@ -6,7 +6,9 @@ export type DailyAiAction =
   | 'fridge_match'
   | 'content_gate'
   | 'remix'
-  | 'extract_attempt';
+  | 'extract_attempt'
+  /** Background recalculation after a hand edit or written recipe (PIN-79). */
+  | 'recipe_edit';
 
 export function currentUtcDate(date = new Date()): string {
   return date.toISOString().slice(0, 10);
