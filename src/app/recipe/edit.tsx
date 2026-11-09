@@ -46,6 +46,14 @@ import { saveRecipeEdit } from '@/lib/supabase/saveRecipeEdit';
 import type { CostEstimate, EffortLevel, LockedField } from '@/types/recipe';
 
 const SIGN_UP = '/auth?mode=signup&reason=edit' as const;
+
+/** Keeps Cancel and Save off the window edges on web, and gives them a comfortable tap target. */
+const HEADER_ACTION_STYLE = {
+  paddingHorizontal: 16,
+  paddingVertical: 8,
+  minHeight: 44,
+  justifyContent: 'center',
+} as const;
 const LIMITED_NOTICE_MS = 2000;
 
 type Exit =
@@ -310,8 +318,17 @@ function RecipeEditor({ initial, title }: { initial: RecipeEditorState; title: s
         options={{
           title,
           headerBackVisible: false,
+          // Centred, so the title never butts against Cancel (start-aligned by default on web/Android).
+          headerTitleAlign: 'center',
           headerLeft: () => (
-            <Pressable onPress={cancel} hitSlop={12} accessibilityRole="button" disabled={saving}>
+            <Pressable
+              onPress={cancel}
+              hitSlop={12}
+              accessibilityRole="button"
+              disabled={saving}
+              className="active:opacity-70"
+              style={HEADER_ACTION_STYLE}
+            >
               <Text className="text-base" style={{ color: colors.textSecondary }}>
                 {t('recipeEditor.cancel')}
               </Text>
@@ -325,6 +342,8 @@ function RecipeEditor({ initial, title }: { initial: RecipeEditorState; title: s
               accessibilityRole="button"
               accessibilityLabel={saving ? t('recipeEditor.saving') : t('recipeEditor.save')}
               accessibilityState={{ disabled: !canSave, busy: saving }}
+              className="active:opacity-70"
+              style={HEADER_ACTION_STYLE}
             >
               {saving ? (
                 <ActivityIndicator color={colors.primary} />
