@@ -1,6 +1,6 @@
 /**
  * Client for the save-recipe-edit Edge Function (PIN-79, ADR 018): one endpoint for Edit recipe,
- * Write a recipe, and retrying a recalculation that failed. Free: never spends recipe credits.
+ * Write a recipe, finishing a partial import (ADR 019), and retrying a recalculation that failed. Free: never spends recipe credits.
  *
  * The server mirrors these types in supabase/functions/_shared/recipeEditTypes.ts. Change both.
  */
@@ -66,11 +66,29 @@ export type SaveRecipeEditRequest =
       app_language: string;
     }
   | {
+      /** A partial import the user finished by hand (ADR 019). Inserted with its source kept. */
+      mode: 'import';
+      content: RecipeEditContent;
+      locked_fields: LockedField[];
+      source: RecipeImportSource;
+      app_language: string;
+    }
+  | {
       /** Re-run whatever is still in recalc_pending (a recalculation that failed or was capped). */
       mode: 'retry';
       recipe_id: string;
       app_language: string;
     };
+
+/** Where a partial import came from. The server checks these against the database's allowed values. */
+export interface RecipeImportSource {
+  original_url: string | null;
+  platform: string;
+  extraction_source: string;
+  image_url: string | null;
+  source_video_url: string | null;
+  source_language: string | null;
+}
 
 /** Fields a hard limit or the content check can point at. */
 export type RecipeEditField =

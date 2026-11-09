@@ -88,7 +88,32 @@ export type SaveRecipeEditRequest =
       locked_fields: LockedField[];
       app_language: string;
     }
+  | {
+      mode: 'import';
+      content: RecipeEditContent;
+      locked_fields: LockedField[];
+      source: RecipeImportSource;
+      app_language: string;
+    }
   | { mode: 'retry'; recipe_id: string; app_language: string };
+
+/** Where a partial import came from (ADR 019). The editor finishes it; the source can't change. */
+export interface RecipeImportSource {
+  original_url: string | null;
+  platform: ImportPlatform;
+  extraction_source: ImportExtractionSource;
+  image_url: string | null;
+  source_video_url: string | null;
+  source_language: string | null;
+}
+
+/** The recipes_platform_check values an import can have. */
+export const IMPORT_PLATFORMS = ['youtube', 'instagram', 'tiktok', 'web', 'photo'] as const;
+export type ImportPlatform = (typeof IMPORT_PLATFORMS)[number];
+
+/** The recipes_extraction_source_check values extract-recipe produces. */
+export const IMPORT_EXTRACTION_SOURCES = ['description', 'comments', 'captions', 'video', 'web', 'photo'] as const;
+export type ImportExtractionSource = (typeof IMPORT_EXTRACTION_SOURCES)[number];
 
 export type RecipeEditField =
   /** The whole recipe (a written recipe that isn't a recipe, or isn't safe). Never has an index. */
@@ -234,6 +259,36 @@ function parseSources(value: unknown, length: number): (number | null)[] | null 
   return out;
 }
 
+function httpUrl(value: unknown, max = 2048): string | null {
+  const text = str(value).trim();
+  if (!text || text.length > max) return null;
+  try {
+    const url = new URL(text);
+    return url.protocol === 'https:' || url.protocol === 'http:' ? text : null;
+  } catch {
+    return null;
+  }
+}
+
+function parseImportSource(value: unknown): RecipeImportSource | null {
+  if (!isRecord(value)) return null;
+  const platform = IMPORT_PLATFORMS.find((p) => p === value.platform);
+  const extraction_source = IMPORT_EXTRACTION_SOURCES.find((s) => s === value.extraction_source);
+  if (!platform || !extraction_source) return null;
+  const original_url = httpUrl(value.original_url);
+  // Only a photo import has no link.
+  if (!original_url && platform !== 'photo') return null;
+  const language = str(value.source_language).trim().toLowerCase();
+  return {
+    original_url,
+    platform,
+    extraction_source,
+    image_url: httpUrl(value.image_url),
+    source_video_url: httpUrl(value.source_video_url),
+    source_language: /^[a-z]{2,3}$/.test(language) ? language : null,
+  };
+}
+
 function parseRecipeId(value: unknown): string | null {
   return typeof value === 'string' && /^[0-9a-f-]{36}$/i.test(value.trim()) ? value.trim() : null;
 }
@@ -255,6 +310,10 @@ export function parseSaveRecipeEditRequest(raw: unknown): SaveRecipeEditRequest 
   if (!content) return null;
   const locked_fields = parseLocked(raw.locked_fields);
   if (raw.mode === 'write') return { mode: 'write', content, locked_fields, app_language };
+  if (raw.mode === 'import') {
+    const source = parseImportSource(raw.source);
+    return source ? { mode: 'import', content, locked_fields, source, app_language } : null;
+  }
   if (raw.mode !== 'edit') return null;
   const recipe_id = parseRecipeId(raw.recipe_id);
   const step_sources = parseSources(raw.step_sources, content.instructions.length);

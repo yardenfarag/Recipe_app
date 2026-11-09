@@ -4,6 +4,7 @@
  *
  *   edit   save a hand edit of the caller's recipe
  *   write  insert a written recipe (extraction_source 'manual', no URL)
+ *   import insert a partial import the user finished by hand (ADR 019), keeping its source
  *   retry  re-run whatever is still in recalc_pending
  *
  * Signed-in only, free (never spends recipe credits). The decision of what to save, block or
@@ -29,6 +30,7 @@ import {
   RECALC_FIELDS,
   type RecalcField,
   type RecipeEditContent,
+  type RecipeImportSource,
   type SaveRecipeEditResult,
 } from '../_shared/recipeEditTypes.ts';
 import { createAuthedSupabase } from '../_shared/recipeLookup.ts';
@@ -123,7 +125,13 @@ Deno.serve(async (req) => {
       ? await updateRecipe(admin, user.id, request.recipe_id, { ...columns, ...recalc, ...imageUrl }, {
         clearTranslations: true,
       })
-      : await insertRecipe(admin, user.id, { ...columns, ...recalc, ...imageUrl, source_language: plan.sourceLanguage });
+      : await insertRecipe(admin, user.id, {
+        ...columns,
+        ...recalc,
+        ...(request.mode === 'import' ? importColumns(request.source) : WRITTEN_COLUMNS),
+        ...imageUrl,
+        source_language: (request.mode === 'import' ? request.source.source_language : null) ?? plan.sourceLanguage,
+      });
     if (!saved) {
       if (reservation?.ok) await refundDailyAiUsage(admin, user.id, 'recipe_edit', reservation.date);
       return failed('server_error', "Couldn't save the recipe.", 500);
@@ -167,7 +175,7 @@ function startRecalculation(
   pending: RecalcField[],
   startedAt: string | null,
   reservation: { ok: boolean } | null,
-  mode: 'edit' | 'write' | 'retry',
+  mode: 'edit' | 'write' | 'import' | 'retry',
 ): Response {
   if (!pending.length) return respond({ status: 'saved', recipe: saved, recalculating: [], recalculation: 'none' });
   // Past the cap: the content is saved and the fields stay pending for tomorrow's retry.
@@ -214,17 +222,23 @@ async function updateRecipe(
   return data;
 }
 
+const WRITTEN_COLUMNS: Row = { extraction_source: 'manual', original_url: null, platform: 'unknown' };
+
+/** A finished import keeps where it came from, so duplicate-link checks and Hub rules still apply. */
+function importColumns(source: RecipeImportSource): Row {
+  return {
+    extraction_source: source.extraction_source,
+    original_url: source.original_url,
+    platform: source.platform,
+    image_url: source.image_url,
+    source_video_url: source.source_video_url,
+  };
+}
+
 async function insertRecipe(admin: Admin, userId: string, columns: Row): Promise<Row | null> {
   const { data, error } = await admin
     .from('recipes')
-    .insert({
-      ...columns,
-      user_id: userId,
-      extraction_source: 'manual',
-      original_url: null,
-      platform: 'unknown',
-      extraction_status: 'full',
-    })
+    .insert({ ...columns, user_id: userId, extraction_status: 'full' })
     .select('*')
     .single();
   if (error) console.error('[save-recipe-edit] insert failed', error);
@@ -309,7 +323,7 @@ function orderedFields(fields: RecalcField[]): RecalcField[] {
 async function logCheck(
   admin: Admin,
   userId: string,
-  mode: 'edit' | 'write',
+  mode: 'edit' | 'write' | 'import',
   plan: RecipeEditPlan,
   existing: Row | null,
   started: number,

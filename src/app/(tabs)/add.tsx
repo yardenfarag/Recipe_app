@@ -53,7 +53,7 @@ import {
   captureRecipeExtracted,
   type RecipeEntrySource,
 } from "@/lib/analytics";
-import { setRecipeDraft } from "@/lib/recipeDraft";
+import { clearRecipeDraft, setRecipeDraft } from "@/lib/recipeDraft";
 import { resolveShareIntentAction } from "@/lib/shareIntentGate";
 import { recipeIsInvented } from "@/lib/recipeOrigin";
 import type {
@@ -101,6 +101,10 @@ export default function AddRecipeScreen() {
   const [extractingPhoto, setExtractingPhoto] = useState(false);
   const [jobKind, setJobKind] = useState<"extract" | "invent">("extract");
   const [creditsOpen, setCreditsOpen] = useState(false);
+  /** ADR 019: a partial import waits here for "Fill it in myself" or Cancel. */
+  const [partialImport, setPartialImport] = useState<{
+    missingIngredients: boolean;
+  } | null>(null);
   const purchasesHere = creditPurchasesOfferedOn(Platform.OS);
   const [inventOffer, setInventOffer] = useState<{
     followUp: InventFollowUp;
@@ -374,6 +378,30 @@ export default function AddRecipeScreen() {
         message: result.message ?? t("snap.notFound"),
       });
       return false;
+    }
+
+    // ADR 019: a partial import isn't previewed or saved. The user fills in what's missing, or
+    // cancels; either way it was free. Invented guesses keep their own banner.
+    if (
+      result.status === "partial" &&
+      !result.cached &&
+      !recipeIsInvented(result.recipe)
+    ) {
+      try {
+        // Persisted so the editor (and a guest coming back from sign-up) can load it.
+        await setRecipeDraft(
+          result.recipe,
+          result.request_id
+            ? { url: requestKey, requestId: result.request_id }
+            : undefined,
+        );
+      } catch (error) {
+        console.warn("[recipe-draft] persistence failed", error);
+      }
+      setPartialImport({
+        missingIngredients: result.recipe.ingredients.length === 0,
+      });
+      return true;
     }
 
     let recipeToPreview: ExtractedRecipe = result.recipe;
@@ -1007,6 +1035,28 @@ export default function AddRecipeScreen() {
           visible={creditsOpen}
           onClose={() => setCreditsOpen(false)}
           onPurchased={() => refreshProfile()}
+        />
+        <ConfirmDialog
+          visible={partialImport != null}
+          title={t("snap.partialTitle")}
+          message={
+            partialImport?.missingIngredients
+              ? t("snap.partialMissingIngredients")
+              : t("snap.partialMissingSteps")
+          }
+          confirmLabel={t("snap.partialFillIn")}
+          cancelLabel={t("common.cancel")}
+          onConfirm={() => {
+            setPartialImport(null);
+            setUrl("");
+            router.push({ pathname: "/recipe/edit", params: { from: "import" } });
+          }}
+          onCancel={() => {
+            setPartialImport(null);
+            void clearRecipeDraft().catch((error) =>
+              console.warn("[recipe-draft] clear failed", error),
+            );
+          }}
         />
         <ConfirmDialog
           visible={inventOffer != null}

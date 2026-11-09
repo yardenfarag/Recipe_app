@@ -1,5 +1,6 @@
 /**
- * Form state for Edit recipe and Write a recipe (PIN-79, ADR 018). Pure: no React, no I/O.
+ * Form state for Edit recipe, Write a recipe (PIN-79, ADR 018) and finishing a partial import
+ * (ADR 019). Pure: no React, no I/O.
  *
  * Rows (ingredients, steps) carry stable ids, so moving or deleting a step remaps appliance step
  * links exactly, and each step keeps its video timestamp. Every function returns a new state.
@@ -18,8 +19,10 @@ import type {
   RecipeEditContent,
   RecipeEditField,
   RecipeEditLimitError,
+  RecipeImportSource,
   SaveRecipeEditRequest,
 } from '@/lib/supabase/saveRecipeEdit';
+import type { ExtractedRecipe } from '@/lib/supabase/extractRecipe';
 import {
   type CostEstimate,
   type EffortLevel,
@@ -29,7 +32,10 @@ import {
   type Recipe,
 } from '@/types/recipe';
 
-export type EditorMode = 'edit' | 'write';
+export type EditorMode = 'edit' | 'write' | 'import';
+
+/** The part a partial import is missing (ADR 019). */
+export type MissingPart = 'ingredients' | 'instructions';
 
 export interface IngredientRow {
   id: string;
@@ -94,6 +100,10 @@ export interface RecipeEditorState {
   /** Written recipe, or a saved one with extraction_source 'manual'. */
   written: boolean;
   sourceUrl: string | null;
+  /** Import mode: where the partial import came from, saved with the finished recipe. */
+  importSource: RecipeImportSource | null;
+  /** Import mode: what the source left out, for the banner and the first empty row. */
+  missing: MissingPart[];
   /** Fields the user chose "reset to Pinch's estimate" on. */
   resetFields: LockedField[];
   baseline: Baseline;
@@ -252,6 +262,8 @@ export function createEditorState(recipe?: Recipe | null): RecipeEditorState {
       cookNote: '',
       written: true,
       sourceUrl: null,
+      importSource: null,
+      missing: [],
       resetFields: [],
       baseline: { values: {} as Record<LockedField, unknown>, locked: [], ingredients: [], snapshot: '' },
       nextId,
@@ -313,6 +325,8 @@ export function createEditorState(recipe?: Recipe | null): RecipeEditorState {
     cookNote: recipe.cook_note ?? '',
     written: recipe.extraction_source === 'manual',
     sourceUrl: recipe.original_url ?? null,
+    importSource: null,
+    missing: [],
     resetFields: [],
     baseline: { values: {} as Record<LockedField, unknown>, locked: [], ingredients: [], snapshot: '' },
     nextId,
@@ -321,6 +335,35 @@ export function createEditorState(recipe?: Recipe | null): RecipeEditorState {
     (LOCKABLE_FIELDS as readonly string[]).includes(f),
   );
   return withBaseline({ ...state }, locked, recipe.ingredients ?? []);
+}
+
+/**
+ * Editor state for a partial import that hasn't been saved (ADR 019). Its estimates count as
+ * Pinch's, not the user's, and each missing list gets one empty row to start typing in.
+ */
+export function createImportEditorState(draft: ExtractedRecipe): RecipeEditorState {
+  const base = createEditorState({ ...draft, id: '', user_id: '', created_at: '' });
+  const missing: MissingPart[] = [];
+  if (draft.ingredients.length === 0) missing.push('ingredients');
+  if (draft.instructions.length === 0) missing.push('instructions');
+  let state: RecipeEditorState = {
+    ...base,
+    mode: 'import',
+    recipeId: null,
+    written: false,
+    missing,
+    importSource: {
+      original_url: draft.original_url ?? null,
+      platform: draft.platform ?? 'unknown',
+      extraction_source: draft.extraction_source ?? 'description',
+      image_url: draft.image_url ?? null,
+      source_video_url: draft.source_video_url ?? null,
+      source_language: draft.source_language ?? null,
+    },
+  };
+  if (missing.includes('ingredients')) state = addIngredient(state);
+  if (missing.includes('instructions')) state = addStep(state);
+  return state;
 }
 
 function withBaseline(
@@ -870,6 +913,13 @@ export function buildSaveRequest(state: RecipeEditorState, appLanguage: string):
         ingredient_sources: ingredientRows.map((row) => row.source),
         app_language: appLanguage,
       },
+    };
+  }
+  if (state.mode === 'import' && state.importSource) {
+    return {
+      ok: true,
+      rows,
+      request: { mode: 'import', content, locked_fields, source: state.importSource, app_language: appLanguage },
     };
   }
   return {

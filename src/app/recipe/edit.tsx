@@ -1,5 +1,7 @@
 /**
  * Edit recipe (`/recipe/edit?id=<id>`) and Write a recipe (`/recipe/edit`), PIN-79 / ADR 018.
+ * Finish a partial import (`/recipe/edit?from=import`, ADR 019): the unsaved import draft from
+ * src/lib/recipeDraft.ts, saved only when the user presses Save.
  * Form state lives in src/lib/recipeEditor.ts; this screen renders it and talks to save-recipe-edit.
  */
 import { type NavigationAction, usePreventRemove } from '@react-navigation/native';
@@ -9,6 +11,7 @@ import { useTranslation } from 'react-i18next';
 import {
   ActivityIndicator,
   KeyboardAvoidingView,
+  type LayoutChangeEvent,
   Platform,
   Pressable,
   ScrollView,
@@ -39,6 +42,7 @@ import { useThemePreference } from '@/hooks/useThemePreference';
 import { announce } from '@/lib/a11y';
 import { COST_I18N_KEYS } from '@/lib/formatCostEstimate';
 import { goBackOrHome } from '@/lib/goBackOrHome';
+import { clearRecipeDraft, getRecipeDraft } from '@/lib/recipeDraft';
 import * as editor from '@/lib/recipeEditor';
 import type { EditorErrors, ErrorTarget, RecipeEditorState } from '@/lib/recipeEditor';
 import { fetchRecipeById } from '@/lib/supabase/recipes';
@@ -96,31 +100,41 @@ function visibleErrors(state: RecipeEditorState, attempted: boolean, server: Edi
 }
 
 export default function RecipeEditScreen() {
-  const { id } = useLocalSearchParams<{ id?: string }>();
+  const { id, from } = useLocalSearchParams<{ id?: string; from?: string }>();
   const { t } = useTranslation();
   const { user, loading: authLoading } = useAuth();
   const { colors } = useThemePreference();
   const isEdit = Boolean(id);
-  const title = isEdit ? t('recipeEditor.titleEdit') : t('recipeEditor.titleWrite');
+  const isImport = !isEdit && from === 'import';
+  const title = isEdit
+    ? t('recipeEditor.titleEdit')
+    : isImport
+      ? t('recipeEditor.titleImport')
+      : t('recipeEditor.titleWrite');
 
   const [initial, setInitial] = useState<RecipeEditorState | null | undefined>(() =>
-    isEdit ? undefined : editor.createEditorState(),
+    isEdit || isImport ? undefined : editor.createEditorState(),
   );
   const [loadError, setLoadError] = useState<string | null>(null);
   const isGuest = !authLoading && !user;
 
   const load = useCallback(async () => {
-    if (!id || !user) return;
+    if (!user || (!id && !isImport)) return;
     setLoadError(null);
     setInitial(undefined);
     try {
-      const found = id.startsWith('guest-') ? null : await fetchRecipeById(id);
+      if (isImport) {
+        const draft = await getRecipeDraft();
+        setInitial(draft ? editor.createImportEditorState(draft) : null);
+        return;
+      }
+      const found = !id || id.startsWith('guest-') ? null : await fetchRecipeById(id);
       setInitial(found ? editor.createEditorState(found) : null);
     } catch (err) {
       setInitial(null);
       setLoadError(err instanceof Error ? err.message : t('recipe.loadFailed'));
     }
-  }, [id, user, t]);
+  }, [id, isImport, user, t]);
 
   useEffect(() => {
     void load();
@@ -136,7 +150,7 @@ export default function RecipeEditScreen() {
     }
   }, [isGuest]);
 
-  if (authLoading || (isEdit && initial === undefined && !isGuest)) {
+  if (authLoading || ((isEdit || isImport) && initial === undefined && !isGuest)) {
     return (
       <Screen edges={['left', 'right', 'bottom']} className="items-center justify-center">
         <Stack.Screen options={{ title }} />
@@ -187,7 +201,7 @@ export default function RecipeEditScreen() {
     );
   }
 
-  return <RecipeEditor key={initial.recipeId ?? 'write'} initial={initial} title={title} />;
+  return <RecipeEditor key={initial.recipeId ?? initial.mode} initial={initial} title={title} />;
 }
 
 function RecipeEditor({ initial, title }: { initial: RecipeEditorState; title: string }) {
@@ -207,6 +221,16 @@ function RecipeEditor({ initial, title }: { initial: RecipeEditorState; title: s
   const [pendingLeave, setPendingLeave] = useState<Exit | null>(null);
   const [dragging, setDragging] = useState(false);
   const scrollRef = useRef<ScrollView>(null);
+  // Import mode: bring the section the source left out into view once, when it's laid out.
+  const scrolledToMissing = useRef(initial.missing.length === 0);
+  const firstMissing = initial.missing[0];
+  function onSectionLayout(part: editor.MissingPart) {
+    return (event: LayoutChangeEvent) => {
+      if (scrolledToMissing.current || part !== firstMissing) return;
+      scrolledToMissing.current = true;
+      scrollRef.current?.scrollTo({ y: Math.max(0, event.nativeEvent.layout.y - 12), animated: true });
+    };
+  }
 
   const dirty = editor.needsDiscardConfirm(state);
   const canSave = editor.canSave(state) && !saving && !exit;
@@ -255,7 +279,14 @@ function RecipeEditor({ initial, title }: { initial: RecipeEditorState; title: s
 
     switch (result.status) {
       case 'saved': {
-        const next: Exit = state.mode === 'write' ? { kind: 'open', recipeId: result.recipe.id } : { kind: 'back' };
+        const next: Exit = state.mode === 'edit' ? { kind: 'back' } : { kind: 'open', recipeId: result.recipe.id };
+        if (state.mode === 'import') {
+          try {
+            await clearRecipeDraft();
+          } catch (error) {
+            console.warn('[recipe-draft] clear failed', error);
+          }
+        }
         if (result.recalculation === 'limited') {
           const text = t('recipeEditor.limited');
           setBanner({ kind: 'info', text });
@@ -382,6 +413,18 @@ function RecipeEditor({ initial, title }: { initial: RecipeEditorState; title: s
             </View>
           ) : null}
 
+          {state.mode === 'import' && initial.missing.length > 0 ? (
+            <View className="mb-4 rounded-2xl p-3" style={{ backgroundColor: colors.warningSoft }}>
+              <Text className="text-sm font-semibold" style={{ color: colors.text, textAlign }}>
+                {t(
+                  initial.missing.includes('ingredients')
+                    ? 'recipeEditor.importMissingIngredients'
+                    : 'recipeEditor.importMissingSteps',
+                )}
+              </Text>
+            </View>
+          ) : null}
+
           <EditorSection title={t('recipeEditor.sections.basics')}>
             <EditorField label={t('recipeEditor.fields.title')} error={format(errors.fields.title)}>
               <EditorInput
@@ -418,7 +461,7 @@ function RecipeEditor({ initial, title }: { initial: RecipeEditorState; title: s
             ) : null}
           </EditorSection>
 
-          <EditorSection title={t('recipeEditor.sections.ingredients')}>
+          <EditorSection title={t('recipeEditor.sections.ingredients')} onLayout={onSectionLayout('ingredients')}>
             <Text className="text-xs" style={{ color: colors.textSecondary, textAlign }}>
               {t('recipeEditor.reorderHint')}
             </Text>
@@ -446,7 +489,7 @@ function RecipeEditor({ initial, title }: { initial: RecipeEditorState; title: s
             />
           </EditorSection>
 
-          <EditorSection title={t('recipeEditor.sections.steps')}>
+          <EditorSection title={t('recipeEditor.sections.steps')} onLayout={onSectionLayout('instructions')}>
             <ReorderableList
               items={state.steps}
               onDragStateChange={setDragging}

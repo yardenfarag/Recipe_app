@@ -638,6 +638,10 @@ export default {
     "illustrationShare": "Share recipe"
   },
   "snap": {
+    "partialTitle": "We couldn’t find the whole recipe",
+    "partialMissingSteps": "We found the ingredients, but not the steps. Want to add the steps yourself? This import is free.",
+    "partialMissingIngredients": "We found the steps, but not the ingredients. Want to add the ingredients yourself? This import is free.",
+    "partialFillIn": "Fill it in myself",
     "title": "Snap a recipe",
     "subtitle": "Paste a YouTube, Instagram, TikTok, or recipe website link — or snap a photo",
     "urlLabel": "Recipe URL",
@@ -1158,6 +1162,9 @@ export default {
   "recipeEditor": {
     "titleEdit": "Edit recipe",
     "titleWrite": "Write a recipe",
+    "titleImport": "Finish the recipe",
+    "importMissingSteps": "The source left out the steps. Add them below, then tap Save.",
+    "importMissingIngredients": "The source left out the ingredients. Add them below, then tap Save.",
     "save": "Save",
     "cancel": "Cancel",
     "saving": "Saving…",

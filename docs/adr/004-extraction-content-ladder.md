@@ -29,7 +29,7 @@ After extraction, classify the result:
 | Outcome | Condition | UX |
 |---------|-----------|-----|
 | **Full recipe** | Title + ingredients + steps present | Show RecipeDetail normally |
-| **Partial result** | Some fields extracted (e.g. title + ingredients, no steps) | Show what we have + banner: *"Couldn't find full instructions — here's what we found."* User can still save if they want |
+| **Partial result** | Some fields extracted (e.g. title + ingredients, no steps) | ~~Show what we have + banner, user can still save~~ **Superseded by ADR 019:** a dialog names what's missing and offers "Fill it in myself" (editor on the unsaved draft) or Cancel. No credit is charged. |
 | **Hard stop** | Nothing useful extracted | Error: *"Couldn't find a recipe in this video. Try a different link."* — no save offered |
 
 No manual paste fallback in MVP (may revisit in Phase 3).
