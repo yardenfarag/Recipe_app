@@ -31,6 +31,8 @@ export function useRecipeRecalc(
   const [tick, setTick] = useState(0);
   const onRefreshedRef = useRef(onRefreshed);
   onRefreshedRef.current = onRefreshed;
+  const recipeRef = useRef(recipe);
+  recipeRef.current = recipe;
   /** The state each recipe had when it first opened on this screen. */
   const openedAs = useRef(new Map<string, RecipeRecalcState['kind']>());
   const retried = useRef(new Set<string>());
@@ -68,7 +70,10 @@ export function useRecipeRecalc(
     const timer = setTimeout(() => {
       fetchRecipeById(id)
         .then((fresh) => {
-          if (!cancelled && fresh) onRefreshedRef.current(fresh);
+          // An unchanged row is not passed on: a new object every few seconds makes the
+          // detail screen re-sync for nothing.
+          if (cancelled || !fresh || JSON.stringify(fresh) === JSON.stringify(recipeRef.current)) return;
+          onRefreshedRef.current(fresh);
         })
         .catch(() => {
           // Keep showing what we have; the next tick tries again.

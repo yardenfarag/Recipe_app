@@ -1,8 +1,9 @@
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 
 import { useLanguagePreference } from '@/hooks/useLanguagePreference';
 import { ensureRecipeTranslation } from '@/lib/ensureRecipeTranslation';
+import { recipeAmountsKey, recipeTextKey, withLiveAmounts } from '@/lib/localizedRecipeKey';
 import {
   getGuestRecipeTranslation,
   upsertGuestRecipeTranslation,
@@ -31,10 +32,13 @@ export function useLocalizedRecipe(recipe: ExtractedRecipe | null | undefined, r
   const { t } = useTranslation();
   const { language: preferredLanguage, ready } = useLanguagePreference();
   // Include ingredient/instruction content so swaps & remixes refresh overlays
-  // (length alone misses same-count edits that change step text).
+  // (length alone misses same-count edits that change step text). Grams/spoons are left out:
+  // a background recalculation fills them in after a hand edit, and resetting the translation
+  // then would flash the source language (ADR 018). They are merged into the display below.
   const recipeKey = recipe
-    ? `${recipeId ?? 'draft'}:${preferredLanguage}:${recipe.title}:${recipe.servings}:${JSON.stringify(recipe.ingredients)}:${JSON.stringify(recipe.instructions)}`
+    ? `${recipeId ?? 'draft'}:${preferredLanguage}:${recipeTextKey(recipe)}`
     : '';
+  const amountsKey = recipeAmountsKey(recipe?.ingredients);
   const [state, setState] = useState<LocalizedState | null>(null);
   const runId = useRef(0);
   // Keep latest recipe for the effect without re-running on parent identity churn
@@ -200,9 +204,21 @@ export function useLocalizedRecipe(recipe: ExtractedRecipe | null | undefined, r
     });
   }, []);
 
+  // Memoised: RecipeView re-syncs whenever this object changes identity.
+  const display = state?.display;
+  const displayContent = useMemo(
+    () =>
+      display
+        ? { ...display, ingredients: withLiveAmounts(display.ingredients, recipeRef.current?.ingredients) }
+        : null,
+    // amountsKey stands for recipeRef.current's grams/spoons.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [display, amountsKey],
+  );
+
   return {
     preferredLanguage,
-    displayContent: state?.display ?? null,
+    displayContent,
     activeLanguage: state?.activeLanguage ?? null,
     translating: state?.translating ?? false,
     translationError: state?.error ?? null,
