@@ -2,7 +2,8 @@ import Ionicons from '@expo/vector-icons/Ionicons';
 import { router } from 'expo-router';
 import { type ReactNode, useEffect, useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { ActivityIndicator, Alert, Pressable, ScrollView, Text, TouchableOpacity, View } from 'react-native';
+import { ActivityIndicator, Alert, ScrollView, Text, View } from 'react-native';
+import { Pressable } from '@/components/ui/Pressable';
 
 import { MeasurementToggle } from '@/components/MeasurementToggle';
 import { AddToCollectionModal } from '@/components/AddToCollectionModal';
@@ -733,24 +734,26 @@ export function RecipeView({
                   {title}
                 </Text>
                 {onEdit != null ? (
-                  <TouchableOpacity
+                  <Pressable
+                    trackId="recipe.title_edit"
                     onPress={onEdit}
                     hitSlop={12}
-                    activeOpacity={0.6}
+                    style={({ pressed }) => ({ opacity: pressed ? 0.6 : 1 })}
                     className="mt-0.5 px-1"
                     accessibilityRole="button"
                     accessibilityLabel={t('recipeEditor.titleEdit')}
                   >
                     <Ionicons name="create-outline" size={24} color={colors.textSecondary} />
-                  </TouchableOpacity>
+                  </Pressable>
                 ) : null}
                 {sourceShareUrl ? (
-                  <TouchableOpacity
+                  <Pressable
+                    trackId="recipe.share_source"
                     onPress={() => {
                       void handleShare();
                     }}
                     hitSlop={12}
-                    activeOpacity={0.6}
+                    style={({ pressed }) => ({ opacity: pressed ? 0.6 : 1 })}
                     className="mt-0.5 px-1"
                     accessibilityRole="button"
                     accessibilityLabel={t('recipe.share')}
@@ -760,13 +763,14 @@ export function RecipeView({
                       size={24}
                       color={colors.textSecondary}
                     />
-                  </TouchableOpacity>
+                  </Pressable>
                 ) : null}
                 {onToggleFavorite != null && (
-                  <TouchableOpacity
+                  <Pressable
+                    trackId="recipe.favorite"
                     onPress={onToggleFavorite}
                     hitSlop={12}
-                    activeOpacity={0.6}
+                    style={({ pressed }) => ({ opacity: pressed ? 0.6 : 1 })}
                     className="mt-0.5 px-1"
                     accessibilityRole="button"
                     accessibilityState={{ selected: isFavorite === true }}
@@ -779,7 +783,7 @@ export function RecipeView({
                       size={26}
                       color={isFavorite ? colors.primary : colors.textSecondary}
                     />
-                  </TouchableOpacity>
+                  </Pressable>
                 )}
               </View>
               <View className="mt-3 flex-row flex-wrap gap-2">
@@ -846,6 +850,7 @@ export function RecipeView({
                 <View className="mt-2.5 flex-row flex-wrap items-center gap-1.5">
                   {tags.map((tag) => (
                     <Pressable
+                      trackId="recipe.tag.open"
                       key={tag}
                       className="rounded-full border px-2.5 py-1 active:opacity-70"
                       style={{ borderColor: colors.border }}
@@ -875,6 +880,7 @@ export function RecipeView({
                   ) : null}
                   {recipeId ? (
                     <Pressable
+                      trackId="recipe.tags.edit"
                       className="rounded-full px-2.5 py-1 active:opacity-70"
                       style={{ backgroundColor: colors.primarySoft }}
                       onPress={() => setEditTagsOpen(true)}
@@ -895,6 +901,7 @@ export function RecipeView({
                 <View className="mt-2 flex-row flex-wrap gap-1.5">
                   {recipeCollections.map((collection) => (
                     <Pressable
+                      trackId="recipe.collection.open"
                       key={collection.id}
                       className="flex-row items-center gap-1 rounded-full px-2.5 py-1 active:opacity-70"
                       style={{ backgroundColor: colors.accentSoft }}
@@ -930,6 +937,7 @@ export function RecipeView({
                   ) : null}
                   <View className="mt-2 flex-row flex-wrap gap-2">
                     <Pressable
+                      trackId="recipe.cooked.toggle"
                       onPress={() => stampCooked(!lastCookedAt)}
                       className="min-h-[40px] items-center justify-center rounded-full px-3.5 active:opacity-80"
                       style={{ backgroundColor: colors.primarySoft }}
@@ -944,6 +952,7 @@ export function RecipeView({
                     </Pressable>
                     {lastCookedAt ? (
                       <Pressable
+                        trackId="recipe.cooked.note"
                         onPress={() => setCookedNoteOpen(true)}
                         className="min-h-[40px] items-center justify-center rounded-full px-3.5 active:opacity-80"
                         style={{ backgroundColor: colors.frosted }}
@@ -1004,6 +1013,7 @@ export function RecipeView({
               })}
             </Text>
             <Pressable
+              trackId="recipe.show_original_language"
               onPress={handleShowOriginalLanguage}
               className="mt-2 active:opacity-70"
               accessibilityRole="button"
@@ -1033,6 +1043,7 @@ export function RecipeView({
               </Text>
             )}
             <Pressable
+              trackId="recipe.remix.revert"
               onPress={handleRevertVariant}
               className="mt-2 active:opacity-70"
               accessibilityRole="button"
@@ -1084,6 +1095,7 @@ export function RecipeView({
             </Text>
             {allowAdaptations ? (
               <Pressable
+                trackId="recipe.repair"
                 onPress={() => void handleRepair()}
                 disabled={repairing}
                 className="mt-3 min-h-[44px] items-center justify-center rounded-3xl px-4 active:opacity-80"
@@ -1155,7 +1167,8 @@ export function RecipeView({
         {scaledIngredients.length > 0 && (
           <>
             <View className="mb-4">
-              <MeasurementToggle hint />
+              <MeasurementToggle
+                trackId="recipe.measurement" hint />
               {isUpdating('ingredient_amounts') ? (
                 <UpdatingText
                   label={updatingLabel}
@@ -1169,6 +1182,7 @@ export function RecipeView({
               count={scaledIngredients.length}
               headerRight={
                 <Pressable
+                  trackId="recipe.add_to_shopping_list"
                   className="flex-row items-center gap-1 rounded-full px-3 py-1.5 active:opacity-80"
                   style={{ backgroundColor: colors.primarySoft }}
                   onPress={() => setShoppingListModalOpen(true)}
@@ -1236,6 +1250,7 @@ export function RecipeView({
                     />
                     {allowAdaptations ? (
                       <Pressable
+                        trackId="recipe.ingredient.swap"
                         className="rounded-full px-3 py-1.5"
                         style={{ backgroundColor: colors.accentSoft }}
                         onPress={() => setSwapIndex(index)}
@@ -1268,6 +1283,7 @@ export function RecipeView({
         {allowAdaptations ? (
         <View className="mb-5 mt-1 flex-row gap-2">
           <Pressable
+            trackId="recipe.translate"
             onPress={() => setTranslateModalOpen(true)}
             className="min-h-[44px] min-w-0 flex-1 flex-row items-center justify-center gap-1.5 rounded-2xl border px-2 active:opacity-90"
             style={{ borderColor: colors.border, backgroundColor: colors.surface }}
@@ -1285,6 +1301,7 @@ export function RecipeView({
             </Text>
           </Pressable>
           <Pressable
+            trackId="recipe.remix.open"
             onPress={() => setVariantModalOpen(true)}
             className="min-h-[44px] min-w-0 flex-1 flex-row items-center justify-center gap-1.5 rounded-2xl px-2 active:opacity-90"
             style={{ backgroundColor: colors.accentSoft }}
@@ -1303,6 +1320,7 @@ export function RecipeView({
           </Pressable>
           {recipeId ? (
             <Pressable
+              trackId="recipe.add_to_collection"
               onPress={() => setCollectionModalOpen(true)}
               className="min-h-[44px] w-11 items-center justify-center rounded-2xl border active:opacity-90"
               style={{ borderColor: colors.border, backgroundColor: colors.surface }}
@@ -1326,6 +1344,7 @@ export function RecipeView({
               <View className="flex-row items-center gap-2">
                 {baseInstructions.length > 0 ? (
                   <Pressable
+                    trackId="recipe.cook_mode.open"
                     className="flex-row items-center gap-1 rounded-full px-3 py-1.5 active:opacity-80"
                     style={{ backgroundColor: colors.primarySoft }}
                     onPress={() => setCookModeOpen(true)}
@@ -1384,6 +1403,7 @@ export function RecipeView({
                 <View className="min-w-0 flex-1">
                   {step.timestamp_seconds != null ? (
                     <Pressable
+                      trackId="recipe.step.jump_to_video"
                       onPress={() => void handleStepTimestamp(step.timestamp_seconds!)}
                       className="mb-1.5 flex-row items-center gap-1 self-start rounded-full px-2.5 py-1 active:opacity-80"
                       style={{ backgroundColor: colors.accentSoft }}
@@ -1737,6 +1757,7 @@ function StepperButton({
       disabled={disabled}
       className="h-11 w-11 items-center justify-center rounded-full active:opacity-80"
       style={{ backgroundColor: colors.primary, opacity: disabled ? 0.45 : 1 }}
+      trackId={icon === 'add' ? 'recipe.servings.increase' : 'recipe.servings.decrease'}
       onPress={onPress}
     >
       <Ionicons name={icon} size={18} color={colors.onPrimary} />

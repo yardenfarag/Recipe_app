@@ -221,6 +221,7 @@ export default {
     "adminInsights": "Actividad",
     "adminPeople": "Cuentas",
     "adminUsage": "Costos y soporte",
+    "adminActivity": "Registro de actividad",
     "rtlReloadTitle": "¿Recargar para acomodar la pantalla?",
     "rtlReloadBody": "El hebreo y el árabe se leen de derecha a izquierda. Recarga ahora para que menús y títulos queden del lado correcto.",
     "rtlReloadConfirm": "Recargar",
@@ -1006,6 +1007,7 @@ export default {
     "insights": "Actividad",
     "people": "Cuentas",
     "usage": "Uso y soporte",
+    "activity": "Actividad",
     "cookbook": "Libro de recetas PDF"
   },
   "hub": {

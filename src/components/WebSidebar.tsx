@@ -1,7 +1,8 @@
 import Ionicons from '@expo/vector-icons/Ionicons';
 import { type Href, router, usePathname } from 'expo-router';
 import { useTranslation } from 'react-i18next';
-import { Pressable, Text, View } from 'react-native';
+import { Text, View } from 'react-native';
+import { Pressable } from '@/components/ui/Pressable';
 
 import { CookieMark } from '@/components/CookieMark';
 import { WebSidebarWidth } from '@/constants/theme';
@@ -92,6 +93,7 @@ export function WebSidebar() {
           return (
             <Pressable
               key={item.labelKey}
+              trackId={`nav.sidebar.${item.labelKey.replace('tabs.', '')}`}
               accessibilityRole="button"
               accessibilityState={{ selected: focused }}
               onPress={() => {

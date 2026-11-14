@@ -19,7 +19,8 @@ export default function AppearanceSettingsScreen() {
       >
         {t('settings.lightDark')}
       </Text>
-      <ThemeToggle />
+      <ThemeToggle
+        trackId="settings.theme" />
       <Text
         className="mb-4 mt-6 text-sm font-semibold"
         style={{ color: colors.text }}

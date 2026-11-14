@@ -1,7 +1,8 @@
 import Ionicons from '@expo/vector-icons/Ionicons';
 import { router } from 'expo-router';
 import { useRef, useState } from 'react';
-import { ActivityIndicator, Alert, Platform, Pressable, ScrollView, Text, View } from 'react-native';
+import { ActivityIndicator, Alert, Platform, ScrollView, Text, View } from 'react-native';
+import { Pressable } from '@/components/ui/Pressable';
 import { useTranslation } from 'react-i18next';
 
 import { SheetModal } from '@/components/SheetModal';
@@ -120,7 +121,8 @@ export function FridgeMatchModal({ visible, recipes, onClose }: FridgeMatchModal
   const bodyPad = { paddingHorizontal: 20, paddingTop: 8, paddingBottom: 24 } as const;
 
   return (
-    <SheetModal visible={visible} onClose={handleClose} title={t('library.fridgeMatchTitle')}>
+    <SheetModal
+      trackId="fridge_match.sheet" visible={visible} onClose={handleClose} title={t('library.fridgeMatchTitle')}>
       <ScrollView
         keyboardShouldPersistTaps="handled"
         style={{ width: '100%', alignSelf: 'stretch' }}
@@ -140,6 +142,7 @@ export function FridgeMatchModal({ visible, recipes, onClose }: FridgeMatchModal
               {t('library.fridgeMatchEmptyLibrary')}
             </Text>
             <Pressable
+              trackId="fridge_match.add_recipes"
               onPress={() => {
                 handleClose();
                 router.push('/add');
@@ -173,6 +176,7 @@ export function FridgeMatchModal({ visible, recipes, onClose }: FridgeMatchModal
 
         {!libraryEmpty ? (
           <Pressable
+            trackId="fridge_match.snap"
             onPress={handlePick}
             disabled={loading}
             className="mt-3 min-h-[44px] flex-row items-center justify-center rounded-3xl py-3.5 active:opacity-90"
@@ -225,6 +229,7 @@ export function FridgeMatchModal({ visible, recipes, onClose }: FridgeMatchModal
               return (
                 <Pressable
                   key={match.id}
+                  trackId="fridge_match.open_recipe"
                   onPress={() => openRecipe(match.id)}
                   accessibilityRole="button"
                   className="rounded-2xl border px-4 py-3 active:opacity-80"

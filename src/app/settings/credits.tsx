@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Platform, Pressable, Text } from 'react-native';
+import { Platform, Text } from 'react-native';
+import { Pressable } from '@/components/ui/Pressable';
 
 import { SettingsDetailScreen } from '@/components/SettingsDetailScreen';
 import { TokenPurchaseSheet } from '@/components/TokenPurchaseSheet';
@@ -48,6 +49,7 @@ export default function CreditSettingsScreen() {
         </Text>
         {purchasesHere ? (
           <Pressable
+            trackId="credits.buy"
             className="mt-4 self-start rounded-[18px] px-4 py-2.5 active:opacity-80"
             style={{ backgroundColor: colors.primary }}
             onPress={() => setCreditsOpen(true)}
@@ -63,6 +65,7 @@ export default function CreditSettingsScreen() {
               {t('credits.webOnlyBody')}
             </Text>
             <Pressable
+              trackId="credits.open_app_store"
               className="mt-4 self-start rounded-[18px] px-4 py-2.5 active:opacity-80"
               style={{ backgroundColor: colors.primary }}
               onPress={() => void openAppStore()}

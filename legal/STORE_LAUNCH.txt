@@ -32,6 +32,12 @@ Enable Pages (one-time, required before the workflow succeeds):
 4. Privacy policy URL: (see above)
 5. Data safety: account email, user content (recipes/avatar), app activity;
    encrypted in transit; deletion in-app (Settings → Delete account) + web URL.
+   2026-11-14 (ADR 020, interaction logging) — App content → Data safety:
+     App activity → App interactions: Collected. Not shared. Not ephemeral.
+       Required (no opt-out). Purposes: Analytics, App functionality.
+     Device or other IDs: Collected (random install id for guests). Not shared.
+       Purposes: App functionality, Analytics, Fraud prevention.
+     Data deletion: users can request deletion (in-app + web URL above).
 6. Content rating questionnaire; no ads; target 13+.
 7. Upload screenshots from production/preview build + feature graphic + icon.
 8. Internal testing track: upload AAB from
@@ -48,6 +54,11 @@ Production Android build finished (AAB):
 --- App Store Connect (after Play path works) ---
 1. Paid Apple Developer membership; app record bundle id com.pinch.myapp
 2. Privacy nutrition labels matching Data safety; privacy + support URLs
+   2026-11-14 (ADR 020) — App Privacy → add Usage Data → Product Interaction:
+     Linked to the user: Yes. Used for tracking: No.
+     Purposes: Analytics, App Functionality.
+   Identifiers → User ID / Device ID: linked, not tracking, App Functionality +
+     Analytics (account id and the random install id ride along with events).
 3. Export compliance: ITSAppUsesNonExemptEncryption = false (app.json)
 4. Screenshots for required devices
 5. iOS production builds: Actions → EAS Build iOS (production) → Run workflow, or

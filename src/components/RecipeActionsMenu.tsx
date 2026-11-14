@@ -1,6 +1,7 @@
 import Ionicons from '@expo/vector-icons/Ionicons';
 import { useTranslation } from 'react-i18next';
-import { Modal, Platform, Pressable, Text, View } from 'react-native';
+import { Modal, Platform, Text, View } from 'react-native';
+import { Pressable } from '@/components/ui/Pressable';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { useRtl } from '@/hooks/useRtl';
@@ -35,7 +36,7 @@ export function RecipeActionsMenu({
 
   return (
     <Modal visible={visible} transparent animationType="fade" onRequestClose={onClose}>
-      <Pressable
+      <Pressable trackId="recipe_actions.backdrop"
         className={isWeb ? 'flex-1 items-center justify-center px-4' : 'flex-1 justify-end'}
         style={{
           backgroundColor: 'rgba(20, 16, 28, 0.48)',
@@ -44,7 +45,7 @@ export function RecipeActionsMenu({
         onPress={onClose}
         accessible={false}
       >
-        <Pressable
+        <Pressable trackId="recipe_actions.panel"
           onPress={(e) => e.stopPropagation?.()}
           accessible={false}
           accessibilityViewIsModal
@@ -78,6 +79,7 @@ export function RecipeActionsMenu({
             color={colors.text}
             iconColor={colors.primary}
             onPress={onAddToCollection}
+            trackId="recipe_actions.add_to_collection"
           />
           {onEdit ? (
             <MenuRow
@@ -86,6 +88,7 @@ export function RecipeActionsMenu({
               color={colors.text}
               iconColor={colors.primary}
               onPress={onEdit}
+              trackId="recipe_actions.edit"
             />
           ) : null}
           <MenuRow
@@ -94,6 +97,7 @@ export function RecipeActionsMenu({
             color={colors.text}
             iconColor={colors.primary}
             onPress={onRename}
+            trackId="recipe_actions.rename"
           />
           <MenuRow
             icon="trash-outline"
@@ -101,9 +105,10 @@ export function RecipeActionsMenu({
             color={colors.danger}
             iconColor={colors.danger}
             onPress={onDelete}
+            trackId="recipe_actions.delete"
           />
 
-          <Pressable
+          <Pressable trackId="recipe_actions.cancel"
             onPress={onClose}
             className="mt-1 min-h-[48px] items-center justify-center rounded-3xl active:opacity-80"
             style={{ backgroundColor: colors.primarySoft }}
@@ -126,15 +131,17 @@ function MenuRow({
   color,
   iconColor,
   onPress,
+  trackId,
 }: {
   icon: keyof typeof Ionicons.glyphMap;
   label: string;
   color: string;
   iconColor: string;
   onPress: () => void;
+  trackId: string;
 }) {
   return (
-    <Pressable
+    <Pressable trackId={trackId}
       onPress={onPress}
       className="min-h-[52px] flex-row items-center gap-3 rounded-3xl px-3 active:opacity-80"
       accessibilityRole="button"

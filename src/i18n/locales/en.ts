@@ -221,6 +221,7 @@ export default {
     "adminInsights": "Insights",
     "adminPeople": "People",
     "adminUsage": "Cost & support",
+    "adminActivity": "Activity log",
     "rtlReloadTitle": "Reload for layout?",
     "rtlReloadBody": "Hebrew and Arabic need a right-to-left layout. Reload now so navigation and headers flip correctly.",
     "rtlReloadConfirm": "Reload",
@@ -1006,6 +1007,7 @@ export default {
     "insights": "Insights",
     "people": "People",
     "usage": "Usage & support",
+    "activity": "Activity",
     "cookbook": "PDF cookbook"
   },
   "hub": {

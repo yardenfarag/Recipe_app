@@ -1,6 +1,7 @@
 import { useFocusEffect } from '@react-navigation/native';
 import { useCallback, useState, type ReactNode } from 'react';
-import { ActivityIndicator, Pressable, ScrollView, Text, View } from 'react-native';
+import { ActivityIndicator, ScrollView, Text, View } from 'react-native';
+import { Pressable } from '@/components/ui/Pressable';
 
 import { AdminOnly } from '@/components/admin/AdminOnly';
 import { Screen } from '@/components/Screen';
@@ -100,6 +101,7 @@ function InsightsBody() {
             const selected = days === range;
             return (
               <Pressable
+                trackId={`admin.insights.range.${days}`}
                 key={days}
                 onPress={() => setRange(days)}
                 accessibilityRole="button"
@@ -117,6 +119,7 @@ function InsightsBody() {
             );
           })}
           <Pressable
+            trackId="admin.insights.refresh"
             onPress={() => void refresh()}
             accessibilityRole="button"
             className="rounded-full px-3 py-1.5"

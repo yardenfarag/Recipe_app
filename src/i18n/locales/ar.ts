@@ -221,6 +221,7 @@ export default {
     "adminInsights": "النشاط",
     "adminPeople": "الحسابات",
     "adminUsage": "التكلفة والدعم",
+    "adminActivity": "سجل النشاط",
     "rtlReloadTitle": "إعادة التحميل لتعديل الاتجاه؟",
     "rtlReloadBody": "العربية والعبرية تُقرآن من اليمين إلى اليسار. أعد التحميل الآن حتى تظهر القوائم والعناوين في مكانها الصحيح.",
     "rtlReloadConfirm": "إعادة التحميل",
@@ -1006,6 +1007,7 @@ export default {
     "insights": "النشاط",
     "people": "الحسابات",
     "usage": "الاستخدام والدعم",
+    "activity": "النشاط",
     "cookbook": "كتاب وصفات PDF"
   },
   "hub": {

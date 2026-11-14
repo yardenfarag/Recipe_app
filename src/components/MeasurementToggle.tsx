@@ -1,6 +1,7 @@
 import Ionicons from '@expo/vector-icons/Ionicons';
 import { useTranslation } from 'react-i18next';
-import { Pressable, Text, View } from 'react-native';
+import { Text, View } from 'react-native';
+import { Pressable } from '@/components/ui/Pressable';
 
 import { useMeasurementPreference } from '@/hooks/useMeasurementPreference';
 import { useThemePreference } from '@/hooks/useThemePreference';
@@ -15,10 +16,12 @@ const MODES: { id: MeasurementSystem; icon: keyof typeof Ionicons.glyphMap }[] =
 type MeasurementToggleProps = {
   /** One-line hint under the control (recipe screen). */
   hint?: boolean;
+  /** Tap-log id prefix; each mode logs as `<trackId>.<mode>`. */
+  trackId?: string;
 };
 
 /** Cute pill toggle — cups & spoons vs grams & milliliters. */
-export function MeasurementToggle({ hint = false }: MeasurementToggleProps) {
+export function MeasurementToggle({ hint = false, trackId = 'measurement' }: MeasurementToggleProps) {
   const { t } = useTranslation();
   const { system, setSystem } = useMeasurementPreference();
   const { colors } = useThemePreference();
@@ -38,6 +41,7 @@ export function MeasurementToggle({ hint = false }: MeasurementToggleProps) {
           const active = system === mode.id;
           return (
             <Pressable
+              trackId={`${trackId}.${mode.id}`}
               key={mode.id}
               onPress={() => setSystem(mode.id)}
               accessibilityRole="button"

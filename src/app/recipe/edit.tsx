@@ -13,11 +13,11 @@ import {
   KeyboardAvoidingView,
   type LayoutChangeEvent,
   Platform,
-  Pressable,
   ScrollView,
   Text,
   View,
 } from 'react-native';
+import { Pressable } from '@/components/ui/Pressable';
 
 import { ConfirmDialog } from '@/components/ConfirmDialog';
 import { AppliancesField } from '@/components/recipeEditor/AppliancesField';
@@ -42,6 +42,7 @@ import { useThemePreference } from '@/hooks/useThemePreference';
 import { announce } from '@/lib/a11y';
 import { COST_I18N_KEYS } from '@/lib/formatCostEstimate';
 import { goBackOrHome } from '@/lib/goBackOrHome';
+import { logTap } from '@/lib/interactionLog';
 import { clearRecipeDraft, getRecipeDraft } from '@/lib/recipeDraft';
 import * as editor from '@/lib/recipeEditor';
 import type { EditorErrors, ErrorTarget, RecipeEditorState } from '@/lib/recipeEditor';
@@ -167,6 +168,7 @@ export default function RecipeEditScreen() {
           {t('auth.signupSubtitle')}
         </Text>
         <Pressable
+          trackId="recipe_editor.sign_up"
           onPress={() => router.push(SIGN_UP)}
           accessibilityRole="button"
           className="min-h-[48px] items-center justify-center rounded-[22px] px-6 active:opacity-80"
@@ -188,6 +190,7 @@ export default function RecipeEditScreen() {
           {loadError ?? t('recipe.loadFailed')}
         </Text>
         <Pressable
+          trackId="recipe_editor.load_retry"
           onPress={() => void load()}
           accessibilityRole="button"
           className="min-h-[48px] items-center justify-center rounded-[22px] px-6 active:opacity-80"
@@ -323,6 +326,7 @@ function RecipeEditor({ initial, title }: { initial: RecipeEditorState; title: s
   function lockedProps(field: LockedField) {
     return {
       locked: locked.has(field),
+      resetTrackId: `recipe_editor.${field}.reset`,
       onReset: () => change((s) => editor.resetField(s, field)),
     };
   }
@@ -353,6 +357,7 @@ function RecipeEditor({ initial, title }: { initial: RecipeEditorState; title: s
           headerTitleAlign: 'center',
           headerLeft: () => (
             <Pressable
+              trackId="recipe_editor.cancel"
               onPress={cancel}
               hitSlop={12}
               accessibilityRole="button"
@@ -367,6 +372,7 @@ function RecipeEditor({ initial, title }: { initial: RecipeEditorState; title: s
           ),
           headerRight: () => (
             <Pressable
+              trackId="recipe_editor.save"
               onPress={() => void save()}
               disabled={!canSave}
               hitSlop={12}
@@ -468,7 +474,10 @@ function RecipeEditor({ initial, title }: { initial: RecipeEditorState; title: s
             <ReorderableList
               items={state.ingredients}
               onDragStateChange={setDragging}
-              onMove={(from, to) => change((s) => editor.moveIngredient(s, from, to))}
+              onMove={(from, to) => {
+                logTap('recipe_editor.ingredient.reorder');
+                change((s) => editor.moveIngredient(s, from, to));
+              }}
               renderItem={(row, _index, handle) => (
                 <IngredientRowEditor
                   row={row}
@@ -484,6 +493,7 @@ function RecipeEditor({ initial, title }: { initial: RecipeEditorState; title: s
             />
             <FieldError message={format(errors.fields.ingredients)} />
             <AddRowButton
+              trackId="recipe_editor.ingredient.add"
               label={t('recipeEditor.add.ingredient')}
               onPress={() => change((s) => editor.addIngredient(s), { field: 'ingredients' })}
             />
@@ -493,7 +503,10 @@ function RecipeEditor({ initial, title }: { initial: RecipeEditorState; title: s
             <ReorderableList
               items={state.steps}
               onDragStateChange={setDragging}
-              onMove={(from, to) => change((s) => editor.moveStep(s, from, to))}
+              onMove={(from, to) => {
+                logTap('recipe_editor.step.reorder');
+                change((s) => editor.moveStep(s, from, to));
+              }}
               renderItem={(row, index, handle) => (
                 <StepRowEditor
                   row={row}
@@ -507,6 +520,7 @@ function RecipeEditor({ initial, title }: { initial: RecipeEditorState; title: s
             />
             <FieldError message={format(errors.fields.steps)} />
             <AddRowButton
+              trackId="recipe_editor.step.add"
               label={t('recipeEditor.add.step')}
               onPress={() => change((s) => editor.addStep(s), { field: 'steps' })}
             />
@@ -543,6 +557,7 @@ function RecipeEditor({ initial, title }: { initial: RecipeEditorState; title: s
             </EditorField>
             <EditorField label={t('recipeEditor.fields.effort')} {...lockedProps('effort_level')}>
               <ChoiceChips
+                trackId="recipe_editor.effort"
                 label={t('recipeEditor.fields.effort')}
                 options={effortOptions}
                 value={state.effort}
@@ -551,6 +566,7 @@ function RecipeEditor({ initial, title }: { initial: RecipeEditorState; title: s
             </EditorField>
             <EditorField label={t('recipeEditor.fields.cost')} {...lockedProps('cost_estimate')}>
               <ChoiceChips
+                trackId="recipe_editor.cost"
                 label={t('recipeEditor.fields.cost')}
                 options={costOptions}
                 value={state.cost}
@@ -589,6 +605,7 @@ function RecipeEditor({ initial, title }: { initial: RecipeEditorState; title: s
       </KeyboardAvoidingView>
 
       <ConfirmDialog
+        trackId="recipe_editor.discard_dialog"
         visible={pendingLeave !== null}
         title={t('recipeEditor.discard.title')}
         message={t('recipeEditor.discard.message')}

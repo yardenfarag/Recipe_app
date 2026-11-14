@@ -2,7 +2,8 @@ import Ionicons from '@expo/vector-icons/Ionicons';
 import { router } from 'expo-router';
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { ActivityIndicator, Platform, Pressable, ScrollView, Text, View } from 'react-native';
+import { ActivityIndicator, Platform, ScrollView, Text, View } from 'react-native';
+import { Pressable } from '@/components/ui/Pressable';
 
 import { SheetModal } from '@/components/SheetModal';
 import { TextInput } from '@/components/text-input';
@@ -139,6 +140,7 @@ export function RecipeVariantModal({
 
   return (
     <SheetModal
+      trackId="recipe.remix.sheet"
       visible={visible}
       onClose={handleClose}
       title={t('recipe.remixTitle')}
@@ -182,6 +184,7 @@ export function RecipeVariantModal({
               maxLength={400}
             />
             <Pressable
+              trackId="recipe.remix.custom"
               onPress={() => void handleCustomRemix()}
               disabled={!instruction.trim()}
               accessibilityRole="button"
@@ -209,6 +212,7 @@ export function RecipeVariantModal({
                 </Text>
                 {error !== 'recipe_limit' ? (
                   <Pressable
+                    trackId="recipe.remix.try_another"
                     onPress={() => setError(null)}
                     className="mt-3 min-h-[32px] justify-center self-start active:opacity-70"
                     hitSlop={6}
@@ -225,6 +229,7 @@ export function RecipeVariantModal({
             {RECIPE_VARIANTS.filter((option) => option.key !== 'custom').map((option) => (
               <Pressable
                 key={option.key}
+                trackId={`recipe.remix.${option.key}`}
                 onPress={() => handleSelectVariant(option.key)}
                 accessibilityRole="button"
                 className="mb-3 flex-row items-center gap-3.5 rounded-3xl border p-4 active:opacity-90"
@@ -281,6 +286,7 @@ export function RecipeVariantModal({
             <Pressable
               className="mb-3 items-center rounded-full py-4 active:opacity-80"
               style={{ backgroundColor: colors.primary }}
+              trackId="recipe.remix.apply"
               onPress={handleApply}
               accessibilityRole="button"
             >
@@ -290,6 +296,7 @@ export function RecipeVariantModal({
             </Pressable>
 
             <Pressable
+              trackId="recipe.remix.pick_different"
               onPress={() => setPreview(null)}
               accessibilityRole="button"
               className="min-h-[44px] items-center justify-center py-2 active:opacity-70"

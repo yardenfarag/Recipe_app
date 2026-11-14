@@ -1,7 +1,8 @@
 import Ionicons from '@expo/vector-icons/Ionicons';
 import { Fragment, memo, type ReactNode } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Pressable, Text, View } from 'react-native';
+import { Text, View } from 'react-native';
+import { Pressable } from '@/components/ui/Pressable';
 import Animated, { FadeInDown } from 'react-native-reanimated';
 
 import { ApplianceIcon } from '@/components/ApplianceIcon';
@@ -35,6 +36,11 @@ interface RecipeListRowProps {
   animateEnter?: boolean;
   /** Secondary line under the title, such as a hub source and save count. */
   detail?: string;
+  /**
+   * Prefix for the admin Activity log ids: `<trackId>.open`, `.favorite`,
+   * `.more`. A fixed string, like 'library.recipe'.
+   */
+  trackId?: string;
 }
 
 /** Frosted mist card in the Library list. */
@@ -46,6 +52,7 @@ export const RecipeListRow = memo(function RecipeListRow({
   onToggleFavorite,
   index = 0,
   variant = 'row',
+  trackId = 'recipe_row',
   animateEnter = true,
   detail,
 }: RecipeListRowProps) {
@@ -170,7 +177,7 @@ export const RecipeListRow = memo(function RecipeListRow({
           ...(card ? { flex: 1 } : null),
         }}
       >
-        <Pressable
+        <Pressable trackId={`${trackId}.open`}
           onPress={onPress}
           onLongPress={onLongPress}
           accessibilityRole="button"
@@ -283,7 +290,7 @@ export const RecipeListRow = memo(function RecipeListRow({
             style={card ? { end: 8 } : undefined}
           >
             {onToggleFavorite != null && (
-              <Pressable
+              <Pressable trackId={`${trackId}.favorite`}
                 onPress={(e) => {
                   e.stopPropagation?.();
                   onToggleFavorite();
@@ -307,7 +314,7 @@ export const RecipeListRow = memo(function RecipeListRow({
             )}
 
             {onMore != null && (
-              <Pressable
+              <Pressable trackId={`${trackId}.more`}
                 onPress={(e) => {
                   e.stopPropagation?.();
                   onMore();

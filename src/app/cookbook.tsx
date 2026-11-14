@@ -7,11 +7,11 @@ import {
   ActivityIndicator,
   KeyboardAvoidingView,
   Platform,
-  Pressable,
   ScrollView,
   Text,
   View,
 } from 'react-native';
+import { Pressable } from '@/components/ui/Pressable';
 
 import { ConfirmDialog } from '@/components/ConfirmDialog';
 import { RecipeImage } from '@/components/RecipeImage';
@@ -227,6 +227,7 @@ export default function CookbookScreen() {
           {t('cookbook.emptyLibrary')}
         </Text>
         <Pressable
+          trackId="cookbook.empty.add_recipe"
           onPress={() => router.push('/add')}
           accessibilityRole="button"
           className="rounded-3xl px-6 py-3.5 active:opacity-80"
@@ -353,6 +354,7 @@ export default function CookbookScreen() {
                     </View>
                     <View className="flex-row">
                       <Pressable
+                        trackId="cookbook.recipe.move_up"
                         onPress={() => moveSelected(index, -1)}
                         disabled={index === 0}
                         hitSlop={8}
@@ -364,6 +366,7 @@ export default function CookbookScreen() {
                         <Ionicons name="chevron-up" size={18} color={colors.primary} />
                       </Pressable>
                       <Pressable
+                        trackId="cookbook.recipe.move_down"
                         onPress={() => moveSelected(index, 1)}
                         disabled={index === selectedRecipes.length - 1}
                         hitSlop={8}
@@ -406,6 +409,7 @@ export default function CookbookScreen() {
           <View className="flex-row gap-3 py-4">
             {step > 0 ? (
               <Pressable
+                trackId="cookbook.back"
                 onPress={() => {
                   setError(null);
                   setStep((prev) => prev - 1);
@@ -422,6 +426,7 @@ export default function CookbookScreen() {
               </Pressable>
             ) : null}
             <Pressable
+              trackId={step === STEPS - 1 ? 'cookbook.generate' : 'cookbook.next'}
               onPress={() => (step === STEPS - 1 ? void handleGenerate() : goNext())}
               disabled={generating}
               accessibilityRole="button"
@@ -443,6 +448,7 @@ export default function CookbookScreen() {
       </KeyboardAvoidingView>
 
       <ConfirmDialog
+        trackId="cookbook.success_dialog"
         visible={successOpen}
         title={t('cookbook.successTitle')}
         message={
@@ -454,6 +460,7 @@ export default function CookbookScreen() {
         onCancel={() => setSuccessOpen(false)}
       />
       <ConfirmDialog
+        trackId="cookbook.error_dialog"
         visible={errorOpen}
         title={t('cookbook.errorTitle')}
         message={error ?? t('cookbook.generateFailed')}

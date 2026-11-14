@@ -6,15 +6,16 @@ import {
   Modal,
   PanResponder,
   Platform,
-  Pressable,
   Text,
   View,
 } from 'react-native';
+import { Pressable } from '@/components/ui/Pressable';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { useRtl } from '@/hooks/useRtl';
 import { useThemePreference } from '@/hooks/useThemePreference';
 import { announce } from '@/lib/a11y';
+import { logTap } from '@/lib/interactionLog';
 import { formatCountdown, parseStepTimers } from '@/lib/stepTimers';
 import type { Instruction } from '@/types/recipe';
 
@@ -125,8 +126,13 @@ export function CookMode({
         onPanResponderRelease: (_, gesture) => {
           const forward = rtl ? gesture.dx > 48 : gesture.dx < -48;
           const back = rtl ? gesture.dx < -48 : gesture.dx > 48;
-          if (forward) goNext();
-          else if (back) goBack();
+          if (forward) {
+            logTap('cook_mode.swipe', { direction: 'next' });
+            goNext();
+          } else if (back) {
+            logTap('cook_mode.swipe', { direction: 'back' });
+            goBack();
+          }
         },
       }),
     [goBack, goNext, rtl],
@@ -161,7 +167,7 @@ export function CookMode({
       >
         <View className="flex-1 px-5 pt-2 pb-4">
           <View className="flex-row items-center justify-between gap-3">
-            <Pressable
+            <Pressable trackId="cook_mode.close"
               onPress={onClose}
               hitSlop={12}
               className="h-12 w-12 items-center justify-center rounded-full active:opacity-80"
@@ -192,7 +198,7 @@ export function CookMode({
                 {t('recipe.cookModeDone')}
               </Text>
               {onCooked ? (
-                <Pressable
+                <Pressable trackId="cook_mode.mark_cooked"
                   onPress={onCooked}
                   className="mt-8 min-h-[56px] items-center justify-center rounded-3xl px-8 active:opacity-80"
                   style={{ backgroundColor: colors.primary }}
@@ -204,7 +210,7 @@ export function CookMode({
                   </Text>
                 </Pressable>
               ) : null}
-              <Pressable
+              <Pressable trackId="cook_mode.finished.close"
                 onPress={onClose}
                 className="mt-4 min-h-[44px] items-center justify-center px-4"
                 accessibilityRole="button"
@@ -225,7 +231,7 @@ export function CookMode({
               </Text>
 
               <View className="mt-4 min-h-0 flex-1" {...pan.panHandlers}>
-                <Pressable
+                <Pressable trackId="cook_mode.step_card.next"
                   onPress={goNext}
                   className="flex-1 justify-center"
                   accessibilityRole="button"
@@ -251,7 +257,7 @@ export function CookMode({
               {timers.length > 0 ? (
                 <View className="mb-4 flex-row flex-wrap gap-2">
                   {timers.map((timer) => (
-                    <Pressable
+                    <Pressable trackId="cook_mode.timer.start"
                       key={`${timer.seconds}-${timer.label}`}
                       onPress={() => {
                         setTimerDone(false);
@@ -290,7 +296,7 @@ export function CookMode({
               </Text>
 
               <View className="flex-row gap-3">
-                <Pressable
+                <Pressable trackId="cook_mode.prev_step"
                   onPress={goBack}
                   disabled={index === 0}
                   className="min-h-[64px] flex-1 items-center justify-center rounded-3xl px-3 py-2 active:opacity-80"
@@ -306,7 +312,7 @@ export function CookMode({
                     {t('recipe.cookModeBack')}
                   </Text>
                 </Pressable>
-                <Pressable
+                <Pressable trackId="cook_mode.next_step"
                   onPress={goNext}
                   className="min-h-[64px] flex-[1.4] items-center justify-center rounded-3xl px-3 py-2 active:opacity-80"
                   style={{ backgroundColor: colors.primary }}

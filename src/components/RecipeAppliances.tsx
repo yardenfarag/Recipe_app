@@ -1,7 +1,8 @@
 import Ionicons from '@expo/vector-icons/Ionicons';
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Pressable, Text, View } from 'react-native';
+import { Text, View } from 'react-native';
+import { Pressable } from '@/components/ui/Pressable';
 
 import { ApplianceIcon } from '@/components/ApplianceIcon';
 import { SheetModal } from '@/components/SheetModal';
@@ -90,6 +91,7 @@ export function RecipeAppliances({
     return (
       <Pressable
         key={item.key}
+        trackId="recipe.appliance.open"
         testID={`appliance-chip-${item.key}`}
         onPress={() => setOpen(item)}
         hitSlop={4}
@@ -181,6 +183,7 @@ export function RecipeAppliances({
       ) : null}
 
       <SheetModal
+        trackId="recipe.appliances.sheet"
         visible={open !== null}
         onClose={() => setOpen(null)}
         title={open ? t(applianceNameKey(open.key)) : ''}

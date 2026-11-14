@@ -1,5 +1,6 @@
 import { useState } from 'react';
-import { Pressable, ScrollView, Text, View } from 'react-native';
+import { ScrollView, Text, View } from 'react-native';
+import { Pressable } from '@/components/ui/Pressable';
 import { useTranslation } from 'react-i18next';
 
 import { ApplianceIcon } from '@/components/ApplianceIcon';
@@ -53,6 +54,7 @@ export function AppliancesField({
                 {name}
               </Text>
               <IconButton
+                trackId="recipe_editor.appliance.remove"
                 icon="trash-outline"
                 label={`${t('recipeEditor.deleteRow')} ${name}`}
                 onPress={() => onRemove(row.key)}
@@ -60,6 +62,7 @@ export function AppliancesField({
               />
             </View>
             <ChoiceChips
+              trackId="recipe_editor.appliance"
               label={name}
               value={row.required ? 'required' : 'optional'}
               onChange={(value) => {
@@ -79,6 +82,7 @@ export function AppliancesField({
                 return (
                   <Pressable
                     key={step.id}
+                    trackId="recipe_editor.appliance.step_toggle"
                     onPress={() => onToggleStep(row.key, step.id)}
                     accessibilityRole="checkbox"
                     accessibilityState={{ checked: linked }}
@@ -101,13 +105,15 @@ export function AppliancesField({
         );
       })}
 
-      <AddRowButton label={t('recipeEditor.add.appliance')} onPress={() => setPicking(true)} disabled={!canAdd} />
+      <AddRowButton trackId="recipe_editor.appliance.add" label={t('recipeEditor.add.appliance')} onPress={() => setPicking(true)} disabled={!canAdd} />
 
-      <SheetModal visible={picking} onClose={() => setPicking(false)} title={t('recipeEditor.appliance.pickTitle')}>
+      <SheetModal
+        trackId="recipe_editor.appliance.sheet" visible={picking} onClose={() => setPicking(false)} title={t('recipeEditor.appliance.pickTitle')}>
         <ScrollView className="flex-1 px-5" contentContainerClassName="pb-8 gap-1">
           {available.map((key) => (
             <Pressable
               key={key}
+              trackId="recipe_editor.appliance.pick"
               onPress={() => {
                 onAdd(key);
                 setPicking(false);

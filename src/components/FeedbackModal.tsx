@@ -3,10 +3,10 @@ import {
   ActivityIndicator,
   KeyboardAvoidingView,
   Platform,
-  Pressable,
   ScrollView,
   Text,
 } from 'react-native';
+import { Pressable } from '@/components/ui/Pressable';
 import { useTranslation } from 'react-i18next';
 
 import { SheetModal } from '@/components/SheetModal';
@@ -52,6 +52,7 @@ export function FeedbackModal({ visible, onClose }: FeedbackModalProps) {
 
   return (
     <SheetModal
+      trackId="feedback.sheet"
       visible={visible}
       onClose={onClose}
       title={t('feedback.title')}
@@ -94,6 +95,7 @@ export function FeedbackModal({ visible, onClose }: FeedbackModalProps) {
         </Text>
 
         <Pressable
+          trackId="feedback.submit"
           className="mb-3 items-center rounded-[22px] py-4"
           style={{ backgroundColor: colors.primary, opacity: canSubmit ? 1 : 0.6 }}
           onPress={() => void handleSubmit()}
@@ -107,7 +109,7 @@ export function FeedbackModal({ visible, onClose }: FeedbackModalProps) {
           )}
         </Pressable>
 
-        <Pressable onPress={onClose} className="items-center py-3 active:opacity-70">
+        <Pressable trackId="feedback.cancel" onPress={onClose} className="items-center py-3 active:opacity-70">
           <Text className="text-sm font-semibold" style={{ color: colors.textSecondary }}>
             {t('common.cancel')}
           </Text>

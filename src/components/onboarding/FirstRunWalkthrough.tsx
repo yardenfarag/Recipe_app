@@ -4,13 +4,13 @@ import {
   BackHandler,
   I18nManager,
   Platform,
-  Pressable,
   ScrollView,
   StyleSheet,
   Text,
   View,
   useWindowDimensions,
 } from 'react-native';
+import { Pressable } from '@/components/ui/Pressable';
 import Animated, { FadeIn, FadeOut, useReducedMotion } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useTranslation } from 'react-i18next';
@@ -134,6 +134,7 @@ export function FirstRunWalkthrough({
           <View />
         ) : (
           <Pressable
+            trackId="walkthrough.skip"
             onPress={onFinish}
             accessibilityRole="button"
             accessibilityLabel={t('walkthrough.skip')}
@@ -146,6 +147,7 @@ export function FirstRunWalkthrough({
           </Pressable>
         )}
         <Pressable
+          trackId="walkthrough.next"
           onPress={goNext}
           accessibilityRole="button"
           className="min-h-[44px] items-center justify-center rounded-2xl px-5 active:opacity-80"

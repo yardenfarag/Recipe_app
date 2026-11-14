@@ -1,5 +1,6 @@
 import { Image } from 'expo-image';
-import { Alert, Platform, Pressable, Text, View } from 'react-native';
+import { Alert, Platform, Text, View } from 'react-native';
+import { Pressable } from '@/components/ui/Pressable';
 import { useTranslation } from 'react-i18next';
 
 import { useThemePreference } from '@/hooks/useThemePreference';
@@ -60,7 +61,7 @@ export function PhotoField({ photo, imageUrl, onChange }: PhotoFieldProps) {
         />
       ) : null}
       <View className="flex-row flex-wrap gap-2">
-        <Pressable
+        <Pressable trackId={source ? 'recipe_editor.photo.replace' : 'recipe_editor.photo.add'}
           onPress={choose}
           accessibilityRole="button"
           className="min-h-[44px] flex-row items-center justify-center rounded-2xl px-4 active:opacity-80"
@@ -71,7 +72,7 @@ export function PhotoField({ photo, imageUrl, onChange }: PhotoFieldProps) {
           </Text>
         </Pressable>
         {source ? (
-          <Pressable
+          <Pressable trackId="recipe_editor.photo.remove"
             onPress={() => onChange(imageUrl ? { kind: 'remove' } : { kind: 'keep' })}
             accessibilityRole="button"
             className="min-h-[44px] flex-row items-center justify-center rounded-2xl border px-4 active:opacity-80"

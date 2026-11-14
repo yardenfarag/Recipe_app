@@ -1,6 +1,7 @@
 import Ionicons from '@expo/vector-icons/Ionicons';
 import { useState } from 'react';
-import { Pressable, ScrollView, Text, View } from 'react-native';
+import { ScrollView, Text, View } from 'react-native';
+import { Pressable } from '@/components/ui/Pressable';
 import { useTranslation } from 'react-i18next';
 
 import { LibraryLayoutToggle } from '@/components/LibraryLayoutToggle';
@@ -111,6 +112,7 @@ export function RecipeLibraryToolbar({
         />
         {search.length > 0 && (
           <Pressable
+            trackId="library.search.clear"
             onPress={() => onSearchChange('')}
             hitSlop={13}
             className="active:opacity-70"
@@ -125,6 +127,7 @@ export function RecipeLibraryToolbar({
       <View className="flex-row flex-wrap items-center gap-2">
         {onToggleFavorites ? (
           <Pressable
+            trackId="library.favorites.toggle"
             onPress={onToggleFavorites}
             className="min-h-[44px] flex-row items-center gap-1.5 rounded-2xl px-4 active:opacity-80"
             style={{
@@ -151,6 +154,7 @@ export function RecipeLibraryToolbar({
 
         {onToggleCookTonight ? (
           <Pressable
+            trackId="library.cook_tonight.toggle"
             onPress={onToggleCookTonight}
             className="min-h-[44px] flex-row items-center gap-1.5 rounded-2xl px-4 active:opacity-80"
             style={{
@@ -176,6 +180,7 @@ export function RecipeLibraryToolbar({
         ) : null}
 
         <Pressable
+          trackId="library.filter.open"
           onPress={() => setFiltersOpen((open) => !open)}
           className="min-h-[44px] flex-row items-center gap-1.5 rounded-2xl px-4 active:opacity-80"
           style={{
@@ -208,6 +213,7 @@ export function RecipeLibraryToolbar({
         >
           {onFridgeMatch ? (
             <Pressable
+              trackId="library.fridge_match"
               onPress={onFridgeMatch}
               className="h-11 w-11 items-center justify-center rounded-2xl active:opacity-80"
               style={{ backgroundColor: inactiveChipBg }}
@@ -256,6 +262,7 @@ export function RecipeLibraryToolbar({
               const active = sort === option.key;
               return (
                 <Pressable
+                  trackId={`library.sort.${option.key}`}
                   key={option.key}
                   onPress={() => onSortChange(option.key)}
                   accessibilityRole="button"
@@ -297,6 +304,7 @@ export function RecipeLibraryToolbar({
                 </Text>
                 {selectedTags.length > 0 && onClearTags ? (
                   <Pressable
+                    trackId="library.tags.clear"
                     onPress={onClearTags}
                     hitSlop={12}
                     className="active:opacity-70"
@@ -319,6 +327,7 @@ export function RecipeLibraryToolbar({
                   const active = selectedTags.includes(tag);
                   return (
                     <Pressable
+                      trackId="library.tag.toggle"
                       key={tag}
                       onPress={() => onToggleTag?.(tag)}
                       accessibilityRole="button"
@@ -357,6 +366,7 @@ export function RecipeLibraryToolbar({
               keyboardShouldPersistTaps="handled"
             >
               <Pressable
+                trackId="library.collection.all"
                 onPress={() => onSelectCollection?.(null)}
                 accessibilityRole="button"
                 accessibilityState={{ selected: selectedCollectionId == null }}
@@ -378,6 +388,7 @@ export function RecipeLibraryToolbar({
                 const active = selectedCollectionId === collection.id;
                 return (
                   <Pressable
+                    trackId="library.collection.select"
                     key={collection.id}
                     onPress={() => onSelectCollection?.(active ? null : collection.id)}
                     onLongPress={() => onLongPressCollection?.(collection.id)}
@@ -420,6 +431,7 @@ export function RecipeLibraryToolbar({
                     </Text>
                     {onManageCollection ? (
                       <Pressable
+                        trackId="library.collection.manage"
                         onPress={(e) => {
                           e.stopPropagation?.();
                           onManageCollection(collection.id);
@@ -442,6 +454,7 @@ export function RecipeLibraryToolbar({
               })}
               {onCreateCollection ? (
                 <Pressable
+                  trackId="library.collection.create"
                   onPress={onCreateCollection}
                   accessibilityRole="button"
                   accessibilityLabel={t('library.newCollection')}

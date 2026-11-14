@@ -8,11 +8,11 @@ import {
   ActivityIndicator,
   Alert,
   Platform,
-  Pressable,
   ScrollView,
   Text,
   View,
 } from 'react-native';
+import { Pressable } from '@/components/ui/Pressable';
 
 import { BrandHeader } from '@/components/BrandHeader';
 import { CookieMark } from '@/components/CookieMark';
@@ -118,6 +118,8 @@ type SettingsActionRowProps = {
   disabled?: boolean;
   busy?: boolean;
   description?: string;
+  /** Fixed id for the admin Activity log, like 'settings.appearance'. */
+  trackId: string;
 };
 
 function SettingsActionRow({
@@ -129,13 +131,14 @@ function SettingsActionRow({
   disabled = false,
   busy = false,
   description,
+  trackId,
 }: SettingsActionRowProps) {
   const { colors } = useThemePreference();
   const { chevronForward } = useRtl();
   const color = destructive ? colors.warning : colors.text;
 
   return (
-    <Pressable
+    <Pressable trackId={trackId}
       onPress={onPress}
       disabled={disabled}
       accessibilityRole="button"
@@ -444,7 +447,7 @@ export default function SettingsScreen() {
             }}
           >
             <View className="flex-row items-center gap-4">
-              <Pressable
+              <Pressable trackId="settings.avatar.change"
                 onPress={handleChangeAvatar}
                 disabled={uploading}
                 accessibilityRole="button"
@@ -500,7 +503,7 @@ export default function SettingsScreen() {
               </View>
             </View>
 
-            <Pressable
+            <Pressable trackId={user ? 'settings.sign_out' : 'settings.sign_in'}
               onPress={() =>
                 user ? void handleSignOut() : router.push('/auth?mode=signin&reason=sync')
               }
@@ -525,7 +528,7 @@ export default function SettingsScreen() {
               <Text className="mb-3 text-sm leading-5" style={{ color: colors.warning }}>
                 {t('errorBoundary.body')}
               </Text>
-              <Pressable
+              <Pressable trackId="settings.migration.retry"
                 onPress={() => void retryMigration()}
                 accessibilityRole="button"
                 className="items-center rounded-[18px] py-3 active:opacity-80"
@@ -541,6 +544,7 @@ export default function SettingsScreen() {
           <SettingsSection title={t('settings.yourSettings')} icon="options-outline">
             {user ? (
               <SettingsActionRow
+                trackId="settings.plan"
                 label={t('settings.plan')}
                 description={
                   totalCredits == null
@@ -552,30 +556,35 @@ export default function SettingsScreen() {
               />
             ) : null}
             <SettingsActionRow
+              trackId="settings.recipe_preferences"
               label={t('settings.recipePreferences')}
               description={t('settings.recipePreferencesHint')}
               icon="restaurant-outline"
               onPress={() => router.push('/settings/recipe')}
             />
             <SettingsActionRow
+              trackId="settings.cookbook"
               label={t('settings.cookbook')}
               description={t('settings.cookbookHint')}
               icon="book-outline"
               onPress={() => router.push('/cookbook')}
             />
             <SettingsActionRow
+              trackId="settings.appearance"
               label={t('settings.appearance')}
               description={t('settings.appearanceHint')}
               icon="color-palette-outline"
               onPress={() => router.push('/settings/appearance')}
             />
             <SettingsActionRow
+              trackId="settings.language"
               label={t('settings.languageAndRegion')}
               description={t('settings.languageHint')}
               icon="language-outline"
               onPress={() => router.push('/settings/language')}
             />
             <SettingsActionRow
+              trackId="settings.legal_support"
               label={t('settings.legalSupport')}
               description={t('settings.legalSupportHint')}
               icon="help-buoy-outline"
@@ -583,6 +592,7 @@ export default function SettingsScreen() {
             />
             {user ? (
               <SettingsActionRow
+                trackId="settings.send_feedback"
                 label={t('settings.sendFeedback')}
                 description={t('settings.sendFeedbackHint')}
                 icon="chatbox-ellipses-outline"
@@ -590,6 +600,7 @@ export default function SettingsScreen() {
               />
             ) : null}
             <SettingsActionRow
+              trackId="settings.share_app"
               label={t('settings.shareApp')}
               description={t('settings.shareAppHint')}
               icon="share-social-outline"
@@ -605,6 +616,7 @@ export default function SettingsScreen() {
               description={t('settings.yourRecipesHint')}
             >
               <SettingsActionRow
+                trackId="settings.backup.download"
                 label={t('settings.backupDownload')}
                 description={t('settings.backupDownloadHint')}
                 icon="download-outline"
@@ -613,6 +625,7 @@ export default function SettingsScreen() {
                 busy={backupBusy === 'export'}
               />
               <SettingsActionRow
+                trackId="settings.backup.restore"
                 label={t('settings.backupRestore')}
                 description={t('settings.backupRestoreHint')}
                 icon="cloud-upload-outline"
@@ -633,19 +646,28 @@ export default function SettingsScreen() {
                 {t('settings.adminBody')}
               </Text>
               <SettingsActionRow
+                trackId="settings.admin.insights"
                 label={t('settings.adminInsights')}
                 icon="analytics-outline"
                 onPress={() => router.push('/admin/insights')}
               />
               <SettingsActionRow
+                trackId="settings.admin.people"
                 label={t('settings.adminPeople')}
                 icon="people-outline"
                 onPress={() => router.push('/admin/users')}
               />
               <SettingsActionRow
+                trackId="settings.admin.usage"
                 label={t('settings.adminUsage')}
                 icon="receipt-outline"
                 onPress={() => router.push('/admin/usage')}
+              />
+              <SettingsActionRow
+                trackId="settings.admin.activity"
+                label={t('settings.adminActivity')}
+                icon="footsteps-outline"
+                onPress={() => router.push('/admin/activity')}
                 last
               />
             </SettingsSection>
@@ -659,6 +681,7 @@ export default function SettingsScreen() {
               danger
             >
               <SettingsActionRow
+                trackId="settings.delete_account"
                 label={t('settings.deleteAccount')}
                 icon="trash-outline"
                 onPress={handleDeleteAccount}

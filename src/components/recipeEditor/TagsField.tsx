@@ -1,6 +1,8 @@
 import Ionicons from '@expo/vector-icons/Ionicons';
 import { useState } from 'react';
-import { Pressable, Text, View } from 'react-native';
+import { Text, View } from 'react-native';
+import { Pressable } from '@/components/ui/Pressable';
+import { logTap } from '@/lib/interactionLog';
 import { useTranslation } from 'react-i18next';
 
 import { useThemePreference } from '@/hooks/useThemePreference';
@@ -34,6 +36,7 @@ export function TagsField({
         <View className="flex-row flex-wrap gap-2">
           {tags.map((tag) => (
             <Pressable
+              trackId="recipe_editor.tag.remove"
               key={tag}
               onPress={() => onRemove(tag)}
               accessibilityRole="button"
@@ -58,10 +61,14 @@ export function TagsField({
           accessibilityLabel={t('recipeEditor.placeholders.tag')}
           autoCapitalize="none"
           returnKeyType="done"
-          onSubmitEditing={add}
+          onSubmitEditing={() => {
+            logTap('recipe_editor.tag.submit');
+            add();
+          }}
           style={{ flex: 1, minWidth: 0 }}
         />
         <Pressable
+          trackId="recipe_editor.tag.add"
           onPress={add}
           accessibilityRole="button"
           accessibilityLabel={t('recipeEditor.add.tag')}

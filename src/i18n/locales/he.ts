@@ -221,6 +221,7 @@ export default {
     "adminInsights": "פעילות",
     "adminPeople": "חשבונות",
     "adminUsage": "עלויות ותמיכה",
+    "adminActivity": "יומן פעילות",
     "rtlReloadTitle": "לרענן כדי לסדר את המסך?",
     "rtlReloadBody": "עברית וערבית נקראות מימין לשמאל. כדאי לרענן עכשיו כדי שהתפריטים והכותרות יישבו במקום הנכון.",
     "rtlReloadConfirm": "רענון",
@@ -1006,6 +1007,7 @@ export default {
     "insights": "פעילות",
     "people": "חשבונות",
     "usage": "שימוש ותמיכה",
+    "activity": "פעילות",
     "cookbook": "ספר מתכונים ב־PDF"
   },
   "hub": {

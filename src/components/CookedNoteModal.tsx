@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Pressable, Text, View } from 'react-native';
+import { Text, View } from 'react-native';
+import { Pressable } from '@/components/ui/Pressable';
 
 import { SheetModal } from '@/components/SheetModal';
 import { TextInput } from '@/components/text-input';
@@ -35,18 +36,19 @@ export function CookedNoteModal({
 
   return (
     <SheetModal
+      trackId="cooked_note.sheet"
       visible={visible}
       onClose={onClose}
       title={t('recipe.cookedNoteTitle')}
       maxWidth={480}
       showCloseButton={false}
       headerLeft={
-        <Pressable onPress={onClose} hitSlop={12} accessibilityRole="button">
+        <Pressable trackId="cooked_note.skip" onPress={onClose} hitSlop={12} accessibilityRole="button">
           <Text style={{ color: colors.textSecondary }}>{t('common.notNow')}</Text>
         </Pressable>
       }
       headerRight={
-        <Pressable
+        <Pressable trackId="cooked_note.save"
           onPress={() => {
             onSave(draft.trim());
             onClose();

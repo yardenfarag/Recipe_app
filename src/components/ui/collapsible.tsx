@@ -1,6 +1,7 @@
 import { SymbolView } from 'expo-symbols';
 import { PropsWithChildren, useState } from 'react';
-import { Pressable, StyleSheet } from 'react-native';
+import { StyleSheet } from 'react-native';
+import { Pressable } from '@/components/ui/Pressable';
 import Animated, { FadeIn } from 'react-native-reanimated';
 
 import { ThemedText } from '@/components/themed-text';
@@ -8,13 +9,21 @@ import { ThemedView } from '@/components/themed-view';
 import { Spacing } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
 
-export function Collapsible({ children, title }: PropsWithChildren & { title: string }) {
+export function Collapsible({
+  children,
+  title,
+  trackId = 'collapsible.toggle',
+}: PropsWithChildren & {
+  title: string;
+  /** Fixed id for the admin Activity log. Never the title. */
+  trackId?: string;
+}) {
   const [isOpen, setIsOpen] = useState(false);
   const theme = useTheme();
 
   return (
     <ThemedView>
-      <Pressable
+      <Pressable trackId={trackId}
         style={({ pressed }) => [styles.heading, pressed && styles.pressedHeading]}
         onPress={() => setIsOpen((value) => !value)}
         accessibilityRole="button"

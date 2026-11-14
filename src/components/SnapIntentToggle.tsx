@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
-import { Pressable, View, type LayoutChangeEvent } from 'react-native';
+import { View, type LayoutChangeEvent } from 'react-native';
+import { Pressable } from '@/components/ui/Pressable';
 import Animated, {
   Easing,
   interpolate,
@@ -45,6 +46,8 @@ type SnapIntentToggleProps = {
   extractLabel: string;
   inventLabel: string;
   onChange: (mode: SnapIntent) => void;
+  /** Prefix for the admin Activity log id; '.extract' or '.invent' is appended. */
+  trackId?: string;
 };
 
 /** Sliding-pill intent switch. Radius stays on the thumb so the track never looks square. */
@@ -54,6 +57,7 @@ export function SnapIntentToggle({
   extractLabel,
   inventLabel,
   onChange,
+  trackId = 'snap_intent',
 }: SnapIntentToggleProps) {
   const { colors } = useThemePreference();
   const { rtl } = useRtl();
@@ -128,6 +132,7 @@ export function SnapIntentToggle({
         />
       ) : null}
       <Pressable
+        trackId={`${trackId}.extract`}
         className="min-h-[44px] flex-1 items-center justify-center px-2"
         onPress={() => onChange('extract')}
         accessibilityRole="tab"
@@ -146,6 +151,7 @@ export function SnapIntentToggle({
         </Animated.Text>
       </Pressable>
       <Pressable
+        trackId={`${trackId}.invent`}
         className="min-h-[44px] flex-1 items-center justify-center px-2"
         onPress={() => onChange('invent')}
         accessibilityRole="tab"

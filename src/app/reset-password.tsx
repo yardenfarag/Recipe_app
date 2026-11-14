@@ -6,11 +6,11 @@ import {
   ActivityIndicator,
   KeyboardAvoidingView,
   Platform,
-  Pressable,
   ScrollView,
   Text,
   View,
 } from 'react-native';
+import { Pressable } from '@/components/ui/Pressable';
 import { useTranslation } from 'react-i18next';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
@@ -18,6 +18,7 @@ import { TextInput } from '@/components/text-input';
 import { useThemePreference } from '@/hooks/useThemePreference';
 import { announce } from '@/lib/a11y';
 import { getPasswordStrength, validatePassword } from '@/lib/authValidation';
+import { logTap } from '@/lib/interactionLog';
 import { consumePasswordRecoveryUrl, updatePassword } from '@/lib/supabase/auth';
 
 export default function ResetPasswordScreen() {
@@ -149,7 +150,7 @@ export default function ResetPasswordScreen() {
           <Text className="mb-8 text-center text-base leading-6" style={{ color: colors.textSecondary }}>
             {t('resetPassword.updatedBody')}
           </Text>
-          <Pressable
+          <Pressable trackId="reset_password.done.continue"
             className="w-full items-center rounded-full py-4"
             style={{ backgroundColor: colors.primary }}
             onPress={() => router.replace('/')}
@@ -222,7 +223,7 @@ export default function ResetPasswordScreen() {
               textContentType="newPassword"
               editable={!loading}
             />
-            <Pressable
+            <Pressable trackId="reset_password.password.toggle_visibility"
               onPress={() => setShowPassword((value) => !value)}
               hitSlop={12}
               accessibilityRole="button"
@@ -290,6 +291,7 @@ export default function ResetPasswordScreen() {
             textContentType="newPassword"
             editable={!loading}
             onSubmitEditing={() => {
+              logTap('reset_password.confirm_field.submit_key');
               if (canSubmit) void handleUpdatePassword();
             }}
           />
@@ -309,7 +311,7 @@ export default function ResetPasswordScreen() {
       )}
 
       {ready && (
-        <Pressable
+        <Pressable trackId="reset_password.submit"
           className="items-center rounded-full py-4"
           style={{ backgroundColor: canSubmit ? colors.primary : colors.border }}
           onPress={handleUpdatePassword}
@@ -332,7 +334,7 @@ export default function ResetPasswordScreen() {
       )}
 
       {error && !ready && (
-        <Pressable
+        <Pressable trackId="reset_password.request_new_link"
           className="mt-4 items-center rounded-full border py-3.5"
           style={{ borderColor: colors.border }}
           onPress={() => router.replace('/auth?mode=forgot')}

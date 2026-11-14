@@ -44,7 +44,7 @@ const DOCS: Record<LegalDocId, LegalDoc> = {
   privacy: {
     id: 'privacy',
     title: 'Privacy Policy',
-    meta: 'Last updated: October 15, 2026',
+    meta: 'Last updated: November 14, 2026',
     blocks: [
       {
         kind: 'card',
@@ -60,9 +60,12 @@ const DOCS: Record<LegalDocId, LegalDoc> = {
         items: [
           [strong('Account:'), text(' email address when you sign up with email, Apple, or Google; optional profile photo.')],
           [strong('Recipes & library:'), text(' saved recipes, collections, shopping list items, favorites, and related metadata you create in the app.')],
-          [strong('Usage & tokens:'), text(' token balance and a ledger of AI actions (extract, remix, etc.) used to operate free allowances.')],
+          [strong('Credits & AI usage:'), text(' your recipe credit balance, credit pack purchases, and a ledger of AI actions (import, remix, translation, etc.) used to run free allowances and paid credits.')],
+          [strong('App activity:'), text(' which screens you open and which buttons you tap, sign-ins and sign-ups, with a random session id, your account or install id, device platform and app version. We never record what you type. Only Pinch admins can see it.')],
+          [strong('Product events:'), text(' a few milestones, such as saving a recipe or finishing onboarding, with your account or install id and your country (from your network or device region).')],
           [strong('Guest device limits:'), text(' a local install identifier and guest extraction/save limits on your device before you create an account.')],
-          [strong('Content you submit:'), text(' social video URLs you paste or share into Pinch so we can fetch public metadata and generate a recipe.')],
+          [strong('Content you submit:'), text(' links you paste or share into Pinch, photos you take or pick (such as a cookbook page or your fridge), and text you type, such as a custom remix request or a recipe you write, so we can make and store your recipes.')],
+          [strong('Support & feedback:'), text(' messages you send us, your email, and device details (app version, OS, device model and language) so we can reply and fix problems.')],
         ],
       },
       { kind: 'h2', text: 'How we use data' },
@@ -71,9 +74,9 @@ const DOCS: Record<LegalDocId, LegalDoc> = {
         items: [
           [text('Provide recipe extraction, remix, translation, and substitutions.')],
           [text('Sync your library across devices when signed in.')],
-          [text('Enforce free token allowances and prevent abuse.')],
-          [text('Respond to support requests you send us.')],
-          [text('Notify you about token packs if you opt in (no purchases in the current soft launch).')],
+          [text('Enforce free allowances, process credit pack purchases, and prevent abuse.')],
+          [text('Understand how Pinch is used and diagnose problems, using app activity and product events.')],
+          [text('Respond to support requests and feedback you send us.')],
         ],
       },
       { kind: 'h2', text: 'Third parties' },
@@ -90,6 +93,7 @@ const DOCS: Record<LegalDocId, LegalDoc> = {
           [strong('ScrapeCreators'), text(' — metadata for some Instagram/TikTok URLs.')],
           [strong('Apple / Google'), text(' — optional sign-in providers.')],
           [strong('YouTube Data API'), text(' — optional metadata for YouTube links.')],
+          [strong('RevenueCat'), text(' — processes credit pack purchases made through Apple and Google; it receives your account id and purchase details.')],
         ],
       },
       {
@@ -103,7 +107,7 @@ const DOCS: Record<LegalDocId, LegalDoc> = {
         kind: 'p',
         parts: [
           text(
-            'We keep account and library data while your account exists. Aggregated or anonymized usage events may be retained after deletion for cost and abuse analysis. Guest data stays on your device until you clear app data or migrate to an account.',
+            'We keep account, library and app activity data while your account exists, and delete it when you delete your account. App activity from people who never create an account is linked only to a random install id and has no fixed deletion date. Product events are deleted after 13 months. Aggregated or anonymized usage events may be retained after deletion for cost and abuse analysis. Guest data stays on your device until you clear app data or migrate to an account.',
           ),
         ],
       },

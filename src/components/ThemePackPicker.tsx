@@ -1,5 +1,6 @@
 import { useTranslation } from 'react-i18next';
-import { Pressable, Text, View } from 'react-native';
+import { Text, View } from 'react-native';
+import { Pressable } from '@/components/ui/Pressable';
 import Svg, { Circle, Ellipse, G, Line, Path } from 'react-native-svg';
 
 import { useThemePreference } from '@/hooks/useThemePreference';
@@ -107,7 +108,12 @@ function PackIcon({ id, primary, accent }: { id: ThemePackId; primary: string; a
 }
 
 /** Scrollable grid of Drift theme packs for Settings. */
-export function ThemePackPicker() {
+type ThemePackPickerProps = {
+  /** Tap-log id prefix; each pack logs as `<trackId>.<packId>`. */
+  trackId?: string;
+};
+
+export function ThemePackPicker({ trackId = 'settings.theme_pack' }: ThemePackPickerProps = {}) {
   const { t } = useTranslation();
   const { packId, setPackId, colors } = useThemePreference();
 
@@ -119,6 +125,7 @@ export function ThemePackPicker() {
         const [swatchA, swatchB] = pack.swatches;
         return (
           <Pressable
+            trackId={`${trackId}.${id}`}
             key={id}
             onPress={() => setPackId(id as ThemePackId)}
             accessibilityRole="radio"

@@ -1,7 +1,8 @@
 import Ionicons from '@expo/vector-icons/Ionicons';
 import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { ActivityIndicator, Pressable, ScrollView, Text, View } from 'react-native';
+import { ActivityIndicator, ScrollView, Text, View } from 'react-native';
+import { Pressable } from '@/components/ui/Pressable';
 
 import { SheetModal } from '@/components/SheetModal';
 import { CHROME_MAX_FONT_SCALE, announce } from '@/lib/a11y';
@@ -125,12 +126,13 @@ export function TokenPurchaseSheet({
 
   if (!purchasesHere) {
     return (
-      <SheetModal visible={visible} onClose={onClose} title={t('credits.buyTitle')} maxWidth={520}>
+      <SheetModal trackId="credits.sheet" visible={visible} onClose={onClose} title={t('credits.buyTitle')} maxWidth={520}>
         <ScrollView className="flex-1 px-5 pb-6" showsVerticalScrollIndicator={false}>
           <Text className="text-sm leading-5" style={{ color: colors.textSecondary }}>
             {t('credits.webOnlyBody')}
           </Text>
           <Pressable
+            trackId="credits.open_app_store"
             className="mt-4 self-start rounded-[18px] px-4 py-2.5 active:opacity-80"
             style={{ backgroundColor: colors.primary }}
             onPress={() => void openAppStore()}
@@ -146,7 +148,7 @@ export function TokenPurchaseSheet({
   }
 
   return (
-    <SheetModal visible={visible} onClose={onClose} title={t('credits.buyTitle')} maxWidth={520}>
+    <SheetModal trackId="credits.sheet" visible={visible} onClose={onClose} title={t('credits.buyTitle')} maxWidth={520}>
       <ScrollView className="flex-1 px-5 pb-6" showsVerticalScrollIndicator={false}>
         <Text className="mb-4 text-sm leading-5" style={{ color: colors.textSecondary }}>
           {t('credits.buyHint')}
@@ -171,6 +173,7 @@ export function TokenPurchaseSheet({
               .join(', ');
             return (
               <Pressable
+                trackId="credits.pack.buy"
                 key={pack.id}
                 onPress={() => void handlePurchase(pack)}
                 disabled={Boolean(busyId)}
@@ -240,6 +243,7 @@ export function TokenPurchaseSheet({
 
         {livePurchases ? (
           <Pressable
+            trackId="credits.sync_purchases"
             onPress={() => void handleSync()}
             disabled={Boolean(busyId)}
             accessibilityRole="button"

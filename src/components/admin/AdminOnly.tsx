@@ -1,6 +1,7 @@
 import { router } from 'expo-router';
 import { type ReactNode } from 'react';
-import { ActivityIndicator, Pressable, Text, View } from 'react-native';
+import { ActivityIndicator, Text, View } from 'react-native';
+import { Pressable } from '@/components/ui/Pressable';
 import { useTranslation } from 'react-i18next';
 
 import { Screen } from '@/components/Screen';
@@ -35,7 +36,7 @@ export function AdminOnly({ children }: { children: ReactNode }) {
           >
             Admin only
           </Text>
-          <Pressable
+          <Pressable trackId="admin_only.go_back"
             onPress={() => router.back()}
             accessibilityRole="button"
             className="rounded-[18px] px-5 py-3"
