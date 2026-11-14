@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { ActivityIndicator, Pressable, ScrollView, Text, View } from 'react-native';
+import { ActivityIndicator, ScrollView, Text, View } from 'react-native';
+import { Pressable } from '@/components/ui/Pressable';
 
 import { useThemePreference } from '@/hooks/useThemePreference';
 import {
@@ -85,6 +86,7 @@ export function AiCostDashboard({ refreshKey }: { refreshKey: number }) {
           return (
             <Pressable
               key={w.key}
+              trackId={`admin.cost.window.${w.key}`}
               onPress={() => setWindowKey(w.key)}
               accessibilityRole="tab"
               accessibilityState={{ selected: active }}

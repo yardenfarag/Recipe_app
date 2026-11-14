@@ -11,7 +11,8 @@ export default function LanguageSettingsScreen() {
 
   return (
     <SettingsDetailScreen>
-      <LanguagePicker />
+      <LanguagePicker
+        trackId="settings.language" />
       <Text className="mt-3 text-xs leading-5" style={{ color: colors.textSecondary }}>
         {t('settings.languageHint')}
       </Text>

@@ -1,6 +1,7 @@
 import Ionicons from '@expo/vector-icons/Ionicons';
 import { type ReactNode } from 'react';
-import { Pressable, Text, View } from 'react-native';
+import { Text, View } from 'react-native';
+import { Pressable } from '@/components/ui/Pressable';
 
 import { useRtl } from '@/hooks/useRtl';
 import { useThemePreference } from '@/hooks/useThemePreference';
@@ -48,6 +49,8 @@ type SettingsRowProps = {
   last?: boolean;
   disabled?: boolean;
   chevron?: boolean;
+  /** Fixed tap-log id, like 'settings.theme'. */
+  trackId?: string;
 };
 
 /** One tappable settings choice: icon, label, current value, chevron. */
@@ -60,6 +63,7 @@ export function SettingsRow({
   last = false,
   disabled = false,
   chevron = true,
+  trackId = 'settings.row',
 }: SettingsRowProps) {
   const { colors } = useThemePreference();
   const { chevronForward } = useRtl();
@@ -67,6 +71,7 @@ export function SettingsRow({
 
   return (
     <Pressable
+      trackId={trackId}
       onPress={onPress}
       disabled={disabled}
       accessibilityRole="button"

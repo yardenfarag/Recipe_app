@@ -4,7 +4,6 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
   ActivityIndicator,
   FlatList,
-  Pressable,
   RefreshControl,
   ScrollView,
   Text,
@@ -12,6 +11,7 @@ import {
   type NativeScrollEvent,
   type NativeSyntheticEvent,
 } from 'react-native';
+import { Pressable } from '@/components/ui/Pressable';
 import type { TFunction } from 'i18next';
 import { useTranslation } from 'react-i18next';
 
@@ -24,6 +24,7 @@ import { useCookingHub } from '@/hooks/useCookingHub';
 import { useLibraryLayout } from '@/hooks/useLibraryLayout';
 import { useThemePreference } from '@/hooks/useThemePreference';
 import { announce, CHROME_MAX_FONT_SCALE } from '@/lib/a11y';
+import { logTap } from '@/lib/interactionLog';
 import { recipeCardToListRecipe } from '@/lib/recipeCardMap';
 import { translateRecipeTag } from '@/lib/recipeTags';
 import type { HubPlatform, RecipeCard } from '@/types/recipeCard';
@@ -150,6 +151,7 @@ export default function CookingHubScreen() {
           />
           {search.length > 0 ? (
             <Pressable
+              trackId="hub.search.clear"
               onPress={() => setSearch('')}
               hitSlop={13}
               className="active:opacity-70"
@@ -163,6 +165,7 @@ export default function CookingHubScreen() {
 
         <View className="flex-row flex-wrap items-center gap-2">
           <Pressable
+            trackId="hub.filter.toggle"
             onPress={() => setFiltersOpen((open) => !open)}
             className="min-h-[44px] flex-row items-center gap-1.5 rounded-2xl px-4 active:opacity-80"
             style={{
@@ -187,6 +190,7 @@ export default function CookingHubScreen() {
           </Pressable>
           <View style={{ marginStart: 'auto', flexShrink: 0 }}>
             <LibraryLayoutToggle
+              trackId="hub.layout"
               layout={layout}
               onToggle={toggleLayout}
               color={colors.primary}
@@ -209,6 +213,7 @@ export default function CookingHubScreen() {
 
         {showInlineError ? (
           <Pressable
+            trackId="hub.error_retry_inline"
             onPress={() => void refresh()}
             className="active:opacity-80"
             accessibilityRole="button"
@@ -234,6 +239,7 @@ export default function CookingHubScreen() {
                 return (
                   <Pressable
                     key={item}
+                    trackId={`hub.filter.source.${item}`}
                     onPress={() => setPlatform(item)}
                     className="min-h-[44px] items-center justify-center rounded-2xl px-4 active:opacity-80"
                     style={{ backgroundColor: active ? colors.primary : inactiveChipBg }}
@@ -263,6 +269,7 @@ export default function CookingHubScreen() {
               keyboardShouldPersistTaps="handled"
             >
               <Pressable
+                trackId="hub.sort.popular"
                 onPress={() => setSort('popular')}
                 className="min-h-[44px] items-center justify-center rounded-2xl px-4 active:opacity-80"
                 style={{ backgroundColor: sort === 'popular' ? colors.primary : inactiveChipBg }}
@@ -279,6 +286,7 @@ export default function CookingHubScreen() {
                 </Text>
               </Pressable>
               <Pressable
+                trackId="hub.sort.newest"
                 onPress={() => setSort('newest')}
                 className="min-h-[44px] items-center justify-center rounded-2xl px-4 active:opacity-80"
                 style={{ backgroundColor: sort === 'newest' ? colors.primary : inactiveChipBg }}
@@ -308,6 +316,7 @@ export default function CookingHubScreen() {
                   </Text>
                   {selectedTags.length > 0 ? (
                     <Pressable
+                      trackId="hub.filter.tags.clear"
                       onPress={clearTags}
                       hitSlop={12}
                       className="active:opacity-70"
@@ -332,6 +341,7 @@ export default function CookingHubScreen() {
                     return (
                       <Pressable
                         key={tag}
+                        trackId="hub.filter.tag.toggle"
                         onPress={() => toggleTag(tag)}
                         accessibilityRole="button"
                         accessibilityState={{ selected: active }}
@@ -366,6 +376,7 @@ export default function CookingHubScreen() {
           renderItem={({ item, index }) => (
             <View style={numColumns > 1 ? { flex: 1, paddingHorizontal: 6 } : undefined}>
               <RecipeListRow
+                trackId="hub.recipe"
                 recipe={item.recipe}
                 index={index}
                 variant={layout === 'grid' ? 'card' : 'row'}
@@ -382,7 +393,10 @@ export default function CookingHubScreen() {
           refreshControl={
             <RefreshControl
               refreshing={refreshing}
-              onRefresh={() => void pullRefresh()}
+              onRefresh={() => {
+                logTap('hub.pull_refresh');
+                void pullRefresh();
+              }}
               tintColor={colors.primary}
               colors={[colors.primary]}
             />
@@ -429,6 +443,7 @@ export default function CookingHubScreen() {
                   {error}
                 </Text>
                 <Pressable
+                  trackId="hub.error_retry"
                   onPress={() => void refresh()}
                   accessibilityRole="button"
                   className="rounded-3xl px-6 py-3.5 active:opacity-80"
@@ -465,6 +480,7 @@ export default function CookingHubScreen() {
                     <Pressable
                       className="mt-8 w-full items-center rounded-3xl py-4 active:opacity-80"
                       style={{ backgroundColor: colors.primary }}
+                      trackId="hub.empty.snap_first"
                       onPress={() => router.push('/add')}
                       accessibilityRole="button"
                     >

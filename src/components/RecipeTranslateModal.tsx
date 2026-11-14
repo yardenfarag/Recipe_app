@@ -1,7 +1,8 @@
 import Ionicons from '@expo/vector-icons/Ionicons';
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { ActivityIndicator, Pressable, ScrollView, Text, View } from 'react-native';
+import { ActivityIndicator, ScrollView, Text, View } from 'react-native';
+import { Pressable } from '@/components/ui/Pressable';
 
 import { SheetModal } from '@/components/SheetModal';
 import { useRtl } from '@/hooks/useRtl';
@@ -124,6 +125,7 @@ export function RecipeTranslateModal({
 
   return (
     <SheetModal
+      trackId="recipe_translate.sheet"
       visible={visible}
       onClose={handleClose}
       title={t('recipe.translateTitle')}
@@ -144,7 +146,7 @@ export function RecipeTranslateModal({
 
       <ScrollView className="flex-1 px-5" contentContainerStyle={{ paddingBottom: 32 }}>
         {activeLanguage != null && (
-          <Pressable
+          <Pressable trackId="recipe_translate.show_original"
             onPress={handleShowOriginal}
             disabled={Boolean(loadingLanguage)}
             accessibilityRole="button"
@@ -168,7 +170,7 @@ export function RecipeTranslateModal({
           const selected = activeLanguage === lang.code;
           const loading = loadingLanguage === lang.code;
           return (
-            <Pressable
+            <Pressable trackId={`recipe_translate.language.${lang.code}`}
               key={lang.code}
               onPress={() => void handleSelectLanguage(lang.code)}
               disabled={Boolean(loadingLanguage)}

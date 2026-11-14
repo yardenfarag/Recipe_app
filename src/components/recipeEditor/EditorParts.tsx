@@ -1,6 +1,7 @@
 import Ionicons from '@expo/vector-icons/Ionicons';
 import { type ComponentProps, type ReactNode } from 'react';
-import { type LayoutChangeEvent, Pressable, Text, View, type TextStyle } from 'react-native';
+import { type LayoutChangeEvent, Text, View, type TextStyle } from 'react-native';
+import { Pressable } from '@/components/ui/Pressable';
 import { useTranslation } from 'react-i18next';
 
 import { TextInput, type TextInputProps } from '@/components/text-input';
@@ -46,9 +47,11 @@ type FieldProps = {
   /** Shows "Set by you" with a reset action for a locked AI-derived field. */
   locked?: boolean;
   onReset?: () => void;
+  /** Admin Activity log id for the reset action. */
+  resetTrackId?: string;
 };
 
-export function EditorField({ label, children, error, locked, onReset }: FieldProps) {
+export function EditorField({ label, children, error, locked, onReset, resetTrackId }: FieldProps) {
   const { colors } = useThemePreference();
   const { textAlign } = useRtl();
   return (
@@ -57,7 +60,7 @@ export function EditorField({ label, children, error, locked, onReset }: FieldPr
         <Text className="text-sm font-semibold" style={{ color: colors.textSecondary, textAlign }}>
           {label}
         </Text>
-        {locked && onReset ? <LockedBadge onReset={onReset} /> : null}
+        {locked && onReset ? <LockedBadge onReset={onReset} trackId={resetTrackId} /> : null}
       </View>
       {children}
       <FieldError message={error} />
@@ -65,7 +68,13 @@ export function EditorField({ label, children, error, locked, onReset }: FieldPr
   );
 }
 
-export function LockedBadge({ onReset }: { onReset: () => void }) {
+export function LockedBadge({
+  onReset,
+  trackId = 'recipe_editor.field.reset',
+}: {
+  onReset: () => void;
+  trackId?: string;
+}) {
   const { t } = useTranslation();
   const { colors } = useThemePreference();
   return (
@@ -76,7 +85,7 @@ export function LockedBadge({ onReset }: { onReset: () => void }) {
           {t('recipeEditor.locked.setByYou')}
         </Text>
       </View>
-      <Pressable onPress={onReset} hitSlop={8} accessibilityRole="button" className="active:opacity-70">
+      <Pressable trackId={trackId} onPress={onReset} hitSlop={8} accessibilityRole="button" className="active:opacity-70">
         <Text className="text-xs font-semibold" style={{ color: colors.primary }}>
           {t('recipeEditor.locked.reset')}
         </Text>
@@ -126,15 +135,18 @@ export function IconButton({
   label,
   onPress,
   color,
+  trackId = 'recipe_editor.row.delete',
 }: {
   icon: ComponentProps<typeof Ionicons>['name'];
   label: string;
   onPress: () => void;
   color?: string;
+  trackId?: string;
 }) {
   const { colors } = useThemePreference();
   return (
     <Pressable
+      trackId={trackId}
       onPress={onPress}
       hitSlop={6}
       accessibilityRole="button"
@@ -146,10 +158,21 @@ export function IconButton({
   );
 }
 
-export function AddRowButton({ label, onPress, disabled }: { label: string; onPress: () => void; disabled?: boolean }) {
+export function AddRowButton({
+  label,
+  onPress,
+  disabled,
+  trackId = 'recipe_editor.row.add',
+}: {
+  label: string;
+  onPress: () => void;
+  disabled?: boolean;
+  trackId?: string;
+}) {
   const { colors } = useThemePreference();
   return (
     <Pressable
+      trackId={trackId}
       onPress={onPress}
       disabled={disabled}
       accessibilityRole="button"
@@ -169,21 +192,28 @@ export function ChoiceChips<T extends string>({
   value,
   onChange,
   label,
+  trackId = 'recipe_editor.choice',
 }: {
   options: { value: T; label: string }[];
   value: T | null;
   /** Tapping the selected chip clears it. */
   onChange: (value: T | null) => void;
   label: string;
+  /**
+   * Prefix for the admin Activity log id. The option value is appended when it
+   * is id-safe (like 'Easy'), otherwise its 1-based position (cost '$' -> 1).
+   */
+  trackId?: string;
 }) {
   const { colors } = useThemePreference();
   return (
     <View className="flex-row flex-wrap gap-2" accessibilityRole="radiogroup" accessibilityLabel={label}>
-      {options.map((option) => {
+      {options.map((option, index) => {
         const selected = option.value === value;
         return (
           <Pressable
             key={option.value}
+            trackId={`${trackId}.${/^[A-Za-z0-9_-]+$/.test(option.value) ? option.value : index + 1}`}
             onPress={() => onChange(selected ? null : option.value)}
             accessibilityRole="radio"
             accessibilityState={{ selected }}

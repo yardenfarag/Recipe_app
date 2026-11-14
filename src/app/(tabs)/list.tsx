@@ -9,10 +9,10 @@ import {
   KeyboardAvoidingView,
   Modal,
   Platform,
-  Pressable,
   Text,
   View,
 } from 'react-native';
+import { Pressable } from '@/components/ui/Pressable';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { BrandHeader } from '@/components/BrandHeader';
@@ -32,6 +32,7 @@ import { announce, CHROME_MAX_FONT_SCALE } from '@/lib/a11y';
 import { pickIngredientAmount } from '@/lib/ingredientAmounts';
 import { filterPantryStaples } from '@/lib/pantryStaples';
 import { formatQuantity } from '@/lib/formatQuantity';
+import { logTap } from '@/lib/interactionLog';
 import {
   getDuplicateNameCounts,
   normalizeShoppingName,
@@ -463,7 +464,7 @@ export default function ShoppingListScreen() {
             opacity: item.checked ? 0.55 : 1,
           }}
         >
-          <Pressable
+          <Pressable trackId="shopping_list.item.toggle"
             className="min-w-0 flex-1 flex-row items-center gap-3 active:opacity-90"
             onPress={() => void handleToggle(item)}
             onLongPress={() => handleLongPress(item)}
@@ -501,7 +502,7 @@ export default function ShoppingListScreen() {
                   {item.name}
                 </Text>
                 {isDuplicate ? (
-                  <Pressable
+                  <Pressable trackId="shopping_list.item.duplicate_badge"
                     className="rounded-full px-2 py-0.5"
                     style={{ backgroundColor: colors.warningSoft }}
                     onPress={showDuplicatePrompt}
@@ -526,7 +527,7 @@ export default function ShoppingListScreen() {
             </View>
           </Pressable>
           {!item.checked ? (
-          <Pressable
+          <Pressable trackId="shopping_list.item.keep_in_pantry"
             accessibilityRole="button"
             accessibilityLabel={t('list.keepThisLabel', { name: item.name })}
             className="min-h-[44px] min-w-[44px] items-center justify-center rounded-full active:opacity-70"
@@ -540,7 +541,7 @@ export default function ShoppingListScreen() {
             <Ionicons name="home-outline" size={18} color={colors.textSecondary} />
           </Pressable>
           ) : null}
-          <Pressable
+          <Pressable trackId="shopping_list.item.edit"
             accessibilityRole="button"
             accessibilityLabel={t('list.editItemLabel', { name: item.name })}
             className="min-h-[44px] min-w-[44px] items-center justify-center rounded-full active:opacity-70"
@@ -549,7 +550,7 @@ export default function ShoppingListScreen() {
           >
             <Ionicons name="pencil-outline" size={18} color={colors.textSecondary} />
           </Pressable>
-          <Pressable
+          <Pressable trackId="shopping_list.item.remove"
             accessibilityRole="button"
             accessibilityLabel={t('list.removeItemLabel', { name: item.name })}
             className="min-h-[44px] min-w-[44px] items-center justify-center rounded-full active:opacity-70"
@@ -600,7 +601,7 @@ export default function ShoppingListScreen() {
           <Text className="mb-6 text-center text-base leading-6" style={{ color: colors.textSecondary }}>
             {t('list.loadFailedBody')}
           </Text>
-          <Pressable
+          <Pressable trackId="shopping_list.load_error.retry"
             className="rounded-3xl px-6 py-3.5 active:opacity-80"
             style={{ backgroundColor: colors.primary }}
             onPress={() => void refresh()}
@@ -632,7 +633,7 @@ export default function ShoppingListScreen() {
             <Text className="flex-1 text-sm" style={{ color: colors.danger }}>
               {t('list.refreshFailed')}
             </Text>
-            <Pressable
+            <Pressable trackId="shopping_list.refresh_error.retry"
               onPress={() => void refresh()}
               hitSlop={12}
               accessibilityRole="button"
@@ -645,7 +646,7 @@ export default function ShoppingListScreen() {
           </View>
         )}
 
-        <Pressable
+        <Pressable trackId="shopping_list.from_recipes"
           accessibilityRole="button"
           accessibilityLabel={t('list.fromRecipes')}
           className="mt-5 min-h-[44px] flex-row items-center justify-center gap-2 rounded-3xl border px-4 active:opacity-80"
@@ -661,7 +662,7 @@ export default function ShoppingListScreen() {
           </Text>
         </Pressable>
 
-        <Pressable
+        <Pressable trackId="shopping_list.add.toggle"
           accessibilityRole="button"
           accessibilityLabel={t('list.addItemToggle')}
           accessibilityState={{ expanded: addOpen }}
@@ -696,7 +697,10 @@ export default function ShoppingListScreen() {
               value={name}
               onChangeText={setName}
               returnKeyType="next"
-              onSubmitEditing={() => void handleAdd()}
+              onSubmitEditing={() => {
+                logTap('shopping_list.add.name_submit_key');
+                void handleAdd();
+              }}
             />
             {typingDuplicateCount > 0 ? (
               <Text
@@ -740,9 +744,12 @@ export default function ShoppingListScreen() {
                 value={unit}
                 onChangeText={setUnit}
                 returnKeyType="done"
-                onSubmitEditing={() => void handleAdd()}
+                onSubmitEditing={() => {
+                  logTap('shopping_list.add.unit_submit_key');
+                  void handleAdd();
+                }}
               />
-              <Pressable
+              <Pressable trackId="shopping_list.add.submit"
                 className="min-h-[44px] items-center justify-center rounded-2xl px-4 active:opacity-80"
                 style={{ backgroundColor: colors.primary, opacity: adding ? 0.7 : 1 }}
                 disabled={adding}
@@ -774,7 +781,7 @@ export default function ShoppingListScreen() {
                 {notice.message}
               </Text>
               {notice.combineName ? (
-                <Pressable
+                <Pressable trackId="shopping_list.notice.combine"
                   className="mt-2 min-h-[32px] justify-center self-start active:opacity-70"
                   hitSlop={6}
                   onPress={() => void handleCombine(notice.combineName!)}
@@ -786,7 +793,7 @@ export default function ShoppingListScreen() {
                 </Pressable>
               ) : null}
             </View>
-            <Pressable
+            <Pressable trackId="shopping_list.notice.dismiss"
               onPress={() => setNotice(null)}
               hitSlop={13}
               accessibilityRole="button"
@@ -805,7 +812,7 @@ export default function ShoppingListScreen() {
               title={t('list.emptyTitle')}
               subtitle={t('list.emptyBody')}
             />
-            <Pressable
+            <Pressable trackId="shopping_list.empty.browse_recipes"
               className="mt-8 min-h-[44px] items-center justify-center rounded-3xl px-6 active:opacity-80"
               style={{ backgroundColor: colors.primary }}
               onPress={() => router.push('/')}
@@ -841,7 +848,7 @@ export default function ShoppingListScreen() {
               }
             />
             <View className="flex-row gap-2 pb-3 pt-1">
-              <Pressable
+              <Pressable trackId="shopping_list.clear_checked"
                 className="min-h-[44px] flex-1 items-center justify-center rounded-2xl border active:opacity-80"
                 style={{ borderColor: colors.frostedBorder }}
                 onPress={handleClearChecked}
@@ -856,7 +863,7 @@ export default function ShoppingListScreen() {
                   {t('list.clearChecked')}
                 </Text>
               </Pressable>
-              <Pressable
+              <Pressable trackId="shopping_list.clear_all"
                 className="min-h-[44px] flex-1 items-center justify-center rounded-2xl active:opacity-80"
                 style={{ backgroundColor: colors.dangerSoft }}
                 onPress={handleDeleteAll}
@@ -893,7 +900,7 @@ export default function ShoppingListScreen() {
             className="flex-row items-center justify-between border-b px-5 py-4"
             style={{ borderColor: colors.frostedBorder }}
           >
-            <Pressable
+            <Pressable trackId="shopping_list.edit.cancel"
               onPress={() => setEditingItem(null)}
               hitSlop={12}
               accessibilityRole="button"
@@ -907,7 +914,7 @@ export default function ShoppingListScreen() {
             >
               {t('list.editItem')}
             </Text>
-            <Pressable
+            <Pressable trackId="shopping_list.edit.save"
               onPress={() => void handleSaveEdit()}
               disabled={savingEdit}
               hitSlop={12}
@@ -981,6 +988,7 @@ export default function ShoppingListScreen() {
       />
 
       <ConfirmDialog
+        trackId="shopping_list.confirm_dialog"
         visible={confirmAction != null}
         title={confirmAction?.title ?? ''}
         message={confirmAction?.message ?? ''}

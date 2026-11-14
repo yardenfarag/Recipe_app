@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { ActivityIndicator, Pressable, Text, View } from 'react-native';
+import { ActivityIndicator, Text, View } from 'react-native';
+import { Pressable } from '@/components/ui/Pressable';
 
 import { SelectRecipesList } from '@/components/SelectRecipesList';
 import { SheetModal } from '@/components/SheetModal';
@@ -66,6 +67,7 @@ export function SelectRecipesForShoppingListModal({
 
   return (
     <SheetModal
+      trackId="shopping_list_from_recipes.sheet"
       visible={visible}
       onClose={onClose}
       title={t('list.fromRecipesTitle')}
@@ -80,7 +82,7 @@ export function SelectRecipesForShoppingListModal({
               {error}
             </Text>
           ) : null}
-          <Pressable
+          <Pressable trackId="shopping_list_from_recipes.confirm"
             className="items-center justify-center rounded-2xl py-3.5 active:opacity-80"
             style={{
               backgroundColor: colors.primary,

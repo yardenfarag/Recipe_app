@@ -1,7 +1,8 @@
 import Ionicons from '@expo/vector-icons/Ionicons';
 import { forwardRef, useImperativeHandle, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Pressable, Text, View } from 'react-native';
+import { Text, View } from 'react-native';
+import { Pressable } from '@/components/ui/Pressable';
 
 import { RecipeImage } from '@/components/RecipeImage';
 import { useBreakpoint } from '@/hooks/useBreakpoint';
@@ -121,6 +122,7 @@ export const RecipeVideoPanel = forwardRef<RecipeVideoPanelHandle, RecipeVideoPa
     if (isMediumUp) {
       return (
         <Pressable
+          trackId="recipe.video.play_card"
           onPress={() => onRequestPlay(0)}
           className="mb-4 flex-row items-center gap-3.5 overflow-hidden rounded-[22px] border p-3 active:opacity-90"
           style={{ borderColor: colors.frostedBorder, backgroundColor: colors.surface }}
@@ -157,6 +159,7 @@ export const RecipeVideoPanel = forwardRef<RecipeVideoPanelHandle, RecipeVideoPa
         style={{ borderColor: colors.frostedBorder, backgroundColor: colors.surface }}
       >
         <Pressable
+          trackId="recipe.video.toggle"
           onPress={() => setExpanded((value) => !value)}
           className="flex-row items-center justify-between px-4 py-3.5 active:opacity-80"
           accessibilityRole="button"
@@ -188,6 +191,7 @@ export const RecipeVideoPanel = forwardRef<RecipeVideoPanelHandle, RecipeVideoPa
 
         {expanded ? (
           <Pressable
+            trackId="recipe.video.play"
             onPress={() => onRequestPlay(0)}
             className="active:opacity-90"
             accessibilityRole="button"

@@ -1,7 +1,8 @@
 import { useFocusEffect, useNavigation } from '@react-navigation/native';
 import { useLocalSearchParams } from 'expo-router';
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { ActivityIndicator, Alert, Pressable, Text } from 'react-native';
+import { ActivityIndicator, Alert, Text } from 'react-native';
+import { Pressable } from '@/components/ui/Pressable';
 import { useTranslation } from 'react-i18next';
 
 import { RecipeView } from '@/components/RecipeView';
@@ -276,6 +277,7 @@ export default function RecipeDetailScreen() {
           {loadError}
         </Text>
         <Pressable
+          trackId="recipe.load_retry"
           onPress={() => void loadRecipe()}
           className="rounded-full px-5 py-3 active:opacity-80"
           style={{ backgroundColor: colors.primary }}

@@ -2,15 +2,16 @@ import { type ReactNode, useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import {
   ActivityIndicator,
-  Pressable,
   Text,
   View,
 } from 'react-native';
+import { Pressable } from '@/components/ui/Pressable';
 
 import { SheetModal } from '@/components/SheetModal';
 import { TextInput } from '@/components/text-input';
 import { useThemePreference } from '@/hooks/useThemePreference';
 import { announce } from '@/lib/a11y';
+import { logTap } from '@/lib/interactionLog';
 import { translateAppError } from '@/lib/translateAppError';
 
 interface NameEditModalProps {
@@ -22,6 +23,8 @@ interface NameEditModalProps {
   onSave: (name: string) => Promise<void>;
   /** Extra content below the field (e.g. delete action). */
   footer?: ReactNode;
+  /** Prefix for admin Activity log ids ('.cancel', '.save', '.submit'). */
+  trackId?: string;
 }
 
 /** Page-sheet name editor used for renaming recipes (and similar flows). */
@@ -33,6 +36,7 @@ export function NameEditModal({
   onClose,
   onSave,
   footer,
+  trackId = 'name_edit',
 }: NameEditModalProps) {
   const { t } = useTranslation();
   const { colors } = useThemePreference();
@@ -70,6 +74,7 @@ export function NameEditModal({
 
   return (
     <SheetModal
+      trackId={`${trackId}.sheet`}
       visible={visible}
       onClose={onClose}
       title={title}
@@ -77,6 +82,7 @@ export function NameEditModal({
       showCloseButton={false}
       headerLeft={
         <Pressable
+          trackId={`${trackId}.cancel`}
           onPress={onClose}
           disabled={saving}
           hitSlop={12}
@@ -88,6 +94,7 @@ export function NameEditModal({
       }
       headerRight={
         <Pressable
+          trackId={`${trackId}.save`}
           onPress={() => void handleSave()}
           disabled={saving}
           hitSlop={12}
@@ -123,7 +130,10 @@ export function NameEditModal({
           }}
           autoFocus
           returnKeyType="done"
-          onSubmitEditing={() => void handleSave()}
+          onSubmitEditing={() => {
+            logTap(`${trackId}.submit`);
+            void handleSave();
+          }}
         />
         {error ? (
           <Text

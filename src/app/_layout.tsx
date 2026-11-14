@@ -8,6 +8,7 @@ import { useTranslation } from 'react-i18next';
 import { Platform } from 'react-native';
 
 import { ErrorBoundary } from '@/components/ErrorBoundary';
+import { ScreenViewLogger } from '@/components/ScreenViewLogger';
 import { StackHeaderBackButton } from '@/components/StackHeaderBackButton';
 import { AuthProvider } from '@/hooks/useAuth';
 import { LanguageProvider } from '@/hooks/useLanguagePreference';
@@ -163,6 +164,7 @@ function RootNavigator() {
           <Stack.Screen name="admin/insights" options={{ title: t('nav.insights') }} />
           <Stack.Screen name="admin/users" options={{ title: t('nav.people') }} />
           <Stack.Screen name="admin/usage" options={{ title: t('nav.usage') }} />
+          <Stack.Screen name="admin/activity" options={{ title: t('nav.activity') }} />
         </Stack>
       ) : null}
     </>
@@ -183,6 +185,7 @@ export default function RootLayout() {
                   <AuthProvider>
                     <OnboardingGate />
                     <ShareIntentRouter />
+                    <ScreenViewLogger />
                     <RootNavigator />
                   </AuthProvider>
                 </ErrorBoundary>

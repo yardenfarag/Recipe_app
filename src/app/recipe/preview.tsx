@@ -1,6 +1,7 @@
 import { router, useNavigation } from 'expo-router';
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { ActivityIndicator, Alert, Platform, Pressable, Text, View } from 'react-native';
+import { ActivityIndicator, Alert, Platform, Text, View } from 'react-native';
+import { Pressable } from '@/components/ui/Pressable';
 import { useTranslation } from 'react-i18next';
 import type { Edge } from 'react-native-safe-area-context';
 
@@ -187,6 +188,7 @@ export default function RecipePreviewScreen() {
             {t('recipe.noPreview')}
           </Text>
           <Pressable
+            trackId="recipe_preview.go_home"
             onPress={() => router.replace('/')}
             className="rounded-full px-5 py-3 active:opacity-80"
             style={{ backgroundColor: colors.primary }}
@@ -291,6 +293,7 @@ export default function RecipePreviewScreen() {
           <Pressable
             className="w-full items-center rounded-full py-3.5 active:opacity-80"
             style={{ backgroundColor: colors.primary, maxWidth: 420 }}
+            trackId="recipe_preview.save"
             onPress={() => void handleSave()}
             disabled={saving}
             accessibilityRole="button"
@@ -345,7 +348,7 @@ function WebPreviewToolbar({
         borderBottomColor: colors.frostedBorder,
       }}
     >
-      <StackHeaderBackButton tintColor={colors.primary} />
+      <StackHeaderBackButton tintColor={colors.primary} trackId="recipe_preview.back" />
       <Text
         accessibilityRole="header"
         className="min-w-0 flex-1 text-base font-bold"
@@ -358,6 +361,7 @@ function WebPreviewToolbar({
         <Pressable
           className="rounded-full px-5 py-2.5 active:opacity-80"
           style={{ backgroundColor: colors.primary }}
+          trackId="recipe_preview.header_save"
           onPress={onSave}
           disabled={saving}
           accessibilityRole="button"

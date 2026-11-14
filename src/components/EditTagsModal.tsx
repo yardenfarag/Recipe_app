@@ -4,17 +4,18 @@ import {
   ActivityIndicator,
   KeyboardAvoidingView,
   Platform,
-  Pressable,
   ScrollView,
   Text,
   View,
 } from 'react-native';
+import { Pressable } from '@/components/ui/Pressable';
 import { useTranslation } from 'react-i18next';
 
 import { SheetModal } from '@/components/SheetModal';
 import { TextInput } from '@/components/text-input';
 import { useThemePreference } from '@/hooks/useThemePreference';
 import { announce } from '@/lib/a11y';
+import { logTap } from '@/lib/interactionLog';
 import { normalizeRecipeTags, translateRecipeTag } from '@/lib/recipeTags';
 
 interface EditTagsModalProps {
@@ -67,6 +68,7 @@ export function EditTagsModal({ visible, tags, onClose, onSave }: EditTagsModalP
 
   return (
     <SheetModal
+      trackId="tags.edit.sheet"
       visible={visible}
       onClose={onClose}
       title={t('tags.editTitle')}
@@ -74,6 +76,7 @@ export function EditTagsModal({ visible, tags, onClose, onSave }: EditTagsModalP
       showCloseButton={false}
       headerLeft={
         <Pressable
+          trackId="tags.edit.cancel"
           onPress={onClose}
           className="active:opacity-70"
           hitSlop={12}
@@ -84,6 +87,7 @@ export function EditTagsModal({ visible, tags, onClose, onSave }: EditTagsModalP
       }
       headerRight={
         <Pressable
+          trackId="tags.edit.save"
           onPress={() => void handleSave()}
           disabled={saving}
           hitSlop={12}
@@ -114,6 +118,7 @@ export function EditTagsModal({ visible, tags, onClose, onSave }: EditTagsModalP
           {draft.map((tag) => (
             <Pressable
               key={tag}
+              trackId="tags.edit.remove"
               onPress={() => removeTag(tag)}
               accessibilityRole="button"
               accessibilityLabel={t('tags.remove', { tag: translateRecipeTag(tag, t) })}
@@ -149,9 +154,13 @@ export function EditTagsModal({ visible, tags, onClose, onSave }: EditTagsModalP
             onChangeText={setInput}
             autoCapitalize="none"
             returnKeyType="done"
-            onSubmitEditing={addTag}
+            onSubmitEditing={() => {
+              logTap('tags.edit.add_submit');
+              addTag();
+            }}
           />
           <Pressable
+            trackId="tags.edit.add"
             className="min-h-[44px] min-w-[44px] items-center justify-center rounded-2xl px-4 active:opacity-80"
             style={{ backgroundColor: colors.primary }}
             onPress={addTag}

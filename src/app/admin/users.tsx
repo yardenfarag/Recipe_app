@@ -1,6 +1,7 @@
 import { useFocusEffect } from '@react-navigation/native';
 import { useCallback, useMemo, useState } from 'react';
-import { ActivityIndicator, Pressable, ScrollView, Text, View } from 'react-native';
+import { ActivityIndicator, ScrollView, Text, View } from 'react-native';
+import { Pressable } from '@/components/ui/Pressable';
 import { useTranslation } from 'react-i18next';
 
 import { AdminOnly } from '@/components/admin/AdminOnly';
@@ -170,6 +171,7 @@ function UsersBody() {
                   keyboardType="numbers-and-punctuation"
                 />
                 <Pressable
+                  trackId="admin.users.adjust_credits"
                   className="rounded-[14px] px-3 py-2"
                   style={{ backgroundColor: colors.primary, opacity: busyId === person.id ? 0.6 : 1 }}
                   onPress={() => void adjust(person)}
@@ -185,6 +187,7 @@ function UsersBody() {
               </View>
               {person.id === user?.id ? null : (
                 <Pressable
+                  trackId="admin.users.delete"
                   className="mt-3 self-start"
                   onPress={() => void remove(person)}
                   disabled={busyId === person.id}

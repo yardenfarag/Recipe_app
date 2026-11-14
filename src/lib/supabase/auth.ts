@@ -5,6 +5,7 @@ import { Platform } from 'react-native';
 
 import { normalizeEmail } from '@/lib/authValidation';
 import { authRedirectUri } from '@/lib/authRedirect';
+import { flushInteractions, logAuth } from '@/lib/interactionLog';
 import { parseAuthCallbackParams } from '@/lib/supabase/authCallbackParams';
 import { supabase } from '@/lib/supabase/client';
 
@@ -37,6 +38,9 @@ export async function signInWithEmail(email: string, password: string) {
 }
 
 export async function signOut() {
+  // Log and send before the session goes, so these rows stay with the account.
+  logAuth('auth.logout');
+  await flushInteractions().catch(() => {});
   const { error } = await supabase.auth.signOut();
   if (error) throw error;
 }
@@ -247,6 +251,8 @@ function friendlyAuthError(error: unknown, action: AuthAction): Error {
     error && typeof error === 'object' && 'code' in error
       ? String((error as { code?: unknown }).code ?? '')
       : '';
+  // Supabase's error code only (e.g. invalid_credentials), never the email or message.
+  logAuth(`auth.${action}_failed`, { reason: /^[a-z0-9_]{1,60}$/.test(code) ? code : 'unknown' });
 
   if (code === 'invalid_credentials') {
     return new Error('The email or password is incorrect.');

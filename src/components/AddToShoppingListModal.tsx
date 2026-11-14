@@ -2,11 +2,11 @@ import Ionicons from '@expo/vector-icons/Ionicons';
 import { useEffect, useMemo, useState } from 'react';
 import {
   ActivityIndicator,
-  Pressable,
   ScrollView,
   Text,
   View,
 } from 'react-native';
+import { Pressable } from '@/components/ui/Pressable';
 import { useTranslation } from 'react-i18next';
 
 import { SheetModal } from '@/components/SheetModal';
@@ -110,6 +110,7 @@ export function AddToShoppingListModal({
 
   return (
     <SheetModal
+      trackId="add_to_list.sheet"
       visible={visible}
       onClose={onClose}
       title={t('addToList.title')}
@@ -117,6 +118,7 @@ export function AddToShoppingListModal({
       footer={
         <View className="border-t px-5 py-4" style={{ borderColor: colors.border }}>
           <Pressable
+            trackId="add_to_list.add"
             className="items-center rounded-full py-3.5 active:opacity-80"
             style={{
               backgroundColor: colors.primary,
@@ -148,6 +150,7 @@ export function AddToShoppingListModal({
           {t('addToList.selected', { selected: selectedCount, total: ingredients.length })}
         </Text>
         <Pressable
+          trackId="add_to_list.toggle_all"
           onPress={toggleAll}
           className="min-h-[44px] justify-center active:opacity-70"
           hitSlop={6}
@@ -185,6 +188,7 @@ export function AddToShoppingListModal({
                 }
               >
                 <Pressable
+                  trackId="add_to_list.item.toggle"
                   className="min-w-0 flex-1 flex-row items-center gap-3 active:opacity-80"
                   onPress={() => toggleIndex(index)}
                   accessibilityRole="checkbox"
@@ -224,6 +228,7 @@ export function AddToShoppingListModal({
                 </Pressable>
                 {!inPantry ? (
                 <Pressable
+                  trackId="add_to_list.item.keep_staple"
                   onPress={() => {
                     keepStaple(ing.name);
                     setSelected((prev) => {

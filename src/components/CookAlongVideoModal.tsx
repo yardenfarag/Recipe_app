@@ -5,11 +5,11 @@ import { useTranslation } from 'react-i18next';
 import {
   ActivityIndicator,
   Platform,
-  Pressable,
   Text,
   useWindowDimensions,
   View,
 } from 'react-native';
+import { Pressable } from '@/components/ui/Pressable';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { WebView } from 'react-native-webview';
 
@@ -163,7 +163,7 @@ export function CookAlongVideoModal({
       <Text className="mt-3 text-center text-sm leading-5 text-white/90">
         {t('cookAlong.loadFailed')}
       </Text>
-      <Pressable
+      <Pressable trackId="cook_along.load_error.open_in_browser"
         onPress={() => void openInBrowser()}
         className="mt-4 rounded-full px-5 py-2.5 active:opacity-80"
         style={{ backgroundColor: colors.primary }}
@@ -263,7 +263,7 @@ export function CookAlongVideoModal({
             {isWeb ? '' : ` · ${t('cookAlong.scrollRecipe')}`}
           </Text>
         </View>
-        <Pressable
+        <Pressable trackId="cook_along.close"
           onPress={onClose}
           hitSlop={12}
           className="h-9 w-9 items-center justify-center rounded-full active:opacity-70"
@@ -287,7 +287,7 @@ export function CookAlongVideoModal({
                   : 'cookAlong.heightTall',
             );
             return (
-              <Pressable
+              <Pressable trackId={`cook_along.height.${preset}`}
                 key={preset}
                 onPress={() => setHeightPreset(preset)}
                 className="flex-1 items-center rounded-full py-1.5 active:opacity-80"
@@ -322,7 +322,7 @@ export function CookAlongVideoModal({
         {videoPlayer}
       </View>
 
-      <Pressable
+      <Pressable trackId="cook_along.open_in_browser"
         onPress={() => void openInBrowser()}
         className="mx-4 mt-2 mb-3 flex-row items-center justify-center gap-1.5 py-2 active:opacity-70"
         accessibilityRole="link"
@@ -369,7 +369,7 @@ export function CookAlongVideoModal({
           padding: WEB_DIALOG_INSET,
         }}
       >
-        <Pressable
+        <Pressable trackId="cook_along.backdrop"
           style={{
             position: 'absolute',
             left: 0,

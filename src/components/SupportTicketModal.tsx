@@ -4,11 +4,11 @@ import {
   Alert,
   KeyboardAvoidingView,
   Platform,
-  Pressable,
   ScrollView,
   Text,
   View,
 } from 'react-native';
+import { Pressable } from '@/components/ui/Pressable';
 import { useTranslation } from 'react-i18next';
 
 import { SheetModal } from '@/components/SheetModal';
@@ -60,6 +60,7 @@ export function SupportTicketModal({ visible, onClose }: SupportTicketModalProps
 
   return (
     <SheetModal
+      trackId="support_ticket.sheet"
       visible={visible}
       onClose={onClose}
       title={t('support.title')}
@@ -95,7 +96,7 @@ export function SupportTicketModal({ visible, onClose }: SupportTicketModalProps
           {CATEGORIES.map((item) => {
             const selected = category === item;
             return (
-              <Pressable
+              <Pressable trackId={`support_ticket.category.${item}`}
                 key={item}
                 onPress={() => setCategory(item)}
                 accessibilityRole="radio"
@@ -144,7 +145,7 @@ export function SupportTicketModal({ visible, onClose }: SupportTicketModalProps
           editable={!submitting}
         />
 
-        <Pressable
+        <Pressable trackId="support_ticket.submit"
           className="mb-3 items-center rounded-[22px] py-4"
           style={{ backgroundColor: colors.primary, opacity: submitting ? 0.6 : 1 }}
           onPress={() => void handleSubmit()}
@@ -162,7 +163,7 @@ export function SupportTicketModal({ visible, onClose }: SupportTicketModalProps
           )}
         </Pressable>
 
-        <Pressable
+        <Pressable trackId="support_ticket.cancel"
           onPress={onClose}
           accessibilityRole="button"
           className="items-center py-3 active:opacity-70"

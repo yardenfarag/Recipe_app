@@ -6,11 +6,11 @@ import {
   ActivityIndicator,
   KeyboardAvoidingView,
   Platform,
-  Pressable,
   ScrollView,
   Text,
   View,
 } from 'react-native';
+import { Pressable } from '@/components/ui/Pressable';
 import { useTranslation } from 'react-i18next';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
@@ -31,6 +31,7 @@ import {
   validatePassword,
 } from '@/lib/authValidation';
 import { savePendingOAuthReason } from '@/lib/pendingOAuth';
+import { logTap } from '@/lib/interactionLog';
 import {
   isAppleAuthAvailable,
   requestPasswordReset,
@@ -319,7 +320,7 @@ export default function AuthScreen() {
           <Text className="mb-8 text-center text-sm leading-5" style={{ color: colors.textSecondary }}>
             {t(isConfirm ? 'auth.confirmInstructions' : 'auth.resetInstructions')}
           </Text>
-          <Pressable
+          <Pressable trackId="auth.check_email.sign_in"
             className="mb-3 w-full items-center rounded-full py-4"
             style={{ backgroundColor: colors.primary }}
             onPress={() => switchMode('signin')}
@@ -329,7 +330,7 @@ export default function AuthScreen() {
               {t(isConfirm ? 'auth.confirmedSignIn' : 'auth.backToSignIn')}
             </Text>
           </Pressable>
-          <Pressable
+          <Pressable trackId="auth.check_email.change_email"
             className="items-center py-3"
             accessibilityRole="button"
             onPress={() => {
@@ -413,6 +414,7 @@ export default function AuthScreen() {
             textAlignVertical="center"
             editable={!loading}
             onSubmitEditing={() => {
+              logTap('auth.email_field.submit_key', { mode });
               if (mode === 'forgot' && canSubmit) void handleEmail();
             }}
           />
@@ -449,10 +451,11 @@ export default function AuthScreen() {
                 textAlignVertical="center"
                 editable={!loading}
                 onSubmitEditing={() => {
+                  logTap('auth.password_field.submit_key', { mode });
                   if (canSubmit) void handleEmail();
                 }}
               />
-              <Pressable
+              <Pressable trackId="auth.password.toggle_visibility"
                 onPress={() => setShowPassword((value) => !value)}
                 hitSlop={12}
                 accessibilityRole="button"
@@ -508,7 +511,7 @@ export default function AuthScreen() {
             )}
 
             {mode === 'signin' && (
-              <Pressable
+              <Pressable trackId="auth.forgot_password"
                 className="mb-5 mt-2 self-end py-1"
                 onPress={() => switchMode('forgot')}
                 disabled={loading}
@@ -538,7 +541,7 @@ export default function AuthScreen() {
           </View>
         )}
 
-        <Pressable
+        <Pressable trackId="auth.email.submit"
           className="items-center rounded-full py-4"
           style={{ backgroundColor: canSubmit ? colors.primary : colors.border }}
           onPress={handleEmail}
@@ -569,7 +572,7 @@ export default function AuthScreen() {
           )}
         </Pressable>
 
-        <Pressable
+        <Pressable trackId={mode === 'signin' ? 'auth.switch_to_signup' : 'auth.switch_to_signin'}
           className="items-center py-4"
           onPress={() => switchMode(mode === 'signin' ? 'signup' : 'signin')}
           disabled={loading}
@@ -616,7 +619,7 @@ export default function AuthScreen() {
         )}
 
         {mode !== 'forgot' && (
-          <Pressable
+          <Pressable trackId="auth.google"
             className="mt-1 flex-row items-center justify-center rounded-full border py-4"
             onPress={handleGoogle}
             disabled={loading}
@@ -635,7 +638,7 @@ export default function AuthScreen() {
         )}
 
         <View className="mt-6 flex-row flex-wrap items-center justify-center gap-x-3 gap-y-2">
-          <Pressable
+          <Pressable trackId="auth.legal.privacy"
             onPress={() => openLegalDoc('privacy')}
             disabled={loading}
             hitSlop={12}
@@ -653,7 +656,7 @@ export default function AuthScreen() {
           >
             ·
           </Text>
-          <Pressable
+          <Pressable trackId="auth.legal.terms"
             onPress={() => openLegalDoc('terms')}
             disabled={loading}
             hitSlop={12}

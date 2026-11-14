@@ -1,6 +1,7 @@
 import Ionicons from '@expo/vector-icons/Ionicons';
 import { Component, useEffect, type ErrorInfo, type ReactNode } from 'react';
-import { Pressable, Text, View } from 'react-native';
+import { Text, View } from 'react-native';
+import { Pressable } from '@/components/ui/Pressable';
 import { useTranslation } from 'react-i18next';
 
 import { useThemePreference } from '@/hooks/useThemePreference';
@@ -46,6 +47,7 @@ function ErrorFallback({ onRetry }: { onRetry: () => void }) {
         {t('errorBoundary.body')}
       </Text>
       <Pressable
+        trackId="error_boundary.retry"
         onPress={onRetry}
         accessibilityRole="button"
         className="rounded-full px-6 py-3 active:opacity-80"

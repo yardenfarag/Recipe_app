@@ -1,6 +1,7 @@
 import { router, useLocalSearchParams } from 'expo-router';
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { ActivityIndicator, Alert, Pressable, Text, View } from 'react-native';
+import { ActivityIndicator, Alert, Text, View } from 'react-native';
+import { Pressable } from '@/components/ui/Pressable';
 import { useTranslation } from 'react-i18next';
 
 import { RecipeView } from '@/components/RecipeView';
@@ -122,6 +123,7 @@ export default function SharedRecipeScreen() {
             {loadError ?? t('recipe.shareNotFound')}
           </Text>
           <Pressable
+            trackId="shared_recipe.go_home"
             onPress={() => router.replace('/')}
             accessibilityRole="button"
             className="rounded-full px-5 py-3 active:opacity-80"
@@ -164,6 +166,7 @@ export default function SharedRecipeScreen() {
               ) : null}
             </View>
             <Pressable
+              trackId="shared_recipe.save"
               onPress={() => {
                 void saveToLibrary();
               }}

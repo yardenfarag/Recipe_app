@@ -1,6 +1,7 @@
 import Ionicons from '@expo/vector-icons/Ionicons';
 import type { Href } from 'expo-router';
-import { I18nManager, Platform, Pressable } from 'react-native';
+import { I18nManager, Platform } from 'react-native';
+import { Pressable } from '@/components/ui/Pressable';
 import { useTranslation } from 'react-i18next';
 
 import { goBackOrHome } from '@/lib/goBackOrHome';
@@ -8,6 +9,8 @@ import { goBackOrHome } from '@/lib/goBackOrHome';
 type StackHeaderBackButtonProps = {
   tintColor?: string;
   fallback?: Href;
+  /** Fixed id for the admin Activity log. */
+  trackId?: string;
 };
 
 /**
@@ -17,12 +20,14 @@ type StackHeaderBackButtonProps = {
 export function StackHeaderBackButton({
   tintColor,
   fallback = '/',
+  trackId = 'nav.back',
 }: StackHeaderBackButtonProps) {
   const { t } = useTranslation();
   const rtl = I18nManager.isRTL;
 
   return (
     <Pressable
+      trackId={trackId}
       onPress={() => goBackOrHome(fallback)}
       accessibilityRole="button"
       accessibilityLabel={t('common.back')}

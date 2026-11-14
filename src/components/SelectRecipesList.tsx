@@ -1,7 +1,8 @@
 import Ionicons from '@expo/vector-icons/Ionicons';
 import { useDeferredValue, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { FlatList, Pressable, ScrollView, Text, View } from 'react-native';
+import { FlatList, ScrollView, Text, View } from 'react-native';
+import { Pressable } from '@/components/ui/Pressable';
 
 import { TextInput } from '@/components/text-input';
 import { useThemePreference } from '@/hooks/useThemePreference';
@@ -110,6 +111,7 @@ export function SelectRecipesList({
         />
         {search.length > 0 ? (
           <Pressable
+            trackId="select_recipes.search.clear"
             onPress={() => setSearch('')}
             hitSlop={13}
             className="active:opacity-70"
@@ -129,6 +131,7 @@ export function SelectRecipesList({
           contentContainerStyle={{ gap: 8, paddingVertical: 2 }}
         >
           <Pressable
+            trackId="select_recipes.collection.all"
             onPress={() => setSelectedCollectionId(null)}
             className="rounded-[14px] px-3.5 py-2 active:opacity-80"
             style={{
@@ -149,6 +152,7 @@ export function SelectRecipesList({
             const selected = selectedCollectionId === collection.id;
             return (
               <Pressable
+                trackId="select_recipes.collection.select"
                 key={collection.id}
                 onPress={() =>
                   setSelectedCollectionId((prev) =>
@@ -180,6 +184,7 @@ export function SelectRecipesList({
         <View className="flex-row items-center gap-3">
           {selectedCount > 0 ? (
             <Pressable
+              trackId="select_recipes.selection.clear"
               onPress={() => onChangeSelectedIds([])}
               hitSlop={12}
               className="active:opacity-70"
@@ -192,6 +197,7 @@ export function SelectRecipesList({
             </Pressable>
           ) : null}
           <Pressable
+            trackId={allVisibleSelected ? 'select_recipes.deselect_visible' : 'select_recipes.select_all_visible'}
             onPress={allVisibleSelected ? deselectVisible : selectAllVisible}
             hitSlop={12}
             className="active:opacity-70"
@@ -230,6 +236,7 @@ export function SelectRecipesList({
           const ingredientCount = item.ingredients?.length ?? 0;
           return (
             <Pressable
+              trackId="select_recipes.recipe.toggle"
               className={`flex-row items-center gap-3 py-3.5 active:opacity-80 ${
                 index < displayedRecipes.length - 1 ? 'border-b' : ''
               }`}

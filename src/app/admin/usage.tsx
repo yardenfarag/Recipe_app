@@ -5,11 +5,11 @@ import { useTranslation } from 'react-i18next';
 import {
   ActivityIndicator,
   Alert,
-  Pressable,
   ScrollView,
   Text,
   View,
 } from 'react-native';
+import { Pressable } from '@/components/ui/Pressable';
 
 import { AiCostDashboard } from '@/components/admin/AiCostDashboard';
 import { Screen } from '@/components/Screen';
@@ -173,6 +173,7 @@ export default function AdminUsageScreen() {
             This usage tracker is limited to your account.
           </Text>
           <Pressable
+            trackId="admin.usage.back"
             onPress={() => router.back()}
             accessibilityRole="button"
             className="rounded-[18px] px-5 py-3"
@@ -204,6 +205,7 @@ export default function AdminUsageScreen() {
         </Text>
 
         <Pressable
+          trackId="admin.usage.refresh"
           onPress={() => void refresh()}
           accessibilityRole="button"
           className="mb-4 self-start rounded-[16px] px-4 py-2 active:opacity-70"
@@ -274,6 +276,7 @@ export default function AdminUsageScreen() {
                 keyboardType="number-pad"
               />
               <Pressable
+                trackId="admin.usage.grant"
                 className="self-start rounded-[14px] px-3 py-2"
                 style={{ backgroundColor: colors.primary }}
                 onPress={() => void handleGrant()}
@@ -310,6 +313,7 @@ export default function AdminUsageScreen() {
                     </Text>
                     {ticket.status === 'open' ? (
                       <Pressable
+                        trackId="admin.usage.ticket.close"
                         className="self-start rounded-[12px] px-3 py-1.5"
                         style={{ backgroundColor: colors.primarySoft }}
                         onPress={() => void handleCloseTicket(ticket.id)}

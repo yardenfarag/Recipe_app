@@ -1,6 +1,7 @@
 import Ionicons from '@expo/vector-icons/Ionicons';
 import { useTranslation } from 'react-i18next';
-import { Pressable, Text, View } from 'react-native';
+import { Text, View } from 'react-native';
+import { Pressable } from '@/components/ui/Pressable';
 
 import { useThemePreference, type ThemePreference } from '@/hooks/useThemePreference';
 import { CHROME_MAX_FONT_SCALE } from '@/lib/a11y';
@@ -14,10 +15,15 @@ const ICONS: Record<ThemePreference, keyof typeof Ionicons.glyphMap> = {
 type ThemeToggleProps = {
   /** Compact icon-only control for headers — cycles modes on tap. */
   compact?: boolean;
+  /**
+   * Prefix for the admin Activity log ids: `<trackId>.cycle` (compact) or
+   * `<trackId>.light` / `.dark` / `.system`. A fixed string.
+   */
+  trackId?: string;
 };
 
 /** Theme control: compact cycles modes; full shows Auto / Light / Dark. */
-export function ThemeToggle({ compact = false }: ThemeToggleProps) {
+export function ThemeToggle({ compact = false, trackId = 'theme' }: ThemeToggleProps) {
   const { t } = useTranslation();
   const { preference, colors, setPreference, cyclePreference } = useThemePreference();
 
@@ -29,7 +35,7 @@ export function ThemeToggle({ compact = false }: ThemeToggleProps) {
 
   if (compact) {
     return (
-      <Pressable
+      <Pressable trackId={`${trackId}.cycle`}
         onPress={cyclePreference}
         accessibilityRole="button"
         accessibilityLabel={t('theme.a11y', { mode: labels[preference] })}
@@ -57,7 +63,7 @@ export function ThemeToggle({ compact = false }: ThemeToggleProps) {
       {(['system', 'light', 'dark'] as ThemePreference[]).map((mode) => {
         const active = preference === mode;
         return (
-          <Pressable
+          <Pressable trackId={`${trackId}.${mode}`}
             key={mode}
             onPress={() => setPreference(mode)}
             accessibilityRole="radio"

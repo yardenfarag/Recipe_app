@@ -1,5 +1,6 @@
 import { useTranslation } from 'react-i18next';
-import { ActivityIndicator, Modal, Pressable, ScrollView, Text, useWindowDimensions, View } from 'react-native';
+import { ActivityIndicator, Modal, ScrollView, Text, useWindowDimensions, View } from 'react-native';
+import { Pressable } from '@/components/ui/Pressable';
 
 import { useRtl } from '@/hooks/useRtl';
 import { useThemePreference } from '@/hooks/useThemePreference';
@@ -17,6 +18,8 @@ interface ConfirmDialogProps {
   onConfirm: () => void;
   onCancel: () => void;
   onSecondary?: () => void;
+  /** Tap-log id prefix; logs `<trackId>.cancel`, `.secondary` and `.confirm`. */
+  trackId?: string;
 }
 
 /** Cross-platform confirm dialog — replaces Alert.alert / window.confirm. */
@@ -32,6 +35,7 @@ export function ConfirmDialog({
   onConfirm,
   onCancel,
   onSecondary,
+  trackId = 'confirm_dialog',
 }: ConfirmDialogProps) {
   const { t } = useTranslation();
   const { colors } = useThemePreference();
@@ -82,6 +86,7 @@ export function ConfirmDialog({
 
             <View className={stacked ? 'mt-5 gap-2' : 'mt-5 flex-row gap-2'}>
               <Pressable
+                trackId={`${trackId}.cancel`}
                 onPress={onCancel}
                 disabled={loading}
                 accessibilityState={{ disabled: loading }}
@@ -96,6 +101,7 @@ export function ConfirmDialog({
               </Pressable>
               {stacked ? (
                 <Pressable
+                  trackId={`${trackId}.secondary`}
                   onPress={onSecondary}
                   disabled={loading}
                   accessibilityState={{ disabled: loading }}
@@ -110,6 +116,7 @@ export function ConfirmDialog({
                 </Pressable>
               ) : null}
               <Pressable
+                trackId={`${trackId}.confirm`}
                 onPress={onConfirm}
                 disabled={loading}
                 className={`min-h-[48px] items-center justify-center rounded-[22px] px-4 py-3 active:opacity-80 ${stacked ? 'w-full' : 'min-w-0 flex-1'}`}

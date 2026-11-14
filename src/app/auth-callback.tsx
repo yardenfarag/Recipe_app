@@ -1,7 +1,8 @@
 import * as Linking from 'expo-linking';
 import { router } from 'expo-router';
 import { useEffect, useRef, useState } from 'react';
-import { ActivityIndicator, Platform, Pressable, Text, View } from 'react-native';
+import { ActivityIndicator, Platform, Text, View } from 'react-native';
+import { Pressable } from '@/components/ui/Pressable';
 import { useTranslation } from 'react-i18next';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
@@ -108,6 +109,7 @@ export default function AuthCallbackScreen() {
               {error}
             </Text>
             <Pressable
+              trackId="auth_callback.back_to_sign_in"
               className="rounded-full px-6 py-3"
               style={{ backgroundColor: colors.primary }}
               onPress={() => router.replace('/auth')}

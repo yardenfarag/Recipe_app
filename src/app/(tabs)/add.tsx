@@ -4,7 +4,8 @@ import { router, useFocusEffect } from "expo-router";
 import { useShareIntentContext } from "expo-share-intent";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { Alert, Platform, Pressable, Text, View } from "react-native";
+import { Alert, Platform, Text, View } from "react-native";
+import { Pressable } from "@/components/ui/Pressable";
 import Animated, {
   FadeIn,
   FadeOut,
@@ -31,6 +32,7 @@ import { useProfile } from "@/hooks/useProfile";
 import { useRtl } from "@/hooks/useRtl";
 import { useThemePreference } from "@/hooks/useThemePreference";
 import { announce } from "@/lib/a11y";
+import { logTap } from "@/lib/interactionLog";
 import { showNotice } from "@/lib/confirmAction";
 import { creditPurchasesOfferedOn } from "@/lib/purchases";
 import { openAppStore } from "@/lib/appStore";
@@ -792,6 +794,7 @@ export default function AddRecipeScreen() {
         >
           <View className="mb-4">
             <SnapIntentToggle
+              trackId="snap.intent"
               mode={mode}
               progress={intentProgress}
               extractLabel={t("snap.modeExtract")}
@@ -859,6 +862,7 @@ export default function AddRecipeScreen() {
                 if (banner) setBanner(null);
               }}
               onSubmitEditing={() => {
+                logTap("snap.submit_keyboard", { mode });
                 if (canSubmit) void handleGetRecipe();
               }}
               returnKeyType="go"
@@ -867,6 +871,7 @@ export default function AddRecipeScreen() {
               keyboardType="url"
             />
             <Pressable
+              trackId={`snap.submit.${mode}`}
               onPress={() => void handleGetRecipe()}
               disabled={!canSubmit}
               hitSlop={6}
@@ -919,6 +924,7 @@ export default function AddRecipeScreen() {
                   className="mt-3 self-start rounded-2xl px-4 py-2"
                   style={{ backgroundColor: colors.primary }}
                   accessibilityRole={purchasesHere ? "button" : "link"}
+                  trackId={purchasesHere ? "snap.credits.buy" : "snap.credits.open_app_store"}
                   onPress={() => {
                     if (!purchasesHere) {
                       void openAppStore();
@@ -941,6 +947,7 @@ export default function AddRecipeScreen() {
           <Pressable
             className="min-h-[48px] items-center justify-center rounded-[22px] py-3.5"
             style={{ backgroundColor: colors.surface, overflow: "hidden" }}
+            trackId="snap.photo"
             onPress={handlePhotoEntry}
             accessibilityRole="button"
           >
@@ -968,6 +975,7 @@ export default function AddRecipeScreen() {
           <Pressable
             className="mt-3 min-h-[48px] flex-row items-center gap-3 rounded-[22px] px-4 py-3 active:opacity-80"
             style={{ backgroundColor: colors.surface, overflow: "hidden" }}
+            trackId="snap.write_recipe"
             onPress={() => openRecipeEditor({ signedIn: Boolean(user) })}
             accessibilityRole="button"
             accessibilityLabel={t("recipeEditor.entry.write")}
@@ -1037,6 +1045,7 @@ export default function AddRecipeScreen() {
           onPurchased={() => refreshProfile()}
         />
         <ConfirmDialog
+          trackId="snap.partial_import_dialog"
           visible={partialImport != null}
           title={t("snap.partialTitle")}
           message={
@@ -1059,6 +1068,7 @@ export default function AddRecipeScreen() {
           }}
         />
         <ConfirmDialog
+          trackId="snap.invent_offer_dialog"
           visible={inventOffer != null}
           title={t("snap.inventConfirmTitle")}
           message={

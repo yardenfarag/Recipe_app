@@ -1,7 +1,8 @@
 import Ionicons from '@expo/vector-icons/Ionicons';
 import { useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Pressable, View } from 'react-native';
+import { View } from 'react-native';
+import { Pressable } from '@/components/ui/Pressable';
 import Animated, {
   Easing,
   interpolate,
@@ -18,6 +19,11 @@ type LibraryLayoutToggleProps = {
   onToggle: () => void;
   color: string;
   backgroundColor: string;
+  /**
+   * Prefix for the admin Activity log id: `<trackId>.grid` or `<trackId>.list`,
+   * named for the layout the tap switches to. A fixed string.
+   */
+  trackId?: string;
 };
 
 /** Icon-only list/grid control with a 3D Y-flip between faces. */
@@ -26,6 +32,7 @@ export function LibraryLayoutToggle({
   onToggle,
   color,
   backgroundColor,
+  trackId = 'library.layout',
 }: LibraryLayoutToggleProps) {
   const { t } = useTranslation();
   const reduceMotion = useReducedMotion();
@@ -61,7 +68,7 @@ export function LibraryLayoutToggle({
   });
 
   return (
-    <Pressable
+    <Pressable trackId={`${trackId}.${layout === 'list' ? 'grid' : 'list'}`}
       onPress={onToggle}
       accessibilityRole="button"
       accessibilityLabel={layout === 'list' ? t('library.showGrid') : t('library.showList')}

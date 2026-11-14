@@ -1,7 +1,8 @@
 import Ionicons from '@expo/vector-icons/Ionicons';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useEffect, useState } from 'react';
-import { I18nManager, Pressable, ScrollView, Text, View } from 'react-native';
+import { I18nManager, ScrollView, Text, View } from 'react-native';
+import { Pressable } from '@/components/ui/Pressable';
 import { useTranslation } from 'react-i18next';
 
 import { LanguagePicker } from '@/components/LanguagePicker';
@@ -63,6 +64,8 @@ export function OnboardingPager({ onAccount }: OnboardingPagerProps) {
   const isLook = step === 2;
   const isMeasure = step === 3;
   const isCook = step === 4;
+  // Fixed step names for the admin Activity log ids.
+  const stepName = (['vision', 'language', 'look', 'measure', 'cook'] as const)[step] ?? 'step';
 
   const stepTitleKeys = [
     null,
@@ -112,6 +115,7 @@ export function OnboardingPager({ onAccount }: OnboardingPagerProps) {
       <View className="mb-1 flex-row items-center justify-between px-1">
         <View className="min-h-[28px] min-w-[64px] flex-1 items-start">
           <Pressable
+            trackId={`onboarding.${stepName}.back`}
             onPress={() => goTo(step - 1)}
             accessibilityRole="button"
             accessibilityLabel={t('common.back')}
@@ -130,6 +134,7 @@ export function OnboardingPager({ onAccount }: OnboardingPagerProps) {
           {/* On the diet step, the "no restrictions" button is the skip. */}
           {isCook ? null : (
             <Pressable
+              trackId={`onboarding.${stepName}.skip`}
               onPress={() => void finishCook(diets)}
               accessibilityRole="button"
               accessibilityLabel={t('onboarding.skip')}
@@ -165,7 +170,7 @@ export function OnboardingPager({ onAccount }: OnboardingPagerProps) {
             <Text className="mb-4 text-sm leading-5" style={{ color: colors.textSecondary }}>
               {t('onboarding.languageLabel')}
             </Text>
-            <LanguagePicker skipRtlPrompt />
+            <LanguagePicker skipRtlPrompt trackId="onboarding.language" />
           </>
         ) : null}
 
@@ -181,9 +186,11 @@ export function OnboardingPager({ onAccount }: OnboardingPagerProps) {
             <Text className="mb-4 text-sm leading-5" style={{ color: colors.textSecondary }}>
               {t('onboarding.lookSubtitle')}
             </Text>
-            <ThemeToggle />
+            <ThemeToggle
+              trackId="onboarding.theme" />
             <View className="mt-4">
-              <ThemePackPicker />
+              <ThemePackPicker
+                trackId="onboarding.theme_pack" />
             </View>
           </>
         ) : null}
@@ -200,7 +207,8 @@ export function OnboardingPager({ onAccount }: OnboardingPagerProps) {
             <Text className="mb-4 text-sm leading-5" style={{ color: colors.textSecondary }}>
               {t('onboarding.measureSubtitle')}
             </Text>
-            <MeasurementToggle hint />
+            <MeasurementToggle
+              trackId="onboarding.measurement" hint />
           </>
         ) : null}
 
@@ -223,6 +231,7 @@ export function OnboardingPager({ onAccount }: OnboardingPagerProps) {
                 return (
                   <Pressable
                     key={variant.key}
+                    trackId={`onboarding.cook.diet.${variant.key}`}
                     onPress={() => toggleDiet(variant.key)}
                     disabled={blocked}
                     accessibilityRole="checkbox"
@@ -258,6 +267,7 @@ export function OnboardingPager({ onAccount }: OnboardingPagerProps) {
       <View className="gap-3 pt-4">
         {isCook && diets.length === 0 ? (
           <Pressable
+            trackId="onboarding.cook.everything"
             onPress={() => void finishCook([])}
             accessibilityRole="button"
             className="items-center rounded-[18px] px-4 py-3.5 active:opacity-80"
@@ -269,6 +279,7 @@ export function OnboardingPager({ onAccount }: OnboardingPagerProps) {
           </Pressable>
         ) : (
           <Pressable
+            trackId={isCook ? 'onboarding.cook.finish' : `onboarding.${stepName}.next`}
             onPress={() => {
               if (isCook) void finishCook(diets);
               else goNext();
@@ -288,6 +299,7 @@ export function OnboardingPager({ onAccount }: OnboardingPagerProps) {
         )}
         {isCook && diets.length > 0 ? (
           <Pressable
+            trackId="onboarding.cook.everything_instead"
             onPress={() => void finishCook([])}
             accessibilityRole="button"
             className="min-h-[44px] items-center justify-center py-2 active:opacity-70"

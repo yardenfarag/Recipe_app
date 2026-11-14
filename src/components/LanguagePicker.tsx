@@ -1,4 +1,5 @@
-import { Pressable, Text, View } from 'react-native';
+import { Text, View } from 'react-native';
+import { Pressable } from '@/components/ui/Pressable';
 import { useTranslation } from 'react-i18next';
 
 import { useLanguagePreference } from '@/hooks/useLanguagePreference';
@@ -12,10 +13,15 @@ type LanguagePickerProps = {
    * mid-flow reload does not kill the pager. Caller should prompt later.
    */
   skipRtlPrompt?: boolean;
+  /** Prefix for the admin Activity log id; the language code is appended. */
+  trackId?: string;
 };
 
 /** Vertical list of app languages for Settings / onboarding. */
-export function LanguagePicker({ skipRtlPrompt = false }: LanguagePickerProps) {
+export function LanguagePicker({
+  skipRtlPrompt = false,
+  trackId = 'language.select',
+}: LanguagePickerProps) {
   const { t } = useTranslation();
   const { language, setLanguage } = useLanguagePreference();
   const { colors } = useThemePreference();
@@ -38,6 +44,7 @@ export function LanguagePicker({ skipRtlPrompt = false }: LanguagePickerProps) {
         return (
           <Pressable
             key={lang.code}
+            trackId={`${trackId}.${lang.code}`}
             onPress={() => handleSelect(lang.code)}
             accessibilityRole="radio"
             accessibilityState={{ checked: active }}

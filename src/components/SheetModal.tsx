@@ -3,11 +3,11 @@ import { type ReactNode } from 'react';
 import {
   Modal,
   Platform,
-  Pressable,
   Text,
   View,
   useWindowDimensions,
 } from 'react-native';
+import { Pressable } from '@/components/ui/Pressable';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useTranslation } from 'react-i18next';
 
@@ -29,6 +29,8 @@ type SheetModalProps = {
   showCloseButton?: boolean;
   /** Replace the default close control on the left. */
   headerLeft?: ReactNode;
+  /** Tap-log id prefix; logs `<trackId>.close` and `<trackId>.backdrop`. */
+  trackId?: string;
 };
 
 /**
@@ -44,6 +46,7 @@ export function SheetModal({
   maxWidth = 520,
   showCloseButton = true,
   headerLeft,
+  trackId = 'sheet_modal',
 }: SheetModalProps) {
   const { t } = useTranslation();
   const { colors } = useThemePreference();
@@ -61,6 +64,7 @@ export function SheetModal({
         headerLeft
       ) : showCloseButton ? (
         <Pressable
+          trackId={`${trackId}.close`}
           onPress={onClose}
           accessibilityRole="button"
           accessibilityLabel={t('common.close')}
@@ -97,6 +101,7 @@ export function SheetModal({
           }}
         >
           <Pressable
+            trackId={`${trackId}.backdrop`}
             accessibilityRole="button"
             accessibilityLabel={t('common.dismiss')}
             onPress={onClose}

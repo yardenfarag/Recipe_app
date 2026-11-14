@@ -1,6 +1,8 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { ActivityIndicator, Pressable, Text, View } from 'react-native';
+import { ActivityIndicator, Text, View } from 'react-native';
+import { Pressable } from '@/components/ui/Pressable';
+import { logTap } from '@/lib/interactionLog';
 
 import { MeasurementToggle } from '@/components/MeasurementToggle';
 import { SettingsDetailScreen } from '@/components/SettingsDetailScreen';
@@ -142,7 +144,7 @@ export default function RecipeSettingsScreen() {
       <Text className="mb-3 text-sm font-semibold" style={{ color: colors.text }} accessibilityRole="header">
         {t('settings.measurements')}
       </Text>
-      <MeasurementToggle />
+      <MeasurementToggle trackId="settings.kitchen.measurement" />
       <Text className="mt-3 text-xs leading-5" style={{ color: colors.textSecondary }}>
         {t('settings.measurementsHint')}
       </Text>
@@ -162,6 +164,7 @@ export default function RecipeSettingsScreen() {
           const active = profile.diets.includes(variant.key as KitchenDietKey);
           return (
             <Pressable
+              trackId={`settings.kitchen.diet.${variant.key}`}
               key={variant.key}
               onPress={() => toggleDiet(variant.key as KitchenDietKey)}
               className="min-h-[44px] items-center justify-center rounded-2xl px-4 active:opacity-80"
@@ -182,6 +185,7 @@ export default function RecipeSettingsScreen() {
       </Text>
       <View className="mb-2 flex-row items-center gap-3">
         <Pressable
+          trackId="settings.kitchen.servings.decrease"
           onPress={() => bumpServings(-1)}
           disabled={profile.defaultServings == null}
           className="h-11 w-11 items-center justify-center rounded-full active:opacity-80"
@@ -212,6 +216,7 @@ export default function RecipeSettingsScreen() {
           {profile.defaultServings ?? t('settings.kitchenServingsOff')}
         </Text>
         <Pressable
+          trackId="settings.kitchen.servings.increase"
           onPress={() => bumpServings(1)}
           disabled={profile.defaultServings === 24}
           className="h-11 w-11 items-center justify-center rounded-full active:opacity-80"
@@ -224,6 +229,7 @@ export default function RecipeSettingsScreen() {
         </Pressable>
         {profile.defaultServings != null ? (
           <Pressable
+            trackId="settings.kitchen.servings.clear"
             onPress={() => void persist({ ...profile, defaultServings: undefined })}
             className="min-h-[44px] justify-center"
             hitSlop={8}
@@ -255,6 +261,7 @@ export default function RecipeSettingsScreen() {
             {swap.from} → {swap.to}
           </Text>
           <Pressable
+            trackId="settings.kitchen.swap.remove"
             onPress={() =>
               void persist({
                 ...profile,
@@ -293,6 +300,7 @@ export default function RecipeSettingsScreen() {
         />
       </View>
       <Pressable
+        trackId="settings.kitchen.swap.add"
         onPress={addSwap}
         accessibilityRole="button"
         className="mb-6 min-h-[44px] items-center justify-center self-start rounded-3xl px-4 active:opacity-80"
@@ -322,6 +330,7 @@ export default function RecipeSettingsScreen() {
               {staple}
             </Text>
             <Pressable
+              trackId="settings.kitchen.pantry.remove"
               onPress={() => void persist(removePantryStaple(profile, staple))}
               className="min-h-[44px] justify-center"
               hitSlop={8}
@@ -344,10 +353,14 @@ export default function RecipeSettingsScreen() {
           placeholderTextColor={colors.textSecondary}
           value={pantryDraft}
           onChangeText={setPantryDraft}
-          onSubmitEditing={addPantry}
+          onSubmitEditing={() => {
+            logTap('settings.kitchen.pantry.submit');
+            addPantry();
+          }}
         />
       </View>
       <Pressable
+        trackId="settings.kitchen.pantry.add"
         onPress={addPantry}
         accessibilityRole="button"
         className="mb-6 min-h-[44px] items-center justify-center self-start rounded-3xl px-4 active:opacity-80"
@@ -366,6 +379,7 @@ export default function RecipeSettingsScreen() {
             {t('hub.title')}
           </Text>
           <Pressable
+            trackId="settings.kitchen.contribute_to_hub.toggle"
             onPress={() => {
               const next = !contributeToHub;
               setContributeToHubState(next);
@@ -409,6 +423,7 @@ export default function RecipeSettingsScreen() {
         {t('settings.kitchenAfterSnap')}
       </Text>
       <Pressable
+        trackId="settings.kitchen.auto_apply.toggle"
         onPress={() => void persist({ ...profile, autoApplyOnExtract: !profile.autoApplyOnExtract })}
         className="flex-row items-center justify-between rounded-3xl border px-4 py-3.5 active:opacity-80"
         style={{ borderColor: colors.border, backgroundColor: colors.surface }}

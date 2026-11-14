@@ -1,6 +1,7 @@
 import { router, useLocalSearchParams, useNavigation } from 'expo-router';
 import { useCallback, useEffect, useState } from 'react';
-import { ActivityIndicator, Alert, Platform, Pressable, Text, View } from 'react-native';
+import { ActivityIndicator, Alert, Platform, Text, View } from 'react-native';
+import { Pressable } from '@/components/ui/Pressable';
 import { useTranslation } from 'react-i18next';
 import type { Edge } from 'react-native-safe-area-context';
 
@@ -126,7 +127,7 @@ export default function HubRecipeScreen() {
           <Text className="text-center text-base" style={{ color: colors.textSecondary }}>
             {loadError ?? t('hub.notFound')}
           </Text>
-          <Pressable
+          <Pressable trackId="hub_recipe.back_to_hub"
             onPress={() => router.replace('/hub')}
             accessibilityRole="button"
             className="rounded-full px-5 py-3 active:opacity-80"
@@ -160,7 +161,7 @@ export default function HubRecipeScreen() {
         </View>
       ) : null}
       <View className="px-5 pb-3 pt-2">
-        <Pressable
+        <Pressable trackId={existingRecipeId ? 'hub_recipe.open_in_library' : 'hub_recipe.add_to_library'}
           onPress={() =>
             existingRecipeId
               ? router.replace(`/recipe/${existingRecipeId}`)

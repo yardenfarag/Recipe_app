@@ -3,16 +3,17 @@ import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import {
   ActivityIndicator,
-  Pressable,
   ScrollView,
   Text,
   View,
 } from 'react-native';
+import { Pressable } from '@/components/ui/Pressable';
 
 import { SheetModal } from '@/components/SheetModal';
 import { TextInput } from '@/components/text-input';
 import { useThemePreference } from '@/hooks/useThemePreference';
 import { announce } from '@/lib/a11y';
+import { logTap } from '@/lib/interactionLog';
 import { translateAppError } from '@/lib/translateAppError';
 import type { RecipeCollection } from '@/types/collection';
 
@@ -97,12 +98,13 @@ export function AddToCollectionModal({
 
   return (
     <SheetModal
+      trackId="add_to_collection.sheet"
       visible={visible}
       onClose={onClose}
       title={t('library.addToCollection')}
       maxWidth={520}
       headerRight={
-        <Pressable
+        <Pressable trackId="add_to_collection.save"
           onPress={() => void handleSave()}
           disabled={saving}
           hitSlop={12}
@@ -134,7 +136,7 @@ export function AddToCollectionModal({
               const isOn = checked.has(collection.id);
               const count = collection.recipeIds.length;
               return (
-                <Pressable
+                <Pressable trackId="add_to_collection.collection.toggle"
                   key={collection.id}
                   className={`flex-row items-center gap-3 py-3.5 active:opacity-80 ${
                     index < localCollections.length - 1 ? 'border-b' : ''
@@ -199,9 +201,12 @@ export function AddToCollectionModal({
             value={newName}
             onChangeText={setNewName}
             returnKeyType="done"
-            onSubmitEditing={() => void handleCreate()}
+            onSubmitEditing={() => {
+              logTap('add_to_collection.create.submit_key');
+              void handleCreate();
+            }}
           />
-          <Pressable
+          <Pressable trackId="add_to_collection.create"
             className="min-h-[44px] min-w-[44px] items-center justify-center rounded-2xl px-4 active:opacity-80"
             style={{ backgroundColor: colors.accent, opacity: creating ? 0.7 : 1 }}
             disabled={creating}

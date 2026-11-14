@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { ActivityIndicator, Pressable, ScrollView, Text, View } from 'react-native';
+import { ActivityIndicator, ScrollView, Text, View } from 'react-native';
+import { Pressable } from '@/components/ui/Pressable';
 
 import { SheetModal } from '@/components/SheetModal';
 import { useLanguagePreference } from '@/hooks/useLanguagePreference';
@@ -124,7 +125,8 @@ export function SubstitutionModal({
   }
 
   return (
-    <SheetModal visible={visible} onClose={onClose} title={t('recipe.swapTitle')} maxWidth={480}>
+    <SheetModal
+      trackId="substitution.sheet" visible={visible} onClose={onClose} title={t('recipe.swapTitle')} maxWidth={480}>
       <ScrollView className="flex-1 px-5" showsVerticalScrollIndicator={false}>
         {ingredient && (
           <View
@@ -189,7 +191,7 @@ export function SubstitutionModal({
                 <Text className="mb-3 text-sm leading-5" style={{ color: colors.textSecondary }}>
                   {alt.reason}
                 </Text>
-                <Pressable
+                <Pressable trackId="substitution.apply"
                   className="items-center rounded-full py-3 active:opacity-80"
                   style={{
                     backgroundColor: colors.primary,

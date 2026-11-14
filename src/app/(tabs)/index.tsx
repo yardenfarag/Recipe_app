@@ -6,12 +6,12 @@ import {
   Alert,
   FlatList,
   Platform,
-  Pressable,
   Text,
   View,
   type NativeScrollEvent,
   type NativeSyntheticEvent,
 } from 'react-native';
+import { Pressable } from '@/components/ui/Pressable';
 import Animated, {
   Easing,
   interpolate,
@@ -412,6 +412,7 @@ export default function HomeScreen() {
     ({ item, index }: { item: Recipe; index: number }) => (
       <View style={numColumns > 1 ? { flex: 1, paddingHorizontal: 6 } : undefined}>
         <RecipeListRow
+          trackId="library.recipe"
           recipe={item}
           index={index}
           variant={numColumns > 1 ? 'card' : 'row'}
@@ -445,6 +446,7 @@ export default function HomeScreen() {
               {t('library.saved')}
             </Text>
             <Pressable
+              trackId="library.saved_banner.dismiss"
               onPress={() => setSavedBanner(false)}
               hitSlop={14}
               accessibilityRole="button"
@@ -471,6 +473,7 @@ export default function HomeScreen() {
               {t('library.refreshFailed')}
             </Text>
             <Pressable
+              trackId="library.load_error.retry"
               onPress={() => refresh()}
               hitSlop={12}
               accessibilityRole="button"
@@ -488,6 +491,7 @@ export default function HomeScreen() {
             <BrandHeader title={t('library.title')} />
           </View>
           <Pressable
+            trackId="library.cookbook.open"
             onPress={() => router.push('/cookbook')}
             accessibilityRole="button"
             accessibilityLabel={t('library.makeCookbook')}
@@ -597,6 +601,7 @@ export default function HomeScreen() {
           {error}
         </Text>
         <Pressable
+          trackId="library.error.try_again"
           onPress={() => refresh()}
           accessibilityRole="button"
           className="rounded-3xl px-6 py-3.5 active:opacity-80"
@@ -622,6 +627,7 @@ export default function HomeScreen() {
           />
 
           <Pressable
+            trackId="library.empty.add_recipe"
             className="mt-8 w-full items-center rounded-3xl py-4 active:opacity-80"
             style={{ backgroundColor: colors.primary }}
             onPress={() => router.push('/add')}
@@ -632,6 +638,7 @@ export default function HomeScreen() {
             </Text>
           </Pressable>
           <Pressable
+            trackId="library.empty.write_recipe"
             className="mt-3 min-h-[44px] items-center justify-center px-4 active:opacity-70"
             onPress={() => openRecipeEditor({ signedIn: Boolean(user) })}
             accessibilityRole="button"
@@ -700,6 +707,7 @@ export default function HomeScreen() {
                         : t('library.noMatchesHint')}
                   </Text>
                   <Pressable
+                    trackId="library.filters.clear"
                     onPress={clearFilters}
                     accessibilityRole="button"
                     className="min-h-[44px] items-center justify-center rounded-3xl px-5 active:opacity-80"
@@ -770,6 +778,7 @@ export default function HomeScreen() {
       />
 
       <NameEditModal
+        trackId="library.rename_recipe"
         visible={renameTarget != null}
         title={t('library.renameRecipe')}
         initialValue={renameTarget ? recipeVisibleName(renameTarget) : ''}
@@ -779,6 +788,7 @@ export default function HomeScreen() {
       />
 
       <ConfirmDialog
+        trackId="library.delete_recipe_dialog"
         visible={deleteTarget != null}
         title={t('library.deleteRecipeTitle')}
         message={
@@ -797,6 +807,7 @@ export default function HomeScreen() {
       />
 
       <ConfirmDialog
+        trackId="library.delete_collection_dialog"
         visible={deleteCollectionId != null}
         title={t('library.deleteCollectionTitle')}
         message={
@@ -815,6 +826,7 @@ export default function HomeScreen() {
       />
 
       <NameEditModal
+        trackId="library.collection_name"
         visible={nameModal != null}
         title={
           nameModal?.mode === 'rename'
@@ -844,6 +856,7 @@ export default function HomeScreen() {
         footer={
           nameModal?.mode === 'rename' ? (
             <Pressable
+              trackId="library.collection.delete"
               className="mt-6 items-center rounded-2xl py-3.5 active:opacity-80"
               style={{ backgroundColor: colors.dangerSoft }}
               accessibilityRole="button"

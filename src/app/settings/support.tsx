@@ -2,7 +2,8 @@ import Ionicons from '@expo/vector-icons/Ionicons';
 import { type Href, router } from 'expo-router';
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Platform, Pressable, Text, View } from 'react-native';
+import { Platform, Text, View } from 'react-native';
+import { Pressable } from '@/components/ui/Pressable';
 
 import { SettingsDetailScreen } from '@/components/SettingsDetailScreen';
 import { SupportTicketModal } from '@/components/SupportTicketModal';
@@ -19,14 +20,23 @@ type SupportRowProps = {
   last?: boolean;
   /** "link" for rows that leave the app (mailto / external URL). */
   role?: 'button' | 'link';
+  /** Fixed id for the admin Activity log, like 'support.privacy_policy'. */
+  trackId: string;
 };
 
-function SupportRow({ label, icon, onPress, last = false, role = 'button' }: SupportRowProps) {
+function SupportRow({
+  label,
+  icon,
+  onPress,
+  last = false,
+  role = 'button',
+  trackId,
+}: SupportRowProps) {
   const { colors } = useThemePreference();
   const { chevronForward } = useRtl();
 
   return (
-    <Pressable
+    <Pressable trackId={trackId}
       onPress={onPress}
       accessibilityRole={role}
       accessibilityLabel={label}
@@ -68,6 +78,7 @@ export default function SupportSettingsScreen() {
       <SettingsDetailScreen>
         {Platform.OS === 'web' ? (
           <SupportRow
+            trackId="support.about_pinch"
             label={t('settings.aboutPinch')}
             icon="phone-portrait-outline"
             onPress={() => router.push('/welcome' as Href)}
@@ -75,33 +86,39 @@ export default function SupportSettingsScreen() {
         ) : null}
         {user ? (
           <SupportRow
+            trackId="support.report_issue"
             label={t('settings.reportIssue')}
             icon="chatbubble-ellipses-outline"
             onPress={() => setSupportOpen(true)}
           />
         ) : null}
         <SupportRow
+          trackId="support.email_support"
           label={t('settings.emailSupport')}
           icon="mail-outline"
           role="link"
           onPress={() => void openLegalUrl(LEGAL_URLS.supportMailto)}
         />
         <SupportRow
+          trackId="support.privacy_policy"
           label={t('settings.privacyPolicy')}
           icon="lock-closed-outline"
           onPress={() => openLegalDoc('privacy')}
         />
         <SupportRow
+          trackId="support.terms_of_use"
           label={t('settings.termsOfUse')}
           icon="document-text-outline"
           onPress={() => openLegalDoc('terms')}
         />
         <SupportRow
+          trackId="support.delete_account_guide"
           label={t('settings.deleteAccountGuide')}
           icon="trash-outline"
           onPress={() => openLegalDoc('delete-account')}
         />
         <SupportRow
+          trackId="support.delete_data_guide"
           label={t('settings.deleteDataGuide')}
           icon="globe-outline"
           onPress={() => openLegalDoc('delete-data')}
