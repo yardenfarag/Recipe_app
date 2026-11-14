@@ -484,6 +484,22 @@ export default {
         "label": "Alta en proteína",
         "description": "Más proteína, igual de rica."
       },
+      "keto": {
+        "label": "Keto",
+        "description": "Muy baja en carbohidratos y alta en grasa: sin azúcar, granos ni almidón."
+      },
+      "mediterranean": {
+        "label": "Mediterránea",
+        "description": "Aceite de oliva, verduras, legumbres y pescado; poca carne roja."
+      },
+      "paleo": {
+        "label": "Paleo",
+        "description": "Sin granos, legumbres, lácteos ni azúcar refinado."
+      },
+      "pescatarian": {
+        "label": "Pescetariana",
+        "description": "Sin carne ni aves; pescado y mariscos, sí."
+      },
       "custom": {
         "label": "Tu versión",
         "description": "Adaptada a lo que pediste."
@@ -851,6 +867,7 @@ export default {
     "nut_free": "Sin frutos secos",
     "keto": "Keto",
     "paleo": "Paleo",
+    "pescatarian": "Pescetariana",
     "healthy": "Saludable",
     "low_carb": "Baja en carbos",
     "high_protein": "Alta en proteína",

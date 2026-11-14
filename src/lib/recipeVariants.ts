@@ -6,6 +6,10 @@ export type RecipeVariantKey =
   | 'dairy_free'
   | 'low_carb'
   | 'high_protein'
+  | 'keto'
+  | 'mediterranean'
+  | 'paleo'
+  | 'pescatarian'
   | 'custom';
 
 export const RECIPE_VARIANTS: {
@@ -55,6 +59,30 @@ export const RECIPE_VARIANTS: {
     label: 'High protein',
     icon: 'barbell-outline',
     description: 'Boost protein while keeping it satisfying.',
+  },
+  {
+    key: 'keto',
+    label: 'Keto',
+    icon: 'flame-outline',
+    description: 'Very low carb, high fat — no sugar, grains, or starch.',
+  },
+  {
+    key: 'mediterranean',
+    label: 'Mediterranean',
+    icon: 'sunny-outline',
+    description: 'Olive oil, vegetables, legumes, and fish; little red meat.',
+  },
+  {
+    key: 'paleo',
+    label: 'Paleo',
+    icon: 'egg-outline',
+    description: 'No grains, legumes, dairy, or refined sugar.',
+  },
+  {
+    key: 'pescatarian',
+    label: 'Pescatarian',
+    icon: 'fish-outline',
+    description: 'No meat or poultry — fish and seafood are fine.',
   },
 ];
 

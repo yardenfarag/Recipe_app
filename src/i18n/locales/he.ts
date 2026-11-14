@@ -484,6 +484,22 @@ export default {
         "label": "עשיר בחלבון",
         "description": "יותר חלבון, בלי לוותר על הטעם."
       },
+      "keto": {
+        "label": "קטו",
+        "description": "מעט מאוד פחמימות והרבה שומן — בלי סוכר, דגנים או עמילן."
+      },
+      "mediterranean": {
+        "label": "ים־תיכוני",
+        "description": "שמן זית, ירקות, קטניות ודגים; מעט בשר אדום."
+      },
+      "paleo": {
+        "label": "פליאו",
+        "description": "בלי דגנים, קטניות, מוצרי חלב או סוכר מזוקק."
+      },
+      "pescatarian": {
+        "label": "פסקטריאני",
+        "description": "בלי בשר ועוף — דגים ופירות ים כן."
+      },
       "custom": {
         "label": "הגרסה שלכם",
         "description": "מותאם למה שביקשתם."
@@ -851,6 +867,7 @@ export default {
     "nut_free": "בלי אגוזים",
     "keto": "קטו",
     "paleo": "פליאו",
+    "pescatarian": "פסקטריאני",
     "healthy": "בריא",
     "low_carb": "דל פחמימות",
     "high_protein": "עשיר בחלבון",

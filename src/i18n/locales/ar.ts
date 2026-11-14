@@ -484,6 +484,22 @@ export default {
         "label": "بروتين عالي",
         "description": "بروتين أكثر، ونفس الطعم."
       },
+      "keto": {
+        "label": "كيتو",
+        "description": "كربوهيدرات قليلة جدًا ودهون عالية — بدون سكر أو حبوب أو نشويات."
+      },
+      "mediterranean": {
+        "label": "متوسطي",
+        "description": "زيت زيتون وخضار وبقوليات وسمك، وقليل من اللحم الأحمر."
+      },
+      "paleo": {
+        "label": "باليو",
+        "description": "بدون حبوب أو بقوليات أو ألبان أو سكر مكرر."
+      },
+      "pescatarian": {
+        "label": "بيسكاتاري",
+        "description": "بدون لحوم أو دواجن — السمك والمأكولات البحرية مسموحة."
+      },
       "custom": {
         "label": "نسختك",
         "description": "معدّلة حسب طلبك."
@@ -851,6 +867,7 @@ export default {
     "nut_free": "بدون مكسرات",
     "keto": "كيتو",
     "paleo": "باليو",
+    "pescatarian": "بيسكاتاري",
     "healthy": "صحي",
     "low_carb": "قليل الكارب",
     "high_protein": "بروتين عالي",
