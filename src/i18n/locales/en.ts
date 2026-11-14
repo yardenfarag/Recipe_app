@@ -484,6 +484,22 @@ export default {
         "label": "High protein",
         "description": "Boost protein while keeping it satisfying."
       },
+      "keto": {
+        "label": "Keto",
+        "description": "Very low carb, high fat — no sugar, grains, or starch."
+      },
+      "mediterranean": {
+        "label": "Mediterranean",
+        "description": "Olive oil, vegetables, legumes, and fish; little red meat."
+      },
+      "paleo": {
+        "label": "Paleo",
+        "description": "No grains, legumes, dairy, or refined sugar."
+      },
+      "pescatarian": {
+        "label": "Pescatarian",
+        "description": "No meat or poultry — fish and seafood are fine."
+      },
       "custom": {
         "label": "Your version",
         "description": "Adapted from what you asked for."
@@ -851,6 +867,7 @@ export default {
     "nut_free": "Nut-Free",
     "keto": "Keto",
     "paleo": "Paleo",
+    "pescatarian": "Pescatarian",
     "healthy": "Healthy",
     "low_carb": "Low-Carb",
     "high_protein": "High-Protein",

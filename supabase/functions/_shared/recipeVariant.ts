@@ -22,7 +22,11 @@ export type RecipeVariantKey =
   | 'gluten_free'
   | 'dairy_free'
   | 'low_carb'
-  | 'high_protein';
+  | 'high_protein'
+  | 'keto'
+  | 'mediterranean'
+  | 'paleo'
+  | 'pescatarian';
 
 const VARIANT_INSTRUCTIONS: Record<RecipeVariantKey, string> = {
   healthier:
@@ -39,6 +43,14 @@ const VARIANT_INSTRUCTIONS: Record<RecipeVariantKey, string> = {
     'Make this recipe lower in carbohydrates. Reduce starchy carbs and added sugars; favor vegetables, proteins, and healthy fats.',
   high_protein:
     'Make this recipe higher in protein while keeping it practical and delicious. Increase lean protein portions or add protein-rich ingredients.',
+  keto:
+    'Make this recipe ketogenic: very low net carbs, high fat, moderate protein. Remove sugar and sweeteners with sugar, grains, flour, rice, pasta, bread, potatoes and other starchy vegetables, legumes, and high-sugar fruit. Use keto swaps such as cauliflower rice, zucchini noodles, almond or coconut flour, and sugar-free sweeteners, and add healthy fats (olive oil, butter, avocado, cheese, nuts) where they fit. This is stricter than simply lowering carbs.',
+  mediterranean:
+    'Adapt this recipe to the Mediterranean diet: use extra-virgin olive oil as the main fat; feature vegetables, legumes, whole grains, fish or seafood, nuts, and fresh herbs. Cut back red and processed meat (swap for fish, poultry, or legumes where it fits), and replace butter, cream, and added sugar. Follow this eating pattern rather than just making the dish lighter.',
+  paleo:
+    'Make this recipe paleo. Allowed: meat, fish, eggs, vegetables, fruit, nuts, and seeds. Remove all grains (including wheat, rice, corn, and oats), legumes (including beans, lentils, peanuts, and soy), dairy, refined sugar, and processed seed oils. Use swaps such as almond or cassava flour, coconut milk, coconut aminos instead of soy sauce, olive oil or avocado oil, and honey or maple syrup in small amounts.',
+  pescatarian:
+    'Make this recipe pescatarian. Replace all meat and poultry (including meat-based stocks, gelatin, and lard) with fish or seafood that suits the dish. Eggs and dairy may stay. Unlike vegetarian, fish and seafood are welcome and should be the main protein where meat was.',
 };
 
 const SYSTEM_PROMPT = `You are a culinary expert adapting home-cooking recipes for dietary and lifestyle goals.
