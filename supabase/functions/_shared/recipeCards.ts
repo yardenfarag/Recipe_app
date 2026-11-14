@@ -10,6 +10,8 @@ import {
 import type { SupabaseClient } from 'https://esm.sh/@supabase/supabase-js@2';
 
 import { recipeAppliancesOf } from './appliances.ts';
+import { deriveRecipeDiets, type DietsRecipeInput } from './recipeDiets.ts';
+import { logUsageEvent } from './usageLog.ts';
 
 export type HubPlatform = 'youtube' | 'instagram' | 'tiktok' | 'web';
 
@@ -161,17 +163,20 @@ export async function findRecipeCard(
   return null;
 }
 
+/** The card a publish wrote or found, when its diets still need checking (PIN-83). */
+export type PublishedCard = { id: string; needsDiets: boolean };
+
 export async function publishRecipeCard(
   admin: SupabaseClient,
   recipe: HubRecipeSnapshot,
   contentId?: string | null,
-): Promise<void> {
-  if (!canPublishHubRecipe(recipe) || !isHubPlatform(recipe.platform)) return;
+): Promise<PublishedCard | null> {
+  if (!canPublishHubRecipe(recipe) || !isHubPlatform(recipe.platform)) return null;
 
   const url = recipe.original_url?.trim();
-  if (!url) return;
+  if (!url) return null;
   const key = recipeCardCanonicalKey(recipe.platform, url, contentId);
-  if (!key) return;
+  if (!key) return null;
 
   const canonicalUrl = recipeCardCanonicalUrl(recipe.platform, url, contentId);
   const row = {
@@ -199,36 +204,84 @@ export async function publishRecipeCard(
 
   const { data: existing, error: existingError } = await admin
     .from('recipe_cards')
-    .select('id, extraction_status, image_url, appliances')
+    .select('id, extraction_status, image_url, appliances, diets')
     .eq('canonical_key', key)
     .maybeSingle();
 
   if (existingError) {
     console.error('[recipe-cards] existing lookup failed', existingError);
-    return;
+    return null;
   }
 
   if (!existing) {
-    const { error } = await admin.from('recipe_cards').insert(row);
-    if (error) console.error('[recipe-cards] insert failed', error);
-    return;
+    const { data: inserted, error } = await admin.from('recipe_cards').insert(row).select('id').single();
+    if (error) {
+      console.error('[recipe-cards] insert failed', error);
+      return null;
+    }
+    return { id: inserted.id as string, needsDiets: true };
   }
 
   const shouldReplace = existing.extraction_status !== 'full';
   const shouldFillImage = !existing.image_url && row.image_url;
   // Like the image: fill appliances on a card that has none, never overwrite (matches the recipe_appliances migration).
   const shouldFillAppliances = existing.appliances == null && row.appliances != null;
-  if (!shouldReplace && !shouldFillImage && !shouldFillAppliances) return;
+  const needsDiets = shouldReplace || existing.diets == null;
+  if (!shouldReplace && !shouldFillImage && !shouldFillAppliances) {
+    return { id: existing.id as string, needsDiets };
+  }
 
   const fill: Record<string, unknown> = { updated_at: row.updated_at };
   if (shouldFillImage) fill.image_url = row.image_url;
   if (shouldFillAppliances) fill.appliances = row.appliances;
 
+  // New content means the old diet check no longer applies.
   const { error } = await admin
     .from('recipe_cards')
-    .update(shouldReplace ? row : fill)
+    .update(shouldReplace ? { ...row, diets: null } : fill)
     .eq('id', existing.id);
-  if (error) console.error('[recipe-cards] update failed', error);
+  if (error) {
+    console.error('[recipe-cards] update failed', error);
+    return null;
+  }
+  return { id: existing.id as string, needsDiets };
+}
+
+/**
+ * Checks which diets a published card fits and stores them (PIN-83). Writes only while the card's
+ * diets are still null, so a concurrent check or the backfill is never overwritten. Logs its own
+ * usage row, because extract-recipe has already logged the extract by the time this runs.
+ */
+export async function fillRecipeCardDiets(
+  admin: SupabaseClient,
+  cardId: string,
+  recipe: DietsRecipeInput,
+  userId: string | null,
+): Promise<void> {
+  const started = Date.now();
+  const result = await deriveRecipeDiets(recipe);
+  let saved = false;
+  if (result.diets !== null) {
+    const { data, error } = await admin
+      .from('recipe_cards')
+      .update({ diets: result.diets })
+      .eq('id', cardId)
+      .is('diets', null)
+      .select('id');
+    if (error) console.error('[recipe-cards] diets update failed', error);
+    saved = !error && (data ?? []).length > 0;
+  }
+  if (result.usages.length === 0) return;
+  await logUsageEvent(admin, {
+    userId,
+    action: 'hub_diets',
+    status: result.diets === null ? 'failed' : 'ok',
+    usages: result.usages,
+    tokensCharged: 0,
+    durationMs: Date.now() - started,
+    errorMessage: result.error ?? null,
+    metadata: { card_id: cardId, diets: result.diets, saved },
+  });
 }
 
 export async function userContributesToHub(

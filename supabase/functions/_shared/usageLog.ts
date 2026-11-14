@@ -21,6 +21,9 @@ export interface UsageEventInput {
     | 'content_gate'
     | 'extract_gate'
     | 'appliances_backfill'
+    /** A Hub card's diet check after publish, and its admin backfill (PIN-83). */
+    | 'hub_diets'
+    | 'hub_diets_backfill'
     /** save-recipe-edit's Jev call: ok, blocked or jev_failed (PIN-79). */
     | 'recipe_edit_check'
     /** save-recipe-edit's background recalculation (PIN-79). */

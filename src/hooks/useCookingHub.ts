@@ -1,6 +1,7 @@
 import { useFocusEffect } from '@react-navigation/native';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 
+import { useKitchenProfile } from '@/hooks/useKitchenProfile';
 import {
   fetchHubCards,
   fetchHubTags,
@@ -18,6 +19,8 @@ type HubFilters = {
   tags: string[];
   sort: HubSort;
   platform: HubPlatform | 'all';
+  /** Kitchen-profile diets; matching cards come first (PIN-83). */
+  diets: string[];
 };
 
 function dedupeAppend(current: RecipeCard[], page: RecipeCard[]): RecipeCard[] {
@@ -47,6 +50,13 @@ export function useCookingHub() {
   const [sort, setSort] = useState<HubSort>('popular');
   const [platform, setPlatform] = useState<HubPlatform | 'all'>('all');
   const [tagChoices, setTagChoices] = useState<string[]>([]);
+  const { profile: kitchen, loading: kitchenLoading, reload: reloadKitchen } = useKitchenProfile();
+  const dietKey = [...kitchen.diets].sort().join(',');
+  // Latches once the first kitchen load ends, so later focus reloads don't re-run the list.
+  const [kitchenReady, setKitchenReady] = useState(false);
+  useEffect(() => {
+    if (!kitchenLoading) setKitchenReady(true);
+  }, [kitchenLoading]);
 
   const requestRef = useRef(0);
   const appendLock = useRef(false);
@@ -60,6 +70,7 @@ export function useCookingHub() {
     tags: [],
     sort: 'popular',
     platform: 'all',
+    diets: [],
   });
 
   useEffect(() => {
@@ -112,6 +123,7 @@ export function useCookingHub() {
           tags: filters.tags,
           sort: filters.sort,
           platform: filters.platform,
+          diets: filters.diets,
           offset,
           limit,
           includeCount: mode !== 'append',
@@ -154,14 +166,17 @@ export function useCookingHub() {
   const tagKey = selectedTags.join('\u0001');
 
   useEffect(() => {
+    // Wait for the kitchen profile so the first page is already in diet order.
+    if (!kitchenReady) return;
     filtersRef.current = {
       search: debouncedSearch,
       tags: tagKey ? tagKey.split('\u0001') : [],
       sort,
       platform,
+      diets: dietKey ? dietKey.split(',') : [],
     };
     void run('replace');
-  }, [debouncedSearch, tagKey, sort, platform, run]);
+  }, [debouncedSearch, tagKey, sort, platform, dietKey, kitchenReady, run]);
 
   useEffect(() => {
     void loadTags(platform);
@@ -172,7 +187,9 @@ export function useCookingHub() {
       if (!hasLoadedRef.current) return;
       void run('refresh');
       void loadTags(filtersRef.current.platform);
-    }, [loadTags, run]),
+      // Diets may have changed in Settings; a change re-runs the list through the effect above.
+      void reloadKitchen();
+    }, [loadTags, reloadKitchen, run]),
   );
 
   const loadMore = useCallback(() => {
