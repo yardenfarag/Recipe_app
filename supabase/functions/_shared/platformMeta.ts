@@ -18,6 +18,8 @@ export interface PlatformMeta {
   durationSeconds?: number;
   /** Platform-native content id when resolved (e.g. TikTok numeric id from short links). */
   contentId?: string;
+  /** The post's stable URL when the fetch resolved one (a Facebook share link becomes its reel or post). */
+  canonicalUrl?: string;
 }
 
 export const EMPTY_PLATFORM_META: PlatformMeta = { topComments: [] };

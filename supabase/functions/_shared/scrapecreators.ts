@@ -14,11 +14,16 @@ export function getScrapeCreatorsApiKey(): string {
   return key;
 }
 
-/** GET request to the ScrapeCreators REST API. */
+/**
+ * GET request to the ScrapeCreators REST API. Pass `timeoutMs` for calls that transcribe a video
+ * on demand, which the provider says can take up to 30 seconds.
+ */
 export async function scrapeCreatorsGet<T>(
   path: string,
   params: Record<string, string>,
+  options: { timeoutMs?: number } = {},
 ): Promise<T> {
+  const timeoutMs = options.timeoutMs ?? REQUEST_TIMEOUT_MS;
   const apiKey = getScrapeCreatorsApiKey();
   const url = new URL(`${BASE_URL}${path}`);
   for (const [key, value] of Object.entries(params)) {
@@ -26,7 +31,7 @@ export async function scrapeCreatorsGet<T>(
   }
 
   const controller = new AbortController();
-  const timeout = setTimeout(() => controller.abort(), REQUEST_TIMEOUT_MS);
+  const timeout = setTimeout(() => controller.abort(), timeoutMs);
 
   let res: Response;
   try {
@@ -43,7 +48,7 @@ export async function scrapeCreatorsGet<T>(
     throw new FetchError('scrapecreators.ts: scrapeCreatorsGet', 'ScrapeCreators request failed', {
       path,
       timedOut: isTimeout,
-      timeoutMs: REQUEST_TIMEOUT_MS,
+      timeoutMs,
       originalError: err instanceof Error ? err.message : String(err),
     });
   } finally {

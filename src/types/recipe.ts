@@ -2,7 +2,14 @@ import type { RecipeAppliance } from '@/lib/appliances';
 
 export type EffortLevel = 'Easy' | 'Medium' | 'Hard';
 export type CostEstimate = '$' | '$$' | '$$$';
-export type Platform = 'youtube' | 'instagram' | 'tiktok' | 'web' | 'photo' | 'unknown';
+export type Platform =
+  | 'youtube'
+  | 'instagram'
+  | 'tiktok'
+  | 'facebook'
+  | 'web'
+  | 'photo'
+  | 'unknown';
 export type ExtractionStatus = 'full' | 'partial';
 /** Which content-ladder rung yielded the recipe (ADR 004). 'manual' = a written recipe (ADR 018). */
 export type ExtractionSource =

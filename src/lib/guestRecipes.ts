@@ -331,7 +331,11 @@ export function sanitizeStoredRecipe(value: unknown): Recipe | null {
   const translations = sanitizeTranslations(value.translations);
   if (translations) recipe.translations = translations;
 
-  if (['youtube', 'instagram', 'tiktok', 'web', 'photo', 'unknown'].includes(String(value.platform))) {
+  if (
+    ['youtube', 'instagram', 'tiktok', 'facebook', 'web', 'photo', 'unknown'].includes(
+      String(value.platform),
+    )
+  ) {
     recipe.platform = value.platform as Recipe['platform'];
   }
   if (['$', '$$', '$$$'].includes(String(value.cost_estimate))) {

@@ -5,6 +5,7 @@ import {
 } from '../_shared/classifyRecipe.ts';
 import { corsHeaders, jsonResponse } from '../_shared/cors.ts';
 import { repairPartialRecipe, type GeminiRecipe } from '../_shared/gemini.ts';
+import { fetchFacebookMeta } from '../_shared/facebook.ts';
 import { fetchInstagramMeta } from '../_shared/instagram.ts';
 import {
   detectPlatform,
@@ -556,6 +557,8 @@ async function fetchPlatformMeta(
       return await fetchInstagramMeta(url);
     case 'tiktok':
       return await fetchTikTokMeta(url);
+    case 'facebook':
+      return await fetchFacebookMeta(url);
     case 'web':
       return await fetchWebRecipeMeta(url);
     default:

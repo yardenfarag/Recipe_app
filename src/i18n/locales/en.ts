@@ -643,7 +643,7 @@ export default {
     "creditsRemaining": "{{total}} credits available · {{free}} free + {{purchased}} purchased",
     "creditLimitBody": "You’ve used all {{limit}} free recipe credits this month. Buy more credits now, or wait for the monthly reset.",
     "creditLimitBodyWeb": "You’ve used all {{limit}} free recipe credits this month. Buy more in the Pinch app, or wait for the monthly reset.",
-    "invalidUrl": "Enter a valid recipe link (YouTube, Instagram, TikTok, or a recipe website).",
+    "invalidUrl": "Enter a valid recipe link (YouTube, Instagram, TikTok, Facebook, or a recipe website).",
     "invalidShare": "That share did not include a valid recipe link.",
     "invalidShareImage": "Couldn’t read that photo. Try choosing it from your library instead.",
     "photoAction": "Snap from a photo",
@@ -994,6 +994,7 @@ export default {
     "platformYoutube": "YouTube",
     "platformInstagram": "Instagram",
     "platformTiktok": "TikTok",
+    "platformFacebook": "Facebook",
     "platformWeb": "Website",
     "platformPhoto": "Photo",
     "stepOf": "Step {{current}} of {{total}}"

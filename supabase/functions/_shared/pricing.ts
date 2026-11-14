@@ -126,5 +126,9 @@ export function estimateScrapeCredits(platform: string | null | undefined, usedV
   if (platform === 'tiktok') {
     return 2;
   }
+  if (platform === 'facebook') {
+    // Post plus comments. A photo post skips the comments call, so this rounds up.
+    return 2;
+  }
   return 0;
 }

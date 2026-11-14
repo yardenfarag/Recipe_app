@@ -176,6 +176,7 @@ export function thumbnailRefererForPlatform(
 ): string | undefined {
   if (platform === 'instagram') return 'https://www.instagram.com/';
   if (platform === 'tiktok') return 'https://www.tiktok.com/';
+  if (platform === 'facebook') return 'https://www.facebook.com/';
   return undefined;
 }
 
@@ -207,7 +208,7 @@ export function buildContentGateInput(opts: {
   };
 }
 
-/** IG/TikTok posts with no thumbnail and no caption cannot be classified; let video/extract proceed. */
+/** IG/TikTok/Facebook posts with no thumbnail and no caption cannot be classified; let video/extract proceed. */
 export function shouldSkipThinSocialGate(opts: {
   platform: string;
   imageBase64?: string | null;
@@ -221,7 +222,7 @@ export function shouldSkipThinSocialGate(opts: {
 }): boolean {
   const { platform, imageBase64, meta } = opts;
   if (imageBase64?.trim()) return false;
-  if (platform !== 'instagram' && platform !== 'tiktok') return false;
+  if (platform !== 'instagram' && platform !== 'tiktok' && platform !== 'facebook') return false;
   const hasText = Boolean(
     meta?.title?.trim() || meta?.description?.trim() || meta?.captions?.trim(),
   );

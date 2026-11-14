@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 
 import {
   buildRecipeVideoWebViewSource,
+  facebookEmbedUrl,
   getRecipePlatformLabel,
   getRecipeVideoInfo,
   instagramEmbedUrl,
@@ -28,6 +29,21 @@ describe('getRecipeVideoInfo', () => {
     const url = 'https://www.tiktok.com/@chef/video/123';
     expect(getRecipeVideoInfo(url).mode).toBe('webview');
     expect(getRecipeVideoInfo(url).platform).toBe('tiktok');
+  });
+
+  it('uses in-app webview for a Facebook reel (PIN-66)', () => {
+    const info = getRecipeVideoInfo('https://www.facebook.com/reel/774239929117468', 'facebook');
+    expect(info.mode).toBe('webview');
+    expect(info.platform).toBe('facebook');
+  });
+
+  it('has nothing to play for a Facebook photo or text post', () => {
+    const info = getRecipeVideoInfo(
+      'https://www.facebook.com/100063940989830/posts/1582534293887922',
+      'facebook',
+    );
+    expect(info.mode).toBe('none');
+    expect(info.platform).toBe('facebook');
   });
 
   it('returns none without a URL', () => {
@@ -97,6 +113,35 @@ describe('buildRecipeVideoWebViewSource', () => {
     expect(instagramEmbedUrl(url)).toBe(
       'https://www.instagram.com/reel/ABC123/embed/captioned/',
     );
+  });
+});
+
+describe('facebookEmbedUrl', () => {
+  it('builds the embedded player URL for reels and videos', () => {
+    const embed =
+      'https://www.facebook.com/plugins/video.php?href=https%3A%2F%2Fwww.facebook.com%2Freel%2F774239929117468&show_text=false';
+    expect(facebookEmbedUrl('https://www.facebook.com/reel/774239929117468')).toBe(embed);
+    expect(facebookEmbedUrl('https://m.facebook.com/watch/?v=774239929117468')).toBe(embed);
+    expect(facebookEmbedUrl('https://www.facebook.com/somepage/videos/774239929117468/')).toBe(embed);
+  });
+
+  it('returns null for posts and share links', () => {
+    expect(
+      facebookEmbedUrl('https://www.facebook.com/100063940989830/posts/1582534293887922'),
+    ).toBeNull();
+    expect(facebookEmbedUrl('https://www.facebook.com/share/r/1HYN8d6iBk/')).toBeNull();
+    expect(facebookEmbedUrl('https://www.facebook.com/photo/?fbid=1582533443888007')).toBeNull();
+  });
+
+  it('loads the Facebook player in the cook-along sheet', () => {
+    const source = buildRecipeVideoWebViewSource(
+      getRecipeVideoInfo('https://www.facebook.com/reel/774239929117468', 'facebook'),
+    );
+    expect(source?.type).toBe('html');
+    if (source?.type === 'html') {
+      expect(source.html).toContain('facebook.com/plugins/video.php?href=');
+      expect(source.baseUrl).toBe('https://www.facebook.com');
+    }
   });
 });
 

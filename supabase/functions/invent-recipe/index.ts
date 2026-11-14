@@ -4,12 +4,15 @@ import {
   buildContentGateInput,
   runContentGate,
   shouldSkipThinSocialGate,
+  thumbnailRefererForPlatform,
 } from '../_shared/contentGate.ts';
 import { corsHeaders, jsonResponse } from '../_shared/cors.ts';
 import { FetchError } from '../_shared/errors.ts';
 import { inventRecipeFromImage, inventRecipeWithLadder } from '../_shared/inventRecipe.ts';
+import { fetchFacebookMeta, resolveFacebookShareLink } from '../_shared/facebook.ts';
 import { fetchInstagramMeta } from '../_shared/instagram.ts';
 import {
+  canonicalFacebookUrl,
   canonicalInstagramUrl,
   canonicalTikTokUrl,
   canonicalYouTubeWatchUrl,
@@ -119,9 +122,15 @@ Deno.serve(async (req) => {
       platform,
       message:
         platform === 'unknown'
-          ? "We couldn't recognize that link. Try a YouTube, Instagram, TikTok, or recipe website link."
+          ? "We couldn't recognize that link. Try a YouTube, Instagram, TikTok, Facebook, or recipe website link."
           : `${capitalize(platform)} support is coming soon — we're starting with YouTube.`,
     });
+  }
+
+  const authHeader = req.headers.get('Authorization');
+  if (platform === 'facebook' && authHeader) {
+    // PIN-66: resolve a share link to its reel or post, so a repeat is recognised before a scrape.
+    url = await resolveFacebookShareLink(url);
   }
 
   const contentId = platform === 'photo' ? null : extractVideoIdForPlatform(url, platform);
@@ -143,7 +152,6 @@ Deno.serve(async (req) => {
   }
 
   const admin = createServiceSupabase();
-  const authHeader = req.headers.get('Authorization');
   let userId: string | null = null;
   let creditReservation: CreditReservation | null = null;
   let guestReservation: GuestExtractionReservation | null = null;
@@ -341,7 +349,7 @@ Deno.serve(async (req) => {
       if (thumbUrl) {
         const fetched = await fetchImageAsBase64({
           sourceUrl: thumbUrl,
-          referer: platform === 'instagram' ? 'https://www.instagram.com/' : platform === 'tiktok' ? 'https://www.tiktok.com/' : undefined,
+          referer: thumbnailRefererForPlatform(platform),
         });
         if (fetched) {
           imageBase64 = fetched.base64;
@@ -409,7 +417,7 @@ Deno.serve(async (req) => {
         originalUrl = null;
       } else {
         const resolvedContentId = meta?.contentId ?? contentId;
-        originalUrl = canonicalOriginalUrl(platform, resolvedContentId, url);
+        originalUrl = canonicalOriginalUrl(platform, resolvedContentId, url, meta?.canonicalUrl);
         imageUrl = await resolveThumbnail(platform, resolvedContentId, meta ?? { topComments: [] });
       }
     } else {
@@ -433,7 +441,7 @@ Deno.serve(async (req) => {
       const resolvedContentId = meta?.contentId ?? contentId;
       imageUrl = await resolveThumbnail(platform, resolvedContentId, meta ?? { topComments: [] });
       sourceVideoUrl = platform === 'web' ? meta?.videoUrl ?? null : null;
-      originalUrl = canonicalOriginalUrl(platform, resolvedContentId, url);
+      originalUrl = canonicalOriginalUrl(platform, resolvedContentId, url, meta?.canonicalUrl);
       durationSeconds = meta?.durationSeconds;
     }
 
@@ -730,10 +738,12 @@ function canonicalOriginalUrl(
   platform: Platform,
   contentId: string | null | undefined,
   url: string,
+  resolvedUrl?: string | null,
 ): string {
   if (platform === 'youtube' && contentId) return canonicalYouTubeWatchUrl(contentId);
   if (platform === 'instagram' && contentId) return canonicalInstagramUrl(contentId);
   if (platform === 'tiktok' && contentId) return canonicalTikTokUrl(contentId);
+  if (platform === 'facebook') return resolvedUrl?.trim() || canonicalFacebookUrl(url);
   return url.trim();
 }
 
@@ -749,6 +759,8 @@ async function fetchPlatformMeta(
       return await fetchInstagramMeta(url);
     case 'tiktok':
       return await fetchTikTokMeta(url);
+    case 'facebook':
+      return await fetchFacebookMeta(url);
     case 'web':
       return await fetchWebRecipeMeta(url);
     default:
@@ -764,7 +776,10 @@ async function resolveThumbnail(
   if (platform === 'youtube') {
     return meta.thumbnailUrl ?? (contentId ? youTubeThumbnail(contentId) : null);
   }
-  if ((platform === 'instagram' || platform === 'tiktok') && meta.thumbnailUrl) {
+  if (
+    (platform === 'instagram' || platform === 'tiktok' || platform === 'facebook') &&
+    meta.thumbnailUrl
+  ) {
     const hosted = await persistSocialThumbnail({
       sourceUrl: meta.thumbnailUrl,
       platform,
