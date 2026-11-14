@@ -2,7 +2,13 @@
 
 import { assertEquals, assertStringIncludes } from 'jsr:@std/assert@1';
 
-import { buildDietsUserText, deriveRecipeDiets, HUB_DIET_KEYS, sanitizeDiets } from './recipeDiets.ts';
+import {
+  buildDietsUserText,
+  deriveRecipeDiets,
+  DIETS_SCHEMA,
+  HUB_DIET_KEYS,
+  sanitizeDiets,
+} from './recipeDiets.ts';
 import { completion, failure, STEAK, withModel } from './testing/applianceModelStub.ts';
 
 Deno.test('sanitizeDiets keeps known keys in a fixed order and drops the rest', () => {
@@ -16,6 +22,20 @@ Deno.test('sanitizeDiets adds the diets a diet implies', () => {
   assertEquals(sanitizeDiets({ diets: ['vegan'] }), ['vegan', 'vegetarian', 'pescatarian', 'dairy_free']);
   assertEquals(sanitizeDiets({ diets: ['keto'] }), ['low_carb', 'keto']);
   assertEquals(sanitizeDiets({ diets: ['paleo'] }), ['gluten_free', 'dairy_free', 'paleo']);
+});
+
+Deno.test('sanitizeDiets reads the per-diet true/false answer', () => {
+  assertEquals(
+    sanitizeDiets({ vegan: false, vegetarian: true, keto: false, paleo: 'yes', gluten_free: true }),
+    ['vegetarian', 'pescatarian', 'gluten_free'],
+  );
+  assertEquals(sanitizeDiets(Object.fromEntries(HUB_DIET_KEYS.map((k) => [k, false]))), []);
+  assertEquals(sanitizeDiets({ unrelated: true }), null);
+});
+
+Deno.test('the schema asks for a boolean for every diet', () => {
+  assertEquals(DIETS_SCHEMA.required, [...HUB_DIET_KEYS]);
+  assertEquals(Object.keys(DIETS_SCHEMA.properties), [...HUB_DIET_KEYS]);
 });
 
 Deno.test('sanitizeDiets: an empty list is an answer, a non-list is not', () => {
@@ -37,7 +57,8 @@ Deno.test('buildDietsUserText lists amounts and names, and steps', () => {
 });
 
 Deno.test('deriveRecipeDiets returns the sanitized list and one usage', async () => {
-  await withModel([completion({ diets: ['gluten_free', 'keto'] })], async (stub) => {
+  const answer = Object.fromEntries(HUB_DIET_KEYS.map((k) => [k, k === 'gluten_free' || k === 'keto']));
+  await withModel([completion(answer)], async (stub) => {
     const result = await deriveRecipeDiets(STEAK);
     assertEquals(result.diets, ['gluten_free', 'low_carb', 'keto']);
     assertEquals(result.usages.length, 1);
