@@ -65,17 +65,18 @@ Diets:
 - pescatarian: no meat or poultry (including their stock, gelatin and lard). Fish, seafood, eggs and dairy are fine.
 - gluten_free: no wheat, barley, rye, spelt, regular pasta, bread, couscous, regular soy sauce, beer or other gluten sources.
 - dairy_free: no milk, butter, cream, cheese, yogurt, ghee or whey.
-- low_carb: few starchy carbs and little added sugar; mostly vegetables, protein and fat.
-- high_protein: protein is clearly the main part of the dish (for example meat, fish, eggs, tofu, legumes or Greek yogurt in large amounts).
-- keto: very low net carbs and high fat; no sugar, grains, flour, rice, pasta, bread, potatoes, starchy vegetables, legumes or high-sugar fruit.
-- paleo: only meat, fish, eggs, vegetables, fruit, nuts, seeds and natural fats; no grains, legumes, dairy, refined sugar or processed seed oils.
-- mediterranean: follows the Mediterranean pattern: olive oil as the main fat, plenty of vegetables, legumes, whole grains, fish, nuts and herbs, little red meat, butter, cream or added sugar.
+- low_carb: few starchy carbs and little added sugar; mostly vegetables, protein and fat. Not low_carb: bread, cakes, cookies, pancakes, pasta, rice, couscous, potato dishes, or anything built on grains, pseudo-grains (quinoa, buckwheat, amaranth, oats) or wheat, rice or corn flour, or sweetened with sugar, honey, syrup, dates or banana. Nut, seed or coconut flour with little or no sugar is fine.
+- high_protein: protein is clearly the main part of the dish (for example meat, fish, eggs, tofu, legumes or Greek yogurt in large amounts). Desserts and breads are rarely high_protein.
+- keto: very low net carbs and high fat; no sugar, honey, syrups, dates, grains, pseudo-grains, flour, rice, pasta, bread, potatoes, starchy vegetables, legumes or high-sugar fruit (bananas, mango, grapes). Chocolate counts only if it is sugar-free.
+- paleo: only meat, fish, eggs, vegetables, fruit, nuts, seeds and natural fats (olive, avocado and coconut oil, animal fat). No grains or pseudo-grains (quinoa, buckwheat, amaranth, oats, rice, corn), legumes (including peanuts and soy), dairy, refined sugar, sweetened chocolate, or seed oils (sunflower, canola, vegetable oil) and things made with them, such as regular mayonnaise or store-bought dressings. Honey, maple syrup and dates are fine in small amounts.
+- mediterranean: the dish itself follows the Mediterranean pattern: olive oil as the main fat, with vegetables, legumes, whole grains, fish or seafood at the centre, and herbs; little red meat, butter, cream or added sugar. Do not add it just because nothing breaks it: sweet bakes, desserts and snacks almost never qualify.
 
 Rules:
 - Judge the ingredients as listed. Do not assume a swap the recipe does not state.
-- Be strict. Include a diet only when the whole recipe clearly fits it. If an ingredient could break a diet (for example "broth", "stock" or "sauce" of unknown kind), leave that diet out.
+- Be strict. Include a diet only when the whole recipe clearly fits it. If an ingredient could break a diet (for example "broth", "stock", "sauce", "mayonnaise" or "chocolate" of unknown kind), leave that diet out.
+- A product name counts as what it normally is: "flour" is wheat flour, "chocolate" is sweetened, "oil" or "vegetable oil" is a seed oil.
 - Optional garnishes count unless the recipe says they can be left out.
-- An empty list is a fine answer.
+- An empty list is a fine answer, and most recipes fit only a few diets or none.
 - Return ONLY data matching the schema.`;
 
 export const DIETS_SCHEMA = {
