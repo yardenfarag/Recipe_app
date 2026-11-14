@@ -15,6 +15,8 @@ export interface FetchHubCardsOptions {
   limit?: number;
   /** Exact count is only needed for the first page. Later pages use an extra row. */
   includeCount?: boolean;
+  /** Kitchen-profile diets; cards that fit more of them come first (PIN-83). */
+  diets?: string[];
 }
 
 function sanitizeSearch(value: string): string {
@@ -40,39 +42,49 @@ export async function fetchHubCards(
   const search = options.search ? sanitizeSearch(options.search) : '';
   const sort = options.sort ?? 'popular';
   const includeCount = options.includeCount ?? offset === 0;
+  const platform =
+    options.platform && options.platform !== 'all' && isHubPlatform(options.platform)
+      ? options.platform
+      : null;
+  const tags = options.tags && options.tags.length > 0 ? options.tags : null;
 
-  let query = supabase
-    .from('recipe_cards')
-    .select('*', includeCount ? { count: 'exact' } : undefined);
+  // hub_cards does the filtering, the diet-first ordering and the paging (PIN-83).
+  // It returns one extra row so the page can tell if more exist.
+  const rowsQuery = supabase.rpc('hub_cards', {
+    p_diets: options.diets && options.diets.length > 0 ? options.diets : null,
+    p_platform: platform,
+    p_search: search || null,
+    p_tags: tags,
+    p_sort: sort,
+    p_offset: offset,
+    p_limit: limit + 1,
+  });
 
-  if (options.platform && options.platform !== 'all' && isHubPlatform(options.platform)) {
-    query = query.eq('platform', options.platform);
-  }
-  if (search) {
-    query = query.ilike('title', `%${search}%`);
-  }
-  if (options.tags && options.tags.length > 0) {
-    query = query.overlaps('tags', options.tags);
-  }
+  const [rowsResult, total] = await Promise.all([
+    rowsQuery,
+    includeCount ? countHubCards({ platform, search, tags }) : Promise.resolve(null),
+  ]);
+  if (rowsResult.error) throw rowsResult.error;
 
-  if (sort === 'newest') {
-    query = query.order('created_at', { ascending: false }).order('id', { ascending: true });
-  } else {
-    query = query
-      .order('save_count', { ascending: false })
-      .order('created_at', { ascending: false })
-      .order('id', { ascending: true });
-  }
-
-  // Inclusive range, so this asks for one extra row and the page can tell if more exist.
-  const { data, error, count } = await query.range(offset, offset + limit);
-  if (error) throw error;
-
-  const rows = ((data ?? []) as RecipeCard[]).map(mapCard);
+  const rows = ((rowsResult.data ?? []) as RecipeCard[]).map(mapCard);
   const hasMore = rows.length > limit;
   const cards = hasMore ? rows.slice(0, limit) : rows;
-  const total = includeCount && typeof count === 'number' ? count : null;
   return { cards, hasMore, total };
+}
+
+/** Total cards for the current filters. Diets only change the order, so they don't count here. */
+async function countHubCards(filters: {
+  platform: HubPlatform | null;
+  search: string;
+  tags: string[] | null;
+}): Promise<number | null> {
+  let query = supabase.from('recipe_cards').select('id', { count: 'exact', head: true });
+  if (filters.platform) query = query.eq('platform', filters.platform);
+  if (filters.search) query = query.ilike('title', `%${filters.search}%`);
+  if (filters.tags) query = query.overlaps('tags', filters.tags);
+  const { count, error } = await query;
+  if (error) throw error;
+  return typeof count === 'number' ? count : null;
 }
 
 export async function fetchHubTags(platform: HubPlatform | 'all' = 'all'): Promise<string[]> {

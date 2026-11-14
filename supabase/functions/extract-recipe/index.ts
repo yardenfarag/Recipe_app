@@ -68,12 +68,15 @@ import { formatMaxVideoDurationLabel, isVideoTooLong } from '../_shared/videoLim
 import { fetchWebRecipeMeta } from '../_shared/webRecipe.ts';
 import { fetchYouTubeMeta } from '../_shared/youtube.ts';
 import {
+  fillRecipeCardDiets,
   findRecipeCard,
   hubCardToExtractRecipe,
   publishRecipeCard,
   touchRecipeCardHit,
   userContributesToHub,
 } from '../_shared/recipeCards.ts';
+
+declare const EdgeRuntime: { waitUntil(promise: Promise<unknown>): void } | undefined;
 
 // Response contract consumed by the app (mirrors ExtractionResult in ADR 004).
 type ExtractionStatus = 'full' | 'partial' | 'failed' | 'coming_soon';
@@ -807,7 +810,15 @@ Deno.serve(async (req) => {
       const contribute = userId ? await userContributesToHub(admin, userId) : true;
       if (contribute) {
         try {
-          await publishRecipeCard(admin, recipe, meta?.contentId ?? contentId);
+          const card = await publishRecipeCard(admin, recipe, meta?.contentId ?? contentId);
+          // PIN-83: the diet check runs after the response so it never slows the extract down.
+          if (card?.needsDiets && typeof EdgeRuntime !== 'undefined') {
+            EdgeRuntime.waitUntil(
+              fillRecipeCardDiets(admin, card.id, recipe, userId ?? null).catch((err) =>
+                console.error('[extract-recipe] hub diets failed', err)
+              ),
+            );
+          }
         } catch (error) {
           console.error('[extract-recipe] hub publish failed', error);
         }

@@ -41,6 +41,7 @@ export type LlmTaskKind =
   | 'content_gate'
   | 'remix_related'
   | 'appliances'
+  | 'diets'
   | 'recipe_estimates';
 
 export interface TaskModelConfig {
@@ -73,6 +74,8 @@ export const TASK_MODELS: Record<LlmTaskKind, TaskModelConfig> = {
   remix_related: { model: LUNA, fallbacks: [QWEN_FLASH], reasoning: 'none' },
   // Classification over the final recipe text (ADR 017). Not in the PIN-44 eval; follows text.
   appliances: { model: LUNA, fallbacks: [QWEN_FLASH], reasoning: 'none' },
+  // Which diets a Hub card fits as written (PIN-83). Classification like appliances; follows it.
+  diets: { model: LUNA, fallbacks: [QWEN_FLASH], reasoning: 'none' },
   // Calories, time, effort, cost, tags and metric/spoons after a hand edit (PIN-79). Not in the
   // PIN-44 eval; these fields came from the text extract on Luna, so it follows text.
   recipe_estimates: { model: LUNA, fallbacks: [QWEN_FLASH], reasoning: 'none' },

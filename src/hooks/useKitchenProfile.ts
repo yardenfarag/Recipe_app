@@ -103,5 +103,7 @@ export function useKitchenProfile() {
     dropStaple,
     stapleSaved,
     pantryStaples: profile.pantryStaples,
+    /** Re-reads the saved profile, e.g. when a screen that stays mounted regains focus. */
+    reload: load,
   };
 }
