@@ -210,7 +210,7 @@ details>*:not(summary){margin-bottom:12px}
 
   <table>
     <tbody>
-      <tr><td class="k">What Pinch is</td><td>A mobile and web app. You give it a cooking video link (TikTok, Instagram, YouTube), a recipe web page, or a photo of a recipe card. It returns a structured recipe (ingredients, steps, servings, time) and saves it to your library. You can then scale servings, swap ingredients, translate, build a shopping list, and cook along with the video.</td></tr>
+      <tr><td class="k">What Pinch is</td><td>A mobile and web app. You give it a cooking video link (TikTok, Instagram, YouTube, Facebook), a recipe web page, or a photo of a recipe card. It returns a structured recipe (ingredients, steps, servings, time) and saves it to your library. You can then scale servings, swap ingredients, translate, build a shopping list, and cook along with the video.</td></tr>
       <tr><td class="k">App</td><td>Expo SDK 54 (React Native), Expo Router, NativeWind (Tailwind), i18next. One codebase for iOS, Android, web.</td></tr>
       <tr><td class="k">Where it ships</td><td><a href="https://apps.apple.com/us/app/pinch-recipe-library/id6796310453">App Store</a> and <a href="https://play.google.com/store/apps/details?id=com.pinch.myapp">Google Play</a> (both in production), plus the web app at <a href="https://pinch-app.io/app">pinch-app.io/app</a>.</td></tr>
       <tr><td class="k">Backend</td><td>Supabase: Postgres with Row Level Security, Auth, Storage, and 11 Edge Functions written in TypeScript for Deno.</td></tr>
@@ -342,9 +342,9 @@ details>*:not(summary){margin-bottom:12px}
       <rect class="box y" x="830" y="70" width="310" height="92"/>
       <text class="t" x="848" y="98">OpenRouter</text><text class="s" x="848" y="118">text extract · vision · translate · remix · swap · gates</text><text class="s" x="848" y="136">+ Decisions API (gpt-6-luna-decisions)</text><text class="s" x="848" y="152">one API key; Luna · Sonnet 5.5 · Sol · Mistral Small · Gemini 3.5 Flash</text>
       <rect class="box y" x="830" y="180" width="310" height="64"/>
-      <text class="t" x="848" y="208">Video via OpenRouter too</text><text class="s" x="848" y="228">YouTube by URL; IG/TikTok clips downloaded, sent inline (≤20 MB)</text>
+      <text class="t" x="848" y="208">Video via OpenRouter too</text><text class="s" x="848" y="228">YouTube by URL; IG/TikTok/Facebook clips downloaded, sent inline (≤20 MB)</text>
       <rect class="box y" x="830" y="262" width="310" height="64"/>
-      <text class="t" x="848" y="290">ScrapeCreators</text><text class="s" x="848" y="310">Instagram and TikTok post data, video download</text>
+      <text class="t" x="848" y="290">ScrapeCreators</text><text class="s" x="848" y="310">Instagram, TikTok and Facebook post data, video download</text>
       <rect class="box y" x="830" y="344" width="310" height="64"/>
       <text class="t" x="848" y="372">YouTube Data API + Innertube</text><text class="s" x="848" y="392">description, top comments, captions, thumbnails</text>
       <rect class="box y" x="830" y="426" width="310" height="64"/>
@@ -460,7 +460,7 @@ details>*:not(summary){margin-bottom:12px}
   user_id?: string;
   title: string;
   original_url?: string;
-  platform?: 'youtube' | 'instagram' | 'tiktok' | 'web' | 'photo' | 'unknown';
+  platform?: 'youtube' | 'instagram' | 'tiktok' | 'facebook' | 'web' | 'photo' | 'unknown';
   image_url?: string;
   ingredients: { name: string; quantity: number; unit: string; metric?: {...}; spoons?: {...} }[];
   instructions: { step: number; text: string; timestamp_seconds?: number }[];
@@ -553,14 +553,14 @@ details>*:not(summary){margin-bottom:12px}
     <tbody>
       <tr><td class="k">llmClient.ts</td><td>The one entry point for AI: <code>generateLlmJson()</code>. <code>TASK_MODELS</code> maps each task <code>kind</code> to a primary model, fallbacks and reasoning effort. Sends the JSON schema, records OpenRouter's exact cost. Read this first.</td></tr>
       <tr><td class="k">gemini.ts</td><td>Extraction prompts, the content ladder (<code>extractRecipeWithLadder</code>), photo extraction, repair. The file name is historical; every call goes through <code>llmClient.ts</code>.</td></tr>
-      <tr><td class="k">videoInput.ts</td><td>Turns a video URL into something OpenRouter accepts: YouTube URLs pass through, Instagram and TikTok clips are downloaded and sent inline as base64 (20 MB cap).</td></tr>
+      <tr><td class="k">videoInput.ts</td><td>Turns a video URL into something OpenRouter accepts: YouTube URLs pass through, Instagram, TikTok and Facebook clips are downloaded and sent inline as base64 (20 MB cap).</td></tr>
       <tr><td class="k">jev.ts</td><td>The extract gate (PIN-46). A cheap typed decision before the expensive extraction.</td></tr>
       <tr><td class="k">contentGate.ts</td><td>"Is this food?" classifier with a daily cap.</td></tr>
       <tr><td class="k">classifyRecipe.ts</td><td>Decides <code>full</code>, <code>partial</code> or <code>failed</code>.</td></tr>
       <tr><td class="k">quotas.ts, pricing.ts, dailyAiUsage.ts</td><td>Credit reserve / finalize / refund, daily caps, limits, cost per model.</td></tr>
-      <tr><td class="k">youtube.ts, instagram.ts, tiktok.ts, webRecipe.ts, scrapecreators.ts</td><td>Fetch the post. YouTube: Data API plus Innertube captions. Instagram and TikTok: ScrapeCreators. Web: direct fetch, prefers schema.org JSON-LD, blocks private IPs.</td></tr>
+      <tr><td class="k">youtube.ts, instagram.ts, tiktok.ts, facebook.ts, webRecipe.ts, scrapecreators.ts</td><td>Fetch the post. YouTube: Data API plus Innertube captions. Instagram, TikTok and Facebook: ScrapeCreators (Facebook share links are resolved to the reel or post first, ADR 021). Web: direct fetch, prefers schema.org JSON-LD, blocks private IPs.</td></tr>
       <tr><td class="k">usageLog.ts</td><td>Writes one row to <code>ai_usage_events</code> per AI call (tokens, USD, model). Feeds the admin usage screen.</td></tr>
-      <tr><td class="k">recipeCards.ts, persistThumbnail.ts</td><td>Hub publishing; re-hosting Instagram and TikTok thumbnails in Storage because their CDN URLs expire.</td></tr>
+      <tr><td class="k">recipeCards.ts, persistThumbnail.ts</td><td>Hub publishing; re-hosting Instagram, TikTok and Facebook thumbnails in Storage because their CDN URLs expire.</td></tr>
       <tr><td class="k">translateRecipe.ts, substitution.ts, recipeVariant.ts, inventRecipe.ts, fridgeMatch.ts</td><td>Prompts and schemas for those tasks.</td></tr>
     </tbody>
   </table>
@@ -583,7 +583,7 @@ details>*:not(summary){margin-bottom:12px}
     <thead><tr><th>Secret</th><th>Needed</th><th>Used for</th></tr></thead>
     <tbody>
       <tr><td><code>OPENROUTER_API_KEY</code></td><td><span class="tag bad">required</span></td><td>Every model call: text, vision, video, and the Jev gate</td></tr>
-      <tr><td><code>SCRAPECREATORS_API_KEY</code></td><td><span class="tag bad">required</span></td><td>Instagram and TikTok</td></tr>
+      <tr><td><code>SCRAPECREATORS_API_KEY</code></td><td><span class="tag bad">required</span></td><td>Instagram, TikTok and Facebook</td></tr>
       <tr><td><code>YOUTUBE_API_KEY</code></td><td><span class="tag">optional</span></td><td>YouTube description, comments, best thumbnail. Captions work without it.</td></tr>
       <tr><td><code>REVENUECAT_WEBHOOK_AUTH</code>, <code>CREDIT_PURCHASES_ENABLED</code></td><td><span class="tag">purchases</span></td><td>Webhook secret and kill switch</td></tr>
       <tr><td><code>APPLE_CLIENT_ID</code>, <code>APPLE_TEAM_ID</code>, <code>APPLE_KEY_ID</code>, <code>APPLE_PRIVATE_KEY</code></td><td><span class="tag">optional</span></td><td>Revoke Sign in with Apple on account deletion</td></tr>
@@ -716,11 +716,11 @@ curl -X POST 'https://ccobefeofhnncpgifxel.supabase.co/functions/v1/extract-reci
 
   <h3>The extract-recipe pipeline</h3>
   <ol class="steps">
-    <li><b>Detect the platform</b><span>youtube, instagram, tiktok, web, or photo. Anything else returns <code>coming_soon</code>. File: <code>_shared/platform.ts</code>.</span></li>
+    <li><b>Detect the platform</b><span>youtube, instagram, tiktok, facebook, web, or photo. Anything else returns <code>coming_soon</code>. File: <code>_shared/platform.ts</code>.</span></li>
     <li><b>Library cache</b><span>User already saved this URL? Return it.</span><div class="branch"><span class="free"><b>free</b> · <code>cached: true</code></span></div></li>
     <li><b>Hub cache</b><span>Another user extracted this URL and allowed Hub publishing? Return that card.</span><div class="branch"><span class="free"><b>free</b> · <code>from_hub: true</code></span><span>skipped when <code>force_extract</code> is set</span></div></li>
     <li><b>Require sign-in</b><span>No session → <code>401 auth_required</code>.</span></li>
-    <li><b>Fetch the post</b><span>YouTube: description, top 10 comments (creator first), captions, duration. Instagram and TikTok: ScrapeCreators. Web: the page, preferring schema.org JSON-LD.</span><div class="branch"><span>limits: 10,000 chars description · 6,000 chars captions · 12 comments</span></div></li>
+    <li><b>Fetch the post</b><span>YouTube: description, top 10 comments (creator first), captions, duration. Instagram, TikTok and Facebook: ScrapeCreators. Web: the page, preferring schema.org JSON-LD.</span><div class="branch"><span>limits: 10,000 chars description · 6,000 chars captions · 12 comments</span></div></li>
     <li><b>Two gates, in parallel with an early text extraction</b>
       <table>
         <tbody>

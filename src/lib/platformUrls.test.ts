@@ -3,6 +3,7 @@ import { describe, expect, it } from 'vitest';
 import {
   detectPlatform,
   extractContentId,
+  extractFacebookId,
   extractInstagramId,
   extractTikTokId,
   normalizeSocialUrl,
@@ -19,6 +20,13 @@ describe('normalizeSocialUrl', () => {
   it('adds https to supported scheme-less links', () => {
     expect(normalizeSocialUrl('youtube.com/watch?v=dQw4w9WgXcQ')).toBe(
       'https://youtube.com/watch?v=dQw4w9WgXcQ',
+    );
+  });
+
+  it('adds https to scheme-less Facebook links', () => {
+    expect(normalizeSocialUrl('Look at this fb.watch/abCDef123_/')).toBe('https://fb.watch/abCDef123_/');
+    expect(normalizeSocialUrl('www.facebook.com/share/r/1HYN8d6iBk/')).toBe(
+      'https://www.facebook.com/share/r/1HYN8d6iBk/',
     );
   });
 
@@ -49,6 +57,23 @@ describe('detectPlatform', () => {
 
   it('detects TikTok short links', () => {
     expect(detectPlatform('https://vm.tiktok.com/ZMabcdef/')).toBe('tiktok');
+  });
+
+  it('detects Facebook share links, reels and fb.watch (PIN-66)', () => {
+    for (const url of [
+      'https://www.facebook.com/share/r/1HYN8d6iBk/',
+      'https://www.facebook.com/share/1CdgCUGMYG/',
+      'https://www.facebook.com/share/r/1A1xoSSih7/?mibextid=wwXIfr',
+      'https://m.facebook.com/watch/?v=1234567890123456',
+      'https://fb.watch/abCDef123_/',
+    ]) {
+      expect(detectPlatform(url)).toBe('facebook');
+    }
+  });
+
+  it('does not mistake lookalike hosts for Facebook', () => {
+    expect(detectPlatform('https://notfacebook.com/reel/1')).toBe('web');
+    expect(detectPlatform('https://facebook.com.evil.example/reel/1')).toBe('web');
   });
 
   it('detects recipe websites as web', () => {
@@ -84,7 +109,44 @@ describe('extractTikTokId', () => {
   });
 });
 
+describe('extractFacebookId', () => {
+  it('parses reel, video and post URLs', () => {
+    expect(extractFacebookId('https://www.facebook.com/reel/774239929117468')).toBe('774239929117468');
+    expect(extractFacebookId('https://m.facebook.com/watch/?v=1535656380759655')).toBe(
+      '1535656380759655',
+    );
+    expect(extractFacebookId('https://www.facebook.com/somepage/videos/1535656380759655/')).toBe(
+      '1535656380759655',
+    );
+    expect(
+      extractFacebookId('https://www.facebook.com/100063940989830/posts/1582534293887922/'),
+    ).toBe('1582534293887922');
+  });
+
+  it('returns null for share links, which carry no id', () => {
+    expect(extractFacebookId('https://www.facebook.com/share/r/1HYN8d6iBk/')).toBeNull();
+    expect(extractFacebookId('https://fb.watch/abCDef123_/')).toBeNull();
+  });
+});
+
 describe('recipeUrlsMatch', () => {
+  it('matches Facebook reel links with the same id', () => {
+    expect(
+      recipeUrlsMatch(
+        'https://m.facebook.com/watch/?v=774239929117468',
+        'https://www.facebook.com/reel/774239929117468',
+        'facebook',
+      ),
+    ).toBe(true);
+    expect(
+      recipeUrlsMatch(
+        'https://www.facebook.com/reel/1773253387059978',
+        'https://www.facebook.com/reel/774239929117468',
+        'facebook',
+      ),
+    ).toBe(false);
+  });
+
   it('matches Instagram reel URL variants', () => {
     expect(
       recipeUrlsMatch(
@@ -120,5 +182,6 @@ describe('extractContentId', () => {
   it('returns platform-specific ids', () => {
     expect(extractContentId('https://www.instagram.com/reel/ABC123/')).toBe('ABC123');
     expect(extractContentId('https://www.tiktok.com/@u/video/999')).toBe('999');
+    expect(extractContentId('https://www.facebook.com/reel/774239929117468')).toBe('774239929117468');
   });
 });

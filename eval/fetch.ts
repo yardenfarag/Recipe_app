@@ -8,6 +8,7 @@ import {
   isInstagramCdnUrl,
   resolveInstagramVideoForGemini,
 } from '../supabase/functions/_shared/instagram.ts';
+import { fetchFacebookMeta } from '../supabase/functions/_shared/facebook.ts';
 import { fetchTikTokMeta } from '../supabase/functions/_shared/tiktok.ts';
 import { fetchWebRecipeMeta } from '../supabase/functions/_shared/webRecipe.ts';
 import { fetchYouTubeMeta } from '../supabase/functions/_shared/youtube.ts';
@@ -41,6 +42,8 @@ async function fetchMeta(url: string): Promise<{ platform: string; meta: Platfor
       return { platform, meta: await fetchInstagramMeta(url) };
     case 'tiktok':
       return { platform, meta: await fetchTikTokMeta(url) };
+    case 'facebook':
+      return { platform, meta: await fetchFacebookMeta(url) };
     case 'web':
       return { platform, meta: await fetchWebRecipeMeta(url) };
     case 'youtube': {

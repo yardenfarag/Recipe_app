@@ -33,6 +33,7 @@ interface InstructionLike {
 const PLATFORM_NAMES: Record<string, string> = {
   tiktok: 'TikTok',
   instagram: 'Instagram',
+  facebook: 'Facebook',
   youtube: 'YouTube',
 };
 

@@ -3,6 +3,7 @@ import type { Platform } from '@/types/recipe';
 
 import {
   detectPlatform,
+  extractFacebookId,
   extractInstagramId,
   extractTikTokId,
 } from '@/lib/platformUrls';
@@ -37,6 +38,7 @@ const PLATFORM_LABEL: Record<Platform, string> = {
   youtube: 'YouTube',
   instagram: 'Instagram',
   tiktok: 'TikTok',
+  facebook: 'Facebook',
   web: 'Website',
   photo: 'Photo',
   unknown: 'Video',
@@ -91,6 +93,13 @@ export function getRecipeVideoInfo(
     return { mode: 'webview', url, platform };
   }
 
+  if (platform === 'facebook') {
+    // Photo and text posts have nothing to play.
+    return facebookEmbedUrl(url)
+      ? { mode: 'webview', url, platform }
+      : { mode: 'none', url: '', platform };
+  }
+
   return { mode: 'none', url: '', platform: 'unknown' };
 }
 
@@ -143,6 +152,23 @@ export function tiktokEmbedUrl(originalUrl: string): string | null {
   const videoId = extractTikTokId(originalUrl);
   if (!videoId) return null;
   return `https://www.tiktok.com/embed/v2/${videoId}`;
+}
+
+/**
+ * Facebook's embedded video player, which plays public reels and videos without a login.
+ * Null for posts: only `/reel/`, `/videos/` and `/watch` links are videos.
+ */
+export function facebookEmbedUrl(originalUrl: string): string | null {
+  const videoId = extractFacebookId(originalUrl);
+  if (!videoId) return null;
+  try {
+    const { pathname } = new URL(originalUrl);
+    if (!/\/(?:reel|videos)\/|^\/watch\/?$|^\/video\.php$/.test(pathname)) return null;
+  } catch {
+    return null;
+  }
+  const href = encodeURIComponent(`https://www.facebook.com/reel/${videoId}`);
+  return `https://www.facebook.com/plugins/video.php?href=${href}&show_text=false`;
 }
 
 /** Page URL for IG/TikTok when embed ids are unavailable (e.g. short links). */
@@ -204,6 +230,17 @@ export function buildRecipeVideoWebViewSource(
         type: 'html',
         html: recipeVideoEmbedHtml(embedUrl),
         baseUrl: 'https://www.tiktok.com',
+      };
+    }
+  }
+
+  if (info.platform === 'facebook') {
+    const embedUrl = facebookEmbedUrl(info.url);
+    if (embedUrl) {
+      return {
+        type: 'html',
+        html: recipeVideoEmbedHtml(embedUrl),
+        baseUrl: 'https://www.facebook.com',
       };
     }
   }

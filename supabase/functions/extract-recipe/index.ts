@@ -14,6 +14,7 @@ import {
   type ExtractInput,
   GeminiRecipe,
 } from '../_shared/gemini.ts';
+import { fetchFacebookMeta, resolveFacebookShareLink } from '../_shared/facebook.ts';
 import { fetchInstagramMeta } from '../_shared/instagram.ts';
 import {
   appliedExtractRoute,
@@ -24,6 +25,7 @@ import {
   skipsTextStep,
 } from '../_shared/jev.ts';
 import {
+  canonicalFacebookUrl,
   canonicalInstagramUrl,
   canonicalTikTokUrl,
   canonicalYouTubeWatchUrl,
@@ -154,9 +156,16 @@ Deno.serve(async (req) => {
       platform,
       message:
         platform === 'unknown'
-          ? "We couldn't recognize that link. Try a YouTube, Instagram, TikTok, or recipe website link."
+          ? "We couldn't recognize that link. Try a YouTube, Instagram, TikTok, Facebook, or recipe website link."
           : `${capitalize(platform)} support is coming soon — we're starting with YouTube.`,
     });
+  }
+
+  const authHeader = req.headers.get('Authorization');
+  if (platform === 'facebook' && authHeader) {
+    // PIN-66: a share link only names its reel or post after a redirect. Resolving it here lets
+    // the saved-recipe check below recognise a repeat before any scrape is paid for.
+    url = await resolveFacebookShareLink(url);
   }
 
   const contentId = platform === 'photo' ? null : extractVideoIdForPlatform(url, platform);
@@ -178,7 +187,6 @@ Deno.serve(async (req) => {
   }
 
   const admin = createServiceSupabase();
-  const authHeader = req.headers.get('Authorization');
   let userId: string | null = null;
   let creditReservation: CreditReservation | null = null;
   let guestReservation: GuestExtractionReservation | null = null;
@@ -194,25 +202,7 @@ Deno.serve(async (req) => {
     if (userId && admin && platform !== 'photo') {
       const existing = await findExistingRecipeForUser(authedClient, url, platform, contentId);
       if (existing) {
-        await logUsageEvent(admin, {
-          userId,
-          action: 'extract',
-          platform,
-          status: 'cached',
-          tokensCharged: 0,
-          durationMs: Date.now() - started,
-          metadata: { cached: true },
-        });
-
-        const quota = await canStartExtract(admin, userId);
-        return jsonResponse({
-          status: existing.extraction_status ?? 'full',
-          platform,
-          recipe: existing,
-          cached: true,
-          tokens_charged: 0,
-          ...quotaFields(quota.snapshot),
-        });
+        return await savedRecipeResponse({ admin, existing, platform, userId, started });
       }
     }
 
@@ -292,6 +282,19 @@ Deno.serve(async (req) => {
       });
 
       const resolvedId = meta.contentId ?? contentId;
+      if (admin && authedClient && resolvedId && resolvedId !== contentId) {
+        // The link had no id (a share or short link), so the first saved-recipe check could not
+        // match. Check again now the post has named itself, before a credit is reserved.
+        const existing = await findExistingRecipeForUser(
+          authedClient,
+          meta.canonicalUrl ?? url,
+          platform,
+          resolvedId,
+        );
+        if (existing) {
+          return await savedRecipeResponse({ admin, existing, platform, userId, started });
+        }
+      }
       if (admin && !forceExtract && resolvedId && resolvedId !== contentId) {
         const hubCard = await findRecipeCard(admin, platform, url, resolvedId);
         if (hubCard) {
@@ -525,7 +528,7 @@ Deno.serve(async (req) => {
       const resolvedContentId = meta?.contentId ?? contentId;
       imageUrl = await resolveThumbnail(platform, resolvedContentId, meta ?? { topComments: [] });
       sourceVideoUrl = platform === 'web' ? meta?.videoUrl ?? null : null;
-      originalUrl = canonicalOriginalUrl(platform, resolvedContentId, url);
+      originalUrl = canonicalOriginalUrl(platform, resolvedContentId, url, meta?.canonicalUrl);
       durationSeconds = meta?.durationSeconds;
       console.log('[extract-recipe] ladder done', {
         source,
@@ -600,6 +603,8 @@ Deno.serve(async (req) => {
             ? "Couldn't find a recipe in this photo. Try a clearer picture of the ingredients and steps."
             : platform === 'web'
             ? "Couldn't find a recipe on this page. Try a different link."
+            : platform === 'facebook'
+            ? "Couldn't find a recipe in this post. Try a different link."
             : "Couldn't find a recipe in this video. Try a different link.",
         tokens_charged: 0,
         ...quotaFields(snapshot),
@@ -1074,6 +1079,36 @@ function quotaBlockMessage(code: string): string {
   return code === 'insufficient_credits' ? 'insufficient_credits' : 'metering_error';
 }
 
+/** The link is already in the user's library: return that recipe, charge nothing. */
+async function savedRecipeResponse(opts: {
+  admin: NonNullable<ReturnType<typeof createServiceSupabase>>;
+  existing: Record<string, unknown>;
+  platform: Platform;
+  userId: string;
+  started: number;
+}): Promise<Response> {
+  const { admin, existing, platform, userId, started } = opts;
+  await logUsageEvent(admin, {
+    userId,
+    action: 'extract',
+    platform,
+    status: 'cached',
+    tokensCharged: 0,
+    durationMs: Date.now() - started,
+    metadata: { cached: true },
+  });
+
+  const quota = await canStartExtract(admin, userId);
+  return jsonResponse({
+    status: existing.extraction_status ?? 'full',
+    platform,
+    recipe: existing,
+    cached: true,
+    tokens_charged: 0,
+    ...quotaFields(quota.snapshot),
+  });
+}
+
 async function recipeCardHitResponse(opts: {
   admin: NonNullable<ReturnType<typeof createServiceSupabase>>;
   card: Record<string, unknown>;
@@ -1256,6 +1291,8 @@ async function fetchPlatformMeta(
       return await fetchInstagramMeta(url);
     case 'tiktok':
       return await fetchTikTokMeta(url);
+    case 'facebook':
+      return await fetchFacebookMeta(url);
     case 'web':
       return await fetchWebRecipeMeta(url);
     default:
@@ -1267,10 +1304,12 @@ function canonicalOriginalUrl(
   platform: Platform,
   contentId: string | null | undefined,
   url: string,
+  resolvedUrl?: string | null,
 ): string {
   if (platform === 'youtube' && contentId) return canonicalYouTubeWatchUrl(contentId);
   if (platform === 'instagram' && contentId) return canonicalInstagramUrl(contentId);
   if (platform === 'tiktok' && contentId) return canonicalTikTokUrl(contentId);
+  if (platform === 'facebook') return resolvedUrl?.trim() || canonicalFacebookUrl(url);
   return url.trim();
 }
 
@@ -1288,7 +1327,10 @@ async function resolveThumbnail(
     return meta.thumbnailUrl ?? (contentId ? youTubeThumbnail(contentId) : null);
   }
 
-  if ((platform === 'instagram' || platform === 'tiktok') && meta.thumbnailUrl) {
+  if (
+    (platform === 'instagram' || platform === 'tiktok' || platform === 'facebook') &&
+    meta.thumbnailUrl
+  ) {
     const hosted = await persistSocialThumbnail({
       sourceUrl: meta.thumbnailUrl,
       platform,
@@ -1313,7 +1355,10 @@ async function resolveThumbnail(
 function fetchErrorMessage(raw: string, platform: string): string {
   const lower = raw.toLowerCase();
   if (lower.includes('timedout=true')) return 'Recipe extraction timed out — try again in a moment.';
-  if (lower.includes('scrapecreators request failed')) return 'Instagram took too long to respond — try again.';
+  if (lower.includes('scrapecreators request failed')) {
+    const source = platform === 'tiktok' ? 'TikTok' : platform === 'facebook' ? 'Facebook' : 'Instagram';
+    return `${source} took too long to respond — try again.`;
+  }
   if (lower.includes('too many requests')) return 'Too many requests right now — try again in a minute.';
   if (lower.includes('not publicly accessible')) return "This post isn't public, so Pinch can't read it.";
   if (lower.includes('invalid instagram')) return "That doesn't look like a valid Instagram link.";

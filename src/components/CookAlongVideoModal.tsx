@@ -35,7 +35,7 @@ const HEIGHT_PRESET: Record<HeightPreset, number> = {
 
 /** Reels / TikTok — portrait player. YouTube stays landscape. */
 function isPortraitSocialVideo(platform: RecipePlatform): boolean {
-  return platform === 'instagram' || platform === 'tiktok';
+  return platform === 'instagram' || platform === 'tiktok' || platform === 'facebook';
 }
 
 /** Chrome around the iframe (title row + open-in-browser link). */

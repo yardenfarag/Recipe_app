@@ -3,7 +3,7 @@ import type { Platform } from '@/types/recipe';
 import { extractYouTubeId } from '@/lib/youtube';
 
 const SOCIAL_DOMAIN_PATTERN =
-  /(?:www\.)?(?:youtube\.com|youtu\.be|instagram\.com|tiktok\.com|vm\.tiktok\.com|vt\.tiktok\.com)\/[^\s<>"']+/i;
+  /(?:www\.)?(?:youtube\.com|youtu\.be|instagram\.com|tiktok\.com|vm\.tiktok\.com|vt\.tiktok\.com|(?:m\.|web\.)?facebook\.com|fb\.watch)\/[^\s<>"']+/i;
 
 /** Bare host/path without scheme (share text sometimes omits https). */
 const BARE_URL_PATTERN =
@@ -11,7 +11,7 @@ const BARE_URL_PATTERN =
 
 /**
  * Pulls a recipe URL from pasted/share-sheet text and normalizes scheme-less
- * links. Accepts YouTube / Instagram / TikTok and other public http(s) pages.
+ * links. Accepts YouTube / Instagram / TikTok / Facebook and other public http(s) pages.
  */
 export function normalizeSocialUrl(input: string): string | null {
   const trimmed = input.trim();
@@ -71,6 +71,10 @@ export function detectPlatform(url: string): Platform | 'unknown' {
   ) {
     return 'tiktok';
   }
+  // m., web. and mbasic. are the same posts on Facebook's other front ends; fb.watch is its video short link.
+  if (host === 'facebook.com' || host.endsWith('.facebook.com') || host === 'fb.watch') {
+    return 'facebook';
+  }
 
   if (host && host !== 'localhost' && !host.endsWith('.localhost') && !host.endsWith('.local')) {
     return 'web';
@@ -101,6 +105,28 @@ export function extractTikTokId(url: string): string | null {
   }
 }
 
+/**
+ * Extracts the numeric id of a Facebook reel, video or post when the URL carries one.
+ * Share links (`/share/...`, `fb.watch`) and `pfbid...` post ids are opaque and give null;
+ * the server resolves those (PIN-66).
+ */
+export function extractFacebookId(url: string): string | null {
+  try {
+    const u = new URL(url);
+    const fromPath = u.pathname.match(
+      /\/(?:reel|videos|posts|permalink)\/(?:[^/]+\/)?(\d{5,})(?:\/|$)/,
+    );
+    if (fromPath) return fromPath[1];
+    for (const key of ['v', 'story_fbid', 'fbid']) {
+      const value = u.searchParams.get(key);
+      if (value && /^\d{5,}$/.test(value)) return value;
+    }
+    return null;
+  } catch {
+    return null;
+  }
+}
+
 /** True when two URLs refer to the same content on a supported platform. */
 export function recipeUrlsMatch(
   inputUrl: string,
@@ -126,6 +152,12 @@ export function recipeUrlsMatch(
   if (resolvedPlatform === 'tiktok') {
     const inputId = extractTikTokId(inputUrl);
     const storedId = extractTikTokId(storedUrl);
+    if (inputId && storedId) return inputId === storedId;
+  }
+
+  if (resolvedPlatform === 'facebook') {
+    const inputId = extractFacebookId(inputUrl);
+    const storedId = extractFacebookId(storedUrl);
     if (inputId && storedId) return inputId === storedId;
   }
 
@@ -163,6 +195,8 @@ export function extractContentId(url: string, platform?: Platform | 'unknown'): 
       return extractInstagramId(url);
     case 'tiktok':
       return extractTikTokId(url);
+    case 'facebook':
+      return extractFacebookId(url);
     default:
       return null;
   }

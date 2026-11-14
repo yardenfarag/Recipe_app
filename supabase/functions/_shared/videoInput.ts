@@ -2,8 +2,8 @@
  * Turns a platform video URL into an LLM part OpenRouter can use.
  *
  * OpenRouter only forwards video *URLs* to providers that fetch them, and on
- * Google AI Studio that means YouTube links only. Instagram and TikTok clips
- * are downloaded here and sent inline as base64 (ADR 015). Instagram's CDN
+ * Google AI Studio that means YouTube links only. Instagram, TikTok and Facebook
+ * clips are downloaded here and sent inline as base64 (ADR 015). Instagram's CDN
  * answers a plain browser-style fetch, so the paid ScrapeCreators hosted copy
  * is only a fallback.
  */
@@ -42,6 +42,7 @@ export function isYouTubeUrl(url: string): boolean {
 function refererFor(platform: Platform): string | undefined {
   if (platform === 'tiktok') return 'https://www.tiktok.com/';
   if (platform === 'instagram') return 'https://www.instagram.com/';
+  if (platform === 'facebook') return 'https://www.facebook.com/';
   return undefined;
 }
 

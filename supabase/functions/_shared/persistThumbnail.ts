@@ -13,7 +13,7 @@ const MAX_THUMBNAIL_BYTES = 10 * 1024 * 1024;
  */
 export async function persistSocialThumbnail(opts: {
   sourceUrl: string;
-  platform: Extract<Platform, 'instagram' | 'tiktok'>;
+  platform: Extract<Platform, 'instagram' | 'tiktok' | 'facebook'>;
   contentId?: string | null;
 }): Promise<string | undefined> {
   const { sourceUrl, platform, contentId } = opts;
@@ -27,7 +27,11 @@ export async function persistSocialThumbnail(opts: {
   }
 
   const referer =
-    platform === 'instagram' ? 'https://www.instagram.com/' : 'https://www.tiktok.com/';
+    platform === 'instagram'
+      ? 'https://www.instagram.com/'
+      : platform === 'facebook'
+        ? 'https://www.facebook.com/'
+        : 'https://www.tiktok.com/';
 
   const controller = new AbortController();
   const timeout = setTimeout(() => controller.abort(), FETCH_TIMEOUT_MS);

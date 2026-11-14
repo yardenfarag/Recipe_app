@@ -1,5 +1,6 @@
 import { createClient, type SupabaseClient } from 'https://esm.sh/@supabase/supabase-js@2';
 import {
+  extractFacebookId,
   extractInstagramId,
   extractTikTokId,
   extractYouTubeId,
@@ -58,6 +59,8 @@ export function extractVideoIdForPlatform(url: string, platform: Platform): stri
       return extractInstagramId(url);
     case 'tiktok':
       return extractTikTokId(url);
+    case 'facebook':
+      return extractFacebookId(url);
     default:
       return null;
   }

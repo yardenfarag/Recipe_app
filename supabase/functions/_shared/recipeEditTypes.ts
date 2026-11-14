@@ -108,7 +108,7 @@ export interface RecipeImportSource {
 }
 
 /** The recipes_platform_check values an import can have. */
-export const IMPORT_PLATFORMS = ['youtube', 'instagram', 'tiktok', 'web', 'photo'] as const;
+export const IMPORT_PLATFORMS = ['youtube', 'instagram', 'tiktok', 'facebook', 'web', 'photo'] as const;
 export type ImportPlatform = (typeof IMPORT_PLATFORMS)[number];
 
 /** The recipes_extraction_source_check values extract-recipe produces. */

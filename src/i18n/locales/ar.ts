@@ -643,7 +643,7 @@ export default {
     "creditsRemaining": "{{total}} رصيد · {{free}} مجاني + {{purchased}} مشترى",
     "creditLimitBody": "استخدمت كل الـ {{limit}} رصيد المجاني هذا الشهر. اشترِ المزيد أو انتظر التجديد.",
     "creditLimitBodyWeb": "استخدمت كل الـ {{limit}} رصيد المجاني هذا الشهر. اشترِ المزيد من التطبيق، أو انتظر التجديد.",
-    "invalidUrl": "أدخل رابط وصفة صحيحًا (YouTube أو Instagram أو TikTok أو موقع وصفات).",
+    "invalidUrl": "أدخل رابط وصفة صحيحًا (YouTube أو Instagram أو TikTok أو Facebook أو موقع وصفات).",
     "invalidShare": "ما شاركته لا يحتوي على رابط وصفة صحيح.",
     "invalidShareImage": "ما قدرنا نقرأ الصورة. جرّب اختيارها من المعرض.",
     "photoAction": "خذ من صورة",
@@ -994,6 +994,7 @@ export default {
     "platformYoutube": "YouTube",
     "platformInstagram": "Instagram",
     "platformTiktok": "TikTok",
+    "platformFacebook": "Facebook",
     "platformWeb": "موقع",
     "platformPhoto": "صورة",
     "stepOf": "الخطوة {{current}} من {{total}}"

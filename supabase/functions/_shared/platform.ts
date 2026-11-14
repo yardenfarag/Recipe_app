@@ -1,7 +1,14 @@
-export type Platform = 'youtube' | 'instagram' | 'tiktok' | 'web' | 'photo' | 'unknown';
+export type Platform =
+  | 'youtube'
+  | 'instagram'
+  | 'tiktok'
+  | 'facebook'
+  | 'web'
+  | 'photo'
+  | 'unknown';
 
 /** Which platforms have live extraction (ADR 003 staged rollout). */
-export const LIVE_PLATFORMS: Platform[] = ['youtube', 'instagram', 'tiktok', 'web'];
+export const LIVE_PLATFORMS: Platform[] = ['youtube', 'instagram', 'tiktok', 'facebook', 'web'];
 
 export function detectPlatform(url: string): Platform {
   let parsed: URL;
@@ -28,6 +35,10 @@ export function detectPlatform(url: string): Platform {
   }
   if (host === 'vm.tiktok.com' || host === 'vt.tiktok.com') {
     return 'tiktok';
+  }
+  // m., web. and mbasic. are the same posts on Facebook's other front ends; fb.watch is its video short link.
+  if (host === 'facebook.com' || host.endsWith('.facebook.com') || host === 'fb.watch') {
+    return 'facebook';
   }
 
   // Any other public http(s) URL is treated as a recipe webpage.
@@ -121,6 +132,62 @@ export function canonicalTikTokUrl(videoId: string, username?: string | null): s
   return `https://www.tiktok.com/video/${videoId}`;
 }
 
+/**
+ * Extracts the numeric id of a Facebook reel, video or post when the URL carries one.
+ * Share links (`/share/...`, `fb.watch`) and `pfbid...` post ids are opaque, so they give null
+ * and the id comes from the fetched post instead (PIN-66).
+ */
+export function extractFacebookId(url: string): string | null {
+  try {
+    const u = new URL(url);
+    const fromPath = u.pathname.match(
+      /\/(?:reel|videos|posts|permalink)\/(?:[^/]+\/)?(\d{5,})(?:\/|$)/,
+    );
+    if (fromPath) return fromPath[1];
+    for (const key of ['v', 'story_fbid', 'fbid']) {
+      const value = u.searchParams.get(key);
+      if (value && /^\d{5,}$/.test(value)) return value;
+    }
+    return null;
+  } catch {
+    return null;
+  }
+}
+
+/** True for Facebook's short share links, which only say what they point at after a redirect. */
+export function isFacebookShareLink(url: string): boolean {
+  try {
+    const u = new URL(url);
+    const host = u.hostname.toLowerCase().replace(/^www\./, '');
+    return host === 'fb.watch' || u.pathname.startsWith('/share/');
+  } catch {
+    return false;
+  }
+}
+
+/** Query parameters that name the post. Everything else on a Facebook URL is tracking. */
+const FACEBOOK_ID_PARAMS = ['v', 'story_fbid', 'id', 'fbid'];
+
+/** Stable Facebook URL for saving and dedup: www host, no tracking parameters, no trailing slash. */
+export function canonicalFacebookUrl(url: string): string {
+  try {
+    const u = new URL(url.trim());
+    const host = u.hostname.toLowerCase();
+    if (host === 'facebook.com' || host.endsWith('.facebook.com')) u.hostname = 'www.facebook.com';
+    u.protocol = 'https:';
+    u.hash = '';
+    for (const key of [...u.searchParams.keys()]) {
+      if (!FACEBOOK_ID_PARAMS.includes(key)) u.searchParams.delete(key);
+    }
+    if (u.pathname.length > 1 && u.pathname.endsWith('/') && !u.search) {
+      u.pathname = u.pathname.slice(0, -1);
+    }
+    return u.toString();
+  } catch {
+    return url.trim();
+  }
+}
+
 /** Extracts the 11-char YouTube video id from watch/shorts/youtu.be URLs. */
 export function extractYouTubeId(url: string): string | null {
   try {
@@ -170,6 +237,14 @@ export function recipeUrlsMatch(
     storedYouTubeId
   ) {
     return inputYouTubeId === storedYouTubeId;
+  }
+
+  // Before Instagram: a Facebook `/reel/<id>` path also fits the Instagram shortcode pattern.
+  if (storedPlatform === 'facebook' || detectPlatform(storedUrl) === 'facebook') {
+    const inputFacebookId = inputContentId ?? extractFacebookId(inputUrl);
+    const storedFacebookId = extractFacebookId(storedUrl);
+    if (inputFacebookId && storedFacebookId) return inputFacebookId === storedFacebookId;
+    return canonicalFacebookUrl(inputUrl) === canonicalFacebookUrl(storedUrl);
   }
 
   const inputInstagramId = inputContentId ?? extractInstagramId(inputUrl);

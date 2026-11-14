@@ -112,7 +112,7 @@ select tablename, rowsecurity from pg_tables where schemaname = 'public';
 ## Edge Function: `extract-recipe` (Step 2b)
 
 Takes `{ url }`, detects the platform, fetches metadata (YouTube Data API / ScrapeCreators for
-Instagram & TikTok), runs the content ladder (text first, then video) through OpenRouter, and returns structured JSON.
+Instagram, TikTok & Facebook), runs the content ladder (text first, then video) through OpenRouter, and returns structured JSON.
 Returns `{ status, platform, recipe?, message? }`.
 
 `status` is one of `full` | `partial` | `failed` | `coming_soon` (see ADR 003/004).
@@ -126,7 +126,7 @@ Supabase) per ADR 002.
 # OPEN_ROUTER_API_KEY is accepted as an alias.
 npx supabase secrets set OPENROUTER_API_KEY=sk-or-v1-your_key
 
-# Required for Instagram + TikTok extraction (ScrapeCreators)
+# Required for Instagram, TikTok and Facebook extraction (ScrapeCreators)
 npx supabase secrets set SCRAPECREATORS_API_KEY=your_scrapecreators_api_key
 
 # Optional — enriches YouTube extraction with description + top 10 comments (ADR 004).
