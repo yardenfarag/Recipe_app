@@ -10,6 +10,7 @@ import { Platform } from 'react-native';
 import { ErrorBoundary } from '@/components/ErrorBoundary';
 import { ScreenViewLogger } from '@/components/ScreenViewLogger';
 import { StackHeaderBackButton } from '@/components/StackHeaderBackButton';
+import { AccountLocaleSync } from '@/components/AccountLocaleSync';
 import { AuthProvider } from '@/hooks/useAuth';
 import { LanguageProvider } from '@/hooks/useLanguagePreference';
 import { MeasurementProvider } from '@/hooks/useMeasurementPreference';
@@ -183,6 +184,7 @@ export default function RootLayout() {
               <OnboardingProvider>
                 <ErrorBoundary>
                   <AuthProvider>
+                    <AccountLocaleSync />
                     <OnboardingGate />
                     <ShareIntentRouter />
                     <ScreenViewLogger />

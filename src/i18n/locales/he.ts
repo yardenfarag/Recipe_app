@@ -286,13 +286,13 @@ export default {
     "reasonHub": "פתחו חשבון חינם כדי לשמור מתכונים מ־Cooking Hub.",
     "reasonEdit": "פתחו חשבון חינם כדי לערוך את המתכונים שלכם ולכתוב מתכונים משלכם.",
     "signupSubtitle": "שומרים מתכונים, והם מחכים לכם בכל מכשיר.",
-    "forgotSubtitle": "כתבו אימייל ונשלח קישור לאיפוס סיסמה.",
+    "forgotSubtitle": "מזינים את כתובת המייל ונשלח קוד לאיפוס הסיסמה.",
     "signinSubtitle": "היכנסו כדי לראות את המתכונים שלכם.",
     "checkEmail": "בדקו את האימייל",
     "confirmSent": "שלחנו קישור לאישור אל",
-    "resetSent": "אם יש חשבון לכתובת הזו, שלחנו קישור אל",
+    "resetSent": "אם קיים חשבון עם הכתובת הזו, שלחנו קוד בן 6 ספרות אל",
     "confirmInstructions": "פתחו את הקישור בטלפון הזה, חזרו לכאן והיכנסו.",
-    "resetInstructions": "פתחו את הקישור בטלפון הזה ובחרו סיסמה חדשה.",
+    "resetInstructions": "מקלידים אותו כאן ובוחרים סיסמה חדשה. במייל יש גם כפתור, אם זה נוח יותר.",
     "confirmedSignIn": "אישרתי — כניסה",
     "backToSignIn": "חזרה לכניסה",
     "differentEmail": "אימייל אחר",
@@ -312,7 +312,7 @@ export default {
       "strong": "סיסמה חזקה"
     },
     "forgotPassword": "שכחתם סיסמה?",
-    "sendResetLink": "שליחת קישור",
+    "sendResetLink": "שליחת קוד איפוס",
     "haveAccount": "כבר יש חשבון? כניסה",
     "needAccount": "אין חשבון? הרשמה",
     "orContinueWith": "או ממשיכים עם",
@@ -321,7 +321,19 @@ export default {
     "terms": "תנאים",
     "callbackFailed": "לא הצלחנו להשלים את הכניסה.",
     "callbackMissing": "חסר קישור כניסה. חזרו למסך הכניסה ונסו שוב.",
-    "callbackFinishing": "נכנסים…"
+    "callbackFinishing": "נכנסים…",
+    "codeTitle": "כניסה עם קוד",
+    "codeSubtitle": "נשלח אליך במייל קוד בן 6 ספרות. בלי סיסמה.",
+    "sendCode": "שלחו לי קוד",
+    "emailMeCode": "שלחו לי קוד כניסה במייל",
+    "usePassword": "כניסה עם סיסמה",
+    "codeSent": "שלחנו קוד בן 6 ספרות אל",
+    "codeInstructions": "מקלידים אותו כאן ומתחברים. הקוד תקף לשעה.",
+    "codeLabel": "קוד בן 6 ספרות",
+    "verifyCode": "המשך",
+    "codeInvalid": "הקוד שגוי או שפג תוקפו. כדאי לבדוק את המייל או לבקש קוד חדש.",
+    "resendCode": "שליחת קוד חדש",
+    "codeResent": "קוד חדש נשלח. כדאי לבדוק את המייל."
   },
   "recipe": {
     "preview": "תצוגה מקדימה",
@@ -655,7 +667,7 @@ export default {
     "cookSubtitle": "לא חובה. נזכור את זה למתכונים שתבחרו להתאים.",
     "cookEverything": "אוכלים הכול",
     "changeLater": "אפשר לשנות את זה בכל רגע בהגדרות.",
-    "dietLimit": "אפשר לבחור עד {{count}}.",
+    "dietLimit": "אפשר לבחור עד {{count}}.",
     "heardTitle": "איך שמעתם על Pinch?",
     "heardSubtitle": "נגיעה אחת, וזה עוזר לנו להגיע לעוד אנשים כמוכם.",
     "heardSources": {
@@ -827,7 +839,7 @@ export default {
     "pantrySaved": "{{name}} לא ייכנס לרשימה בפעם הבאה."
   },
   "resetPassword": {
-    "openLink": "פתחו את הקישור מהאימייל כדי להמשיך.",
+    "openLink": "צריך לבקש קוד איפוס חדש כדי להמשיך.",
     "invalidLink": "הקישור לא תקין או שפג תוקפו.",
     "mismatch": "הסיסמאות לא תואמות.",
     "updateFailed": "לא הצלחנו לעדכן את הסיסמה.",
@@ -838,7 +850,7 @@ export default {
     "newPassword": "סיסמה חדשה",
     "confirmPassword": "עוד פעם, הסיסמה החדשה",
     "update": "שמירת סיסמה",
-    "requestNewLink": "בקשת קישור חדש"
+    "requestNewLink": "בקשת קוד איפוס חדש"
   },
   "errorBoundary": {
     "title": "משהו השתבש",
