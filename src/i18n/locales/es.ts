@@ -651,7 +651,7 @@ export default {
     "photoHint": "Página de un libro, receta a mano o captura de pantalla.",
     "photoTooLarge": "Esa foto es demasiado grande. Recórtala o elige una más pequeña.",
     "genericError": "Algo salió mal. Inténtalo de nuevo.",
-    "videoTooLong": "Ese video es demasiado largo. Prueba uno de menos de 3 minutos, o uno que traiga la receta en la descripción.",
+    "videoTooLong": "Ese video es demasiado largo. Prueba uno de menos de 12 minutos, o uno que traiga la receta en la descripción.",
     "comingSoon": "Esa plataforma llega pronto.",
     "notFound": "No vimos una receta en ese enlace. Prueba con otro.",
     "statusReadingPhoto": "Leyendo la foto…",

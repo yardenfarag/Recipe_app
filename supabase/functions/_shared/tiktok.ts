@@ -10,11 +10,11 @@ import {
   scrapeCreatorsGet,
   webVttToPlainText,
 } from './scrapecreators.ts';
-import { parseDurationMilliseconds } from './videoLimits.ts';
+import { parseDurationMilliseconds, wantsSmallestVideo } from './videoLimits.ts';
 
 const MAX_COMMENTS = 10;
 
-interface TikTokVideoResponse {
+export interface TikTokVideoResponse {
   aweme_detail?: TikTokAwemeDetail;
   transcript?: string;
   no_watermark_video_url?: string;
@@ -24,7 +24,7 @@ interface TikTokCommentsResponse {
   comments?: TikTokComment[];
 }
 
-interface TikTokAwemeDetail {
+export interface TikTokAwemeDetail {
   aweme_id?: string;
   desc?: string;
   author?: { unique_id?: string; nickname?: string; uid?: string };
@@ -33,7 +33,15 @@ interface TikTokAwemeDetail {
     has_watermark?: boolean;
     play_addr?: { url_list?: string[] };
     download_no_watermark_addr?: { url_list?: string[] };
+    /** The same video at several qualities. */
+    bit_rate?: TikTokBitRate[];
   };
+}
+
+export interface TikTokBitRate {
+  bit_rate?: number;
+  gear_name?: string;
+  play_addr?: { url_list?: string[]; data_size?: number | string };
 }
 
 interface TikTokCoverFields {
@@ -82,14 +90,16 @@ export async function fetchTikTokMeta(url: string): Promise<PlatformMeta> {
     extractTikTokThumbnail(detail.video, videoResponse as Record<string, unknown>) ??
     (await fetchTikTokOembedThumbnail(url));
 
+  const durationSeconds = parseDurationMilliseconds(detail.video?.duration);
+
   return {
     description: detail.desc?.trim() || undefined,
     thumbnailUrl,
     captions: transcript || undefined,
     topComments,
-    videoUrl: resolveTikTokVideoUrl(videoResponse, detail),
+    videoUrl: resolveTikTokVideoUrl(videoResponse, detail, durationSeconds),
     contentId: videoId,
-    durationSeconds: parseDurationMilliseconds(detail.video?.duration),
+    durationSeconds,
   };
 }
 
@@ -111,10 +121,31 @@ function mapTikTokComments(
     .filter((comment) => comment.text.length > 0);
 }
 
-function resolveTikTokVideoUrl(
+/** The URL of the smallest quality on offer, by file size, then bit rate. */
+export function pickSmallestTikTokVideo(bitRates: TikTokBitRate[] | undefined): string | undefined {
+  const size = (entry: TikTokBitRate) => {
+    const bytes = Number(entry.play_addr?.data_size);
+    return Number.isFinite(bytes) && bytes > 0 ? bytes : Number.POSITIVE_INFINITY;
+  };
+  const rate = (entry: TikTokBitRate) =>
+    typeof entry.bit_rate === 'number' && entry.bit_rate > 0 ? entry.bit_rate : Number.POSITIVE_INFINITY;
+  const [smallest] = (bitRates ?? [])
+    .filter((entry) => firstUrlList(entry.play_addr))
+    .sort((a, b) => size(a) - size(b) || rate(a) - rate(b));
+  return smallest ? firstUrlList(smallest.play_addr) : undefined;
+}
+
+export function resolveTikTokVideoUrl(
   response: TikTokVideoResponse,
   detail: TikTokAwemeDetail,
+  durationSeconds?: number,
 ): string | undefined {
+  // Long videos: the smallest quality, so more of them fit under the inline video cap.
+  if (wantsSmallestVideo(durationSeconds)) {
+    const smallest = pickSmallestTikTokVideo(detail.video?.bit_rate);
+    if (smallest) return smallest;
+  }
+
   if (response.no_watermark_video_url) return response.no_watermark_video_url;
 
   const noWatermark = firstUrlList(detail.video?.download_no_watermark_addr);

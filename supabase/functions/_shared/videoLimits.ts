@@ -1,5 +1,11 @@
 /** Max source video length sent to Gemini multimodal (extract + timestamp map). */
-export const MAX_VIDEO_DURATION_SECONDS = 180;
+export const MAX_VIDEO_DURATION_SECONDS = 720;
+
+/**
+ * Videos up to this length keep the platform's default quality. Longer ones download the
+ * smallest quality on offer, so more of them fit under the inline cap (MAX_INLINE_VIDEO_BYTES).
+ */
+export const FULL_QUALITY_MAX_SECONDS = 180;
 
 export function isVideoTooLong(durationSeconds: number | null | undefined): boolean {
   return (
@@ -9,8 +15,17 @@ export function isVideoTooLong(durationSeconds: number | null | undefined): bool
   );
 }
 
+/** True when a video is long enough that the smallest available quality should be downloaded. */
+export function wantsSmallestVideo(durationSeconds: number | null | undefined): boolean {
+  return (
+    typeof durationSeconds === 'number' &&
+    Number.isFinite(durationSeconds) &&
+    durationSeconds > FULL_QUALITY_MAX_SECONDS
+  );
+}
+
 export function formatMaxVideoDurationLabel(): string {
-  return '3 minutes';
+  return '12 minutes';
 }
 
 /** Parses YouTube Data API ISO 8601 durations (e.g. PT1M30S, PT45S). */

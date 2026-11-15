@@ -10,10 +10,10 @@ import {
 } from '../../supabase/functions/_shared/videoLimits';
 
 describe('videoLimits', () => {
-  it('caps at three minutes', () => {
-    expect(MAX_VIDEO_DURATION_SECONDS).toBe(180);
-    expect(isVideoTooLong(181)).toBe(true);
-    expect(isVideoTooLong(180)).toBe(false);
+  it('caps at twelve minutes', () => {
+    expect(MAX_VIDEO_DURATION_SECONDS).toBe(720);
+    expect(isVideoTooLong(721)).toBe(true);
+    expect(isVideoTooLong(720)).toBe(false);
     expect(isVideoTooLong(undefined)).toBe(false);
   });
 

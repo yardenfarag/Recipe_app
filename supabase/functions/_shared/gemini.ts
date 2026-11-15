@@ -611,8 +611,11 @@ async function extractRecipeWithVideo(
   const resolveStarted = Date.now();
   const video = await resolveVideoPart(input);
   if (!video.part) {
+    // `too_large` with a long durationSeconds is the inline cap at work (PIN-100).
     console.log('[gemini] skipping multimodal — no usable video', {
       reason: video.reason,
+      platform: input.platform,
+      durationSeconds: input.durationSeconds ?? null,
       ms: Date.now() - resolveStarted,
     });
     return {
@@ -626,6 +629,7 @@ async function extractRecipeWithVideo(
     timeoutMs: VIDEO_TIMEOUT_MS,
     inline: 'imageBase64' in video.part,
     bytes: video.bytes,
+    durationSeconds: input.durationSeconds ?? null,
     resolveMs: Date.now() - resolveStarted,
   });
 
