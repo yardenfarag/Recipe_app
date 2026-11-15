@@ -203,20 +203,22 @@
     "support": "Soporte",
     "privacy": "Privacidad",
     "terms": "Términos",
+    "refunds": "Reembolsos",
     "deleteAccount": "Eliminar tu cuenta"
   },
   "support": {
-    "title": "¿En qué podemos ayudarte?",
-    "intro": "Una pregunta, un error o una idea. Leemos todos los mensajes.",
-    "message": "Mensaje",
-    "email": "Tu correo (opcional, para poder responderte)",
+    "title": "Contactar con soporte",
+    "intro": "Una pregunta, un error o una idea. Leemos cada mensaje y respondemos por correo.",
+    "name": "Tu nombre",
+    "email": "Tu correo electrónico",
+    "subject": "Título",
+    "message": "Descripción",
     "cancel": "Cancelar",
     "send": "Enviar",
-    "tooShort": "Primero escribe unas palabras.",
+    "required": "Completa todos los campos.",
     "badEmail": "Ese correo no parece correcto.",
     "sending": "Enviando…",
-    "thanksReply": "¡Gracias! Te responderemos por correo.",
-    "thanks": "¡Gracias! Recibimos tu mensaje.",
-    "failed": "No se pudo enviar. Inténtalo de nuevo o escribe a yarden.farag@gmail.com."
+    "thanks": "¡Gracias! Recibimos tu mensaje y te responderemos por correo.",
+    "failed": "No se pudo enviar. Inténtalo de nuevo en un momento."
   }
 }

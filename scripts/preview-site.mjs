@@ -15,7 +15,7 @@ const port = Number(process.env.PORT ?? 8090);
 try {
   process.loadEnvFile(join(root, '.env'));
 } catch {
-  // No .env: the support form falls back to email.
+  // No .env: the support form can't send.
 }
 
 const html = 'text/html; charset=utf-8';
@@ -28,6 +28,7 @@ const files = {
   '/robots.txt': ['public/robots.txt', 'text/plain; charset=utf-8'],
   '/privacy.html': ['legal/privacy.html', html],
   '/terms.html': ['legal/terms.html', html],
+  '/refund.html': ['legal/refund.html', html],
   '/delete-account.html': ['legal/delete-account.html', html],
   '/delete-data.html': ['legal/delete-data.html', html],
   '/share.html': ['legal/share.html', html],
@@ -38,6 +39,13 @@ function render(path) {
   if (files[path]) {
     const [file, type] = files[path];
     return { type, body: readFileSync(join(root, file)) };
+  }
+  if (path === '/support.js') {
+    const script = readFileSync(join(root, 'landing/support.js'), 'utf8');
+    return {
+      type: 'text/javascript; charset=utf-8',
+      body: fillSupabaseConfig(script, process.env.EXPO_PUBLIC_SUPABASE_URL, process.env.EXPO_PUBLIC_SUPABASE_KEY),
+    };
   }
   const site = loadSite(root);
   if (path === '/sitemap.xml') {

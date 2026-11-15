@@ -294,34 +294,19 @@
         </nav>
         <nav id="legal" aria-labelledby="footer-help">
           <h2 id="footer-help">{{t:footer.helpLegal}}</h2>
-          <a id="support-link" href="mailto:yarden.farag@gmail.com">{{t:footer.support}}</a>
+          <a href="/#support" data-support>{{t:footer.support}}</a>
           <a href="/privacy.html">{{t:footer.privacy}}</a>
           <a href="/terms.html">{{t:footer.terms}}</a>
+          <a href="/refund.html">{{t:footer.refunds}}</a>
           <a href="/delete-account.html">{{t:footer.deleteAccount}}</a>
         </nav>
       </div>
       <p>© <span id="year">2026</span> Pinch</p>
     </footer>
 
-    <dialog class="support" id="support" aria-labelledby="support-title">
-      <form id="support-form" novalidate>
-        <h2 id="support-title">{{t:support.title}}</h2>
-        <p>{{t:support.intro}}</p>
-        <label>
-          {{t:support.message}}
-          <textarea name="message" required minlength="2" maxlength="4000"></textarea>
-        </label>
-        <label>
-          {{t:support.email}}
-          <input type="email" name="email" maxlength="254" autocomplete="email" />
-        </label>
-        <p class="status" role="status" aria-live="polite"></p>
-        <div class="row">
-          <button type="button" class="btn btn-quiet" data-close>{{t:support.cancel}}</button>
-          <button type="submit" class="btn btn-web">{{t:support.send}}</button>
-        </div>
-      </form>
-    </dialog>
+    <script type="application/json" id="support-text">{{SUPPORT_TEXT}}</script>
+    <script src="/support.js" defer></script>
+
 
     <script>
       (function () {
@@ -360,7 +345,7 @@
         window.addEventListener('hashchange', followGuideHash);
         followGuideHash();
 
-        // The build fills these in; left as placeholders, tracking is off and Support opens email.
+        // The build fills these in; left as placeholders, tracking is off.
         var SUPABASE_URL = '__SUPABASE_URL__';
         var SUPABASE_KEY = '__SUPABASE_KEY__';
         if (SUPABASE_URL.indexOf('__') === 0 || SUPABASE_KEY.indexOf('__') === 0) return;
@@ -375,62 +360,6 @@
               Prefer: 'return=minimal',
             },
             body: JSON.stringify(body),
-          });
-        }
-
-        // Support: a message to the feedback table (admin → Usage → Feedback).
-        // Its messages come from landing/strings/<language>.json (support.*).
-        var TEXT = {{SUPPORT_TEXT}};
-        var dialog = document.getElementById('support');
-        var form = document.getElementById('support-form');
-        var status = form.querySelector('.status');
-        var send = form.querySelector('[type=submit]');
-        function setStatus(text, isError) {
-          status.textContent = text;
-          status.className = 'status' + (isError ? ' error' : '');
-        }
-        if (dialog.showModal) {
-          document.getElementById('support-link').addEventListener('click', function (event) {
-            event.preventDefault();
-            setStatus('');
-            dialog.showModal();
-            form.message.focus();
-          });
-          form.querySelector('[data-close]').addEventListener('click', function () {
-            dialog.close();
-          });
-          dialog.addEventListener('click', function (event) {
-            if (event.target === dialog) dialog.close();
-          });
-          form.addEventListener('submit', function (event) {
-            event.preventDefault();
-            var message = form.message.value.trim();
-            var email = form.email.value.trim();
-            if (message.length < 2) return setStatus(TEXT.tooShort, true);
-            if (email && !/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email)) {
-              return setStatus(TEXT.badEmail, true);
-            }
-            send.disabled = true;
-            setStatus(TEXT.sending);
-            post('/rest/v1/rpc/submit_website_feedback', {
-              p_message: message,
-              p_email: email || null,
-              p_locale: navigator.language || null,
-            })
-              .then(function (response) {
-                if (!response.ok) throw new Error(String(response.status));
-                form.reset();
-                setStatus(email ? TEXT.thanksReply : TEXT.thanks);
-                setTimeout(function () {
-                  dialog.close();
-                }, 1800);
-              })
-              .catch(function () {
-                setStatus(TEXT.failed, true);
-              })
-              .then(function () {
-                send.disabled = false;
-              });
           });
         }
 

@@ -7,6 +7,7 @@
 //   /sitemap.xml     public/sitemap.xml plus a URL per page per language
 //   /app/            the Expo web app (experiments.baseUrl = "/app")
 //   /*.html          legal pages
+//   /support.js      the Contact support form every page opens
 //   /404.html        the app shell, so /app/<route> deep links load the app.
 //                    Its inline script sends old root links (/s/…, /auth-callback…) to /app/….
 import { execSync } from 'node:child_process';
@@ -31,6 +32,7 @@ const copy = (from, to = from.split('/').pop()) => copyFileSync(join(root, from)
 
 copy('legal/privacy.html');
 copy('legal/terms.html');
+copy('legal/refund.html');
 copy('legal/delete-account.html');
 copy('legal/delete-data.html');
 copy('legal/share.html');
@@ -59,6 +61,14 @@ for (const page of pages) {
     fillSupabaseConfig(page.html, process.env.EXPO_PUBLIC_SUPABASE_URL, process.env.EXPO_PUBLIC_SUPABASE_KEY),
   );
 }
+writeFileSync(
+  join(dist, 'support.js'),
+  fillSupabaseConfig(
+    readFileSync(join(root, 'landing/support.js'), 'utf8'),
+    process.env.EXPO_PUBLIC_SUPABASE_URL,
+    process.env.EXPO_PUBLIC_SUPABASE_KEY,
+  ),
+);
 writeFileSync(join(dist, 'sitemap.xml'), buildSitemap(readFileSync(join(root, 'public/sitemap.xml'), 'utf8'), site));
 
 writeFileSync(join(dist, '.nojekyll'), '');

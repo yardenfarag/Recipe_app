@@ -14,7 +14,7 @@ import { openAppStore } from '@/lib/appStore';
 export default function CreditSettingsScreen() {
   const { t } = useTranslation();
   const { colors } = useThemePreference();
-  const { freeExtractsRemaining, purchasedCredits, totalCredits, refresh } = useProfile();
+  const { totalCredits, refresh } = useProfile();
   const [creditsOpen, setCreditsOpen] = useState(false);
   const purchasesHere = creditPurchasesOfferedOn(Platform.OS);
 
@@ -29,23 +29,12 @@ export default function CreditSettingsScreen() {
           {t('settings.recipeCredits')}
         </Text>
         {totalCredits == null ? null : (
-          <>
-            <Text className="mb-3 text-sm" style={{ color: colors.accent }}>
-              {t('settings.creditsTotal', { count: totalCredits })}
-            </Text>
-            <Text className="text-xs leading-5" style={{ color: colors.textSecondary }}>
-              {t('settings.creditsFree', {
-                remaining: freeExtractsRemaining ?? 0,
-                limit: FREE_MONTHLY_EXTRACT_LIMIT,
-              })}
-            </Text>
-            <Text className="mt-1 text-xs leading-5" style={{ color: colors.textSecondary }}>
-              {t('settings.creditsPurchased', { count: purchasedCredits ?? 0 })}
-            </Text>
-          </>
+          <Text className="text-sm" style={{ color: colors.accent }}>
+            {t('settings.creditsTotal', { count: totalCredits })}
+          </Text>
         )}
         <Text className="mt-1 text-xs leading-5" style={{ color: colors.textSecondary }}>
-          {t('settings.creditsReset')}
+          {t('settings.creditsMonthlyNote', { limit: FREE_MONTHLY_EXTRACT_LIMIT })}
         </Text>
         {purchasesHere ? (
           <Pressable

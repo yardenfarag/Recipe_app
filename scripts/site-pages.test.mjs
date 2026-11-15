@@ -465,7 +465,8 @@ describe('translations', () => {
       expect(value.includes('{date}'), path).toBe(source.includes('{date}'));
     }
     expect(strings.meta.title.startsWith('Pinch: Recipe Library | ')).toBe(true);
-    expect(strings.support.failed).toContain(english.support.failed.match(/\S+@\S+\.[a-z]+/)[0]);
+    // The site never shows an email address: people write through the support form.
+    expect(JSON.stringify(strings), code).not.toMatch(/[^\s"@]+@[^\s"@]+\.[a-z]{2,}/);
   });
 
   it.each(translated.map((lang) => lang.code))('%s has every guide, translated from the current English', (code) => {

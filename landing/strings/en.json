@@ -203,20 +203,22 @@
     "support": "Support",
     "privacy": "Privacy",
     "terms": "Terms",
+    "refunds": "Refunds",
     "deleteAccount": "Delete your account"
   },
   "support": {
-    "title": "How can we help?",
-    "intro": "A question, a bug, or an idea. We read every message.",
-    "message": "Message",
-    "email": "Your email (optional, so we can reply)",
+    "title": "Contact support",
+    "intro": "A question, a bug, or an idea. We read every message and reply by email.",
+    "name": "Your name",
+    "email": "Your email",
+    "subject": "Title",
+    "message": "Description",
     "cancel": "Cancel",
     "send": "Send",
-    "tooShort": "Write a few words first.",
+    "required": "Please fill in every field.",
     "badEmail": "That email doesn’t look right.",
     "sending": "Sending…",
-    "thanksReply": "Thanks! We’ll reply by email.",
-    "thanks": "Thanks! We got your message.",
-    "failed": "Couldn’t send. Try again, or email yarden.farag@gmail.com."
+    "thanks": "Thanks! We got your message and will reply by email.",
+    "failed": "Couldn’t send. Please try again in a moment."
   }
 }

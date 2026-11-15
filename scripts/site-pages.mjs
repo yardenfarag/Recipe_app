@@ -64,11 +64,27 @@ const GUIDE_PLACEHOLDERS = [
   'HOME',
   'BODY',
   'MORE_GUIDES',
+  'SUPPORT_TEXT',
 ];
 // Section subtitles a language may leave out ("") when no line reads well in it: the paragraph
 // is dropped, rather than shown in English.
 export const OPTIONAL_STRINGS = ['features.sub', 'how.sub', 'compare.sub', 'guides.sub'];
-const SUPPORT_TEXT_KEYS =['tooShort', 'badEmail', 'sending', 'thanksReply', 'thanks', 'failed'];
+// Everything the support form (landing/support.js) shows, in the page's language.
+const SUPPORT_TEXT_KEYS = [
+  'title',
+  'intro',
+  'name',
+  'email',
+  'subject',
+  'message',
+  'cancel',
+  'send',
+  'required',
+  'badEmail',
+  'sending',
+  'thanks',
+  'failed',
+];
 
 const marked = new Marked();
 
@@ -492,13 +508,16 @@ function fill(templateHtml, file, placeholders, values, t) {
     .replace(/\{\{([A-Z_]+)\}\}/g, (placeholder, name) => values[name] ?? placeholder);
 }
 
+function supportText(t) {
+  return scriptJson(Object.fromEntries(SUPPORT_TEXT_KEYS.map((key) => [key, t(`support.${key}`)])));
+}
+
 export function buildLanding(landingHtml, site, lang = DEFAULT_LANGUAGE) {
   for (const marker of [GUIDES_MARKER, GUIDE_LINKS_MARKER]) {
     if (!landingHtml.includes(marker)) throw new Error(`landing/index.html is missing ${marker}`);
   }
   const t = translator(site, lang);
   const page = { lang };
-  const supportText = Object.fromEntries(SUPPORT_TEXT_KEYS.map((key) => [key, t(`support.${key}`)]));
   const values = {
     LANG: lang,
     DIR: language(lang).dir,
@@ -508,7 +527,7 @@ export function buildLanding(landingHtml, site, lang = DEFAULT_LANGUAGE) {
     LANG_BANNER: renderLanguageBanner(site, page),
     LANG_MENU: renderLanguageMenu(site, page),
     FAQ: renderFaq(t('faq.items')),
-    SUPPORT_TEXT: scriptJson(supportText),
+    SUPPORT_TEXT: supportText(t),
   };
   return fill(landingHtml, 'landing/index.html', LANDING_PLACEHOLDERS, values, t)
     .replace(GUIDES_MARKER, () => renderGuides(site, lang))
@@ -544,6 +563,7 @@ export function buildGuidePage(templateHtml, site, guide) {
     HOME: homePath(lang),
     BODY: localizeGuideLinks(guide.html, site, lang),
     MORE_GUIDES: renderGuideLinks(site, lang, others),
+    SUPPORT_TEXT: supportText(t),
   };
   return fill(templateHtml, 'landing/guide.html', GUIDE_PLACEHOLDERS, values, t);
 }
@@ -600,8 +620,8 @@ export function buildSitemap(sitemapXml, site) {
     .replace('</urlset>', () => `${guides}</urlset>`);
 }
 
-// The landing page's tracking and support form talk to Supabase with the public key.
-// Left as placeholders, both are off and Support falls back to email.
+// The landing page's tracking and the support form (landing/support.js) talk to Supabase with
+// the public key. Left as placeholders, tracking is off and the form says it couldn't send.
 export function fillSupabaseConfig(html, url, key) {
   // Trimmed: a secret saved with a trailing newline breaks the JS string and blanks the page.
   const supabaseUrl = (url ?? '').trim().replace(/\/$/, '');
