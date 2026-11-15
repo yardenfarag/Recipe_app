@@ -23,8 +23,8 @@ function newSessionId(): string {
   });
 }
 
-const platform = Platform.OS === 'ios' || Platform.OS === 'android' ? Platform.OS : 'web';
-const appVersion = (() => {
+export const platform = Platform.OS === 'ios' || Platform.OS === 'android' ? Platform.OS : 'web';
+export const appVersion = (() => {
   const version = Constants.nativeAppVersion ?? Constants.expoConfig?.version ?? '';
   return (__DEV__ ? `${version}-dev` : version).slice(0, 24) || null;
 })();

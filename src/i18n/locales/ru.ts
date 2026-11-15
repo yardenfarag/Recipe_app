@@ -16,6 +16,13 @@ export default {
     "continue": "Дальше",
     "upgrade": "Улучшить"
   },
+  "inAppMessages": {
+    "update": "Обновить",
+    "notNow": "Не сейчас",
+    "close": "Закрыть",
+    "learnMore": "Подробнее",
+    "region": "Сообщение от Pinch"
+  },
   "credits": {
     "buyTitle": "Купить кредиты",
     "buyHint": "Один кредит за каждый удачный Snap или «Угадать рецепт». Купленные не сгорают.",
@@ -220,6 +227,7 @@ export default {
     "adminPeople": "Аккаунты",
     "adminUsage": "Расходы и поддержка",
     "adminActivity": "Журнал действий",
+    "adminMessages": "Сообщения",
     "rtlReloadTitle": "Перезапустить, чтобы всё встало на место?",
     "rtlReloadBody": "Иврит и арабский читаются справа налево. Перезапустите сейчас, чтобы меню и заголовки были с нужной стороны.",
     "rtlReloadConfirm": "Перезапустить",
@@ -1064,6 +1072,7 @@ export default {
     "people": "Аккаунты",
     "usage": "Использование и поддержка",
     "activity": "Активность",
+    "messages": "Сообщения",
     "cookbook": "PDF-книга рецептов"
   },
   "hub": {
