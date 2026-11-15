@@ -116,12 +116,12 @@ export function MessagePreview({ draft }: { draft: AdminMessageDraft }) {
   if (draft.presentation === 'banner') {
     shape = (
       <View className="rounded-[14px] p-3" style={[{ backgroundColor: colors.surface, borderLeftWidth: 4, borderLeftColor: accent }, direction]}>
-        <View className="flex-row items-start gap-3" style={direction}>
+        <View className="flex-row items-center gap-3" style={direction}>
           {icon}
           {text}
           {closable ? <Ionicons name="close" size={18} color={colors.textSecondary} /> : null}
         </View>
-        {buttonRow}
+        {buttons.length > 0 ? <View style={{ marginStart: icon ? 34 : 0 }}>{buttonRow}</View> : null}
       </View>
     );
   } else if (draft.presentation === 'alert') {
