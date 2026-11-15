@@ -610,7 +610,17 @@ export default {
     "cookSubtitle": "לא חובה. נזכור את זה למתכונים שתבחרו להתאים.",
     "cookEverything": "אוכלים הכול",
     "changeLater": "אפשר לשנות את זה בכל רגע בהגדרות.",
-    "dietLimit": "אפשר לבחור עד {{count}}."
+    "dietLimit": "אפשר לבחור עד {{count}}.",
+    "heardTitle": "איך שמעתם על Pinch?",
+    "heardSubtitle": "נגיעה אחת, וזה עוזר לנו להגיע לעוד אנשים כמוכם.",
+    "heardSources": {
+      "tiktok_instagram": "טיקטוק או אינסטגרם",
+      "friend": "חבר או בן משפחה",
+      "app_store": "חיפוש ב-App Store או ב-Google Play",
+      "google": "חיפוש בגוגל",
+      "ai_assistant": "עוזר בינה מלאכותית, כמו ChatGPT או Gemini",
+      "other": "ממקום אחר"
+    }
   },
   "walkthrough": {
     "progress": "{{current}} מתוך {{total}}",

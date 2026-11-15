@@ -205,6 +205,14 @@ function InsightsBody() {
             <Card title="Why the credit sheet opens" colors={colors}>
               <RankList items={summary.paywallTriggers} empty="No paywall views yet." colors={colors} />
             </Card>
+            <Card title="How people heard about Pinch" colors={colors}>
+              <RankList
+                items={summary.heardAbout}
+                empty="No answers yet. New people are asked during onboarding."
+                colors={colors}
+                format={label}
+              />
+            </Card>
             <Card title="Onboarding languages" colors={colors}>
               <RankList items={summary.locales} empty="Nobody has finished onboarding yet." colors={colors} />
             </Card>

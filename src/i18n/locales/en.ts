@@ -610,7 +610,17 @@ export default {
     "cookSubtitle": "Optional. We’ll remember it for recipes you choose to adapt.",
     "cookEverything": "I cook everything",
     "changeLater": "You can change this anytime in Settings.",
-    "dietLimit": "You can pick up to {{count}}."
+    "dietLimit": "You can pick up to {{count}}.",
+    "heardTitle": "How did you hear about Pinch?",
+    "heardSubtitle": "One tap, and it helps us reach more people like you.",
+    "heardSources": {
+      "tiktok_instagram": "TikTok or Instagram",
+      "friend": "A friend or family member",
+      "app_store": "App Store or Google Play search",
+      "google": "Google search",
+      "ai_assistant": "An AI assistant, like ChatGPT or Gemini",
+      "other": "Somewhere else"
+    }
   },
   "walkthrough": {
     "progress": "{{current}} of {{total}}",

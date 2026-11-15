@@ -1,7 +1,7 @@
 import Ionicons from '@expo/vector-icons/Ionicons';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useEffect, useState } from 'react';
-import { I18nManager, ScrollView, Text, View } from 'react-native';
+import { I18nManager, Platform, ScrollView, Text, View } from 'react-native';
 import { Pressable } from '@/components/ui/Pressable';
 import { useTranslation } from 'react-i18next';
 
@@ -15,13 +15,14 @@ import { useKitchenProfile } from '@/hooks/useKitchenProfile';
 import { useLanguagePreference } from '@/hooks/useLanguagePreference';
 import { useThemePreference } from '@/hooks/useThemePreference';
 import { announce } from '@/lib/a11y';
+import { captureHeardAbout, HEARD_ABOUT_SOURCES, type HeardAboutSource } from '@/lib/analytics';
 import type { KitchenDietKey } from '@/lib/kitchenProfile';
 import { ONBOARDING_STEP_KEY, parseOnboardingStep } from '@/lib/onboardingStorage';
 import { promptRtlReloadIfLayoutMismatch } from '@/lib/rtlLayout';
 import { RECIPE_VARIANTS, type RecipeVariantKey } from '@/lib/recipeVariants';
 
-/** Vision, then language, look, measurements, and an optional diet. */
-const QUESTION_STEP_COUNT = 4;
+/** Vision, then language, look, measurements, an optional diet, and how they heard about Pinch. */
+const QUESTION_STEP_COUNT = 5;
 export const ONBOARDING_STEP_COUNT = QUESTION_STEP_COUNT + 1;
 const MAX_DIETS = 4;
 
@@ -64,8 +65,9 @@ export function OnboardingPager({ onAccount }: OnboardingPagerProps) {
   const isLook = step === 2;
   const isMeasure = step === 3;
   const isCook = step === 4;
+  const isHeard = step === 5;
   // Fixed step names for the admin Activity log ids.
-  const stepName = (['vision', 'language', 'look', 'measure', 'cook'] as const)[step] ?? 'step';
+  const stepName = (['vision', 'language', 'look', 'measure', 'cook', 'heard'] as const)[step] ?? 'step';
 
   const stepTitleKeys = [
     null,
@@ -73,6 +75,7 @@ export function OnboardingPager({ onAccount }: OnboardingPagerProps) {
     'onboarding.lookTitle',
     'onboarding.measureTitle',
     'onboarding.cookTitle',
+    'onboarding.heardTitle',
   ] as const;
 
   function goTo(next: number) {
@@ -100,8 +103,24 @@ export function OnboardingPager({ onAccount }: OnboardingPagerProps) {
     });
   }
 
-  async function finishCook(nextDiets: KitchenDietKey[]) {
+  async function saveDiets(nextDiets: KitchenDietKey[]) {
     await persist({ ...profile, diets: nextDiets, autoApplyOnExtract: false });
+  }
+
+  /** "Skip" in the header: keep what they picked so far and go straight to the account. */
+  async function skipToAccount() {
+    await saveDiets(diets);
+    onAccount();
+  }
+
+  async function finishCook(nextDiets: KitchenDietKey[]) {
+    await saveDiets(nextDiets);
+    goTo(step + 1);
+  }
+
+  /** One tap answers and moves on; skipping sends nothing. */
+  function answerHeard(source: HeardAboutSource | null) {
+    if (source) captureHeardAbout({ source, platform: Platform.OS });
     onAccount();
   }
 
@@ -131,11 +150,11 @@ export function OnboardingPager({ onAccount }: OnboardingPagerProps) {
         </View>
         <OnboardingProgress count={QUESTION_STEP_COUNT} index={step - 1} />
         <View className="min-h-[28px] min-w-[64px] flex-1 items-end">
-          {/* On the diet step, the "no restrictions" button is the skip. */}
-          {isCook ? null : (
+          {/* On the diet step, the "no restrictions" button is the skip; the last step has its own. */}
+          {isCook || isHeard ? null : (
             <Pressable
               trackId={`onboarding.${stepName}.skip`}
-              onPress={() => void finishCook(diets)}
+              onPress={() => void skipToAccount()}
               accessibilityRole="button"
               accessibilityLabel={t('onboarding.skip')}
               className="py-1 active:opacity-70"
@@ -257,7 +276,38 @@ export function OnboardingPager({ onAccount }: OnboardingPagerProps) {
           </>
         ) : null}
 
-        {!isVision && !isLanguage ? (
+        {isHeard ? (
+          <>
+            <Text
+              className="mb-1 pt-3 text-2xl font-bold"
+              style={{ color: colors.text }}
+              accessibilityRole="header"
+            >
+              {t('onboarding.heardTitle')}
+            </Text>
+            <Text className="mb-4 text-sm leading-5" style={{ color: colors.textSecondary }}>
+              {t('onboarding.heardSubtitle')}
+            </Text>
+            <View className="gap-2">
+              {HEARD_ABOUT_SOURCES.map((source) => (
+                <Pressable
+                  key={source}
+                  trackId={`onboarding.heard.${source}`}
+                  onPress={() => answerHeard(source)}
+                  accessibilityRole="button"
+                  className="min-h-[48px] justify-center rounded-2xl px-4 py-3 active:opacity-80"
+                  style={{ backgroundColor: colors.frosted }}
+                >
+                  <Text className="text-[15px] font-semibold" style={{ color: colors.text }}>
+                    {t(`onboarding.heardSources.${source}`)}
+                  </Text>
+                </Pressable>
+              ))}
+            </View>
+          </>
+        ) : null}
+
+        {!isVision && !isLanguage && !isHeard ? (
           <Text className="mt-4 text-xs leading-5" style={{ color: colors.textSecondary }}>
             {t('onboarding.changeLater')}
           </Text>
@@ -265,7 +315,18 @@ export function OnboardingPager({ onAccount }: OnboardingPagerProps) {
       </ScrollView>
 
       <View className="gap-3 pt-4">
-        {isCook && diets.length === 0 ? (
+        {isHeard ? (
+          <Pressable
+            trackId="onboarding.heard.skip"
+            onPress={() => answerHeard(null)}
+            accessibilityRole="button"
+            className="min-h-[44px] items-center justify-center py-2 active:opacity-70"
+          >
+            <Text className="text-sm font-semibold" style={{ color: colors.textSecondary }}>
+              {t('onboarding.skip')}
+            </Text>
+          </Pressable>
+        ) : isCook && diets.length === 0 ? (
           <Pressable
             trackId="onboarding.cook.everything"
             onPress={() => void finishCook([])}

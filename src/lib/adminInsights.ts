@@ -27,6 +27,8 @@ export type InsightSummary = {
   snapModes: RankedItem[];
   saveFrom: RankedItem[];
   paywallTriggers: RankedItem[];
+  /** Answers to "How did you hear about Pinch?" in onboarding. */
+  heardAbout: RankedItem[];
   locales: RankedItem[];
   countries: RankedItem[];
   webIntro: {
@@ -102,6 +104,9 @@ function detailFor(event: InsightEvent): string {
   if (event.name === 'app_shared') {
     return `${prop(properties, 'outcome')} · ${prop(properties, 'platform')}`;
   }
+  if (event.name === 'heard_about') {
+    return `${prop(properties, 'source')} · ${prop(properties, 'platform')}`;
+  }
   if (event.name === 'web_intro_viewed') {
     const source = properties.utm_source;
     return typeof source === 'string' && source.trim() ? `visit · ${source}` : 'visit';
@@ -127,6 +132,7 @@ export function summarizeInsights(
   const saved = events.filter((event) => event.name === 'recipe_saved');
   const paywall = events.filter((event) => event.name === 'paywall_viewed');
   const onboarded = events.filter((event) => event.name === 'onboarding_completed');
+  const heard = events.filter((event) => event.name === 'heard_about');
   const introViews = events.filter((event) => event.name === 'web_intro_viewed');
   const introClicks = events.filter((event) => event.name === 'web_intro_clicked');
   const introVisitors = new Set<string>();
@@ -156,6 +162,7 @@ export function summarizeInsights(
     paywallTriggers: tally(
       paywall.map((event) => ({ label: prop(event.properties ?? {}, 'trigger') })),
     ),
+    heardAbout: tally(heard.map((event) => ({ label: prop(event.properties ?? {}, 'source') }))),
     locales: tally(onboarded.map((event) => ({ label: prop(event.properties ?? {}, 'locale') }))),
     countries: tally(events.map((event) => ({ label: countryLabel(event.country) }))),
     webIntro: {
