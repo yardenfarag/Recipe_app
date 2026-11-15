@@ -5,6 +5,7 @@ import { I18nManager, Platform, ScrollView, Text, View } from 'react-native';
 import { Pressable } from '@/components/ui/Pressable';
 import { useTranslation } from 'react-i18next';
 
+import { AvoidListEditor } from '@/components/AvoidListEditor';
 import { LanguagePicker } from '@/components/LanguagePicker';
 import { MeasurementToggle } from '@/components/MeasurementToggle';
 import { OnboardingProgress } from '@/components/onboarding/OnboardingProgress';
@@ -16,13 +17,17 @@ import { useLanguagePreference } from '@/hooks/useLanguagePreference';
 import { useThemePreference } from '@/hooks/useThemePreference';
 import { announce } from '@/lib/a11y';
 import { captureHeardAbout, HEARD_ABOUT_SOURCES, type HeardAboutSource } from '@/lib/analytics';
+import { avoidListIsEmpty } from '@/lib/avoidList';
 import type { KitchenDietKey } from '@/lib/kitchenProfile';
 import { ONBOARDING_STEP_KEY, parseOnboardingStep } from '@/lib/onboardingStorage';
 import { promptRtlReloadIfLayoutMismatch } from '@/lib/rtlLayout';
 import { RECIPE_VARIANTS, type RecipeVariantKey } from '@/lib/recipeVariants';
 
-/** Vision, then language, look, measurements, an optional diet, and how they heard about Pinch. */
-const QUESTION_STEP_COUNT = 5;
+/**
+ * Vision, then language, look, measurements, an optional diet, an optional avoid list, and how
+ * they heard about Pinch.
+ */
+const QUESTION_STEP_COUNT = 6;
 export const ONBOARDING_STEP_COUNT = QUESTION_STEP_COUNT + 1;
 const MAX_DIETS = 4;
 
@@ -65,9 +70,11 @@ export function OnboardingPager({ onAccount }: OnboardingPagerProps) {
   const isLook = step === 2;
   const isMeasure = step === 3;
   const isCook = step === 4;
-  const isHeard = step === 5;
+  const isAvoid = step === 5;
+  const isHeard = step === 6;
   // Fixed step names for the admin Activity log ids.
-  const stepName = (['vision', 'language', 'look', 'measure', 'cook', 'heard'] as const)[step] ?? 'step';
+  const stepName =
+    (['vision', 'language', 'look', 'measure', 'cook', 'avoid', 'heard'] as const)[step] ?? 'step';
 
   const stepTitleKeys = [
     null,
@@ -75,6 +82,7 @@ export function OnboardingPager({ onAccount }: OnboardingPagerProps) {
     'onboarding.lookTitle',
     'onboarding.measureTitle',
     'onboarding.cookTitle',
+    'avoid.stepTitle',
     'onboarding.heardTitle',
   ] as const;
 
@@ -104,7 +112,8 @@ export function OnboardingPager({ onAccount }: OnboardingPagerProps) {
   }
 
   async function saveDiets(nextDiets: KitchenDietKey[]) {
-    await persist({ ...profile, diets: nextDiets, autoApplyOnExtract: false });
+    // Auto-apply stays as it is: off until they turn it on in the avoid step or in Settings.
+    await persist({ ...profile, diets: nextDiets });
   }
 
   /** "Skip" in the header: keep what they picked so far and go straight to the account. */
@@ -150,8 +159,8 @@ export function OnboardingPager({ onAccount }: OnboardingPagerProps) {
         </View>
         <OnboardingProgress count={QUESTION_STEP_COUNT} index={step - 1} />
         <View className="min-h-[28px] min-w-[64px] flex-1 items-end">
-          {/* On the diet step, the "no restrictions" button is the skip; the last step has its own. */}
-          {isCook || isHeard ? null : (
+          {/* On the diet and avoid steps, the main button is the skip; the last step has its own. */}
+          {isCook || isAvoid || isHeard ? null : (
             <Pressable
               trackId={`onboarding.${stepName}.skip`}
               onPress={() => void skipToAccount()}
@@ -174,6 +183,7 @@ export function OnboardingPager({ onAccount }: OnboardingPagerProps) {
         contentContainerStyle={{ flexGrow: 1, paddingBottom: 8 }}
         showsVerticalScrollIndicator={false}
         keyboardShouldPersistTaps="handled"
+        automaticallyAdjustKeyboardInsets
       >
         {isVision ? <OnboardingVision /> : null}
 
@@ -276,6 +286,59 @@ export function OnboardingPager({ onAccount }: OnboardingPagerProps) {
           </>
         ) : null}
 
+        {isAvoid ? (
+          <>
+            <Text
+              className="mb-1 pt-3 text-2xl font-bold"
+              style={{ color: colors.text }}
+              accessibilityRole="header"
+            >
+              {t('avoid.stepTitle')}
+            </Text>
+            <Text className="mb-5 text-sm leading-5" style={{ color: colors.textSecondary }}>
+              {t('avoid.stepSubtitle')}
+            </Text>
+            <AvoidListEditor
+              profile={profile}
+              onChange={(next) => void persist(next)}
+              trackPrefix="onboarding.avoid"
+            />
+            {/* The same switch as Settings → Recipe, offered once there is something to apply. */}
+            {profile.diets.length > 0 || !avoidListIsEmpty(profile) ? (
+              <Pressable
+                trackId="onboarding.avoid.auto_apply.toggle"
+                onPress={() => void persist({ ...profile, autoApplyOnExtract: !profile.autoApplyOnExtract })}
+                className="mt-7 flex-row items-center justify-between rounded-3xl border px-4 py-3.5 active:opacity-80"
+                style={{ borderColor: colors.border, backgroundColor: colors.surface }}
+                accessibilityRole="switch"
+                accessibilityState={{ checked: profile.autoApplyOnExtract }}
+                accessibilityLabel={t('avoid.autoApplyTitle')}
+                accessibilityHint={t('avoid.autoApplyHint')}
+              >
+                <View className="min-w-0 flex-1" style={{ marginEnd: 12 }}>
+                  <Text className="text-sm font-semibold" style={{ color: colors.text }}>
+                    {t('avoid.autoApplyTitle')}
+                  </Text>
+                  <Text className="mt-1 text-xs leading-5" style={{ color: colors.textSecondary }}>
+                    {t('avoid.autoApplyHint')}
+                  </Text>
+                </View>
+                <View
+                  className="h-6 w-11 rounded-full p-0.5"
+                  style={{ backgroundColor: profile.autoApplyOnExtract ? colors.primary : colors.border }}
+                  accessible={false}
+                  importantForAccessibility="no-hide-descendants"
+                >
+                  <View
+                    className="h-5 w-5 rounded-full bg-white"
+                    style={{ alignSelf: profile.autoApplyOnExtract ? 'flex-end' : 'flex-start' }}
+                  />
+                </View>
+              </Pressable>
+            ) : null}
+          </>
+        ) : null}
+
         {isHeard ? (
           <>
             <Text
@@ -352,9 +415,11 @@ export function OnboardingPager({ onAccount }: OnboardingPagerProps) {
             <Text className="text-[15px] font-bold" style={{ color: colors.onPrimary }}>
               {isVision
                 ? t('onboarding.visionCta')
-                : isCook
-                  ? t('onboarding.continue')
-                  : t('onboarding.next')}
+                : isAvoid && avoidListIsEmpty(profile)
+                  ? t('avoid.nothing')
+                  : isCook || isAvoid
+                    ? t('onboarding.continue')
+                    : t('onboarding.next')}
             </Text>
           </Pressable>
         )}

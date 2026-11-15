@@ -22,7 +22,27 @@ describe('sanitizeKitchenProfile', () => {
       autoApplyOnExtract: true,
       defaultServings: 3,
       pantryStaples: [],
+      allergies: [],
+      otherAllergies: [],
+      dislikes: [],
     });
+  });
+
+  it('keeps known allergies in a fixed order and cleans typed items', () => {
+    const profile = sanitizeKitchenProfile({
+      allergies: ['sesame', 'nope', 'milk', 'milk'],
+      otherAllergies: [' Celery ', 'celery', 7],
+      dislikes: ['Olives', ''],
+      allergyNoticeAcceptedAt: '2026-11-15T10:00:00.000Z',
+    });
+    expect(profile.allergies).toEqual(['milk', 'sesame']);
+    expect(profile.otherAllergies).toEqual(['Celery']);
+    expect(profile.dislikes).toEqual(['Olives']);
+    expect(profile.allergyNoticeAcceptedAt).toBe('2026-11-15T10:00:00.000Z');
+  });
+
+  it('drops a notice date that is not a date', () => {
+    expect(sanitizeKitchenProfile({ allergyNoticeAcceptedAt: 'yes' })).toEqual(EMPTY_KITCHEN_PROFILE);
   });
 
   it('defaults missing JSON to empty prefs', () => {
@@ -48,15 +68,38 @@ describe('kitchenInstruction', () => {
 
   it('builds a remix instruction from diets and swaps', () => {
     const text = kitchenInstruction({
+      ...EMPTY_KITCHEN_PROFILE,
       diets: ['dairy_free'],
       alwaysSwap: [{ from: 'cream', to: 'oat cream' }],
       autoApplyOnExtract: true,
       defaultServings: 2,
-      pantryStaples: [],
     });
     expect(text).toContain('dairy free');
     expect(text).toContain('2 servings');
     expect(text).toContain('cream');
+  });
+
+  it('puts allergies first and dislikes last', () => {
+    const text = kitchenInstruction({
+      ...EMPTY_KITCHEN_PROFILE,
+      diets: ['vegan'],
+      allergies: ['peanuts'],
+      otherAllergies: ['celery'],
+      dislikes: ['olives'],
+    })!;
+    expect(text.startsWith('I am allergic to peanuts, celery')).toBe(true);
+    expect(text.indexOf('vegan')).toBeGreaterThan(0);
+    expect(text.endsWith('I do not like olives: leave them out or swap them')).toBe(true);
+  });
+
+  it('keeps the allergy sentence when the rest does not fit', () => {
+    const text = kitchenInstruction({
+      ...EMPTY_KITCHEN_PROFILE,
+      allergies: ['milk', 'eggs'],
+      alwaysSwap: Array.from({ length: 8 }, (_, i) => ({ from: `${'x'.repeat(55)}${i}`, to: 'y'.repeat(58) })),
+    })!;
+    expect(text.startsWith('I am allergic to milk and dairy, eggs')).toBe(true);
+    expect(text.length).toBeLessThanOrEqual(400);
   });
 });
 

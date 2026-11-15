@@ -1,6 +1,6 @@
 import Ionicons from '@expo/vector-icons/Ionicons';
 import { router } from 'expo-router';
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { ActivityIndicator, Platform, ScrollView, Text, View } from 'react-native';
 import { Pressable } from '@/components/ui/Pressable';
@@ -11,6 +11,7 @@ import { useAuth } from '@/hooks/useAuth';
 import { useRtl } from '@/hooks/useRtl';
 import { useThemePreference } from '@/hooks/useThemePreference';
 import { announce } from '@/lib/a11y';
+import { fitInstruction } from '@/lib/avoidList';
 import { RECIPE_REMIX_LIMIT } from '@/lib/quotas';
 import { RECIPE_VARIANTS, RecipeVariantKey } from '@/lib/recipeVariants';
 import { transformRecipe, TransformedRecipePayload } from '@/lib/supabase/transformRecipe';
@@ -25,6 +26,15 @@ interface RecipeVariantModalProps {
   calories?: number;
   recipeId?: string;
   originalUrl?: string;
+  /**
+   * A complete request to run as soon as the sheet opens, such as "Make it without these"
+   * (PIN-105). The cook lands on the result instead of the list of remixes.
+   */
+  presetInstruction?: string | null;
+  /** The cook's allergies, added to every remix so an adapted recipe never brings one in. */
+  allergyInstruction?: string | null;
+  /** A line under the result, such as the reminder to check labels. */
+  notice?: string;
   onClose: () => void;
   onApply: (result: TransformedRecipePayload, variant: RecipeVariantKey) => void;
 }
@@ -43,6 +53,9 @@ export function RecipeVariantModal({
   calories,
   recipeId,
   originalUrl,
+  presetInstruction,
+  allergyInstruction,
+  notice,
   onClose,
   onApply,
 }: RecipeVariantModalProps) {
@@ -66,14 +79,35 @@ export function RecipeVariantModal({
     onClose();
   }
 
+  // Run a preset request once each time the sheet opens with one.
+  const presetStarted = useRef(false);
+  useEffect(() => {
+    if (!visible) {
+      presetStarted.current = false;
+      return;
+    }
+    if (!presetInstruction || presetStarted.current) return;
+    presetStarted.current = true;
+    void handleSelectVariant('custom', presetInstruction, { complete: true });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [visible, presetInstruction]);
+
   async function handleCustomRemix() {
     const trimmed = instruction.trim();
     if (!trimmed || loading) return;
     await handleSelectVariant('custom', trimmed);
   }
 
-  async function handleSelectVariant(variant: RecipeVariantKey, customInstruction?: string) {
+  async function handleSelectVariant(
+    variant: RecipeVariantKey,
+    customInstruction?: string,
+    options?: { complete?: boolean },
+  ) {
     if (loading) return;
+    // What the cook asked for comes first, so it is never the part left out for length.
+    const instructionToSend = options?.complete
+      ? customInstruction
+      : (fitInstruction([customInstruction ?? null, allergyInstruction ?? null]) ?? undefined);
 
     if (!user) {
       onClose();
@@ -96,7 +130,7 @@ export function RecipeVariantModal({
           id: recipeId,
           original_url: originalUrl,
         },
-        customInstruction,
+        instructionToSend,
       );
 
       if (result.status === 'failed' || !result.recipe) {
@@ -281,6 +315,11 @@ export function RecipeVariantModal({
               <Text className="text-base leading-6" style={{ color: colors.text }}>
                 {preview.recipe.summary}
               </Text>
+              {notice ? (
+                <Text className="mt-3 text-xs leading-4" style={{ color: colors.textSecondary }}>
+                  {notice}
+                </Text>
+              ) : null}
             </View>
 
             <Pressable

@@ -1,5 +1,16 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
+import {
+  ALLERGEN_KEYS,
+  MAX_DISLIKES,
+  MAX_OTHER_ALLERGIES,
+  allergyInstruction,
+  cleanAvoidItems,
+  dislikeInstruction,
+  fitInstruction,
+  isAllergenKey,
+  type AllergenKey,
+} from '@/lib/avoidList';
 import { RECIPE_VARIANTS, type RecipeVariantKey } from '@/lib/recipeVariants';
 
 const STORAGE_KEY = 'pinch:kitchen-profile';
@@ -15,6 +26,13 @@ export type KitchenProfile = {
   autoApplyOnExtract: boolean;
   /** Ingredient names that stay off the shopping list unless added by hand. */
   pantryStaples: string[];
+  /** The avoid list (PIN-105): flagged on every recipe, and part of the kitchen instruction. */
+  allergies: AllergenKey[];
+  /** Allergies typed in, outside the fixed list. */
+  otherAllergies: string[];
+  dislikes: string[];
+  /** When the cook confirmed the allergy notice (ISO date). Asked once, before the first allergy. */
+  allergyNoticeAcceptedAt?: string;
 };
 
 export const EMPTY_KITCHEN_PROFILE: KitchenProfile = {
@@ -22,6 +40,9 @@ export const EMPTY_KITCHEN_PROFILE: KitchenProfile = {
   alwaysSwap: [],
   autoApplyOnExtract: false,
   pantryStaples: [],
+  allergies: [],
+  otherAllergies: [],
+  dislikes: [],
 };
 
 export const MAX_PANTRY_STAPLES = 40;
@@ -62,12 +83,24 @@ export function sanitizeKitchenProfile(value: unknown): KitchenProfile {
         ),
       ].slice(0, MAX_PANTRY_STAPLES)
     : [];
+  const allergies = Array.isArray(raw.allergies)
+    ? ALLERGEN_KEYS.filter((key) => (raw.allergies as unknown[]).some((item) => isAllergenKey(item) && item === key))
+    : [];
+  const acceptedAt = raw.allergyNoticeAcceptedAt;
+  const allergyNoticeAcceptedAt =
+    typeof acceptedAt === 'string' && acceptedAt.length <= 40 && !Number.isNaN(Date.parse(acceptedAt))
+      ? acceptedAt
+      : undefined;
   return {
     diets: [...new Set(diets)].slice(0, 4),
     defaultServings,
     alwaysSwap,
     autoApplyOnExtract: raw.autoApplyOnExtract === true,
     pantryStaples,
+    allergies,
+    otherAllergies: cleanAvoidItems(raw.otherAllergies, MAX_OTHER_ALLERGIES),
+    dislikes: cleanAvoidItems(raw.dislikes, MAX_DISLIKES),
+    ...(allergyNoticeAcceptedAt ? { allergyNoticeAcceptedAt } : {}),
   };
 }
 
@@ -90,8 +123,12 @@ export function removePantryStaple(profile: KitchenProfile, name: string): Kitch
   };
 }
 
+/**
+ * The request sent when a new extract is adapted automatically. Allergies come first, so they are
+ * never the part that is left out when the text is too long.
+ */
 export function kitchenInstruction(profile: KitchenProfile): string | null {
-  const parts: string[] = [];
+  const parts: (string | null)[] = [allergyInstruction(profile)];
   for (const diet of profile.diets) {
     parts.push(`Adapt this recipe to be ${diet.replace(/_/g, ' ')}`);
   }
@@ -101,8 +138,8 @@ export function kitchenInstruction(profile: KitchenProfile): string | null {
   for (const swap of profile.alwaysSwap) {
     parts.push(`Always swap ${swap.from} for ${swap.to}`);
   }
-  const text = parts.join('. ').trim();
-  return text ? text.slice(0, 400) : null;
+  parts.push(dislikeInstruction(profile.dislikes));
+  return fitInstruction(parts);
 }
 
 export const MAX_KITCHEN_JSON_BYTES = 8192;
@@ -120,7 +157,10 @@ export function kitchenProfileIsEmpty(profile: KitchenProfile): boolean {
     profile.alwaysSwap.length === 0 &&
     profile.defaultServings == null &&
     profile.autoApplyOnExtract === false &&
-    profile.pantryStaples.length === 0
+    profile.pantryStaples.length === 0 &&
+    profile.allergies.length === 0 &&
+    profile.otherAllergies.length === 0 &&
+    profile.dislikes.length === 0
   );
 }
 

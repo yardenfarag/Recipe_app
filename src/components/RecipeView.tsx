@@ -1,6 +1,6 @@
 import Ionicons from '@expo/vector-icons/Ionicons';
-import { router } from 'expo-router';
-import { type ReactNode, useEffect, useMemo, useRef, useState } from 'react';
+import { router, useFocusEffect } from 'expo-router';
+import { type ReactNode, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { ActivityIndicator, Alert, ScrollView, Text, View } from 'react-native';
 import { Pressable } from '@/components/ui/Pressable';
@@ -24,6 +24,7 @@ import { TokenPurchaseSheet } from '@/components/TokenPurchaseSheet';
 import { RecipeReadingWidth } from '@/constants/theme';
 import { useBreakpoint } from '@/hooks/useBreakpoint';
 import { useCollections } from '@/hooks/useCollections';
+import { useKitchenProfile } from '@/hooks/useKitchenProfile';
 import { useLanguagePreference } from '@/hooks/useLanguagePreference';
 import { useMeasurementPreference } from '@/hooks/useMeasurementPreference';
 import { useRtl } from '@/hooks/useRtl';
@@ -31,6 +32,7 @@ import { useShoppingList } from '@/hooks/useShoppingList';
 import { useThemePreference } from '@/hooks/useThemePreference';
 import { useAuth } from '@/hooks/useAuth';
 import { announce, CHROME_MAX_FONT_SCALE } from '@/lib/a11y';
+import { allergyInstruction, findAvoidMatches, hasAllergies, makeWithoutInstruction } from '@/lib/avoidList';
 import { setGuestRecipeTags } from '@/lib/guestRecipes';
 import { convertStepAmounts } from '@/lib/convertStepAmounts';
 import { pickIngredientAmount, scaleIngredient, scaleIngredients } from '@/lib/ingredientAmounts';
@@ -234,6 +236,31 @@ export function RecipeView({
     localizedLanguage,
   );
   const videoPanelRef = useRef<RecipeVideoPanelHandle>(null);
+
+  // The avoid list (PIN-105). Matched against the ingredients on screen, so a swap, a remix or a
+  // translation is always reflected.
+  const { profile: kitchen, reload: reloadKitchen } = useKitchenProfile();
+  const kitchenLoadedOnce = useRef(false);
+  useFocusEffect(
+    useCallback(() => {
+      // The hook loads on mount; coming back from Settings picks up a changed list.
+      if (kitchenLoadedOnce.current) void reloadKitchen();
+      kitchenLoadedOnce.current = true;
+    }, [reloadKitchen]),
+  );
+  const avoidMatches = useMemo(
+    () =>
+      findAvoidMatches(
+        baseIngredients.map((ing) => ing.name),
+        kitchen,
+      ),
+    [baseIngredients, kitchen],
+  );
+  const hasAllergyMatches = avoidMatches.allergies.length > 0;
+  const hasAvoidMatches = hasAllergyMatches || avoidMatches.dislikes.length > 0;
+  const cookHasAllergies = hasAllergies(kitchen);
+  /** Set while the remix sheet is open for "Make it without these". */
+  const [avoidInstruction, setAvoidInstruction] = useState<string | null>(null);
 
   function openCookAlong(startSeconds = 0) {
     setCookAlongStartSeconds(Math.max(0, Math.round(startSeconds)));
@@ -1042,6 +1069,11 @@ export function RecipeView({
                 {variantSummary}
               </Text>
             )}
+            {cookHasAllergies ? (
+              <Text className="mt-2 text-xs leading-4" style={{ color: colors.textSecondary }}>
+                {t('avoid.checkLabels')}
+              </Text>
+            ) : null}
             <Pressable
               trackId="recipe.remix.revert"
               onPress={handleRevertVariant}
@@ -1054,6 +1086,80 @@ export function RecipeView({
             </Pressable>
           </View>
         )}
+
+        {hasAvoidMatches ? (
+          <View
+            className="mb-4 rounded-3xl border p-4"
+            style={{
+              borderColor: hasAllergyMatches ? colors.warningSoft : colors.border,
+              backgroundColor: hasAllergyMatches ? colors.warningSoft : colors.surface,
+            }}
+          >
+            {hasAllergyMatches ? (
+              <>
+                <View className="flex-row items-center gap-2">
+                  <Ionicons name="alert-circle" size={18} color={colors.warning} />
+                  <Text
+                    className="min-w-0 flex-1 text-sm font-semibold"
+                    style={{ color: colors.warning }}
+                    accessibilityRole="header"
+                  >
+                    {t('avoid.bannerAllergyTitle')}
+                  </Text>
+                </View>
+                {avoidMatches.allergies.map((hit) => (
+                  <Text key={hit.item} className="mt-1.5 text-sm leading-5" style={{ color: colors.text }}>
+                    <Text className="font-semibold">
+                      {hit.allergen ? t(`avoid.allergens.${hit.allergen}`) : hit.item}:{' '}
+                    </Text>
+                    {hit.ingredients.join(', ')}
+                  </Text>
+                ))}
+              </>
+            ) : null}
+            {avoidMatches.dislikes.length > 0 ? (
+              <>
+                <Text
+                  className={`text-sm font-semibold ${hasAllergyMatches ? 'mt-3' : ''}`}
+                  style={{ color: colors.text }}
+                  accessibilityRole="header"
+                >
+                  {t('avoid.bannerDislikeTitle')}
+                </Text>
+                {avoidMatches.dislikes.map((hit) => (
+                  <Text key={hit.item} className="mt-1.5 text-sm leading-5" style={{ color: colors.textSecondary }}>
+                    <Text className="font-semibold">{hit.item}: </Text>
+                    {hit.ingredients.join(', ')}
+                  </Text>
+                ))}
+              </>
+            ) : null}
+            {allowAdaptations ? (
+              <Pressable
+                trackId="recipe.avoid.make_without"
+                onPress={() => {
+                  setAvoidInstruction(makeWithoutInstruction(kitchen, avoidMatches));
+                  setVariantModalOpen(true);
+                }}
+                className="mt-3 min-h-[44px] items-center justify-center rounded-3xl px-4 active:opacity-80"
+                style={{ backgroundColor: hasAllergyMatches ? colors.warning : colors.primarySoft }}
+                accessibilityRole="button"
+              >
+                <Text
+                  className="text-sm font-semibold"
+                  style={{ color: hasAllergyMatches ? colors.background : colors.primary }}
+                >
+                  {t('avoid.makeWithout')}
+                </Text>
+              </Pressable>
+            ) : null}
+            {hasAllergyMatches ? (
+              <Text className="mt-3 text-xs leading-4" style={{ color: colors.textSecondary }}>
+                {t('avoid.checkLabels')}
+              </Text>
+            ) : null}
+          </View>
+        ) : null}
 
         {recipeIsInvented(recipe) ? (
           <View
@@ -1205,6 +1311,7 @@ export function RecipeView({
                     system: measurementSystem,
                     language: unitLanguage,
                   }) || t('recipe.amountUnknown');
+                const avoidKind = avoidMatches.byIngredient[index] ?? null;
                 return (
                 <View
                   key={`${ing.name}-${index}`}
@@ -1217,6 +1324,19 @@ export function RecipeView({
                       : undefined
                   }
                 >
+                  {avoidKind ? (
+                    <View
+                      style={{ marginEnd: 6 }}
+                      accessible={false}
+                      importantForAccessibility="no-hide-descendants"
+                    >
+                      <Ionicons
+                        name={avoidKind === 'allergy' ? 'alert-circle' : 'remove-circle-outline'}
+                        size={16}
+                        color={avoidKind === 'allergy' ? colors.warning : colors.textSecondary}
+                      />
+                    </View>
+                  ) : null}
                   <Text
                     className="min-w-0 flex-1 text-base font-medium"
                     style={{
@@ -1225,7 +1345,13 @@ export function RecipeView({
                       textAlign: textDirection === 'rtl' ? 'right' : 'left',
                       paddingEnd: 8,
                     }}
-                    accessibilityLabel={`${ing.name}, ${amountLabel}`}
+                    accessibilityLabel={
+                      avoidKind
+                        ? `${ing.name}, ${amountLabel}, ${t(
+                            avoidKind === 'allergy' ? 'avoid.ingredientAllergy' : 'avoid.ingredientDislike',
+                          )}`
+                        : `${ing.name}, ${amountLabel}`
+                    }
                   >
                     {ing.name}
                   </Text>
@@ -1597,7 +1723,13 @@ export function RecipeView({
         calories={calories}
         recipeId={recipeId && !recipeId.startsWith('guest-') ? recipeId : undefined}
         originalUrl={recipe.original_url}
-        onClose={() => setVariantModalOpen(false)}
+        presetInstruction={avoidInstruction}
+        allergyInstruction={allergyInstruction(kitchen)}
+        notice={cookHasAllergies ? t('avoid.checkLabels') : undefined}
+        onClose={() => {
+          setVariantModalOpen(false);
+          setAvoidInstruction(null);
+        }}
         onApply={handleApplyVariant}
       />
 

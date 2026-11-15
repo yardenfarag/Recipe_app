@@ -4,6 +4,7 @@ import { ActivityIndicator, Text, View } from 'react-native';
 import { Pressable } from '@/components/ui/Pressable';
 import { logTap } from '@/lib/interactionLog';
 
+import { AvoidListEditor } from '@/components/AvoidListEditor';
 import { MeasurementToggle } from '@/components/MeasurementToggle';
 import { SettingsDetailScreen } from '@/components/SettingsDetailScreen';
 import { TextInput } from '@/components/text-input';
@@ -20,6 +21,7 @@ import {
   type KitchenProfile,
   type KitchenSwap,
 } from '@/lib/kitchenProfile';
+import { avoidListIsEmpty } from '@/lib/avoidList';
 import { fetchContributeToHub, setContributeToHub } from '@/lib/supabase/cookingHub';
 import { fetchCloudKitchenProfile, saveCloudKitchenProfile } from '@/lib/supabase/kitchen';
 import { RECIPE_VARIANTS } from '@/lib/recipeVariants';
@@ -178,6 +180,10 @@ export default function RecipeSettingsScreen() {
             </Pressable>
           );
         })}
+      </View>
+
+      <View className="mb-6 mt-2">
+        <AvoidListEditor profile={profile} onChange={(next) => void persist(next)} trackPrefix="settings.kitchen" />
       </View>
 
       <Text className="mb-2 text-xs font-semibold uppercase tracking-wide" style={{ color: colors.textSecondary }} accessibilityRole="header">
@@ -455,14 +461,18 @@ export default function RecipeSettingsScreen() {
       <Text className="mt-3 text-xs leading-5" style={{ color: colors.textSecondary }}>
         {profile.diets.length === 0 &&
         profile.alwaysSwap.length === 0 &&
-        profile.defaultServings == null
+        profile.defaultServings == null &&
+        avoidListIsEmpty(profile)
           ? t('settings.kitchenPreviewEmpty')
           : [
+              ...profile.allergies.map((allergen) => t(`avoid.allergens.${allergen}`)),
+              ...profile.otherAllergies,
               ...profile.diets.map((diet) => t(`recipe.variants.${diet}.label`)),
               ...profile.alwaysSwap.map((swap) => `${swap.from} → ${swap.to}`),
               profile.defaultServings
                 ? t('settings.kitchenPreviewServings', { count: profile.defaultServings })
                 : null,
+              ...profile.dislikes,
             ]
               .filter(Boolean)
               .join(' · ')}

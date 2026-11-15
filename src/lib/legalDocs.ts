@@ -44,7 +44,7 @@ const DOCS: Record<LegalDocId, LegalDoc> = {
   privacy: {
     id: 'privacy',
     title: 'Privacy Policy',
-    meta: 'Last updated: November 14, 2026',
+    meta: 'Last updated: November 15, 2026',
     blocks: [
       {
         kind: 'card',
@@ -65,6 +65,7 @@ const DOCS: Record<LegalDocId, LegalDoc> = {
           [strong('Product events:'), text(' a few milestones, such as saving a recipe or finishing onboarding, with your account or install id and your country (from your network or device region).')],
           [strong('Guest device limits:'), text(' a local install identifier and guest extraction/save limits on your device before you create an account.')],
           [strong('Content you submit:'), text(' links you paste or share into Pinch, photos you take or pick (such as a cookbook page or your fridge), and text you type, such as a custom remix request or a recipe you write, so we can make and store your recipes.')],
+          [strong('Kitchen preferences:'), text(' diets, allergies and foods you don’t like, if you choose to add them. Allergies can be health information. We use them only to flag and adapt recipes for you, and they are sent with a request when you ask Pinch to adapt a recipe. They are never part of App activity.')],
           [strong('Support & feedback:'), text(' messages you send us, your email, and device details (app version, OS, device model and language) so we can reply and fix problems.')],
         ],
       },
@@ -150,7 +151,7 @@ const DOCS: Record<LegalDocId, LegalDoc> = {
   terms: {
     id: 'terms',
     title: 'Terms of Use',
-    meta: 'Last updated: July 22, 2026',
+    meta: 'Last updated: November 15, 2026',
     blocks: [
       {
         kind: 'card',
@@ -211,7 +212,7 @@ const DOCS: Record<LegalDocId, LegalDoc> = {
         kind: 'p',
         parts: [
           text(
-            'Pinch is provided “as is” without warranties of any kind. We do not guarantee uninterrupted service, extraction quality, calorie accuracy, allergen safety, or fitness for a particular purpose. Cooking involves risk — verify ingredients and methods yourself.',
+            'Pinch is provided “as is” without warranties of any kind. We do not guarantee uninterrupted service, extraction quality, calorie accuracy, allergen safety, or fitness for a particular purpose. Cooking involves risk — verify ingredients and methods yourself. If you add allergies or foods you avoid, Pinch flags and adapts recipes as a convenience only. It can miss an ingredient, so always check the ingredients and product labels yourself. Pinch does not give medical advice.',
           ),
         ],
       },

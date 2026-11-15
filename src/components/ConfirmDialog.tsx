@@ -39,7 +39,7 @@ export function ConfirmDialog({
 }: ConfirmDialogProps) {
   const { t } = useTranslation();
   const { colors } = useThemePreference();
-  const { rtl } = useRtl();
+  const { rtl, textAlign, writingDirection } = useRtl();
   const { height: windowHeight } = useWindowDimensions();
   const resolvedConfirm = confirmLabel ?? t('common.continue');
   const resolvedCancel = cancelLabel ?? t('common.cancel');
@@ -77,10 +77,18 @@ export function ConfirmDialog({
             keyboardShouldPersistTaps="handled"
             style={{ flexGrow: 0 }}
           >
-            <Text className="text-lg font-bold" style={{ color: colors.text }} accessibilityRole="header">
+            {/* A title or message can start with a Latin word such as "Pinch": keep the app's direction. */}
+            <Text
+              className="text-lg font-bold"
+              style={{ color: colors.text, textAlign, writingDirection }}
+              accessibilityRole="header"
+            >
               {title}
             </Text>
-            <Text className="mt-2 text-sm leading-5" style={{ color: colors.textSecondary }}>
+            <Text
+              className="mt-2 text-sm leading-5"
+              style={{ color: colors.textSecondary, textAlign, writingDirection }}
+            >
               {message}
             </Text>
 
