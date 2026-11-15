@@ -64,7 +64,7 @@ const DOCS: Record<LegalDocId, LegalDoc> = {
           [strong('App activity:'), text(' which screens you open and which buttons you tap, sign-ins and sign-ups, with a random session id, your account or install id, device platform and app version. We never record what you type. Only Pinch admins can see it.')],
           [strong('Product events:'), text(' a few milestones, such as saving a recipe or finishing onboarding, with your account or install id and your country (from your network or device region).')],
           [strong('Guest device limits:'), text(' a local install identifier and guest extraction/save limits on your device before you create an account.')],
-          [strong('Content you submit:'), text(' links you paste or share into Pinch, photos you take or pick (such as a cookbook page or your fridge), and text you type, such as a custom remix request or a recipe you write, so we can make and store your recipes.')],
+          [strong('Content you submit:'), text(' links you paste or share into Pinch, photos you take or pick (such as a cookbook page, a dish for Guess the recipe, or your fridge), and text you type, such as a custom remix request or a recipe you write, so we can make and store your recipes.')],
           [strong('Kitchen preferences:'), text(' diets, allergies and foods you don’t like, if you choose to add them. Allergies can be health information. We use them only to flag and adapt recipes for you, and they are sent with a request when you ask Pinch to adapt a recipe. They are never part of App activity.')],
           [strong('Support & feedback:'), text(' messages you send us, your email, and device details (app version, OS, device model and language) so we can reply and fix problems.')],
         ],
@@ -108,7 +108,7 @@ const DOCS: Record<LegalDocId, LegalDoc> = {
         kind: 'p',
         parts: [
           text(
-            'We keep account, library and app activity data while your account exists, and delete it when you delete your account. App activity from people who never create an account is linked only to a random install id and has no fixed deletion date. Product events are deleted after 13 months. Aggregated or anonymized usage events may be retained after deletion for cost and abuse analysis. Guest data stays on your device until you clear app data or migrate to an account.',
+            'We keep account, library and app activity data while your account exists, and delete it when you delete your account. Photos you upload to Snap or Guess the recipe are stored when you send them and kept until you delete your account, even if no recipe is made or you later delete the recipe. App activity from people who never create an account is linked only to a random install id and has no fixed deletion date. Product events are deleted after 13 months. Aggregated or anonymized usage events may be retained after deletion for cost and abuse analysis. Guest data stays on your device until you clear app data or migrate to an account.',
           ),
         ],
       },
@@ -278,6 +278,7 @@ const DOCS: Record<LegalDocId, LegalDoc> = {
           [text('Your auth account and profile')],
           [text('Saved recipes, collections, and shopping list items')],
           [text('Profile photo stored for your account')],
+          [text('Photos you uploaded to Snap or Guess the recipe')],
           [text('Token balance and personal token ledger entries')],
         ],
       },

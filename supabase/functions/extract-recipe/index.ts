@@ -35,7 +35,7 @@ import {
   youTubeThumbnail,
 } from '../_shared/platform.ts';
 import type { PlatformMeta } from '../_shared/platformMeta.ts';
-import { persistSocialThumbnail, persistUploadedPhoto } from '../_shared/persistThumbnail.ts';
+import { keepUploadedPhoto, persistSocialThumbnail } from '../_shared/persistThumbnail.ts';
 import { estimateScrapeCredits, GUEST_EXTRACT_LIMIT } from '../_shared/pricing.ts';
 import {
   canStartExtract,
@@ -244,6 +244,9 @@ Deno.serve(async (req) => {
       401,
     );
   }
+
+  // Every uploaded photo is kept, whatever the outcome, until the account is deleted.
+  const uploadedPhoto = keepUploadedPhoto(platform, imageBase64, imageMime, userId);
 
   try {
     console.log('[extract-recipe] start', {
@@ -616,7 +619,7 @@ Deno.serve(async (req) => {
     }
 
     if (platform === 'photo' && imageBase64) {
-      imageUrl = (await persistUploadedPhoto({ imageBase64, mimeType: imageMime, userId })) ?? imageUrl;
+      imageUrl = (await uploadedPhoto) ?? imageUrl;
     }
 
     // ADR 019: a partial import is free and goes to the editor, whose Save recalculates
