@@ -833,7 +833,7 @@ cp .env.example .env   <span class="c"># PowerShell: Copy-Item .env.example .env
       <tr><td><code>EXPO_PUBLIC_SUPABASE_URL</code></td><td><span class="tag bad">yes</span></td><td><code>https://ccobefeofhnncpgifxel.supabase.co</code></td></tr>
       <tr><td><code>EXPO_PUBLIC_SUPABASE_KEY</code></td><td><span class="tag bad">yes</span></td><td>The publishable (anon) key from the Supabase dashboard → Project Settings → API. It is public by design; RLS protects the data.</td></tr>
       <tr><td><code>EXPO_PUBLIC_ADMIN_EMAILS</code></td><td><span class="tag">optional</span></td><td>Your email, to see Settings → Admin. Yarden also sets <code>profiles.is_admin = true</code> for you.</td></tr>
-      <tr><td><code>EXPO_PUBLIC_LEGAL_BASE_URL</code>, <code>EXPO_PUBLIC_SUPPORT_EMAIL</code></td><td><span class="tag">optional</span></td><td>Defaults: <code>https://pinch-app.io</code>, Yarden's email.</td></tr>
+      <tr><td><code>EXPO_PUBLIC_LEGAL_BASE_URL</code>, <code>EXPO_PUBLIC_SUPPORT_EMAIL</code></td><td><span class="tag">optional</span></td><td>Defaults: <code>https://pinch-app.io</code>, <code>support@pinch-app.io</code>.</td></tr>
       <tr><td><code>EXPO_PUBLIC_CREDIT_PURCHASES_ENABLED</code></td><td><span class="tag">leave</span></td><td><code>false</code>. Purchases stay off in development.</td></tr>
       <tr><td><code>OPENROUTER_*</code>, <code>SCRAPECREATORS_*</code></td><td><span class="tag">not for the app</span></td><td>Server-side only. Needed locally only for the eval harness or for running Edge Functions on your machine.</td></tr>
     </tbody>

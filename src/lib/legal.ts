@@ -14,7 +14,7 @@ export const LEGAL_BASE_URL = (
 ).replace(/\/$/, '');
 
 export const SUPPORT_EMAIL =
-  process.env.EXPO_PUBLIC_SUPPORT_EMAIL ?? extra?.supportEmail ?? 'yarden.farag@gmail.com';
+  process.env.EXPO_PUBLIC_SUPPORT_EMAIL ?? extra?.supportEmail ?? 'support@pinch-app.io';
 
 export const LEGAL_URLS = {
   privacy: `${LEGAL_BASE_URL}/privacy.html`,

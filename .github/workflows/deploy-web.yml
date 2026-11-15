@@ -46,7 +46,7 @@ jobs:
           EXPO_PUBLIC_PADDLE_PRICE_100: ${{ vars.EXPO_PUBLIC_PADDLE_PRICE_100 }}
         run: |
           export EXPO_PUBLIC_LEGAL_BASE_URL="${EXPO_PUBLIC_LEGAL_BASE_URL:-https://pinch-app.io}"
-          export EXPO_PUBLIC_SUPPORT_EMAIL="${EXPO_PUBLIC_SUPPORT_EMAIL:-yarden.farag@gmail.com}"
+          export EXPO_PUBLIC_SUPPORT_EMAIL="${EXPO_PUBLIC_SUPPORT_EMAIL:-support@pinch-app.io}"
           npm run build:web
 
       - name: Check the landing page is real HTML, with the guides
