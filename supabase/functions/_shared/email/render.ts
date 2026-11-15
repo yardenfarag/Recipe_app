@@ -18,6 +18,26 @@ const C = {
   line: '#efe4e8',
 };
 const FONT = "-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif";
+// Hebrew and Arabic: fonts every mail app has with those scripts. Some apps (Gmail among them)
+// drop the system-font stack above and fall back to Times New Roman.
+const RTL_FONT = 'Arial, Tahoma, Helvetica, sans-serif';
+
+function fontFor(locale: EmailLocale): string {
+  return isRtl(locale) ? RTL_FONT : FONT;
+}
+
+/**
+ * Puts the locale's font on every text element. Mail apps don't always inherit font-family into
+ * headings and paragraphs; an element's own font-family later in its style (the monospace code)
+ * still wins.
+ */
+function withFont(html: string, locale: EmailLocale): string {
+  const font = fontFor(locale);
+  return html
+    .split(`font-family:${FONT}`)
+    .join(`font-family:${font}`)
+    .replace(/<(p|div|h1|a|td)((?: [a-z-]+="[^"]*")*?) style="/g, `<$1$2 style="font-family:${font};`);
+}
 
 export interface RenderedEmail {
   subject: string;
@@ -48,7 +68,11 @@ interface LayoutParts {
   body: string;
 }
 
-function layout({ locale, subject, preheader, title, body }: LayoutParts): string {
+function layout(parts: LayoutParts): string {
+  return withFont(baseLayout(parts), parts.locale);
+}
+
+function baseLayout({ locale, subject, preheader, title, body }: LayoutParts): string {
   const copy = COPY[locale];
   const dir = isRtl(locale) ? 'rtl' : 'ltr';
   const align = dir === 'rtl' ? 'right' : 'left';

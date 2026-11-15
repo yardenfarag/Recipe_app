@@ -223,7 +223,11 @@ export default {
     "rtlReloadTitle": "לרענן כדי לסדר את המסך?",
     "rtlReloadBody": "עברית וערבית נקראות מימין לשמאל. כדאי לרענן עכשיו כדי שהתפריטים והכותרות יישבו במקום הנכון.",
     "rtlReloadConfirm": "רענון",
-    "rtlReloadLater": "אחר כך"
+    "rtlReloadLater": "אחר כך",
+    "helpSupport": "עזרה ותמיכה",
+    "helpSupportHint": "משהו לא עובד? ספרו לנו ונחזור אליכם במייל.",
+    "legal": "משפטי ופרטיות",
+    "legalHint": "מדיניות פרטיות, תנאי שימוש ומחיקת המידע שלך."
   },
   "theme": {
     "auto": "אוטומטי",
@@ -857,8 +861,8 @@ export default {
     "body": "קרתה תקלה לא צפויה."
   },
   "support": {
-    "title": "דיווח על תקלה",
-    "hint": "ספרו לנו מה קרה. אנחנו קוראים כל פנייה.",
+    "title": "עזרה ותמיכה",
+    "hint": "ספרו לנו מה לא עובד. אדם אמיתי קורא כל הודעה.",
     "category": "נושא",
     "categories": {
       "bug": "תקלה",
@@ -871,7 +875,8 @@ export default {
     "submit": "שליחה",
     "sentTitle": "הפנייה נשלחה",
     "sentBody": "תודה — נבדוק.",
-    "sendFailed": "לא הצלחנו לשלוח"
+    "sendFailed": "לא הצלחנו לשלוח",
+    "replyTo": "נחזור אליך לכתובת {{email}}."
   },
   "feedback": {
     "title": "שליחת משוב",

@@ -223,7 +223,11 @@ export default {
     "rtlReloadTitle": "Reload for layout?",
     "rtlReloadBody": "Hebrew and Arabic need a right-to-left layout. Reload now so navigation and headers flip correctly.",
     "rtlReloadConfirm": "Reload",
-    "rtlReloadLater": "Later"
+    "rtlReloadLater": "Later",
+    "helpSupport": "Help & support",
+    "helpSupportHint": "Something not working? Tell us and we’ll reply by email.",
+    "legal": "Legal & privacy",
+    "legalHint": "Privacy policy, terms, and deleting your data."
   },
   "theme": {
     "auto": "Auto",
@@ -857,8 +861,8 @@ export default {
     "body": "An unexpected error occurred."
   },
   "support": {
-    "title": "Report an issue",
-    "hint": "Tell us what went wrong. We read every ticket.",
+    "title": "Help & support",
+    "hint": "Tell us what’s wrong. A real person reads every message.",
     "category": "Category",
     "categories": {
       "bug": "Bug",
@@ -871,7 +875,8 @@ export default {
     "submit": "Submit ticket",
     "sentTitle": "Ticket sent",
     "sentBody": "Thanks — we’ll look into it.",
-    "sendFailed": "Could not send"
+    "sendFailed": "Could not send",
+    "replyTo": "We’ll reply to {{email}}."
   },
   "feedback": {
     "title": "Send feedback",

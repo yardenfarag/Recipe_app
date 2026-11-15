@@ -28,6 +28,10 @@ export async function sendEmail(
     tags?: Record<string, string>;
     /** Defaults to support@pinch-app.io. */
     replyTo?: string;
+    /** Defaults to EMAIL_FROM; must stay an @pinch-app.io address. */
+    from?: string;
+    /** Extra email headers, e.g. X-Pinch-* details that replies don't quote. */
+    headers?: Record<string, string>;
     fetchImpl?: typeof fetch;
   } = {},
 ): Promise<string> {
@@ -45,9 +49,10 @@ export async function sendEmail(
     method: 'POST',
     headers,
     body: JSON.stringify({
-      from: EMAIL_FROM,
+      from: options.from ?? EMAIL_FROM,
       to: [to],
       reply_to: options.replyTo ?? EMAIL_REPLY_TO,
+      ...(options.headers && Object.keys(options.headers).length ? { headers: options.headers } : {}),
       subject: email.subject,
       html: email.html,
       text: email.text,
@@ -79,6 +84,8 @@ export async function sendOnce(
     to: string;
     email: RenderedEmail;
     replyTo?: string;
+    from?: string;
+    headers?: Record<string, string>;
   },
 ): Promise<boolean> {
   const { data: existing, error: readError } = await admin
@@ -94,6 +101,8 @@ export async function sendOnce(
     idempotencyKey: `${input.kind}/${input.dedupeKey}`,
     tags: { kind: input.kind },
     replyTo: input.replyTo,
+    from: input.from,
+    headers: input.headers,
   });
 
   const { error: insertError } = await admin.from('email_sends').insert({

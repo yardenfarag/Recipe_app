@@ -1,4 +1,5 @@
 import { supabase } from '@/lib/supabase/client';
+import type { FeedbackContext } from '@/lib/supabase/feedback';
 
 export type SupportTicketCategory = 'billing' | 'bug' | 'account' | 'other';
 export type SupportTicketStatus = 'open' | 'closed';
@@ -17,6 +18,8 @@ export async function submitSupportTicket(input: {
   category: SupportTicketCategory;
   message: string;
   email?: string | null;
+  /** App version and device, emailed to support in headers (never in the reply). */
+  context?: FeedbackContext;
 }): Promise<SupportTicket> {
   const message = input.message.trim();
   if (message.length < 5) {
@@ -41,6 +44,7 @@ export async function submitSupportTicket(input: {
       category: input.category,
       message,
       status: 'open',
+      ...input.context,
     })
     .select('id, user_id, email, category, message, status, created_at')
     .single();

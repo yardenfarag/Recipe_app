@@ -1,83 +1,135 @@
-// A support message (website "Contact support" or the app's "Send feedback"), emailed to
-// support@pinch-app.io with Reply-To set to the sender, so answering is one click. English only:
-// it's for the team.
+// Support messages (the app's "Help & support" tickets, "Send feedback", and the website's
+// "Contact support" form), emailed to support@pinch-app.io.
+//
+// Replying quotes the whole email, so the body is ONLY what the person wrote. The details we
+// need (platform, language, app version, account id) ride in X-Pinch-* headers instead: Gmail
+// shows them under ⋮ → Show original, replies never include them, and the admin page has them too.
 import { escapeHtml, type RenderedEmail } from './render.ts';
 
 export const SUPPORT_INBOX = 'support@pinch-app.io';
 
-export interface FeedbackRow {
-  id: string;
-  user_id: string | null;
-  message: string;
-  source: 'app' | 'website' | string;
-  contact_email: string | null;
+interface Context {
   app_version: string | null;
   build_number: string | null;
   platform: string | null;
   os_version: string | null;
   device_model: string | null;
   locale: string | null;
+}
+
+export interface FeedbackRow extends Context {
+  id: string;
+  user_id: string | null;
+  message: string;
+  source: 'app' | 'website' | string;
+  contact_email: string | null;
   created_at: string;
   profile?: { email: string | null } | null;
 }
 
-/** Who to answer: the address typed into the website form, else the account's email. */
-export function replyAddress(row: FeedbackRow): string | null {
-  const address = (row.contact_email || row.profile?.email || '').trim();
-  return /^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(address) ? address : null;
+export interface TicketRow extends Partial<Context> {
+  id: string;
+  user_id: string | null;
+  email: string | null;
+  category: string;
+  message: string;
+  created_at: string;
 }
 
-export function supportSubject(row: FeedbackRow): string {
-  const firstLine = row.message.trim().split(/\s+/).join(' ');
-  const preview = firstLine.length > 60 ? `${firstLine.slice(0, 57).trimEnd()}…` : firstLine;
-  return `Pinch support: ${preview}`;
+/** One support message, whichever table it came from. */
+export interface SupportMessage {
+  kind: 'ticket' | 'feedback';
+  id: string;
+  userId: string | null;
+  message: string;
+  /** Where to send the answer, or null when they left no email. */
+  replyTo: string | null;
+  /** Shown in the subject: "Bug", "Feedback", "Website". */
+  label: string;
+  headers: Record<string, string>;
 }
 
-export function renderSupportEmail(row: FeedbackRow): RenderedEmail {
-  const reply = replyAddress(row);
-  const where = row.source === 'website' ? 'Website support form' : 'App · Send feedback';
-  const details: [string, string | null][] = [
-    ['From', reply ?? 'No email (can’t reply)'],
-    ['Sent from', where],
-    ['App version', [row.app_version, row.build_number && `(${row.build_number})`].filter(Boolean).join(' ') || null],
-    ['Platform', [row.platform, row.os_version].filter(Boolean).join(' · ') || null],
-    ['Device', row.device_model],
-    ['Language', row.locale],
-    ['Account id', row.user_id],
-    ['Received', new Date(row.created_at).toUTCString()],
-    ['Feedback id', row.id],
+const EMAIL_RE = /^[^@\s]+@[^@\s]+\.[^@\s]+$/;
+
+function validEmail(value: string | null | undefined): string | null {
+  const address = (value ?? '').trim();
+  return EMAIL_RE.test(address) ? address : null;
+}
+
+const CATEGORY_LABELS: Record<string, string> = { bug: 'Bug', billing: 'Billing', account: 'Account', other: 'Other' };
+
+/** X-Pinch-* headers; header values must be one plain line. */
+function detailHeaders(entries: [string, string | null | undefined][]): Record<string, string> {
+  const headers: Record<string, string> = {};
+  for (const [name, value] of entries) {
+    const clean = (value ?? '').replace(/[\r\n]+/g, ' ').replace(/[^\x20-\x7E]/g, '?').trim().slice(0, 200);
+    if (clean) headers[`X-Pinch-${name}`] = clean;
+  }
+  return headers;
+}
+
+function contextHeaders(row: Partial<Context>): [string, string | null][] {
+  return [
+    ['App-Version', [row.app_version, row.build_number && `(${row.build_number})`].filter(Boolean).join(' ') || null],
+    ['Platform', [row.platform, row.os_version].filter(Boolean).join(' / ') || null],
+    ['Device', row.device_model ?? null],
+    ['Language', row.locale ?? null],
   ];
-  const rows = details.filter(([, value]) => value);
-  const subject = supportSubject(row);
+}
+
+export function fromFeedback(row: FeedbackRow): SupportMessage {
+  const website = row.source === 'website';
+  return {
+    kind: 'feedback',
+    id: row.id,
+    userId: row.user_id,
+    message: row.message,
+    replyTo: validEmail(row.contact_email) ?? validEmail(row.profile?.email),
+    label: website ? 'Website' : 'Feedback',
+    headers: detailHeaders([
+      ['Source', website ? 'website support form' : 'app feedback'],
+      ...contextHeaders(row),
+      ['Account-Id', row.user_id],
+      ['Feedback-Id', row.id],
+    ]),
+  };
+}
+
+export function fromTicket(row: TicketRow): SupportMessage {
+  return {
+    kind: 'ticket',
+    id: row.id,
+    userId: row.user_id,
+    message: row.message,
+    replyTo: validEmail(row.email),
+    label: CATEGORY_LABELS[row.category] ?? 'Support',
+    headers: detailHeaders([
+      ['Source', `app support (${row.category})`],
+      ...contextHeaders(row),
+      ['Account-Id', row.user_id],
+      ['Ticket-Id', row.id],
+    ]),
+  };
+}
+
+export function supportSubject(msg: SupportMessage): string {
+  const oneLine = msg.message.trim().split(/\s+/).join(' ');
+  const preview = oneLine.length > 60 ? `${oneLine.slice(0, 57).trimEnd()}…` : oneLine;
+  return `Pinch ${msg.label}: ${preview}`;
+}
+
+/** "cook@example.com via Pinch" <hello@pinch-app.io>, so the inbox shows who wrote. */
+export function supportFrom(msg: SupportMessage): string {
+  const who = (msg.replyTo ?? 'Someone').replace(/["<>\\]/g, '');
+  return `"${who} via Pinch" <hello@pinch-app.io>`;
+}
+
+/** Just their words: this is what a reply quotes. */
+export function renderSupportEmail(msg: SupportMessage): RenderedEmail {
+  const subject = supportSubject(msg);
+  const message = msg.message.trim();
   const html = `<!doctype html>
 <html lang="en"><head><meta charset="utf-8"><title>${escapeHtml(subject)}</title></head>
-<body style="margin:0;padding:24px 16px;background:#f7f2f4;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;color:#2a1620;">
-<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0"><tr><td align="center">
-<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="max-width:600px;background:#ffffff;border:1px solid #efe4e8;border-radius:20px;">
-<tr><td style="padding:24px 24px 8px;">
-  <div style="font-size:13px;font-weight:700;color:#b24f6d;margin-bottom:6px;">💬 ${escapeHtml(where)}</div>
-  <div dir="auto" style="font-size:16px;line-height:1.6;white-space:pre-wrap;word-break:break-word;background:#fbe9ef;border-radius:14px;padding:16px;">${escapeHtml(row.message.trim())}</div>
-</td></tr>
-<tr><td style="padding:12px 24px 24px;">
-  <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="font-size:13px;">
-  ${rows
-    .map(
-      ([label, value]) =>
-        `<tr><td style="padding:4px 12px 4px 0;color:#7a6670;white-space:nowrap;vertical-align:top;">${escapeHtml(label)}</td><td style="padding:4px 0;color:#2a1620;word-break:break-all;">${escapeHtml(String(value))}</td></tr>`,
-    )
-    .join('\n  ')}
-  </table>
-  <div style="margin-top:14px;font-size:13px;color:#7a6670;">${reply ? 'Hit Reply to answer them.' : 'They didn’t leave an email, so this one can’t be answered.'}</div>
-</td></tr>
-</table>
-</td></tr></table>
-</body></html>`;
-  const text = [
-    where,
-    '',
-    row.message.trim(),
-    '',
-    ...rows.map(([label, value]) => `${label}: ${value}`),
-  ].join('\n');
-  return { subject, html, text };
+<body><div dir="auto" style="font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;font-size:15px;line-height:1.6;white-space:pre-wrap;word-break:break-word;">${escapeHtml(message)}</div></body></html>`;
+  return { subject, html, text: message };
 }

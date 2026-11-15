@@ -223,7 +223,11 @@ export default {
     "rtlReloadTitle": "¿Recargar para acomodar la pantalla?",
     "rtlReloadBody": "El hebreo y el árabe se leen de derecha a izquierda. Recarga ahora para que menús y títulos queden del lado correcto.",
     "rtlReloadConfirm": "Recargar",
-    "rtlReloadLater": "Más tarde"
+    "rtlReloadLater": "Más tarde",
+    "helpSupport": "Ayuda y soporte",
+    "helpSupportHint": "¿Algo no funciona? Cuéntanoslo y te responderemos por correo.",
+    "legal": "Legal y privacidad",
+    "legalHint": "Política de privacidad, términos y borrar tus datos."
   },
   "theme": {
     "auto": "Automático",
@@ -857,8 +861,8 @@ export default {
     "body": "Pasó un error inesperado."
   },
   "support": {
-    "title": "Avisar de un problema",
-    "hint": "Cuéntanos qué pasó. Leemos todos los mensajes.",
+    "title": "Ayuda y soporte",
+    "hint": "Cuéntanos qué pasa. Una persona real lee cada mensaje.",
     "category": "Tema",
     "categories": {
       "bug": "Error",
@@ -871,7 +875,8 @@ export default {
     "submit": "Enviar",
     "sentTitle": "Mensaje enviado",
     "sentBody": "Gracias — lo vemos.",
-    "sendFailed": "No se pudo enviar"
+    "sendFailed": "No se pudo enviar",
+    "replyTo": "Te responderemos a {{email}}."
   },
   "feedback": {
     "title": "Enviar comentarios",

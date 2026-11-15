@@ -65,6 +65,21 @@ Deno.test('Hebrew and Arabic render right-to-left, codes stay left-to-right', ()
   assertStringIncludes(renderWelcomeEmail({ locale: 'en' }).html, 'dir="ltr"');
 });
 
+Deno.test('Hebrew and Arabic use Arial/Tahoma on every heading and paragraph', () => {
+  for (const locale of ['he', 'ar'] as const) {
+    for (const email of allKinds(locale)) {
+      assert(!email.html.includes('-apple-system'), `${locale}: ${email.subject}`);
+      for (const tag of email.html.match(/<(h1|p) style="[^"]*"/g) ?? []) {
+        assertStringIncludes(tag, 'font-family:Arial, Tahoma');
+      }
+    }
+  }
+  const en = renderWelcomeEmail({ locale: 'en' }).html;
+  assertMatch(en, /<h1 style="font-family:-apple-system/);
+  // The code keeps its monospace font: it comes later in the same style, so it wins.
+  assertMatch(renderCodeEmail({ locale: 'he', code: '1', purpose: 'signin' }).html, /font-family:Arial[^"]*font-family:'SF Mono'/);
+});
+
 Deno.test('sign-in code email shows the code in the subject, html and text', () => {
   const email = renderCodeEmail({ locale: 'en', code: '482913', purpose: 'signin' });
   assertEquals(email.subject, 'Your Pinch code: 482913');
