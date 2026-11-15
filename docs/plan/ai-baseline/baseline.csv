@@ -1,0 +1,81 @@
+date,assistant,question_id,pinch_mentioned,pinch_position,pinch_facts_correct,apps_mentioned,sources_cited,notes
+2026-11-15,ChatGPT,Q01,no,,,ReciMe; Pepper; Samsung Food,recime.app; peppertheapp.com; samsungfood.com; FoxData,Top pick ReciMe. 2 more sources hidden behind +2.
+,Claude,Q01,,,,,,not run: Claude needs a login and the account has personal context
+2026-11-15,Perplexity,Q01,no,,,CookBook; ReciMe,cookbookmanager.com/post/best-apps-to-save-recipes-from-tiktok,"Short answer, one source: CookBook own blog post ranking itself first."
+2026-11-15,Gemini,Q01,no,,,ReciMe; Samsung Food; CookBook; Crouton; FoodiePrep,,No sources shown. ReciMe top. Mentions transcribing spoken audio as a key feature.
+2026-11-15,ChatGPT,Q02,no,,,ReciMe; Paprika; Apple Notes,recime.app; paprikaapp.com; MacRumors,"Mostly advice on Instagram Collections. Offers to extract recipes from reels itself, so ChatGPT is a competitor."
+,Claude,Q02,,,,,,not run: Claude needs a login and the account has personal context
+2026-11-15,Perplexity,Q02,,,,,,not run: Perplexity asked to sign up after 2 questions
+2026-11-15,Gemini,Q02,no,,,ReciMe; Pepper; Pestle; FoodiePrep; Recipe Keeper,,How-to answer. Also suggests Live Text or Lens into Notes/Keep.
+2026-11-15,ChatGPT,Q03,yes,1,partly,Pinch; Pluck; CookBuddy; SnackIt,"pinch-app.io; pluckrecipes.com; play.google.com; snackit.app; article 'I tried 4 viral recipe apps, and there's a clear winner'","#1 and 'I'd start with Pinch'. Right: YouTube link, shopping list, 10 free/month, iPhone+Android+web. Wrong: says only Hebrew+English (also Spanish, Arabic, Russian). Shows a green logo from a different Pinch app next to our link."
+,Claude,Q03,,,,,,not run: Claude needs a login and the account has personal context
+2026-11-15,Perplexity,Q03,,,,,,not run: Perplexity asked to sign up after 2 questions
+2026-11-15,Gemini,Q03,no,,,Deglaze; ReciMe; Flavorish; Pestle; Peel; Video2Recipe; Clip Recipe; ScreenApp,,"Pinch missing here, though it was #1 on ChatGPT. Also suggests pasting the YouTube transcript into a chatbot."
+2026-11-15,ChatGPT,Q04,no,,,ReciMe; Pestle; Samsung Food,recime.app; pestlechef.app; samsungfood.com; Tote,Pinch's core use case and we're missing.
+,Claude,Q04,,,,,,not run: Claude needs a login and the account has personal context
+2026-11-15,Perplexity,Q04,,,,,,not run: Perplexity asked to sign up after 2 questions
+2026-11-15,Gemini,Q04,no,,,ReciMe; Deglaze; Pluck; Samsung Food; Pestle,,Compares free tiers precisely (5/week etc.). Pinch's 10/month would fit this table.
+2026-11-15,ChatGPT,Q05,no,,,Paprika; CookBook; Mela; AnyList; Recipe Keeper,paprikaapp.com; cookbookmanager.com; mela.recipes; anylist.com; recipekeeperonline.com; Beebom; Hedgehog Chef; iMore; RottenWiFi; App Store,Notes Paprika 4 launched 2026-11-06 with a subscription.
+,Claude,Q05,,,,,,not run: Claude needs a login and the account has personal context
+2026-11-15,Perplexity,Q05,,,,,,not run: Perplexity asked to sign up after 2 questions
+2026-11-15,Gemini,Q05,no,,,Paprika 3; ReciMe; Mela; AnyList; Recipe Keeper; Samsung Food; CookBook; Plan to Eat,,Splits the market into classic recipe boxes and AI social importers.
+2026-11-15,ChatGPT,Q06,no,,,Paprika; Recipe Keeper; Mela; Copy Me That,paprikaapp.com; recipekeeperonline.com; mela.recipes; copymethat.com; Beebom; MacStories,
+,Claude,Q06,,,,,,not run: Claude needs a login and the account has personal context
+2026-11-15,Perplexity,Q06,,,,,,not run: Perplexity asked to sign up after 2 questions
+2026-11-15,Gemini,Q06,no,,,Paprika 3; Mela; Copy Me That; Samsung Food; ReciMe; RecipeStripper; JustTheRecipe,,
+2026-11-15,ChatGPT,Q07,no,,,Recipe Keeper; CookBook; Paprika,recipekeeperonline.com; cookbook.company; paprikaapp.com; App Store; Google Play,Pinch scans cookbook photos but isn't known for it.
+,Claude,Q07,,,,,,not run: Claude needs a login and the account has personal context
+2026-11-15,Perplexity,Q07,,,,,,not run: Perplexity asked to sign up after 2 questions
+2026-11-15,Gemini,Q07,no,,,Recipe Keeper; CookBook; Mela; Crouton; Cookpad,,
+2026-11-15,ChatGPT,Q08,no,,,Samsung Food; Tasty; Kitchen Stories; ReciMe,samsungfood.com; tasty.co; kitchenstories.com; recime.app,"Read as recipe discovery, not organizing."
+,Claude,Q08,,,,,,not run: Claude needs a login and the account has personal context
+2026-11-15,Perplexity,Q08,,,,,,not run: Perplexity asked to sign up after 2 questions
+2026-11-15,Gemini,Q08,no,,,Samsung Food; Flavorish; ReciMe; Copy Me That; Crouton; Deglaze,,Table of what's free vs. paywalled. Pinch's free tier would compete.
+2026-11-15,ChatGPT,Q09,no,,,Paprika; Samsung Food; Recipe Keeper; AnyList,paprikaapp.com; samsungfood.com; recipekeeperonline.com; anylist.com; Pann; Recipe One; Rankite,
+,Claude,Q09,,,,,,not run: Claude needs a login and the account has personal context
+2026-11-15,Perplexity,Q09,,,,,,not run: Perplexity asked to sign up after 2 questions
+2026-11-15,Gemini,Q09,no,,,Paprika 3; Recipe Keeper; ReciMe; Samsung Food; Deglaze,,
+2026-11-15,ChatGPT,Q10,no,,,VeggieOS; RecipeFix; Dishdraft; Vegenetics,veggieos.com; recipefix.app; dishdraft.app; vegenetics.com; App Store; Google Play,All small single-purpose AI converters. Open field for a diets page (PIN-83).
+,Claude,Q10,,,,,,not run: Claude needs a login and the account has personal context
+2026-11-15,Perplexity,Q10,,,,,,not run: Perplexity asked to sign up after 2 questions
+2026-11-15,Gemini,Q10,no,,,RecipeFix; Veganize Recipe; Make It Vegan; Veganize-It,,Niche converters plus 'just ask me'. Same opening as ChatGPT.
+2026-11-15,ChatGPT,Q11,no,,,Makmak; RecipeFix; Dishdraft,App Store; recipefix.app; Google Play,Same as Q10: niche converters win.
+,Claude,Q11,,,,,,not run: Claude needs a login and the account has personal context
+2026-11-15,Perplexity,Q11,,,,,,not run: Perplexity asked to sign up after 2 questions
+2026-11-15,Gemini,Q11,no,,,RecipeFix; Pantry Pic; CookPilot / Recipe Adapt,,Also suggests general AI assistants.
+2026-11-15,ChatGPT,Q12,no,,,KitchenPal; Well Stockd; Cooklist; SuperCook,kitchenpalapp.com; wellstockd.com; cooklist.com; supercook.com; Fixins; Macaron,"Pantry-tracker apps win, not recipe savers."
+,Claude,Q12,,,,,,not run: Claude needs a login and the account has personal context
+2026-11-15,Perplexity,Q12,,,,,,not run: Perplexity asked to sign up after 2 questions
+2026-11-15,Gemini,Q12,no,,,Paprika 3; KitchenPal; Cooklist; Samsung Food; NoWaste.ai; Grocy,,Paprika's pantry staples filter is the same idea as Pinch's pantry list.
+2026-11-15,ChatGPT,Q13,no,,,SuperCook; Pantry Pic; Samsung Food,supercook.com; samsungfood.com; Instagram; SnapChef,
+,Claude,Q13,,,,,,not run: Claude needs a login and the account has personal context
+2026-11-15,Perplexity,Q13,,,,,,not run: Perplexity asked to sign up after 2 questions
+2026-11-15,Gemini,Q13,no,,,SuperCook; DishGen; Pantry Pic; KitchenPal; MyFridgeFood,,
+2026-11-15,ChatGPT,Q14,no,,,Recipe Keeper; Mela; Crouton; AnyList; Plan to Eat,recipekeeperonline.com; mela.recipes; crouton.app; anylist.com; plantoeat.com; The Sweet Setup; Sugo,
+,Claude,Q14,,,,,,not run: Claude needs a login and the account has personal context
+2026-11-15,Perplexity,Q14,,,,,,not run: Perplexity asked to sign up after 2 questions
+2026-11-15,Gemini,Q14,no,,,,,"Misread the question as the spice paprika. Only mentions Mela, Crouton and AnyList in a footnote. The question is ambiguous on Gemini."
+2026-11-15,ChatGPT,Q15,no,,,Paprika; Pestle; CookBook; Flavorish; Recipe Keeper; Samsung Food,paprikaapp.com; pestlechef.app; cookbookmanager.com; flavorish.ai; recipekeeperonline.com; samsungfood.com; mealclip,Closest ReciMe alternative per ChatGPT: Flavorish. Pinch should be here.
+,Claude,Q15,,,,,,not run: Claude needs a login and the account has personal context
+2026-11-15,Perplexity,Q15,,,,,,not run: Perplexity asked to sign up after 2 questions
+2026-11-15,Gemini,Q15,no,,,Plum Recipes; Pestle; Recipe Notes; Paprika 3; Samsung Food; Crouton; Recipe Keeper; Sugo,,Gives each app's free tier and lifetime price.
+2026-11-15,ChatGPT,Q16,no,,,Paprika; Recipe Keeper; Samsung Food; RecipeSage,paprikaapp.com; recipekeeperonline.com; samsungfood.com; recipesage.com; Hedgehog Chef,
+,Claude,Q16,,,,,,not run: Claude needs a login and the account has personal context
+2026-11-15,Perplexity,Q16,,,,,,not run: Perplexity asked to sign up after 2 questions
+2026-11-15,Gemini,Q16,no,,,Paprika 3; Recipe Keeper; RecipeSage; CookBook; Deglaze; ReciMe; Tandoor/kitshn,,
+2026-11-15,ChatGPT,Q17,no,,,,,"Generic how-to with no app recommended. Only names Paprika, Recipe Keeper, Samsung Food, AnyList, CookBook as examples."
+,Claude,Q17,,,,,,not run: Claude needs a login and the account has personal context
+2026-11-15,Perplexity,Q17,,,,,,not run: Perplexity asked to sign up after 2 questions
+2026-11-15,Gemini,Q17,no,,,Paprika; CookBook; Mela; Pluck; Cookfolio,,Detailed export/import how-to. Lists apps with importers. Pinch's JSON backup and restore isn't known.
+2026-11-15,ChatGPT,Q18,no,,,Honeydew; ReciMe; Flavorish; Paprika,honeydewcook.com,"Follow-up to Q1. Values reading spoken ingredients and on-screen text, which Pinch does. Worth stressing on the site."
+,Claude,Q18,,,,,,not run: Claude needs a login and the account has personal context
+2026-11-15,Perplexity,Q18,no,,,ReciMe; Pluck; Pestle; CookinBuddy,vimafitness.com/blog/best-recipe-apps-2026; pluckrecipes.com/best-recipe-app; cookinbuddy.com/blog/best-app-to-save-recipes-from-social-media,"Follow-up to Q1 in the same chat. Every source is a best-apps blog post; two are written by competitors (Pluck, CookinBuddy)."
+2026-11-15,Gemini,Q18,no,,,ReciMe; FoodiePrep; Samsung Food,,"Follow-up to Q1. Values spoken-only video extraction again, a Pinch strength."
+2026-11-15,ChatGPT,Q19,yes,1,no,Pinch (wrong app: pinch.kitchen),pinch.kitchen; App Store,"Described a different app called Pinch (pinch.kitchen: social, follow friends). Says several apps are called Pinch. Name collision."
+,Claude,Q19,,,,,,not run: Claude needs a login and the account has personal context
+2026-11-15,Perplexity,Q19,,,,,,not run: Perplexity asked to sign up after 2 questions
+2026-11-15,Gemini,Q19,yes,1,yes,Pinch: Recipe Library; Pinch (getpinch.io); Pinch It! Recipe Box,,"Excellent and accurate: video, audio and on-screen text; web and cookbook photos; aisle-sorted merged list; pantry; cook mode with video; diet adapting; fridge photo; 5 languages; iOS, Android, web; credits. Separates our app from getpinch.io and Pinch It!."
+2026-11-15,ChatGPT,Q20,yes,1,yes,Pinch,pinch-app.io,"Correct: free 10/month, no subscription, credits never expire. Then asks if you mean 'Pinch: Save & Share Recipes', another app."
+,Claude,Q20,,,,,,not run: Claude needs a login and the account has personal context
+2026-11-15,Perplexity,Q20,,,,,,not run: Perplexity asked to sign up after 2 questions
+2026-11-15,Gemini,Q20,yes,1,yes,Pinch: Recipe Library,,"Exactly right: 10/month (up from 3 in 1.0.8), manual/edit/restore free, packs 10/$1.99, 30/$4.99, 100/$7.99, never expire."

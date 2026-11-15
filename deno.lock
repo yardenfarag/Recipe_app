@@ -42,6 +42,7 @@
         "npm:expo-crypto@~15.0.9",
         "npm:expo-dev-client@~6.0.21",
         "npm:expo-device@~8.0.10",
+        "npm:expo-file-system@~19.0.24",
         "npm:expo-font@~14.0.12",
         "npm:expo-glass-effect@~0.1.10",
         "npm:expo-image-manipulator@~14.0.8",
