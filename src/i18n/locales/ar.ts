@@ -610,7 +610,17 @@ export default {
     "cookSubtitle": "اختياري. نذكّره للوصفات التي تختار تكييفها.",
     "cookEverything": "أطبخ كل شيء",
     "changeLater": "تقدر تغيّر هذا في أي وقت من الإعدادات.",
-    "dietLimit": "يمكنك اختيار حتى {{count}}."
+    "dietLimit": "يمكنك اختيار حتى {{count}}.",
+    "heardTitle": "كيف سمعت عن Pinch؟",
+    "heardSubtitle": "نقرة واحدة تساعدنا على الوصول إلى المزيد من الأشخاص مثلك.",
+    "heardSources": {
+      "tiktok_instagram": "تيك توك أو إنستغرام",
+      "friend": "صديق أو أحد أفراد العائلة",
+      "app_store": "البحث في App Store أو Google Play",
+      "google": "البحث في Google",
+      "ai_assistant": "مساعد ذكاء اصطناعي، مثل ChatGPT أو Gemini",
+      "other": "مكان آخر"
+    }
   },
   "walkthrough": {
     "progress": "{{current}} من {{total}}",

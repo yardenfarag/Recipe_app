@@ -10,13 +10,24 @@ export type RecipeEntryMode = 'extract' | 'invent';
 export type PaywallTrigger = 'out_of_credits' | 'settings';
 /** What happened after "Share Pinch". */
 export type AppShareOutcome = 'shared' | 'copied' | 'dismissed';
+/** Answers to "How did you hear about Pinch?" in onboarding, in the order shown. */
+export const HEARD_ABOUT_SOURCES = [
+  'tiktok_instagram',
+  'friend',
+  'app_store',
+  'google',
+  'ai_assistant',
+  'other',
+] as const;
+export type HeardAboutSource = (typeof HEARD_ABOUT_SOURCES)[number];
 
 type ProductEventName =
   | 'recipe_extracted'
   | 'recipe_saved'
   | 'paywall_viewed'
   | 'onboarding_completed'
-  | 'app_shared';
+  | 'app_shared'
+  | 'heard_about';
 // web_intro_viewed / web_intro_clicked come from the static landing page (landing/index.html).
 
 function capture(name: ProductEventName, properties: Record<string, string>): void {
@@ -74,6 +85,11 @@ export function captureOnboardingCompleted(properties: {
   platform: string;
 }): void {
   capture('onboarding_completed', properties);
+}
+
+/** Sent before sign-up too, so guests are counted by install id. */
+export function captureHeardAbout(properties: { source: HeardAboutSource; platform: string }): void {
+  capture('heard_about', properties);
 }
 
 export function captureAppShared(properties: {

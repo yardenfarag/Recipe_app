@@ -610,7 +610,17 @@ export default {
     "cookSubtitle": "Необязательно. Запомним это для рецептов, которые решите адаптировать.",
     "cookEverything": "Готовлю всё",
     "changeLater": "Это всегда можно изменить в настройках.",
-    "dietLimit": "Можно выбрать до {{count}}."
+    "dietLimit": "Можно выбрать до {{count}}.",
+    "heardTitle": "Как вы узнали о Pinch?",
+    "heardSubtitle": "Одно касание, и это поможет нам найти больше таких людей, как вы.",
+    "heardSources": {
+      "tiktok_instagram": "TikTok или Instagram",
+      "friend": "От друзей или семьи",
+      "app_store": "Поиск в App Store или Google Play",
+      "google": "Поиск в Google",
+      "ai_assistant": "ИИ-ассистент, например ChatGPT или Gemini",
+      "other": "Другое"
+    }
   },
   "walkthrough": {
     "progress": "{{current}} из {{total}}",

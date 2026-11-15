@@ -133,6 +133,30 @@ describe('summarizeInsights', () => {
     ]);
     expect(summary.recent[0]?.country).toBe('United States');
   });
+
+  it('ranks "How did you hear about Pinch?" answers, from guests and signed-in people', () => {
+    const heard = (source: string, at: string, guest: string | null): InsightEvent => ({
+      name: 'heard_about',
+      properties: { source, platform: 'ios' },
+      created_at: at,
+      user_id: guest ? null : 'user-1',
+      guest_install_id: guest,
+    });
+    const summary = summarizeInsights(
+      [
+        heard('ai_assistant', '2026-09-24T10:00:00.000Z', 'install-1'),
+        heard('tiktok_instagram', '2026-09-24T11:00:00.000Z', 'install-2'),
+        heard('ai_assistant', '2026-09-24T12:00:00.000Z', null),
+      ],
+      new Date('2026-09-24T18:00:00.000Z'),
+    );
+    expect(summary.heardAbout).toEqual([
+      { label: 'ai_assistant', count: 2 },
+      { label: 'tiktok_instagram', count: 1 },
+    ]);
+    expect(summary.recent[0]?.detail).toBe('ai_assistant · ios');
+    expect(summarizeInsights(events).heardAbout).toEqual([]);
+  });
 });
 
 describe('summarizeFailures', () => {
