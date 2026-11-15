@@ -150,6 +150,30 @@ export async function persistUploadedPhoto(opts: {
   return data.publicUrl;
 }
 
+declare const EdgeRuntime: { waitUntil(promise: Promise<unknown>): void } | undefined;
+
+/**
+ * Starts storing a Snap/invent upload as soon as the request is accepted, so the
+ * photo is kept even when the food gate or the model later turns it down. The
+ * upload outlives an early response. Resolves to the public URL, or undefined.
+ */
+export function keepUploadedPhoto(
+  platform: Platform,
+  imageBase64: string | null,
+  mimeType: string,
+  userId: string,
+): Promise<string | undefined> {
+  if (platform !== 'photo' || !imageBase64) return Promise.resolve(undefined);
+  const upload = persistUploadedPhoto({ imageBase64, mimeType, userId }).catch((err) => {
+    console.warn('[persistThumbnail] keep photo failed', {
+      error: err instanceof Error ? err.message : String(err),
+    });
+    return undefined;
+  });
+  if (typeof EdgeRuntime !== 'undefined') EdgeRuntime.waitUntil(upload);
+  return upload;
+}
+
 /** Downloads a remote image for the cheap food gate (vision). */
 export async function fetchImageAsBase64(opts: {
   sourceUrl: string;
