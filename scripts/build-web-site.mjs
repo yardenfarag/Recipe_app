@@ -1,15 +1,17 @@
 // Builds the pinch-app.io site into dist/:
-//   /            static landing page (landing/index.html) — real HTML for crawlers,
-//                with the guides in content/guides/*.md rendered into it (scripts/site-pages.mjs)
-//   /app/        the Expo web app (experiments.baseUrl = "/app")
-//   /*.html      legal pages
-//   /404.html    the app shell, so /app/<route> deep links load the app.
-//                Its inline script sends old root links (/s/…, /auth-callback…) to /app/….
+//   /                static landing page (landing/index.html) — real HTML for crawlers,
+//                    with a card per guide in content/guides/*.md (scripts/site-pages.mjs)
+//   /guides/<name>/  a page per guide, from landing/guide.html
+//   /sitemap.xml     public/sitemap.xml plus a URL per guide
+//   /app/            the Expo web app (experiments.baseUrl = "/app")
+//   /*.html          legal pages
+//   /404.html        the app shell, so /app/<route> deep links load the app.
+//                    Its inline script sends old root links (/s/…, /auth-callback…) to /app/….
 import { execSync } from 'node:child_process';
-import { copyFileSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
+import { copyFileSync, mkdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 
-import { buildLanding, fillSupabaseConfig } from './site-pages.mjs';
+import { buildGuidePage, buildLanding, buildSitemap, fillSupabaseConfig, loadGuides } from './site-pages.mjs';
 
 const root = join(import.meta.dirname, '..');
 const dist = join(root, 'dist');
@@ -32,7 +34,6 @@ copy('legal/delete-data.html');
 copy('legal/share.html');
 copy('legal/styles.css');
 copy('public/robots.txt');
-copy('public/sitemap.xml');
 copy('assets/images/favicon.png');
 copy('assets/images/icon.png');
 copy('landing/site.css');
@@ -47,6 +48,18 @@ const landing = buildLanding(readFileSync(join(root, 'landing/index.html'), 'utf
 writeFileSync(
   join(dist, 'index.html'),
   fillSupabaseConfig(landing, process.env.EXPO_PUBLIC_SUPABASE_URL, process.env.EXPO_PUBLIC_SUPABASE_KEY),
+);
+
+const guides = loadGuides(join(root, 'content'));
+const guideTemplate = readFileSync(join(root, 'landing/guide.html'), 'utf8');
+for (const guide of guides) {
+  const dir = join(dist, 'guides', guide.slug);
+  mkdirSync(dir, { recursive: true });
+  writeFileSync(join(dir, 'index.html'), buildGuidePage(guideTemplate, guide, guides));
+}
+writeFileSync(
+  join(dist, 'sitemap.xml'),
+  buildSitemap(readFileSync(join(root, 'public/sitemap.xml'), 'utf8'), guides),
 );
 
 writeFileSync(join(dist, '.nojekyll'), '');

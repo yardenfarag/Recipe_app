@@ -576,16 +576,13 @@
           });
         }
 
-        // Links to a guide (#save-tiktok-recipes) open it.
-        function openFromHash() {
+        // Old links to a guide (/#save-tiktok-recipes) go to its own page (/guides/save-tiktok-recipes/).
+        function followGuideHash() {
           var target = location.hash && document.getElementById(location.hash.slice(1));
-          if (target && target.tagName === 'DETAILS') {
-            target.open = true;
-            target.classList.add('is-visible');
-          }
+          if (target && target.classList.contains('guide') && target.href) location.replace(target.href);
         }
-        window.addEventListener('hashchange', openFromHash);
-        openFromHash();
+        window.addEventListener('hashchange', followGuideHash);
+        followGuideHash();
 
         // The build fills these in; left as placeholders, tracking is off and Support opens email.
         var SUPABASE_URL = '__SUPABASE_URL__';

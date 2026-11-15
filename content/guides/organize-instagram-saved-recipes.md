@@ -2,6 +2,7 @@
 title: How to organize your Instagram saved recipes
 description: Hundreds of saved Instagram Reels and no idea where the lasagna went? How to sort Instagram saved recipes into collections, and how to turn them into recipes you can cook from.
 order: 2
+updated: 2026-10-05
 ---
 
 Saving a recipe on Instagram takes one tap. Finding it again takes a lot longer. After a few months, "Saved" is a wall of hundreds of thumbnails, and the recipe you want is somewhere in the middle.
@@ -69,4 +70,4 @@ If the recipe is written in the caption, yes. For a recipe written on a carousel
 
 ### What about TikTok?
 
-The same idea works there. See [how to save a recipe from TikTok](#save-tiktok-recipes).
+The same idea works there. See [how to save a recipe from TikTok](/guides/save-tiktok-recipes/).

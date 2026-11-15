@@ -2,6 +2,7 @@
 title: How to make a meal-prep shopping list from your recipes
 description: Pick your recipes for the week, combine the ingredients into one list, skip what is already in the pantry, and shop by aisle. A simple meal-prep shopping list method.
 order: 3
+updated: 2026-10-05
 ---
 
 The hard part of meal prep isn't the cooking. It's the shopping list. Three recipes that each need an onion turn into three separate "1 onion" lines, you buy cumin you already have, and you walk the store twice because dairy was at the bottom of the list.
@@ -74,4 +75,4 @@ Repeat what works. Keep a "Meal prep" collection of recipes that reheated well, 
 
 ### Where do I find meal-prep recipes?
 
-TikTok and Instagram are full of them. See [how to save a recipe from TikTok](#save-tiktok-recipes) and [how to organize your Instagram saved recipes](#organize-instagram-saved-recipes).
+TikTok and Instagram are full of them. See [how to save a recipe from TikTok](/guides/save-tiktok-recipes/) and [how to organize your Instagram saved recipes](/guides/organize-instagram-saved-recipes/).
