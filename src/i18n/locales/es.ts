@@ -231,7 +231,11 @@ export default {
     "rtlReloadTitle": "¿Recargar para acomodar la pantalla?",
     "rtlReloadBody": "El hebreo y el árabe se leen de derecha a izquierda. Recarga ahora para que menús y títulos queden del lado correcto.",
     "rtlReloadConfirm": "Recargar",
-    "rtlReloadLater": "Más tarde"
+    "rtlReloadLater": "Más tarde",
+    "helpSupport": "Ayuda y soporte",
+    "helpSupportHint": "¿Algo no funciona? Cuéntanoslo y te responderemos por correo.",
+    "legal": "Legal y privacidad",
+    "legalHint": "Política de privacidad, términos y borrar tus datos."
   },
   "theme": {
     "auto": "Automático",
@@ -294,13 +298,13 @@ export default {
     "reasonHub": "Crea una cuenta gratis para guardar recetas del Cooking Hub.",
     "reasonEdit": "Crea una cuenta gratis para editar tus recetas y escribir las tuyas.",
     "signupSubtitle": "Guarda recetas y tenlas en todos tus dispositivos.",
-    "forgotSubtitle": "Escribe tu correo y te mandamos un enlace para cambiar la contraseña.",
+    "forgotSubtitle": "Escribe tu correo y te enviaremos un código para restablecer tu contraseña.",
     "signinSubtitle": "Entra para ver tus recetas.",
     "checkEmail": "Revisa tu correo",
     "confirmSent": "Mandamos un enlace de confirmación a",
-    "resetSent": "Si hay una cuenta con ese correo, mandamos un enlace a",
+    "resetSent": "Si existe una cuenta con esa dirección, enviamos un código de 6 dígitos a",
     "confirmInstructions": "Abre el enlace en este teléfono, vuelve aquí y entra.",
-    "resetInstructions": "Abre el enlace en este teléfono y elige una contraseña nueva.",
+    "resetInstructions": "Escríbelo aquí para elegir una contraseña nueva. El correo también trae un botón, si lo prefieres.",
     "confirmedSignIn": "Ya confirmé — entrar",
     "backToSignIn": "Volver a iniciar sesión",
     "differentEmail": "Usar otro correo",
@@ -320,7 +324,7 @@ export default {
       "strong": "Contraseña segura"
     },
     "forgotPassword": "¿Olvidaste tu contraseña?",
-    "sendResetLink": "Enviar enlace",
+    "sendResetLink": "Enviar código",
     "haveAccount": "¿Ya tienes cuenta? Entra",
     "needAccount": "¿No tienes cuenta? Créala",
     "orContinueWith": "o sigue con",
@@ -329,7 +333,19 @@ export default {
     "terms": "Términos",
     "callbackFailed": "No se pudo completar el inicio de sesión.",
     "callbackMissing": "Falta el enlace. Vuelve a la pantalla de acceso e inténtalo de nuevo.",
-    "callbackFinishing": "Entrando…"
+    "callbackFinishing": "Entrando…",
+    "codeTitle": "Entra con un código",
+    "codeSubtitle": "Te enviaremos un código de 6 dígitos por correo. Sin contraseña.",
+    "sendCode": "Enviarme un código",
+    "emailMeCode": "Enviarme un código para entrar",
+    "usePassword": "Usar mi contraseña",
+    "codeSent": "Enviamos un código de 6 dígitos a",
+    "codeInstructions": "Escríbelo aquí para entrar. Caduca en una hora.",
+    "codeLabel": "Código de 6 dígitos",
+    "verifyCode": "Continuar",
+    "codeInvalid": "Ese código no es correcto o ha caducado. Revisa el correo o pide uno nuevo.",
+    "resendCode": "Enviar un código nuevo",
+    "codeResent": "Código nuevo enviado. Revisa tu correo."
   },
   "recipe": {
     "preview": "Vista previa",
@@ -663,7 +679,7 @@ export default {
     "cookSubtitle": "Opcional. Lo recordamos para las recetas que elijas adaptar.",
     "cookEverything": "Cocino de todo",
     "changeLater": "Puedes cambiarlo cuando quieras en Ajustes.",
-    "dietLimit": "Puedes elegir hasta {{count}}.",
+    "dietLimit": "Puedes elegir hasta {{count}}.",
     "heardTitle": "¿Cómo conociste Pinch?",
     "heardSubtitle": "Un toque, y nos ayuda a llegar a más personas como tú.",
     "heardSources": {
@@ -835,7 +851,7 @@ export default {
     "pantrySaved": "{{name}} no entrará en la lista la próxima vez."
   },
   "resetPassword": {
-    "openLink": "Abre el enlace del correo para seguir.",
+    "openLink": "Pide un código nuevo para continuar.",
     "invalidLink": "Este enlace no vale o ya caducó.",
     "mismatch": "Las contraseñas no coinciden.",
     "updateFailed": "No se pudo cambiar la contraseña.",
@@ -846,15 +862,15 @@ export default {
     "newPassword": "Contraseña nueva",
     "confirmPassword": "Repite la contraseña nueva",
     "update": "Guardar contraseña",
-    "requestNewLink": "Pedir otro enlace"
+    "requestNewLink": "Pedir un código nuevo"
   },
   "errorBoundary": {
     "title": "Algo salió mal",
     "body": "Pasó un error inesperado."
   },
   "support": {
-    "title": "Avisar de un problema",
-    "hint": "Cuéntanos qué pasó. Leemos todos los mensajes.",
+    "title": "Ayuda y soporte",
+    "hint": "Cuéntanos qué pasa. Una persona real lee cada mensaje.",
     "category": "Tema",
     "categories": {
       "bug": "Error",
@@ -867,7 +883,8 @@ export default {
     "submit": "Enviar",
     "sentTitle": "Mensaje enviado",
     "sentBody": "Gracias — lo vemos.",
-    "sendFailed": "No se pudo enviar"
+    "sendFailed": "No se pudo enviar",
+    "replyTo": "Te responderemos a {{email}}."
   },
   "feedback": {
     "title": "Enviar comentarios",

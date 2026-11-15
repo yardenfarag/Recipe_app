@@ -18,6 +18,7 @@ import { BrandHeader } from '@/components/BrandHeader';
 import { CookieMark } from '@/components/CookieMark';
 import { FeedbackModal } from '@/components/FeedbackModal';
 import { Screen } from '@/components/Screen';
+import { SupportTicketModal } from '@/components/SupportTicketModal';
 import { FormContentWidth } from '@/constants/theme';
 import { useAuth } from '@/hooks/useAuth';
 import { useBreakpoint } from '@/hooks/useBreakpoint';
@@ -28,6 +29,7 @@ import { useTranslation } from 'react-i18next';
 import { announce } from '@/lib/a11y';
 import { captureAppShared } from '@/lib/analytics';
 import { confirmAction, confirmDestructive, showNotice } from '@/lib/confirmAction';
+import { LEGAL_URLS, openLegalUrl } from '@/lib/legal';
 import {
   parseRecipeBackup,
   recipeBackupFileName,
@@ -193,6 +195,7 @@ export default function SettingsScreen() {
   const [uploading, setUploading] = useState(false);
   const [deleting, setDeleting] = useState(false);
   const [feedbackOpen, setFeedbackOpen] = useState(false);
+  const [supportOpen, setSupportOpen] = useState(false);
   const [backupBusy, setBackupBusy] = useState<'export' | 'restore' | null>(null);
 
   useEffect(() => {
@@ -584,11 +587,12 @@ export default function SettingsScreen() {
               onPress={() => router.push('/settings/language')}
             />
             <SettingsActionRow
-              trackId="settings.legal_support"
-              label={t('settings.legalSupport')}
-              description={t('settings.legalSupportHint')}
+              trackId="settings.help_support"
+              label={t('settings.helpSupport')}
+              description={t('settings.helpSupportHint')}
               icon="help-buoy-outline"
-              onPress={() => router.push('/settings/support')}
+              // Guests have no email to reply to, so they write to support@ directly.
+              onPress={() => (user ? setSupportOpen(true) : void openLegalUrl(LEGAL_URLS.supportMailto))}
             />
             {user ? (
               <SettingsActionRow
@@ -599,6 +603,13 @@ export default function SettingsScreen() {
                 onPress={() => setFeedbackOpen(true)}
               />
             ) : null}
+            <SettingsActionRow
+              trackId="settings.legal_support"
+              label={t('settings.legal')}
+              description={t('settings.legalHint')}
+              icon="document-text-outline"
+              onPress={() => router.push('/settings/support')}
+            />
             <SettingsActionRow
               trackId="settings.share_app"
               label={t('settings.shareApp')}
@@ -717,6 +728,7 @@ export default function SettingsScreen() {
       </ScrollView>
 
       <FeedbackModal visible={feedbackOpen} onClose={() => setFeedbackOpen(false)} />
+      <SupportTicketModal visible={supportOpen} onClose={() => setSupportOpen(false)} />
     </Screen>
   );
 }

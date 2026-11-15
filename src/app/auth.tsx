@@ -35,14 +35,21 @@ import { logTap } from '@/lib/interactionLog';
 import {
   isAppleAuthAvailable,
   requestPasswordReset,
+  sendSignInCode,
   signInWithApple,
   signInWithEmail,
   signInWithGoogle,
   signUpWithEmail,
+  verifyResetCode,
+  verifySignInCode,
+  type AuthError,
 } from '@/lib/supabase/auth';
 
-type Mode = 'signin' | 'signup' | 'forgot';
-type WaitingFor = 'confirm' | 'reset' | null;
+/** 'code' signs in with a 6-digit emailed code instead of a password. */
+type Mode = 'signin' | 'signup' | 'forgot' | 'code';
+type WaitingFor = 'confirm' | 'reset' | 'code' | null;
+
+const CODE_LENGTH = 6;
 type AuthReason =
   | 'extract_limit'
   | 'save_limit'
@@ -55,7 +62,7 @@ type AuthReason =
 
 function parseMode(value: string | string[] | undefined): Mode {
   const raw = Array.isArray(value) ? value[0] : value;
-  return raw === 'signin' || raw === 'forgot' ? raw : 'signup';
+  return raw === 'signin' || raw === 'forgot' || raw === 'code' ? raw : 'signup';
 }
 
 function parseReason(value: string | string[] | undefined): AuthReason {
@@ -140,6 +147,8 @@ export default function AuthScreen() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
+  const [code, setCode] = useState('');
+  const [notice, setNotice] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [isAppleAvailable, setIsAppleAvailable] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -179,7 +188,61 @@ export default function AuthScreen() {
     setWaitingFor(null);
     setPassword('');
     setShowPassword(false);
+    setCode('');
+    setNotice(null);
     setError(null);
+  }
+
+  /** Signing in or up with a password; the code and forgot modes only ask for the email. */
+  const usesPassword = mode === 'signin' || mode === 'signup';
+
+  async function sendCodeEmail(target: 'code' | 'reset', address: string) {
+    if (target === 'code') await sendSignInCode(address, language);
+    else await requestPasswordReset(address);
+  }
+
+  async function handleResendCode() {
+    if (waitingFor !== 'code' && waitingFor !== 'reset') return;
+    setError(null);
+    setNotice(null);
+    setLoading(true);
+    try {
+      await sendCodeEmail(waitingFor, normalizeEmail(email));
+      setCode('');
+      setNotice(t('auth.codeResent'));
+    } catch (err) {
+      setError(err instanceof Error ? err.message : t('auth.genericError'));
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  async function handleVerifyCode(value = code) {
+    const digits = value.replace(/\D/g, '');
+    if (digits.length !== CODE_LENGTH || loading) return;
+    setError(null);
+    setNotice(null);
+    setLoading(true);
+    try {
+      if (waitingFor === 'reset') {
+        await verifyResetCode(normalizeEmail(email), digits);
+        router.replace('/reset-password?via=code');
+        return;
+      }
+      await verifySignInCode(normalizeEmail(email), digits);
+      done();
+    } catch (err) {
+      const errorCode = (err as AuthError | null)?.code;
+      setError(
+        errorCode === 'otp_expired'
+          ? t('auth.codeInvalid')
+          : err instanceof Error
+            ? err.message
+            : t('auth.genericError'),
+      );
+    } finally {
+      setLoading(false);
+    }
   }
 
   async function handleEmail() {
@@ -189,7 +252,7 @@ export default function AuthScreen() {
       setError(t('auth.validEmail'));
       return;
     }
-    if (mode !== 'forgot' && !password) {
+    if (usesPassword && !password) {
       setError(t('auth.enterPassword'));
       return;
     }
@@ -210,7 +273,7 @@ export default function AuthScreen() {
     setLoading(true);
     try {
       if (mode === 'signup') {
-        const { needsConfirmation } = await signUpWithEmail(normalizedEmail, password);
+        const { needsConfirmation } = await signUpWithEmail(normalizedEmail, password, language);
         if (needsConfirmation) {
           setPassword('');
           setWaitingFor('confirm');
@@ -219,8 +282,11 @@ export default function AuthScreen() {
       } else if (mode === 'signin') {
         await signInWithEmail(normalizedEmail, password);
       } else {
-        await requestPasswordReset(normalizedEmail);
-        setWaitingFor('reset');
+        const target = mode === 'code' ? 'code' : 'reset';
+        await sendCodeEmail(target, normalizedEmail);
+        setCode('');
+        setNotice(null);
+        setWaitingFor(target);
         return;
       }
       done();
@@ -266,8 +332,7 @@ export default function AuthScreen() {
   }
 
   const passwordStrength = getPasswordStrength(password);
-  const canSubmit =
-    Boolean(email.trim()) && (mode === 'forgot' || Boolean(password)) && !loading;
+  const canSubmit = Boolean(email.trim()) && (!usesPassword || Boolean(password)) && !loading;
   const { isMediumUp } = useBreakpoint();
 
   const subtitle =
@@ -289,7 +354,144 @@ export default function AuthScreen() {
               ? t('auth.signupSubtitle')
               : mode === 'forgot'
                 ? t('auth.forgotSubtitle')
-                : t('auth.signinSubtitle');
+                : mode === 'code'
+                  ? t('auth.codeSubtitle')
+                  : t('auth.signinSubtitle');
+
+  if (waitingFor === 'code' || waitingFor === 'reset') {
+    const isReset = waitingFor === 'reset';
+    const codeComplete = code.length === CODE_LENGTH;
+    return (
+      <AuthShell>
+        <View className="flex-1 items-center justify-center px-6 pb-10">
+          <View
+            className="mb-5 h-16 w-16 items-center justify-center rounded-full"
+            style={{ backgroundColor: colors.primarySoft }}
+            accessible={false}
+            importantForAccessibility="no-hide-descendants"
+          >
+            <Ionicons name="mail-open-outline" size={30} color={colors.primary} />
+          </View>
+          <Text
+            className="mb-2 text-center text-2xl font-bold"
+            style={{ color: colors.text }}
+            accessibilityRole="header"
+          >
+            {t('auth.checkEmail')}
+          </Text>
+          <Text className="mb-2 text-center text-base leading-6" style={{ color: colors.textSecondary }}>
+            {t(isReset ? 'auth.resetSent' : 'auth.codeSent')}
+          </Text>
+          <Text className="mb-6 text-center text-base font-semibold" style={{ color: colors.text }}>
+            {normalizeEmail(email)}
+          </Text>
+
+          <TextInput
+            accessibilityLabel={t('auth.codeLabel')}
+            accessibilityHint={t(isReset ? 'auth.resetInstructions' : 'auth.codeInstructions')}
+            className="mb-3 w-full rounded-2xl border px-4 py-4 text-center text-3xl font-bold"
+            style={{
+              color: colors.text,
+              borderColor: error ? colors.danger : colors.border,
+              backgroundColor: colors.surface,
+              letterSpacing: 10,
+              writingDirection: 'ltr',
+            }}
+            placeholder="••••••"
+            placeholderTextColor={colors.textSecondary}
+            value={code}
+            onChangeText={(value) => {
+              const digits = value.replace(/\D/g, '').slice(0, CODE_LENGTH);
+              setCode(digits);
+              if (error) setError(null);
+              // Pasted or autofilled codes sign in right away.
+              if (digits.length === CODE_LENGTH) void handleVerifyCode(digits);
+            }}
+            keyboardType="number-pad"
+            inputMode="numeric"
+            autoComplete="one-time-code"
+            textContentType="oneTimeCode"
+            maxLength={CODE_LENGTH}
+            autoFocus
+            editable={!loading}
+            onSubmitEditing={() => {
+              logTap('auth.code_field.submit_key', { mode: waitingFor });
+              void handleVerifyCode();
+            }}
+          />
+          <Text className="mb-5 text-center text-sm leading-5" style={{ color: colors.textSecondary }}>
+            {t(isReset ? 'auth.resetInstructions' : 'auth.codeInstructions')}
+          </Text>
+
+          {error && (
+            <View
+              className="mb-4 w-full rounded-2xl border px-4 py-3"
+              style={{ borderColor: colors.dangerSoft, backgroundColor: colors.dangerSoft }}
+              accessibilityRole="alert"
+            >
+              <Text className="text-sm" style={{ color: colors.danger }}>
+                {error}
+              </Text>
+            </View>
+          )}
+          {notice && !error && (
+            <Text
+              className="mb-4 text-center text-sm font-semibold"
+              style={{ color: colors.success }}
+              accessibilityLiveRegion="polite"
+            >
+              {notice}
+            </Text>
+          )}
+
+          <Pressable trackId={isReset ? 'auth.reset_code.verify' : 'auth.code.verify'}
+            className="mb-3 w-full items-center rounded-full py-4"
+            style={{ backgroundColor: codeComplete && !loading ? colors.primary : colors.border }}
+            onPress={() => void handleVerifyCode()}
+            disabled={!codeComplete || loading}
+            accessibilityRole="button"
+            accessibilityState={{ disabled: !codeComplete || loading, busy: loading }}
+          >
+            {loading ? (
+              <ActivityIndicator color={codeComplete ? colors.onPrimary : colors.textSecondary} />
+            ) : (
+              <Text
+                className="text-lg font-bold"
+                style={{ color: codeComplete ? colors.onPrimary : colors.textSecondary }}
+              >
+                {t('auth.verifyCode')}
+              </Text>
+            )}
+          </Pressable>
+          <Pressable trackId={isReset ? 'auth.reset_code.resend' : 'auth.code.resend'}
+            className="items-center py-3"
+            accessibilityRole="button"
+            disabled={loading}
+            onPress={() => void handleResendCode()}
+          >
+            <Text className="text-sm font-semibold" style={{ color: colors.primary }}>
+              {t('auth.resendCode')}
+            </Text>
+          </Pressable>
+          <Pressable trackId={isReset ? 'auth.reset_code.change_email' : 'auth.code.change_email'}
+            className="items-center py-2"
+            accessibilityRole="button"
+            disabled={loading}
+            onPress={() => {
+              setWaitingFor(null);
+              setCode('');
+              setNotice(null);
+              setError(null);
+            }}
+          >
+            <Text className="text-sm" style={{ color: colors.textSecondary }}>
+              {t('auth.differentEmail')}
+            </Text>
+          </Pressable>
+        </View>
+      </AuthShell>
+    );
+  }
 
   if (waitingFor) {
     const isConfirm = waitingFor === 'confirm';
@@ -369,7 +571,9 @@ export default function AuthScreen() {
               ? t('auth.createAccount')
               : mode === 'forgot'
                 ? t('auth.resetPassword')
-                : t('auth.welcomeBack')}
+                : mode === 'code'
+                  ? t('auth.codeTitle')
+                  : t('auth.welcomeBack')}
           </Text>
           <Text className="text-sm leading-5" style={{ color: colors.textSecondary }}>
             {subtitle}
@@ -415,12 +619,12 @@ export default function AuthScreen() {
             editable={!loading}
             onSubmitEditing={() => {
               logTap('auth.email_field.submit_key', { mode });
-              if (mode === 'forgot' && canSubmit) void handleEmail();
+              if (!usesPassword && canSubmit) void handleEmail();
             }}
           />
         </View>
 
-        {mode !== 'forgot' && (
+        {usesPassword && (
           <>
             <Text className="mb-2 text-sm font-semibold" style={{ color: colors.text }}>
               {t('auth.password')}
@@ -527,7 +731,7 @@ export default function AuthScreen() {
           </>
         )}
 
-        {mode === 'forgot' && <View className="mb-5" />}
+        {!usesPassword && <View className="mb-5" />}
 
         {error && (
           <View
@@ -552,7 +756,9 @@ export default function AuthScreen() {
               ? t('auth.signUp')
               : mode === 'forgot'
                 ? t('auth.sendResetLink')
-                : t('auth.signIn')
+                : mode === 'code'
+                  ? t('auth.sendCode')
+                  : t('auth.signIn')
           }
           accessibilityState={{ disabled: !canSubmit, busy: loading }}
         >
@@ -567,10 +773,30 @@ export default function AuthScreen() {
                 ? t('auth.signUp')
                 : mode === 'forgot'
                   ? t('auth.sendResetLink')
-                  : t('auth.signIn')}
+                  : mode === 'code'
+                    ? t('auth.sendCode')
+                    : t('auth.signIn')}
             </Text>
           )}
         </Pressable>
+
+        {mode === 'signin' && (
+          <Pressable trackId="auth.switch_to_code"
+            className="mt-3 flex-row items-center justify-center rounded-full border py-3.5"
+            style={{ borderColor: colors.border }}
+            onPress={() => switchMode('code')}
+            disabled={loading}
+            accessibilityRole="button"
+            accessibilityState={{ disabled: loading }}
+          >
+            <View accessible={false} importantForAccessibility="no-hide-descendants">
+              <Ionicons name="keypad-outline" size={18} color={colors.primary} />
+            </View>
+            <Text className="text-sm font-semibold" style={{ color: colors.primary, marginStart: 8 }}>
+              {t('auth.emailMeCode')}
+            </Text>
+          </Pressable>
+        )}
 
         <Pressable trackId={mode === 'signin' ? 'auth.switch_to_signup' : 'auth.switch_to_signin'}
           className="items-center py-4"
@@ -584,11 +810,13 @@ export default function AuthScreen() {
               ? t('auth.haveAccount')
               : mode === 'forgot'
                 ? t('auth.backToSignIn')
-                : t('auth.needAccount')}
+                : mode === 'code'
+                  ? t('auth.usePassword')
+                  : t('auth.needAccount')}
           </Text>
         </Pressable>
 
-        {mode !== 'forgot' && (
+        {usesPassword && (
           <View className="my-2 flex-row items-center">
             <View className="h-px flex-1" style={{ backgroundColor: colors.border }} />
             <Text className="mx-3 text-xs" style={{ color: colors.textSecondary }}>
@@ -598,7 +826,7 @@ export default function AuthScreen() {
           </View>
         )}
 
-        {mode !== 'forgot' && isAppleAvailable && (
+        {usesPassword && isAppleAvailable && (
           <View pointerEvents={loading ? 'none' : 'auto'} style={{ opacity: loading ? 0.5 : 1 }}>
             <AppleAuthentication.AppleAuthenticationButton
               buttonType={
@@ -618,7 +846,7 @@ export default function AuthScreen() {
           </View>
         )}
 
-        {mode !== 'forgot' && (
+        {usesPassword && (
           <Pressable trackId="auth.google"
             className="mt-1 flex-row items-center justify-center rounded-full border py-4"
             onPress={handleGoogle}

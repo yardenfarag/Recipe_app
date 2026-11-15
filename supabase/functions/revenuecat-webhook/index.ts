@@ -1,4 +1,5 @@
 import { corsHeaders, jsonResponse } from '../_shared/cors.ts';
+import { sendPurchaseEmail } from '../_shared/email/purchase.ts';
 import { creditPurchaseDecision, purchaseEventSummary } from '../_shared/revenuecatPurchase.ts';
 import { createServiceSupabase } from '../_shared/supabaseAdmin.ts';
 
@@ -75,6 +76,16 @@ Deno.serve(async (req) => {
     await recordFailure(body, 'grant_failed', error);
     return jsonResponse({ error: 'Credit grant failed' }, 500);
   }
+
+  await sendPurchaseEmail(admin, {
+    userId: grant.userId,
+    credits: grant.credits,
+    balance: Number.isFinite(Number(data)) ? Number(data) : null,
+    provider: 'revenuecat',
+    transactionId: grant.transactionId,
+    store: grant.store,
+    purchasedAt: grant.purchasedAtMs ? new Date(grant.purchasedAtMs) : null,
+  });
 
   return jsonResponse({ received: true, balance: Number(data) });
 });

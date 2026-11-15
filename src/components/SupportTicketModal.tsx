@@ -14,7 +14,9 @@ import { useTranslation } from 'react-i18next';
 import { SheetModal } from '@/components/SheetModal';
 import { TextInput } from '@/components/text-input';
 import { useAuth } from '@/hooks/useAuth';
+import { useLanguagePreference } from '@/hooks/useLanguagePreference';
 import { useThemePreference } from '@/hooks/useThemePreference';
+import { getFeedbackContext } from '@/lib/supabase/feedback';
 import {
   submitSupportTicket,
   type SupportTicketCategory,
@@ -31,6 +33,7 @@ export function SupportTicketModal({ visible, onClose }: SupportTicketModalProps
   const { t } = useTranslation();
   const { user } = useAuth();
   const { colors } = useThemePreference();
+  const { language } = useLanguagePreference();
   const [category, setCategory] = useState<SupportTicketCategory>('bug');
   const [message, setMessage] = useState('');
   const [submitting, setSubmitting] = useState(false);
@@ -43,6 +46,7 @@ export function SupportTicketModal({ visible, onClose }: SupportTicketModalProps
         category,
         message,
         email: user?.email ?? null,
+        context: getFeedbackContext(language),
       });
       setMessage('');
       setCategory('bug');
@@ -144,6 +148,12 @@ export function SupportTicketModal({ visible, onClose }: SupportTicketModalProps
           placeholderTextColor={colors.textSecondary}
           editable={!submitting}
         />
+
+        {user?.email ? (
+          <Text className="mb-4 text-xs leading-5" style={{ color: colors.textSecondary }}>
+            {t('support.replyTo', { email: user.email })}
+          </Text>
+        ) : null}
 
         <Pressable trackId="support_ticket.submit"
           className="mb-3 items-center rounded-[22px] py-4"

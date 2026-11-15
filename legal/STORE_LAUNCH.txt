@@ -12,7 +12,7 @@ Legal URLs:
   Terms:    https://pinch-app.io/terms.html
   Delete account: https://pinch-app.io/delete-account.html
   Delete data:    https://pinch-app.io/delete-data.html
-  Support:  yarden.farag@gmail.com
+  Support:  support@pinch-app.io (hello@ and privacy@ also forward to the same inbox)
 
 Enable Pages (one-time, required before the workflow succeeds):
   Repo → Settings → Pages → Build and deployment → Source: GitHub Actions

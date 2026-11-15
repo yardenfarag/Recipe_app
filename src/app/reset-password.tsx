@@ -1,6 +1,6 @@
 import Ionicons from '@expo/vector-icons/Ionicons';
 import * as Linking from 'expo-linking';
-import { router } from 'expo-router';
+import { router, useLocalSearchParams } from 'expo-router';
 import { useEffect, useState } from 'react';
 import {
   ActivityIndicator,
@@ -19,11 +19,13 @@ import { useThemePreference } from '@/hooks/useThemePreference';
 import { announce } from '@/lib/a11y';
 import { getPasswordStrength, validatePassword } from '@/lib/authValidation';
 import { logTap } from '@/lib/interactionLog';
-import { consumePasswordRecoveryUrl, updatePassword } from '@/lib/supabase/auth';
+import { consumePasswordRecoveryUrl, hasSession, updatePassword } from '@/lib/supabase/auth';
 
 export default function ResetPasswordScreen() {
   const { t } = useTranslation();
   const linkingUrl = Linking.useLinkingURL();
+  // ?via=code: the auth screen already signed in with the code from the reset email.
+  const viaCode = useLocalSearchParams<{ via?: string }>().via === 'code';
   const [recoveryUrl, setRecoveryUrl] = useState<string | null | undefined>(undefined);
   const [ready, setReady] = useState(false);
   const [done, setDone] = useState(false);
@@ -35,6 +37,20 @@ export default function ResetPasswordScreen() {
   const { colors } = useThemePreference();
 
   useEffect(() => {
+    if (!viaCode) return;
+    let active = true;
+    void hasSession().then((signedIn) => {
+      if (!active) return;
+      setReady(signedIn);
+      setError(signedIn ? null : t('resetPassword.openLink'));
+    });
+    return () => {
+      active = false;
+    };
+  }, [viaCode, t]);
+
+  useEffect(() => {
+    if (viaCode) return;
     if (linkingUrl) {
       setRecoveryUrl(linkingUrl);
       return;
@@ -53,10 +69,10 @@ export default function ResetPasswordScreen() {
       active = false;
       clearTimeout(timer);
     };
-  }, [linkingUrl]);
+  }, [linkingUrl, viaCode]);
 
   useEffect(() => {
-    if (recoveryUrl === undefined) return;
+    if (viaCode || recoveryUrl === undefined) return;
 
     if (!recoveryUrl) {
       setReady(false);
@@ -86,7 +102,7 @@ export default function ResetPasswordScreen() {
     return () => {
       active = false;
     };
-  }, [recoveryUrl, t]);
+  }, [recoveryUrl, viaCode, t]);
 
   useEffect(() => {
     if (error) announce(error);
