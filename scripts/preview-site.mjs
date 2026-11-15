@@ -1,4 +1,4 @@
-// Serves the static site (landing page with guides, legal pages) at http://localhost:8090,
+// Serves the static site (landing page, guide pages, legal pages) at http://localhost:8090,
 // rebuilding the landing page on every request so edits to landing/ and content/ show
 // up on refresh (restart after changing scripts/site-pages.mjs). Uses .env for Supabase,
 // so the support form sends real messages; page-view tracking is off on localhost.
@@ -7,7 +7,7 @@ import { readFileSync } from 'node:fs';
 import { createServer } from 'node:http';
 import { join } from 'node:path';
 
-import { buildLanding, fillSupabaseConfig } from './site-pages.mjs';
+import { buildGuidePage, buildLanding, buildSitemap, fillSupabaseConfig, loadGuides } from './site-pages.mjs';
 
 const root = join(import.meta.dirname, '..');
 const port = Number(process.env.PORT ?? 8090);
@@ -26,7 +26,6 @@ const files = {
   '/favicon.png': ['assets/images/favicon.png', 'image/png'],
   '/icon.png': ['assets/images/icon.png', 'image/png'],
   '/robots.txt': ['public/robots.txt', 'text/plain; charset=utf-8'],
-  '/sitemap.xml': ['public/sitemap.xml', 'application/xml'],
   '/privacy.html': ['legal/privacy.html', html],
   '/terms.html': ['legal/terms.html', html],
   '/delete-account.html': ['legal/delete-account.html', html],
@@ -42,6 +41,18 @@ function render(path) {
       type: html,
       body: fillSupabaseConfig(landing, process.env.EXPO_PUBLIC_SUPABASE_URL, process.env.EXPO_PUBLIC_SUPABASE_KEY),
     };
+  }
+  if (path === '/sitemap.xml') {
+    const sitemap = readFileSync(join(root, 'public/sitemap.xml'), 'utf8');
+    return { type: 'application/xml', body: buildSitemap(sitemap, loadGuides(join(root, 'content'))) };
+  }
+  const guidePage = /^\/guides\/([a-z0-9-]+)\/$/.exec(path);
+  if (guidePage) {
+    const guides = loadGuides(join(root, 'content'));
+    const guide = guides.find((g) => g.slug === guidePage[1]);
+    if (!guide) return null;
+    const template = readFileSync(join(root, 'landing/guide.html'), 'utf8');
+    return { type: html, body: buildGuidePage(template, guide, guides) };
   }
   if (!files[path]) return null;
   const [file, type] = files[path];

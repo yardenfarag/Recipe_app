@@ -510,7 +510,7 @@ footer button:hover {
   dialog.support[open] {
     animation: none;
   }
-  .guide summary::after {
+  a.guide::after {
     transition: none;
   }
 }
@@ -644,60 +644,108 @@ table.compare {
   }
 }
 
-/* Guides: closed cards that open into the full article. */
+/* Guides: a card per guide on the landing page, each linking to its own page. */
 .guides {
   max-width: 760px;
   margin: 32px auto 0;
   display: grid;
   gap: 12px;
 }
-.guide summary {
-  cursor: pointer;
-  list-style: none;
-  padding: 22px 56px 22px 22px;
+a.guide {
+  display: block;
   position: relative;
+  padding: 22px 56px 22px 22px;
+  text-decoration: none;
 }
-.guide summary::-webkit-details-marker {
-  display: none;
-}
-.guide summary::after {
-  content: "+";
+a.guide::after {
+  content: "→";
   position: absolute;
-  top: 18px;
+  top: 20px;
   right: 22px;
-  font-size: 26px;
+  font-size: 22px;
   color: var(--pink-bright);
   transition: transform 0.3s ease;
 }
-.guide[open] summary::after {
-  transform: rotate(45deg);
+a.guide:hover::after {
+  transform: translateX(4px);
 }
-.guide summary h3 {
+a.guide h3 {
   margin: 0;
   font-size: 19px;
 }
-.guide summary p {
+a.guide p {
   margin: 6px 0 0;
   font-size: 15px;
   line-height: 22px;
   color: var(--muted);
 }
-.guide .prose {
-  padding: 0 22px 24px;
+
+/* A guide's own page (landing/guide.html). */
+.home-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  text-decoration: none;
+}
+.article {
+  max-width: 760px;
+  margin: 0 auto;
+}
+.crumbs {
+  margin: 40px 0 0;
+  font-size: 15px;
+  font-weight: 700;
+}
+.crumbs a {
+  color: var(--pink-bright);
+  text-decoration: none;
+}
+.crumbs a::before {
+  content: "← ";
+}
+.article .lede {
+  margin: 18px 0 0;
+  max-width: none;
+}
+.updated {
+  margin: 12px 0 0;
+  font-size: 14px;
+  color: var(--muted);
+}
+.article .prose {
+  margin-top: 8px;
+  padding-top: 8px;
   border-top: 1px solid var(--line);
 }
+.more-guides {
+  max-width: 760px;
+  margin: 72px auto 0;
+  display: grid;
+  gap: 10px;
+}
+.more-guides h2 {
+  margin: 0 0 4px;
+  text-align: left;
+  font-size: 20px;
+}
+.more-guides a {
+  color: var(--pink-bright);
+}
+
 .prose {
   font-size: 16px;
   line-height: 26px;
 }
-.prose h4 {
-  margin: 32px 0 0;
-  font-size: 20px;
-  letter-spacing: -0.3px;
+.prose h2 {
+  margin: 36px 0 0;
+  text-align: left;
+  font-size: 24px;
+  line-height: 1.25;
+  letter-spacing: -0.4px;
 }
-.prose h5 {
-  margin: 24px 0 0;
-  font-size: 17px;
+.prose h3 {
+  margin: 28px 0 0;
+  font-size: 19px;
 }
 .prose p,
 .prose ul,

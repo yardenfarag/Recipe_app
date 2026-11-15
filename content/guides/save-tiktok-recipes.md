@@ -2,6 +2,7 @@
 title: How to save a recipe from TikTok
 description: Four ways to save a recipe from a TikTok video, from TikTok Favorites to turning the video into a written recipe with ingredients, steps, and a shopping list.
 order: 1
+updated: 2026-10-21
 ---
 
 You found the perfect pasta on TikTok. Two weeks later you want to cook it, and it is gone: buried in your likes, or the caption just says "recipe in bio."
@@ -74,4 +75,4 @@ That usually means the recipe is on their blog. Open the link in their bio, copy
 
 ### Does it work for Instagram and YouTube?
 
-Yes. The same steps work for Instagram Reels and YouTube videos. See [how to organize your Instagram saved recipes](#organize-instagram-saved-recipes).
+Yes. The same steps work for Instagram Reels and YouTube videos. See [how to organize your Instagram saved recipes](/guides/organize-instagram-saved-recipes/).
