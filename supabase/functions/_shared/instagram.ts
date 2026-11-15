@@ -6,7 +6,7 @@ import {
 } from './platform.ts';
 import { EMPTY_PLATFORM_META, type PlatformMeta, type PostComment } from './platformMeta.ts';
 import { scrapeCreatorsGet } from './scrapecreators.ts';
-import { parseDurationMilliseconds, parseDurationSeconds } from './videoLimits.ts';
+import { parseDurationMilliseconds, parseDurationSeconds, wantsSmallestVideo } from './videoLimits.ts';
 
 const MAX_COMMENTS = 10;
 
@@ -88,8 +88,8 @@ export async function fetchInstagramMeta(url: string): Promise<PlatformMeta> {
   }
 
   const description = extractInstagramCaption(media);
-  const videoUrl = extractInstagramVideoUrl(media);
   const durationSeconds = extractInstagramDurationSeconds(media, response);
+  const videoUrl = extractInstagramVideoUrl(media, durationSeconds);
   console.log('[instagram] fetchMeta done', {
     fetchUrl,
     ownerUsername,
@@ -369,7 +369,33 @@ function extractInstagramDurationFromEnvelope(
   return undefined;
 }
 
-function extractInstagramVideoUrl(media: Record<string, unknown>): string | undefined {
+/** The URL of the lowest-resolution entry in `video_versions`, if any. */
+export function pickSmallestInstagramVideo(versions: unknown): string | undefined {
+  if (!Array.isArray(versions)) return undefined;
+  let best: { url: string; pixels: number } | undefined;
+  for (const version of versions) {
+    if (!version || typeof version !== 'object') continue;
+    const { url, width, height } = version as { url?: unknown; width?: unknown; height?: unknown };
+    if (typeof url !== 'string' || !url) continue;
+    const pixels =
+      typeof width === 'number' && typeof height === 'number' && width > 0 && height > 0
+        ? width * height
+        : Number.POSITIVE_INFINITY;
+    if (!best || pixels < best.pixels) best = { url, pixels };
+  }
+  return best?.url;
+}
+
+export function extractInstagramVideoUrl(
+  media: Record<string, unknown>,
+  durationSeconds?: number,
+): string | undefined {
+  // Long videos: the smallest quality, so more of them fit under the inline video cap.
+  if (wantsSmallestVideo(durationSeconds)) {
+    const smallest = pickSmallestInstagramVideo(media.video_versions);
+    if (smallest) return smallest;
+  }
+
   const direct = readString(media, 'video_url');
   if (direct) return direct;
 

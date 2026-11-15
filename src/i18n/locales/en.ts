@@ -651,7 +651,7 @@ export default {
     "photoHint": "Cookbook page, handwritten card, or a screenshot of a recipe.",
     "photoTooLarge": "That photo is too large. Try a closer crop or a smaller image.",
     "genericError": "Something went wrong. Please try again.",
-    "videoTooLong": "This video is too long to analyze. Try a clip under 3 minutes, or one with the recipe in the caption.",
+    "videoTooLong": "This video is too long to analyze. Try a clip under 12 minutes, or one with the recipe in the caption.",
     "comingSoon": "That platform is coming soon.",
     "notFound": "Couldn’t find a recipe in this link. Try a different one.",
     "statusReadingPhoto": "Reading the photo…",
