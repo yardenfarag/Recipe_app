@@ -1,0 +1,222 @@
+{
+  "lang": {
+    "menuLabel": "Language",
+    "banner": "Read this page in English",
+    "dismiss": "Close"
+  },
+  "meta": {
+    "title": "Pinch: Recipe Library | Save Recipes from TikTok, Instagram & YouTube",
+    "description": "Pinch is a recipe keeper app that turns TikTok, Instagram, and YouTube cooking videos into written recipes, with ingredients, steps, and a shopping list. It reads the whole video, not just the caption.",
+    "ogDescription": "Turn a cooking video into ingredients, steps, and a shopping list.",
+    "ogImageAlt": "Pinch: a TikTok pasta video turned into a saved recipe card. Saw it on TikTok? Now it's dinner.",
+    "appDescription": "Pinch is a recipe keeper app that turns TikTok, Instagram, and YouTube cooking videos into written recipes, with ingredients, steps, and a shopping list.",
+    "disambiguation": "The recipe app at pinch-app.io that turns TikTok, Instagram, and YouTube cooking videos into written recipes. Listed as Pinch: Recipe Library on the App Store and Google Play. Not related to other apps or sites named Pinch."
+  },
+  "stores": {
+    "appStore": "Download on the App Store",
+    "googlePlay": "Get it on Google Play",
+    "web": "Continue on the web"
+  },
+  "hero": {
+    "tagline": "See it. Snap it. Cook it.",
+    "title": "Save recipes from <span>TikTok, Instagram &amp; YouTube</span>",
+    "lede": "Turn any cooking video into a recipe you can actually cook from.",
+    "ledeMore": "Ingredients, steps, and a shopping list, all in one place.",
+    "trustLabel": "Why Pinch",
+    "trust": ["10 free recipes every month", "No subscription", "iPhone, Android and any browser"],
+    "shotAlt": "A recipe saved in Pinch: lemon garlic pasta, with its source video, servings, and ingredients."
+  },
+  "features": {
+    "title": "A recipe organizer for the videos you cook from",
+    "sub": "The recipe, the list, and the video, kept in one kitchen.",
+    "items": [
+      {
+        "title": "Save TikTok and Instagram recipes",
+        "text": "Share a TikTok or an Instagram Reel to Pinch, or paste the link yourself."
+      },
+      {
+        "title": "YouTube video to recipe",
+        "text": "Get the ingredients and steps written out. No more pausing and rewinding."
+      },
+      {
+        "title": "The whole recipe, every time",
+        "text": "Even when the amounts are only said out loud or flashed on screen, Pinch writes them down."
+      },
+      {
+        "title": "Cook along",
+        "text": "Keep the source video beside the steps, or follow a step-by-step cook mode with timers."
+      },
+      {
+        "title": "A shopping list that knows your pantry",
+        "text": "Ingredients from several recipes stack into one line, grouped by aisle. Staples you always have stay off."
+      },
+      {
+        "title": "What's in the fridge?",
+        "text": "Snap your fridge and Pinch ranks the recipes you already saved by what you have."
+      },
+      {
+        "title": "Make it yours",
+        "text": "Remix any recipe (healthier, vegetarian, gluten-free, and more), swap an ingredient, scale servings, or translate it."
+      },
+      {
+        "title": "Websites and cookbooks too",
+        "text": "Paste a recipe website link, or snap a cookbook page or a handwritten card."
+      },
+      {
+        "title": "Your recipe library",
+        "text": "Keep every saved recipe in one place and group them for dinner, baking, or easy weeknights."
+      }
+    ]
+  },
+  "how": {
+    "title": "How to save a recipe from a video",
+    "sub": "From a video in your feed to a list in your hand.",
+    "steps": [
+      {
+        "title": "Share the video",
+        "text": "Tap Share on a TikTok, Instagram Reel, or YouTube video and pick Pinch. Or copy the link and paste it in."
+      },
+      {
+        "title": "Get the recipe",
+        "text": "Pinch's AI writes out the ingredients and steps, even the ones only said out loud or shown on screen."
+      },
+      {
+        "title": "Shop the list",
+        "text": "The ingredients go on one shopping list, grouped by aisle. Check them off at the store."
+      }
+    ],
+    "mock": {
+      "share": "Share",
+      "copyLink": "Copy link",
+      "messages": "Messages",
+      "recipeTitle": "Creamy tomato pasta",
+      "ingredients": "Ingredients",
+      "steps": "Steps",
+      "firstStep": "1. Boil the pasta…",
+      "rigatoni": "200 g rigatoni",
+      "garlic": "2 cloves garlic",
+      "onion": "1 onion",
+      "produce": "Produce",
+      "pastaGrains": "Pasta & grains"
+    }
+  },
+  "compare": {
+    "title": "How Pinch compares",
+    "sub": "Built for the recipes that live in videos.",
+    "feature": "Feature",
+    "rows": [
+      "Save from TikTok, Instagram & YouTube",
+      "Reads the video itself: speech and on-screen text",
+      "Scan cookbook pages and handwritten cards",
+      "Shopping list that merges ingredients and sorts by aisle",
+      "Translate a recipe",
+      "Remix with AI: healthier, vegetarian, ingredient swaps",
+      "Recipes from a photo of your fridge",
+      "Cooking Hub: browse recipes other cooks saved"
+    ],
+    "platformsLabel": "Platforms",
+    "platforms": {
+      "pinch": "iPhone, Android, web",
+      "osta": "iPhone, Android, Mac",
+      "paprika": "iPhone, Android, Mac, Windows",
+      "mela": "iPhone, Mac",
+      "recime": "iPhone, Android, web",
+      "samsung": "iPhone, Android, web"
+    },
+    "priceLabel": "Price",
+    "prices": {
+      "pinch": "Free, 10 recipes a month. Extra credits, no subscription",
+      "osta": "Free with ads, 5 imports a week. $49.99–59.99/yr",
+      "paprika": "$4.99 one‑time",
+      "mela": "$6.99 one‑time",
+      "recime": "Free, 5 imports a week. $59.99/yr",
+      "samsung": "Free. AI features $59.99/yr"
+    },
+    "footnote": "✓ Yes · ✗ No · – The app's maker doesn't say. * Paprika 3. The Paprika 4 beta adds these, as part of a subscription. Osta's photo scanning, and Samsung Food's AI remix and fridge photo, need their paid plans. Prices are in US dollars. Based on each app's website, help pages, and App Store listing, checked October 2026."
+  },
+  "guides": {
+    "title": "Recipe guides",
+    "sub": "Save, organize, and shop for the recipes in your feed.",
+    "updated": "Updated {date}",
+    "more": "More recipe guides",
+    "ctaTitle": "Save your next recipe with Pinch",
+    "ctaSub": "10 free recipe credits every month. No subscription, and extra credits never expire.",
+    "homeLabel": "Pinch: Recipe Library home"
+  },
+  "faq": {
+    "title": "Frequently asked questions",
+    "items": [
+      {
+        "q": "What does Pinch do?",
+        "a": "Pinch reads a cooking video from TikTok, Instagram, or YouTube and turns it into a written recipe: ingredients, steps, and a shopping list you can check off at the store."
+      },
+      {
+        "q": "Is this the same as other apps called Pinch?",
+        "a": "No. This is Pinch: Recipe Library, the app at pinch-app.io, on the App Store and Google Play. It isn't related to other apps or sites with Pinch in the name, such as getpinch.io or the Pinch It! Recipe Box app."
+      },
+      {
+        "q": "Can Pinch turn a YouTube video into a recipe?",
+        "a": "Yes. Paste a YouTube link and Pinch's AI recipe extractor writes out the ingredients and steps, so you don't have to pause and rewind while you cook."
+      },
+      {
+        "q": "How do I save a recipe from TikTok or Instagram?",
+        "a": "Tap Share on the video and pick Pinch, or copy the link and paste it into Pinch. Preview the recipe, then tap save to keep it in your library."
+      },
+      {
+        "q": "Is Pinch free?",
+        "a": "Yes. A free account includes 10 recipe credits every month. If you need more, you can buy recipe credits in the app. They never expire, and there's no subscription."
+      },
+      {
+        "q": "Can I use Pinch without the app?",
+        "a": "Yes. Pinch also runs in your browser at [pinch-app.io/app](/app/). Your library syncs when you sign in with the same account."
+      },
+      {
+        "q": "Can I move my recipes from another app?",
+        "a": "Yes, one recipe at a time. Paste the original link, from a website or a video, and Pinch saves it to your library."
+      },
+      {
+        "q": "Which languages does Pinch support?",
+        "a": "Pinch is available in English, Spanish, Hebrew, Arabic, and Russian."
+      },
+      {
+        "q": "Does Pinch sell my data?",
+        "a": "No. Pinch doesn't sell your personal information. The services that help run Pinch, like the AI that writes out your recipes, only process it to operate Pinch.",
+        "more": "Read the [privacy policy](/privacy.html)."
+      }
+    ]
+  },
+  "cta": {
+    "title": "Your next dinner is already in your feed.",
+    "sub": "10 free recipe credits every month. Extra credits never expire."
+  },
+  "footer": {
+    "home": "Home",
+    "features": "Features",
+    "how": "How it works",
+    "compare": "Compare apps",
+    "faq": "FAQ",
+    "iphone": "Pinch for iPhone",
+    "android": "Pinch for Android",
+    "web": "Pinch on the web",
+    "guides": "Guides",
+    "helpLegal": "Help & legal",
+    "support": "Support",
+    "privacy": "Privacy",
+    "terms": "Terms",
+    "deleteAccount": "Delete your account"
+  },
+  "support": {
+    "title": "How can we help?",
+    "intro": "A question, a bug, or an idea. We read every message.",
+    "message": "Message",
+    "email": "Your email (optional, so we can reply)",
+    "cancel": "Cancel",
+    "send": "Send",
+    "tooShort": "Write a few words first.",
+    "badEmail": "That email doesn’t look right.",
+    "sending": "Sending…",
+    "thanksReply": "Thanks! We’ll reply by email.",
+    "thanks": "Thanks! We got your message.",
+    "failed": "Couldn’t send. Try again, or email yarden.farag@gmail.com."
+  }
+}

@@ -1,13 +1,13 @@
 // Serves the static site (landing page, guide pages, legal pages) at http://localhost:8090,
-// rebuilding the landing page on every request so edits to landing/ and content/ show
-// up on refresh (restart after changing scripts/site-pages.mjs). Uses .env for Supabase,
-// so the support form sends real messages; page-view tracking is off on localhost.
+// in every language (/es/, /he/…), rebuilding the pages on every request so edits to landing/
+// and content/ show up on refresh (restart after changing scripts/site-pages.mjs). Uses .env
+// for Supabase, so the support form sends real messages; page-view tracking is off on localhost.
 // /app/ links go to the Expo dev server on :8081.
 import { readFileSync } from 'node:fs';
 import { createServer } from 'node:http';
 import { join } from 'node:path';
 
-import { buildGuidePage, buildLanding, buildSitemap, fillSupabaseConfig, loadGuides } from './site-pages.mjs';
+import { buildSitemap, buildSitePages, fillSupabaseConfig, loadSite } from './site-pages.mjs';
 
 const root = join(import.meta.dirname, '..');
 const port = Number(process.env.PORT ?? 8090);
@@ -35,28 +35,25 @@ const files = {
 };
 
 function render(path) {
-  if (path === '/' || path === '/index.html') {
-    const landing = buildLanding(readFileSync(join(root, 'landing/index.html'), 'utf8'), join(root, 'content'));
-    return {
-      type: html,
-      body: fillSupabaseConfig(landing, process.env.EXPO_PUBLIC_SUPABASE_URL, process.env.EXPO_PUBLIC_SUPABASE_KEY),
-    };
+  if (files[path]) {
+    const [file, type] = files[path];
+    return { type, body: readFileSync(join(root, file)) };
   }
+  const site = loadSite(root);
   if (path === '/sitemap.xml') {
     const sitemap = readFileSync(join(root, 'public/sitemap.xml'), 'utf8');
-    return { type: 'application/xml', body: buildSitemap(sitemap, loadGuides(join(root, 'content'))) };
+    return { type: 'application/xml', body: buildSitemap(sitemap, site) };
   }
-  const guidePage = /^\/guides\/([a-z0-9-]+)\/$/.exec(path);
-  if (guidePage) {
-    const guides = loadGuides(join(root, 'content'));
-    const guide = guides.find((g) => g.slug === guidePage[1]);
-    if (!guide) return null;
-    const template = readFileSync(join(root, 'landing/guide.html'), 'utf8');
-    return { type: html, body: buildGuidePage(template, guide, guides) };
-  }
-  if (!files[path]) return null;
-  const [file, type] = files[path];
-  return { type, body: readFileSync(join(root, file)) };
+  const pages = buildSitePages(site, {
+    landingHtml: readFileSync(join(root, 'landing/index.html'), 'utf8'),
+    guideHtml: readFileSync(join(root, 'landing/guide.html'), 'utf8'),
+  });
+  const page = pages.find((p) => p.path === path.replace(/index\.html$/, ''));
+  if (!page) return null;
+  return {
+    type: html,
+    body: fillSupabaseConfig(page.html, process.env.EXPO_PUBLIC_SUPABASE_URL, process.env.EXPO_PUBLIC_SUPABASE_KEY),
+  };
 }
 
 createServer((req, res) => {

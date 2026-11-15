@@ -1,5 +1,5 @@
 <!doctype html>
-<html lang="en">
+<html lang="{{LANG}}" dir="{{DIR}}">
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
@@ -7,6 +7,7 @@
     <title>{{TITLE}} | Pinch: Recipe Library</title>
     <meta name="description" content="{{DESCRIPTION}}" />
     <link rel="canonical" href="{{URL}}" />
+    {{ALTERNATES}}
     <link rel="icon" type="image/png" href="/favicon.png" />
     <link rel="apple-touch-icon" href="/icon.png" />
     <link rel="manifest" href="/manifest.json" />
@@ -30,8 +31,9 @@
     <link rel="stylesheet" href="/site.css" />
   </head>
   <body>
+    {{LANG_BANNER}}
     <header class="top wrap">
-      <a class="home-link" href="/" aria-label="Pinch: Recipe Library home">
+      <a class="home-link" href="{{HOME}}" aria-label="{{t:guides.homeLabel}}">
         <svg viewBox="0 0 24 24" aria-hidden="true">
           <path
             d="M12,3A9,9 0 0,0 3,12A9,9 0 0,0 12,21A9,9 0 0,0 21,12C21,11.5 20.96,11 20.87,10.5C20.6,10 20,10 20,10H18V9C18,8 17,8 17,8H15V7C15,6 14,6 14,6H13V4C13,3 12,3 12,3M9.5,6A1.5,1.5 0 0,1 11,7.5A1.5,1.5 0 0,1 9.5,9A1.5,1.5 0 0,1 8,7.5A1.5,1.5 0 0,1 9.5,6M6.5,10A1.5,1.5 0 0,1 8,11.5A1.5,1.5 0 0,1 6.5,13A1.5,1.5 0 0,1 5,11.5A1.5,1.5 0 0,1 6.5,10M11.5,11A1.5,1.5 0 0,1 13,12.5A1.5,1.5 0 0,1 11.5,14A1.5,1.5 0 0,1 10,12.5A1.5,1.5 0 0,1 11.5,11M16.5,13A1.5,1.5 0 0,1 18,14.5A1.5,1.5 0 0,1 16.5,16H16.5A1.5,1.5 0 0,1 15,14.5H15A1.5,1.5 0 0,1 16.5,13M11,16A1.5,1.5 0 0,1 12.5,17.5A1.5,1.5 0 0,1 11,19A1.5,1.5 0 0,1 9.5,17.5A1.5,1.5 0 0,1 11,16Z"
@@ -39,28 +41,27 @@
         </svg>
         Pinch
       </a>
+      {{LANG_MENU}}
     </header>
 
     <main class="wrap">
       <article class="article">
-        <p class="crumbs"><a href="/#guides">Recipe guides</a></p>
+        <p class="crumbs"><a href="{{HOME}}#guides">{{t:guides.title}}</a></p>
         <h1>{{TITLE}}</h1>
         <p class="lede">{{DESCRIPTION}}</p>
-        <p class="updated">Updated <time datetime="{{UPDATED}}">{{UPDATED_LABEL}}</time></p>
+        <p class="updated">{{UPDATED_LINE}}</p>
         <div class="prose">{{BODY}}</div>
       </article>
 
       <section class="cta" aria-labelledby="start">
-        <h2 id="start">Save your next recipe with Pinch</h2>
-        <p class="sub">
-          10 free recipe credits every month. No subscription, and extra credits never expire.
-        </p>
+        <h2 id="start">{{t:guides.ctaTitle}}</h2>
+        <p class="sub">{{t:guides.ctaSub}}</p>
         <div class="actions">
           <a
             class="btn btn-store btn-apple"
             data-track="app_store"
             href="https://apps.apple.com/us/app/pinch-recipe-library/id6796310453"
-            aria-label="Download on the App Store"
+            aria-label="{{t:stores.appStore}}"
           >
             <svg viewBox="0 0 24 24" aria-hidden="true">
               <path
@@ -72,7 +73,7 @@
             class="btn btn-store btn-play"
             data-track="play_store"
             href="https://play.google.com/store/apps/details?id=com.pinch.myapp"
-            aria-label="Get it on Google Play"
+            aria-label="{{t:stores.googlePlay}}"
           >
             <svg viewBox="0 0 24 24" aria-hidden="true">
               <path
@@ -80,12 +81,12 @@
               />
             </svg>
           </a>
-          <a class="btn btn-web" data-track="continue" href="/app/">Continue on the web</a>
+          <a class="btn btn-web" data-track="continue" href="/app/">{{t:stores.web}}</a>
         </div>
       </section>
 
       <nav class="more-guides" aria-labelledby="more-guides">
-        <h2 id="more-guides">More recipe guides</h2>
+        <h2 id="more-guides">{{t:guides.more}}</h2>
         {{MORE_GUIDES}}
       </nav>
     </main>
@@ -94,17 +95,17 @@
       <div class="footer-cols">
         <nav aria-labelledby="footer-product">
           <h2 id="footer-product">Pinch</h2>
-          <a href="/">Home</a>
-          <a href="/#faq">FAQ</a>
-          <a href="https://apps.apple.com/us/app/pinch-recipe-library/id6796310453"> Pinch for iPhone </a>
-          <a href="https://play.google.com/store/apps/details?id=com.pinch.myapp">Pinch for Android</a>
-          <a href="/app/">Pinch on the web</a>
+          <a href="{{HOME}}">{{t:footer.home}}</a>
+          <a href="{{HOME}}#faq">{{t:footer.faq}}</a>
+          <a href="https://apps.apple.com/us/app/pinch-recipe-library/id6796310453">{{t:footer.iphone}}</a>
+          <a href="https://play.google.com/store/apps/details?id=com.pinch.myapp">{{t:footer.android}}</a>
+          <a href="/app/">{{t:footer.web}}</a>
         </nav>
         <nav aria-labelledby="footer-help">
-          <h2 id="footer-help">Help &amp; legal</h2>
-          <a href="mailto:yarden.farag@gmail.com">Support</a>
-          <a href="/privacy.html">Privacy</a>
-          <a href="/terms.html">Terms</a>
+          <h2 id="footer-help">{{t:footer.helpLegal}}</h2>
+          <a href="mailto:yarden.farag@gmail.com">{{t:footer.support}}</a>
+          <a href="/privacy.html">{{t:footer.privacy}}</a>
+          <a href="/terms.html">{{t:footer.terms}}</a>
         </nav>
       </div>
       <p>© 2026 Pinch</p>
