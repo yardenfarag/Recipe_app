@@ -132,8 +132,9 @@ function AlertCard({ view, onAction, onClose }: PresenterProps) {
           <ScrollView bounces={false} contentContainerStyle={{ padding: 20 }} style={{ flexGrow: 0 }}>
             <MessageContent view={view} trackPrefix={TRACK} onAction={onAction} />
           </ScrollView>
+          {/* The close control's side is explicit: react-native-web turns `end` into `right` whatever the direction. */}
           {dismissible ? (
-            <View style={{ position: 'absolute', top: 12, end: 12 }}>
+            <View style={{ position: 'absolute', top: 12, ...(view.rtl ? { left: 12 } : { right: 12 }) }}>
               <CloseButton trackId={`${TRACK}.close`} onPress={onClose} size={36} />
             </View>
           ) : null}

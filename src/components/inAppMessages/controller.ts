@@ -216,8 +216,8 @@ export function createMessagesController(deps: ControllerDeps) {
       lastFetchAt = 0;
       inFlight = null;
       cancelPending();
-      active = null;
-      previewing = false;
+      // A dev sample opened from the URL is activated before the session resolves; the user change must not wipe it.
+      if (!previewing) active = null;
       emit();
     },
 

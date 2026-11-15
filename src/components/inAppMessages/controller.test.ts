@@ -321,6 +321,16 @@ describe('preview', () => {
     expect(t.active()).toBeNull();
     expect(t.recorded).toEqual([]);
   });
+
+  it('survives the session resolving after the sample opened (a sample opened from the URL)', () => {
+    const t = setup({ messages: [] });
+    t.controller.preview(message('sample'));
+    t.controller.setUser('u1');
+    expect(t.active()).toBe('sample');
+    t.controller.dismiss('sample');
+    expect(t.active()).toBeNull();
+    expect(t.recorded).toEqual([]);
+  });
 });
 
 describe('mergeReceipt', () => {

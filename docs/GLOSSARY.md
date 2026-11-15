@@ -109,3 +109,33 @@ _Avoid_: Error screen, unsupported error
 **Task model**:
 The AI model a task `kind` runs on, set in `TASK_MODELS` (`supabase/functions/_shared/llmClient.ts`) with a fallback and a reasoning effort. Override one task with the `OPENROUTER_MODEL_<KIND>` secret (ADR 015).
 _Avoid_: Tier (the old fast/standard split)
+
+## In-app messages
+
+**In-app message**:
+A popup, banner or full-screen notice an admin sends to signed-in users from Settings → Admin → Messages, with no app release (ADR 023). It targets users by ID, plan, platform, language and app version.
+_Avoid_: Notification (that is a push notification, which this is not), announcement (one kind of message), popup (one way of showing it)
+
+**Way of showing** (`presentation`):
+How a message appears: `alert` (the system alert on iOS and Android), `sheet` (a page sheet), `banner` (a strip at the top or bottom of the tabs) or `fullscreen`. On web the alert is a centred card and the banner sits in the content column beside the sidebar.
+_Avoid_: Style, type, layout
+
+**Tone**:
+The mood of a message: info, success, warning or critical. It sets the icon colour and the main button colour.
+_Avoid_: Severity, level
+
+**Required message**:
+A message that cannot be closed. It is always full screen, always has a store button, ignores how often and how many times, and comes back until the user no longer matches its targeting, which is what an update does.
+_Avoid_: Forced update, blocking message
+
+**Update prompt**:
+A message with a store button and a "below version X" targeting rule (`maxAppVersion`, exclusive), so only users on older versions see it. A required message is the strict form.
+_Avoid_: Update banner (a banner is one way of showing it)
+
+**Receipt**:
+The record of one user and one message: how many times it was seen, when it was dismissed, and when and which button was tapped. The admin screen's Seen, Dismissed and Clicked counts come from receipts.
+_Avoid_: Impression, read state
+
+**Send to me only**:
+The composer's test button. It saves a separate live copy of the message that targets only the admin's own account, with no start or end time, so the admin sees it first. Stop it from the list afterwards.
+_Avoid_: Preview (the preview in the composer shows words only, not the real thing)

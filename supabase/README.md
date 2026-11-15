@@ -97,6 +97,29 @@ exists (or create the equivalent schedule) and that a stale test reservation is
 refunded. Repository deploy commands do not by themselves prove the scheduler is
 active.
 
+### In-app messages (PIN-106, migration `20261116120000`)
+
+Admins send popups, announcements and update prompts from Settings → Admin → Messages (ADR 023). It needs one migration and no Edge Function and no secret:
+
+```bash
+npx supabase db push
+```
+
+The migration creates `in_app_messages` and `in_app_message_receipts` (row level security on, every grant revoked), the functions `get_in_app_messages`, `record_in_app_message_event` and `admin_list_in_app_messages` / `admin_save_in_app_message` / `admin_set_in_app_message_status` / `admin_delete_in_app_message`, and a storage policy that lets only admins write under `in-app-messages/` in the existing `recipe-thumbnails` bucket (no new bucket). Or paste the file into the SQL Editor and run it.
+
+Deploy it by hand before releasing a build that has the feature: an app without the migration simply never gets a message (a failed fetch is silent). After the push, check in the SQL Editor:
+
+```sql
+select proname from pg_proc where proname like '%in_app_message%';
+-- expect the six functions above (plus some small validation helpers, `in_app_message_*_valid` and `in_app_message_targets`)
+select tablename, rowsecurity from pg_tables where tablename like 'in_app_message%';
+-- expect rowsecurity = true for both
+```
+
+Then sign in as an admin, open Settings → Admin → Messages and use "Send to me only" to see a message on your own account before sending it to anyone. Message images upload to `recipe-thumbnails/in-app-messages/`; deleting a message leaves its image in storage.
+
+Local test: `npx supabase test db supabase/tests/in_app_messages.sql` runs the pgTAP file (60 assertions).
+
 ## Verifying schema
 
 Run in SQL Editor:

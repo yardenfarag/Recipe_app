@@ -31,13 +31,13 @@ function BannerView({ message, position }: { message: InAppMessage; position: 't
       </View>
     );
   }
-  // In the layout, above the tabs (and, on wide web, above the sidebar and content), so it pushes the screen down.
+  // In the layout, above the tabs (on wide web, in the content column beside the sidebar), so it pushes the screen down.
   return <BannerPresenter view={view} onAction={onAction} onClose={onClose} edge="top" inset={insets.top} />;
 }
 
 /**
  * Where a `banner` message appears. Mount `position="top"` above the tabs and
- * `position="bottom"` over them, in `src/app/(tabs)/_layout.tsx`. Each shows
+ * `position="bottom"` over them, in `src/components/app-tabs.tsx` (on wide web inside the content column, beside the sidebar). Each shows
  * only the message whose `bannerPosition` matches (default top).
  */
 export function InAppMessageBanner({ position }: { position: 'top' | 'bottom' }) {

@@ -4,6 +4,7 @@ import { useTranslation } from 'react-i18next';
 import { View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
+import { InAppMessageBanner } from '@/components/inAppMessages/InAppMessageBanner';
 import { FirstRunWalkthrough } from '@/components/onboarding/FirstRunWalkthrough';
 import { WebSidebar } from '@/components/WebSidebar';
 import { useBreakpoint } from '@/hooks/useBreakpoint';
@@ -135,10 +136,20 @@ export default function AppTabs() {
     </Tabs>
   );
 
+  // In-app message banners: the top one pushes the screen down, the bottom one floats above the tab bar.
+  // On wide web they sit in the content column, beside WebSidebar.
+  const withBanners = (
+    <View style={{ flex: 1 }}>
+      <InAppMessageBanner position="top" />
+      <View style={{ flex: 1 }}>{tabs}</View>
+      <InAppMessageBanner position="bottom" />
+    </View>
+  );
+
   if (!isWide) {
     return (
       <>
-        {tabs}
+        {withBanners}
         {showWalkthrough ? (
           <FirstRunWalkthrough
             tabBarHeight={TAB_BAR_CONTENT_HEIGHT + tabBarPaddingBottom}
@@ -153,7 +164,7 @@ export default function AppTabs() {
   return (
     <View style={{ flex: 1, flexDirection: 'row', backgroundColor: colors.background }}>
       <WebSidebar />
-      <View style={{ flex: 1 }}>{tabs}</View>
+      {withBanners}
     </View>
   );
 }

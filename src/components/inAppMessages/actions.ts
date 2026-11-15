@@ -1,8 +1,9 @@
 import type { Href } from 'expo-router';
 import { router } from 'expo-router';
 import * as WebBrowser from 'expo-web-browser';
+import { Platform } from 'react-native';
 
-import { openAppStore } from '@/lib/appStore';
+import { openAppStore, storeUrlFor } from '@/lib/appStore';
 import type { ButtonAction } from '@/lib/inAppMessages';
 
 /** A web address the in-app browser may open. The server checks too; this is the app's own guard. */
@@ -15,6 +16,25 @@ export function isSafeRoute(href: string): boolean {
   return /^\/([^/\s]\S*)?$/.test(href);
 }
 
+/**
+ * The store page. On web it opens in a new tab and leaves the app where it
+ * is (`Linking.openURL` on web would navigate this tab away); on iOS and
+ * Android it is the usual store link. Call it straight from the tap handler.
+ */
+export function openStorePage(
+  os: typeof Platform.OS = Platform.OS,
+  openTab: (url: string) => void = (url) => {
+    window.open(url, '_blank', 'noopener');
+  },
+  userAgent: string = typeof navigator === 'undefined' ? '' : (navigator.userAgent ?? ''),
+): unknown {
+  if (os === 'web') {
+    openTab(storeUrlFor('web', userAgent));
+    return undefined;
+  }
+  return openAppStore();
+}
+
 export type ActionDeps = {
   openBrowser: (url: string) => unknown;
   navigate: (href: string) => void;
@@ -24,7 +44,7 @@ export type ActionDeps = {
 export const defaultActionDeps: ActionDeps = {
   openBrowser: (url) => WebBrowser.openBrowserAsync(url),
   navigate: (href) => router.push(href as Href),
-  openStore: () => openAppStore(),
+  openStore: () => openStorePage(),
 };
 
 /**

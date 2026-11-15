@@ -1,10 +1,15 @@
 import { describe, expect, it, vi } from 'vitest';
 
-import { isSafeRoute, isSafeWebUrl, runButtonAction, type ActionDeps } from './actions';
+import { openAppStore } from '@/lib/appStore';
+
+import { isSafeRoute, isSafeWebUrl, openStorePage, runButtonAction, type ActionDeps } from './actions';
 
 vi.mock('expo-router', () => ({ router: { push: vi.fn() } }));
 vi.mock('expo-web-browser', () => ({ openBrowserAsync: vi.fn() }));
-vi.mock('@/lib/appStore', () => ({ openAppStore: vi.fn() }));
+vi.mock('@/lib/appStore', async (importOriginal) => ({
+  ...(await importOriginal<typeof import('@/lib/appStore')>()),
+  openAppStore: vi.fn(),
+}));
 
 
 function deps(): ActionDeps & { calls: string[] } {
@@ -80,5 +85,25 @@ describe('guards', () => {
     expect(isSafeRoute('/recipe/123')).toBe(true);
     expect(isSafeRoute('//x')).toBe(false);
     expect(isSafeRoute('x')).toBe(false);
+  });
+});
+
+describe('openStorePage', () => {
+  it('opens the store page that fits the browser in a new tab on web, without leaving the app', () => {
+    const opened: string[] = [];
+    openStorePage('web', (url) => opened.push(url), 'Mozilla/5.0 (X11; Linux x86_64)');
+    openStorePage('web', (url) => opened.push(url), 'Mozilla/5.0 (Linux; Android 14)');
+    expect(opened).toEqual([
+      'https://apps.apple.com/us/app/pinch-recipe-library/id6796310453',
+      'https://play.google.com/store/apps/details?id=com.pinch.myapp',
+    ]);
+    expect(openAppStore).not.toHaveBeenCalled();
+  });
+
+  it('uses the store link on iOS and Android', () => {
+    const opened: string[] = [];
+    openStorePage('ios', (url) => opened.push(url));
+    expect(opened).toEqual([]);
+    expect(openAppStore).toHaveBeenCalledTimes(1);
   });
 });
