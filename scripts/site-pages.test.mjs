@@ -15,6 +15,7 @@ import {
   guidePath,
   homePath,
   LANGUAGE_CHOICE_KEY,
+  OPTIONAL_STRINGS,
   loadGuides,
   loadSite,
   markdownToHtml,
@@ -430,6 +431,16 @@ describe('languages', () => {
     expect(buildLanding(landingSource, partial, code)).toContain(escapeHtml(site.strings.en.cta.title));
   });
 
+  it('drops a section subtitle a language leaves empty, instead of showing it in English', () => {
+    const [{ code }] = translated;
+    const how = { ...site.strings[code].how, sub: '' };
+    const partial = { ...site, strings: { ...site.strings, [code]: { ...site.strings[code], how } } };
+    const page = buildLanding(landingSource, partial, code);
+    const section = page.slice(page.indexOf('id="how"'), page.indexOf('class="steps"'));
+    expect(section).not.toContain('class="sub');
+    expect(page).not.toContain(escapeHtml(site.strings.en.how.sub));
+  });
+
   it('rejects a translation of a guide that does not exist in English', () => {
     expect(() => loadGuides(contentDir, 'xx')).toThrow(/not a site language/);
   });
@@ -446,7 +457,7 @@ describe('translations', () => {
     for (const path of englishPaths) {
       const source = stringAt(english, path);
       const value = stringAt(strings, path);
-      expect(value.trim(), path).not.toBe('');
+      if (!OPTIONAL_STRINGS.includes(path)) expect(value.trim(), path).not.toBe('');
       // Plain text everywhere but the hero title, which keeps its one highlighted <span>.
       if (path === 'hero.title') expect(value).toMatch(/^[^<>]*<span>[^<>]+<\/span>[^<>]*$/);
       else expect(value, path).not.toMatch(/[<>]|&[a-z]+;|&#/);

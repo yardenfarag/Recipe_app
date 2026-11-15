@@ -65,7 +65,10 @@ const GUIDE_PLACEHOLDERS = [
   'BODY',
   'MORE_GUIDES',
 ];
-const SUPPORT_TEXT_KEYS = ['tooShort', 'badEmail', 'sending', 'thanksReply', 'thanks', 'failed'];
+// Section subtitles a language may leave out ("") when no line reads well in it: the paragraph
+// is dropped, rather than shown in English.
+export const OPTIONAL_STRINGS = ['features.sub', 'how.sub', 'compare.sub', 'guides.sub'];
+const SUPPORT_TEXT_KEYS =['tooShort', 'badEmail', 'sending', 'thanksReply', 'thanks', 'failed'];
 
 const marked = new Marked();
 
@@ -482,6 +485,9 @@ function fill(templateHtml, file, placeholders, values, t) {
     if (!templateHtml.includes(`{{${name}}}`)) throw new Error(`${file} is missing {{${name}}}`);
   }
   return templateHtml
+    .replace(/\r?\n[ \t]*<p[^>]*>\{\{t:([\w.]+)\}\}<\/p>/g, (line, key) =>
+      OPTIONAL_STRINGS.includes(key) && t(key) === '' ? '' : line,
+    )
     .replace(/\{\{(t|h):([\w.]+)\}\}/g, (_, mode, key) => (mode === 't' ? escapeHtml(t(key)) : t(key)))
     .replace(/\{\{([A-Z_]+)\}\}/g, (placeholder, name) => values[name] ?? placeholder);
 }

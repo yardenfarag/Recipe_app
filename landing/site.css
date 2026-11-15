@@ -451,10 +451,15 @@ h2 {
 .mock-sheet {
   display: flex;
   justify-content: space-around;
+  gap: 8px;
   padding: 7px 4px;
   border-radius: 10px;
   background: var(--glass);
   color: var(--muted);
+}
+/* One line per option, like a real share sheet: a long label must not wrap into its neighbour. */
+.mock-sheet span {
+  white-space: nowrap;
 }
 .mock-pick {
   font-weight: 700;
