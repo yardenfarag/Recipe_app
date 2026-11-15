@@ -7,5 +7,9 @@
 [functions.revenuecat-webhook]
 verify_jwt = false
 
+# Paddle signs its deliveries (Paddle-Signature); it sends no Supabase JWT.
+[functions.paddle-webhook]
+verify_jwt = false
+
 [auth.email]
 enable_confirmations = false

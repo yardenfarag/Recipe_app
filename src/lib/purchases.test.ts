@@ -1,4 +1,4 @@
-import { describe, expect, it } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import {
   BEST_VALUE_PACK_ID,
@@ -28,11 +28,44 @@ describe('credit pack catalog', () => {
     expect(packs[1]?.storePackage).toBeUndefined();
   });
 
-  it('keeps credit purchases off the website', () => {
+  it('keeps credit purchases off the website until Paddle is configured', () => {
+    // Tests run without the EXPO_PUBLIC_PADDLE_* settings.
     expect(WEB_CREDIT_PURCHASES_ENABLED).toBe(false);
     expect(creditPurchasesOfferedOn('web')).toBe(false);
     expect(creditPurchasesOfferedOn('ios')).toBe(true);
     expect(creditPurchasesOfferedOn('android')).toBe(true);
+  });
+
+  describe('on the website, with Paddle set up', () => {
+    beforeEach(() => {
+      vi.resetModules();
+      vi.stubEnv('EXPO_PUBLIC_PADDLE_CLIENT_TOKEN', 'live_token');
+      vi.stubEnv('EXPO_PUBLIC_PADDLE_PRICE_10', 'pri_10');
+      vi.stubEnv('EXPO_PUBLIC_PADDLE_PRICE_30', 'pri_30');
+      vi.stubEnv('EXPO_PUBLIC_PADDLE_PRICE_100', 'pri_100');
+    });
+    afterEach(() => {
+      vi.unstubAllEnvs();
+    });
+
+    it('still says "buy in the app" while purchases are switched off', async () => {
+      vi.stubEnv('EXPO_PUBLIC_CREDIT_PURCHASES_ENABLED', 'false');
+      const purchases = await import('@/lib/purchases');
+      expect(purchases.creditPurchasesOfferedOn('web')).toBe(false);
+    });
+
+    it('sells packs once purchases are switched on', async () => {
+      vi.stubEnv('EXPO_PUBLIC_CREDIT_PURCHASES_ENABLED', 'true');
+      const purchases = await import('@/lib/purchases');
+      expect(purchases.creditPurchasesOfferedOn('web')).toBe(true);
+    });
+
+    it('stays off when a price id is missing', async () => {
+      vi.stubEnv('EXPO_PUBLIC_CREDIT_PURCHASES_ENABLED', 'true');
+      vi.stubEnv('EXPO_PUBLIC_PADDLE_PRICE_30', '');
+      const purchases = await import('@/lib/purchases');
+      expect(purchases.creditPurchasesOfferedOn('web')).toBe(false);
+    });
   });
 
   it('marks the 100-credit pack as best value', () => {

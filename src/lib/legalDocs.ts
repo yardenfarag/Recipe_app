@@ -95,6 +95,7 @@ const DOCS: Record<LegalDocId, LegalDoc> = {
           [strong('Apple / Google'), text(' — optional sign-in providers.')],
           [strong('YouTube Data API'), text(' — optional metadata for YouTube links.')],
           [strong('RevenueCat'), text(' — processes credit pack purchases made through Apple and Google; it receives your account id and purchase details.')],
+          [strong('Paddle'), text(' — sells credit packs bought on pinch-app.io as our reseller and merchant of record; it receives your account id, email, billing country and payment details.')],
         ],
       },
       {
@@ -189,15 +190,10 @@ const DOCS: Record<LegalDocId, LegalDoc> = {
           [text('Respect third-party platform terms when sharing content into Pinch.')],
         ],
       },
-      { kind: 'h2', text: 'Tokens & purchases' },
-      {
-        kind: 'p',
-        parts: [
-          text(
-            'Soft launch builds use free token allowances. Paid token packs are not yet available. Features labeled “coming soon” are not a commitment to ship on a specific date.',
-          ),
-        ],
-      },
+      { kind: 'h2', text: 'Credits & purchases' },
+      { kind: 'p', parts: [text('You get a free allowance of recipe credits each month. You can also buy one-time credit packs. Purchased credits don’t expire and have no cash value.')] },
+      { kind: 'p', parts: [text('In the iPhone and Android apps, Apple or Google processes the payment. On pinch-app.io, our order process is conducted by our online reseller Paddle.com. Paddle.com is the Merchant of Record for all our web orders and provides all customer service inquiries and handles returns.')] },
+      { kind: 'p', parts: [text('Refunds follow our Refund Policy. When a purchase is refunded or charged back, the credits from that pack are removed from your balance.')] },
       { kind: 'h2', text: 'Intellectual property' },
       {
         kind: 'p',
