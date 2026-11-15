@@ -601,6 +601,8 @@ export function presetNeeds(preset: PresetId): string | null {
 /**
  * A new live copy of the message for the admin's own device: targeted at their
  * user ID only, no start or end, and named so it is easy to find and stop.
+ * It shows on every launch: receipts are per user, not per device, so with
+ * "once" a copy seen on the web would never reach the admin's phone.
  */
 export function testDraft(form: MessageForm, adminUserId: string): AdminMessageDraft {
   const draft = draftFromForm({ ...form, id: undefined }, [adminUserId]);
@@ -610,6 +612,7 @@ export function testDraft(form: MessageForm, adminUserId: string): AdminMessageD
     name: `Test: ${draft.name.trim() || 'untitled'}`.slice(0, 120),
     startsAt: null,
     endsAt: null,
+    frequency: { type: 'every_launch' },
     targeting: { userIds: [adminUserId.toLowerCase()] },
   };
 }

@@ -19,6 +19,18 @@ export const inAppMessagesController = createMessagesController({
   recordEvent: recordInAppMessageEvent,
 });
 
+/** What the mounted `useInAppMessages` fetches with; null until it mounts with a signed-in user. */
+let currentParams: FetchParams | null = null;
+
+/**
+ * Fetch now, skipping the 30 s throttle. The admin screen calls it after a
+ * change, so a message sent to yourself shows on the device you sent it from
+ * without leaving the app and coming back.
+ */
+export function refreshInAppMessagesNow(): void {
+  if (currentParams) void inAppMessagesController.refresh(currentParams, { force: true });
+}
+
 /** The message on screen now, from anywhere. Read-only; use `useInAppMessages` to drive it. */
 export function useActiveInAppMessage(): InAppMessage | null {
   return useSyncExternalStore(
@@ -85,6 +97,7 @@ export function useInAppMessages(): InAppMessage | null {
 
   // Launch, sign-in and language change.
   useEffect(() => {
+    currentParams = userId ? params : null;
     if (userId) void inAppMessagesController.refresh(params, { force: true });
   }, [userId, params]);
 

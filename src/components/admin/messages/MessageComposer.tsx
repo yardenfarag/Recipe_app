@@ -142,7 +142,7 @@ export function MessageComposer({ initial, initialStatus, onCancel, onDone }: Pr
         }
         const saved = await saveAdminMessage(draft);
         await setAdminMessageStatus(saved.id, 'live');
-        onDone(`Sent “${saved.name}” to you only. Open the app to see it, and stop it from the list when you are done.`);
+        onDone(`Sent “${saved.name}” to you only. It shows on this device now and on your others at their next launch. Stop it from the list when you are done.`);
         return;
       }
 
@@ -598,7 +598,7 @@ export function MessageComposer({ initial, initialStatus, onCancel, onDone }: Pr
           <ActionButton label="Cancel" kind="soft" trackId="admin.messages.composer.cancel" onPress={onCancel} disabled={busy !== null} />
         </View>
         <Text className="mt-3 text-xs" style={{ color: colors.textSecondary }}>
-          “Send to me only” saves a separate live copy that goes to your own account, with no start or end time. Stop it from the list afterwards.
+          “Send to me only” saves a separate live copy that goes to your own account, with no start or end time, shown on every launch. Stop it from the list afterwards.
         </Text>
         {busy ? <ActivityIndicator className="mt-3" color={colors.primary} /> : null}
       </Card>

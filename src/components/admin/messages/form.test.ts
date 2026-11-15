@@ -385,6 +385,10 @@ describe('send to me only', () => {
     expect(validateMessage(draft)).toEqual([]);
   });
 
+  it('shows on every launch, so a copy seen on one device still reaches the others', () => {
+    expect(testDraft(filled({ frequency: 'once' }), ADMIN).frequency).toEqual({ type: 'every_launch' });
+  });
+
   it('keeps the name within the limit', () => {
     expect(testDraft(filled({ name: 'x'.repeat(120) }), ADMIN).name.length).toBe(120);
   });

@@ -8,6 +8,7 @@ import { MessageList } from '@/components/admin/messages/MessageList';
 import { duplicateForm, emptyForm, formFromMessage, type MessageForm } from '@/components/admin/messages/form';
 import { Screen } from '@/components/Screen';
 import { Pressable } from '@/components/ui/Pressable';
+import { refreshInAppMessagesNow } from '@/hooks/useInAppMessages';
 import { useThemePreference } from '@/hooks/useThemePreference';
 import { errorText } from '@/lib/errorText';
 import type { AdminMessage, MessageStatus } from '@/lib/inAppMessages';
@@ -68,6 +69,8 @@ function MessagesBody() {
     setNotice(text);
     setEditing(null);
     void refresh();
+    // A message that targets this admin shows here without leaving the app and coming back.
+    refreshInAppMessagesNow();
   };
 
   return (
@@ -124,6 +127,7 @@ function MessagesBody() {
             onChanged={(text) => {
               setNotice(text);
               void refresh();
+              refreshInAppMessagesNow();
             }}
           />
         )}
