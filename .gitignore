@@ -49,3 +49,6 @@ example
 # Cloudflare Worker local state
 .wrangler/
 .dev.vars
+
+# Teamwork run folders
+.teamwork/

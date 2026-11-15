@@ -16,6 +16,13 @@ export default {
     "continue": "Continuar",
     "upgrade": "Mejorar plan"
   },
+  "inAppMessages": {
+    "update": "Actualizar",
+    "notNow": "Ahora no",
+    "close": "Cerrar",
+    "learnMore": "Más información",
+    "region": "Mensaje de Pinch"
+  },
   "credits": {
     "buyTitle": "Comprar créditos",
     "buyHint": "Cada Snap o «Adivinar la receta» que salga bien gasta un crédito. Los que compres no caducan.",
@@ -220,6 +227,7 @@ export default {
     "adminPeople": "Cuentas",
     "adminUsage": "Costos y soporte",
     "adminActivity": "Registro de actividad",
+    "adminMessages": "Mensajes",
     "rtlReloadTitle": "¿Recargar para acomodar la pantalla?",
     "rtlReloadBody": "El hebreo y el árabe se leen de derecha a izquierda. Recarga ahora para que menús y títulos queden del lado correcto.",
     "rtlReloadConfirm": "Recargar",
@@ -1081,6 +1089,7 @@ export default {
     "people": "Cuentas",
     "usage": "Uso y soporte",
     "activity": "Actividad",
+    "messages": "Mensajes",
     "cookbook": "Libro de recetas PDF"
   },
   "hub": {

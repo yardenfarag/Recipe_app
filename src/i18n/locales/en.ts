@@ -16,6 +16,13 @@ export default {
     "continue": "Continue",
     "upgrade": "Upgrade"
   },
+  "inAppMessages": {
+    "update": "Update",
+    "notNow": "Not now",
+    "close": "Close",
+    "learnMore": "Learn more",
+    "region": "Message from Pinch"
+  },
   "credits": {
     "buyTitle": "Buy recipe credits",
     "buyHint": "Use one credit for each successful Snap or Guess the recipe. Purchased credits never expire.",
@@ -220,6 +227,7 @@ export default {
     "adminPeople": "People",
     "adminUsage": "Cost & support",
     "adminActivity": "Activity log",
+    "adminMessages": "Messages",
     "rtlReloadTitle": "Reload for layout?",
     "rtlReloadBody": "Hebrew and Arabic need a right-to-left layout. Reload now so navigation and headers flip correctly.",
     "rtlReloadConfirm": "Reload",
@@ -1081,6 +1089,7 @@ export default {
     "people": "People",
     "usage": "Usage & support",
     "activity": "Activity",
+    "messages": "Messages",
     "cookbook": "PDF cookbook"
   },
   "hub": {

@@ -435,10 +435,26 @@ details>*:not(summary){margin-bottom:12px}
       <tr><td><code>onboarding</code>, <code>welcome</code>, <code>auth</code>, <code>auth-callback</code>, <code>reset-password</code></td><td>First run and sign-in (email, Apple on iOS, Google via browser)</td></tr>
       <tr><td><code>s/[token]</code></td><td>Opens a shared recipe and copies it into your library</td></tr>
       <tr><td><code>cookbook</code></td><td>PDF export of the library</td></tr>
-      <tr><td><code>admin/insights</code>, <code>admin/users</code>, <code>admin/usage</code></td><td>Admin only (<code>profiles.is_admin</code> or email allowlist)</td></tr>
+      <tr><td><code>admin/insights</code>, <code>admin/users</code>, <code>admin/usage</code>, <code>admin/activity</code>, <code>admin/messages</code></td><td>Admin only (<code>profiles.is_admin</code> or email allowlist). <code>admin/messages</code> writes in-app messages (see below).</td></tr>
       <tr><td><code>+native-intent.ts</code></td><td>Turns a share-extension deep link into <code>/add</code></td></tr>
     </tbody>
   </table></div>
+
+  <h3 id="in-app-messages">In-app messages</h3>
+  <p>Admins send popups, announcements and update prompts from Settings → Admin → Messages, with no app release (ADR 023). The app asks the server for the messages that target the signed-in user, shows one at a time, and records when it was seen, dismissed or tapped.</p>
+  <div class="table-wrap"><table>
+    <thead><tr><th>Piece</th><th>Where</th></tr></thead>
+    <tbody>
+      <tr><td>Tables and functions</td><td><code>supabase/migrations/20261116120000_in_app_messages.sql</code>, tests in <code>supabase/tests/in_app_messages.sql</code>. Deploy by hand: <code>supabase/README.md</code>.</td></tr>
+      <tr><td>Types and rules (pure, tested)</td><td><code>src/lib/inAppMessages.ts</code>: <code>pickContent</code>, <code>compareVersions</code>, <code>nextMessageToShow</code>, <code>validateMessage</code>.</td></tr>
+      <tr><td>Server calls</td><td><code>src/lib/supabase/inAppMessages.ts</code> (the app) and <code>adminMessages.ts</code> (the admin screen).</td></tr>
+      <tr><td>Choosing and recording</td><td><code>src/components/inAppMessages/controller.ts</code> and the hook <code>src/hooks/useInAppMessages.ts</code>. <code>InAppMessageHost</code> is mounted once in <code>src/app/_layout.tsx</code>; the banner slot is in <code>src/components/app-tabs.tsx</code>.</td></tr>
+      <tr><td>Ways of showing</td><td><code>alert</code>: system <code>Alert.alert</code> on iOS and Android when it fits, a card otherwise and on web. <code>sheet</code>: <code>SheetModal</code>. <code>banner</code>: a custom strip. <code>fullscreen</code>: <code>Modal</code>. Each is in <code>src/components/inAppMessages/*Presenter.tsx</code>.</td></tr>
+      <tr><td>Admin screen</td><td><code>src/app/admin/messages.tsx</code> and <code>src/components/admin/messages/</code> (<code>form.ts</code> holds the tested logic).</td></tr>
+      <tr><td>See each one without a database</td><td>In a dev build or on web in dev, open the app with <code>?inAppSample=alert</code> (also <code>alert-image</code>, <code>sheet</code>, <code>banner</code>, <code>banner-bottom</code>, <code>fullscreen</code>, <code>required</code>). Nothing is recorded.</td></tr>
+    </tbody>
+  </table></div>
+  <p>A message has a way of showing, a tone, an icon, an image, text per language (English required, the rest fall back to it), up to two buttons, and targeting by user, plan, platform, language and app version. A required message cannot be closed and always has a store button.</p>
 
   <h3>How state and data work</h3>
   <table>
@@ -662,11 +678,13 @@ curl -X POST 'https://ccobefeofhnncpgifxel.supabase.co/functions/v1/extract-reci
       <tr><td><code>token_ledger</code></td><td>Every balance change.</td></tr>
       <tr><td><code>recipe_remix_usage</code>, <code>preview_remix_usage</code></td><td>Remix counts per recipe (saved or still in preview).</td></tr>
       <tr><td><code>ai_usage_daily</code>, <code>guest_ai_usage_daily</code></td><td>Daily caps for translate, swap, fridge match, content gate.</td></tr>
-      <tr><td rowspan="4" class="k">Ops</td><td><code>ai_usage_events</code></td><td>Every AI call: action, model, tokens, USD cost, metadata.</td></tr>
+      <tr><td rowspan="6" class="k">Ops</td><td><code>ai_usage_events</code></td><td>Every AI call: action, model, tokens, USD cost, metadata.</td></tr>
       <tr><td><code>product_events</code></td><td>Analytics events, with country from the Cloudflare header.</td></tr>
       <tr><td><code>feedback</code></td><td>In-app and website feedback.</td></tr>
       <tr><td><code>support_tickets</code></td><td>Support requests.</td></tr>
-      <tr><td class="k">Storage</td><td><code>avatars</code>, <code>recipe-thumbnails</code></td><td>Both public buckets.</td></tr>
+      <tr><td><code>in_app_messages</code></td><td>Popups, banners and update prompts an admin sends (ADR 023). No table grants: read only through <code>get_in_app_messages</code> (the caller's own) and the <code>admin_*_in_app_message</code> functions.</td></tr>
+      <tr><td><code>in_app_message_receipts</code></td><td>One row per user and message: times seen, dismissed, clicked and which button. Erased with the account.</td></tr>
+      <tr><td class="k">Storage</td><td><code>avatars</code>, <code>recipe-thumbnails</code></td><td>Both public buckets. Message images go in <code>recipe-thumbnails/in-app-messages/</code> (admins only can write there).</td></tr>
     </tbody>
   </table></div>
 

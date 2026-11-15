@@ -31,6 +31,8 @@ type SheetModalProps = {
   headerLeft?: ReactNode;
   /** Tap-log id prefix; logs `<trackId>.close` and `<trackId>.backdrop`. */
   trackId?: string;
+  /** Called once the modal is really on screen (the `Modal`'s own `onShow`). */
+  onShow?: () => void;
 };
 
 /**
@@ -47,6 +49,7 @@ export function SheetModal({
   showCloseButton = true,
   headerLeft,
   trackId = 'sheet_modal',
+  onShow,
 }: SheetModalProps) {
   const { t } = useTranslation();
   const { colors } = useThemePreference();
@@ -90,7 +93,7 @@ export function SheetModal({
 
   if (isWeb) {
     return (
-      <Modal visible={visible} transparent animationType="fade" onRequestClose={onClose}>
+      <Modal visible={visible} transparent animationType="fade" onRequestClose={onClose} onShow={onShow}>
         <View
           className="flex-1 justify-center"
           style={{
@@ -161,6 +164,7 @@ export function SheetModal({
       animationType="slide"
       presentationStyle="pageSheet"
       onRequestClose={onClose}
+      onShow={onShow}
     >
       <SafeAreaView
         className="flex-1"

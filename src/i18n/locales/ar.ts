@@ -16,6 +16,13 @@ export default {
     "continue": "متابعة",
     "upgrade": "ترقية"
   },
+  "inAppMessages": {
+    "update": "تحديث",
+    "notNow": "ليس الآن",
+    "close": "إغلاق",
+    "learnMore": "اعرف المزيد",
+    "region": "رسالة من Pinch"
+  },
   "credits": {
     "buyTitle": "شراء رصيد",
     "buyHint": "كل Snap أو «خمّن الوصفة» ينجح يخصم رصيد واحد. الرصيد الذي تشتريه لا ينتهي.",
@@ -220,6 +227,7 @@ export default {
     "adminPeople": "الحسابات",
     "adminUsage": "التكلفة والدعم",
     "adminActivity": "سجل النشاط",
+    "adminMessages": "الرسائل",
     "rtlReloadTitle": "إعادة التحميل لتعديل الاتجاه؟",
     "rtlReloadBody": "العربية والعبرية تُقرآن من اليمين إلى اليسار. أعد التحميل الآن حتى تظهر القوائم والعناوين في مكانها الصحيح.",
     "rtlReloadConfirm": "إعادة التحميل",
@@ -1081,6 +1089,7 @@ export default {
     "people": "الحسابات",
     "usage": "الاستخدام والدعم",
     "activity": "النشاط",
+    "messages": "الرسائل",
     "cookbook": "كتاب وصفات PDF"
   },
   "hub": {

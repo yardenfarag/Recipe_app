@@ -16,6 +16,13 @@ export default {
     "continue": "המשך",
     "upgrade": "שדרוג"
   },
+  "inAppMessages": {
+    "update": "עדכון",
+    "notNow": "לא עכשיו",
+    "close": "סגירה",
+    "learnMore": "למידע נוסף",
+    "region": "הודעה מ־Pinch"
+  },
   "credits": {
     "buyTitle": "קניית קרדיטים",
     "buyHint": "קרדיט אחד לכל שליפה או ניחוש מתכון שהצליחו. מה שקניתם לא פג תוקף.",
@@ -220,6 +227,7 @@ export default {
     "adminPeople": "חשבונות",
     "adminUsage": "עלויות ותמיכה",
     "adminActivity": "יומן פעילות",
+    "adminMessages": "הודעות",
     "rtlReloadTitle": "לרענן כדי לסדר את המסך?",
     "rtlReloadBody": "עברית וערבית נקראות מימין לשמאל. כדאי לרענן עכשיו כדי שהתפריטים והכותרות יישבו במקום הנכון.",
     "rtlReloadConfirm": "רענון",
@@ -1081,6 +1089,7 @@ export default {
     "people": "חשבונות",
     "usage": "שימוש ותמיכה",
     "activity": "פעילות",
+    "messages": "הודעות",
     "cookbook": "ספר מתכונים ב־PDF"
   },
   "hub": {
