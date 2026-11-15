@@ -1,4 +1,4 @@
-import { Linking, Platform } from 'react-native';
+import { Platform } from 'react-native';
 import type { PurchasesPackage } from 'react-native-purchases';
 
 export const CREDIT_PACKS = [
@@ -12,12 +12,26 @@ export type CreditPackId = (typeof CREDIT_PACKS)[number]['id'];
 export const BEST_VALUE_PACK_ID: CreditPackId = 'pinch_credits_100';
 
 /**
- * RevenueCat web checkout charges through Stripe. Stripe does not support this
- * account's country, so the website stays purchase-free. App Store and Play
- * Store purchases do not use Stripe. Leave this off unless web billing moves
- * to a processor that can actually charge here.
+ * Paddle price ids (pri_…) for each pack on the web. RevenueCat's web checkout
+ * needs Stripe, which doesn't support this account's country, so the website
+ * sells through Paddle instead (src/lib/paddleCheckout.ts). App Store and Play
+ * Store purchases still go through RevenueCat.
  */
-export const WEB_CREDIT_PURCHASES_ENABLED = false;
+const PADDLE_PRICE_IDS: Readonly<Record<CreditPackId, string | undefined>> = {
+  pinch_credits_10: process.env.EXPO_PUBLIC_PADDLE_PRICE_10,
+  pinch_credits_30: process.env.EXPO_PUBLIC_PADDLE_PRICE_30,
+  pinch_credits_100: process.env.EXPO_PUBLIC_PADDLE_PRICE_100,
+};
+
+/**
+ * The website sells packs only when purchases are switched on and Paddle's client token and
+ * every pack's price id are set. Otherwise it says to buy in the app, instead of showing packs
+ * that can't be bought.
+ */
+export const WEB_CREDIT_PURCHASES_ENABLED =
+  process.env.EXPO_PUBLIC_CREDIT_PURCHASES_ENABLED === 'true' &&
+  Boolean(process.env.EXPO_PUBLIC_PADDLE_CLIENT_TOKEN) &&
+  Object.values(PADDLE_PRICE_IDS).every(Boolean);
 
 export function creditPurchasesOfferedOn(platform: typeof Platform.OS): boolean {
   return platform !== 'web' || WEB_CREDIT_PURCHASES_ENABLED;
@@ -35,10 +49,11 @@ export interface CreditPack {
 }
 
 let configuredUserId: string | null = null;
+let configuredEmail: string | null = null;
 
 /**
  * The SDK is loaded on first use. Its web build is ~850 KB and the website
- * never talks to it (web checkout is a plain link), so it stays out of the
+ * never talks to it (web checkout is Paddle), so it stays out of the
  * initial web bundle.
  */
 function loadSdk() {
@@ -48,7 +63,7 @@ function loadSdk() {
 function apiKey(): string | undefined {
   if (Platform.OS === 'ios') return process.env.EXPO_PUBLIC_REVENUECAT_IOS_API_KEY;
   if (Platform.OS === 'android') return process.env.EXPO_PUBLIC_REVENUECAT_ANDROID_API_KEY;
-  return process.env.EXPO_PUBLIC_REVENUECAT_WEB_API_KEY;
+  return process.env.EXPO_PUBLIC_PADDLE_CLIENT_TOKEN;
 }
 
 export function purchasesEnabled(): boolean {
@@ -81,13 +96,14 @@ export function packIsPurchasable(pack: CreditPack): boolean {
   return Boolean(pack.storePackage);
 }
 
-export async function configurePurchases(userId: string): Promise<void> {
+export async function configurePurchases(userId: string, email?: string | null): Promise<void> {
   const key = apiKey();
   if (!key || !purchasesEnabled()) return;
 
-  // Web checkout only needs the user id for its link.
+  // Web checkout tags the payment with the user id, and fills in their email.
   if (Platform.OS === 'web') {
     configuredUserId = userId;
+    configuredEmail = email ?? null;
     return;
   }
 
@@ -109,6 +125,7 @@ export async function clearPurchasesUser(): Promise<void> {
   if (!configuredUserId || !purchasesEnabled()) return;
   if (Platform.OS === 'web') {
     configuredUserId = null;
+    configuredEmail = null;
     return;
   }
   try {
@@ -141,18 +158,19 @@ export async function purchaseCreditPack(
   }
 
   if (Platform.OS === 'web') {
-    const url =
-      pack.credits === 10
-        ? process.env.EXPO_PUBLIC_REVENUECAT_WEB_10_URL
-        : pack.credits === 30
-          ? process.env.EXPO_PUBLIC_REVENUECAT_WEB_30_URL
-          : process.env.EXPO_PUBLIC_REVENUECAT_WEB_100_URL;
-    if (!url) throw new Error('web_checkout_unavailable');
+    const token = process.env.EXPO_PUBLIC_PADDLE_CLIENT_TOKEN;
+    const priceId = PADDLE_PRICE_IDS[pack.id];
+    if (!token || !priceId) throw new Error('web_checkout_unavailable');
     if (!configuredUserId) throw new Error('purchase_user_unavailable');
-    const checkoutUrl = new URL(url);
-    checkoutUrl.searchParams.set('app_user_id', configuredUserId);
-    await Linking.openURL(checkoutUrl.toString());
-    return 'opened_web_checkout';
+    const { openPaddleCheckout } = await import('./paddleCheckout');
+    // 'purchased' once Paddle took the payment; the webhook adds the credits moments later.
+    return await openPaddleCheckout({
+      token,
+      environment: process.env.EXPO_PUBLIC_PADDLE_ENVIRONMENT,
+      priceId,
+      userId: configuredUserId,
+      email: configuredEmail,
+    });
   }
 
   if (!pack.storePackage) throw new Error('store_product_unavailable');

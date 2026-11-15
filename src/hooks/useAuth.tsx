@@ -138,7 +138,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     if (loading) return;
     if (session?.user.id) {
-      void configurePurchases(session.user.id).catch((error) => {
+      void configurePurchases(session.user.id, session.user.email).catch((error) => {
         console.warn('[purchases] configure failed', error);
       });
     } else {
