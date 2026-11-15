@@ -19,6 +19,10 @@ verify_jwt = false
 [functions.welcome-emails]
 verify_jwt = false
 
+# The feedback trigger sends a Vault secret (x-support-email-secret), not a JWT.
+[functions.support-email]
+verify_jwt = false
+
 [auth.email]
 enable_confirmations = false
 # Sign-in and password-reset codes are 6 digits and last an hour (the emails say so).

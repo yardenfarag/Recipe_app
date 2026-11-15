@@ -23,7 +23,13 @@ export class EmailSendError extends Error {
 export async function sendEmail(
   to: string,
   email: RenderedEmail,
-  options: { idempotencyKey?: string; tags?: Record<string, string>; fetchImpl?: typeof fetch } = {},
+  options: {
+    idempotencyKey?: string;
+    tags?: Record<string, string>;
+    /** Defaults to support@pinch-app.io. */
+    replyTo?: string;
+    fetchImpl?: typeof fetch;
+  } = {},
 ): Promise<string> {
   const apiKey = Deno.env.get('RESEND_API_KEY');
   if (!apiKey) throw new EmailSendError('RESEND_API_KEY is not set', 500);
@@ -41,7 +47,7 @@ export async function sendEmail(
     body: JSON.stringify({
       from: EMAIL_FROM,
       to: [to],
-      reply_to: EMAIL_REPLY_TO,
+      reply_to: options.replyTo ?? EMAIL_REPLY_TO,
       subject: email.subject,
       html: email.html,
       text: email.text,
@@ -57,7 +63,7 @@ export async function sendEmail(
   return typeof body?.id === 'string' ? body.id : '';
 }
 
-export type OnceKind = 'welcome' | 'purchase';
+export type OnceKind = 'welcome' | 'purchase' | 'support';
 
 /**
  * Sends an email at most once per (kind, dedupeKey), using public.email_sends as the record.
@@ -66,7 +72,14 @@ export type OnceKind = 'welcome' | 'purchase';
  */
 export async function sendOnce(
   admin: SupabaseClient,
-  input: { kind: OnceKind; dedupeKey: string; userId: string | null; to: string; email: RenderedEmail },
+  input: {
+    kind: OnceKind;
+    dedupeKey: string;
+    userId: string | null;
+    to: string;
+    email: RenderedEmail;
+    replyTo?: string;
+  },
 ): Promise<boolean> {
   const { data: existing, error: readError } = await admin
     .from('email_sends')
@@ -80,6 +93,7 @@ export async function sendOnce(
   const resendId = await sendEmail(input.to, input.email, {
     idempotencyKey: `${input.kind}/${input.dedupeKey}`,
     tags: { kind: input.kind },
+    replyTo: input.replyTo,
   });
 
   const { error: insertError } = await admin.from('email_sends').insert({
