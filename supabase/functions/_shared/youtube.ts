@@ -7,7 +7,7 @@
 // authored by the video's own channel and surface them first (see gemini.ts,
 // which now treats these as a primary source, not just a gap-filler).
 
-import { youTubeThumbnail } from './platform.ts';
+import { canonicalYouTubeWatchUrl, youTubeThumbnail } from './platform.ts';
 import { parseDurationSeconds, parseYouTubeIsoDuration } from './videoLimits.ts';
 
 const MAX_COMMENTS = 10;
@@ -26,7 +26,29 @@ export interface YouTubeMeta {
   captions?: string;
   /** Video length in seconds when available from the Data API or player metadata. */
   durationSeconds?: number;
+  /** Watch URL for the ladder's video step; unset when the length is unknown. */
+  videoUrl?: string;
   topComments: YouTubeComment[];
+}
+
+/**
+ * The URL the video step may send to the model, or undefined to keep the video out.
+ *
+ * AI Studio fetches YouTube links itself, so the inline 20 MB cap never trims a long
+ * video and the model would bill every frame of a multi-hour upload. Other platforms
+ * treat an unknown length as "not too long"; for YouTube it means "don't send".
+ * Known lengths over the limit still get a URL so the ladder's too-long path
+ * (isVideoTooLong) skips the video and reports it the same way as on other platforms.
+ */
+export function youTubeVideoUrlForModel(
+  videoId: string,
+  durationSeconds: number | undefined,
+): string | undefined {
+  if (typeof durationSeconds !== 'number' || !Number.isFinite(durationSeconds) || durationSeconds <= 0) {
+    return undefined;
+  }
+  // Shorts ids are plain video ids, so one watch URL form covers both.
+  return canonicalYouTubeWatchUrl(videoId);
 }
 
 /** YouTube Data API thumbnail sizes, highest quality first. */
@@ -69,6 +91,7 @@ export async function fetchYouTubeMeta(videoId: string): Promise<YouTubeMeta> {
       topComments: [],
       captions: player.captions,
       durationSeconds: player.durationSeconds,
+      videoUrl: youTubeVideoUrlForModel(videoId, player.durationSeconds),
     };
   }
 
@@ -90,12 +113,14 @@ export async function fetchYouTubeMeta(videoId: string): Promise<YouTubeMeta> {
     }))
     .sort((a, b) => Number(b.isCreator) - Number(a.isCreator));
 
+  const knownDuration = durationSeconds ?? player.durationSeconds;
   return {
     description,
     title,
     thumbnailUrl,
     captions: player.captions,
-    durationSeconds: durationSeconds ?? player.durationSeconds,
+    durationSeconds: knownDuration,
+    videoUrl: youTubeVideoUrlForModel(videoId, knownDuration),
     topComments,
   };
 }

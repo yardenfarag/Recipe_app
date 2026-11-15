@@ -286,7 +286,10 @@ export async function generateOpenRouterJson<T>(
   const task = resolveTaskModel(options.kind, options.tier);
   const pinned = evalModel();
   const model = pinned ?? options.model ?? task.model;
-  const fallbacks = pinned ? [] : task.fallbacks.filter((m) => m !== model);
+  // Only Gemini on AI Studio fetches a YouTube URL. A fallback would get a link it can't
+  // open and could answer from the text alone, so a URL video fails cleanly instead.
+  const hasUrlVideo = options.parts.some((p) => 'fileData' in p);
+  const fallbacks = pinned || hasUrlVideo ? [] : task.fallbacks.filter((m) => m !== model);
   const reasoning = evalHook?.reasoning?.() ?? task.reasoning;
   const ignore = providerIgnoreFor([model, ...fallbacks]);
   const userContent = partsToOpenRouterContent(options.parts);
