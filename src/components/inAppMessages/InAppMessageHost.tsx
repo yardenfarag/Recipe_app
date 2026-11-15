@@ -7,19 +7,29 @@ import { AlertPresenter } from './AlertPresenter';
 import { FullscreenPresenter } from './FullscreenPresenter';
 import { SAMPLE_MESSAGES } from './samples';
 import { SheetPresenter } from './SheetPresenter';
+import { useIsAdmin } from './useIsAdmin';
 import { useMessageView } from './useMessageView';
 import type { InAppMessage } from '@/lib/inAppMessages';
 
 function Presenter({ message }: { message: InAppMessage }) {
   const view = useMessageView(message);
-  const { onAction, onClose } = useInAppMessageActions(message);
+  const { onAction, onClose, onShown, onAdminHide } = useInAppMessageActions(message);
+  // Only a required message can lock an admin out of the admin screen, so only then is the lookup made.
+  const isAdmin = useIsAdmin(view.presentation === 'fullscreen' && message.required);
   switch (view.presentation) {
     case 'alert':
-      return <AlertPresenter key={message.id} view={view} onAction={onAction} onClose={onClose} />;
+      return <AlertPresenter key={message.id} view={view} onAction={onAction} onClose={onClose} onShown={onShown} />;
     case 'sheet':
-      return <SheetPresenter key={message.id} view={view} onAction={onAction} onClose={onClose} />;
+      return <SheetPresenter key={message.id} view={view} onAction={onAction} onClose={onClose} onShown={onShown} />;
     case 'fullscreen':
-      return <FullscreenPresenter key={message.id} view={view} onAction={onAction} onClose={onClose} />;
+      return <FullscreenPresenter
+          key={message.id}
+          view={view}
+          onAction={onAction}
+          onClose={onClose}
+          onShown={onShown}
+          onAdminHide={message.required && isAdmin ? onAdminHide : undefined}
+        />;
     default:
       // Banners are drawn by <InAppMessageBanner /> inside the tabs layout.
       return null;

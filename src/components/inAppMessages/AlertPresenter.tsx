@@ -8,12 +8,15 @@ import type { ButtonAction, ClickedButton } from '@/lib/inAppMessages';
 
 import { CloseButton } from './CloseButton';
 import { MessageContent, type MessageActionHandler } from './MessageContent';
-import { canUseSystemAlert, type MessageView } from './viewModel';
+import { useModalShow } from './useModalShow';
+import { canUseSystemAlert, needsCloseButton, type MessageView } from './viewModel';
 
 type PresenterProps = {
   view: MessageView;
   onAction: MessageActionHandler;
   onClose: () => void;
+  /** The message is really on screen; only then is it recorded as seen. */
+  onShown: () => void;
 };
 
 const TRACK = 'in_app_message.alert';
@@ -24,19 +27,19 @@ const TRACK = 'in_app_message.alert';
  * ConfirmDialog style. Web always gets the card, because `Alert.alert` does
  * nothing there. See `canUseSystemAlert` for when the card is used on a phone.
  */
-export function AlertPresenter({ view, onAction, onClose }: PresenterProps) {
+export function AlertPresenter({ view, onAction, onClose, onShown }: PresenterProps) {
   const system = canUseSystemAlert(view, { platform: Platform.OS, deviceRtl: I18nManager.isRTL });
   return system ? (
-    <SystemAlert view={view} onAction={onAction} onClose={onClose} />
+    <SystemAlert view={view} onAction={onAction} onClose={onClose} onShown={onShown} />
   ) : (
-    <AlertCard view={view} onAction={onAction} onClose={onClose} />
+    <AlertCard view={view} onAction={onAction} onClose={onClose} onShown={onShown} />
   );
 }
 
-function SystemAlert({ view, onAction, onClose }: PresenterProps) {
+function SystemAlert({ view, onAction, onClose, onShown }: PresenterProps) {
   // Latest handlers without re-showing the alert when they change.
-  const latest = useRef({ onAction, onClose });
-  latest.current = { onAction, onClose };
+  const latest = useRef({ onAction, onClose, onShown });
+  latest.current = { onAction, onClose, onShown };
   const shownFor = useRef<string | null>(null);
 
   useEffect(() => {
@@ -60,8 +63,8 @@ function SystemAlert({ view, onAction, onClose }: PresenterProps) {
         latest.current.onAction(entry.kind, entry.action);
       },
     }));
-    // iOS closes an alert only through a button, so a dismissible alert with none gets one.
-    if (buttons.length === 0 && view.dismissible) {
+    // iOS closes an alert only through a button, so a dismissible alert with no "dismiss" button gets one.
+    if (needsCloseButton(view)) {
       buttons.push({
         text: view.closeLabel,
         style: 'cancel' as const,
@@ -76,21 +79,26 @@ function SystemAlert({ view, onAction, onClose }: PresenterProps) {
       cancelable: view.dismissible,
       onDismiss: () => latest.current.onClose(),
     });
+    // The system alert has no "shown" event and is not blocked by a modal that is up: it is on screen now.
+    latest.current.onShown();
   }, [view]);
 
   return null;
 }
 
-function AlertCard({ view, onAction, onClose }: PresenterProps) {
+function AlertCard({ view, onAction, onClose, onShown }: PresenterProps) {
   const { colors } = useThemePreference();
+  const { modalKey, onShow } = useModalShow(onShown);
   const { height } = useWindowDimensions();
   const dismissible = view.dismissible;
 
   return (
     <Modal
+      key={modalKey}
       visible
       transparent
       animationType="fade"
+      onShow={onShow}
       // Android back and web Escape: close a dismissible message, ignore otherwise.
       onRequestClose={dismissible ? onClose : () => {}}
     >
@@ -130,7 +138,12 @@ function AlertCard({ view, onAction, onClose }: PresenterProps) {
           }}
         >
           <ScrollView bounces={false} contentContainerStyle={{ padding: 20 }} style={{ flexGrow: 0 }}>
-            <MessageContent view={view} trackPrefix={TRACK} onAction={onAction} />
+            <MessageContent
+              view={view}
+              trackPrefix={TRACK}
+              onAction={onAction}
+              closeButton={needsCloseButton(view) ? { label: view.closeLabel, onPress: onClose } : undefined}
+            />
           </ScrollView>
           {/* The close control's side is explicit: react-native-web turns `end` into `right` whatever the direction. */}
           {dismissible ? (

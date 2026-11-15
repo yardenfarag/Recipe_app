@@ -2,8 +2,9 @@
  * The presenters rendered with the real English strings. React Native Testing
  * Library v14: render and fireEvent are async, always await them.
  */
-import { fireEvent, render, screen } from '@testing-library/react-native';
-import { beforeAll, describe, expect, it, vi } from 'vitest';
+import { act, fireEvent, render, renderHook, screen } from '@testing-library/react-native';
+import { Alert, Platform } from 'react-native';
+import { afterEach, beforeAll, describe, expect, it, vi } from 'vitest';
 
 import { getThemePackColors } from '@/constants/themes';
 import { initI18n } from '@/i18n/config';
@@ -12,6 +13,8 @@ import type { InAppMessage } from '@/lib/inAppMessages';
 import { AlertPresenter } from './AlertPresenter';
 import { BannerPresenter } from './BannerPresenter';
 import { FullscreenPresenter } from './FullscreenPresenter';
+import { SheetPresenter } from './SheetPresenter';
+import { MODAL_RETRY_MS, useModalShow } from './useModalShow';
 import { buildMessageView } from './viewModel';
 
 vi.mock('@/hooks/useThemePreference', () => ({
@@ -73,7 +76,7 @@ describe('FullscreenPresenter', () => {
     const onClose = vi.fn();
     const onAction = vi.fn();
     const view = buildMessageView(message(), 'en', LABELS);
-    await render(<FullscreenPresenter view={view} onAction={onAction} onClose={onClose} />);
+    await render(<FullscreenPresenter view={view} onAction={onAction} onClose={onClose} onShown={vi.fn()} />);
 
     await fireEvent.press(screen.getByLabelText('Close'));
     expect(onClose).toHaveBeenCalledTimes(1);
@@ -86,7 +89,7 @@ describe('FullscreenPresenter', () => {
     const onClose = vi.fn();
     const onAction = vi.fn();
     const view = buildMessageView(message({ required: true, dismissible: false }), 'en', LABELS);
-    await render(<FullscreenPresenter view={view} onAction={onAction} onClose={onClose} />);
+    await render(<FullscreenPresenter view={view} onAction={onAction} onClose={onClose} onShown={vi.fn()} />);
 
     expect(screen.queryByLabelText('Close')).toBeNull();
     expect(screen.queryByLabelText('Later')).toBeNull();
@@ -101,20 +104,20 @@ describe('FullscreenPresenter', () => {
   it('closes a dismissible message on back', async () => {
     const onClose = vi.fn();
     const view = buildMessageView(message(), 'en', LABELS);
-    await render(<FullscreenPresenter view={view} onAction={vi.fn()} onClose={onClose} />);
+    await render(<FullscreenPresenter view={view} onAction={vi.fn()} onClose={onClose} onShown={vi.fn()} />);
     requestClose();
     expect(onClose).toHaveBeenCalledTimes(1);
   });
 
   it('lays Hebrew content out right-to-left', async () => {
     const view = buildMessageView(message(), 'he', LABELS);
-    await render(<FullscreenPresenter view={view} onAction={vi.fn()} onClose={vi.fn()} />);
+    await render(<FullscreenPresenter view={view} onAction={vi.fn()} onClose={vi.fn()} onShown={vi.fn()} />);
     expect(screen.getByText('שלום').props.style).toMatchObject({ writingDirection: 'rtl', textAlign: 'center' });
   });
 
   it('shows the image when the message has one', async () => {
     const view = buildMessageView(message({ imageUrl: 'https://example.com/a.png' }), 'en', LABELS);
-    await render(<FullscreenPresenter view={view} onAction={vi.fn()} onClose={vi.fn()} />);
+    await render(<FullscreenPresenter view={view} onAction={vi.fn()} onClose={vi.fn()} onShown={vi.fn()} />);
     expect(screen.getByTestId('message-image').props.source).toEqual({ uri: 'https://example.com/a.png' });
   });
 });
@@ -124,7 +127,7 @@ describe('AlertPresenter card', () => {
   it('uses the card for a Hebrew alert and a tap on the backdrop closes it', async () => {
     const onClose = vi.fn();
     const view = buildMessageView(message({ presentation: 'alert' }), 'he', LABELS);
-    await render(<AlertPresenter view={view} onAction={vi.fn()} onClose={onClose} />);
+    await render(<AlertPresenter view={view} onAction={vi.fn()} onClose={onClose} onShown={vi.fn()} />);
     expect(screen.getByText('שלום').props.style).toMatchObject({ writingDirection: 'rtl' });
     await fireEvent.press(screen.getAllByLabelText('Close')[0] as never);
     expect(onClose).toHaveBeenCalled();
@@ -132,7 +135,7 @@ describe('AlertPresenter card', () => {
 
   it('a message that cannot be dismissed has no backdrop or close control', async () => {
     const view = buildMessageView(message({ presentation: 'alert', dismissible: false }), 'he', LABELS);
-    await render(<AlertPresenter view={view} onAction={vi.fn()} onClose={vi.fn()} />);
+    await render(<AlertPresenter view={view} onAction={vi.fn()} onClose={vi.fn()} onShown={vi.fn()} />);
     expect(screen.queryByLabelText('Close')).toBeNull();
   });
 });
@@ -154,6 +157,167 @@ describe('BannerPresenter', () => {
   it('has no close control when it cannot be dismissed', async () => {
     const view = buildMessageView(message({ presentation: 'banner', dismissible: false }), 'en', LABELS);
     await render(<BannerPresenter view={view} onAction={vi.fn()} onClose={vi.fn()} edge="bottom" />);
+    expect(screen.queryByLabelText('Close')).toBeNull();
+  });
+});
+
+describe('a dismissible alert always has a way to close it (iOS closes an alert only through a button)', () => {
+  const NO_DISMISS = { secondaryAction: undefined, presentation: 'alert' as const };
+
+  afterEach(() => {
+    vi.restoreAllMocks();
+  });
+
+  it('system alert: a button that does something gets a cancel-style Close, which records the close', async () => {
+    const alert = vi.spyOn(Alert, 'alert').mockImplementation(() => {});
+    const onClose = vi.fn();
+    const onShown = vi.fn();
+    const view = buildMessageView(message(NO_DISMISS), 'en', LABELS);
+    await render(<AlertPresenter view={view} onAction={vi.fn()} onClose={onClose} onShown={onShown} />);
+
+    expect(alert).toHaveBeenCalledTimes(1);
+    const buttons = alert.mock.calls[0]?.[2] ?? [];
+    expect(buttons.map((b) => b.text)).toEqual(['Open', 'Close']);
+    expect(buttons[1]?.style).toBe('cancel');
+    buttons[1]?.onPress?.();
+    expect(onClose).toHaveBeenCalledTimes(1);
+    // A system alert has no "shown" event: it counts as shown at the call.
+    expect(onShown).toHaveBeenCalledTimes(1);
+  });
+
+  it('system alert: a "dismiss" button already closes it, so no extra button is added', async () => {
+    const alert = vi.spyOn(Alert, 'alert').mockImplementation(() => {});
+    const view = buildMessageView(message({ presentation: 'alert' }), 'en', LABELS);
+    await render(<AlertPresenter view={view} onAction={vi.fn()} onClose={vi.fn()} onShown={vi.fn()} />);
+    expect((alert.mock.calls[0]?.[2] ?? []).map((b) => b.text)).toEqual(['Open', 'Later']);
+  });
+
+  it('a button and a link that both do something would need a third place, so the card is used, with a Close button', async () => {
+    const alert = vi.spyOn(Alert, 'alert').mockImplementation(() => {});
+    const onClose = vi.fn();
+    const view = buildMessageView(message({ ...NO_DISMISS, link: { url: 'https://example.com' } }), 'en', LABELS);
+    await render(<AlertPresenter view={view} onAction={vi.fn()} onClose={onClose} onShown={vi.fn()} />);
+    expect(alert).not.toHaveBeenCalled();
+    // The card's round close control and the Close button.
+    const closes = screen.getAllByLabelText('Close');
+    expect(closes).toHaveLength(2);
+    await fireEvent.press(closes[1] as never);
+    expect(onClose).toHaveBeenCalledTimes(1);
+  });
+
+  it('a message that cannot be dismissed gets no Close button on the card', async () => {
+    const view = buildMessageView(
+      message({ ...NO_DISMISS, dismissible: false, link: { url: 'https://example.com' } }),
+      'en',
+      LABELS,
+    );
+    await render(<AlertPresenter view={view} onAction={vi.fn()} onClose={vi.fn()} onShown={vi.fn()} />);
+    expect(screen.queryByLabelText('Close')).toBeNull();
+  });
+});
+
+describe('modal presenters report when they are really shown', () => {
+  it('fullscreen: onShown fires from the Modal onShow, not from mounting', async () => {
+    const onShown = vi.fn();
+    const view = buildMessageView(message(), 'en', LABELS);
+    await render(<FullscreenPresenter view={view} onAction={vi.fn()} onClose={vi.fn()} onShown={onShown} />);
+    expect(onShown).not.toHaveBeenCalled();
+    const modal = screen.root as unknown as { props: { onShow?: () => void } };
+    expect(modal.props.onShow).toBeTypeOf('function');
+    await act(async () => modal.props.onShow?.());
+    expect(onShown).toHaveBeenCalledTimes(1);
+  });
+
+  it('card alert: onShown fires from the Modal onShow, not from mounting', async () => {
+    const onShown = vi.fn();
+    const view = buildMessageView(message({ presentation: 'alert' }), 'he', LABELS);
+    await render(<AlertPresenter view={view} onAction={vi.fn()} onClose={vi.fn()} onShown={onShown} />);
+    expect(onShown).not.toHaveBeenCalled();
+    const modal = screen.root as unknown as { props: { onShow?: () => void } };
+    await act(async () => modal.props.onShow?.());
+    expect(onShown).toHaveBeenCalledTimes(1);
+  });
+});
+
+describe('sheet reports when it is really shown', () => {
+  it('sheet: onShown fires from the Modal onShow, not from mounting', async () => {
+    const onShown = vi.fn();
+    const view = buildMessageView(message({ presentation: 'sheet' }), 'en', LABELS);
+    await render(<SheetPresenter view={view} onAction={vi.fn()} onClose={vi.fn()} onShown={onShown} />);
+    expect(onShown).not.toHaveBeenCalled();
+    const modal = screen.root as unknown as { props: { onShow?: () => void } };
+    expect(modal.props.onShow).toBeTypeOf('function');
+    await act(async () => modal.props.onShow?.());
+    expect(onShown).toHaveBeenCalledTimes(1);
+  });
+});
+
+describe('useModalShow: remount until the modal shows (iOS)', () => {
+  const original = Platform.OS;
+  afterEach(() => {
+    Platform.OS = original;
+    vi.useRealTimers();
+  });
+
+  it("remounts at a calm interval until onShow fires, then stops", async () => {
+    Platform.OS = 'ios';
+    vi.useFakeTimers();
+    const onShown = vi.fn();
+    const { result } = await renderHook(() => useModalShow(onShown));
+    expect(result.current.modalKey).toBe(0);
+
+    await act(async () => vi.advanceTimersByTime(MODAL_RETRY_MS - 1));
+    expect(result.current.modalKey).toBe(0);
+    await act(async () => vi.advanceTimersByTime(1));
+    expect(result.current.modalKey).toBe(1);
+    await act(async () => vi.advanceTimersByTime(MODAL_RETRY_MS));
+    expect(result.current.modalKey).toBe(2);
+
+    await act(async () => result.current.onShow());
+    expect(onShown).toHaveBeenCalledTimes(1);
+    await act(async () => vi.advanceTimersByTime(MODAL_RETRY_MS * 5));
+    expect(result.current.modalKey).toBe(2);
+  });
+
+  it("stops when the presenter goes away (the message is no longer the active one)", async () => {
+    Platform.OS = 'ios';
+    vi.useFakeTimers();
+    const { result, unmount } = await renderHook(() => useModalShow(vi.fn()));
+    const running = vi.getTimerCount();
+    expect(running).toBeGreaterThan(0);
+    await unmount();
+    expect(vi.getTimerCount()).toBe(running - 1);
+    expect(result.current.modalKey).toBe(0);
+  });
+
+  it("does not retry on Android or web, where modals stack", async () => {
+    Platform.OS = 'android';
+    vi.useFakeTimers();
+    const { result } = await renderHook(() => useModalShow(vi.fn()));
+    await act(async () => vi.advanceTimersByTime(MODAL_RETRY_MS * 3));
+    expect(result.current.modalKey).toBe(0);
+  });
+});
+
+describe('admin-only close control on a required message', () => {
+  const required = () => message({ required: true, dismissible: false });
+
+  it('is shown when the host gives it, hides the message without being a normal close, and is labelled admin-only', async () => {
+    const onAdminHide = vi.fn();
+    const onClose = vi.fn();
+    const view = buildMessageView(required(), 'en', LABELS);
+    await render(
+      <FullscreenPresenter view={view} onAction={vi.fn()} onClose={onClose} onShown={vi.fn()} onAdminHide={onAdminHide} />,
+    );
+    await fireEvent.press(screen.getByLabelText(/Admin only/));
+    expect(onAdminHide).toHaveBeenCalledTimes(1);
+    expect(onClose).not.toHaveBeenCalled();
+  });
+
+  it('is absent for everyone else: a required message looks exactly as before', async () => {
+    const view = buildMessageView(required(), 'en', LABELS);
+    await render(<FullscreenPresenter view={view} onAction={vi.fn()} onClose={vi.fn()} onShown={vi.fn()} />);
+    expect(screen.queryByLabelText(/Admin only/)).toBeNull();
     expect(screen.queryByLabelText('Close')).toBeNull();
   });
 });

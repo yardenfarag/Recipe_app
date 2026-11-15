@@ -19,6 +19,8 @@ type MessageContentProps = {
   /** The sheet puts the title in its own header. */
   showTitle?: boolean;
   align?: 'start' | 'center';
+  /** A last, quiet button that closes the message (an alert whose buttons all do something). */
+  closeButton?: { label: string; onPress: () => void };
 };
 
 /** Icon, image, title, body, buttons and link: the inside of a card, a sheet or the full-screen page. */
@@ -28,6 +30,7 @@ export function MessageContent({
   onAction,
   showTitle = true,
   align = 'start',
+  closeButton,
 }: MessageContentProps) {
   const { colors } = useThemePreference();
   const { message } = view;
@@ -154,6 +157,28 @@ export function MessageContent({
             }}
           >
             {view.link.label}
+          </Text>
+        </Pressable>
+      ) : null}
+      {closeButton ? (
+        <Pressable
+          trackId={`${trackPrefix}.close_button`}
+          onPress={closeButton.onPress}
+          accessibilityRole="button"
+          accessibilityLabel={closeButton.label}
+          style={({ pressed }) => ({
+            marginTop: 8,
+            minHeight: 48,
+            alignItems: 'center',
+            justifyContent: 'center',
+            borderRadius: 22,
+            paddingHorizontal: 16,
+            paddingVertical: 12,
+            opacity: pressed ? 0.8 : 1,
+          })}
+        >
+          <Text style={{ fontSize: 15, fontWeight: '600', textAlign: 'center', color: colors.textSecondary }}>
+            {closeButton.label}
           </Text>
         </Pressable>
       ) : null}

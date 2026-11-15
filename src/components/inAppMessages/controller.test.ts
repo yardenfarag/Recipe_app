@@ -131,6 +131,8 @@ describe('choosing', () => {
     t.controller.setUser('u1');
     await t.controller.refresh(PARAMS, { force: true });
     expect(t.active()).toBe('high');
+    t.controller.reportShown('high');
+    t.controller.reportShown('high');
     // A second fetch with the same message on screen does not record it again.
     await t.controller.refresh(PARAMS, { force: true });
     expect(t.recorded.filter((r) => r.event === 'seen')).toEqual([{ id: 'high', event: 'seen', button: undefined }]);
@@ -211,6 +213,7 @@ describe('recording', () => {
     const t = setup({ messages: [message('a')] });
     t.controller.setUser('u1');
     await t.controller.refresh(PARAMS, { force: true });
+    t.controller.reportShown('a');
     t.controller.dismiss('a');
     expect(t.active()).toBeNull();
     expect(t.recorded.map((r) => r.event)).toEqual(['seen', 'dismissed']);
@@ -229,6 +232,7 @@ describe('recording', () => {
     const t = setup({ messages: [message('update', { required: true, dismissible: false, presentation: 'fullscreen' })] });
     t.controller.setUser('u1');
     await t.controller.refresh(PARAMS, { force: true });
+    t.controller.reportShown('update');
     t.controller.dismiss('update');
     expect(t.active()).toBe('update');
     t.controller.press('update', 'primary');
@@ -330,6 +334,112 @@ describe('preview', () => {
     t.controller.dismiss('sample');
     expect(t.active()).toBeNull();
     expect(t.recorded).toEqual([]);
+  });
+});
+
+describe('seen is recorded only when the message is really on screen', () => {
+  it('records nothing until the presenter reports it shown, and only once', async () => {
+    const t = setup({ messages: [message('a')] });
+    t.controller.setUser('u1');
+    await t.controller.refresh(PARAMS, { force: true });
+    expect(t.active()).toBe('a');
+    // An iOS modal that could not be presented over another modal never reports.
+    expect(t.recorded).toEqual([]);
+    t.controller.reportShown('a');
+    t.controller.reportShown('a');
+    expect(t.recorded.map((r) => r.event)).toEqual(['seen']);
+  });
+
+  it('ignores a report for a message that is not the active one', async () => {
+    const t = setup({ messages: [message('a')] });
+    t.controller.setUser('u1');
+    await t.controller.refresh(PARAMS, { force: true });
+    t.controller.reportShown('other');
+    expect(t.recorded).toEqual([]);
+  });
+
+  it('shows nothing while the sign-in screens are up, then the message once the user lands in the app', async () => {
+    const t = setup({ messages: [message('a')] });
+    t.controller.setRoute('/auth');
+    t.controller.setUser('u1');
+    await t.controller.refresh(PARAMS, { force: true });
+    expect(t.active()).toBeNull();
+    for (const route of ['/welcome', '/onboarding', '/reset-password', '/auth-callback']) {
+      t.controller.setRoute(route);
+      expect(t.active()).toBeNull();
+    }
+    t.controller.setRoute('/(tabs)');
+    expect(t.active()).toBe('a');
+    expect(t.recorded).toEqual([]);
+  });
+
+  it('does not place a delayed message while a sign-in screen is up', async () => {
+    const t = setup({ messages: [message('late', { delaySeconds: 5 })] });
+    t.controller.setRoute('/(tabs)');
+    t.controller.setUser('u1');
+    await t.controller.refresh(PARAMS, { force: true });
+    t.controller.setRoute('/auth');
+    t.fireTimers();
+    expect(t.active()).toBeNull();
+  });
+
+  it('keeps a banner back while a screen is pushed over the tabs, and records it once the tabs show', async () => {
+    const banner = message('b', { presentation: 'banner' });
+    const t = setup({ messages: [banner] });
+    t.controller.setUser('u1');
+    // Opened from a shared recipe link: nothing draws a banner under that screen.
+    t.controller.setRoute('/recipe/1');
+    await t.controller.refresh(PARAMS, { force: true });
+    expect(t.active()).toBeNull();
+    t.controller.setRoute('/(tabs)');
+    expect(t.active()).toBe('b');
+    t.controller.reportShown('b');
+    expect(t.recorded.map((r) => r.event)).toEqual(['seen']);
+  });
+
+  it('does not record a banner that is mounted but hidden under a pushed screen', async () => {
+    const t = setup({ messages: [message('b', { presentation: 'banner' })] });
+    t.controller.setUser('u1');
+    t.controller.setRoute('/(tabs)');
+    await t.controller.refresh(PARAMS, { force: true });
+    t.controller.setRoute('/recipe/1');
+    t.controller.reportShown('b');
+    expect(t.recorded).toEqual([]);
+    t.controller.setRoute('/(tabs)');
+    expect(t.recorded.map((r) => r.event)).toEqual(['seen']);
+  });
+
+  it('lets a sheet through while a banner has to wait for the tabs', async () => {
+    const t = setup({ messages: [message('b', { presentation: 'banner', priority: 9 }), message('s', { priority: 1 })] });
+    t.controller.setUser('u1');
+    t.controller.setRoute('/recipe/1');
+    await t.controller.refresh(PARAMS, { force: true });
+    expect(t.active()).toBe('s');
+  });
+});
+
+describe('hiding a message for this launch (admin way out)', () => {
+  const required = () => message('update', { required: true, dismissible: false, presentation: 'fullscreen' });
+
+  it('hides a required message for the rest of the launch and records nothing', async () => {
+    const t = setup({ messages: [required()] });
+    t.controller.setUser('u1');
+    await t.controller.refresh(PARAMS, { force: true });
+    t.controller.reportShown('update');
+    t.controller.hideForThisLaunch('update');
+    expect(t.active()).toBeNull();
+    expect(t.recorded.map((r) => r.event)).toEqual(['seen']);
+    // A fetch brings the message back from the server, but it stays hidden this launch.
+    await t.controller.refresh(PARAMS, { force: true });
+    expect(t.active()).toBeNull();
+  });
+
+  it('does not let a user dismiss a required message the normal way', async () => {
+    const t = setup({ messages: [required()] });
+    t.controller.setUser('u1');
+    await t.controller.refresh(PARAMS, { force: true });
+    t.controller.dismiss('update');
+    expect(t.active()).toBe('update');
   });
 });
 

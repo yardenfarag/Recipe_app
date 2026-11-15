@@ -3,6 +3,7 @@ import { ScrollView, View } from 'react-native';
 import { SheetModal } from '@/components/SheetModal';
 
 import { MessageContent, type MessageActionHandler } from './MessageContent';
+import { useModalShow } from './useModalShow';
 import type { MessageView } from './viewModel';
 
 const TRACK = 'in_app_message.sheet';
@@ -21,15 +22,20 @@ export function SheetPresenter({
   view,
   onAction,
   onClose,
+  onShown,
 }: {
   view: MessageView;
   onAction: MessageActionHandler;
   onClose: () => void;
+  onShown: () => void;
 }) {
   const dismissible = view.dismissible;
+  const { modalKey, onShow } = useModalShow(onShown);
   return (
     <SheetModal
+      key={modalKey}
       visible
+      onShow={onShow}
       title={view.title}
       onClose={dismissible ? onClose : noop}
       showCloseButton={dismissible}

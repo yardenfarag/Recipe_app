@@ -1,3 +1,4 @@
+import { useEffect } from 'react';
 import { View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
@@ -20,7 +21,13 @@ function BannerView({ message, position }: { message: InAppMessage; position: 't
   const insets = useSafeAreaInsets();
   const { isWide } = useBreakpoint();
   const view = useMessageView(message);
-  const { onAction, onClose } = useInAppMessageActions(message);
+  const { onAction, onClose, onShown } = useInAppMessageActions(message);
+
+  // Drawn, so it can be seen. The controller records `seen` only while a tabs route is current,
+  // not while a screen pushed over the tabs hides it.
+  useEffect(() => {
+    onShown();
+  }, [onShown]);
 
   if (position === 'bottom') {
     // Over the content, just above the bottom tab bar (wide layouts have none).

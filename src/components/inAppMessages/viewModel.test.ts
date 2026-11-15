@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 
 import type { InAppMessage } from '@/lib/inAppMessages';
 
-import { buildMessageView, canUseSystemAlert } from './viewModel';
+import { buildMessageView, canUseSystemAlert, needsCloseButton } from './viewModel';
 import { resolveIconName, toneColors } from './tone';
 import { getThemePackColors } from '@/constants/themes';
 
@@ -135,12 +135,21 @@ describe('canUseSystemAlert', () => {
   it('uses the card for an image, or when buttons and link need more than two places', () => {
     expect(canUseSystemAlert(view({ imageUrl: 'https://example.com/a.png' }), { platform: 'ios', deviceRtl: false })).toBe(false);
     expect(canUseSystemAlert(view({ link: { url: 'https://example.com' } }), { platform: 'ios', deviceRtl: false })).toBe(false);
-    expect(
-      canUseSystemAlert(view({ link: { url: 'https://example.com' }, secondaryAction: undefined }), {
-        platform: 'ios',
-        deviceRtl: false,
-      }),
-    ).toBe(true);
+  });
+
+  it('counts the close button a dismissible alert needs when none of its buttons dismisses', () => {
+    const env = { platform: 'ios', deviceRtl: false };
+    // One button that does something: that button plus Close fit.
+    expect(needsCloseButton(view({ secondaryAction: undefined }))).toBe(true);
+    expect(canUseSystemAlert(view({ secondaryAction: undefined }), env)).toBe(true);
+    // A button and a link, neither dismissing: Close would be a third place, so the card is used.
+    expect(canUseSystemAlert(view({ link: { url: 'https://example.com' }, secondaryAction: undefined }), env)).toBe(false);
+    // Two buttons that do something: same.
+    expect(canUseSystemAlert(view({ secondaryAction: { type: 'route', href: '/hub' } }), env)).toBe(false);
+    // A "dismiss" button already closes it; a message that cannot be dismissed needs no close button.
+    expect(needsCloseButton(view())).toBe(false);
+    expect(needsCloseButton(view({ dismissible: false, secondaryAction: undefined }))).toBe(false);
+    expect(canUseSystemAlert(view({ link: { url: 'https://example.com' } }), env)).toBe(false);
   });
 
   it('is only for the alert way of showing', () => {

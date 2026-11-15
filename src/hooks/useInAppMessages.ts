@@ -47,7 +47,15 @@ export function useInAppMessageActions(message: InAppMessage | null) {
     },
     [id],
   );
-  return { onClose, onAction };
+  // The presenter calls this when the message is really on screen; only then is it recorded as seen.
+  const onShown = useCallback(() => {
+    if (id) inAppMessagesController.reportShown(id);
+  }, [id]);
+  // Admin-only way out of a required message for the rest of this launch; records nothing.
+  const onAdminHide = useCallback(() => {
+    if (id) inAppMessagesController.hideForThisLaunch(id);
+  }, [id]);
+  return { onClose, onAction, onShown, onAdminHide };
 }
 
 /**

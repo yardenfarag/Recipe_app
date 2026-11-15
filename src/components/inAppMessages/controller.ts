@@ -45,6 +45,26 @@ export type MessagesSnapshot = {
 
 type Listener = () => void;
 
+/** Screens a signed-out person sees. A message chosen at sign-in waits until the user leaves them. */
+const SIGNED_OUT_SCREENS = new Set(['auth', 'welcome', 'onboarding', 'reset-password', 'auth-callback']);
+
+/** The raw route (group segments included, e.g. `/auth`) is one of the signed-out screens. */
+export function isSignedOutRoute(route: string | null): boolean {
+  if (!route) return false;
+  const first = route.split('/').find((part) => part !== '') ?? '';
+  return SIGNED_OUT_SCREENS.has(first.split('?')[0] ?? '');
+}
+
+/** The raw route is a tabs route. `matchesScreen` drops `(group)` segments, so this checks the raw string. */
+export function isTabsRoute(route: string | null): boolean {
+  return route === '/(tabs)' || (route?.startsWith('/(tabs)/') ?? false);
+}
+
+/** A banner is drawn only inside the tabs; a required message is always full screen. */
+function isBannerMessage(message: InAppMessage): boolean {
+  return message.presentation === 'banner' && !message.required;
+}
+
 /** The later of two ISO times (either may be null). */
 function later(a: string | null, b: string | null): string | null {
   if (!a) return b;
@@ -87,6 +107,9 @@ export function createMessagesController(deps: ControllerDeps) {
   let receipts: Record<string, MessageReceipt> = {};
   let route: string | null = null;
   let active: InAppMessage | null = null;
+  /** The active message's presenter reported it is really on screen (a modal's onShow, the alert call, the banner mounted). */
+  let shown = false;
+  let seenRecorded = false;
   /** True while `active` is a sample being previewed: nothing is recorded for it. */
   let previewing = false;
   /** Messages closed during this launch; they don't come back until the next one. */
@@ -117,11 +140,31 @@ export function createMessagesController(deps: ControllerDeps) {
     void deps.recordEvent(messageId, event, button).catch(() => {});
   }
 
+  /** The messages that may be chosen now: not closed this launch, and a banner only while a tabs route is showing. */
+  function candidates(): InAppMessage[] {
+    return messages.filter((m) => !closedThisLaunch.has(m.id) && (!isBannerMessage(m) || isTabsRoute(route)));
+  }
+
+  function clearActive() {
+    active = null;
+    shown = false;
+    seenRecorded = false;
+  }
+
+  /** Record `seen` once the message is really on screen (a banner also needs a tabs route showing). */
+  function recordSeenIfShown() {
+    if (!active || previewing || seenRecorded || !shown) return;
+    if (isBannerMessage(active) && !isTabsRoute(route)) return;
+    seenRecorded = true;
+    record(active.id, 'seen');
+  }
+
   function activate(message: InAppMessage) {
     cancelPending();
     active = message;
+    shown = false;
+    seenRecorded = false;
     previewing = false;
-    record(message.id, 'seen');
     emit();
   }
 
@@ -133,19 +176,13 @@ export function createMessagesController(deps: ControllerDeps) {
       const current = messages.find((m) => m.id === active?.id);
       if (!current) {
         // Stopped, ended or no longer targeting this user: it goes away at this fetch.
-        active = null;
+        clearActive();
       } else {
         active = current;
-        const candidate = nextMessageToShow(
-          messages.filter((m) => !closedThisLaunch.has(m.id)),
-          receipts,
-          route,
-          now(),
-          { launchedAt },
-        );
+        const candidate = nextMessageToShow(candidates(), receipts, route, now(), { launchedAt });
         // A required message (an update prompt) takes over from an optional one.
         if (candidate && candidate.required && !active.required && candidate.id !== active.id) {
-          active = null;
+          clearActive();
         } else {
           emit();
           return;
@@ -153,13 +190,8 @@ export function createMessagesController(deps: ControllerDeps) {
       }
     }
 
-    const next = nextMessageToShow(
-      messages.filter((m) => !closedThisLaunch.has(m.id)),
-      receipts,
-      route,
-      now(),
-      { launchedAt },
-    );
+    // Nothing new while the sign-in screens are up; it appears once the user lands in the app.
+    const next = isSignedOutRoute(route) ? null : nextMessageToShow(candidates(), receipts, route, now(), { launchedAt });
     if (!next) {
       cancelPending();
       emit();
@@ -179,7 +211,8 @@ export function createMessagesController(deps: ControllerDeps) {
       handle: setTimer(() => {
         pending = null;
         const still = messages.find((m) => m.id === id);
-        if (still && !active && userId !== null) activate(still);
+        const placeable = still && (!isBannerMessage(still) || isTabsRoute(route)) && !isSignedOutRoute(route);
+        if (still && placeable && !active && userId !== null) activate(still);
       }, wait),
     };
   }
@@ -188,7 +221,7 @@ export function createMessagesController(deps: ControllerDeps) {
     if (!active || active.id !== messageId) return;
     if (!previewing) closedThisLaunch.add(messageId);
     const wasPreview = previewing;
-    active = null;
+    clearActive();
     previewing = false;
     emit();
     if (!wasPreview) evaluate(true);
@@ -217,7 +250,7 @@ export function createMessagesController(deps: ControllerDeps) {
       inFlight = null;
       cancelPending();
       // A dev sample opened from the URL is activated before the session resolves; the user change must not wipe it.
-      if (!previewing) active = null;
+      if (!previewing) clearActive();
       emit();
     },
 
@@ -226,6 +259,29 @@ export function createMessagesController(deps: ControllerDeps) {
       if (next === route) return;
       route = next;
       evaluate();
+      // A banner waiting under a pushed screen is recorded once the tabs are back.
+      recordSeenIfShown();
+    },
+
+    /**
+     * The presenter reports the active message is really on screen: a modal's
+     * `onShow`, the call to `Alert.alert`, or a mounted banner. Only then is
+     * `seen` recorded. An iOS modal that could not be presented over another
+     * modal never reports, so it is not counted.
+     */
+    reportShown(messageId: string) {
+      if (!active || active.id !== messageId) return;
+      shown = true;
+      recordSeenIfShown();
+    },
+
+    /**
+     * Admin-only way out of a message for the rest of this launch. Records
+     * nothing (not even `dismissed`), so the message still counts as unanswered
+     * and comes back on the next launch.
+     */
+    hideForThisLaunch(messageId: string) {
+      close(messageId);
     },
 
     /** Fetch the messages for the signed-in user. Silent on failure. Does nothing when nobody is signed in. */
@@ -286,7 +342,7 @@ export function createMessagesController(deps: ControllerDeps) {
         emit();
       } else {
         previewing = false;
-        active = null;
+        clearActive();
         emit();
         evaluate();
       }

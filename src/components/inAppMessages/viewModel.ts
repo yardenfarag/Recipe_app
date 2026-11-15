@@ -92,11 +92,21 @@ export function buildMessageView(
 }
 
 /**
+ * A dismissible alert whose buttons all do something (open a page, the store)
+ * needs a button of its own to close it: iOS closes a system alert only through
+ * a button. Costs a place, so `canUseSystemAlert` counts it.
+ */
+export function needsCloseButton(view: MessageView): boolean {
+  return view.dismissible && !view.buttons.some((button) => button.action.type === 'dismiss');
+}
+
+/**
  * Can this one be the system alert (UIAlertController / AlertDialog)? Only on
  * iOS and Android; only when the device's layout direction matches the
  * message's language (the system alert follows the device, so Hebrew or
  * Arabic would otherwise come out left-to-right); and only when it has no
- * image and at most two buttons, counting the link as a button. Otherwise the
+ * image and at most two buttons, counting the link and the close button a
+ * dismissible alert may need (`needsCloseButton`) as buttons. Otherwise the
  * custom card is used.
  */
 export function canUseSystemAlert(
@@ -107,5 +117,5 @@ export function canUseSystemAlert(
   if (view.presentation !== 'alert') return false;
   if (view.message.imageUrl) return false;
   if (env.deviceRtl !== view.rtl) return false;
-  return view.buttons.length + (view.link ? 1 : 0) <= 2;
+  return view.buttons.length + (view.link ? 1 : 0) + (needsCloseButton(view) ? 1 : 0) <= 2;
 }
