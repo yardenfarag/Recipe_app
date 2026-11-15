@@ -31,6 +31,7 @@ export interface EmailCopy {
   codeIntro: string;
   codeExpiry: string;
   codeIgnore: string;
+  codeCopy: string;
 
   reauthSubject: string;
   reauthTitle: string;
@@ -88,6 +89,7 @@ const en: EmailCopy = {
   codeIntro: 'Type this code in Pinch to sign in. No password needed.',
   codeExpiry: 'It works once and expires in an hour.',
   codeIgnore: 'Didn’t ask for a code? You can ignore this email. Nobody can sign in without it.',
+  codeCopy: 'Copy code',
 
   reauthSubject: 'Your Pinch confirmation code: {code}',
   reauthTitle: 'Confirm it’s you',
@@ -172,6 +174,7 @@ const es: EmailCopy = {
   codeIntro: 'Escribe este código en Pinch para iniciar sesión. Sin contraseña.',
   codeExpiry: 'Sirve una sola vez y caduca en una hora.',
   codeIgnore: '¿No pediste un código? Ignora este correo. Nadie puede entrar sin él.',
+  codeCopy: 'Copiar código',
 
   reauthSubject: 'Tu código de confirmación de Pinch: {code}',
   reauthTitle: 'Confirma que eres tú',
@@ -256,6 +259,7 @@ const he: EmailCopy = {
   codeIntro: 'מקלידים את הקוד הזה ב-Pinch ומתחברים. בלי סיסמה.',
   codeExpiry: 'הקוד עובד פעם אחת ותקף לשעה.',
   codeIgnore: 'לא ביקשת קוד? אפשר להתעלם מהמייל. אי אפשר להתחבר בלעדיו.',
+  codeCopy: 'העתקת הקוד',
 
   reauthSubject: 'קוד האישור שלך ל-Pinch: {code}',
   reauthTitle: 'רק מוודאים שזה את/ה',
@@ -340,6 +344,7 @@ const ru: EmailCopy = {
   codeIntro: 'Введите этот код в Pinch, чтобы войти. Пароль не нужен.',
   codeExpiry: 'Код одноразовый и действует один час.',
   codeIgnore: 'Не запрашивали код? Просто проигнорируйте это письмо. Без кода никто не войдёт.',
+  codeCopy: 'Скопировать код',
 
   reauthSubject: 'Ваш код подтверждения Pinch: {code}',
   reauthTitle: 'Подтвердите, что это вы',
@@ -424,6 +429,7 @@ const ar: EmailCopy = {
   codeIntro: 'اكتب هذا الرمز في Pinch لتسجيل الدخول. لا حاجة لكلمة مرور.',
   codeExpiry: 'يعمل مرة واحدة وتنتهي صلاحيته خلال ساعة.',
   codeIgnore: 'لم تطلب رمزًا؟ يمكنك تجاهل هذه الرسالة. لا أحد يستطيع الدخول بدونه.',
+  codeCopy: 'نسخ الرمز',
 
   reauthSubject: 'رمز التأكيد في Pinch: {code}',
   reauthTitle: 'تأكيد أنه أنت',

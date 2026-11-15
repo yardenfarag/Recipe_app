@@ -73,6 +73,14 @@ Deno.test('sign-in code email shows the code in the subject, html and text', () 
   assertStringIncludes(email.html, 'https://pinch-app.io/icon-192.png');
 });
 
+Deno.test('code emails link to the copy page with the code and language', () => {
+  const signin = renderCodeEmail({ locale: 'he', code: '482913', purpose: 'signin' });
+  assertStringIncludes(signin.html, 'href="https://pinch-app.io/code.html?l=he#482913"');
+  assertStringIncludes(signin.html, COPY.he.codeCopy);
+  const reset = renderResetEmail({ locale: 'es', code: '111222', link: 'https://e.com' });
+  assertStringIncludes(reset.html, 'href="https://pinch-app.io/code.html?l=es#111222"');
+});
+
 Deno.test('links and values are escaped', () => {
   assertEquals(escapeHtml(`<a href="x">'&`), '&lt;a href=&quot;x&quot;&gt;&#39;&amp;');
   const reset = renderResetEmail({ locale: 'en', code: '1', link: 'https://e.com/?a=1&b="2"' });

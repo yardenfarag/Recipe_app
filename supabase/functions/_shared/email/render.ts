@@ -100,11 +100,23 @@ function button(label: string, href: string): string {
 </td></tr></table>`;
 }
 
-/** The code, big and spaced out. Always left-to-right, even in Hebrew and Arabic. */
-function codeBlock(code: string): string {
-  return `<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="margin:8px 0 20px;">
-<tr><td align="center" dir="ltr" style="background:${C.pinkSoft};border:2px dashed ${C.pinkLine};border-radius:18px;padding:20px 12px;font-family:'SF Mono',Menlo,Consolas,monospace;font-size:36px;font-weight:800;letter-spacing:10px;color:${C.pink};">${escapeHtml(code)}</td></tr>
-</table>`;
+/** Opens pinch-app.io/code.html, which copies the code (email apps can't run scripts). */
+export function copyCodeUrl(code: string, locale: EmailLocale): string {
+  return `${SITE_URL}/code.html?l=${locale}#${encodeURIComponent(code)}`;
+}
+
+/**
+ * The code, big and spaced out, always left-to-right, even in Hebrew and Arabic. A tap selects
+ * the whole code where the mail app allows it, and "Copy code" opens a page that copies it.
+ */
+function codeBlock(code: string, locale: EmailLocale): string {
+  return `<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="margin:8px 0 12px;">
+<tr><td align="center" dir="ltr" style="background:${C.pinkSoft};border:2px dashed ${C.pinkLine};border-radius:18px;padding:20px 12px;font-family:'SF Mono',Menlo,Consolas,monospace;font-size:36px;font-weight:800;letter-spacing:10px;color:${C.pink};-webkit-user-select:all;user-select:all;">${escapeHtml(code)}</td></tr>
+</table>
+<table role="presentation" cellpadding="0" cellspacing="0" border="0" align="center" style="margin:0 auto 20px;">
+<tr><td align="center" style="border-radius:999px;border:2px solid ${C.pink};">
+<a href="${escapeHtml(copyCodeUrl(code, locale))}" style="display:inline-block;padding:10px 22px;font-family:${FONT};font-size:15px;font-weight:700;color:${C.pink};text-decoration:none;border-radius:999px;">📋 ${escapeHtml(COPY[locale].codeCopy)}</a>
+</td></tr></table>`;
 }
 
 function divider(): string {
@@ -127,7 +139,7 @@ export function renderCodeEmail(input: {
   const subject = fill(isReauth ? c.reauthSubject : c.codeSubject, { code: input.code });
   const title = isReauth ? c.reauthTitle : c.codeTitle;
   const intro = isReauth ? c.reauthIntro : c.codeIntro;
-  const body = [p(intro), codeBlock(input.code), p(c.codeExpiry, { muted: true, small: true }), p(c.codeIgnore, { muted: true, small: true })].join('\n');
+  const body = [p(intro), codeBlock(input.code, input.locale), p(c.codeExpiry, { muted: true, small: true }), p(c.codeIgnore, { muted: true, small: true })].join('\n');
   return {
     subject,
     html: layout({ locale: input.locale, subject, preheader: c.codePreheader, title, body }),
@@ -141,7 +153,7 @@ export function renderResetEmail(input: { locale: EmailLocale; code: string; lin
   const c = COPY[input.locale];
   const body = [
     p(c.resetIntro),
-    codeBlock(input.code),
+    codeBlock(input.code, input.locale),
     p(c.codeExpiry, { muted: true, small: true }),
     divider(),
     p(c.resetButtonIntro, { small: true }),
