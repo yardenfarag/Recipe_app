@@ -20,13 +20,57 @@ WebBrowser.maybeCompleteAuthSession();
 export async function signUpWithEmail(
   email: string,
   password: string,
+  locale?: string,
 ): Promise<{ needsConfirmation: boolean }> {
   const { data, error } = await supabase.auth.signUp({
     email: normalizeEmail(email),
     password,
+    // Emails (welcome, codes, receipts) go out in this language.
+    options: locale ? { data: { locale } } : undefined,
   });
   if (error) throw friendlyAuthError(error, 'signup');
   return { needsConfirmation: !data.session };
+}
+
+/**
+ * Emails a 6-digit sign-in code (the auth-email function sends it from hello@pinch-app.io).
+ * An address without an account gets one, the same as signing up.
+ */
+export async function sendSignInCode(email: string, locale?: string): Promise<void> {
+  const { error } = await supabase.auth.signInWithOtp({
+    email: normalizeEmail(email),
+    options: { shouldCreateUser: true, data: locale ? { locale } : undefined },
+  });
+  if (error) throw friendlyAuthError(error, 'code');
+}
+
+export async function verifySignInCode(email: string, code: string): Promise<void> {
+  const { error } = await supabase.auth.verifyOtp({
+    email: normalizeEmail(email),
+    token: code.trim(),
+    type: 'email',
+  });
+  if (error) throw friendlyAuthError(error, 'code');
+}
+
+/** Signs in with the code from the reset email, so the next step can set a new password. */
+export async function verifyResetCode(email: string, code: string): Promise<void> {
+  const { error } = await supabase.auth.verifyOtp({
+    email: normalizeEmail(email),
+    token: code.trim(),
+    type: 'recovery',
+  });
+  if (error) throw friendlyAuthError(error, 'code');
+}
+
+/** Saves the app language on the account, so server emails use it. No-op when it's already saved. */
+export async function saveAccountLocale(
+  user: { user_metadata?: Record<string, unknown> | null } | null,
+  locale: string,
+): Promise<void> {
+  if (!user || user.user_metadata?.locale === locale) return;
+  const { error } = await supabase.auth.updateUser({ data: { locale } });
+  if (error) console.warn('[auth] could not save language', error.message);
 }
 
 export async function signInWithEmail(email: string, password: string) {
@@ -226,13 +270,18 @@ export async function consumePasswordRecoveryUrl(url: string): Promise<void> {
   throw new Error('This password reset link is invalid or has expired.');
 }
 
+export async function hasSession(): Promise<boolean> {
+  const { data } = await supabase.auth.getSession();
+  return Boolean(data.session);
+}
+
 export async function updatePassword(password: string): Promise<void> {
   const { data: sessionData, error: sessionError } = await supabase.auth.getSession();
   if (sessionError) throw friendlyAuthError(sessionError, 'update');
 
   const email = sessionData.session?.user?.email;
   if (!email) {
-    throw new Error('Your reset session expired. Open the link from your email again.');
+    throw new Error('Your reset session expired. Ask for a new reset code and try again.');
   }
 
   const { error: updateError } = await supabase.auth.updateUser({ password });
@@ -244,9 +293,20 @@ export async function updatePassword(password: string): Promise<void> {
   await signInWithEmail(email, password);
 }
 
-type AuthAction = 'signin' | 'signup' | 'social' | 'reset' | 'update';
+type AuthAction = 'signin' | 'signup' | 'social' | 'reset' | 'update' | 'code';
 
-function friendlyAuthError(error: unknown, action: AuthAction): Error {
+/** An auth failure the screen can translate: `code` is Supabase's error code. */
+export type AuthError = Error & { code?: string };
+
+function friendlyAuthError(error: unknown, action: AuthAction): AuthError {
+  const err = friendlyAuthMessage(error, action) as AuthError;
+  const code =
+    error && typeof error === 'object' && 'code' in error ? String((error as { code?: unknown }).code ?? '') : '';
+  if (code) err.code = code;
+  return err;
+}
+
+function friendlyAuthMessage(error: unknown, action: AuthAction): Error {
   const code =
     error && typeof error === 'object' && 'code' in error
       ? String((error as { code?: unknown }).code ?? '')
@@ -269,13 +329,17 @@ function friendlyAuthError(error: unknown, action: AuthAction): Error {
   if (code === 'same_password') {
     return new Error('Choose a password you have not used for this account.');
   }
+  if (code === 'otp_expired' || code === 'otp_disabled') {
+    return new Error('That code is wrong or has expired. Check the email or ask for a new code.');
+  }
 
   const fallback: Record<AuthAction, string> = {
     signin: 'Sign-in failed. Check your details and try again.',
     signup: "We couldn't create the account. Try signing in or reset your password.",
     social: 'Sign-in could not be completed. Please try again.',
     reset: 'The reset request could not be completed. Please try again.',
-    update: 'Your password could not be updated. Request a new reset link and try again.',
+    update: 'Your password could not be updated. Request a new reset code and try again.',
+    code: 'The code could not be checked. Please try again.',
   };
   return new Error(fallback[action]);
 }

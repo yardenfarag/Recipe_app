@@ -286,13 +286,13 @@ export default {
     "reasonHub": "Create a free account to save recipes from the Cooking Hub.",
     "reasonEdit": "Create a free account to edit your recipes and write your own.",
     "signupSubtitle": "Save recipes and sync them across devices.",
-    "forgotSubtitle": "Enter your email and we’ll send you a secure reset link.",
+    "forgotSubtitle": "Enter your email and we’ll send you a code to reset your password.",
     "signinSubtitle": "Sign in to access your recipe library.",
     "checkEmail": "Check your email",
     "confirmSent": "We sent a confirmation link to",
-    "resetSent": "If an account exists for that address, we sent a reset link to",
+    "resetSent": "If an account exists for that address, we sent a 6-digit code to",
     "confirmInstructions": "Open the link on this phone, then come back here and sign in.",
-    "resetInstructions": "Open the link on this phone to choose a new password.",
+    "resetInstructions": "Type it here to choose a new password. The email also has a button if you’d rather use that.",
     "confirmedSignIn": "I confirmed — sign in",
     "backToSignIn": "Back to sign in",
     "differentEmail": "Use a different email",
@@ -312,7 +312,7 @@ export default {
       "strong": "Strong password"
     },
     "forgotPassword": "Forgot password?",
-    "sendResetLink": "Send reset link",
+    "sendResetLink": "Send reset code",
     "haveAccount": "Already have an account? Sign in",
     "needAccount": "Don’t have an account? Sign up",
     "orContinueWith": "or continue with",
@@ -321,7 +321,19 @@ export default {
     "terms": "Terms",
     "callbackFailed": "Sign-in could not be completed.",
     "callbackMissing": "Sign-in link was missing. Try again from the sign-in screen.",
-    "callbackFinishing": "Finishing sign-in…"
+    "callbackFinishing": "Finishing sign-in…",
+    "codeTitle": "Sign in with a code",
+    "codeSubtitle": "We’ll email you a 6-digit code. No password needed.",
+    "sendCode": "Email me a code",
+    "emailMeCode": "Email me a sign-in code instead",
+    "usePassword": "Use my password instead",
+    "codeSent": "We sent a 6-digit code to",
+    "codeInstructions": "Type it here to sign in. It expires in an hour.",
+    "codeLabel": "6-digit code",
+    "verifyCode": "Continue",
+    "codeInvalid": "That code is wrong or has expired. Check the email or send a new code.",
+    "resendCode": "Send a new code",
+    "codeResent": "New code sent. Check your email."
   },
   "recipe": {
     "preview": "Preview",
@@ -655,7 +667,7 @@ export default {
     "cookSubtitle": "Optional. We’ll remember it for recipes you choose to adapt.",
     "cookEverything": "I cook everything",
     "changeLater": "You can change this anytime in Settings.",
-    "dietLimit": "You can pick up to {{count}}.",
+    "dietLimit": "You can pick up to {{count}}.",
     "heardTitle": "How did you hear about Pinch?",
     "heardSubtitle": "One tap, and it helps us reach more people like you.",
     "heardSources": {
@@ -827,7 +839,7 @@ export default {
     "pantrySaved": "{{name}} will stay off the list next time."
   },
   "resetPassword": {
-    "openLink": "Open the reset link from your email to continue.",
+    "openLink": "Request a new reset code to continue.",
     "invalidLink": "This password reset link is invalid or expired.",
     "mismatch": "Passwords do not match.",
     "updateFailed": "Your password could not be updated.",
@@ -838,7 +850,7 @@ export default {
     "newPassword": "New password",
     "confirmPassword": "Confirm new password",
     "update": "Update password",
-    "requestNewLink": "Request a new reset link"
+    "requestNewLink": "Request a new reset code"
   },
   "errorBoundary": {
     "title": "Something went wrong",

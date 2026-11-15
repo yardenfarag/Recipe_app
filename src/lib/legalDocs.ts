@@ -78,6 +78,7 @@ const DOCS: Record<LegalDocId, LegalDoc> = {
           [text('Enforce free allowances, process credit pack purchases, and prevent abuse.')],
           [text('Understand how Pinch is used and diagnose problems, using app activity and product events.')],
           [text('Respond to support requests and feedback you send us.')],
+          [text('Send account emails in your app language: sign-in and password reset codes, a welcome email when you join, and a confirmation for each credit pack you buy.')],
         ],
       },
       { kind: 'h2', text: 'Third parties' },
@@ -96,6 +97,7 @@ const DOCS: Record<LegalDocId, LegalDoc> = {
           [strong('YouTube Data API'), text(' — optional metadata for YouTube links.')],
           [strong('RevenueCat'), text(' — processes credit pack purchases made through Apple and Google; it receives your account id and purchase details.')],
           [strong('Paddle'), text(' — sells credit packs bought on pinch-app.io as our reseller and merchant of record; it receives your account id, email, billing country and payment details.')],
+          [strong('Resend'), text(' — sends Pinch’s emails from pinch-app.io; it receives your email address and the content of each email.')],
         ],
       },
       {

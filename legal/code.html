@@ -1,0 +1,133 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="robots" content="noindex" />
+    <meta name="referrer" content="no-referrer" />
+    <title>Your Pinch code</title>
+    <link rel="icon" type="image/png" href="/icon-192.png" />
+    <!--
+      The "Copy code" button in Pinch's sign-in and reset emails opens this page. Email apps can't
+      run scripts, so the copying happens here. The code rides in the #fragment, which browsers
+      never send to a server, and ?l= picks the language.
+    -->
+    <style>
+      :root {
+        color-scheme: light;
+        --pink: #b24f6d;
+        --pink-soft: #fbe9ef;
+        --pink-line: #f0c9d6;
+        --ink: #2a1620;
+        --muted: #7a6670;
+        --page: #f7f2f4;
+      }
+      * { box-sizing: border-box; }
+      body {
+        margin: 0;
+        min-height: 100vh;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: 24px 16px;
+        background: var(--page);
+        color: var(--ink);
+        font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+      }
+      main {
+        width: 100%;
+        max-width: 420px;
+        background: #fff;
+        border: 1px solid #efe4e8;
+        border-radius: 24px;
+        padding: 32px 24px;
+        text-align: center;
+      }
+      img { display: block; margin: 0 auto 16px; border-radius: 16px; }
+      h1 { margin: 0 0 8px; font-size: 24px; }
+      p { margin: 0 0 20px; color: var(--muted); line-height: 1.5; }
+      .code {
+        direction: ltr;
+        margin: 0 0 20px;
+        padding: 18px 12px;
+        border: 2px dashed var(--pink-line);
+        border-radius: 18px;
+        background: var(--pink-soft);
+        color: var(--pink);
+        font: 800 34px/1.2 "SF Mono", Menlo, Consolas, monospace;
+        letter-spacing: 8px;
+        user-select: all;
+        -webkit-user-select: all;
+      }
+      button {
+        width: 100%;
+        padding: 16px;
+        border: 0;
+        border-radius: 999px;
+        background: var(--pink);
+        color: #fff;
+        font: 700 17px/1 inherit;
+        font-family: inherit;
+        cursor: pointer;
+      }
+      button:focus-visible { outline: 3px solid var(--pink-line); outline-offset: 3px; }
+      .done { margin: 16px 0 0; color: #327456; font-weight: 600; min-height: 1.5em; }
+    </style>
+  </head>
+  <body>
+    <main>
+      <img src="/icon-192.png" width="56" height="56" alt="Pinch" />
+      <h1 id="title">Your Pinch code</h1>
+      <p id="intro">Copy it, then go back to Pinch and paste it.</p>
+      <div class="code" id="code" aria-live="polite">——————</div>
+      <button type="button" id="copy">Copy code</button>
+      <p class="done" id="done" role="status"></p>
+    </main>
+    <script>
+      (function () {
+        var STRINGS = {
+          en: ['Your Pinch code', 'Copy it, then go back to Pinch and paste it.', 'Copy code', 'Copied! Go back to Pinch and paste it.', 'This link has no code. Open the latest email from Pinch.'],
+          es: ['Tu código de Pinch', 'Cópialo, vuelve a Pinch y pégalo.', 'Copiar código', '¡Copiado! Vuelve a Pinch y pégalo.', 'Este enlace no tiene código. Abre el último correo de Pinch.'],
+          he: ['הקוד שלך ל-Pinch', 'מעתיקים, חוזרים ל-Pinch ומדביקים.', 'העתקת הקוד', 'הועתק! חוזרים ל-Pinch ומדביקים.', 'אין קוד בקישור הזה. כדאי לפתוח את המייל האחרון מ-Pinch.'],
+          ru: ['Ваш код Pinch', 'Скопируйте его, вернитесь в Pinch и вставьте.', 'Скопировать код', 'Скопировано! Вернитесь в Pinch и вставьте код.', 'В этой ссылке нет кода. Откройте последнее письмо от Pinch.'],
+          ar: ['رمزك في Pinch', 'انسخه، ثم ارجع إلى Pinch والصقه.', 'نسخ الرمز', 'تم النسخ! ارجع إلى Pinch والصقه.', 'لا يوجد رمز في هذا الرابط. افتح أحدث رسالة من Pinch.'],
+        };
+        var lang = (new URLSearchParams(location.search).get('l') || 'en').slice(0, 2);
+        var t = STRINGS[lang] || STRINGS.en;
+        if (!STRINGS[lang]) lang = 'en';
+        document.documentElement.lang = lang;
+        document.documentElement.dir = lang === 'he' || lang === 'ar' ? 'rtl' : 'ltr';
+        document.title = t[0];
+
+        var code = (location.hash.slice(1).match(/^\d{4,10}$/) || [''])[0];
+        var $ = function (id) { return document.getElementById(id); };
+        $('title').textContent = t[0];
+        $('intro').textContent = code ? t[1] : t[4];
+        $('copy').textContent = t[2];
+        $('code').textContent = code || '——————';
+        if (!code) { $('copy').hidden = true; return; }
+
+        function selectCode() {
+          var range = document.createRange();
+          range.selectNodeContents($('code'));
+          var sel = window.getSelection();
+          sel.removeAllRanges();
+          sel.addRange(range);
+        }
+        function copied() { $('done').textContent = t[3]; }
+
+        $('copy').addEventListener('click', function () {
+          if (navigator.clipboard && navigator.clipboard.writeText) {
+            navigator.clipboard.writeText(code).then(copied, function () {
+              selectCode();
+              if (document.execCommand('copy')) copied();
+            });
+          } else {
+            selectCode();
+            if (document.execCommand('copy')) copied();
+          }
+        });
+      })();
+    </script>
+  </body>
+</html>

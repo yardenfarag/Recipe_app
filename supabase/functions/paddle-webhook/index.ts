@@ -8,6 +8,7 @@
 // Paddle retries any non-2xx for days, so a delivery we can't handle yet (grants switched off,
 // a database error) answers 500 and is recorded in purchase_webhook_failures.
 import { jsonResponse } from '../_shared/cors.ts';
+import { sendPurchaseEmail } from '../_shared/email/purchase.ts';
 import {
   creditsFor,
   paddleApiBase,
@@ -140,5 +141,16 @@ Deno.serve(async (req) => {
     await recordFailure(body, 'grant_failed', error);
     return jsonResponse({ error: 'Credit grant failed' }, 500);
   }
+
+  const occurredAt = decision.occurredAt ? new Date(decision.occurredAt) : null;
+  await sendPurchaseEmail(admin, {
+    userId: decision.userId,
+    credits,
+    balance: Number.isFinite(Number(data)) ? Number(data) : null,
+    provider: PROVIDER,
+    transactionId: decision.transactionId,
+    store: 'paddle',
+    purchasedAt: occurredAt && !Number.isNaN(occurredAt.getTime()) ? occurredAt : null,
+  });
   return jsonResponse({ received: true, balance: Number(data) });
 });

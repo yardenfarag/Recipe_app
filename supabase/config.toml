@@ -11,5 +11,16 @@ verify_jwt = false
 [functions.paddle-webhook]
 verify_jwt = false
 
+# Supabase Auth signs Send Email Hook calls with the hook secret; it sends no user JWT.
+[functions.auth-email]
+verify_jwt = false
+
+# The welcome cron job sends a Vault secret (x-email-cron-secret), not a JWT.
+[functions.welcome-emails]
+verify_jwt = false
+
 [auth.email]
 enable_confirmations = false
+# Sign-in and password-reset codes are 6 digits and last an hour (the emails say so).
+otp_length = 6
+otp_expiry = 3600

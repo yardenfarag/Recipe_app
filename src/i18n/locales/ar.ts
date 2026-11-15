@@ -286,13 +286,13 @@ export default {
     "reasonHub": "أنشئ حسابًا مجانيًا لحفظ وصفات Cooking Hub.",
     "reasonEdit": "أنشئ حسابًا مجانيًا لتعديل وصفاتك وكتابة وصفاتك الخاصة.",
     "signupSubtitle": "احفظ الوصفات وتجدها على كل أجهزتك.",
-    "forgotSubtitle": "أدخل بريدك وسنرسل رابطًا لتغيير كلمة المرور.",
+    "forgotSubtitle": "أدخل بريدك وسنرسل لك رمزًا لإعادة تعيين كلمة المرور.",
     "signinSubtitle": "سجّل الدخول لترى وصفاتك.",
     "checkEmail": "تحقق من بريدك",
     "confirmSent": "أرسلنا رابط تأكيد إلى",
-    "resetSent": "إذا كان هناك حساب بهذا البريد، أرسلنا رابطًا إلى",
+    "resetSent": "إذا كان هناك حساب بهذا العنوان، فقد أرسلنا رمزًا من 6 أرقام إلى",
     "confirmInstructions": "افتح الرابط على هذا الهاتف، ثم عد إلى هنا وسجّل الدخول.",
-    "resetInstructions": "افتح الرابط على هذا الهاتف واختر كلمة مرور جديدة.",
+    "resetInstructions": "اكتبه هنا لاختيار كلمة مرور جديدة. في الرسالة زر أيضًا إذا كان أسهل.",
     "confirmedSignIn": "تم التأكيد — تسجيل الدخول",
     "backToSignIn": "العودة لتسجيل الدخول",
     "differentEmail": "بريد آخر",
@@ -312,7 +312,7 @@ export default {
       "strong": "كلمة مرور قوية"
     },
     "forgotPassword": "نسيت كلمة المرور؟",
-    "sendResetLink": "إرسال الرابط",
+    "sendResetLink": "إرسال رمز إعادة التعيين",
     "haveAccount": "لديك حساب؟ سجّل الدخول",
     "needAccount": "ليس لديك حساب؟ أنشئ واحدًا",
     "orContinueWith": "أو تابع عبر",
@@ -321,7 +321,19 @@ export default {
     "terms": "الشروط",
     "callbackFailed": "ما قدرنا نكمل تسجيل الدخول.",
     "callbackMissing": "رابط الدخول ناقص. ارجع إلى شاشة الدخول وجرّب مرة ثانية.",
-    "callbackFinishing": "جارٍ تسجيل الدخول…"
+    "callbackFinishing": "جارٍ تسجيل الدخول…",
+    "codeTitle": "الدخول برمز",
+    "codeSubtitle": "سنرسل إلى بريدك رمزًا من 6 أرقام. لا حاجة لكلمة مرور.",
+    "sendCode": "أرسل لي رمزًا",
+    "emailMeCode": "أرسل لي رمز دخول بالبريد",
+    "usePassword": "استخدام كلمة المرور",
+    "codeSent": "أرسلنا رمزًا من 6 أرقام إلى",
+    "codeInstructions": "اكتبه هنا لتسجيل الدخول. تنتهي صلاحيته خلال ساعة.",
+    "codeLabel": "رمز من 6 أرقام",
+    "verifyCode": "متابعة",
+    "codeInvalid": "الرمز غير صحيح أو انتهت صلاحيته. تحقق من البريد أو اطلب رمزًا جديدًا.",
+    "resendCode": "إرسال رمز جديد",
+    "codeResent": "أُرسل رمز جديد. تحقق من بريدك."
   },
   "recipe": {
     "preview": "معاينة",
@@ -655,7 +667,7 @@ export default {
     "cookSubtitle": "اختياري. نذكّره للوصفات التي تختار تكييفها.",
     "cookEverything": "أطبخ كل شيء",
     "changeLater": "تقدر تغيّر هذا في أي وقت من الإعدادات.",
-    "dietLimit": "يمكنك اختيار حتى {{count}}.",
+    "dietLimit": "يمكنك اختيار حتى {{count}}.",
     "heardTitle": "كيف سمعت عن Pinch؟",
     "heardSubtitle": "نقرة واحدة تساعدنا على الوصول إلى المزيد من الأشخاص مثلك.",
     "heardSources": {
@@ -827,7 +839,7 @@ export default {
     "pantrySaved": "{{name}} ما رح ينزل عاللائحة المرة الجاية."
   },
   "resetPassword": {
-    "openLink": "افتح الرابط من بريدك حتى نكمل.",
+    "openLink": "اطلب رمز إعادة تعيين جديدًا للمتابعة.",
     "invalidLink": "الرابط غير صالح أو منتهٍ.",
     "mismatch": "كلمتا المرور غير متطابقتين.",
     "updateFailed": "ما قدرنا نغيّر كلمة المرور.",
@@ -838,7 +850,7 @@ export default {
     "newPassword": "كلمة المرور الجديدة",
     "confirmPassword": "كلمة المرور الجديدة مرة أخرى",
     "update": "حفظ كلمة المرور",
-    "requestNewLink": "طلب رابط جديد"
+    "requestNewLink": "طلب رمز جديد"
   },
   "errorBoundary": {
     "title": "حدث خطأ ما",
