@@ -1,14 +1,15 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="{{LANG}}" dir="{{DIR}}">
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>Pinch: Recipe Library | Save Recipes from TikTok, Instagram &amp; YouTube</title>
+    <title>{{t:meta.title}}</title>
     <meta
       name="description"
-      content="Pinch is a recipe keeper app that turns TikTok, Instagram, and YouTube cooking videos into written recipes, with ingredients, steps, and a shopping list. It reads the whole video, not just the caption."
+      content="{{t:meta.description}}"
     />
-    <link rel="canonical" href="https://pinch-app.io/" />
+    <link rel="canonical" href="{{URL}}" />
+    {{ALTERNATES}}
     <link rel="icon" type="image/png" href="/favicon.png" />
     <link rel="apple-touch-icon" href="/icon.png" />
     <link rel="manifest" href="/manifest.json" />
@@ -17,164 +18,23 @@
 
     <meta property="og:type" content="website" />
     <meta property="og:site_name" content="Pinch: Recipe Library" />
-    <meta property="og:url" content="https://pinch-app.io/" />
-    <meta property="og:title" content="Pinch: Recipe Library | Save Recipes from TikTok, Instagram &amp; YouTube" />
+    <meta property="og:url" content="{{URL}}" />
+    <meta property="og:title" content="{{t:meta.title}}" />
     <meta
       property="og:description"
-      content="Turn a cooking video into ingredients, steps, and a shopping list."
+      content="{{t:meta.ogDescription}}"
     />
     <meta property="og:image" content="https://pinch-app.io/og-image.jpg" />
     <meta property="og:image:width" content="1200" />
     <meta property="og:image:height" content="630" />
     <meta
       property="og:image:alt"
-      content="Pinch: a TikTok pasta video turned into a saved recipe card. Saw it on TikTok? Now it's dinner."
+      content="{{t:meta.ogImageAlt}}"
     />
     <meta name="twitter:card" content="summary_large_image" />
 
-    <script type="application/ld+json">
-      {
-        "@context": "https://schema.org",
-        "@graph": [
-          {
-            "@type": "Organization",
-            "@id": "https://pinch-app.io/#organization",
-            "name": "Pinch: Recipe Library",
-            "alternateName": ["Pinch", "Pinch Recipe Library"],
-            "url": "https://pinch-app.io/",
-            "logo": "https://pinch-app.io/icon-512.png",
-            "disambiguatingDescription": "The recipe app at pinch-app.io that turns TikTok, Instagram, and YouTube cooking videos into written recipes. Listed as Pinch: Recipe Library on the App Store and Google Play. Not related to other apps or sites named Pinch.",
-            "sameAs": ["https://apps.apple.com/us/app/pinch-recipe-library/id6796310453", "https://play.google.com/store/apps/details?id=com.pinch.myapp"]
-          },
-          {
-            "@type": "MobileApplication",
-            "@id": "https://pinch-app.io/#ios-app",
-            "name": "Pinch: Recipe Library",
-            "alternateName": ["Pinch", "Pinch Recipe Library"],
-            "url": "https://pinch-app.io/",
-            "description": "Pinch is a recipe keeper app that turns TikTok, Instagram, and YouTube cooking videos into written recipes, with ingredients, steps, and a shopping list.",
-            "operatingSystem": "iOS",
-            "applicationCategory": "LifestyleApplication",
-            "applicationSubCategory": "Food & Drink",
-            "image": "https://pinch-app.io/icon-512.png",
-            "installUrl": "https://apps.apple.com/us/app/pinch-recipe-library/id6796310453",
-            "sameAs": ["https://apps.apple.com/us/app/pinch-recipe-library/id6796310453"],
-            "inLanguage": ["en", "es", "he", "ar", "ru"],
-            "offers": { "@type": "Offer", "price": "0", "priceCurrency": "USD" },
-            "publisher": { "@id": "https://pinch-app.io/#organization" }
-          },
-          {
-            "@type": "MobileApplication",
-            "@id": "https://pinch-app.io/#android-app",
-            "name": "Pinch: Recipe Library",
-            "alternateName": ["Pinch", "Pinch Recipe Library"],
-            "url": "https://pinch-app.io/",
-            "description": "Pinch is a recipe keeper app that turns TikTok, Instagram, and YouTube cooking videos into written recipes, with ingredients, steps, and a shopping list.",
-            "operatingSystem": "Android",
-            "applicationCategory": "LifestyleApplication",
-            "applicationSubCategory": "Food & Drink",
-            "image": "https://pinch-app.io/icon-512.png",
-            "installUrl": "https://play.google.com/store/apps/details?id=com.pinch.myapp",
-            "sameAs": ["https://play.google.com/store/apps/details?id=com.pinch.myapp"],
-            "inLanguage": ["en", "es", "he", "ar", "ru"],
-            "offers": { "@type": "Offer", "price": "0", "priceCurrency": "USD" },
-            "publisher": { "@id": "https://pinch-app.io/#organization" }
-          },
-          {
-            "@type": "WebApplication",
-            "@id": "https://pinch-app.io/#web-app",
-            "name": "Pinch: Recipe Library",
-            "alternateName": ["Pinch", "Pinch Recipe Library"],
-            "url": "https://pinch-app.io/app/",
-            "operatingSystem": "Any",
-            "browserRequirements": "Requires JavaScript",
-            "applicationCategory": "LifestyleApplication",
-            "offers": { "@type": "Offer", "price": "0", "priceCurrency": "USD" },
-            "publisher": { "@id": "https://pinch-app.io/#organization" }
-          }
-        ]
-      }
-    </script>
-    <script type="application/ld+json">
-      {
-        "@context": "https://schema.org",
-        "@type": "FAQPage",
-        "mainEntity": [
-          {
-            "@type": "Question",
-            "name": "What does Pinch do?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "Pinch reads a cooking video from TikTok, Instagram, or YouTube and turns it into a written recipe: ingredients, steps, and a shopping list you can check off at the store."
-            }
-          },
-          {
-            "@type": "Question",
-            "name": "Is this the same as other apps called Pinch?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "No. This is Pinch: Recipe Library, the app at pinch-app.io, on the App Store and Google Play. It isn't related to other apps or sites with Pinch in the name, such as getpinch.io or the Pinch It! Recipe Box app."
-            }
-          },
-          {
-            "@type": "Question",
-            "name": "Can Pinch turn a YouTube video into a recipe?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "Yes. Paste a YouTube link and Pinch's AI recipe extractor writes out the ingredients and steps, so you don't have to pause and rewind while you cook."
-            }
-          },
-          {
-            "@type": "Question",
-            "name": "How do I save a recipe from TikTok or Instagram?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "Tap Share on the video and pick Pinch, or copy the link and paste it into Pinch. Preview the recipe, then tap save to keep it in your library."
-            }
-          },
-          {
-            "@type": "Question",
-            "name": "Is Pinch free?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "Yes. A free account includes 10 recipe credits every month. If you need more, you can buy recipe credits in the app. They never expire, and there's no subscription."
-            }
-          },
-          {
-            "@type": "Question",
-            "name": "Can I use Pinch without the app?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "Yes. Pinch also runs in your browser at pinch-app.io/app. Your library syncs when you sign in with the same account."
-            }
-          },
-          {
-            "@type": "Question",
-            "name": "Can I move my recipes from another app?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "Yes, one recipe at a time. Paste the original link, from a website or a video, and Pinch saves it to your library."
-            }
-          },
-          {
-            "@type": "Question",
-            "name": "Which languages does Pinch support?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "Pinch is available in English, Spanish, Hebrew, Arabic, and Russian."
-            }
-          },
-          {
-            "@type": "Question",
-            "name": "Does Pinch sell my data?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "No. Pinch doesn't sell your personal information. The services that help run Pinch, like the AI that writes out your recipes, only process it to operate Pinch."
-            }
-          }
-        ]
-      }
-    </script>
+    <!-- Organization, the apps and the FAQ, built by scripts/site-pages.mjs (landingStructuredData). -->
+    {{STRUCTURED_DATA}}
 
     <script>
       // Lets the stylesheet hide scroll-in elements only when the script that reveals them runs.
@@ -183,30 +43,34 @@
     <link rel="stylesheet" href="/site.css" />
   </head>
   <body>
+    {{LANG_BANNER}}
     <header class="top wrap">
-      <svg viewBox="0 0 24 24" aria-hidden="true">
-        <path
-          d="M12,3A9,9 0 0,0 3,12A9,9 0 0,0 12,21A9,9 0 0,0 21,12C21,11.5 20.96,11 20.87,10.5C20.6,10 20,10 20,10H18V9C18,8 17,8 17,8H15V7C15,6 14,6 14,6H13V4C13,3 12,3 12,3M9.5,6A1.5,1.5 0 0,1 11,7.5A1.5,1.5 0 0,1 9.5,9A1.5,1.5 0 0,1 8,7.5A1.5,1.5 0 0,1 9.5,6M6.5,10A1.5,1.5 0 0,1 8,11.5A1.5,1.5 0 0,1 6.5,13A1.5,1.5 0 0,1 5,11.5A1.5,1.5 0 0,1 6.5,10M11.5,11A1.5,1.5 0 0,1 13,12.5A1.5,1.5 0 0,1 11.5,14A1.5,1.5 0 0,1 10,12.5A1.5,1.5 0 0,1 11.5,11M16.5,13A1.5,1.5 0 0,1 18,14.5A1.5,1.5 0 0,1 16.5,16H16.5A1.5,1.5 0 0,1 15,14.5H15A1.5,1.5 0 0,1 16.5,13M11,16A1.5,1.5 0 0,1 12.5,17.5A1.5,1.5 0 0,1 11,19A1.5,1.5 0 0,1 9.5,17.5A1.5,1.5 0 0,1 11,16Z"
-        />
-      </svg>
-      Pinch
+      <span class="brand">
+        <svg viewBox="0 0 24 24" aria-hidden="true">
+          <path
+            d="M12,3A9,9 0 0,0 3,12A9,9 0 0,0 12,21A9,9 0 0,0 21,12C21,11.5 20.96,11 20.87,10.5C20.6,10 20,10 20,10H18V9C18,8 17,8 17,8H15V7C15,6 14,6 14,6H13V4C13,3 12,3 12,3M9.5,6A1.5,1.5 0 0,1 11,7.5A1.5,1.5 0 0,1 9.5,9A1.5,1.5 0 0,1 8,7.5A1.5,1.5 0 0,1 9.5,6M6.5,10A1.5,1.5 0 0,1 8,11.5A1.5,1.5 0 0,1 6.5,13A1.5,1.5 0 0,1 5,11.5A1.5,1.5 0 0,1 6.5,10M11.5,11A1.5,1.5 0 0,1 13,12.5A1.5,1.5 0 0,1 11.5,14A1.5,1.5 0 0,1 10,12.5A1.5,1.5 0 0,1 11.5,11M16.5,13A1.5,1.5 0 0,1 18,14.5A1.5,1.5 0 0,1 16.5,16H16.5A1.5,1.5 0 0,1 15,14.5H15A1.5,1.5 0 0,1 16.5,13M11,16A1.5,1.5 0 0,1 12.5,17.5A1.5,1.5 0 0,1 11,19A1.5,1.5 0 0,1 9.5,17.5A1.5,1.5 0 0,1 11,16Z"
+          />
+        </svg>
+        Pinch
+      </span>
+      {{LANG_MENU}}
     </header>
 
     <main class="wrap">
       <div class="hero">
         <div class="hero-text">
-          <p class="tagline reveal">See it. Snap it. Cook it.</p>
-          <h1 class="reveal">Save recipes from <span>TikTok, Instagram &amp; YouTube</span></h1>
+          <p class="tagline reveal">{{t:hero.tagline}}</p>
+          <h1 class="reveal">{{h:hero.title}}</h1>
           <p class="lede reveal">
-            Turn any cooking video into a recipe you can actually cook from.
-            <span class="lede-more">Ingredients, steps, and a shopping list, all in one place.</span>
+            {{t:hero.lede}}
+            <span class="lede-more">{{t:hero.ledeMore}}</span>
           </p>
           <div class="actions reveal">
             <a
               class="btn btn-store btn-apple"
               data-track="app_store"
               href="https://apps.apple.com/us/app/pinch-recipe-library/id6796310453"
-              aria-label="Download on the App Store"
+              aria-label="{{t:stores.appStore}}"
             >
               <svg viewBox="0 0 24 24" aria-hidden="true">
                 <path
@@ -218,18 +82,18 @@
               class="btn btn-store btn-play"
               data-track="play_store"
               href="https://play.google.com/store/apps/details?id=com.pinch.myapp"
-              aria-label="Get it on Google Play"
+              aria-label="{{t:stores.googlePlay}}"
             >
               <svg viewBox="0 0 24 24" aria-hidden="true">
                 <path d="M3 20.5v-17c0-.59.34-1.11.84-1.35L13.69 12l-9.85 9.85c-.5-.25-.84-.76-.84-1.35zm13.81-5.38L6.05 21.34l8.49-8.49 2.27 2.27zm3.35-4.31c.34.27.59.69.59 1.19s-.22.9-.57 1.18l-2.29 1.32-2.5-2.5 2.5-2.5 2.27 1.31zM6.05 2.66l10.76 6.22-2.27 2.27-8.49-8.49z" />
               </svg>
             </a>
-            <a class="btn btn-web" data-track="continue" href="/app/">Continue on the web</a>
+            <a class="btn btn-web" data-track="continue" href="/app/">{{t:stores.web}}</a>
           </div>
-          <ul class="trust reveal" aria-label="Why Pinch">
-            <li>10 free recipes every month</li>
-            <li>No subscription</li>
-            <li>iPhone, Android and any browser</li>
+          <ul class="trust reveal" aria-label="{{t:hero.trustLabel}}">
+            <li>{{t:hero.trust.0}}</li>
+            <li>{{t:hero.trust.1}}</li>
+            <li>{{t:hero.trust.2}}</li>
           </ul>
         </div>
         <img
@@ -238,244 +102,158 @@
           width="470"
           height="936"
           fetchpriority="high"
-          alt="A recipe saved in Pinch: lemon garlic pasta, with its source video, servings, and ingredients."
+          alt="{{t:hero.shotAlt}}"
         />
       </div>
 
       <section aria-labelledby="features">
-        <h2 id="features" class="reveal">A recipe organizer for the videos you cook from</h2>
-        <p class="sub reveal">The recipe, the list, and the video, kept in one kitchen.</p>
+        <h2 id="features" class="reveal">{{t:features.title}}</h2>
+        <p class="sub reveal">{{t:features.sub}}</p>
         <ul class="features">
           <li class="card reveal">
             <div class="icon" aria-hidden="true">✦</div>
-            <h3>Save TikTok and Instagram recipes</h3>
-            <p>Share a TikTok or an Instagram Reel to Pinch, or paste the link yourself.</p>
+            <h3>{{t:features.items.0.title}}</h3>
+            <p>{{t:features.items.0.text}}</p>
           </li>
           <li class="card reveal">
             <div class="icon" aria-hidden="true">▤</div>
-            <h3>YouTube video to recipe</h3>
-            <p>Get the ingredients and steps written out. No more pausing and rewinding.</p>
+            <h3>{{t:features.items.1.title}}</h3>
+            <p>{{t:features.items.1.text}}</p>
           </li>
           <li class="card reveal">
             <div class="icon" aria-hidden="true">◉</div>
-            <h3>The whole recipe, every time</h3>
-            <p>
-              Even when the amounts are only said out loud or flashed on screen, Pinch writes them
-              down.
-            </p>
+            <h3>{{t:features.items.2.title}}</h3>
+            <p>{{t:features.items.2.text}}</p>
           </li>
           <li class="card reveal">
             <div class="icon" aria-hidden="true">▶</div>
-            <h3>Cook along</h3>
-            <p>Keep the source video beside the steps, or follow a step-by-step cook mode with timers.</p>
+            <h3>{{t:features.items.3.title}}</h3>
+            <p>{{t:features.items.3.text}}</p>
           </li>
           <li class="card reveal">
             <div class="icon" aria-hidden="true">✓</div>
-            <h3>A shopping list that knows your pantry</h3>
-            <p>
-              Ingredients from several recipes stack into one line, grouped by aisle. Staples you
-              always have stay off.
-            </p>
+            <h3>{{t:features.items.4.title}}</h3>
+            <p>{{t:features.items.4.text}}</p>
           </li>
           <li class="card reveal">
             <div class="icon" aria-hidden="true">❄</div>
-            <h3>What's in the fridge?</h3>
-            <p>Snap your fridge and Pinch ranks the recipes you already saved by what you have.</p>
+            <h3>{{t:features.items.5.title}}</h3>
+            <p>{{t:features.items.5.text}}</p>
           </li>
           <li class="card reveal">
             <div class="icon" aria-hidden="true">↻</div>
-            <h3>Make it yours</h3>
-            <p>
-              Remix any recipe (healthier, vegetarian, gluten-free, and more), swap an ingredient,
-              scale servings, or translate it.
-            </p>
+            <h3>{{t:features.items.6.title}}</h3>
+            <p>{{t:features.items.6.text}}</p>
           </li>
           <li class="card reveal">
             <div class="icon" aria-hidden="true">▣</div>
-            <h3>Websites and cookbooks too</h3>
-            <p>Paste a recipe website link, or snap a cookbook page or a handwritten card.</p>
+            <h3>{{t:features.items.7.title}}</h3>
+            <p>{{t:features.items.7.text}}</p>
           </li>
           <li class="card reveal">
             <div class="icon" aria-hidden="true">❏</div>
-            <h3>Your recipe library</h3>
-            <p>Keep every saved recipe in one place and group them for dinner, baking, or easy weeknights.</p>
+            <h3>{{t:features.items.8.title}}</h3>
+            <p>{{t:features.items.8.text}}</p>
           </li>
         </ul>
       </section>
 
       <section aria-labelledby="how">
-        <h2 id="how" class="reveal">How to save a recipe from a video</h2>
-        <p class="sub reveal">From a video in your feed to a list in your hand.</p>
+        <h2 id="how" class="reveal">{{t:how.title}}</h2>
+        <p class="sub reveal">{{t:how.sub}}</p>
         <ol class="steps">
           <li class="card reveal">
             <div class="mock" aria-hidden="true">
               <div class="mock-video">
                 <span class="mock-play">▶</span>
-                <span class="mock-share">Share</span>
+                <span class="mock-share">{{t:how.mock.share}}</span>
               </div>
               <div class="mock-sheet">
-                <span>Copy link</span>
+                <span>{{t:how.mock.copyLink}}</span>
                 <span class="mock-pick">Pinch</span>
-                <span>Messages</span>
+                <span>{{t:how.mock.messages}}</span>
               </div>
             </div>
-            <h3>Share the video</h3>
-            <p>
-              Tap Share on a TikTok, Instagram Reel, or YouTube video and pick Pinch. Or copy the
-              link and paste it in.
-            </p>
+            <h3>{{t:how.steps.0.title}}</h3>
+            <p>{{t:how.steps.0.text}}</p>
           </li>
           <li class="card reveal">
             <div class="mock" aria-hidden="true">
-              <b class="mock-title">Creamy tomato pasta</b>
-              <span class="mock-label">Ingredients</span>
-              <span class="mock-line">200 g rigatoni</span>
-              <span class="mock-line">2 cloves garlic</span>
-              <span class="mock-label">Steps</span>
-              <span class="mock-line">1. Boil the pasta…</span>
+              <b class="mock-title">{{t:how.mock.recipeTitle}}</b>
+              <span class="mock-label">{{t:how.mock.ingredients}}</span>
+              <span class="mock-line">{{t:how.mock.rigatoni}}</span>
+              <span class="mock-line">{{t:how.mock.garlic}}</span>
+              <span class="mock-label">{{t:how.mock.steps}}</span>
+              <span class="mock-line">{{t:how.mock.firstStep}}</span>
             </div>
-            <h3>Get the recipe</h3>
-            <p>
-              Pinch's AI writes out the ingredients and steps, even the ones only said out loud or
-              shown on screen.
-            </p>
+            <h3>{{t:how.steps.1.title}}</h3>
+            <p>{{t:how.steps.1.text}}</p>
           </li>
           <li class="card reveal">
             <div class="mock" aria-hidden="true">
-              <span class="mock-label">Produce</span>
-              <span class="mock-check is-done">2 cloves garlic</span>
-              <span class="mock-check">1 onion</span>
-              <span class="mock-label">Pasta &amp; grains</span>
-              <span class="mock-check">200 g rigatoni</span>
+              <span class="mock-label">{{t:how.mock.produce}}</span>
+              <span class="mock-check is-done">{{t:how.mock.garlic}}</span>
+              <span class="mock-check">{{t:how.mock.onion}}</span>
+              <span class="mock-label">{{t:how.mock.pastaGrains}}</span>
+              <span class="mock-check">{{t:how.mock.rigatoni}}</span>
             </div>
-            <h3>Shop the list</h3>
-            <p>
-              The ingredients go on one shopping list, grouped by aisle. Check them off at the
-              store.
-            </p>
+            <h3>{{t:how.steps.2.title}}</h3>
+            <p>{{t:how.steps.2.text}}</p>
           </li>
         </ol>
       </section>
 
       <section aria-labelledby="compare">
-        <h2 id="compare" class="reveal">How Pinch compares</h2>
-        <p class="sub reveal">Built for the recipes that live in videos.</p>
+        <h2 id="compare" class="reveal">{{t:compare.title}}</h2>
+        <p class="sub reveal">{{t:compare.sub}}</p>
         <div class="compare-wrap reveal">
           <div class="table-scroll">
             <table class="compare">
               <thead>
-                <tr><th><span class="visually-hidden">Feature</span></th><th>Pinch</th><th>Osta</th><th>Paprika</th><th>Mela</th><th>ReciMe</th><th>Samsung Food</th></tr>
+                <tr><th><span class="visually-hidden">{{t:compare.feature}}</span></th><th>Pinch</th><th>Osta</th><th>Paprika</th><th>Mela</th><th>ReciMe</th><th>Samsung Food</th></tr>
               </thead>
               <tbody>
-                <tr><td>Save from TikTok, Instagram &amp; YouTube</td><td class="yes">✓</td><td class="yes">✓</td><td class="no">✗*</td><td class="yes">✓</td><td class="yes">✓</td><td class="yes">✓</td></tr>
-                <tr><td>Reads the video itself: speech and on-screen text</td><td class="yes">✓</td><td class="na">–</td><td class="no">✗</td><td class="no">✗</td><td class="yes">✓</td><td class="na">–</td></tr>
-                <tr><td>Scan cookbook pages and handwritten cards</td><td class="yes">✓</td><td class="yes">✓</td><td class="no">✗*</td><td class="yes">✓</td><td class="yes">✓</td><td class="yes">✓</td></tr>
-                <tr><td>Shopping list that merges ingredients and sorts by aisle</td><td class="yes">✓</td><td class="na">–</td><td class="yes">✓</td><td class="na">–</td><td class="na">–</td><td class="yes">✓</td></tr>
-                <tr><td>Translate a recipe</td><td class="yes">✓</td><td class="na">–</td><td class="no">✗</td><td class="yes">✓</td><td class="na">–</td><td class="na">–</td></tr>
-                <tr><td>Remix with AI: healthier, vegetarian, ingredient swaps</td><td class="yes">✓</td><td class="na">–</td><td class="no">✗</td><td class="no">✗</td><td class="na">–</td><td class="yes">✓</td></tr>
-                <tr><td>Recipes from a photo of your fridge</td><td class="yes">✓</td><td class="na">–</td><td class="no">✗</td><td class="no">✗</td><td class="na">–</td><td class="yes">✓</td></tr>
-                <tr><td>Cooking Hub: browse recipes other cooks saved</td><td class="yes">✓</td><td class="na">–</td><td class="no">✗</td><td class="no">✗</td><td class="na">–</td><td class="yes">✓</td></tr>
-                <tr class="text"><td>Platforms</td><td>iPhone, Android, web</td><td>iPhone, Android, Mac</td><td>iPhone, Android, Mac, Windows</td><td>iPhone, Mac</td><td>iPhone, Android, web</td><td>iPhone, Android, web</td></tr>
-                <tr class="text"><td>Price</td><td>Free, 10 recipes a month. Extra credits, no subscription</td><td>Free with ads, 5 imports a week. $49.99–59.99/yr</td><td>$4.99 one&#8209;time</td><td>$6.99 one&#8209;time</td><td>Free, 5 imports a week. $59.99/yr</td><td>Free. AI features $59.99/yr</td></tr>
+                <tr><td>{{t:compare.rows.0}}</td><td class="yes">✓</td><td class="yes">✓</td><td class="no">✗*</td><td class="yes">✓</td><td class="yes">✓</td><td class="yes">✓</td></tr>
+                <tr><td>{{t:compare.rows.1}}</td><td class="yes">✓</td><td class="na">–</td><td class="no">✗</td><td class="no">✗</td><td class="yes">✓</td><td class="na">–</td></tr>
+                <tr><td>{{t:compare.rows.2}}</td><td class="yes">✓</td><td class="yes">✓</td><td class="no">✗*</td><td class="yes">✓</td><td class="yes">✓</td><td class="yes">✓</td></tr>
+                <tr><td>{{t:compare.rows.3}}</td><td class="yes">✓</td><td class="na">–</td><td class="yes">✓</td><td class="na">–</td><td class="na">–</td><td class="yes">✓</td></tr>
+                <tr><td>{{t:compare.rows.4}}</td><td class="yes">✓</td><td class="na">–</td><td class="no">✗</td><td class="yes">✓</td><td class="na">–</td><td class="na">–</td></tr>
+                <tr><td>{{t:compare.rows.5}}</td><td class="yes">✓</td><td class="na">–</td><td class="no">✗</td><td class="no">✗</td><td class="na">–</td><td class="yes">✓</td></tr>
+                <tr><td>{{t:compare.rows.6}}</td><td class="yes">✓</td><td class="na">–</td><td class="no">✗</td><td class="no">✗</td><td class="na">–</td><td class="yes">✓</td></tr>
+                <tr><td>{{t:compare.rows.7}}</td><td class="yes">✓</td><td class="na">–</td><td class="no">✗</td><td class="no">✗</td><td class="na">–</td><td class="yes">✓</td></tr>
+                <tr class="text"><td>{{t:compare.platformsLabel}}</td><td>{{t:compare.platforms.pinch}}</td><td>{{t:compare.platforms.osta}}</td><td>{{t:compare.platforms.paprika}}</td><td>{{t:compare.platforms.mela}}</td><td>{{t:compare.platforms.recime}}</td><td>{{t:compare.platforms.samsung}}</td></tr>
+                <tr class="text"><td>{{t:compare.priceLabel}}</td><td>{{t:compare.prices.pinch}}</td><td>{{t:compare.prices.osta}}</td><td>{{t:compare.prices.paprika}}</td><td>{{t:compare.prices.mela}}</td><td>{{t:compare.prices.recime}}</td><td>{{t:compare.prices.samsung}}</td></tr>
               </tbody>
             </table>
           </div>
-          <p class="footnote">
-            ✓ Yes · ✗ No · – The app's maker doesn't say. * Paprika 3. The Paprika 4 beta adds
-            these, as part of a subscription. Osta's photo scanning, and Samsung Food's AI remix
-            and fridge photo, need their paid plans. Prices are in US dollars. Based on each app's
-            website, help pages, and App Store listing, checked October 2026.
-          </p>
+          <p class="footnote">{{t:compare.footnote}}</p>
         </div>
       </section>
 
       <section aria-labelledby="guides">
-        <h2 id="guides" class="reveal">Recipe guides</h2>
-        <p class="sub reveal">Save, organize, and shop for the recipes in your feed.</p>
+        <h2 id="guides" class="reveal">{{t:guides.title}}</h2>
+        <p class="sub reveal">{{t:guides.sub}}</p>
         <div class="guides">
           <!-- GUIDES -->
         </div>
       </section>
 
       <section aria-labelledby="faq">
-        <h2 id="faq" class="reveal">Frequently asked questions</h2>
+        <h2 id="faq" class="reveal">{{t:faq.title}}</h2>
         <div class="faq">
-          <details class="card reveal" open>
-            <summary>What does Pinch do?</summary>
-            <p>
-              Pinch reads a cooking video from TikTok, Instagram, or YouTube and turns it into a
-              written recipe: ingredients, steps, and a shopping list you can check off at the
-              store.
-            </p>
-          </details>
-          <details class="card reveal">
-            <summary>Is this the same as other apps called Pinch?</summary>
-            <p>
-              No. This is Pinch: Recipe Library, the app at pinch-app.io, on the App Store and Google
-              Play. It isn't related to other apps or sites with Pinch in the name, such as
-              getpinch.io or the Pinch It! Recipe Box app.
-            </p>
-          </details>
-          <details class="card reveal">
-            <summary>Can Pinch turn a YouTube video into a recipe?</summary>
-            <p>
-              Yes. Paste a YouTube link and Pinch's AI recipe extractor writes out the ingredients
-              and steps, so you don't have to pause and rewind while you cook.
-            </p>
-          </details>
-          <details class="card reveal">
-            <summary>How do I save a recipe from TikTok or Instagram?</summary>
-            <p>
-              Tap Share on the video and pick Pinch, or copy the link and paste it into Pinch.
-              Preview the recipe, then tap save to keep it in your library.
-            </p>
-          </details>
-          <details class="card reveal">
-            <summary>Is Pinch free?</summary>
-            <p>
-              Yes. A free account includes 10 recipe credits every month. If you need more, you can
-              buy recipe credits in the app. They never expire, and there's no subscription.
-            </p>
-          </details>
-          <details class="card reveal">
-            <summary>Can I use Pinch without the app?</summary>
-            <p>
-              Yes. Pinch also runs in your browser at
-              <a href="/app/">pinch-app.io/app</a>. Your library syncs when you sign in with the
-              same account.
-            </p>
-          </details>
-          <details class="card reveal">
-            <summary>Can I move my recipes from another app?</summary>
-            <p>
-              Yes, one recipe at a time. Paste the original link, from a website or a video, and
-              Pinch saves it to your library.
-            </p>
-          </details>
-          <details class="card reveal">
-            <summary>Which languages does Pinch support?</summary>
-            <p>Pinch is available in English, Spanish, Hebrew, Arabic, and Russian.</p>
-          </details>
-          <details class="card reveal">
-            <summary>Does Pinch sell my data?</summary>
-            <p>
-              No. Pinch doesn't sell your personal information. The services that help run Pinch,
-              like the AI that writes out your recipes, only process it to operate Pinch. Read the
-              <a href="/privacy.html">privacy policy</a>.
-            </p>
-          </details>
+          {{FAQ}}
         </div>
       </section>
 
       <section class="cta" aria-labelledby="start">
-        <h2 id="start" class="reveal">Your next dinner is already in your feed.</h2>
-        <p class="sub reveal">10 free recipe credits every month. Extra credits never expire.</p>
+        <h2 id="start" class="reveal">{{t:cta.title}}</h2>
+        <p class="sub reveal">{{t:cta.sub}}</p>
         <div class="actions reveal">
           <a
             class="btn btn-store btn-apple"
             data-track="app_store"
             href="https://apps.apple.com/us/app/pinch-recipe-library/id6796310453"
-            aria-label="Download on the App Store"
+            aria-label="{{t:stores.appStore}}"
           >
             <svg viewBox="0 0 24 24" aria-hidden="true">
               <path
@@ -487,13 +265,13 @@
             class="btn btn-store btn-play"
             data-track="play_store"
             href="https://play.google.com/store/apps/details?id=com.pinch.myapp"
-            aria-label="Get it on Google Play"
+            aria-label="{{t:stores.googlePlay}}"
           >
             <svg viewBox="0 0 24 24" aria-hidden="true">
               <path d="M3 20.5v-17c0-.59.34-1.11.84-1.35L13.69 12l-9.85 9.85c-.5-.25-.84-.76-.84-1.35zm13.81-5.38L6.05 21.34l8.49-8.49 2.27 2.27zm3.35-4.31c.34.27.59.69.59 1.19s-.22.9-.57 1.18l-2.29 1.32-2.5-2.5 2.5-2.5 2.27 1.31zM6.05 2.66l10.76 6.22-2.27 2.27-8.49-8.49z" />
             </svg>
           </a>
-          <a class="btn btn-web" data-track="continue" href="/app/">Continue on the web</a>
+          <a class="btn btn-web" data-track="continue" href="/app/">{{t:stores.web}}</a>
         </div>
       </section>
     </main>
@@ -502,26 +280,24 @@
       <div class="footer-cols">
         <nav aria-labelledby="footer-product">
           <h2 id="footer-product">Pinch</h2>
-          <a href="#features">Features</a>
-          <a href="#how">How it works</a>
-          <a href="#compare">Compare apps</a>
-          <a href="#faq">FAQ</a>
-          <a href="https://apps.apple.com/us/app/pinch-recipe-library/id6796310453">
-            Pinch for iPhone
-          </a>
-          <a href="https://play.google.com/store/apps/details?id=com.pinch.myapp">Pinch for Android</a>
-          <a href="/app/">Pinch on the web</a>
+          <a href="#features">{{t:footer.features}}</a>
+          <a href="#how">{{t:footer.how}}</a>
+          <a href="#compare">{{t:footer.compare}}</a>
+          <a href="#faq">{{t:footer.faq}}</a>
+          <a href="https://apps.apple.com/us/app/pinch-recipe-library/id6796310453">{{t:footer.iphone}}</a>
+          <a href="https://play.google.com/store/apps/details?id=com.pinch.myapp">{{t:footer.android}}</a>
+          <a href="/app/">{{t:footer.web}}</a>
         </nav>
         <nav aria-labelledby="footer-guides">
-          <h2 id="footer-guides">Guides</h2>
+          <h2 id="footer-guides">{{t:footer.guides}}</h2>
           <!-- GUIDE LINKS -->
         </nav>
         <nav id="legal" aria-labelledby="footer-help">
-          <h2 id="footer-help">Help &amp; legal</h2>
-          <a id="support-link" href="mailto:yarden.farag@gmail.com">Support</a>
-          <a href="/privacy.html">Privacy</a>
-          <a href="/terms.html">Terms</a>
-          <a href="/delete-account.html">Delete your account</a>
+          <h2 id="footer-help">{{t:footer.helpLegal}}</h2>
+          <a id="support-link" href="mailto:yarden.farag@gmail.com">{{t:footer.support}}</a>
+          <a href="/privacy.html">{{t:footer.privacy}}</a>
+          <a href="/terms.html">{{t:footer.terms}}</a>
+          <a href="/delete-account.html">{{t:footer.deleteAccount}}</a>
         </nav>
       </div>
       <p>© <span id="year">2026</span> Pinch</p>
@@ -529,20 +305,20 @@
 
     <dialog class="support" id="support" aria-labelledby="support-title">
       <form id="support-form" novalidate>
-        <h2 id="support-title">How can we help?</h2>
-        <p>A question, a bug, or an idea. We read every message.</p>
+        <h2 id="support-title">{{t:support.title}}</h2>
+        <p>{{t:support.intro}}</p>
         <label>
-          Message
+          {{t:support.message}}
           <textarea name="message" required minlength="2" maxlength="4000"></textarea>
         </label>
         <label>
-          Your email (optional, so we can reply)
+          {{t:support.email}}
           <input type="email" name="email" maxlength="254" autocomplete="email" />
         </label>
         <p class="status" role="status" aria-live="polite"></p>
         <div class="row">
-          <button type="button" class="btn btn-quiet" data-close>Cancel</button>
-          <button type="submit" class="btn btn-web">Send</button>
+          <button type="button" class="btn btn-quiet" data-close>{{t:support.cancel}}</button>
+          <button type="submit" class="btn btn-web">{{t:support.send}}</button>
         </div>
       </form>
     </dialog>
@@ -603,6 +379,8 @@
         }
 
         // Support: a message to the feedback table (admin → Usage → Feedback).
+        // Its messages come from landing/strings/<language>.json (support.*).
+        var TEXT = {{SUPPORT_TEXT}};
         var dialog = document.getElementById('support');
         var form = document.getElementById('support-form');
         var status = form.querySelector('.status');
@@ -628,12 +406,12 @@
             event.preventDefault();
             var message = form.message.value.trim();
             var email = form.email.value.trim();
-            if (message.length < 2) return setStatus('Write a few words first.', true);
+            if (message.length < 2) return setStatus(TEXT.tooShort, true);
             if (email && !/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email)) {
-              return setStatus('That email doesn’t look right.', true);
+              return setStatus(TEXT.badEmail, true);
             }
             send.disabled = true;
-            setStatus('Sending…');
+            setStatus(TEXT.sending);
             post('/rest/v1/rpc/submit_website_feedback', {
               p_message: message,
               p_email: email || null,
@@ -642,13 +420,13 @@
               .then(function (response) {
                 if (!response.ok) throw new Error(String(response.status));
                 form.reset();
-                setStatus(email ? 'Thanks! We’ll reply by email.' : 'Thanks! We got your message.');
+                setStatus(email ? TEXT.thanksReply : TEXT.thanks);
                 setTimeout(function () {
                   dialog.close();
                 }, 1800);
               })
               .catch(function () {
-                setStatus('Couldn’t send. Try again, or email yarden.farag@gmail.com.', true);
+                setStatus(TEXT.failed, true);
               })
               .then(function () {
                 send.disabled = false;

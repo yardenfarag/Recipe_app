@@ -48,8 +48,8 @@ a {
   padding: 0 24px;
 }
 header.top {
-  display: flex;
-  justify-content: center;
+  display: grid;
+  grid-template-columns: 1fr auto 1fr;
   align-items: center;
   gap: 10px;
   padding-top: 48px;
@@ -57,10 +57,121 @@ header.top {
   font-weight: 700;
   letter-spacing: -0.4px;
 }
-header.top svg {
+.brand,
+.home-link {
+  grid-column: 2;
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+}
+.brand svg,
+.home-link svg {
   width: 28px;
   height: 28px;
   fill: var(--pink);
+}
+
+/* Language menu: real links in a <details>, so it works without JavaScript. */
+.lang-menu {
+  grid-column: 3;
+  justify-self: end;
+  position: relative;
+  font-size: 14px;
+  font-weight: 600;
+  letter-spacing: 0;
+}
+.lang-menu summary {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-height: 40px;
+  padding: 0 12px;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  background: var(--glass);
+  color: var(--muted);
+  cursor: pointer;
+  list-style: none;
+}
+.lang-menu summary::-webkit-details-marker {
+  display: none;
+}
+.lang-menu summary:hover,
+.lang-menu[open] summary {
+  color: var(--cream);
+}
+.lang-menu svg {
+  width: 18px;
+  height: 18px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.8;
+}
+.lang-list {
+  position: absolute;
+  top: calc(100% + 6px);
+  inset-inline-end: 0;
+  z-index: 5;
+  display: grid;
+  min-width: 160px;
+  padding: 6px;
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  background: #140c11;
+  box-shadow: 0 16px 40px -12px rgba(0, 0, 0, 0.8);
+}
+.lang-list a {
+  padding: 9px 12px;
+  border-radius: 10px;
+  color: var(--muted);
+  text-decoration: none;
+}
+.lang-list a:hover {
+  color: var(--cream);
+  background: var(--glass);
+}
+.lang-list a[aria-current] {
+  color: var(--cream);
+  background: var(--well);
+}
+
+/* Offers the page in the visitor's browser language. Hidden until its script shows it. */
+.lang-banner {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 4px;
+  padding: 4px 8px 4px 16px;
+  border-bottom: 1px solid var(--line);
+  background: #2a1420;
+  font-size: 14px;
+  font-weight: 600;
+}
+.lang-banner[hidden] {
+  display: none;
+}
+.lang-banner a {
+  padding: 8px 0;
+  color: var(--pink-bright);
+}
+.lang-banner button {
+  width: 40px;
+  height: 40px;
+  border: 0;
+  border-radius: 999px;
+  background: none;
+  color: var(--muted);
+  font: inherit;
+  font-size: 20px;
+  line-height: 1;
+  cursor: pointer;
+}
+.lang-banner button:hover {
+  color: var(--cream);
+}
+/* Arabic letters join up: spacing between them breaks the words apart. */
+:lang(ar) {
+  letter-spacing: 0 !important;
 }
 .hero {
   text-align: center;
@@ -87,10 +198,10 @@ header.top svg {
     align-items: center;
     gap: 48px;
     max-width: none;
-    text-align: left;
+    text-align: start;
   }
   .hero .lede {
-    margin-left: 0;
+    margin-inline-start: 0;
   }
   .hero .actions,
   .hero .trust {
@@ -268,7 +379,7 @@ h2 {
 }
 .trust li::before {
   content: "✓";
-  margin-right: 7px;
+  margin-inline-end: 7px;
   color: var(--pink-bright);
 }
 
@@ -295,9 +406,12 @@ h2 {
   content: "→";
   position: absolute;
   top: 82px;
-  left: -29px;
+  inset-inline-start: -29px;
   font-size: 22px;
   color: var(--pink-bright);
+}
+[dir="rtl"] .steps li + li::before {
+  content: "←";
 }
 .mock {
   display: flex;
@@ -327,7 +441,7 @@ h2 {
 }
 .mock-share {
   position: absolute;
-  right: 8px;
+  inset-inline-end: 8px;
   bottom: 8px;
   padding: 2px 9px;
   border-radius: 999px;
@@ -337,10 +451,15 @@ h2 {
 .mock-sheet {
   display: flex;
   justify-content: space-around;
+  gap: 8px;
   padding: 7px 4px;
   border-radius: 10px;
   background: var(--glass);
   color: var(--muted);
+}
+/* One line per option, like a real share sheet: a long label must not wrap into its neighbour. */
+.mock-sheet span {
+  white-space: nowrap;
 }
 .mock-pick {
   font-weight: 700;
@@ -368,7 +487,7 @@ h2 {
   display: inline-block;
   width: 11px;
   height: 11px;
-  margin-right: 8px;
+  margin-inline-end: 8px;
   border: 1.5px solid var(--muted);
   border-radius: 4px;
   vertical-align: -1px;
@@ -436,7 +555,7 @@ footer nav {
 }
 footer h2 {
   margin-bottom: 8px;
-  text-align: left;
+  text-align: start;
   font-size: 15px;
   letter-spacing: 0;
   color: var(--cream);
@@ -535,7 +654,7 @@ th,
 td {
   padding: 12px 14px;
   border-bottom: 1px solid var(--line);
-  text-align: left;
+  text-align: start;
   vertical-align: top;
   color: var(--muted);
 }
@@ -621,22 +740,26 @@ table.compare {
   .compare th:first-child,
   .compare td:first-child {
     position: sticky;
-    left: 0;
+    inset-inline-start: 0;
     z-index: 1;
     width: 120px;
     min-width: 120px;
-    padding-left: 12px;
+    padding-inline-start: 12px;
     background: #110b0f;
   }
   .compare th:nth-child(2),
   .compare td:nth-child(2) {
     position: sticky;
-    left: 120px;
+    inset-inline-start: 120px;
     z-index: 1;
     width: 72px;
     min-width: 72px;
     background: #2a1420;
     box-shadow: 6px 0 8px -6px rgba(0, 0, 0, 0.8);
+  }
+  [dir="rtl"] .compare th:nth-child(2),
+  [dir="rtl"] .compare td:nth-child(2) {
+    box-shadow: -6px 0 8px -6px rgba(0, 0, 0, 0.8);
   }
   .compare tr.text td:not(:first-child) {
     font-size: 12px;
@@ -654,20 +777,27 @@ table.compare {
 a.guide {
   display: block;
   position: relative;
-  padding: 22px 56px 22px 22px;
+  padding: 22px;
+  padding-inline-end: 56px;
   text-decoration: none;
 }
 a.guide::after {
   content: "→";
   position: absolute;
   top: 20px;
-  right: 22px;
+  inset-inline-end: 22px;
   font-size: 22px;
   color: var(--pink-bright);
   transition: transform 0.3s ease;
 }
 a.guide:hover::after {
   transform: translateX(4px);
+}
+[dir="rtl"] a.guide::after {
+  content: "←";
+}
+[dir="rtl"] a.guide:hover::after {
+  transform: translateX(-4px);
 }
 a.guide h3 {
   margin: 0;
@@ -682,9 +812,6 @@ a.guide p {
 
 /* A guide's own page (landing/guide.html). */
 .home-link {
-  display: inline-flex;
-  align-items: center;
-  gap: 10px;
   text-decoration: none;
 }
 .article {
@@ -702,6 +829,9 @@ a.guide p {
 }
 .crumbs a::before {
   content: "← ";
+}
+[dir="rtl"] .crumbs a::before {
+  content: "→ ";
 }
 .article .lede {
   margin: 18px 0 0;
@@ -725,7 +855,7 @@ a.guide p {
 }
 .more-guides h2 {
   margin: 0 0 4px;
-  text-align: left;
+  text-align: start;
   font-size: 20px;
 }
 .more-guides a {
@@ -738,7 +868,7 @@ a.guide p {
 }
 .prose h2 {
   margin: 36px 0 0;
-  text-align: left;
+  text-align: start;
   font-size: 24px;
   line-height: 1.25;
   letter-spacing: -0.4px;
@@ -765,8 +895,9 @@ a.guide p {
 .prose blockquote {
   margin: 20px 0 0;
   padding: 2px 20px 16px;
-  border-left: 3px solid var(--pink);
-  border-radius: 0 14px 14px 0;
+  border-inline-start: 3px solid var(--pink);
+  border-start-end-radius: 14px;
+  border-end-end-radius: 14px;
   background: var(--glass);
 }
 .prose .table-scroll {
@@ -804,7 +935,7 @@ dialog.support[open] {
   padding: 24px;
 }
 .support h2 {
-  text-align: left;
+  text-align: start;
   font-size: 24px;
   letter-spacing: -0.4px;
 }

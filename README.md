@@ -65,7 +65,7 @@ The site root is a hand-written static landing page (`landing/index.html`), so c
 Workflow: [`.github/workflows/deploy-web.yml`](.github/workflows/deploy-web.yml) runs `npm run build:web` ([`scripts/build-web-site.mjs`](scripts/build-web-site.mjs)), which:
 
 - Exports the app with `npx expo export -p web --output-dir dist/app`
-- Writes `landing/index.html` to `dist/index.html`, filling in the Supabase URL and key for its `web_intro_*` analytics
+- Builds the landing page and a page per guide, once per language (`/`, `/es/`, `/he/`, `/ru/`, `/ar/`), from `landing/index.html`, `landing/guide.html`, `landing/strings/<lang>.json` and `content/guides/` (see [ADR 022](docs/adr/022-website-languages.md)), filling in the Supabase URL and key for the `web_intro_*` analytics
 - Merges legal HTML (`privacy.html`, `terms.html`, `delete-account.html`, `delete-data.html`, `share.html`) into `dist/`
 - Adds `.nojekyll`, `404.html` (the app shell, so `/app/<route>` deep links load; old root links like `/s/…` and `/auth-callback` redirect to `/app/…`), and a `CNAME` for `pinch-app.io`
 
