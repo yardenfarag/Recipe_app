@@ -36,6 +36,11 @@ export type ControllerDeps = {
   chainGapMs?: number;
   setTimer?: (fn: () => void, ms: number) => unknown;
   clearTimer?: (handle: unknown) => void;
+  /**
+   * Keeps the ids closed this launch beyond this JS context. On web a launch
+   * is the browser tab, and a reload must not bring a closed message back.
+   */
+  closedStore?: { load: () => string[]; save: (ids: string[]) => void };
 };
 
 export type MessagesSnapshot = {
@@ -113,7 +118,8 @@ export function createMessagesController(deps: ControllerDeps) {
   /** True while `active` is a sample being previewed: nothing is recorded for it. */
   let previewing = false;
   /** Messages closed during this launch; they don't come back until the next one. */
-  const closedThisLaunch = new Set<string>();
+  const closedThisLaunch = new Set<string>(deps.closedStore?.load() ?? []);
+  const saveClosed = () => deps.closedStore?.save([...closedThisLaunch]);
   let pending: { id: string; handle: unknown } | null = null;
   let lastFetchAt = 0;
   let inFlight: Promise<void> | null = null;
@@ -219,7 +225,10 @@ export function createMessagesController(deps: ControllerDeps) {
 
   function close(messageId: string) {
     if (!active || active.id !== messageId) return;
-    if (!previewing) closedThisLaunch.add(messageId);
+    if (!previewing) {
+      closedThisLaunch.add(messageId);
+      saveClosed();
+    }
     const wasPreview = previewing;
     clearActive();
     previewing = false;
@@ -241,11 +250,16 @@ export function createMessagesController(deps: ControllerDeps) {
     /** Who is signed in. A different user (or nobody) clears everything held. */
     setUser(next: string | null) {
       if (next === userId) return;
+      // Restoring the session at launch (nobody, then the same user as before a reload) keeps what was closed.
+      const restoring = userId === null && next !== null;
       userId = next;
       generation += 1;
       messages = [];
       receipts = {};
-      closedThisLaunch.clear();
+      if (!restoring) {
+        closedThisLaunch.clear();
+        saveClosed();
+      }
       lastFetchAt = 0;
       inFlight = null;
       cancelPending();

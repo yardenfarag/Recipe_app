@@ -4,6 +4,7 @@ import { AppState } from 'react-native';
 
 import { runButtonAction } from '@/components/inAppMessages/actions';
 import { createMessagesController, type FetchParams } from '@/components/inAppMessages/controller';
+import { webClosedStore, webLaunchStartedAt } from '@/components/inAppMessages/webLaunch';
 import { useAuth } from '@/hooks/useAuth';
 import { useLanguagePreference } from '@/hooks/useLanguagePreference';
 import { appVersion, platform } from '@/lib/interactionLog';
@@ -17,6 +18,9 @@ import { fetchInAppMessages, recordInAppMessageEvent } from '@/lib/supabase/inAp
 export const inAppMessagesController = createMessagesController({
   fetchMessages: fetchInAppMessages,
   recordEvent: recordInAppMessageEvent,
+  // On web a launch is the browser tab, so a reload doesn't bring back what was closed or seen.
+  launchedAt: webLaunchStartedAt(),
+  closedStore: webClosedStore(),
 });
 
 /** What the mounted `useInAppMessages` fetches with; null until it mounts with a signed-in user. */
