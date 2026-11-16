@@ -140,6 +140,8 @@ export async function purchaseCreditPack(
       body: { pack_id: pack.id, return_url: returnUrl },
     });
     if (error || !data?.url) throw error ?? new Error('web_checkout_unavailable');
+    const { markCheckoutStarted } = await import('./webCheckoutReturn');
+    markCheckoutStarted();
     window.location.assign(data.url);
     return 'opened_web_checkout';
   }
