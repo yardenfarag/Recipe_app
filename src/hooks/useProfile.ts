@@ -7,6 +7,7 @@ import { isAdminUser } from '@/lib/admin';
 import { type SubscriptionStatus } from '@/lib/quotas';
 import type { ProfileQuota } from '@/lib/supabase/profile';
 import { fetchProfile, profileQuota } from '@/lib/supabase/profile';
+import { onCreditsChanged } from '@/lib/webCheckoutReturn';
 
 /**
  * Loads the current signed-in user's profile (avatar, plan, admin)
@@ -54,19 +55,11 @@ export function useProfile() {
     }, [refresh]),
   );
 
-  // Back from Polar's web checkout (?checkout_id=…): the webhook adds the credits within
-  // seconds, so check again a couple of times instead of waiting for the next focus.
+  // Website: WebCheckoutReturnDialog announces when a web purchase's credits have landed.
   useEffect(() => {
-    if (Platform.OS !== 'web' || typeof window === 'undefined' || !user) return;
-    const url = new URL(window.location.href);
-    if (!url.searchParams.has('checkout_id')) return;
-    const timers = [2_000, 6_000, 15_000].map((delay) => setTimeout(() => void refresh(), delay));
-    const cleanup = setTimeout(() => {
-      url.searchParams.delete('checkout_id');
-      window.history.replaceState(window.history.state, '', url.toString());
-    }, 15_500);
-    return () => [...timers, cleanup].forEach(clearTimeout);
-  }, [refresh, user]);
+    if (Platform.OS !== 'web' || typeof window === 'undefined') return;
+    return onCreditsChanged(() => void refresh());
+  }, [refresh]);
 
   return {
     avatarUrl,

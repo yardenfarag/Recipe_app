@@ -10,6 +10,7 @@ import { Platform } from 'react-native';
 import { ErrorBoundary } from '@/components/ErrorBoundary';
 import { InAppMessageHost } from '@/components/inAppMessages/InAppMessageHost';
 import { ScreenViewLogger } from '@/components/ScreenViewLogger';
+import { WebCheckoutReturnDialog } from '@/components/WebCheckoutReturnDialog';
 import { StackHeaderBackButton } from '@/components/StackHeaderBackButton';
 import { AccountLocaleSync } from '@/components/AccountLocaleSync';
 import { AuthProvider } from '@/hooks/useAuth';
@@ -192,6 +193,7 @@ export default function RootLayout() {
                     <ScreenViewLogger />
                     <RootNavigator />
                     <InAppMessageHost />
+                    <WebCheckoutReturnDialog />
                   </AuthProvider>
                 </ErrorBoundary>
               </OnboardingProvider>

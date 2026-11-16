@@ -422,7 +422,11 @@ export default function SettingsScreen() {
     }
   }
 
-  const planLabel = t('settings.recipeCredits');
+  // "Signed in · 25 credits available"; just "Recipe credits" until the balance loads.
+  const planLabel =
+    totalCredits == null
+      ? t('settings.recipeCredits')
+      : t('settings.creditsTotal', { count: totalCredits });
 
   return (
     <Screen dense tabScreen>
