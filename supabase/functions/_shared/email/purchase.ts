@@ -18,6 +18,29 @@ export interface PurchaseEmailInput {
   purchasedAt: Date | null;
 }
 
+/** Free credits every account gets each calendar month (UTC); src/lib/quotas.ts has the same number. */
+export const FREE_MONTHLY_CREDITS = 10;
+
+/** What the app shows as the balance: purchased credits plus this month's unused free ones. */
+export function totalCredits(purchased: number, monthlyUsed: number): number {
+  return Math.max(0, purchased) + Math.max(0, FREE_MONTHLY_CREDITS - Math.max(0, monthlyUsed));
+}
+
+/** The balance to print, or null (the email then leaves the line out) if it can't be read. */
+async function displayBalance(admin: SupabaseClient, userId: string, purchased: number | null): Promise<number | null> {
+  if (purchased == null) return null;
+  const now = new Date();
+  const yearMonth = `${now.getUTCFullYear()}-${String(now.getUTCMonth() + 1).padStart(2, '0')}`;
+  const { data, error } = await admin
+    .from('extract_usage_monthly')
+    .select('extract_count')
+    .eq('user_id', userId)
+    .eq('year_month', yearMonth)
+    .maybeSingle();
+  if (error) return null;
+  return totalCredits(purchased, Number(data?.extract_count ?? 0) || 0);
+}
+
 export async function sendPurchaseEmail(admin: SupabaseClient, input: PurchaseEmailInput): Promise<void> {
   try {
     if (!Deno.env.get('RESEND_API_KEY')) return;
@@ -35,7 +58,7 @@ export async function sendPurchaseEmail(admin: SupabaseClient, input: PurchaseEm
       email: renderPurchaseEmail({
         locale: pickLocale(user?.user_metadata?.locale),
         credits: input.credits,
-        balance: input.balance,
+        balance: await displayBalance(admin, input.userId, input.balance),
         store: purchaseStore(input.store),
         date: input.purchasedAt ?? new Date(),
         reference: input.transactionId,

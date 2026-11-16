@@ -12,6 +12,7 @@ import {
   renderWelcomeEmail,
   type RenderedEmail,
 } from './render.ts';
+import { totalCredits } from './purchase.ts';
 import { EMAIL_FROM, sendEmail } from './send.ts';
 
 const SUPABASE_URL = 'https://example.supabase.co';
@@ -125,6 +126,13 @@ Deno.test('purchase email lists credits, balance, store and date', () => {
     assertStringIncludes(email.html, piece);
   }
   assert(!renderPurchaseEmail({ locale: 'en', credits: 10, balance: null, store: 'paddle', date: new Date(), reference: 'x' }).html.includes('Your balance now'));
+});
+
+Deno.test('purchase email balance adds the unused free monthly credits', () => {
+  assertEquals(totalCredits(191, 2), 199);
+  assertEquals(totalCredits(191, 0), 201);
+  assertEquals(totalCredits(191, 25), 191);
+  assertEquals(totalCredits(0, 10), 0);
 });
 
 Deno.test('purchaseStore maps RevenueCat, Paddle and Polar stores', () => {
