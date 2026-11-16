@@ -44,7 +44,7 @@ const DOCS: Record<LegalDocId, LegalDoc> = {
   privacy: {
     id: 'privacy',
     title: 'Privacy Policy',
-    meta: 'Last updated: November 15, 2026',
+    meta: 'Last updated: November 16, 2026',
     blocks: [
       {
         kind: 'card',
@@ -96,7 +96,7 @@ const DOCS: Record<LegalDocId, LegalDoc> = {
           [strong('Apple / Google'), text(' — optional sign-in providers.')],
           [strong('YouTube Data API'), text(' — optional metadata for YouTube links.')],
           [strong('RevenueCat'), text(' — processes credit pack purchases made through Apple and Google; it receives your account id and purchase details.')],
-          [strong('Paddle'), text(' — sells credit packs bought on pinch-app.io as our reseller and merchant of record; it receives your account id, email, billing country and payment details.')],
+          [strong('Polar'), text(' — sells credit packs bought on pinch-app.io as our reseller and merchant of record; it receives your account id, email, billing country and payment details.')],
           [strong('Resend'), text(' — sends Pinch’s emails from pinch-app.io; it receives your email address and the content of each email.')],
         ],
       },
@@ -154,7 +154,7 @@ const DOCS: Record<LegalDocId, LegalDoc> = {
   terms: {
     id: 'terms',
     title: 'Terms of Use',
-    meta: 'Last updated: November 15, 2026',
+    meta: 'Last updated: November 16, 2026',
     blocks: [
       {
         kind: 'card',
@@ -194,7 +194,7 @@ const DOCS: Record<LegalDocId, LegalDoc> = {
       },
       { kind: 'h2', text: 'Credits & purchases' },
       { kind: 'p', parts: [text('You get a free allowance of recipe credits each month. You can also buy one-time credit packs. Purchased credits don’t expire and have no cash value.')] },
-      { kind: 'p', parts: [text('In the iPhone and Android apps, Apple or Google processes the payment. On pinch-app.io, our order process is conducted by our online reseller Paddle.com. Paddle.com is the Merchant of Record for all our web orders and provides all customer service inquiries and handles returns.')] },
+      { kind: 'p', parts: [text('In the iPhone and Android apps, Apple or Google processes the payment. On pinch-app.io, our order process is conducted by our online reseller Polar Software, Inc. (Polar). Polar is the Merchant of Record for all our web orders: it processes the payment, issues the receipt and handles refunds, under its Buyer Terms.')] },
       { kind: 'p', parts: [text('Refunds follow our Refund Policy. When a purchase is refunded or charged back, the credits from that pack are removed from your balance.')] },
       { kind: 'h2', text: 'Intellectual property' },
       {

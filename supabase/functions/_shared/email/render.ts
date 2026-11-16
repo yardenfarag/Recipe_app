@@ -254,12 +254,13 @@ export function renderWelcomeEmail(input: { locale: EmailLocale }): RenderedEmai
 
 // ── Purchase ──────────────────────────────────────────────────────────────
 
-export type PurchaseStore = 'app_store' | 'play_store' | 'paddle' | 'other';
+export type PurchaseStore = 'app_store' | 'play_store' | 'paddle' | 'polar' | 'other';
 
 /** RevenueCat's store names (APP_STORE, MAC_APP_STORE, PLAY_STORE, …) and our 'paddle'. */
 export function purchaseStore(raw: string | null | undefined): PurchaseStore {
   const value = (raw ?? '').toLowerCase();
   if (value === 'paddle') return 'paddle';
+  if (value === 'polar') return 'polar';
   if (value.includes('app_store')) return 'app_store';
   if (value.includes('play')) return 'play_store';
   return 'other';

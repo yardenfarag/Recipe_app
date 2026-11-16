@@ -127,11 +127,12 @@ Deno.test('purchase email lists credits, balance, store and date', () => {
   assert(!renderPurchaseEmail({ locale: 'en', credits: 10, balance: null, store: 'paddle', date: new Date(), reference: 'x' }).html.includes('Your balance now'));
 });
 
-Deno.test('purchaseStore maps RevenueCat and Paddle stores', () => {
+Deno.test('purchaseStore maps RevenueCat, Paddle and Polar stores', () => {
   assertEquals(purchaseStore('APP_STORE'), 'app_store');
   assertEquals(purchaseStore('MAC_APP_STORE'), 'app_store');
   assertEquals(purchaseStore('PLAY_STORE'), 'play_store');
   assertEquals(purchaseStore('paddle'), 'paddle');
+  assertEquals(purchaseStore('polar'), 'polar');
   assertEquals(purchaseStore('STRIPE'), 'other');
   assertEquals(purchaseStore(null), 'other');
 });
