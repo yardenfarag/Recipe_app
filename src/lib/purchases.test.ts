@@ -28,21 +28,17 @@ describe('credit pack catalog', () => {
     expect(packs[1]?.storePackage).toBeUndefined();
   });
 
-  it('keeps credit purchases off the website until Paddle is configured', () => {
-    // Tests run without the EXPO_PUBLIC_PADDLE_* settings.
+  it('keeps credit purchases off the website while purchases are switched off', () => {
+    // Tests run without EXPO_PUBLIC_CREDIT_PURCHASES_ENABLED.
     expect(WEB_CREDIT_PURCHASES_ENABLED).toBe(false);
     expect(creditPurchasesOfferedOn('web')).toBe(false);
     expect(creditPurchasesOfferedOn('ios')).toBe(true);
     expect(creditPurchasesOfferedOn('android')).toBe(true);
   });
 
-  describe('on the website, with Paddle set up', () => {
+  describe('on the website', () => {
     beforeEach(() => {
       vi.resetModules();
-      vi.stubEnv('EXPO_PUBLIC_PADDLE_CLIENT_TOKEN', 'live_token');
-      vi.stubEnv('EXPO_PUBLIC_PADDLE_PRICE_10', 'pri_10');
-      vi.stubEnv('EXPO_PUBLIC_PADDLE_PRICE_30', 'pri_30');
-      vi.stubEnv('EXPO_PUBLIC_PADDLE_PRICE_100', 'pri_100');
     });
     afterEach(() => {
       vi.unstubAllEnvs();
@@ -54,17 +50,10 @@ describe('credit pack catalog', () => {
       expect(purchases.creditPurchasesOfferedOn('web')).toBe(false);
     });
 
-    it('sells packs once purchases are switched on', async () => {
+    it('sells packs through Polar once purchases are switched on', async () => {
       vi.stubEnv('EXPO_PUBLIC_CREDIT_PURCHASES_ENABLED', 'true');
       const purchases = await import('@/lib/purchases');
       expect(purchases.creditPurchasesOfferedOn('web')).toBe(true);
-    });
-
-    it('stays off when a price id is missing', async () => {
-      vi.stubEnv('EXPO_PUBLIC_CREDIT_PURCHASES_ENABLED', 'true');
-      vi.stubEnv('EXPO_PUBLIC_PADDLE_PRICE_30', '');
-      const purchases = await import('@/lib/purchases');
-      expect(purchases.creditPurchasesOfferedOn('web')).toBe(false);
     });
   });
 

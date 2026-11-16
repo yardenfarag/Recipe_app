@@ -11,9 +11,9 @@ export interface PurchaseEmailInput {
   userId: string;
   credits: number;
   balance: number | null;
-  provider: 'revenuecat' | 'paddle';
+  provider: 'revenuecat' | 'paddle' | 'polar';
   transactionId: string;
-  /** RevenueCat's store (APP_STORE, PLAY_STORE, …) or 'paddle'. */
+  /** RevenueCat's store (APP_STORE, PLAY_STORE, …) or 'paddle' / 'polar'. */
   store: string | null;
   purchasedAt: Date | null;
 }

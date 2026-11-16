@@ -37,9 +37,4 @@ jobs:
           EXPO_PUBLIC_LEGAL_BASE_URL: https://example.com
           EXPO_PUBLIC_SUPPORT_EMAIL: support@example.com
           EXPO_PUBLIC_CREDIT_PURCHASES_ENABLED: 'false'
-          EXPO_PUBLIC_PADDLE_CLIENT_TOKEN: test_ci_placeholder
-          EXPO_PUBLIC_PADDLE_ENVIRONMENT: sandbox
-          EXPO_PUBLIC_PADDLE_PRICE_10: pri_ci_placeholder_10
-          EXPO_PUBLIC_PADDLE_PRICE_30: pri_ci_placeholder_30
-          EXPO_PUBLIC_PADDLE_PRICE_100: pri_ci_placeholder_100
         run: npm run export:web

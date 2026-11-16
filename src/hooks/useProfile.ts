@@ -1,5 +1,6 @@
 import { useFocusEffect } from '@react-navigation/native';
-import { useCallback, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
+import { Platform } from 'react-native';
 
 import { useAuth } from '@/hooks/useAuth';
 import { isAdminUser } from '@/lib/admin';
@@ -52,6 +53,20 @@ export function useProfile() {
       refresh();
     }, [refresh]),
   );
+
+  // Back from Polar's web checkout (?checkout_id=…): the webhook adds the credits within
+  // seconds, so check again a couple of times instead of waiting for the next focus.
+  useEffect(() => {
+    if (Platform.OS !== 'web' || typeof window === 'undefined' || !user) return;
+    const url = new URL(window.location.href);
+    if (!url.searchParams.has('checkout_id')) return;
+    const timers = [2_000, 6_000, 15_000].map((delay) => setTimeout(() => void refresh(), delay));
+    const cleanup = setTimeout(() => {
+      url.searchParams.delete('checkout_id');
+      window.history.replaceState(window.history.state, '', url.toString());
+    }, 15_500);
+    return () => [...timers, cleanup].forEach(clearTimeout);
+  }, [refresh, user]);
 
   return {
     avatarUrl,

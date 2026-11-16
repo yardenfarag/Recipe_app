@@ -11,6 +11,10 @@ verify_jwt = false
 [functions.paddle-webhook]
 verify_jwt = false
 
+# Polar signs its deliveries (Standard Webhooks headers); it sends no Supabase JWT.
+[functions.polar-webhook]
+verify_jwt = false
+
 # Supabase Auth signs Send Email Hook calls with the hook secret; it sends no user JWT.
 [functions.auth-email]
 verify_jwt = false

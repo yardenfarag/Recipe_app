@@ -12,26 +12,11 @@ export type CreditPackId = (typeof CREDIT_PACKS)[number]['id'];
 export const BEST_VALUE_PACK_ID: CreditPackId = 'pinch_credits_100';
 
 /**
- * Paddle price ids (pri_…) for each pack on the web. RevenueCat's web checkout
- * needs Stripe, which doesn't support this account's country, so the website
- * sells through Paddle instead (src/lib/paddleCheckout.ts). App Store and Play
- * Store purchases still go through RevenueCat.
+ * The website sells packs through Polar (supabase/functions/polar-checkout), only while
+ * purchases are switched on. Otherwise it says to buy in the app. App Store and Play Store
+ * purchases go through RevenueCat.
  */
-const PADDLE_PRICE_IDS: Readonly<Record<CreditPackId, string | undefined>> = {
-  pinch_credits_10: process.env.EXPO_PUBLIC_PADDLE_PRICE_10,
-  pinch_credits_30: process.env.EXPO_PUBLIC_PADDLE_PRICE_30,
-  pinch_credits_100: process.env.EXPO_PUBLIC_PADDLE_PRICE_100,
-};
-
-/**
- * The website sells packs only when purchases are switched on and Paddle's client token and
- * every pack's price id are set. Otherwise it says to buy in the app, instead of showing packs
- * that can't be bought.
- */
-export const WEB_CREDIT_PURCHASES_ENABLED =
-  process.env.EXPO_PUBLIC_CREDIT_PURCHASES_ENABLED === 'true' &&
-  Boolean(process.env.EXPO_PUBLIC_PADDLE_CLIENT_TOKEN) &&
-  Object.values(PADDLE_PRICE_IDS).every(Boolean);
+export const WEB_CREDIT_PURCHASES_ENABLED = process.env.EXPO_PUBLIC_CREDIT_PURCHASES_ENABLED === 'true';
 
 export function creditPurchasesOfferedOn(platform: typeof Platform.OS): boolean {
   return platform !== 'web' || WEB_CREDIT_PURCHASES_ENABLED;
@@ -49,11 +34,10 @@ export interface CreditPack {
 }
 
 let configuredUserId: string | null = null;
-let configuredEmail: string | null = null;
 
 /**
  * The SDK is loaded on first use. Its web build is ~850 KB and the website
- * never talks to it (web checkout is Paddle), so it stays out of the
+ * never talks to it (web checkout is Polar), so it stays out of the
  * initial web bundle.
  */
 function loadSdk() {
@@ -63,11 +47,12 @@ function loadSdk() {
 function apiKey(): string | undefined {
   if (Platform.OS === 'ios') return process.env.EXPO_PUBLIC_REVENUECAT_IOS_API_KEY;
   if (Platform.OS === 'android') return process.env.EXPO_PUBLIC_REVENUECAT_ANDROID_API_KEY;
-  return process.env.EXPO_PUBLIC_PADDLE_CLIENT_TOKEN;
+  return undefined;
 }
 
 export function purchasesEnabled(): boolean {
-  return process.env.EXPO_PUBLIC_CREDIT_PURCHASES_ENABLED === 'true' && Boolean(apiKey());
+  if (process.env.EXPO_PUBLIC_CREDIT_PURCHASES_ENABLED !== 'true') return false;
+  return Platform.OS === 'web' || Boolean(apiKey());
 }
 
 type StoreProductRef = {
@@ -96,16 +81,10 @@ export function packIsPurchasable(pack: CreditPack): boolean {
   return Boolean(pack.storePackage);
 }
 
-export async function configurePurchases(userId: string, email?: string | null): Promise<void> {
+export async function configurePurchases(userId: string): Promise<void> {
   const key = apiKey();
-  if (!key || !purchasesEnabled()) return;
-
-  // Web checkout tags the payment with the user id, and fills in their email.
-  if (Platform.OS === 'web') {
-    configuredUserId = userId;
-    configuredEmail = email ?? null;
-    return;
-  }
+  // The web checkout reads the signed-in user on the server; nothing to set up here.
+  if (!key || !purchasesEnabled() || Platform.OS === 'web') return;
 
   const { default: Purchases, LOG_LEVEL } = await loadSdk();
   if (__DEV__) Purchases.setLogLevel(LOG_LEVEL.DEBUG);
@@ -123,11 +102,6 @@ export async function configurePurchases(userId: string, email?: string | null):
 
 export async function clearPurchasesUser(): Promise<void> {
   if (!configuredUserId || !purchasesEnabled()) return;
-  if (Platform.OS === 'web') {
-    configuredUserId = null;
-    configuredEmail = null;
-    return;
-  }
   try {
     const { default: Purchases } = await loadSdk();
     await Purchases.logOut();
@@ -158,19 +132,16 @@ export async function purchaseCreditPack(
   }
 
   if (Platform.OS === 'web') {
-    const token = process.env.EXPO_PUBLIC_PADDLE_CLIENT_TOKEN;
-    const priceId = PADDLE_PRICE_IDS[pack.id];
-    if (!token || !priceId) throw new Error('web_checkout_unavailable');
-    if (!configuredUserId) throw new Error('purchase_user_unavailable');
-    const { openPaddleCheckout } = await import('./paddleCheckout');
-    // 'purchased' once Paddle took the payment; the webhook adds the credits moments later.
-    return await openPaddleCheckout({
-      token,
-      environment: process.env.EXPO_PUBLIC_PADDLE_ENVIRONMENT,
-      priceId,
-      userId: configuredUserId,
-      email: configuredEmail,
+    // Polar's hosted checkout opens in this tab and comes back here with ?checkout_id=…;
+    // polar-webhook adds the credits once the order is paid.
+    const { supabase } = await import('@/lib/supabase/client');
+    const returnUrl = typeof window === 'undefined' ? undefined : window.location.href;
+    const { data, error } = await supabase.functions.invoke<{ url?: string }>('polar-checkout', {
+      body: { pack_id: pack.id, return_url: returnUrl },
     });
+    if (error || !data?.url) throw error ?? new Error('web_checkout_unavailable');
+    window.location.assign(data.url);
+    return 'opened_web_checkout';
   }
 
   if (!pack.storePackage) throw new Error('store_product_unavailable');

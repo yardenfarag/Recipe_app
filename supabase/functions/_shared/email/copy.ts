@@ -75,7 +75,7 @@ export interface EmailCopy {
   purchaseNever: string;
   purchaseReceipt: string;
   purchaseButton: string;
-  stores: { app_store: string; play_store: string; paddle: string; other: string };
+  stores: { app_store: string; play_store: string; paddle: string; polar: string; other: string };
 }
 
 const en: EmailCopy = {
@@ -160,7 +160,7 @@ const en: EmailCopy = {
   purchaseNever: 'Credits never expire.',
   purchaseReceipt: 'Your payment receipt comes from {store}.',
   purchaseButton: 'Open Pinch',
-  stores: { app_store: 'the App Store', play_store: 'Google Play', paddle: 'Paddle (pinch-app.io)', other: 'your store' },
+  stores: { app_store: 'the App Store', play_store: 'Google Play', paddle: 'Paddle (pinch-app.io)', polar: 'Polar (pinch-app.io)', other: 'your store' },
 };
 
 const es: EmailCopy = {
@@ -245,7 +245,7 @@ const es: EmailCopy = {
   purchaseNever: 'Los créditos no caducan.',
   purchaseReceipt: 'El recibo del pago te llega de {store}.',
   purchaseButton: 'Abrir Pinch',
-  stores: { app_store: 'App Store', play_store: 'Google Play', paddle: 'Paddle (pinch-app.io)', other: 'tu tienda' },
+  stores: { app_store: 'App Store', play_store: 'Google Play', paddle: 'Paddle (pinch-app.io)', polar: 'Polar (pinch-app.io)', other: 'tu tienda' },
 };
 
 const he: EmailCopy = {
@@ -330,7 +330,7 @@ const he: EmailCopy = {
   purchaseNever: 'הקרדיטים לא פגים לעולם.',
   purchaseReceipt: 'הקבלה על התשלום נשלחת מ-{store}.',
   purchaseButton: 'לפתוח את Pinch',
-  stores: { app_store: 'App Store', play_store: 'Google Play', paddle: 'Paddle (pinch-app.io)', other: 'החנות' },
+  stores: { app_store: 'App Store', play_store: 'Google Play', paddle: 'Paddle (pinch-app.io)', polar: 'Polar (pinch-app.io)', other: 'החנות' },
 };
 
 const ru: EmailCopy = {
@@ -415,7 +415,7 @@ const ru: EmailCopy = {
   purchaseNever: 'Кредиты не сгорают.',
   purchaseReceipt: 'Чек об оплате придёт от {store}.',
   purchaseButton: 'Открыть Pinch',
-  stores: { app_store: 'App Store', play_store: 'Google Play', paddle: 'Paddle (pinch-app.io)', other: 'магазина' },
+  stores: { app_store: 'App Store', play_store: 'Google Play', paddle: 'Paddle (pinch-app.io)', polar: 'Polar (pinch-app.io)', other: 'магазина' },
 };
 
 const ar: EmailCopy = {
@@ -500,7 +500,7 @@ const ar: EmailCopy = {
   purchaseNever: 'الرصيد لا تنتهي صلاحيته.',
   purchaseReceipt: 'يصلك إيصال الدفع من {store}.',
   purchaseButton: 'افتح Pinch',
-  stores: { app_store: 'App Store', play_store: 'Google Play', paddle: 'Paddle (pinch-app.io)', other: 'المتجر' },
+  stores: { app_store: 'App Store', play_store: 'Google Play', paddle: 'Paddle (pinch-app.io)', polar: 'Polar (pinch-app.io)', other: 'المتجر' },
 };
 
 export const COPY: Readonly<Record<EmailLocale, EmailCopy>> = { en, es, he, ru, ar };
