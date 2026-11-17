@@ -33,7 +33,11 @@ export function OnboardingGate() {
       pathname.startsWith('/auth-callback') ||
       pathname === '/reset-password';
 
-    if (onWelcome || onLegal) return;
+    // The web admin dashboard asks for sign-in itself; an admin on a new
+    // computer shouldn't be walked through onboarding to reach it.
+    const onAdminDashboard = pathname === '/admin/dashboard';
+
+    if (onWelcome || onLegal || onAdminDashboard) return;
 
     if (!completed && !onOnboarding && !onAuth) {
       router.replace('/onboarding');

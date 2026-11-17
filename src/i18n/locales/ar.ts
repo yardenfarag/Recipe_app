@@ -228,6 +228,7 @@ export default {
     "aboutPinch": "حول Pinch",
     "adminTitle": "إدارة",
     "adminBody": "كيف يُستخدم بينش، والحسابات، وسجل التكلفة.",
+    "adminDashboard": "لوحة التحكم",
     "adminInsights": "النشاط",
     "adminPeople": "الحسابات",
     "adminUsage": "التكلفة والدعم",

@@ -228,6 +228,7 @@ export default {
     "aboutPinch": "О Pinch",
     "adminTitle": "Админ",
     "adminBody": "Как пользуются Pinch, аккаунты и журнал расходов.",
+    "adminDashboard": "Панель",
     "adminInsights": "Активность",
     "adminPeople": "Аккаунты",
     "adminUsage": "Расходы и поддержка",

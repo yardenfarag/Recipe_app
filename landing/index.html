@@ -306,6 +306,7 @@
 
     <script type="application/json" id="support-text">{{SUPPORT_TEXT}}</script>
     <script src="/support.js" defer></script>
+    <script src="/track.js" defer></script>
 
 
     <script>
@@ -344,80 +345,6 @@
         }
         window.addEventListener('hashchange', followGuideHash);
         followGuideHash();
-
-        // The build fills these in; left as placeholders, tracking is off.
-        var SUPABASE_URL = '__SUPABASE_URL__';
-        var SUPABASE_KEY = '__SUPABASE_KEY__';
-        if (SUPABASE_URL.indexOf('__') === 0 || SUPABASE_KEY.indexOf('__') === 0) return;
-
-        function post(path, body) {
-          return fetch(SUPABASE_URL + path, {
-            method: 'POST',
-            keepalive: true,
-            headers: {
-              apikey: SUPABASE_KEY,
-              'Content-Type': 'application/json',
-              Prefer: 'return=minimal',
-            },
-            body: JSON.stringify(body),
-          });
-        }
-
-        // Same product_events rows the in-app intro used to write (admin Insights → Web intro).
-        // Not from local previews, so testing doesn't skew the numbers.
-        if (location.hostname === 'localhost' || location.hostname === '127.0.0.1') return;
-
-        // Shared with the web app's AsyncStorage, so a visitor keeps one guest id.
-        var INSTALL_KEY = 'pinch:install-id';
-        function installId() {
-          try {
-            var id = localStorage.getItem(INSTALL_KEY);
-            if (id && id.length >= 8) return id;
-            id = crypto.randomUUID
-              ? crypto.randomUUID()
-              : 'guest-' + Date.now() + '-' + Math.random().toString(36).slice(2, 12);
-            localStorage.setItem(INSTALL_KEY, id);
-            return id;
-          } catch (e) {
-            return 'guest-' + Date.now() + '-' + Math.random().toString(36).slice(2, 12);
-          }
-        }
-        function country() {
-          var match = /-([A-Za-z]{2})$/.exec(navigator.language || '');
-          return match ? match[1].toUpperCase() : null;
-        }
-        function capture(name, properties) {
-          try {
-            post('/rest/v1/product_events', {
-              user_id: null,
-              guest_install_id: installId(),
-              name: name,
-              properties: properties,
-              country: country(),
-            }).catch(function () {});
-          } catch (e) {}
-        }
-
-        // Campaign tags, e.g. from "Share Pinch" in the app.
-        function visitProperties() {
-          var properties = { page: 'intro' };
-          try {
-            var params = new URLSearchParams(window.location.search);
-            ['utm_source', 'utm_medium', 'utm_campaign', 'utm_content'].forEach(function (key) {
-              var value = params.get(key);
-              if (value) properties[key] = value.slice(0, 64);
-            });
-          } catch (e) {}
-          return properties;
-        }
-
-        capture('web_intro_viewed', visitProperties());
-        var links = document.querySelectorAll('[data-track]');
-        for (var i = 0; i < links.length; i++) {
-          links[i].addEventListener('click', function (event) {
-            capture('web_intro_clicked', { action: event.currentTarget.getAttribute('data-track') });
-          });
-        }
       })();
     </script>
   </body>

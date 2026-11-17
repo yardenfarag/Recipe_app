@@ -228,6 +228,7 @@ export default {
     "aboutPinch": "About Pinch",
     "adminTitle": "Admin",
     "adminBody": "How Pinch is used, the people on it, and the cost log.",
+    "adminDashboard": "Dashboard",
     "adminInsights": "Insights",
     "adminPeople": "People",
     "adminUsage": "Cost & support",

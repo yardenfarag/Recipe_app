@@ -5,6 +5,8 @@
 //   /<lang>/…        the landing page and the guides again in each other language
 //                    (landing/strings/<lang>.json, content/guides/<lang>/*.md)
 //   /sitemap.xml     public/sitemap.xml plus a URL per page per language
+//   /llms.txt        landing/llms.txt with the guides filled in, for AI assistants
+//   /<key>.txt       the IndexNow key (scripts/indexnow.mjs)
 //   /app/            the Expo web app (experiments.baseUrl = "/app")
 //   /*.html          legal pages
 //   /support.js      the Contact support form every page opens
@@ -14,7 +16,8 @@ import { execSync } from 'node:child_process';
 import { copyFileSync, mkdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 
-import { buildSitemap, buildSitePages, fillSupabaseConfig, loadSite } from './site-pages.mjs';
+import { INDEXNOW_KEY } from './indexnow.mjs';
+import { buildLlmsTxt, buildSitemap, buildSitePages, fillSupabaseConfig, loadSite } from './site-pages.mjs';
 
 const root = join(import.meta.dirname, '..');
 const dist = join(root, 'dist');
@@ -62,15 +65,19 @@ for (const page of pages) {
     fillSupabaseConfig(page.html, process.env.EXPO_PUBLIC_SUPABASE_URL, process.env.EXPO_PUBLIC_SUPABASE_KEY),
   );
 }
-writeFileSync(
-  join(dist, 'support.js'),
-  fillSupabaseConfig(
-    readFileSync(join(root, 'landing/support.js'), 'utf8'),
-    process.env.EXPO_PUBLIC_SUPABASE_URL,
-    process.env.EXPO_PUBLIC_SUPABASE_KEY,
-  ),
-);
+for (const script of ['support.js', 'track.js']) {
+  writeFileSync(
+    join(dist, script),
+    fillSupabaseConfig(
+      readFileSync(join(root, 'landing', script), 'utf8'),
+      process.env.EXPO_PUBLIC_SUPABASE_URL,
+      process.env.EXPO_PUBLIC_SUPABASE_KEY,
+    ),
+  );
+}
 writeFileSync(join(dist, 'sitemap.xml'), buildSitemap(readFileSync(join(root, 'public/sitemap.xml'), 'utf8'), site));
+writeFileSync(join(dist, 'llms.txt'), buildLlmsTxt(readFileSync(join(root, 'landing/llms.txt'), 'utf8'), site));
+writeFileSync(join(dist, `${INDEXNOW_KEY}.txt`), INDEXNOW_KEY);
 
 writeFileSync(join(dist, '.nojekyll'), '');
 writeFileSync(join(dist, 'CNAME'), 'pinch-app.io\n');
