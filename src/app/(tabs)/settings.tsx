@@ -660,6 +660,14 @@ export default function SettingsScreen() {
               <Text className="mb-3 text-xs leading-5" style={{ color: colors.textSecondary }}>
                 {t('settings.adminBody')}
               </Text>
+              {Platform.OS === 'web' ? (
+                <SettingsActionRow
+                  trackId="settings.admin.dashboard"
+                  label={t('settings.adminDashboard')}
+                  icon="speedometer-outline"
+                  onPress={() => router.push('/admin/dashboard')}
+                />
+              ) : null}
               <SettingsActionRow
                 trackId="settings.admin.insights"
                 label={t('settings.adminInsights')}

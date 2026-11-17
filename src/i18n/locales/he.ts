@@ -228,6 +228,7 @@ export default {
     "aboutPinch": "על Pinch",
     "adminTitle": "ניהול",
     "adminBody": "איך משתמשים ב־Pinch, החשבונות, ויומן העלויות.",
+    "adminDashboard": "לוח בקרה",
     "adminInsights": "פעילות",
     "adminPeople": "חשבונות",
     "adminUsage": "עלויות ותמיכה",

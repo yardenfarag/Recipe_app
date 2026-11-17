@@ -164,6 +164,7 @@ function RootNavigator() {
               ),
             }}
           />
+          <Stack.Screen name="admin/dashboard" options={{ headerShown: false, title: 'Pinch admin' }} />
           <Stack.Screen name="admin/insights" options={{ title: t('nav.insights') }} />
           <Stack.Screen name="admin/users" options={{ title: t('nav.people') }} />
           <Stack.Screen name="admin/usage" options={{ title: t('nav.usage') }} />

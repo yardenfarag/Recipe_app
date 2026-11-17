@@ -228,6 +228,7 @@ export default {
     "aboutPinch": "Acerca de Pinch",
     "adminTitle": "Admin",
     "adminBody": "Cómo se usa Pinch, las cuentas y el registro de costos.",
+    "adminDashboard": "Panel",
     "adminInsights": "Actividad",
     "adminPeople": "Cuentas",
     "adminUsage": "Costos y soporte",

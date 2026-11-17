@@ -1,0 +1,43 @@
+# Pinch: Recipe Library
+
+> Pinch is a recipe keeper app that turns TikTok, Instagram, and YouTube cooking videos into written recipes, with ingredients, steps, and a shopping list. It reads the whole video (speech and on-screen text), not just the caption. It runs on iPhone, Android, and in any browser.
+
+Pinch: Recipe Library is the app at pinch-app.io. It isn't related to other apps or sites named Pinch, such as getpinch.io or the Pinch It! Recipe Box app.
+
+## What Pinch does
+
+- Save a recipe from a TikTok, Instagram Reel, or YouTube video: tap Share and pick Pinch, or paste the link.
+- Write out the amounts and steps that are only said out loud or shown on screen.
+- Save recipes from recipe websites, cookbook page photos, and handwritten recipe cards.
+- Build one shopping list from several recipes: same ingredients merge into one line, grouped by aisle, and pantry staples stay off.
+- Rank your saved recipes by what's in a photo of your fridge.
+- Remix a recipe with AI (healthier, vegetarian, vegan, gluten-free, dairy-free), swap an ingredient, scale servings, or translate it.
+- Cook mode with step-by-step instructions and timers, next to the source video.
+- Flag allergies and disliked ingredients on every recipe.
+
+## Price
+
+- Free: 10 recipe credits every month.
+- No subscription. Extra credit packs are one-time purchases: 10 credits for $1.99, 30 for $4.99, 100 for $7.99 (US prices). Bought credits never expire.
+
+## Platforms and languages
+
+- iPhone: [App Store](https://apps.apple.com/us/app/pinch-recipe-library/id6796310453)
+- Android: [Google Play](https://play.google.com/store/apps/details?id=com.pinch.myapp)
+- Web: [pinch-app.io/app](https://pinch-app.io/app/). The library syncs across devices with one account.
+- The app and this site are in English, Spanish, Hebrew, Russian, and Arabic.
+
+## Guides
+
+{{GUIDES}}
+
+## Other languages
+
+{{LANGUAGES}}
+
+## Optional
+
+- [Privacy policy](https://pinch-app.io/privacy.html)
+- [Terms of service](https://pinch-app.io/terms.html)
+- [Refund policy](https://pinch-app.io/refund.html)
+- Support: support@pinch-app.io

@@ -5,6 +5,7 @@ import { describe, expect, it } from 'vitest';
 
 import {
   buildGuidePage,
+  buildLlmsTxt,
   buildLanding,
   buildSitemap,
   buildSitePages,
@@ -289,11 +290,12 @@ describe('landing page', () => {
   });
 
   it('fills in Supabase settings only when both are set', () => {
-    expect(fillSupabaseConfig(landing, '', 'key')).toBe(landing);
-    const filled = fillSupabaseConfig(landing, 'https://x.supabase.co/', 'key');
+    const track = readFileSync(join(root, 'landing/track.js'), 'utf8');
+    expect(fillSupabaseConfig(track, '', 'key')).toBe(track);
+    const filled = fillSupabaseConfig(track, 'https://x.supabase.co/', 'key');
     expect(filled).toContain("var SUPABASE_URL = 'https://x.supabase.co';");
     expect(filled).toContain("var SUPABASE_KEY = 'key';");
-    const padded = fillSupabaseConfig(landing, 'https://x.supabase.co\n', ' key\r\n');
+    const padded = fillSupabaseConfig(track, 'https://x.supabase.co\n', ' key\r\n');
     expect(padded).toContain("var SUPABASE_URL = 'https://x.supabase.co';");
     expect(padded).toContain("var SUPABASE_KEY = 'key';");
   });
@@ -486,5 +488,29 @@ describe('translations', () => {
       const hrefs = (html) => [...html.matchAll(/href="([^"]+)"/g)].map(([, href]) => href);
       expect(hrefs(guide.html)).toEqual(hrefs(source.html));
     }
+  });
+});
+
+describe('llms.txt', () => {
+  const llms = buildLlmsTxt(readFileSync(join(root, 'landing/llms.txt'), 'utf8'), site);
+
+  it('links every English guide with its description', () => {
+    for (const guide of site.guides.en) {
+      expect(llms).toContain(`- [${guide.meta.title}](https://pinch-app.io${guidePath(guide.slug)}): ${guide.meta.description}`);
+    }
+  });
+
+  it('links the home page in each other language', () => {
+    for (const { code } of site.languages.filter(({ code }) => code !== 'en')) {
+      expect(llms).toContain(`(https://pinch-app.io${homePath(code)})`);
+    }
+  });
+
+  it('fills every marker', () => {
+    expect(llms).not.toContain('{{');
+  });
+
+  it('refuses a template without the markers', () => {
+    expect(() => buildLlmsTxt('# Pinch\n\n{{GUIDES}}\n', site)).toThrow('{{LANGUAGES}}');
   });
 });

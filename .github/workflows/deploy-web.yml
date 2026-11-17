@@ -21,6 +21,8 @@ jobs:
   build:
     needs: quality
     runs-on: ubuntu-latest
+    outputs:
+      indexnow_urls: ${{ steps.indexnow.outputs.urls }}
     steps:
       - uses: actions/checkout@v4
 
@@ -56,6 +58,14 @@ jobs:
           grep -q 'data-support' dist/index.html
           test -f dist/hero-recipe.webp
           grep -q 'id="save-tiktok-recipes"' dist/index.html
+          grep -q 'guides/save-tiktok-recipes/' dist/llms.txt
+          if grep -q '{{' dist/llms.txt; then echo 'llms.txt has an unfilled marker'; exit 1; fi
+
+      # Compared with the live sitemap before this deploy replaces it. Sent after the deploy.
+      - name: List pages that changed, for IndexNow
+        id: indexnow
+        continue-on-error: true
+        run: echo "urls=$(node scripts/indexnow.mjs changed dist/sitemap.xml)" >> "$GITHUB_OUTPUT"
 
       - name: Setup Pages
         uses: actions/configure-pages@v5
@@ -77,3 +87,23 @@ jobs:
       - name: Deploy to GitHub Pages
         id: deployment
         uses: actions/deploy-pages@v4
+
+  # Tells Bing and the other IndexNow engines which pages changed. A failure here doesn't undo the deploy.
+  indexnow:
+    needs: [build, deploy]
+    if: needs.build.outputs.indexnow_urls != ''
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          sparse-checkout: scripts/indexnow.mjs
+          sparse-checkout-cone-mode: false
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+
+      - name: Submit changed pages to IndexNow
+        env:
+          URLS: ${{ needs.build.outputs.indexnow_urls }}
+        run: node scripts/indexnow.mjs submit "$URLS"

@@ -7,7 +7,7 @@ import { readFileSync } from 'node:fs';
 import { createServer } from 'node:http';
 import { join } from 'node:path';
 
-import { buildSitemap, buildSitePages, fillSupabaseConfig, loadSite } from './site-pages.mjs';
+import { buildLlmsTxt, buildSitemap, buildSitePages, fillSupabaseConfig, loadSite } from './site-pages.mjs';
 
 const root = join(import.meta.dirname, '..');
 const port = Number(process.env.PORT ?? 8090);
@@ -40,8 +40,8 @@ function render(path) {
     const [file, type] = files[path];
     return { type, body: readFileSync(join(root, file)) };
   }
-  if (path === '/support.js') {
-    const script = readFileSync(join(root, 'landing/support.js'), 'utf8');
+  if (path === '/support.js' || path === '/track.js') {
+    const script = readFileSync(join(root, 'landing', path.slice(1)), 'utf8');
     return {
       type: 'text/javascript; charset=utf-8',
       body: fillSupabaseConfig(script, process.env.EXPO_PUBLIC_SUPABASE_URL, process.env.EXPO_PUBLIC_SUPABASE_KEY),
@@ -51,6 +51,10 @@ function render(path) {
   if (path === '/sitemap.xml') {
     const sitemap = readFileSync(join(root, 'public/sitemap.xml'), 'utf8');
     return { type: 'application/xml', body: buildSitemap(sitemap, site) };
+  }
+  if (path === '/llms.txt') {
+    const template = readFileSync(join(root, 'landing/llms.txt'), 'utf8');
+    return { type: 'text/plain; charset=utf-8', body: buildLlmsTxt(template, site) };
   }
   const pages = buildSitePages(site, {
     landingHtml: readFileSync(join(root, 'landing/index.html'), 'utf8'),

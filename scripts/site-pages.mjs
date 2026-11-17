@@ -620,6 +620,22 @@ export function buildSitemap(sitemapXml, site) {
     .replace('</urlset>', () => `${guides}</urlset>`);
 }
 
+// /llms.txt for AI assistants, from landing/llms.txt: {{GUIDES}} becomes a link per English guide
+// with its description, and {{LANGUAGES}} a link to the home page in each other language.
+export function buildLlmsTxt(template, site) {
+  for (const marker of ['{{GUIDES}}', '{{LANGUAGES}}']) {
+    if (!template.includes(marker)) throw new Error(`landing/llms.txt is missing ${marker}`);
+  }
+  const guides = site.guides[DEFAULT_LANGUAGE]
+    .map((guide) => `- [${guide.meta.title}](${SITE_URL}${guidePath(guide.slug)}): ${guide.meta.description}`)
+    .join('\n');
+  const languages = site.languages
+    .filter(({ code }) => code !== DEFAULT_LANGUAGE)
+    .map(({ code, label }) => `- [${label}](${SITE_URL}${homePath(code)})`)
+    .join('\n');
+  return template.replace('{{GUIDES}}', () => guides).replace('{{LANGUAGES}}', () => languages);
+}
+
 // The landing page's tracking and the support form (landing/support.js) talk to Supabase with
 // the public key. Left as placeholders, tracking is off and the form says it couldn't send.
 export function fillSupabaseConfig(html, url, key) {
