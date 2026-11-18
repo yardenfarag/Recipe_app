@@ -16,6 +16,7 @@ import { execSync } from 'node:child_process';
 import { copyFileSync, mkdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 
+import { contentHashWebChunks } from './content-hash-web-chunks.mjs';
 import { INDEXNOW_KEY } from './indexnow.mjs';
 import { buildLlmsTxt, buildSitemap, buildSitePages, fillSupabaseConfig, loadSite } from './site-pages.mjs';
 
@@ -30,6 +31,9 @@ try {
 
 rmSync(dist, { recursive: true, force: true });
 execSync('npx expo export -p web --output-dir dist/app', { cwd: root, stdio: 'inherit' });
+// Before 404.html is copied from the app shell, so both point at the renamed files.
+const renamed = contentHashWebChunks(join(dist, 'app'));
+console.log(`Content-hashed ${Object.keys(renamed).length} web JS files.`);
 
 const copy = (from, to = from.split('/').pop()) => copyFileSync(join(root, from), join(dist, to));
 
