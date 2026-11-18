@@ -910,7 +910,7 @@ npm run build:web    <span class="c"># same build CI does for pinch-app.io, outp
 
   <details>
     <summary>Optional: run the backend locally (Supabase CLI and Docker)</summary>
-    <p>Only needed when you change a migration or an Edge Function. There is no staging: merging to <code>master</code> deploys to production, so test first. <code>supabase/README.md</code> → "Testing backend changes" has the full flow, including preview functions and webhook sandboxes.</p>
+    <p>Only needed when you change a migration or an Edge Function. There is no staging: merging to <code>master</code> deploys to production, so test first. <code>supabase/README.md</code> → "Testing backend changes" has the full flow, including preview functions and webhook sandboxes. Before writing backend code, read <code>docs/adr/024-backend-conventions.md</code>: where files go and how a function is written.</p>
     <pre><button class="copy" data-copy>Copy</button><code>npx supabase start                                               <span class="c"># local Postgres, Auth, Studio</span>
 npx supabase functions serve --env-file ./supabase/.env.local     <span class="c"># your own AI keys in that file</span>
 npx supabase test db                                             <span class="c"># pgTAP tests in supabase/tests/</span></code></pre>
