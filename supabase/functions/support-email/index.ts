@@ -1,3 +1,4 @@
+import { serve } from '../_shared/core/observe.ts';
 // Emails each new support message to support@pinch-app.io. Triggers on public.support_tickets
 // ("Help & support" in the app) and public.feedback ("Send feedback", and the website's "Contact
 // support" form) call this with the row id and a Vault secret; the message itself is read here,
@@ -20,7 +21,7 @@ import { createServiceSupabase } from '../_shared/core/supabaseAdmin.ts';
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 const CONTEXT = 'app_version, build_number, platform, os_version, device_model, locale';
 
-Deno.serve(async (req) => {
+serve('support-email', async (req) => {
   if (req.method !== 'POST') return jsonResponse({ error: 'Method not allowed' }, 405);
 
   const admin = createServiceSupabase();

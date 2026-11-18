@@ -1,3 +1,4 @@
+import { serve } from '../_shared/core/observe.ts';
 import { normalizeStoredCalories } from '../_shared/recipes/calories.ts';
 import { classifyGeminiRecipe } from '../_shared/extraction/classifyRecipe.ts';
 import {
@@ -59,7 +60,7 @@ type JobStatus = 'full' | 'partial' | 'failed' | 'coming_soon';
  * POST { url | image_base64, guest_install_id?, language? }
  * Invents a home-cook recipe after a food gate. Same 1-credit charge as Snap.
  */
-Deno.serve(async (req) => {
+serve('invent-recipe', async (req) => {
   if (req.method === 'OPTIONS') {
     return new Response('ok', { headers: corsHeaders });
   }

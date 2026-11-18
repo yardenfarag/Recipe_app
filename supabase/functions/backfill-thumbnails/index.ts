@@ -1,3 +1,4 @@
+import { serve } from '../_shared/core/observe.ts';
 import { createClient, type SupabaseClient } from 'https://esm.sh/@supabase/supabase-js@2.110.6';
 import type { Database } from '../_shared/core/database.types.ts';
 import { corsHeaders, jsonResponse } from '../_shared/core/cors.ts';
@@ -19,7 +20,7 @@ interface RequestBody {
  * YouTube's standard thumbnail URL without an API call, so an anonymous script
  * can't spend the YouTube quota that extraction depends on (PIN-54).
  */
-Deno.serve(async (req) => {
+serve('backfill-thumbnails', async (req) => {
   if (req.method === 'OPTIONS') {
     return new Response('ok', { headers: corsHeaders });
   }

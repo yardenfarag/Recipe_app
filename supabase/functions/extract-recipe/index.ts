@@ -1,3 +1,4 @@
+import { serve } from '../_shared/core/observe.ts';
 import { normalizeStoredCalories } from '../_shared/recipes/calories.ts';
 import { corsHeaders, jsonResponse } from '../_shared/core/cors.ts';
 import { FetchError } from '../_shared/core/errors.ts';
@@ -95,7 +96,7 @@ type ExtractionStatus = 'full' | 'partial' | 'failed' | 'coming_soon';
  * 10 monthly credits and can spend non-expiring purchased credits after those.
  * Cached URL re-extract is free, and so is a partial result (ADR 019).
  */
-Deno.serve(async (req) => {
+serve('extract-recipe', async (req) => {
   if (req.method === 'OPTIONS') {
     return new Response('ok', { headers: corsHeaders });
   }

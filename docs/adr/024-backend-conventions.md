@@ -116,7 +116,7 @@ The admin client (`createServiceSupabase`, which bypasses RLS) is used only insi
 
 ### 5. Logging and error tracking
 
-- The wrapper writes one JSON log line per request: `fn`, `request_id`, `user_id`, `status`, `code`, `duration_ms`. Feature code logs through `log`, not bare `console.log`, so every line carries the `request_id`.
+- `core/observe.ts`'s `serve('<name>', handler)` (PIN-37), which every function uses in place of `Deno.serve` and which the handler wrapper will build on, writes one JSON log line per request: `fn`, `request_id`, `user_id`, `status`, `code`, `duration_ms`. Feature code logs through `log`, not bare `console.log`, so every line carries the `request_id`.
 - **Sentry, free tier** (`npm:@sentry/deno`), initialised in `core/`, with the DSN in the `SENTRY_DSN` secret. Only unexpected errors are reported, tagged with the function, request id and user id. No request bodies or recipe content. PIN-37 sets it up.
 - `ai_usage_events` (`usageLog`) stays the record of AI cost per call. It's analytics, not error tracking.
 

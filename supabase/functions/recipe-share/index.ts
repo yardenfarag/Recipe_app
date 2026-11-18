@@ -1,3 +1,4 @@
+import { serve } from '../_shared/core/observe.ts';
 import { recipeAppliancesOf } from '../_shared/recipes/enrich/appliances.ts';
 import { corsHeaders, jsonResponse } from '../_shared/core/cors.ts';
 import { createAuthedSupabase } from '../_shared/core/recipeLookup.ts';
@@ -136,7 +137,7 @@ function insertRowFromSnapshot(userId: string, snapshot: RecipeSnapshot) {
   };
 }
 
-Deno.serve(async (req) => {
+serve('recipe-share', async (req) => {
   if (req.method === 'OPTIONS') {
     return new Response('ok', { headers: corsHeaders });
   }

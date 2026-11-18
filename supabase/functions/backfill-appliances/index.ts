@@ -1,3 +1,4 @@
+import { serve } from '../_shared/core/observe.ts';
 import type { Db } from '../_shared/core/supabaseAdmin.ts';
 
 import type { RecipeAppliance } from '../_shared/recipes/enrich/appliances.ts';
@@ -66,7 +67,7 @@ function supabaseBackfillDb(admin: Db): BackfillDb {
  * PIN-26, one batch per call (ADR 017 decision 8). Call again with `after: next_cursor` until it is
  * null, then do the same for table "recipe_cards". Costs users no credits.
  */
-Deno.serve(async (req) => {
+serve('backfill-appliances', async (req) => {
   if (req.method === 'OPTIONS') return new Response('ok', { headers: corsHeaders });
   if (req.method !== 'POST') return jsonResponse({ error: 'Method not allowed' }, 405);
 

@@ -1,3 +1,4 @@
+import { serve } from '../_shared/core/observe.ts';
 import { corsHeaders, jsonResponse } from '../_shared/core/cors.ts';
 import { currentUtcDate, refundDailyAiUsage, reserveDailyAiUsage } from '../_shared/core/dailyAiUsage.ts';
 import { RECIPE_REMIX_LIMIT, REMIX_DAILY_LIMIT } from '../_shared/llm/pricing.ts';
@@ -49,7 +50,7 @@ interface RequestBody {
  * Adapts a full recipe for a dietary/lifestyle goal (healthier, vegan, etc.).
  * Remix is free for signed-in users and capped at RECIPE_REMIX_LIMIT per recipe.
  */
-Deno.serve(async (req) => {
+serve('transform-recipe', async (req) => {
   if (req.method === 'OPTIONS') {
     return new Response('ok', { headers: corsHeaders });
   }

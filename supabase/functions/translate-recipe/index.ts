@@ -1,3 +1,4 @@
+import { serve } from '../_shared/core/observe.ts';
 import { corsHeaders, jsonResponse } from '../_shared/core/cors.ts';
 import {
   currentUtcDate,
@@ -43,7 +44,7 @@ interface RequestBody {
  * Translates recipe title, ingredients, and instructions. Free for now
  * (logged for cost tracking); no product-token charge.
  */
-Deno.serve(async (req) => {
+serve('translate-recipe', async (req) => {
   if (req.method === 'OPTIONS') {
     return new Response('ok', { headers: corsHeaders });
   }

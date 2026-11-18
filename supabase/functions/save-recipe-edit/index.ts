@@ -1,3 +1,4 @@
+import { serve } from '../_shared/core/observe.ts';
 /**
  * POST SaveRecipeEditRequest -> SaveRecipeEditResult (PIN-79, ADR 018). Contract:
  * src/lib/supabase/saveRecipeEdit.ts, mirrored in _shared/recipes/recipeEditTypes.ts.
@@ -50,7 +51,7 @@ const respond = (body: SaveRecipeEditResult, status = 200) => jsonResponse(body,
 const failed = (code: 'auth_required' | 'not_found' | 'server_error', message: string, status: number) =>
   respond({ status: 'failed', code, message }, status);
 
-Deno.serve(async (req) => {
+serve('save-recipe-edit', async (req) => {
   if (req.method === 'OPTIONS') return new Response('ok', { headers: corsHeaders });
   if (req.method !== 'POST') return jsonResponse({ error: 'Method not allowed' }, 405);
   if (Number(req.headers.get('content-length')) > MAX_BODY_BYTES) {

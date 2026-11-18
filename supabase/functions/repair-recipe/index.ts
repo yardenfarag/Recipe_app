@@ -1,3 +1,4 @@
+import { serve } from '../_shared/core/observe.ts';
 import { normalizeStoredCalories } from '../_shared/recipes/calories.ts';
 import {
   classifyGeminiRecipe,
@@ -82,7 +83,7 @@ interface RequestBody {
  *
  * Signed-in only. Charges 1 credit when the user applies an upgrade.
  */
-Deno.serve(async (req) => {
+serve('repair-recipe', async (req) => {
   if (req.method === 'OPTIONS') {
     return new Response('ok', { headers: corsHeaders });
   }

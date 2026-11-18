@@ -1,3 +1,4 @@
+import { serve } from '../_shared/core/observe.ts';
 import { corsHeaders, jsonResponse } from '../_shared/core/cors.ts';
 import { revokeAppleCredentials } from '../_shared/account/appleRevoke.ts';
 import { createAuthedSupabase } from '../_shared/core/recipeLookup.ts';
@@ -18,7 +19,7 @@ interface RequestBody {
  * photos → personal rows that don't cascade → auth user. The cascade wipes
  * profiles, recipes, collections, shopping list, token ledger and shares.
  */
-Deno.serve(async (req) => {
+serve('delete-account', async (req) => {
   if (req.method === 'OPTIONS') {
     return new Response('ok', { headers: corsHeaders });
   }
