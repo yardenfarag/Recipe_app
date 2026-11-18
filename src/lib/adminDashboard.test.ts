@@ -8,8 +8,11 @@ import {
   deltaOf,
   featureName,
   formatUsd,
+  heardAboutName,
   modelName,
+  personSource,
   sortPeople,
+  summarizeSignupSources,
   type Dashboard,
   type DashboardPerson,
   type DashboardWindow,
@@ -123,28 +126,28 @@ describe('buildHighlights', () => {
   });
 });
 
-describe('sortPeople', () => {
-  const person = (id: string, overrides: Partial<DashboardPerson>): DashboardPerson => ({
-    id,
-    email: `${id}@x.test`,
-    created_at: '2026-11-01T00:00:00Z',
-    is_admin: false,
-    token_balance: 0,
-    plan: 'free',
-    recipes: 0,
-    window_recipes: 0,
-    extractions: 0,
-    failures: 0,
-    ai_cost_usd: 0,
-    window_ai_cost_usd: 0,
-    credits_bought: 0,
-    spent_usd: 0,
-    last_active_at: null,
-    country: null,
-    platform: null,
-    ...overrides,
-  });
+const person = (id: string, overrides: Partial<DashboardPerson>): DashboardPerson => ({
+  id,
+  email: `${id}@x.test`,
+  created_at: '2026-11-01T00:00:00Z',
+  is_admin: false,
+  token_balance: 0,
+  plan: 'free',
+  recipes: 0,
+  window_recipes: 0,
+  extractions: 0,
+  failures: 0,
+  ai_cost_usd: 0,
+  window_ai_cost_usd: 0,
+  credits_bought: 0,
+  spent_usd: 0,
+  last_active_at: null,
+  country: null,
+  platform: null,
+  ...overrides,
+});
 
+describe('sortPeople', () => {
   it('sorts numbers high to low and dates newest first, nulls last', () => {
     const people = [
       person('a', { recipes: 2, last_active_at: null }),
@@ -197,5 +200,47 @@ describe('traffic sources', () => {
     expect(buildHighlights(data).map((h) => h.text)).toContain(
       '25 website visits came from AI assistants (ChatGPT 25), 25% of all visits.',
     );
+  });
+});
+
+describe('personSource', () => {
+  it('prefers the onboarding answer and adds the website source as detail', () => {
+    expect(personSource({ heard_about: 'ai_assistant', web_source: 'chatgpt.com' })).toEqual({
+      label: 'An AI assistant',
+      detail: 'Website: ChatGPT',
+      known: true,
+    });
+  });
+
+  it('falls back to the website source, and says when nothing is known', () => {
+    expect(personSource({ heard_about: null, web_source: 'google.com' }).label).toBe('Google');
+    expect(personSource({ heard_about: null, web_source: '' }).label).toBe('Direct or unknown');
+    expect(personSource({ heard_about: null, web_source: null })).toEqual({ label: 'Not known', detail: null, known: false });
+    expect(personSource({}).known).toBe(false);
+  });
+
+  it('names unexpected answers instead of dropping them', () => {
+    expect(heardAboutName('podcast_ad')).toBe('Podcast ad');
+  });
+});
+
+describe('summarizeSignupSources', () => {
+  it('groups new people by answer and website, with how far each group got', () => {
+    const summary = summarizeSignupSources([
+      person('a', { heard_about: 'tiktok_instagram', extractions: 2, recipes: 1 }),
+      person('b', { heard_about: 'tiktok_instagram', credits_bought: 10, extractions: 1 }),
+      person('c', { heard_about: null, web_source: 'chatgpt.com' }),
+      person('d', {}),
+      person('e', {}),
+      person('f', { heard_about: 'friend' }),
+    ]);
+    expect(summary.total).toBe(6);
+    expect(summary.known).toBe(4);
+    expect(summary.heard).toEqual([
+      { label: 'TikTok or Instagram', people: 2, extracted: 2, saved: 1, paid: 1 },
+      { label: 'A friend', people: 1, extracted: 0, saved: 0, paid: 0 },
+      { label: 'Not known', people: 3, extracted: 0, saved: 0, paid: 0 },
+    ]);
+    expect(summary.web).toEqual([{ label: 'ChatGPT', people: 1, extracted: 0, saved: 0, paid: 0 }]);
   });
 });

@@ -56,6 +56,10 @@ export type DashboardPerson = {
   last_active_at: string | null;
   country: string | null;
   platform: string | null;
+  /** Their onboarding "How did you hear about Pinch?" answer, if linked. */
+  heard_about?: string | null;
+  /** Raw source of their first website visit ('' = untagged visit, null = none linked). */
+  web_source?: string | null;
 };
 
 export type DashboardRecipe = {
@@ -492,6 +496,85 @@ export function classifySource(raw: string | null | undefined): { label: string;
   const rule = TRAFFIC_RULES.find((r) => r.test.test(source));
   if (rule) return { label: rule.label, group: rule.group };
   return { label: source.replace(/^www\./, ''), group: 'Other sites' };
+}
+
+const HEARD_ABOUT_NAMES: Record<string, string> = {
+  tiktok_instagram: 'TikTok or Instagram',
+  friend: 'A friend',
+  app_store: 'App Store or Google Play',
+  google: 'Google search',
+  ai_assistant: 'An AI assistant',
+  other: 'Something else',
+};
+
+/** An onboarding "How did you hear about Pinch?" answer, in words. */
+export function heardAboutName(source: string | null | undefined): string {
+  if (!source) return 'Not known';
+  return HEARD_ABOUT_NAMES[source] ?? humanize(source);
+}
+
+export type PersonSource = {
+  /** Main label: what they told us, else the site that sent them, else "Not known". */
+  label: string;
+  /** Supporting detail, such as the website source behind their answer. */
+  detail: string | null;
+  known: boolean;
+};
+
+/** Where one person came from, for the People table. */
+export function personSource(person: Pick<DashboardPerson, 'heard_about' | 'web_source'>): PersonSource {
+  const web = person.web_source == null ? null : classifySource(person.web_source).label;
+  if (person.heard_about) {
+    return { label: heardAboutName(person.heard_about), detail: web ? `Website: ${web}` : null, known: true };
+  }
+  if (web) return { label: web, detail: 'Website visit, no answer', known: true };
+  return { label: 'Not known', detail: null, known: false };
+}
+
+export type SourceStats = {
+  label: string;
+  people: number;
+  extracted: number;
+  saved: number;
+  paid: number;
+};
+
+export type SignupSources = {
+  total: number;
+  /** People with an answer or a linked website visit. */
+  known: number;
+  /** By onboarding answer ("Not known" last). */
+  heard: SourceStats[];
+  /** By the site of their first website visit, for people linked to one. */
+  web: SourceStats[];
+};
+
+/** New people grouped by where they came from, with how far each group got. */
+export function summarizeSignupSources(people: DashboardPerson[]): SignupSources {
+  const heard = new Map<string, SourceStats>();
+  const web = new Map<string, SourceStats>();
+  const add = (map: Map<string, SourceStats>, label: string, p: DashboardPerson) => {
+    const row = map.get(label) ?? { label, people: 0, extracted: 0, saved: 0, paid: 0 };
+    row.people += 1;
+    if (num(p.extractions) > 0) row.extracted += 1;
+    if (num(p.recipes) > 0) row.saved += 1;
+    if (num(p.credits_bought) > 0) row.paid += 1;
+    map.set(label, row);
+  };
+  let known = 0;
+  for (const p of people) {
+    add(heard, heardAboutName(p.heard_about), p);
+    if (p.web_source != null) add(web, classifySource(p.web_source).label, p);
+    if (personSource(p).known) known += 1;
+  }
+  const order = (a: SourceStats, b: SourceStats) =>
+    Number(a.label === 'Not known') - Number(b.label === 'Not known') || b.people - a.people || a.label.localeCompare(b.label);
+  return {
+    total: people.length,
+    known,
+    heard: [...heard.values()].sort(order),
+    web: [...web.values()].sort(order),
+  };
 }
 
 export type TrafficSource = {

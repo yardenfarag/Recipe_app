@@ -261,7 +261,7 @@ export function OverviewTab({
         </Card>
         <Card
           title="How people heard about Pinch"
-          subtitle="Answers from onboarding. Most people answer before they make an account, so these are not tied to people."
+          subtitle="All onboarding answers, including from guests who never made an account. The People tab shows the answer behind each new account."
         >
           <RankBars
             items={data.heard_about.map((h) => ({ label: humanize(h.label), value: num(h.count) }))}

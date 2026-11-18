@@ -51,10 +51,12 @@ async function insertProductEvent(
   try {
     const { data } = await supabase.auth.getSession();
     const userId = data.session?.user.id ?? null;
-    const guestInstallId = userId ? null : await getInstallId();
+    // Sent when signed in too: it ties the account to this install's events from
+    // before sign-up ("heard about" answer, website visit) for the admin dashboard.
+    const installId = await getInstallId();
     const { error } = await supabase.from('product_events').insert({
       user_id: userId,
-      guest_install_id: guestInstallId,
+      guest_install_id: installId,
       name,
       properties,
       country: deviceCountry(),
