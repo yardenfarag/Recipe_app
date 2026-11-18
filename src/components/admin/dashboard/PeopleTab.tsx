@@ -101,19 +101,19 @@ export function PeopleTab({ data, onOpenPerson }: { data: Dashboard; onOpenPerso
           {rows.length === 0 ? (
             <div className="pd-empty">Nobody matches.</div>
           ) : (
-            <div className="pd-table-wrap">
-              <table className="pd-table">
-                <thead>
-                  <tr>
-                    {COLUMNS.map((c) => (
-                      <th key={c.label} className={c.num ? 'num' : undefined}>
-                        {c.key ? (
-                          <button type="button" aria-pressed={sort === c.key} onClick={() => setSort(c.key as PersonSort)}>
-                            {c.label}
-                            {sort === c.key ? ' ↓' : ''}
-                          </button>
+              <div className="pd-table-wrap">
+                <table className="pd-table">
+                  <thead>
+                    <tr>
+                      {COLUMNS.map((c) => (
+                        <th key={c.label} className={c.num ? 'num' : undefined}>
+                          {c.key ? (
+                            <button type="button" aria-pressed={sort === c.key} onClick={() => setSort(c.key as PersonSort)}>
+                              {c.label}
+                              {sort === c.key ? ' ↓' : ''}
+                            </button>
                         ) : (
-                          c.label
+                            c.label
                         )}
                       </th>
                     ))}
@@ -183,6 +183,7 @@ function SourceCell({ person }: { person: Dashboard['people'][number] }) {
 function SignupSourcesCard({ data, since }: { data: Dashboard; since: number }) {
   const newcomers = data.people.filter((p) => new Date(p.created_at).getTime() >= since);
   const summary = summarizeSignupSources(newcomers);
+  const available = data.people.length === 0 || data.people.some((p) => 'heard_about' in p);
   const progress = (s: { people: number; extracted: number; paid: number }) =>
     `${formatPercent(s.extracted, s.people)} extracted · ${formatCount(s.paid)} paid`;
   return (
@@ -191,28 +192,35 @@ function SignupSourcesCard({ data, since }: { data: Dashboard; since: number }) 
         title="Where new people came from"
         subtitle={`Everyone who signed up in ${rangeLabel(data.range.days)}: ${formatCount(summary.known)} of ${plural(summary.total, 'person', 'people')} can be traced. Known for most sign-ups from Nov 14, 2026; older accounts have no record.`}
       >
-        <div className="pd-grid pd-2" style={{ gap: 28 }}>
-          <div>
-            <div className="pd-muted pd-small" style={{ marginBottom: 8 }}>
-              What they answered in onboarding · how far they got
-            </div>
-            <RankBars
-              items={summary.heard.map((s) => ({ label: s.label, value: s.people, sub: progress(s) }))}
-              format={formatCount}
-              empty="No sign-ups in this period."
-            />
+        {!available ? (
+          <div className="pd-empty">
+            The database does not send this yet. It appears once the admin_dashboard update (migration
+            20261118120000) is deployed.
           </div>
-          <div>
-            <div className="pd-muted pd-small" style={{ marginBottom: 8 }}>
-              Site that sent them to pinch-app.io first (web sign-ups)
+        ) : (
+          <div className="pd-grid pd-2" style={{ gap: 28 }}>
+            <div>
+              <div className="pd-muted pd-small" style={{ marginBottom: 8 }}>
+                What they answered in onboarding · how far they got
+              </div>
+              <RankBars
+                items={summary.heard.map((s) => ({ label: s.label, value: s.people, sub: progress(s) }))}
+                format={formatCount}
+                empty="No sign-ups in this period."
+              />
             </div>
-            <RankBars
-              items={summary.web.map((s) => ({ label: s.label, value: s.people, sub: progress(s) }))}
-              format={formatCount}
-              empty="No new people linked to a website visit yet."
-            />
+            <div>
+              <div className="pd-muted pd-small" style={{ marginBottom: 8 }}>
+                Site that sent them to pinch-app.io first (web sign-ups)
+              </div>
+              <RankBars
+                items={summary.web.map((s) => ({ label: s.label, value: s.people, sub: progress(s) }))}
+                format={formatCount}
+                empty="No new people linked to a website visit yet."
+              />
+            </div>
           </div>
-        </div>
+        )}
       </Card>
     </div>
   );
@@ -221,6 +229,7 @@ function SignupSourcesCard({ data, since }: { data: Dashboard; since: number }) 
 /** Everyone who opened pinch-app.io in the period, by where they came from, and how many went on. */
 function WebsiteVisitorsCard({ data, since }: { data: Dashboard; since: number }) {
   const web = summarizeWebsiteVisitors(data);
+  const available = data.web_totals != null || data.traffic != null;
   const signedUp = new Map<string, number>();
   for (const p of data.people) {
     if (p.web_source == null || new Date(p.created_at).getTime() < since) continue;
@@ -246,28 +255,37 @@ function WebsiteVisitorsCard({ data, since }: { data: Dashboard; since: number }
         title="Website visitors"
         subtitle={`People who opened pinch-app.io (home page or a guide) in ${rangeLabel(data.range.days)}, counted once per browser. Sites other than ChatGPT are known from the referrer, recorded from Nov 17, 2026.`}
       >
-        <div className="pd-grid pd-3" style={{ marginBottom: 20 }}>
-          {figures.map((f) => (
-            <div key={f.label}>
-              <div className="pd-tile-label">{f.label}</div>
-              <div className="pd-tile-value">{formatCount(f.value)}</div>
-              <div className="pd-tile-sub">{f.sub}</div>
+        {!available ? (
+          <div className="pd-empty">
+            The database does not send this yet. It appears once the admin_dashboard update (migration
+            20261118120000) is deployed.
+          </div>
+        ) : (
+          <>
+            <div className="pd-grid pd-3" style={{ marginBottom: 20 }}>
+              {figures.map((f) => (
+                <div key={f.label}>
+                  <div className="pd-tile-label">{f.label}</div>
+                  <div className="pd-tile-value">{formatCount(f.value)}</div>
+                  <div className="pd-tile-sub">{f.sub}</div>
+                </div>
+              ))}
             </div>
-          ))}
-        </div>
-        <div className="pd-muted pd-small" style={{ marginBottom: 8 }}>
-          Where they came from · people, how many just looked, tapped and signed up
-        </div>
-        <RankBars
-          items={web.sources.map((s) => ({
-            label: s.label,
-            value: s.visitors,
-            sub: `${formatCount(s.justLooked)} just looked · ${formatCount(s.clicked)} tapped · ${formatCount(signedUp.get(s.label) ?? 0)} signed up`,
-          }))}
-          format={formatCount}
-          empty="No website visits in this period."
-          limit={12}
-        />
+            <div className="pd-muted pd-small" style={{ marginBottom: 8 }}>
+              Where they came from · people, how many just looked, tapped and signed up
+            </div>
+            <RankBars
+              items={web.sources.map((s) => ({
+                label: s.label,
+                value: s.visitors,
+                sub: `${formatCount(s.justLooked)} just looked · ${formatCount(s.clicked)} tapped · ${formatCount(signedUp.get(s.label) ?? 0)} signed up`,
+              }))}
+              format={formatCount}
+              empty="No website visits in this period."
+              limit={12}
+            />
+          </>
+        )}
       </Card>
     </div>
   );
