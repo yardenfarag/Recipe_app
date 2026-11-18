@@ -112,6 +112,12 @@ Deno.test('a call to the -preview copy is tagged as preview', async () => {
   });
   await handler(new Request('https://x.supabase.co/functions/v1/demo-preview', { method: 'POST' }));
   assertEquals(seen, 'preview');
+  // The Edge Runtime itself sees the path without /functions/v1.
+  seen = '';
+  await handler(new Request('http://localhost/demo-preview', { method: 'POST' }));
+  assertEquals(seen, 'preview');
+  await handler(new Request('http://localhost/demo', { method: 'POST' }));
+  assertEquals(seen, 'production');
 });
 
 Deno.test('the test trigger throws only on a -preview copy', async () => {

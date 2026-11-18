@@ -102,7 +102,10 @@ export function createRequestHandler(
 
     const ctx: RequestContext = {
       fn,
-      environment: /\/functions\/v1\/[^/]+-preview(\/|$)/.test(new URL(req.url).pathname) ? 'preview' : 'production',
+      // Inside the Edge Runtime the path is /<name>; through the public URL it's /functions/v1/<name>.
+      environment: /^(?:\/functions\/v1)?\/[^/]+-preview(?:\/|$)/.test(new URL(req.url).pathname)
+        ? 'preview'
+        : 'production',
       requestId: requestIdOf(req),
       userId: userIdFromAuthHeader(req.headers.get('Authorization')),
       reported: false,
