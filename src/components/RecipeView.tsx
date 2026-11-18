@@ -37,7 +37,7 @@ import { setGuestRecipeTags } from '@/lib/guestRecipes';
 import { convertStepAmounts } from '@/lib/convertStepAmounts';
 import { pickIngredientAmount, scaleIngredient, scaleIngredients } from '@/lib/ingredientAmounts';
 import { isRtlAppLanguage } from '@/lib/appLanguages';
-import { confirmAction } from '@/lib/confirmAction';
+import { confirmAction, showNotice } from '@/lib/confirmAction';
 import { clearExtractionRequestId } from '@/lib/extractionRequestId';
 import { resolveCulinaryLanguage } from '@/lib/culinaryUnits';
 import { displayIngredientAmount, displayedAmountIsPinch, ingredientAmountIsUnknown, recipeHasUnknownAmounts } from '@/lib/displayIngredientAmount';
@@ -59,6 +59,7 @@ import { RecipeVariantKey } from '@/lib/recipeVariants';
 import { recipeSourceShareUrl, shareRecipe } from '@/lib/shareRecipe';
 import { recipeAppliancesOf } from '@/lib/appliances';
 import { ExtractedRecipe } from '@/lib/supabase/extractRecipe';
+import { createRecipeShare } from '@/lib/supabase/recipeShare';
 import { setRecipeTags } from '@/lib/supabase/recipes';
 import { repairRecipe, repairRequestKey, settleRepairRecipe } from '@/lib/supabase/repairRecipe';
 import type { RepairedRecipePayload } from '@/lib/supabase/repairRecipe';
@@ -199,6 +200,7 @@ export function RecipeView({
   });
 
   const [title, setTitle] = useState(localizedContent?.title ?? recipe.title);
+  const [shareBusy, setShareBusy] = useState(false);
   const [baseServings, setBaseServings] = useState(recipe.servings);
   const [baseIngredients, setBaseIngredients] = useState<Ingredient[]>(
     localizedContent?.ingredients ?? recipe.ingredients,
@@ -637,6 +639,9 @@ export function RecipeView({
   }
 
   const sourceShareUrl = recipeSourceShareUrl(recipe.original_url);
+  // Saved recipes of a signed-in user get a Pinch link (PIN-110); anything else can only pass on its source.
+  const pinchShareRecipeId = user && recipeId && !recipeId.startsWith('guest-') ? recipeId : null;
+  const canShare = Boolean(pinchShareRecipeId || sourceShareUrl);
 
   function stampCooked(openNote: boolean) {
     if (!onCookedChange) return;
@@ -646,19 +651,34 @@ export function RecipeView({
     if (openNote) setCookedNoteOpen(true);
   }
 
-  async function handleShare() {
-    if (!sourceShareUrl) return;
-
+  async function sendShareLink(url: string) {
     try {
-      const result = await shareRecipe({
-        title,
-        url: sourceShareUrl,
-      });
+      const result = await shareRecipe({ title, url });
       if (result === 'copied') {
-        Alert.alert(t('recipe.linkCopied'));
+        void showNotice(t('recipe.linkCopied'), '');
       }
     } catch {
-      Alert.alert(t('recipe.shareFailedTitle'), t('common.tryAgain'));
+      void showNotice(t('recipe.shareFailedTitle'), t('common.tryAgain'));
+    }
+  }
+
+  // One tap straight to the share sheet, like other apps. The link stays live until the recipe
+  // (or the account) is deleted; there is no separate "stop sharing" in the app (PIN-110).
+  async function handleShare() {
+    if (shareBusy) return;
+    if (!pinchShareRecipeId) {
+      if (sourceShareUrl) await sendShareLink(sourceShareUrl);
+      return;
+    }
+    setShareBusy(true);
+    const result = await createRecipeShare(pinchShareRecipeId);
+    setShareBusy(false);
+    if (result.status === 'ok') {
+      await sendShareLink(result.url);
+    } else if (sourceShareUrl) {
+      await sendShareLink(sourceShareUrl);
+    } else {
+      void showNotice(t('recipe.shareFailedTitle'), result.message || t('common.tryAgain'));
     }
   }
 
@@ -773,12 +793,14 @@ export function RecipeView({
                     <Ionicons name="create-outline" size={24} color={colors.textSecondary} />
                   </Pressable>
                 ) : null}
-                {sourceShareUrl ? (
+                {canShare ? (
                   <Pressable
-                    trackId="recipe.share_source"
+                    trackId={pinchShareRecipeId ? 'recipe.share' : 'recipe.share_source'}
                     onPress={() => {
                       void handleShare();
                     }}
+                    disabled={shareBusy}
+                    accessibilityState={{ busy: shareBusy }}
                     hitSlop={12}
                     style={({ pressed }) => ({ opacity: pressed ? 0.6 : 1 })}
                     className="mt-0.5 px-1"

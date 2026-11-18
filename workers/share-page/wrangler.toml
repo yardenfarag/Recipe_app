@@ -1,12 +1,17 @@
 # Cloudflare Worker that renders shared-recipe pages at pinch-app.io/s/<token> (PIN-9).
-# Only /s/* is routed here; everything else on pinch-app.io is served by GitHub Pages.
+# Only /s/* and the app-link files are routed here; everything else on pinch-app.io is served by GitHub Pages.
 # Requires the pinch-app.io DNS records to be proxied (orange cloud) in Cloudflare.
 name = "pinch-share-page"
 main = "src/index.ts"
 compatibility_date = "2026-10-01"
 workers_dev = false
 
-routes = [{ pattern = "pinch-app.io/s/*", zone_name = "pinch-app.io" }]
+routes = [
+  { pattern = "pinch-app.io/s/*", zone_name = "pinch-app.io" },
+  # Universal links (iOS) and App Links (Android) verification files (PIN-110).
+  { pattern = "pinch-app.io/.well-known/*", zone_name = "pinch-app.io" },
+  { pattern = "pinch-app.io/apple-app-site-association", zone_name = "pinch-app.io" },
+]
 
 [vars]
 # Public values — the same ones baked into the web app bundle.

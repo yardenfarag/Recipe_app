@@ -1,11 +1,7 @@
 import { FunctionsHttpError } from '@supabase/supabase-js';
 
-import { LEGAL_BASE_URL } from '@/lib/legal';
 import { supabase } from '@/lib/supabase/client';
 import type { ExtractedRecipe } from '@/lib/supabase/extractRecipe';
-
-/** Flip to true when share links + store fallback are ready for production. */
-export const RECIPE_SHARE_ENABLED = false;
 
 export type RecipeSharePreview = ExtractedRecipe;
 
@@ -42,9 +38,15 @@ async function invokeErrorMessage(error: unknown): Promise<{
   return { message: 'Request failed' };
 }
 
+/**
+ * Share links always use this domain, whatever EXPO_PUBLIC_LEGAL_BASE_URL says: it is the one
+ * the apps claim for universal links / App Links (app.json) and where the share-page Worker runs.
+ */
+export const SHARE_LINK_ORIGIN = 'https://pinch-app.io';
+
 /** HTTPS share page (workers/share-page): recipe preview, then opens the app or store. */
 export function recipeShareLandingUrl(token: string): string {
-  return `${LEGAL_BASE_URL}/s/${encodeURIComponent(token)}`;
+  return `${SHARE_LINK_ORIGIN}/s/${encodeURIComponent(token)}`;
 }
 
 /** Custom-scheme deep link used by the landing page / installed app. */

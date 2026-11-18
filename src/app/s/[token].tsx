@@ -27,7 +27,8 @@ export default function SharedRecipeScreen() {
   const [claiming, setClaiming] = useState(false);
   const [claimError, setClaimError] = useState<string | null>(null);
   const claimInFlight = useRef(false);
-  const autoClaimAttempted = useRef(false);
+  // Set when Save sent a guest to sign up, so the recipe saves once they come back signed in.
+  const saveAfterAuth = useRef(false);
 
   useEffect(() => {
     let cancelled = false;
@@ -64,6 +65,7 @@ export default function SharedRecipeScreen() {
     if (!token?.trim() || claimInFlight.current) return false;
 
     if (!session?.user) {
+      saveAfterAuth.current = true;
       router.push({
         pathname: '/auth',
         params: { mode: 'signup', reason: 'shared_recipe' },
@@ -95,12 +97,11 @@ export default function SharedRecipeScreen() {
     }
   }, [session?.user, token, t]);
 
-  // Signed-in recipients (including after auth) get the recipe copied automatically.
+  // Recipients see the recipe first and save it with one tap. Someone who tapped Save as a guest
+  // and then signed up gets it saved on return, without a second tap.
   useEffect(() => {
-    if (authLoading || loading || !recipe || !session?.user || autoClaimAttempted.current) {
-      return;
-    }
-    autoClaimAttempted.current = true;
+    if (authLoading || loading || !recipe || !session?.user || !saveAfterAuth.current) return;
+    saveAfterAuth.current = false;
     void saveToLibrary();
   }, [authLoading, loading, recipe, session?.user, saveToLibrary]);
 
@@ -138,7 +139,7 @@ export default function SharedRecipeScreen() {
     );
   }
 
-  if (session?.user && !claimError) {
+  if (claiming) {
     return (
       <Screen edges={['bottom']}>
         <View

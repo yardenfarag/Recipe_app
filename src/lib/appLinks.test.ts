@@ -1,0 +1,21 @@
+import { describe, expect, it } from 'vitest';
+
+import { appPathForWebLink } from './appLinks';
+
+describe('appPathForWebLink', () => {
+  it('opens a shared recipe link on the share screen', () => {
+    expect(appPathForWebLink('https://pinch-app.io/s/AbC_-123')).toBe('/s/AbC_-123');
+    expect(appPathForWebLink('https://www.pinch-app.io/s/AbC_-123/')).toBe('/s/AbC_-123');
+    expect(appPathForWebLink('https://pinch-app.io/app/s/AbC_-123?utm=x')).toBe('/s/AbC_-123');
+  });
+
+  it('sends other pinch-app.io pages to the library', () => {
+    expect(appPathForWebLink('https://pinch-app.io/guides/save-tiktok/')).toBe('/');
+  });
+
+  it('leaves app paths and other URLs alone', () => {
+    expect(appPathForWebLink('/s/AbC')).toBe('/s/AbC');
+    expect(appPathForWebLink('pinch://s/AbC')).toBe('pinch://s/AbC');
+    expect(appPathForWebLink('https://evil.example/s/AbC')).toBe('https://evil.example/s/AbC');
+  });
+});

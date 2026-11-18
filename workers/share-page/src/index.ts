@@ -1,13 +1,16 @@
-// Cloudflare Worker on pinch-app.io/s/* (PIN-9).
+// Cloudflare Worker on pinch-app.io/s/* and pinch-app.io/.well-known/* (PIN-9, PIN-110).
 // GitHub Pages can only answer /s/<token> with 404.html, so this renders the share page —
-// title, OG tags and Recipe schema — with a 200. Every other path goes to Pages untouched.
+// title, OG tags and Recipe schema — with a 200. It also serves the app-link verification
+// files (appLinks.ts). Every other path goes to Pages untouched.
 
+import { handleAppLinkRequest } from './appLinks';
 import {
   renderNotFoundPage,
   renderSharePage,
   renderUnavailablePage,
   type SharedRecipe,
 } from './render';
+import { pickLanguage } from './strings';
 
 export interface Env {
   SUPABASE_URL: string;
@@ -51,6 +54,12 @@ function html(body: string, status: number, cacheControl: string): Response {
       'Content-Type': 'text/html; charset=utf-8',
       'Cache-Control': cacheControl,
       'X-Content-Type-Options': 'nosniff',
+      // Share links are private by intent: never in search results (PIN-110).
+      'X-Robots-Tag': 'noindex',
+      // Links out (store, source video) don't carry the share token.
+      'Referrer-Policy': 'no-referrer',
+      // The page text follows the browser language.
+      Vary: 'Accept-Language',
     },
   });
 }
@@ -63,26 +72,31 @@ export async function handleShareRequest(request: Request, env: Env): Promise<Re
     return new Response('Method not allowed', { status: 405, headers: { Allow: 'GET, HEAD' } });
   }
 
+  const acceptLanguage = request.headers.get('Accept-Language');
+  const notFound = () => html(renderNotFoundPage(pickLanguage(acceptLanguage)), 404, 'public, max-age=300');
+
   let token: string;
   try {
     token = decodeURIComponent(match[1]);
   } catch {
-    return html(renderNotFoundPage(), 404, 'public, max-age=300');
+    return notFound();
   }
-  if (!TOKEN_PATTERN.test(token)) return html(renderNotFoundPage(), 404, 'public, max-age=300');
+  if (!TOKEN_PATTERN.test(token)) return notFound();
 
   const share = await fetchShare(env, token);
-  if (share.status === 'not_found') return html(renderNotFoundPage(), 404, 'public, max-age=300');
+  if (share.status === 'not_found') return notFound();
   if (share.status === 'error') {
-    const response = html(renderUnavailablePage(token), 503, 'no-store');
+    const response = html(renderUnavailablePage(token, pickLanguage(acceptLanguage)), 503, 'no-store');
     response.headers.set('Retry-After', '60');
     return response;
   }
-  return html(renderSharePage(share.recipe, token), 200, 'public, max-age=300');
+  // Revoking a link must take effect quickly, so caches keep a page for a minute at most.
+  const lang = pickLanguage(acceptLanguage, share.recipe.source_language);
+  return html(renderSharePage(share.recipe, token, lang), 200, 'public, max-age=60');
 }
 
 export default {
   async fetch(request: Request, env: Env): Promise<Response> {
-    return (await handleShareRequest(request, env)) ?? fetch(request);
+    return handleAppLinkRequest(request) ?? (await handleShareRequest(request, env)) ?? fetch(request);
   },
 };
