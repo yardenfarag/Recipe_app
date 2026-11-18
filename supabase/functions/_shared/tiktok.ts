@@ -8,6 +8,7 @@ import {
 import {
   firstUrlList,
   scrapeCreatorsGet,
+  TRANSCRIPT_TIMEOUT_MS,
   webVttToPlainText,
 } from './scrapecreators.ts';
 import { parseDurationMilliseconds, wantsSmallestVideo } from './videoLimits.ts';
@@ -60,11 +61,11 @@ interface TikTokComment {
 /** Fetches TikTok video metadata via ScrapeCreators for the content ladder. */
 export async function fetchTikTokMeta(url: string): Promise<PlatformMeta> {
   const [videoResponse, commentsResponse] = await Promise.all([
-    scrapeCreatorsGet<TikTokVideoResponse>('/v2/tiktok/video', {
-      url,
-      get_transcript: 'true',
-      trim: 'true',
-    }),
+    scrapeCreatorsGet<TikTokVideoResponse>(
+      '/v2/tiktok/video',
+      { url, get_transcript: 'true', trim: 'true' },
+      { timeoutMs: TRANSCRIPT_TIMEOUT_MS },
+    ),
     scrapeCreatorsGet<TikTokCommentsResponse>('/v1/tiktok/video/comments', {
       url,
       trim: 'true',
