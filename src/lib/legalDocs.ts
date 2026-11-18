@@ -44,7 +44,7 @@ const DOCS: Record<LegalDocId, LegalDoc> = {
   privacy: {
     id: 'privacy',
     title: 'Privacy Policy',
-    meta: 'Last updated: November 16, 2026',
+    meta: 'Last updated: November 18, 2026',
     blocks: [
       {
         kind: 'card',
@@ -62,7 +62,7 @@ const DOCS: Record<LegalDocId, LegalDoc> = {
           [strong('Recipes & library:'), text(' saved recipes, collections, shopping list items, favorites, and related metadata you create in the app.')],
           [strong('Credits & AI usage:'), text(' your recipe credit balance, credit pack purchases, and a ledger of AI actions (import, remix, translation, etc.) used to run free allowances and paid credits.')],
           [strong('App activity:'), text(' which screens you open and which buttons you tap, sign-ins and sign-ups, with a random session id, your account or install id, device platform and app version. We never record what you type. Only Pinch admins can see it.')],
-          [strong('Product events:'), text(' a few milestones, such as saving a recipe or finishing onboarding, with your account or install id and your country (from your network or device region).')],
+          [strong('Product events:'), text(' a few milestones, such as saving a recipe or finishing onboarding, with your install id, your account once you sign in (linking what you did before signing up), and your country (from your network or device region).')],
           [strong('Guest device limits:'), text(' a local install identifier and guest extraction/save limits on your device before you create an account.')],
           [strong('Content you submit:'), text(' links you paste or share into Pinch, photos you take or pick (such as a cookbook page, a dish for Guess the recipe, or your fridge), and text you type, such as a custom remix request or a recipe you write, so we can make and store your recipes.')],
           [strong('Kitchen preferences:'), text(' diets, allergies and foods you don’t like, if you choose to add them. Allergies can be health information. We use them only to flag and adapt recipes for you, and they are sent with a request when you ask Pinch to adapt a recipe. They are never part of App activity.')],

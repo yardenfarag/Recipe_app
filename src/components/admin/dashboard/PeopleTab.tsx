@@ -1,17 +1,26 @@
 import { useMemo, useState } from 'react';
 
 import {
+  classifySource,
   countryName,
   deviceName,
   formatDate,
   formatUsd,
+  formatCount,
+  formatPercent,
   num,
+  personSource,
+  plural,
+  rangeLabel,
   relativeTime,
   sortPeople,
+  summarizeSignupSources,
+  summarizeWebsiteVisitors,
   type Dashboard,
   type PersonSort,
 } from '@/lib/adminDashboard';
 
+import { RankBars } from './charts';
 import { Badge, Card, PersonCell } from './ui';
 
 type Filter = 'new' | 'all' | 'active' | 'paying' | 'stuck';
@@ -31,6 +40,7 @@ const COLUMNS: { key: PersonSort | null; label: string; num?: boolean }[] = [
   { key: 'extractions', label: 'Extractions', num: true },
   { key: 'ai_cost_usd', label: 'AI cost', num: true },
   { key: 'spent_usd', label: 'Paid', num: true },
+  { key: null, label: 'Came from' },
   { key: null, label: 'Country' },
   { key: null, label: 'Device' },
 ];
@@ -63,88 +73,218 @@ export function PeopleTab({ data, onOpenPerson }: { data: Dashboard; onOpenPerso
   };
 
   return (
+    <>
+      <WebsiteVisitorsCard data={data} since={since} />
+      <SignupSourcesCard data={data} since={since} />
+      <div className="pd-section">
+        <Card
+          title="People"
+          subtitle="Click anyone to see their recipes, AI use and purchases. Numbers are all-time unless noted."
+          actions={
+            <input
+              className="pd-search"
+              type="search"
+              placeholder="Search by email"
+              value={query}
+              onChange={(e) => setQuery(e.target.value)}
+              aria-label="Search people by email"
+            />
+          }
+        >
+          <div className="pd-seg" role="group" aria-label="Filter people" style={{ marginBottom: 14 }}>
+            {FILTERS.map((f) => (
+              <button key={f.key} type="button" aria-pressed={filter === f.key} onClick={() => setFilter(f.key)}>
+                {f.label} <span className="pd-muted">{counts[f.key]}</span>
+              </button>
+            ))}
+          </div>
+          {rows.length === 0 ? (
+            <div className="pd-empty">Nobody matches.</div>
+          ) : (
+              <div className="pd-table-wrap">
+                <table className="pd-table">
+                  <thead>
+                    <tr>
+                      {COLUMNS.map((c) => (
+                        <th key={c.label} className={c.num ? 'num' : undefined}>
+                          {c.key ? (
+                            <button type="button" aria-pressed={sort === c.key} onClick={() => setSort(c.key as PersonSort)}>
+                              {c.label}
+                              {sort === c.key ? ' ↓' : ''}
+                            </button>
+                        ) : (
+                            c.label
+                        )}
+                      </th>
+                    ))}
+                  </tr>
+                </thead>
+                <tbody>
+                  {rows.map((p) => (
+                    <tr key={p.id} className="click" onClick={() => onOpenPerson(p.id)}>
+                      <td>
+                        <PersonCell
+                          email={p.email}
+                          sub={
+                            <>
+                              {formatDate(p.created_at)} · {relativeTime(p.created_at)}
+                              {p.is_admin ? (
+                                <>
+                                  {' '}
+                                  <Badge>admin</Badge>
+                                </>
+                              ) : null}
+                            </>
+                          }
+                        />
+                      </td>
+                      <td className="pd-muted">{relativeTime(p.last_active_at)}</td>
+                      <td className="num">
+                        {p.recipes}
+                        {num(p.window_recipes) > 0 ? <div className="pd-muted pd-small">+{p.window_recipes} in period</div> : null}
+                      </td>
+                      <td className="num">
+                        {p.extractions}
+                        {num(p.failures) > 0 ? <div className="pd-small" style={{ color: 'var(--bad)' }}>{p.failures} failed</div> : null}
+                      </td>
+                      <td className="num">{formatUsd(p.ai_cost_usd)}</td>
+                      <td className="num">
+                        {num(p.spent_usd) > 0 ? <Badge tone="good">{formatUsd(p.spent_usd)}</Badge> : <span className="pd-muted">—</span>}
+                      </td>
+                      <td>
+                        <SourceCell person={p} />
+                      </td>
+                      <td>{countryName(p.country)}</td>
+                      <td>{deviceName(p.platform)}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
+        </Card>
+      </div>
+    </>
+  );
+}
+
+function SourceCell({ person }: { person: Dashboard['people'][number] }) {
+  const source = personSource(person);
+  if (!source.known) return <span className="pd-muted">—</span>;
+  return (
+    <>
+      {source.label}
+      {source.detail ? <div className="pd-muted pd-small">{source.detail}</div> : null}
+    </>
+  );
+}
+
+/** New people in the period by where they came from, and how far each group got. */
+function SignupSourcesCard({ data, since }: { data: Dashboard; since: number }) {
+  const newcomers = data.people.filter((p) => new Date(p.created_at).getTime() >= since);
+  const summary = summarizeSignupSources(newcomers);
+  const available = data.people.length === 0 || data.people.some((p) => 'heard_about' in p);
+  const progress = (s: { people: number; extracted: number; paid: number }) =>
+    `${formatPercent(s.extracted, s.people)} extracted · ${formatCount(s.paid)} paid`;
+  return (
     <div className="pd-section">
       <Card
-        title="People"
-        subtitle="Click anyone to see their recipes, AI use and purchases. Numbers are all-time unless noted."
-        actions={
-          <input
-            className="pd-search"
-            type="search"
-            placeholder="Search by email"
-            value={query}
-            onChange={(e) => setQuery(e.target.value)}
-            aria-label="Search people by email"
-          />
-        }
+        title="Where new people came from"
+        subtitle={`Everyone who signed up in ${rangeLabel(data.range.days)}: ${formatCount(summary.known)} of ${plural(summary.total, 'person', 'people')} can be traced. Known for most sign-ups from Nov 14, 2026; older accounts have no record.`}
       >
-        <div className="pd-seg" role="group" aria-label="Filter people" style={{ marginBottom: 14 }}>
-          {FILTERS.map((f) => (
-            <button key={f.key} type="button" aria-pressed={filter === f.key} onClick={() => setFilter(f.key)}>
-              {f.label} <span className="pd-muted">{counts[f.key]}</span>
-            </button>
-          ))}
-        </div>
-        {rows.length === 0 ? (
-          <div className="pd-empty">Nobody matches.</div>
-        ) : (
-          <div className="pd-table-wrap">
-            <table className="pd-table">
-              <thead>
-                <tr>
-                  {COLUMNS.map((c) => (
-                    <th key={c.label} className={c.num ? 'num' : undefined}>
-                      {c.key ? (
-                        <button type="button" aria-pressed={sort === c.key} onClick={() => setSort(c.key as PersonSort)}>
-                          {c.label}
-                          {sort === c.key ? ' ↓' : ''}
-                        </button>
-                      ) : (
-                        c.label
-                      )}
-                    </th>
-                  ))}
-                </tr>
-              </thead>
-              <tbody>
-                {rows.map((p) => (
-                  <tr key={p.id} className="click" onClick={() => onOpenPerson(p.id)}>
-                    <td>
-                      <PersonCell
-                        email={p.email}
-                        sub={
-                          <>
-                            {formatDate(p.created_at)} · {relativeTime(p.created_at)}
-                            {p.is_admin ? (
-                              <>
-                                {' '}
-                                <Badge>admin</Badge>
-                              </>
-                            ) : null}
-                          </>
-                        }
-                      />
-                    </td>
-                    <td className="pd-muted">{relativeTime(p.last_active_at)}</td>
-                    <td className="num">
-                      {p.recipes}
-                      {num(p.window_recipes) > 0 ? <div className="pd-muted pd-small">+{p.window_recipes} in period</div> : null}
-                    </td>
-                    <td className="num">
-                      {p.extractions}
-                      {num(p.failures) > 0 ? <div className="pd-small" style={{ color: 'var(--bad)' }}>{p.failures} failed</div> : null}
-                    </td>
-                    <td className="num">{formatUsd(p.ai_cost_usd)}</td>
-                    <td className="num">
-                      {num(p.spent_usd) > 0 ? <Badge tone="good">{formatUsd(p.spent_usd)}</Badge> : <span className="pd-muted">—</span>}
-                    </td>
-                    <td>{countryName(p.country)}</td>
-                    <td>{deviceName(p.platform)}</td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
+        {!available ? (
+          <div className="pd-empty">
+            The database does not send this yet. It appears once the admin_dashboard update (migration
+            20261118120000) is deployed.
           </div>
+        ) : (
+          <div className="pd-grid pd-2" style={{ gap: 28 }}>
+            <div>
+              <div className="pd-muted pd-small" style={{ marginBottom: 8 }}>
+                What they answered in onboarding · how far they got
+              </div>
+              <RankBars
+                items={summary.heard.map((s) => ({ label: s.label, value: s.people, sub: progress(s) }))}
+                format={formatCount}
+                empty="No sign-ups in this period."
+              />
+            </div>
+            <div>
+              <div className="pd-muted pd-small" style={{ marginBottom: 8 }}>
+                Site that sent them to pinch-app.io first (web sign-ups)
+              </div>
+              <RankBars
+                items={summary.web.map((s) => ({ label: s.label, value: s.people, sub: progress(s) }))}
+                format={formatCount}
+                empty="No new people linked to a website visit yet."
+              />
+            </div>
+          </div>
+        )}
+      </Card>
+    </div>
+  );
+}
+
+/** Everyone who opened pinch-app.io in the period, by where they came from, and how many went on. */
+function WebsiteVisitorsCard({ data, since }: { data: Dashboard; since: number }) {
+  const web = summarizeWebsiteVisitors(data);
+  const available = data.web_totals != null || data.traffic != null;
+  const signedUp = new Map<string, number>();
+  for (const p of data.people) {
+    if (p.web_source == null || new Date(p.created_at).getTime() < since) continue;
+    const label = classifySource(p.web_source).label;
+    signedUp.set(label, (signedUp.get(label) ?? 0) + 1);
+  }
+  const figures = [
+    { label: 'Visited the website', value: web.visitors, sub: plural(web.visits, 'page view') },
+    {
+      label: 'Just looked',
+      value: web.justLooked,
+      sub: `${formatPercent(web.justLooked, web.visitors)} left without tapping a button`,
+    },
+    {
+      label: 'Went on',
+      value: web.clicked,
+      sub: `${formatPercent(web.clicked, web.visitors)} tapped App Store, Google Play or the web app`,
+    },
+  ];
+  return (
+    <div className="pd-section">
+      <Card
+        title="Website visitors"
+        subtitle={`People who opened pinch-app.io (home page or a guide) in ${rangeLabel(data.range.days)}, counted once per browser. Sites other than ChatGPT are known from the referrer, recorded from Nov 17, 2026.`}
+      >
+        {!available ? (
+          <div className="pd-empty">
+            The database does not send this yet. It appears once the admin_dashboard update (migration
+            20261118120000) is deployed.
+          </div>
+        ) : (
+          <>
+            <div className="pd-grid pd-3" style={{ marginBottom: 20 }}>
+              {figures.map((f) => (
+                <div key={f.label}>
+                  <div className="pd-tile-label">{f.label}</div>
+                  <div className="pd-tile-value">{formatCount(f.value)}</div>
+                  <div className="pd-tile-sub">{f.sub}</div>
+                </div>
+              ))}
+            </div>
+            <div className="pd-muted pd-small" style={{ marginBottom: 8 }}>
+              Where they came from · people, how many just looked, tapped and signed up
+            </div>
+            <RankBars
+              items={web.sources.map((s) => ({
+                label: s.label,
+                value: s.visitors,
+                sub: `${formatCount(s.justLooked)} just looked · ${formatCount(s.clicked)} tapped · ${formatCount(signedUp.get(s.label) ?? 0)} signed up`,
+              }))}
+              format={formatCount}
+              empty="No website visits in this period."
+              limit={12}
+            />
+          </>
         )}
       </Card>
     </div>
