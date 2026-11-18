@@ -34,8 +34,9 @@ incident: deploy by hand, tell the other developer, and merge the same change
 right after. The workflow also has a manual "Run workflow" button that
 redeploys `master`.
 
-Setup: the workflow needs the repo secrets `SUPABASE_ACCESS_TOKEN` (a personal
-access token from Supabase → Account → Access Tokens) and `SUPABASE_DB_PASSWORD`.
+Setup: the workflow needs one repo secret, `SUPABASE_ACCESS_TOKEN` (a personal
+access token from Supabase → Account → Access Tokens). It needs no database
+password.
 
 The feature rollout notes further down list the `db push` / `functions deploy`
 commands from before CI. Today, merging runs them. The manual checks in those
