@@ -1,4 +1,4 @@
-import type { SupabaseClient } from 'https://esm.sh/@supabase/supabase-js@2';
+import type { Db } from '../_shared/core/supabaseAdmin.ts';
 
 import { corsHeaders, jsonResponse } from '../_shared/core/cors.ts';
 import {
@@ -23,7 +23,7 @@ interface RequestBody {
 
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
-function supabaseDietsDb(admin: SupabaseClient): DietsBackfillDb {
+function supabaseDietsDb(admin: Db): DietsBackfillDb {
   return {
     async fetchPending(after, limit) {
       let query = admin

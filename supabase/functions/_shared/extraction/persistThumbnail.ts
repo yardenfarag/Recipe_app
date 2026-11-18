@@ -1,4 +1,5 @@
-import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
+import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.110.6';
+import type { Database } from '../core/database.types.ts';
 
 import type { Platform } from './platform.ts';
 import { readBodyCapped, safeFetch } from '../core/safeFetch.ts';
@@ -87,7 +88,7 @@ export async function persistSocialThumbnail(opts: {
   const idPart = (contentId?.trim() || hashShort(sourceUrl)).replace(/[^A-Za-z0-9_-]/g, '');
   const path = `${platform}/${idPart}.${ext}`;
 
-  const supabase = createClient(supabaseUrl, serviceKey);
+  const supabase = createClient<Database>(supabaseUrl, serviceKey);
   const { error } = await supabase.storage.from('recipe-thumbnails').upload(path, bytes, {
     contentType,
     upsert: true,
@@ -134,7 +135,7 @@ export async function persistUploadedPhoto(opts: {
 
   const ext = extensionForContentType(mime);
   const path = `photo/${opts.userId ?? 'guest'}/${crypto.randomUUID()}.${ext}`;
-  const supabase = createClient(supabaseUrl, serviceKey);
+  const supabase = createClient<Database>(supabaseUrl, serviceKey);
   const { error } = await supabase.storage.from('recipe-thumbnails').upload(path, bytes, {
     contentType: mime.startsWith('image/') ? mime : 'image/jpeg',
     upsert: false,

@@ -92,6 +92,12 @@ calls; production builds ignore the variable.
 ### 3. Migrations
 
 - Test locally: `supabase db reset` + `supabase test db` must pass.
+- Regenerate the database types: `npm run db:types` (with local Supabase
+  started) rewrites `supabase/functions/_shared/core/database.types.ts`, which
+  both the app and the functions use. Commit it with the migration; CI fails
+  when it doesn't match the migrations. At the boundary between those types and
+  the app's own (`Recipe`, JSON columns, RPC arguments that are SQL null), use
+  the helpers in `src/lib/supabase/dbTypes.ts` and `_shared/core/supabaseAdmin.ts`.
 - Name new files with a `YYYYMMDDHHMMSS_` prefix newer than every existing
   migration, or the deploy check stops them.
 - **Expand, then contract.** Functions deploy right after migrations, and app

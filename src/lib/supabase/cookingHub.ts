@@ -1,4 +1,5 @@
 import { supabase } from '@/lib/supabase/client';
+import { sqlNullable } from '@/lib/supabase/dbTypes';
 import { isHubPlatform } from '@/lib/recipeCardKey';
 import type { HubPlatform, RecipeCard } from '@/types/recipeCard';
 
@@ -51,10 +52,10 @@ export async function fetchHubCards(
   // hub_cards does the filtering, the diet-first ordering and the paging (PIN-83).
   // It returns one extra row so the page can tell if more exist.
   const rowsQuery = supabase.rpc('hub_cards', {
-    p_diets: options.diets && options.diets.length > 0 ? options.diets : null,
-    p_platform: platform,
-    p_search: search || null,
-    p_tags: tags,
+    p_diets: sqlNullable(options.diets && options.diets.length > 0 ? options.diets : null),
+    p_platform: sqlNullable(platform),
+    p_search: sqlNullable(search || null),
+    p_tags: sqlNullable(tags),
     p_sort: sort,
     p_offset: offset,
     p_limit: limit + 1,
@@ -66,7 +67,7 @@ export async function fetchHubCards(
   ]);
   if (rowsResult.error) throw rowsResult.error;
 
-  const rows = ((rowsResult.data ?? []) as RecipeCard[]).map(mapCard);
+  const rows = ((rowsResult.data ?? []) as unknown as RecipeCard[]).map(mapCard);
   const hasMore = rows.length > limit;
   const cards = hasMore ? rows.slice(0, limit) : rows;
   return { cards, hasMore, total };
@@ -89,7 +90,7 @@ async function countHubCards(filters: {
 
 export async function fetchHubTags(platform: HubPlatform | 'all' = 'all'): Promise<string[]> {
   const { data, error } = await supabase.rpc('hub_popular_tags', {
-    p_platform: platform === 'all' ? null : platform,
+    p_platform: sqlNullable(platform === 'all' ? null : platform),
     p_limit: 12,
   });
   if (error) throw error;
@@ -114,7 +115,7 @@ export async function fetchHubCard(id: string): Promise<RecipeCard | null> {
     if (error.code === 'PGRST116') return null;
     throw error;
   }
-  return data ? mapCard(data as RecipeCard) : null;
+  return data ? mapCard(data as unknown as RecipeCard) : null;
 }
 
 export async function claimHubCard(cardId: string): Promise<string> {

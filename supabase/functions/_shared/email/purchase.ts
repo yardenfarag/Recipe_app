@@ -1,7 +1,7 @@
 // "Your credits are in" email after a credit pack is granted. Called by both purchase webhooks
 // once grant_purchased_credits succeeds. Best effort: a failure here never fails the webhook,
 // because the credits are already in the account.
-import type { SupabaseClient } from 'https://esm.sh/@supabase/supabase-js@2';
+import type { Db } from '../core/supabaseAdmin.ts';
 
 import { pickLocale } from './copy.ts';
 import { purchaseStore, renderPurchaseEmail } from './render.ts';
@@ -27,7 +27,7 @@ export function totalCredits(purchased: number, monthlyUsed: number): number {
 }
 
 /** The balance to print, or null (the email then leaves the line out) if it can't be read. */
-async function displayBalance(admin: SupabaseClient, userId: string, purchased: number | null): Promise<number | null> {
+async function displayBalance(admin: Db, userId: string, purchased: number | null): Promise<number | null> {
   if (purchased == null) return null;
   const now = new Date();
   const yearMonth = `${now.getUTCFullYear()}-${String(now.getUTCMonth() + 1).padStart(2, '0')}`;
@@ -41,7 +41,7 @@ async function displayBalance(admin: SupabaseClient, userId: string, purchased: 
   return totalCredits(purchased, Number(data?.extract_count ?? 0) || 0);
 }
 
-export async function sendPurchaseEmail(admin: SupabaseClient, input: PurchaseEmailInput): Promise<void> {
+export async function sendPurchaseEmail(admin: Db, input: PurchaseEmailInput): Promise<void> {
   try {
     if (!Deno.env.get('RESEND_API_KEY')) return;
     const { data, error } = await admin.auth.admin.getUserById(input.userId);

@@ -6,6 +6,7 @@ import {
 } from '@/lib/recipeBackup';
 import { recipeUrlOrigin } from '@/lib/recipeOrigin';
 import { supabase } from '@/lib/supabase/client';
+import { untypedInsert, untypedSupabase } from '@/lib/supabase/dbTypes';
 import { fetchRecipeByUrl, fetchRecipesPage } from '@/lib/supabase/recipes';
 import type { Recipe, RecipeTranslationContent } from '@/types/recipe';
 
@@ -51,7 +52,7 @@ export async function restoreRecipeBackup(backup: ParsedRecipeBackup): Promise<R
   for (const recipe of toAdd) {
     const { data, error } = await supabase
       .from('recipes')
-      .insert(restoreRow(recipe, userId))
+      .insert(untypedInsert<'recipes'>(restoreRow(recipe, userId)))
       .select('id')
       .single();
 
@@ -121,7 +122,7 @@ async function restoreTranslations(rows: Record<string, unknown>[]): Promise<voi
   for (let i = 0; i < rows.length; i += TRANSLATION_CHUNK) {
     const { error } = await supabase
       .from('recipe_translations')
-      .upsert(rows.slice(i, i + TRANSLATION_CHUNK), { onConflict: 'recipe_id,language_code' });
+      .upsert(rows.slice(i, i + TRANSLATION_CHUNK).map((row) => untypedInsert<'recipe_translations'>(row)), { onConflict: 'recipe_id,language_code' });
     // Best-effort: translations can be made again, the recipes are what matter.
     if (error) {
       console.warn('Could not restore recipe translations', error.message);
@@ -245,7 +246,7 @@ async function fetchAllTranslations(): Promise<Record<string, Record<string, Rec
 async function selectAll<T>(table: string, columns: string, orderBy: string[]): Promise<T[]> {
   const rows: T[] = [];
   for (;;) {
-    let query = supabase.from(table).select(columns);
+    let query = untypedSupabase().from(table).select(columns);
     for (const column of orderBy) query = query.order(column, { ascending: true });
     const { data, error } = await query.range(rows.length, rows.length + PAGE_SIZE - 1);
     if (error) throw error;

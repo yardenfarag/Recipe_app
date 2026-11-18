@@ -1,4 +1,5 @@
 import { supabase } from '@/lib/supabase/client';
+import { toJson } from '@/lib/supabase/dbTypes';
 import type { Ingredient, Instruction, RecipeTranslationContent } from '@/types/recipe';
 
 export type RecipeTranslationRow = RecipeTranslationContent & {
@@ -42,8 +43,8 @@ export async function fetchRecipeTranslation(
   if (!data) return null;
   return {
     title: data.title as string,
-    ingredients: data.ingredients as Ingredient[],
-    instructions: data.instructions as Instruction[],
+    ingredients: data.ingredients as unknown as Ingredient[],
+    instructions: data.instructions as unknown as Instruction[],
   };
 }
 
@@ -73,8 +74,8 @@ export async function fetchRecipeTranslationsForLanguage(
   for (const row of data ?? []) {
     map[row.recipe_id as string] = {
       title: row.title as string,
-      ingredients: row.ingredients as Ingredient[],
-      instructions: row.instructions as Instruction[],
+      ingredients: row.ingredients as unknown as Ingredient[],
+      instructions: row.instructions as unknown as Instruction[],
     };
   }
   return map;
@@ -95,8 +96,8 @@ export async function upsertRecipeTranslation(
           recipe_id: recipeId,
           language_code: languageCode,
           title: content.title,
-          ingredients: content.ingredients,
-          instructions: content.instructions,
+          ingredients: toJson(content.ingredients),
+          instructions: toJson(content.instructions),
         },
         { onConflict: 'recipe_id,language_code' },
       )

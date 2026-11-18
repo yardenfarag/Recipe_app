@@ -155,7 +155,7 @@ Deno.serve(async (req) => {
 
   const instructions = (recipe.instructions ?? [])
     .filter(
-      (s): s is { step: number; text: string } =>
+      (s): s is { step: number; text: string; timestamp_seconds?: number } =>
         s.step != null && typeof s.text === 'string' && s.text.trim().length > 0,
     )
     .map((s) => ({

@@ -1,6 +1,6 @@
 // Sends Pinch emails through Resend's API, from hello@pinch-app.io with replies going to support@.
 // Secret: RESEND_API_KEY (a Resend key with sending access to pinch-app.io).
-import type { SupabaseClient } from 'https://esm.sh/@supabase/supabase-js@2';
+import type { Db } from '../core/supabaseAdmin.ts';
 
 import type { RenderedEmail } from './render.ts';
 
@@ -76,7 +76,7 @@ export type OnceKind = 'welcome' | 'purchase' | 'support';
  * tries again.
  */
 export async function sendOnce(
-  admin: SupabaseClient,
+  admin: Db,
   input: {
     kind: OnceKind;
     dedupeKey: string;

@@ -8,7 +8,7 @@ Production is the only Supabase project; there is no staging (a cost decision, s
 
 - Deploy only by merging. Hand the user a PR instead of running `supabase db push`, `supabase functions deploy`, MCP `apply_migration` or migration SQL against production.
 - Before merging, test with one of the paths in `supabase/README.md` → "Testing backend changes": local Supabase (the default), a `-preview` function for changes that need real data, or provider sandboxes for webhooks. Tell the user which one you used.
-- Write migrations expand-then-contract, with a timestamp newer than every existing one.
+- Write migrations expand-then-contract, with a timestamp newer than every existing one. After any migration change, run `npm run db:types` (local Supabase started) and commit the regenerated `database.types.ts`; CI fails otherwise.
 - Before writing or changing an Edge Function or a `_shared` module, read `docs/adr/024-backend-conventions.md`. It covers where files go, the handler wrapper, error shapes and data access.
 
 # Onboarding

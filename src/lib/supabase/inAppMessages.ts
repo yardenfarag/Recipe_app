@@ -11,6 +11,7 @@ import type {
   Tone,
 } from '@/lib/inAppMessages';
 import { supabase } from '@/lib/supabase/client';
+import { sqlNullable } from '@/lib/supabase/dbTypes';
 
 /** One row of get_in_app_messages: the message, then the caller's own receipt. */
 export type InAppMessageRow = {
@@ -194,7 +195,7 @@ export async function fetchInAppMessages(params: {
 }): Promise<FetchedInAppMessages> {
   const { data, error } = await supabase.rpc('get_in_app_messages', {
     p_platform: params.platform,
-    p_app_version: params.appVersion,
+    p_app_version: sqlNullable(params.appVersion),
     p_language: params.language,
   });
   if (error) throw error;
@@ -210,7 +211,7 @@ export async function recordInAppMessageEvent(
   const { error } = await supabase.rpc('record_in_app_message_event', {
     p_message_id: messageId,
     p_event: event,
-    p_button: event === 'clicked' ? (button ?? null) : null,
+    p_button: sqlNullable(event === 'clicked' ? (button ?? null) : null),
   });
   if (error) throw error;
 }

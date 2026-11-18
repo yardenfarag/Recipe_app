@@ -1,4 +1,5 @@
 import { supabase } from '@/lib/supabase/client';
+import { sqlNullable } from '@/lib/supabase/dbTypes';
 
 export type ActivitySession = {
   sessionId: string;
@@ -34,7 +35,7 @@ export type ActivityTopItem = {
 export async function fetchActivitySessions(since: string, search: string): Promise<ActivitySession[]> {
   const { data, error } = await supabase.rpc('admin_interaction_sessions', {
     p_since: since,
-    p_search: search.trim() || null,
+    p_search: sqlNullable(search.trim() || null),
     p_limit: 100,
   });
   if (error) throw error;

@@ -1,4 +1,4 @@
-import type { SupabaseClient } from 'https://esm.sh/@supabase/supabase-js@2';
+import { type Db, toJson } from './supabaseAdmin.ts';
 
 import {
   estimateGeminiCostUsd,
@@ -42,7 +42,7 @@ export interface UsageEventInput {
 }
 
 export async function logUsageEvent(
-  admin: SupabaseClient | null,
+  admin: Db | null,
   input: UsageEventInput,
 ): Promise<string | null> {
   if (!admin) return null;
@@ -100,7 +100,7 @@ export async function logUsageEvent(
     tokens_charged: input.tokensCharged ?? 0,
     duration_ms: input.durationMs ?? null,
     error_message: input.errorMessage ?? null,
-    metadata: llmCalls.length > 0 ? { ...(input.metadata ?? {}), llm_calls: llmCalls } : (input.metadata ?? {}),
+    metadata: toJson(llmCalls.length > 0 ? { ...(input.metadata ?? {}), llm_calls: llmCalls } : (input.metadata ?? {})),
   };
 
   const { data, error } = await admin.from('ai_usage_events').insert(row).select('id').maybeSingle();

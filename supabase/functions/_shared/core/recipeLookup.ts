@@ -1,4 +1,6 @@
-import { createClient, type SupabaseClient } from 'https://esm.sh/@supabase/supabase-js@2';
+import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.110.6';
+import type { Database } from './database.types.ts';
+import type { Db } from './supabaseAdmin.ts';
 import {
   extractFacebookId,
   extractInstagramId,
@@ -10,7 +12,7 @@ import {
 
 /** Looks up a saved recipe for the authenticated user that matches the input URL. */
 export async function findExistingRecipeForUser(
-  supabase: SupabaseClient,
+  supabase: Db,
   inputUrl: string,
   platform: Platform,
   videoId: string | null,
@@ -46,7 +48,7 @@ export function createAuthedSupabase(authHeader: string) {
   const supabaseAnonKey = Deno.env.get('SUPABASE_ANON_KEY');
   if (!supabaseUrl || !supabaseAnonKey) return null;
 
-  return createClient(supabaseUrl, supabaseAnonKey, {
+  return createClient<Database>(supabaseUrl, supabaseAnonKey, {
     global: { headers: { Authorization: authHeader } },
   });
 }

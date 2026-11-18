@@ -1,4 +1,4 @@
-import type { SupabaseClient } from 'https://esm.sh/@supabase/supabase-js@2';
+import { type Db, sqlNullable } from './supabaseAdmin.ts';
 
 import {
   FREE_MONTHLY_EXTRACT_LIMIT,
@@ -42,7 +42,7 @@ export function currentYearMonthUtc(date = new Date()): string {
 }
 
 async function ensureUserProfile(
-  admin: SupabaseClient,
+  admin: Db,
   userId: string,
 ): Promise<boolean> {
   const { error } = await admin.rpc('ensure_user_profile', { p_user_id: userId });
@@ -70,7 +70,7 @@ function parseRpcJson(data: unknown): Record<string, unknown> | null {
 }
 
 export async function getQuotaSnapshot(
-  admin: SupabaseClient,
+  admin: Db,
   userId: string,
 ): Promise<QuotaSnapshot | null> {
   let { data: profile, error } = await admin
@@ -138,7 +138,7 @@ export async function getQuotaSnapshot(
  * Pre-check whether the user can start a billable extract (not a reserve).
  */
 export async function canStartExtract(
-  admin: SupabaseClient,
+  admin: Db,
   userId: string,
 ): Promise<
   | { ok: true; snapshot: QuotaSnapshot }
@@ -162,7 +162,7 @@ export async function canStartExtract(
  * Atomically reserves one extract against Free or Plus monthly quota.
  */
 export async function reserveSignedInExtract(
-  admin: SupabaseClient,
+  admin: Db,
   userId: string,
   idempotencyKey: string,
 ): Promise<
@@ -249,7 +249,7 @@ export async function reserveSignedInExtract(
 }
 
 export async function finalizeSignedInExtract(
-  admin: SupabaseClient,
+  admin: Db,
   userId: string,
   reservationId: string,
 ): Promise<boolean> {
@@ -262,7 +262,7 @@ export async function finalizeSignedInExtract(
 }
 
 export async function refundSignedInExtract(
-  admin: SupabaseClient,
+  admin: Db,
   userId: string,
   reservationId: string,
   reason: string,
@@ -287,7 +287,7 @@ export async function refundSignedInExtract(
 }
 
 export async function refundSignedInExtractAfterFinalizeFailure(
-  admin: SupabaseClient,
+  admin: Db,
   userId: string,
   reservationId: string,
 ): Promise<CompensationResult> {
@@ -315,7 +315,7 @@ export async function refundSignedInExtractAfterFinalizeFailure(
 }
 
 export async function markSignedInExtractCompensationPending(
-  admin: SupabaseClient,
+  admin: Db,
   userId: string,
   reservationId: string,
   reason: string,
@@ -325,14 +325,14 @@ export async function markSignedInExtractCompensationPending(
     p_user_id: userId,
     p_reservation_id: reservationId,
     p_reason: reason,
-    p_error: errorMessage,
+    p_error: sqlNullable(errorMessage),
   });
   if (error) console.error('[quotas] mark_recipe_credit_compensation_pending', error);
   return !error && data === true;
 }
 
 export async function getGuestExtractCount(
-  admin: SupabaseClient,
+  admin: Db,
   installId: string,
 ): Promise<number> {
   const { data, error } = await admin
@@ -353,7 +353,7 @@ export async function getGuestExtractCount(
  * Returns remaining after reservation, or blocked when over limit.
  */
 export async function reserveGuestExtraction(
-  admin: SupabaseClient,
+  admin: Db,
   installId: string,
   idempotencyKey: string,
 ): Promise<
@@ -394,7 +394,7 @@ export async function reserveGuestExtraction(
 }
 
 export async function finalizeGuestExtraction(
-  admin: SupabaseClient,
+  admin: Db,
   installId: string,
   reservationId: string,
 ): Promise<boolean> {
@@ -407,7 +407,7 @@ export async function finalizeGuestExtraction(
 }
 
 export async function refundGuestExtraction(
-  admin: SupabaseClient,
+  admin: Db,
   installId: string,
   reservationId: string,
   reason: string,
@@ -432,7 +432,7 @@ export async function refundGuestExtraction(
 }
 
 export async function markGuestExtractionCompensationPending(
-  admin: SupabaseClient,
+  admin: Db,
   installId: string,
   reservationId: string,
   reason: string,
@@ -442,14 +442,14 @@ export async function markGuestExtractionCompensationPending(
     p_install_id: installId,
     p_reservation_id: reservationId,
     p_reason: reason,
-    p_error: errorMessage,
+    p_error: sqlNullable(errorMessage),
   });
   if (error) console.error('[quotas] mark_guest_extraction_compensation_pending', error);
   return !error && data === true;
 }
 
 async function signedInReservationIsRefunded(
-  admin: SupabaseClient,
+  admin: Db,
   userId: string,
   reservationId: string,
 ): Promise<boolean> {
@@ -464,7 +464,7 @@ async function signedInReservationIsRefunded(
 }
 
 async function guestReservationIsRefunded(
-  admin: SupabaseClient,
+  admin: Db,
   installId: string,
   reservationId: string,
 ): Promise<boolean> {

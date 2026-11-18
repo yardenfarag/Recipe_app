@@ -1,4 +1,5 @@
 import { supabase } from '@/lib/supabase/client';
+import { untypedInsert, untypedUpdate } from '@/lib/supabase/dbTypes';
 import {
   detectPlatform,
   extractContentId,
@@ -23,7 +24,7 @@ export async function fetchRecipes(): Promise<Recipe[]> {
     .order('created_at', { ascending: false });
 
   if (error) throw error;
-  return data as Recipe[];
+  return data as unknown as Recipe[];
 }
 
 export async function fetchRecipesPage(
@@ -37,7 +38,7 @@ export async function fetchRecipesPage(
     .range(offset, offset + limit - 1);
 
   if (error) throw error;
-  const recipes = (data ?? []) as Recipe[];
+  const recipes = (data ?? []) as unknown as Recipe[];
   const total = typeof count === 'number' ? count : offset + recipes.length;
   return { recipes, total };
 }
@@ -63,7 +64,7 @@ export async function fetchRecipeByUrl(
         .ilike('original_url', `%${videoId}%`);
 
       if (error) throw error;
-      const match = (data as Recipe[] | null)?.find(
+      const match = (data as unknown as Recipe[] | null)?.find(
         (row) => matchesOrigin(row) && youtubeUrlsMatch(trimmed, row.original_url),
       );
       return match ?? null;
@@ -80,7 +81,7 @@ export async function fetchRecipeByUrl(
         .ilike('original_url', `%${shortcode}%`);
 
       if (error) throw error;
-      const match = (data as Recipe[] | null)?.find(
+      const match = (data as unknown as Recipe[] | null)?.find(
         (row) => matchesOrigin(row) && recipeUrlsMatch(trimmed, row.original_url, 'instagram'),
       );
       return match ?? null;
@@ -97,7 +98,7 @@ export async function fetchRecipeByUrl(
         .ilike('original_url', `%${videoId}%`);
 
       if (error) throw error;
-      const match = (data as Recipe[] | null)?.find(
+      const match = (data as unknown as Recipe[] | null)?.find(
         (row) => matchesOrigin(row) && recipeUrlsMatch(trimmed, row.original_url, 'tiktok'),
       );
       return match ?? null;
@@ -113,7 +114,7 @@ export async function fetchRecipeByUrl(
       .ilike('original_url', `%${contentId}%`);
 
     if (error) throw error;
-    const match = (data as Recipe[] | null)?.find(
+    const match = (data as unknown as Recipe[] | null)?.find(
       (row) => matchesOrigin(row) && recipeUrlsMatch(trimmed, row.original_url, platform),
     );
     if (match) return match;
@@ -125,7 +126,7 @@ export async function fetchRecipeByUrl(
     .eq('original_url', trimmed);
 
   if (error) throw error;
-  const exact = (data as Recipe[] | null)?.find(matchesOrigin) ?? null;
+  const exact = (data as unknown as Recipe[] | null)?.find(matchesOrigin) ?? null;
   if (exact || platform !== 'web') return exact;
 
   const { data: canonicalId, error: canonicalError } = await supabase.rpc('library_recipe_for_url', {
@@ -150,7 +151,7 @@ export async function fetchRecipeById(id: string): Promise<Recipe | null> {
     if (error.code === 'PGRST116') return null; // no rows
     throw error;
   }
-  return data as Recipe;
+  return data as unknown as Recipe;
 }
 
 export async function saveRecipe(recipe: NewRecipe): Promise<Recipe> {
@@ -165,16 +166,16 @@ export async function saveRecipe(recipe: NewRecipe): Promise<Recipe> {
 
   const { data, error } = await supabase
     .from('recipes')
-    .insert({
+    .insert(untypedInsert<'recipes'>({
       ...persistable,
       source_language: persistable.source_language ?? 'en',
       user_id: userData.user.id,
-    })
+    }))
     .select()
     .single();
 
   if (error) throw error;
-  return data as Recipe;
+  return data as unknown as Recipe;
 }
 
 export async function deleteRecipe(id: string): Promise<void> {
@@ -274,7 +275,7 @@ export async function updateRecipeContent(id: string, content: RecipeContentUpda
 
   const { data, error } = await supabase
     .from('recipes')
-    .update(recipeContentUpdateRow(content))
+    .update(untypedUpdate<'recipes'>(recipeContentUpdateRow(content)))
     .eq('id', id)
     .select()
     .single();
@@ -286,7 +287,7 @@ export async function updateRecipeContent(id: string, content: RecipeContentUpda
     await supabase.from('recipe_translations').delete().eq('recipe_id', id);
   }
 
-  return data as Recipe;
+  return data as unknown as Recipe;
 }
 
 const COOK_NOTE_MAX = 160;
@@ -309,5 +310,5 @@ export async function setRecipeCooked(
     .single();
 
   if (error) throw error;
-  return data as Recipe;
+  return data as unknown as Recipe;
 }

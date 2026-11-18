@@ -5,6 +5,7 @@ import {
 } from '../_shared/extraction/classifyRecipe.ts';
 import { corsHeaders, jsonResponse } from '../_shared/core/cors.ts';
 import { repairPartialRecipe, type GeminiRecipe } from '../_shared/extraction/gemini.ts';
+import { parseIngredientAmount } from '../_shared/recipes/ingredientAmounts.ts';
 import { fetchFacebookMeta } from '../_shared/extraction/sources/facebook.ts';
 import { fetchInstagramMeta } from '../_shared/extraction/sources/instagram.ts';
 import {
@@ -129,7 +130,7 @@ Deno.serve(async (req) => {
     );
   }
 
-  let requestId = crypto.randomUUID();
+  let requestId: string = crypto.randomUUID();
   const rawRequestId = body.request_id ?? body.requestId;
   if (typeof rawRequestId === 'string' && rawRequestId.trim().length >= 8) {
     requestId = rawRequestId.trim().slice(0, 128);
@@ -495,8 +496,8 @@ function toGeminiRecipe(raw: RequestBody['recipe']): GeminiRecipe | null {
       name: item.name!.trim(),
       quantity: typeof item.quantity === 'number' && Number.isFinite(item.quantity) ? item.quantity : 0,
       unit: typeof item.unit === 'string' ? item.unit.trim() : '',
-      metric: item.metric,
-      spoons: item.spoons,
+      metric: parseIngredientAmount(item.metric),
+      spoons: parseIngredientAmount(item.spoons),
     }));
   const instructions = raw.instructions
     .filter((step) => typeof step?.text === 'string' && step.text.trim())

@@ -1,4 +1,4 @@
-import type { SupabaseClient } from 'https://esm.sh/@supabase/supabase-js@2';
+import type { Db } from '../_shared/core/supabaseAdmin.ts';
 
 import type { RecipeAppliance } from '../_shared/recipes/enrich/appliances.ts';
 import {
@@ -12,7 +12,7 @@ import {
 import { corsHeaders, jsonResponse } from '../_shared/core/cors.ts';
 import { deriveRecipeAppliances } from '../_shared/recipes/enrich/recipeAppliances.ts';
 import { createAuthedSupabase } from '../_shared/core/recipeLookup.ts';
-import { createServiceSupabase } from '../_shared/core/supabaseAdmin.ts';
+import { createServiceSupabase, toJson } from '../_shared/core/supabaseAdmin.ts';
 import { logUsageEvent } from '../_shared/core/usageLog.ts';
 
 interface RequestBody {
@@ -28,7 +28,7 @@ interface RequestBody {
 
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
-function supabaseBackfillDb(admin: SupabaseClient): BackfillDb {
+function supabaseBackfillDb(admin: Db): BackfillDb {
   return {
     async fetchPending(table, after, limit) {
       let query = admin
@@ -51,7 +51,7 @@ function supabaseBackfillDb(admin: SupabaseClient): BackfillDb {
       // `is null` makes the write a no-op if a user's remix or a new extract filled it first.
       const { data, error } = await admin
         .from(table)
-        .update({ appliances })
+        .update({ appliances: toJson(appliances) })
         .eq('id', id)
         .is('appliances', null)
         .select('id');
