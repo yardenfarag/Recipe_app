@@ -26,6 +26,7 @@ import { useProfile } from '@/hooks/useProfile';
 import { useRtl } from '@/hooks/useRtl';
 import { useThemePreference } from '@/hooks/useThemePreference';
 import { useTranslation } from 'react-i18next';
+import { showToast } from '@/lib/toast';
 import { announce } from '@/lib/a11y';
 import { captureAppShared } from '@/lib/analytics';
 import { confirmAction, confirmDestructive, showNotice } from '@/lib/confirmAction';
@@ -265,7 +266,7 @@ export default function SettingsScreen() {
         message: t('settings.shareAppMessage'),
       });
       captureAppShared({ outcome, platform: Platform.OS });
-      if (outcome === 'copied') Alert.alert(t('settings.shareAppCopied'));
+      if (outcome === 'copied') showToast(t('settings.shareAppCopied'));
     } catch {
       Alert.alert(t('settings.shareAppFailedTitle'), t('common.tryAgain'));
     }

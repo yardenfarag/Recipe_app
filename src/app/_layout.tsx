@@ -12,6 +12,7 @@ import { InAppMessageHost } from '@/components/inAppMessages/InAppMessageHost';
 import { ScreenViewLogger } from '@/components/ScreenViewLogger';
 import { WebCheckoutReturnDialog } from '@/components/WebCheckoutReturnDialog';
 import { StackHeaderBackButton } from '@/components/StackHeaderBackButton';
+import { ToastHost } from '@/components/ToastHost';
 import { AccountLocaleSync } from '@/components/AccountLocaleSync';
 import { AuthProvider } from '@/hooks/useAuth';
 import { LanguageProvider } from '@/hooks/useLanguagePreference';
@@ -172,6 +173,7 @@ function RootNavigator() {
           <Stack.Screen name="admin/messages" options={{ title: t('nav.messages') }} />
         </Stack>
       ) : null}
+      <ToastHost />
     </>
   );
 }

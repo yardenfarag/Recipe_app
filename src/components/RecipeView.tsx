@@ -60,6 +60,7 @@ import { recipeSourceShareUrl, shareRecipe } from '@/lib/shareRecipe';
 import { recipeAppliancesOf } from '@/lib/appliances';
 import { ExtractedRecipe } from '@/lib/supabase/extractRecipe';
 import { createRecipeShare } from '@/lib/supabase/recipeShare';
+import { showToast } from '@/lib/toast';
 import { setRecipeTags } from '@/lib/supabase/recipes';
 import { repairRecipe, repairRequestKey, settleRepairRecipe } from '@/lib/supabase/repairRecipe';
 import type { RepairedRecipePayload } from '@/lib/supabase/repairRecipe';
@@ -655,7 +656,7 @@ export function RecipeView({
     try {
       const result = await shareRecipe({ title, url });
       if (result === 'copied') {
-        void showNotice(t('recipe.linkCopied'), '');
+        showToast(t('recipe.linkCopied'));
       }
     } catch {
       void showNotice(t('recipe.shareFailedTitle'), t('common.tryAgain'));
