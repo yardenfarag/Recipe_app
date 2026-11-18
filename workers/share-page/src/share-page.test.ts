@@ -164,7 +164,10 @@ describe('handleAppLinkRequest', () => {
     expect(response?.headers.get('Content-Type')).toBe('application/json');
     const [link] = (await response?.json()) as { target: { package_name: string; sha256_cert_fingerprints: string[] } }[];
     expect(link.target.package_name).toBe('com.pinch.myapp');
-    expect(link.target.sha256_cert_fingerprints[0]).toMatch(/^([0-9A-F]{2}:){31}[0-9A-F]{2}$/);
+    expect(link.target.sha256_cert_fingerprints).toHaveLength(2);
+    for (const fingerprint of link.target.sha256_cert_fingerprints) {
+      expect(fingerprint).toMatch(/^([0-9A-F]{2}:){31}[0-9A-F]{2}$/);
+    }
   });
 
   it('leaves other paths to GitHub Pages', () => {

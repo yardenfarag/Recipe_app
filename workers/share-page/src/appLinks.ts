@@ -5,9 +5,11 @@
 const APPLE_TEAM_ID = 'V9W92RK5W6';
 const BUNDLE_ID = 'com.pinch.myapp';
 const ANDROID_PACKAGE = 'com.pinch.myapp';
-/** Play App Signing key (Play Console → Setup → App integrity). Store builds are signed with it. */
 const ANDROID_CERT_FINGERPRINTS = [
+  // Play App Signing key (Play Console → Setup → App integrity). Store builds are signed with it.
   '97:EF:5E:2B:45:39:E1:63:0B:73:65:D9:A3:D0:F4:01:D6:DD:46:01:11:30:69:53:0A:F1:B5:06:54:70:53:79',
+  // EAS upload keystore (`npx eas-cli credentials -p android`), for builds installed straight from EAS.
+  'A0:1B:AB:AB:23:4D:7C:A2:D5:CE:B2:A8:A7:7B:E7:32:EF:20:4B:4C:7A:20:F8:04:E6:B9:CB:CE:66:74:4D:B0',
 ];
 
 export const APPLE_APP_SITE_ASSOCIATION = {
