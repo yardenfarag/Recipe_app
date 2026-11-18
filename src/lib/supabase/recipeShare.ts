@@ -4,9 +4,6 @@ import { LEGAL_BASE_URL } from '@/lib/legal';
 import { supabase } from '@/lib/supabase/client';
 import type { ExtractedRecipe } from '@/lib/supabase/extractRecipe';
 
-/** Flip to true when share links + store fallback are ready for production. */
-export const RECIPE_SHARE_ENABLED = false;
-
 export type RecipeSharePreview = ExtractedRecipe;
 
 type CreateShareResult =
@@ -140,4 +137,28 @@ export async function claimRecipeShare(token: string): Promise<ClaimShareResult>
     recipeId: data.recipe_id,
     alreadyClaimed: data.already_claimed === true,
   };
+}
+
+type ShareStatusResult = { status: 'ok'; shared: boolean } | { status: 'failed'; message: string };
+
+/** Whether the signed-in user has a live share link for this recipe. */
+export async function getRecipeShareStatus(recipeId: string): Promise<ShareStatusResult> {
+  const { data, error } = await supabase.functions.invoke<{ shared?: boolean; error?: string }>(
+    'recipe-share',
+    { body: { action: 'status', recipe_id: recipeId } },
+  );
+  if (error) return { status: 'failed', message: (await invokeErrorMessage(error)).message };
+  return { status: 'ok', shared: data?.shared === true };
+}
+
+type RevokeShareResult = { status: 'ok'; revoked: number } | { status: 'failed'; message: string };
+
+/** Turns off every share link the signed-in user made for this recipe. */
+export async function revokeRecipeShares(recipeId: string): Promise<RevokeShareResult> {
+  const { data, error } = await supabase.functions.invoke<{ revoked?: number; error?: string }>(
+    'recipe-share',
+    { body: { action: 'revoke', recipe_id: recipeId } },
+  );
+  if (error) return { status: 'failed', message: (await invokeErrorMessage(error)).message };
+  return { status: 'ok', revoked: typeof data?.revoked === 'number' ? data.revoked : 0 };
 }

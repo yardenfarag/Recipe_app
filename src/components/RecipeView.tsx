@@ -10,6 +10,7 @@ import { AddToCollectionModal } from '@/components/AddToCollectionModal';
 import { AddToShoppingListModal } from '@/components/AddToShoppingListModal';
 import { CookAlongVideoModal } from '@/components/CookAlongVideoModal';
 import { CookMode } from '@/components/CookMode';
+import { ConfirmDialog } from '@/components/ConfirmDialog';
 import { CookedNoteModal } from '@/components/CookedNoteModal';
 import { CostMeter } from '@/components/CostEstimateDisplay';
 import { RecipeAppliances } from '@/components/RecipeAppliances';
@@ -37,7 +38,7 @@ import { setGuestRecipeTags } from '@/lib/guestRecipes';
 import { convertStepAmounts } from '@/lib/convertStepAmounts';
 import { pickIngredientAmount, scaleIngredient, scaleIngredients } from '@/lib/ingredientAmounts';
 import { isRtlAppLanguage } from '@/lib/appLanguages';
-import { confirmAction } from '@/lib/confirmAction';
+import { confirmAction, showNotice } from '@/lib/confirmAction';
 import { clearExtractionRequestId } from '@/lib/extractionRequestId';
 import { resolveCulinaryLanguage } from '@/lib/culinaryUnits';
 import { displayIngredientAmount, displayedAmountIsPinch, ingredientAmountIsUnknown, recipeHasUnknownAmounts } from '@/lib/displayIngredientAmount';
@@ -59,6 +60,7 @@ import { RecipeVariantKey } from '@/lib/recipeVariants';
 import { recipeSourceShareUrl, shareRecipe } from '@/lib/shareRecipe';
 import { recipeAppliancesOf } from '@/lib/appliances';
 import { ExtractedRecipe } from '@/lib/supabase/extractRecipe';
+import { createRecipeShare, getRecipeShareStatus, revokeRecipeShares } from '@/lib/supabase/recipeShare';
 import { setRecipeTags } from '@/lib/supabase/recipes';
 import { repairRecipe, repairRequestKey, settleRepairRecipe } from '@/lib/supabase/repairRecipe';
 import type { RepairedRecipePayload } from '@/lib/supabase/repairRecipe';
@@ -199,6 +201,9 @@ export function RecipeView({
   });
 
   const [title, setTitle] = useState(localizedContent?.title ?? recipe.title);
+  const [shareDialogOpen, setShareDialogOpen] = useState(false);
+  const [shareLinkLive, setShareLinkLive] = useState(false);
+  const [shareBusy, setShareBusy] = useState(false);
   const [baseServings, setBaseServings] = useState(recipe.servings);
   const [baseIngredients, setBaseIngredients] = useState<Ingredient[]>(
     localizedContent?.ingredients ?? recipe.ingredients,
@@ -637,6 +642,9 @@ export function RecipeView({
   }
 
   const sourceShareUrl = recipeSourceShareUrl(recipe.original_url);
+  // Saved recipes of a signed-in user get a Pinch link (PIN-110); anything else can only pass on its source.
+  const pinchShareRecipeId = user && recipeId && !recipeId.startsWith('guest-') ? recipeId : null;
+  const canShare = Boolean(pinchShareRecipeId || sourceShareUrl);
 
   function stampCooked(openNote: boolean) {
     if (!onCookedChange) return;
@@ -646,19 +654,56 @@ export function RecipeView({
     if (openNote) setCookedNoteOpen(true);
   }
 
-  async function handleShare() {
-    if (!sourceShareUrl) return;
-
+  async function sendShareLink(url: string) {
     try {
-      const result = await shareRecipe({
-        title,
-        url: sourceShareUrl,
-      });
+      const result = await shareRecipe({ title, url });
       if (result === 'copied') {
-        Alert.alert(t('recipe.linkCopied'));
+        void showNotice(t('recipe.linkCopied'), '');
       }
     } catch {
-      Alert.alert(t('recipe.shareFailedTitle'), t('common.tryAgain'));
+      void showNotice(t('recipe.shareFailedTitle'), t('common.tryAgain'));
+    }
+  }
+
+  function handleShare() {
+    if (!pinchShareRecipeId) {
+      if (sourceShareUrl) void sendShareLink(sourceShareUrl);
+      return;
+    }
+    setShareLinkLive(false);
+    setShareDialogOpen(true);
+    void getRecipeShareStatus(pinchShareRecipeId).then((result) => {
+      if (result.status === 'ok') setShareLinkLive(result.shared);
+    });
+  }
+
+  async function handleSharePinchLink() {
+    if (!pinchShareRecipeId || shareBusy) return;
+    setShareBusy(true);
+    const result = await createRecipeShare(pinchShareRecipeId);
+    setShareBusy(false);
+    setShareDialogOpen(false);
+    if (result.status === 'ok') {
+      await sendShareLink(result.url);
+    } else if (sourceShareUrl) {
+      await sendShareLink(sourceShareUrl);
+    } else {
+      void showNotice(t('recipe.shareFailedTitle'), result.message || t('common.tryAgain'));
+    }
+  }
+
+  async function handleStopSharing() {
+    if (!pinchShareRecipeId || shareBusy) return;
+    setShareBusy(true);
+    const result = await revokeRecipeShares(pinchShareRecipeId);
+    setShareBusy(false);
+    setShareDialogOpen(false);
+    if (result.status === 'ok') {
+      setShareLinkLive(false);
+      announce(t('recipe.shareStopped'));
+      void showNotice(t('recipe.shareStopped'), t('recipe.shareStoppedBody'));
+    } else {
+      void showNotice(t('recipe.shareStopFailed'), t('common.tryAgain'));
     }
   }
 
@@ -773,12 +818,10 @@ export function RecipeView({
                     <Ionicons name="create-outline" size={24} color={colors.textSecondary} />
                   </Pressable>
                 ) : null}
-                {sourceShareUrl ? (
+                {canShare ? (
                   <Pressable
-                    trackId="recipe.share_source"
-                    onPress={() => {
-                      void handleShare();
-                    }}
+                    trackId={pinchShareRecipeId ? 'recipe.share' : 'recipe.share_source'}
+                    onPress={handleShare}
                     hitSlop={12}
                     style={({ pressed }) => ({ opacity: pressed ? 0.6 : 1 })}
                     className="mt-0.5 px-1"
@@ -1749,6 +1792,18 @@ export function RecipeView({
       />
 
       <TokenPurchaseSheet visible={creditsOpen} onClose={() => setCreditsOpen(false)} />
+      <ConfirmDialog
+        visible={shareDialogOpen}
+        title={t('recipe.shareDialogTitle')}
+        message={t('recipe.shareDialogBody')}
+        confirmLabel={t('recipe.shareLinkAction')}
+        secondaryLabel={shareLinkLive ? t('recipe.shareStop') : undefined}
+        onSecondary={shareLinkLive ? () => void handleStopSharing() : undefined}
+        loading={shareBusy}
+        onConfirm={() => void handleSharePinchLink()}
+        onCancel={() => setShareDialogOpen(false)}
+        trackId="recipe.share_dialog"
+      />
 
       {cookModeOpen ? (
         <CookMode

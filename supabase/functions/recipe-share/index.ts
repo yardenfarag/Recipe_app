@@ -7,7 +7,7 @@ import { createServiceSupabase, toJson } from '../_shared/core/supabaseAdmin.ts'
 const MAX_BODY_BYTES = 32_000;
 const TOKEN_BYTES = 18;
 
-type ShareAction = 'create' | 'get' | 'claim' | 'revoke';
+type ShareAction = 'create' | 'get' | 'claim' | 'revoke' | 'status';
 
 interface RequestBody {
   action?: ShareAction;
@@ -158,7 +158,7 @@ serve('recipe-share', async (req) => {
   }
 
   const action = body.action;
-  if (action !== 'create' && action !== 'get' && action !== 'claim' && action !== 'revoke') {
+  if (!['create', 'get', 'claim', 'revoke', 'status'].includes(action as string)) {
     return jsonResponse({ error: 'Invalid action' }, 400);
   }
 
@@ -227,6 +227,24 @@ serve('recipe-share', async (req) => {
     return jsonResponse({ status: 'ok', revoked: data?.length ?? 0 });
   }
 
+  // Whether the sharer has a live link for this recipe, so the app can offer "Stop sharing".
+  if (action === 'status') {
+    const recipeId = typeof body.recipe_id === 'string' ? body.recipe_id.trim() : '';
+    if (!recipeId) return jsonResponse({ error: 'Missing recipe_id' }, 400);
+    const { data, error } = await admin
+      .from('recipe_shares')
+      .select('token')
+      .eq('created_by', user.id)
+      .eq('source_recipe_id', recipeId)
+      .is('revoked_at', null)
+      .limit(1);
+    if (error) {
+      console.error('recipe-share status failed:', error);
+      return jsonResponse({ error: 'Could not load share status' }, 500);
+    }
+    return jsonResponse({ status: 'ok', shared: (data?.length ?? 0) > 0 });
+  }
+
   if (action === 'create') {
     const recipeId = typeof body.recipe_id === 'string' ? body.recipe_id.trim() : '';
     if (!recipeId || recipeId.startsWith('guest-')) {
@@ -257,10 +275,6 @@ serve('recipe-share', async (req) => {
       .limit(1)
       .maybeSingle();
 
-    if (existing?.token) {
-      return jsonResponse({ status: 'ok', token: existing.token, reused: true });
-    }
-
     let snapshot: RecipeSnapshot;
     try {
       snapshot = snapshotFromRecipe(recipe as Record<string, unknown>);
@@ -269,6 +283,16 @@ serve('recipe-share', async (req) => {
         { error: err instanceof Error ? err.message : 'Invalid recipe' },
         400,
       );
+    }
+
+    // Sharing again keeps the same link but sends the recipe as it is now, edits included.
+    if (existing?.token) {
+      const { error: refreshError } = await admin
+        .from('recipe_shares')
+        .update({ snapshot: toJson(snapshot) })
+        .eq('token', existing.token);
+      if (refreshError) console.error('recipe-share snapshot refresh failed:', refreshError);
+      return jsonResponse({ status: 'ok', token: existing.token, reused: true });
     }
 
     for (let attempt = 0; attempt < 5; attempt++) {
