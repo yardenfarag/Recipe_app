@@ -117,6 +117,27 @@ cloudflared tunnel --url http://localhost:54321
 
 Put the sandbox webhook secret in `supabase/.env.local`.
 
+## Errors and logs
+
+Every function starts with `serve('<name>', handler)` from
+`_shared/core/observe.ts` instead of `Deno.serve`. A new function does the same.
+
+- **Request id.** Each request gets one, returned in the `x-request-id`
+  response header (or taken from that request header when the caller sends
+  one). Ask a user or the app for it when tracing a failure.
+- **One JSON log line per request** (Supabase → Edge Functions → Logs):
+  `fn`, `request_id`, `user_id`, `status`, `code`, `duration_ms`. Search the logs
+  by request id.
+- **Sentry** (org `pinch-mv`, free tier) gets crashes the function didn't
+  catch, every 5xx response, and every `console.error(..., err)` that includes
+  an `Error`, each tagged with function, request id, user id and environment
+  (`production`, or `preview` for `-preview` copies). It sends no request bodies,
+  headers or recipe content, and no tracing. The `SENTRY_DSN` function secret
+  turns it on.
+- **Checking the pipeline:** deploy a preview (see above) and call it with the
+  header `x-observe-test: error`. Only `-preview` copies throw on it. A
+  "Observability test error" should appear in Sentry within a minute.
+
 ### Recipe share links (`recipe-share` + migration `0017`)
 
 Outbound share creates an opaque token + recipe snapshot (so recipients don’t need access to the owner’s private row). Recipients open `…/share.html?t=TOKEN` → app deep link `pinch://s/TOKEN` → claim copies the snapshot into their library.
