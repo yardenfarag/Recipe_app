@@ -1,17 +1,17 @@
-import { normalizeStoredCalories } from '../_shared/calories.ts';
+import { normalizeStoredCalories } from '../_shared/recipes/calories.ts';
 import {
   classifyGeminiRecipe,
   recipeRepairIsUpgrade,
-} from '../_shared/classifyRecipe.ts';
-import { corsHeaders, jsonResponse } from '../_shared/cors.ts';
-import { repairPartialRecipe, type GeminiRecipe } from '../_shared/gemini.ts';
-import { fetchFacebookMeta } from '../_shared/facebook.ts';
-import { fetchInstagramMeta } from '../_shared/instagram.ts';
+} from '../_shared/extraction/classifyRecipe.ts';
+import { corsHeaders, jsonResponse } from '../_shared/core/cors.ts';
+import { repairPartialRecipe, type GeminiRecipe } from '../_shared/extraction/gemini.ts';
+import { fetchFacebookMeta } from '../_shared/extraction/sources/facebook.ts';
+import { fetchInstagramMeta } from '../_shared/extraction/sources/instagram.ts';
 import {
   detectPlatform,
   type Platform,
-} from '../_shared/platform.ts';
-import type { PlatformMeta } from '../_shared/platformMeta.ts';
+} from '../_shared/extraction/platform.ts';
+import type { PlatformMeta } from '../_shared/extraction/platformMeta.ts';
 import {
   canStartExtract,
   finalizeSignedInExtract,
@@ -24,17 +24,17 @@ import {
   refundSignedInExtract,
   refundSignedInExtractAfterFinalizeFailure,
   reserveSignedInExtract,
-} from '../_shared/quotas.ts';
-import { appliancesForRecipe } from '../_shared/recipeAppliances.ts';
-import { createAuthedSupabase, extractVideoIdForPlatform } from '../_shared/recipeLookup.ts';
-import { openJson, sealJson } from '../_shared/sealedPayload.ts';
-import { createServiceSupabase } from '../_shared/supabaseAdmin.ts';
-import { normalizeRecipeTags } from '../_shared/tags.ts';
-import { fitRecipeToLimits } from '../_shared/recipeLimits.ts';
-import { fetchTikTokMeta } from '../_shared/tiktok.ts';
-import { logUsageEvent } from '../_shared/usageLog.ts';
-import { fetchWebRecipeMeta } from '../_shared/webRecipe.ts';
-import { fetchYouTubeMeta } from '../_shared/youtube.ts';
+} from '../_shared/core/quotas.ts';
+import { appliancesForRecipe } from '../_shared/recipes/enrich/recipeAppliances.ts';
+import { createAuthedSupabase, extractVideoIdForPlatform } from '../_shared/core/recipeLookup.ts';
+import { openJson, sealJson } from '../_shared/core/sealedPayload.ts';
+import { createServiceSupabase } from '../_shared/core/supabaseAdmin.ts';
+import { normalizeRecipeTags } from '../_shared/recipes/tags.ts';
+import { fitRecipeToLimits } from '../_shared/recipes/recipeLimits.ts';
+import { fetchTikTokMeta } from '../_shared/extraction/sources/tiktok.ts';
+import { logUsageEvent } from '../_shared/core/usageLog.ts';
+import { fetchWebRecipeMeta } from '../_shared/extraction/webRecipe.ts';
+import { fetchYouTubeMeta } from '../_shared/extraction/sources/youtube.ts';
 
 const MAX_BODY_BYTES = 96_000;
 const MAX_TITLE_CHARS = 200;

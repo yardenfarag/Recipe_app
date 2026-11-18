@@ -1,4 +1,4 @@
-/** Mirror of `supabase/functions/_shared/classifyRecipe.ts` for client tests. */
+/** Mirror of `supabase/functions/_shared/extraction/classifyRecipe.ts` for client tests. */
 
 export type ClassifiableRecipe = {
   found_recipe?: boolean;

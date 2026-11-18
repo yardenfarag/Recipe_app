@@ -7,7 +7,7 @@ import {
   polarDecision,
   polarEventSummary,
   polarSignatureValid,
-} from '../../supabase/functions/_shared/polarPurchase';
+} from '../../supabase/functions/_shared/billing/polarPurchase';
 
 const USER = '6f1c2b3a-4d5e-4f60-8a7b-9c0d1e2f3a4b';
 const NOW = 1_763_200_000;

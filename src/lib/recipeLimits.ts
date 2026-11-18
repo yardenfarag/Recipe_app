@@ -1,6 +1,6 @@
 /**
  * Hard limits on recipe content (PIN-79, ADR 018). Same values as the database CHECK constraints
- * (migration 20261108130000_hand_edited_recipes) and supabase/functions/_shared/recipeLimits.ts.
+ * (migration 20261108130000_hand_edited_recipes) and supabase/functions/_shared/recipes/recipeLimits.ts.
  * recipeLimits.test.ts fails if this copy drifts from the server's.
  */
 export const RECIPE_LIMITS = {

@@ -1,7 +1,7 @@
-import { corsHeaders, jsonResponse } from '../_shared/cors.ts';
+import { corsHeaders, jsonResponse } from '../_shared/core/cors.ts';
 import { sendPurchaseEmail } from '../_shared/email/purchase.ts';
-import { creditPurchaseDecision, purchaseEventSummary } from '../_shared/revenuecatPurchase.ts';
-import { createServiceSupabase } from '../_shared/supabaseAdmin.ts';
+import { creditPurchaseDecision, purchaseEventSummary } from '../_shared/billing/revenuecatPurchase.ts';
+import { createServiceSupabase } from '../_shared/core/supabaseAdmin.ts';
 
 /** Best effort: the admin credit health report counts these. */
 async function recordFailure(body: unknown, reason: string, error?: unknown): Promise<void> {

@@ -4,9 +4,9 @@
 // The signed-in user's id becomes the Polar customer's external id and goes into the checkout
 // metadata, which Polar copies onto the order; polar-webhook credits that user once it's paid.
 // Secret: POLAR_ACCESS_TOKEN (organization token with checkouts:write and products:read).
-import { corsHeaders, jsonResponse } from '../_shared/cors.ts';
-import { checkoutReturnUrl, PACK_CREDITS } from '../_shared/polarPurchase.ts';
-import { createAuthedSupabase } from '../_shared/recipeLookup.ts';
+import { corsHeaders, jsonResponse } from '../_shared/core/cors.ts';
+import { checkoutReturnUrl, PACK_CREDITS } from '../_shared/billing/polarPurchase.ts';
+import { createAuthedSupabase } from '../_shared/core/recipeLookup.ts';
 
 const POLAR_API = 'https://api.polar.sh/v1';
 const DEFAULT_RETURN_URL = 'https://pinch-app.io/app/settings/credits';

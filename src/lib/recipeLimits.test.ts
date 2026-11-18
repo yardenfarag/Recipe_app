@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
-import { RECIPE_LIMITS as SERVER_LIMITS } from '../../supabase/functions/_shared/recipeLimits';
+import { RECIPE_LIMITS as SERVER_LIMITS } from '../../supabase/functions/_shared/recipes/recipeLimits';
 import { charCount, RECIPE_LIMITS } from '@/lib/recipeLimits';
 
 describe('recipe limits', () => {

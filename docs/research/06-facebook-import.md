@@ -46,7 +46,7 @@ Things to know:
 - **`get_comments` is named in the endpoint description but is not in the parameter list.** The description says "Optionally fetches comments and transcript via get_comments and get_transcript parameters". The spec, the docs page and the product page list only the four parameters above. Treat `get_comments` as **[unconfirmed]** and use the comments endpoint.
 - **No `download_media`.** In the whole spec only `/v2/tiktok/video`, `/v1/instagram/post` and `/v1/truthsocial/post` have it. **[docs]**
 - **No `trim` and no `region`** on the Facebook post endpoint. **[docs]**
-- **Transcript calls are slow.** The docs say: "These routes remain synchronous. Allow at least 30 seconds on your client." `scrapeCreatorsGet` times out at 15 s (`REQUEST_TIMEOUT_MS` in `supabase/functions/_shared/scrapecreators.ts`).
+- **Transcript calls are slow.** The docs say: "These routes remain synchronous. Allow at least 30 seconds on your client." `scrapeCreatorsGet` times out at 15 s (`REQUEST_TIMEOUT_MS` in `supabase/functions/_shared/extraction/sources/scrapecreators.ts`).
 
 Response. This is the docs example with the long CDN query strings cut (`…`). Field names are exact.
 
@@ -215,7 +215,7 @@ Same result for all three links:
 | Chrome User-Agent plus `Accept`, `Accept-Language`, `Sec-Fetch-Dest/Mode/Site/User` and `Upgrade-Insecure-Requests` (first link only) | `302` to the real URL. |
 | Empty User-Agent (first link only) | `302` to `https://www.facebook.com/unsupportedbrowser`. |
 
-So the `400` in production is Facebook rejecting a request that claims to be Chrome but does not send Chrome's other headers. `fetchHtml` in `supabase/functions/_shared/webRecipe.ts` sends a browser User-Agent with only `Accept` and `Accept-Language`. I did not isolate which missing header triggers the `400`. That exact header set was not tested on its own.
+So the `400` in production is Facebook rejecting a request that claims to be Chrome but does not send Chrome's other headers. `fetchHtml` in `supabase/functions/_shared/extraction/webRecipe.ts` sends a browser User-Agent with only `Accept` and `Accept-Language`. I did not isolate which missing header triggers the `400`. That exact header set was not tested on its own.
 
 **No login was needed to resolve any of the three links.** None of the final pages was a login wall.
 

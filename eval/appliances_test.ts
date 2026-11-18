@@ -2,7 +2,7 @@
 
 import { assertEquals } from 'jsr:@std/assert@1';
 
-import type { RecipeAppliance } from '../supabase/functions/_shared/appliances.ts';
+import type { RecipeAppliance } from '../supabase/functions/_shared/recipes/enrich/appliances.ts';
 import { type ApplianceCase, scoreCase, totals } from './appliances.ts';
 
 const cookies: ApplianceCase = {
@@ -78,8 +78,8 @@ Deno.test('totals add up across cases', () => {
 });
 
 Deno.test('every label in cases/appliances.json uses real catalog keys', async () => {
-  const { isApplianceKey } = await import('../supabase/functions/_shared/appliances.ts');
-  const { TIP_KEYS } = await import('../supabase/functions/_shared/recipeAppliances.ts');
+  const { isApplianceKey } = await import('../supabase/functions/_shared/recipes/enrich/appliances.ts');
+  const { TIP_KEYS } = await import('../supabase/functions/_shared/recipes/enrich/recipeAppliances.ts');
   const file = JSON.parse(await Deno.readTextFile(new URL('./cases/appliances.json', import.meta.url)));
   const ids = new Set<string>();
   for (const c of file.cases as ApplianceCase[]) {

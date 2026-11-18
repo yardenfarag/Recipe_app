@@ -4,7 +4,7 @@ import { fileURLToPath } from 'node:url';
 
 import { describe, expect, it } from 'vitest';
 
-import * as shared from '../../supabase/functions/_shared/appliances';
+import * as shared from '../../supabase/functions/_shared/recipes/enrich/appliances';
 import {
   ALTERNATIVE_KEYS,
   APPLIANCE_CATALOG,
@@ -252,7 +252,7 @@ describe('app and Edge Function copies', () => {
   it('are byte-identical', () => {
     const here = path.dirname(fileURLToPath(import.meta.url));
     const read = (relative: string) => readFileSync(path.join(here, relative), 'utf8');
-    expect(read('../../supabase/functions/_shared/appliances.ts')).toBe(read('./appliances.ts'));
+    expect(read('../../supabase/functions/_shared/recipes/enrich/appliances.ts')).toBe(read('./appliances.ts'));
   });
 
   it('behave the same', () => {

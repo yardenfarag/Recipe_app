@@ -1,17 +1,17 @@
-import { corsHeaders, jsonResponse } from '../_shared/cors.ts';
+import { corsHeaders, jsonResponse } from '../_shared/core/cors.ts';
 import {
   currentUtcDate,
   refundDailyAiUsage,
   reserveDailyAiUsage,
-} from '../_shared/dailyAiUsage.ts';
-import { parseIngredientAmount } from '../_shared/ingredientAmounts.ts';
-import { createAuthedSupabase } from '../_shared/recipeLookup.ts';
-import { createServiceSupabase } from '../_shared/supabaseAdmin.ts';
+} from '../_shared/core/dailyAiUsage.ts';
+import { parseIngredientAmount } from '../_shared/recipes/ingredientAmounts.ts';
+import { createAuthedSupabase } from '../_shared/core/recipeLookup.ts';
+import { createServiceSupabase } from '../_shared/core/supabaseAdmin.ts';
 import {
   isTranslateLanguageCode,
   translateRecipeWithGemini,
-} from '../_shared/translateRecipe.ts';
-import { logUsageEvent } from '../_shared/usageLog.ts';
+} from '../_shared/recipes/translateRecipe.ts';
+import { logUsageEvent } from '../_shared/core/usageLog.ts';
 
 const MAX_BODY_BYTES = 64_000;
 const MAX_TITLE_CHARS = 200;

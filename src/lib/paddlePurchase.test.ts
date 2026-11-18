@@ -8,7 +8,7 @@ import {
   paddleDecision,
   paddleEventSummary,
   paddleSignatureValid,
-} from '../../supabase/functions/_shared/paddlePurchase';
+} from '../../supabase/functions/_shared/billing/paddlePurchase';
 
 const USER = '6f1c2b3a-4d5e-4f60-8a7b-9c0d1e2f3a4b';
 const SECRET = 'pdl_ntfset_test_secret';

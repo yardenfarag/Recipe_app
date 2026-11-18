@@ -1,7 +1,7 @@
-import { corsHeaders, jsonResponse } from '../_shared/cors.ts';
-import { revokeAppleCredentials } from '../_shared/appleRevoke.ts';
-import { createAuthedSupabase } from '../_shared/recipeLookup.ts';
-import { createServiceSupabase } from '../_shared/supabaseAdmin.ts';
+import { corsHeaders, jsonResponse } from '../_shared/core/cors.ts';
+import { revokeAppleCredentials } from '../_shared/account/appleRevoke.ts';
+import { createAuthedSupabase } from '../_shared/core/recipeLookup.ts';
+import { createServiceSupabase } from '../_shared/core/supabaseAdmin.ts';
 
 const AVATAR_BUCKET = 'avatars';
 const THUMBNAIL_BUCKET = 'recipe-thumbnails';

@@ -8,7 +8,7 @@ import { RECIPE_VARIANTS } from '@/lib/recipeVariants';
 
 function serverVariantKeys(): string[] {
   const src = readFileSync(
-    join(__dirname, '../../supabase/functions/_shared/recipeVariant.ts'),
+    join(__dirname, '../../supabase/functions/_shared/recipes/recipeVariant.ts'),
     'utf8',
   );
   const block = src.match(/const VARIANT_INSTRUCTIONS[^{]*\{([\s\S]*?)\n\};/);

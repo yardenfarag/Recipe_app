@@ -1,5 +1,5 @@
 // PIN-28 shortlist under test. Production defaults now live in
-// supabase/functions/_shared/llmClient.ts (TASK_MODELS); the `google/*` entries
+// supabase/functions/_shared/llm/llmClient.ts (TASK_MODELS); the `google/*` entries
 // here are the pre-PIN-45 baselines, kept so reruns stay comparable.
 
 export const TASK_MODELS = {

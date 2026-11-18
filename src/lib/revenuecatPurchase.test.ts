@@ -3,7 +3,7 @@ import { describe, expect, it } from 'vitest';
 import {
   creditPurchaseDecision,
   purchaseEventSummary,
-} from '../../supabase/functions/_shared/revenuecatPurchase';
+} from '../../supabase/functions/_shared/billing/revenuecatPurchase';
 
 const paidPack = {
   app_user_id: '6757bcb0-ba2b-4e56-a3cb-1f53ee036b9e',

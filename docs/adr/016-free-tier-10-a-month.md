@@ -14,7 +14,7 @@ Cost isn't the constraint. Production `ai_usage_events` for July–October 2026 
 
 ## Decision
 
-- Signed-in users get **10 free recipe credits per UTC month** (`FREE_MONTHLY_EXTRACT_LIMIT` in `src/lib/quotas.ts` and `supabase/functions/_shared/pricing.ts`). Migration `0042_free_monthly_limit_10.sql` aligns the SQL defaults of `reserve_recipe_credit` and `reopen_refunded_recipe_credit`.
+- Signed-in users get **10 free recipe credits per UTC month** (`FREE_MONTHLY_EXTRACT_LIMIT` in `src/lib/quotas.ts` and `supabase/functions/_shared/llm/pricing.ts`). Migration `0042_free_monthly_limit_10.sql` aligns the SQL defaults of `reserve_recipe_credit` and `reopen_refunded_recipe_credit`.
 - That's twice ReciMe's and Flavorish's free imports. 15 was rejected because it gives away too much: few casual users would ever need a pack, and packs are the only revenue.
 - Unused free credits still **don't roll over**. Banking (PIN-56 suggested up to 30) would add schema and accounting complexity for little marketing gain.
 - Abuse protection stays as it is: an account is required to extract. A throwaway account is worth about 3.5¢ of provider cost a month, so there's no reduced first-month allowance.

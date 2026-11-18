@@ -1,6 +1,6 @@
 /**
  * Parse model output into JSON. Keep in sync with
- * supabase/functions/_shared/llmJson.ts (Edge Functions are excluded from vitest).
+ * supabase/functions/_shared/llm/llmJson.ts (Edge Functions are excluded from vitest).
  */
 
 export function parseLlmJsonText(raw: string): string {

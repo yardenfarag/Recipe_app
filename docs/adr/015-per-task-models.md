@@ -13,7 +13,7 @@ Two production facts shaped the design. OpenRouter rejects the whole request whe
 
 ## Decision
 
-- `generateLlmJson` picks its model from `TASK_MODELS`, keyed by the call's `kind` (`supabase/functions/_shared/llmClient.ts`). Each entry has a primary, an ordered fallback list sent as `models[]`, and a reasoning effort. `tier` is only a fallback for unknown kinds.
+- `generateLlmJson` picks its model from `TASK_MODELS`, keyed by the call's `kind` (`supabase/functions/_shared/llm/llmClient.ts`). Each entry has a primary, an ordered fallback list sent as `models[]`, and a reasoning effort. `tier` is only a fallback for unknown kinds.
 
 | `kind` | Primary | Fallback | Reasoning |
 |---|---|---|---|

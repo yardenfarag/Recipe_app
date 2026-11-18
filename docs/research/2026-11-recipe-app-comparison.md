@@ -20,11 +20,11 @@ Samsung Food's own site blocked our checks (HTTP 403), so it's left out of the v
 
 ## Pinch, from the code (2026-11-15)
 
-- Video input: `supabase/functions/_shared/videoInput.ts` (whole file inline, 20 MB cap), `videoLimits.ts` (180 s), `gemini.ts` (text first, then video; partial text still tries video).
+- Video input: `supabase/functions/_shared/extraction/videoInput.ts` (whole file inline, 20 MB cap), `videoLimits.ts` (180 s), `gemini.ts` (text first, then video; partial text still tries video).
 - YouTube: `youtube.ts` sets no `videoUrl`, so only description, comments and captions are used.
 - Transcripts: TikTok and Facebook through ScrapeCreators; Instagram has none.
 - No recipe found refunds the credit; partial imports are never charged (ADR 019).
-- Pricing: `_shared/pricing.ts` (`FREE_MONTHLY_EXTRACT_LIMIT = 10`, one credit per import), `src/lib/purchases.ts` (packs).
+- Pricing: `_shared/llm/pricing.ts` (`FREE_MONTHLY_EXTRACT_LIMIT = 10`, one credit per import), `src/lib/purchases.ts` (packs).
 - Not supported: Pinterest, PDF import.
 
 ## Sources

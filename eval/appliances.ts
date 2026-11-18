@@ -3,9 +3,9 @@
 //   npx -y deno run -A --no-lock --env-file=.env eval/cli.ts appliances [--runs=2] [--model=slug] [--only=he]
 // Writes eval/results/appliances.md (in git) and one JSON per call under eval/results/raw/appliances/.
 
-import type { RecipeAppliance } from '../supabase/functions/_shared/appliances.ts';
-import { setEvalHook } from '../supabase/functions/_shared/llmClient.ts';
-import { deriveRecipeAppliances } from '../supabase/functions/_shared/recipeAppliances.ts';
+import type { RecipeAppliance } from '../supabase/functions/_shared/recipes/enrich/appliances.ts';
+import { setEvalHook } from '../supabase/functions/_shared/llm/llmClient.ts';
+import { deriveRecipeAppliances } from '../supabase/functions/_shared/recipes/enrich/recipeAppliances.ts';
 
 export type ExpectedAppliance = { any_of: string[]; required: boolean | 'either' };
 

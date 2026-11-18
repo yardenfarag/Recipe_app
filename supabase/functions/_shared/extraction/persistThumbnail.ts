@@ -1,0 +1,259 @@
+import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
+
+import type { Platform } from './platform.ts';
+import { readBodyCapped, safeFetch } from '../core/safeFetch.ts';
+
+const FETCH_TIMEOUT_MS = 12_000;
+/** Matches the recipe-thumbnails bucket's file_size_limit. */
+const MAX_THUMBNAIL_BYTES = 10 * 1024 * 1024;
+
+/**
+ * Downloads a social CDN thumbnail with the right Referer and uploads it to
+ * Supabase Storage so the app can display a stable, public URL.
+ */
+export async function persistSocialThumbnail(opts: {
+  sourceUrl: string;
+  platform: Extract<Platform, 'instagram' | 'tiktok' | 'facebook'>;
+  contentId?: string | null;
+}): Promise<string | undefined> {
+  const { sourceUrl, platform, contentId } = opts;
+  if (!sourceUrl.trim()) return undefined;
+
+  const supabaseUrl = Deno.env.get('SUPABASE_URL');
+  const serviceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY');
+  if (!supabaseUrl || !serviceKey) {
+    console.warn('[persistThumbnail] missing SUPABASE_URL or SERVICE_ROLE_KEY');
+    return undefined;
+  }
+
+  const referer =
+    platform === 'instagram'
+      ? 'https://www.instagram.com/'
+      : platform === 'facebook'
+        ? 'https://www.facebook.com/'
+        : 'https://www.tiktok.com/';
+
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), FETCH_TIMEOUT_MS);
+
+  let res: Response;
+  try {
+    res = await safeFetch(sourceUrl, {
+      headers: {
+        Referer: referer,
+        Accept: 'image/avif,image/webp,image/apng,image/*,*/*;q=0.8',
+        'User-Agent':
+          'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+      },
+      signal: controller.signal,
+    });
+  } catch (err) {
+    console.warn('[persistThumbnail] fetch failed', {
+      platform,
+      host: safeHost(sourceUrl),
+      error: err instanceof Error ? err.message : String(err),
+    });
+    return undefined;
+  } finally {
+    clearTimeout(timeout);
+  }
+
+  if (!res.ok) {
+    console.warn('[persistThumbnail] fetch HTTP error', {
+      platform,
+      status: res.status,
+      host: safeHost(sourceUrl),
+    });
+    return undefined;
+  }
+
+  const contentType = (res.headers.get('content-type') ?? 'image/jpeg').split(';')[0].trim();
+  if (!contentType.startsWith('image/')) {
+    console.warn('[persistThumbnail] not an image', { contentType, host: safeHost(sourceUrl) });
+    return undefined;
+  }
+
+  const bytes = await readBodyCapped(res, MAX_THUMBNAIL_BYTES);
+  if (!bytes) {
+    console.warn('[persistThumbnail] image too large', { host: safeHost(sourceUrl) });
+    return undefined;
+  }
+  if (bytes.byteLength < 100) {
+    console.warn('[persistThumbnail] image too small', { bytes: bytes.byteLength });
+    return undefined;
+  }
+
+  const ext = extensionForContentType(contentType);
+  const idPart = (contentId?.trim() || hashShort(sourceUrl)).replace(/[^A-Za-z0-9_-]/g, '');
+  const path = `${platform}/${idPart}.${ext}`;
+
+  const supabase = createClient(supabaseUrl, serviceKey);
+  const { error } = await supabase.storage.from('recipe-thumbnails').upload(path, bytes, {
+    contentType,
+    upsert: true,
+    cacheControl: '31536000',
+  });
+
+  if (error) {
+    console.warn('[persistThumbnail] upload failed', { path, message: error.message });
+    return undefined;
+  }
+
+  const { data } = supabase.storage.from('recipe-thumbnails').getPublicUrl(path);
+  console.log('[persistThumbnail] ok', {
+    platform,
+    path,
+    bytes: bytes.byteLength,
+    publicHost: safeHost(data.publicUrl),
+  });
+  return data.publicUrl;
+}
+
+/**
+ * Uploads a user Snap/invent photo so it can be the recipe hero image. Photos
+ * live under `photo/<user id>/` so delete-account can find and remove them.
+ */
+export async function persistUploadedPhoto(opts: {
+  imageBase64: string;
+  mimeType?: string;
+  userId: string | null;
+}): Promise<string | undefined> {
+  const supabaseUrl = Deno.env.get('SUPABASE_URL');
+  const serviceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY');
+  if (!supabaseUrl || !serviceKey) {
+    console.warn('[persistThumbnail] missing SUPABASE_URL or SERVICE_ROLE_KEY');
+    return undefined;
+  }
+
+  const mime = opts.mimeType?.trim() || 'image/jpeg';
+  const bytes = decodeBase64(opts.imageBase64);
+  if (!bytes || bytes.byteLength < 100) {
+    console.warn('[persistThumbnail] uploaded photo too small');
+    return undefined;
+  }
+
+  const ext = extensionForContentType(mime);
+  const path = `photo/${opts.userId ?? 'guest'}/${crypto.randomUUID()}.${ext}`;
+  const supabase = createClient(supabaseUrl, serviceKey);
+  const { error } = await supabase.storage.from('recipe-thumbnails').upload(path, bytes, {
+    contentType: mime.startsWith('image/') ? mime : 'image/jpeg',
+    upsert: false,
+    cacheControl: '31536000',
+  });
+  if (error) {
+    console.warn('[persistThumbnail] photo upload failed', { path, message: error.message });
+    return undefined;
+  }
+
+  const { data } = supabase.storage.from('recipe-thumbnails').getPublicUrl(path);
+  console.log('[persistThumbnail] photo ok', { path, bytes: bytes.byteLength });
+  return data.publicUrl;
+}
+
+declare const EdgeRuntime: { waitUntil(promise: Promise<unknown>): void } | undefined;
+
+/**
+ * Starts storing a Snap/invent upload as soon as the request is accepted, so the
+ * photo is kept even when the food gate or the model later turns it down. The
+ * upload outlives an early response. Resolves to the public URL, or undefined.
+ */
+export function keepUploadedPhoto(
+  platform: Platform,
+  imageBase64: string | null,
+  mimeType: string,
+  userId: string,
+): Promise<string | undefined> {
+  if (platform !== 'photo' || !imageBase64) return Promise.resolve(undefined);
+  const upload = persistUploadedPhoto({ imageBase64, mimeType, userId }).catch((err) => {
+    console.warn('[persistThumbnail] keep photo failed', {
+      error: err instanceof Error ? err.message : String(err),
+    });
+    return undefined;
+  });
+  if (typeof EdgeRuntime !== 'undefined') EdgeRuntime.waitUntil(upload);
+  return upload;
+}
+
+/** Downloads a remote image for the cheap food gate (vision). */
+export async function fetchImageAsBase64(opts: {
+  sourceUrl: string;
+  referer?: string;
+}): Promise<{ base64: string; mimeType: string } | null> {
+  const { sourceUrl, referer } = opts;
+  if (!sourceUrl.trim()) return null;
+
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), FETCH_TIMEOUT_MS);
+  try {
+    const headers: Record<string, string> = {
+      Accept: 'image/avif,image/webp,image/apng,image/*,*/*;q=0.8',
+      'User-Agent':
+        'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+    };
+    if (referer) headers.Referer = referer;
+
+    const res = await safeFetch(sourceUrl, {
+      headers,
+      signal: controller.signal,
+    });
+    if (!res.ok) {
+      console.warn('[persistThumbnail] fetchImageAsBase64 HTTP', { status: res.status });
+      return null;
+    }
+    const contentType = (res.headers.get('content-type') ?? 'image/jpeg').split(';')[0].trim();
+    if (!contentType.startsWith('image/')) return null;
+    const bytes = await readBodyCapped(res, 1_800_000);
+    if (!bytes || bytes.byteLength < 100) return null;
+    return { base64: encodeBase64(bytes), mimeType: contentType };
+  } catch (err) {
+    console.warn('[persistThumbnail] fetchImageAsBase64 failed', {
+      error: err instanceof Error ? err.message : String(err),
+    });
+    return null;
+  } finally {
+    clearTimeout(timeout);
+  }
+}
+
+function extensionForContentType(contentType: string): string {
+  if (contentType.includes('png')) return 'png';
+  if (contentType.includes('webp')) return 'webp';
+  if (contentType.includes('gif')) return 'gif';
+  return 'jpg';
+}
+
+function hashShort(value: string): string {
+  let hash = 0;
+  for (let i = 0; i < value.length; i++) {
+    hash = (hash * 31 + value.charCodeAt(i)) >>> 0;
+  }
+  return hash.toString(16).padStart(8, '0');
+}
+
+function safeHost(url: string): string | null {
+  try {
+    return new URL(url).hostname;
+  } catch {
+    return null;
+  }
+}
+
+function decodeBase64(value: string): Uint8Array | null {
+  try {
+    const binary = atob(value.replace(/\s/g, ''));
+    const bytes = new Uint8Array(binary.length);
+    for (let i = 0; i < binary.length; i++) bytes[i] = binary.charCodeAt(i);
+    return bytes;
+  } catch {
+    return null;
+  }
+}
+
+function encodeBase64(bytes: Uint8Array): string {
+  let binary = '';
+  const chunk = 0x8000;
+  for (let i = 0; i < bytes.length; i += chunk) {
+    binary += String.fromCharCode(...bytes.subarray(i, i + chunk));
+  }
+  return btoa(binary);
+}
