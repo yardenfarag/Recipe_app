@@ -227,7 +227,8 @@ serve('recipe-share', async (req) => {
     return jsonResponse({ status: 'ok', revoked: data?.length ?? 0 });
   }
 
-  // Whether the sharer has a live link for this recipe, so the app can offer "Stop sharing".
+  // Whether the sharer has a live link for this recipe. Not called by the app today: kept with
+  // `revoke` so a "Stop sharing" button can be added without backend work (PIN-110).
   if (action === 'status') {
     const recipeId = typeof body.recipe_id === 'string' ? body.recipe_id.trim() : '';
     if (!recipeId) return jsonResponse({ error: 'Missing recipe_id' }, 400);

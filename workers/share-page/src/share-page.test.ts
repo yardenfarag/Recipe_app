@@ -187,6 +187,7 @@ describe('handleShareRequest', () => {
     expect(response?.status).toBe(200);
     expect(response?.headers.get('Content-Type')).toBe('text/html; charset=utf-8');
     expect(response?.headers.get('X-Robots-Tag')).toBe('noindex');
+    expect(response?.headers.get('Referrer-Policy')).toBe('no-referrer');
     expect(response?.headers.get('Vary')).toBe('Accept-Language');
     expect(await response?.text()).toContain('application/ld+json');
     expect(fetchMock).toHaveBeenCalledWith(

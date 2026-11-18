@@ -56,6 +56,8 @@ function html(body: string, status: number, cacheControl: string): Response {
       'X-Content-Type-Options': 'nosniff',
       // Share links are private by intent: never in search results (PIN-110).
       'X-Robots-Tag': 'noindex',
+      // Links out (store, source video) don't carry the share token.
+      'Referrer-Policy': 'no-referrer',
       // The page text follows the browser language.
       Vary: 'Accept-Language',
     },
