@@ -139,6 +139,8 @@ export type Dashboard = {
   recipes_by_source: RankedCount[];
   heard_about: RankedCount[];
   traffic: TrafficRow[];
+  /** Website visitors counted once across sources (missing before the Nov 18, 2026 migration). */
+  web_totals?: { visits: number; visitors: number; clicked: number };
   funnel: { signed_up: number; extracted: number; saved: number; saved_3: number; purchased: number };
   people: DashboardPerson[];
   recent_recipes: DashboardRecipe[];
@@ -583,6 +585,8 @@ export type TrafficSource = {
   visits: number;
   visitors: number;
   clicked: number;
+  /** Visitors who left without tapping a store or web-app button. */
+  justLooked: number;
 };
 
 export type TrafficSummary = {
@@ -598,10 +602,11 @@ export function summarizeTraffic(rows: TrafficRow[]): TrafficSummary {
   const byLabel = new Map<string, TrafficSource>();
   for (const row of rows) {
     const { label, group } = classifySource(row.source);
-    const current = byLabel.get(label) ?? { label, group, visits: 0, visitors: 0, clicked: 0 };
+    const current = byLabel.get(label) ?? { label, group, visits: 0, visitors: 0, clicked: 0, justLooked: 0 };
     current.visits += num(row.visits);
     current.visitors += num(row.visitors);
     current.clicked += num(row.clicked);
+    current.justLooked = Math.max(0, current.visitors - current.clicked);
     byLabel.set(label, current);
   }
   const sources = [...byLabel.values()].sort((a, b) => b.visits - a.visits || a.label.localeCompare(b.label));
@@ -619,5 +624,41 @@ export function summarizeTraffic(rows: TrafficRow[]): TrafficSummary {
     groups: [...groupMap.values()].sort((a, b) => b.visits - a.visits),
     ai,
     aiVisits: ai.reduce((sum, s) => sum + s.visits, 0),
+  };
+}
+
+export type WebsiteVisitors = {
+  visits: number;
+  /** Different people (install ids) who opened pinch-app.io. */
+  visitors: number;
+  /** Visitors who tapped App Store, Google Play or "continue on the web". */
+  clicked: number;
+  /** Visitors who only looked: no button tapped. */
+  justLooked: number;
+  /** By source, most visitors first. */
+  sources: TrafficSource[];
+};
+
+/**
+ * Website visitors for the period. Totals come from web_totals, which counts a
+ * person once even if two sources sent them; without it they are summed per source.
+ */
+export function summarizeWebsiteVisitors(data: Pick<Dashboard, 'traffic' | 'web_totals'>): WebsiteVisitors {
+  const traffic = summarizeTraffic(data.traffic ?? []);
+  const totals = data.web_totals ?? {
+    visits: traffic.totalVisits,
+    visitors: traffic.sources.reduce((sum, s) => sum + s.visitors, 0),
+    clicked: traffic.sources.reduce((sum, s) => sum + s.clicked, 0),
+  };
+  const visitors = num(totals.visitors);
+  const clicked = num(totals.clicked);
+  return {
+    visits: num(totals.visits),
+    visitors,
+    clicked,
+    justLooked: Math.max(0, visitors - clicked),
+    sources: [...traffic.sources].sort(
+      (a, b) => b.visitors - a.visitors || b.visits - a.visits || a.label.localeCompare(b.label),
+    ),
   };
 }

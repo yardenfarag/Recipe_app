@@ -13,6 +13,8 @@
 --   heard_about  their latest onboarding answer (null if not known)
 --   web_source   utm_source or referring host of their first website visit
 --                ('' = a visit with neither, null = no linked visit)
+-- plus web_totals (website visits, distinct visitors, and visitors who tapped a
+-- store or web-app button, each counted once across sources),
 -- and "active guests" counts only rows without a user, so signed-in events
 -- that now carry an install id are not counted as guests.
 
@@ -268,6 +270,23 @@ begin
       group by v.src
     ) t
   ),
+  -- Website visitors in the window, each counted once whatever sent them.
+  web_totals as (
+    select jsonb_build_object(
+      'visits', count(*),
+      'visitors', count(distinct v.guest_install_id),
+      'clicked', count(distinct v.guest_install_id) filter (
+        where exists (
+          select 1 from ev c
+          where c.name = 'web_intro_clicked'
+            and c.guest_install_id = v.guest_install_id
+            and c.created_at >= v_since
+        )
+      )
+    ) as value
+    from ev v
+    where v.name = 'web_intro_viewed' and v.created_at >= v_since
+  ),
   cohort as (
     select p.id from people p where p.created_at >= v_since
   ),
@@ -474,6 +493,7 @@ begin
     'recipes_by_source', (select value from recipes_by_source),
     'heard_about', (select value from heard_about),
     'traffic', (select value from traffic),
+    'web_totals', (select value from web_totals),
     'funnel', (select value from funnel),
     'people', (select value from people_list),
     'recent_recipes', (select value from recent_recipes),

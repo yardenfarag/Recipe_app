@@ -13,6 +13,7 @@ import {
   personSource,
   sortPeople,
   summarizeSignupSources,
+  summarizeWebsiteVisitors,
   type Dashboard,
   type DashboardPerson,
   type DashboardWindow,
@@ -242,5 +243,29 @@ describe('summarizeSignupSources', () => {
       { label: 'Not known', people: 3, extracted: 0, saved: 0, paid: 0 },
     ]);
     expect(summary.web).toEqual([{ label: 'ChatGPT', people: 1, extracted: 0, saved: 0, paid: 0 }]);
+  });
+});
+
+describe('summarizeWebsiteVisitors', () => {
+  const traffic = [
+    { source: 'chatgpt.com', visits: 12, visitors: 10, clicked: 3, guide_visits: 0 },
+    { source: 'chat.openai.com', visits: 2, visitors: 2, clicked: 1, guide_visits: 0 },
+    { source: '', visits: 30, visitors: 20, clicked: 2, guide_visits: 5 },
+    { source: 'google.com', visits: 4, visitors: 4, clicked: 0, guide_visits: 4 },
+  ];
+
+  it('uses the de-duplicated totals and splits visitors into just looked and went on', () => {
+    const web = summarizeWebsiteVisitors({ traffic, web_totals: { visits: 48, visitors: 34, clicked: 6 } });
+    expect(web).toMatchObject({ visits: 48, visitors: 34, clicked: 6, justLooked: 28 });
+    expect(web.sources.map((s) => [s.label, s.visitors, s.justLooked, s.clicked])).toEqual([
+      ['Direct or unknown', 20, 18, 2],
+      ['ChatGPT', 12, 8, 4],
+      ['Google', 4, 4, 0],
+    ]);
+  });
+
+  it('sums the sources when totals are missing', () => {
+    expect(summarizeWebsiteVisitors({ traffic })).toMatchObject({ visits: 48, visitors: 36, clicked: 6, justLooked: 30 });
+    expect(summarizeWebsiteVisitors({ traffic: [] })).toMatchObject({ visitors: 0, justLooked: 0, sources: [] });
   });
 });

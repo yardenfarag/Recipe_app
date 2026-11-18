@@ -1,6 +1,7 @@
 import { useMemo, useState } from 'react';
 
 import {
+  classifySource,
   countryName,
   deviceName,
   formatDate,
@@ -14,6 +15,7 @@ import {
   relativeTime,
   sortPeople,
   summarizeSignupSources,
+  summarizeWebsiteVisitors,
   type Dashboard,
   type PersonSort,
 } from '@/lib/adminDashboard';
@@ -72,6 +74,7 @@ export function PeopleTab({ data, onOpenPerson }: { data: Dashboard; onOpenPerso
 
   return (
     <>
+      <WebsiteVisitorsCard data={data} since={since} />
       <SignupSourcesCard data={data} since={since} />
       <div className="pd-section">
         <Card
@@ -210,6 +213,61 @@ function SignupSourcesCard({ data, since }: { data: Dashboard; since: number }) 
             />
           </div>
         </div>
+      </Card>
+    </div>
+  );
+}
+
+/** Everyone who opened pinch-app.io in the period, by where they came from, and how many went on. */
+function WebsiteVisitorsCard({ data, since }: { data: Dashboard; since: number }) {
+  const web = summarizeWebsiteVisitors(data);
+  const signedUp = new Map<string, number>();
+  for (const p of data.people) {
+    if (p.web_source == null || new Date(p.created_at).getTime() < since) continue;
+    const label = classifySource(p.web_source).label;
+    signedUp.set(label, (signedUp.get(label) ?? 0) + 1);
+  }
+  const figures = [
+    { label: 'Visited the website', value: web.visitors, sub: plural(web.visits, 'page view') },
+    {
+      label: 'Just looked',
+      value: web.justLooked,
+      sub: `${formatPercent(web.justLooked, web.visitors)} left without tapping a button`,
+    },
+    {
+      label: 'Went on',
+      value: web.clicked,
+      sub: `${formatPercent(web.clicked, web.visitors)} tapped App Store, Google Play or the web app`,
+    },
+  ];
+  return (
+    <div className="pd-section">
+      <Card
+        title="Website visitors"
+        subtitle={`People who opened pinch-app.io (home page or a guide) in ${rangeLabel(data.range.days)}, counted once per browser. Sites other than ChatGPT are known from the referrer, recorded from Nov 17, 2026.`}
+      >
+        <div className="pd-grid pd-3" style={{ marginBottom: 20 }}>
+          {figures.map((f) => (
+            <div key={f.label}>
+              <div className="pd-tile-label">{f.label}</div>
+              <div className="pd-tile-value">{formatCount(f.value)}</div>
+              <div className="pd-tile-sub">{f.sub}</div>
+            </div>
+          ))}
+        </div>
+        <div className="pd-muted pd-small" style={{ marginBottom: 8 }}>
+          Where they came from · people, how many just looked, tapped and signed up
+        </div>
+        <RankBars
+          items={web.sources.map((s) => ({
+            label: s.label,
+            value: s.visitors,
+            sub: `${formatCount(s.justLooked)} just looked · ${formatCount(s.clicked)} tapped · ${formatCount(signedUp.get(s.label) ?? 0)} signed up`,
+          }))}
+          format={formatCount}
+          empty="No website visits in this period."
+          limit={12}
+        />
       </Card>
     </div>
   );

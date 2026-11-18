@@ -3,7 +3,7 @@
 begin;
 
 create extension if not exists pgtap with schema extensions;
-select plan(8);
+select plan(9);
 
 insert into auth.users (
   instance_id, id, aud, role, email, encrypted_password,
@@ -25,7 +25,8 @@ update public.profiles set is_admin = true where id = '10000000-0000-4000-8000-0
 insert into public.product_events (guest_install_id, name, properties, created_at) values
   ('install-src-1', 'web_intro_viewed', '{"page":"intro","utm_source":"chatgpt.com"}', now() - interval '2 hours'),
   ('install-src-1', 'web_intro_viewed', '{"page":"intro","ref":"google.com"}', now() - interval '1 hour'),
-  ('install-src-1', 'heard_about', '{"source":"ai_assistant","platform":"web"}', now() - interval '50 minutes');
+  ('install-src-1', 'heard_about', '{"source":"ai_assistant","platform":"web"}', now() - interval '50 minutes'),
+  ('install-src-1', 'web_intro_clicked', '{"action":"web","page":"intro"}', now() - interval '55 minutes');
 insert into public.interaction_events (user_id, guest_install_id, session_id, kind, name, platform, occurred_at) values
   (null, 'install-src-1', '30000000-0000-4000-8000-000000000001', 'tap', 'onboarding.heard.ai_assistant', 'web', now()),
   ('10000000-0000-4000-8000-0000000000a1', null, '30000000-0000-4000-8000-000000000001', 'screen', '/add', 'web', now());
@@ -64,6 +65,22 @@ select is(
   (public.admin_dashboard(30, 'UTC', false)->'kpis'->'current'->>'active_guests')::int,
   (select count(distinct guest_install_id)::int from public.product_events where user_id is null),
   'signed-in events with an install id are not counted as guests'
+);
+
+select is(
+  public.admin_dashboard(30, 'UTC', false)->'web_totals',
+  jsonb_build_object(
+    'visits', (select count(*) from public.product_events
+               where name = 'web_intro_viewed' and created_at >= (current_date - 29)::timestamptz),
+    'visitors', (select count(distinct guest_install_id) from public.product_events
+                 where name = 'web_intro_viewed' and created_at >= (current_date - 29)::timestamptz),
+    'clicked', (select count(distinct v.guest_install_id) from public.product_events v
+                where v.name = 'web_intro_viewed' and v.created_at >= (current_date - 29)::timestamptz and exists (
+                  select 1 from public.product_events c
+                  where c.name = 'web_intro_clicked' and c.guest_install_id = v.guest_install_id
+                    and c.created_at >= (current_date - 29)::timestamptz))
+  ),
+  'web_totals counts each visitor once across sources'
 );
 
 set local request.jwt.claims = '{"sub":"10000000-0000-4000-8000-0000000000a1","role":"authenticated"}';
