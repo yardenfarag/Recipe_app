@@ -3,6 +3,8 @@ import 'react-native-url-polyfill/auto';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { createClient } from '@supabase/supabase-js';
 
+import { createPreviewFetch, parsePreviewFunctions } from './functionPreview';
+
 const supabaseUrl = normalizeSupabaseUrl(process.env.EXPO_PUBLIC_SUPABASE_URL);
 const supabaseKey = process.env.EXPO_PUBLIC_SUPABASE_KEY;
 
@@ -37,7 +39,13 @@ const authStorage = {
   },
 };
 
+// Dev builds only: production builds always call the real functions.
+const previewFetch = __DEV__
+  ? createPreviewFetch(parsePreviewFunctions(process.env.EXPO_PUBLIC_FUNCTION_PREVIEWS))
+  : undefined;
+
 export const supabase = createClient(supabaseUrl, supabaseKey, {
+  ...(previewFetch ? { global: { fetch: previewFetch } } : {}),
   auth: {
     storage: authStorage,
     autoRefreshToken: true,

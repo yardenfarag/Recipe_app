@@ -14,48 +14,101 @@ npx supabase link --project-ref ccobefeofhnncpgifxel
 
 `login` opens a browser to authenticate the CLI with your Supabase account.
 
-## Run migrations (remote)
+## Deploying to production
 
-Pushes every pending file in `supabase/migrations/` to the linked project:
+**Merging to `master` deploys the backend.** The `Deploy backend` workflow
+(`.github/workflows/deploy-backend.yml`) runs on every merge that touches
+`supabase/`:
+
+1. Backend tests (pgTAP + Deno).
+2. Migration history check: it stops the deploy if production has a migration
+   the repo doesn't, or if a new migration is older than the latest applied one
+   (`db push` would run it out of order).
+3. `supabase db push` for the new migrations.
+4. Deploy of every function from `master`, so production always matches the repo.
+5. Smoke check: every function must boot.
+
+Nobody runs `db push`, `functions deploy` or migration SQL against production
+from a laptop. The one exception is GitHub Actions being down during an
+incident: deploy by hand, tell the other developer, and merge the same change
+right after. The workflow also has a manual "Run workflow" button that
+redeploys `master`.
+
+Setup: the workflow needs the repo secrets `SUPABASE_ACCESS_TOKEN` (a personal
+access token from Supabase → Account → Access Tokens) and `SUPABASE_DB_PASSWORD`.
+
+The feature rollout notes further down list the `db push` / `functions deploy`
+commands from before CI. Today, merging runs them. The manual checks in those
+notes (pg_cron jobs, SQL verification queries) still apply after the deploy.
+
+## Testing backend changes
+
+There is **no staging environment** (decided 2026-11-18, cost). Production is
+the only remote project, so test a change in one of these ways before merging:
+
+### 1. Locally (the default)
+
+Needs Docker Desktop running.
 
 ```bash
-npx supabase db push
+npx supabase start                                          # local Postgres, Auth, Storage on :54321
+npx supabase db reset                                       # replays every migration from zero
+npx supabase test db                                        # pgTAP tests
+npx supabase functions serve --env-file supabase/.env.local # functions with hot reload
 ```
 
-Preview without applying:
+`supabase/.env.local` (git-ignored) holds the function secrets: real
+`OPENROUTER_API_KEY`, `GEMINI_API_KEY`, `SCRAPECREATORS_API_KEY` and so on (ask
+for keys with a spending cap). AI calls and scraping are real; the database is
+local.
+
+To point the app at it, set these in `.env` and restart Metro:
+`EXPO_PUBLIC_SUPABASE_URL=http://<your LAN IP>:54321` (a phone can't reach
+`localhost`) and `EXPO_PUBLIC_SUPABASE_KEY` = the anon key from
+`npx supabase status`. Switch back to the production values when done.
+
+### 2. Preview function (real production data)
+
+Use it when a function change only shows up with real data, for example a
+specific user's recipes or a production-only integration:
 
 ```bash
-npx supabase db push --dry-run
+gh workflow run deploy-function-preview.yml --ref <your-branch> -f function=extract-recipe
 ```
 
-### Manual alternative (SQL Editor)
+This deploys your branch's copy as `extract-recipe-preview` next to the real
+one. Users never call it. To use it from a **dev build**, add
+`EXPO_PUBLIC_FUNCTION_PREVIEWS=extract-recipe` (comma-separated for several) to
+`.env` and restart Metro. `src/lib/supabase/functionPreview.ts` reroutes those
+calls; production builds ignore the variable.
 
-You can also paste a single migration into the dashboard:
+- It runs against the production database with production secrets. Sign in
+  with a test account; credits and usage are real.
+- Functions only. Test migrations locally (below).
+- Delete it when done:
+  `gh workflow run deploy-function-preview.yml -f function=extract-recipe -f action=delete`
 
-1. Go to **SQL Editor**
-2. Open the migration file (e.g. `supabase/migrations/0016_monthly_free_quotas.sql`)
-3. Paste the full contents and click **Run**
+### 3. Migrations
 
-Fresh project: run `0001_init.sql` through the latest migration in order
-(`0002` … `0016`, etc.).
+- Test locally: `supabase db reset` + `supabase test db` must pass.
+- Name new files with a `YYYYMMDDHHMMSS_` prefix newer than every existing
+  migration, or the deploy check stops them.
+- **Expand, then contract.** Functions deploy right after migrations, and app
+  builds in users' hands stay old for weeks. Add the new column, table or
+  function first and ship code that uses it. Drop or rename the old one in a
+  later migration, once nothing calls it.
 
-## Redeploy Edge Functions
+### 4. Webhooks (Polar, RevenueCat, Paddle)
 
-Deploy all app functions:
+Use the provider's sandbox and send its webhooks to your local function
+through a tunnel:
 
 ```bash
-npx supabase functions deploy extract-recipe
-npx supabase functions deploy invent-recipe
-npx supabase functions deploy repair-recipe
-npx supabase functions deploy match-fridge
-npx supabase functions deploy backfill-thumbnails
-npx supabase functions deploy suggest-substitution
-npx supabase functions deploy transform-recipe
-npx supabase functions deploy translate-recipe
-npx supabase functions deploy delete-account
-npx supabase functions deploy recipe-share
-npx supabase functions deploy revenuecat-webhook
+cloudflared tunnel --url http://localhost:54321
+# webhook URL in the sandbox dashboard: https://<tunnel>.trycloudflare.com/functions/v1/polar-webhook
 ```
+
+Put the sandbox webhook secret in `supabase/.env.local`.
 
 ### Recipe share links (`recipe-share` + migration `0017`)
 
