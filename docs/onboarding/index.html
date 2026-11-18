@@ -910,7 +910,7 @@ npm run build:web    <span class="c"># same build CI does for pinch-app.io, outp
 
   <details>
     <summary>Optional: run the backend locally (Supabase CLI and Docker)</summary>
-    <p>Only needed when you change a migration or an Edge Function. Standard Supabase CLI workflow; the repo does not document it yet.</p>
+    <p>Only needed when you change a migration or an Edge Function. There is no staging: merging to <code>master</code> deploys to production, so test first. <code>supabase/README.md</code> → "Testing backend changes" has the full flow, including preview functions and webhook sandboxes.</p>
     <pre><button class="copy" data-copy>Copy</button><code>npx supabase start                                               <span class="c"># local Postgres, Auth, Studio</span>
 npx supabase functions serve --env-file ./supabase/.env.local     <span class="c"># your own AI keys in that file</span>
 npx supabase test db                                             <span class="c"># pgTAP tests in supabase/tests/</span></code></pre>
@@ -925,7 +925,7 @@ npx supabase test db                                             <span class="c"
     <li><input type="checkbox" id="a1"><label for="a1"><b>GitHub</b>: write access to <a href="https://github.com/yardenfarag/Recipe_app">yardenfarag/Recipe_app</a>.<small>The repo is public, so reading works already. Write access is for pushing branches and opening PRs. Do not push to <code>master</code> directly.</small></label></li>
     <li><input type="checkbox" id="a2"><label for="a2"><b><code>.env</code> values</b>: Supabase URL and publishable key.<small>Sent privately. Then sign up in the app and ask Yarden to set <code>is_admin = true</code> on your profile.</small></label></li>
     <li><input type="checkbox" id="a3"><label for="a3"><b>Linear</b>: invite to <a href="https://linear.app/pinch-recipe">linear.app/pinch-recipe</a>, team PIN.</label></li>
-    <li><input type="checkbox" id="a4"><label for="a4"><b>Supabase</b>: invite to the organization that owns project <code>recipe_app</code>.<small>Needed for logs, SQL editor, Auth users, function deploys and secrets. Real users are in this database; treat it as production.</small></label></li>
+    <li><input type="checkbox" id="a4"><label for="a4"><b>Supabase</b>: invite to the organization that owns project <code>recipe_app</code>.<small>Needed for logs, SQL editor, Auth users and secrets. Deploys happen through CI when a PR merges, never from your machine. Real users are in this database; treat it as production.</small></label></li>
     <li><input type="checkbox" id="a5"><label for="a5"><b>Expo / EAS</b>: member of the <code>yardenfa</code> account.<small>For dev builds and production env vars (EAS builds read env from the Expo dashboard, not <code>.env</code>). <span class="tag">later</span></small></label></li>
     <li><input type="checkbox" id="a6"><label for="a6"><b>Apple Developer team, Google Play Console</b>.<small>Only for iOS dev builds, TestFlight and store releases. <span class="tag">later</span></small></label></li>
     <li><input type="checkbox" id="a7"><label for="a7"><b>OpenRouter and ScrapeCreators keys</b>.<small>Only for the eval harness or local Edge Functions. Ask for a separate key with a spending cap. <span class="tag">later</span></small></label></li>

@@ -8,6 +8,8 @@ on:
       - 'supabase/**'
       - '.github/workflows/backend-tests.yml'
   workflow_dispatch:
+  # Deploy backend runs these before every production deploy.
+  workflow_call:
 
 concurrency:
   group: backend-tests-${{ github.ref }}

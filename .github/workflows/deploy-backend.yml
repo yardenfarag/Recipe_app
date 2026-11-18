@@ -1,0 +1,107 @@
+name: Deploy backend
+
+# The only way migrations and Edge Functions reach production (PIN-36). There is no staging
+# environment: test locally or with a preview function first (supabase/README.md, "Testing backend changes").
+on:
+  push:
+    branches: [master]
+    paths:
+      - 'supabase/migrations/**'
+      - 'supabase/functions/**'
+      - 'supabase/config.toml'
+      - '.github/workflows/deploy-backend.yml'
+  workflow_dispatch:
+
+# Deploys queue behind each other; a running deploy is never cancelled halfway.
+concurrency:
+  group: deploy-backend
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+
+env:
+  SUPABASE_PROJECT_REF: ccobefeofhnncpgifxel
+  SUPABASE_CLI_VERSION: 2.109.1
+
+jobs:
+  tests:
+    uses: ./.github/workflows/backend-tests.yml
+
+  deploy:
+    needs: tests
+    runs-on: ubuntu-latest
+    environment: production
+    env:
+      SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+      SUPABASE_DB_PASSWORD: ${{ secrets.SUPABASE_DB_PASSWORD }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Supabase CLI
+        uses: supabase/setup-cli@v1
+        with:
+          version: ${{ env.SUPABASE_CLI_VERSION }}
+
+      - name: Link project
+        run: supabase link --project-ref "$SUPABASE_PROJECT_REF"
+
+      # db push re-runs any local migration missing from the remote history, even one older than what's
+      # live, and a re-run can silently revert functions that later migrations redefined. Only new
+      # migrations (newer than the latest applied one) may go out.
+      - name: Check migration history
+        id: migrations
+        run: |
+          supabase migration list --linked --output-format json > migrations.json
+          remote_only=$(jq -r '.migrations[] | select((.local // "") == "") | .remote' migrations.json)
+          latest=$(jq '[.migrations[] | select((.remote // "") != "") | .remote | tonumber] | max' migrations.json)
+          pending=$(jq -r '.migrations[] | select((.remote // "") == "") | .local' migrations.json)
+          stale=$(jq -r --argjson latest "$latest" \
+            '.migrations[] | select((.remote // "") == "") | .local | select(tonumber < $latest)' migrations.json)
+          if [ -n "$remote_only" ]; then
+            echo "::error::Production has migrations that are not in the repo: $remote_only. Add the files (or repair the history) before deploying."
+            exit 1
+          fi
+          if [ -n "$stale" ]; then
+            echo "::error::These migrations are older than the latest applied one, so push would re-run them out of order: $stale. Give them a newer timestamp, or mark them applied with 'supabase migration repair' if they are already live."
+            exit 1
+          fi
+          if [ -n "$pending" ]; then
+            echo "New migrations: $pending"
+            echo "pending=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "No new migrations."
+          fi
+
+      # Migrations go first, so new functions never run against an old schema. Keep migrations
+      # backward compatible (expand, then contract) so the functions still live keep working too.
+      - name: Push migrations
+        if: steps.migrations.outputs.pending == 'true'
+        run: supabase db push --linked --yes
+
+      # Deploys every function from master, so production always matches the repo. Never add --prune:
+      # production still has functions that aren't in the repo (public-recipe).
+      - name: Deploy Edge Functions
+        run: supabase functions deploy --project-ref "$SUPABASE_PROJECT_REF" --use-api --yes
+
+      - name: Smoke-check that every function boots
+        run: |
+          failed=""
+          for dir in supabase/functions/*/; do
+            fn=$(basename "$dir")
+            case "$fn" in _*) continue ;; esac
+            [ -f "$dir/index.ts" ] || continue
+            for attempt in 1 2 3; do
+              status=$(curl -s -o /dev/null -w '%{http_code}' -X OPTIONS \
+                "https://$SUPABASE_PROJECT_REF.supabase.co/functions/v1/$fn" || echo 000)
+              [ "$status" -lt 500 ] && [ "$status" != 000 ] && break
+              sleep 5
+            done
+            echo "$fn: $status"
+            if [ "$status" -ge 500 ] || [ "$status" = 000 ]; then failed="$failed $fn"; fi
+          done
+          if [ -n "$failed" ]; then
+            echo "::error::These functions don't boot after deploy:$failed"
+            exit 1
+          fi

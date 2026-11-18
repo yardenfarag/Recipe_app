@@ -1,0 +1,71 @@
+name: Deploy function preview
+
+# Deploys one Edge Function from any branch to production as `<name>-preview`, next to the real one,
+# so a change can be tried against real data before it merges. Real users never call it. A dev build
+# reaches it through EXPO_PUBLIC_FUNCTION_PREVIEWS (supabase/README.md, "Testing backend changes").
+# Run it with:  gh workflow run deploy-function-preview.yml --ref <branch> -f function=<name>
+# Delete it when done:  ... -f function=<name> -f action=delete
+on:
+  workflow_dispatch:
+    inputs:
+      function:
+        description: 'Function folder name, e.g. extract-recipe'
+        required: true
+        type: string
+      action:
+        description: 'Deploy or delete the preview'
+        required: true
+        default: deploy
+        type: choice
+        options: [deploy, delete]
+
+concurrency:
+  group: function-preview-${{ inputs.function }}
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+
+env:
+  SUPABASE_PROJECT_REF: ccobefeofhnncpgifxel
+
+jobs:
+  preview:
+    runs-on: ubuntu-latest
+    environment: production
+    env:
+      SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+      FN: ${{ inputs.function }}
+      ACTION: ${{ inputs.action }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Supabase CLI
+        uses: supabase/setup-cli@v1
+        with:
+          version: 2.109.1
+
+      - name: Check the function name
+        run: |
+          if ! printf '%s' "$FN" | grep -Eq '^[a-z0-9][a-z0-9-]*$' || [ ! -f "supabase/functions/$FN/index.ts" ]; then
+            echo "::error::'$FN' is not a function folder on this branch."
+            exit 1
+          fi
+
+      - name: Deploy preview
+        if: env.ACTION == 'deploy'
+        run: |
+          # The copy sits next to the original, so its ../_shared imports still resolve.
+          cp -r "supabase/functions/$FN" "supabase/functions/$FN-preview"
+          # Keep the original's JWT setting from config.toml (webhooks and email hooks turn it off).
+          flags=""
+          if awk -v s="[functions.$FN]" '$0==s{f=1;next} /^\[/{f=0} f && /^verify_jwt *= *false/{found=1} END{exit !found}' supabase/config.toml; then
+            flags="--no-verify-jwt"
+          fi
+          supabase functions deploy "$FN-preview" --project-ref "$SUPABASE_PROJECT_REF" --use-api $flags
+          echo "Deployed $FN-preview from ${GITHUB_REF_NAME}. Set EXPO_PUBLIC_FUNCTION_PREVIEWS=$FN in .env and restart Metro to use it." >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Delete preview
+        if: env.ACTION == 'delete'
+        run: supabase functions delete "$FN-preview" --project-ref "$SUPABASE_PROJECT_REF" --yes
