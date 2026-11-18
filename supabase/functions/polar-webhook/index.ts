@@ -1,3 +1,4 @@
+import { serve } from '../_shared/core/observe.ts';
 // Polar notifications for web credit packs (pinch-app.io checkout, polar-checkout).
 //   order.paid       → grant the pack's credits (grant_purchased_credits)
 //   order.refunded   → a full refund takes them back (revoke_purchased_credits)
@@ -24,7 +25,7 @@ async function recordFailure(body: unknown, eventId: string | null, reason: stri
   if (insertError) console.error('[polar-webhook] could not record failure', insertError);
 }
 
-Deno.serve(async (req) => {
+serve('polar-webhook', async (req) => {
   if (req.method !== 'POST') return jsonResponse({ error: 'Method not allowed' }, 405);
 
   const secret = Deno.env.get('POLAR_WEBHOOK_SECRET');

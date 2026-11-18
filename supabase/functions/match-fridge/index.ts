@@ -1,3 +1,4 @@
+import { serve } from '../_shared/core/observe.ts';
 import { corsHeaders, jsonResponse } from '../_shared/core/cors.ts';
 import {
   currentUtcDate,
@@ -29,7 +30,7 @@ interface RequestBody {
  *
  * Free vision ranker over the user's saved recipes. Daily cap only.
  */
-Deno.serve(async (req) => {
+serve('match-fridge', async (req) => {
   if (req.method === 'OPTIONS') {
     return new Response('ok', { headers: corsHeaders });
   }

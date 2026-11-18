@@ -1,3 +1,4 @@
+import { serve } from '../_shared/core/observe.ts';
 // Welcome emails. A cron job (migration 20261115210000_branded_emails) calls this every 5 minutes;
 // it welcomes each account created in the last two days that hasn't been welcomed, once, in the
 // language the app saved for them. Works for email, Google and Apple signups alike.
@@ -8,7 +9,7 @@ import { renderWelcomeEmail } from '../_shared/email/render.ts';
 import { sendOnce } from '../_shared/email/send.ts';
 import { createServiceSupabase } from '../_shared/core/supabaseAdmin.ts';
 
-Deno.serve(async (req) => {
+serve('welcome-emails', async (req) => {
   if (req.method !== 'POST') return jsonResponse({ error: 'Method not allowed' }, 405);
 
   const admin = createServiceSupabase();

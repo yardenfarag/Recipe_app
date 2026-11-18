@@ -1,3 +1,4 @@
+import { serve } from '../_shared/core/observe.ts';
 import { corsHeaders, jsonResponse } from '../_shared/core/cors.ts';
 import {
   currentUtcDate,
@@ -51,7 +52,7 @@ interface RequestBody {
  *
  * Asks Gemini for supermarket-realistic substitutes, or patches steps after a swap (ADR 005).
  */
-Deno.serve(async (req) => {
+serve('suggest-substitution', async (req) => {
   if (req.method === 'OPTIONS') {
     return new Response('ok', { headers: corsHeaders });
   }

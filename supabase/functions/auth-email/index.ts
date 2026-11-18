@@ -1,3 +1,4 @@
+import { serve } from '../_shared/core/observe.ts';
 // Supabase Auth "Send Email Hook": every auth email (sign-in code, password reset, email change)
 // comes here instead of Supabase's own mailer, and goes out branded from hello@pinch-app.io.
 //
@@ -17,7 +18,7 @@ function hookError(status: number, message: string): Response {
   });
 }
 
-Deno.serve(async (req) => {
+serve('auth-email', async (req) => {
   if (req.method !== 'POST') return hookError(405, 'Method not allowed');
 
   const secret = Deno.env.get('SEND_EMAIL_HOOK_SECRET');

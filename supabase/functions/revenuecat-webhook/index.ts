@@ -1,3 +1,4 @@
+import { serve } from '../_shared/core/observe.ts';
 import { corsHeaders, jsonResponse } from '../_shared/core/cors.ts';
 import { sendPurchaseEmail } from '../_shared/email/purchase.ts';
 import { creditPurchaseDecision, purchaseEventSummary } from '../_shared/billing/revenuecatPurchase.ts';
@@ -15,7 +16,7 @@ async function recordFailure(body: unknown, reason: string, error?: unknown): Pr
   if (insertError) console.error('[revenuecat-webhook] could not record failure', insertError);
 }
 
-Deno.serve(async (req) => {
+serve('revenuecat-webhook', async (req) => {
   if (req.method === 'OPTIONS') {
     return new Response('ok', { headers: corsHeaders });
   }

@@ -1,3 +1,4 @@
+import { serve } from '../_shared/core/observe.ts';
 // Paddle notifications for web credit packs (pinch-app.io checkout, src/lib/purchases.ts).
 //   transaction.completed           → grant the pack's credits (grant_purchased_credits)
 //   adjustment.created / .updated   → an approved refund or chargeback takes them back
@@ -57,7 +58,7 @@ async function fillPackIds(lines: PaddleLine[]): Promise<PaddleLine[]> {
   );
 }
 
-Deno.serve(async (req) => {
+serve('paddle-webhook', async (req) => {
   if (req.method !== 'POST') return jsonResponse({ error: 'Method not allowed' }, 405);
 
   const secret = Deno.env.get('PADDLE_WEBHOOK_SECRET');

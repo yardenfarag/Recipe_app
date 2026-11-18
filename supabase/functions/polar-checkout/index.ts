@@ -1,3 +1,4 @@
+import { serve } from '../_shared/core/observe.ts';
 // Starts a Polar checkout for a web credit pack (src/lib/purchases.ts).
 // POST { pack_id, return_url } with the user's JWT → { url } of Polar's hosted checkout.
 //
@@ -32,7 +33,7 @@ async function productIdFor(packId: string, token: string): Promise<string | nul
   return productIds.get(packId) ?? null;
 }
 
-Deno.serve(async (req) => {
+serve('polar-checkout', async (req) => {
   if (req.method === 'OPTIONS') return new Response('ok', { headers: corsHeaders });
   if (req.method !== 'POST') return jsonResponse({ error: 'Method not allowed' }, 405);
 

@@ -1,3 +1,4 @@
+import { serve } from '../_shared/core/observe.ts';
 import type { Db } from '../_shared/core/supabaseAdmin.ts';
 
 import { corsHeaders, jsonResponse } from '../_shared/core/cors.ts';
@@ -63,7 +64,7 @@ function supabaseDietsDb(admin: Db): DietsBackfillDb {
  * Admin only. POST { after?, limit?, dry_run? } fills `recipe_cards.diets` on cards published
  * before PIN-83, one batch per call. Call again with `after: next_cursor` until it is null.
  */
-Deno.serve(async (req) => {
+serve('backfill-diets', async (req) => {
   if (req.method === 'OPTIONS') return new Response('ok', { headers: corsHeaders });
   if (req.method !== 'POST') return jsonResponse({ error: 'Method not allowed' }, 405);
 
