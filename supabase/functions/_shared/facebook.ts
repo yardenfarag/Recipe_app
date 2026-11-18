@@ -6,12 +6,10 @@ import {
   isFacebookShareLink,
 } from './platform.ts';
 import type { PlatformMeta, PostComment } from './platformMeta.ts';
-import { scrapeCreatorsGet } from './scrapecreators.ts';
+import { scrapeCreatorsGet, TRANSCRIPT_TIMEOUT_MS } from './scrapecreators.ts';
 import { parseDurationSeconds } from './videoLimits.ts';
 
 const MAX_COMMENTS = 10;
-/** The post call transcribes short videos on demand; ScrapeCreators asks for 30 s of patience. */
-const POST_TIMEOUT_MS = 30_000;
 const SHARE_LINK_TIMEOUT_MS = 5_000;
 
 /** `GET /v1/facebook/post`, as seen on 14 Nov 2026 (docs/research/06-facebook-import.md). */
@@ -143,7 +141,7 @@ function fetchFacebookPost(url: string): Promise<FacebookPostResponse> {
     '/v1/facebook/post',
     // The transcript is free for videos up to two minutes. Longer ones are left to the video step.
     { url, get_transcript: 'true' },
-    { timeoutMs: POST_TIMEOUT_MS },
+    { timeoutMs: TRANSCRIPT_TIMEOUT_MS },
   );
 }
 

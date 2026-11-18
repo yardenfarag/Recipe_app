@@ -3,6 +3,13 @@ import { AppError, FetchError } from './errors.ts';
 const BASE_URL = 'https://api.scrapecreators.com';
 const REQUEST_TIMEOUT_MS = 15_000;
 
+/**
+ * For calls that transcribe a video on demand (`get_transcript=true`). ScrapeCreators says "allow at
+ * least 30 seconds", so 30 s is their floor, not a ceiling. 45 s keeps the whole extraction under
+ * Supabase's 150 s request idle timeout.
+ */
+export const TRANSCRIPT_TIMEOUT_MS = 45_000;
+
 export function getScrapeCreatorsApiKey(): string {
   const key = Deno.env.get('SCRAPECREATORS_API_KEY');
   if (!key) {
@@ -81,6 +88,11 @@ export async function scrapeCreatorsGet<T>(
   }
 
   return data as T;
+}
+
+/** True when `scrapeCreatorsGet` gave up waiting, as opposed to ScrapeCreators answering with an error. */
+export function isScrapeCreatorsTimeout(err: unknown): boolean {
+  return err instanceof FetchError && err.details?.timedOut === true;
 }
 
 function extractErrorMessage(data: unknown): string | undefined {

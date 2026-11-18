@@ -5,7 +5,7 @@ import {
   sanitizeInstagramUrl,
 } from './platform.ts';
 import { EMPTY_PLATFORM_META, type PlatformMeta, type PostComment } from './platformMeta.ts';
-import { scrapeCreatorsGet } from './scrapecreators.ts';
+import { isScrapeCreatorsTimeout, scrapeCreatorsGet } from './scrapecreators.ts';
 import { parseDurationMilliseconds, parseDurationSeconds, wantsSmallestVideo } from './videoLimits.ts';
 
 const MAX_COMMENTS = 10;
@@ -124,9 +124,7 @@ async function fetchInstagramMediaWithFallback(
     try {
       console.log('[instagram] scrapeCreators GET', { fetchUrl });
       const started = Date.now();
-      const response = await scrapeCreatorsGet<Record<string, unknown>>('/v1/instagram/post', {
-        url: fetchUrl,
-      });
+      const response = await getInstagramPostRetryingTimeout(fetchUrl);
 
       assertInstagramResponseOk(response, fetchUrl);
 
@@ -166,6 +164,20 @@ async function fetchInstagramMediaWithFallback(
       url: sanitizeInstagramUrl(url),
     })
   );
+}
+
+/**
+ * ScrapeCreators sometimes takes longer than 15 s on a post it answers quickly a moment later, so a
+ * timeout gets one more try before the user sees an error.
+ */
+async function getInstagramPostRetryingTimeout(fetchUrl: string): Promise<Record<string, unknown>> {
+  try {
+    return await scrapeCreatorsGet<Record<string, unknown>>('/v1/instagram/post', { url: fetchUrl });
+  } catch (err) {
+    if (!isScrapeCreatorsTimeout(err)) throw err;
+    console.warn('[instagram] scrapeCreators timed out, retrying once', { fetchUrl });
+    return await scrapeCreatorsGet<Record<string, unknown>>('/v1/instagram/post', { url: fetchUrl });
+  }
 }
 
 function shouldRetryInstagramFetch(err: FetchError): boolean {
