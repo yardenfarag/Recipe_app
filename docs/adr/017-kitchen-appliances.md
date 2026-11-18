@@ -11,7 +11,7 @@ People save recipes without knowing whether their kitchen can make them, and fin
 
 The ticket was written on 2026-10-04, before per-task models (ADR 015). Facts that shape the design:
 
-- `RECIPE_SCHEMA` in `supabase/functions/_shared/gemini.ts` is shared by every extraction model (text, photo, video, repair, invent). A field added there reaches every flow and every model.
+- `RECIPE_SCHEMA` in `supabase/functions/_shared/extraction/gemini.ts` is shared by every extraction model (text, photo, video, repair, invent). A field added there reaches every flow and every model.
 - The extraction prompt currently says "never invent … equipment" (`gemini.ts` lines 45 and 513). The ticket wants appliances that a step clearly implies ("bake at 180°C" → oven), so these rules have to be reconciled.
 - Recipes are copied in several places: `recipes`, `recipe_cards` (Hub, published by a trigger on save), share snapshots, and the kitchen auto-apply copy (`kitchen_original`).
 - Merging to master deploys the web app automatically, but migrations are applied by hand.
@@ -52,7 +52,7 @@ type AlternativeKey = 'by_hand' | 'pre_ground' | 'cut_to_check';
 
 ### 3. One appliance catalog, grown from real data
 
-- One module, `src/lib/appliances.ts` (catalog, types, sanitizer). It has a byte-identical copy at `supabase/functions/_shared/appliances.ts` for the Edge Functions, and `src/lib/appliances.test.ts` fails if the two differ. The module has no imports, so it runs in both Hermes and Deno.
+- One module, `src/lib/appliances.ts` (catalog, types, sanitizer). It has a byte-identical copy at `supabase/functions/_shared/recipes/enrich/appliances.ts` for the Edge Functions, and `src/lib/appliances.test.ts` fails if the two differ. The module has no imports, so it runs in both Hermes and Deno.
 - Each entry: `key`, `category`, `tier` (`basic` | `special`), and multilingual `aliases` (en, es, he, ru, ar, plus brand names like "KitchenAid" or "Instant Pot") that map the model's wording to a key.
 - First version (32 entries):
 
@@ -94,8 +94,8 @@ type AlternativeKey = 'by_hand' | 'pre_ground' | 'cut_to_check';
 
 ### 6. A separate `appliances` task, run on the final recipe
 
-- New task kind `appliances` in `TASK_MODELS` (`_shared/llmClient.ts`): `openai/gpt-6-luna`, falling back to `qwen/qwen3.8-flash`, reasoning `none`. It is called through `generateLlmJson()`.
-- **Input:** the finished recipe, trimmed to the title, ingredient names and numbered step text (no amounts, metric or spoon values). **Output:** the item list from decision 2. The JSON schema lists the catalog keys as an `enum`. The router sends schemas with `strict: false`, so the enum guides the model but does not bind it; `sanitizeRecipeAppliances` is what guarantees only known keys are kept. Code: `supabase/functions/_shared/recipeAppliances.ts` (`deriveRecipeAppliances`).
+- New task kind `appliances` in `TASK_MODELS` (`_shared/llm/llmClient.ts`): `openai/gpt-6-luna`, falling back to `qwen/qwen3.8-flash`, reasoning `none`. It is called through `generateLlmJson()`.
+- **Input:** the finished recipe, trimmed to the title, ingredient names and numbered step text (no amounts, metric or spoon values). **Output:** the item list from decision 2. The JSON schema lists the catalog keys as an `enum`. The router sends schemas with `strict: false`, so the enum guides the model but does not bind it; `sanitizeRecipeAppliances` is what guarantees only known keys are kept. Code: `supabase/functions/_shared/recipes/enrich/recipeAppliances.ts` (`deriveRecipeAppliances`).
 - **Where it runs:** on the server, after the recipe is final and before the Hub publish, in extract-recipe, invent-recipe, repair-recipe and transform-recipe (remix and kitchen auto-apply). One implementation covers all flows and a later backfill.
 - **Fails soft:** an error, timeout or invalid output gives `appliances = NULL` ("not analysed"). The recipe is still returned. Extraction status and credits are never affected.
 - **Cost controls:**

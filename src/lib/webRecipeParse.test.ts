@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 
 /**
- * Lightweight mirrors of the HTML helpers in supabase/functions/_shared/webRecipe.ts
+ * Lightweight mirrors of the HTML helpers in supabase/functions/_shared/extraction/webRecipe.ts
  * so we can unit-test parsing without Deno.
  */
 

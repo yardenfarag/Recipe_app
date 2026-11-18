@@ -3,7 +3,7 @@
  *
  * This file exists twice and must stay byte-identical:
  *   src/lib/appliances.ts                      (app)
- *   supabase/functions/_shared/appliances.ts   (Edge Functions, Deno)
+ *   supabase/functions/_shared/recipes/enrich/appliances.ts   (Edge Functions, Deno)
  * src/lib/appliances.test.ts fails when they differ. It has no imports so it runs in both.
  */
 

@@ -3,7 +3,7 @@
 // support" form) call this with the row id and a Vault secret; the message itself is read here,
 // so a forged call can't make one up. Reply-To is the sender, and the body is only their words.
 // Secrets: RESEND_API_KEY. The triggers' secret lives in Vault (support_email_secret).
-import { jsonResponse } from '../_shared/cors.ts';
+import { jsonResponse } from '../_shared/core/cors.ts';
 import { sendOnce } from '../_shared/email/send.ts';
 import {
   fromFeedback,
@@ -15,7 +15,7 @@ import {
   type SupportMessage,
   type TicketRow,
 } from '../_shared/email/support.ts';
-import { createServiceSupabase } from '../_shared/supabaseAdmin.ts';
+import { createServiceSupabase } from '../_shared/core/supabaseAdmin.ts';
 
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 const CONTEXT = 'app_version, build_number, platform, os_version, device_model, locale';

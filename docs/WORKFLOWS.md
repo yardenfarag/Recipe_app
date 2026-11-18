@@ -106,7 +106,7 @@ Tabs: `src/components/app-tabs.tsx` (Library, Favorites, Snap, Settings).
 
 **Why:** Snap must stay faithful extraction. Invent is a separate, labeled guess. See [ADR 014](./adr/014-how-to-cook-this.md).
 
-**Key files:** `add.tsx`, `src/lib/supabase/inventRecipe.ts`, `src/lib/contentGate.ts`, `supabase/functions/invent-recipe/`, `supabase/functions/_shared/contentGate.ts`
+**Key files:** `add.tsx`, `src/lib/supabase/inventRecipe.ts`, `src/lib/contentGate.ts`, `supabase/functions/invent-recipe/`, `supabase/functions/_shared/extraction/contentGate.ts`
 
 ---
 
@@ -145,7 +145,7 @@ Tabs: `src/components/app-tabs.tsx` (Library, Favorites, Snap, Settings).
 
 **Why:** Recipes on social live in captions, comments (“recipe?”), and spoken audio. A single source misses most of them. Partial results still give value (e.g. ingredients without perfect steps). Saving stays on the client so guests can use AsyncStorage and signed-in users can preview before commit.
 
-**Key files:** `supabase/functions/extract-recipe/index.ts`, `_shared/gemini.ts`, `_shared/platform.ts`, `_shared/youtube.ts`, `_shared/instagram.ts`, `_shared/tiktok.ts`, `_shared/scrapecreators.ts`, `_shared/recipeLookup.ts`
+**Key files:** `supabase/functions/extract-recipe/index.ts`, `_shared/extraction/gemini.ts`, `_shared/extraction/platform.ts`, `_shared/extraction/sources/youtube.ts`, `_shared/extraction/sources/instagram.ts`, `_shared/extraction/sources/tiktok.ts`, `_shared/extraction/sources/scrapecreators.ts`, `_shared/core/recipeLookup.ts`
 
 ---
 

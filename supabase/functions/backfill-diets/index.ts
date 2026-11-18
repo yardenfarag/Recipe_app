@@ -1,16 +1,16 @@
 import type { SupabaseClient } from 'https://esm.sh/@supabase/supabase-js@2';
 
-import { corsHeaders, jsonResponse } from '../_shared/cors.ts';
+import { corsHeaders, jsonResponse } from '../_shared/core/cors.ts';
 import {
   clampDietsBatchSize,
   type DietsBackfillDb,
   type PendingCard,
   runDietsBackfillBatch,
-} from '../_shared/dietsBackfill.ts';
-import { deriveRecipeDiets } from '../_shared/recipeDiets.ts';
-import { createAuthedSupabase } from '../_shared/recipeLookup.ts';
-import { createServiceSupabase } from '../_shared/supabaseAdmin.ts';
-import { logUsageEvent } from '../_shared/usageLog.ts';
+} from '../_shared/recipes/enrich/dietsBackfill.ts';
+import { deriveRecipeDiets } from '../_shared/recipes/enrich/recipeDiets.ts';
+import { createAuthedSupabase } from '../_shared/core/recipeLookup.ts';
+import { createServiceSupabase } from '../_shared/core/supabaseAdmin.ts';
+import { logUsageEvent } from '../_shared/core/usageLog.ts';
 
 interface RequestBody {
   /** next_cursor from the previous response; omit to start. */

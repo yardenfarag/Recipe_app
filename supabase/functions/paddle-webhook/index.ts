@@ -7,7 +7,7 @@
 //
 // Paddle retries any non-2xx for days, so a delivery we can't handle yet (grants switched off,
 // a database error) answers 500 and is recorded in purchase_webhook_failures.
-import { jsonResponse } from '../_shared/cors.ts';
+import { jsonResponse } from '../_shared/core/cors.ts';
 import { sendPurchaseEmail } from '../_shared/email/purchase.ts';
 import {
   creditsFor,
@@ -17,8 +17,8 @@ import {
   paddleEventSummary,
   paddleSignatureValid,
   type PaddleLine,
-} from '../_shared/paddlePurchase.ts';
-import { createServiceSupabase } from '../_shared/supabaseAdmin.ts';
+} from '../_shared/billing/paddlePurchase.ts';
+import { createServiceSupabase } from '../_shared/core/supabaseAdmin.ts';
 
 const PROVIDER = 'paddle';
 

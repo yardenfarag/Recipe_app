@@ -10,7 +10,7 @@ Pinch called Google Gemini directly for every AI job. Video extract needs Gemini
 
 ## Decision
 
-- Edge Functions call `generateLlmJson` ([`llmClient.ts`](../../supabase/functions/_shared/llmClient.ts)).
+- Edge Functions call `generateLlmJson` ([`llmClient.ts`](../../supabase/functions/_shared/llm/llmClient.ts)).
 - **Text and image** jobs use OpenRouter when `OPENROUTER_API_KEY` or `OPEN_ROUTER_API_KEY` is set, with model fallbacks and `data_collection: deny`. Failures fall back to native Gemini.
 - **Video `fileUri`** stays on native Gemini `generateContent`.
 - Extract ladder: a **partial** text result (title + ingredients or steps, not both) still tries the video rung before returning. One user-facing credit.

@@ -284,7 +284,7 @@ details>*:not(summary){margin-bottom:12px}
       <tr><td>Fridge match (photo of fridge)</td><td>Free</td><td>8 per day</td></tr>
     </tbody>
   </table>
-  <p>Where the numbers live: <code>src/lib/quotas.ts</code> (app) and <code>supabase/functions/_shared/pricing.ts</code> (server). Both must match.</p>
+  <p>Where the numbers live: <code>src/lib/quotas.ts</code> (app) and <code>supabase/functions/_shared/llm/pricing.ts</code> (server). Both must match.</p>
 </section>
 
 <!-- 2 MAP -->
@@ -334,9 +334,9 @@ details>*:not(summary){margin-bottom:12px}
       <text class="l" x="368" y="438">transform-recipe (remix) · suggest-substitution</text>
       <text class="l" x="368" y="458">translate-recipe · match-fridge · backfill-thumbnails</text>
       <text class="l" x="368" y="478">recipe-share · delete-account · revenuecat-webhook</text>
-      <text class="s" x="368" y="508">_shared/llmClient.ts picks the AI provider per call</text>
-      <text class="s" x="368" y="526">_shared/quotas.ts reserves / finalizes / refunds credits</text>
-      <text class="s" x="368" y="544">_shared/usageLog.ts logs every AI call to ai_usage_events</text>
+      <text class="s" x="368" y="508">_shared/llm/llmClient.ts picks the AI provider per call</text>
+      <text class="s" x="368" y="526">_shared/core/quotas.ts reserves / finalizes / refunds credits</text>
+      <text class="s" x="368" y="544">_shared/core/usageLog.ts logs every AI call to ai_usage_events</text>
       <text class="s" x="368" y="566">Deployed by hand: npx supabase functions deploy &lt;name&gt;</text>
       <rect class="zone" x="810" y="40" width="350" height="560"/><text class="zt" x="826" y="30">OUTSIDE SERVICES</text>
       <rect class="box y" x="830" y="70" width="310" height="92"/>
@@ -734,7 +734,7 @@ curl -X POST 'https://ccobefeofhnncpgifxel.supabase.co/functions/v1/extract-reci
 
   <h3>The extract-recipe pipeline</h3>
   <ol class="steps">
-    <li><b>Detect the platform</b><span>youtube, instagram, tiktok, facebook, web, or photo. Anything else returns <code>coming_soon</code>. File: <code>_shared/platform.ts</code>.</span></li>
+    <li><b>Detect the platform</b><span>youtube, instagram, tiktok, facebook, web, or photo. Anything else returns <code>coming_soon</code>. File: <code>_shared/extraction/platform.ts</code>.</span></li>
     <li><b>Library cache</b><span>User already saved this URL? Return it.</span><div class="branch"><span class="free"><b>free</b> · <code>cached: true</code></span></div></li>
     <li><b>Hub cache</b><span>Another user extracted this URL and allowed Hub publishing? Return that card.</span><div class="branch"><span class="free"><b>free</b> · <code>from_hub: true</code></span><span>skipped when <code>force_extract</code> is set</span></div></li>
     <li><b>Require sign-in</b><span>No session → <code>401 auth_required</code>.</span></li>
@@ -757,14 +757,14 @@ curl -X POST 'https://ccobefeofhnncpgifxel.supabase.co/functions/v1/extract-reci
           <tr><td class="k">Photos</td><td>Skip the ladder. One vision call.</td></tr>
         </tbody>
       </table>
-      <div class="branch"><span>file: <code>_shared/gemini.ts</code> → <code>extractRecipeWithLadder</code></span><span>video over 180 s → <code>video_too_long</code></span></div></li>
+      <div class="branch"><span>file: <code>_shared/extraction/gemini.ts</code> → <code>extractRecipeWithLadder</code></span><span>video over 180 s → <code>video_too_long</code></span></div></li>
     <li><b>Classify</b><span><code>full</code>, <code>partial</code> (with <code>missing_fields</code>), or <code>failed</code>.</span><div class="branch"><span class="credit"><b>full or partial → finalize credit</b></span><span class="free"><b>failed → refund</b></span></div></li>
     <li><b>Return</b><span>Re-host the thumbnail in Storage, publish a full result to the Hub unless the user opted out, log usage to <code>ai_usage_events</code>, return JSON. The app opens Preview. Saving is the app's job.</span></li>
   </ol>
 
   <h3>How a model gets picked</h3>
   <ul>
-    <li>Every AI call goes through <code>generateLlmJson()</code> in <code>supabase/functions/_shared/llmClient.ts</code>.</li>
+    <li>Every AI call goes through <code>generateLlmJson()</code> in <code>supabase/functions/_shared/llm/llmClient.ts</code>.</li>
     <li>Each call has a <code>kind</code>. <code>TASK_MODELS[kind]</code> gives the primary model, the fallback list (sent as <code>models[]</code>, OpenRouter tries them in order) and the reasoning effort.</li>
     <li>Override per task with Supabase secrets: <code>OPENROUTER_MODEL_&lt;KIND&gt;</code>, <code>OPENROUTER_FALLBACKS_&lt;KIND&gt;</code>, <code>OPENROUTER_REASONING_&lt;KIND&gt;</code>.</li>
     <li>Every request sets <code>require_parameters: true</code> (skip hosts that ignore the JSON schema) and, for Anthropic models, <code>ignore: ['azure']</code> (Azure's filter truncates the JSON).</li>
@@ -816,7 +816,7 @@ npx -y deno run -A --no-lock --env-file=.env eval/cli.ts report</code></pre>
 
   <h3>Where to look</h3>
   <ul>
-    <li>Code: <code>_shared/llmClient.ts</code>, <code>_shared/videoInput.ts</code>, <code>_shared/gemini.ts</code>, <code>_shared/jev.ts</code>, <code>_shared/contentGate.ts</code>, <code>_shared/classifyRecipe.ts</code>.</li>
+    <li>Code: <code>_shared/llm/llmClient.ts</code>, <code>_shared/extraction/videoInput.ts</code>, <code>_shared/extraction/gemini.ts</code>, <code>_shared/llm/jev.ts</code>, <code>_shared/extraction/contentGate.ts</code>, <code>_shared/extraction/classifyRecipe.ts</code>.</li>
     <li>Decisions: <code>docs/adr/015-per-task-models.md</code> (current routing), <code>docs/adr/013</code> (credits and caps), <code>docs/adr/014</code> (invent), <code>docs/research/05-llm-per-task.md</code> (the eval), Linear PIN-28, PIN-44, PIN-45, PIN-46.</li>
     <li>Live numbers: Settings → Admin → Usage in the app. The "AI cost" panel shows cost, calls and tokens per model, per task and per action for the last 24 hours, 7 or 30 days. Each <code>ai_usage_events</code> row stores its per-call breakdown in <code>metadata.llm_calls</code>, so you can also query it directly.</li>
   </ul>

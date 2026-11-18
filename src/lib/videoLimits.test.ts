@@ -7,7 +7,7 @@ import {
   parseDurationMilliseconds,
   parseDurationSeconds,
   parseYouTubeIsoDuration,
-} from '../../supabase/functions/_shared/videoLimits';
+} from '../../supabase/functions/_shared/extraction/videoLimits';
 
 describe('videoLimits', () => {
   it('caps at twelve minutes', () => {

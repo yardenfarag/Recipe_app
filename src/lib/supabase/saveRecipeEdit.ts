@@ -2,7 +2,7 @@
  * Client for the save-recipe-edit Edge Function (PIN-79, ADR 018): one endpoint for Edit recipe,
  * Write a recipe, finishing a partial import (ADR 019), and retrying a recalculation that failed. Free: never spends recipe credits.
  *
- * The server mirrors these types in supabase/functions/_shared/recipeEditTypes.ts. Change both.
+ * The server mirrors these types in supabase/functions/_shared/recipes/recipeEditTypes.ts. Change both.
  */
 import { FunctionsHttpError } from '@supabase/supabase-js';
 

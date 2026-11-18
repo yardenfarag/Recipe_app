@@ -212,7 +212,7 @@ npx supabase secrets set YOUTUBE_API_KEY=your_youtube_data_api_key
 # Optional — per-task model overrides. <KIND> is the upper-cased task kind:
 # TEXT, VIDEO, PHOTO, REPAIR, INVENT_TEXT, INVENT_PHOTO, INVENT_VIDEO, TRANSLATE,
 # TRANSFORM, SUBSTITUTION, FRIDGE_MATCH, CONTENT_GATE, REMIX_RELATED.
-# Defaults are TASK_MODELS in functions/_shared/llmClient.ts (ADR 015).
+# Defaults are TASK_MODELS in functions/_shared/llm/llmClient.ts (ADR 015).
 # npx supabase secrets set OPENROUTER_MODEL_TEXT=openai/gpt-6-luna
 # npx supabase secrets set OPENROUTER_FALLBACKS_TEXT=qwen/qwen3.8-flash   # comma list, or "none"
 # npx supabase secrets set OPENROUTER_REASONING_TEXT=none                 # none | low | medium
@@ -225,7 +225,7 @@ PIN-45 deploy: `npx supabase secrets unset GEMINI_API_KEY GEMINI_MODEL GEMINI_FA
 
 ### Per-task models (PIN-45)
 
-Every function that calls a model shares `functions/_shared/llmClient.ts`. Deploy all of them together
+Every function that calls a model shares `functions/_shared/llm/llmClient.ts`. Deploy all of them together
 when the router changes:
 
 ```bash

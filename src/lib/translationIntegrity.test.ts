@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
-import { assertTranslationIdentity } from '../../supabase/functions/_shared/translationIntegrity';
+import { assertTranslationIdentity } from '../../supabase/functions/_shared/recipes/translationIntegrity';
 
 const ingredients = [{ quantity: 2 }, { quantity: 500 }];
 const instructions = [{ step: 1 }, { step: 2 }];

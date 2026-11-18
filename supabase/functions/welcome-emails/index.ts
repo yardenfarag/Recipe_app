@@ -2,11 +2,11 @@
 // it welcomes each account created in the last two days that hasn't been welcomed, once, in the
 // language the app saved for them. Works for email, Google and Apple signups alike.
 // Secrets: RESEND_API_KEY. The cron secret lives in Vault (email_cron_secret).
-import { jsonResponse } from '../_shared/cors.ts';
+import { jsonResponse } from '../_shared/core/cors.ts';
 import { pickLocale } from '../_shared/email/copy.ts';
 import { renderWelcomeEmail } from '../_shared/email/render.ts';
 import { sendOnce } from '../_shared/email/send.ts';
-import { createServiceSupabase } from '../_shared/supabaseAdmin.ts';
+import { createServiceSupabase } from '../_shared/core/supabaseAdmin.ts';
 
 Deno.serve(async (req) => {
   if (req.method !== 'POST') return jsonResponse({ error: 'Method not allowed' }, 405);

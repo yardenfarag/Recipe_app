@@ -1,6 +1,6 @@
 /**
  * Client-side mirror of unwrapInstagramMedia — keep in sync with
- * supabase/functions/_shared/instagram.ts
+ * supabase/functions/_shared/extraction/sources/instagram.ts
  */
 export function unwrapInstagramMedia(response: Record<string, unknown>): Record<string, unknown> | null {
   if (response.xdt_shortcode_media && typeof response.xdt_shortcode_media === 'object') {

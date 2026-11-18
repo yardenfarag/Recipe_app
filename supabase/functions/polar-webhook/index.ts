@@ -6,10 +6,10 @@
 // Polar retries any non-2xx up to 10 times and disables the endpoint after 10 failures in a
 // row, so only deliveries we expect to succeed on a retry answer 500; they're also recorded
 // in purchase_webhook_failures.
-import { jsonResponse } from '../_shared/cors.ts';
+import { jsonResponse } from '../_shared/core/cors.ts';
 import { sendPurchaseEmail } from '../_shared/email/purchase.ts';
-import { polarDecision, polarEventSummary, polarSignatureValid } from '../_shared/polarPurchase.ts';
-import { createServiceSupabase } from '../_shared/supabaseAdmin.ts';
+import { polarDecision, polarEventSummary, polarSignatureValid } from '../_shared/billing/polarPurchase.ts';
+import { createServiceSupabase } from '../_shared/core/supabaseAdmin.ts';
 
 const PROVIDER = 'polar';
 

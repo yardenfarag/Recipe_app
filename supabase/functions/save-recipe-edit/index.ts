@@ -1,6 +1,6 @@
 /**
  * POST SaveRecipeEditRequest -> SaveRecipeEditResult (PIN-79, ADR 018). Contract:
- * src/lib/supabase/saveRecipeEdit.ts, mirrored in _shared/recipeEditTypes.ts.
+ * src/lib/supabase/saveRecipeEdit.ts, mirrored in _shared/recipes/recipeEditTypes.ts.
  *
  *   edit   save a hand edit of the caller's recipe
  *   write  insert a written recipe (extraction_source 'manual', no URL)
@@ -8,20 +8,20 @@
  *   retry  re-run whatever is still in recalc_pending
  *
  * Signed-in only, free (never spends recipe credits). The decision of what to save, block or
- * recalculate is planRecipeEdit (_shared/recipeEditPlan.ts). This file loads, stores and logs.
+ * recalculate is planRecipeEdit (_shared/recipes/recipeEditPlan.ts). This file loads, stores and logs.
  * The saved row is returned at once; recalculation runs after the response (recipeRecalc.ts),
  * capped at RECIPE_EDIT_DAILY_LIMIT saves a day. Never touches recipe_cards.
  */
 
 import type { SupabaseClient } from 'https://esm.sh/@supabase/supabase-js@2';
 
-import { sanitizeRecipeAppliances } from '../_shared/appliances.ts';
-import { classifyGeminiRecipe } from '../_shared/classifyRecipe.ts';
-import { corsHeaders, jsonResponse } from '../_shared/cors.ts';
-import { currentUtcDate, refundDailyAiUsage, reserveDailyAiUsage } from '../_shared/dailyAiUsage.ts';
-import { persistUploadedPhoto } from '../_shared/persistThumbnail.ts';
-import { RECIPE_EDIT_DAILY_LIMIT } from '../_shared/pricing.ts';
-import { planRecipeEdit, type RecipeEditPlan, storedEditContent } from '../_shared/recipeEditPlan.ts';
+import { sanitizeRecipeAppliances } from '../_shared/recipes/enrich/appliances.ts';
+import { classifyGeminiRecipe } from '../_shared/extraction/classifyRecipe.ts';
+import { corsHeaders, jsonResponse } from '../_shared/core/cors.ts';
+import { currentUtcDate, refundDailyAiUsage, reserveDailyAiUsage } from '../_shared/core/dailyAiUsage.ts';
+import { persistUploadedPhoto } from '../_shared/extraction/persistThumbnail.ts';
+import { RECIPE_EDIT_DAILY_LIMIT } from '../_shared/llm/pricing.ts';
+import { planRecipeEdit, type RecipeEditPlan, storedEditContent } from '../_shared/recipes/recipeEditPlan.ts';
 import {
   type Ingredient,
   type Instruction,
@@ -32,11 +32,11 @@ import {
   type RecipeEditContent,
   type RecipeImportSource,
   type SaveRecipeEditResult,
-} from '../_shared/recipeEditTypes.ts';
-import { createAuthedSupabase } from '../_shared/recipeLookup.ts';
-import { rowsMissingAmounts, runRecipeRecalculation, withoutAmounts } from '../_shared/recipeRecalc.ts';
-import { createServiceSupabase } from '../_shared/supabaseAdmin.ts';
-import { logUsageEvent } from '../_shared/usageLog.ts';
+} from '../_shared/recipes/recipeEditTypes.ts';
+import { createAuthedSupabase } from '../_shared/core/recipeLookup.ts';
+import { rowsMissingAmounts, runRecipeRecalculation, withoutAmounts } from '../_shared/recipes/recipeRecalc.ts';
+import { createServiceSupabase } from '../_shared/core/supabaseAdmin.ts';
+import { logUsageEvent } from '../_shared/core/usageLog.ts';
 
 declare const EdgeRuntime: { waitUntil(promise: Promise<unknown>): void } | undefined;
 

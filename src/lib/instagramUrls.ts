@@ -1,6 +1,6 @@
 /**
  * Client-side mirror of Instagram URL helpers in
- * supabase/functions/_shared/platform.ts — keep in sync.
+ * supabase/functions/_shared/extraction/platform.ts — keep in sync.
  */
 import { extractInstagramId } from '@/lib/platformUrls';
 

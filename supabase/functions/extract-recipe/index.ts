@@ -1,21 +1,21 @@
-import { normalizeStoredCalories } from '../_shared/calories.ts';
-import { corsHeaders, jsonResponse } from '../_shared/cors.ts';
-import { FetchError } from '../_shared/errors.ts';
-import { classifyGeminiRecipe } from '../_shared/classifyRecipe.ts';
+import { normalizeStoredCalories } from '../_shared/recipes/calories.ts';
+import { corsHeaders, jsonResponse } from '../_shared/core/cors.ts';
+import { FetchError } from '../_shared/core/errors.ts';
+import { classifyGeminiRecipe } from '../_shared/extraction/classifyRecipe.ts';
 import {
   buildContentGateInput,
   runContentGate,
   shouldSkipThinSocialGate,
-} from '../_shared/contentGate.ts';
+} from '../_shared/extraction/contentGate.ts';
 import {
   beginTextExtraction,
   extractRecipeFromImage,
   extractRecipeWithLadder,
   type ExtractInput,
   GeminiRecipe,
-} from '../_shared/gemini.ts';
-import { fetchFacebookMeta, resolveFacebookShareLink } from '../_shared/facebook.ts';
-import { fetchInstagramMeta } from '../_shared/instagram.ts';
+} from '../_shared/extraction/gemini.ts';
+import { fetchFacebookMeta, resolveFacebookShareLink } from '../_shared/extraction/sources/facebook.ts';
+import { fetchInstagramMeta } from '../_shared/extraction/sources/instagram.ts';
 import {
   appliedExtractRoute,
   decideExtractRoute,
@@ -23,7 +23,7 @@ import {
   type ExtractRoute,
   shouldRunExtractGate,
   skipsTextStep,
-} from '../_shared/jev.ts';
+} from '../_shared/llm/jev.ts';
 import {
   canonicalFacebookUrl,
   canonicalInstagramUrl,
@@ -33,10 +33,10 @@ import {
   LIVE_PLATFORMS,
   type Platform,
   youTubeThumbnail,
-} from '../_shared/platform.ts';
-import type { PlatformMeta } from '../_shared/platformMeta.ts';
-import { keepUploadedPhoto, persistSocialThumbnail } from '../_shared/persistThumbnail.ts';
-import { estimateScrapeCredits, GUEST_EXTRACT_LIMIT } from '../_shared/pricing.ts';
+} from '../_shared/extraction/platform.ts';
+import type { PlatformMeta } from '../_shared/extraction/platformMeta.ts';
+import { keepUploadedPhoto, persistSocialThumbnail } from '../_shared/extraction/persistThumbnail.ts';
+import { estimateScrapeCredits, GUEST_EXTRACT_LIMIT } from '../_shared/llm/pricing.ts';
 import {
   canStartExtract,
   finalizeSignedInExtract,
@@ -54,21 +54,21 @@ import {
   refundSignedInExtractAfterFinalizeFailure,
   reserveGuestExtraction,
   reserveSignedInExtract,
-} from '../_shared/quotas.ts';
-import { appliancesForRecipe } from '../_shared/recipeAppliances.ts';
+} from '../_shared/core/quotas.ts';
+import { appliancesForRecipe } from '../_shared/recipes/enrich/recipeAppliances.ts';
 import {
   createAuthedSupabase,
   extractVideoIdForPlatform,
   findExistingRecipeForUser,
-} from '../_shared/recipeLookup.ts';
-import { createServiceSupabase } from '../_shared/supabaseAdmin.ts';
-import { normalizeRecipeTags } from '../_shared/tags.ts';
-import { fitRecipeToLimits } from '../_shared/recipeLimits.ts';
-import { fetchTikTokMeta } from '../_shared/tiktok.ts';
-import { logUsageEvent } from '../_shared/usageLog.ts';
-import { formatMaxVideoDurationLabel, isVideoTooLong } from '../_shared/videoLimits.ts';
-import { fetchWebRecipeMeta } from '../_shared/webRecipe.ts';
-import { fetchYouTubeMeta } from '../_shared/youtube.ts';
+} from '../_shared/core/recipeLookup.ts';
+import { createServiceSupabase } from '../_shared/core/supabaseAdmin.ts';
+import { normalizeRecipeTags } from '../_shared/recipes/tags.ts';
+import { fitRecipeToLimits } from '../_shared/recipes/recipeLimits.ts';
+import { fetchTikTokMeta } from '../_shared/extraction/sources/tiktok.ts';
+import { logUsageEvent } from '../_shared/core/usageLog.ts';
+import { formatMaxVideoDurationLabel, isVideoTooLong } from '../_shared/extraction/videoLimits.ts';
+import { fetchWebRecipeMeta } from '../_shared/extraction/webRecipe.ts';
+import { fetchYouTubeMeta } from '../_shared/extraction/sources/youtube.ts';
 import {
   fillRecipeCardDiets,
   findRecipeCard,
@@ -76,7 +76,7 @@ import {
   publishRecipeCard,
   touchRecipeCardHit,
   userContributesToHub,
-} from '../_shared/recipeCards.ts';
+} from '../_shared/recipes/recipeCards.ts';
 
 declare const EdgeRuntime: { waitUntil(promise: Promise<unknown>): void } | undefined;
 
@@ -259,7 +259,7 @@ Deno.serve(async (req) => {
 
     let gemini: GeminiRecipe;
     let source: 'description' | 'comments' | 'captions' | 'video' | 'web' | 'photo';
-    let usages: import('../_shared/pricing.ts').GeminiUsageSnapshot[] = [];
+    let usages: import('../_shared/llm/pricing.ts').GeminiUsageSnapshot[] = [];
     let usedInstagramVideoDownload = false;
     let videoSkippedReason: 'too_long' | undefined;
     let scrapeCredits = 0;
@@ -363,7 +363,7 @@ Deno.serve(async (req) => {
       meta,
     });
 
-    let gateKind: import('../_shared/contentGate.ts').ContentKind = 'mixed';
+    let gateKind: import('../_shared/extraction/contentGate.ts').ContentKind = 'mixed';
     let dishGuess = '';
 
     if (!skipGate) {

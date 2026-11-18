@@ -1,17 +1,17 @@
 // Snapshot eval inputs: post text through the production fetchers, post videos,
 // and Wikimedia Commons images. Everything lands in eval/private/ (gitignored).
 
-import { detectPlatform } from '../supabase/functions/_shared/platform.ts';
-import type { PlatformMeta } from '../supabase/functions/_shared/platformMeta.ts';
+import { detectPlatform } from '../supabase/functions/_shared/extraction/platform.ts';
+import type { PlatformMeta } from '../supabase/functions/_shared/extraction/platformMeta.ts';
 import {
   fetchInstagramMeta,
   isInstagramCdnUrl,
   resolveInstagramVideoForGemini,
-} from '../supabase/functions/_shared/instagram.ts';
-import { fetchFacebookMeta } from '../supabase/functions/_shared/facebook.ts';
-import { fetchTikTokMeta } from '../supabase/functions/_shared/tiktok.ts';
-import { fetchWebRecipeMeta } from '../supabase/functions/_shared/webRecipe.ts';
-import { fetchYouTubeMeta } from '../supabase/functions/_shared/youtube.ts';
+} from '../supabase/functions/_shared/extraction/sources/instagram.ts';
+import { fetchFacebookMeta } from '../supabase/functions/_shared/extraction/sources/facebook.ts';
+import { fetchTikTokMeta } from '../supabase/functions/_shared/extraction/sources/tiktok.ts';
+import { fetchWebRecipeMeta } from '../supabase/functions/_shared/extraction/webRecipe.ts';
+import { fetchYouTubeMeta } from '../supabase/functions/_shared/extraction/sources/youtube.ts';
 import { exists, pool, PRIVATE, readJson, ROOT, writeJson } from './lib.ts';
 
 export type PostCase = { id: string; url: string; tasks?: string[] };

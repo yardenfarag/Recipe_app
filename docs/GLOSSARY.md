@@ -107,7 +107,7 @@ The UX shown when a user Snaps a URL from a platform not yet supported — clear
 _Avoid_: Error screen, unsupported error
 
 **Task model**:
-The AI model a task `kind` runs on, set in `TASK_MODELS` (`supabase/functions/_shared/llmClient.ts`) with a fallback and a reasoning effort. Override one task with the `OPENROUTER_MODEL_<KIND>` secret (ADR 015).
+The AI model a task `kind` runs on, set in `TASK_MODELS` (`supabase/functions/_shared/llm/llmClient.ts`) with a fallback and a reasoning effort. Override one task with the `OPENROUTER_MODEL_<KIND>` secret (ADR 015).
 _Avoid_: Tier (the old fast/standard split)
 
 ## In-app messages

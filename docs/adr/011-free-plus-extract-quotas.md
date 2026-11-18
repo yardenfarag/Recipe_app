@@ -40,5 +40,5 @@ Product tokens created friction at the moment of saving a recipe. Users want a s
 ## Implementation Notes
 
 - Migrations `0013_subscription_quotas.sql`, `0016_monthly_free_quotas.sql`
-- Edge: `supabase/functions/_shared/quotas.ts`, `extract-recipe`, `transform-recipe`
+- Edge: `supabase/functions/_shared/core/quotas.ts`, `extract-recipe`, `transform-recipe`
 - Client: `src/lib/quotas.ts`, Settings plan UI, SupportTicketModal

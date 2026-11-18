@@ -1,6 +1,6 @@
 import type { SupabaseClient } from 'https://esm.sh/@supabase/supabase-js@2';
 
-import type { RecipeAppliance } from '../_shared/appliances.ts';
+import type { RecipeAppliance } from '../_shared/recipes/enrich/appliances.ts';
 import {
   type BackfillDb,
   type BackfillTable,
@@ -8,12 +8,12 @@ import {
   isBackfillTable,
   type PendingRow,
   runAppliancesBackfillBatch,
-} from '../_shared/appliancesBackfill.ts';
-import { corsHeaders, jsonResponse } from '../_shared/cors.ts';
-import { deriveRecipeAppliances } from '../_shared/recipeAppliances.ts';
-import { createAuthedSupabase } from '../_shared/recipeLookup.ts';
-import { createServiceSupabase } from '../_shared/supabaseAdmin.ts';
-import { logUsageEvent } from '../_shared/usageLog.ts';
+} from '../_shared/recipes/enrich/appliancesBackfill.ts';
+import { corsHeaders, jsonResponse } from '../_shared/core/cors.ts';
+import { deriveRecipeAppliances } from '../_shared/recipes/enrich/recipeAppliances.ts';
+import { createAuthedSupabase } from '../_shared/core/recipeLookup.ts';
+import { createServiceSupabase } from '../_shared/core/supabaseAdmin.ts';
+import { logUsageEvent } from '../_shared/core/usageLog.ts';
 
 interface RequestBody {
   /** recipes (default) or recipe_cards. */

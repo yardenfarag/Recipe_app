@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 
 import { recipeImageSource } from '@/lib/recipeImageSource';
 
-/** Mirrors cover priority in supabase/functions/_shared/tiktokThumbnail.ts */
+/** Mirrors cover priority in supabase/functions/_shared/extraction/sources/tiktokThumbnail.ts */
 function pickTikTokCover(video: Record<string, unknown>): string | undefined {
   const fields = ['cover', 'dynamic_cover', 'origin_cover', 'ai_dynamic_cover', 'animated_cover'];
   for (const key of fields) {

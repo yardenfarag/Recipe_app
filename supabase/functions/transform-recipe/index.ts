@@ -1,22 +1,22 @@
-import { corsHeaders, jsonResponse } from '../_shared/cors.ts';
-import { currentUtcDate, refundDailyAiUsage, reserveDailyAiUsage } from '../_shared/dailyAiUsage.ts';
-import { RECIPE_REMIX_LIMIT, REMIX_DAILY_LIMIT } from '../_shared/pricing.ts';
-import { appliancesForRecipe, stepsChanged } from '../_shared/recipeAppliances.ts';
-import { fitRecipeToLimits } from '../_shared/recipeLimits.ts';
-import { createAuthedSupabase } from '../_shared/recipeLookup.ts';
+import { corsHeaders, jsonResponse } from '../_shared/core/cors.ts';
+import { currentUtcDate, refundDailyAiUsage, reserveDailyAiUsage } from '../_shared/core/dailyAiUsage.ts';
+import { RECIPE_REMIX_LIMIT, REMIX_DAILY_LIMIT } from '../_shared/llm/pricing.ts';
+import { appliancesForRecipe, stepsChanged } from '../_shared/recipes/enrich/recipeAppliances.ts';
+import { fitRecipeToLimits } from '../_shared/recipes/recipeLimits.ts';
+import { createAuthedSupabase } from '../_shared/core/recipeLookup.ts';
 import {
   isRecipeVariantKey,
   remixInstructionIsRelated,
   transformRecipeWithGemini,
-} from '../_shared/recipeVariant.ts';
+} from '../_shared/recipes/recipeVariant.ts';
 import {
   parseRecipeId,
   parseSourceUrl,
   refundRecipeRemix,
   reserveRecipeRemix,
-} from '../_shared/remixUsage.ts';
-import { createServiceSupabase } from '../_shared/supabaseAdmin.ts';
-import { logUsageEvent } from '../_shared/usageLog.ts';
+} from '../_shared/core/remixUsage.ts';
+import { createServiceSupabase } from '../_shared/core/supabaseAdmin.ts';
+import { logUsageEvent } from '../_shared/core/usageLog.ts';
 
 const MAX_BODY_BYTES = 64_000;
 const MAX_TITLE_CHARS = 200;

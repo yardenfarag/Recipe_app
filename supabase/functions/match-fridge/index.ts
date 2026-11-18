@@ -1,14 +1,14 @@
-import { corsHeaders, jsonResponse } from '../_shared/cors.ts';
+import { corsHeaders, jsonResponse } from '../_shared/core/cors.ts';
 import {
   currentUtcDate,
   refundDailyAiUsage,
   reserveDailyAiUsage,
-} from '../_shared/dailyAiUsage.ts';
-import { matchFridgeToCatalog, type FridgeCatalogItem } from '../_shared/fridgeMatch.ts';
-import { FRIDGE_MATCH_DAILY_LIMIT } from '../_shared/pricing.ts';
-import { createAuthedSupabase } from '../_shared/recipeLookup.ts';
-import { createServiceSupabase } from '../_shared/supabaseAdmin.ts';
-import { logUsageEvent } from '../_shared/usageLog.ts';
+} from '../_shared/core/dailyAiUsage.ts';
+import { matchFridgeToCatalog, type FridgeCatalogItem } from '../_shared/recipes/fridgeMatch.ts';
+import { FRIDGE_MATCH_DAILY_LIMIT } from '../_shared/llm/pricing.ts';
+import { createAuthedSupabase } from '../_shared/core/recipeLookup.ts';
+import { createServiceSupabase } from '../_shared/core/supabaseAdmin.ts';
+import { logUsageEvent } from '../_shared/core/usageLog.ts';
 
 const MAX_BODY_BYTES = 2_200_000;
 const MAX_CATALOG = 80;

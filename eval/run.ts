@@ -3,7 +3,7 @@
 
 import { AsyncLocalStorage } from 'node:async_hooks';
 
-import { classifyContent } from '../supabase/functions/_shared/contentGate.ts';
+import { classifyContent } from '../supabase/functions/_shared/extraction/contentGate.ts';
 import {
   beginTextExtraction,
   extractRecipeFromImage,
@@ -11,15 +11,15 @@ import {
   RECIPE_SCHEMA,
   VIDEO_SYSTEM_PROMPT,
   type GeminiRecipe,
-} from '../supabase/functions/_shared/gemini.ts';
-import { EXTRACT_ROUTE_INSTRUCTIONS } from '../supabase/functions/_shared/jev.ts';
-import { inventRecipeFromImage, inventRecipeWithLadder } from '../supabase/functions/_shared/inventRecipe.ts';
-import { generateLlmJson, type GenerateLlmJsonResult, setEvalHook } from '../supabase/functions/_shared/llmClient.ts';
-import { estimateGeminiCostUsd } from '../supabase/functions/_shared/pricing.ts';
+} from '../supabase/functions/_shared/extraction/gemini.ts';
+import { EXTRACT_ROUTE_INSTRUCTIONS } from '../supabase/functions/_shared/llm/jev.ts';
+import { inventRecipeFromImage, inventRecipeWithLadder } from '../supabase/functions/_shared/recipes/inventRecipe.ts';
+import { generateLlmJson, type GenerateLlmJsonResult, setEvalHook } from '../supabase/functions/_shared/llm/llmClient.ts';
+import { estimateGeminiCostUsd } from '../supabase/functions/_shared/llm/pricing.ts';
 import {
   translateRecipeWithGemini,
   type TranslateLanguageCode,
-} from '../supabase/functions/_shared/translateRecipe.ts';
+} from '../supabase/functions/_shared/recipes/translateRecipe.ts';
 import { type ImageCase, imagePath, type PostCase, postPath, type PostSnapshot, videoPath } from './fetch.ts';
 import {
   type GateCase,

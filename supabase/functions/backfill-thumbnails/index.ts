@@ -1,7 +1,7 @@
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
-import { corsHeaders, jsonResponse } from '../_shared/cors.ts';
-import { extractYouTubeId, needsThumbnailBackfill, youTubeThumbnail } from '../_shared/platform.ts';
-import { resolveYouTubeThumbnailUrl } from '../_shared/youtube.ts';
+import { corsHeaders, jsonResponse } from '../_shared/core/cors.ts';
+import { extractYouTubeId, needsThumbnailBackfill, youTubeThumbnail } from '../_shared/extraction/platform.ts';
+import { resolveYouTubeThumbnailUrl } from '../_shared/extraction/sources/youtube.ts';
 
 const MAX_VIDEO_IDS = 20;
 

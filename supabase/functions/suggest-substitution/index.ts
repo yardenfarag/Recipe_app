@@ -1,18 +1,18 @@
-import { corsHeaders, jsonResponse } from '../_shared/cors.ts';
+import { corsHeaders, jsonResponse } from '../_shared/core/cors.ts';
 import {
   currentUtcDate,
   refundDailyAiUsage,
   reserveDailyAiUsage,
-} from '../_shared/dailyAiUsage.ts';
-import { createAuthedSupabase } from '../_shared/recipeLookup.ts';
-import { fitRecipeToLimits } from '../_shared/recipeLimits.ts';
-import { createServiceSupabase } from '../_shared/supabaseAdmin.ts';
+} from '../_shared/core/dailyAiUsage.ts';
+import { createAuthedSupabase } from '../_shared/core/recipeLookup.ts';
+import { fitRecipeToLimits } from '../_shared/recipes/recipeLimits.ts';
+import { createServiceSupabase } from '../_shared/core/supabaseAdmin.ts';
 import {
   isSubstitutionLanguageCode,
   rewriteInstructionsForSubstitutionWithGemini,
   suggestSubstitutionsWithGemini,
-} from '../_shared/substitution.ts';
-import { logUsageEvent } from '../_shared/usageLog.ts';
+} from '../_shared/recipes/substitution.ts';
+import { logUsageEvent } from '../_shared/core/usageLog.ts';
 
 const MAX_BODY_BYTES = 24_000;
 const MAX_RECIPE_TITLE_CHARS = 200;
