@@ -72,7 +72,7 @@ Deno.serve(async (req) => {
   let imageBase64: string | null = null;
   let imageMime = 'image/jpeg';
   let guestInstallId: string | null = null;
-  let requestId = crypto.randomUUID();
+  let requestId: string = crypto.randomUUID();
   let language = 'en';
   let alreadyGated = false;
   try {

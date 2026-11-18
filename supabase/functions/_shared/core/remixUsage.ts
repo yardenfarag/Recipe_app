@@ -1,4 +1,4 @@
-import type { SupabaseClient } from 'https://esm.sh/@supabase/supabase-js@2';
+import { type Db, sqlNullable } from './supabaseAdmin.ts';
 
 import { RECIPE_REMIX_LIMIT } from '../llm/pricing.ts';
 
@@ -21,7 +21,7 @@ export function parseSourceUrl(value: unknown): string | null {
 }
 
 export async function reserveRecipeRemix(
-  admin: SupabaseClient,
+  admin: Db,
   userId: string,
   recipeId: string | null,
   sourceUrl: string | null,
@@ -30,8 +30,8 @@ export async function reserveRecipeRemix(
 
   const { data, error } = await admin.rpc('reserve_recipe_remix', {
     p_user_id: userId,
-    p_recipe_id: recipeId,
-    p_source_url: sourceUrl,
+    p_recipe_id: sqlNullable(recipeId),
+    p_source_url: sqlNullable(sourceUrl),
     p_limit: RECIPE_REMIX_LIMIT,
   });
   if (error) {
@@ -42,15 +42,15 @@ export async function reserveRecipeRemix(
 }
 
 export async function refundRecipeRemix(
-  admin: SupabaseClient,
+  admin: Db,
   userId: string,
   recipeId: string | null,
   sourceUrl: string | null,
 ): Promise<boolean> {
   const { data, error } = await admin.rpc('refund_recipe_remix', {
     p_user_id: userId,
-    p_recipe_id: recipeId,
-    p_source_url: sourceUrl,
+    p_recipe_id: sqlNullable(recipeId),
+    p_source_url: sqlNullable(sourceUrl),
   });
   if (error) console.error('[remixUsage] refund_recipe_remix', error);
   return !error && data === true;

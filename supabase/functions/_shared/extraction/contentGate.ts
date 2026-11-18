@@ -1,4 +1,4 @@
-import type { SupabaseClient } from 'https://esm.sh/@supabase/supabase-js@2';
+import type { Db } from '../core/supabaseAdmin.ts';
 
 import {
   currentUtcDate,
@@ -130,7 +130,7 @@ export async function classifyContent(
 }
 
 export async function runContentGate(opts: {
-  admin: SupabaseClient;
+  admin: Db;
   userId: string | null;
   guestInstallId: string | null;
   input: ClassifyContentInput;

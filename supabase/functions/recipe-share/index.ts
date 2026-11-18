@@ -1,7 +1,7 @@
 import { recipeAppliancesOf } from '../_shared/recipes/enrich/appliances.ts';
 import { corsHeaders, jsonResponse } from '../_shared/core/cors.ts';
 import { createAuthedSupabase } from '../_shared/core/recipeLookup.ts';
-import { createServiceSupabase } from '../_shared/core/supabaseAdmin.ts';
+import { createServiceSupabase, toJson } from '../_shared/core/supabaseAdmin.ts';
 
 const MAX_BODY_BYTES = 32_000;
 const TOKEN_BYTES = 18;
@@ -99,7 +99,7 @@ function publicSnapshot(snapshot: RecipeSnapshot) {
     tags: snapshot.tags ?? undefined,
     missing_fields: snapshot.missing_fields ?? undefined,
     source_language: snapshot.source_language ?? undefined,
-    appliances: snapshotAppliances(snapshot),
+    appliances: toJson(snapshotAppliances(snapshot)),
   };
 }
 
@@ -116,8 +116,8 @@ function insertRowFromSnapshot(userId: string, snapshot: RecipeSnapshot) {
     platform: snapshot.platform ?? null,
     image_url: snapshot.image_url ?? null,
     source_video_url: snapshot.source_video_url ?? null,
-    ingredients: snapshot.ingredients ?? [],
-    instructions: snapshot.instructions ?? [],
+    ingredients: toJson(snapshot.ingredients ?? []),
+    instructions: toJson(snapshot.instructions ?? []),
     servings: snapshot.servings,
     calories: snapshot.calories ?? null,
     estimated_time_minutes: snapshot.estimated_time_minutes ?? null,
@@ -130,7 +130,7 @@ function insertRowFromSnapshot(userId: string, snapshot: RecipeSnapshot) {
     source_language: snapshot.source_language ?? 'en',
     calories_reasoning: snapshot.calories_reasoning ?? null,
     time_reasoning: snapshot.time_reasoning ?? null,
-    appliances: snapshotAppliances(snapshot),
+    appliances: toJson(snapshotAppliances(snapshot)),
     is_favorite: false,
     migrated_from_guest: false,
   };
@@ -185,7 +185,7 @@ Deno.serve(async (req) => {
     return jsonResponse({
       status: 'ok',
       token: data.token,
-      recipe: publicSnapshot(data.snapshot as RecipeSnapshot),
+      recipe: publicSnapshot(data.snapshot as unknown as RecipeSnapshot),
     });
   }
 
@@ -276,7 +276,7 @@ Deno.serve(async (req) => {
         token,
         created_by: user.id,
         source_recipe_id: recipeId,
-        snapshot,
+        snapshot: toJson(snapshot),
       });
 
       if (!insertError) {
@@ -326,7 +326,7 @@ Deno.serve(async (req) => {
     });
   }
 
-  const snapshot = share.snapshot as RecipeSnapshot;
+  const snapshot = share.snapshot as unknown as RecipeSnapshot;
   const originalUrl =
     typeof snapshot.original_url === 'string' && snapshot.original_url.trim()
       ? snapshot.original_url.trim()

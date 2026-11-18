@@ -108,7 +108,7 @@ Deno.serve(async (req) => {
   let imageBase64: string | null = null;
   let imageMime = 'image/jpeg';
   let guestInstallId: string | null = null;
-  let requestId = crypto.randomUUID();
+  let requestId: string = crypto.randomUUID();
   let forceExtract = false;
   try {
     const body = await req.json();
@@ -844,7 +844,7 @@ Deno.serve(async (req) => {
   } catch (err) {
     console.error('extract-recipe error:', err);
 
-    if (userId && creditReservation) {
+    if (admin && userId && creditReservation) {
       const refunded = await compensateSignedInExtract(
         admin,
         userId,
@@ -853,7 +853,7 @@ Deno.serve(async (req) => {
       );
       compensationPending = !refunded;
       if (refunded) creditReservation = null;
-    } else if (!userId && guestInstallId && guestReservation) {
+    } else if (admin && !userId && guestInstallId && guestReservation) {
       const refunded = await compensateGuestExtraction(
         admin,
         guestInstallId,

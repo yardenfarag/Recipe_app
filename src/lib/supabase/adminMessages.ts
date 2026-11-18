@@ -9,6 +9,7 @@ import {
   type Targeting,
 } from '@/lib/inAppMessages';
 import { supabase } from '@/lib/supabase/client';
+import { toJson } from '@/lib/supabase/dbTypes';
 import { mapMessageFields, type InAppMessageRow } from '@/lib/supabase/inAppMessages';
 
 /** One row of admin_list_in_app_messages. */
@@ -164,7 +165,7 @@ export async function saveAdminMessage(draft: AdminMessageDraft): Promise<AdminM
     throw new Error(issues.map((issue) => issue.message).join(' '));
   }
 
-  const { data: id, error } = await supabase.rpc('admin_save_in_app_message', { p_message: payload });
+  const { data: id, error } = await supabase.rpc('admin_save_in_app_message', { p_message: toJson(payload) });
   if (error) throw error;
 
   const { data, error: readError } = await supabase.rpc('admin_list_in_app_messages', { p_id: id });

@@ -6,6 +6,7 @@ import {
 import { clearGuestRecipes, getGuestRecipes } from '@/lib/guestRecipes';
 import { recipeUrlOrigin } from '@/lib/recipeOrigin';
 import { supabase } from '@/lib/supabase/client';
+import { untypedInsert } from '@/lib/supabase/dbTypes';
 import type { RecipeTranslationContent } from '@/types/recipe';
 
 export type GuestRecipeMigrationResult = {
@@ -63,7 +64,7 @@ export async function migrateGuestRecipesToSupabase(
       source_language: recipe.source_language ?? 'en',
     };
 
-    const { data, error } = await supabase.from('recipes').insert(row).select('id').single();
+    const { data, error } = await supabase.from('recipes').insert(untypedInsert<'recipes'>(row)).select('id').single();
     if (error) {
       if (error.code === '23505') {
         const { data: mappedRecipe, error: mappedError } = await supabase
@@ -134,7 +135,7 @@ async function migrateGuestTranslations(
     instructions: content.instructions,
   }));
   if (rows.length === 0) return;
-  const { error } = await supabase.from('recipe_translations').upsert(rows, {
+  const { error } = await supabase.from('recipe_translations').upsert(rows.map((row) => untypedInsert<'recipe_translations'>(row)), {
     onConflict: 'recipe_id,language_code',
   });
   // Best-effort: recipes already migrated even if translation table is missing.

@@ -7,7 +7,7 @@ import {
   extractYouTubeId,
   type Platform,
 } from '../extraction/platform.ts';
-import type { SupabaseClient } from 'https://esm.sh/@supabase/supabase-js@2';
+import { type Db, type TablesUpdate, toJson } from '../core/supabaseAdmin.ts';
 
 import { recipeAppliancesOf } from './enrich/appliances.ts';
 import { deriveRecipeDiets, type DietsRecipeInput } from './enrich/recipeDiets.ts';
@@ -139,7 +139,7 @@ export function hubCardToExtractRecipe(card: Record<string, unknown>): HubRecipe
 }
 
 export async function findRecipeCard(
-  admin: SupabaseClient,
+  admin: Db,
   platform: Platform,
   url: string,
   contentId?: string | null,
@@ -167,7 +167,7 @@ export async function findRecipeCard(
 export type PublishedCard = { id: string; needsDiets: boolean };
 
 export async function publishRecipeCard(
-  admin: SupabaseClient,
+  admin: Db,
   recipe: HubRecipeSnapshot,
   contentId?: string | null,
 ): Promise<PublishedCard | null> {
@@ -187,8 +187,8 @@ export async function publishRecipeCard(
     title: recipe.title.trim(),
     image_url: recipe.image_url ?? null,
     source_video_url: recipe.source_video_url ?? null,
-    ingredients: recipe.ingredients ?? [],
-    instructions: recipe.instructions ?? [],
+    ingredients: toJson(recipe.ingredients ?? []),
+    instructions: toJson(recipe.instructions ?? []),
     servings: recipe.servings >= 1 ? recipe.servings : 1,
     calories: recipe.calories ?? null,
     estimated_time_minutes: recipe.estimated_time_minutes ?? null,
@@ -198,7 +198,7 @@ export async function publishRecipeCard(
     extraction_source: recipe.extraction_source ?? null,
     tags: recipe.tags ?? [],
     source_language: recipe.source_language ?? 'en',
-    appliances: recipe.appliances ?? null,
+    appliances: toJson(recipe.appliances ?? null),
     updated_at: new Date().toISOString(),
   };
 
@@ -231,7 +231,7 @@ export async function publishRecipeCard(
     return { id: existing.id as string, needsDiets };
   }
 
-  const fill: Record<string, unknown> = { updated_at: row.updated_at };
+  const fill: TablesUpdate<'recipe_cards'> = { updated_at: row.updated_at };
   if (shouldFillImage) fill.image_url = row.image_url;
   if (shouldFillAppliances) fill.appliances = row.appliances;
 
@@ -253,7 +253,7 @@ export async function publishRecipeCard(
  * usage row, because extract-recipe has already logged the extract by the time this runs.
  */
 export async function fillRecipeCardDiets(
-  admin: SupabaseClient,
+  admin: Db,
   cardId: string,
   recipe: DietsRecipeInput,
   userId: string | null,
@@ -285,7 +285,7 @@ export async function fillRecipeCardDiets(
 }
 
 export async function userContributesToHub(
-  admin: SupabaseClient,
+  admin: Db,
   userId: string,
 ): Promise<boolean> {
   const { data, error } = await admin
@@ -300,7 +300,7 @@ export async function userContributesToHub(
   return data?.contribute_to_hub !== false;
 }
 
-export async function touchRecipeCardHit(admin: SupabaseClient, cardId: string): Promise<void> {
+export async function touchRecipeCardHit(admin: Db, cardId: string): Promise<void> {
   const { error } = await admin.rpc('touch_recipe_card_hit', { p_card_id: cardId });
   if (error) console.error('[recipe-cards] hit increment failed', error);
 }

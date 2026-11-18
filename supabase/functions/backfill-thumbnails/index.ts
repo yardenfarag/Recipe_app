@@ -1,4 +1,5 @@
-import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
+import { createClient, type SupabaseClient } from 'https://esm.sh/@supabase/supabase-js@2.110.6';
+import type { Database } from '../_shared/core/database.types.ts';
 import { corsHeaders, jsonResponse } from '../_shared/core/cors.ts';
 import { extractYouTubeId, needsThumbnailBackfill, youTubeThumbnail } from '../_shared/extraction/platform.ts';
 import { resolveYouTubeThumbnailUrl } from '../_shared/extraction/sources/youtube.ts';
@@ -46,7 +47,7 @@ Deno.serve(async (req) => {
     return jsonResponse({ error: 'Server misconfigured' }, 500);
   }
 
-  const supabase = createClient(supabaseUrl, supabaseAnonKey, {
+  const supabase = createClient<Database>(supabaseUrl, supabaseAnonKey, {
     global: { headers: { Authorization: authHeader } },
   });
 
@@ -95,7 +96,7 @@ function normalizeRecipeIds(recipeIds: unknown): string[] {
 }
 
 async function backfillUserRecipesByVideoIds(
-  supabase: ReturnType<typeof createClient>,
+  supabase: SupabaseClient<Database>,
   videoIds: string[],
   recipeIds: string[],
 ): Promise<Array<{ id: string; image_url: string }>> {
@@ -143,7 +144,7 @@ async function backfillUserRecipesByVideoIds(
       continue;
     }
 
-    if (data) updated.push(data);
+    if (data?.image_url) updated.push({ id: data.id, image_url: data.image_url });
   }
 
   return updated;

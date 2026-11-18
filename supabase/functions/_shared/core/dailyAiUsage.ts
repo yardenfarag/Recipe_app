@@ -1,4 +1,4 @@
-import type { SupabaseClient } from 'https://esm.sh/@supabase/supabase-js@2';
+import type { Db } from './supabaseAdmin.ts';
 
 export type DailyAiAction =
   | 'substitution'
@@ -15,7 +15,7 @@ export function currentUtcDate(date = new Date()): string {
 }
 
 export async function reserveDailyAiUsage(
-  admin: SupabaseClient,
+  admin: Db,
   userId: string,
   action: DailyAiAction,
   limit: number,
@@ -35,7 +35,7 @@ export async function reserveDailyAiUsage(
 }
 
 export async function refundDailyAiUsage(
-  admin: SupabaseClient,
+  admin: Db,
   userId: string,
   action: DailyAiAction,
   usageDate: string,
@@ -50,7 +50,7 @@ export async function refundDailyAiUsage(
 }
 
 export async function reserveGuestDailyAiUsage(
-  admin: SupabaseClient,
+  admin: Db,
   installId: string,
   action: DailyAiAction,
   limit: number,
@@ -70,7 +70,7 @@ export async function reserveGuestDailyAiUsage(
 }
 
 export async function refundGuestDailyAiUsage(
-  admin: SupabaseClient,
+  admin: Db,
   installId: string,
   action: DailyAiAction,
   usageDate: string,

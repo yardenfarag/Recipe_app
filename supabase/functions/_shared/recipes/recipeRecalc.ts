@@ -14,7 +14,7 @@
  *   for a retry.
  */
 
-import type { SupabaseClient } from 'https://esm.sh/@supabase/supabase-js@2';
+import { type Db, untypedUpdate } from '../core/supabaseAdmin.ts';
 
 import { classifyGeminiRecipe } from '../extraction/classifyRecipe.ts';
 import type { GeminiUsageSnapshot } from '../llm/pricing.ts';
@@ -49,7 +49,7 @@ function asArray<T>(value: unknown): T[] {
 }
 
 export async function runRecipeRecalculation(opts: {
-  admin: SupabaseClient;
+  admin: Db;
   userId: string;
   /** The row as saved, with this run's recalc_started_at. */
   recipe: Row;
@@ -98,7 +98,7 @@ export async function runRecipeRecalculation(opts: {
       }).missingFields;
       const { data: updated, error: updateError } = await admin
         .from('recipes')
-        .update(update)
+        .update(untypedUpdate<'recipes'>(update))
         .eq('id', recipeId)
         .eq('recalc_started_at', row.recalc_started_at as string)
         .select('id');

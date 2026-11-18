@@ -31,6 +31,15 @@ jobs:
       - name: Start Supabase
         run: supabase start -x studio,imgproxy,inbucket,realtime,edge-runtime,logflare,vector,supavisor
 
+      # The app and the functions share these types (PIN-32). A migration change without `npm run db:types` fails here.
+      - name: Generated types match the migrations
+        run: |
+          supabase gen types typescript --local --schema public > /tmp/database.types.ts
+          if ! diff -u supabase/functions/_shared/core/database.types.ts /tmp/database.types.ts; then
+            echo "::error::supabase/functions/_shared/core/database.types.ts is out of date. Run 'npm run db:types' with local Supabase started and commit the result."
+            exit 1
+          fi
+
       - name: Database tests
         run: supabase test db
 
@@ -44,6 +53,9 @@ jobs:
         uses: denoland/setup-deno@v2
         with:
           deno-version: v2.x
+
+      - name: Type-check Edge Functions
+        run: deno check --no-lock --config supabase/functions/deno.json $(find supabase/functions -name '*.ts')
 
       - name: Edge Function tests
         # --config keeps Deno off the repo-root package.json, which would make it look for npm types in a node_modules CI never installs.

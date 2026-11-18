@@ -13,7 +13,7 @@
  * capped at RECIPE_EDIT_DAILY_LIMIT saves a day. Never touches recipe_cards.
  */
 
-import type { SupabaseClient } from 'https://esm.sh/@supabase/supabase-js@2';
+import type { Db } from '../_shared/core/supabaseAdmin.ts';
 
 import { sanitizeRecipeAppliances } from '../_shared/recipes/enrich/appliances.ts';
 import { classifyGeminiRecipe } from '../_shared/extraction/classifyRecipe.ts';
@@ -35,7 +35,7 @@ import {
 } from '../_shared/recipes/recipeEditTypes.ts';
 import { createAuthedSupabase } from '../_shared/core/recipeLookup.ts';
 import { rowsMissingAmounts, runRecipeRecalculation, withoutAmounts } from '../_shared/recipes/recipeRecalc.ts';
-import { createServiceSupabase } from '../_shared/core/supabaseAdmin.ts';
+import { createServiceSupabase, type TablesInsert, untypedUpdate } from '../_shared/core/supabaseAdmin.ts';
 import { logUsageEvent } from '../_shared/core/usageLog.ts';
 
 declare const EdgeRuntime: { waitUntil(promise: Promise<unknown>): void } | undefined;
@@ -44,7 +44,7 @@ declare const EdgeRuntime: { waitUntil(promise: Promise<unknown>): void } | unde
 const MAX_BODY_BYTES = 2_400_000;
 
 type Row = Record<string, unknown>;
-type Admin = SupabaseClient;
+type Admin = Db;
 
 const respond = (body: SaveRecipeEditResult, status = 200) => jsonResponse(body, status);
 const failed = (code: 'auth_required' | 'not_found' | 'server_error', message: string, status: number) =>
@@ -207,7 +207,7 @@ async function updateRecipe(
 ): Promise<Row | null> {
   const { data, error } = await admin
     .from('recipes')
-    .update(columns)
+    .update(untypedUpdate<'recipes'>(columns))
     .eq('id', recipeId)
     .eq('user_id', userId)
     .select('*')
@@ -238,7 +238,7 @@ function importColumns(source: RecipeImportSource): Row {
 async function insertRecipe(admin: Admin, userId: string, columns: Row): Promise<Row | null> {
   const { data, error } = await admin
     .from('recipes')
-    .insert({ ...columns, user_id: userId, extraction_status: 'full' })
+    .insert({ ...untypedUpdate<'recipes'>(columns), user_id: userId, extraction_status: 'full' } as TablesInsert<'recipes'>)
     .select('*')
     .single();
   if (error) console.error('[save-recipe-edit] insert failed', error);

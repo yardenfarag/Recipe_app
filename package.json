@@ -81,6 +81,7 @@
     "serve:web": "expo serve",
     "lint": "expo lint",
     "typecheck": "tsc --noEmit",
+    "db:types": "supabase gen types typescript --local --schema public > supabase/functions/_shared/core/database.types.ts",
     "test": "vitest run",
     "test:watch": "vitest",
     "postinstall": "patch-package"

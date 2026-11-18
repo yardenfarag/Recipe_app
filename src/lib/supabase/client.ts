@@ -3,6 +3,7 @@ import 'react-native-url-polyfill/auto';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { createClient } from '@supabase/supabase-js';
 
+import type { Database } from '../../../supabase/functions/_shared/core/database.types';
 import { createPreviewFetch, parsePreviewFunctions } from './functionPreview';
 
 const supabaseUrl = normalizeSupabaseUrl(process.env.EXPO_PUBLIC_SUPABASE_URL);
@@ -44,7 +45,7 @@ const previewFetch = __DEV__
   ? createPreviewFetch(parsePreviewFunctions(process.env.EXPO_PUBLIC_FUNCTION_PREVIEWS))
   : undefined;
 
-export const supabase = createClient(supabaseUrl, supabaseKey, {
+export const supabase = createClient<Database>(supabaseUrl, supabaseKey, {
   ...(previewFetch ? { global: { fetch: previewFetch } } : {}),
   auth: {
     storage: authStorage,

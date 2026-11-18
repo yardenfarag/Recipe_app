@@ -9,7 +9,7 @@
 import { jsonResponse } from '../_shared/core/cors.ts';
 import { sendPurchaseEmail } from '../_shared/email/purchase.ts';
 import { polarDecision, polarEventSummary, polarSignatureValid } from '../_shared/billing/polarPurchase.ts';
-import { createServiceSupabase } from '../_shared/core/supabaseAdmin.ts';
+import { createServiceSupabase, sqlNullable } from '../_shared/core/supabaseAdmin.ts';
 
 const PROVIDER = 'polar';
 
@@ -71,7 +71,7 @@ Deno.serve(async (req) => {
     const { data, error } = await admin.rpc('revoke_purchased_credits', {
       p_provider: PROVIDER,
       p_transaction_id: decision.orderId,
-      p_event_id: eventId,
+      p_event_id: sqlNullable(eventId),
       p_metadata: { store: 'polar' },
     });
     if (error) {
@@ -88,7 +88,7 @@ Deno.serve(async (req) => {
     p_user_id: decision.userId,
     p_amount: decision.credits,
     p_provider: PROVIDER,
-    p_event_id: eventId,
+    p_event_id: sqlNullable(eventId),
     p_transaction_id: decision.orderId,
     p_product_id: decision.packId,
     p_metadata: { store: 'polar', occurred_at: decision.occurredAt },
