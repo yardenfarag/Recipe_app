@@ -1,0 +1,129 @@
+Pinch — Spanish and Russian store listings (PIN-61)
+===================================================
+
+Localized copy for App Store Connect and Play Console, the second step of PIN-61 after Hebrew and
+Arabic (STORE_LISTINGS_HE_AR.txt). The English source and the character limits are in
+STORE_LAUNCH.txt → "Store listing copy". Like the Hebrew and Arabic copy, these leave out the
+"reads the whole video" section.
+
+Character limits, and keywords that repeat a word from the name or subtitle (Apple indexes
+those already), are checked by scripts/store-listings.test.mjs, which runs with the other
+tests. Keep each value on one line after its label so the test can read it.
+
+Screenshots (rendered by assets/store/appstore/src/render.sh es|ru):
+  App Store:   assets/store/appstore/{es,ru}/iphone-1206x2622/*.png  (6.9")
+  Google Play: assets/store/appstore/{es,ru}/google-play-1080x1920/*.png
+  Feature graphic and app icon stay English.
+
+Paste them with scripts/store-listing-wizard.sh es|ru.
+
+Spanish is written for Latin America ("video", tú). Use it for App Store "Spanish (Mexico)",
+which Latin American storefronts read, and Play "Spanish (Latin America) – es-419". It also
+works for Spain if you want to add "Spanish (Spain)" / es-ES with the same text.
+Russian addresses the reader as вы, as most Russian store listings do.
+
+
+=============================== SPANISH (es) ===============================
+
+--- App Store ---
+Name (≤30): Pinch: Recetario de videos
+Subtitle (≤30): Recetas de TikTok y YouTube
+Promotional text (≤170): Convierte los videos de cocina que guardas en recetas que de verdad cocinas: ingredientes, pasos y una lista de compras por pasillos. 10 recetas gratis al mes.
+Keywords (≤100): instagram,reels,lista,compras,super,cocinar,organizador,menu,despensa,ia,guardar,escanear,refri
+
+--- Google Play ---
+App name (≤30): Pinch: Guarda recetas de video
+Short description (≤80): Convierte videos de TikTok, Instagram y YouTube en recetas y listas de compras.
+
+--- Full description (both stores, ≤4000) ---
+Guarda recetas de TikTok, Instagram y YouTube, y cocínalas de verdad.
+
+Pinch es el recetario de las recetas que ves en tu feed. Comparte un video de cocina con Pinch: su IA escribe los ingredientes y los pasos, y los manda a tu lista de compras. Se acabó pausar, retroceder y hacer capturas de pantalla.
+
+GUARDA RECETAS DE DONDE SEA
+• Recetas de TikTok y Reels de Instagram: toca Compartir y elige Pinch, o pega el enlace
+• De un video de YouTube a una receta: ingredientes y pasos, por escrito
+• Sitios de recetas: pega el enlace y sáltate la historia de vida
+• Libros de cocina y recetas escritas a mano: toma una foto de la página
+
+DE LA RECETA A LA LISTA DE COMPRAS EN UN TOQUE
+• Si varias recetas llevan el mismo ingrediente, se suma en una sola línea
+• Ordenada por pasillos, para recorrer el súper una sola vez
+• Lo que siempre tienes en casa no entra en la lista
+
+COCINA CON EL VIDEO
+• El video original junto a los pasos
+• Modo cocina paso a paso con temporizadores
+• Cambia el número de porciones y las cantidades se ajustan solas
+
+HAZLA A TU GUSTO
+• Haz un remix de cualquier receta con IA: más saludable, vegetariana, sin gluten y mucho más
+• Cambia un ingrediente y los pasos se actualizan
+• ¿Qué hay en tu refrigerador? Tómale una foto y Pinch ordena tus recetas guardadas según lo que tienes
+
+UN RECETARIO EN TU IDIOMA
+Usa Pinch en español, inglés, ruso, hebreo o árabe. ¿Guardaste una receta de un video en otro idioma? Tradúcela a cualquiera de ellos, o al alemán o al francés, en un toque.
+
+TU RECETARIO, EN TODAS PARTES
+Todas tus recetas guardadas en un solo lugar, organizadas en colecciones para la cena, la repostería o las noches con prisa. Inicia sesión y tu recetario se sincroniza entre tu teléfono y la web, en pinch-app.io.
+
+GRATIS PARA EMPEZAR, SIN SUSCRIPCIÓN
+Cada cuenta recibe 10 créditos gratis al mes para recetas. ¿Necesitas más? Compra un paquete de créditos en la app. Los créditos que compras no vencen y no hay suscripción.
+
+PRIVADO DESDE EL PRINCIPIO
+Pinch no vende tu información personal. Puedes eliminar tu cuenta y tus datos cuando quieras desde Ajustes.
+
+Míralo. Guárdalo. Cocínalo.
+
+
+=============================== RUSSIAN (ru) ===============================
+
+--- App Store ---
+Name (≤30): Pinch: Книга рецептов
+Subtitle (≤30): Рецепты из TikTok и YouTube
+Promotional text (≤170): Превращайте сохранённые кулинарные видео в рецепты, по которым удобно готовить: ингредиенты, шаги и список покупок по отделам. 10 рецептов в месяц бесплатно.
+Keywords (≤100): instagram,инстаграм,reels,тикток,ютуб,нейросеть,рецепт,видео,список,покупок,продукты,холодильник
+
+--- Google Play ---
+App name (≤30): Pinch: Рецепты из видео
+Short description (≤80): Рецепты и список покупок из видео в TikTok, Instagram и YouTube.
+
+--- Full description (both stores, ≤4000) ---
+Сохраняйте рецепты из TikTok, Instagram и YouTube — и правда готовьте по ним.
+
+Pinch — книга рецептов для всего, что попадается вам в ленте. Поделитесь кулинарным видео с Pinch, и ИИ выпишет ингредиенты и шаги, а продукты сразу добавит в список покупок. Больше никаких пауз, перемоток и скриншотов.
+
+СОХРАНЯЙТЕ РЕЦЕПТЫ ОТОВСЮДУ
+• Рецепты из TikTok и Reels в Instagram: нажмите «Поделиться» и выберите Pinch или вставьте ссылку
+• Из видео на YouTube в рецепт: ингредиенты и шаги текстом
+• Сайты с рецептами: вставьте ссылку — и без долгих предисловий
+• Кулинарные книги и рукописные рецепты: сфотографируйте страницу
+
+ОТ РЕЦЕПТА ДО СПИСКА ПОКУПОК В ОДНО КАСАНИЕ
+• Одинаковые ингредиенты из разных рецептов объединяются в одну строку
+• Список разбит по отделам — обойдёте магазин за один раз
+• То, что всегда есть дома, в список не попадает
+
+ГОТОВЬТЕ ПО ВИДЕО
+• Исходное видео рядом с шагами
+• Пошаговый режим готовки со встроенными таймерами
+• Меняйте число порций — количества пересчитаются сами
+
+ПОД ВАШ ВКУС
+• Ремикс любого рецепта с помощью ИИ: сделайте его полезнее, вегетарианским, без глютена — и не только
+• Замените ингредиент, и шаги обновятся
+• Что в холодильнике? Сфотографируйте его, и Pinch отсортирует сохранённые рецепты по тому, что у вас есть
+
+НА ВАШЕМ ЯЗЫКЕ
+Pinch работает на русском, английском, испанском, иврите и арабском. Сохранили рецепт из видео на другом языке? Переведите его на любой из этих языков, а также на немецкий или французский, в одно касание.
+
+ВАША КНИГА РЕЦЕПТОВ ВСЕГДА С ВАМИ
+Все сохранённые рецепты в одном месте, по подборкам: ужины, выпечка, быстрые блюда на будни. Войдите в аккаунт, и рецепты синхронизируются между телефоном и сайтом pinch-app.io.
+
+НАЧНИТЕ БЕСПЛАТНО, БЕЗ ПОДПИСКИ
+В начале каждого месяца вы получаете 10 бесплатных кредитов на рецепты. Нужно больше? Купите пакет кредитов в приложении. Купленные кредиты не сгорают, и никакой подписки.
+
+КОНФИДЕНЦИАЛЬНОСТЬ ПО УМОЛЧАНИЮ
+Pinch не продаёт ваши личные данные. Удалить аккаунт и данные можно в любой момент в «Настройках».
+
+Увидели. Сохранили. Приготовили.

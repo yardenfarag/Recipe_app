@@ -75,6 +75,8 @@ Production Android build finished (AAB):
 9. eas.json submit.production.ios.ascAppId is set (6796310453).
 
 --- Store listing copy (Play Store + App Store) ---
+Localized listings and screenshots (PIN-61): STORE_LISTINGS_HE_AR.txt (Hebrew, Arabic) and
+STORE_LISTINGS_ES_RU.txt (Spanish, Russian).
 Keywords (PIN-10): recipe keeper app, recipe organizer app, save recipes from
 TikTok, save Instagram recipes, YouTube video to recipe, AI recipe extractor,
 recipe to shopping list. Feature claims match landing/index.html; change both
@@ -124,7 +126,7 @@ Full description (both stores, ≤4000):
    Keep every saved recipe in one place and group them for dinner, baking, or easy weeknights. Sign in and your library syncs between your phone and the web at pinch-app.io.
 
    FREE TO START, NO SUBSCRIPTION
-   Every account gets 10 free recipe credits each month. Need more? Buy a credit pack in the app. Credits never expire, and there's no subscription.
+   Every account gets 10 free recipe credits each month. Need more? Buy a credit pack in the app. Credits you buy never expire, and there's no subscription.
 
    PRIVATE BY DEFAULT
    Pinch doesn't sell your personal information. You can delete your account and data at any time in Settings.

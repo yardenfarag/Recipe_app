@@ -4,7 +4,8 @@
 <meta charset="utf-8">
 <link rel="stylesheet" href="shared.css">
 <style>
-  /* One continuous 6-frame panorama, 1206 x 2622 per frame. render.sh picks a frame via #frame=N&w=..&h=.. */
+  /* One continuous 6-frame panorama, 1206 x 2622 per frame. render.sh picks a frame via #frame=N&w=..&h=..
+     and a language via #lang=he|ar (see i18n.js; English is the default and lives in this file). */
   #stage { position: absolute; left: 0; top: 0; width: 7236px; height: 2622px; transform-origin: 0 0;
     background:
       radial-gradient(1400px 1100px at 300px 300px, #2a2140 0%, transparent 70%),
@@ -329,6 +330,7 @@
   const yOff = (h - H * s) / 2;
   if (!p.has('pano')) stage.style.transform = `translate(${-f * 1206 * s + (w - 1206 * s) / 2}px, ${yOff}px) scale(${s})`;
 </script>
+<script src="i18n.js"></script>
 <script src="food.js"></script>
 </body>
 </html>
