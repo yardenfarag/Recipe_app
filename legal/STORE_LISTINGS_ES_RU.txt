@@ -33,10 +33,10 @@ Keywords (≤100): instagram,reels,lista,compras,super,cocinar,organizador,menu,
 
 --- Google Play ---
 App name (≤30): Pinch: Guarda recetas de video
-Short description (≤80): Convierte videos de TikTok, Instagram y YouTube en recetas y listas de compras.
+Short description (≤80): De video a receta y lista de compras. Sin suscripción, 10 recetas gratis al mes.
 
 --- Full description (both stores, ≤4000) ---
-Guarda recetas de TikTok, Instagram y YouTube, y cocínalas de verdad.
+Comparte un video de cocina de TikTok, Instagram o YouTube y Pinch te escribe la receta y la lista de la compra. Sin suscripción: 10 recetas gratis cada mes.
 
 Pinch es el recetario de las recetas que ves en tu feed. Comparte un video de cocina con Pinch: su IA escribe los ingredientes y los pasos, y los manda a tu lista de compras. Se acabó pausar, retroceder y hacer capturas de pantalla.
 
@@ -86,10 +86,10 @@ Keywords (≤100): instagram,инстаграм,reels,тикток,ютуб,не
 
 --- Google Play ---
 App name (≤30): Pinch: Рецепты из видео
-Short description (≤80): Рецепты и список покупок из видео в TikTok, Instagram и YouTube.
+Short description (≤80): Из видео в рецепт и список покупок. Без подписки, 10 рецептов в месяц бесплатно.
 
 --- Full description (both stores, ≤4000) ---
-Сохраняйте рецепты из TikTok, Instagram и YouTube — и правда готовьте по ним.
+Поделитесь кулинарным видео из TikTok, Instagram или YouTube, и Pinch запишет рецепт и список покупок. Без подписки: 10 бесплатных рецептов каждый месяц.
 
 Pinch — книга рецептов для всего, что попадается вам в ленте. Поделитесь кулинарным видео с Pinch, и ИИ выпишет ингредиенты и шаги, а продукты сразу добавит в список покупок. Больше никаких пауз, перемоток и скриншотов.
 

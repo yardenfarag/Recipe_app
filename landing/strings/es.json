@@ -6,10 +6,10 @@
   },
   "meta": {
     "title": "Pinch: Recipe Library | Guarda recetas de TikTok, Instagram y YouTube",
-    "description": "Pinch es una app para guardar recetas que convierte videos de cocina de TikTok, Instagram y YouTube en recetas escritas, con ingredientes, pasos y lista de la compra. Lee el video entero, no solo la descripción.",
+    "description": "Comparte un video de cocina de TikTok, Instagram o YouTube y Pinch te escribe la receta y la lista de la compra. Sin suscripción: 10 recetas gratis cada mes.",
     "ogDescription": "Convierte un video de cocina en ingredientes, pasos y lista de la compra.",
     "ogImageAlt": "Pinch: un video de pasta de TikTok convertido en una ficha de receta guardada. ¿Lo viste en TikTok? Ahora es tu cena.",
-    "appDescription": "Pinch es una app para guardar recetas que convierte videos de cocina de TikTok, Instagram y YouTube en recetas escritas, con ingredientes, pasos y lista de la compra.",
+    "appDescription": "Comparte un video de cocina de TikTok, Instagram o YouTube y Pinch te escribe la receta y la lista de la compra. Sin suscripción: 10 recetas gratis cada mes.",
     "disambiguation": "La app de recetas de pinch-app.io que convierte videos de cocina de TikTok, Instagram y YouTube en recetas escritas. Aparece como Pinch: Recipe Library en el App Store y en Google Play. No tiene relación con otras apps o sitios llamados Pinch."
   },
   "stores": {
@@ -20,8 +20,8 @@
   "hero": {
     "tagline": "Míralo. Guárdalo. Cocínalo.",
     "title": "Guarda recetas de <span>TikTok, Instagram y YouTube</span>",
-    "lede": "Convierte cualquier video de cocina en una receta con la que sí puedes cocinar.",
-    "ledeMore": "Ingredientes, pasos y lista de la compra, todo en un solo lugar.",
+    "lede": "Comparte un video de cocina y obtén los ingredientes, los pasos y la lista de la compra.",
+    "ledeMore": "Sin pausar, sin rebobinar, sin suscripción.",
     "trustLabel": "Por qué Pinch",
     "trust": ["10 recetas gratis cada mes", "Sin suscripción", "iPhone, Android y cualquier navegador"],
     "shotAlt": "Una receta guardada en Pinch: pasta con limón y ajo, con su video de origen, las porciones y los ingredientes."
