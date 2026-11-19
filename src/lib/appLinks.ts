@@ -1,4 +1,4 @@
-/** Hosts whose links the app claims (universal links / Android App Links, PIN-110). */
+/** Hosts whose links the app claims (universal links / Android App Links, PIN-110, PIN-124). */
 const APP_LINK_HOSTS = new Set(['pinch-app.io', 'www.pinch-app.io']);
 
 /**
@@ -17,6 +17,9 @@ export function appPathForWebLink(path: string): string {
 
   const share = /^\/(?:app\/)?s\/([^/]+)\/?$/.exec(url.pathname);
   if (share) return `/s/${share[1]}`;
-  // Only /s/* is claimed today; any other pinch-app.io page opens the library.
+  // Public Hub recipe page (PIN-124): the Hub screen loads a card by its public slug too.
+  const hub = /^\/r\/([^/]+)\/?$/.exec(url.pathname);
+  if (hub) return `/hub/${hub[1]}`;
+  // Only /s/* and /r/* are claimed; any other pinch-app.io page opens the library.
   return '/';
 }

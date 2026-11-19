@@ -3,3 +3,5 @@ User-agent: *
 Disallow: /app/
 
 Sitemap: https://pinch-app.io/sitemap.xml
+# Public Hub recipe pages (/r/), served by the share-page Worker (PIN-124).
+Sitemap: https://pinch-app.io/sitemap-recipes.xml
