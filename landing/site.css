@@ -292,23 +292,29 @@ h1 span {
 .btn:hover {
   opacity: 0.9;
 }
-.btn-store {
-  background: #fff;
-  color: #000;
+/* The official App Store and Google Play badges (landing/badges, one of each per language), as
+   tall as the web button. The Google Play files are cropped to the badge's edge, so both size
+   the same way. */
+.actions {
+  align-items: center;
 }
-.btn-store svg {
-  width: 22px;
-  height: 22px;
-}
-.btn-store small {
+.store-badge {
   display: block;
-  font-size: 11px;
-  font-weight: 400;
-  letter-spacing: 0.2px;
+  border-radius: 8px;
 }
-.btn-store b {
+.store-badge:hover {
+  opacity: 0.9;
+}
+.store-badge img {
   display: block;
-  line-height: 1.1;
+  width: auto;
+  height: 56px;
+}
+/* Smaller on phones, so both badges fit on one row at 360px. */
+@media (max-width: 560px) {
+  .store-badge img {
+    height: 44px;
+  }
 }
 .btn-web {
   background: var(--pink-button);
@@ -589,19 +595,6 @@ footer button {
 }
 footer button:hover {
   color: var(--cream);
-}
-
-/* App Store and Google Play: the store logo alone, the way Apple shows it. */
-.btn-apple,
-.btn-play {
-  min-width: 0;
-  width: 64px;
-  padding: 0;
-}
-.btn-apple svg,
-.btn-play svg {
-  width: 26px;
-  height: 26px;
 }
 
 /* Scroll-in: fade and lift, once. Only with JS, so nothing stays hidden without it. */

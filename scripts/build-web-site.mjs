@@ -13,7 +13,7 @@
 //   /404.html        the app shell, so /app/<route> deep links load the app.
 //                    Its inline script sends old root links (/s/…, /auth-callback…) to /app/….
 import { execSync } from 'node:child_process';
-import { copyFileSync, mkdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
+import { copyFileSync, cpSync, mkdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 
 import { contentHashWebChunks } from './content-hash-web-chunks.mjs';
@@ -54,6 +54,8 @@ copy('landing/og-image.jpg');
 copy('landing/manifest.json');
 copy('landing/icon-192.png');
 copy('landing/icon-512.png');
+// The App Store and Google Play badges, one of each per language: /badges/app-store-<lang>.svg.
+cpSync(join(root, 'landing/badges'), join(dist, 'badges'), { recursive: true });
 copy('dist/app/index.html', '404.html');
 
 const site = loadSite(root);
