@@ -25,7 +25,7 @@ Enable Pages (one-time, required before the workflow succeeds):
 --- Play Console ---
 1. Create app: Pinch / package com.pinch.myapp
 2. Store listing (full description shared with the App Store; see "Store listing copy" below):
-   App name (≤30):          Pinch: Save Recipes from Video
+   App name (≤30):          Pinch: Recipe Library
    Short description (≤80): Video to recipe & shopping list. No subscription, 10 free recipes a month.
    Full description (≤4000): the shared full description below.
 3. Configure and sandbox-test RevenueCat consumable packs before store submission.
@@ -83,7 +83,7 @@ recipe to shopping list. Feature claims match landing/index.html; change both
 together. Screenshots: assets/store/phone (library, recipe, snap, list).
 
 App Store only:
-   Name (≤30):     Pinch: Video Recipe Organizer
+   Name (≤30):     Pinch: Recipe Library
    Subtitle (≤30): Save TikTok & YouTube Recipes
    Promotional text (≤170):
    Turn the cooking videos you save into recipes you can cook from: ingredients, steps, and a shopping list grouped by aisle. 10 free recipes every month.
