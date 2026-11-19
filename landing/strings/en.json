@@ -6,10 +6,10 @@
   },
   "meta": {
     "title": "Pinch: Recipe Library | Save Recipes from TikTok, Instagram & YouTube",
-    "description": "Pinch is a recipe keeper app that turns TikTok, Instagram, and YouTube cooking videos into written recipes, with ingredients, steps, and a shopping list. It reads the whole video, not just the caption.",
+    "description": "Share a cooking video from TikTok, Instagram, or YouTube and Pinch writes out the recipe and your shopping list. No subscription: 10 free recipes every month.",
     "ogDescription": "Turn a cooking video into ingredients, steps, and a shopping list.",
     "ogImageAlt": "Pinch: a TikTok pasta video turned into a saved recipe card. Saw it on TikTok? Now it's dinner.",
-    "appDescription": "Pinch is a recipe keeper app that turns TikTok, Instagram, and YouTube cooking videos into written recipes, with ingredients, steps, and a shopping list.",
+    "appDescription": "Share a cooking video from TikTok, Instagram, or YouTube and Pinch writes out the recipe and your shopping list. No subscription: 10 free recipes every month.",
     "disambiguation": "The recipe app at pinch-app.io that turns TikTok, Instagram, and YouTube cooking videos into written recipes. Listed as Pinch: Recipe Library on the App Store and Google Play. Not related to other apps or sites named Pinch."
   },
   "stores": {
@@ -20,8 +20,8 @@
   "hero": {
     "tagline": "See it. Snap it. Cook it.",
     "title": "Save recipes from <span>TikTok, Instagram &amp; YouTube</span>",
-    "lede": "Turn any cooking video into a recipe you can actually cook from.",
-    "ledeMore": "Ingredients, steps, and a shopping list, all in one place.",
+    "lede": "Share a cooking video and get the ingredients, steps, and shopping list.",
+    "ledeMore": "No pausing, no rewinding, no subscription.",
     "trustLabel": "Why Pinch",
     "trust": ["10 free recipes every month", "No subscription", "iPhone, Android and any browser"],
     "shotAlt": "A recipe saved in Pinch: lemon garlic pasta, with its source video, servings, and ingredients."
