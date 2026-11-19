@@ -198,12 +198,12 @@ finish() {
 # the whole file before the first prompt, so an edit mid-run can't break it.
 # ──────────────────────────────────────────────────────────────────────────
 
-# Usage: scripts/store-listing-wizard.sh he|ar
-# Puts a localized listing (legal/STORE_LISTINGS_HE_AR.txt) and its screenshots into App Store
+# Usage: scripts/store-listing-wizard.sh he|ar|es|ru
+# Puts a localized listing (legal/STORE_LISTINGS_*.txt) and its screenshots into App Store
 # Connect and Play Console, one field at a time, copying each value to the clipboard.
 
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
-LISTINGS="$ROOT/legal/STORE_LISTINGS_HE_AR.txt"
+LISTINGS=""  # the STORE_LISTINGS_*.txt file holding the language, found in run_wizard
 
 # listing LANG STORE LABEL prints one field. STORE is "App Store", "Google Play" or "Full description".
 listing() {
@@ -256,11 +256,14 @@ LANG_CODE="${1:-}"
 case "$LANG_CODE" in
   he) LANG_NAME="Hebrew"; PLAY_LANG="Hebrew – iw-IL" ;;
   ar) LANG_NAME="Arabic"; PLAY_LANG="Arabic – ar" ;;
-  *) echo "Usage: $0 he|ar" >&2; exit 1 ;;
+  es) LANG_NAME="Spanish (Mexico)"; PLAY_LANG="Spanish (Latin America) – es-419" ;;
+  ru) LANG_NAME="Russian"; PLAY_LANG="Russian – ru-RU" ;;
+  *) echo "Usage: $0 he|ar|es|ru" >&2; exit 1 ;;
 esac
 SHOTS="$ROOT/assets/store/appstore/$LANG_CODE"
 [[ -d "$SHOTS/iphone-1206x2622" ]] || { echo "No screenshots in $SHOTS; run assets/store/appstore/src/render.sh $LANG_CODE" >&2; exit 1; }
-listing "$LANG_CODE" "App Store" "Name" >/dev/null || { echo "No $LANG_CODE listing in $LISTINGS" >&2; exit 1; }
+LISTINGS=$(grep -l "^=* [A-Z]* ($LANG_CODE) =*$" "$ROOT"/legal/STORE_LISTINGS_*.txt | head -n1)
+[[ -n "$LISTINGS" ]] && listing "$LANG_CODE" "App Store" "Name" >/dev/null || { echo "No $LANG_CODE listing in legal/STORE_LISTINGS_*.txt" >&2; exit 1; }
 
 TOTAL_STAGES=5
 

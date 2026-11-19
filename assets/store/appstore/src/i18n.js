@@ -1,6 +1,6 @@
-// Localized store screenshots. screenshots.html stays written in English; with #lang=he or #lang=ar this
-// script swaps each English string for its translation, flips every frame right-to-left and loads fonts
-// that cover the script. Keys are the English text exactly as it appears in the page (an element's
+// Localized store screenshots. screenshots.html stays written in English; with #lang=he|ar|es|ru this
+// script swaps each English string for its translation, loads fonts that cover the script and, for Hebrew and
+// Arabic, flips every frame right-to-left. Keys are the English text exactly as it appears in the page (an element's
 // innerHTML, or a single text node). Add #check=1 to outline any English text that is still showing.
 (() => {
   const STRINGS = {
@@ -186,12 +186,199 @@
       '15 min · Easy': '15 د · سهل',
       'Free recipes every month. No subscription.': 'وصفات مجانية كل شهر. بلا اشتراك.',
     },
+    es: {
+      // frame 1: hook
+      'Pinch · Recipe keeper': 'Pinch · Recetario',
+      "Saw it on TikTok?<br><em>Now it's dinner.</em>": '¿Lo viste en TikTok?<br><em>Ya es la cena.</em>',
+      '15-min lemon garlic pasta — you NEED this': 'Pasta de limón y ajo en 15 min — TIENES que probarla',
+      'Saved to Pinch': 'Guardada en Pinch',
+      'Lemon garlic pasta': 'Pasta de limón y&nbsp;ajo',
+      '25 min': '25 min',
+      Easy: 'Fácil',
+      'Serves 4': '4 porciones',
+      spaghetti: 'espagueti',
+      '400 g': '400 g',
+      'garlic cloves': 'dientes de ajo',
+      lemon: 'limón',
+      parmesan: 'parmesano',
+      '40 g': '40 g',
+      'Any recipe site': 'Cualquier sitio de recetas',
+      // frame 2: reads the whole video
+      'Smart extraction': 'Extracción inteligente',
+      'Reads the<br>whole video.': 'Lee todo<br>el video.',
+      'Not just the caption. Every pinch, splash and sneaky “just a bit more”.':
+        'No solo la descripción. Cada pizca, cada chorrito y cada “un poquito más”.',
+      'Snap a recipe': 'Sacar una receta',
+      'Weeknight shakshuka': 'Shakshuka rápida',
+      'Watching the video… 72%': 'Viendo el video… 72%',
+      'Found so far': 'Encontrado hasta ahora',
+      'crushed tomatoes': 'puré de tomate',
+      '800 g': '800 g',
+      eggs: 'huevos',
+      'smoked paprika': 'paprika ahumada',
+      '1 tsp': '1 cdta',
+      'Heard at 2:41': 'Se oye en el minuto 2:41',
+      '“…and a good<br>pinch of cumin”': '“…y una buena<br>pizca de comino”',
+      '+ 1 tsp cumin': '+ 1 cdta de comino',
+      // frame 3: make it yours
+      'Your kitchen, your rules': 'Tu cocina, tus reglas',
+      'Scale it.<br>Swap it.<br><em>Remix it.</em>': 'Ajústala.<br>Cámbiala.<br><em>Hazle un remix.</em>',
+      Servings: 'Porciones',
+      'Everything recalculates': 'Todo se recalcula',
+      'was 4': 'antes 4',
+      Swap: 'Cambiar',
+      'out of butter?': '¿sin mantequilla?',
+      butter: 'mantequilla',
+      'olive oil': 'aceite de oliva',
+      'Use ¾ the amount · 3 tbsp': 'Usa ¾ de la cantidad · 3 cdas',
+      'Remix: make it vegan': 'Remix: versión vegana',
+      'Gluten-free': 'Sin gluten',
+      Vegetarian: 'Vegetariana',
+      Healthier: 'Más sana',
+      Translate: 'Traducir',
+      'EN · ES · HE · AR · RU': 'ES · EN · RU · HE · AR',
+      // frame 4: shopping list
+      'Shopping list': 'Lista de compras',
+      'The list<br><em>writes itself.</em>': 'La lista<br><em>se hace sola.</em>',
+      'Add a recipe, get the groceries. Check things off in the aisle.':
+        'Agrega una receta y ya sabes qué comprar. Márcalo en el pasillo.',
+      List: 'Lista',
+      '5 LEFT · 2 CHECKED': '5 PENDIENTES · 2 MARCADOS',
+      'dark chocolate': 'chocolate amargo',
+      '200 g': '200 g',
+      garlic: 'ajo',
+      '1 head': '1 cabeza',
+      lemons: 'limones',
+      tahini: 'tahini',
+      '1 jar': '1 frasco',
+      cucumbers: 'pepinos',
+      '7 items added': '7 productos agregados',
+      'from 2 recipes': 'de 2 recetas',
+      // frame 5: cook along
+      'Cook along': 'Cocina con el video',
+      'No more<br><em>pause, rewind,</em><br>pause.': 'Se acabó<br><em>pausar, retroceder,</em><br>pausar.',
+      'Clear steps you can follow. Tap a step to jump to that moment in the video.':
+        'Pasos claros y fáciles de seguir. Toca un paso para saltar a ese momento del video.',
+      'Boil the spaghetti in well salted water until al dente.':
+        'Cocina el espagueti en agua con bastante sal hasta que esté al dente.',
+      'Gently fry the garlic in olive oil until fragrant, not brown.':
+        'Sofríe el ajo a fuego suave en aceite de oliva hasta que suelte su aroma, sin que se dore.',
+      'Toss with lemon zest, juice, parmesan and a splash of pasta water.':
+        'Mezcla con ralladura y jugo de limón, parmesano y un chorrito del agua de la pasta.',
+      'Screen stays on while you cook': 'La pantalla no se apaga mientras cocinas',
+      // frame 6: library
+      'Your library': 'Tu recetario',
+      'Every recipe<br>you loved,<br><em>in one place.</em>': 'Cada receta<br>que te encantó,<br><em>en un solo lugar.</em>',
+      'Chewy chocolate cookies': 'Galletas suaves de chocolate',
+      'Weeknight miso ramen': 'Ramen de miso rápido',
+      'Sesame cucumber salad': 'Ensalada de pepino y sésamo',
+      '40 min · Easy': '40 min · Fácil',
+      '25 min · Easy': '25 min · Fácil',
+      '30 min · Easy': '30 min · Fácil',
+      '15 min · Easy': '15 min · Fácil',
+      'Free recipes every month. No subscription.': 'Recetas gratis cada mes. Sin suscripción.',
+    },
+    ru: {
+      // frame 1: hook
+      'Pinch · Recipe keeper': 'Pinch · Книга рецептов',
+      "Saw it on TikTok?<br><em>Now it's dinner.</em>": 'Увидели<br>в&nbsp;TikTok?<br><em>Вот и ужин.</em>',
+      '15-min lemon garlic pasta — you NEED this': 'Паста с лимоном и чесноком за 15 минут — это надо попробовать!',
+      'Saved to Pinch': 'Сохранено в Pinch',
+      'Lemon garlic pasta': 'Паста с лимоном и&nbsp;чесноком',
+      '25 min': '25 мин',
+      Easy: 'Легко',
+      'Serves 4': '4 порции',
+      spaghetti: 'спагетти',
+      '400 g': '400 г',
+      'garlic cloves': 'зубчики чеснока',
+      lemon: 'лимон',
+      parmesan: 'пармезан',
+      '40 g': '40 г',
+      'Any recipe site': 'Любой сайт с рецептами',
+      // frame 2: reads the whole video
+      'Smart extraction': 'Умный разбор видео',
+      'Reads the<br>whole video.': 'Смотрит видео<br>целиком.',
+      'Not just the caption. Every pinch, splash and sneaky “just a bit more”.':
+        'Не только описание. Каждую щепотку, каждую каплю и каждое «ещё чуть-чуть».',
+      'Snap a recipe': 'Забрать рецепт',
+      'Weeknight shakshuka': 'Быстрая шакшука',
+      'Watching the video… 72%': 'Смотрим видео… 72%',
+      'Found so far': 'Уже нашли',
+      'crushed tomatoes': 'протёртые томаты',
+      '800 g': '800 г',
+      eggs: 'яйца',
+      'smoked paprika': 'копчёная паприка',
+      '1 tsp': '1 ч. л.',
+      'Heard at 2:41': 'Слышно на 2:41',
+      '“…and a good<br>pinch of cumin”': '«…и хорошую<br>щепотку зиры»',
+      '+ 1 tsp cumin': '+ 1 ч. л. зиры',
+      // frame 3: make it yours
+      'Your kitchen, your rules': 'Ваша кухня, ваши правила',
+      'Scale it.<br>Swap it.<br><em>Remix it.</em>': 'Пересчитайте.<br>Замените.<br><em>Сделайте ремикс.</em>',
+      Servings: 'Порции',
+      'Everything recalculates': 'Всё пересчитается само',
+      'was 4': 'было 4',
+      Swap: 'Замена',
+      'out of butter?': 'нет сливочного?',
+      butter: 'сливочное',
+      'olive oil': 'оливковое',
+      'Use ¾ the amount · 3 tbsp': '¾ от нормы · 3 ст. л.',
+      'Remix: make it vegan': 'Ремикс: веганская версия',
+      'Gluten-free': 'Без глютена',
+      Vegetarian: 'Вегетарианский',
+      Healthier: 'Полезнее',
+      Translate: 'Перевод',
+      'EN · ES · HE · AR · RU': 'RU · EN · ES · HE · AR',
+      // frame 4: shopping list
+      'Shopping list': 'Список покупок',
+      'The list<br><em>writes itself.</em>': 'Список<br><em>соберётся сам.</em>',
+      'Add a recipe, get the groceries. Check things off in the aisle.':
+        'Добавьте рецепт, и список покупок готов. Отмечайте прямо в магазине.',
+      List: 'Список',
+      '5 LEFT · 2 CHECKED': 'ОСТАЛОСЬ 5 · ОТМЕЧЕНО 2',
+      'dark chocolate': 'тёмный шоколад',
+      '200 g': '200 г',
+      garlic: 'чеснок',
+      '1 head': '1 головка',
+      lemons: 'лимоны',
+      tahini: 'тахини',
+      '1 jar': '1 банка',
+      cucumbers: 'огурцы',
+      '7 items added': 'Добавлено 7 продуктов',
+      'from 2 recipes': 'из 2 рецептов',
+      // frame 5: cook along
+      'Cook along': 'Готовим по видео',
+      'No more<br><em>pause, rewind,</em><br>pause.': 'Больше никаких<br><em>пауз и перемоток.</em>',
+      'Clear steps you can follow. Tap a step to jump to that moment in the video.':
+        'Понятные шаги. Нажмите на шаг, и видео перейдёт к этому моменту.',
+      'Boil the spaghetti in well salted water until al dente.':
+        'Отварите спагетти в хорошо подсоленной воде до состояния аль денте.',
+      'Gently fry the garlic in olive oil until fragrant, not brown.':
+        'Слегка обжарьте чеснок в оливковом масле до появления аромата, не давая ему потемнеть.',
+      'Toss with lemon zest, juice, parmesan and a splash of pasta water.':
+        'Перемешайте с цедрой и соком лимона, пармезаном и парой ложек воды от пасты.',
+      'Screen stays on while you cook': 'Экран не гаснет, пока вы готовите',
+      // frame 6: library
+      'Your library': 'Ваша библиотека',
+      'Every recipe<br>you loved,<br><em>in one place.</em>': 'Все любимые<br>рецепты<br><em>в одном месте.</em>',
+      'Chewy chocolate cookies': 'Мягкое шоколадное печенье',
+      'Weeknight miso ramen': 'Быстрый мисо-рамен',
+      'Sesame cucumber salad': 'Салат из огурцов с&nbsp;кунжутом',
+      '40 min · Easy': '40 мин · Легко',
+      '25 min · Easy': '25 мин · Легко',
+      '30 min · Easy': '30 мин · Легко',
+      '15 min · Easy': '15 мин · Легко',
+      'Free recipes every month. No subscription.': 'Бесплатные рецепты каждый месяц. Без подписки.',
+    },
   };
 
   // Google Fonts with the right script: `serif` is the headline face, `sans` everything else.
   const FONTS = {
     he: { sans: 'Rubik', serif: 'Rubik', css: 'family=Rubik:wght@400;500;600;700;800' },
     ar: { sans: 'Tajawal', serif: 'Cairo', css: 'family=Tajawal:wght@400;500;700;800&family=Cairo:wght@600;700;800' },
+    // Close to the English design (New York headlines, SF text), with Cyrillic, and the same on every machine
+    es: { sans: 'Inter', serif: 'Lora', css: 'family=Inter:wght@400;500;600;700&family=Lora:ital,wght@0,600;0,700;1,600' },
+    ru: { sans: 'Inter', serif: 'Lora', css: 'family=Inter:wght@400;500;600;700&family=Lora:ital,wght@0,600;0,700;1,600' },
   };
 
   // Text that stays as-is in every language: brand names, handles, URLs, times.
@@ -202,6 +389,7 @@
   if (!STRINGS[lang]) return;
   const dict = STRINGS[lang];
   const font = FONTS[lang];
+  const rtl = lang === 'he' || lang === 'ar';
 
   const link = document.createElement('link');
   link.rel = 'stylesheet';
@@ -211,21 +399,24 @@
   const style = document.createElement('style');
   style.textContent = `
     :root { --sans: "${font.sans}", sans-serif; --serif: "${font.serif}", "${font.sans}", serif; }
+    .untranslated { outline: 6px solid red !important; }
+  ` + (rtl ? `
     /* Hebrew and Arabic have no italics, and letter-spacing breaks Arabic joining */
     .headline em, [style*="italic"] { font-style: normal !important; }
     .headline em { font-weight: 700; }
     .headline, .eyebrow, .pill, [style*="letter-spacing"] { letter-spacing: 0 !important; }
     .headline { line-height: 1.12; }
     .flip-rtl { transform: scaleX(-1); }
-    .untranslated { outline: 6px solid red !important; }
-  `;
+  ` : '');
   document.head.appendChild(style);
   document.documentElement.lang = lang;
 
   // Whole elements first, so headlines keep their <br> and <em>; then any loose text nodes.
   for (const el of document.querySelectorAll('#stage *')) {
     const key = el.innerHTML.trim();
-    if (dict[key] !== undefined) el.innerHTML = dict[key];
+    if (dict[key] === undefined) continue;
+    el.innerHTML = dict[key];
+    el.dataset.i18n = '';
   }
   const walker = document.createTreeWalker(document.getElementById('stage'), NodeFilter.SHOW_TEXT);
   const missing = [];
@@ -233,19 +424,22 @@
     const text = node.nodeValue.trim();
     if (!text) continue;
     if (dict[text] !== undefined) node.nodeValue = node.nodeValue.replace(text, dict[text]);
-    // Already translated (has Hebrew or Arabic letters), or nothing to translate
+    // Inside an element translated above, or already in Hebrew/Arabic, or nothing to translate
+    else if (node.parentElement.closest('[data-i18n]')) continue;
     else if (/[A-Za-z]/.test(text) && !/[֐-ۿ]/.test(text) && !KEEP.test(text)) missing.push(node);
   }
 
-  // Mirror each frame's layout. The frames stay where they are, so the panorama still reads left to right.
-  document.querySelectorAll('.frame').forEach((frame) => (frame.dir = 'rtl'));
-  // Arrows that point "forward" should point left in RTL.
-  document.querySelectorAll('svg path[d^="M2 15 H52"]').forEach((p) => p.closest('svg').classList.add('flip-rtl'));
-  // The "7 items added" toast sits over the right end of the first list row, which is where RTL text starts.
-  document.querySelectorAll('.frame .card[style*="left:610px"]').forEach((el) => {
-    el.style.left = 'auto';
-    el.style.right = '670px';
-  });
+  if (rtl) {
+    // Mirror each frame's layout. The frames stay where they are, so the panorama still reads left to right.
+    document.querySelectorAll('.frame').forEach((frame) => (frame.dir = 'rtl'));
+    // Arrows that point "forward" should point left in RTL.
+    document.querySelectorAll('svg path[d^="M2 15 H52"]').forEach((p) => p.closest('svg').classList.add('flip-rtl'));
+    // The "7 items added" toast sits over the right end of the first list row, which is where RTL text starts.
+    document.querySelectorAll('.frame .card[style*="left:610px"]').forEach((el) => {
+      el.style.left = 'auto';
+      el.style.right = '670px';
+    });
+  }
 
   if (missing.length) {
     console.warn(`[i18n] ${missing.length} untranslated:`, missing.map((n) => n.nodeValue.trim()));

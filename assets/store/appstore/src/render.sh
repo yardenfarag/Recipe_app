@@ -2,8 +2,8 @@
 # Renders the store screenshots with headless Chrome.
 #   ./render.sh          English screenshots, header art and the site share image (macOS: needs the New York font and sips)
 #   ./render.sh he       Hebrew screenshots into ../he/ (works on macOS, Linux and Windows Git Bash)
-#   ./render.sh ar       Arabic screenshots into ../ar/
-# Hebrew and Arabic copy lives in i18n.js. Those renders load Google Fonts, so they need a network connection.
+#   ./render.sh ar|es|ru Arabic, Spanish or Russian screenshots into ../ar/, ../es/, ../ru/
+# Translated copy lives in i18n.js. Those renders load Google Fonts, so they need a network connection.
 set -e
 cd "$(dirname "$0")"
 LANG_CODE="${1:-en}"

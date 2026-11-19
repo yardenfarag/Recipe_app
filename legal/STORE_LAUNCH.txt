@@ -75,7 +75,8 @@ Production Android build finished (AAB):
 9. eas.json submit.production.ios.ascAppId is set (6796310453).
 
 --- Store listing copy (Play Store + App Store) ---
-Hebrew and Arabic listings and screenshots: STORE_LISTINGS_HE_AR.txt (PIN-61).
+Localized listings and screenshots (PIN-61): STORE_LISTINGS_HE_AR.txt (Hebrew, Arabic) and
+STORE_LISTINGS_ES_RU.txt (Spanish, Russian).
 Keywords (PIN-10): recipe keeper app, recipe organizer app, save recipes from
 TikTok, save Instagram recipes, YouTube video to recipe, AI recipe extractor,
 recipe to shopping list. Feature claims match landing/index.html; change both

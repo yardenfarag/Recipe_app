@@ -1,10 +1,14 @@
-// Keeps the localized store listings (legal/STORE_LISTINGS_HE_AR.txt) inside the store character limits,
+// Keeps the localized store listings (legal/STORE_LISTINGS_*.txt) inside the store character limits,
 // so a copy edit can't be rejected by App Store Connect or Play Console at paste time.
-import { readFileSync } from 'node:fs';
+import { readdirSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
 
-const text = readFileSync(join(import.meta.dirname, '..', 'legal', 'STORE_LISTINGS_HE_AR.txt'), 'utf8').replace(/\r/g, '');
+const legal = join(import.meta.dirname, '..', 'legal');
+const text = readdirSync(legal)
+  .filter((f) => /^STORE_LISTINGS_.+\.txt$/.test(f))
+  .map((f) => readFileSync(join(legal, f), 'utf8').replace(/\r/g, ''))
+  .join('\n');
 const chars = (s) => [...s].length;
 
 // One block per language, split on the "=== HEBREW (he) ===" style banners.
@@ -29,8 +33,8 @@ const languages = [...text.matchAll(/=+ [A-Z]+ \((\w+)\) =+\n([\s\S]*?)(?=\n=+ [
 });
 
 describe('localized store listings', () => {
-  it('has Hebrew and Arabic', () => {
-    expect(languages.map((l) => l.code)).toEqual(['he', 'ar']);
+  it('has Spanish, Hebrew, Arabic and Russian', () => {
+    expect(languages.map((l) => l.code).sort()).toEqual(['ar', 'es', 'he', 'ru']);
   });
 
   for (const lang of languages) {

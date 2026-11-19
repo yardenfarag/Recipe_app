@@ -10,9 +10,10 @@ No recipe-saver competitor we found supports Hebrew, Arabic or right-to-left lay
 | Piece | Where |
 |---|---|
 | Hebrew and Arabic listing copy (name, subtitle, keywords, promo text, description) | `legal/STORE_LISTINGS_HE_AR.txt` |
+| Spanish (Latin America) and Russian listing copy, the ticket's second step | `legal/STORE_LISTINGS_ES_RU.txt` |
 | A test that keeps the copy within store limits | `scripts/store-listings.test.mjs` |
-| RTL screenshots with Hebrew and Arabic overlays | `assets/store/appstore/{he,ar}/`, rendered with `assets/store/appstore/src/render.sh he\|ar` |
-| A step-by-step wizard that pastes it all into both consoles | `scripts/store-listing-wizard.sh he\|ar` |
+| Screenshots with translated overlays (RTL for Hebrew and Arabic) | `assets/store/appstore/{he,ar,es,ru}/`, rendered with `assets/store/appstore/src/render.sh he\|ar\|es\|ru` |
+| A step-by-step wizard that pastes it all into both consoles | `scripts/store-listing-wizard.sh he\|ar\|es\|ru` |
 | In-app review prompt after a cook | `src/lib/reviewPrompt.ts`. Asks from the 2nd recipe someone marks as cooked, at most every 120 days and 3 times in total. The OS still decides whether the sheet appears. Logged as the `review_prompt.requested` interaction. |
 
 `expo-store-review` is a native module, so the review prompt ships with the next store build, not before.
@@ -21,7 +22,7 @@ No recipe-saver competitor we found supports Hebrew, Arabic or right-to-left lay
 
 ### Week 0: ship the listings
 
-1. Read the Hebrew copy yourself. Get a native Arabic speaker to read the Arabic.
+1. Read the Hebrew copy yourself. The Arabic, Spanish and Russian were checked by agent reviews (no native readers available).
 2. Run `scripts/store-listing-wizard.sh he`, then `ar`.
 3. Submit the next iOS and Android build, which includes the review prompt. On iOS the localized name, subtitle and keywords go live with that version.
 4. Write down the baseline (see "Tracking" below) on the day the listings go live.
@@ -39,7 +40,7 @@ Carry on into Arabic markets (GCC first, then Arabic speakers in Israel) if, aft
 - Israel has at least **20 new ratings** across both stores, averaging **4.5 or more**, and
 - product-page conversion in Israel (App Store) is at least as good as in the US.
 
-If ratings are coming in but conversion is low, try different screenshots before anything else. If neither is moving, the market is too small to matter, and Spanish and Russian listings (the ticket's second step) are a better next bet.
+If ratings are coming in but conversion is low, try different screenshots before anything else. If neither is moving, the market is too small to matter, and the Spanish and Russian listings (ready in `legal/STORE_LISTINGS_ES_RU.txt`) are a better next bet. They can also go live alongside Hebrew: they cost one wizard run each and don't depend on the Israel results.
 
 ## Tracking installs and ratings per locale
 
