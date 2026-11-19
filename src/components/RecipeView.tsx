@@ -46,6 +46,7 @@ import { COST_I18N_KEYS, costFilledCount } from '@/lib/formatCostEstimate';
 import { formatRecipeDuration } from '@/lib/formatRecipeDuration';
 import { formatVideoTimestamp } from '@/lib/formatVideoTimestamp';
 import { getRecipeVideoInfo } from '@/lib/recipeVideo';
+import { recordCookForReviewPrompt } from '@/lib/reviewPrompt';
 import { getCalorieDisplay } from '@/lib/recipeCalories';
 import { recipeHasSource, recipeIsInvented } from '@/lib/recipeOrigin';
 import {
@@ -650,6 +651,8 @@ export function RecipeView({
     setLastCookedAt(at);
     onCookedChange({ last_cooked_at: at, cook_note: cookNote });
     if (openNote) setCookedNoteOpen(true);
+    // Native only: may show the OS rating sheet once someone has cooked more than once (PIN-61)
+    void recordCookForReviewPrompt();
   }
 
   async function sendShareLink(url: string) {
