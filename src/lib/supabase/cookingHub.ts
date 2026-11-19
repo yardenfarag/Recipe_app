@@ -109,8 +109,13 @@ export async function fetchLibraryRecipeForCard(cardId: string): Promise<string 
   return typeof data === 'string' && data ? data : null;
 }
 
-export async function fetchHubCard(id: string): Promise<RecipeCard | null> {
-  const { data, error } = await supabase.from('recipe_cards').select('*').eq('id', id).maybeSingle();
+const UUID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
+/** Loads a card by id, or by its public slug when opened from pinch-app.io/r/<slug> (PIN-124). */
+export async function fetchHubCard(idOrSlug: string): Promise<RecipeCard | null> {
+  const column = UUID_PATTERN.test(idOrSlug) ? 'id' : 'public_slug';
+  const value = column === 'id' ? idOrSlug : idOrSlug.toLowerCase();
+  const { data, error } = await supabase.from('recipe_cards').select('*').eq(column, value).maybeSingle();
   if (error) {
     if (error.code === 'PGRST116') return null;
     throw error;

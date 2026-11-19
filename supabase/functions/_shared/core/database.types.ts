@@ -858,6 +858,7 @@ export type Database = {
           instructions: Json
           original_url: string
           platform: string
+          public_slug: string
           save_count: number
           servings: number
           source_language: string | null
@@ -885,6 +886,7 @@ export type Database = {
           instructions?: Json
           original_url: string
           platform: string
+          public_slug?: string
           save_count?: number
           servings?: number
           source_language?: string | null
@@ -912,6 +914,7 @@ export type Database = {
           instructions?: Json
           original_url?: string
           platform?: string
+          public_slug?: string
           save_count?: number
           servings?: number
           source_language?: string | null
@@ -1563,6 +1566,7 @@ export type Database = {
           instructions: Json
           original_url: string
           platform: string
+          public_slug: string
           save_count: number
           servings: number
           source_language: string | null
@@ -1653,6 +1657,10 @@ export type Database = {
       }
       recipe_card_canonical_web_url: {
         Args: { p_url: string }
+        Returns: string
+      }
+      recipe_card_public_slug: {
+        Args: { p_id: string; p_title: string }
         Returns: string
       }
       recipe_ingredients_within_limits: {

@@ -152,7 +152,13 @@ describe('handleAppLinkRequest', () => {
       expect(await response?.json()).toEqual({
         applinks: {
           details: [
-            { appIDs: ['V9W92RK5W6.com.pinch.myapp'], components: [{ '/': '/s/*', comment: 'Shared recipes' }] },
+            {
+              appIDs: ['V9W92RK5W6.com.pinch.myapp'],
+              components: [
+                { '/': '/s/*', comment: 'Shared recipes' },
+                { '/': '/r/*', comment: 'Public Hub recipes' },
+              ],
+            },
           ],
         },
       });

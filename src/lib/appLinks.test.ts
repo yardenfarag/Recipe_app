@@ -9,6 +9,13 @@ describe('appPathForWebLink', () => {
     expect(appPathForWebLink('https://pinch-app.io/app/s/AbC_-123?utm=x')).toBe('/s/AbC_-123');
   });
 
+  it('opens a public Hub recipe page on the Hub screen', () => {
+    expect(appPathForWebLink('https://pinch-app.io/r/honey-butter-cornbread-16dcf08bfa53')).toBe(
+      '/hub/honey-butter-cornbread-16dcf08bfa53',
+    );
+    expect(appPathForWebLink('https://pinch-app.io/r/c160897a0a21/?utm_source=x')).toBe('/hub/c160897a0a21');
+  });
+
   it('sends other pinch-app.io pages to the library', () => {
     expect(appPathForWebLink('https://pinch-app.io/guides/save-tiktok/')).toBe('/');
   });

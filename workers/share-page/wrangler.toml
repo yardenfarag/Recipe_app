@@ -1,5 +1,6 @@
-# Cloudflare Worker that renders shared-recipe pages at pinch-app.io/s/<token> (PIN-9).
-# Only /s/* and the app-link files are routed here; everything else on pinch-app.io is served by GitHub Pages.
+# Cloudflare Worker that renders shared-recipe pages at pinch-app.io/s/<token> (PIN-9) and public
+# Hub recipe pages at pinch-app.io/r/<slug> with their sitemap (PIN-124).
+# Only the routes below come here; everything else on pinch-app.io is served by GitHub Pages.
 # Requires the pinch-app.io DNS records to be proxied (orange cloud) in Cloudflare.
 name = "pinch-share-page"
 main = "src/index.ts"
@@ -8,10 +9,17 @@ workers_dev = false
 
 routes = [
   { pattern = "pinch-app.io/s/*", zone_name = "pinch-app.io" },
+  # Public Hub recipe pages and their sitemap (PIN-124). robots.txt points crawlers at the sitemap.
+  { pattern = "pinch-app.io/r/*", zone_name = "pinch-app.io" },
+  { pattern = "pinch-app.io/sitemap-recipes.xml", zone_name = "pinch-app.io" },
   # Universal links (iOS) and App Links (Android) verification files (PIN-110).
   { pattern = "pinch-app.io/.well-known/*", zone_name = "pinch-app.io" },
   { pattern = "pinch-app.io/apple-app-site-association", zone_name = "pinch-app.io" },
 ]
+
+# Daily: send new and changed Hub recipe pages to IndexNow (Bing and friends), 06:17 UTC.
+[triggers]
+crons = ["17 6 * * *"]
 
 [vars]
 # Public values — the same ones baked into the web app bundle.

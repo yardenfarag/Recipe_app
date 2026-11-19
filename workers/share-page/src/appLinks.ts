@@ -1,5 +1,6 @@
 // Domain verification for universal links (iOS) and App Links (Android), PIN-110.
-// With these, tapping https://pinch-app.io/s/<token> opens the app when it is installed.
+// With these, tapping https://pinch-app.io/s/<token> or a public Hub recipe at /r/<slug>
+// (PIN-124) opens the app when it is installed.
 // The apps must claim the same paths: app.json ios.associatedDomains and android.intentFilters.
 
 const APPLE_TEAM_ID = 'V9W92RK5W6';
@@ -17,7 +18,10 @@ export const APPLE_APP_SITE_ASSOCIATION = {
     details: [
       {
         appIDs: [`${APPLE_TEAM_ID}.${BUNDLE_ID}`],
-        components: [{ '/': '/s/*', comment: 'Shared recipes' }],
+        components: [
+          { '/': '/s/*', comment: 'Shared recipes' },
+          { '/': '/r/*', comment: 'Public Hub recipes' },
+        ],
       },
     ],
   },

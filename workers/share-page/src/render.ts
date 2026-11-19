@@ -1,4 +1,5 @@
-// Server-rendered HTML for https://pinch-app.io/s/<token> (PIN-9, redesigned in PIN-110).
+// Server-rendered HTML for https://pinch-app.io/s/<token> (PIN-9, redesigned in PIN-110) and the
+// public Hub recipe pages at https://pinch-app.io/r/<public_slug> (PIN-124).
 // Pure functions only — no Cloudflare APIs — so vitest can cover them.
 // Looks like the landing page (landing/site.css): night background, Pinch pink, glass cards.
 
@@ -167,7 +168,11 @@ export function shareDescription(recipe: SharedRecipe, lang: PageLanguage = 'en'
   return list.length ? `${lead} · ${list.join(' · ')}.` : `${lead}.`;
 }
 
-export function recipeJsonLd(recipe: SharedRecipe, pageUrl: string): Record<string, unknown> {
+export function recipeJsonLd(
+  recipe: SharedRecipe,
+  pageUrl: string,
+  options: { description?: string; datePublished?: string } = {},
+): Record<string, unknown> {
   const time = minutes(recipe);
   const serves = servings(recipe);
   const source = httpsUrl(recipe.original_url);
@@ -178,7 +183,7 @@ export function recipeJsonLd(recipe: SharedRecipe, pageUrl: string): Record<stri
     name: recipe.title,
     url: pageUrl,
     image: [httpsUrl(recipe.image_url) ?? FALLBACK_IMAGE],
-    description: shareDescription(recipe),
+    description: options.description ?? shareDescription(recipe),
     recipeIngredient: ingredientLines(recipe),
     recipeInstructions: steps.map((text) => ({ '@type': 'HowToStep', text })),
   };
@@ -186,6 +191,7 @@ export function recipeJsonLd(recipe: SharedRecipe, pageUrl: string): Record<stri
   if (serves) data.recipeYield = `${serves} servings`;
   if (recipe.tags?.length) data.keywords = recipe.tags.join(', ');
   if (source) data.isBasedOn = source;
+  if (options.datePublished) data.datePublished = options.datePublished;
   return data;
 }
 
@@ -243,6 +249,7 @@ h2{margin:0 0 14px;font-size:22px;letter-spacing:-.3px}
 .steps ol{list-style:none;margin:0;padding:0;counter-reset:step}
 .steps li{counter-increment:step;display:grid;grid-template-columns:36px 1fr;gap:14px;padding:12px 0;border-top:1px solid var(--line)}
 .steps li:first-child{border-top:0;padding-top:0}
+.steps .credit{margin:14px 0 0;padding-top:14px;border-top:1px solid var(--line);color:var(--muted);font-size:14px}
 .steps li::before{content:counter(step);display:grid;place-items:center;width:36px;height:36px;border-radius:999px;background:var(--well);color:var(--pink-bright);font-weight:800}
 .promo{margin-top:48px;text-align:center;padding:36px 22px;background:linear-gradient(160deg,rgba(196,91,122,.22),rgba(255,255,255,.03))}
 .promo svg.logo{width:44px;height:44px;fill:var(--pink)}
@@ -280,13 +287,18 @@ function storeButtons(s: PageStrings): string {
           <a class="btn btn-store" data-store="android" href="${PLAY_STORE_URL}"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="${PLAY_PATH}"/></svg>${escapeHtml(s.googlePlay)}</a>`;
 }
 
-/** Custom-scheme link: opens the app if installed. The script below adds store fallbacks. */
-function appLink(token: string): string {
-  return `pinch://s/${encodeURIComponent(token)}`;
+/** App route for a share token: `s/<token>`. Hub cards use `hub/<id>`. */
+function shareRoute(token: string): string {
+  return `s/${encodeURIComponent(token)}`;
 }
 
-function webAppLink(token: string): string {
-  return `/app/s/${encodeURIComponent(token)}`;
+/** Custom-scheme link: opens the app if installed. The script below adds store fallbacks. */
+function appLink(route: string): string {
+  return `pinch://${route}`;
+}
+
+function webAppLink(route: string): string {
+  return `/app/${route}`;
 }
 
 /**
@@ -295,9 +307,9 @@ function webAppLink(token: string): string {
  * Desktop has no app, so those buttons are hidden by CSS and the web app is offered instead.
  * Installed apps usually never see this page: universal links / App Links open them directly.
  */
-function openAppScript(token: string): string {
-  const scheme = appLink(token);
-  const intent = `intent://s/${encodeURIComponent(token)}#Intent;scheme=pinch;package=${ANDROID_PACKAGE};S.browser_fallback_url=${encodeURIComponent(PLAY_STORE_URL)};end`;
+function openAppScript(route: string): string {
+  const scheme = appLink(route);
+  const intent = `intent://${route}#Intent;scheme=pinch;package=${ANDROID_PACKAGE};S.browser_fallback_url=${encodeURIComponent(PLAY_STORE_URL)};end`;
   return `<script>
 (function () {
   var ua = navigator.userAgent || '';
@@ -334,9 +346,11 @@ function page(options: {
   imageAlt?: string;
   appArgument?: string;
   jsonLd?: Record<string, unknown>;
+  /** Share pages and error pages stay out of search. Only full Hub recipe pages are indexed. */
+  indexable?: boolean;
   body: string;
 }): string {
-  const { lang, title, description, canonical, image, imageAlt, appArgument, jsonLd, body } = options;
+  const { lang, title, description, canonical, image, imageAlt, appArgument, jsonLd, indexable, body } = options;
   const s = stringsFor(lang);
   const bigImage = image !== FALLBACK_IMAGE;
   return `<!DOCTYPE html>
@@ -346,7 +360,7 @@ function page(options: {
     <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
     <title>${escapeHtml(title)}</title>
     <meta name="description" content="${escapeHtml(description)}" />
-    <meta name="robots" content="noindex" />
+    <meta name="robots" content="${indexable ? 'index, follow, max-image-preview:large' : 'noindex'}" />
     <meta name="theme-color" content="#140910" />
     ${canonical ? `<link rel="canonical" href="${escapeHtml(canonical)}" />` : ''}
     <link rel="icon" type="image/png" href="/favicon.png" />
@@ -395,10 +409,18 @@ function promo(s: PageStrings): string {
       </section>`;
 }
 
-export function renderSharePage(recipe: SharedRecipe, token: string, lang: PageLanguage = 'en'): string {
-  const s = stringsFor(lang);
-  const pageUrl = `${SITE_URL}/s/${encodeURIComponent(token)}`;
-  const description = shareDescription(recipe, lang);
+function sourceName(recipe: SharedRecipe): string | undefined {
+  const source = httpsUrl(recipe.original_url);
+  return platformName(recipe) ?? (source ? new URL(source).hostname.replace(/^www\./, '') : undefined);
+}
+
+/** Title, photo, facts, buttons, ingredients and steps: shared by share pages and Hub pages. */
+function recipeBody(
+  recipe: SharedRecipe,
+  s: PageStrings,
+  options: { route: string; eyebrow: string; creditNote?: string },
+): string {
+  const { route, eyebrow, creditNote } = options;
   const photo = httpsUrl(recipe.image_url);
   const ingredients = ingredientList(recipe);
   const steps = instructionSteps(recipe);
@@ -412,7 +434,7 @@ export function renderSharePage(recipe: SharedRecipe, token: string, lang: PageL
       )} ↗</a></p>`
     : '';
 
-  const body = `    <main class="wrap">
+  return `    <main class="wrap">
       <article>
         <div class="hero">
           <figure class="photo">${
@@ -421,12 +443,12 @@ export function renderSharePage(recipe: SharedRecipe, token: string, lang: PageL
               : logo()
           }</figure>
           <div>
-            <p class="eyebrow">${escapeHtml(s.sharedWithYou)}</p>
+            <p class="eyebrow">${escapeHtml(eyebrow)}</p>
             <h1 dir="auto">${escapeHtml(recipe.title)}</h1>
             ${factList.length ? `<ul class="facts">${factList.map((fact) => `<li>${escapeHtml(fact)}</li>`).join('')}</ul>` : ''}
             <div class="actions">
-              <a class="btn btn-primary mobile-only" data-open-app href="${appLink(token)}">${escapeHtml(s.openInApp)}</a>
-              <a class="btn btn-primary desktop-only" href="${webAppLink(token)}">${escapeHtml(s.saveOnWeb)}</a>
+              <a class="btn btn-primary mobile-only" data-open-app href="${appLink(route)}">${escapeHtml(s.openInApp)}</a>
+              <a class="btn btn-primary desktop-only" href="${webAppLink(route)}">${escapeHtml(s.saveOnWeb)}</a>
               <a class="btn btn-ghost" href="#get">${escapeHtml(s.getApp)}</a>
             </div>
             ${sourceLine}
@@ -445,7 +467,10 @@ export function renderSharePage(recipe: SharedRecipe, token: string, lang: PageL
             steps.length
               ? `<section class="card steps">
             <h2>${escapeHtml(s.steps)}</h2>
-            <ol>${steps.map((text) => `<li><span dir="auto">${escapeHtml(text)}</span></li>`).join('')}</ol>
+            <ol>${steps.map((text) => `<li><span dir="auto">${escapeHtml(text)}</span></li>`).join('')}</ol>${
+              creditNote ? `
+            <p class="credit">${escapeHtml(creditNote)}</p>` : ''
+            }
           </section>`
               : ''
           }
@@ -454,11 +479,59 @@ export function renderSharePage(recipe: SharedRecipe, token: string, lang: PageL
 ${promo(s)}
     </main>
     <div class="sticky">
-      <a class="btn btn-primary" data-open-app href="${appLink(token)}">${escapeHtml(s.openInApp)}</a>
+      <a class="btn btn-primary" data-open-app href="${appLink(route)}">${escapeHtml(s.openInApp)}</a>
       <a class="btn btn-ghost" href="#get">${escapeHtml(s.getApp)}</a>
     </div>
-    ${openAppScript(token)}`;
+    ${openAppScript(route)}`;
+}
 
+export function renderSharePage(recipe: SharedRecipe, token: string, lang: PageLanguage = 'en'): string {
+  const s = stringsFor(lang);
+  const pageUrl = `${SITE_URL}/s/${encodeURIComponent(token)}`;
+  const photo = httpsUrl(recipe.image_url);
+  return page({
+    lang,
+    title: `${recipe.title} · Pinch`,
+    description: shareDescription(recipe, lang),
+    canonical: pageUrl,
+    image: photo ?? FALLBACK_IMAGE,
+    imageAlt: recipe.title,
+    appArgument: pageUrl,
+    jsonLd: recipeJsonLd(recipe, pageUrl),
+    body: recipeBody(recipe, s, { route: shareRoute(token), eyebrow: s.sharedWithYou }),
+  });
+}
+
+/** A Hub card as the public recipe page reads it from `recipe_cards` (PIN-124). */
+export interface HubRecipe extends SharedRecipe {
+  id: string;
+  public_slug: string;
+  extraction_status?: string;
+  created_at?: string;
+  updated_at?: string;
+}
+
+/** "Recipe from TikTok · 15 min · Serves 2 · 3 ingredients." */
+export function hubDescription(recipe: SharedRecipe, lang: PageLanguage = 'en'): string {
+  const s = stringsFor(lang);
+  const source = sourceName(recipe);
+  const lead = source ? fill(s.creditFrom, { source }) : s.leadShared;
+  const list = facts(recipe, s);
+  return list.length ? `${lead} · ${list.join(' · ')}.` : `${lead}.`;
+}
+
+export function hubPageUrl(recipe: Pick<HubRecipe, 'public_slug'>): string {
+  return `${SITE_URL}/r/${encodeURIComponent(recipe.public_slug)}`;
+}
+
+/** Public page for a Hub recipe. `indexable` is false for thin recipes (see isIndexable in hub.ts). */
+export function renderHubPage(recipe: HubRecipe, lang: PageLanguage, indexable: boolean): string {
+  const s = stringsFor(lang);
+  const pageUrl = hubPageUrl(recipe);
+  const photo = httpsUrl(recipe.image_url);
+  const source = sourceName(recipe);
+  const description = hubDescription(recipe, lang);
+  const datePublished = recipe.created_at?.slice(0, 10);
   return page({
     lang,
     title: `${recipe.title} · Pinch`,
@@ -467,22 +540,28 @@ ${promo(s)}
     image: photo ?? FALLBACK_IMAGE,
     imageAlt: recipe.title,
     appArgument: pageUrl,
-    jsonLd: recipeJsonLd(recipe, pageUrl),
-    body,
+    jsonLd: recipeJsonLd(recipe, pageUrl, { description, datePublished }),
+    indexable,
+    body: recipeBody(recipe, s, {
+      route: `hub/${encodeURIComponent(recipe.id)}`,
+      eyebrow: source ? fill(s.creditFrom, { source }) : s.leadShared,
+      creditNote: source ? fill(s.creditNote, { source }) : undefined,
+    }),
   });
 }
 
-export function renderNotFoundPage(lang: PageLanguage = 'en'): string {
+export function renderNotFoundPage(lang: PageLanguage = 'en', kind: 'share' | 'hub' = 'share'): string {
   const s = stringsFor(lang);
+  const message = kind === 'hub' ? s.hubNotFoundBody : s.notFoundBody;
   return page({
     lang,
     title: `${s.notFoundTitle} · Pinch`,
-    description: s.notFoundBody,
+    description: message,
     image: FALLBACK_IMAGE,
     body: `    <main class="wrap">
       <div class="notice">
         <h1>${escapeHtml(s.notFoundTitle)}</h1>
-        <p>${escapeHtml(s.notFoundBody)}</p>
+        <p>${escapeHtml(message)}</p>
         <div class="actions"><a class="btn btn-primary" href="/">${escapeHtml(s.goHome)}</a></div>
       </div>
 ${promo(s)}
@@ -503,12 +582,12 @@ export function renderUnavailablePage(token: string, lang: PageLanguage = 'en'):
         <h1>${escapeHtml(s.unavailableTitle)}</h1>
         <p>${escapeHtml(s.unavailableBody)}</p>
         <div class="actions">
-          <a class="btn btn-primary mobile-only" data-open-app href="${appLink(token)}">${escapeHtml(s.openInApp)}</a>
-          <a class="btn btn-ghost" href="${webAppLink(token)}">${escapeHtml(s.saveOnWeb)}</a>
+          <a class="btn btn-primary mobile-only" data-open-app href="${appLink(shareRoute(token))}">${escapeHtml(s.openInApp)}</a>
+          <a class="btn btn-ghost" href="${webAppLink(shareRoute(token))}">${escapeHtml(s.saveOnWeb)}</a>
         </div>
       </div>
 ${promo(s)}
     </main>
-    ${openAppScript(token)}`,
+    ${openAppScript(shareRoute(token))}`,
   });
 }

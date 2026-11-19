@@ -44,6 +44,11 @@
               "scheme": "https",
               "host": "pinch-app.io",
               "pathPrefix": "/s/"
+            },
+            {
+              "scheme": "https",
+              "host": "pinch-app.io",
+              "pathPrefix": "/r/"
             }
           ],
           "category": [

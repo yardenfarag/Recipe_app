@@ -30,6 +30,11 @@ export interface PageStrings {
   unavailableBody: string;
   leadShared: string;
   leadSaved: string;
+  /** Hub page eyebrow and description lead (PIN-124). {source} is a platform or a site. */
+  creditFrom: string;
+  /** Under the steps of a Hub page: the recipe is the creator's, the write-up is ours. */
+  creditNote: string;
+  hubNotFoundBody: string;
 }
 
 const STRINGS: Record<PageLanguage, PageStrings> = {
@@ -59,6 +64,10 @@ const STRINGS: Record<PageLanguage, PageStrings> = {
     unavailableBody: 'We couldn’t load the preview right now. Open it in Pinch instead.',
     leadShared: 'A recipe shared from Pinch',
     leadSaved: 'A recipe saved from {platform} with Pinch',
+    creditFrom: 'Recipe from {source}',
+    creditNote:
+      'All credit goes to the original creator. Pinch wrote out these steps from the original on {source}. Watch it for every detail.',
+    hubNotFoundBody: 'This recipe may have been removed from Pinch.',
   },
   es: {
     sharedWithYou: 'Compartida contigo en Pinch',
@@ -86,6 +95,10 @@ const STRINGS: Record<PageLanguage, PageStrings> = {
     unavailableBody: 'No pudimos cargar la vista previa. Ábrela en Pinch.',
     leadShared: 'Una receta compartida desde Pinch',
     leadSaved: 'Una receta guardada de {platform} con Pinch',
+    creditFrom: 'Receta de {source}',
+    creditNote:
+      'Todo el mérito es de quien la creó. Pinch escribió estos pasos a partir del original en {source}. Míralo para no perderte ningún detalle.',
+    hubNotFoundBody: 'Puede que esta receta se haya eliminado de Pinch.',
   },
   he: {
     sharedWithYou: 'שותף איתך ב־Pinch',
@@ -113,6 +126,10 @@ const STRINGS: Record<PageLanguage, PageStrings> = {
     unavailableBody: 'לא הצלחנו לטעון את התצוגה המקדימה כרגע. אפשר לפתוח אותו ב־Pinch.',
     leadShared: 'מתכון ששותף מ־Pinch',
     leadSaved: 'מתכון שנשמר מ־{platform} עם Pinch',
+    creditFrom: 'מתכון מ־{source}',
+    creditNote:
+      'כל הקרדיט ליוצר המקורי. Pinch כתבה את השלבים לפי המקור ב־{source}. כדאי לצפות בו לכל הפרטים.',
+    hubNotFoundBody: 'ייתכן שהמתכון הוסר מ־Pinch.',
   },
   ru: {
     sharedWithYou: 'С вами поделились в Pinch',
@@ -140,6 +157,10 @@ const STRINGS: Record<PageLanguage, PageStrings> = {
     unavailableBody: 'Сейчас не удалось загрузить превью. Откройте рецепт в Pinch.',
     leadShared: 'Рецепт из Pinch',
     leadSaved: 'Рецепт из {platform}, сохранённый в Pinch',
+    creditFrom: 'Рецепт из {source}',
+    creditNote:
+      'Все заслуги принадлежат автору. Pinch записал эти шаги по оригиналу в {source}. Посмотрите его, чтобы не упустить детали.',
+    hubNotFoundBody: 'Возможно, этот рецепт удалили из Pinch.',
   },
   ar: {
     sharedWithYou: 'تمت مشاركتها معك على Pinch',
@@ -167,6 +188,10 @@ const STRINGS: Record<PageLanguage, PageStrings> = {
     unavailableBody: 'تعذّر تحميل المعاينة الآن. افتحها في Pinch بدلًا من ذلك.',
     leadShared: 'وصفة تمت مشاركتها من Pinch',
     leadSaved: 'وصفة محفوظة من {platform} عبر Pinch',
+    creditFrom: 'وصفة من {source}',
+    creditNote:
+      'كل الفضل لصاحب الوصفة الأصلي. كتب Pinch هذه الخطوات من الأصل على {source}. شاهده لكل التفاصيل.',
+    hubNotFoundBody: 'ربما أُزيلت هذه الوصفة من Pinch.',
   },
 };
 
