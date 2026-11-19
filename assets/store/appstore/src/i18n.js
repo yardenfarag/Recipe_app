@@ -145,7 +145,7 @@
       Vegetarian: 'نباتي',
       Healthier: 'أكثر صحة',
       Translate: 'ترجمة',
-      'EN · ES · HE · AR · RU': 'AR · HE · EN · ES · RU',
+      'EN · ES · HE · AR · RU': 'AR · EN · ES · RU',
       // frame 4: shopping list
       'Shopping list': 'قائمة التسوّق',
       'The list<br><em>writes itself.</em>': 'القائمة<br><em>تكتب نفسها.</em>',
@@ -188,10 +188,10 @@
     },
   };
 
-  // Google Fonts with the right script: a serif for headlines and a sans for everything else.
+  // Google Fonts with the right script: `serif` is the headline face, `sans` everything else.
   const FONTS = {
-    he: { sans: 'Heebo', serif: 'Frank Ruhl Libre', css: 'family=Heebo:wght@400;500;600;700&family=Frank+Ruhl+Libre:wght@500;700' },
-    ar: { sans: 'IBM Plex Sans Arabic', serif: 'Noto Naskh Arabic', css: 'family=IBM+Plex+Sans+Arabic:wght@400;500;600;700&family=Noto+Naskh+Arabic:wght@500;700' },
+    he: { sans: 'Rubik', serif: 'Rubik', css: 'family=Rubik:wght@400;500;600;700;800' },
+    ar: { sans: 'Tajawal', serif: 'Cairo', css: 'family=Tajawal:wght@400;500;700;800&family=Cairo:wght@600;700;800' },
   };
 
   // Text that stays as-is in every language: brand names, handles, URLs, times.
@@ -213,6 +213,7 @@
     :root { --sans: "${font.sans}", sans-serif; --serif: "${font.serif}", "${font.sans}", serif; }
     /* Hebrew and Arabic have no italics, and letter-spacing breaks Arabic joining */
     .headline em, [style*="italic"] { font-style: normal !important; }
+    .headline em { font-weight: 700; }
     .headline, .eyebrow, .pill, [style*="letter-spacing"] { letter-spacing: 0 !important; }
     .headline { line-height: 1.12; }
     .flip-rtl { transform: scaleX(-1); }
@@ -243,7 +244,7 @@
   // The "7 items added" toast sits over the right end of the first list row, which is where RTL text starts.
   document.querySelectorAll('.frame .card[style*="left:610px"]').forEach((el) => {
     el.style.left = 'auto';
-    el.style.right = '610px';
+    el.style.right = '670px';
   });
 
   if (missing.length) {
