@@ -292,38 +292,28 @@ h1 span {
 .btn:hover {
   opacity: 0.9;
 }
-/* The official App Store and Google Play badges (landing/badges, one of each per language), with
-   the web button slimmed to the same height. The Google Play files are cropped to the badge's
-   edge, so both size the same way. */
+/* The official App Store and Google Play badges (landing/badges, one of each per language), as
+   tall as the web button. The Google Play files are cropped to the badge's edge, so both size
+   the same way. */
 .actions {
   align-items: center;
-  gap: 14px;
 }
 .store-badge {
   display: block;
-  border-radius: 7px;
-  transition: opacity 0.15s;
+  border-radius: 8px;
 }
 .store-badge:hover {
-  opacity: 0.85;
+  opacity: 0.9;
 }
 .store-badge img {
   display: block;
   width: auto;
-  height: 44px;
+  height: 56px;
 }
-.actions .btn-web {
-  min-width: 0;
-  min-height: 44px;
-  padding: 0 26px;
-  border-radius: 10px;
-  font-size: 15px;
-  font-weight: 600;
-}
-/* Apple's smallest allowed size on phones, so both badges share a row at 360px. */
+/* Smaller on phones, so both badges fit on one row at 360px. */
 @media (max-width: 560px) {
   .store-badge img {
-    height: 40px;
+    height: 44px;
   }
 }
 .btn-web {
