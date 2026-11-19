@@ -886,7 +886,7 @@ export type Database = {
           instructions?: Json
           original_url: string
           platform: string
-          public_slug: string
+          public_slug?: string
           save_count?: number
           servings?: number
           source_language?: string | null

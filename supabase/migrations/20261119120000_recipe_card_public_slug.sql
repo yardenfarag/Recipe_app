@@ -2,8 +2,8 @@
 --
 -- Production already has all of this: it came from the unmerged cost-guards branch
 -- (0044_recipe_card_public_slug.sql) and was applied by hand. This migration brings the repo,
--- local Supabase and the generated types in line, and is a no-op on production. Every
--- statement is idempotent and the definitions match production exactly.
+-- local Supabase and the generated types in line. Every statement is idempotent and matches
+-- production, except the column default '' below, which is the only change there.
 --
 -- The slug is the Latin title plus the first 12 hex digits of the card id, or the digits alone
 -- for titles with no Latin letters. It is set once on insert; title changes never move it. The
@@ -55,6 +55,11 @@ where public_slug is null or btrim(public_slug) = '';
 
 alter table public.recipe_cards
   alter column public_slug set not null;
+
+-- The trigger replaces an empty slug, so inserts never need to pass one. The default makes
+-- that visible to the generated types (Insert.public_slug optional). New on production.
+alter table public.recipe_cards
+  alter column public_slug set default '';
 
 create unique index if not exists recipe_cards_public_slug_unique
   on public.recipe_cards (public_slug);
