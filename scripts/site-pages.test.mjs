@@ -1,4 +1,4 @@
-import { readFileSync } from 'node:fs';
+import { existsSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
 
 import { describe, expect, it } from 'vitest';
@@ -220,8 +220,8 @@ describe('landing page', () => {
   ].map(([, json]) => JSON.parse(json));
   const graph = structuredData.flatMap((data) => data['@graph'] ?? [data]);
   const byType = (type) => graph.filter((node) => node['@type'] === type);
-  const appStoreUrl = landing.match(/class="btn btn-store btn-apple"[\s\S]*?href="([^"]+)"/)[1];
-  const playStoreUrl = landing.match(/class="btn btn-store btn-play"[\s\S]*?href="([^"]+)"/)[1];
+  const appStoreUrl = landing.match(/data-track="app_store" href="([^"]+)"/)[1];
+  const playStoreUrl = landing.match(/data-track="play_store" href="([^"]+)"/)[1];
 
   it('describes the iPhone and Android apps with a free offer and their store listings', () => {
     const [organization] = byType('Organization');
@@ -286,6 +286,17 @@ describe('landing page', () => {
     const ogImage = landing.match(/property="og:image" content="https:\/\/pinch-app\.io\/([^"]+)"/)[1];
     for (const file of [ogImage, 'manifest.json', ...manifest.icons.map((icon) => icon.src.slice(1))]) {
       expect(build).toContain(`copy('landing/${file}');`);
+    }
+  });
+
+  it('shows the official store badges in each page language, from files the build copies', () => {
+    const build = readFileSync(join(root, 'scripts/build-web-site.mjs'), 'utf8');
+    expect(build).toContain("join(root, 'landing/badges')");
+    for (const page of buildSitePages(site, templates)) {
+      const badges = [...page.html.matchAll(/src="\/badges\/([^"]+)"/g)].map(([, file]) => file);
+      const lang = page.path.match(/^\/(es|he|ru|ar)\//)?.[1] ?? 'en';
+      expect(new Set(badges), page.path).toEqual(new Set([`app-store-${lang}.svg`, `google-play-${lang}.png`]));
+      for (const file of badges) expect(existsSync(join(root, 'landing/badges', file)), file).toBe(true);
     }
   });
 

@@ -40,6 +40,11 @@ function render(path) {
     const [file, type] = files[path];
     return { type, body: readFileSync(join(root, file)) };
   }
+  const badge = path.match(/^\/badges\/([a-z-]+\.(svg|png))$/);
+  if (badge) {
+    const type = badge[2] === 'svg' ? 'image/svg+xml' : 'image/png';
+    return { type, body: readFileSync(join(root, 'landing/badges', badge[1])) };
+  }
   if (path === '/support.js' || path === '/track.js') {
     const script = readFileSync(join(root, 'landing', path.slice(1)), 'utf8');
     return {

@@ -57,6 +57,8 @@ jobs:
           test -f dist/support.js
           grep -q 'data-support' dist/index.html
           test -f dist/hero-recipe.webp
+          test -f dist/badges/app-store-en.svg
+          test -f dist/badges/google-play-en.png
           grep -q 'id="save-tiktok-recipes"' dist/index.html
           grep -q 'guides/save-tiktok-recipes/' dist/llms.txt
           if grep -q '{{' dist/llms.txt; then echo 'llms.txt has an unfilled marker'; exit 1; fi
