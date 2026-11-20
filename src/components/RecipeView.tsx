@@ -61,7 +61,7 @@ import { recipeSourceShareUrl, shareRecipe } from '@/lib/shareRecipe';
 import { recipeAppliancesOf } from '@shared/lib/appliances';
 import { ExtractedRecipe } from '@/lib/supabase/extractRecipe';
 import { createRecipeShare } from '@shared/lib/supabase/recipeShare';
-import { showToast } from '@/lib/toast';
+import { showToast } from '@shared/lib/toast';
 import { setRecipeTags } from '@shared/lib/supabase/recipes';
 import { repairRecipe, repairRequestKey, settleRepairRecipe } from '@/lib/supabase/repairRecipe';
 import type { RepairedRecipePayload } from '@/lib/supabase/repairRecipe';

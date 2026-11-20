@@ -1344,5 +1344,39 @@ export default {
     },
     "updating": "Updating…",
     "originChip": "Written"
+  },
+  "web": {
+    "skipToContent": "Skip to content",
+    "mainNavigation": "Main",
+    "account": "Account",
+    "accountMenu": "Account, theme and language",
+    "signedInAs": "Signed in as",
+    "colorTheme": "Color theme",
+    "errorTitle": "Something went wrong",
+    "notFoundTitle": "We couldn’t find that page",
+    "notFoundBody": "The link may be old, or the page has moved.",
+    "comingSoon": "Coming soon to the web",
+    "soon": {
+      "library": {
+        "title": "Your recipes, on a bigger screen",
+        "body": "Everything you saved in the app will be here. Search it, filter by tag, and cook with the steps right beside the ingredients."
+      },
+      "hub": {
+        "title": "Recipes other people found, free to keep",
+        "body": "Browse recipes others already snapped and add the ones you like to your library, at no cost."
+      },
+      "snap": {
+        "title": "Paste a link, get the recipe",
+        "body": "Drop in a TikTok, Instagram, YouTube or recipe website link and get the ingredients and steps in seconds. No typing."
+      },
+      "list": {
+        "title": "One list for the whole week",
+        "body": "Pick the recipes you plan to cook and get one shopping list, grouped the way the shop is laid out."
+      },
+      "settings": {
+        "title": "Make Pinch yours",
+        "body": "Your account, how you cook, units and more. Theme and language are already in the account menu."
+      }
+    }
   }
 } as const;
