@@ -1,85 +1,39 @@
+/**
+ * The mobile app's auth: the shared calls (shared/lib/supabase/auth.ts) plus what needs the device —
+ * Apple, Google through the system browser, the pinch:// redirect, and logging.
+ */
 import * as AppleAuthentication from 'expo-apple-authentication';
 import * as QueryParams from 'expo-auth-session/build/QueryParams';
 import * as WebBrowser from 'expo-web-browser';
 import { Platform } from 'react-native';
 
-import { normalizeEmail } from '@shared/lib/authValidation';
 import { authRedirectUri } from '@/lib/authRedirect';
 import { flushInteractions, logAuth } from '@/lib/interactionLog';
-import { parseAuthCallbackParams } from '@shared/lib/supabase/authCallbackParams';
 import { supabase } from '@/lib/supabase/client';
+import {
+  completeOAuthFromCallbackUrl as completeSharedOAuth,
+  friendlyAuthError,
+  requestPasswordReset as requestSharedPasswordReset,
+  setAuthFailureReporter,
+} from '@shared/lib/supabase/auth';
+
+export {
+  consumePasswordRecoveryUrl,
+  hasSession,
+  saveAccountLocale,
+  sendSignInCode,
+  signInWithEmail,
+  signUpWithEmail,
+  updatePassword,
+  verifyResetCode,
+  verifySignInCode,
+  type AuthError,
+} from '@shared/lib/supabase/auth';
 
 WebBrowser.maybeCompleteAuthSession();
 
-/**
- * Returns `needsConfirmation: true` only when the project still requires a
- * confirmation link. Leave "Confirm email" off so sign-up returns a session
- * in the same step, the same way Google and Apple do.
- * Supabase → Authentication → Providers → Email.
- */
-export async function signUpWithEmail(
-  email: string,
-  password: string,
-  locale?: string,
-): Promise<{ needsConfirmation: boolean }> {
-  const { data, error } = await supabase.auth.signUp({
-    email: normalizeEmail(email),
-    password,
-    // Emails (welcome, codes, receipts) go out in this language.
-    options: locale ? { data: { locale } } : undefined,
-  });
-  if (error) throw friendlyAuthError(error, 'signup');
-  return { needsConfirmation: !data.session };
-}
-
-/**
- * Emails a 6-digit sign-in code (the auth-email function sends it from hello@pinch-app.io).
- * An address without an account gets one, the same as signing up.
- */
-export async function sendSignInCode(email: string, locale?: string): Promise<void> {
-  const { error } = await supabase.auth.signInWithOtp({
-    email: normalizeEmail(email),
-    options: { shouldCreateUser: true, data: locale ? { locale } : undefined },
-  });
-  if (error) throw friendlyAuthError(error, 'code');
-}
-
-export async function verifySignInCode(email: string, code: string): Promise<void> {
-  const { error } = await supabase.auth.verifyOtp({
-    email: normalizeEmail(email),
-    token: code.trim(),
-    type: 'email',
-  });
-  if (error) throw friendlyAuthError(error, 'code');
-}
-
-/** Signs in with the code from the reset email, so the next step can set a new password. */
-export async function verifyResetCode(email: string, code: string): Promise<void> {
-  const { error } = await supabase.auth.verifyOtp({
-    email: normalizeEmail(email),
-    token: code.trim(),
-    type: 'recovery',
-  });
-  if (error) throw friendlyAuthError(error, 'code');
-}
-
-/** Saves the app language on the account, so server emails use it. No-op when it's already saved. */
-export async function saveAccountLocale(
-  user: { user_metadata?: Record<string, unknown> | null } | null,
-  locale: string,
-): Promise<void> {
-  if (!user || user.user_metadata?.locale === locale) return;
-  const { error } = await supabase.auth.updateUser({ data: { locale } });
-  if (error) console.warn('[auth] could not save language', error.message);
-}
-
-export async function signInWithEmail(email: string, password: string) {
-  const { error } = await supabase.auth.signInWithPassword({
-    email: normalizeEmail(email),
-    password,
-  });
-  if (error) throw friendlyAuthError(error, 'signin');
-}
+// Supabase's error code only (e.g. invalid_credentials), never the email or message.
+setAuthFailureReporter((action, reason) => logAuth(`auth.${action}_failed`, { reason }));
 
 export async function signOut() {
   // Log and send before the session goes, so these rows stay with the account.
@@ -168,6 +122,13 @@ export async function signInWithApple() {
   if (error) throw friendlyAuthError(error, 'social');
 }
 
+/** Finish OAuth from a callback URL (PKCE code or legacy token hash). */
+export async function completeOAuthFromCallbackUrl(url: string): Promise<void> {
+  const { errorCode } = QueryParams.getQueryParams(url);
+  if (errorCode) throw new Error('Google sign-in could not be completed. Please try again.');
+  await completeSharedOAuth(url);
+}
+
 /**
  * Google OAuth via the system browser.
  *
@@ -176,32 +137,6 @@ export async function signInWithApple() {
  * registered in the Supabase dashboard. Reliable deep-linking with the
  * `pinch://` scheme requires a dev build (Phase 3, ADR 007).
  */
-/** Finish OAuth from a callback URL (PKCE code or legacy token hash). */
-export async function completeOAuthFromCallbackUrl(url: string): Promise<void> {
-  const { params, errorCode } = QueryParams.getQueryParams(url);
-  if (errorCode) throw new Error('Google sign-in could not be completed. Please try again.');
-
-  const parsed = parseAuthCallbackParams(url);
-  const code = params.code ?? parsed.code;
-  if (code) {
-    const { error } = await supabase.auth.exchangeCodeForSession(code);
-    if (error) throw friendlyAuthError(error, 'social');
-    return;
-  }
-
-  const access_token = params.access_token ?? parsed.accessToken;
-  const refresh_token = params.refresh_token ?? parsed.refreshToken;
-  if (!access_token || !refresh_token) {
-    throw new Error('Google sign-in did not return a valid session.');
-  }
-
-  const { error } = await supabase.auth.setSession({
-    access_token,
-    refresh_token,
-  });
-  if (error) throw friendlyAuthError(error, 'social');
-}
-
 export async function signInWithGoogle() {
   const redirectTo = authRedirectUri('auth-callback');
 
@@ -233,113 +168,5 @@ export async function signInWithGoogle() {
 }
 
 export async function requestPasswordReset(email: string): Promise<void> {
-  const redirectTo = authRedirectUri('reset-password');
-  const { error } = await supabase.auth.resetPasswordForEmail(normalizeEmail(email), {
-    redirectTo,
-  });
-  if (error) throw friendlyAuthError(error, 'reset');
-}
-
-export async function consumePasswordRecoveryUrl(url: string): Promise<void> {
-  const params = parseAuthCallbackParams(url);
-
-  if (params.tokenHash) {
-    const { error } = await supabase.auth.verifyOtp({
-      token_hash: params.tokenHash,
-      type: 'recovery',
-    });
-    if (error) throw friendlyAuthError(error, 'reset');
-    return;
-  }
-
-  if (params.code) {
-    const { error } = await supabase.auth.exchangeCodeForSession(params.code);
-    if (error) throw friendlyAuthError(error, 'reset');
-    return;
-  }
-
-  if (params.accessToken && params.refreshToken) {
-    const { error } = await supabase.auth.setSession({
-      access_token: params.accessToken,
-      refresh_token: params.refreshToken,
-    });
-    if (error) throw friendlyAuthError(error, 'reset');
-    return;
-  }
-
-  throw new Error('This password reset link is invalid or has expired.');
-}
-
-export async function hasSession(): Promise<boolean> {
-  const { data } = await supabase.auth.getSession();
-  return Boolean(data.session);
-}
-
-export async function updatePassword(password: string): Promise<void> {
-  const { data: sessionData, error: sessionError } = await supabase.auth.getSession();
-  if (sessionError) throw friendlyAuthError(sessionError, 'update');
-
-  const email = sessionData.session?.user?.email;
-  if (!email) {
-    throw new Error('Your reset session expired. Ask for a new reset code and try again.');
-  }
-
-  const { error: updateError } = await supabase.auth.updateUser({ password });
-  if (updateError) throw friendlyAuthError(updateError, 'update');
-
-  // Recovery sessions can keep you logged in even when the password did not persist.
-  // Re-authenticate with the new password so the next manual sign-in works too.
-  await supabase.auth.signOut({ scope: 'local' });
-  await signInWithEmail(email, password);
-}
-
-type AuthAction = 'signin' | 'signup' | 'social' | 'reset' | 'update' | 'code';
-
-/** An auth failure the screen can translate: `code` is Supabase's error code. */
-export type AuthError = Error & { code?: string };
-
-function friendlyAuthError(error: unknown, action: AuthAction): AuthError {
-  const err = friendlyAuthMessage(error, action) as AuthError;
-  const code =
-    error && typeof error === 'object' && 'code' in error ? String((error as { code?: unknown }).code ?? '') : '';
-  if (code) err.code = code;
-  return err;
-}
-
-function friendlyAuthMessage(error: unknown, action: AuthAction): Error {
-  const code =
-    error && typeof error === 'object' && 'code' in error
-      ? String((error as { code?: unknown }).code ?? '')
-      : '';
-  // Supabase's error code only (e.g. invalid_credentials), never the email or message.
-  logAuth(`auth.${action}_failed`, { reason: /^[a-z0-9_]{1,60}$/.test(code) ? code : 'unknown' });
-
-  if (code === 'invalid_credentials') {
-    return new Error('The email or password is incorrect.');
-  }
-  if (code === 'email_not_confirmed') {
-    return new Error('Confirm your email before signing in.');
-  }
-  if (code === 'over_request_rate_limit' || code === 'over_email_send_rate_limit') {
-    return new Error('Too many attempts. Wait a few minutes and try again.');
-  }
-  if (code === 'weak_password') {
-    return new Error('Choose a stronger password with at least 8 characters, a letter, and a number.');
-  }
-  if (code === 'same_password') {
-    return new Error('Choose a password you have not used for this account.');
-  }
-  if (code === 'otp_expired' || code === 'otp_disabled') {
-    return new Error('That code is wrong or has expired. Check the email or ask for a new code.');
-  }
-
-  const fallback: Record<AuthAction, string> = {
-    signin: 'Sign-in failed. Check your details and try again.',
-    signup: "We couldn't create the account. Try signing in or reset your password.",
-    social: 'Sign-in could not be completed. Please try again.',
-    reset: 'The reset request could not be completed. Please try again.',
-    update: 'Your password could not be updated. Request a new reset code and try again.',
-    code: 'The code could not be checked. Please try again.',
-  };
-  return new Error(fallback[action]);
+  await requestSharedPasswordReset(email, authRedirectUri('reset-password'));
 }
