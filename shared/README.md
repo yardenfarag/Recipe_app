@@ -72,6 +72,7 @@ Shared code may only import packages that **both** apps install, at the same ver
 
 - `web/next.config.ts` sets the build root to the repo root and points each package in `packages.json` at `web/node_modules`. Without that, a shared file's packages would be looked up in the mobile app's `node_modules`, which CI does not install for the web job.
 - `web/tsconfig.json` and `web/vitest.config.mts` do the same for type-checking and tests.
+- `shared/tsconfig.json` exists for tools that read the nearest tsconfig to a file. Without it they find the repo root's, which extends Expo's and cannot load where only `web/` is installed (the CI web job).
 - `web/` keeps its lockfile as **`npm-shrinkwrap.json`**, not `package-lock.json`. npm treats the two the same. OpenNext (the Cloudflare build) takes the nearest folder with a `package-lock.json` as the project root; with one in `web/` it cannot follow imports into `shared/` and the Worker build fails. Don't rename it back.
 
 We chose this over npm workspaces because workspaces would merge both apps into one install, and change how the mobile app's dependencies are laid out for every EAS build.
