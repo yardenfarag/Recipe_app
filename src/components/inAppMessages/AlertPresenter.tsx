@@ -4,7 +4,7 @@ import { Alert, I18nManager, Modal, Platform, ScrollView, View, useWindowDimensi
 import { Pressable } from '@/components/ui/Pressable';
 import { useThemePreference } from '@/hooks/useThemePreference';
 import { logTap } from '@/lib/interactionLog';
-import type { ButtonAction, ClickedButton } from '@/lib/inAppMessages';
+import type { ButtonAction, ClickedButton } from '@shared/lib/inAppMessages';
 
 import { CloseButton } from './CloseButton';
 import { MessageContent, type MessageActionHandler } from './MessageContent';

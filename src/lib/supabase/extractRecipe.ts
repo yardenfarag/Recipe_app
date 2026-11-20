@@ -3,12 +3,11 @@ import { FunctionsHttpError } from '@supabase/supabase-js';
 import { getOrCreateExtractionRequestId } from '@/lib/extractionRequestId';
 import { getInstallId } from '@/lib/installId';
 import { supabase } from '@/lib/supabase/client';
-import { Recipe } from '@/types/recipe';
+import type { ExtractedRecipe, Recipe } from '@shared/types/recipe';
+
+export type { ExtractedRecipe };
 
 export type ExtractStatus = 'full' | 'partial' | 'failed' | 'coming_soon';
-
-/** Recipe as returned by the Edge Function (no id/user_id yet — not saved). */
-export type ExtractedRecipe = Omit<Recipe, 'id' | 'user_id' | 'created_at'>;
 
 export interface ExtractResult {
   status: ExtractStatus;

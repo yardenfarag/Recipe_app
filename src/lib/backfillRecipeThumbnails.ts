@@ -1,7 +1,7 @@
 import { replaceGuestRecipes } from '@/lib/guestRecipes';
 import { supabase } from '@/lib/supabase/client';
-import { extractYouTubeId, needsThumbnailBackfill } from '@/lib/youtube';
-import { Recipe } from '@/types/recipe';
+import { extractYouTubeId, needsThumbnailBackfill } from '@shared/lib/youtube';
+import { Recipe } from '@shared/types/recipe';
 
 interface BackfillResult {
   updated: { id: string; image_url: string }[];

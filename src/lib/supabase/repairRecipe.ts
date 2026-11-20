@@ -1,9 +1,9 @@
 import { FunctionsHttpError } from '@supabase/supabase-js';
 
-import type { RecipeAppliance } from '@/lib/appliances';
+import type { RecipeAppliance } from '@shared/lib/appliances';
 import { getOrCreateExtractionRequestId } from '@/lib/extractionRequestId';
 import { supabase } from '@/lib/supabase/client';
-import type { CostEstimate, EffortLevel, Ingredient, Instruction } from '@/types/recipe';
+import type { CostEstimate, EffortLevel, Ingredient, Instruction } from '@shared/types/recipe';
 
 export type RepairStatus = 'full' | 'partial' | 'failed' | 'ok';
 

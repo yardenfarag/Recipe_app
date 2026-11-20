@@ -6,7 +6,7 @@ import { Pressable } from '@/components/ui/Pressable';
 import { useMeasurementPreference } from '@/hooks/useMeasurementPreference';
 import { useThemePreference } from '@/hooks/useThemePreference';
 import { CHROME_MAX_FONT_SCALE } from '@/lib/a11y';
-import type { MeasurementSystem } from '@/lib/convertMeasurement';
+import type { MeasurementSystem } from '@shared/lib/convertMeasurement';
 
 const MODES: { id: MeasurementSystem; icon: keyof typeof Ionicons.glyphMap }[] = [
   { id: 'original', icon: 'restaurant-outline' },

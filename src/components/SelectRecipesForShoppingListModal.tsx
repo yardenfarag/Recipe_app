@@ -7,9 +7,9 @@ import { SelectRecipesList } from '@/components/SelectRecipesList';
 import { SheetModal } from '@/components/SheetModal';
 import { useThemePreference } from '@/hooks/useThemePreference';
 import { announce } from '@/lib/a11y';
-import { translateAppError } from '@/lib/translateAppError';
-import type { RecipeCollection } from '@/types/collection';
-import type { Recipe } from '@/types/recipe';
+import { translateAppError } from '@shared/lib/translateAppError';
+import type { RecipeCollection } from '@shared/types/collection';
+import type { Recipe } from '@shared/types/recipe';
 
 interface SelectRecipesForShoppingListModalProps {
   visible: boolean;

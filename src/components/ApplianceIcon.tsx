@@ -1,7 +1,7 @@
 import MaterialCommunityIcons from '@expo/vector-icons/MaterialCommunityIcons';
 import type { ComponentProps } from 'react';
 
-import type { ApplianceKey } from '@/lib/appliances';
+import type { ApplianceKey } from '@shared/lib/appliances';
 
 type GlyphName = ComponentProps<typeof MaterialCommunityIcons>['name'];
 

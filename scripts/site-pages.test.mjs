@@ -317,7 +317,7 @@ describe('languages', () => {
   const pageAt = (path) => pages.find((page) => page.path === path);
 
   it('speaks the same languages as the app, and every one of them is live', () => {
-    const app = readFileSync(join(root, 'src/lib/appLanguages.ts'), 'utf8');
+    const app = readFileSync(join(root, 'shared/lib/appLanguages.ts'), 'utf8');
     const appLanguages = [...app.matchAll(/\{ code: '([a-z]+)', label: '[^']+', nativeLabel: '([^']+)' \}/g)];
     expect(SITE_LANGUAGES.map((lang) => [lang.code, lang.label])).toEqual(
       appLanguages.map(([, code, nativeLabel]) => [code, nativeLabel]),

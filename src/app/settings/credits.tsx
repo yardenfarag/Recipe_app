@@ -7,7 +7,7 @@ import { SettingsDetailScreen } from '@/components/SettingsDetailScreen';
 import { TokenPurchaseSheet } from '@/components/TokenPurchaseSheet';
 import { useProfile } from '@/hooks/useProfile';
 import { useThemePreference } from '@/hooks/useThemePreference';
-import { FREE_MONTHLY_EXTRACT_LIMIT } from '@/lib/quotas';
+import { FREE_MONTHLY_EXTRACT_LIMIT } from '@shared/lib/quotas';
 import { creditPurchasesOfferedOn } from '@/lib/purchases';
 import { openAppStore } from '@/lib/appStore';
 

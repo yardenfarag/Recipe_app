@@ -3,19 +3,19 @@ import { useTranslation } from 'react-i18next';
 
 import { useLanguagePreference } from '@/hooks/useLanguagePreference';
 import { ensureRecipeTranslation } from '@/lib/ensureRecipeTranslation';
-import { recipeAmountsKey, recipeTextKey, withLiveAmounts } from '@/lib/localizedRecipeKey';
+import { recipeAmountsKey, recipeTextKey, withLiveAmounts } from '@shared/lib/localizedRecipeKey';
 import {
   getGuestRecipeTranslation,
   upsertGuestRecipeTranslation,
 } from '@/lib/guestRecipes';
-import { isRecipeLanguageCode, type RecipeLanguageCode } from '@/lib/recipeLanguages';
-import { resolveRecipeSourceLanguage } from '@/lib/recipeSourceLanguage';
+import { isRecipeLanguageCode, type RecipeLanguageCode } from '@shared/lib/recipeLanguages';
+import { resolveRecipeSourceLanguage } from '@shared/lib/recipeSourceLanguage';
 import {
   fetchRecipeTranslation,
   upsertRecipeTranslation,
-} from '@/lib/supabase/recipeTranslations';
+} from '@shared/lib/supabase/recipeTranslations';
 import type { ExtractedRecipe } from '@/lib/supabase/extractRecipe';
-import type { RecipeTranslationContent } from '@/types/recipe';
+import type { RecipeTranslationContent } from '@shared/types/recipe';
 
 type LocalizedState = {
   display: RecipeTranslationContent;

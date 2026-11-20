@@ -42,22 +42,22 @@ import { useThemePreference } from '@/hooks/useThemePreference';
 import { announce } from '@/lib/a11y';
 import { removeGuestRecipe, renameGuestRecipe } from '@/lib/guestRecipes';
 import { openRecipeEditor } from '@/lib/openRecipeEditor';
-import { rankCookTonight } from '@/lib/cookTonight';
+import { rankCookTonight } from '@shared/lib/cookTonight';
 import {
   filterAndSortRecipes,
   isRecipeLibraryFiltered,
   RecipeSortKey,
-} from '@/lib/recipeListQuery';
-import { collectLibraryTags } from '@/lib/recipeTags';
-import { upsertRecipeTranslation } from '@/lib/supabase/recipeTranslations';
-import { deleteRecipe, renameRecipe } from '@/lib/supabase/recipes';
-import { translateAppError } from '@/lib/translateAppError';
+} from '@shared/lib/recipeListQuery';
+import { collectLibraryTags } from '@shared/lib/recipeTags';
+import { upsertRecipeTranslation } from '@shared/lib/supabase/recipeTranslations';
+import { deleteRecipe, renameRecipe } from '@shared/lib/supabase/recipes';
+import { translateAppError } from '@shared/lib/translateAppError';
 import {
   isCollectionNameTaken,
   isRecipeNameTaken,
   recipeVisibleName,
-} from '@/lib/uniqueNames';
-import { Recipe } from '@/types/recipe';
+} from '@shared/lib/uniqueNames';
+import { Recipe } from '@shared/types/recipe';
 
 type CollectionNameModalState =
   | { mode: 'create' }

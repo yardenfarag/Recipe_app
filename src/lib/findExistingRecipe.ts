@@ -1,8 +1,8 @@
 import { getGuestRecipes } from '@/lib/guestRecipes';
-import { detectPlatform, recipeUrlsMatch } from '@/lib/platformUrls';
-import { recipeMatchesUrlOrigin, type RecipeUrlOrigin } from '@/lib/recipeOrigin';
-import { fetchRecipeByUrl } from '@/lib/supabase/recipes';
-import { Recipe } from '@/types/recipe';
+import { detectPlatform, recipeUrlsMatch } from '@shared/lib/platformUrls';
+import { recipeMatchesUrlOrigin, type RecipeUrlOrigin } from '@shared/lib/recipeOrigin';
+import { fetchRecipeByUrl } from '@shared/lib/supabase/recipes';
+import { Recipe } from '@shared/types/recipe';
 
 /** Guest-only duplicate check — authed users rely on the extract-recipe edge function. */
 export async function findExistingGuestRecipe(

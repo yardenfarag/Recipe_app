@@ -9,7 +9,7 @@ import { useBreakpoint } from '@/hooks/useBreakpoint';
 import { useRtl } from '@/hooks/useRtl';
 import { useThemePreference } from '@/hooks/useThemePreference';
 import { getRecipePlatformLabel, getRecipeVideoInfo } from '@/lib/recipeVideo';
-import type { Platform } from '@/types/recipe';
+import type { Platform } from '@shared/types/recipe';
 
 type RecipeVideoPanelProps = {
   originalUrl?: string | null;

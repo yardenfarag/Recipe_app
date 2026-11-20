@@ -6,7 +6,7 @@ import {
   type MessageEvent,
   type MessagePlatform,
   type MessageReceipt,
-} from '@/lib/inAppMessages';
+} from '@shared/lib/inAppMessages';
 
 /**
  * What the app holds about in-app messages for the signed-in user, and the

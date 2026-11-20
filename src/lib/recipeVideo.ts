@@ -1,13 +1,13 @@
 import Constants from 'expo-constants';
-import type { Platform } from '@/types/recipe';
+import type { Platform } from '@shared/types/recipe';
 
 import {
   detectPlatform,
   extractFacebookId,
   extractInstagramId,
   extractTikTokId,
-} from '@/lib/platformUrls';
-import { extractYouTubeId } from '@/lib/youtube';
+} from '@shared/lib/platformUrls';
+import { extractYouTubeId } from '@shared/lib/youtube';
 
 /** Mobile UA helps TikTok/Instagram pages load in WebView instead of 404/desktop blocks. */
 export const VIDEO_WEBVIEW_USER_AGENT =

@@ -18,7 +18,7 @@ import {
   resolveContentLanguage,
   type AdminMessageDraft,
   type Tone,
-} from '@/lib/inAppMessages';
+} from '@shared/lib/inAppMessages';
 
 /**
  * A plain picture of what the message says, per language. It is not the app's

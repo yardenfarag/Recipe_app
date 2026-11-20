@@ -9,11 +9,11 @@ import { Screen } from '@/components/Screen';
 import { TextInput } from '@/components/text-input';
 import { useAuth } from '@/hooks/useAuth';
 import { useThemePreference } from '@/hooks/useThemePreference';
-import { errorText } from '@/lib/errorText';
-import { FREE_MONTHLY_EXTRACT_LIMIT } from '@/lib/quotas';
+import { errorText } from '@shared/lib/errorText';
+import { FREE_MONTHLY_EXTRACT_LIMIT } from '@shared/lib/quotas';
 import { confirmAction, showNotice } from '@/lib/confirmAction';
-import { adminDeleteUser, fetchAdminPeople, type AdminPerson } from '@/lib/supabase/adminPeople';
-import { adminAdjustRecipeCredits } from '@/lib/supabase/profile';
+import { adminDeleteUser, fetchAdminPeople, type AdminPerson } from '@shared/lib/supabase/adminPeople';
+import { adminAdjustRecipeCredits } from '@shared/lib/supabase/profile';
 
 export default function AdminUsersScreen() {
   return (

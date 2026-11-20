@@ -29,16 +29,16 @@ import { useRtl } from '@/hooks/useRtl';
 import { useShoppingList } from '@/hooks/useShoppingList';
 import { useThemePreference } from '@/hooks/useThemePreference';
 import { announce, CHROME_MAX_FONT_SCALE } from '@/lib/a11y';
-import { pickIngredientAmount } from '@/lib/ingredientAmounts';
-import { filterPantryStaples } from '@/lib/pantryStaples';
-import { formatQuantity } from '@/lib/formatQuantity';
+import { pickIngredientAmount } from '@shared/lib/ingredientAmounts';
+import { filterPantryStaples } from '@shared/lib/pantryStaples';
+import { formatQuantity } from '@shared/lib/formatQuantity';
 import { logTap } from '@/lib/interactionLog';
 import {
   getDuplicateNameCounts,
   normalizeShoppingName,
-} from '@/lib/shoppingListMerge';
-import { SHOPPING_AISLE_ORDER, shoppingAisleForName } from '@/lib/shoppingAisles';
-import type { ShoppingListItem } from '@/types/shoppingList';
+} from '@shared/lib/shoppingListMerge';
+import { SHOPPING_AISLE_ORDER, shoppingAisleForName } from '@shared/lib/shoppingAisles';
+import type { ShoppingListItem } from '@shared/types/shoppingList';
 
 export default function ShoppingListScreen() {
   const {

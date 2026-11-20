@@ -8,16 +8,16 @@ import { SheetModal } from '@/components/SheetModal';
 import { useRtl } from '@/hooks/useRtl';
 import { useThemePreference } from '@/hooks/useThemePreference';
 import { announce } from '@/lib/a11y';
-import { localizeIngredientUnits } from '@/lib/culinaryUnits';
+import { localizeIngredientUnits } from '@shared/lib/culinaryUnits';
 import {
   RECIPE_LANGUAGES,
   RecipeLanguageCode,
-} from '@/lib/recipeLanguages';
+} from '@shared/lib/recipeLanguages';
 import {
   translateRecipe,
   TranslatedRecipePayload,
-} from '@/lib/supabase/translateRecipe';
-import { Ingredient, Instruction, RecipeTranslationContent } from '@/types/recipe';
+} from '@shared/lib/supabase/translateRecipe';
+import { Ingredient, Instruction, RecipeTranslationContent } from '@shared/types/recipe';
 
 interface RecipeTranslateModalProps {
   visible: boolean;

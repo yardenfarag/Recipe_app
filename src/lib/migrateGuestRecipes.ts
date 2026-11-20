@@ -4,10 +4,10 @@ import {
   updateGuestRecipeIdMapping,
 } from '@/lib/guestMigrationJournal';
 import { clearGuestRecipes, getGuestRecipes } from '@/lib/guestRecipes';
-import { recipeUrlOrigin } from '@/lib/recipeOrigin';
+import { recipeUrlOrigin } from '@shared/lib/recipeOrigin';
 import { supabase } from '@/lib/supabase/client';
-import { untypedInsert } from '@/lib/supabase/dbTypes';
-import type { RecipeTranslationContent } from '@/types/recipe';
+import { untypedInsert } from '@shared/lib/supabase/dbTypes';
+import type { RecipeTranslationContent } from '@shared/types/recipe';
 
 export type GuestRecipeMigrationResult = {
   migrated: number;

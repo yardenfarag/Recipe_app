@@ -6,7 +6,7 @@ import {
   COOKBOOK_PAGE_PX,
   cookbookFileName,
   type CookbookPageSize,
-} from '@/lib/cookbook/buildCookbookHtml';
+} from '@shared/lib/cookbook/buildCookbookHtml';
 
 export type CookbookExportResult = 'shared' | 'printed';
 export { cookbookFileName };

@@ -7,7 +7,7 @@ import {
   plural,
   rangeLabel,
   type Dashboard,
-} from '@/lib/adminDashboard';
+} from '@shared/lib/adminDashboard';
 
 import { DailyBars, RankBars } from './charts';
 import { Badge, Card, PersonCell, StatTile } from './ui';

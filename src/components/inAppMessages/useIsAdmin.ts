@@ -1,8 +1,8 @@
 import { useEffect, useState } from 'react';
 
 import { useAuth } from '@/hooks/useAuth';
-import { isAdminUser } from '@/lib/admin';
-import { fetchProfile } from '@/lib/supabase/profile';
+import { isAdminUser } from '@shared/lib/admin';
+import { fetchProfile } from '@shared/lib/supabase/profile';
 
 /**
  * Is the signed-in user an admin (`profiles.is_admin`)? Looked up only while

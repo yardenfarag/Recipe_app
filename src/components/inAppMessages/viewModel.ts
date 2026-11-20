@@ -1,4 +1,4 @@
-import { isRtlAppLanguage } from '@/lib/appLanguages';
+import { isRtlAppLanguage } from '@shared/lib/appLanguages';
 import {
   isDismissible,
   messageButtons,
@@ -8,7 +8,7 @@ import {
   type ClickedButton,
   type InAppMessage,
   type Presentation,
-} from '@/lib/inAppMessages';
+} from '@shared/lib/inAppMessages';
 
 export type ViewButton = {
   /** Which slot it was in, for the receipt ("primary", "secondary"). */

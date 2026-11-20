@@ -12,7 +12,7 @@ import { TextInput } from '@/components/text-input';
 import { useThemePreference } from '@/hooks/useThemePreference';
 import { announce } from '@/lib/a11y';
 import { logTap } from '@/lib/interactionLog';
-import { translateAppError } from '@/lib/translateAppError';
+import { translateAppError } from '@shared/lib/translateAppError';
 
 interface NameEditModalProps {
   visible: boolean;

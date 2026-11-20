@@ -1,8 +1,8 @@
 import { reloadAppAsync } from 'expo';
 import { Alert, I18nManager, Platform } from 'react-native';
 
-import type { AppLanguageCode } from '@/lib/appLanguages';
-import { isRtlAppLanguage } from '@/lib/appLanguages';
+import type { AppLanguageCode } from '@shared/lib/appLanguages';
+import { isRtlAppLanguage } from '@shared/lib/appLanguages';
 import i18n from '@/i18n/config';
 
 /** Returns true when switching languages requires a native RTL direction flip. */

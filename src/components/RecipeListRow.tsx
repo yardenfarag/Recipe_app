@@ -12,13 +12,13 @@ import { RecipeImage } from '@/components/RecipeImage';
 import { useLanguagePreference } from '@/hooks/useLanguagePreference';
 import { useThemePreference } from '@/hooks/useThemePreference';
 import { CHROME_MAX_FONT_SCALE } from '@/lib/a11y';
-import { applianceNameKey, cardApplianceKeys } from '@/lib/applianceDisplay';
-import { recipeAppliancesOf } from '@/lib/appliances';
-import { COST_I18N_KEYS } from '@/lib/formatCostEstimate';
-import { formatCookedDate } from '@/lib/formatCookedDate';
-import { formatRecipeDuration } from '@/lib/formatRecipeDuration';
-import { recipeOriginChip } from '@/lib/recipeOrigin';
-import { Recipe } from '@/types/recipe';
+import { applianceNameKey, cardApplianceKeys } from '@shared/lib/applianceDisplay';
+import { recipeAppliancesOf } from '@shared/lib/appliances';
+import { COST_I18N_KEYS } from '@shared/lib/formatCostEstimate';
+import { formatCookedDate } from '@shared/lib/formatCookedDate';
+import { formatRecipeDuration } from '@shared/lib/formatRecipeDuration';
+import { recipeOriginChip } from '@shared/lib/recipeOrigin';
+import { Recipe } from '@shared/types/recipe';
 
 interface RecipeListRowProps {
   recipe: Recipe;

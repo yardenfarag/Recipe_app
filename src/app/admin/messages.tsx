@@ -10,9 +10,9 @@ import { Screen } from '@/components/Screen';
 import { Pressable } from '@/components/ui/Pressable';
 import { refreshInAppMessagesNow } from '@/hooks/useInAppMessages';
 import { useThemePreference } from '@/hooks/useThemePreference';
-import { errorText } from '@/lib/errorText';
-import type { AdminMessage, MessageStatus } from '@/lib/inAppMessages';
-import { listAdminMessages } from '@/lib/supabase/adminMessages';
+import { errorText } from '@shared/lib/errorText';
+import type { AdminMessage, MessageStatus } from '@shared/lib/inAppMessages';
+import { listAdminMessages } from '@shared/lib/supabase/adminMessages';
 
 type Editing = { key: number; form: MessageForm; status: MessageStatus | null };
 

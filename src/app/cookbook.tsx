@@ -27,16 +27,16 @@ import { useRecipes } from '@/hooks/useRecipes';
 import { useRtl } from '@/hooks/useRtl';
 import { useThemePreference } from '@/hooks/useThemePreference';
 import { announce } from '@/lib/a11y';
-import { isRtlAppLanguage } from '@/lib/appLanguages';
+import { isRtlAppLanguage } from '@shared/lib/appLanguages';
 import {
   buildCookbookHtml,
   cookbookPageSizeForLocale,
   toCookbookHtmlRecipe,
-} from '@/lib/cookbook/buildCookbookHtml';
+} from '@shared/lib/cookbook/buildCookbookHtml';
 import { embedRecipeImages } from '@/lib/cookbook/embedRecipeImages';
 import { exportCookbookPdf } from '@/lib/cookbook/exportCookbookPdf';
-import { translateAppError } from '@/lib/translateAppError';
-import type { Platform as RecipePlatform } from '@/types/recipe';
+import { translateAppError } from '@shared/lib/translateAppError';
+import type { Platform as RecipePlatform } from '@shared/types/recipe';
 
 const STEPS = 3;
 

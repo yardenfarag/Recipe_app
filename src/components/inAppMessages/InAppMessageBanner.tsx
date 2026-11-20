@@ -7,7 +7,7 @@ import { useBreakpoint } from '@/hooks/useBreakpoint';
 
 import { BannerPresenter } from './BannerPresenter';
 import { useMessageView } from './useMessageView';
-import type { InAppMessage } from '@/lib/inAppMessages';
+import type { InAppMessage } from '@shared/lib/inAppMessages';
 
 /** Same numbers as `src/components/app-tabs.tsx`: the bottom tab bar's height, so a bottom banner sits above it. */
 const TAB_BAR_CONTENT_HEIGHT = 56;

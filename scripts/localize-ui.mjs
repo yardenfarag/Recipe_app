@@ -452,7 +452,7 @@ async function main() {
   const onlySet = only ? new Set(only.split(',').map((s) => s.trim()).filter(Boolean)) : null;
 
   if (!onlySet || onlySet.has('en')) {
-    writeFileSync(join(root, 'src/i18n/locales/en.ts'), toTsModule(english), 'utf8');
+    writeFileSync(join(root, 'shared/i18n/locales/en.ts'), toTsModule(english), 'utf8');
     console.log('Wrote en.ts');
   }
 
@@ -471,7 +471,7 @@ async function main() {
       }
     }
     if (!translated) throw lastErr;
-    writeFileSync(join(root, `src/i18n/locales/${target.code}.ts`), toTsModule(translated), 'utf8');
+    writeFileSync(join(root, `shared/i18n/locales/${target.code}.ts`), toTsModule(translated), 'utf8');
     console.log(`Wrote ${target.code}.ts`);
   }
   console.log('Done.');

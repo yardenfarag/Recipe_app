@@ -9,7 +9,7 @@ import { SAMPLE_MESSAGES } from './samples';
 import { SheetPresenter } from './SheetPresenter';
 import { useIsAdmin } from './useIsAdmin';
 import { useMessageView } from './useMessageView';
-import type { InAppMessage } from '@/lib/inAppMessages';
+import type { InAppMessage } from '@shared/lib/inAppMessages';
 
 function Presenter({ message }: { message: InAppMessage }) {
   const view = useMessageView(message);

@@ -11,7 +11,7 @@ import {
   DEFAULT_THEME_PACK,
   ThemePacks,
   type ThemePackColors,
-} from '@/constants/themes';
+} from '@shared/constants/themes';
 
 const pack = ThemePacks[DEFAULT_THEME_PACK];
 

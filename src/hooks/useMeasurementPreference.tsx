@@ -9,7 +9,7 @@ import {
   type ReactNode,
 } from 'react';
 
-import type { MeasurementSystem } from '@/lib/convertMeasurement';
+import type { MeasurementSystem } from '@shared/lib/convertMeasurement';
 
 const STORAGE_KEY = 'pinch:measurementSystem';
 

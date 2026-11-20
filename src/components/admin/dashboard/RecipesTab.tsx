@@ -1,6 +1,6 @@
 import { useMemo, useState } from 'react';
 
-import { formatDate, humanize, rangeLabel, type Dashboard } from '@/lib/adminDashboard';
+import { formatDate, humanize, rangeLabel, type Dashboard } from '@shared/lib/adminDashboard';
 
 import { Badge, Card, Thumb, platformName } from './ui';
 

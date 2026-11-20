@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 
-import { buildFridgeCatalog } from './fridgeCatalog';
-import type { Recipe } from '@/types/recipe';
+import { buildFridgeCatalog } from '@shared/lib/fridgeCatalog';
+import type { Recipe } from '@shared/types/recipe';
 
 function recipe(id: string, extra: Partial<Recipe> = {}): Recipe {
   return {

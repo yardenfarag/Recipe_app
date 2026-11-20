@@ -45,7 +45,7 @@ import {
   signOut,
   userHasAppleIdentity,
 } from '@/lib/supabase/auth';
-import { uploadAvatar } from '@/lib/supabase/profile';
+import { uploadAvatar } from '@shared/lib/supabase/profile';
 import { fetchRecipeBackup, restoreRecipeBackup } from '@/lib/supabase/recipeBackup';
 
 const RESTORE_ERROR_KEYS = {

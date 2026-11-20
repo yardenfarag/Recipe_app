@@ -1,6 +1,6 @@
 import { setGuestRecipeFavorite } from '@/lib/guestRecipes';
-import { setRecipeFavorite } from '@/lib/supabase/recipes';
-import { Recipe } from '@/types/recipe';
+import { setRecipeFavorite } from '@shared/lib/supabase/recipes';
+import { Recipe } from '@shared/types/recipe';
 
 /** Coerce DB null/undefined to a strict boolean for favorite UI. */
 export function normalizeRecipeFavorite(recipe: Recipe): Recipe {

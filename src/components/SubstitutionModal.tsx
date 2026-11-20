@@ -8,19 +8,19 @@ import { useLanguagePreference } from '@/hooks/useLanguagePreference';
 import { useMeasurementPreference } from '@/hooks/useMeasurementPreference';
 import { useThemePreference } from '@/hooks/useThemePreference';
 import { announce } from '@/lib/a11y';
-import { resolveCulinaryLanguage } from '@/lib/culinaryUnits';
-import { displayIngredientAmount } from '@/lib/displayIngredientAmount';
+import { resolveCulinaryLanguage } from '@shared/lib/culinaryUnits';
+import { displayIngredientAmount } from '@shared/lib/displayIngredientAmount';
 import {
   mergeRewrittenInstructions,
   patchInstructionsForSubstitution,
-} from '@/lib/patchInstructionsForSubstitution';
-import { RecipeLanguageCode } from '@/lib/recipeLanguages';
+} from '@shared/lib/patchInstructionsForSubstitution';
+import { RecipeLanguageCode } from '@shared/lib/recipeLanguages';
 import {
   SubstitutionAlternative,
   rewriteInstructionsForSubstitution,
   suggestSubstitution,
-} from '@/lib/supabase/suggestSubstitution';
-import { Ingredient, Instruction } from '@/types/recipe';
+} from '@shared/lib/supabase/suggestSubstitution';
+import { Ingredient, Instruction } from '@shared/types/recipe';
 
 interface SubstitutionModalProps {
   visible: boolean;

@@ -7,9 +7,9 @@ import { Pressable } from '@/components/ui/Pressable';
 import { TextInput } from '@/components/text-input';
 import { useThemePreference } from '@/hooks/useThemePreference';
 import { CHROME_MAX_FONT_SCALE } from '@/lib/a11y';
-import { filterAndSortRecipes } from '@/lib/recipeListQuery';
-import type { RecipeCollection } from '@/types/collection';
-import type { Recipe } from '@/types/recipe';
+import { filterAndSortRecipes } from '@shared/lib/recipeListQuery';
+import type { RecipeCollection } from '@shared/types/collection';
+import type { Recipe } from '@shared/types/recipe';
 
 function toggleOrderedId(ids: string[], id: string): string[] {
   if (ids.includes(id)) return ids.filter((item) => item !== id);

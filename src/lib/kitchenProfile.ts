@@ -10,8 +10,8 @@ import {
   fitInstruction,
   isAllergenKey,
   type AllergenKey,
-} from '@/lib/avoidList';
-import { RECIPE_VARIANTS, type RecipeVariantKey } from '@/lib/recipeVariants';
+} from '@shared/lib/avoidList';
+import { RECIPE_VARIANTS, type RecipeVariantKey } from '@shared/lib/recipeVariants';
 
 const STORAGE_KEY = 'pinch:kitchen-profile';
 

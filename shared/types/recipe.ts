@@ -1,0 +1,151 @@
+import type { RecipeAppliance } from '../lib/appliances';
+
+export type EffortLevel = 'Easy' | 'Medium' | 'Hard';
+export type CostEstimate = '$' | '$$' | '$$$';
+export type Platform =
+  | 'youtube'
+  | 'instagram'
+  | 'tiktok'
+  | 'facebook'
+  | 'web'
+  | 'photo'
+  | 'unknown';
+export type ExtractionStatus = 'full' | 'partial';
+/** Which content-ladder rung yielded the recipe (ADR 004). 'manual' = a written recipe (ADR 018). */
+export type ExtractionSource =
+  | 'description'
+  | 'comments'
+  | 'captions'
+  | 'video'
+  | 'web'
+  | 'photo'
+  | 'invented'
+  | 'manual';
+
+/**
+ * AI-derived fields a user can set by hand (ADR 018). A locked field is never recalculated
+ * until the user resets it. Matches the recipes_locked_fields_known CHECK.
+ */
+export const LOCKABLE_FIELDS = [
+  'calories',
+  'estimated_time_minutes',
+  'effort_level',
+  'cost_estimate',
+  'tags',
+  'appliances',
+] as const;
+export type LockedField = (typeof LOCKABLE_FIELDS)[number];
+
+/**
+ * What a save can recalculate in the background (ADR 018): every lockable field, plus the
+ * metric/spoons amounts of changed ingredient rows. Matches the recipes_recalc_pending_known CHECK.
+ */
+export const RECALC_FIELDS = [...LOCKABLE_FIELDS, 'ingredient_amounts'] as const;
+export type RecalcField = (typeof RECALC_FIELDS)[number];
+
+/** One measured amount, used for grams/spoons toggle values. */
+export interface IngredientAmount {
+  quantity: number;
+  unit: string;
+}
+
+export interface Ingredient {
+  name: string;
+  quantity: number;
+  unit: string;
+  /** Weight (g/kg) for solids or volume (ml/liter) for liquids — set at extraction. */
+  metric?: IngredientAmount;
+  /** Cups / tablespoons / teaspoons (or a count) — set at extraction. */
+  spoons?: IngredientAmount;
+}
+
+export interface Instruction {
+  step: number;
+  text: string;
+  /** Seconds into the source video where this step begins (video extraction). */
+  timestamp_seconds?: number;
+}
+
+/** Cached translation of recipe text fields (not servings/calories). */
+export interface RecipeTranslationContent {
+  title: string;
+  ingredients: Ingredient[];
+  instructions: Instruction[];
+}
+
+/** Mirrors the `recipes` table (supabase/migrations/0001_init.sql + later). */
+export interface Recipe {
+  id: string;
+  user_id?: string; // absent for guest (local-only) recipes — ADR 002
+  title: string;
+  original_url?: string;
+  platform?: Platform;
+  image_url?: string;
+  /**
+   * Optional playable video for cook-along when `platform` is `web`
+   * (e.g. a YouTube embed found on the recipe page).
+   */
+  source_video_url?: string;
+  ingredients: Ingredient[];
+  instructions: Instruction[];
+  servings: number;
+  calories?: number;
+  estimated_time_minutes?: number;
+  cost_estimate?: CostEstimate;
+  effort_level?: EffortLevel;
+  extraction_status: ExtractionStatus;
+  extraction_source?: ExtractionSource;
+  /** Gemini reasoning for the calorie estimate — stored for QA, not shown in MVP UI. */
+  calories_reasoning?: string;
+  /** Gemini reasoning for the time estimate — stored for QA, not shown in MVP UI. */
+  time_reasoning?: string;
+  /** Short lowercase labels (cuisine, meal, dish type, etc.) for browsing / trends. */
+  tags?: string[];
+  missing_fields?: string[];
+  migrated_from_guest?: boolean;
+  /** Quick-access pin in the library Favorites section. */
+  is_favorite?: boolean;
+  /** Last time the user marked this recipe as cooked. */
+  last_cooked_at?: string;
+  /** Optional one-line note from the last cook. */
+  cook_note?: string;
+  created_at?: string;
+  /** Language of canonical title/ingredients/instructions (ADR 012). */
+  source_language?: string;
+  /**
+   * Guest / client cache of translations keyed by language code.
+   * Cloud recipes use `recipe_translations`; this field is hydrated for list titles.
+   */
+  translations?: Record<string, RecipeTranslationContent>;
+  /** Client-only: preferred-language title for library rows. */
+  display_title?: string;
+  /** Kitchen auto-apply summary. Survives save so the whisper stays on the recipe. */
+  kitchen_adapted_summary?: string;
+  /** Content before kitchen auto-apply, used to revert. */
+  kitchen_original?: {
+    title: string;
+    servings: number;
+    ingredients: Ingredient[];
+    instructions: Instruction[];
+    calories?: number;
+    /** Absent in snapshots saved before PIN-26. */
+    appliances?: RecipeAppliance[] | null;
+  };
+  /**
+   * Kitchen appliances (ADR 017). null or absent = not analysed (show nothing); [] = none needed.
+   * Read it through recipeAppliancesOf() so it is always cleaned against the steps.
+   */
+  appliances?: RecipeAppliance[] | null;
+  /** AI-derived fields the user set by hand (ADR 018). Absent on guest and older rows = none. */
+  locked_fields?: LockedField[];
+  /**
+   * Fields a save is recalculating in the background (ADR 018). Each is removed as its new
+   * value is written; one left here after a failure is retried the next time the recipe opens.
+   */
+  recalc_pending?: RecalcField[];
+  /** When the current recalculation started. With recalc_pending, tells "Updating…" from stale. */
+  recalc_started_at?: string | null;
+}
+
+/** Recipe as returned by the Edge Function (no id/user_id yet — not saved). */
+export type ExtractedRecipe = Omit<Recipe, 'id' | 'user_id' | 'created_at'>;

@@ -37,7 +37,7 @@ import { showNotice } from "@/lib/confirmAction";
 import { claimShare, releaseShareClaim } from "@/lib/shareIntentClaim";
 import { creditPurchasesOfferedOn } from "@/lib/purchases";
 import { openAppStore } from "@/lib/appStore";
-import { isFoodGateReject, shouldOfferInvent } from "@/lib/contentGate";
+import { isFoodGateReject, shouldOfferInvent } from "@shared/lib/contentGate";
 import { clearExtractionRequestId } from "@/lib/extractionRequestId";
 import { findExistingGuestRecipe } from "@/lib/findExistingRecipe";
 import {
@@ -50,15 +50,15 @@ import {
   fileUriToBase64,
   pickCompressedRecipeImage,
 } from "@/lib/pickCompressedImage";
-import { detectPlatform, normalizeSocialUrl } from "@/lib/platformUrls";
-import { FREE_MONTHLY_EXTRACT_LIMIT } from "@/lib/quotas";
+import { detectPlatform, normalizeSocialUrl } from "@shared/lib/platformUrls";
+import { FREE_MONTHLY_EXTRACT_LIMIT } from "@shared/lib/quotas";
 import {
   captureRecipeExtracted,
   type RecipeEntrySource,
 } from "@/lib/analytics";
 import { clearRecipeDraft, setRecipeDraft } from "@/lib/recipeDraft";
 import { resolveShareIntentAction } from "@/lib/shareIntentGate";
-import { recipeIsInvented } from "@/lib/recipeOrigin";
+import { recipeIsInvented } from "@shared/lib/recipeOrigin";
 import type {
   ExtractResult,
   ExtractedRecipe,
@@ -73,7 +73,7 @@ import {
   inventRecipeFromImage,
 } from "@/lib/supabase/inventRecipe";
 import { fetchCloudKitchenProfile } from "@/lib/supabase/kitchen";
-import { transformRecipe } from "@/lib/supabase/transformRecipe";
+import { transformRecipe } from "@shared/lib/supabase/transformRecipe";
 
 type Banner = {
   kind: "error" | "info" | "limit" | "credits";

@@ -11,7 +11,7 @@ import {
   numberedSteps,
   resolveApplianceKey,
   sanitizeRecipeAppliances,
-} from './appliances';
+} from '@shared/lib/appliances';
 
 const RLM = '\u200f';
 const LRM = '\u200e';

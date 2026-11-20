@@ -18,7 +18,7 @@ import {
   type Presentation,
   type Targeting,
   type Tone,
-} from '@/lib/inAppMessages';
+} from '@shared/lib/inAppMessages';
 
 export const MESSAGE_LANGUAGES = [
   { code: 'en', label: 'English', rtl: false },

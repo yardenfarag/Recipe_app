@@ -3,10 +3,10 @@ import * as QueryParams from 'expo-auth-session/build/QueryParams';
 import * as WebBrowser from 'expo-web-browser';
 import { Platform } from 'react-native';
 
-import { normalizeEmail } from '@/lib/authValidation';
+import { normalizeEmail } from '@shared/lib/authValidation';
 import { authRedirectUri } from '@/lib/authRedirect';
 import { flushInteractions, logAuth } from '@/lib/interactionLog';
-import { parseAuthCallbackParams } from '@/lib/supabase/authCallbackParams';
+import { parseAuthCallbackParams } from '@shared/lib/supabase/authCallbackParams';
 import { supabase } from '@/lib/supabase/client';
 
 WebBrowser.maybeCompleteAuthSession();

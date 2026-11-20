@@ -1,6 +1,6 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
-import type { RecipeCollection } from '@/types/collection';
+import type { RecipeCollection } from '@shared/types/collection';
 
 const STORAGE_KEY = 'pinch:guest-collections';
 let mutationQueue: Promise<void> = Promise.resolve();

@@ -16,8 +16,8 @@ import { useRtl } from '@/hooks/useRtl';
 import { useThemePreference } from '@/hooks/useThemePreference';
 import { announce } from '@/lib/a11y';
 import { logTap } from '@/lib/interactionLog';
-import { formatCountdown, parseStepTimers } from '@/lib/stepTimers';
-import type { Instruction } from '@/types/recipe';
+import { formatCountdown, parseStepTimers } from '@shared/lib/stepTimers';
+import type { Instruction } from '@shared/types/recipe';
 
 type CookModeProps = {
   visible: boolean;

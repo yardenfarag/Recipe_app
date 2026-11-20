@@ -7,7 +7,7 @@ const mocks = vi.hoisted(() => ({
   fetchRecipeByUrl: vi.fn(),
 }));
 
-vi.mock('@/lib/supabase/recipes', () => ({
+vi.mock('@shared/lib/supabase/recipes', () => ({
   saveRecipe: mocks.saveRecipe,
   fetchRecipeByUrl: mocks.fetchRecipeByUrl,
 }));

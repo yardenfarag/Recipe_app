@@ -17,7 +17,7 @@ const {
   pinchRoseSoftDark,
   pinchTextDark,
   pinchMutedDark,
-} = require('./src/constants/brandColors');
+} = require('./shared/constants/brandColors');
 
 /** @type {import('tailwindcss').Config} */
 module.exports = {

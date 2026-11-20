@@ -1,19 +1,16 @@
+/**
+ * The mobile app's Supabase client: the shared client (shared/lib/supabase/client.ts) with device storage.
+ * Importing this file creates it. The root layout imports it first, so shared modules can use `supabase` too.
+ */
 import 'react-native-url-polyfill/auto';
 
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { createClient } from '@supabase/supabase-js';
 
-import type { Database } from '../../../supabase/functions/_shared/core/database.types';
-import { createPreviewFetch, parsePreviewFunctions } from './functionPreview';
+import { initSupabaseClient, normalizeSupabaseUrl } from '@shared/lib/supabase/client';
+import { createPreviewFetch, parsePreviewFunctions } from '@shared/lib/supabase/functionPreview';
 
 const supabaseUrl = normalizeSupabaseUrl(process.env.EXPO_PUBLIC_SUPABASE_URL);
 const supabaseKey = process.env.EXPO_PUBLIC_SUPABASE_KEY;
-
-/** Project root only. createClient appends /auth/v1 and /rest/v1 itself. */
-function normalizeSupabaseUrl(raw: string | undefined): string | undefined {
-  if (!raw) return raw;
-  return raw.trim().replace(/\/+$/, '').replace(/\/rest\/v1$/i, '');
-}
 
 if (!supabaseUrl || !supabaseKey) {
   throw new Error(
@@ -45,13 +42,10 @@ const previewFetch = __DEV__
   ? createPreviewFetch(parsePreviewFunctions(process.env.EXPO_PUBLIC_FUNCTION_PREVIEWS))
   : undefined;
 
-export const supabase = createClient<Database>(supabaseUrl, supabaseKey, {
-  ...(previewFetch ? { global: { fetch: previewFetch } } : {}),
-  auth: {
-    storage: authStorage,
-    autoRefreshToken: true,
-    persistSession: true,
-    detectSessionInUrl: false,
-    flowType: 'pkce',
-  },
+export const supabase = initSupabaseClient({
+  url: supabaseUrl,
+  key: supabaseKey,
+  storage: authStorage,
+  detectSessionInUrl: false,
+  fetch: previewFetch,
 });

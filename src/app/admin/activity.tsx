@@ -7,8 +7,8 @@ import { Screen } from '@/components/Screen';
 import { TextInput } from '@/components/text-input';
 import { Pressable } from '@/components/ui/Pressable';
 import { useThemePreference } from '@/hooks/useThemePreference';
-import { insightSince } from '@/lib/adminInsights';
-import { errorText } from '@/lib/errorText';
+import { insightSince } from '@shared/lib/adminInsights';
+import { errorText } from '@shared/lib/errorText';
 import {
   fetchActivitySessionEvents,
   fetchActivitySessions,
@@ -16,7 +16,7 @@ import {
   type ActivityEvent,
   type ActivitySession,
   type ActivityTopItem,
-} from '@/lib/supabase/adminActivity';
+} from '@shared/lib/supabase/adminActivity';
 
 const RANGES = [1, 7, 30] as const;
 type Range = (typeof RANGES)[number];

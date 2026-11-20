@@ -48,20 +48,20 @@ import { useAuth } from '@/hooks/useAuth';
 import { useBreakpoint } from '@/hooks/useBreakpoint';
 import { useThemePreference } from '@/hooks/useThemePreference';
 import { confirmAction } from '@/lib/confirmAction';
-import { errorText } from '@/lib/errorText';
+import { errorText } from '@shared/lib/errorText';
 import {
   PRESENTATIONS,
   TONES,
   validateMessage,
   type MessageIssue,
   type MessageStatus,
-} from '@/lib/inAppMessages';
+} from '@shared/lib/inAppMessages';
 import {
   saveAdminMessage,
   setAdminMessageStatus,
   uploadMessageImage,
-} from '@/lib/supabase/adminMessages';
-import { fetchAdminPeople } from '@/lib/supabase/adminPeople';
+} from '@shared/lib/supabase/adminMessages';
+import { fetchAdminPeople } from '@shared/lib/supabase/adminPeople';
 
 type Props = {
   initial: MessageForm;

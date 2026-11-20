@@ -6,9 +6,9 @@ import { useTranslation } from 'react-i18next';
 import { ApplianceIcon } from '@/components/ApplianceIcon';
 import { SheetModal } from '@/components/SheetModal';
 import { useThemePreference } from '@/hooks/useThemePreference';
-import { applianceNameKey } from '@/lib/applianceDisplay';
-import { APPLIANCE_KEYS, type ApplianceKey, MAX_RECIPE_APPLIANCES } from '@/lib/appliances';
-import type { ApplianceRow, StepRow } from '@/lib/recipeEditor';
+import { applianceNameKey } from '@shared/lib/applianceDisplay';
+import { APPLIANCE_KEYS, type ApplianceKey, MAX_RECIPE_APPLIANCES } from '@shared/lib/appliances';
+import type { ApplianceRow, StepRow } from '@shared/lib/recipeEditor';
 
 import { AddRowButton, ChoiceChips, IconButton } from './EditorParts';
 

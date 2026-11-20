@@ -4,7 +4,7 @@ import { I18nextProvider } from 'react-i18next';
 
 import { useLanguagePreference } from '@/hooks/useLanguagePreference';
 import { useThemePreference } from '@/hooks/useThemePreference';
-import { isRtlAppLanguage } from '@/lib/appLanguages';
+import { isRtlAppLanguage } from '@shared/lib/appLanguages';
 import { applyRtlFlag } from '@/lib/rtlLayout';
 import i18n, { changeAppLanguage, initI18n } from '@/i18n/config';
 

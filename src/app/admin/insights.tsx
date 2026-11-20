@@ -15,14 +15,14 @@ import {
   type InsightRange,
   type InsightSummary,
   type RankedItem,
-} from '@/lib/adminInsights';
+} from '@shared/lib/adminInsights';
 import {
   fetchAdminFailures,
   fetchAdminProductEvents,
   fetchAdminPurchases,
   type AdminPurchase,
-} from '@/lib/supabase/adminUsage';
-import { errorText } from '@/lib/errorText';
+} from '@shared/lib/supabase/adminUsage';
+import { errorText } from '@shared/lib/errorText';
 
 function fmtWhen(iso: string): string {
   try {

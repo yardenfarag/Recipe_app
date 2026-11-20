@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
-import type { InAppMessage } from '@/lib/inAppMessages';
+import type { InAppMessage } from '@shared/lib/inAppMessages';
 
 import { createMessagesController } from './controller';
 import { webClosedStore, webLaunchStartedAt } from './webLaunch';

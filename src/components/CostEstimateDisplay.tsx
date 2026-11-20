@@ -1,8 +1,8 @@
 import { Text, View } from 'react-native';
 
 import { CHROME_MAX_FONT_SCALE } from '@/lib/a11y';
-import { COST_TIER_COUNT, costFilledCount } from '@/lib/formatCostEstimate';
-import { CostEstimate } from '@/types/recipe';
+import { COST_TIER_COUNT, costFilledCount } from '@shared/lib/formatCostEstimate';
+import { CostEstimate } from '@shared/types/recipe';
 
 type CostMeterProps = {
   tier: CostEstimate;

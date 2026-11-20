@@ -5,7 +5,7 @@ import { useTranslation } from 'react-i18next';
 
 import { useThemePreference } from '@/hooks/useThemePreference';
 import { pickCompressedRecipeImage } from '@/lib/pickCompressedImage';
-import type { EditorPhoto } from '@/lib/recipeEditor';
+import type { EditorPhoto } from '@shared/lib/recipeEditor';
 import { recipeImageSource } from '@/lib/recipeImageSource';
 
 type PhotoFieldProps = {

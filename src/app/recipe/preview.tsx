@@ -12,25 +12,25 @@ import { useLanguagePreference } from '@/hooks/useLanguagePreference';
 import { useLocalizedRecipe } from '@/hooks/useLocalizedRecipe';
 import { useThemePreference } from '@/hooks/useThemePreference';
 import { captureRecipeSaved } from '@/lib/analytics';
-import { DEFAULT_SOURCE_LANGUAGE } from '@/lib/appLanguages';
+import { DEFAULT_SOURCE_LANGUAGE } from '@shared/lib/appLanguages';
 import { showNotice } from '@/lib/confirmAction';
 import { ensureRecipeTranslation } from '@/lib/ensureRecipeTranslation';
-import { recipeContentEquals } from '@/lib/recipeContentEquals';
-import { recipeIsInvented } from '@/lib/recipeOrigin';
+import { recipeContentEquals } from '@shared/lib/recipeContentEquals';
+import { recipeIsInvented } from '@shared/lib/recipeOrigin';
 import {
   clearRecipeDraft,
   getRecipeDraft,
   peekRecipeDraft,
   setRecipeDraft,
 } from '@/lib/recipeDraft';
-import { isRecipeLanguageCode } from '@/lib/recipeLanguages';
-import { resolveRecipeSourceLanguage } from '@/lib/recipeSourceLanguage';
+import { isRecipeLanguageCode } from '@shared/lib/recipeLanguages';
+import { resolveRecipeSourceLanguage } from '@shared/lib/recipeSourceLanguage';
 import { saveRecipeDraft } from '@/lib/saveRecipeDraft';
 import { supabase } from '@/lib/supabase/client';
 import { ExtractedRecipe } from '@/lib/supabase/extractRecipe';
 import type { RepairedRecipePayload } from '@/lib/supabase/repairRecipe';
-import { upsertRecipeTranslation } from '@/lib/supabase/recipeTranslations';
-import type { RecipeTranslationContent } from '@/types/recipe';
+import { upsertRecipeTranslation } from '@shared/lib/supabase/recipeTranslations';
+import type { RecipeTranslationContent } from '@shared/types/recipe';
 
 /**
  * Shows a freshly extracted recipe that has NOT been saved yet.

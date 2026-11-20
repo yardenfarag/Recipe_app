@@ -9,9 +9,9 @@ import {
   num,
   relativeTime,
   type UserDetail,
-} from '@/lib/adminDashboard';
-import { errorText } from '@/lib/errorText';
-import { fetchAdminUserDetail } from '@/lib/supabase/adminDashboard';
+} from '@shared/lib/adminDashboard';
+import { errorText } from '@shared/lib/errorText';
+import { fetchAdminUserDetail } from '@shared/lib/supabase/adminDashboard';
 
 import { Badge, Card, Skeleton, Thumb, platformName } from './ui';
 

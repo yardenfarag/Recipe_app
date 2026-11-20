@@ -1,4 +1,4 @@
-import { isRtlAppLanguage } from '@/lib/appLanguages';
+import { isRtlAppLanguage } from '@shared/lib/appLanguages';
 import { useLanguagePreference } from '@/hooks/useLanguagePreference';
 
 /** App-language RTL, independent of whether I18nManager has reloaded yet. */

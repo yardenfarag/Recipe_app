@@ -25,9 +25,9 @@ import { useLibraryLayout } from '@/hooks/useLibraryLayout';
 import { useThemePreference } from '@/hooks/useThemePreference';
 import { announce, CHROME_MAX_FONT_SCALE } from '@/lib/a11y';
 import { logTap } from '@/lib/interactionLog';
-import { recipeCardToListRecipe } from '@/lib/recipeCardMap';
-import { translateRecipeTag } from '@/lib/recipeTags';
-import type { HubPlatform, RecipeCard } from '@/types/recipeCard';
+import { recipeCardToListRecipe } from '@shared/lib/recipeCardMap';
+import { translateRecipeTag } from '@shared/lib/recipeTags';
+import type { HubPlatform, RecipeCard } from '@shared/types/recipeCard';
 
 const HUB_PLATFORMS = ['all', 'youtube', 'instagram', 'tiktok', 'web'] as const;
 

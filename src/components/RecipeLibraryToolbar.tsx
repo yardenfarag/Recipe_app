@@ -9,8 +9,8 @@ import { TextInput } from '@/components/text-input';
 import type { LibraryLayout } from '@/hooks/useLibraryLayout';
 import { useThemePreference } from '@/hooks/useThemePreference';
 import { CHROME_MAX_FONT_SCALE } from '@/lib/a11y';
-import { RECIPE_SORT_OPTIONS, RecipeSortKey } from '@/lib/recipeListQuery';
-import { translateRecipeTag } from '@/lib/recipeTags';
+import { RECIPE_SORT_OPTIONS, RecipeSortKey } from '@shared/lib/recipeListQuery';
+import { translateRecipeTag } from '@shared/lib/recipeTags';
 
 export type LibraryCollectionChip = {
   id: string;

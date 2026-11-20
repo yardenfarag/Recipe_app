@@ -14,7 +14,7 @@ import Animated, {
 import Svg, { Circle, Ellipse, G, Line, Path, Rect } from 'react-native-svg';
 
 import { useThemePreference } from '@/hooks/useThemePreference';
-import type { ThemePackColors, ThemePackId } from '@/constants/themes';
+import type { ThemePackColors, ThemePackId } from '@shared/constants/themes';
 
 type Viewport = { width: number; height: number };
 

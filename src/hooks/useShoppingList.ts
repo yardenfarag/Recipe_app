@@ -11,7 +11,7 @@ import {
   combineDuplicatesForName,
   mergeIntoShoppingList,
   sortShoppingListItems,
-} from '@/lib/shoppingListMerge';
+} from '@shared/lib/shoppingListMerge';
 import {
   clearShoppingList,
   deleteCheckedShoppingListItems,
@@ -19,11 +19,11 @@ import {
   fetchShoppingList,
   syncMergedShoppingList,
   updateShoppingListItem,
-} from '@/lib/supabase/shoppingList';
+} from '@shared/lib/supabase/shoppingList';
 import type {
   ShoppingListIncomingItem,
   ShoppingListItem,
-} from '@/types/shoppingList';
+} from '@shared/types/shoppingList';
 
 export type AddShoppingItemsResult = {
   items: ShoppingListItem[];

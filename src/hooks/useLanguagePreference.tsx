@@ -14,7 +14,7 @@ import {
   isAppLanguageCode,
   resolveAppLanguageFromDevice,
   type AppLanguageCode,
-} from '@/lib/appLanguages';
+} from '@shared/lib/appLanguages';
 
 const STORAGE_KEY = 'pinch:appLanguage';
 

@@ -1,10 +1,10 @@
-import { localizeIngredientUnits } from '@/lib/culinaryUnits';
-import { withSourceAmounts } from '@/lib/ingredientAmounts';
-import { resolveRecipeSourceLanguage } from '@/lib/recipeSourceLanguage';
-import { translateRecipe } from '@/lib/supabase/translateRecipe';
-import type { Ingredient, Instruction, RecipeTranslationContent } from '@/types/recipe';
-import type { RecipeLanguageCode } from '@/lib/recipeLanguages';
-import { isRecipeLanguageCode } from '@/lib/recipeLanguages';
+import { localizeIngredientUnits } from '@shared/lib/culinaryUnits';
+import { withSourceAmounts } from '@shared/lib/ingredientAmounts';
+import { resolveRecipeSourceLanguage } from '@shared/lib/recipeSourceLanguage';
+import { translateRecipe } from '@shared/lib/supabase/translateRecipe';
+import type { Ingredient, Instruction, RecipeTranslationContent } from '@shared/types/recipe';
+import type { RecipeLanguageCode } from '@shared/lib/recipeLanguages';
+import { isRecipeLanguageCode } from '@shared/lib/recipeLanguages';
 
 function withLocalizedUnits(
   content: RecipeTranslationContent,
