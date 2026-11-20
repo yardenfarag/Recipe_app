@@ -1,0 +1,33 @@
+import { localSupabase } from "./env.mjs";
+
+/** Local Supabase's admin API, for setting up accounts and reading one-time codes. Local only (env.mjs). */
+async function admin(path: string, body: unknown) {
+  const { url, serviceRoleKey } = localSupabase();
+  const response = await fetch(`${url}/auth/v1/admin/${path}`, {
+    method: "POST",
+    headers: { apikey: serviceRoleKey, Authorization: `Bearer ${serviceRoleKey}`, "Content-Type": "application/json" },
+    body: JSON.stringify(body),
+  });
+  const text = await response.text();
+  if (!response.ok) throw new Error(`admin/${path} failed (${response.status}): ${text}`);
+  return JSON.parse(text);
+}
+
+export async function createUser(email: string, password: string, locale = "en") {
+  return admin("users", { email, password, email_confirm: true, user_metadata: { locale } });
+}
+
+/**
+ * A fresh 6-digit code for the address, as the sign-in or reset email would carry. Local Supabase sends its
+ * default emails, which hold only a link, so the tests take the code from here instead of the inbox.
+ */
+export async function oneTimeCode(email: string, type: "magiclink" | "recovery"): Promise<string> {
+  const data = await admin("generate_link", { type, email });
+  const code = data.email_otp ?? data.properties?.email_otp;
+  if (!/^\d{6}$/.test(code ?? "")) throw new Error(`No code in generate_link response: ${JSON.stringify(data)}`);
+  return code;
+}
+
+export function uniqueEmail(prefix: string) {
+  return `${prefix}-${Date.now()}-${Math.floor(Math.random() * 1e6)}@example.com`;
+}

@@ -16,6 +16,8 @@ Production is the only Supabase project; there is no staging (a cost decision, s
 The Next.js app in `web/` replaces the Expo web app screen by screen. Decisions are in `docs/adr/026-web-app-foundations.md` and `docs/adr/027-web-app-hosting.md`.
 
 - It is a separate npm project. Run its commands from `web/`: `npm ci`, `npm run dev`, `npm test`, `npm run typecheck`, `npm run lint`, `npm run preview`.
+- Browser tests (`npm run test:e2e`, Playwright) run only against local Supabase (`npx supabase start` at the repo root). `web/e2e/env.mjs` refuses any other address. Never point them at production.
+- Signed-in pages go in `web/app/(signed-in)/`; its layout sends signed-out visitors to sign-in and back. The session lives in the browser, so read it with `useAuth()`, not on the server.
 - Next.js here is newer than your training data. Read `web/AGENTS.md` and the guides in `web/node_modules/next/dist/docs/` before writing code.
 - Cache Components stay off: OpenNext does not fully support them on Cloudflare yet.
 - Don't copy code from `src/` into `web/`. Code both apps need goes in `shared/` (next section).

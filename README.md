@@ -65,14 +65,17 @@ The signed-in web app is being rebuilt as a Next.js app in [`web/`](web/), scree
 ```bash
 cd web
 npm ci
+cp .env.example .env.local   # then fill in the Supabase URL and key
 npm run dev          # http://localhost:3000/app
 npm test             # Vitest
+npm run test:e2e     # Playwright, against local Supabase (start it first: npx supabase start)
 npm run typecheck
 npm run lint
 npm run preview      # build the Worker with OpenNext and serve it locally in workerd
 ```
 
-- CI runs test, type-check, lint and the Worker build in the `web` job of [`quality.yml`](.github/workflows/quality.yml).
+- CI runs test, type-check, lint and the Worker build in the `web` job of [`quality.yml`](.github/workflows/quality.yml), and the browser tests in `web-e2e`, against a local Supabase started in that job.
+- Sign-in returns to `<origin>/app/auth-callback` (Google) and `<origin>/app/reset-password` (reset emails). Every address the app runs on must be in Supabase → Authentication → URL Configuration → Redirect URLs, e.g. `https://next.pinch-app.io/app/**`.
 - Every merge to `master` that touches `web/` deploys through [`deploy-web-app.yml`](.github/workflows/deploy-web-app.yml). It reuses the `EXPO_PUBLIC_SUPABASE_*` secrets as `NEXT_PUBLIC_*` and the `CLOUDFLARE_*` secrets of the share Worker.
 - The app is built with `basePath: '/app'`. Links through `next/link` get the prefix automatically. Plain `/...` paths to files in `public/` need it written out.
 - Its lockfile is `npm-shrinkwrap.json`, not `package-lock.json`. npm treats them the same; the Cloudflare build needs this name ([`shared/README.md`](shared/README.md) says why).

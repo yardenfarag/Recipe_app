@@ -14,9 +14,11 @@
         "i18next": "^26.3.6",
         "next": "16.4.6",
         "react": "19.3.0",
-        "react-dom": "19.3.0"
+        "react-dom": "19.3.0",
+        "react-i18next": "^17.0.11"
       },
       "devDependencies": {
+        "@playwright/test": "^1.65.1",
         "@tailwindcss/turbopack": "4.3.3",
         "@testing-library/dom": "^10.4.2",
         "@testing-library/react": "^16.3.3",
@@ -1396,7 +1398,6 @@
       "version": "7.29.14",
       "resolved": "https://registry.npmjs.org/@babel/runtime/-/runtime-7.29.14.tgz",
       "integrity": "sha512-Y5tqevQaUAZhhj82BpYMNC1ssvLQTVAfwKdm8iy8qwmhvC2/CpcAu8OC+QEtjM7pMk7knx83u1Qj8gzkicyelw==",
-      "dev": true,
       "license": "MIT",
       "engines": {
         "node": ">=6.9.0"
@@ -3416,6 +3417,22 @@
       "peer": true,
       "funding": {
         "url": "https://github.com/sponsors/oxc-project"
+      }
+    },
+    "node_modules/@playwright/test": {
+      "version": "1.65.1",
+      "resolved": "https://registry.npmjs.org/@playwright/test/-/test-1.65.1.tgz",
+      "integrity": "sha512-y+NCIRm2LvY4slUVWvGh1nujJ8RF/hEisIsq2mtUPgdQC4L701bq5hZGMhrpeXjACvwvO9tj5dJqhvM6TP9lbw==",
+      "devOptional": true,
+      "license": "Apache-2.0",
+      "dependencies": {
+        "playwright": "1.65.1"
+      },
+      "bin": {
+        "playwright": "cli.js"
+      },
+      "engines": {
+        "node": ">=20"
       }
     },
     "node_modules/@poppinss/colors": {
@@ -8171,6 +8188,15 @@
         "node": "^20.19.0 || ^22.12.0 || >=24.0.0"
       }
     },
+    "node_modules/html-parse-stringify": {
+      "version": "4.0.1",
+      "resolved": "https://registry.npmjs.org/html-parse-stringify/-/html-parse-stringify-4.0.1.tgz",
+      "integrity": "sha512-0zHsZJrK7S3K2aucXWL6ycoYJ/iNtIcFHC/nYQgFklPtrv5LpJctIiSCroWZWeuoXvuyFdzp6KzjJQ+OT5MfFw==",
+      "license": "MIT",
+      "funding": {
+        "url": "https://locize.com"
+      }
+    },
     "node_modules/http-errors": {
       "version": "2.0.1",
       "resolved": "https://registry.npmjs.org/http-errors/-/http-errors-2.0.1.tgz",
@@ -10076,6 +10102,35 @@
         "url": "https://github.com/sponsors/jonschlinkert"
       }
     },
+    "node_modules/playwright": {
+      "version": "1.65.1",
+      "resolved": "https://registry.npmjs.org/playwright/-/playwright-1.65.1.tgz",
+      "integrity": "sha512-vJ1FuoOrNwOKHUIVEvSt3jT1L+wjjDpwhwIstKtfvTh8XIG4FG4bIFuvNdMxi81LGfAhUgUZleVFaOLY4RIUUw==",
+      "devOptional": true,
+      "license": "Apache-2.0",
+      "dependencies": {
+        "playwright-core": "1.65.1"
+      },
+      "bin": {
+        "playwright": "cli.js"
+      },
+      "engines": {
+        "node": ">=20"
+      }
+    },
+    "node_modules/playwright-core": {
+      "version": "1.65.1",
+      "resolved": "https://registry.npmjs.org/playwright-core/-/playwright-core-1.65.1.tgz",
+      "integrity": "sha512-hqPpz7blSMPxWVdoeE1yiBSzXsKiVOd2k+kjCvmUywD2GPO2Dd9HfcWnq9NN0GHbNZDFgZ9JfBFr+X5/BLo0qw==",
+      "devOptional": true,
+      "license": "Apache-2.0",
+      "bin": {
+        "playwright-core": "cli.js"
+      },
+      "engines": {
+        "node": ">=20"
+      }
+    },
     "node_modules/possible-typed-array-names": {
       "version": "1.1.0",
       "resolved": "https://registry.npmjs.org/possible-typed-array-names/-/possible-typed-array-names-1.1.0.tgz",
@@ -10281,6 +10336,33 @@
       },
       "peerDependencies": {
         "react": "^19.3.0"
+      }
+    },
+    "node_modules/react-i18next": {
+      "version": "17.0.11",
+      "resolved": "https://registry.npmjs.org/react-i18next/-/react-i18next-17.0.11.tgz",
+      "integrity": "sha512-cDtkXgxjuFTWUH6V+aQn1Ve5vDiUztCNPWW5GtSHDccsgRXO1nE6QFWCEmc1KAutrb3OUv87wFShJL5RhUwPXg==",
+      "license": "MIT",
+      "dependencies": {
+        "@babel/runtime": "^7.29.2",
+        "html-parse-stringify": "^4.0.1",
+        "use-sync-external-store": "^1.6.0"
+      },
+      "peerDependencies": {
+        "i18next": ">= 26.2.0",
+        "react": ">= 16.8.0",
+        "typescript": "^5 || ^6 || ^7"
+      },
+      "peerDependenciesMeta": {
+        "react-dom": {
+          "optional": true
+        },
+        "react-native": {
+          "optional": true
+        },
+        "typescript": {
+          "optional": true
+        }
       }
     },
     "node_modules/react-is": {
@@ -11687,6 +11769,15 @@
       "resolved": "https://registry.npmjs.org/urlpattern-polyfill/-/urlpattern-polyfill-10.1.0.tgz",
       "integrity": "sha512-IGjKp/o0NL3Bso1PymYURCJxMPNAf/ILOpendP9f5B6e1rTJgdgiOvgfoT8VxCAdY+Wisb9uhGaJJf3yZ2V9nw==",
       "license": "MIT"
+    },
+    "node_modules/use-sync-external-store": {
+      "version": "1.7.0",
+      "resolved": "https://registry.npmjs.org/use-sync-external-store/-/use-sync-external-store-1.7.0.tgz",
+      "integrity": "sha512-6L+EeigHMQhdaIPNIFUKwfWJSwWFQ8gJbJ2DLOs5sDIegTwR9fRxvnM3uciHKjIZhFz+KAv2emhWMRvDmMcY8A==",
+      "license": "MIT",
+      "peerDependencies": {
+        "react": "^16.8.0 || ^17.0.0 || ^18.0.0 || ^19.0.0"
+      }
     },
     "node_modules/vary": {
       "version": "1.1.2",
