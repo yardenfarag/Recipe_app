@@ -14,7 +14,7 @@ export async function expectSignedIn(page: Page, email: string) {
   await accountMenuButton(page).click();
   await expect(page.getByRole("menu").getByText(email, { exact: true })).toBeVisible();
   await page.keyboard.press("Escape");
-  await expect(page.getByRole("menu")).toBeHidden();
+  await expect(page.getByRole("menu")).toHaveCount(0);
 }
 
 export async function signOutFromMenu(page: Page) {

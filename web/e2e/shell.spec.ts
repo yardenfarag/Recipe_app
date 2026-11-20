@@ -73,13 +73,13 @@ test.describe("desktop", () => {
     await page.getByRole("menuitemradio", { name: "Dark" }).focus();
     await page.keyboard.press("Enter");
     await expect(page.locator("html")).toHaveAttribute("data-scheme", "dark");
-    await expect(page.getByRole("menu")).toBeHidden();
+    await expect(page.getByRole("menu")).toHaveCount(0);
     await expect(accountButton).toBeFocused();
 
     await page.keyboard.press("Enter");
     await expect(page.getByRole("menu")).toBeVisible();
     await page.keyboard.press("Escape");
-    await expect(page.getByRole("menu")).toBeHidden();
+    await expect(page.getByRole("menu")).toHaveCount(0);
     await expect(accountButton).toBeFocused();
   });
 
