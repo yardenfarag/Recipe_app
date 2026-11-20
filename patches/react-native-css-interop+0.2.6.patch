@@ -1,0 +1,18 @@
+diff --git a/node_modules/react-native-css-interop/dist/runtime/web/api.js b/node_modules/react-native-css-interop/dist/runtime/web/api.js
+index 45339c1..1a0a7b4 100644
+--- a/node_modules/react-native-css-interop/dist/runtime/web/api.js
++++ b/node_modules/react-native-css-interop/dist/runtime/web/api.js
+@@ -27,6 +27,13 @@ const cssInterop = (baseComponent, mapping) => {
+         for (const config of configs) {
+             const source = props[config.source];
+             if (typeof source === "string" && source) {
++                // Pinch patch: assignToTarget pushes into an existing style array in place.
++                // React Compiler reuses that array between renders, so every render added
++                // another class entry and old class names never went away. Copy it first.
++                const targetProp = config.target.length === 1 ? config.target[0] : undefined;
++                if (targetProp !== undefined && Array.isArray(props[targetProp])) {
++                    props[targetProp] = [...props[targetProp]];
++                }
+                 (0, shared_1.assignToTarget)(props, {
+                     $$css: true,
+                     [source]: source,
