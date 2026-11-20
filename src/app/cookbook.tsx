@@ -172,7 +172,7 @@ export default function CookbookScreen() {
   function goToLibrary() {
     setSuccessOpen(false);
     setErrorOpen(false);
-    router.replace('/');
+    router.dismissTo('/');
   }
 
   const stepTitle =

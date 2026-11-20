@@ -43,10 +43,10 @@ export default function AuthCallbackScreen() {
           const { completeOnboarding: complete, language: locale } = onboardingRef.current;
           captureOnboardingCompleted({ locale, platform: Platform.OS });
           await complete();
-          if (active) router.replace('/add');
+          if (active) router.dismissTo('/add');
           return;
         }
-        router.replace('/');
+        router.dismissTo('/');
       } catch (err) {
         if (active) {
           const message = err instanceof Error ? err.message : t('auth.callbackFailed');

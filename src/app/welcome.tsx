@@ -8,7 +8,7 @@ export default function WelcomeScreen() {
     if (Platform.OS === 'web') {
       window.location.assign('/');
     } else {
-      router.replace('/');
+      router.dismissTo('/');
     }
   }, []);
 

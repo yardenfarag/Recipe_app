@@ -176,11 +176,11 @@ export default function AuthScreen() {
     if (reason === 'onboarding') {
       captureOnboardingCompleted({ locale: language, platform: Platform.OS });
       await completeOnboarding();
-      router.replace('/add');
+      router.dismissTo('/add');
       return;
     }
     if (router.canGoBack()) router.back();
-    else router.replace('/');
+    else router.dismissTo('/');
   }
 
   function switchMode(next: Mode) {
