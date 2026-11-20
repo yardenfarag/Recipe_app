@@ -22,6 +22,7 @@ export default defineConfig({
     environment: "jsdom",
     setupFiles: ["./vitest.setup.ts"],
     include: ["**/*.test.{ts,tsx}"],
-    exclude: ["node_modules/**", ".next/**", ".open-next/**"],
+    // Browser tests (e2e/) run with Playwright: npm run test:e2e.
+    exclude: ["node_modules/**", ".next/**", ".open-next/**", "e2e/**"],
   },
 });
