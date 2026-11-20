@@ -169,7 +169,7 @@ export default function ResetPasswordScreen() {
           <Pressable trackId="reset_password.done.continue"
             className="w-full items-center rounded-full py-4"
             style={{ backgroundColor: colors.primary }}
-            onPress={() => router.replace('/')}
+            onPress={() => router.dismissTo('/')}
             accessibilityRole="button"
           >
             <Text className="text-lg font-bold" style={{ color: colors.onPrimary }}>

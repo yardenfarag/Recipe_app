@@ -34,6 +34,7 @@ import { useThemePreference } from "@/hooks/useThemePreference";
 import { announce } from "@/lib/a11y";
 import { logTap } from "@/lib/interactionLog";
 import { showNotice } from "@/lib/confirmAction";
+import { claimShare, releaseShareClaim } from "@/lib/shareIntentClaim";
 import { creditPurchasesOfferedOn } from "@/lib/purchases";
 import { openAppStore } from "@/lib/appStore";
 import { isFoodGateReject, shouldOfferInvent } from "@/lib/contentGate";
@@ -116,7 +117,6 @@ export default function AddRecipeScreen() {
   const { hasShareIntent, shareIntent, resetShareIntent } =
     useShareIntentContext();
   const { user, loading: authLoading } = useAuth();
-  const consumedShareRef = useRef<string | null>(null);
   const pendingShareRef = useRef<PendingShare | null>(null);
   const {
     freeExtractsRemaining,
@@ -184,7 +184,7 @@ export default function AddRecipeScreen() {
 
   useEffect(() => {
     if (!hasShareIntent) {
-      consumedShareRef.current = null;
+      releaseShareClaim();
       return;
     }
 
@@ -207,9 +207,9 @@ export default function AddRecipeScreen() {
     });
     if (action === "wait") return;
 
-    // resetShareIntent() lands on a later render; don't take the same share twice.
-    if (consumedShareRef.current === shareKey) return;
-    consumedShareRef.current = shareKey;
+    // resetShareIntent() lands on a later render, and more than one Snap screen
+    // can be mounted. The claim is app-wide so a share is only taken once.
+    if (!claimShare(shareKey)) return;
     resetShareIntent();
 
     let share: PendingShare;

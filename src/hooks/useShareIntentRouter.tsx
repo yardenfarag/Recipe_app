@@ -21,7 +21,7 @@ export function ShareIntentRouter() {
 
   useEffect(() => {
     if (!hasShareIntent || !ready || !completed || authLoading) return;
-    if (pathname !== '/add') router.replace('/add');
+    if (pathname !== '/add') router.dismissTo('/add');
   }, [hasShareIntent, ready, completed, authLoading, pathname]);
 
   return null;

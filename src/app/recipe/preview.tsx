@@ -189,7 +189,7 @@ export default function RecipePreviewScreen() {
           </Text>
           <Pressable
             trackId="recipe_preview.go_home"
-            onPress={() => router.replace('/')}
+            onPress={() => router.dismissTo('/')}
             className="rounded-full px-5 py-3 active:opacity-80"
             style={{ backgroundColor: colors.primary }}
             accessibilityRole="button"
@@ -256,7 +256,7 @@ export default function RecipePreviewScreen() {
         await showNotice(t('recipe.saveFailedTitle'), t('recipe.alreadySaved'));
         router.replace(`/recipe/${saved.id}`);
       } else {
-        router.replace('/?saved=1');
+        router.dismissTo('/?saved=1');
       }
     } catch (err) {
       Alert.alert(

@@ -125,7 +125,7 @@ export default function SharedRecipeScreen() {
           </Text>
           <Pressable
             trackId="shared_recipe.go_home"
-            onPress={() => router.replace('/')}
+            onPress={() => router.dismissTo('/')}
             accessibilityRole="button"
             className="rounded-full px-5 py-3 active:opacity-80"
             style={{ backgroundColor: colors.primary }}
