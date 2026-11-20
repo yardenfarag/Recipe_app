@@ -4,7 +4,7 @@ import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { useEffect, type ReactNode } from "react";
 
 import { useAuth } from "@/components/AuthProvider";
-import { Spinner } from "@/components/ui/Spinner";
+import { LoadingState } from "@/components/ui/States";
 import { signInPathFor } from "@/lib/nextPath";
 
 /**
@@ -23,12 +23,6 @@ export function RequireAuth({ children }: { children: ReactNode }) {
     router.replace(signInPathFor(query ? `${pathname}?${query}` : pathname));
   }, [loading, user, pathname, searchParams, router]);
 
-  if (!user) {
-    return (
-      <div className="flex flex-1 items-center justify-center p-6">
-        <Spinner />
-      </div>
-    );
-  }
+  if (!user) return <LoadingState className="min-h-dvh" />;
   return <>{children}</>;
 }

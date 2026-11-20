@@ -9,6 +9,9 @@ const PORT = 3100;
 export default defineConfig({
   testDir: "./e2e",
   fullyParallel: false,
+  // One at a time: the tests share one local server and one local Supabase, and parallel runs made them flaky.
+  workers: 1,
+  expect: { timeout: 10_000 },
   forbidOnly: Boolean(process.env.CI),
   retries: process.env.CI ? 1 : 0,
   reporter: process.env.CI ? [["github"], ["list"]] : "list",
