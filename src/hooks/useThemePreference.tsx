@@ -67,6 +67,12 @@ function applyWebDocumentTheme(colors: ThemePackColors, scheme: ResolvedScheme) 
   root.style.setProperty('--pinch-scrollbar-thumb', hexToRgba(colors.primary, 0.32));
   root.style.setProperty('--pinch-scrollbar-thumb-hover', hexToRgba(colors.primary, 0.55));
   root.style.setProperty('--pinch-focus-ring', hexToRgba(colors.primary, 0.4));
+  root.style.setProperty('--pinch-focus-outline', hexToRgba(colors.primary, 0.9));
+  // Hovered controls get a touch darker on light themes and lighter on dark ones.
+  root.style.setProperty(
+    '--pinch-hover-filter',
+    scheme === 'dark' ? 'brightness(1.14)' : 'brightness(0.96)',
+  );
 }
 
 function applyAppearance(preference: ThemePreference, packId: ThemePackId) {

@@ -1158,6 +1158,7 @@ export default {
     "removeSwap": "Remove swap: {{from}} for {{to}}",
     "retryLoadingRecipes": "Retry loading recipes",
     "searchRecipes": "Search recipes",
+    "mainNavigation": "Main navigation",
     "showRecipesTagged": "Show recipes tagged {{tag}}",
     "sortBy": "Sort: {{option}}",
     "sourceFilter": "Source: {{source}}",

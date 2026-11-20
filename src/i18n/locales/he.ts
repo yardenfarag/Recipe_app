@@ -1158,6 +1158,7 @@ export default {
     "removeSwap": "הסרת ההחלפה: {{from}} ב{{to}}",
     "retryLoadingRecipes": "ניסיון חוזר לטעון מתכונים",
     "searchRecipes": "חיפוש מתכונים",
+    "mainNavigation": "ניווט ראשי",
     "showRecipesTagged": "הצגת מתכונים עם התגית {{tag}}",
     "sortBy": "מיון: {{option}}",
     "sourceFilter": "מקור: {{source}}",

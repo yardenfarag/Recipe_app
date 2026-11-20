@@ -3,7 +3,7 @@ import { Platform, View, type ViewProps } from 'react-native';
 import { SafeAreaView, useSafeAreaInsets, type Edge } from 'react-native-safe-area-context';
 
 import { MistAtmosphere } from '@/components/MistAtmosphere';
-import { MaxContentWidth } from '@/constants/theme';
+import { GridContentWidth, MaxContentWidth, RecipeReadingWidth } from '@/constants/theme';
 import { useBreakpoint } from '@/hooks/useBreakpoint';
 import { useThemePreference } from '@/hooks/useThemePreference';
 
@@ -32,7 +32,20 @@ type ScreenProps = ViewProps & {
    * Atmosphere stays full-bleed either way.
    */
   constrainWidth?: boolean;
+  /**
+   * How wide the content column gets on the desktop website (PIN-109).
+   * `grid` is wider, for card grids. `reading` is narrower, for lists and
+   * forms that would otherwise stretch across the window. Phones, tablets and
+   * the mobile apps always get the default.
+   */
+  contentWidth?: 'default' | 'grid' | 'reading';
 };
+
+const DESKTOP_CONTENT_WIDTH = {
+  default: MaxContentWidth,
+  grid: GridContentWidth,
+  reading: RecipeReadingWidth,
+} as const;
 
 /** App canvas with theme-pack Drift atmosphere. */
 export function Screen({
@@ -43,12 +56,14 @@ export function Screen({
   plain,
   dense,
   constrainWidth = true,
+  contentWidth = 'default',
   className,
   style,
   ...rest
 }: ScreenProps) {
   const { colors } = useThemePreference();
-  const { isMediumUp } = useBreakpoint();
+  const { isMediumUp, isDesktopWeb } = useBreakpoint();
+  const maxWidth = isDesktopWeb ? DESKTOP_CONTENT_WIDTH[contentWidth] : MaxContentWidth;
   const insets = useSafeAreaInsets();
   const resolvedEdges = edges ?? (tabScreen ? TAB_SCREEN_EDGES : DEFAULT_EDGES);
   const needsTop = resolvedEdges.includes('top');
@@ -73,7 +88,7 @@ export function Screen({
   const body =
     constrainWidth && isMediumUp ? (
       <View style={{ flex: 1, width: '100%', alignItems: 'center' }}>
-        <View style={{ flex: 1, width: '100%', maxWidth: MaxContentWidth }}>{inner}</View>
+        <View style={{ flex: 1, width: '100%', maxWidth }}>{inner}</View>
       </View>
     ) : (
       inner

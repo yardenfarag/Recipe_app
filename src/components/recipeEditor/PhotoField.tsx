@@ -3,6 +3,7 @@ import { Alert, Platform, Text, View } from 'react-native';
 import { Pressable } from '@/components/ui/Pressable';
 import { useTranslation } from 'react-i18next';
 
+import { useBreakpoint } from '@/hooks/useBreakpoint';
 import { useThemePreference } from '@/hooks/useThemePreference';
 import { pickCompressedRecipeImage } from '@/lib/pickCompressedImage';
 import type { EditorPhoto } from '@/lib/recipeEditor';
@@ -19,6 +20,7 @@ type PhotoFieldProps = {
 export function PhotoField({ photo, imageUrl, onChange }: PhotoFieldProps) {
   const { t } = useTranslation();
   const { colors } = useThemePreference();
+  const { isDesktopWeb } = useBreakpoint();
 
   const source =
     photo.kind === 'replace'
@@ -57,7 +59,14 @@ export function PhotoField({ photo, imageUrl, onChange }: PhotoFieldProps) {
           source={source}
           contentFit="cover"
           accessibilityIgnoresInvertColors
-          style={{ width: '100%', aspectRatio: 16 / 9, borderRadius: 18, backgroundColor: colors.primarySoft }}
+          style={{
+            width: '100%',
+            // A full-width photo would fill the whole window on the desktop website.
+            maxWidth: isDesktopWeb ? 420 : undefined,
+            aspectRatio: 16 / 9,
+            borderRadius: 18,
+            backgroundColor: colors.primarySoft,
+          }}
         />
       ) : null}
       <View className="flex-row flex-wrap gap-2">

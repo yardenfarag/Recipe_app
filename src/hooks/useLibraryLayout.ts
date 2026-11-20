@@ -2,6 +2,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useCallback, useEffect, useRef, useState } from 'react';
 
 import { useBreakpoint } from '@/hooks/useBreakpoint';
+import { gridColumns } from '@/lib/gridColumns';
 
 const STORAGE_KEY = 'pinch:libraryLayout';
 
@@ -16,7 +17,7 @@ function isLibraryLayout(value: string | null): value is LibraryLayout {
  * on tablet/desktop); a tap persists the choice.
  */
 export function useLibraryLayout() {
-  const { isMediumUp, isWide } = useBreakpoint();
+  const { isMediumUp, isWide, isDesktopWeb, width } = useBreakpoint();
   const [saved, setSaved] = useState<LibraryLayout | null>(null);
   const userSet = useRef(false);
 
@@ -38,7 +39,9 @@ export function useLibraryLayout() {
   }, []);
 
   const layout: LibraryLayout = saved ?? (isMediumUp ? 'grid' : 'list');
-  const numColumns = layout === 'grid' ? (isWide ? 3 : 2) : 1;
+  // The desktop website shows list rows two across, so they don't stretch over the window.
+  const numColumns =
+    layout === 'grid' ? gridColumns({ width, isWide, isDesktopWeb }) : isDesktopWeb ? 2 : 1;
 
   const setLayout = useCallback((next: LibraryLayout) => {
     userSet.current = true;

@@ -167,7 +167,8 @@ export const RecipeListRow = memo(function RecipeListRow({
       <View
         className={
           card
-            ? 'overflow-hidden rounded-3xl'
+            ? // pinch-card: hover lift on the website (web.css); no effect in the apps.
+              'pinch-card overflow-hidden rounded-3xl'
             : 'flex-row items-center gap-2 rounded-3xl p-3.5'
         }
         style={{

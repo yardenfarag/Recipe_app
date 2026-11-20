@@ -617,7 +617,7 @@ export default function ShoppingListScreen() {
   }
 
   return (
-    <Screen tabScreen>
+    <Screen tabScreen contentWidth="reading">
       <KeyboardAvoidingView
         className="flex-1"
         behavior={Platform.OS === 'ios' ? 'padding' : undefined}

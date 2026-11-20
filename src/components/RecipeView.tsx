@@ -21,7 +21,7 @@ import { RecipeTranslateModal } from '@/components/RecipeTranslateModal';
 import { RecipeVariantModal } from '@/components/RecipeVariantModal';
 import { SubstitutionModal } from '@/components/SubstitutionModal';
 import { TokenPurchaseSheet } from '@/components/TokenPurchaseSheet';
-import { RecipeReadingWidth } from '@/constants/theme';
+import { RecipeDesktopWidth, RecipeReadingWidth } from '@/constants/theme';
 import { useBreakpoint } from '@/hooks/useBreakpoint';
 import { useCollections } from '@/hooks/useCollections';
 import { useKitchenProfile } from '@/hooks/useKitchenProfile';
@@ -140,6 +140,9 @@ interface RecipeViewProps {
 
 /** Stack header on web — used so the side cook-along can fill the remaining viewport. */
 const WEB_RECIPE_HEADER = 64;
+/** Narrowest recipe column that still fits ingredients and steps side by side. */
+const SPLIT_BODY_MIN_WIDTH = 720;
+
 const NO_FIELDS: readonly RecalcField[] = [];
 
 /**
@@ -167,7 +170,9 @@ export function RecipeView({
   const { t } = useTranslation();
   const { user } = useAuth();
   const { colors } = useThemePreference();
-  const { isWide, isMediumUp, height: viewportHeight } = useBreakpoint();
+  const { isWide, isMediumUp, isDesktopWeb, height: viewportHeight } = useBreakpoint();
+  /** Width of the recipe column, measured so the split follows the space really left. */
+  const [bodyWidth, setBodyWidth] = useState(0);
   const { language: appLanguage } = useLanguagePreference();
   const { system: measurementSystem } = useMeasurementPreference();
   const { addFromRecipe } = useShoppingList();
@@ -728,8 +733,16 @@ export function RecipeView({
     announce(t('cookbook.servings', { count: clamped }));
   }
 
-  const sideCookAlong = isWide && sourceVideo.mode !== 'none';
-  const splitRecipeBody = isWide && !sideCookAlong;
+  const hasVideo = sourceVideo.mode !== 'none';
+  // Desktop website (PIN-109): ingredients and steps sit side by side whenever
+  // the column is wide enough. The video only takes a side column while it
+  // plays; until then its card sits next to the title. Wide tablets keep the
+  // earlier layout: video always at the side, body split only without one.
+  const sideCookAlong = isDesktopWeb ? hasVideo && cookAlongOpen : isWide && hasVideo;
+  const splitRecipeBody = isDesktopWeb
+    ? bodyWidth >= SPLIT_BODY_MIN_WIDTH
+    : isWide && !sideCookAlong;
+  const videoBesideTitle = isDesktopWeb && hasVideo && !cookAlongOpen;
 
   return (
     <View className="flex-1">
@@ -749,17 +762,24 @@ export function RecipeView({
     >
       <View
         className={isMediumUp ? 'px-5 pt-3 pb-2' : 'px-5 pt-4'}
+        onLayout={
+          isDesktopWeb ? (event) => setBodyWidth(event.nativeEvent.layout.width) : undefined
+        }
         style={
           isMediumUp && !sideCookAlong
             ? {
                 width: '100%',
-                maxWidth: splitRecipeBody ? 1040 : RecipeReadingWidth,
+                maxWidth: isDesktopWeb
+                  ? RecipeDesktopWidth
+                  : splitRecipeBody
+                    ? 1040
+                    : RecipeReadingWidth,
                 alignSelf: 'center',
               }
             : undefined
         }
       >
-        {!sideCookAlong && sourceVideo.mode !== 'none' ? (
+        {!sideCookAlong && hasVideo && !videoBesideTitle ? (
           <RecipeVideoPanel
             ref={videoPanelRef}
             originalUrl={recipe.original_url}
@@ -770,6 +790,8 @@ export function RecipeView({
           />
         ) : null}
 
+        <View className={videoBesideTitle ? 'flex-row items-start gap-4' : undefined}>
+        <View className={videoBesideTitle ? 'min-w-0 flex-1' : undefined}>
         <View
           className="mb-4 rounded-3xl border p-4"
           style={{ borderColor: colors.border, backgroundColor: colors.surface }}
@@ -1042,6 +1064,20 @@ export function RecipeView({
               </View>
             ) : null}
           </View>
+        </View>
+        </View>
+        {videoBesideTitle ? (
+          <View style={{ width: 340 }}>
+            <RecipeVideoPanel
+              ref={videoPanelRef}
+              originalUrl={recipe.original_url}
+              platform={recipe.platform}
+              sourceVideoUrl={recipe.source_video_url}
+              posterUri={recipe.image_url}
+              onRequestPlay={openCookAlong}
+            />
+          </View>
+        ) : null}
         </View>
 
         {translating ? (

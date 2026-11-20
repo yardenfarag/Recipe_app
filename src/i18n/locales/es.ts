@@ -1158,6 +1158,7 @@ export default {
     "removeSwap": "Quitar cambio: {{from}} por {{to}}",
     "retryLoadingRecipes": "Reintentar cargar las recetas",
     "searchRecipes": "Buscar recetas",
+    "mainNavigation": "Navegación principal",
     "showRecipesTagged": "Ver recetas con la etiqueta {{tag}}",
     "sortBy": "Ordenar: {{option}}",
     "sourceFilter": "Fuente: {{source}}",

@@ -348,7 +348,7 @@ function RecipeEditor({ initial, title }: { initial: RecipeEditorState; title: s
       : null;
 
   return (
-    <Screen edges={['left', 'right']} dense>
+    <Screen edges={['left', 'right']} dense contentWidth="reading">
       <Stack.Screen
         options={{
           title,

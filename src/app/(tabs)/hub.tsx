@@ -4,6 +4,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
   ActivityIndicator,
   FlatList,
+  Platform,
   RefreshControl,
   ScrollView,
   Text,
@@ -16,6 +17,7 @@ import type { TFunction } from 'i18next';
 import { useTranslation } from 'react-i18next';
 
 import { BrandHeader } from '@/components/BrandHeader';
+import { KeyHint } from '@/components/KeyHint';
 import { LibraryLayoutToggle } from '@/components/LibraryLayoutToggle';
 import { RecipeListRow } from '@/components/RecipeListRow';
 import { Screen } from '@/components/Screen';
@@ -23,6 +25,7 @@ import { TextInput } from '@/components/text-input';
 import { useCookingHub } from '@/hooks/useCookingHub';
 import { useLibraryLayout } from '@/hooks/useLibraryLayout';
 import { useThemePreference } from '@/hooks/useThemePreference';
+import { useSlashToSearch } from '@/hooks/useWebShortcut';
 import { announce, CHROME_MAX_FONT_SCALE } from '@/lib/a11y';
 import { logTap } from '@/lib/interactionLog';
 import { recipeCardToListRecipe } from '@/lib/recipeCardMap';
@@ -89,6 +92,7 @@ export default function CookingHubScreen() {
     [cards],
   );
   const listRef = useRef<FlatList<(typeof rows)[number]>>(null);
+  const searchRef = useSlashToSearch();
   const filtersActive = selectedTags.length > 0 || sort !== 'popular' || platform !== 'all';
   const [filtersOpen, setFiltersOpen] = useState(filtersActive);
   const hasQuery = Boolean(search.trim());
@@ -114,7 +118,7 @@ export default function CookingHubScreen() {
   );
 
   return (
-    <Screen tabScreen className="overflow-hidden">
+    <Screen tabScreen contentWidth="grid" className="overflow-hidden">
       <View
         className="w-full min-w-0 gap-3 px-5 pb-3"
         style={{ flexShrink: 0, maxWidth: '100%', alignSelf: 'stretch' }}
@@ -137,6 +141,8 @@ export default function CookingHubScreen() {
             importantForAccessibility="no"
           />
           <TextInput
+            ref={searchRef}
+            aria-keyshortcuts="/"
             accessibilityLabel={t('hub.searchPlaceholder')}
             className="pinch-plain-focus flex-1 px-3 py-3.5 text-base"
             style={{ color: colors.text }}
@@ -160,7 +166,9 @@ export default function CookingHubScreen() {
             >
               <Ionicons name="close-circle" size={18} color={colors.textSecondary} />
             </Pressable>
-          ) : null}
+          ) : (
+            <KeyHint label="/" />
+          )}
         </View>
 
         <View className="flex-row flex-wrap items-center gap-2">
@@ -368,13 +376,25 @@ export default function CookingHubScreen() {
       <View style={{ flex: 1, minHeight: 0, overflow: 'hidden' }}>
         <FlatList
           ref={listRef}
-          key={`hub-${numColumns}`}
+          key={`hub-${layout}-${numColumns}`}
           data={rows}
           keyExtractor={(item) => item.recipe.id}
           numColumns={numColumns}
           columnWrapperStyle={numColumns > 1 ? { gap: 0, marginBottom: 12 } : undefined}
           renderItem={({ item, index }) => (
-            <View style={numColumns > 1 ? { flex: 1, paddingHorizontal: 6 } : undefined}>
+            <View
+              style={
+                numColumns > 1
+                  ? // On the website, maxWidth keeps a short last row from stretching its
+                    // cards across the grid. The apps keep their layout.
+                    {
+                      flex: 1,
+                      maxWidth: Platform.OS === 'web' ? `${100 / numColumns}%` : undefined,
+                      paddingHorizontal: 6,
+                    }
+                  : undefined
+              }
+            >
               <RecipeListRow
                 trackId="hub.recipe"
                 recipe={item.recipe}
@@ -479,7 +499,10 @@ export default function CookingHubScreen() {
                     />
                     <Pressable
                       className="mt-8 w-full items-center rounded-3xl py-4 active:opacity-80"
-                      style={{ backgroundColor: colors.primary }}
+                      style={{
+                        backgroundColor: colors.primary,
+                        maxWidth: Platform.OS === 'web' ? 420 : undefined,
+                      }}
                       trackId="hub.empty.snap_first"
                       onPress={() => router.push('/add')}
                       accessibilityRole="button"

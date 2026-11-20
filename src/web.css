@@ -1,0 +1,69 @@
+/**
+ * Keyboard and mouse affordances for the website only (PIN-109).
+ *
+ * This file must stay out of the mobile apps: it is imported from
+ * webStyles.web.ts, never from global.css. NativeWind compiles global.css
+ * for iOS and Android too, and plain rules such as `box-shadow` here make
+ * that compile fail.
+ *
+ * React Native pressables render as <a>, <button> or an element with a role,
+ * so these rules reach every one of them without touching the components.
+ */
+:root {
+  --pinch-focus-outline: rgba(123, 107, 154, 0.9);
+  --pinch-hover-filter: brightness(0.96);
+}
+
+/* Tab key only (:focus-visible), never a mouse click. Text fields keep their own ring (global.css). */
+:is(a, button, [role='button'], [role='link'], [role='tab'], [role='checkbox'], [role='switch'], [role='radio'], [role='menuitem'], [tabindex='0']):not(input, textarea):focus-visible {
+  outline: 2px solid var(--pinch-focus-outline);
+  outline-offset: 2px;
+}
+
+/* Real mouse pointers only, so a tap on a phone doesn't leave a button looking hovered. */
+@media (hover: hover) and (pointer: fine) {
+  :is(a[href], button, [role='button'], [role='link'], [role='tab'], [role='checkbox'], [role='switch'], [role='radio'], [role='menuitem']) {
+    transition:
+      filter 120ms ease,
+      background-color 120ms ease,
+      box-shadow 160ms ease,
+      transform 160ms ease;
+  }
+
+  :is(a[href], button, [role='button'], [role='link'], [role='tab'], [role='checkbox'], [role='switch'], [role='radio'], [role='menuitem']):hover:not(:disabled, [aria-disabled='true']) {
+    filter: var(--pinch-hover-filter);
+  }
+
+  /* Recipe cards in the Library and Hub grids lift a little under the pointer. */
+  .pinch-card {
+    transition:
+      box-shadow 160ms ease,
+      transform 160ms ease;
+  }
+
+  .pinch-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 10px 24px rgba(40, 30, 60, 0.12);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .pinch-card,
+  .pinch-card:hover {
+    transition: none;
+    transform: none;
+  }
+}
+
+/*
+ * A grid card clips its corners, which would cut the ring off the button
+ * inside it. Draw the ring around the whole card instead.
+ */
+.pinch-card > :is(a, button, [role='button'], [role='link']):focus-visible {
+  outline: none;
+}
+
+.pinch-card:has(> :is(a, button, [role='button'], [role='link']):focus-visible) {
+  outline: 2px solid var(--pinch-focus-outline);
+  outline-offset: 2px;
+}

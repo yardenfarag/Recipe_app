@@ -1,14 +1,15 @@
 import { router, useLocalSearchParams, useNavigation } from 'expo-router';
 import { useCallback, useEffect, useState } from 'react';
-import { ActivityIndicator, Alert, Platform, Text, View } from 'react-native';
+import { ActivityIndicator, Alert, Text, View } from 'react-native';
 import { Pressable } from '@/components/ui/Pressable';
 import { useTranslation } from 'react-i18next';
 import type { Edge } from 'react-native-safe-area-context';
 
 import { RecipeView } from '@/components/RecipeView';
 import { Screen } from '@/components/Screen';
-import { StackHeaderBackButton } from '@/components/StackHeaderBackButton';
+import { RecipeDesktopWidth } from '@/constants/theme';
 import { useAuth } from '@/hooks/useAuth';
+import { useBreakpoint } from '@/hooks/useBreakpoint';
 import { useThemePreference } from '@/hooks/useThemePreference';
 import { recipeCardToExtracted } from '@/lib/recipeCardMap';
 import { claimHubCard, fetchHubCard, fetchLibraryRecipeForCard } from '@/lib/supabase/cookingHub';
@@ -22,7 +23,7 @@ export default function HubRecipeScreen() {
   const { session, loading: authLoading } = useAuth();
   const { colors } = useThemePreference();
   const navigation = useNavigation();
-  const isWeb = Platform.OS === 'web';
+  const { isDesktopWeb } = useBreakpoint();
 
   const [card, setCard] = useState<RecipeCard | null>(null);
   const [existingRecipeId, setExistingRecipeId] = useState<string | null>(null);
@@ -105,7 +106,8 @@ export default function HubRecipeScreen() {
     }
   }, [card, claiming, session?.user, t]);
 
-  const screenEdges: Edge[] = isWeb ? ['top', 'bottom'] : ['bottom'];
+  // The stack header (root layout) already has the back button and the title.
+  const screenEdges: Edge[] = ['bottom'];
 
   if (loading || authLoading) {
     return (
@@ -146,21 +148,22 @@ export default function HubRecipeScreen() {
 
   return (
     <Screen edges={screenEdges}>
-      {isWeb ? (
-        <View className="flex-row items-center justify-between px-5 py-3">
-          <StackHeaderBackButton fallback="/hub" />
-          <Text
-            accessibilityRole="header"
-            className="min-w-0 flex-1 px-2 text-center text-base font-bold"
-            style={{ color: colors.text }}
-            numberOfLines={1}
-          >
-            {card.title}
-          </Text>
-          <View className="w-10" />
-        </View>
-      ) : null}
-      <View className="px-5 pb-3 pt-2">
+      <View
+        className="px-5 pb-3 pt-2"
+        style={
+          // Desktop website: line up with the recipe column below, button and note in one row.
+          isDesktopWeb
+            ? {
+                width: '100%',
+                maxWidth: RecipeDesktopWidth,
+                alignSelf: 'center',
+                flexDirection: 'row',
+                alignItems: 'center',
+                gap: 16,
+              }
+            : undefined
+        }
+      >
         <Pressable trackId={existingRecipeId ? 'hub_recipe.open_in_library' : 'hub_recipe.add_to_library'}
           onPress={() =>
             existingRecipeId
@@ -172,7 +175,7 @@ export default function HubRecipeScreen() {
           accessibilityLabel={existingRecipeId ? t('hub.openInLibrary') : t('hub.addToLibrary')}
           accessibilityState={{ disabled: claiming, busy: claiming }}
           className="min-h-12 items-center justify-center rounded-3xl px-5 active:opacity-80 disabled:opacity-60"
-          style={{ backgroundColor: colors.primary }}
+          style={{ backgroundColor: colors.primary, minWidth: isDesktopWeb ? 240 : undefined }}
         >
           {claiming ? (
             <ActivityIndicator color={colors.onPrimary} />
@@ -182,7 +185,10 @@ export default function HubRecipeScreen() {
             </Text>
           )}
         </Pressable>
-        <Text className="mt-2 text-center text-xs leading-4" style={{ color: colors.textSecondary }}>
+        <Text
+          className={isDesktopWeb ? 'min-w-0 flex-1 text-xs leading-4' : 'mt-2 text-center text-xs leading-4'}
+          style={{ color: colors.textSecondary }}
+        >
           {t('hub.attribution')}
         </Text>
       </View>

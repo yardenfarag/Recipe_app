@@ -4,10 +4,12 @@ import { ScrollView, Text, View } from 'react-native';
 import { Pressable } from '@/components/ui/Pressable';
 import { useTranslation } from 'react-i18next';
 
+import { KeyHint } from '@/components/KeyHint';
 import { LibraryLayoutToggle } from '@/components/LibraryLayoutToggle';
 import { TextInput } from '@/components/text-input';
 import type { LibraryLayout } from '@/hooks/useLibraryLayout';
 import { useThemePreference } from '@/hooks/useThemePreference';
+import { useSlashToSearch } from '@/hooks/useWebShortcut';
 import { CHROME_MAX_FONT_SCALE } from '@/lib/a11y';
 import { RECIPE_SORT_OPTIONS, RecipeSortKey } from '@/lib/recipeListQuery';
 import { translateRecipeTag } from '@/lib/recipeTags';
@@ -79,6 +81,7 @@ export function RecipeLibraryToolbar({
     selectedCollectionId != null;
 
   const [filtersOpen, setFiltersOpen] = useState(filtersActive);
+  const searchRef = useSlashToSearch();
 
   return (
     <View className="gap-3">
@@ -98,6 +101,8 @@ export function RecipeLibraryToolbar({
           importantForAccessibility="no"
         />
         <TextInput
+          ref={searchRef}
+          aria-keyshortcuts="/"
           accessibilityLabel={t('a11y.searchRecipes')}
           className="pinch-plain-focus flex-1 px-3 py-3.5 text-base"
           style={{ color: colors.text }}
@@ -122,6 +127,7 @@ export function RecipeLibraryToolbar({
             <Ionicons name="close-circle" size={18} color={colors.textSecondary} />
           </Pressable>
         )}
+        {search.length === 0 ? <KeyHint label="/" /> : null}
       </View>
 
       <View className="flex-row flex-wrap items-center gap-2">

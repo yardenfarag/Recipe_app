@@ -1,7 +1,7 @@
 import Ionicons from '@expo/vector-icons/Ionicons';
 import { Tabs, useSegments } from 'expo-router';
 import { useTranslation } from 'react-i18next';
-import { View } from 'react-native';
+import { Platform, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { InAppMessageBanner } from '@/components/inAppMessages/InAppMessageBanner';
@@ -23,19 +23,22 @@ const TAB_BAR_CONTENT_HEIGHT = 56;
  *
  * Order: Library · Hub · Snap · List · Settings.
  * Favorites lives as a Library filter — tab hidden via href: null.
- * On wide viewports, bottom tabs hide and WebSidebar takes over.
+ * On wide viewports, bottom tabs hide and WebSidebar takes over (here on a
+ * tablet, in the root layout on the website).
  * Right after onboarding, FirstRunWalkthrough coaches over the bottom tab bar.
  */
 export default function AppTabs() {
   const { t } = useTranslation();
   const { colors } = useThemePreference();
   const insets = useSafeAreaInsets();
-  const { isWide } = useBreakpoint();
+  const { isWide: wideWindow } = useBreakpoint();
+  // The website keeps WebSidebar in the root layout, next to every screen (PIN-109).
+  const isWide = wideWindow && Platform.OS !== 'web';
   const tabBarPaddingBottom = Math.max(insets.bottom, 8);
   const { walkthroughPending, finishWalkthrough } = useOnboarding();
   const segments = useSegments();
   // Tabs stay mounted under pushed screens; only coach while a tab is showing.
-  const showWalkthrough = walkthroughPending && !isWide && segments[0] === '(tabs)';
+  const showWalkthrough = walkthroughPending && !wideWindow && segments[0] === '(tabs)';
 
   const tabs = (
     <Tabs
@@ -43,7 +46,7 @@ export default function AppTabs() {
         headerShown: false,
         tabBarActiveTintColor: colors.primary,
         tabBarInactiveTintColor: colors.textSecondary,
-        tabBarStyle: isWide
+        tabBarStyle: wideWindow
           ? { display: 'none' }
           : {
               backgroundColor: colors.tabBar,
@@ -137,7 +140,7 @@ export default function AppTabs() {
   );
 
   // In-app message banners: the top one pushes the screen down, the bottom one floats above the tab bar.
-  // On wide web they sit in the content column, beside WebSidebar.
+  // On wide layouts they sit in the content column, beside WebSidebar.
   const withBanners = (
     <View style={{ flex: 1 }}>
       <InAppMessageBanner position="top" />

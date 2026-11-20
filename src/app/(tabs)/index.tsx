@@ -410,21 +410,33 @@ export default function HomeScreen() {
 
   const renderItem = useCallback(
     ({ item, index }: { item: Recipe; index: number }) => (
-      <View style={numColumns > 1 ? { flex: 1, paddingHorizontal: 6 } : undefined}>
+      <View
+        style={
+          numColumns > 1
+            ? // On the website, maxWidth keeps a short last row from stretching its cards
+              // across the grid. The apps keep their layout.
+              {
+                flex: 1,
+                maxWidth: Platform.OS === 'web' ? `${100 / numColumns}%` : undefined,
+                paddingHorizontal: 6,
+              }
+            : undefined
+        }
+      >
         <RecipeListRow
           trackId="library.recipe"
           recipe={item}
           index={index}
-          variant={numColumns > 1 ? 'card' : 'row'}
+          variant={layout === 'grid' ? 'card' : 'row'}
           animateEnter={!skipItemEnter.current}
           onPress={() => openRecipe(item)}
-          onLongPress={numColumns > 1 ? undefined : () => openRecipeMenu(item)}
+          onLongPress={layout === 'grid' ? undefined : () => openRecipeMenu(item)}
           onMore={() => openRecipeMenu(item)}
           onToggleFavorite={() => handleToggleFavorite(item)}
         />
       </View>
     ),
-    [handleToggleFavorite, numColumns, openRecipe, openRecipeMenu],
+    [handleToggleFavorite, layout, numColumns, openRecipe, openRecipeMenu],
   );
 
   const listHeader = useMemo(
@@ -629,7 +641,7 @@ export default function HomeScreen() {
           <Pressable
             trackId="library.empty.add_recipe"
             className="mt-8 w-full items-center rounded-3xl py-4 active:opacity-80"
-            style={{ backgroundColor: colors.primary }}
+            style={{ backgroundColor: colors.primary, maxWidth: Platform.OS === 'web' ? 420 : undefined }}
             onPress={() => router.push('/add')}
             accessibilityRole="button"
           >
@@ -653,12 +665,12 @@ export default function HomeScreen() {
   }
 
   return (
-    <Screen tabScreen>
+    <Screen tabScreen contentWidth="grid">
       <View className="px-5">{listHeader}</View>
       <View style={{ flex: 1, minHeight: 0, overflow: 'hidden' }}>
         <Animated.View collapsable={false} style={[{ flex: 1 }, flipStyle]}>
           <FlatList
-            key={`library-${numColumns}`}
+            key={`library-${layout}-${numColumns}`}
             data={displayedRecipes}
             extraData={recipes}
             keyExtractor={(item) => item.id}

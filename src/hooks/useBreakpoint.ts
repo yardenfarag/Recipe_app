@@ -1,4 +1,4 @@
-import { useWindowDimensions } from 'react-native';
+import { Platform, useWindowDimensions } from 'react-native';
 
 export type Breakpoint = 'compact' | 'medium' | 'wide';
 
@@ -29,6 +29,8 @@ export function useBreakpoint() {
     isCompact: breakpoint === 'compact',
     isMedium: breakpoint === 'medium',
     isWide: breakpoint === 'wide',
+    /** Wide browser window. Use for layouts that must not change the mobile apps (PIN-109). */
+    isDesktopWeb: Platform.OS === 'web' && breakpoint === 'wide',
     /** medium or wide — use content max-width shell */
     isMediumUp: breakpoint !== 'compact',
   };

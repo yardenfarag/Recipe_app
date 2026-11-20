@@ -69,8 +69,12 @@ export const Radius = {
 export const BottomTabInset = Platform.select({ ios: 50, android: 80 }) ?? 0;
 /** Centered content column on medium+ web/tablet layouts. */
 export const MaxContentWidth = 1200;
+/** Wider column for card grids on the desktop website, so big monitors get more columns. */
+export const GridContentWidth = 1440;
 /** Readable recipe column on web/tablet (avoids stretching phone UI). */
 export const RecipeReadingWidth = 840;
+/** Recipe column on the desktop website, wide enough for ingredients and steps side by side. */
+export const RecipeDesktopWidth = 1120;
 /** Narrow form column (settings, snap card). */
 export const FormContentWidth = 640;
 /** Auth modal card width on web. */

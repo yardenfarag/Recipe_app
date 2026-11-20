@@ -1158,6 +1158,7 @@ export default {
     "removeSwap": "Удалить замену: {{from}} на {{to}}",
     "retryLoadingRecipes": "Повторить загрузку рецептов",
     "searchRecipes": "Поиск рецептов",
+    "mainNavigation": "Основная навигация",
     "showRecipesTagged": "Показать рецепты с тегом {{tag}}",
     "sortBy": "Сортировка: {{option}}",
     "sourceFilter": "Источник: {{source}}",

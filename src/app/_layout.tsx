@@ -1,11 +1,12 @@
 import '../global.css';
+import '../webStyles';
 
 import Constants, { ExecutionEnvironment } from 'expo-constants';
-import { Stack } from 'expo-router';
+import { Stack, useSegments } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { ShareIntentProvider } from 'expo-share-intent';
 import { useTranslation } from 'react-i18next';
-import { Platform } from 'react-native';
+import { Platform, View } from 'react-native';
 
 import { ErrorBoundary } from '@/components/ErrorBoundary';
 import { InAppMessageHost } from '@/components/inAppMessages/InAppMessageHost';
@@ -14,7 +15,9 @@ import { WebCheckoutReturnDialog } from '@/components/WebCheckoutReturnDialog';
 import { StackHeaderBackButton } from '@/components/StackHeaderBackButton';
 import { ToastHost } from '@/components/ToastHost';
 import { AccountLocaleSync } from '@/components/AccountLocaleSync';
-import { AuthProvider } from '@/hooks/useAuth';
+import { WebSidebar } from '@/components/WebSidebar';
+import { AuthProvider, useAuth } from '@/hooks/useAuth';
+import { useBreakpoint } from '@/hooks/useBreakpoint';
 import { LanguageProvider } from '@/hooks/useLanguagePreference';
 import { MeasurementProvider } from '@/hooks/useMeasurementPreference';
 import { OnboardingProvider, useOnboarding } from '@/hooks/useOnboarding';
@@ -33,15 +36,38 @@ export const unstable_settings = {
   initialRouteName: '(tabs)',
 };
 
+/** Screens that stand alone on the website: no side navigation next to them. */
+const NO_SIDEBAR_SEGMENTS = new Set([
+  'onboarding',
+  'welcome',
+  'auth',
+  'auth-callback',
+  'reset-password',
+  'legal',
+  'admin',
+  's',
+]);
+
 function RootNavigator() {
   const { colors, scheme } = useThemePreference();
   const { t } = useTranslation();
   const { ready: onboardingReady } = useOnboarding();
+  const { user, loading: authLoading } = useAuth();
+  const { isDesktopWeb } = useBreakpoint();
+  const segments = useSegments();
+  // Desktop website: the side navigation stays put on every signed-in screen,
+  // including the ones pushed over the tabs (a recipe, a settings page). PIN-109.
+  // Shown while the session loads too, so the page doesn't jump sideways when it arrives.
+  const showSidebar =
+    isDesktopWeb && (Boolean(user) || authLoading) && !NO_SIDEBAR_SEGMENTS.has(segments[0] ?? '');
 
   return (
     <>
       <StatusBar style={scheme === 'dark' ? 'light' : 'dark'} />
       {onboardingReady ? (
+        <View style={{ flex: 1, flexDirection: 'row', backgroundColor: colors.background }}>
+        {showSidebar ? <WebSidebar /> : null}
+        <View style={{ flex: 1, minWidth: 0 }}>
         <Stack
           screenOptions={{
             headerShadowVisible: false,
@@ -172,6 +198,8 @@ function RootNavigator() {
           <Stack.Screen name="admin/activity" options={{ title: t('nav.activity') }} />
           <Stack.Screen name="admin/messages" options={{ title: t('nav.messages') }} />
         </Stack>
+        </View>
+        </View>
       ) : null}
       <ToastHost />
     </>

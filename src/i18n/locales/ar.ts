@@ -1158,6 +1158,7 @@ export default {
     "removeSwap": "إزالة الاستبدال: {{from}} بـ{{to}}",
     "retryLoadingRecipes": "إعادة محاولة تحميل الوصفات",
     "searchRecipes": "البحث في الوصفات",
+    "mainNavigation": "التنقل الرئيسي",
     "showRecipesTagged": "عرض الوصفات ذات الوسم {{tag}}",
     "sortBy": "الترتيب: {{option}}",
     "sourceFilter": "المصدر: {{source}}",
