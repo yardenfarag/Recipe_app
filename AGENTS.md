@@ -11,6 +11,16 @@ Production is the only Supabase project; there is no staging (a cost decision, s
 - Write migrations expand-then-contract, with a timestamp newer than every existing one. After any migration change, run `npm run db:types` (local Supabase started) and commit the regenerated `database.types.ts`; CI fails otherwise.
 - Before writing or changing an Edge Function or a `_shared` module, read `docs/adr/024-backend-conventions.md`. It covers where files go, the handler wrapper, error shapes and data access.
 
+# New web app (`web/`)
+
+The Next.js app in `web/` replaces the Expo web app screen by screen. Decisions are in `docs/adr/026-web-app-foundations.md` and `docs/adr/027-web-app-hosting.md`.
+
+- It is a separate npm project. Run its commands from `web/`: `npm ci`, `npm run dev`, `npm test`, `npm run typecheck`, `npm run lint`, `npm run preview`.
+- Next.js here is newer than your training data. Read `web/AGENTS.md` and the guides in `web/node_modules/next/dist/docs/` before writing code.
+- Cache Components stay off: OpenNext does not fully support them on Cloudflare yet.
+- Don't copy code from `src/` into `web/`. Shared code moves to one place both apps import (PIN-128).
+- A change that touches `metro.config.js` or the root configs must still pass `npx expo export -p android` and `-p ios`.
+
 # Onboarding
 
 **Cookie tour**: `docs/onboarding/index.html` is the developer guide (architecture, AI model per task, local setup, workflow). When asked for the "cookie tour", open it in the user's browser (`open` on macOS, `start` on Windows, `xdg-open` on Linux) and offer to walk through it.

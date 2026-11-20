@@ -58,6 +58,25 @@ Desktop web (wide viewport). On smaller screens the same flows use bottom tabs i
    npm test
    ```
 
+## New web app (Next.js, `web/`)
+
+The signed-in web app is being rebuilt as a Next.js app in [`web/`](web/), screen by screen ([ADR 026](docs/adr/026-web-app-foundations.md)). Until it replaces the Expo web app, it is live at **https://next.pinch-app.io/app** on Cloudflare Workers ([ADR 027](docs/adr/027-web-app-hosting.md)). `web/` has its own `package.json` and lockfile; the mobile app's Metro, type-check, lint and Vitest ignore it.
+
+```bash
+cd web
+npm ci
+npm run dev          # http://localhost:3000/app
+npm test             # Vitest
+npm run typecheck
+npm run lint
+npm run preview      # build the Worker with OpenNext and serve it locally in workerd
+```
+
+- CI runs test, type-check, lint and the Worker build in the `web` job of [`quality.yml`](.github/workflows/quality.yml).
+- Every merge to `master` that touches `web/` deploys through [`deploy-web-app.yml`](.github/workflows/deploy-web-app.yml). It reuses the `EXPO_PUBLIC_SUPABASE_*` secrets as `NEXT_PUBLIC_*` and the `CLOUDFLARE_*` secrets of the share Worker.
+- The app is built with `basePath: '/app'`. Links through `next/link` get the prefix automatically. Plain `/...` paths to files in `public/` need it written out.
+- OpenNext warns that Windows is not fully supported. `npm run dev` is fine; if `npm run preview` misbehaves, trust the CI build (Linux).
+
 ## Web deploy (GitHub Pages + pinch-app.io)
 
 The site root is a hand-written static landing page (`landing/index.html`), so crawlers get real HTML. The Expo app exports as a static SPA (`web.output: single`) under `/app` (`experiments.baseUrl`). GitHub builds the site. Visitors use `https://pinch-app.io`.

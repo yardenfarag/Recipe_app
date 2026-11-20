@@ -1,0 +1,50 @@
+@import "tailwindcss";
+
+/*
+ * Pinch brand colours. The hex values must match src/constants/brandColors.js;
+ * app/brand-colors.test.ts fails when they drift. Theme packs and the light/dark
+ * switch arrive with the app shell (PIN-130).
+ */
+:root {
+  --pinch-primary: #6D5E8A;
+  --pinch-primary-soft: #E8E2F0;
+  --pinch-rose: #546980;
+  --pinch-rose-soft: #E0E8F0;
+  --pinch-bg: #F4F1F8;
+  --pinch-surface: #FFFFFF;
+  --pinch-text: #2A2634;
+  --pinch-muted: #595461;
+  --pinch-border: #E2DCE8;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --pinch-primary: #B8A8D4;
+    --pinch-primary-soft: #2E2838;
+    --pinch-rose: #9BB4D0;
+    --pinch-rose-soft: #243040;
+    --pinch-bg: #12101A;
+    --pinch-surface: #1E1A28;
+    --pinch-text: #F2F0F6;
+    --pinch-muted: #B7AFC1;
+    --pinch-border: #3A3448;
+  }
+}
+
+@theme inline {
+  --color-primary: var(--pinch-primary);
+  --color-primary-soft: var(--pinch-primary-soft);
+  --color-rose: var(--pinch-rose);
+  --color-rose-soft: var(--pinch-rose-soft);
+  --color-bg: var(--pinch-bg);
+  --color-surface: var(--pinch-surface);
+  --color-text: var(--pinch-text);
+  --color-muted: var(--pinch-muted);
+  --color-border: var(--pinch-border);
+}
+
+body {
+  background: var(--pinch-bg);
+  color: var(--pinch-text);
+  font-family: system-ui, -apple-system, "Segoe UI", Roboto, Arial, sans-serif;
+}
