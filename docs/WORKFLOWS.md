@@ -106,7 +106,7 @@ Tabs: `src/components/app-tabs.tsx` (Library, Favorites, Snap, Settings).
 
 **Why:** Snap must stay faithful extraction. Invent is a separate, labeled guess. See [ADR 014](./adr/014-how-to-cook-this.md).
 
-**Key files:** `add.tsx`, `src/lib/supabase/inventRecipe.ts`, `src/lib/contentGate.ts`, `supabase/functions/invent-recipe/`, `supabase/functions/_shared/extraction/contentGate.ts`
+**Key files:** `add.tsx`, `src/lib/supabase/inventRecipe.ts`, `shared/lib/contentGate.ts`, `supabase/functions/invent-recipe/`, `supabase/functions/_shared/extraction/contentGate.ts`
 
 ---
 
@@ -303,7 +303,7 @@ Root `ErrorBoundary` catches render crashes so one bad recipe screen doesn’t w
 
 ## 5. Data model (mental model)
 
-**Recipe** (`src/types/recipe.ts`) mirrors the `recipes` table:
+**Recipe** (`shared/types/recipe.ts`) mirrors the `recipes` table:
 
 - Source: `title`, `original_url`, `platform`, `image_url`  
 - Content: `ingredients[]`, `instructions[]`, `servings`  

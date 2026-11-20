@@ -4,7 +4,7 @@ import * as WebBrowser from 'expo-web-browser';
 import { Platform } from 'react-native';
 
 import { openAppStore, storeUrlFor } from '@/lib/appStore';
-import type { ButtonAction } from '@/lib/inAppMessages';
+import type { ButtonAction } from '@shared/lib/inAppMessages';
 
 /** A web address the in-app browser may open. The server checks too; this is the app's own guard. */
 export function isSafeWebUrl(url: string): boolean {

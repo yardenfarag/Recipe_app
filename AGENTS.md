@@ -18,8 +18,18 @@ The Next.js app in `web/` replaces the Expo web app screen by screen. Decisions 
 - It is a separate npm project. Run its commands from `web/`: `npm ci`, `npm run dev`, `npm test`, `npm run typecheck`, `npm run lint`, `npm run preview`.
 - Next.js here is newer than your training data. Read `web/AGENTS.md` and the guides in `web/node_modules/next/dist/docs/` before writing code.
 - Cache Components stay off: OpenNext does not fully support them on Cloudflare yet.
-- Don't copy code from `src/` into `web/`. Shared code moves to one place both apps import (PIN-128).
+- Don't copy code from `src/` into `web/`. Code both apps need goes in `shared/` (next section).
+- The lockfile in `web/` is `npm-shrinkwrap.json`. Never add a `package-lock.json` there: the Cloudflare build breaks (`shared/README.md` says why).
 - A change that touches `metro.config.js` or the root configs must still pass `npx expo export -p android` and `-p ios`.
+
+# Shared code (`shared/`)
+
+`shared/` holds what the mobile app and the web app both use: recipe logic, the Supabase calls, types, the language files, the theme packs. Read `shared/README.md` before adding or moving a file there.
+
+- Import it as `@shared/…` from `src/` and `web/`. Inside `shared/`, use relative imports.
+- No `react-native`, `expo-*`, `next`, `react`, `@/…`, `process.env` or `__DEV__` in `shared/`. Root `npm run lint` fails on them. Take platform things as parameters.
+- Only the packages in `shared/packages.json` may be imported there. Both apps must install each one at the same version.
+- A change in `shared/` affects both apps. Run the root checks and the `web/` checks, and the Android and iOS exports.
 
 # Onboarding
 

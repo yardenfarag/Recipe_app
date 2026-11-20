@@ -19,7 +19,11 @@
       }
     ],
     "paths": {
-      "@/*": ["./*"]
+      "@/*": ["./*"],
+      "@shared/*": ["../shared/*"],
+      "@supabase/supabase-js": ["./node_modules/@supabase/supabase-js"],
+      "base64-arraybuffer": ["./node_modules/base64-arraybuffer"],
+      "i18next": ["./node_modules/i18next"]
     }
   },
   "include": [

@@ -7,9 +7,9 @@ import { StyleSheet } from 'react-native';
 import { afterEach, beforeAll, describe, expect, it, vi } from 'vitest';
 
 import { RecipeAppliances } from '@/components/RecipeAppliances';
-import { getThemePackColors } from '@/constants/themes';
+import { getThemePackColors } from '@shared/constants/themes';
 import { changeAppLanguage, initI18n } from '@/i18n/config';
-import type { RecipeAppliance } from '@/lib/appliances';
+import type { RecipeAppliance } from '@shared/lib/appliances';
 
 const rtlState = vi.hoisted(() => ({ rtl: false }));
 

@@ -1,0 +1,19 @@
+{
+  // For tools that use the nearest tsconfig to a file (Vite, Turbopack, editors). Without this they find the
+  // repo root's, which extends Expo's and cannot load where only web/ is installed. Each app still type-checks
+  // shared/ with its own tsconfig; this one adds no rules of its own.
+  "compilerOptions": {
+    "target": "ES2022",
+    "lib": ["ES2022", "DOM", "DOM.Iterable"],
+    "module": "esnext",
+    "moduleResolution": "bundler",
+    "strict": true,
+    "noEmit": true,
+    "skipLibCheck": true,
+    "isolatedModules": true,
+    "resolveJsonModule": true,
+    "esModuleInterop": true,
+    "allowJs": true
+  },
+  "include": ["**/*"]
+}

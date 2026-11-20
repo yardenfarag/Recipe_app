@@ -6,7 +6,7 @@ import { logTap } from '@/lib/interactionLog';
 import { useTranslation } from 'react-i18next';
 
 import { useThemePreference } from '@/hooks/useThemePreference';
-import { translateRecipeTag } from '@/lib/recipeTags';
+import { translateRecipeTag } from '@shared/lib/recipeTags';
 
 import { EditorInput } from './EditorParts';
 

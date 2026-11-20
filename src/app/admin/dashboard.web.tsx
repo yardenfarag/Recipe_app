@@ -12,9 +12,9 @@ import { UserDrawer } from '@/components/admin/dashboard/UserDrawer';
 import { useAuth } from '@/hooks/useAuth';
 import { useProfile } from '@/hooks/useProfile';
 import { useThemePreference } from '@/hooks/useThemePreference';
-import { DASHBOARD_RANGES, formatDate, num, relativeTime, type Dashboard } from '@/lib/adminDashboard';
-import { errorText } from '@/lib/errorText';
-import { fetchAdminDashboard } from '@/lib/supabase/adminDashboard';
+import { DASHBOARD_RANGES, formatDate, num, relativeTime, type Dashboard } from '@shared/lib/adminDashboard';
+import { errorText } from '@shared/lib/errorText';
+import { fetchAdminDashboard } from '@shared/lib/supabase/adminDashboard';
 
 type Tab = 'overview' | 'people' | 'recipes' | 'costs' | 'failures';
 const PREFS_KEY = 'pinch.adminDashboard';

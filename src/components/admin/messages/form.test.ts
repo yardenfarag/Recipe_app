@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
-import { validateMessage, type AdminMessage } from '@/lib/inAppMessages';
+import { validateMessage, type AdminMessage } from '@shared/lib/inAppMessages';
 
 import {
   alertLimits,

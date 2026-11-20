@@ -2,7 +2,7 @@ import { useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 
 import { useLanguagePreference } from '@/hooks/useLanguagePreference';
-import type { InAppMessage } from '@/lib/inAppMessages';
+import type { InAppMessage } from '@shared/lib/inAppMessages';
 
 import { buildMessageView, type MessageView } from './viewModel';
 

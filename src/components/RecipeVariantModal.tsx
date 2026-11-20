@@ -11,11 +11,11 @@ import { useAuth } from '@/hooks/useAuth';
 import { useRtl } from '@/hooks/useRtl';
 import { useThemePreference } from '@/hooks/useThemePreference';
 import { announce } from '@/lib/a11y';
-import { fitInstruction } from '@/lib/avoidList';
-import { RECIPE_REMIX_LIMIT } from '@/lib/quotas';
-import { RECIPE_VARIANTS, RecipeVariantKey } from '@/lib/recipeVariants';
-import { transformRecipe, TransformedRecipePayload } from '@/lib/supabase/transformRecipe';
-import { Ingredient, Instruction } from '@/types/recipe';
+import { fitInstruction } from '@shared/lib/avoidList';
+import { RECIPE_REMIX_LIMIT } from '@shared/lib/quotas';
+import { RECIPE_VARIANTS, RecipeVariantKey } from '@shared/lib/recipeVariants';
+import { transformRecipe, TransformedRecipePayload } from '@shared/lib/supabase/transformRecipe';
+import { Ingredient, Instruction } from '@shared/types/recipe';
 
 interface RecipeVariantModalProps {
   visible: boolean;

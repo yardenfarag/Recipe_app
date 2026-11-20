@@ -8,7 +8,7 @@ import {
   THEME_PACK_ORDER,
   ThemePacks,
   type ThemePackId,
-} from '@/constants/themes';
+} from '@shared/constants/themes';
 
 function PackIcon({ id, primary, accent }: { id: ThemePackId; primary: string; accent: string }) {
   const common = { width: 36, height: 36, viewBox: '0 0 36 36' } as const;

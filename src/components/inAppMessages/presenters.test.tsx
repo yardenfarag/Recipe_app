@@ -6,9 +6,9 @@ import { act, fireEvent, render, renderHook, screen } from '@testing-library/rea
 import { Alert, Platform } from 'react-native';
 import { afterEach, beforeAll, describe, expect, it, vi } from 'vitest';
 
-import { getThemePackColors } from '@/constants/themes';
+import { getThemePackColors } from '@shared/constants/themes';
 import { initI18n } from '@/i18n/config';
-import type { InAppMessage } from '@/lib/inAppMessages';
+import type { InAppMessage } from '@shared/lib/inAppMessages';
 
 import { AlertPresenter } from './AlertPresenter';
 import { BannerPresenter } from './BannerPresenter';

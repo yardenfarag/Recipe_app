@@ -13,9 +13,9 @@ import {
 import { Pressable } from '@/components/ui/Pressable';
 import { useThemePreference } from '@/hooks/useThemePreference';
 import { confirmAction, confirmDestructive } from '@/lib/confirmAction';
-import { errorText } from '@/lib/errorText';
-import { pickContent, type AdminMessage, type MessageStatus } from '@/lib/inAppMessages';
-import { deleteAdminMessage, setAdminMessageStatus } from '@/lib/supabase/adminMessages';
+import { errorText } from '@shared/lib/errorText';
+import { pickContent, type AdminMessage, type MessageStatus } from '@shared/lib/inAppMessages';
+import { deleteAdminMessage, setAdminMessageStatus } from '@shared/lib/supabase/adminMessages';
 
 type Filter = 'all' | MessageStatus;
 const FILTERS: Filter[] = ['all', 'live', 'scheduled', 'draft', 'stopped', 'ended'];

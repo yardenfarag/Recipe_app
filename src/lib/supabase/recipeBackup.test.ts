@@ -1,7 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import type { ParsedRecipeBackup } from '@/lib/recipeBackup';
-import type { Recipe } from '@/types/recipe';
+import type { Recipe } from '@shared/types/recipe';
 
 import { restoreRecipeBackup } from './recipeBackup';
 
@@ -17,7 +17,7 @@ const mocks = vi.hoisted(() => ({
 
 vi.mock('@react-native-async-storage/async-storage', () => ({ default: {} }));
 
-vi.mock('@/lib/supabase/recipes', () => ({
+vi.mock('@shared/lib/supabase/recipes', () => ({
   fetchRecipesPage: mocks.fetchRecipesPage,
   fetchRecipeByUrl: mocks.fetchRecipeByUrl,
 }));

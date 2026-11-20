@@ -1,5 +1,5 @@
-import type { ThemePackColors } from '@/constants/themes';
-import type { Tone } from '@/lib/inAppMessages';
+import type { ThemePackColors } from '@shared/constants/themes';
+import type { Tone } from '@shared/lib/inAppMessages';
 
 export type ToneColors = {
   /** Icon, accent line and the filled button. */

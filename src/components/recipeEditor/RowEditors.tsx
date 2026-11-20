@@ -4,7 +4,7 @@ import { useTranslation } from 'react-i18next';
 
 import { useRtl } from '@/hooks/useRtl';
 import { useThemePreference } from '@/hooks/useThemePreference';
-import type { IngredientRow, IngredientRowErrors, StepRow } from '@/lib/recipeEditor';
+import type { IngredientRow, IngredientRowErrors, StepRow } from '@shared/lib/recipeEditor';
 
 import { EditorInput, FieldError, IconButton } from './EditorParts';
 

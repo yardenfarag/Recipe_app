@@ -20,7 +20,7 @@ import {
   ThemePacks,
   type ThemePackColors,
   type ThemePackId,
-} from '@/constants/themes';
+} from '@shared/constants/themes';
 
 const SCHEME_KEY = 'pinch.themePreference';
 const PACK_KEY = 'pinch.themePack';

@@ -13,7 +13,7 @@ import {
   relativeTime,
   summarizeTraffic,
   type Dashboard,
-} from '@/lib/adminDashboard';
+} from '@shared/lib/adminDashboard';
 
 import { DailyBars, Funnel, RankBars, type DayMetric } from './charts';
 import { Card, PersonCell, StatTile, Thumb, platformName } from './ui';

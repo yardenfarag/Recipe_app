@@ -11,9 +11,9 @@ import {
   summarizeAiCost,
   summarizeImports,
   type AiCostRow,
-} from '@/lib/aiCostSummary';
-import { errorText } from '@/lib/errorText';
-import { fetchAdminCostRows, formatUsageAction } from '@/lib/supabase/adminUsage';
+} from '@shared/lib/aiCostSummary';
+import { errorText } from '@shared/lib/errorText';
+import { fetchAdminCostRows, formatUsageAction } from '@shared/lib/supabase/adminUsage';
 
 type WindowKey = '24h' | '7d' | '30d';
 

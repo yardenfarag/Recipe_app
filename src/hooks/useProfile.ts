@@ -3,10 +3,10 @@ import { useCallback, useEffect, useState } from 'react';
 import { Platform } from 'react-native';
 
 import { useAuth } from '@/hooks/useAuth';
-import { isAdminUser } from '@/lib/admin';
-import { type SubscriptionStatus } from '@/lib/quotas';
-import type { ProfileQuota } from '@/lib/supabase/profile';
-import { fetchProfile, profileQuota } from '@/lib/supabase/profile';
+import { isAdminUser } from '@shared/lib/admin';
+import { type SubscriptionStatus } from '@shared/lib/quotas';
+import type { ProfileQuota } from '@shared/lib/supabase/profile';
+import { fetchProfile, profileQuota } from '@shared/lib/supabase/profile';
 import { onCreditsChanged } from '@/lib/webCheckoutReturn';
 
 /**

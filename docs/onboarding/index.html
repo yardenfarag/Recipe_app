@@ -8,7 +8,7 @@
 <meta name="description" content="How Pinch works (app, backend, database, AI), how to run it on your PC and phone, what access you need, and how we work.">
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath fill='%23B8A8D4' d='M12,3A9,9 0 0,0 3,12A9,9 0 0,0 12,21A9,9 0 0,0 21,12C21,11.5 20.96,11 20.87,10.5C20.6,10 20,10 20,10H18V9C18,8 17,8 17,8H15V7C15,6 14,6 14,6H13V4C13,3 12,3 12,3Z'/%3E%3Ccircle cx='9.5' cy='7.5' r='1.5' fill='%2312101A' fill-opacity='.6'/%3E%3Ccircle cx='6.5' cy='11.5' r='1.5' fill='%2312101A' fill-opacity='.6'/%3E%3Ccircle cx='11.5' cy='12.5' r='1.5' fill='%2312101A' fill-opacity='.6'/%3E%3Ccircle cx='16.5' cy='14.5' r='1.5' fill='%2312101A' fill-opacity='.6'/%3E%3Ccircle cx='11' cy='17.5' r='1.5' fill='%2312101A' fill-opacity='.6'/%3E%3C/svg%3E">
 <style>
-/* Pinch "Mist Drift" dark tokens, from src/constants/brandColors.js */
+/* Pinch "Mist Drift" dark tokens, from shared/constants/brandColors.js */
 :root{
   --bg:#12101A; --surface:#1E1A28; --primary:#B8A8D4; --primary-soft:#2E2838;
   --blue:#9BB4D0; --blue-soft:#243040; --text:#F2F0F6; --muted:#B7AFC1; --border:#3A3448;
@@ -284,7 +284,7 @@ details>*:not(summary){margin-bottom:12px}
       <tr><td>Fridge match (photo of fridge)</td><td>Free</td><td>8 per day</td></tr>
     </tbody>
   </table>
-  <p>Where the numbers live: <code>src/lib/quotas.ts</code> (app) and <code>supabase/functions/_shared/llm/pricing.ts</code> (server). Both must match.</p>
+  <p>Where the numbers live: <code>shared/lib/quotas.ts</code> (app) and <code>supabase/functions/_shared/llm/pricing.ts</code> (server). Both must match.</p>
 </section>
 
 <!-- 2 MAP -->
@@ -308,7 +308,7 @@ details>*:not(summary){margin-bottom:12px}
       <rect class="zone" x="20" y="40" width="250" height="560"/><text class="zt" x="36" y="30">APP (one codebase)</text>
       <rect class="box p" x="40" y="70" width="210" height="150"/>
       <text class="t" x="60" y="98">Pinch app</text><text class="s" x="60" y="118">Expo SDK 54 · Expo Router</text><text class="s" x="60" y="136">React Native · NativeWind</text>
-      <text class="l" x="60" y="166">iOS · Android</text><text class="l" x="60" y="186">Web at pinch-app.io/app</text><text class="s" x="60" y="206">src/app · src/lib · src/hooks</text>
+      <text class="l" x="60" y="166">iOS · Android</text><text class="l" x="60" y="186">Web at pinch-app.io/app</text><text class="s" x="60" y="206">src/app · src/hooks · shared</text>
       <rect class="box" x="40" y="250" width="210" height="96"/>
       <text class="t" x="60" y="278">Share sheet</text><text class="s" x="60" y="298">expo-share-intent</text><text class="s" x="60" y="316">"Share to Pinch" from other apps</text><text class="s" x="60" y="334">dev build only, not Expo Go</text>
       <rect class="box" x="40" y="376" width="210" height="80"/>
@@ -384,7 +384,7 @@ details>*:not(summary){margin-bottom:12px}
     <li>The function checks the user's library and the Hub. Miss. It fetches the post from ScrapeCreators, runs the gates, reserves 1 credit, calls the model, classifies the result.</li>
     <li>Response: <code>{ status: 'full', platform: 'instagram', recipe: {...}, tokens_charged: 1, total_credits: 2 }</code>.</li>
     <li>App stores the recipe as a draft in AsyncStorage and opens <code>/recipe/preview</code>.</li>
-    <li>User taps Save. App inserts into <code>recipes</code> through RLS (<code>src/lib/supabase/recipes.ts</code>).</li>
+    <li>User taps Save. App inserts into <code>recipes</code> through RLS (<code>shared/lib/supabase/recipes.ts</code>).</li>
   </ol>
 </section>
 
@@ -398,9 +398,9 @@ details>*:not(summary){margin-bottom:12px}
     <tbody>
       <tr><td class="k">Expo SDK 54</td><td>Dev server, Expo Go, cloud builds (EAS), native modules (camera, share, image picker).</td><td><code>AGENTS.md</code> says to read the v57 docs. We are on <b>54</b>. Use <a href="https://docs.expo.dev/versions/v54.0.0/">docs.expo.dev/versions/v54.0.0</a>.</td></tr>
       <tr><td class="k">Expo Router</td><td>File-based navigation. A file in <code>src/app/</code> is a screen. <code>(tabs)/</code> is the tab bar. <code>recipe/[id].tsx</code> is a dynamic route.</td><td>Typed routes are on.</td></tr>
-      <tr><td class="k">NativeWind v4</td><td>Tailwind classes on React Native components.</td><td>Example: <code>&lt;View className="bg-pinch-surface rounded-2xl p-4"&gt;</code>. Colors come from <code>src/constants/brandColors.js</code>.</td></tr>
-      <tr><td class="k">i18next</td><td>Translations.</td><td>Example: <code>const { t } = useTranslation(); t('list.refreshFailed')</code>. Locale files: <code>src/i18n/locales/{en,es,he,ru,ar}.ts</code>.</td></tr>
-      <tr><td class="k">Supabase JS</td><td>Auth, database, storage, function calls.</td><td>One client in <code>src/lib/supabase/client.ts</code>.</td></tr>
+      <tr><td class="k">NativeWind v4</td><td>Tailwind classes on React Native components.</td><td>Example: <code>&lt;View className="bg-pinch-surface rounded-2xl p-4"&gt;</code>. Colors come from <code>shared/constants/brandColors.js</code>.</td></tr>
+      <tr><td class="k">i18next</td><td>Translations.</td><td>Example: <code>const { t } = useTranslation(); t('list.refreshFailed')</code>. Locale files: <code>shared/i18n/locales/{en,es,he,ru,ar}.ts</code>.</td></tr>
+      <tr><td class="k">Supabase JS</td><td>Auth, database, storage, function calls.</td><td>One client, defined in <code>shared/lib/supabase/client.ts</code>. The mobile app creates it with device storage in <code>src/lib/supabase/client.ts</code>.</td></tr>
       <tr><td class="k">Vitest</td><td>Unit tests.</td><td>Tests sit next to the file: <code>formatQuantity.ts</code> and <code>formatQuantity.test.ts</code>.</td></tr>
     </tbody>
   </table>
@@ -412,10 +412,11 @@ details>*:not(summary){margin-bottom:12px}
       <tr><td class="k"><code>src/app/</code></td><td>Screens. <code>_layout.tsx</code> is the root. It nests the providers in this order: theme → language → i18n → measurement units → onboarding → error boundary → auth → share intent → navigator.</td></tr>
       <tr><td class="k"><code>src/components/</code></td><td>UI pieces. The important one is <code>RecipeView.tsx</code>, used by both the preview and the saved recipe screen. Modals: <code>SubstitutionModal</code>, <code>RecipeVariantModal</code> (remix), <code>RecipeTranslateModal</code>, <code>FridgeMatchModal</code>. <code>CookieMark.tsx</code> is the logo.</td></tr>
       <tr><td class="k"><code>src/hooks/</code></td><td>State. <code>useAuth</code>, <code>useRecipes</code>, <code>useShoppingList</code>, <code>useCollections</code>, <code>useCookingHub</code>, <code>useProfile</code>, preference hooks (theme, language, units), gates (<code>useOnboardingGate</code>, <code>useShareIntentRouter</code>).</td></tr>
-      <tr><td class="k"><code>src/lib/</code></td><td>Pure functions with tests: formatting, unit conversion, quotas, draft handling, analytics, PDF cookbook, URL parsing.</td></tr>
-      <tr><td class="k"><code>src/lib/supabase/</code></td><td>All Supabase access. One file per topic. Edge Function clients are named after the function: <code>extractRecipe.ts</code>, <code>transformRecipe.ts</code>, <code>translateRecipe.ts</code>, and so on.</td></tr>
-      <tr><td class="k"><code>src/constants/</code></td><td><code>brandColors.js</code> (hex values), <code>theme.ts</code> (spacing, radius, widths), <code>themes.ts</code> (7 theme packs).</td></tr>
-      <tr><td class="k"><code>src/i18n/</code>, <code>src/types/</code></td><td>Translations; TypeScript types. <code>types/recipe.ts</code> mirrors the <code>recipes</code> table.</td></tr>
+      <tr><td class="k"><code>shared/</code></td><td>Code the mobile app and the new web app (<code>web/</code>) both use: recipe logic, formatting, unit conversion, quotas, the Supabase calls, types, the five language files and the theme packs. No React Native, Expo or Next.js in here; a lint rule enforces it. Import it as <code>@shared/…</code>. Rules in <code>shared/README.md</code>.</td></tr>
+      <tr><td class="k"><code>src/lib/</code></td><td>Mobile-only helpers with tests: guest storage, drafts, analytics, share intent, purchases, PDF export.</td></tr>
+      <tr><td class="k"><code>src/lib/supabase/</code></td><td>Supabase access that needs the device (sign-in, extraction, feedback). The rest is in <code>shared/lib/supabase/</code>, one file per topic. Edge Function clients are named after the function: <code>extractRecipe.ts</code>, <code>transformRecipe.ts</code>, <code>translateRecipe.ts</code>, and so on.</td></tr>
+      <tr><td class="k"><code>src/constants/</code></td><td><code>theme.ts</code> (spacing, radius, widths). The colours are shared: <code>shared/constants/brandColors.js</code> (hex values) and <code>themes.ts</code> (7 theme packs).</td></tr>
+      <tr><td class="k"><code>src/i18n/</code></td><td>Starts i18next for the mobile app. The strings are in <code>shared/i18n/locales/</code>, the types in <code>shared/types/</code> (<code>recipe.ts</code> mirrors the <code>recipes</code> table).</td></tr>
       <tr><td class="k"><code>landing/</code>, <code>legal/</code>, <code>public/</code></td><td>The static website (hand-written HTML, a separate pink palette), legal pages, robots.txt and sitemap.</td></tr>
       <tr><td class="k"><code>assets/</code></td><td>Icons, splash screen, store graphics.</td></tr>
     </tbody>
@@ -446,8 +447,8 @@ details>*:not(summary){margin-bottom:12px}
     <thead><tr><th>Piece</th><th>Where</th></tr></thead>
     <tbody>
       <tr><td>Tables and functions</td><td><code>supabase/migrations/20261116120000_in_app_messages.sql</code>, tests in <code>supabase/tests/in_app_messages.sql</code>. Deploy by hand: <code>supabase/README.md</code>.</td></tr>
-      <tr><td>Types and rules (pure, tested)</td><td><code>src/lib/inAppMessages.ts</code>: <code>pickContent</code>, <code>compareVersions</code>, <code>nextMessageToShow</code>, <code>validateMessage</code>.</td></tr>
-      <tr><td>Server calls</td><td><code>src/lib/supabase/inAppMessages.ts</code> (the app) and <code>adminMessages.ts</code> (the admin screen).</td></tr>
+      <tr><td>Types and rules (pure, tested)</td><td><code>shared/lib/inAppMessages.ts</code>: <code>pickContent</code>, <code>compareVersions</code>, <code>nextMessageToShow</code>, <code>validateMessage</code>.</td></tr>
+      <tr><td>Server calls</td><td><code>shared/lib/supabase/inAppMessages.ts</code> (the app) and <code>adminMessages.ts</code> (the admin screen).</td></tr>
       <tr><td>Choosing and recording</td><td><code>src/components/inAppMessages/controller.ts</code> and the hook <code>src/hooks/useInAppMessages.ts</code>. <code>InAppMessageHost</code> is mounted once in <code>src/app/_layout.tsx</code>; the banner slot is in <code>src/components/app-tabs.tsx</code>.</td></tr>
       <tr><td>Ways of showing</td><td><code>alert</code>: system <code>Alert.alert</code> on iOS and Android when it fits, a card otherwise and on web. <code>sheet</code>: <code>SheetModal</code>. <code>banner</code>: a custom strip. <code>fullscreen</code>: <code>Modal</code>. Each is in <code>src/components/inAppMessages/*Presenter.tsx</code>.</td></tr>
       <tr><td>Admin screen</td><td><code>src/app/admin/messages.tsx</code> and <code>src/components/admin/messages/</code> (<code>form.ts</code> holds the tested logic).</td></tr>
@@ -470,7 +471,7 @@ details>*:not(summary){margin-bottom:12px}
   </table>
 
   <h3>Example: the Recipe type</h3>
-  <p>From <code>src/types/recipe.ts</code>. Ingredients and instructions are JSONB columns in Postgres.</p>
+  <p>From <code>shared/types/recipe.ts</code>. Ingredients and instructions are JSONB columns in Postgres.</p>
   <pre><code>interface Recipe {
   id: string;
   user_id?: string;
@@ -502,12 +503,12 @@ details>*:not(summary){margin-bottom:12px}
 "list": { "combineFailed": "Couldn’t combine {{count}} items." }
 <span class="c">// he.ts, es.ts, ru.ts, ar.ts: same key, translated text, same {{count}}</span></code></pre></li>
     <li>Use it: <code>t('list.combineFailed', { count: 3 })</code>.</li>
-    <li>Run <code>npm test</code>. <code>src/i18n/locales.test.ts</code> fails if a key is missing in one locale.</li>
+    <li>Run <code>npm test</code>. <code>shared/i18n/locales.test.ts</code> fails if a key is missing in one locale.</li>
     <li>Check Hebrew or Arabic once: they are right-to-left.</li>
   </ol>
 
   <h3>Design tokens</h3>
-  <p>Palette name: Mist Drift. Lilac and mist blue, no orange or green. Values are in <code>src/constants/brandColors.js</code>. In components, read colors from <code>useThemePreference().colors</code> because the user can pick one of 7 theme packs.</p>
+  <p>Palette name: Mist Drift. Lilac and mist blue, no orange or green. Values are in <code>shared/constants/brandColors.js</code>. In components, read colors from <code>useThemePreference().colors</code> because the user can pick one of 7 theme packs.</p>
   <div class="swatches">
     <div class="sw"><i style="background:#B8A8D4"></i><span><b>#B8A8D4</b>primary, dark</span></div>
     <div class="sw"><i style="background:#6D5E8A"></i><span><b>#6D5E8A</b>primary, light</span></div>

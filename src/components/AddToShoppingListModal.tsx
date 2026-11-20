@@ -15,11 +15,11 @@ import { useLanguagePreference } from '@/hooks/useLanguagePreference';
 import { useMeasurementPreference } from '@/hooks/useMeasurementPreference';
 import { useThemePreference } from '@/hooks/useThemePreference';
 import { announce, CHROME_MAX_FONT_SCALE } from '@/lib/a11y';
-import { resolveCulinaryLanguage } from '@/lib/culinaryUnits';
-import { displayIngredientAmount } from '@/lib/displayIngredientAmount';
-import { isPantryStaple } from '@/lib/pantryStaples';
-import { RecipeLanguageCode } from '@/lib/recipeLanguages';
-import { Ingredient } from '@/types/recipe';
+import { resolveCulinaryLanguage } from '@shared/lib/culinaryUnits';
+import { displayIngredientAmount } from '@shared/lib/displayIngredientAmount';
+import { isPantryStaple } from '@shared/lib/pantryStaples';
+import { RecipeLanguageCode } from '@shared/lib/recipeLanguages';
+import { Ingredient } from '@shared/types/recipe';
 
 interface AddToShoppingListModalProps {
   visible: boolean;

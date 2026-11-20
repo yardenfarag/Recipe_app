@@ -23,7 +23,7 @@ import {
   recipeVideoUrlAtSeconds,
   VIDEO_WEBVIEW_USER_AGENT,
 } from '@/lib/recipeVideo';
-import type { Platform as RecipePlatform } from '@/types/recipe';
+import type { Platform as RecipePlatform } from '@shared/types/recipe';
 
 type HeightPreset = 'compact' | 'medium' | 'tall';
 

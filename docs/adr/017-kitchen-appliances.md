@@ -52,7 +52,7 @@ type AlternativeKey = 'by_hand' | 'pre_ground' | 'cut_to_check';
 
 ### 3. One appliance catalog, grown from real data
 
-- One module, `src/lib/appliances.ts` (catalog, types, sanitizer). It has a byte-identical copy at `supabase/functions/_shared/recipes/enrich/appliances.ts` for the Edge Functions, and `src/lib/appliances.test.ts` fails if the two differ. The module has no imports, so it runs in both Hermes and Deno.
+- One module, `shared/lib/appliances.ts` (catalog, types, sanitizer). It has a byte-identical copy at `supabase/functions/_shared/recipes/enrich/appliances.ts` for the Edge Functions, and `shared/lib/appliances.test.ts` fails if the two differ. The module has no imports, so it runs in both Hermes and Deno.
 - Each entry: `key`, `category`, `tier` (`basic` | `special`), and multilingual `aliases` (en, es, he, ru, ar, plus brand names like "KitchenAid" or "Instant Pot") that map the model's wording to a key.
 - First version (32 entries):
 
@@ -173,7 +173,7 @@ One label was changed after the first run, with the reason recorded in the case:
 
 | # | Slice | Tests |
 |---|---|---|
-| 1 | Catalog and types: `src/lib/appliances.ts`, the `RecipeAppliance` type, a sanitizer (drops unknown keys and items citing missing steps), with a byte-identical copy in `_shared` | Vitest unit tests, plus a parity test between the app and `_shared` copies |
+| 1 | Catalog and types: `shared/lib/appliances.ts`, the `RecipeAppliance` type, a sanitizer (drops unknown keys and items citing missing steps), with a byte-identical copy in `_shared` | Vitest unit tests, plus a parity test between the app and `_shared` copies |
 | 2 | Migration `20261023180331_recipe_appliances.sql`: nullable `appliances jsonb` + check constraint on `recipes` and `recipe_cards`; the Hub publish trigger and share snapshot carry the field | pgTAP: NULL and `[]` accepted, non-array rejected, Hub copy keeps the field |
 | 3 | Backend: `appliances` task kind, prompt, enum schema, wired into extract, invent, repair and transform; fail-soft; usage logging | Deno tests (invalid output → NULL, error → NULL), plus the 30-recipe eval against decision 7's targets |
 | 4 | App data path: save, preview draft, Hub card mapping, remix | Vitest: the field saves and round-trips, and rows without it load unchanged |

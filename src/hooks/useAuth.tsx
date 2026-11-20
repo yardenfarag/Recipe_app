@@ -13,7 +13,7 @@ import {
 import { logAuth } from '@/lib/interactionLog';
 import { migrateGuestDataToSupabase } from '@/lib/migrateGuestData';
 import { clearPurchasesUser, configurePurchases } from '@/lib/purchases';
-import { runSingleFlight } from '@/lib/singleFlight';
+import { runSingleFlight } from '@shared/lib/singleFlight';
 import { supabase } from '@/lib/supabase/client';
 
 export type MigrationStatus = 'idle' | 'running' | 'done' | 'error';

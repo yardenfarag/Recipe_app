@@ -13,7 +13,7 @@ The site is static HTML on GitHub Pages. There is no server, so nothing can read
 ## Decision
 
 - **One copy of the site per app language.** English stays at `/` and `/guides/<name>/`. Each other language lives under its code: `/es/`, `/he/`, `/ru/`, `/ar/`, with guides at `/<lang>/guides/<name>/`. Guide names in the URL stay in English.
-- **The site's languages are the app's languages**, no more. `SITE_LANGUAGES` in `scripts/site-pages.mjs` mirrors `src/lib/appLanguages.ts`, and a test fails if they drift. A language is live once `landing/strings/<lang>.json` exists.
+- **The site's languages are the app's languages**, no more. `SITE_LANGUAGES` in `scripts/site-pages.mjs` mirrors `shared/lib/appLanguages.ts`, and a test fails if they drift. A language is live once `landing/strings/<lang>.json` exists.
 - **Text lives in two places.** Every string of the two templates is a key in `landing/strings/<lang>.json` (`{{t:key}}` in `landing/index.html` and `landing/guide.html`). A guide's translation is `content/guides/<lang>/<name>.md`, under the English file name.
 - **English is the fallback.** A missing string is shown in English. A guide with no translation builds no page in that language, and links to it go to the English guide.
 - **Nobody is redirected.** A visitor always gets the page they asked for. When the browser's language is one we have and the page is in another, a slim banner above the page offers that version, written in the visitor's language. It is hidden in the HTML and shown by an inline script before the page paints, so it does not shift the layout and crawlers never see it. Dismissing it, or picking a language, is remembered in `localStorage` (`pinch:site-language`) and the banner stays away.

@@ -1,4 +1,4 @@
-import type { InAppMessage } from '@/lib/inAppMessages';
+import type { InAppMessage } from '@shared/lib/inAppMessages';
 
 /**
  * Hard-coded messages for looking at each way of showing in dev. Shown by

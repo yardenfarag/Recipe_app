@@ -13,8 +13,8 @@ import {
   fetchCollections,
   renameCollection as renameCollectionRemote,
   setRecipeCollectionMembership,
-} from '@/lib/supabase/collections';
-import type { RecipeCollection } from '@/types/collection';
+} from '@shared/lib/supabase/collections';
+import type { RecipeCollection } from '@shared/types/collection';
 
 function createGuestId(): string {
   return `guest-col-${Date.now()}-${Math.random().toString(36).slice(2, 10)}`;

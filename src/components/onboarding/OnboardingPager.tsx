@@ -17,11 +17,11 @@ import { useLanguagePreference } from '@/hooks/useLanguagePreference';
 import { useThemePreference } from '@/hooks/useThemePreference';
 import { announce } from '@/lib/a11y';
 import { captureHeardAbout, HEARD_ABOUT_SOURCES, type HeardAboutSource } from '@/lib/analytics';
-import { avoidListIsEmpty } from '@/lib/avoidList';
+import { avoidListIsEmpty } from '@shared/lib/avoidList';
 import type { KitchenDietKey } from '@/lib/kitchenProfile';
 import { ONBOARDING_STEP_KEY, parseOnboardingStep } from '@/lib/onboardingStorage';
 import { promptRtlReloadIfLayoutMismatch } from '@/lib/rtlLayout';
-import { RECIPE_VARIANTS, type RecipeVariantKey } from '@/lib/recipeVariants';
+import { RECIPE_VARIANTS, type RecipeVariantKey } from '@shared/lib/recipeVariants';
 
 /**
  * Vision, then language, look, measurements, an optional diet, an optional avoid list, and how

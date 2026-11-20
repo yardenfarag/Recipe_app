@@ -9,10 +9,10 @@ import { RecipeView } from '@/components/RecipeView';
 import { Screen } from '@/components/Screen';
 import { useAuth } from '@/hooks/useAuth';
 import { useThemePreference } from '@/hooks/useThemePreference';
-import { recipeCardToExtracted } from '@/lib/recipeCardMap';
-import { claimHubCard, fetchHubCard, fetchLibraryRecipeForCard } from '@/lib/supabase/cookingHub';
-import { translateAppError } from '@/lib/translateAppError';
-import type { RecipeCard } from '@/types/recipeCard';
+import { recipeCardToExtracted } from '@shared/lib/recipeCardMap';
+import { claimHubCard, fetchHubCard, fetchLibraryRecipeForCard } from '@shared/lib/supabase/cookingHub';
+import { translateAppError } from '@shared/lib/translateAppError';
+import type { RecipeCard } from '@shared/types/recipeCard';
 
 export default function HubRecipeScreen() {
   const { t } = useTranslation();

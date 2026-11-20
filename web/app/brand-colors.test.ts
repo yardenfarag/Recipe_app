@@ -7,7 +7,7 @@ import { describe, expect, it } from "vitest";
 
 // The mobile app's single source of brand colours (plain CommonJS).
 const require = createRequire(import.meta.url);
-const brand: Record<string, string> = require("../../src/constants/brandColors.js");
+const brand: Record<string, string> = require("../../shared/constants/brandColors.js");
 
 const css = readFileSync(path.join(path.dirname(fileURLToPath(import.meta.url)), "globals.css"), "utf8");
 const [light, dark] = css.split("@media (prefers-color-scheme: dark)");

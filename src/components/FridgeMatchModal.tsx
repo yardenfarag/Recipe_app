@@ -9,9 +9,9 @@ import { SheetModal } from '@/components/SheetModal';
 import { useThemePreference } from '@/hooks/useThemePreference';
 import { announce } from '@/lib/a11y';
 import { pickCompressedRecipeImage } from '@/lib/pickCompressedImage';
-import { buildFridgeCatalog } from '@/lib/fridgeCatalog';
+import { buildFridgeCatalog } from '@shared/lib/fridgeCatalog';
 import { matchFridge, type FridgeMatchRow } from '@/lib/supabase/matchFridge';
-import type { Recipe } from '@/types/recipe';
+import type { Recipe } from '@shared/types/recipe';
 
 type FridgeMatchModalProps = {
   visible: boolean;

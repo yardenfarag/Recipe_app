@@ -1,0 +1,5 @@
+[
+  "@supabase/supabase-js",
+  "base64-arraybuffer",
+  "i18next"
+]

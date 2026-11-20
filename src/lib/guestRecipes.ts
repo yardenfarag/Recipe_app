@@ -1,11 +1,11 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
-import { DEFAULT_SOURCE_LANGUAGE } from '@/lib/appLanguages';
-import { readIngredientAmount } from '@/lib/ingredientAmounts';
-import { detectPlatform, recipeUrlsMatch } from '@/lib/platformUrls';
-import { recipeContentEquals } from '@/lib/recipeContentEquals';
-import { recipeMatchesUrlOrigin, recipeUrlOrigin } from '@/lib/recipeOrigin';
-import { LOCKABLE_FIELDS, type LockedField, Recipe, RecipeTranslationContent } from '@/types/recipe';
+import { DEFAULT_SOURCE_LANGUAGE } from '@shared/lib/appLanguages';
+import { readIngredientAmount } from '@shared/lib/ingredientAmounts';
+import { detectPlatform, recipeUrlsMatch } from '@shared/lib/platformUrls';
+import { recipeContentEquals } from '@shared/lib/recipeContentEquals';
+import { recipeMatchesUrlOrigin, recipeUrlOrigin } from '@shared/lib/recipeOrigin';
+import { LOCKABLE_FIELDS, type LockedField, Recipe, RecipeTranslationContent } from '@shared/types/recipe';
 
 /** Guests cannot save; sign-up is required to keep recipes. */
 export const GUEST_RECIPE_LIMIT = 0;

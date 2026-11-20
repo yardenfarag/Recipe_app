@@ -14,8 +14,8 @@ import { TextInput } from '@/components/text-input';
 import { useThemePreference } from '@/hooks/useThemePreference';
 import { announce } from '@/lib/a11y';
 import { logTap } from '@/lib/interactionLog';
-import { translateAppError } from '@/lib/translateAppError';
-import type { RecipeCollection } from '@/types/collection';
+import { translateAppError } from '@shared/lib/translateAppError';
+import type { RecipeCollection } from '@shared/types/collection';
 
 interface AddToCollectionModalProps {
   visible: boolean;

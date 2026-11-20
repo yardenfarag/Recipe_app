@@ -4,7 +4,7 @@ import { useTranslation } from 'react-i18next';
 
 import { useLanguagePreference } from '@/hooks/useLanguagePreference';
 import { useThemePreference } from '@/hooks/useThemePreference';
-import { APP_LANGUAGES, type AppLanguageCode } from '@/lib/appLanguages';
+import { APP_LANGUAGES, type AppLanguageCode } from '@shared/lib/appLanguages';
 import { promptRtlReloadIfNeeded } from '@/lib/rtlLayout';
 
 type LanguagePickerProps = {

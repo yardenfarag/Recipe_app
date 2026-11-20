@@ -1,4 +1,6 @@
 import '../global.css';
+// Creates the Supabase client before any screen or shared module uses it.
+import '@/lib/supabase/client';
 
 import Constants, { ExecutionEnvironment } from 'expo-constants';
 import { Stack } from 'expo-router';

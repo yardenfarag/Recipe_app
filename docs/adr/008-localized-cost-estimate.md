@@ -43,5 +43,5 @@ If locale is unknown, show text labels: **Budget · Moderate · Premium** (never
 
 ## Implementation Notes
 
-- `src/lib/formatCostEstimate.ts` — maps tier + locale → display string
+- `shared/lib/formatCostEstimate.ts` — maps tier + locale → display string
 - Store in DB as `cost_estimate: '$' | '$$' | '$$$'` (unchanged)

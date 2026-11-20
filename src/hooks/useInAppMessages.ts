@@ -8,8 +8,8 @@ import { webClosedStore, webLaunchStartedAt } from '@/components/inAppMessages/w
 import { useAuth } from '@/hooks/useAuth';
 import { useLanguagePreference } from '@/hooks/useLanguagePreference';
 import { appVersion, platform } from '@/lib/interactionLog';
-import type { ButtonAction, ClickedButton, InAppMessage } from '@/lib/inAppMessages';
-import { fetchInAppMessages, recordInAppMessageEvent } from '@/lib/supabase/inAppMessages';
+import type { ButtonAction, ClickedButton, InAppMessage } from '@shared/lib/inAppMessages';
+import { fetchInAppMessages, recordInAppMessageEvent } from '@shared/lib/supabase/inAppMessages';
 
 /**
  * One controller for the whole app, so the host (modals) and the banner slot

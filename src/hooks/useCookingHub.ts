@@ -6,8 +6,8 @@ import {
   fetchHubCards,
   fetchHubTags,
   type HubSort,
-} from '@/lib/supabase/cookingHub';
-import type { HubPlatform, RecipeCard } from '@/types/recipeCard';
+} from '@shared/lib/supabase/cookingHub';
+import type { HubPlatform, RecipeCard } from '@shared/types/recipeCard';
 
 const PAGE_SIZE = 40;
 const REFRESH_PAGE_CAP = PAGE_SIZE * 3;

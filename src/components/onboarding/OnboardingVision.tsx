@@ -15,7 +15,7 @@ import Animated, {
 import { CookieMark } from '@/components/CookieMark';
 import { useLanguagePreference } from '@/hooks/useLanguagePreference';
 import { useThemePreference } from '@/hooks/useThemePreference';
-import { isRtlAppLanguage } from '@/lib/appLanguages';
+import { isRtlAppLanguage } from '@shared/lib/appLanguages';
 
 /** Opening moment: the mark, the line, and why Pinch exists. */
 export function OnboardingVision() {

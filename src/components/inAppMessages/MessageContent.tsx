@@ -4,7 +4,7 @@ import { Text, View } from 'react-native';
 
 import { Pressable } from '@/components/ui/Pressable';
 import { useThemePreference } from '@/hooks/useThemePreference';
-import type { ButtonAction, ClickedButton } from '@/lib/inAppMessages';
+import type { ButtonAction, ClickedButton } from '@shared/lib/inAppMessages';
 
 import { resolveIconName, toneColors } from './tone';
 import type { MessageView } from './viewModel';

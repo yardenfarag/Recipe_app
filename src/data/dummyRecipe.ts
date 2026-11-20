@@ -1,4 +1,4 @@
-import { Recipe } from '@/types/recipe';
+import { Recipe } from '@shared/types/recipe';
 
 export const dummyRecipe: Recipe = {
   id: 'dummy-1',

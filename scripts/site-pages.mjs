@@ -21,7 +21,7 @@ import { Marked } from 'marked';
 
 export const SITE_URL = 'https://pinch-app.io';
 export const DEFAULT_LANGUAGE = 'en';
-// The app's languages (src/lib/appLanguages.ts), in the same order.
+// The app's languages (shared/lib/appLanguages.ts), in the same order.
 export const SITE_LANGUAGES = [
   { code: 'en', label: 'English', dir: 'ltr', dateLocale: 'en-US' },
   { code: 'es', label: 'Español', dir: 'ltr', dateLocale: 'es' },

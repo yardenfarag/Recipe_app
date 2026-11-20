@@ -1,6 +1,6 @@
 import { useState, type ReactNode } from 'react';
 
-import { deltaOf, humanize } from '@/lib/adminDashboard';
+import { deltaOf, humanize } from '@shared/lib/adminDashboard';
 
 import { Sparkline } from './charts';
 

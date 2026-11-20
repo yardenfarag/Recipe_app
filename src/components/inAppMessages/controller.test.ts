@@ -1,6 +1,6 @@
 import { describe, expect, it, vi } from 'vitest';
 
-import type { InAppMessage, MessageEvent, MessageReceipt } from '@/lib/inAppMessages';
+import type { InAppMessage, MessageEvent, MessageReceipt } from '@shared/lib/inAppMessages';
 
 import { createMessagesController, mergeReceipt, type FetchParams } from './controller';
 

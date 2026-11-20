@@ -17,10 +17,10 @@ import { TextInput } from '@/components/text-input';
 import { useAuth } from '@/hooks/useAuth';
 import { useProfile } from '@/hooks/useProfile';
 import { useThemePreference } from '@/hooks/useThemePreference';
-import { errorText } from '@/lib/errorText';
-import { ADMIN_PRICE_CARD } from '@/lib/quotas';
-import { formatTokens, shortModelName } from '@/lib/aiCostSummary';
-import { creditHealthWarnings, type CreditHealth } from '@/lib/creditHealth';
+import { errorText } from '@shared/lib/errorText';
+import { ADMIN_PRICE_CARD } from '@shared/lib/quotas';
+import { formatTokens, shortModelName } from '@shared/lib/aiCostSummary';
+import { creditHealthWarnings, type CreditHealth } from '@shared/lib/creditHealth';
 import {
   fetchAdminTokenLedger,
   fetchAdminUsageEvents,
@@ -28,8 +28,8 @@ import {
   formatUsageAction,
   type AiUsageEvent,
   type TokenLedgerRow,
-} from '@/lib/supabase/adminUsage';
-import { adminAdjustRecipeCredits } from '@/lib/supabase/profile';
+} from '@shared/lib/supabase/adminUsage';
+import { adminAdjustRecipeCredits } from '@shared/lib/supabase/profile';
 import {
   closeSupportTicket,
   fetchSupportTickets,

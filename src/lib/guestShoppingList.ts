@@ -1,6 +1,6 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
-import type { ShoppingListItem } from '@/types/shoppingList';
+import type { ShoppingListItem } from '@shared/types/shoppingList';
 
 const STORAGE_KEY = 'pinch:guest-shopping-list';
 let mutationQueue: Promise<void> = Promise.resolve();

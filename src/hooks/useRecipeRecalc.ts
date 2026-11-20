@@ -7,10 +7,10 @@ import {
   recalcUpdatingFields,
   recipeRecalcState,
   type RecipeRecalcState,
-} from '@/lib/recipeRecalc';
-import { fetchRecipeById } from '@/lib/supabase/recipes';
-import { saveRecipeEdit } from '@/lib/supabase/saveRecipeEdit';
-import type { RecalcField, Recipe } from '@/types/recipe';
+} from '@shared/lib/recipeRecalc';
+import { fetchRecipeById } from '@shared/lib/supabase/recipes';
+import { saveRecipeEdit } from '@shared/lib/supabase/saveRecipeEdit';
+import type { RecalcField, Recipe } from '@shared/types/recipe';
 
 /**
  * Background recalculation on the recipe detail screen (ADR 018).

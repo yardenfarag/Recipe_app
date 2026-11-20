@@ -2,9 +2,9 @@ import {
   fetchRecipeByUrl,
   saveRecipe,
   type NewRecipe,
-} from '@/lib/supabase/recipes';
-import { recipeUrlOrigin } from '@/lib/recipeOrigin';
-import type { Recipe } from '@/types/recipe';
+} from '@shared/lib/supabase/recipes';
+import { recipeUrlOrigin } from '@shared/lib/recipeOrigin';
+import type { Recipe } from '@shared/types/recipe';
 
 export type DraftSaveResult = {
   recipe: Recipe;

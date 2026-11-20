@@ -1,16 +1,16 @@
 import i18n from 'i18next';
 import { initReactI18next } from 'react-i18next';
 
-import type { AppLanguageCode } from '@/lib/appLanguages';
-import en from '@/i18n/locales/en';
+import type { AppLanguageCode } from '@shared/lib/appLanguages';
+import en from '@shared/i18n/locales/en';
 
 // English is the fallback, so it ships in the main bundle. The others load
 // when picked, which keeps ~300 KB of strings out of the initial web download.
 const localeLoaders: Record<Exclude<AppLanguageCode, 'en'>, () => Promise<{ default: object }>> = {
-  es: () => import('@/i18n/locales/es'),
-  he: () => import('@/i18n/locales/he'),
-  ru: () => import('@/i18n/locales/ru'),
-  ar: () => import('@/i18n/locales/ar'),
+  es: () => import('@shared/i18n/locales/es'),
+  he: () => import('@shared/i18n/locales/he'),
+  ru: () => import('@shared/i18n/locales/ru'),
+  ar: () => import('@shared/i18n/locales/ar'),
 };
 
 async function loadLocale(language: AppLanguageCode) {

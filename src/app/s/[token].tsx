@@ -12,7 +12,7 @@ import {
   claimRecipeShare,
   getRecipeShare,
   type RecipeSharePreview,
-} from '@/lib/supabase/recipeShare';
+} from '@shared/lib/supabase/recipeShare';
 
 export default function SharedRecipeScreen() {
   const { t } = useTranslation();

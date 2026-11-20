@@ -10,7 +10,7 @@ import {
   saveGuestKitchenProfile,
   type KitchenProfile,
 } from '@/lib/kitchenProfile';
-import { isPantryStaple } from '@/lib/pantryStaples';
+import { isPantryStaple } from '@shared/lib/pantryStaples';
 import { fetchCloudKitchenProfile, saveCloudKitchenProfile } from '@/lib/supabase/kitchen';
 
 /**

@@ -2,7 +2,7 @@
  * Edit recipe (`/recipe/edit?id=<id>`) and Write a recipe (`/recipe/edit`), PIN-79 / ADR 018.
  * Finish a partial import (`/recipe/edit?from=import`, ADR 019): the unsaved import draft from
  * src/lib/recipeDraft.ts, saved only when the user presses Save.
- * Form state lives in src/lib/recipeEditor.ts; this screen renders it and talks to save-recipe-edit.
+ * Form state lives in shared/lib/recipeEditor.ts; this screen renders it and talks to save-recipe-edit.
  */
 import { type NavigationAction, usePreventRemove } from '@react-navigation/native';
 import { router, Stack, useLocalSearchParams, useNavigation } from 'expo-router';
@@ -40,15 +40,15 @@ import { useLanguagePreference } from '@/hooks/useLanguagePreference';
 import { useRtl } from '@/hooks/useRtl';
 import { useThemePreference } from '@/hooks/useThemePreference';
 import { announce } from '@/lib/a11y';
-import { COST_I18N_KEYS } from '@/lib/formatCostEstimate';
+import { COST_I18N_KEYS } from '@shared/lib/formatCostEstimate';
 import { goBackOrHome } from '@/lib/goBackOrHome';
 import { logTap } from '@/lib/interactionLog';
 import { clearRecipeDraft, getRecipeDraft } from '@/lib/recipeDraft';
-import * as editor from '@/lib/recipeEditor';
-import type { EditorErrors, ErrorTarget, RecipeEditorState } from '@/lib/recipeEditor';
-import { fetchRecipeById } from '@/lib/supabase/recipes';
-import { saveRecipeEdit } from '@/lib/supabase/saveRecipeEdit';
-import type { CostEstimate, EffortLevel, LockedField } from '@/types/recipe';
+import * as editor from '@shared/lib/recipeEditor';
+import type { EditorErrors, ErrorTarget, RecipeEditorState } from '@shared/lib/recipeEditor';
+import { fetchRecipeById } from '@shared/lib/supabase/recipes';
+import { saveRecipeEdit } from '@shared/lib/supabase/saveRecipeEdit';
+import type { CostEstimate, EffortLevel, LockedField } from '@shared/types/recipe';
 
 const SIGN_UP = '/auth?mode=signup&reason=edit' as const;
 

@@ -5,12 +5,12 @@ import { useAuth } from '@/hooks/useAuth';
 import { useLanguagePreference } from '@/hooks/useLanguagePreference';
 import { backfillRecipeThumbnails } from '@/lib/backfillRecipeThumbnails';
 import { getGuestRecipes } from '@/lib/guestRecipes';
-import { withDisplayTitles } from '@/lib/recipeDisplayTitle';
-import { resolveRecipeSourceLanguage } from '@/lib/recipeSourceLanguage';
+import { withDisplayTitles } from '@shared/lib/recipeDisplayTitle';
+import { resolveRecipeSourceLanguage } from '@shared/lib/recipeSourceLanguage';
 import { normalizeRecipeFavorite, normalizeRecipes, toggleRecipeFavorite } from '@/lib/recipeFavorites';
-import { fetchRecipeTranslationsForLanguage } from '@/lib/supabase/recipeTranslations';
-import { fetchRecipes, fetchRecipesPage } from '@/lib/supabase/recipes';
-import { Recipe } from '@/types/recipe';
+import { fetchRecipeTranslationsForLanguage } from '@shared/lib/supabase/recipeTranslations';
+import { fetchRecipes, fetchRecipesPage } from '@shared/lib/supabase/recipes';
+import { Recipe } from '@shared/types/recipe';
 
 type UseRecipesOptions = {
   /** When set, signed-in libraries load this many recipes per scroll page. */

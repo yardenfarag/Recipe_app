@@ -8,7 +8,7 @@ import {
   cookbookSourceLabel,
   escapeHtml,
   toCookbookHtmlRecipe,
-} from '@/lib/cookbook/buildCookbookHtml';
+} from '@shared/lib/cookbook/buildCookbookHtml';
 
 const copy = {
   brand: 'Made with Pinch',

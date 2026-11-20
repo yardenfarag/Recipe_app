@@ -1,6 +1,6 @@
 import { FunctionsHttpError } from '@supabase/supabase-js';
 
-import type { FridgeCatalogItem } from '@/lib/fridgeCatalog';
+import type { FridgeCatalogItem } from '@shared/lib/fridgeCatalog';
 import { getInstallId } from '@/lib/installId';
 import { supabase } from '@/lib/supabase/client';
 

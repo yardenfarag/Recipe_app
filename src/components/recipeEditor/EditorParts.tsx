@@ -7,7 +7,7 @@ import { useTranslation } from 'react-i18next';
 import { TextInput, type TextInputProps } from '@/components/text-input';
 import { useRtl } from '@/hooks/useRtl';
 import { useThemePreference } from '@/hooks/useThemePreference';
-import type { EditorMessage } from '@/lib/recipeEditor';
+import type { EditorMessage } from '@shared/lib/recipeEditor';
 
 /** Translates an editor message (i18n key + params). */
 export function useEditorMessage() {

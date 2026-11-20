@@ -1,7 +1,7 @@
 @import "tailwindcss";
 
 /*
- * Pinch brand colours. The hex values must match src/constants/brandColors.js;
+ * Pinch brand colours. The hex values must match shared/constants/brandColors.js;
  * app/brand-colors.test.ts fails when they drift. Theme packs and the light/dark
  * switch arrive with the app shell (PIN-130).
  */

@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 
-import { formatDay, formatPercent, type DashboardDay } from '@/lib/adminDashboard';
+import { formatDay, formatPercent, type DashboardDay } from '@shared/lib/adminDashboard';
 
 function useElementWidth<T extends HTMLElement>() {
   const ref = useRef<T | null>(null);

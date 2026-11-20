@@ -80,7 +80,7 @@ gh workflow run deploy-function-preview.yml --ref <your-branch> -f function=extr
 This deploys your branch's copy as `extract-recipe-preview` next to the real
 one. Users never call it. To use it from a **dev build**, add
 `EXPO_PUBLIC_FUNCTION_PREVIEWS=extract-recipe` (comma-separated for several) to
-`.env` and restart Metro. `src/lib/supabase/functionPreview.ts` reroutes those
+`.env` and restart Metro. `shared/lib/supabase/functionPreview.ts` reroutes those
 calls; production builds ignore the variable.
 
 - It runs against the production database with production secrets. Sign in
@@ -97,7 +97,7 @@ calls; production builds ignore the variable.
   both the app and the functions use. Commit it with the migration; CI fails
   when it doesn't match the migrations. At the boundary between those types and
   the app's own (`Recipe`, JSON columns, RPC arguments that are SQL null), use
-  the helpers in `src/lib/supabase/dbTypes.ts` and `_shared/core/supabaseAdmin.ts`.
+  the helpers in `shared/lib/supabase/dbTypes.ts` and `_shared/core/supabaseAdmin.ts`.
 - Name new files with a `YYYYMMDDHHMMSS_` prefix newer than every existing
   migration, or the deploy check stops them.
 - **Expand, then contract.** Functions deploy right after migrations, and app

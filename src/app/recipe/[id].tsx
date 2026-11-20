@@ -15,11 +15,11 @@ import { announce } from '@/lib/a11y';
 import { backfillRecipeThumbnails } from '@/lib/backfillRecipeThumbnails';
 import { openRecipeEditor } from '@/lib/openRecipeEditor';
 import { getGuestRecipeById, setGuestRecipeCooked, updateGuestRecipeContent } from '@/lib/guestRecipes';
-import { recipeContentEquals } from '@/lib/recipeContentEquals';
+import { recipeContentEquals } from '@shared/lib/recipeContentEquals';
 import { toggleRecipeFavorite } from '@/lib/recipeFavorites';
-import { fetchRecipeById, setRecipeCooked, updateRecipeContent } from '@/lib/supabase/recipes';
+import { fetchRecipeById, setRecipeCooked, updateRecipeContent } from '@shared/lib/supabase/recipes';
 import type { RepairedRecipePayload } from '@/lib/supabase/repairRecipe';
-import { Recipe } from '@/types/recipe';
+import { Recipe } from '@shared/types/recipe';
 
 export default function RecipeDetailScreen() {
   const { t } = useTranslation();

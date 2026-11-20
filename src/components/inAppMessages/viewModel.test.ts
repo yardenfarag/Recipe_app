@@ -1,10 +1,10 @@
 import { describe, expect, it } from 'vitest';
 
-import type { InAppMessage } from '@/lib/inAppMessages';
+import type { InAppMessage } from '@shared/lib/inAppMessages';
 
 import { buildMessageView, canUseSystemAlert, needsCloseButton } from './viewModel';
 import { resolveIconName, toneColors } from './tone';
-import { getThemePackColors } from '@/constants/themes';
+import { getThemePackColors } from '@shared/constants/themes';
 
 const LABELS = { update: 'Update', learnMore: 'Learn more', close: 'Close' };
 

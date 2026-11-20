@@ -8,7 +8,7 @@ import {
   RecipeBackupError,
   recipeBackupFileName,
 } from './recipeBackup';
-import type { Recipe } from '@/types/recipe';
+import type { Recipe } from '@shared/types/recipe';
 
 vi.mock('@react-native-async-storage/async-storage', () => ({ default: {} }));
 

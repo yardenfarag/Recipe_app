@@ -15,8 +15,8 @@ import {
   applianceSteps,
   groupAppliances,
   isBasicAppliance,
-} from '@/lib/applianceDisplay';
-import type { RecipeAppliance } from '@/lib/appliances';
+} from '@shared/lib/applianceDisplay';
+import type { RecipeAppliance } from '@shared/lib/appliances';
 
 type RecipeAppliancesProps = {
   /** Already cleaned with recipeAppliancesOf(). null = not analysed: nothing is shown. */

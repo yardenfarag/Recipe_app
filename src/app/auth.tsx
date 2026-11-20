@@ -29,7 +29,7 @@ import {
   isValidEmail,
   normalizeEmail,
   validatePassword,
-} from '@/lib/authValidation';
+} from '@shared/lib/authValidation';
 import { savePendingOAuthReason } from '@/lib/pendingOAuth';
 import { logTap } from '@/lib/interactionLog';
 import {

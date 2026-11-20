@@ -21,10 +21,10 @@ import {
   type KitchenProfile,
   type KitchenSwap,
 } from '@/lib/kitchenProfile';
-import { avoidListIsEmpty } from '@/lib/avoidList';
-import { fetchContributeToHub, setContributeToHub } from '@/lib/supabase/cookingHub';
+import { avoidListIsEmpty } from '@shared/lib/avoidList';
+import { fetchContributeToHub, setContributeToHub } from '@shared/lib/supabase/cookingHub';
 import { fetchCloudKitchenProfile, saveCloudKitchenProfile } from '@/lib/supabase/kitchen';
-import { RECIPE_VARIANTS } from '@/lib/recipeVariants';
+import { RECIPE_VARIANTS } from '@shared/lib/recipeVariants';
 import { announce } from '@/lib/a11y';
 
 export default function RecipeSettingsScreen() {

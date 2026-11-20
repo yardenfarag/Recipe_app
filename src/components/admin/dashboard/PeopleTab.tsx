@@ -18,7 +18,7 @@ import {
   summarizeWebsiteVisitors,
   type Dashboard,
   type PersonSort,
-} from '@/lib/adminDashboard';
+} from '@shared/lib/adminDashboard';
 
 import { RankBars } from './charts';
 import { Badge, Card, PersonCell } from './ui';

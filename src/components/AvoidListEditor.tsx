@@ -21,7 +21,7 @@ import {
   normalizeFoodText,
   type AllergenKey,
   type DislikeSuggestionKey,
-} from '@/lib/avoidList';
+} from '@shared/lib/avoidList';
 import { logTap } from '@/lib/interactionLog';
 import type { KitchenProfile } from '@/lib/kitchenProfile';
 

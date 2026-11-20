@@ -16,7 +16,7 @@ import { TextInput } from '@/components/text-input';
 import { useThemePreference } from '@/hooks/useThemePreference';
 import { announce } from '@/lib/a11y';
 import { logTap } from '@/lib/interactionLog';
-import { normalizeRecipeTags, translateRecipeTag } from '@/lib/recipeTags';
+import { normalizeRecipeTags, translateRecipeTag } from '@shared/lib/recipeTags';
 
 interface EditTagsModalProps {
   visible: boolean;

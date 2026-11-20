@@ -32,49 +32,49 @@ import { useShoppingList } from '@/hooks/useShoppingList';
 import { useThemePreference } from '@/hooks/useThemePreference';
 import { useAuth } from '@/hooks/useAuth';
 import { announce, CHROME_MAX_FONT_SCALE } from '@/lib/a11y';
-import { allergyInstruction, findAvoidMatches, hasAllergies, makeWithoutInstruction } from '@/lib/avoidList';
+import { allergyInstruction, findAvoidMatches, hasAllergies, makeWithoutInstruction } from '@shared/lib/avoidList';
 import { setGuestRecipeTags } from '@/lib/guestRecipes';
-import { convertStepAmounts } from '@/lib/convertStepAmounts';
-import { pickIngredientAmount, scaleIngredient, scaleIngredients } from '@/lib/ingredientAmounts';
-import { isRtlAppLanguage } from '@/lib/appLanguages';
+import { convertStepAmounts } from '@shared/lib/convertStepAmounts';
+import { pickIngredientAmount, scaleIngredient, scaleIngredients } from '@shared/lib/ingredientAmounts';
+import { isRtlAppLanguage } from '@shared/lib/appLanguages';
 import { confirmAction, showNotice } from '@/lib/confirmAction';
 import { clearExtractionRequestId } from '@/lib/extractionRequestId';
-import { resolveCulinaryLanguage } from '@/lib/culinaryUnits';
-import { displayIngredientAmount, displayedAmountIsPinch, ingredientAmountIsUnknown, recipeHasUnknownAmounts } from '@/lib/displayIngredientAmount';
-import { formatCookedDate } from '@/lib/formatCookedDate';
-import { COST_I18N_KEYS, costFilledCount } from '@/lib/formatCostEstimate';
-import { formatRecipeDuration } from '@/lib/formatRecipeDuration';
-import { formatVideoTimestamp } from '@/lib/formatVideoTimestamp';
+import { resolveCulinaryLanguage } from '@shared/lib/culinaryUnits';
+import { displayIngredientAmount, displayedAmountIsPinch, ingredientAmountIsUnknown, recipeHasUnknownAmounts } from '@shared/lib/displayIngredientAmount';
+import { formatCookedDate } from '@shared/lib/formatCookedDate';
+import { COST_I18N_KEYS, costFilledCount } from '@shared/lib/formatCostEstimate';
+import { formatRecipeDuration } from '@shared/lib/formatRecipeDuration';
+import { formatVideoTimestamp } from '@shared/lib/formatVideoTimestamp';
 import { getRecipeVideoInfo } from '@/lib/recipeVideo';
 import { recordCookForReviewPrompt } from '@/lib/reviewPrompt';
-import { getCalorieDisplay } from '@/lib/recipeCalories';
-import { recipeHasSource, recipeIsInvented } from '@/lib/recipeOrigin';
+import { getCalorieDisplay } from '@shared/lib/recipeCalories';
+import { recipeHasSource, recipeIsInvented } from '@shared/lib/recipeOrigin';
 import {
   isRecipeLanguageCode,
   isRtlRecipeLanguage,
   RecipeLanguageCode,
-} from '@/lib/recipeLanguages';
-import { resolveRecipeSourceLanguage } from '@/lib/recipeSourceLanguage';
-import { normalizeRecipeTags, translateRecipeTag } from '@/lib/recipeTags';
-import { RecipeVariantKey } from '@/lib/recipeVariants';
+} from '@shared/lib/recipeLanguages';
+import { resolveRecipeSourceLanguage } from '@shared/lib/recipeSourceLanguage';
+import { normalizeRecipeTags, translateRecipeTag } from '@shared/lib/recipeTags';
+import { RecipeVariantKey } from '@shared/lib/recipeVariants';
 import { recipeSourceShareUrl, shareRecipe } from '@/lib/shareRecipe';
-import { recipeAppliancesOf } from '@/lib/appliances';
+import { recipeAppliancesOf } from '@shared/lib/appliances';
 import { ExtractedRecipe } from '@/lib/supabase/extractRecipe';
-import { createRecipeShare } from '@/lib/supabase/recipeShare';
+import { createRecipeShare } from '@shared/lib/supabase/recipeShare';
 import { showToast } from '@/lib/toast';
-import { setRecipeTags } from '@/lib/supabase/recipes';
+import { setRecipeTags } from '@shared/lib/supabase/recipes';
 import { repairRecipe, repairRequestKey, settleRepairRecipe } from '@/lib/supabase/repairRecipe';
 import type { RepairedRecipePayload } from '@/lib/supabase/repairRecipe';
-import { SubstitutionAlternative } from '@/lib/supabase/suggestSubstitution';
-import { TranslatedRecipePayload } from '@/lib/supabase/translateRecipe';
-import { TransformedRecipePayload } from '@/lib/supabase/transformRecipe';
+import { SubstitutionAlternative } from '@shared/lib/supabase/suggestSubstitution';
+import { TranslatedRecipePayload } from '@shared/lib/supabase/translateRecipe';
+import { TransformedRecipePayload } from '@shared/lib/supabase/transformRecipe';
 import {
   Ingredient,
   Instruction,
   type RecalcField,
   Recipe,
   RecipeTranslationContent,
-} from '@/types/recipe';
+} from '@shared/types/recipe';
 
 interface RecipeContentSnapshot {
   title: string;

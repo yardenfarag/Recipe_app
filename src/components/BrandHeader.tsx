@@ -4,7 +4,7 @@ import Animated, { FadeIn, FadeOut, LinearTransition, useReducedMotion } from 'r
 import { CookieMark } from '@/components/CookieMark';
 import { useLanguagePreference } from '@/hooks/useLanguagePreference';
 import { useThemePreference } from '@/hooks/useThemePreference';
-import { isRtlAppLanguage } from '@/lib/appLanguages';
+import { isRtlAppLanguage } from '@shared/lib/appLanguages';
 
 type BrandHeaderProps = {
   title: string;

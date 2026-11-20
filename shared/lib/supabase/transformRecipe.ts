@@ -1,0 +1,114 @@
+import { FunctionsHttpError } from '@supabase/supabase-js';
+
+import type { RecipeAppliance } from '../appliances';
+import { supabase } from './client';
+import { RecipeVariantKey } from '../recipeVariants';
+import { Ingredient, Instruction } from '../../types/recipe';
+
+export interface TransformedRecipePayload {
+  ingredients: Ingredient[];
+  instructions: Instruction[];
+  servings: number;
+  calories?: number;
+  calories_reasoning?: string;
+  summary: string;
+  /**
+   * Present only when the remix changed the steps (ADR 017): the new list, or null if it could not
+   * be analysed. Absent = keep the recipe's current appliances.
+   */
+  appliances?: RecipeAppliance[] | null;
+}
+
+export type TransformRecipeStatus = 'ok' | 'failed';
+
+export interface TransformRecipeResult {
+  status: TransformRecipeStatus;
+  variant?: RecipeVariantKey;
+  recipe?: TransformedRecipePayload;
+  message?: string;
+  code?: 'auth_required' | 'recipe_limit' | 'daily_limit' | 'metering_error' | string;
+  tokens_charged?: number;
+  token_balance?: number | null;
+  tokens_required?: number;
+  remix_limit?: number;
+}
+
+export interface TransformRecipeRequest {
+  title: string;
+  servings: number;
+  ingredients: Ingredient[];
+  instructions: Instruction[];
+  calories?: number;
+  id?: string;
+  original_url?: string;
+}
+
+async function invokeErrorMessage(error: unknown): Promise<{
+  message: string;
+  code?: string;
+  token_balance?: number | null;
+  tokens_required?: number;
+}> {
+  if (error instanceof FunctionsHttpError) {
+    try {
+      const body = (await error.context.json()) as TransformRecipeResult & { error?: string };
+      if (body.message || body.error) {
+        return {
+          message: body.message ?? body.error ?? 'Request failed',
+          code: body.code,
+          token_balance: body.token_balance,
+          tokens_required: body.tokens_required,
+        };
+      }
+    } catch {
+      // Fall through.
+    }
+  }
+
+  if (error instanceof Error && error.message && !error.message.includes('non-2xx')) {
+    return { message: error.message };
+  }
+
+  return { message: 'Could not reach the recipe adaptation service. Please try again.' };
+}
+
+/** Asks the model to adapt a full recipe for a dietary/lifestyle variant or free-text request. */
+export async function transformRecipe(
+  variant: RecipeVariantKey | 'custom',
+  recipe: TransformRecipeRequest,
+  instruction?: string,
+  options?: { kitchenAutoApply?: boolean },
+): Promise<TransformRecipeResult> {
+  const { data, error } = await supabase.functions.invoke<TransformRecipeResult>(
+    'transform-recipe',
+    {
+      body: {
+        ...(variant !== 'custom' ? { variant } : {}),
+        ...(instruction?.trim() ? { instruction: instruction.trim().slice(0, 400) } : {}),
+        ...(options?.kitchenAutoApply ? { kitchen_auto_apply: true } : {}),
+        recipe: {
+          title: recipe.title,
+          servings: recipe.servings,
+          ingredients: recipe.ingredients,
+          instructions: recipe.instructions,
+          calories: recipe.calories,
+        },
+        recipe_id: recipe.id,
+        original_url: recipe.original_url,
+      },
+    },
+  );
+
+  if (error) {
+    const details = await invokeErrorMessage(error);
+    return {
+      status: 'failed',
+      message: details.message,
+      code: details.code,
+      token_balance: details.token_balance,
+      tokens_required: details.tokens_required,
+    };
+  }
+
+  return data ?? { status: 'failed', message: 'No response from the recipe adaptation service.' };
+}
