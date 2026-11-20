@@ -1,0 +1,22 @@
+// The new web app (ADR 027). Built by `opennextjs-cloudflare build`, deployed by .github/workflows/deploy-web-app.yml.
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "pinch-web",
+  "main": ".open-next/worker.js",
+  "compatibility_date": "2026-10-01",
+  "compatibility_flags": ["nodejs_compat", "global_fetch_strictly_public"],
+  "assets": {
+    "directory": ".open-next/assets",
+    "binding": "ASSETS"
+  },
+  "services": [
+    {
+      "binding": "WORKER_SELF_REFERENCE",
+      "service": "pinch-web"
+    }
+  ],
+  "workers_dev": false,
+  // While we build. After the switch (PIN-147) this becomes the zone routes
+  // pinch-app.io/app and pinch-app.io/app/* (never /app*, which also matches /apple-app-site-association).
+  "routes": [{ "pattern": "next.pinch-app.io", "custom_domain": true }]
+}

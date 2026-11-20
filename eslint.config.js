@@ -5,7 +5,8 @@ const expoConfig = require("eslint-config-expo/flat");
 module.exports = defineConfig([
   expoConfig,
   {
-    ignores: ["dist/*"],
+    // web/ is the Next.js app; it has its own ESLint config (web/eslint.config.mjs).
+    ignores: ["dist/*", "web/**"],
   },
   {
     // Taps are logged for the admin Activity page through our Pressable.
