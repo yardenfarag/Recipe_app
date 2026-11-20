@@ -75,7 +75,14 @@ npm run preview      # build the Worker with OpenNext and serve it locally in wo
 - CI runs test, type-check, lint and the Worker build in the `web` job of [`quality.yml`](.github/workflows/quality.yml).
 - Every merge to `master` that touches `web/` deploys through [`deploy-web-app.yml`](.github/workflows/deploy-web-app.yml). It reuses the `EXPO_PUBLIC_SUPABASE_*` secrets as `NEXT_PUBLIC_*` and the `CLOUDFLARE_*` secrets of the share Worker.
 - The app is built with `basePath: '/app'`. Links through `next/link` get the prefix automatically. Plain `/...` paths to files in `public/` need it written out.
+- Its lockfile is `npm-shrinkwrap.json`, not `package-lock.json`. npm treats them the same; the Cloudflare build needs this name ([`shared/README.md`](shared/README.md) says why).
 - OpenNext warns that Windows is not fully supported. `npm run dev` is fine; if `npm run preview` misbehaves, trust the CI build (Linux).
+
+## Shared code (`shared/`)
+
+Code that the mobile app and the new web app both use lives once, in [`shared/`](shared/): recipe logic, the Supabase calls, types, the five language files and the theme packs. Both apps import it as `@shared/…`.
+
+Nothing platform-specific may go in there: no React Native, Expo or Next.js imports, no `process.env`. `npm run lint` fails if it does. [`shared/README.md`](shared/README.md) has the rules, how to add a package, and how to move a module in.
 
 ## Web deploy (GitHub Pages + pinch-app.io)
 
