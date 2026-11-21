@@ -49,6 +49,13 @@ import {
   fileUriToBase64,
   pickCompressedRecipeImage,
 } from "@/lib/pickCompressedImage";
+import {
+  pickRecipePdf,
+  readRecipePdf,
+  sharedRecipeFile,
+  type RecipePdfRead,
+} from "@/lib/recipePdf";
+import { pdfRequestKey } from "@shared/lib/supabase/extractRecipe";
 import { detectPlatform, normalizeSocialUrl } from "@shared/lib/platformUrls";
 import { FREE_MONTHLY_EXTRACT_LIMIT } from "@shared/lib/quotas";
 import {
@@ -66,6 +73,7 @@ import type {
 import {
   extractRecipe,
   extractRecipeFromImage,
+  extractRecipeFromPdf,
   extractionOutcomeIsUncertain,
   NO_RESPONSE_CODE,
 } from "@/lib/supabase/extractRecipe";
@@ -86,6 +94,7 @@ type InventFollowUp =
 
 type PendingShare =
   | { kind: "image"; path: string }
+  | { kind: "pdf"; path: string; size: number | null }
   | { kind: "url"; url: string };
 
 // Share → Pinch needs native share-intent code (ADR 010); Expo Go can't receive it.
@@ -102,6 +111,7 @@ export default function AddRecipeScreen() {
   const [banner, setBanner] = useState<Banner>(null);
   const [, setGuestExtractsRemaining] = useState<number | null>(null);
   const [extractingPhoto, setExtractingPhoto] = useState(false);
+  const [extractingPdf, setExtractingPdf] = useState(false);
   const [jobKind, setJobKind] = useState<"extract" | "invent">("extract");
   const [creditsOpen, setCreditsOpen] = useState(false);
   /** ADR 019: a partial import waits here for "Fill it in myself" or Cancel. */
@@ -168,6 +178,10 @@ export default function AddRecipeScreen() {
       void handleSharedImage(share.path);
       return;
     }
+    if (share.kind === "pdf") {
+      void handleSharedPdf(share.path, share.size);
+      return;
+    }
     setUrl(share.url);
     void handleGetRecipe(share.url, "extract", "share");
   }
@@ -188,14 +202,13 @@ export default function AddRecipeScreen() {
       return;
     }
 
-    const files = shareIntent.files;
-    const imagePath = files?.find((file) =>
-      (file.mimeType ?? "").startsWith("image/"),
-    )?.path;
+    const sharedFile = sharedRecipeFile(shareIntent.files);
     // Wait until the payload is present — on Android hasShareIntent can flip
     // true a tick before webUrl/text are hydrated; resetting early drops the share.
     const raw = shareIntent.webUrl ?? shareIntent.text ?? "";
-    const shareKey = imagePath ? `image:${imagePath}` : raw.trim();
+    const shareKey = sharedFile
+      ? `${sharedFile.kind}:${sharedFile.path}`
+      : raw.trim();
 
     // On a cold start auth is still hydrating, so `user` is null even for a
     // signed-in user. Wait for it rather than consuming the share into a
@@ -213,8 +226,8 @@ export default function AddRecipeScreen() {
     resetShareIntent();
 
     let share: PendingShare;
-    if (imagePath) {
-      share = { kind: "image", path: imagePath };
+    if (sharedFile) {
+      share = sharedFile;
     } else {
       const sharedUrl = normalizeSocialUrl(raw);
       if (!sharedUrl) {
@@ -546,6 +559,57 @@ export default function AddRecipeScreen() {
     await runPhotoExtract(image.base64, image.mimeType, "share", "extract");
   }
 
+  /** A PDF is always read as a recipe: there is no Guess the recipe from a PDF (PIN-72). */
+  async function runPdfExtract(base64: string, source: RecipeEntrySource) {
+    if (loading) return;
+    if (!requireAccount()) return;
+
+    setBanner(null);
+    setExtractingPdf(true);
+    setJobKind("extract");
+    setLoading(true);
+    try {
+      const result = await extractRecipeFromPdf(base64);
+      await applyExtractResult(result, pdfRequestKey(base64), source);
+    } catch {
+      setBanner({ kind: "error", message: t("snap.genericError") });
+    } finally {
+      setLoading(false);
+      setExtractingPdf(false);
+    }
+  }
+
+  function showPdfReadFailure(read: Extract<RecipePdfRead, { ok: false }>, fromShare: boolean) {
+    setBanner({
+      kind: "error",
+      message:
+        read.reason === "too_large"
+          ? t("snap.pdfTooLarge")
+          : t(fromShare ? "snap.invalidSharePdf" : "snap.pdfUnreadable"),
+    });
+  }
+
+  async function handleSharedPdf(path: string, size: number | null) {
+    const pdf = await readRecipePdf(path, size);
+    if (!pdf.ok) {
+      showPdfReadFailure(pdf, true);
+      return;
+    }
+    await runPdfExtract(pdf.base64, "share");
+  }
+
+  async function handlePickPdf() {
+    if (loading) return;
+    if (!requireAccount()) return;
+    const pdf = await pickRecipePdf();
+    if (!pdf) return;
+    if (!pdf.ok) {
+      showPdfReadFailure(pdf, false);
+      return;
+    }
+    await runPdfExtract(pdf.base64, "pdf");
+  }
+
   async function handlePickPhoto(source: "camera" | "library") {
     if (loading) return;
     const image = await pickCompressedRecipeImage(source, {
@@ -696,7 +760,9 @@ export default function AddRecipeScreen() {
 
   const canSubmit = Boolean(url.trim());
   const inventing = jobKind === "invent";
-  const readingLine = extractingPhoto
+  const readingLine = extractingPdf
+    ? t("snap.statusReadingPdf")
+    : extractingPhoto
     ? t("snap.statusReadingPhoto")
     : detectPlatform(url) === "web"
       ? t("snap.statusReadingPage")
@@ -933,6 +999,54 @@ export default function AddRecipeScreen() {
               </Animated.Text>
             </View>
           </Pressable>
+
+          {/* PIN-72: a PDF is read as a written recipe, so it has no Guess the recipe side. The old Expo
+              web app (being replaced by web/) can't read a picked file this way, so it isn't offered there. */}
+          {mode === "extract" && Platform.OS !== "web" ? (
+            <Animated.View
+              entering={reduceMotion ? undefined : FadeIn.duration(200)}
+              exiting={reduceMotion ? undefined : FadeOut.duration(150)}
+            >
+              <Pressable
+                className="mt-3 min-h-[48px] flex-row items-center gap-3 rounded-[22px] px-4 py-3 active:opacity-80"
+                style={{ backgroundColor: colors.surface, overflow: "hidden" }}
+                trackId="snap.pdf"
+                onPress={() => void handlePickPdf()}
+                accessibilityRole="button"
+                accessibilityLabel={t("snap.pdfAction")}
+                accessibilityHint={t("snap.pdfHint")}
+              >
+                <Ionicons
+                  name="document-text-outline"
+                  size={18}
+                  color={colors.primary}
+                  accessible={false}
+                  importantForAccessibility="no"
+                />
+                <View className="min-w-0 flex-1">
+                  <Text
+                    className="text-base font-bold"
+                    style={{ color: colors.text, ...rtlText }}
+                  >
+                    {t("snap.pdfAction")}
+                  </Text>
+                  <Text
+                    className="mt-0.5 text-xs leading-4"
+                    style={{ color: colors.textSecondary, ...rtlText }}
+                  >
+                    {t("snap.pdfHint")}
+                  </Text>
+                </View>
+                <Ionicons
+                  name={chevronForward}
+                  size={16}
+                  color={colors.textSecondary}
+                  accessible={false}
+                  importantForAccessibility="no"
+                />
+              </Pressable>
+            </Animated.View>
+          ) : null}
 
           {/* Write a recipe (ADR 018) opens its own screen, so it sits beside Snap and Guess
               rather than inside the intent toggle, and reads the same in either mode. */}

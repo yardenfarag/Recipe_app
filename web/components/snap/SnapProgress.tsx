@@ -1,6 +1,6 @@
 "use client";
 
-import { Link2 } from "lucide-react";
+import { FileText, Link2 } from "lucide-react";
 import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 
@@ -17,7 +17,9 @@ export function statusLineKeys(job: SnapJob): string[] {
   const reading =
     job.source.type === "photo"
       ? "snap.statusReadingPhoto"
-      : detectPlatform(job.source.url) === "web"
+      : job.source.type === "pdf"
+        ? "snap.statusReadingPdf"
+        : detectPlatform(job.source.url) === "web"
         ? "snap.statusReadingPage"
         : "snap.statusReadingVideo";
   return job.intent === "invent"
@@ -68,6 +70,11 @@ export function SnapProgress({ job }: { job: SnapJob }) {
           alt=""
           className="h-28 w-28 rounded-2xl object-cover shadow-soft"
         />
+      ) : job.source.type === "pdf" ? (
+        <p className="flex max-w-full items-center gap-2 text-sm text-muted">
+          <FileText aria-hidden className="h-4 w-4 shrink-0" />
+          <span className="truncate">{job.source.name}</span>
+        </p>
       ) : (
         <p className="flex max-w-full items-center gap-2 text-sm text-muted">
           <Link2 aria-hidden className="h-4 w-4 shrink-0" />

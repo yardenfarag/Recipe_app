@@ -44,7 +44,7 @@ function stepTimeout(capMs: number, deadlineAt: number | undefined): number {
   if (deadlineAt === undefined) return capMs;
   return Math.max(0, Math.min(capMs, deadlineAt - Date.now()));
 }
-const TEXT_MAX_OUTPUT_TOKENS = 6_144;
+export const TEXT_MAX_OUTPUT_TOKENS = 6_144;
 const VIDEO_MAX_OUTPUT_TOKENS = 6_144;
 const MAX_DESCRIPTION_CHARS = 10_000;
 /** About 30 minutes of speech, so a long video whose recipe is only spoken is read to the end (PIN-151). */
@@ -60,10 +60,10 @@ export const TIME_RULES = `- time_reasoning: one short phrase (prep + cook/bake 
 - estimated_time_minutes: TOTAL wall-clock minutes until ready — include oven and mandatory waits, not just hands-on time. Example: mix 15 + chill 30 + bake 12 + cool 5 → 62.`;
 
 export const TAG_RULES = `- tags: 3–6 short lowercase labels (cuisine, meal, dish type, method, traits). Example: ["dessert","cookies","baked","american"]. No hashtags or invented diet claims.`;
-const LANGUAGE_RULE =
+export const LANGUAGE_RULE =
   '- source_language: the lowercase ISO 639-1 language code used by the extracted title, ingredients, and instructions (for example en, es, he, ru, ar, de, or fr).';
 
-const INSTRUCTION_RULES = `- Write clear, followable home-cook steps without turning them into a lab protocol.
+export const INSTRUCTION_RULES = `- Write clear, followable home-cook steps without turning them into a lab protocol.
 - Preserve sensory cues, asides, and distinctive wording from the source ("until it smells nutty", "don't walk away") when they are already clear.
 - Preserve every explicit cooking action and keep the steps in the correct order. Split dense directions into separate steps when that makes them easier to follow.
 - Make each step actionable: name what to add or do, where to do it, and include any stated time, temperature, texture, or visual cue.
@@ -255,7 +255,7 @@ export function isFullGeminiRecipe(r: GeminiRecipe): boolean {
   );
 }
 
-function recipeCompleteness(r: GeminiRecipe): number {
+export function recipeCompleteness(r: GeminiRecipe): number {
   let score = 0;
   if (r.found_recipe && r.title?.trim()) score += 1;
   if (r.ingredients?.length) score += 2;
@@ -810,7 +810,7 @@ function safeUrlHost(url: string): string | null {
   }
 }
 
-function isGeminiTimeout(err: unknown): boolean {
+export function isGeminiTimeout(err: unknown): boolean {
   return err instanceof FetchError && err.message.toLowerCase().includes('timedout=true');
 }
 

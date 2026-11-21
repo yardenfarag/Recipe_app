@@ -3,8 +3,8 @@ import * as Localization from 'expo-localization';
 import { getInstallId } from '@/lib/installId';
 import { supabase } from '@/lib/supabase/client';
 
-/** How the person started this Snap. */
-export type RecipeEntrySource = 'share' | 'url' | 'camera' | 'library';
+/** How the person started this Snap. `pdf`: Snap from a PDF (PIN-72); a PDF shared into Pinch counts as `share`. */
+export type RecipeEntrySource = 'share' | 'url' | 'camera' | 'library' | 'pdf';
 export type RecipeEntryMode = 'extract' | 'invent';
 /** Why the credit purchase sheet opened. */
 export type PaywallTrigger = 'out_of_credits' | 'settings';

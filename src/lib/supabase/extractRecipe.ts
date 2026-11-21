@@ -3,6 +3,7 @@ import { getInstallId } from '@/lib/installId';
 import {
   extractRecipe as extractRecipeShared,
   extractRecipeFromImage as extractRecipeFromImageShared,
+  extractRecipeFromPdf as extractRecipeFromPdfShared,
   type ExtractionRequestContext,
   type ExtractResult,
 } from '@shared/lib/supabase/extractRecipe';
@@ -40,4 +41,9 @@ export function extractRecipeFromImage(
   opts?: { forceExtract?: boolean },
 ): Promise<ExtractResult> {
   return extractRecipeFromImageShared(mobileExtractionContext, imageBase64, mimeType, opts);
+}
+
+/** Sends a recipe PDF (base64) to `extract-recipe` (PIN-72). One credit, like a photo. */
+export function extractRecipeFromPdf(pdfBase64: string): Promise<ExtractResult> {
+  return extractRecipeFromPdfShared(mobileExtractionContext, pdfBase64);
 }

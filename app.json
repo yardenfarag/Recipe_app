@@ -98,13 +98,15 @@
         {
           "androidIntentFilters": [
             "text/*",
-            "image/*"
+            "image/*",
+            "application/pdf"
           ],
           "iosActivationRules": {
             "NSExtensionActivationSupportsText": true,
             "NSExtensionActivationSupportsWebURLWithMaxCount": 1,
             "NSExtensionActivationSupportsWebPageWithMaxCount": 1,
-            "NSExtensionActivationSupportsImageWithMaxCount": 1
+            "NSExtensionActivationSupportsImageWithMaxCount": 1,
+            "NSExtensionActivationSupportsFileWithMaxCount": 1
           }
         }
       ],

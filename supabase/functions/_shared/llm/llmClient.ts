@@ -19,7 +19,12 @@ export type LlmPart =
   /** A URL the provider fetches itself. Only YouTube URLs work on OpenRouter. */
   | { fileData: { fileUri: string } }
   /** Inline image or video (mimeType video/* becomes a video_url data URL). */
-  | { imageBase64: string; mimeType?: string };
+  | { imageBase64: string; mimeType?: string }
+  /**
+   * An inline PDF. OpenRouter hands it to the model as is when the model reads PDFs (billed as input tokens), and
+   * otherwise parses it first with its OCR engine (PIN-72).
+   */
+  | { pdfBase64: string; filename?: string };
 
 /** @deprecated Name kept for import stability; same shape as LlmPart. */
 export type GeminiPart = LlmPart;
@@ -247,6 +252,14 @@ export function partsToOpenRouterContent(
       );
     } else if ('fileData' in part) {
       content.push({ type: 'video_url', video_url: { url: part.fileData.fileUri } });
+    } else if ('pdfBase64' in part) {
+      content.push({
+        type: 'file',
+        file: {
+          filename: part.filename?.trim() || 'recipe.pdf',
+          file_data: `data:application/pdf;base64,${part.pdfBase64}`,
+        },
+      });
     }
   }
   if (content.length === 1 && content[0].type === 'text') {
@@ -419,6 +432,7 @@ async function requestOpenRouterJson<T>(
   const hasVideo = options.parts.some(
     (p) => 'fileData' in p || ('imageBase64' in p && (p.mimeType ?? '').startsWith('video/')),
   );
+  const hasPdf = options.parts.some((p) => 'pdfBase64' in p);
   console.log('[openrouter] start', {
     model,
     fallbacks,
@@ -429,6 +443,7 @@ async function requestOpenRouterJson<T>(
     maxOutputTokens: options.maxOutputTokens,
     hasImage,
     hasVideo,
+    hasPdf,
   });
 
   const controller = new AbortController();

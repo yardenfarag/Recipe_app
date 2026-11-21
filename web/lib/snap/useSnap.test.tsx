@@ -11,6 +11,7 @@ const mocks = vi.hoisted(() => ({
   push: vi.fn(),
   extractRecipe: vi.fn(),
   extractRecipeFromImage: vi.fn(),
+  extractRecipeFromPdf: vi.fn(),
   inventRecipe: vi.fn(),
   inventRecipeFromImage: vi.fn(),
   applyKitchen: vi.fn(),
@@ -24,6 +25,7 @@ vi.mock("@shared/lib/supabase/extractRecipe", async (importOriginal) => ({
   ...(await importOriginal<typeof import("@shared/lib/supabase/extractRecipe")>()),
   extractRecipe: mocks.extractRecipe,
   extractRecipeFromImage: mocks.extractRecipeFromImage,
+  extractRecipeFromPdf: mocks.extractRecipeFromPdf,
 }));
 vi.mock("@shared/lib/supabase/inventRecipe", () => ({ inventRecipe: mocks.inventRecipe, inventRecipeFromImage: mocks.inventRecipeFromImage }));
 vi.mock("@shared/lib/supabase/kitchenAutoApply", () => ({ applyKitchenOnExtract: mocks.applyKitchen }));
@@ -110,6 +112,32 @@ describe("useSnap", () => {
     expect(result.current.banner).toMatchObject({ tone: "partial", title: "We couldn’t find the whole recipe" });
     expect(getSnapDraft()).toBeNull();
     expect(mocks.push).not.toHaveBeenCalled();
+  });
+
+  it("sends a PDF as a PDF, and opens its recipe", async () => {
+    mocks.extractRecipeFromPdf.mockResolvedValue({ status: "full", platform: "photo", recipe, request_id: "req-3" });
+    const { result } = renderHook(() => useSnap(), { wrapper });
+
+    await act(() => result.current.run({ intent: "extract", source: { type: "pdf", base64: "JVBERi0x", name: "cake.pdf" } }));
+
+    expect(mocks.extractRecipeFromPdf).toHaveBeenCalledWith(expect.anything(), "JVBERi0x");
+    expect(mocks.extractRecipeFromImage).not.toHaveBeenCalled();
+    expect(mocks.push).toHaveBeenCalledWith("/recipe/preview");
+  });
+
+  it("a PDF with no recipe says so in the app's words, and offers no guess", async () => {
+    mocks.extractRecipeFromPdf.mockResolvedValue({
+      status: "failed",
+      platform: "photo",
+      code: "pdf_no_recipe",
+      message: "Couldn't find a recipe in this PDF.",
+    });
+    const { result } = renderHook(() => useSnap(), { wrapper });
+
+    await act(() => result.current.run({ intent: "extract", source: { type: "pdf", base64: "JVBERi0x", name: "cake.pdf" } }));
+
+    expect(result.current.offer).toBeNull();
+    expect(result.current.banner).toEqual({ tone: "error", message: i18n.t("snap.pdfNotFound") });
   });
 
   it("a guess that throws says so", async () => {
