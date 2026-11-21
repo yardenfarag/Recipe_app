@@ -4,6 +4,7 @@ import { resetLibrary, resetTestUserLanguage, type SeedRecipe } from "./admin";
 import { signInWithPassword } from "./helpers";
 import { resetHub } from "./hubSeed";
 import { resetShoppingList } from "./listSeed";
+import { setRecipeVideo } from "./cookSeed";
 import { writeAccountPrefs } from "./prefsSeed";
 import { resetShares, stubRecipeShare } from "./shareSeed";
 import { TEST_USER } from "./testUser";
@@ -275,6 +276,12 @@ test("editor, credits, recipe actions and cook mode", async ({ browser }) => {
     { ...RECIPE, createdSecondsAgo: 1 },
     { ...COOK_ALONG, createdSecondsAgo: 2 },
   ]);
+  // A YouTube recipe with timed steps, so cook along has a player and step times to jump to.
+  await setRecipeVideo(potatoes, {
+    platform: "youtube",
+    original_url: COOK_ALONG.original_url ?? "",
+    instructions: (RECIPE.instructions ?? []).map((step, index) => ({ ...step, timestamp_seconds: 20 + index * 45 })),
+  });
   const screens = [
     ["editor-edit", `/app/recipe/edit?id=${pasta}`],
     ["editor-new", "/app/recipe/edit"],
