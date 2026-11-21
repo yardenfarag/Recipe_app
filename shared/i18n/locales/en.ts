@@ -284,6 +284,33 @@ export default {
       "blurb": "Indigo sky — twinkles & shooting stars."
     }
   },
+  "serverErrors": {
+    "sourceTimeout": "That site took too long to respond. Try again in a moment.",
+    "tryAgain": "Reading the recipe failed. Try again in a moment.",
+    "siteBlocked": "This site doesn’t let apps read its pages. Take a screenshot of the recipe and add it as a photo instead.",
+    "pageGone": "That page doesn’t exist anymore. Check the link.",
+    "siteBusy": "That site is having trouble right now. Try again later.",
+    "notAWebpage": "That link doesn’t look like a recipe page.",
+    "siteUnreachable": "Couldn’t reach that site. Check the link and try again.",
+    "rateLimited": "Too many requests right now. Try again in a minute.",
+    "postPrivate": "This post is private or was deleted, so Pinch can’t read it.",
+    "pageUnreadable": "Couldn’t read a recipe on this page. Take a screenshot of the recipe and add it as a photo instead.",
+    "sourceUnavailable": "Couldn’t load this link. Try again.",
+    "tooManyMessages": "You’ve sent several messages in the last hour. Try again later.",
+    "auth": {
+      "invalidCredentials": "The email or password is incorrect.",
+      "emailNotConfirmed": "Confirm your email before signing in.",
+      "tooManyAttempts": "Too many attempts. Wait a few minutes and try again.",
+      "weakPassword": "Choose a stronger password with at least 8 characters, a letter, and a number.",
+      "samePassword": "Choose a password you have not used for this account.",
+      "signinFailed": "Sign-in failed. Check your details and try again.",
+      "signupFailed": "We couldn’t create the account. Try signing in or reset your password.",
+      "socialFailed": "Sign-in could not be completed. Please try again.",
+      "resetFailed": "The reset request could not be completed. Please try again.",
+      "updateFailed": "Your password could not be updated. Request a new reset code and try again.",
+      "codeFailed": "The code could not be checked. Please try again."
+    }
+  },
   "auth": {
     "signUp": "Sign up",
     "welcome": "Welcome",

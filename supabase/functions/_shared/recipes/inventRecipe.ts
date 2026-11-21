@@ -19,7 +19,8 @@ const VIDEO_TIMEOUT_MS = 120_000;
 const IMAGE_TIMEOUT_MS = 45_000;
 const MAX_OUTPUT_TOKENS = 6_144;
 const MAX_DESCRIPTION_CHARS = 10_000;
-const MAX_CAPTIONS_CHARS = 6_000;
+/** About 30 minutes of speech, so a long video whose recipe is only spoken is read to the end (PIN-151). */
+const MAX_CAPTIONS_CHARS = 30_000;
 const MAX_COMMENTS = 12;
 const MAX_COMMENT_CHARS = 500;
 

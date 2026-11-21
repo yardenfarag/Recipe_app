@@ -14,6 +14,7 @@ import { useTranslation } from 'react-i18next';
 import { SheetModal } from '@/components/SheetModal';
 import { TextInput } from '@/components/text-input';
 import { useAuth } from '@/hooks/useAuth';
+import { supportErrorKey } from '@shared/lib/serverErrors';
 import { useLanguagePreference } from '@/hooks/useLanguagePreference';
 import { useThemePreference } from '@/hooks/useThemePreference';
 import { getFeedbackContext } from '@/lib/supabase/feedback';
@@ -53,9 +54,10 @@ export function SupportTicketModal({ visible, onClose }: SupportTicketModalProps
       onClose();
       Alert.alert(t('support.sentTitle'), t('support.sentBody'));
     } catch (err) {
+      const limitKey = supportErrorKey(err);
       Alert.alert(
         t('support.sendFailed'),
-        err instanceof Error ? err.message : t('common.tryAgain'),
+        limitKey ? t(limitKey) : err instanceof Error ? err.message : t('common.tryAgain'),
       );
     } finally {
       setSubmitting(false);

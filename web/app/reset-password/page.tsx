@@ -14,6 +14,7 @@ import { Spinner } from "@/components/ui/Spinner";
 import { usePageTitle } from "@/components/ui/PageHeader";
 import { TextField } from "@/components/ui/TextField";
 import { getSupabase } from "@/lib/supabase";
+import { authErrorText } from "@shared/lib/serverErrors";
 
 type Stage = "checking" | "ready" | "invalid" | "done";
 
@@ -62,7 +63,7 @@ export default function ResetPasswordPage() {
       })
       .catch((err) => {
         setStage("invalid");
-        setError(err instanceof Error ? err.message : t("resetPassword.invalidLink"));
+        setError(authErrorText(err, t, "resetPassword.invalidLink"));
       });
   }, [t]);
 
@@ -77,7 +78,7 @@ export default function ResetPasswordPage() {
       await updatePassword(password);
       setStage("done");
     } catch (err) {
-      setError(err instanceof Error ? err.message : t("resetPassword.updateFailed"));
+      setError(authErrorText(err, t, "resetPassword.updateFailed"));
     } finally {
       setBusy(false);
     }

@@ -1,5 +1,6 @@
 // Sends Pinch emails through Resend's API, from hello@pinch-app.io with replies going to support@.
-// Secret: RESEND_API_KEY (a Resend key with sending access to pinch-app.io).
+// Secret: RESEND_API_KEY (a Resend key with sending access to pinch-app.io). A caller may pass
+// another key (support-email does), so one kind of email can't use up another's quota.
 import type { Db } from '../core/supabaseAdmin.ts';
 
 import type { RenderedEmail } from './render.ts';
@@ -32,10 +33,12 @@ export async function sendEmail(
     from?: string;
     /** Extra email headers, e.g. X-Pinch-* details that replies don't quote. */
     headers?: Record<string, string>;
+    /** Defaults to RESEND_API_KEY. */
+    apiKey?: string;
     fetchImpl?: typeof fetch;
   } = {},
 ): Promise<string> {
-  const apiKey = Deno.env.get('RESEND_API_KEY');
+  const apiKey = options.apiKey || Deno.env.get('RESEND_API_KEY');
   if (!apiKey) throw new EmailSendError('RESEND_API_KEY is not set', 500);
 
   const headers: Record<string, string> = {
@@ -86,6 +89,7 @@ export async function sendOnce(
     replyTo?: string;
     from?: string;
     headers?: Record<string, string>;
+    apiKey?: string;
   },
 ): Promise<boolean> {
   const { data: existing, error: readError } = await admin
@@ -103,6 +107,7 @@ export async function sendOnce(
     replyTo: input.replyTo,
     from: input.from,
     headers: input.headers,
+    apiKey: input.apiKey,
   });
 
   const { error: insertError } = await admin.from('email_sends').insert({

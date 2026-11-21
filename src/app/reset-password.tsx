@@ -19,6 +19,7 @@ import { useThemePreference } from '@/hooks/useThemePreference';
 import { announce } from '@/lib/a11y';
 import { getPasswordStrength, validatePassword } from '@shared/lib/authValidation';
 import { logTap } from '@/lib/interactionLog';
+import { authErrorText } from '@shared/lib/serverErrors';
 import { consumePasswordRecoveryUrl, hasSession, updatePassword } from '@/lib/supabase/auth';
 
 export default function ResetPasswordScreen() {
@@ -93,9 +94,7 @@ export default function ResetPasswordScreen() {
       .catch((err) => {
         if (active) {
           setReady(false);
-          setError(
-            err instanceof Error ? err.message : t('resetPassword.invalidLink'),
-          );
+          setError(authErrorText(err, t, 'resetPassword.invalidLink'));
         }
       });
 
@@ -135,7 +134,7 @@ export default function ResetPasswordScreen() {
       await updatePassword(password);
       setDone(true);
     } catch (err) {
-      setError(err instanceof Error ? err.message : t('resetPassword.updateFailed'));
+      setError(authErrorText(err, t, 'resetPassword.updateFailed'));
     } finally {
       setLoading(false);
     }

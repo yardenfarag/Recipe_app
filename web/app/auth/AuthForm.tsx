@@ -11,7 +11,6 @@ import {
   signUpWithEmail,
   verifyResetCode,
   verifySignInCode,
-  type AuthError,
 } from "@shared/lib/supabase/auth";
 
 import { AuthCard, PinchMark } from "@/components/AuthCard";
@@ -24,6 +23,7 @@ import { requestPasswordReset, signInWithGoogle } from "@/lib/auth";
 import i18n from "@/lib/i18n";
 import { LEGAL_URLS } from "@/lib/legal";
 import { safeNextPath } from "@/lib/nextPath";
+import { authErrorText } from "@shared/lib/serverErrors";
 import { getSupabase } from "@/lib/supabase";
 
 /** 'code' signs in with a 6-digit emailed code instead of a password. */
@@ -97,8 +97,9 @@ export function AuthForm() {
     setError(null);
   }
 
+  // The auth helpers' own messages are English; show ours for the error's code (PIN-153).
   function show(err: unknown, fallbackKey: string) {
-    setError(err instanceof Error ? err.message : t(fallbackKey));
+    setError(authErrorText(err, t, fallbackKey));
   }
 
   async function sendCodeEmail(target: "code" | "reset", address: string) {
@@ -161,14 +162,14 @@ export function AuthForm() {
       }
       await verifySignInCode(normalizeEmail(email), digits);
     } catch (err) {
-      setError((err as AuthError | null)?.code === "otp_expired" ? t("auth.codeInvalid") : errorText(err));
+      setError(errorText(err));
     } finally {
       setBusy(false);
     }
   }
 
   function errorText(err: unknown) {
-    return err instanceof Error ? err.message : t("auth.genericError");
+    return authErrorText(err, t, "auth.genericError");
   }
 
   async function handleResendCode() {

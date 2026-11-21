@@ -8,6 +8,7 @@ import { serve } from '../_shared/core/observe.ts';
 // row, so only deliveries we expect to succeed on a retry answer 500; they're also recorded
 // in purchase_webhook_failures.
 import { jsonResponse } from '../_shared/core/cors.ts';
+import { permanentCreditError } from '../_shared/billing/creditErrors.ts';
 import { sendPurchaseEmail } from '../_shared/email/purchase.ts';
 import { polarDecision, polarEventSummary, polarSignatureValid } from '../_shared/billing/polarPurchase.ts';
 import { createServiceSupabase, sqlNullable } from '../_shared/core/supabaseAdmin.ts';
@@ -77,10 +78,13 @@ serve('polar-webhook', async (req) => {
     });
     if (error) {
       console.error('[polar-webhook] revoke failed', error);
-      await recordFailure(body, eventId, 'revoke_failed', error);
+      const permanent = permanentCreditError(error);
+      await recordFailure(body, eventId, permanent ?? 'revoke_failed', error);
+      if (permanent) return jsonResponse({ received: true, unhandled: permanent });
       return jsonResponse({ error: 'Credit revoke failed' }, 500);
     }
-    // null: no grant for this order (nothing was credited, so nothing to take back).
+    // null: no grant for this order yet. revoke_purchased_credits left a marker, so an
+    // order.paid that arrives after its refund is refused.
     if (data === null) await recordFailure(body, eventId, 'revoke_without_grant');
     return jsonResponse({ received: true, balance: data });
   }
@@ -96,7 +100,11 @@ serve('polar-webhook', async (req) => {
   });
   if (error) {
     console.error('[polar-webhook] grant failed', error);
-    await recordFailure(body, eventId, 'grant_failed', error);
+    // The buyer deleted their account, or the order was refunded first: no retry can grant it.
+    // Answering 500 would use up Polar's 10 failures and switch the endpoint off for everyone.
+    const permanent = permanentCreditError(error);
+    await recordFailure(body, eventId, permanent ?? 'grant_failed', error);
+    if (permanent) return jsonResponse({ received: true, unhandled: permanent });
     return jsonResponse({ error: 'Credit grant failed' }, 500);
   }
 

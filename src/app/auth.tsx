@@ -33,6 +33,7 @@ import {
 import { safeReturnPath } from '@/lib/authReturnPath';
 import { savePendingOAuthReason, savePendingOAuthReturnTo } from '@/lib/pendingOAuth';
 import { logTap } from '@/lib/interactionLog';
+import { authErrorText } from '@shared/lib/serverErrors';
 import {
   isAppleAuthAvailable,
   requestPasswordReset,
@@ -43,7 +44,6 @@ import {
   signUpWithEmail,
   verifyResetCode,
   verifySignInCode,
-  type AuthError,
 } from '@/lib/supabase/auth';
 
 /** 'code' signs in with a 6-digit emailed code instead of a password. */
@@ -221,7 +221,7 @@ export default function AuthScreen() {
       setCode('');
       setNotice(t('auth.codeResent'));
     } catch (err) {
-      setError(err instanceof Error ? err.message : t('auth.genericError'));
+      setError(authErrorText(err, t, 'auth.genericError'));
     } finally {
       setLoading(false);
     }
@@ -242,14 +242,7 @@ export default function AuthScreen() {
       await verifySignInCode(normalizeEmail(email), digits);
       done();
     } catch (err) {
-      const errorCode = (err as AuthError | null)?.code;
-      setError(
-        errorCode === 'otp_expired'
-          ? t('auth.codeInvalid')
-          : err instanceof Error
-            ? err.message
-            : t('auth.genericError'),
-      );
+      setError(authErrorText(err, t, 'auth.genericError'));
     } finally {
       setLoading(false);
     }
@@ -301,7 +294,7 @@ export default function AuthScreen() {
       }
       done();
     } catch (err) {
-      setError(err instanceof Error ? err.message : t('auth.genericError'));
+      setError(authErrorText(err, t, 'auth.genericError'));
     } finally {
       setLoading(false);
     }
@@ -321,7 +314,7 @@ export default function AuthScreen() {
       ) {
         return;
       }
-      setError(err instanceof Error ? err.message : t('auth.appleFailed'));
+      setError(authErrorText(err, t, 'auth.appleFailed'));
     } finally {
       setLoading(false);
     }
@@ -338,7 +331,7 @@ export default function AuthScreen() {
       const result = await signInWithGoogle();
       if (!result.cancelled) done();
     } catch (err) {
-      setError(err instanceof Error ? err.message : t('auth.googleFailed'));
+      setError(authErrorText(err, t, 'auth.googleFailed'));
     } finally {
       setLoading(false);
     }

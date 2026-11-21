@@ -43,6 +43,7 @@ export type LlmTaskKind =
   | 'remix_related'
   | 'appliances'
   | 'diets'
+  | 'hub_moderation'
   | 'recipe_estimates';
 
 export interface TaskModelConfig {
@@ -77,6 +78,8 @@ export const TASK_MODELS: Record<LlmTaskKind, TaskModelConfig> = {
   appliances: { model: LUNA, fallbacks: [QWEN_FLASH], reasoning: 'none' },
   // Which diets a Hub card fits as written (PIN-83). Classification like appliances; follows it.
   diets: { model: LUNA, fallbacks: [QWEN_FLASH], reasoning: 'none' },
+  // May this card be a public Hub page (PIN-153)? Classification over the recipe text, like diets.
+  hub_moderation: { model: LUNA, fallbacks: [QWEN_FLASH], reasoning: 'none' },
   // Calories, time, effort, cost, tags and metric/spoons after a hand edit (PIN-79). Not in the
   // PIN-44 eval; these fields came from the text extract on Luna, so it follows text.
   recipe_estimates: { model: LUNA, fallbacks: [QWEN_FLASH], reasoning: 'none' },

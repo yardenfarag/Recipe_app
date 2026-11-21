@@ -799,6 +799,27 @@ export type Database = {
           },
         ]
       }
+      purchase_refund_markers: {
+        Row: {
+          created_at: string
+          event_id: string | null
+          provider: string
+          transaction_id: string
+        }
+        Insert: {
+          created_at?: string
+          event_id?: string | null
+          provider: string
+          transaction_id: string
+        }
+        Update: {
+          created_at?: string
+          event_id?: string | null
+          provider?: string
+          transaction_id?: string
+        }
+        Relationships: []
+      }
       purchase_webhook_failures: {
         Row: {
           app_user_id: string | null
@@ -852,6 +873,8 @@ export type Database = {
           extract_hit_count: number
           extraction_source: string | null
           extraction_status: string
+          hidden_at: string | null
+          hidden_reason: string | null
           id: string
           image_url: string | null
           ingredients: Json
@@ -880,6 +903,8 @@ export type Database = {
           extract_hit_count?: number
           extraction_source?: string | null
           extraction_status?: string
+          hidden_at?: string | null
+          hidden_reason?: string | null
           id?: string
           image_url?: string | null
           ingredients?: Json
@@ -908,6 +933,8 @@ export type Database = {
           extract_hit_count?: number
           extraction_source?: string | null
           extraction_status?: string
+          hidden_at?: string | null
+          hidden_reason?: string | null
           id?: string
           image_url?: string | null
           ingredients?: Json
@@ -1226,6 +1253,30 @@ export type Database = {
           },
         ]
       }
+      request_rate_events: {
+        Row: {
+          bucket: string
+          created_at: string
+          id: number
+          key: string
+          units: number
+        }
+        Insert: {
+          bucket: string
+          created_at?: string
+          id?: never
+          key: string
+          units?: number
+        }
+        Update: {
+          bucket?: string
+          created_at?: string
+          id?: never
+          key?: string
+          units?: number
+        }
+        Relationships: []
+      }
       shopping_list_items: {
         Row: {
           checked: boolean
@@ -1387,6 +1438,18 @@ export type Database = {
         Args: { p_amount: number; p_reason?: string; p_user_id: string }
         Returns: number
       }
+      admin_hidden_recipe_cards: {
+        Args: { p_limit?: number }
+        Returns: {
+          hidden_at: string
+          hidden_reason: string
+          id: string
+          original_url: string
+          platform: string
+          public_slug: string
+          title: string
+        }[]
+      }
       admin_interaction_session_events: {
         Args: { p_session_id: string }
         Returns: {
@@ -1460,9 +1523,14 @@ export type Database = {
         Args: { p_id: string; p_status: string }
         Returns: undefined
       }
+      admin_set_recipe_card_hidden: {
+        Args: { p_card: string; p_hidden?: boolean; p_reason?: string }
+        Returns: string
+      }
       admin_user_detail: { Args: { p_user_id: string }; Returns: Json }
       app_version_parts: { Args: { v: string }; Returns: number[] }
       backfill_recipe_cards: { Args: never; Returns: number }
+      can_moderate_recipe_cards: { Args: never; Returns: boolean }
       cancel_subscription: { Args: { p_user_id?: string }; Returns: string }
       claim_recipe_card: { Args: { p_card_id: string }; Returns: string }
       compare_app_versions: { Args: { a: string; b: string }; Returns: number }
@@ -1560,6 +1628,8 @@ export type Database = {
           extract_hit_count: number
           extraction_source: string | null
           extraction_status: string
+          hidden_at: string | null
+          hidden_reason: string | null
           id: string
           image_url: string | null
           ingredients: Json
@@ -1736,6 +1806,7 @@ export type Database = {
         }
         Returns: Json
       }
+      request_ip_key: { Args: never; Returns: string }
       reserve_daily_ai_usage: {
         Args: {
           p_action: string
@@ -1823,6 +1894,16 @@ export type Database = {
       }
       support_email_secret_matches: {
         Args: { p_secret: string }
+        Returns: boolean
+      }
+      take_rate_limit: {
+        Args: {
+          p_bucket: string
+          p_key: string
+          p_max: number
+          p_units?: number
+          p_window: string
+        }
         Returns: boolean
       }
       touch_recipe_card_hit: { Args: { p_card_id: string }; Returns: undefined }

@@ -14,6 +14,8 @@ export interface PlatformMeta {
   topComments: PostComment[];
   /** Direct MP4/CDN URL for multimodal Gemini fallback. */
   videoUrl?: string;
+  /** ScrapeCreators credits this fetch spent on top of the platform's usual estimate (YouTube transcript). */
+  scrapeCredits?: number;
   /** Source video length in seconds when the platform reports it. */
   durationSeconds?: number;
   /** Platform-native content id when resolved (e.g. TikTok numeric id from short links). */

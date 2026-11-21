@@ -41,7 +41,10 @@ jobs:
         env:
           NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.EXPO_PUBLIC_SUPABASE_URL }}
           NEXT_PUBLIC_SUPABASE_KEY: ${{ secrets.EXPO_PUBLIC_SUPABASE_KEY }}
-          NEXT_PUBLIC_CREDIT_PURCHASES_ENABLED: ${{ vars.EXPO_PUBLIC_CREDIT_PURCHASES_ENABLED }}
+          # Its own switch, unset (off) while the app is still being built at next.pinch-app.io: that
+          # address is public, and it shouldn't take real payments before launch (PIN-153). Set the
+          # repository variable WEB_APP_CREDIT_PURCHASES_ENABLED to "true" at the switch (PIN-147).
+          NEXT_PUBLIC_CREDIT_PURCHASES_ENABLED: ${{ vars.WEB_APP_CREDIT_PURCHASES_ENABLED }}
         run: npm run build:worker
 
       - name: Deploy to Cloudflare (next.pinch-app.io)

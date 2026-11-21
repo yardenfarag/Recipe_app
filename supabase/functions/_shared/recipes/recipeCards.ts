@@ -9,6 +9,13 @@ import {
 } from '../extraction/platform.ts';
 import { type Db, type TablesUpdate, toJson } from '../core/supabaseAdmin.ts';
 
+import { hubWebUrl } from './hubSourceUrl.ts';
+import {
+  moderateHubRecipe,
+  stripRecipeLinks,
+  type ModeratedRecipeInput,
+  type ModerationResult,
+} from './hubModeration.ts';
 import { recipeAppliancesOf } from './enrich/appliances.ts';
 import { deriveRecipeDiets, type DietsRecipeInput } from './enrich/recipeDiets.ts';
 import { logUsageEvent } from '../core/usageLog.ts';
@@ -36,25 +43,6 @@ export interface HubRecipeSnapshot {
   appliances?: unknown;
 }
 
-function canonicalizeUrlForCompare(url: string): string {
-  try {
-    const u = new URL(url.trim());
-    u.hash = '';
-    for (const key of [...u.searchParams.keys()]) {
-      if (/^(utm_|fbclid|gclid|mc_|ref$)/i.test(key)) {
-        u.searchParams.delete(key);
-      }
-    }
-    u.hostname = u.hostname.toLowerCase().replace(/^www\./, '');
-    let path = u.pathname;
-    if (path.length > 1 && path.endsWith('/')) path = path.slice(0, -1);
-    u.pathname = path;
-    return u.toString();
-  } catch {
-    return url.trim();
-  }
-}
-
 export function isHubPlatform(value: string | null | undefined): value is HubPlatform {
   return value === 'youtube' || value === 'instagram' || value === 'tiktok' || value === 'web';
 }
@@ -76,7 +64,9 @@ export function recipeCardCanonicalKey(
     const id = contentId?.trim() || extractTikTokId(url);
     return id ? `tiktok:${id}` : null;
   }
-  const canonical = canonicalizeUrlForCompare(url);
+  // Null for a link that isn't a plain public page (hubSourceUrl.ts): no card is looked up or
+  // published for it.
+  const canonical = hubWebUrl(url);
   return canonical ? `web:${canonical}` : null;
 }
 
@@ -88,7 +78,7 @@ export function recipeCardCanonicalUrl(
   if (platform === 'youtube' && contentId) return canonicalYouTubeWatchUrl(contentId);
   if (platform === 'instagram' && contentId) return canonicalInstagramUrl(contentId);
   if (platform === 'tiktok' && contentId) return canonicalTikTokUrl(contentId);
-  if (platform === 'web') return canonicalizeUrlForCompare(url);
+  if (platform === 'web') return hubWebUrl(url) ?? url.trim();
   return url.trim();
 }
 
@@ -155,7 +145,8 @@ export async function findRecipeCard(
       .maybeSingle();
     if (error) {
       console.error('[recipe-cards] lookup by key failed', error);
-    } else if (data) {
+    } else if (data && !data.hidden_at) {
+      // A hidden card (moderation or an admin) is never served: the link is extracted afresh.
       return data as Record<string, unknown>;
     }
   }
@@ -163,20 +154,51 @@ export async function findRecipeCard(
   return null;
 }
 
+/**
+ * The picture a public card may show. A web page's image is only used once it is our own copy in
+ * Storage: a link to the source site would let its owner change the picture on our page at any
+ * time. YouTube thumbnails stay YouTube's links, and social ones are already copies.
+ */
+export function hubImageUrl(platform: HubPlatform, imageUrl: string | null | undefined): string | null {
+  const url = imageUrl?.trim();
+  if (!url) return null;
+  if (platform !== 'web') return url;
+  const base = (Deno.env.get('SUPABASE_URL') ?? '').replace(/\/$/, '');
+  return base && url.startsWith(`${base}/storage/v1/object/public/recipe-thumbnails/`) ? url : null;
+}
+
 /** The card a publish wrote or found, when its diets still need checking (PIN-83). */
 export type PublishedCard = { id: string; needsDiets: boolean };
 
+export interface PublishOptions {
+  /** For the usage row of the moderation call. */
+  userId?: string | null;
+  /** The check a new card must pass. Tests pass their own. */
+  moderate?: (recipe: ModeratedRecipeInput) => Promise<ModerationResult>;
+}
+
+/**
+ * Publishes a full extraction as a public Hub card, or returns null when it stays private:
+ * the link isn't a plain public page, the card is hidden, the moderation check rejected the
+ * recipe, or the check couldn't run. Only a new card (or one replacing a partial card) is
+ * checked; an existing full card's text never changes here.
+ */
 export async function publishRecipeCard(
   admin: Db,
-  recipe: HubRecipeSnapshot,
+  snapshot: HubRecipeSnapshot,
   contentId?: string | null,
+  options: PublishOptions = {},
 ): Promise<PublishedCard | null> {
-  if (!canPublishHubRecipe(recipe) || !isHubPlatform(recipe.platform)) return null;
+  if (!canPublishHubRecipe(snapshot) || !isHubPlatform(snapshot.platform)) return null;
 
-  const url = recipe.original_url?.trim();
+  const url = snapshot.original_url?.trim();
   if (!url) return null;
-  const key = recipeCardCanonicalKey(recipe.platform, url, contentId);
+  const key = recipeCardCanonicalKey(snapshot.platform, url, contentId);
   if (!key) return null;
+
+  // The public page carries no links from the recipe text. Without them it must still be a recipe.
+  const recipe = stripRecipeLinks(snapshot);
+  if (!canPublishHubRecipe(recipe) || !isHubPlatform(recipe.platform)) return null;
 
   const canonicalUrl = recipeCardCanonicalUrl(recipe.platform, url, contentId);
   const row = {
@@ -185,7 +207,7 @@ export async function publishRecipeCard(
     original_url: canonicalUrl,
     platform: recipe.platform,
     title: recipe.title.trim(),
-    image_url: recipe.image_url ?? null,
+    image_url: hubImageUrl(recipe.platform, recipe.image_url),
     source_video_url: recipe.source_video_url ?? null,
     ingredients: toJson(recipe.ingredients ?? []),
     instructions: toJson(recipe.instructions ?? []),
@@ -204,13 +226,30 @@ export async function publishRecipeCard(
 
   const { data: existing, error: existingError } = await admin
     .from('recipe_cards')
-    .select('id, extraction_status, image_url, appliances, diets')
+    .select('id, extraction_status, image_url, appliances, diets, hidden_at')
     .eq('canonical_key', key)
     .maybeSingle();
 
   if (existingError) {
     console.error('[recipe-cards] existing lookup failed', existingError);
     return null;
+  }
+  // Hidden by moderation or an admin: it stays as it is until an admin restores it.
+  if (existing?.hidden_at) return null;
+
+  const shouldReplace = Boolean(existing) && existing?.extraction_status !== 'full';
+  if (!existing || shouldReplace) {
+    const review = await reviewForHub(admin, recipe, key, options);
+    if (review.verdict === 'error') return null;
+    if (review.verdict === 'reject') {
+      // Keep the rejected card, hidden, so an admin can look at it and the link stays blocked.
+      const hidden = { hidden_at: row.updated_at, hidden_reason: `moderation:${review.reason}` };
+      const { error } = existing
+        ? await admin.from('recipe_cards').update(hidden).eq('id', existing.id)
+        : await admin.from('recipe_cards').insert({ ...row, ...hidden });
+      if (error) console.error('[recipe-cards] could not store the rejected card', error);
+      return null;
+    }
   }
 
   if (!existing) {
@@ -222,7 +261,6 @@ export async function publishRecipeCard(
     return { id: inserted.id as string, needsDiets: true };
   }
 
-  const shouldReplace = existing.extraction_status !== 'full';
   const shouldFillImage = !existing.image_url && row.image_url;
   // Like the image: fill appliances on a card that has none, never overwrite (matches the recipe_appliances migration).
   const shouldFillAppliances = existing.appliances == null && row.appliances != null;
@@ -245,6 +283,34 @@ export async function publishRecipeCard(
     return null;
   }
   return { id: existing.id as string, needsDiets };
+}
+
+/** Runs the moderation check and logs its own usage row, like the diet check below. */
+async function reviewForHub(
+  admin: Db,
+  recipe: HubRecipeSnapshot,
+  canonicalKey: string,
+  options: PublishOptions,
+): Promise<ModerationResult> {
+  const started = Date.now();
+  const review = await (options.moderate ?? moderateHubRecipe)(recipe);
+  console.log('[recipe-cards] moderation', {
+    verdict: review.verdict,
+    reason: review.verdict === 'reject' ? review.reason : null,
+    canonicalKey,
+  });
+  await logUsageEvent(admin, {
+    userId: options.userId ?? null,
+    action: 'hub_moderation',
+    platform: recipe.platform,
+    status: review.verdict === 'ok' ? 'ok' : review.verdict === 'reject' ? 'rejected' : 'failed',
+    usages: review.usages,
+    tokensCharged: 0,
+    durationMs: Date.now() - started,
+    errorMessage: review.verdict === 'error' ? review.error : null,
+    metadata: { canonical_key: canonicalKey, reason: review.verdict === 'reject' ? review.reason : null },
+  });
+  return review;
 }
 
 /**

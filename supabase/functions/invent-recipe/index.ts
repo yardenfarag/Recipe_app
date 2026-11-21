@@ -470,7 +470,7 @@ serve('invent-recipe', async (req) => {
       usages = ladder.usages;
       usedInstagramVideoDownload = ladder.usedInstagramVideoDownload === true;
       videoSkippedReason = ladder.videoSkippedReason;
-      scrapeCredits = estimateScrapeCredits(platform, usedInstagramVideoDownload);
+      scrapeCredits = estimateScrapeCredits(platform, usedInstagramVideoDownload) + (meta?.scrapeCredits ?? 0);
       const resolvedContentId = meta?.contentId ?? contentId;
       imageUrl = await resolveThumbnail(platform, resolvedContentId, meta ?? { topComments: [] });
       sourceVideoUrl = platform === 'web' ? meta?.videoUrl ?? null : null;
@@ -670,6 +670,7 @@ serve('invent-recipe', async (req) => {
         {
           status: 'failed' as JobStatus,
           platform,
+          code: 'try_again',
           message: "Couldn't invent a recipe from that. Try again in a moment.",
           guest_extracts_remaining: guestRemaining,
         },
@@ -680,6 +681,7 @@ serve('invent-recipe', async (req) => {
       {
         status: 'failed' as JobStatus,
         platform,
+        code: 'try_again',
         message: 'Something went wrong while inventing this recipe. Please try again.',
         guest_extracts_remaining: guestRemaining,
       },
@@ -813,7 +815,7 @@ async function resolveThumbnail(
     return meta.thumbnailUrl ?? (contentId ? youTubeThumbnail(contentId) : null);
   }
   if (
-    (platform === 'instagram' || platform === 'tiktok' || platform === 'facebook') &&
+    (platform === 'instagram' || platform === 'tiktok' || platform === 'facebook' || platform === 'web') &&
     meta.thumbnailUrl
   ) {
     const hosted = await persistSocialThumbnail({

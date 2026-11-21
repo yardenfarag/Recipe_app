@@ -2,7 +2,7 @@ import { serve } from '../_shared/core/observe.ts';
 import { normalizeStoredCalories } from '../_shared/recipes/calories.ts';
 import { corsHeaders, jsonResponse } from '../_shared/core/cors.ts';
 import { FetchError } from '../_shared/core/errors.ts';
-import { fetchErrorMessage } from '../_shared/extraction/fetchErrorMessage.ts';
+import { fetchErrorInfo } from '../_shared/extraction/fetchErrorMessage.ts';
 import { classifyGeminiRecipe } from '../_shared/extraction/classifyRecipe.ts';
 import {
   buildContentGateInput,
@@ -577,7 +577,7 @@ serve('extract-recipe', async (req) => {
       usages = ladder.usages;
       usedInstagramVideoDownload = ladder.usedInstagramVideoDownload === true;
       videoSkippedReason = ladder.videoSkippedReason;
-      scrapeCredits = estimateScrapeCredits(platform, usedInstagramVideoDownload);
+      scrapeCredits = estimateScrapeCredits(platform, usedInstagramVideoDownload) + (meta?.scrapeCredits ?? 0);
       const resolvedContentId = meta?.contentId ?? contentId;
       imageUrl = deadlineAt - Date.now() >= MIN_THUMBNAIL_COPY_MS
         ? await resolveThumbnail(platform, resolvedContentId, meta ?? { topComments: [] })
@@ -880,22 +880,19 @@ serve('extract-recipe', async (req) => {
     });
 
     if (status === 'full' && admin) {
-      const contribute = userId ? await userContributesToHub(admin, userId) : true;
-      if (contribute) {
-        try {
-          const card = await publishRecipeCard(admin, recipe, meta?.contentId ?? contentId);
-          // PIN-83: the diet check runs after the response so it never slows the extract down.
-          if (card?.needsDiets && typeof EdgeRuntime !== 'undefined') {
-            EdgeRuntime.waitUntil(
-              fillRecipeCardDiets(admin, card.id, recipe, userId ?? null).catch((err) =>
-                console.error('[extract-recipe] hub diets failed', err)
-              ),
-            );
-          }
-        } catch (error) {
-          console.error('[extract-recipe] hub publish failed', error);
-        }
-      }
+      // Publishing to the Hub includes a moderation check (PIN-153) and then the diet check
+      // (PIN-83), each a model call. Both run after the response, so they never slow the
+      // extract down; the user's own recipe doesn't depend on either.
+      const publishToHub = async () => {
+        if (userId && !(await userContributesToHub(admin, userId))) return;
+        const card = await publishRecipeCard(admin, recipe, meta?.contentId ?? contentId, { userId });
+        if (card?.needsDiets) await fillRecipeCardDiets(admin, card.id, recipe, userId ?? null);
+      };
+      const publishing = publishToHub().catch((error) =>
+        console.error('[extract-recipe] hub publish failed', error)
+      );
+      if (typeof EdgeRuntime !== 'undefined') EdgeRuntime.waitUntil(publishing);
+      else await publishing;
     }
 
     return jsonResponse({
@@ -952,11 +949,13 @@ serve('extract-recipe', async (req) => {
       return compensationPendingResponse(platform, guestRemaining, creditReservation);
     }
     if (err instanceof FetchError) {
-      const message = fetchErrorMessage(err, platform);
+      // The app translates by `code`; `message` is for builds that don't know the code yet.
+      const { code, message } = fetchErrorInfo(err, platform);
       return jsonResponse(
         {
           status: 'failed' as ExtractionStatus,
           platform,
+          code,
           message,
           guest_extracts_remaining: guestRemaining,
         },
@@ -968,6 +967,7 @@ serve('extract-recipe', async (req) => {
       {
         status: 'failed' as ExtractionStatus,
         platform,
+        code: 'try_again',
         message:
           platform === 'web'
             ? 'Something went wrong while reading this page. Please try again.'
@@ -1403,20 +1403,18 @@ async function resolveThumbnail(
   }
 
   if (
-    (platform === 'instagram' || platform === 'tiktok' || platform === 'facebook') &&
+    (platform === 'instagram' || platform === 'tiktok' || platform === 'facebook' || platform === 'web') &&
     meta.thumbnailUrl
   ) {
+    // A web page's image is copied too, so its site can't swap the picture later (PIN-153).
     const hosted = await persistSocialThumbnail({
       sourceUrl: meta.thumbnailUrl,
       platform,
       contentId,
     });
-    // Prefer durable Storage URL; fall back to CDN so the client still has a chance.
+    // Prefer our own copy. The user's recipe falls back to the source's link so it still has a
+    // chance of a picture; the public Hub card only ever takes our copy (publishRecipeCard).
     return hosted ?? meta.thumbnailUrl;
-  }
-
-  if (platform === 'web') {
-    return meta.thumbnailUrl ?? null;
   }
 
   return meta.thumbnailUrl ?? null;

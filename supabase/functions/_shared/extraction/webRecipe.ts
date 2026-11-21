@@ -9,11 +9,13 @@ import { extractYouTubeId } from './platform.ts';
 import { safeFetch } from '../core/safeFetch.ts';
 
 const FETCH_TIMEOUT_MS = 18_000;
+/** How much of a page is downloaded. Recipe pages are well under this; nothing past it is read. */
+const MAX_HTML_BYTES = 2 * 1024 * 1024;
 const MAX_HTML_CHARS = 600_000;
 const MAX_DESCRIPTION_CHARS = 12_000;
 
 const BROWSER_UA =
-  'Mozilla/5.0 (compatible; PinchBot/1.0; +https://pinch.app) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36';
+  'Mozilla/5.0 (compatible; PinchBot/1.0; +https://pinch-app.io) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36';
 
 export interface WebRecipeMeta extends PlatformMeta {
   /** Host of the page (for logging). */
@@ -69,12 +71,16 @@ export async function fetchWebRecipeMeta(url: string): Promise<WebRecipeMeta> {
   };
 }
 
-async function fetchHtml(url: string): Promise<string> {
+/**
+ * The page's HTML. One timer covers the headers and the body, and the body is read at most
+ * MAX_HTML_BYTES deep, so a huge or drip-fed page can't hang the function or fill its memory.
+ * A page longer than the cap is cut there, not refused: the recipe is rarely past 2 MB.
+ */
+export async function fetchHtml(url: string, timeoutMs: number = FETCH_TIMEOUT_MS): Promise<string> {
   const controller = new AbortController();
-  const timeout = setTimeout(() => controller.abort(), FETCH_TIMEOUT_MS);
-  let res: Response;
+  const timeout = setTimeout(() => controller.abort(), timeoutMs);
   try {
-    res = await safeFetch(url, {
+    const res = await safeFetch(url, {
       signal: controller.signal,
       headers: {
         Accept: 'text/html,application/xhtml+xml;q=0.9,*/*;q=0.8',
@@ -82,9 +88,36 @@ async function fetchHtml(url: string): Promise<string> {
         'User-Agent': BROWSER_UA,
       },
     });
+
+    if (!res.ok) {
+      await res.body?.cancel();
+      throw new FetchError('webRecipe.ts: fetchHtml', 'Webpage returned an error', {
+        url,
+        status: res.status,
+      });
+    }
+
+    const contentType = (res.headers.get('content-type') ?? '').toLowerCase();
+    if (
+      contentType &&
+      !contentType.includes('html') &&
+      !contentType.includes('xml') &&
+      !contentType.includes('text/plain') &&
+      !contentType.includes('json')
+    ) {
+      await res.body?.cancel();
+      throw new FetchError(
+        'webRecipe.ts: fetchHtml',
+        "That link doesn't look like a recipe webpage.",
+        { url, contentType },
+      );
+    }
+
+    const text = await readTextCapped(res, MAX_HTML_BYTES);
+    return text.length > MAX_HTML_CHARS ? text.slice(0, MAX_HTML_CHARS) : text;
   } catch (err) {
     if (err instanceof FetchError) throw err;
-    const timedOut = err instanceof Error && err.name === 'AbortError';
+    const timedOut = controller.signal.aborted || (err instanceof Error && err.name === 'AbortError');
     throw new FetchError('webRecipe.ts: fetchHtml', 'Could not load this webpage', {
       url,
       timedOut,
@@ -93,31 +126,24 @@ async function fetchHtml(url: string): Promise<string> {
   } finally {
     clearTimeout(timeout);
   }
+}
 
-  if (!res.ok) {
-    throw new FetchError('webRecipe.ts: fetchHtml', 'Webpage returned an error', {
-      url,
-      status: res.status,
-    });
+/** Decodes at most `maxBytes` of the body as UTF-8 and stops the download there. */
+async function readTextCapped(res: Response, maxBytes: number): Promise<string> {
+  if (!res.body) return '';
+  const reader = res.body.getReader();
+  const decoder = new TextDecoder();
+  let text = '';
+  let total = 0;
+  while (total < maxBytes) {
+    const { done, value } = await reader.read();
+    if (done) return text + decoder.decode();
+    const chunk = value.byteLength > maxBytes - total ? value.subarray(0, maxBytes - total) : value;
+    total += chunk.byteLength;
+    text += decoder.decode(chunk, { stream: true });
   }
-
-  const contentType = (res.headers.get('content-type') ?? '').toLowerCase();
-  if (
-    contentType &&
-    !contentType.includes('html') &&
-    !contentType.includes('xml') &&
-    !contentType.includes('text/plain') &&
-    !contentType.includes('json')
-  ) {
-    throw new FetchError(
-      'webRecipe.ts: fetchHtml',
-      "That link doesn't look like a recipe webpage.",
-      { url, contentType },
-    );
-  }
-
-  const text = await res.text();
-  return text.length > MAX_HTML_CHARS ? text.slice(0, MAX_HTML_CHARS) : text;
+  await reader.cancel();
+  return text;
 }
 
 function buildPageDescription(input: {

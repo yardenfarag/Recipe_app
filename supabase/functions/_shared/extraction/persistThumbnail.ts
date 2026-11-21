@@ -8,13 +8,18 @@ const FETCH_TIMEOUT_MS = 12_000;
 /** Matches the recipe-thumbnails bucket's file_size_limit. */
 const MAX_THUMBNAIL_BYTES = 10 * 1024 * 1024;
 
+/** Image types a browser shows as a picture. SVG is left out: it can carry scripts. */
+const WEB_IMAGE_TYPES = new Set(['image/jpeg', 'image/png', 'image/webp', 'image/gif', 'image/avif']);
+
 /**
- * Downloads a social CDN thumbnail with the right Referer and uploads it to
- * Supabase Storage so the app can display a stable, public URL.
+ * Downloads a thumbnail and uploads it to Supabase Storage, so the app and the public Hub page
+ * show a stable copy of ours. For social CDNs that is the only way to show it at all (their
+ * links expire and need a Referer). For a web page's og:image it means the site's owner can't
+ * swap the picture after the recipe is published (PIN-153).
  */
 export async function persistSocialThumbnail(opts: {
   sourceUrl: string;
-  platform: Extract<Platform, 'instagram' | 'tiktok' | 'facebook'>;
+  platform: Extract<Platform, 'instagram' | 'tiktok' | 'facebook' | 'web'>;
   contentId?: string | null;
 }): Promise<string | undefined> {
   const { sourceUrl, platform, contentId } = opts;
@@ -32,22 +37,46 @@ export async function persistSocialThumbnail(opts: {
       ? 'https://www.instagram.com/'
       : platform === 'facebook'
         ? 'https://www.facebook.com/'
-        : 'https://www.tiktok.com/';
+        : platform === 'tiktok'
+          ? 'https://www.tiktok.com/'
+          : null;
 
   const controller = new AbortController();
   const timeout = setTimeout(() => controller.abort(), FETCH_TIMEOUT_MS);
 
-  let res: Response;
+  // One timer for the headers and the body, so a slow image can't hold the import up.
+  let contentType: string;
+  let bytes: Uint8Array | null;
   try {
-    res = await safeFetch(sourceUrl, {
+    const res = await safeFetch(sourceUrl, {
       headers: {
-        Referer: referer,
+        ...(referer ? { Referer: referer } : {}),
         Accept: 'image/avif,image/webp,image/apng,image/*,*/*;q=0.8',
         'User-Agent':
           'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
       },
       signal: controller.signal,
     });
+
+    if (!res.ok) {
+      await res.body?.cancel();
+      console.warn('[persistThumbnail] fetch HTTP error', {
+        platform,
+        status: res.status,
+        host: safeHost(sourceUrl),
+      });
+      return undefined;
+    }
+
+    contentType = (res.headers.get('content-type') ?? 'image/jpeg').split(';')[0].trim().toLowerCase();
+    const isImage = platform === 'web' ? WEB_IMAGE_TYPES.has(contentType) : contentType.startsWith('image/');
+    if (!isImage) {
+      await res.body?.cancel();
+      console.warn('[persistThumbnail] not an image', { contentType, host: safeHost(sourceUrl) });
+      return undefined;
+    }
+
+    bytes = await readBodyCapped(res, MAX_THUMBNAIL_BYTES);
   } catch (err) {
     console.warn('[persistThumbnail] fetch failed', {
       platform,
@@ -59,22 +88,6 @@ export async function persistSocialThumbnail(opts: {
     clearTimeout(timeout);
   }
 
-  if (!res.ok) {
-    console.warn('[persistThumbnail] fetch HTTP error', {
-      platform,
-      status: res.status,
-      host: safeHost(sourceUrl),
-    });
-    return undefined;
-  }
-
-  const contentType = (res.headers.get('content-type') ?? 'image/jpeg').split(';')[0].trim();
-  if (!contentType.startsWith('image/')) {
-    console.warn('[persistThumbnail] not an image', { contentType, host: safeHost(sourceUrl) });
-    return undefined;
-  }
-
-  const bytes = await readBodyCapped(res, MAX_THUMBNAIL_BYTES);
   if (!bytes) {
     console.warn('[persistThumbnail] image too large', { host: safeHost(sourceUrl) });
     return undefined;
@@ -85,7 +98,12 @@ export async function persistSocialThumbnail(opts: {
   }
 
   const ext = extensionForContentType(contentType);
-  const idPart = (contentId?.trim() || hashShort(sourceUrl)).replace(/[^A-Za-z0-9_-]/g, '');
+  // A web image is named by a hash of its bytes. Uploads overwrite, so a name taken from the
+  // address would let the site change a picture we already published by changing its file and
+  // getting the page imported again. A different picture is a different file here.
+  const idPart = platform === 'web'
+    ? await sha256Hex(bytes, 32)
+    : (contentId?.trim() || hashShort(sourceUrl)).replace(/[^A-Za-z0-9_-]/g, '');
   const path = `${platform}/${idPart}.${ext}`;
 
   const supabase = createClient<Database>(supabaseUrl, serviceKey);
@@ -220,7 +238,13 @@ function extensionForContentType(contentType: string): string {
   if (contentType.includes('png')) return 'png';
   if (contentType.includes('webp')) return 'webp';
   if (contentType.includes('gif')) return 'gif';
+  if (contentType.includes('avif')) return 'avif';
   return 'jpg';
+}
+
+async function sha256Hex(bytes: Uint8Array, length: number): Promise<string> {
+  const digest = await crypto.subtle.digest('SHA-256', bytes as Uint8Array<ArrayBuffer>);
+  return [...new Uint8Array(digest)].map((byte) => byte.toString(16).padStart(2, '0')).join('').slice(0, length);
 }
 
 function hashShort(value: string): string {
