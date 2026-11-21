@@ -83,6 +83,8 @@ export function useSnap({ onSettled }: { onSettled?: () => void } = {}) {
   const [job, setJob] = useState<SnapJob | null>(null);
   const [banner, setBanner] = useState<SnapBanner>(null);
   const [offer, setOffer] = useState<InventOffer | null>(null);
+  /** The recipe is in and its page is opening: the progress shows as complete until it does. */
+  const [finished, setFinished] = useState(false);
   const running = useRef(false);
 
   const run = useCallback(
@@ -91,6 +93,7 @@ export function useSnap({ onSettled }: { onSettled?: () => void } = {}) {
       running.current = true;
       setBanner(null);
       setOffer(null);
+      setFinished(false);
       setJob(next);
       let leaving = false;
       try {
@@ -125,6 +128,7 @@ export function useSnap({ onSettled }: { onSettled?: () => void } = {}) {
             break;
           case "saved":
             leaving = true;
+            setFinished(true);
             showToast(t("recipe.alreadySaved"), "info");
             router.push(`/recipe/${outcome.recipe.id}`);
             break;
@@ -138,6 +142,7 @@ export function useSnap({ onSettled }: { onSettled?: () => void } = {}) {
             });
             break;
           case "preview": {
+            setFinished(true);
             const kitchen = user ? await applyKitchenOnExtract(user.id, outcome.recipe) : { recipe: outcome.recipe, failed: false };
             await setSnapDraft(kitchen.recipe, {
               kitchenFailed: kitchen.failed,
@@ -171,6 +176,7 @@ export function useSnap({ onSettled }: { onSettled?: () => void } = {}) {
 
   return {
     job,
+    finished,
     banner,
     setBanner,
     offer,

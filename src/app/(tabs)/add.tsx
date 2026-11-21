@@ -49,7 +49,7 @@ import {
   fileUriToBase64,
   pickCompressedRecipeImage,
 } from "@/lib/pickCompressedImage";
-import { detectPlatform, normalizeSocialUrl } from "@shared/lib/platformUrls";
+import { normalizeSocialUrl } from "@shared/lib/platformUrls";
 import { FREE_MONTHLY_EXTRACT_LIMIT } from "@shared/lib/quotas";
 import {
   captureRecipeExtracted,
@@ -98,7 +98,6 @@ export default function AddRecipeScreen() {
   const [url, setUrl] = useState("");
   const [mode, setMode] = useState<SnapIntent>("extract");
   const [loading, setLoading] = useState(false);
-  const [statusIndex, setStatusIndex] = useState(0);
   const [banner, setBanner] = useState<Banner>(null);
   const [, setGuestExtractsRemaining] = useState<number | null>(null);
   const [extractingPhoto, setExtractingPhoto] = useState(false);
@@ -144,18 +143,6 @@ export default function AddRecipeScreen() {
       active = false;
     };
   }, [user]);
-
-  useEffect(() => {
-    if (!loading) {
-      setStatusIndex(0);
-      return;
-    }
-    const lineCount = jobKind === "invent" ? 3 : 4;
-    const id = setInterval(() => {
-      setStatusIndex((i) => (i + 1) % lineCount);
-    }, 2800);
-    return () => clearInterval(id);
-  }, [loading, jobKind]);
 
   // Errors/notices land on the form after the wait screen unmounts, so focus
   // doesn't move to them — speak them for VoiceOver/TalkBack.
@@ -695,24 +682,6 @@ export default function AddRecipeScreen() {
   }
 
   const canSubmit = Boolean(url.trim());
-  const inventing = jobKind === "invent";
-  const readingLine = extractingPhoto
-    ? t("snap.statusReadingPhoto")
-    : detectPlatform(url) === "web"
-      ? t("snap.statusReadingPage")
-      : t("snap.statusReadingVideo");
-  const statusLines = inventing
-    ? ([
-        readingLine,
-        t("snap.statusFiguringDish"),
-        t("snap.statusWritingHome"),
-      ] as const)
-    : ([
-        readingLine,
-        t("snap.statusIngredients"),
-        t("snap.statusWritingSteps"),
-        t("snap.statusAlmost"),
-      ] as const);
 
   const signedInQuotaLabel = (() => {
     if (!user || totalCredits == null) return null;
@@ -727,8 +696,8 @@ export default function AddRecipeScreen() {
     return (
       <Screen dense tabScreen>
         <SnapExtractingView
-          statusLines={statusLines}
-          statusIndex={statusIndex}
+          intent={jobKind}
+          url={extractingPhoto ? null : url}
         />
       </Screen>
     );
