@@ -3,8 +3,9 @@
  *
  * Each task `kind` has its own primary model, fallback list and reasoning
  * effort (TASK_MODELS). OpenRouter runs the fallbacks server-side via
- * `models[]`. Video goes through OpenRouter too, as a YouTube URL or a
- * base64 clip (ADR 015). There is no direct Gemini path any more.
+ * `models[]` when a provider errors. An answer whose JSON doesn't parse is
+ * retried here, once, on the next fallback. Video goes through OpenRouter
+ * too, as a YouTube URL or a base64 clip (ADR 015). There is no direct Gemini path any more.
  */
 
 import { AppError, FetchError } from '../core/errors.ts';
@@ -279,6 +280,47 @@ function contentToText(rawContent: unknown): string {
   return '';
 }
 
+/** Below this much of the caller's timeout left, a retry can't finish, so the first failure stands. */
+const MIN_RETRY_MS = 5_000;
+
+/** The model answered (HTTP 200), but its JSON didn't parse. */
+class InvalidLlmJsonError extends AppError {
+  constructor(
+    context: string,
+    readonly usedModel: string,
+  ) {
+    super(context, 'OpenRouter returned invalid JSON', { model: usedModel });
+    this.name = 'InvalidLlmJsonError';
+  }
+}
+
+/** Characters of the answer logged on each side of where JSON.parse stopped. */
+const JSON_ERROR_WINDOW = 80;
+
+/** What to log about an answer that didn't parse: its end, and the text around the break. */
+export function describeInvalidJson(text: string, err: unknown): Record<string, unknown> {
+  const message = err instanceof Error ? err.message : String(err);
+  const position = Number(message.match(/position (\d+)/)?.[1]);
+  return {
+    length: text.length,
+    parseError: message.slice(0, 200),
+    head: text.slice(0, 120),
+    tail: text.slice(-200),
+    ...(Number.isFinite(position)
+      ? {
+          position,
+          around: text.slice(Math.max(0, position - JSON_ERROR_WINDOW), position + JSON_ERROR_WINDOW),
+        }
+      : {}),
+  };
+}
+
+/** The models after `usedModel` in the chain. A slug OpenRouter reports with a suffix still matches. */
+function modelsAfter(chain: string[], usedModel: string): string[] {
+  const at = chain.findIndex((m) => usedModel === m || usedModel.startsWith(`${m}-`));
+  return chain.slice(at === -1 ? 1 : at + 1);
+}
+
 export async function generateOpenRouterJson<T>(
   options: GenerateLlmJsonOptions,
   apiKey: string,
@@ -291,6 +333,52 @@ export async function generateOpenRouterJson<T>(
   const hasUrlVideo = options.parts.some((p) => 'fileData' in p);
   const fallbacks = pinned || hasUrlVideo ? [] : task.fallbacks.filter((m) => m !== model);
   const reasoning = evalHook?.reasoning?.() ?? task.reasoning;
+  const started = Date.now();
+
+  try {
+    return await requestOpenRouterJson<T>(options, apiKey, {
+      model,
+      fallbacks,
+      reasoning,
+      timeoutMs: options.timeoutMs,
+    });
+  } catch (err) {
+    if (!(err instanceof InvalidLlmJsonError)) throw err;
+    // OpenRouter's models[] only covers provider errors. A 200 with broken JSON never
+    // reaches the fallback, so retry on it here (extract-recipe, 21 Nov 2026).
+    const next = modelsAfter([model, ...fallbacks], err.usedModel);
+    const remainingMs = options.timeoutMs - (Date.now() - started);
+    if (next.length === 0 || remainingMs < MIN_RETRY_MS) {
+      console.error('[openrouter] invalid JSON, not retrying', {
+        model: err.usedModel,
+        kind: options.kind,
+        reason: next.length === 0 ? 'no_fallback' : 'no_time',
+        remainingMs,
+      });
+      throw err;
+    }
+    console.warn('[openrouter] invalid JSON, retrying on fallback', {
+      failedModel: err.usedModel,
+      model: next[0],
+      kind: options.kind,
+      remainingMs,
+    });
+    return await requestOpenRouterJson<T>(options, apiKey, {
+      model: next[0],
+      fallbacks: next.slice(1),
+      reasoning,
+      timeoutMs: remainingMs,
+    });
+  }
+}
+
+/** One chat completion. Throws InvalidLlmJsonError when the answer doesn't parse. */
+async function requestOpenRouterJson<T>(
+  options: GenerateLlmJsonOptions,
+  apiKey: string,
+  attempt: { model: string; fallbacks: string[]; reasoning: ReasoningEffort | string; timeoutMs: number },
+): Promise<GenerateLlmJsonResult<T>> {
+  const { model, fallbacks, reasoning, timeoutMs } = attempt;
   const ignore = providerIgnoreFor([model, ...fallbacks]);
   const userContent = partsToOpenRouterContent(options.parts);
 
@@ -334,14 +422,14 @@ export async function generateOpenRouterJson<T>(
     reasoning,
     ignore,
     kind: options.kind,
-    timeoutMs: options.timeoutMs,
+    timeoutMs,
     maxOutputTokens: options.maxOutputTokens,
     hasImage,
     hasVideo,
   });
 
   const controller = new AbortController();
-  const timeout = setTimeout(() => controller.abort(), options.timeoutMs);
+  const timeout = setTimeout(() => controller.abort(), timeoutMs);
   const started = Date.now();
 
   let res: Response;
@@ -367,7 +455,7 @@ export async function generateOpenRouterJson<T>(
     });
     throw new FetchError(options.context, 'OpenRouter request failed', {
       timedOut: isTimeout,
-      timeoutMs: options.timeoutMs,
+      timeoutMs,
       model,
       originalError: err instanceof Error ? err.message : String(err),
     });
@@ -429,14 +517,19 @@ export async function generateOpenRouterJson<T>(
   let data: T;
   try {
     data = unwrapTopLevelArray<T>(JSON.parse(jsonText), options.responseSchema);
-  } catch {
+  } catch (err) {
     console.error('[openrouter] invalid JSON', {
       model: usedModel,
+      provider: payload.provider,
       kind: options.kind,
+      ms: Date.now() - started,
       finishReason: choice?.finish_reason,
-      head: jsonText.slice(0, 120),
+      nativeFinishReason: choice?.native_finish_reason,
+      completionTokens: payload.usage?.completion_tokens,
+      costUsd: payload.usage?.cost,
+      ...describeInvalidJson(jsonText, err),
     });
-    throw new AppError(options.context, 'OpenRouter returned invalid JSON', { model: usedModel });
+    throw new InvalidLlmJsonError(options.context, usedModel);
   }
 
   const promptTokenCount = Number(payload.usage?.prompt_tokens ?? 0) || 0;

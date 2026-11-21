@@ -8,6 +8,7 @@ import { assert, assertEquals, assertRejects } from 'jsr:@std/assert@1';
 
 import {
   defaultModelSlugs,
+  describeInvalidJson,
   generateLlmJson,
   partsToOpenRouterContent,
   resolveTaskModel,
@@ -221,6 +222,102 @@ Deno.test('a refusal with empty content throws a clear error', () =>
       stub.restore();
     }
   }));
+
+const TEXT_CALL = {
+  kind: 'text',
+  systemPrompt: 'sys',
+  parts: [{ text: 'go' }],
+  responseSchema: OBJECT_SCHEMA,
+  timeoutMs: 50_000,
+  maxOutputTokens: 100,
+  context: 'test',
+};
+
+const BROKEN = '{"title":"Falafel","ingredients":[{"name":"C"}';
+
+Deno.test('invalid JSON from the primary is retried once on the fallback', () =>
+  withEnv({ OPENROUTER_API_KEY: 'test' }, async () => {
+    const stub = stubFetch((body) =>
+      body.model === 'openai/gpt-6-luna'
+        ? completion(BROKEN)
+        : completion('{"title":"Falafel"}', { model: 'qwen/qwen3.8-flash' }),
+    );
+    try {
+      const result = await generateLlmJson<{ title: string }>(TEXT_CALL);
+      assertEquals(stub.calls.length, 2);
+      assertEquals(stub.calls[0].models, ['qwen/qwen3.8-flash']);
+      assertEquals(stub.calls[1].model, 'qwen/qwen3.8-flash');
+      assertEquals(stub.calls[1].models, undefined);
+      assertEquals(result.data, { title: 'Falafel' });
+      assertEquals(result.model, 'qwen/qwen3.8-flash');
+    } finally {
+      stub.restore();
+    }
+  }));
+
+Deno.test('invalid JSON from both models fails with the same error as before', () =>
+  withEnv({ OPENROUTER_API_KEY: 'test' }, async () => {
+    const stub = stubFetch((body) => completion(BROKEN, { model: body.model }));
+    try {
+      await assertRejects(() => generateLlmJson(TEXT_CALL), Error, 'OpenRouter returned invalid JSON');
+      assertEquals(stub.calls.length, 2);
+    } finally {
+      stub.restore();
+    }
+  }));
+
+Deno.test('no retry when OpenRouter already answered from the last fallback', () =>
+  withEnv({ OPENROUTER_API_KEY: 'test' }, async () => {
+    const stub = stubFetch(() => completion(BROKEN, { model: 'qwen/qwen3.8-flash' }));
+    try {
+      await assertRejects(() => generateLlmJson(TEXT_CALL), Error, 'OpenRouter returned invalid JSON');
+      assertEquals(stub.calls.length, 1);
+    } finally {
+      stub.restore();
+    }
+  }));
+
+Deno.test('no retry when the task has no fallback', () =>
+  withEnv({ OPENROUTER_API_KEY: 'test', OPENROUTER_FALLBACKS_TEXT: 'none' }, async () => {
+    const stub = stubFetch(() => completion(BROKEN));
+    try {
+      await assertRejects(() => generateLlmJson(TEXT_CALL), Error, 'OpenRouter returned invalid JSON');
+      assertEquals(stub.calls.length, 1);
+    } finally {
+      stub.restore();
+    }
+  }));
+
+Deno.test('no retry when too little of the timeout is left', () =>
+  withEnv({ OPENROUTER_API_KEY: 'test' }, async () => {
+    const stub = stubFetch(() => completion(BROKEN));
+    try {
+      await assertRejects(
+        () => generateLlmJson({ ...TEXT_CALL, timeoutMs: 1_000 }),
+        Error,
+        'OpenRouter returned invalid JSON',
+      );
+      assertEquals(stub.calls.length, 1);
+    } finally {
+      stub.restore();
+    }
+  }));
+
+Deno.test('the invalid-JSON log shows the end of the answer and where it broke', () => {
+  const text = '{"title":"Cake","steps":["mix" "bake"]}';
+  let err: unknown;
+  try {
+    JSON.parse(text);
+  } catch (e) {
+    err = e;
+  }
+  const info = describeInvalidJson(text, err);
+  assertEquals(info.length, text.length);
+  assertEquals(info.tail, text);
+  assert(typeof info.parseError === 'string' && info.parseError.length > 0);
+  assert(typeof info.position === 'number', `no position in: ${info.parseError}`);
+  assert(String(info.around).includes('"mix" "bake"'));
+});
 
 Deno.test('without an OpenRouter key the call fails fast', () =>
   withEnv({ OPENROUTER_API_KEY: null, OPEN_ROUTER_API_KEY: null }, async () => {
