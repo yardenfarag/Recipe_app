@@ -1359,6 +1359,11 @@ export default {
     "library": {
       "sortBy": "Sort by"
     },
+    "recipe": {
+      "viewOriginal": "View the original",
+      "opensInNewTab": "opens in a new tab",
+      "stepVideoTime": "In the video at {{time}}"
+    },
     "soon": {
       "recipe": {
         "title": "Recipe pages are on their way",

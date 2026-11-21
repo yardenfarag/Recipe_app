@@ -131,3 +131,71 @@ test("library", async ({ browser }) => {
     await context.close();
   }
 });
+
+const RECIPE: SeedRecipe = {
+  title: "Creamy lemon pasta with garlic and parmesan",
+  image_url: picture(40),
+  servings: 4,
+  calories: 2400,
+  estimated_time_minutes: 25,
+  effort_level: "Easy",
+  cost_estimate: "$",
+  tags: ["pasta", "dinner"],
+  original_url: "https://example.com/lemon-pasta",
+  ingredients: [
+    { name: "spaghetti", quantity: 400, unit: "g", metric: { quantity: 400, unit: "g" }, spoons: { quantity: 14, unit: "oz" } },
+    { name: "butter", quantity: 3, unit: "tbsp", metric: { quantity: 42, unit: "g" }, spoons: { quantity: 3, unit: "tbsp" } },
+    { name: "garlic cloves, finely chopped", quantity: 4, unit: "" },
+    { name: "heavy cream", quantity: 0.75, unit: "cup", metric: { quantity: 180, unit: "ml" }, spoons: { quantity: 0.75, unit: "cup" } },
+    { name: "lemon, zest and juice", quantity: 1, unit: "" },
+    { name: "parmesan, grated", quantity: 0.5, unit: "cup", metric: { quantity: 50, unit: "g" }, spoons: { quantity: 0.5, unit: "cup" } },
+    { name: "salt", quantity: 1, unit: "pinch" },
+  ],
+  instructions: [
+    { step: 1, text: "Cook the spaghetti in well-salted water until just tender. Keep 1 cup of the pasta water." },
+    { step: 2, text: "Melt 3 tbsp butter in a wide pan and soften the garlic for a minute, without letting it brown." },
+    { step: 3, text: "Add the cream, lemon zest and juice, and simmer for 2 minutes." },
+    { step: 4, text: "Toss in the pasta and parmesan, loosening with pasta water until glossy. Season and serve." },
+  ],
+};
+
+const SHAKSHUKA: SeedRecipe = {
+  title: "שקשוקה של שבת",
+  source_language: "he",
+  servings: 2,
+  estimated_time_minutes: 30,
+  effort_level: "Easy",
+  ingredients: [
+    { name: "ביצים", quantity: 4, unit: "" },
+    { name: "olive oil", quantity: 2, unit: "tbsp" },
+    { name: "עגבניות מרוסקות", quantity: 400, unit: "g" },
+    { name: "פפריקה מתוקה", quantity: 1, unit: "tsp" },
+  ],
+  instructions: [
+    { step: 1, text: "מחממים 2 כפות שמן זית במחבת רחבה." },
+    { step: 2, text: "מוסיפים את העגבניות והפפריקה ומבשלים 10 דקות." },
+    { step: 3, text: "שוברים פנימה את הביצים, מכסים ומבשלים עד שהחלבון מתייצב." },
+  ],
+};
+
+test("recipe page", async ({ browser }) => {
+  const [pasta, shakshuka] = await resetLibrary([
+    { ...RECIPE, createdSecondsAgo: 1 },
+    { ...SHAKSHUKA, createdSecondsAgo: 2 },
+  ]);
+  for (const viewport of Object.keys(VIEWPORTS) as (keyof typeof VIEWPORTS)[]) {
+    for (const [language, scheme] of [["en", "light"], ["en", "dark"], ["he", "light"]] as const) {
+      const { page, context } = await open(browser, viewport, { language, scheme }, `/app/recipe/${pasta}`);
+      await page.waitForTimeout(300);
+      await page.screenshot({ path: `${OUT}/recipe-${viewport}-${language}-${scheme}.png`, fullPage: true });
+      await context.close();
+    }
+  }
+  // Mixed direction: a Hebrew recipe in the English app, on desktop and phone.
+  for (const viewport of ["desktop", "phone"] as const) {
+    const { page, context } = await open(browser, viewport, { language: "en", scheme: "light" }, `/app/recipe/${shakshuka}`);
+    await page.waitForTimeout(300);
+    await page.screenshot({ path: `${OUT}/recipe-hebrew-in-en-${viewport}.png`, fullPage: true });
+    await context.close();
+  }
+});
