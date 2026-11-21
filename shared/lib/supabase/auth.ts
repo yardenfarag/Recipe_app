@@ -8,8 +8,11 @@ import { supabase } from './client';
 
 export type AuthAction = 'signin' | 'signup' | 'social' | 'reset' | 'update' | 'code';
 
-/** An auth failure the screen can translate: `code` is Supabase's error code. */
-export type AuthError = Error & { code?: string };
+/**
+ * An auth failure the screen can translate (shared/lib/serverErrors.ts): `code` is Supabase's error code and
+ * `action` is the step that failed. `message` is English, for logs.
+ */
+export type AuthError = Error & { code?: string; action?: AuthAction };
 
 type FailureReporter = (action: AuthAction, reason: string) => void;
 let reportFailure: FailureReporter = () => {};
@@ -201,6 +204,7 @@ export function friendlyAuthError(error: unknown, action: AuthAction): AuthError
   reportFailure(action, /^[a-z0-9_]{1,60}$/.test(code) ? code : 'unknown');
   const err = friendlyAuthMessage(code, action) as AuthError;
   if (code) err.code = code;
+  err.action = action;
   return err;
 }
 

@@ -64,13 +64,25 @@ describe("AuthForm", () => {
     await waitFor(() => expect(calls.signInWithEmail).toHaveBeenCalledWith("cook@example.com", "secret123"));
   });
 
-  it("shows the reason sign-in failed", async () => {
-    calls.signInWithEmail.mockRejectedValue(new Error("The email or password is incorrect."));
+  it("shows the reason sign-in failed, in the app's own words for the error code", async () => {
+    // What the auth helper throws: an English message for logs, Supabase's code, and the step that failed.
+    calls.signInWithEmail.mockRejectedValue(
+      Object.assign(new Error("English from the helper"), { code: "invalid_credentials", action: "signin" }),
+    );
     renderForm("mode=signin");
     typeInto("Email", "cook@example.com");
     typeInto("Password", "wrong-pass1");
     fireEvent.click(screen.getByRole("button", { name: "Sign in" }));
     expect((await screen.findByRole("alert")).textContent).toBe("The email or password is incorrect.");
+  });
+
+  it("never shows an error's raw text", async () => {
+    calls.signInWithEmail.mockRejectedValue(new Error("Edge Function returned a non-2xx status code"));
+    renderForm("mode=signin");
+    typeInto("Email", "cook@example.com");
+    typeInto("Password", "wrong-pass1");
+    fireEvent.click(screen.getByRole("button", { name: "Sign in" }));
+    expect((await screen.findByRole("alert")).textContent).toBe("Something went wrong. Please try again.");
   });
 
   it("checks the email and the new password before signing up", async () => {

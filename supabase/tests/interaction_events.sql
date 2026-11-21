@@ -1,7 +1,7 @@
 begin;
 
 create extension if not exists pgtap with schema extensions;
-select plan(16);
+select plan(17);
 
 insert into auth.users (
   instance_id, id, aud, role, email, encrypted_password,
@@ -110,17 +110,28 @@ select ok(
   'a device clock far in the past falls back to server time'
 );
 
--- No timed purge; erasure --------------------------------------------------
+-- Purge and erasure ---------------------------------------------------------
 reset role;
 
+-- A visitor who never signed in, and a visitor row from a session that later signed in.
 insert into public.interaction_events (guest_install_id, session_id, kind, name, platform, occurred_at, created_at)
-values ('install-tap-old', gen_random_uuid(), 'tap', 'old.tap', 'web', now() - interval '91 days', now() - interval '91 days');
+values
+  ('install-tap-old', gen_random_uuid(), 'tap', 'old.tap', 'web', now() - interval '91 days', now() - interval '91 days'),
+  ('install-tap-recent', gen_random_uuid(), 'tap', 'recent.tap', 'web', now() - interval '89 days', now() - interval '89 days'),
+  ('install-tap-user-old', '20000000-0000-4000-8000-000000000002', 'screen', '/welcome', 'android',
+   now() - interval '91 days', now() - interval '91 days');
 
 select public.purge_expired_personal_data();
 
 select is(
-  (select count(*)::int from public.interaction_events where guest_install_id = 'install-tap-old'),
-  1, 'the daily purge keeps old events'
+  (select array_agg(guest_install_id order by guest_install_id) from public.interaction_events
+   where guest_install_id in ('install-tap-old', 'install-tap-recent')),
+  array['install-tap-recent'],
+  'the daily purge deletes events of visitors who never signed in after 90 days'
+);
+select is(
+  (select count(*)::int from public.interaction_events where guest_install_id = 'install-tap-user-old'),
+  1, 'the purge keeps an account''s history, including its visitor rows from before sign-in'
 );
 
 -- The same session had guest rows before sign-in.

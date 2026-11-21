@@ -24,12 +24,12 @@ export interface FeedbackRow extends Context {
   source: 'app' | 'website' | string;
   contact_email: string | null;
   created_at: string;
-  profile?: { email: string | null } | null;
 }
 
 export interface TicketRow extends Partial<Context> {
   id: string;
   user_id: string | null;
+  /** What the app sent with the ticket. Not used for the reply: the account's own address is. */
   email: string | null;
   category: string;
   message: string;
@@ -77,14 +77,20 @@ function contextHeaders(row: Partial<Context>): [string, string | null][] {
   ];
 }
 
-export function fromFeedback(row: FeedbackRow): SupportMessage {
+/**
+ * `accountEmail` is the sender's address from auth.users (null for a visitor, who has no account).
+ * Replies go there, never to an address stored in a row the sender can write: profiles.email and
+ * support_tickets.email come from the app, so anyone could point our reply at someone else.
+ * A website visitor has no account, so the address they typed into the form is all there is.
+ */
+export function fromFeedback(row: FeedbackRow, accountEmail: string | null = null): SupportMessage {
   const website = row.source === 'website';
   return {
     kind: 'feedback',
     id: row.id,
     userId: row.user_id,
     message: row.message,
-    replyTo: validEmail(row.contact_email) ?? validEmail(row.profile?.email),
+    replyTo: row.user_id ? validEmail(accountEmail) : validEmail(row.contact_email),
     label: website ? 'Website' : 'Feedback',
     headers: detailHeaders([
       ['Source', website ? 'website support form' : 'app feedback'],
@@ -95,13 +101,13 @@ export function fromFeedback(row: FeedbackRow): SupportMessage {
   };
 }
 
-export function fromTicket(row: TicketRow): SupportMessage {
+export function fromTicket(row: TicketRow, accountEmail: string | null = null): SupportMessage {
   return {
     kind: 'ticket',
     id: row.id,
     userId: row.user_id,
     message: row.message,
-    replyTo: validEmail(row.email),
+    replyTo: validEmail(accountEmail),
     label: CATEGORY_LABELS[row.category] ?? 'Support',
     headers: detailHeaders([
       ['Source', `app support (${row.category})`],

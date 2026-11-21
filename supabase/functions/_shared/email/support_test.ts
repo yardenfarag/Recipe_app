@@ -13,7 +13,7 @@ import {
 function feedback(overrides: Partial<FeedbackRow> = {}): FeedbackRow {
   return {
     id: '11111111-2222-3333-4444-555555555555',
-    user_id: 'user-1',
+    user_id: null,
     message: 'The share sheet\ndoesn’t show Pinch <b>on my phone</b>',
     source: 'website',
     contact_email: 'cook@example.com',
@@ -24,7 +24,6 @@ function feedback(overrides: Partial<FeedbackRow> = {}): FeedbackRow {
     device_model: 'iPhone 16',
     locale: 'he',
     created_at: '2026-11-15T21:30:00Z',
-    profile: null,
     ...overrides,
   };
 }
@@ -68,7 +67,7 @@ Deno.test('details travel in X-Pinch headers instead', () => {
   assertEquals(fb.headers['X-Pinch-Platform'], 'ios / iOS 19.1');
   assertEquals(fb.headers['X-Pinch-Device'], 'iPhone 16');
   assertEquals(fb.headers['X-Pinch-Language'], 'he');
-  assertEquals(fb.headers['X-Pinch-Account-Id'], 'user-1');
+  assertEquals(fromFeedback(feedback({ user_id: 'user-1' })).headers['X-Pinch-Account-Id'], 'user-1');
   assertEquals(fb.headers['X-Pinch-Source'], 'website support form');
   const tk = fromTicket(ticket({ device_model: 'Pixel\r\nBcc: x@y.z' }));
   assertEquals(tk.headers['X-Pinch-Ticket-Id'], '99999999-2222-3333-4444-555555555555');
@@ -76,17 +75,24 @@ Deno.test('details travel in X-Pinch headers instead', () => {
   assert(!('X-Pinch-Build' in tk.headers));
 });
 
-Deno.test('reply goes to the sender', () => {
+Deno.test('a website visitor is answered at the address they typed', () => {
   assertEquals(fromFeedback(feedback()).replyTo, 'cook@example.com');
-  assertEquals(fromFeedback(feedback({ contact_email: null, profile: { email: 'me@example.com' } })).replyTo, 'me@example.com');
-  assertEquals(fromFeedback(feedback({ contact_email: 'nope', profile: null })).replyTo, null);
-  assertEquals(fromTicket(ticket()).replyTo, 'baker@example.com');
+  assertEquals(fromFeedback(feedback({ contact_email: 'nope' })).replyTo, null);
+  assertEquals(fromFeedback(feedback({ contact_email: null })).replyTo, null);
+});
+
+Deno.test('a signed-in sender is answered at the account address, whatever the row says', () => {
+  const account = 'owner@example.com';
+  assertEquals(fromTicket(ticket({ email: 'victim@example.com' }), account).replyTo, account);
+  assertEquals(fromTicket(ticket({ email: 'victim@example.com' }), null).replyTo, null);
+  assertEquals(fromFeedback(feedback({ user_id: 'user-1', contact_email: 'victim@example.com' }), account).replyTo, account);
+  assertEquals(fromFeedback(feedback({ user_id: 'user-1', contact_email: 'victim@example.com' }), null).replyTo, null);
 });
 
 Deno.test('subject and sender name say what it is and who wrote', () => {
   assertEquals(supportSubject(fromTicket(ticket())), 'Pinch Billing: I bought 30 credits but see 10');
   assertEquals(supportSubject(fromFeedback(feedback({ source: 'app', message: 'Hi\nthere' }))), 'Pinch Feedback: Hi there');
   assert(supportSubject(fromFeedback(feedback({ message: 'word '.repeat(40) }))).endsWith('…'));
-  assertEquals(supportFrom(fromTicket(ticket())), '"baker@example.com via Pinch" <hello@pinch-app.io>');
-  assertEquals(supportFrom(fromTicket(ticket({ email: null }))), '"Someone via Pinch" <hello@pinch-app.io>');
+  assertEquals(supportFrom(fromTicket(ticket(), 'baker@example.com')), '"baker@example.com via Pinch" <hello@pinch-app.io>');
+  assertEquals(supportFrom(fromTicket(ticket())), '"Someone via Pinch" <hello@pinch-app.io>');
 });

@@ -58,6 +58,7 @@ import {
 import { clearRecipeDraft, setRecipeDraft } from "@/lib/recipeDraft";
 import { resolveShareIntentAction } from "@/lib/shareIntentGate";
 import { recipeIsInvented } from "@shared/lib/recipeOrigin";
+import { importErrorText } from "@shared/lib/serverErrors";
 import type {
   ExtractResult,
   ExtractedRecipe,
@@ -316,7 +317,7 @@ export default function AddRecipeScreen() {
     if (result.code === "video_too_long") {
       setBanner({
         kind: "error",
-        message: result.message ?? t("snap.videoTooLong"),
+        message: importErrorText(result, t, language, "snap.videoTooLong"),
       });
       return false;
     }
@@ -380,7 +381,7 @@ export default function AddRecipeScreen() {
     if (result.status === "coming_soon") {
       setBanner({
         kind: "info",
-        message: result.message ?? t("snap.comingSoon"),
+        message: importErrorText(result, t, language, "snap.comingSoon"),
       });
       return false;
     }
@@ -388,7 +389,8 @@ export default function AddRecipeScreen() {
     if (result.status === "failed" || !result.recipe) {
       setBanner({
         kind: "error",
-        message: result.message ?? t("snap.notFound"),
+        // The server's words are English; show ours for its code (PIN-153).
+        message: importErrorText(result, t, language, result.code ? "snap.genericError" : "snap.notFound"),
       });
       return false;
     }

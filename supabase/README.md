@@ -138,6 +138,61 @@ Every function starts with `serve('<name>', handler)` from
   header `x-observe-test: error`. Only `-preview` copies throw on it. A
   "Observability test error" should appear in Sentry within a minute.
 
+## Cooking Hub: what gets published, and hiding a card
+
+Every full extraction can become a public page at `pinch-app.io/r/<slug>`. Before it does
+(`_shared/recipes/recipeCards.ts` → `publishRecipeCard`):
+
+- **The link must be a plain public page** (`hubSourceUrl.ts`). Document, file-sharing and chat
+  sites, links with a parameter we don't know, and links with a key in the path are never
+  published or matched against another card. The user still gets their recipe.
+- **Links are removed** from the card's title, ingredients, steps and tags.
+- **A model check decides** (`hubModeration.ts`, task `hub_moderation`): spam, abuse, dangerous
+  steps and things that aren't recipes are stored **hidden**, with `hidden_reason =
+  'moderation:<reason>'`. If the check can't run, nothing is published.
+- **A web page's image** is only shown once it is our own copy in Storage.
+
+A hidden card (`recipe_cards.hidden_at`) is gone from the Hub, its public page and the sitemap,
+and its link is not published again. To hide or restore one, in the SQL editor:
+
+```sql
+-- by page address, slug or id; the reason is free text
+select public.admin_set_recipe_card_hidden('https://pinch-app.io/r/<slug>', true, 'spam');
+select public.admin_set_recipe_card_hidden('<slug or id>', false);   -- put it back
+select * from public.admin_hidden_recipe_cards();                     -- what is hidden, and why
+```
+
+Admins can call the same functions from the app (`supabase.rpc`). Look at the hidden list now and
+then: a card the model rejected by mistake is restored with the second line.
+
+## Limits on free writes
+
+Migration `20261122101000`. Limits for visitors count per address (a keyed hash of it, kept one
+day in `request_rate_events`); limits for signed-in users count per user.
+
+| What | Limit |
+|---|---|
+| Website support form (`submit_website_feedback`) | 5 an hour per address, 5 an hour per reply email, 100 an hour in total |
+| Support tickets, app feedback | 5 an hour per user, each |
+| `log_interaction_events` | 600 per 10 min per session, 1,500 per user or install id, 3,000 per address for visitors |
+
+Over a limit, the forms get `rate_limited` and the app shows "You've sent several messages in
+the last hour"; interaction events are dropped silently.
+
+## Secrets added for PIN-153
+
+All optional: without them the feature is skipped, never broken.
+
+```bash
+# Support messages use their own Resend key, so a flood of them can't use up the quota that
+# sign-in codes need. Falls back to RESEND_API_KEY.
+npx supabase secrets set RESEND_SUPPORT_API_KEY=re_...
+
+# Deleting an account also deletes the customer at RevenueCat (a v1 secret key) and at Polar.
+# For Polar, give the existing POLAR_ACCESS_TOKEN the customers:write scope.
+npx supabase secrets set REVENUECAT_REST_API_KEY=sk_...
+```
+
 ### Recipe share links (`recipe-share` + migration `0017`)
 
 Outbound share creates an opaque token + recipe snapshot (so recipients don’t need access to the owner’s private row). Recipients open `…/share.html?t=TOKEN` → app deep link `pinch://s/TOKEN` → claim copies the snapshot into their library.

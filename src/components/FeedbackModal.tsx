@@ -13,6 +13,7 @@ import { SheetModal } from '@/components/SheetModal';
 import { TextInput } from '@/components/text-input';
 import { useThemePreference } from '@/hooks/useThemePreference';
 import { showNotice } from '@/lib/confirmAction';
+import { supportErrorKey } from '@shared/lib/serverErrors';
 import {
   FEEDBACK_MAX_LENGTH,
   FEEDBACK_MIN_LENGTH,
@@ -41,9 +42,10 @@ export function FeedbackModal({ visible, onClose }: FeedbackModalProps) {
       void showNotice(t('feedback.sentTitle'), t('feedback.sentBody'));
     } catch (err) {
       console.warn('[feedback] submit failed', err);
+      const limitKey = supportErrorKey(err);
       void showNotice(
         t('feedback.sendFailed'),
-        err instanceof Error ? err.message : t('common.tryAgain'),
+        limitKey ? t(limitKey) : err instanceof Error ? err.message : t('common.tryAgain'),
       );
     } finally {
       setSubmitting(false);

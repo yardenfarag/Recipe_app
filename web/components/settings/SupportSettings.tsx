@@ -6,6 +6,7 @@ import { useTranslation } from "react-i18next";
 
 import { FEEDBACK_MAX_LENGTH, FEEDBACK_MIN_LENGTH, submitFeedback } from "@shared/lib/supabase/feedback";
 import { submitSupportTicket, type SupportTicketCategory } from "@shared/lib/supabase/supportTickets";
+import { supportErrorKey } from "@shared/lib/serverErrors";
 import { showToast } from "@shared/lib/toast";
 
 import { useAuth } from "@/components/AuthProvider";
@@ -82,7 +83,8 @@ function SupportTicketForm() {
       setCategory("bug");
       showToast(`${t("support.sentTitle")}. ${t("support.sentBody")}`);
     } catch (err) {
-      setError(err instanceof Error && err.message ? err.message : t("common.tryAgain"));
+      const limitKey = supportErrorKey(err);
+      setError(limitKey ? t(limitKey) : err instanceof Error && err.message ? err.message : t("common.tryAgain"));
     } finally {
       setBusy(false);
     }
@@ -144,7 +146,8 @@ function FeedbackForm() {
       setMessage("");
       showToast(`${t("feedback.sentTitle")} ${t("feedback.sentBody")}`);
     } catch (err) {
-      setError(err instanceof Error && err.message ? err.message : t("common.tryAgain"));
+      const limitKey = supportErrorKey(err);
+      setError(limitKey ? t(limitKey) : err instanceof Error && err.message ? err.message : t("common.tryAgain"));
     } finally {
       setBusy(false);
     }

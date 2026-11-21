@@ -78,3 +78,52 @@ describe('import calls without a guest install id', () => {
     expect(extractionOutcomeIsUncertain('extraction_timeout')).toBe(false);
   });
 });
+
+describe('the same import started twice at once', () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
+
+  /** A server call that stays open until `finish` is called. */
+  function openCall() {
+    let finish!: (value: unknown) => void;
+    mocks.invoke.mockReturnValue(new Promise((resolve) => (finish = resolve)));
+    return { finish: () => finish({ data: { status: 'full', platform: 'web' }, error: null }) };
+  }
+
+  it('reaches the server once, and every caller gets the answer', async () => {
+    const call = openCall();
+    const first = extractRecipe(webContext, 'https://example.com/soup');
+    const second = extractRecipe(webContext, 'https://example.com/soup');
+    const third = extractRecipe(webContext, 'https://example.com/soup');
+    await vi.waitFor(() => expect(mocks.invoke).toHaveBeenCalled());
+    call.finish();
+    const results = await Promise.all([first, second, third]);
+    expect(mocks.invoke).toHaveBeenCalledTimes(1);
+    expect(results).toEqual(Array(3).fill({ status: 'full', platform: 'web', request_id: 'request-1' }));
+  });
+
+  it('once the first has answered, the next call is a new request', async () => {
+    mocks.invoke.mockResolvedValue({ data: { status: 'full', platform: 'web' }, error: null });
+    await extractRecipe(webContext, 'https://example.com/soup');
+    await extractRecipe(webContext, 'https://example.com/soup');
+    expect(mocks.invoke).toHaveBeenCalledTimes(2);
+  });
+
+  it('a failed call does not block the retry', async () => {
+    mocks.invoke.mockRejectedValueOnce(new Error('network down'));
+    await expect(extractRecipe(webContext, 'https://example.com/soup')).rejects.toThrow('network down');
+    mocks.invoke.mockResolvedValue({ data: { status: 'full', platform: 'web' }, error: null });
+    await expect(extractRecipe(webContext, 'https://example.com/soup')).resolves.toMatchObject({ status: 'full' });
+  });
+
+  it('skipping the food check, or guessing, is a different import', async () => {
+    const call = openCall();
+    const snap = extractRecipe(webContext, 'https://example.com/soup');
+    const forced = extractRecipe(webContext, 'https://example.com/soup', { forceExtract: true });
+    const guess = inventRecipe(webContext, 'https://example.com/soup');
+    await vi.waitFor(() => expect(mocks.invoke).toHaveBeenCalledTimes(3));
+    call.finish();
+    await Promise.all([snap, forced, guess]);
+  });
+});

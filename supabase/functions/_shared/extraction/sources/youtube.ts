@@ -9,6 +9,7 @@
 
 import { canonicalYouTubeWatchUrl, youTubeThumbnail } from '../platform.ts';
 import { parseDurationSeconds, parseYouTubeIsoDuration } from '../videoLimits.ts';
+import { scrapeCreatorsGet } from './scrapecreators.ts';
 
 const MAX_COMMENTS = 10;
 
@@ -22,8 +23,10 @@ export interface YouTubeMeta {
   title?: string;
   /** Best available thumbnail from the Data API snippet, when YOUTUBE_API_KEY is set. */
   thumbnailUrl?: string;
-  /** Plain-text captions/transcript when available (via YouTube player metadata). */
+  /** Plain-text captions/transcript: from YouTube's player when it answers, else ScrapeCreators. */
   captions?: string;
+  /** ScrapeCreators credits this fetch spent (1 when the transcript came from there). */
+  scrapeCredits?: number;
   /** Video length in seconds when available from the Data API or player metadata. */
   durationSeconds?: number;
   /** Watch URL for the ladder's video step; unset when the length is unknown. */
@@ -84,21 +87,24 @@ interface RawComment {
 export async function fetchYouTubeMeta(videoId: string): Promise<YouTubeMeta> {
   const apiKey = Deno.env.get('YOUTUBE_API_KEY');
   const playerPromise = fetchYouTubePlayerMetadata(videoId);
+  const captionsPromise = playerPromise.then((player) => resolveCaptions(videoId, player));
 
   if (!apiKey) {
-    const player = await playerPromise;
+    const [player, captions] = await Promise.all([playerPromise, captionsPromise]);
     return {
       topComments: [],
-      captions: player.captions,
+      captions: captions.text,
+      scrapeCredits: captions.scrapeCredits,
       durationSeconds: player.durationSeconds,
       videoUrl: youTubeVideoUrlForModel(videoId, player.durationSeconds),
     };
   }
 
-  // Player captions, the snippet, and comments are independent.
-  const [player, { description, title, channelId, thumbnailUrl, durationSeconds }, rawComments] =
+  // Captions, the snippet, and comments are independent.
+  const [player, captions, { description, title, channelId, thumbnailUrl, durationSeconds }, rawComments] =
     await Promise.all([
       playerPromise,
+      captionsPromise,
       fetchVideoSnippet(videoId, apiKey),
       fetchTopComments(videoId, apiKey),
     ]);
@@ -118,7 +124,8 @@ export async function fetchYouTubeMeta(videoId: string): Promise<YouTubeMeta> {
     description,
     title,
     thumbnailUrl,
-    captions: player.captions,
+    captions: captions.text,
+    scrapeCredits: captions.scrapeCredits,
     durationSeconds: knownDuration,
     videoUrl: youTubeVideoUrlForModel(videoId, knownDuration),
     topComments,
@@ -189,13 +196,29 @@ async function fetchTopComments(videoId: string, apiKey: string): Promise<RawCom
   }
 }
 
-const MAX_CAPTION_CHARS = 12_000;
+/** About 30 minutes of speech. Matches MAX_CAPTIONS_CHARS in gemini.ts, which trims again. */
+const MAX_CAPTION_CHARS = 30_000;
+
+/**
+ * ScrapeCreators answers in about 5 s. Past 20 s the import goes on without captions, so a slow
+ * transcript can't use up the time the model needs.
+ */
+const TRANSCRIPT_TIMEOUT_MS = 20_000;
 
 interface YouTubePlayerMetadata {
   captions?: string;
   durationSeconds?: number;
 }
 
+function logNoPlayerCaptions(videoId: string, reason: string, details: Record<string, unknown> = {}): void {
+  console.log('[youtube] player has no captions', { videoId, reason, ...details });
+}
+
+/**
+ * YouTube's own player endpoint: free, but from server addresses it almost never hands out
+ * captions (PIN-151: 1 of 56 imports in a day). When it has none the reason is logged, so the
+ * function logs show whether YouTube refused the request, listed no tracks, or sent an empty track.
+ */
 async function fetchYouTubePlayerMetadata(videoId: string): Promise<YouTubePlayerMetadata> {
   try {
     const res = await fetch('https://www.youtube.com/youtubei/v1/player?prettyPrint=false', {
@@ -217,36 +240,117 @@ async function fetchYouTubePlayerMetadata(videoId: string): Promise<YouTubePlaye
         videoId,
       }),
     });
-    if (!res.ok) return {};
+    if (!res.ok) {
+      logNoPlayerCaptions(videoId, 'player_http', { status: res.status });
+      return {};
+    }
 
     const data = await res.json();
     const lengthSeconds = parseDurationSeconds(data?.videoDetails?.lengthSeconds);
+    const playability = typeof data?.playabilityStatus?.status === 'string' ? data.playabilityStatus.status : null;
 
     const tracks = data?.captions?.playerCaptionsTracklistRenderer?.captionTracks;
-    let captions: string | undefined;
-    if (Array.isArray(tracks) && tracks.length > 0) {
-      const track = pickCaptionTrack(tracks);
-      if (track?.baseUrl) {
-        const captionRes = await fetch(track.baseUrl);
-        if (captionRes.ok) {
-          const text = parseTimedTextXml(await captionRes.text());
-          if (text) {
-            captions = text.length > MAX_CAPTION_CHARS ? text.slice(0, MAX_CAPTION_CHARS) : text;
-          }
-        }
-      }
+    if (!Array.isArray(tracks) || tracks.length === 0) {
+      logNoPlayerCaptions(videoId, 'no_tracks', { playability });
+      return { durationSeconds: lengthSeconds };
+    }
+    const track = pickCaptionTrack(tracks);
+    if (!track?.baseUrl) {
+      logNoPlayerCaptions(videoId, 'track_without_url', { playability });
+      return { durationSeconds: lengthSeconds };
     }
 
-    return { captions, durationSeconds: lengthSeconds };
-  } catch {
+    const captionRes = await fetch(track.baseUrl);
+    const body = captionRes.ok ? await captionRes.text() : '';
+    const text = parseTimedTextXml(body);
+    if (!text) {
+      logNoPlayerCaptions(videoId, captionRes.ok ? 'empty_track' : 'track_http', {
+        status: captionRes.status,
+        bytes: body.length,
+        playability,
+      });
+      return { durationSeconds: lengthSeconds };
+    }
+
+    return { captions: capCaptions(text), durationSeconds: lengthSeconds };
+  } catch (err) {
+    logNoPlayerCaptions(videoId, 'error', { error: err instanceof Error ? err.message : String(err) });
     return {};
   }
 }
 
-/** Fetches plain-text captions via YouTube's player metadata (public timedtext tracks). */
+function capCaptions(text: string): string {
+  return text.length > MAX_CAPTION_CHARS ? text.slice(0, MAX_CAPTION_CHARS) : text;
+}
+
+interface ResolvedCaptions {
+  text?: string;
+  scrapeCredits: number;
+}
+
+/** The player's captions when it has them, otherwise ScrapeCreators' transcript. */
+async function resolveCaptions(videoId: string, player: YouTubePlayerMetadata): Promise<ResolvedCaptions> {
+  if (player.captions) return { text: player.captions, scrapeCredits: 0 };
+  const text = await fetchScrapeCreatorsTranscript(videoId);
+  // ScrapeCreators charges 1 credit for a transcript and nothing when the video has none.
+  return { text, scrapeCredits: text ? 1 : 0 };
+}
+
+export interface ScrapeCreatorsTranscriptResponse {
+  transcript?: { text?: unknown }[] | null;
+  transcript_only_text?: unknown;
+  language?: unknown;
+}
+
+/**
+ * Plain text of a ScrapeCreators YouTube transcript, one line per caption segment.
+ * `transcript_only_text` is the fallback for a reply without segments.
+ */
+export function scrapeCreatorsTranscriptText(response: ScrapeCreatorsTranscriptResponse | null): string {
+  const oneLine = (value: unknown) => (typeof value === 'string' ? value.replace(/\s+/g, ' ').trim() : '');
+  const lines = Array.isArray(response?.transcript)
+    ? response.transcript.map((segment) => oneLine(segment?.text)).filter(Boolean)
+    : [];
+  return lines.length > 0 ? lines.join('\n') : oneLine(response?.transcript_only_text);
+}
+
+/**
+ * The video's transcript from ScrapeCreators, which reads YouTube's captions (auto-generated ones
+ * too) from addresses YouTube doesn't block. Undefined when the video has no captions, the key
+ * isn't set, or the call fails: the import then goes on with the description and the video.
+ */
+async function fetchScrapeCreatorsTranscript(videoId: string): Promise<string | undefined> {
+  if (!Deno.env.get('SCRAPECREATORS_API_KEY')) return undefined;
+  const started = Date.now();
+  try {
+    const response = await scrapeCreatorsGet<ScrapeCreatorsTranscriptResponse | null>(
+      '/v1/youtube/video/transcript',
+      { url: canonicalYouTubeWatchUrl(videoId) },
+      { timeoutMs: TRANSCRIPT_TIMEOUT_MS },
+    );
+    const text = scrapeCreatorsTranscriptText(response);
+    console.log('[youtube] scrapecreators transcript', {
+      videoId,
+      found: Boolean(text),
+      chars: text.length,
+      language: typeof response?.language === 'string' ? response.language : null,
+      ms: Date.now() - started,
+    });
+    return text ? capCaptions(text) : undefined;
+  } catch (err) {
+    console.log('[youtube] scrapecreators transcript failed', {
+      videoId,
+      ms: Date.now() - started,
+      error: err instanceof Error ? err.message : String(err),
+    });
+    return undefined;
+  }
+}
+
+/** Plain-text captions for a video: YouTube's player first, then ScrapeCreators. */
 export async function fetchYouTubeCaptions(videoId: string): Promise<string | undefined> {
-  const { captions } = await fetchYouTubePlayerMetadata(videoId);
-  return captions;
+  const { text } = await resolveCaptions(videoId, await fetchYouTubePlayerMetadata(videoId));
+  return text;
 }
 
 interface CaptionTrack {

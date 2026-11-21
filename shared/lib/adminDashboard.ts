@@ -306,6 +306,7 @@ const FEATURE_NAMES: Record<string, string> = {
   substitution: 'Ingredient swaps',
   fridge_match: 'Fridge match',
   hub_diets: 'Hub diet tags',
+  hub_moderation: 'Hub publishing check',
   recipe_edit_check: 'Edit check',
   recipe_edit_recalc: 'Edit recalculation',
   appliances_backfill: 'Appliance backfill',

@@ -2,8 +2,11 @@ import { serve } from '../_shared/core/observe.ts';
 // Emails each new support message to support@pinch-app.io. Triggers on public.support_tickets
 // ("Help & support" in the app) and public.feedback ("Send feedback", and the website's "Contact
 // support" form) call this with the row id and a Vault secret; the message itself is read here,
-// so a forged call can't make one up. Reply-To is the sender, and the body is only their words.
-// Secrets: RESEND_API_KEY. The triggers' secret lives in Vault (support_email_secret).
+// so a forged call can't make one up. Reply-To is the sender's account address (auth.users), or
+// for a website visitor the address they typed. The body is only their words.
+// Secrets: RESEND_SUPPORT_API_KEY, falling back to RESEND_API_KEY. A key of its own means a flood
+// of support messages can't use up the key that sends sign-in codes. The triggers' secret lives
+// in Vault (support_email_secret).
 import { jsonResponse } from '../_shared/core/cors.ts';
 import { sendOnce } from '../_shared/email/send.ts';
 import {
@@ -16,7 +19,7 @@ import {
   type SupportMessage,
   type TicketRow,
 } from '../_shared/email/support.ts';
-import { createServiceSupabase } from '../_shared/core/supabaseAdmin.ts';
+import { createServiceSupabase, type Db } from '../_shared/core/supabaseAdmin.ts';
 
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 const CONTEXT = 'app_version, build_number, platform, os_version, device_model, locale';
@@ -52,11 +55,12 @@ serve('support-email', async (req) => {
       return jsonResponse({ error: 'Could not read ticket' }, 500);
     }
     if (!data) return jsonResponse({ error: 'Not found' }, 404);
-    msg = fromTicket(data as unknown as TicketRow);
+    const row = data as unknown as TicketRow;
+    msg = fromTicket(row, await accountEmail(admin, row.user_id));
   } else {
     const { data, error } = await admin
       .from('feedback')
-      .select(`id, user_id, message, source, contact_email, created_at, ${CONTEXT}, profile:profiles(email)`)
+      .select(`id, user_id, message, source, contact_email, created_at, ${CONTEXT}`)
       .eq('id', feedbackId)
       .maybeSingle();
     if (error) {
@@ -64,7 +68,8 @@ serve('support-email', async (req) => {
       return jsonResponse({ error: 'Could not read feedback' }, 500);
     }
     if (!data) return jsonResponse({ error: 'Not found' }, 404);
-    msg = fromFeedback(data as unknown as FeedbackRow);
+    const row = data as unknown as FeedbackRow;
+    msg = fromFeedback(row, await accountEmail(admin, row.user_id));
   }
 
   try {
@@ -78,6 +83,7 @@ serve('support-email', async (req) => {
       replyTo: msg.replyTo ?? undefined,
       from: supportFrom(msg),
       headers: msg.headers,
+      apiKey: Deno.env.get('RESEND_SUPPORT_API_KEY') || undefined,
     });
     return jsonResponse({ sent });
   } catch (err) {
@@ -85,3 +91,14 @@ serve('support-email', async (req) => {
     return jsonResponse({ error: 'Send failed' }, 500);
   }
 });
+
+/** The address the account signed up with, from auth.users. Null for a visitor or a failed lookup. */
+async function accountEmail(admin: Db, userId: string | null): Promise<string | null> {
+  if (!userId) return null;
+  const { data, error } = await admin.auth.admin.getUserById(userId);
+  if (error) {
+    console.error('[support-email] could not read the account email', userId, error);
+    return null;
+  }
+  return data.user?.email ?? null;
+}

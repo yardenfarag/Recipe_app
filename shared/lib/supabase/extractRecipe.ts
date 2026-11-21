@@ -194,8 +194,32 @@ const NO_RESPONSE: Record<string, string> = {
   'invent-recipe': 'No response from the invent service.',
 };
 
-/** Calls `extract-recipe` or `invent-recipe` and turns any failure into a `failed` result that keeps the request id. */
-export async function invokeImport(
+/** Imports on their way to the server, by function, request id and whether the food check is skipped. */
+const inFlightImports = new Map<string, Promise<ExtractResult>>();
+
+/**
+ * Calls `extract-recipe` or `invent-recipe` and turns any failure into a `failed` result that keeps the request id.
+ *
+ * A second call for the same import while the first is still running gets the first one's answer instead of
+ * starting another. The request id is per link or photo, so two screens that both react to one share (PIN-153:
+ * 2 to 4 identical requests within the same 10 ms) would otherwise each run the whole AI pipeline; the user was
+ * charged once, but we paid for every run.
+ */
+export function invokeImport(
+  fn: 'extract-recipe' | 'invent-recipe',
+  requestId: string,
+  body: Record<string, unknown>,
+): Promise<ExtractResult> {
+  const key = `${fn}|${requestId}|${body.force_extract === true}`;
+  const running = inFlightImports.get(key);
+  if (running) return running;
+
+  const call = sendImport(fn, requestId, body).finally(() => inFlightImports.delete(key));
+  inFlightImports.set(key, call);
+  return call;
+}
+
+async function sendImport(
   fn: 'extract-recipe' | 'invent-recipe',
   requestId: string,
   body: Record<string, unknown>,

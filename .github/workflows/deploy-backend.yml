@@ -81,7 +81,8 @@ jobs:
         run: supabase db push --linked --yes
 
       # Deploys every function from master, so production always matches the repo. Never add --prune:
-      # production still has functions that aren't in the repo (public-recipe).
+      # it would delete the -preview copies a developer deployed to test a branch
+      # (deploy-function-preview.yml), which aren't in the repo under that name.
       - name: Deploy Edge Functions
         run: supabase functions deploy --project-ref "$SUPABASE_PROJECT_REF" --use-api --yes
 

@@ -1,11 +1,12 @@
 import { serve } from '../_shared/core/observe.ts';
 import { corsHeaders, jsonResponse } from '../_shared/core/cors.ts';
 import { revokeAppleCredentials } from '../_shared/account/appleRevoke.ts';
+import { deletePaymentCustomers } from '../_shared/account/paymentCustomers.ts';
+import { removeUserPhotos } from '../_shared/account/userPhotos.ts';
 import { createAuthedSupabase } from '../_shared/core/recipeLookup.ts';
 import { createServiceSupabase } from '../_shared/core/supabaseAdmin.ts';
 
 const AVATAR_BUCKET = 'avatars';
-const THUMBNAIL_BUCKET = 'recipe-thumbnails';
 const MAX_BODY_BYTES = 4_000;
 
 interface RequestBody {
@@ -15,9 +16,10 @@ interface RequestBody {
 
 /**
  * POST { apple_authorization_code? }
- * Deletes the caller's account: Apple revoke (best effort) → avatars and Snap
- * photos → personal rows that don't cascade → auth user. The cascade wipes
- * profiles, recipes, collections, shopping list, token ledger and shares.
+ * Deletes the caller's account: Apple revoke (best effort) → avatars and the user's own Snap
+ * photos → personal rows that don't cascade → auth user → the customer records at Polar and
+ * RevenueCat (best effort). The cascade wipes profiles, recipes, collections, shopping list,
+ * token ledger and shares.
  */
 serve('delete-account', async (req) => {
   if (req.method === 'OPTIONS') {
@@ -106,44 +108,9 @@ serve('delete-account', async (req) => {
     return jsonResponse({ error: 'Could not delete account. Please try again.' }, 500);
   }
 
+  // The account is gone; now the buyer's record at Polar and RevenueCat (best effort).
+  const customers = await deletePaymentCustomers(user.id);
+  console.log('[delete-account] payment customers', customers);
+
   return jsonResponse({ ok: true });
 });
-
-/**
- * Snap/invent photos live at `photo/<user id>/…`. Older uploads sit directly
- * under `photo/`, so those are found through the user's recipes instead.
- */
-async function removeUserPhotos(
-  admin: NonNullable<ReturnType<typeof createServiceSupabase>>,
-  userId: string,
-): Promise<void> {
-  try {
-    const paths = new Set<string>();
-
-    const { data: files, error: listError } = await admin.storage
-      .from(THUMBNAIL_BUCKET)
-      .list(`photo/${userId}`, { limit: 1000 });
-    if (listError) console.error('Photo list failed:', listError);
-    for (const file of files ?? []) paths.add(`photo/${userId}/${file.name}`);
-
-    const { data: recipes, error: recipeError } = await admin
-      .from('recipes')
-      .select('image_url')
-      .eq('user_id', userId)
-      .like('image_url', `%/${THUMBNAIL_BUCKET}/photo/%`);
-    if (recipeError) console.error('Photo recipe lookup failed:', recipeError);
-    for (const row of recipes ?? []) {
-      const marker = `/${THUMBNAIL_BUCKET}/`;
-      const url = typeof row.image_url === 'string' ? row.image_url : '';
-      const path = url.slice(url.indexOf(marker) + marker.length).split('?')[0];
-      if (path.startsWith('photo/')) paths.add(decodeURIComponent(path));
-    }
-
-    if (paths.size > 0) {
-      const { error: removeError } = await admin.storage.from(THUMBNAIL_BUCKET).remove([...paths]);
-      if (removeError) console.error('Photo remove failed:', removeError);
-    }
-  } catch (err) {
-    console.error('Photo cleanup error:', err);
-  }
-}

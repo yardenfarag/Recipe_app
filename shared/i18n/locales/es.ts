@@ -284,6 +284,33 @@ export default {
       "blurb": "Cielo índigo, destellos y estrellas fugaces."
     }
   },
+  "serverErrors": {
+    "sourceTimeout": "Ese sitio tardó demasiado en responder. Inténtalo de nuevo en un momento.",
+    "tryAgain": "No se pudo leer la receta. Inténtalo de nuevo en un momento.",
+    "siteBlocked": "Este sitio no deja que las apps lean sus páginas. Haz una captura de la receta y añádela como foto.",
+    "pageGone": "Esa página ya no existe. Revisa el enlace.",
+    "siteBusy": "Ese sitio tiene problemas ahora mismo. Inténtalo más tarde.",
+    "notAWebpage": "Ese enlace no parece una página de receta.",
+    "siteUnreachable": "No pudimos llegar a ese sitio. Revisa el enlace e inténtalo de nuevo.",
+    "rateLimited": "Hay demasiadas solicitudes ahora mismo. Inténtalo en un minuto.",
+    "postPrivate": "Esta publicación es privada o se eliminó, así que Pinch no puede leerla.",
+    "pageUnreadable": "No pudimos leer una receta en esta página. Haz una captura de la receta y añádela como foto.",
+    "sourceUnavailable": "No pudimos cargar este enlace. Inténtalo de nuevo.",
+    "tooManyMessages": "Has enviado varios mensajes en la última hora. Inténtalo más tarde.",
+    "auth": {
+      "invalidCredentials": "El correo o la contraseña no son correctos.",
+      "emailNotConfirmed": "Confirma tu correo antes de iniciar sesión.",
+      "tooManyAttempts": "Demasiados intentos. Espera unos minutos e inténtalo de nuevo.",
+      "weakPassword": "Elige una contraseña más segura: al menos 8 caracteres, con una letra y un número.",
+      "samePassword": "Elige una contraseña que no hayas usado en esta cuenta.",
+      "signinFailed": "No se pudo iniciar sesión. Revisa tus datos e inténtalo de nuevo.",
+      "signupFailed": "No pudimos crear la cuenta. Prueba a iniciar sesión o restablece tu contraseña.",
+      "socialFailed": "No se pudo completar el inicio de sesión. Inténtalo de nuevo.",
+      "resetFailed": "No se pudo completar la solicitud. Inténtalo de nuevo.",
+      "updateFailed": "No se pudo actualizar tu contraseña. Pide un código nuevo e inténtalo de nuevo.",
+      "codeFailed": "No se pudo comprobar el código. Inténtalo de nuevo."
+    }
+  },
   "auth": {
     "signUp": "Crear cuenta",
     "welcome": "Hola",
