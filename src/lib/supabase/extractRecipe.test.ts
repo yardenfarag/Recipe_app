@@ -81,8 +81,7 @@ describe('extractRecipe request recovery', () => {
     expect(extractionOutcomeIsUncertain('no_response')).toBe(true);
     expect(extractionOutcomeIsUncertain('guest_limit')).toBe(false);
     expect(extractionOutcomeIsUncertain('gate_unavailable')).toBe(false);
-    // No JSON answer: the charge is unknown. A timeout was refunded, so a retry is new.
-    expect(extractionOutcomeIsUncertain('no_response')).toBe(true);
+    // A timeout was refunded, so a retry is new.
     expect(extractionOutcomeIsUncertain('extraction_timeout')).toBe(false);
   });
 
