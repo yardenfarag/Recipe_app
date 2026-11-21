@@ -59,6 +59,7 @@ export function StepsPanel({
         {onCookMode ? (
           <button
             type="button"
+            data-track="recipe.cook_mode.open"
             onClick={onCookMode}
             className="ms-auto inline-flex h-9 items-center gap-1.5 self-center rounded-full px-3 text-sm font-semibold text-primary transition-colors hover:bg-primary-soft focus-visible:outline-2 focus-visible:outline-primary"
           >
@@ -95,6 +96,7 @@ export function StepsPanel({
                   {video ? (
                     <button
                       type="button"
+                      data-track="recipe.step.jump_to_video"
                       onClick={() => video.onPlayAt(step.timestamp_seconds ?? 0)}
                       aria-label={t("web.cook.playFrom", { time: formatVideoTimestamp(step.timestamp_seconds) })}
                       className="inline-flex h-8 items-center gap-1.5 rounded-full bg-accent-soft px-3 text-xs font-bold text-accent transition-[filter] hover:brightness-95 active:brightness-90 focus-visible:outline-2 focus-visible:outline-primary"

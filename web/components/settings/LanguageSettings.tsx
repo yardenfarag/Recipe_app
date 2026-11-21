@@ -32,6 +32,7 @@ export function LanguageSettings() {
       <SettingsCard title={t("settings.language")}>
         <ChoiceGroup<AppLanguageCode>
           label={t("settings.language")}
+          trackId="settings.language"
           value={language}
           onChange={setLanguage}
           className="grid gap-2 @lg:grid-cols-2"

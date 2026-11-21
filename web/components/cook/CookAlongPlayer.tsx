@@ -212,13 +212,14 @@ export function CookAlongPlayer({
               href={openHere}
               target="_blank"
               rel="noopener noreferrer"
+              data-track="cook_along.open_in_browser"
               aria-label={`${watchOn} (${t("web.recipe.opensInNewTab")})`}
               className="grid h-10 w-10 shrink-0 place-items-center rounded-full text-muted transition-colors hover:bg-element hover:text-text focus-visible:outline-2 focus-visible:outline-primary"
             >
               <ExternalLink aria-hidden className="h-[18px] w-[18px] rtl:-scale-x-100" />
             </a>
           </Tooltip>
-          <IconButton label={t("cookAlong.close")} icon={<X className="h-5 w-5" />} onClick={onClose} />
+          <IconButton label={t("cookAlong.close")} trackId="cook_along.close" icon={<X className="h-5 w-5" />} onClick={onClose} />
         </div>
 
         <div
@@ -260,6 +261,7 @@ export function CookAlongPlayer({
                   href={openHere}
                   target="_blank"
                   rel="noopener noreferrer"
+                  data-track="cook_along.load_error.open_in_browser"
                   className="inline-flex h-10 items-center gap-1.5 rounded-full bg-primary px-4 text-sm font-semibold text-on-primary shadow-soft hover:brightness-105"
                 >
                   {watchOn}
@@ -279,6 +281,7 @@ export function CookAlongPlayer({
             </p>
             <button
               type="button"
+              data-track="cook_along.no_seek_notice.dismiss"
               onClick={() => setSkipTo(null)}
               aria-label={t("common.close")}
               className="-my-1 grid h-7 w-7 shrink-0 place-items-center rounded-full text-muted hover:bg-element hover:text-text"

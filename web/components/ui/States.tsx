@@ -23,11 +23,14 @@ export function ErrorState({
   body,
   onRetry,
   className,
+  trackId,
 }: {
   title?: string;
   body?: string;
   onRetry?: () => void;
   className?: string;
+  /** Activity-log id prefix (ADR 020): the retry button logs `<trackId>.retry`. */
+  trackId?: string;
 }) {
   const { t } = useTranslation();
   return (
@@ -38,7 +41,7 @@ export function ErrorState({
       <h2 className="text-lg font-bold text-text">{title ?? t("web.errorTitle")}</h2>
       <p className="mt-1.5 text-[15px] leading-relaxed text-muted">{body ?? t("common.tryAgain")}</p>
       {onRetry ? (
-        <Button variant="secondary" className="mt-5" onClick={onRetry}>
+        <Button variant="secondary" className="mt-5" trackId={trackId ? `${trackId}.retry` : undefined} onClick={onRetry}>
           {t("common.tryAgainAction")}
         </Button>
       ) : null}

@@ -48,12 +48,12 @@ function CheckoutReturn() {
         footer={
           <>
             {state.kind === "slow" ? (
-              <Link href="/settings/support" onClick={dismiss} className={buttonClasses({ variant: "ghost" })}>
+              <Link href="/settings/support" data-track="credits.web_purchase.contact_support" onClick={dismiss} className={buttonClasses({ variant: "ghost" })}>
                 {t("web.credits.contactSupport")}
               </Link>
             ) : null}
             <DialogClose asChild>
-              <Button variant={added ? "primary" : "secondary"}>{added ? t("credits.webPurchaseDone") : t("common.close")}</Button>
+              <Button variant={added ? "primary" : "secondary"} trackId="credits.web_purchase_done">{added ? t("credits.webPurchaseDone") : t("common.close")}</Button>
             </DialogClose>
           </>
         }

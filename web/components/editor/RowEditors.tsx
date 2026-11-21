@@ -117,6 +117,7 @@ export function IngredientRowEditor({
         />
         <IconButton
           label={t("a11y.removeItem", { item: rowLabel })}
+          trackId="recipe_editor.ingredient.remove"
           icon={<Trash2 className="h-[18px] w-[18px]" />}
           onClick={onRemove}
           className="col-start-4 row-start-1 h-11 w-10 hover:bg-danger-soft hover:text-danger"
@@ -206,6 +207,7 @@ export function StepRowEditor({ row, position, handle, error, onChange, onRemove
         </div>
         <IconButton
           label={t("a11y.removeItem", { item: label })}
+          trackId="recipe_editor.step.remove"
           icon={<Trash2 className="h-[18px] w-[18px]" />}
           onClick={onRemove}
           className="h-11 w-10 hover:bg-danger-soft hover:text-danger"

@@ -7,6 +7,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 
 import { DEFAULT_SOURCE_LANGUAGE } from "@shared/lib/appLanguages";
+import { recipeIsInvented } from "@shared/lib/recipeOrigin";
 import { saveRecipeDraft } from "@shared/lib/supabase/saveRecipeDraft";
 import { showToast } from "@shared/lib/toast";
 import { translateAppError } from "@shared/lib/translateAppError";
@@ -19,6 +20,7 @@ import { Button, buttonClasses } from "@/components/ui/Button";
 import { ConfirmDialog } from "@/components/ui/Dialog";
 import { usePageTitle } from "@/components/ui/PageHeader";
 import { EmptyState, LoadingState } from "@/components/ui/States";
+import { captureRecipeSaved } from "@/lib/analytics";
 import { buildRecipeDisplay } from "@/lib/recipe/recipeDisplay";
 import { useAutoTranslation } from "@/lib/recipe/useAutoTranslation";
 import { clearSnapDraft, getSnapDraft, PREVIEW_RECIPE_ID, type SnapDraft } from "@/lib/snap/draft";
@@ -81,6 +83,7 @@ export function SnapPreview() {
         source_language: draft.recipe.source_language ?? DEFAULT_SOURCE_LANGUAGE,
       });
       clearSnapDraft();
+      if (!recoveredDuplicate) captureRecipeSaved({ from: recipeIsInvented(draft.recipe) ? "invent" : "extract" });
       if (recoveredDuplicate) {
         showToast(t("recipe.alreadySaved"), "info");
         router.replace(`/recipe/${saved.id}`);
@@ -110,10 +113,10 @@ export function SnapPreview() {
                 </p>
               </div>
             ) : null}
-            <Button size="lg" busy={saving} onClick={() => void save()}>
+            <Button size="lg" busy={saving} trackId="recipe_preview.save" onClick={() => void save()}>
               {t("recipe.save")}
             </Button>
-            <Button size="lg" variant="ghost" disabled={saving} onClick={() => setDiscardOpen(true)}>
+            <Button size="lg" variant="ghost" disabled={saving} trackId="recipe_preview.discard" onClick={() => setDiscardOpen(true)}>
               {t("web.snap.discard")}
             </Button>
           </>
@@ -125,6 +128,7 @@ export function SnapPreview() {
         title={t("web.snap.discardTitle")}
         description={t("web.snap.discardBody")}
         confirmLabel={t("web.snap.discard")}
+        trackId="recipe_preview.discard_dialog"
         onConfirm={() => {
           clearSnapDraft();
           router.replace("/add");

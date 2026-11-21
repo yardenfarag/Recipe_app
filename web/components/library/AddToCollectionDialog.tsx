@@ -114,11 +114,11 @@ function Body({
       footer={
         <>
           <DialogClose asChild>
-            <Button variant="ghost" disabled={saving}>
+            <Button variant="ghost" trackId="add_to_collection.cancel" disabled={saving}>
               {t("common.cancel")}
             </Button>
           </DialogClose>
-          <Button busy={saving} onClick={save}>
+          <Button trackId="add_to_collection.save" busy={saving} onClick={save}>
             {t("common.save")}
           </Button>
         </>
@@ -135,6 +135,7 @@ function Body({
                 <button
                   type="button"
                   role="checkbox"
+                  data-track="add_to_collection.collection.toggle"
                   aria-checked={on}
                   onClick={() => toggle(collection.id)}
                   className="flex min-h-12 w-full items-center gap-3 rounded-2xl px-3 text-start transition-colors hover:bg-element"
@@ -178,7 +179,7 @@ function Body({
               nameError ? "border-danger" : "border-border",
             )}
           />
-          <Button type="submit" variant="secondary" busy={creating} aria-label={t("a11y.createCollection")}>
+          <Button type="submit" variant="secondary" trackId="add_to_collection.create" busy={creating} aria-label={t("a11y.createCollection")}>
             <Plus aria-hidden className="h-4 w-4" />
             {t("library.new")}
           </Button>

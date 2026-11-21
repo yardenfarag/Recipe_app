@@ -15,12 +15,14 @@ import {
 } from "@shared/lib/kitchenProfile";
 import { RECIPE_VARIANTS } from "@shared/lib/recipeVariants";
 
+import { AppliancesSettings } from "@/components/settings/AppliancesSettings";
 import { AvoidListEditor } from "@/components/settings/AvoidListEditor";
 import { AddItemField, ChoiceGroup, RemovableChip, SaveStatusLine, SettingsCard, SubHeading, SwitchRow, ToggleChip } from "@/components/settings/controls";
 import { SettingsPageHeader } from "@/components/settings/SettingsPageHeader";
 import { ErrorState, LoadingState } from "@/components/ui/States";
 import { useMeasurementSystem } from "@/lib/recipe/useMeasurementSystem";
-import { useKitchenSettings } from "@/lib/settings/useKitchenSettings";
+import { useOwnedAppliances } from "@/lib/settings/ownedAppliances";
+import { useKitchenSettings, type SaveStatus } from "@/lib/settings/useKitchenSettings";
 
 /** The mobile app's limits (src/app/settings/recipe.tsx and sanitizeKitchenProfile). */
 const MAX_DIETS = 4;
@@ -30,21 +32,22 @@ const MAX_SERVINGS = 24;
 const DIET_KEYS = RECIPE_VARIANTS.map((variant) => variant.key as KitchenDietKey);
 
 /**
- * How recipes come out for this cook: spoons or grams, diets, allergies and dislikes, swaps, pantry staples, what
- * happens after a Snap, and sharing imports to the Cooking Hub. Everything but spoons or grams is saved on the
- * account the moment it changes, so the mobile app shows it after a refresh.
+ * How recipes come out for this cook: spoons or grams, diets, allergies and dislikes, the appliances they have,
+ * swaps, pantry staples, what happens after a Snap, and sharing imports to the Cooking Hub. Everything is saved on
+ * the account the moment it changes, so the mobile app shows it after a refresh.
  */
 export function RecipeSettings() {
   const { t } = useTranslation();
   const kitchen = useKitchenSettings();
+  const appliancesStatus = useOwnedAppliances().status;
 
   return (
     <>
-      <SettingsPageHeader id="recipe" actions={<SaveStatusLine status={kitchen.status} />} />
+      <SettingsPageHeader id="recipe" actions={<SaveStatusLine status={combinedStatus(kitchen.status, appliancesStatus)} />} />
       <div className="flex flex-col gap-5">
         <MeasurementCard />
         {kitchen.loadFailed ? (
-          <ErrorState body={t("common.tryAgain")} onRetry={() => void kitchen.retry()} />
+          <ErrorState body={t("common.tryAgain")} trackId="settings.kitchen.load_error" onRetry={() => void kitchen.retry()} />
         ) : !kitchen.profile ? (
           <LoadingState />
         ) : (
@@ -73,6 +76,7 @@ function MeasurementCard() {
         label={t("settings.measurements")}
         value={system}
         onChange={setSystem}
+        trackId="settings.kitchen.measurement"
         className="grid max-w-md grid-cols-2 gap-2 rounded-2xl bg-primary-soft p-1"
         optionClassName="flex h-11 items-center justify-center gap-2 rounded-xl px-3 text-sm font-semibold text-muted transition-colors hover:text-text data-[checked]:bg-surface data-[checked]:text-primary data-[checked]:shadow-soft"
         options={options.map(({ value, label, Icon }) => ({
@@ -160,7 +164,7 @@ function KitchenCards({
           {DIET_KEYS.map((key) => {
             const on = profile.diets.includes(key);
             return (
-              <ToggleChip key={key} pressed={on} disabled={dietsFull && !on} onToggle={() => toggleDiet(key)}>
+              <ToggleChip key={key} pressed={on} disabled={dietsFull && !on} onToggle={() => toggleDiet(key)} trackId={`settings.kitchen.diet.${key}`}>
                 {t(`recipe.variants.${key}.label`)}
               </ToggleChip>
             );
@@ -175,6 +179,7 @@ function KitchenCards({
               type="button"
               aria-label={t("recipe.decreaseServings")}
               aria-disabled={servings == null}
+              data-track="settings.kitchen.servings.decrease"
               onClick={() => servings != null && setServings(servings - 1)}
               className={stepper}
             >
@@ -188,6 +193,7 @@ function KitchenCards({
               type="button"
               aria-label={t("recipe.increaseServings")}
               aria-disabled={servings === MAX_SERVINGS}
+              data-track="settings.kitchen.servings.increase"
               onClick={() => servings !== MAX_SERVINGS && setServings(servings == null ? 2 : servings + 1)}
               className={stepper}
             >
@@ -196,6 +202,7 @@ function KitchenCards({
             {servings != null ? (
               <button
                 type="button"
+                data-track="settings.kitchen.servings.clear"
                 onClick={() => setServings(undefined)}
                 aria-label={t("a11y.clearDefaultServings")}
                 className="h-9 rounded-full px-3 text-sm font-semibold text-primary transition-colors hover:bg-primary-soft"
@@ -209,6 +216,8 @@ function KitchenCards({
       </SettingsCard>
 
       <AvoidListEditor profile={profile} onChange={onChange} />
+
+      <AppliancesSettings />
 
       <SettingsCard title={t("settings.kitchenAlwaysSwap")}>
         {profile.alwaysSwap.length > 0 ? (
@@ -226,6 +235,7 @@ function KitchenCards({
                 </span>
                 <button
                   type="button"
+                  data-track="settings.kitchen.swap.remove"
                   onClick={() => onChange({ ...profile, alwaysSwap: profile.alwaysSwap.filter((_, i) => i !== index) })}
                   aria-label={t("a11y.removeSwap", { from: swap.from, to: swap.to })}
                   className="grid h-9 w-9 place-items-center rounded-full text-muted transition-colors hover:bg-element hover:text-danger"
@@ -268,6 +278,7 @@ function KitchenCards({
             />
             <button
               type="submit"
+              data-track="settings.kitchen.swap.add"
               disabled={!swapFrom.trim() || !swapTo.trim()}
               className="inline-flex h-11 shrink-0 items-center justify-center rounded-full bg-primary-soft px-5 text-sm font-semibold text-primary transition-[filter] hover:brightness-97 disabled:opacity-45"
             >
@@ -283,7 +294,7 @@ function KitchenCards({
         ) : (
           <div className="mb-3 flex flex-wrap gap-2">
             {profile.pantryStaples.map((staple) => (
-              <RemovableChip key={staple} label={staple} onRemove={() => onChange(removePantryStaple(profile, staple))} />
+              <RemovableChip key={staple} label={staple} onRemove={() => onChange(removePantryStaple(profile, staple))} trackId="settings.kitchen.pantry.remove" />
             ))}
           </div>
         )}
@@ -297,6 +308,7 @@ function KitchenCards({
             onAdd={addPantry}
             maxLength={60}
             addLabel={t("settings.kitchenPantryAdd")}
+            trackId="settings.kitchen.pantry.add"
           />
         )}
       </SettingsCard>
@@ -307,17 +319,24 @@ function KitchenCards({
           hint={t("settings.kitchenAutoApplyHint")}
           checked={profile.autoApplyOnExtract}
           onChange={(next) => onChange({ ...profile, autoApplyOnExtract: next })}
+          trackId="settings.kitchen.auto_apply.toggle"
         />
         <p className="mt-3 text-sm leading-relaxed text-muted">{summary}</p>
       </SettingsCard>
 
       <SettingsCard title={t("hub.title")}>
-        <SwitchRow label={t("settings.contributeToHub")} hint={t("settings.contributeToHubHint")} checked={contributeToHub} onChange={onContributeToHubChange} />
+        <SwitchRow label={t("settings.contributeToHub")} hint={t("settings.contributeToHubHint")} checked={contributeToHub} onChange={onContributeToHubChange} trackId="settings.kitchen.contribute_to_hub.toggle" />
       </SettingsCard>
-
-      {/* "My appliances" (PIN-139) has no place in the kitchen profile yet: the mobile app has no such setting. */}
     </>
   );
+}
+
+/** One line for the page's two stores (the kitchen profile, and "My appliances" on the account). */
+function combinedStatus(a: SaveStatus, b: SaveStatus): SaveStatus {
+  if (a === "saving" || b === "saving") return "saving";
+  if (a === "failed" || b === "failed") return "failed";
+  if (a === "saved" || b === "saved") return "saved";
+  return "idle";
 }
 
 const inputClass =

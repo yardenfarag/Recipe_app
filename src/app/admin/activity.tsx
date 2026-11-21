@@ -7,6 +7,7 @@ import { Screen } from '@/components/Screen';
 import { TextInput } from '@/components/text-input';
 import { Pressable } from '@/components/ui/Pressable';
 import { useThemePreference } from '@/hooks/useThemePreference';
+import { formatClock, formatSessionDuration, formatWhen, sessionPlatform, sessionWho } from '@shared/lib/adminFormat';
 import { insightSince } from '@shared/lib/adminInsights';
 import { errorText } from '@shared/lib/errorText';
 import {
@@ -20,29 +21,6 @@ import {
 
 const RANGES = [1, 7, 30] as const;
 type Range = (typeof RANGES)[number];
-
-function fmtWhen(iso: string): string {
-  try {
-    return new Date(iso).toLocaleString();
-  } catch {
-    return iso;
-  }
-}
-
-function fmtTime(iso: string): string {
-  try {
-    return new Date(iso).toLocaleTimeString();
-  } catch {
-    return iso;
-  }
-}
-
-function fmtDuration(fromIso: string, toIso: string): string {
-  const seconds = Math.max(0, Math.round((Date.parse(toIso) - Date.parse(fromIso)) / 1000));
-  if (seconds < 60) return `${seconds}s`;
-  const minutes = Math.round(seconds / 60);
-  return minutes < 60 ? `${minutes}m` : `${Math.floor(minutes / 60)}h ${minutes % 60}m`;
-}
 
 export default function AdminActivityScreen() {
   return (
@@ -177,7 +155,7 @@ function ActivityBody() {
             </Text>
             {sessions.map((session) => {
               const open = openSession === session.sessionId;
-              const who = session.email ?? (session.userId ? session.userId : `Guest ${session.guestInstallId?.slice(0, 8) ?? ''}`);
+              const who = sessionWho(session);
               return (
                 <View key={session.sessionId} className="mb-3 rounded-[22px] p-4" style={card}>
                   <Pressable
@@ -190,9 +168,8 @@ function ActivityBody() {
                       {who}
                     </Text>
                     <Text className="mt-1 text-xs" style={{ color: colors.textSecondary }}>
-                      {fmtWhen(session.startedAt)} · {fmtDuration(session.startedAt, session.lastAt)} ·{' '}
-                      {session.platform}
-                      {session.appVersion ? ` ${session.appVersion}` : ''}
+                      {formatWhen(session.startedAt)} · {formatSessionDuration(session.startedAt, session.lastAt)} ·{' '}
+                      {sessionPlatform(session)}
                     </Text>
                     <Text className="mt-1 text-xs" style={{ color: colors.textSecondary }}>
                       {session.screenCount} screens · {session.tapCount} taps · {open ? 'Hide' : 'Show'} timeline
@@ -247,7 +224,7 @@ function SessionTimeline({ sessionId }: { sessionId: string }) {
       {events.map((event) => (
         <View key={event.id} className="flex-row py-0.5">
           <Text className="w-20 text-xs" style={{ color: colors.textSecondary }}>
-            {fmtTime(event.occurredAt)}
+            {formatClock(event.occurredAt)}
           </Text>
           <Text
             className="min-w-0 flex-1 text-xs"

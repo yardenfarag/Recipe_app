@@ -44,7 +44,7 @@ export function BalanceCard() {
           ) : (
             <div className="mt-2 flex flex-wrap items-center gap-3">
               <p className="text-sm text-muted">{t("web.credits.balanceFailed")}</p>
-              <Button variant="secondary" size="sm" onClick={() => void refresh()}>
+              <Button variant="secondary" size="sm" trackId="credits.balance.retry" onClick={() => void refresh()}>
                 {t("common.tryAgainAction")}
               </Button>
             </div>

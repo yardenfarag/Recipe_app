@@ -137,11 +137,11 @@ function Picker({
       ) : null}
       <div className="mt-6 flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
         <DialogClose asChild>
-          <Button variant="ghost" disabled={busy}>
+          <Button variant="ghost" trackId="add_to_list.cancel" disabled={busy}>
             {t("common.cancel")}
           </Button>
         </DialogClose>
-        <Button busy={busy} disabled={count === 0} onClick={() => void add()}>
+        <Button trackId="add_to_list.add" busy={busy} disabled={count === 0} onClick={() => void add()}>
           {t(count === 1 ? "addToList.addOne" : "addToList.addOther", { count })}
         </Button>
       </div>

@@ -13,6 +13,7 @@ import {
 import { logAuth } from '@/lib/interactionLog';
 import { migrateGuestDataToSupabase } from '@/lib/migrateGuestData';
 import { clearPurchasesUser, configurePurchases } from '@/lib/purchases';
+import { createAuthActivityTracker } from '@shared/lib/authActivity';
 import { runSingleFlight } from '@shared/lib/singleFlight';
 import { supabase } from '@/lib/supabase/client';
 
@@ -36,28 +37,12 @@ const AuthContext = createContext<AuthContextValue>({
   retryMigration: async () => {},
 });
 
-// Who the last auth event was about. supabase-js re-emits SIGNED_IN on token
-// refresh and when a web tab regains focus, so only a change of user counts.
-let loggedUserId: string | null = null;
+// Logins and signups for the activity log; the rules are shared with the web app (ADR 020).
+const authActivity = createAuthActivityTracker();
 
 function logAuthChange(event: string, nextSession: Session | null) {
-  const userId = nextSession?.user.id ?? null;
-  if (event === 'INITIAL_SESSION') {
-    // Restored session on launch (always the first event): not a login.
-    loggedUserId = userId;
-    return;
-  }
-  if (event === 'SIGNED_OUT') {
-    loggedUserId = null;
-    return;
-  }
-  if (event !== 'SIGNED_IN' || !nextSession || userId === loggedUserId) return;
-  loggedUserId = userId;
-  const user = nextSession.user;
-  const method = String(user.app_metadata?.provider ?? 'email').replace(/[^a-z0-9_]/g, '').slice(0, 20) || 'email';
-  // Supabase has no separate signup event; a brand-new account is a signup.
-  const isNew = Date.now() - Date.parse(user.created_at) < 2 * 60_000;
-  logAuth(isNew ? 'auth.signup' : 'auth.login', { method });
+  const activity = authActivity(event, nextSession);
+  if (activity) logAuth(activity.name, activity.properties);
 }
 
 export function AuthProvider({ children }: { children: ReactNode }) {

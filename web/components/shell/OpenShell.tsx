@@ -41,20 +41,21 @@ export function OpenShell({ children }: { children: ReactNode }) {
     <div className="flex min-h-dvh flex-col">
       <a
         href="#main"
+        data-track="nav.skip_to_content"
         className="fixed start-3 top-3 z-50 -translate-y-20 rounded-full bg-primary px-4 py-2.5 font-semibold text-on-primary shadow-lift transition-transform focus:translate-y-0"
       >
         {t("web.skipToContent")}
       </a>
       <header className="sticky top-0 z-30 border-b border-frosted-border bg-frosted backdrop-blur-md">
         <div className="mx-auto flex h-16 w-full max-w-6xl items-center justify-between gap-3 px-5 sm:px-8">
-          <a href="https://pinch-app.io/" className="rounded-xl focus-visible:outline-2 focus-visible:outline-primary">
+          <a href="https://pinch-app.io/" data-track="open_shell.logo" className="rounded-xl focus-visible:outline-2 focus-visible:outline-primary">
             <PinchLogo />
           </a>
           <nav aria-label={t("web.account")} className="flex items-center gap-2">
-            <Link href={signInHere("signin")} className={buttonClasses({ variant: "ghost", size: "sm" })}>
+            <Link href={signInHere("signin")} data-track="open_shell.sign_in" className={buttonClasses({ variant: "ghost", size: "sm" })}>
               {t("auth.signIn")}
             </Link>
-            <Link href={signInHere("signup")} className={buttonClasses({ variant: "primary", size: "sm" })}>
+            <Link href={signInHere("signup")} data-track="open_shell.sign_up" className={buttonClasses({ variant: "primary", size: "sm" })}>
               {t("auth.signUp")}
             </Link>
           </nav>

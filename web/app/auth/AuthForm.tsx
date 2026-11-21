@@ -40,6 +40,8 @@ const REASON_SUBTITLES = {
   shared_recipe: "auth.reasonShared",
   hub_recipe: "auth.reasonHub",
   edit: "auth.reasonEdit",
+  // From the welcome page's "Get started": the first-run questions come next (PIN-140).
+  welcome: "web.welcome.signupReason",
 } as const;
 
 export function parseMode(value: string | null): Mode {
@@ -239,16 +241,17 @@ export function AuthForm() {
           />
           {error ? <ErrorAlert>{error}</ErrorAlert> : null}
           {notice && !error ? <Notice>{notice}</Notice> : null}
-          <Button fullWidth size="lg" type="submit" disabled={!codeComplete} busy={busy}>
+          <Button fullWidth size="lg" type="submit" trackId="auth.code.verify" disabled={!codeComplete} busy={busy}>
             {t("auth.verifyCode")}
           </Button>
         </form>
         <div className="mt-4 flex flex-col items-center gap-1">
-          <Button variant="link" disabled={busy} onClick={() => void handleResendCode()}>
+          <Button variant="link" trackId="auth.code.resend" disabled={busy} onClick={() => void handleResendCode()}>
             {t("auth.resendCode")}
           </Button>
           <Button
             variant="link"
+            trackId="auth.code.change_email"
             disabled={busy}
             className="text-muted"
             onClick={() => {
@@ -274,7 +277,7 @@ export function AuthForm() {
         <p className="mb-6 text-center font-semibold text-text" dir="ltr">
           {normalizeEmail(email)}
         </p>
-        <Button fullWidth size="lg" onClick={() => switchMode("signin")}>{t("auth.confirmedSignIn")}</Button>
+        <Button fullWidth size="lg" trackId="auth.check_email.sign_in" onClick={() => switchMode("signin")}>{t("auth.confirmedSignIn")}</Button>
       </AuthCard>
     );
   }
@@ -342,6 +345,7 @@ export function AuthForm() {
                 className="rounded-full px-3 py-1 text-sm font-semibold text-primary hover:bg-primary-soft"
                 onClick={() => setShowPassword((value) => !value)}
                 aria-pressed={showPassword}
+                data-track="auth.password.toggle_visibility"
               >
                 {showPassword ? t("auth.hidePassword") : t("auth.showPassword")}
               </button>
@@ -351,7 +355,7 @@ export function AuthForm() {
 
         {mode === "signin" ? (
           <div className="-mt-2 flex justify-end">
-            <Button variant="link" onClick={() => switchMode("forgot")}>
+            <Button variant="link" trackId="auth.forgot_password" onClick={() => switchMode("forgot")}>
               {t("auth.forgotPassword")}
             </Button>
           </div>
@@ -359,7 +363,7 @@ export function AuthForm() {
 
         {error ? <ErrorAlert>{error}</ErrorAlert> : null}
 
-        <Button fullWidth size="lg" type="submit" busy={busy}>
+        <Button fullWidth size="lg" type="submit" trackId="auth.email.submit" busy={busy}>
           {mode === "signup"
             ? t("auth.signUp")
             : mode === "forgot"
@@ -372,16 +376,20 @@ export function AuthForm() {
 
       <div className="mt-3 flex flex-col items-center gap-1">
         {usesPassword ? (
-          <Button variant="link" onClick={() => switchMode("code")}>
+          <Button variant="link" trackId="auth.switch_to_code" onClick={() => switchMode("code")}>
             {t("auth.emailMeCode")}
           </Button>
         ) : null}
         {mode === "code" ? (
-          <Button variant="link" onClick={() => switchMode("signin")}>
+          <Button variant="link" trackId="auth.switch_to_password" onClick={() => switchMode("signin")}>
             {t("auth.usePassword")}
           </Button>
         ) : null}
-        <Button variant="link" onClick={() => switchMode(mode === "signup" ? "signin" : "signup")}>
+        <Button
+          variant="link"
+          trackId={mode === "signup" ? "auth.switch_to_signin" : "auth.switch_to_signup"}
+          onClick={() => switchMode(mode === "signup" ? "signin" : "signup")}
+        >
           {mode === "signup" ? t("auth.haveAccount") : t("auth.needAccount")}
         </Button>
       </div>
@@ -393,25 +401,25 @@ export function AuthForm() {
             {t("auth.orContinueWith")}
             <span className="h-px flex-1 bg-border" />
           </div>
-          <Button variant="outline" fullWidth size="lg" disabled={busy} onClick={() => void handleGoogle()}>
+          <Button variant="outline" fullWidth size="lg" trackId="auth.google" disabled={busy} onClick={() => void handleGoogle()}>
             <GoogleLogo />
             {t("auth.continueGoogle")}
           </Button>
         </>
       ) : (
         <div className="mt-2 flex justify-center">
-          <Button variant="link" onClick={() => switchMode("signin")}>
+          <Button variant="link" trackId="auth.back_to_sign_in" onClick={() => switchMode("signin")}>
             {t("auth.backToSignIn")}
           </Button>
         </div>
       )}
 
       <nav aria-label={`${t("auth.privacy")} · ${t("auth.terms")}`} className="mt-8 flex justify-center gap-4 text-sm text-muted">
-        <a className="hover:underline" href={LEGAL_URLS.privacy} target="_blank" rel="noopener noreferrer">
+        <a className="hover:underline" data-track="auth.legal.privacy" href={LEGAL_URLS.privacy} target="_blank" rel="noopener noreferrer">
           {t("auth.privacy")}
         </a>
         <span aria-hidden>·</span>
-        <a className="hover:underline" href={LEGAL_URLS.terms} target="_blank" rel="noopener noreferrer">
+        <a className="hover:underline" data-track="auth.legal.terms" href={LEGAL_URLS.terms} target="_blank" rel="noopener noreferrer">
           {t("auth.terms")}
         </a>
       </nav>

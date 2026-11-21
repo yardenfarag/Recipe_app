@@ -1,5 +1,6 @@
 "use client";
 
+import { useEffect, useRef } from "react";
 import { useTranslation } from "react-i18next";
 
 import { BalanceCard } from "@/components/credits/BalanceCard";
@@ -7,6 +8,7 @@ import { CreditCosts } from "@/components/credits/CreditCosts";
 import { GetTheAppCard } from "@/components/credits/GetTheAppCard";
 import { PackList } from "@/components/credits/PackList";
 import { SettingsPageHeader } from "@/components/settings/SettingsPageHeader";
+import { capturePaywallViewed } from "@/lib/analytics";
 import { useWebSalesOn } from "@/lib/credits/salesSwitch";
 
 /**
@@ -17,6 +19,15 @@ import { useWebSalesOn } from "@/lib/credits/salesSwitch";
 export function CreditsSettings() {
   const { t } = useTranslation();
   const salesOn = useWebSalesOn();
+
+  // Once per visit, and only when the page offers packs (mobile counts its purchase sheet the same way).
+  const counted = useRef(false);
+  useEffect(() => {
+    if (!salesOn || counted.current) return;
+    counted.current = true;
+    capturePaywallViewed("settings");
+  }, [salesOn]);
+
   return (
     <>
       <SettingsPageHeader id="credits" />

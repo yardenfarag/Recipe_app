@@ -89,6 +89,7 @@ function Body({
           <li>
             <button
               type="button"
+              data-track="recipe_translate.show_original"
               disabled={loading != null}
               onClick={() => {
                 onShowOriginal();
@@ -112,6 +113,7 @@ function Body({
             <li key={language.code}>
               <button
                 type="button"
+                data-track={`recipe_translate.language.${language.code}`}
                 lang={language.code}
                 aria-current={current ? "true" : undefined}
                 aria-busy={busy || undefined}

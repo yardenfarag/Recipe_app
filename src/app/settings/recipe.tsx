@@ -1,14 +1,17 @@
+import Ionicons from '@expo/vector-icons/Ionicons';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { ActivityIndicator, Text, View } from 'react-native';
 import { Pressable } from '@/components/ui/Pressable';
 import { logTap } from '@/lib/interactionLog';
 
+import { ApplianceIcon } from '@/components/ApplianceIcon';
 import { AvoidListEditor } from '@/components/AvoidListEditor';
 import { MeasurementToggle } from '@/components/MeasurementToggle';
 import { SettingsDetailScreen } from '@/components/SettingsDetailScreen';
 import { TextInput } from '@/components/text-input';
 import { useAuth } from '@/hooks/useAuth';
+import { ownedAppliances, useOwnedAppliances } from '@/hooks/useOwnedAppliances';
 import { useRtl } from '@/hooks/useRtl';
 import { useThemePreference } from '@/hooks/useThemePreference';
 import {
@@ -26,6 +29,15 @@ import { fetchContributeToHub, setContributeToHub } from '@shared/lib/supabase/c
 import { fetchCloudKitchenProfile, saveCloudKitchenProfile } from '@/lib/supabase/kitchen';
 import { RECIPE_VARIANTS } from '@shared/lib/recipeVariants';
 import { announce } from '@/lib/a11y';
+import { confirmAction } from '@/lib/confirmAction';
+import { applianceNameKey } from '@shared/lib/applianceDisplay';
+import type { ApplianceKey } from '@shared/lib/appliances';
+import {
+  APPLIANCE_CHECKLIST,
+  specialOwnedCount,
+  tickedAppliances,
+  toggleAppliance,
+} from '@shared/lib/ownedAppliances';
 
 export default function RecipeSettingsScreen() {
   const { t } = useTranslation();
@@ -185,6 +197,14 @@ export default function RecipeSettingsScreen() {
       <View className="mb-6 mt-2">
         <AvoidListEditor profile={profile} onChange={(next) => void persist(next)} trackPrefix="settings.kitchen" />
       </View>
+
+      {user ? (
+        <>
+          <View className="mb-6 h-px" style={{ backgroundColor: colors.border }} />
+          <MyAppliancesEditor />
+          <View className="my-6 h-px" style={{ backgroundColor: colors.border }} />
+        </>
+      ) : null}
 
       <Text className="mb-2 text-xs font-semibold uppercase tracking-wide" style={{ color: colors.textSecondary }} accessibilityRole="header">
         {t('settings.kitchenServings')}
@@ -491,5 +511,165 @@ export default function RecipeSettingsScreen() {
         ) : null}
       </View>
     </SettingsDetailScreen>
+  );
+}
+
+/**
+ * "My appliances" (PIN-155): tick what's in the kitchen, and recipes that need something else say so. Saved on the
+ * account at every tap, so the web app shows the same list. Until the first tick the list is "not set" and recipes
+ * check nothing, as before. The basics start ticked; "I have none of these" saves the list as it stands.
+ */
+function MyAppliancesEditor() {
+  const { t } = useTranslation();
+  const { colors } = useThemePreference();
+  const { textAlign, writingDirection } = useRtl();
+  const { kitchen, status, userId } = useOwnedAppliances();
+  const ticked = tickedAppliances(kitchen);
+  const count = specialOwnedCount(kitchen);
+  const textStyle = { textAlign, writingDirection };
+
+  // Opening Settings is when a list ticked on the web matters most: read the account again.
+  useEffect(() => {
+    ownedAppliances.refresh({ force: true });
+  }, [userId]);
+
+  useEffect(() => {
+    if (status === 'failed') announce(t('settings.kitchenSaveFailed'), { liveRegion: true });
+  }, [status, t]);
+
+  async function stopChecking() {
+    const ok = await confirmAction(
+      t('myAppliances.clearTitle'),
+      t('myAppliances.clearBody'),
+      t('myAppliances.clearConfirm'),
+      t('common.cancel'),
+    );
+    if (ok) ownedAppliances.clear();
+  }
+
+  return (
+    <View testID="my-appliances">
+      <Text className="mb-2 text-sm font-semibold" style={[{ color: colors.text }, textStyle]} accessibilityRole="header">
+        {t('myAppliances.title')}
+      </Text>
+      <Text className="mb-3 text-xs leading-5" style={[{ color: colors.textSecondary }, textStyle]}>
+        {t('myAppliances.hint')}
+      </Text>
+
+      {kitchen ? (
+        <View className="mb-4 flex-row flex-wrap items-center gap-x-3 gap-y-1" testID="my-appliances-status">
+          <View className="min-w-0 flex-1 flex-row items-center gap-2">
+            <Ionicons name="checkmark-circle" size={18} color={colors.success} />
+            <Text className="min-w-0 flex-1 text-sm font-semibold" style={[{ color: colors.text }, textStyle]}>
+              {t('myAppliances.checking', { count })}
+            </Text>
+          </View>
+          <Pressable
+            trackId="settings.appliances.clear"
+            onPress={() => void stopChecking()}
+            className="min-h-[44px] justify-center"
+            hitSlop={8}
+            accessibilityRole="button"
+          >
+            <Text className="text-xs font-semibold" style={{ color: colors.primary }}>
+              {t('myAppliances.stopChecking')}
+            </Text>
+          </Pressable>
+        </View>
+      ) : (
+        <View className="mb-4 rounded-2xl px-4 py-3" style={{ backgroundColor: colors.frosted }} testID="my-appliances-status">
+          <View className="flex-row items-start gap-2">
+            <Ionicons name="information-circle-outline" size={18} color={colors.primary} />
+            <Text className="min-w-0 flex-1 text-xs leading-5" style={[{ color: colors.textSecondary }, textStyle]}>
+              {t('myAppliances.notSet')}
+            </Text>
+          </View>
+          <Pressable
+            trackId="settings.appliances.none"
+            onPress={() => ownedAppliances.save([...ticked])}
+            className="mt-3 min-h-[44px] items-center justify-center self-start rounded-3xl px-4 active:opacity-80"
+            style={{ backgroundColor: colors.primarySoft }}
+            accessibilityRole="button"
+          >
+            <Text className="text-sm font-semibold" style={{ color: colors.primary }}>
+              {t('myAppliances.noneOfThese')}
+            </Text>
+          </Pressable>
+        </View>
+      )}
+
+      {APPLIANCE_CHECKLIST.map((group) => (
+        <View key={group.id} className="mb-4">
+          <Text
+            className="mb-2 text-xs font-semibold uppercase tracking-wide"
+            style={[{ color: colors.textSecondary }, textStyle]}
+            accessibilityRole="header"
+          >
+            {t(`myAppliances.groups.${group.id}`)}
+          </Text>
+          {group.id === 'basics' ? (
+            <Text className="mb-2 text-xs leading-5" style={[{ color: colors.textSecondary }, textStyle]}>
+              {t('myAppliances.basicsHint')}
+            </Text>
+          ) : null}
+          <View className="flex-row flex-wrap gap-2">
+            {group.keys.map((key) => (
+              <ApplianceToggle
+                key={key}
+                appliance={key}
+                checked={ticked.has(key)}
+                onToggle={() => ownedAppliances.save(toggleAppliance(kitchen, key))}
+              />
+            ))}
+          </View>
+        </View>
+      ))}
+
+      {status === 'failed' ? (
+        <Text className="text-xs" style={{ color: colors.danger }} accessibilityLiveRegion="polite">
+          {t('settings.kitchenSaveFailed')}
+        </Text>
+      ) : null}
+    </View>
+  );
+}
+
+/** One appliance, on or off. The icon stays so the list is quick to scan; a tick shows it's in the kitchen. */
+function ApplianceToggle({
+  appliance,
+  checked,
+  onToggle,
+}: {
+  appliance: ApplianceKey;
+  checked: boolean;
+  onToggle: () => void;
+}) {
+  const { t } = useTranslation();
+  const { colors } = useThemePreference();
+  const name = t(applianceNameKey(appliance));
+  return (
+    <Pressable
+      trackId={`settings.appliances.toggle.${appliance}`}
+      testID={`my-appliance-${appliance}`}
+      onPress={onToggle}
+      className="min-h-[44px] flex-row items-center gap-1.5 rounded-2xl border px-3 active:opacity-80"
+      style={{
+        backgroundColor: checked ? colors.primarySoft : colors.surface,
+        borderColor: checked ? colors.primary : colors.border,
+      }}
+      accessibilityRole="checkbox"
+      accessibilityState={{ checked }}
+      accessibilityLabel={name}
+    >
+      <ApplianceIcon appliance={appliance} size={17} color={checked ? colors.primary : colors.textSecondary} />
+      <Text className="text-sm font-semibold" style={{ color: checked ? colors.primary : colors.text }}>
+        {name}
+      </Text>
+      <Ionicons
+        name={checked ? 'checkmark-circle' : 'ellipse-outline'}
+        size={16}
+        color={checked ? colors.primary : colors.border}
+      />
+    </Pressable>
   );
 }

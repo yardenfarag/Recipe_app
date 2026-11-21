@@ -74,6 +74,7 @@ export function AccountSettings() {
             <ProfileAvatar url={avatarUrl} className="h-24 w-24" />
             <button
               type="button"
+              data-track="settings.avatar.change"
               onClick={() => fileInput.current?.click()}
               disabled={uploading}
               aria-busy={uploading || undefined}
@@ -108,14 +109,14 @@ export function AccountSettings() {
             </p>
             {totalCredits != null ? <p className="mt-0.5 text-sm text-muted">{t("settings.creditsTotal", { count: totalCredits })}</p> : null}
           </div>
-          <Button variant="secondary" busy={signingOut} onClick={() => void handleSignOut()}>
+          <Button variant="secondary" trackId="settings.sign_out" busy={signingOut} onClick={() => void handleSignOut()}>
             <LogOut aria-hidden className="h-4 w-4 rtl:rotate-180" />
             {t("settings.signOut")}
           </Button>
         </section>
 
         <SettingsCard title={t("settings.dangerZone")} hint={t("settings.dangerZoneHint")} tone="danger">
-          <Button variant="danger" onClick={() => setDeleteOpen(true)}>
+          <Button variant="danger" trackId="settings.delete_account" onClick={() => setDeleteOpen(true)}>
             <Trash2 aria-hidden className="h-4 w-4" />
             {t("settings.deleteAccount")}
           </Button>
@@ -187,11 +188,11 @@ export function DeleteAccountDialog({
         footer={
           <>
             <DialogClose asChild>
-              <Button variant="ghost" disabled={busy}>
+              <Button variant="ghost" trackId="settings.delete_account_dialog.cancel" disabled={busy}>
                 {t("common.cancel")}
               </Button>
             </DialogClose>
-            <Button variant="danger" busy={busy} disabled={!confirmed} onClick={() => void confirm()}>
+            <Button variant="danger" trackId="settings.delete_account_dialog.confirm" busy={busy} disabled={!confirmed} onClick={() => void confirm()}>
               {t("settings.deleteAccount")}
             </Button>
           </>

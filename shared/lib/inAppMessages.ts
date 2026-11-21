@@ -395,6 +395,19 @@ export function applyMessageEvent(
 }
 
 // ---------------------------------------------------------------------------
+// Opening what a button points at
+
+/** A web address a button may open. The server checks too; this is the app's own guard. */
+export function isSafeWebUrl(url: string): boolean {
+  return /^https:\/\/\S+$/i.test(url);
+}
+
+/** An app path ("/hub"), not a web address ("//evil.example") and not empty. */
+export function isSafeRoute(href: string): boolean {
+  return /^\/([^/\s]\S*)?$/.test(href);
+}
+
+// ---------------------------------------------------------------------------
 // Checking what an admin wrote
 
 function isHttpsUrl(value: unknown): value is string {

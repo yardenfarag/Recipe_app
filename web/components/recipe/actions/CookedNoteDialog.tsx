@@ -70,11 +70,11 @@ function Body({
         />
         <div className="mt-6 flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
           <DialogClose asChild>
-            <Button variant="ghost" disabled={saving}>
+            <Button variant="ghost" trackId="cooked_note.skip" disabled={saving}>
               {t("common.notNow")}
             </Button>
           </DialogClose>
-          <Button type="submit" busy={saving}>
+          <Button type="submit" trackId="cooked_note.save" busy={saving}>
             {t("common.save")}
           </Button>
         </div>

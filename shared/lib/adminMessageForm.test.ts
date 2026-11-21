@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
-import { validateMessage, type AdminMessage } from '@shared/lib/inAppMessages';
+import { validateMessage, type AdminMessage } from './inAppMessages';
 
 import {
   alertLimits,
@@ -23,7 +23,7 @@ import {
   statusActions,
   testDraft,
   type MessageForm,
-} from './form';
+} from './adminMessageForm';
 
 const ADMIN = '123e4567-e89b-12d3-a456-426614174000';
 const OTHER = '223e4567-e89b-12d3-a456-426614174001';

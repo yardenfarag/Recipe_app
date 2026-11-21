@@ -35,6 +35,7 @@ export function GetTheAppCard({ compact = false }: { compact?: boolean }) {
           <a
             key={link.href}
             href={link.href}
+            data-track="credits.open_app_store"
             target="_blank"
             rel="noopener noreferrer"
             className={buttonClasses({ variant: "outline", size: "sm" })}

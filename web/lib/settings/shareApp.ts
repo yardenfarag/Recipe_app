@@ -3,6 +3,7 @@ import type { TFunction } from "i18next";
 import { appShareUrl, shareAppInBrowser } from "@shared/lib/shareApp";
 import { showToast } from "@shared/lib/toast";
 
+import { captureAppShared } from "@/lib/analytics";
 import { LEGAL_BASE_URL } from "@/lib/legal";
 
 /** "Share Pinch": the browser's share sheet, or the link copied, with the same text as the mobile app. */
@@ -13,6 +14,7 @@ export async function shareApp(t: TFunction): Promise<void> {
       message: t("settings.shareAppMessage"),
       url: appShareUrl(LEGAL_BASE_URL, "web"),
     });
+    captureAppShared({ outcome });
     if (outcome === "copied") showToast(t("settings.shareAppCopied"));
   } catch {
     showToast(t("settings.shareAppFailedTitle"), "info");

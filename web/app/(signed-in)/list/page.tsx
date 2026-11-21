@@ -25,7 +25,7 @@ import { displayOrder, groupShoppingList, neighbourId } from "@/lib/list/shoppin
 import { usePantryStaples } from "@/lib/list/usePantryStaples";
 import { useShoppingList, type ItemPatch } from "@/lib/list/useShoppingList";
 
-type Notice = { message: string; action?: { label: string; run: () => Promise<void> } };
+type Notice = { message: string; action?: { label: string; trackId: string; run: () => Promise<void> } };
 type Confirm = { kind: "checked" } | { kind: "all" } | { kind: "combine"; name: string; count: number } | null;
 
 const menuItemClass =
@@ -119,7 +119,7 @@ export default function ListPage() {
         .then(() =>
           setNotice({
             message: t("web.list.removed", { name: item.name }),
-            action: { label: t("web.list.undo"), run: () => restoreItem(item) },
+            action: { label: t("web.list.undo"), trackId: "shopping_list.notice.undo_remove", run: () => restoreItem(item) },
           }),
         )
         .catch(failed("list.removeFailed"));
@@ -137,6 +137,7 @@ export default function ListPage() {
             message: t("list.pantrySaved", { name: item.name }),
             action: {
               label: t("web.list.undo"),
+              trackId: "shopping_list.notice.undo_keep_in_pantry",
               run: async () => {
                 await Promise.all([dropStaple(item.name), restoreItem(item)]);
               },
@@ -157,7 +158,7 @@ export default function ListPage() {
           already
             ? {
                 message: t("list.alreadyListed", { name: already }),
-                action: { label: t("list.combineOneLine"), run: () => combineDuplicates(already) },
+                action: { label: t("list.combineOneLine"), trackId: "shopping_list.notice.combine", run: () => combineDuplicates(already) },
               }
             : null,
         );
@@ -205,13 +206,13 @@ export default function ListPage() {
         subtitle={items.length > 0 ? t("list.progress", { left: items.length - checkedCount, checked: checkedCount }) : t("list.subtitle")}
         actions={
           <>
-            <Button variant="secondary" onClick={() => setFromRecipesOpen(true)}>
+            <Button variant="secondary" trackId="shopping_list.from_recipes" onClick={() => setFromRecipesOpen(true)}>
               <UtensilsCrossed aria-hidden className="h-[18px] w-[18px]" />
               {t("list.fromRecipes")}
             </Button>
             <Menu.Root>
               <Menu.Trigger asChild>
-                <IconButton label={t("a11y.moreOptions")} icon={<MoreHorizontal className="h-5 w-5" />} disabled={items.length === 0} />
+                <IconButton label={t("a11y.moreOptions")} trackId="shopping_list.more" icon={<MoreHorizontal className="h-5 w-5" />} disabled={items.length === 0} />
               </Menu.Trigger>
               <Menu.Portal>
                 <Menu.Content
@@ -220,12 +221,12 @@ export default function ListPage() {
                   collisionPadding={12}
                   className="z-50 min-w-52 animate-pop-in rounded-2xl border border-frosted-border bg-surface p-1.5 shadow-lift"
                 >
-                  <Menu.Item className={menuItemClass} disabled={checkedCount === 0} onSelect={() => setConfirm({ kind: "checked" })}>
+                  <Menu.Item className={menuItemClass} data-track="shopping_list.clear_checked" disabled={checkedCount === 0} onSelect={() => setConfirm({ kind: "checked" })}>
                     <Eraser aria-hidden className="h-[18px] w-[18px] text-muted" />
                     {t("list.clearChecked")}
                   </Menu.Item>
                   <Menu.Separator className="my-1.5 h-px bg-border" />
-                  <Menu.Item className={cn(menuItemClass, "text-danger")} onSelect={() => setConfirm({ kind: "all" })}>
+                  <Menu.Item className={cn(menuItemClass, "text-danger")} data-track="shopping_list.clear_all" onSelect={() => setConfirm({ kind: "all" })}>
                     <Trash2 aria-hidden className="h-[18px] w-[18px]" />
                     {t("list.clearList")}
                   </Menu.Item>
@@ -237,7 +238,7 @@ export default function ListPage() {
       />
 
       {loadFailed ? (
-        <ErrorState title={t("list.loadFailedTitle")} body={t("list.loadFailedBody")} onRetry={() => void refresh()} />
+        <ErrorState title={t("list.loadFailedTitle")} body={t("list.loadFailedBody")} trackId="shopping_list.load_error" onRetry={() => void refresh()} />
       ) : (
         <div className={cn("flex w-full max-w-2xl flex-col gap-4", wide && "xl:max-w-5xl")}>
           <div className="flex max-w-2xl flex-col gap-3">
@@ -247,7 +248,7 @@ export default function ListPage() {
               <div role="alert" className="flex items-center gap-3 rounded-2xl bg-danger-soft px-4 py-3 text-sm text-danger">
                 <CircleAlert aria-hidden className="h-4 w-4 shrink-0" />
                 <span className="flex-1">{t("list.refreshFailed")}</span>
-                <button type="button" onClick={() => void refresh()} className="font-semibold underline underline-offset-2">
+                <button type="button" data-track="shopping_list.refresh_error.retry" onClick={() => void refresh()} className="font-semibold underline underline-offset-2">
                   {t("common.retry")}
                 </button>
               </div>
@@ -264,7 +265,7 @@ export default function ListPage() {
               title={t("list.emptyTitle")}
               body={t("web.list.emptyBody")}
               action={
-                <Button variant="secondary" onClick={() => setFromRecipesOpen(true)}>
+                <Button variant="secondary" trackId="shopping_list.from_recipes" onClick={() => setFromRecipesOpen(true)}>
                   <UtensilsCrossed aria-hidden className="h-[18px] w-[18px]" />
                   {t("list.fromRecipes")}
                 </Button>
@@ -290,7 +291,7 @@ export default function ListPage() {
                   count={checked.length}
                   muted
                   action={
-                    <Button variant="ghost" size="sm" onClick={() => setConfirm({ kind: "checked" })}>
+                    <Button variant="ghost" size="sm" trackId="shopping_list.clear_checked" onClick={() => setConfirm({ kind: "checked" })}>
                       <Eraser aria-hidden className="h-4 w-4" />
                       {t("list.clearChecked")}
                     </Button>
@@ -316,6 +317,7 @@ export default function ListPage() {
         title={t("list.clearCheckedTitle")}
         description={t(checkedCount === 1 ? "list.clearCheckedBodyOne" : "list.clearCheckedBodyOther", { count: checkedCount })}
         confirmLabel={t("list.clearChecked")}
+        trackId="shopping_list.clear_checked_dialog"
         onConfirm={() => clearChecked().catch(failed("list.clearFailed"))}
       />
       <ConfirmDialog
@@ -324,6 +326,7 @@ export default function ListPage() {
         title={t("list.deleteAllTitle")}
         description={t(items.length === 1 ? "list.deleteAllBodyOne" : "list.deleteAllBodyOther", { count: items.length })}
         confirmLabel={t("list.deleteAll")}
+        trackId="shopping_list.clear_all_dialog"
         onConfirm={() => clearAll().catch(failed("list.deleteFailed"))}
       />
       <ConfirmDialog
@@ -332,6 +335,7 @@ export default function ListPage() {
         title={t("list.duplicateTitle")}
         description={confirm?.kind === "combine" ? t("list.duplicateBody", { name: confirm.name, count: confirm.count }) : undefined}
         confirmLabel={t("list.combine")}
+        trackId="shopping_list.combine_dialog"
         confirmVariant="primary"
         onConfirm={() => {
           if (confirm?.kind !== "combine") return;
@@ -386,6 +390,7 @@ function NoticeBar({ notice, onDismiss, onError }: { notice: Notice; onDismiss: 
         <Button
           variant="ghost"
           size="sm"
+          trackId={notice.action.trackId}
           busy={busy}
           className="text-warning"
           onClick={async () => {
@@ -403,7 +408,7 @@ function NoticeBar({ notice, onDismiss, onError }: { notice: Notice; onDismiss: 
           {notice.action.label}
         </Button>
       ) : null}
-      <IconButton label={t("common.dismiss")} icon={<X className="h-4 w-4" />} tooltip={false} onClick={onDismiss} className="h-8 w-8" />
+      <IconButton label={t("common.dismiss")} trackId="shopping_list.notice.dismiss" icon={<X className="h-4 w-4" />} tooltip={false} onClick={onDismiss} className="h-8 w-8" />
     </div>
   );
 }

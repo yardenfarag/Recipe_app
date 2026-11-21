@@ -50,11 +50,14 @@ function ChipRadioGroup<T extends string>({
   value,
   options,
   onChange,
+  trackPrefix,
 }: {
   label: string;
   value: T;
   options: { value: T; label: string }[];
   onChange: (value: T) => void;
+  /** Each chip logs `<trackPrefix>.<value>` in the activity log; values are fixed keys. */
+  trackPrefix: string;
 }) {
   const group = useRef<HTMLDivElement>(null);
 
@@ -83,6 +86,7 @@ function ChipRadioGroup<T extends string>({
             key={option.value}
             type="button"
             role="radio"
+            data-track={`${trackPrefix}.${option.value}`}
             aria-checked={on}
             tabIndex={on ? 0 : -1}
             onClick={() => onChange(option.value)}
@@ -131,6 +135,7 @@ export function HubToolbar({ searchInput, ...props }: HubToolbarProps) {
           {search ? (
             <button
               type="button"
+              data-track="hub.search.clear"
               aria-label={t("library.clearSearch")}
               onClick={() => props.onSearchChange("")}
               className="absolute end-2 top-1/2 grid h-8 w-8 -translate-y-1/2 place-items-center rounded-full text-muted hover:bg-element hover:text-text"
@@ -153,6 +158,7 @@ export function HubToolbar({ searchInput, ...props }: HubToolbarProps) {
       <div className="-mx-4 flex items-center gap-2 overflow-x-auto px-4 pb-1 md:mx-0 md:flex-wrap md:overflow-visible md:px-0 md:pb-0">
         <ChipRadioGroup
           label={t("web.hub.source")}
+          trackPrefix="hub.filter.source"
           value={props.platform}
           onChange={props.onPlatformChange}
           options={HUB_PLATFORMS.map((value) => ({ value, label: t(platformLabelKey(value)) }))}
@@ -160,6 +166,7 @@ export function HubToolbar({ searchInput, ...props }: HubToolbarProps) {
         <span aria-hidden className="mx-1 h-6 w-px shrink-0 bg-border" />
         <ChipRadioGroup
           label={t("web.library.sortBy")}
+          trackPrefix="hub.sort"
           value={props.sort}
           onChange={props.onSortChange}
           options={SORTS.map((option) => ({ value: option.value, label: t(option.labelKey) }))}
@@ -169,6 +176,7 @@ export function HubToolbar({ searchInput, ...props }: HubToolbarProps) {
             <span aria-hidden className="mx-1 h-6 w-px shrink-0 bg-border" />
             <button
               type="button"
+              data-track="hub.filter.toggle"
               aria-expanded={props.tagsOpen}
               aria-controls={panelId}
               onClick={() => props.onTagsOpenChange(!props.tagsOpen)}
@@ -198,6 +206,7 @@ export function HubToolbar({ searchInput, ...props }: HubToolbarProps) {
             {selectedTags.length > 0 ? (
               <button
                 type="button"
+                data-track="hub.filter.tags.clear"
                 onClick={props.onClearTags}
                 aria-label={t("a11y.clearTags")}
                 className="rounded-full px-2 py-1 text-sm font-semibold text-primary hover:bg-primary-soft"
@@ -210,7 +219,7 @@ export function HubToolbar({ searchInput, ...props }: HubToolbarProps) {
             {props.availableTags.map((tag) => {
               const on = selectedTags.includes(tag);
               return (
-                <button key={tag} type="button" aria-pressed={on} onClick={() => props.onToggleTag(tag)} className={cn(chip, "h-9", on ? chipOn : chipOff)}>
+                <button key={tag} type="button" data-track="hub.filter.tag.toggle" aria-pressed={on} onClick={() => props.onToggleTag(tag)} className={cn(chip, "h-9", on ? chipOn : chipOff)}>
                   {translateRecipeTag(tag, t)}
                 </button>
               );
@@ -237,6 +246,7 @@ function LayoutToggle({ layout, onLayoutChange }: { layout: LibraryLayout; onLay
           key={value}
           type="button"
           role="radio"
+          data-track={`hub.layout.${value}`}
           aria-checked={layout === value}
           aria-label={label}
           title={label}

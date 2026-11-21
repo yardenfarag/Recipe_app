@@ -58,7 +58,7 @@ export function TagsField({
         <ul aria-labelledby={labelId} className="mb-3 flex flex-wrap gap-2">
           {tags.map((tag) => (
             <li key={tag}>
-              <RemovableChip label={translateRecipeTag(tag, t)} onRemove={() => onRemove(tag)} />
+              <RemovableChip label={translateRecipeTag(tag, t)} onRemove={() => onRemove(tag)} trackId="recipe_editor.tag.remove" />
             </li>
           ))}
         </ul>

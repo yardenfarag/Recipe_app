@@ -98,6 +98,7 @@ export function RecipeHeader({
       {back === null ? null : (
         <Link
           href={back?.href ?? "/"}
+          data-track="recipe.back"
           className="inline-flex items-center gap-1.5 rounded-full py-1 pe-2 text-sm font-semibold text-muted transition-colors hover:text-text focus-visible:outline-2 focus-visible:outline-primary"
         >
           <ArrowLeft aria-hidden className="h-4 w-4 rtl:rotate-180" />
@@ -128,6 +129,7 @@ export function RecipeHeader({
             <IconButton
               label={isFavorite ? t("a11y.removeRecipeFromFavorites", { name: title }) : t("a11y.addRecipeToFavorites", { name: title })}
               aria-pressed={isFavorite}
+              trackId="recipe.favorite"
               onClick={onToggleFavorite}
               className="-mt-0.5 h-11 w-11"
               icon={<Heart aria-hidden className={cn("h-6 w-6 transition-colors", isFavorite ? "fill-primary text-primary" : "text-muted")} />}
@@ -169,6 +171,7 @@ export function RecipeHeader({
                 <li key={tag}>
                   <Link
                     href={`/?tag=${encodeURIComponent(tag)}`}
+                    data-track="recipe.tag.open"
                     className="inline-flex rounded-full bg-element px-2.5 py-1 text-xs font-medium text-muted transition-colors hover:bg-selected hover:text-text"
                   >
                     {translateRecipeTag(tag, t)}
@@ -186,6 +189,7 @@ export function RecipeHeader({
                   <button
                     type="button"
                     aria-haspopup="dialog"
+                    data-track="recipe.tags.edit"
                     onClick={() => actions.open({ kind: "tags" })}
                     className="inline-flex items-center gap-1 rounded-full bg-primary-soft px-2.5 py-1 text-xs font-semibold text-primary transition-[filter] hover:brightness-95 focus-visible:outline-2 focus-visible:outline-primary"
                   >
@@ -209,6 +213,7 @@ export function RecipeHeader({
                     <button
                       type="button"
                       aria-haspopup="dialog"
+                      data-track="recipe.cooked.note"
                       onClick={() => actions.open({ kind: "note" })}
                       className="ms-1 rounded font-semibold text-primary underline-offset-4 hover:underline focus-visible:outline-2 focus-visible:outline-primary"
                     >
@@ -220,6 +225,7 @@ export function RecipeHeader({
               {recipe.original_url ? (
                 <a
                   href={recipe.original_url}
+                  data-track="recipe.view_original"
                   target="_blank"
                   rel="noopener noreferrer"
                   className="inline-flex items-center gap-1.5 font-semibold text-primary underline-offset-4 hover:underline focus-visible:outline-2 focus-visible:outline-primary"
@@ -245,6 +251,7 @@ function TitleActions({ actions, recipeId }: { actions: RecipeActions; recipeId:
       <Tooltip label={t("recipeEditor.titleEdit")}>
         <Link
           href={`/recipe/edit?id=${encodeURIComponent(recipeId)}`}
+          data-track="recipe.title_edit"
           aria-label={t("recipeEditor.titleEdit")}
           className="grid h-11 w-11 place-items-center rounded-full text-muted transition-colors hover:bg-element hover:text-text focus-visible:outline-2 focus-visible:outline-primary"
         >
@@ -253,6 +260,7 @@ function TitleActions({ actions, recipeId }: { actions: RecipeActions; recipeId:
       </Tooltip>
       <IconButton
         label={t("recipe.share")}
+        trackId="recipe.share"
         aria-busy={actions.busy.share || undefined}
         disabled={actions.busy.share}
         onClick={actions.share}
@@ -280,6 +288,7 @@ function CollectionChips({ recipeId, collections }: { recipeId: string; collecti
         <li key={collection.id}>
           <Link
             href={`/?collection=${encodeURIComponent(collection.id)}`}
+            data-track="recipe.collection.open"
             aria-label={t("a11y.openCollection", { name: collection.name })}
             className="inline-flex items-center gap-1 rounded-full bg-accent-soft px-2.5 py-1 text-xs font-semibold text-accent transition-[filter] hover:brightness-95 focus-visible:outline-2 focus-visible:outline-primary"
           >

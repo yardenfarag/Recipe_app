@@ -118,7 +118,7 @@ export const AddItemForm = forwardRef<
           maxLength={30}
           className={cn(fieldClass, "w-0 flex-1 sm:w-32 sm:flex-none")}
         />
-        <Button type="submit" className="h-11 px-4">
+        <Button type="submit" trackId="shopping_list.add.submit" className="h-11 px-4">
           <Plus aria-hidden className="h-5 w-5" />
           <span className="sr-only sm:not-sr-only">{t("list.addItem")}</span>
         </Button>

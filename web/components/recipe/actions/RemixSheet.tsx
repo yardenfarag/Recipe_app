@@ -157,10 +157,10 @@ function Body({ preset, allergies, notice, display, onClose, onApply, onOutOfCre
       footer={
         stage.kind === "preview" ? (
           <div className="flex w-full flex-col-reverse gap-2 sm:flex-row sm:justify-end">
-            <Button variant="ghost" disabled={stage.saving} onClick={() => setStage({ kind: "pick", error: null })}>
+            <Button variant="ghost" trackId="recipe.remix.pick_different" disabled={stage.saving} onClick={() => setStage({ kind: "pick", error: null })}>
               {t("recipe.remixPickDifferent")}
             </Button>
-            <Button busy={stage.saving} onClick={() => void use(stage)}>
+            <Button trackId="recipe.remix.apply" busy={stage.saving} onClick={() => void use(stage)}>
               {t("recipe.remixUseVersion")}
             </Button>
           </div>
@@ -198,7 +198,7 @@ function Body({ preset, allergies, notice, display, onClose, onApply, onOutOfCre
             <div role="alert" className="rounded-2xl bg-danger-soft px-4 py-3 text-sm">
               <p className="font-medium text-danger">{stage.error.message}</p>
               {stage.error.retry ? (
-                <Button variant="link" className="mt-1.5 -ms-1" onClick={() => setStage({ kind: "pick", error: null })}>
+                <Button variant="link" className="mt-1.5 -ms-1" trackId="recipe.remix.try_another" onClick={() => setStage({ kind: "pick", error: null })}>
                   {t("recipe.remixTryAnother")}
                 </Button>
               ) : null}
@@ -224,7 +224,7 @@ function Body({ preset, allergies, notice, display, onClose, onApply, onOutOfCre
               onKeyDown={onFieldKeyDown}
               className="mt-1.5 block w-full resize-none rounded-2xl border border-border bg-surface px-4 py-3 text-base text-text placeholder:text-muted/80 hover:border-muted/60 focus:border-primary focus:ring-4 focus:ring-primary/15"
             />
-            <Button type="submit" variant="secondary" className="mt-2.5" disabled={!instruction.trim()} fullWidth>
+            <Button type="submit" variant="secondary" className="mt-2.5" trackId="recipe.remix.custom" disabled={!instruction.trim()} fullWidth>
               {t("recipe.remixCustomAction")}
             </Button>
           </form>
@@ -238,6 +238,7 @@ function Body({ preset, allergies, notice, display, onClose, onApply, onOutOfCre
                   <li key={key}>
                     <button
                       type="button"
+                      data-track={`recipe.remix.${key}`}
                       onClick={() => void run(key, { kind: "remix", variant: key })}
                       className={cn(
                         "flex w-full items-center gap-3.5 rounded-2xl border border-border bg-surface px-3.5 py-3 text-start transition-colors",

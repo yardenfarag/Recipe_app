@@ -1,7 +1,8 @@
 "use client";
 
 import * as Menu from "@radix-ui/react-dropdown-menu";
-import { Flame, Heart, LayoutGrid, List, MoreHorizontal, Pencil, Plus, Refrigerator, Search, SlidersHorizontal, Trash2, X } from "lucide-react";
+import { Flame, Heart, LayoutGrid, List, MoreHorizontal, Pencil, Plus, Printer, Refrigerator, Search, SlidersHorizontal, Trash2, X } from "lucide-react";
+import Link from "next/link";
 import { useId, type Ref } from "react";
 import { useTranslation } from "react-i18next";
 
@@ -85,6 +86,7 @@ export function LibraryToolbar({ searchInput, ...props }: LibraryToolbarProps) {
             <button
               type="button"
               aria-label={t("library.clearSearch")}
+              data-track="library.search.clear"
               onClick={() => props.onSearchChange("")}
               className="absolute end-2 top-1/2 grid h-8 w-8 -translate-y-1/2 place-items-center rounded-full text-muted hover:bg-element hover:text-text"
             >
@@ -112,6 +114,7 @@ export function LibraryToolbar({ searchInput, ...props }: LibraryToolbarProps) {
               type="button"
               role="radio"
               aria-checked={props.layout === value}
+              data-track={`library.layout.${value}`}
               aria-label={label}
               title={label}
               onClick={() => props.onLayoutChange(value)}
@@ -127,13 +130,14 @@ export function LibraryToolbar({ searchInput, ...props }: LibraryToolbarProps) {
       </div>
 
       <div className="-mx-4 flex items-center gap-2 overflow-x-auto px-4 pb-1 md:mx-0 md:flex-wrap md:overflow-visible md:px-0 md:pb-0">
-        <button type="button" aria-pressed={props.favoritesOnly} onClick={props.onToggleFavorites} className={cn(chip, props.favoritesOnly ? chipOn : chipOff)}>
+        <button type="button" aria-pressed={props.favoritesOnly} data-track="library.favorites.toggle" onClick={props.onToggleFavorites} className={cn(chip, props.favoritesOnly ? chipOn : chipOff)}>
           <Heart aria-hidden className={cn("h-4 w-4", props.favoritesOnly && "fill-current")} />
           {t("library.favorites")}
         </button>
         <button
           type="button"
           aria-pressed={props.cookTonight}
+          data-track="library.cook_tonight.toggle"
           onClick={props.onToggleCookTonight}
           title={t("library.cookTonightRule")}
           className={cn(chip, props.cookTonight ? chipOn : chipOff)}
@@ -141,14 +145,19 @@ export function LibraryToolbar({ searchInput, ...props }: LibraryToolbarProps) {
           <Flame aria-hidden className="h-4 w-4" />
           {t("library.cookTonight")}
         </button>
-        <button type="button" onClick={props.onFridgeMatch} className={cn(chip, chipOff)}>
+        <button type="button" data-track="library.fridge_match" onClick={props.onFridgeMatch} className={cn(chip, chipOff)}>
           <Refrigerator aria-hidden className="h-4 w-4" />
           {t("library.fridgeMatch")}
         </button>
+        <Link href="/cookbook" data-track="library.cookbook.open" title={t("settings.cookbookHint")} className={cn(chip, chipOff)}>
+          <Printer aria-hidden className="h-4 w-4" />
+          {t("cookbook.title")}
+        </Link>
         <button
           type="button"
           aria-expanded={props.filtersOpen}
           aria-controls={panelId}
+          data-track="library.filter.open"
           onClick={() => props.onFiltersOpenChange(!props.filtersOpen)}
           className={cn(chip, filtersActive ? chipOn : chipOff)}
         >
@@ -179,6 +188,7 @@ export function LibraryToolbar({ searchInput, ...props }: LibraryToolbarProps) {
                 type="button"
                 role="radio"
                 aria-checked={sort === option.key}
+                data-track={`library.sort.${option.key}`}
                 onClick={() => props.onSortChange(option.key)}
                 className={cn(chip, sort === option.key ? chipOn : chipOff)}
               >
@@ -194,7 +204,7 @@ export function LibraryToolbar({ searchInput, ...props }: LibraryToolbarProps) {
               {props.availableTags.map((tag) => {
                 const on = selectedTags.includes(tag);
                 return (
-                  <button key={tag} type="button" aria-pressed={on} onClick={() => props.onToggleTag(tag)} className={cn(chip, "h-9", on ? chipOn : chipOff)}>
+                  <button key={tag} type="button" aria-pressed={on} data-track="library.tag.toggle" onClick={() => props.onToggleTag(tag)} className={cn(chip, "h-9", on ? chipOn : chipOff)}>
                     {translateRecipeTag(tag, t)}
                   </button>
                 );
@@ -206,7 +216,7 @@ export function LibraryToolbar({ searchInput, ...props }: LibraryToolbarProps) {
 
       <div role="group" aria-label={t("library.collections")} className="-mx-4 flex items-center gap-2 overflow-x-auto px-4 pb-1 md:mx-0 md:flex-wrap md:overflow-visible md:px-0 md:pb-0">
         <span className="me-1 shrink-0 text-sm font-bold text-muted">{t("library.collections")}</span>
-        <button type="button" aria-pressed={selectedCollectionId == null} onClick={() => props.onSelectCollection(null)} className={cn(chip, "h-9", selectedCollectionId == null ? chipOn : chipOff)}>
+        <button type="button" aria-pressed={selectedCollectionId == null} data-track="library.collection.all" onClick={() => props.onSelectCollection(null)} className={cn(chip, "h-9", selectedCollectionId == null ? chipOn : chipOff)}>
           {t("library.allCollections")}
         </button>
         {props.collections.map((collection) => {
@@ -216,6 +226,7 @@ export function LibraryToolbar({ searchInput, ...props }: LibraryToolbarProps) {
               key={collection.id}
               type="button"
               aria-pressed={on}
+              data-track="library.collection.select"
               onClick={() => props.onSelectCollection(on ? null : collection.id)}
               className={cn(chip, "h-9 max-w-56", on ? chipOn : chipOff)}
             >
@@ -229,6 +240,7 @@ export function LibraryToolbar({ searchInput, ...props }: LibraryToolbarProps) {
               <button
                 type="button"
                 aria-label={t("library.manageCollection", { name: selectedCollection.name })}
+                data-track="library.collection.manage"
                 className="grid h-9 w-9 shrink-0 place-items-center rounded-full border border-border bg-surface text-muted transition-colors hover:bg-element hover:text-text data-[state=open]:bg-element"
               >
                 <MoreHorizontal aria-hidden className="h-4 w-4" />
@@ -236,11 +248,17 @@ export function LibraryToolbar({ searchInput, ...props }: LibraryToolbarProps) {
             </Menu.Trigger>
             <Menu.Portal>
               <Menu.Content align="start" sideOffset={6} collisionPadding={12} className="z-50 min-w-52 animate-pop-in rounded-2xl border border-frosted-border bg-surface p-1.5 shadow-lift">
-                <Menu.Item className={menuItem} onSelect={() => props.onRenameCollection(selectedCollection.id)}>
+                <Menu.Item className={menuItem} asChild>
+                  <Link href={`/cookbook?collection=${encodeURIComponent(selectedCollection.id)}`} data-track="library.collection.cookbook">
+                    <Printer aria-hidden className="h-[18px] w-[18px] text-muted" />
+                    {t("library.makeCookbook")}
+                  </Link>
+                </Menu.Item>
+                <Menu.Item className={menuItem} data-track="library.collection.rename" onSelect={() => props.onRenameCollection(selectedCollection.id)}>
                   <Pencil aria-hidden className="h-[18px] w-[18px] text-muted" />
                   {t("library.renameCollection")}
                 </Menu.Item>
-                <Menu.Item className={cn(menuItem, "text-danger")} onSelect={() => props.onDeleteCollection(selectedCollection.id)}>
+                <Menu.Item className={cn(menuItem, "text-danger")} data-track="library.collection.delete" onSelect={() => props.onDeleteCollection(selectedCollection.id)}>
                   <Trash2 aria-hidden className="h-[18px] w-[18px]" />
                   {t("library.deleteCollection")}
                 </Menu.Item>
@@ -248,7 +266,7 @@ export function LibraryToolbar({ searchInput, ...props }: LibraryToolbarProps) {
             </Menu.Portal>
           </Menu.Root>
         ) : null}
-        <button type="button" onClick={props.onCreateCollection} className={cn(chip, "h-9 border-dashed", chipOff)}>
+        <button type="button" data-track="library.collection.create" onClick={props.onCreateCollection} className={cn(chip, "h-9 border-dashed", chipOff)}>
           <Plus aria-hidden className="h-4 w-4" />
           {t("library.newCollection")}
         </button>

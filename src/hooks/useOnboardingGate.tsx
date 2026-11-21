@@ -5,6 +5,7 @@ import { Platform } from 'react-native';
 import { useAuth } from '@/hooks/useAuth';
 import { useOnboarding } from '@/hooks/useOnboarding';
 import { isPublicRecipePath } from '@/lib/authReturnPath';
+import { backfillAccountOnboarded } from '@shared/lib/supabase/onboarding';
 
 /**
  * The app requires an account. Incomplete installs stay on `/onboarding` or
@@ -19,6 +20,11 @@ export function OnboardingGate() {
   const { user, loading: authLoading } = useAuth();
   const pathname = usePathname();
   const segments = useSegments();
+
+  // Finished here and signed in: keep it on the account too, so the web app doesn't ask again (PIN-140).
+  useEffect(() => {
+    if (ready && completed && user) backfillAccountOnboarded(user);
+  }, [ready, completed, user]);
 
   useEffect(() => {
     if (!ready || authLoading) return;

@@ -14,7 +14,7 @@ export function MobileTopBar() {
   const { t } = useTranslation();
   return (
     <header className="sticky top-0 z-30 flex h-14 items-center justify-between border-b border-frosted-border bg-tab-bar/80 px-4 pt-[env(safe-area-inset-top)] backdrop-blur-xl md:hidden">
-      <Link href="/" className="rounded-xl" aria-label={`Pinch — ${t("tabs.library")}`}>
+      <Link href="/" data-track="nav.top_bar.logo" className="rounded-xl" aria-label={`Pinch — ${t("tabs.library")}`}>
         <PinchLogo />
       </Link>
       <AccountMenu variant="compact" />
@@ -42,6 +42,7 @@ export function BottomNav() {
               <li key={item.id} className="flex justify-center">
                 <Link
                   href={item.href}
+                  data-track={`nav.tab.${item.id}`}
                   aria-current={pathname === item.href ? "page" : undefined}
                   className="-mt-5 flex flex-col items-center gap-1"
                 >
@@ -62,6 +63,7 @@ export function BottomNav() {
             <li key={item.id}>
               <Link
                 href={item.href}
+                data-track={`nav.tab.${item.id}`}
                 aria-current={pathname === item.href ? "page" : undefined}
                 className={cn(
                   "flex h-full flex-col items-center justify-center gap-1 text-[11px] font-semibold",

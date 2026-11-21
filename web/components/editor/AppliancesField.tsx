@@ -50,6 +50,7 @@ export function AppliancesField({ appliances, steps, onAdd, onRemove, onSetRequi
                   <span className="min-w-0 flex-1 truncate text-[15px] font-semibold text-text">{name}</span>
                   <IconButton
                     label={t("a11y.removeItem", { item: name })}
+                    trackId="recipe_editor.appliance.remove"
                     icon={<Trash2 className="h-[18px] w-[18px]" />}
                     onClick={() => onRemove(row.key)}
                     className="h-9 w-9 hover:bg-danger-soft hover:text-danger"
@@ -57,6 +58,7 @@ export function AppliancesField({ appliances, steps, onAdd, onRemove, onSetRequi
                 </div>
                 <ChoiceGroup
                   label={name}
+                  trackId="recipe_editor.appliance.required"
                   value={row.required ? "required" : "optional"}
                   onChange={(value) => onSetRequired(row.key, value === "required")}
                   options={[
@@ -77,6 +79,7 @@ export function AppliancesField({ appliances, steps, onAdd, onRemove, onSetRequi
                         <button
                           key={step.id}
                           type="button"
+                          data-track="recipe_editor.appliance.step_toggle"
                           aria-pressed={linked}
                           aria-label={t("recipeEditor.fields.step", { n: index + 1 })}
                           onClick={() => onToggleStep(row.key, step.id)}
@@ -96,7 +99,7 @@ export function AppliancesField({ appliances, steps, onAdd, onRemove, onSetRequi
           })}
         </ul>
       )}
-      <Button variant="secondary" size="sm" className="mt-3" disabled={!canAdd} onClick={() => setPicking(true)}>
+      <Button variant="secondary" size="sm" className="mt-3" trackId="recipe_editor.appliance.add" disabled={!canAdd} onClick={() => setPicking(true)}>
         <Plus aria-hidden className="h-4 w-4" />
         {t("web.editor.addAppliance")}
       </Button>
@@ -166,6 +169,7 @@ function AppliancePicker({
             <li key={option.key}>
               <button
                 type="button"
+                data-track="recipe_editor.appliance.pick"
                 onClick={() => onPick(option.key)}
                 className="flex min-h-11 w-full items-center rounded-xl px-3 text-start text-[15px] text-text transition-colors hover:bg-element focus-visible:bg-element focus-visible:outline-2 focus-visible:outline-primary"
               >

@@ -3,7 +3,9 @@
 import { DirectionProvider } from "@radix-ui/react-direction";
 import type { ReactNode } from "react";
 
+import { ActivityTracker } from "@/components/activity/ActivityTracker";
 import { AuthProvider } from "@/components/AuthProvider";
+import { InAppMessageHost } from "@/components/inAppMessages/InAppMessageHost";
 import { LanguageProvider, useLanguage } from "@/components/LanguageProvider";
 import { ThemeProvider } from "@/components/ThemeProvider";
 import { ToastHost } from "@/components/ui/Toast";
@@ -16,7 +18,10 @@ function Direction({ children }: { children: ReactNode }) {
   return <DirectionProvider dir={textDirection(language)}>{children}</DirectionProvider>;
 }
 
-/** What every page shares: the session, the language that follows it, the theme, and the toast host. */
+/**
+ * What every page shares: the session, the language that follows it, the theme, the toast host, the activity log
+ * (ADR 020) and in-app messages (ADR 023).
+ */
 export function Providers({ children }: { children: ReactNode }) {
   return (
     <AuthProvider>
@@ -26,6 +31,8 @@ export function Providers({ children }: { children: ReactNode }) {
             <TooltipProvider>
               {children}
               <ToastHost />
+              <ActivityTracker />
+              <InAppMessageHost />
             </TooltipProvider>
           </Direction>
         </ThemeProvider>

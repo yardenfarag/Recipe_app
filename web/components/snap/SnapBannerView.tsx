@@ -36,14 +36,14 @@ export function SnapBannerView({ banner, onDismiss }: { banner: NonNullable<Snap
         <p className={banner.title ? "text-text" : cn("font-medium", tone.text)}>{banner.message}</p>
         {banner.tone === "credits" ? (
           <>
-            <Button size="sm" className="mt-3" onClick={() => setBuying(true)}>
+            <Button size="sm" className="mt-3" trackId="snap.credits.buy" onClick={() => setBuying(true)}>
               {t("credits.buyAction")}
             </Button>
             <OutOfCreditsDialog open={buying} onOpenChange={setBuying} needed={1} />
           </>
         ) : null}
       </div>
-      <IconButton label={t("common.dismiss")} icon={<X className="h-4 w-4" />} onClick={onDismiss} className="-me-2 -mt-1.5 h-9 w-9" />
+      <IconButton label={t("common.dismiss")} trackId="snap.banner.dismiss" icon={<X className="h-4 w-4" />} onClick={onDismiss} className="-me-2 -mt-1.5 h-9 w-9" />
     </div>
   );
 }

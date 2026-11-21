@@ -428,6 +428,7 @@ export function RecipeEditor({ initial }: { initial: RecipeEditorState }) {
                 <div className="flex items-center gap-1">
                   <IconButton
                     label={t("recipe.decreaseServings")}
+                    trackId="recipe_editor.servings.decrease"
                     icon={<Minus className="h-4 w-4" />}
                     onClick={() => setServingsBy(-1)}
                     disabled={Number.isFinite(servingsValue) && servingsValue <= RECIPE_LIMITS.servingsMin}
@@ -450,6 +451,7 @@ export function RecipeEditor({ initial }: { initial: RecipeEditorState }) {
                   />
                   <IconButton
                     label={t("recipe.increaseServings")}
+                    trackId="recipe_editor.servings.increase"
                     icon={<Plus className="h-4 w-4" />}
                     onClick={() => setServingsBy(1)}
                     disabled={Number.isFinite(servingsValue) && servingsValue >= RECIPE_LIMITS.servingsMax}
@@ -467,6 +469,7 @@ export function RecipeEditor({ initial }: { initial: RecipeEditorState }) {
                 ) : state.sourceUrl ? (
                   <a
                     href={state.sourceUrl}
+                    data-track="recipe_editor.source_link"
                     target="_blank"
                     rel="noopener noreferrer"
                     dir="ltr"
@@ -520,7 +523,7 @@ export function RecipeEditor({ initial }: { initial: RecipeEditorState }) {
               )}
             />
             <FieldMessage id={`${FIELD_IDS.ingredients}-error`} message={format(errors.fields.ingredients)} />
-            <Button id={FIELD_IDS.ingredients} variant="secondary" size="sm" className="mt-3" onClick={addIngredientAtEnd}>
+            <Button id={FIELD_IDS.ingredients} variant="secondary" size="sm" className="mt-3" trackId="recipe_editor.ingredient.add" onClick={addIngredientAtEnd}>
               <Plus aria-hidden className="h-4 w-4" />
               {t("web.editor.addIngredient")}
             </Button>
@@ -559,7 +562,7 @@ export function RecipeEditor({ initial }: { initial: RecipeEditorState }) {
               )}
             />
             <FieldMessage id={`${FIELD_IDS.steps}-error`} message={format(errors.fields.steps)} />
-            <Button id={FIELD_IDS.steps} variant="secondary" size="sm" className="mt-3" onClick={addStepAtEnd}>
+            <Button id={FIELD_IDS.steps} variant="secondary" size="sm" className="mt-3" trackId="recipe_editor.step.add" onClick={addStepAtEnd}>
               <Plus aria-hidden className="h-4 w-4" />
               {t("web.editor.addStep")}
             </Button>
@@ -624,6 +627,7 @@ export function RecipeEditor({ initial }: { initial: RecipeEditorState }) {
                     <ToggleChip
                       key={option.value}
                       pressed={state.effort === option.value}
+                      trackId={`recipe_editor.effort.${option.value}`}
                       onToggle={() => change((s) => editor.setEffort(s, s.effort === option.value ? null : option.value))}
                     >
                       {option.label}
@@ -641,6 +645,7 @@ export function RecipeEditor({ initial }: { initial: RecipeEditorState }) {
                     <ToggleChip
                       key={option.value}
                       pressed={state.cost === option.value}
+                      trackId={`recipe_editor.cost.${option.value.length}`}
                       onToggle={() => change((s) => editor.setCost(s, s.cost === option.value ? null : option.value))}
                     >
                       {option.label}
@@ -706,10 +711,10 @@ export function RecipeEditor({ initial }: { initial: RecipeEditorState }) {
                 · {t("web.editor.saveShortcut", { shortcut })}
               </span>
             </p>
-            <Button variant="ghost" onClick={cancel} disabled={busy}>
+            <Button variant="ghost" trackId="recipe_editor.cancel" onClick={cancel} disabled={busy}>
               {t("recipeEditor.cancel")}
             </Button>
-            <Button type="submit" busy={saving} disabled={leaving} aria-keyshortcuts="Control+S Meta+S">
+            <Button type="submit" trackId="recipe_editor.save" busy={saving} disabled={leaving} aria-keyshortcuts="Control+S Meta+S">
               {saving ? null : <Save aria-hidden className="h-4 w-4" />}
               {saving ? t("recipeEditor.saving") : t("recipeEditor.save")}
             </Button>
@@ -724,10 +729,11 @@ export function RecipeEditor({ initial }: { initial: RecipeEditorState }) {
           footer={
             <>
               <DialogClose asChild>
-                <Button variant="ghost">{t("recipeEditor.discard.keepEditing")}</Button>
+                <Button variant="ghost" trackId="recipe_editor.discard_dialog.cancel">{t("recipeEditor.discard.keepEditing")}</Button>
               </DialogClose>
               <Button
                 variant="danger"
+                trackId="recipe_editor.discard_dialog.confirm"
                 onClick={() => {
                   const proceed = pendingLeave;
                   setPendingLeave(null);

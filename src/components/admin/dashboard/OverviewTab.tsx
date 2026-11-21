@@ -14,6 +14,7 @@ import {
   summarizeTraffic,
   type Dashboard,
 } from '@shared/lib/adminDashboard';
+import { countryCounts } from '@shared/lib/adminDashboardView';
 
 import { DailyBars, Funnel, RankBars, type DayMetric } from './charts';
 import { Card, PersonCell, StatTile, Thumb, platformName } from './ui';
@@ -272,13 +273,4 @@ export function OverviewTab({
       </div>
     </>
   );
-}
-
-function countryCounts(codes: (string | null)[]) {
-  const counts = new Map<string, number>();
-  for (const code of codes) {
-    const name = code ? countryName(code) : 'Unknown';
-    counts.set(name, (counts.get(name) ?? 0) + 1);
-  }
-  return [...counts.entries()].map(([label, value]) => ({ label, value })).sort((a, b) => b.value - a.value);
 }

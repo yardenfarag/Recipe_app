@@ -66,6 +66,7 @@ export function IngredientsPanel({ display, choices, avoid }: IngredientsPanelPr
           <Button
             size="sm"
             variant="secondary"
+            trackId="recipe.add_to_shopping_list"
             aria-haspopup="dialog"
             className="ms-auto"
             onClick={() => actions.open({ kind: "list", servings: choices.servings })}
@@ -133,14 +134,14 @@ function ServingsStepper({
         {calories != null ? <p className="mt-0.5 text-xs text-muted">{t("recipe.calTotal", { count: calories.toLocaleString() })}</p> : null}
       </div>
       <div role="group" aria-labelledby={labelId} className="flex items-center gap-3">
-        <button type="button" aria-label={t("recipe.decreaseServings")} aria-disabled={atMin} onClick={() => !atMin && change(servings - 1)} className={stepperButton}>
+        <button type="button" data-track="recipe.servings.decrease" aria-label={t("recipe.decreaseServings")} aria-disabled={atMin} onClick={() => !atMin && change(servings - 1)} className={stepperButton}>
           <Minus aria-hidden className="h-[18px] w-[18px]" />
         </button>
         <output aria-live="polite" aria-atomic className="min-w-8 text-center text-xl font-bold tabular-nums text-text">
           <span aria-hidden>{servings}</span>
           <span className="sr-only">{t("cookbook.servings", { count: servings })}</span>
         </output>
-        <button type="button" aria-label={t("recipe.increaseServings")} aria-disabled={atMax} onClick={() => !atMax && change(servings + 1)} className={stepperButton}>
+        <button type="button" data-track="recipe.servings.increase" aria-label={t("recipe.increaseServings")} aria-disabled={atMax} onClick={() => !atMax && change(servings + 1)} className={stepperButton}>
           <Plus aria-hidden className="h-[18px] w-[18px]" />
         </button>
       </div>
@@ -187,6 +188,7 @@ function MeasurementSwitch({ system, onChange }: { system: MeasurementSystem; on
               }}
               type="button"
               role="radio"
+              data-track={`recipe.measurement.${value}`}
               aria-checked={on}
               tabIndex={on ? 0 : -1}
               title={t(description)}
@@ -252,6 +254,7 @@ function IngredientList({
             {onSwap ? (
               <button
                 type="button"
+                data-track="recipe.ingredient.swap"
                 dir={i18n.dir()}
                 aria-haspopup="dialog"
                 aria-label={t("a11y.swapIngredient", { name: row.name })}

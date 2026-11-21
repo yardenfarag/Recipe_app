@@ -44,22 +44,22 @@ export function RecipeActionsMenu({
           aria-label={t("a11y.recipeActionsFor", { name: title })}
           className="z-50 min-w-56 animate-pop-in rounded-2xl border border-frosted-border bg-surface p-1.5 shadow-lift"
         >
-          <Menu.Item className={itemClass} onSelect={() => actions.onAddToCollection(recipe)}>
+          <Menu.Item className={itemClass} data-track="recipe_actions.add_to_collection" onSelect={() => actions.onAddToCollection(recipe)}>
             <FolderPlus aria-hidden className="h-[18px] w-[18px] text-muted" />
             {t("library.addToCollection")}
           </Menu.Item>
           <Menu.Item asChild className={itemClass}>
-            <Link href={`/recipe/edit?id=${recipe.id}`}>
+            <Link href={`/recipe/edit?id=${recipe.id}`} data-track="recipe_actions.edit">
               <PenLine aria-hidden className="h-[18px] w-[18px] text-muted" />
               {t("recipeEditor.titleEdit")}
             </Link>
           </Menu.Item>
-          <Menu.Item className={itemClass} onSelect={() => actions.onRename(recipe)}>
+          <Menu.Item className={itemClass} data-track="recipe_actions.rename" onSelect={() => actions.onRename(recipe)}>
             <Pencil aria-hidden className="h-[18px] w-[18px] text-muted" />
             {t("library.rename")}
           </Menu.Item>
           <Menu.Separator className="my-1.5 h-px bg-border" />
-          <Menu.Item className={`${itemClass} text-danger`} onSelect={() => actions.onDelete(recipe)}>
+          <Menu.Item className={`${itemClass} text-danger`} data-track="recipe_actions.delete" onSelect={() => actions.onDelete(recipe)}>
             <Trash2 aria-hidden className="h-[18px] w-[18px]" />
             {t("common.delete")}
           </Menu.Item>

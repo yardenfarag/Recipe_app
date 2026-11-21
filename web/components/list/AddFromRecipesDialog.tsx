@@ -113,9 +113,9 @@ function Body({ onAdd, onDone }: { onAdd: (items: ShoppingListIncomingItem[]) =>
     step === "recipes" ? (
       <>
         <DialogClose asChild>
-          <Button variant="ghost">{t("common.cancel")}</Button>
+          <Button variant="ghost" trackId="shopping_list_from_recipes.cancel">{t("common.cancel")}</Button>
         </DialogClose>
-        <Button disabled={selectedIds.length === 0 || staples == null} onClick={goToIngredients}>
+        <Button trackId="shopping_list_from_recipes.choose_ingredients" disabled={selectedIds.length === 0 || staples == null} onClick={goToIngredients}>
           {t("web.list.chooseIngredients")}
           {selectedIds.length > 0 ? (
             <span className="grid h-5 min-w-5 place-items-center rounded-full bg-on-primary/20 px-1.5 text-xs tabular-nums">{selectedIds.length}</span>
@@ -124,10 +124,10 @@ function Body({ onAdd, onDone }: { onAdd: (items: ShoppingListIncomingItem[]) =>
       </>
     ) : (
       <>
-        <Button variant="ghost" disabled={busy} onClick={() => setStep("recipes")}>
+        <Button variant="ghost" trackId="shopping_list_from_recipes.back" disabled={busy} onClick={() => setStep("recipes")}>
           {t("common.back")}
         </Button>
-        <Button busy={busy} disabled={pickedCount === 0} onClick={() => void add()}>
+        <Button trackId="shopping_list_from_recipes.confirm" busy={busy} disabled={pickedCount === 0} onClick={() => void add()}>
           {t(pickedCount === 1 ? "addToList.addOne" : "addToList.addOther", { count: pickedCount })}
         </Button>
       </>
@@ -144,7 +144,7 @@ function Body({ onAdd, onDone }: { onAdd: (items: ShoppingListIncomingItem[]) =>
         loading ? (
           <LoadingState className="min-h-64" label={t("a11y.loadingRecipes")} />
         ) : error && recipes.length === 0 ? (
-          <ErrorState className="py-8" title={t("library.loadFailedTitle")} onRetry={() => void refresh()} />
+          <ErrorState className="py-8" title={t("library.loadFailedTitle")} trackId="select_recipes.load_error" onRetry={() => void refresh()} />
         ) : (
           <RecipeChooser recipes={recipes} collections={collections} selectedIds={selectedIds} onChange={setSelectedIds} />
         )
@@ -226,6 +226,7 @@ function RecipeChooser({
         {search ? (
           <button
             type="button"
+            data-track="select_recipes.search.clear"
             onClick={() => setSearch("")}
             aria-label={t("a11y.clearSearch")}
             className="absolute end-1.5 top-1/2 grid h-8 w-8 -translate-y-1/2 place-items-center rounded-full text-muted hover:bg-element hover:text-text"
@@ -243,6 +244,7 @@ function RecipeChooser({
               <button
                 key={collection.id ?? "all"}
                 type="button"
+                data-track={collection.id ? "select_recipes.collection.select" : "select_recipes.collection.all"}
                 aria-pressed={on}
                 aria-label={collection.id ? undefined : t("a11y.allCollections")}
                 onClick={() => setCollectionId(on && collection.id ? null : collection.id)}
@@ -268,6 +270,7 @@ function RecipeChooser({
           {selectedIds.length > 0 ? (
             <button
               type="button"
+              data-track="select_recipes.selection.clear"
               onClick={() => onChange([])}
               aria-label={t("a11y.clearSelectedRecipes")}
               className="rounded-full px-2 py-1 font-semibold text-muted hover:bg-element hover:text-text"
@@ -278,6 +281,7 @@ function RecipeChooser({
           {!allShownSelected && shownIds.length > 0 ? (
             <button
               type="button"
+              data-track="select_recipes.select_all_visible"
               onClick={() => onChange([...selectedIds, ...shownIds.filter((id) => !selectedIds.includes(id))])}
               className="rounded-full px-2 py-1 font-semibold text-primary hover:bg-primary-soft"
             >
@@ -300,6 +304,7 @@ function RecipeChooser({
                 <button
                   type="button"
                   role="checkbox"
+                  data-track="select_recipes.recipe.toggle"
                   aria-checked={on}
                   aria-label={`${recipeTitle(recipe)}, ${countText}`}
                   onClick={() => onChange(toggleOrderedId(selectedIds, recipe.id))}

@@ -1,7 +1,7 @@
 "use client";
 
 import * as Menu from "@radix-ui/react-dropdown-menu";
-import { Check, ChevronRight, ChevronsUpDown, Coins, Languages, LogOut, Monitor, Moon, Palette, Settings, Sun } from "lucide-react";
+import { Check, ChevronRight, ChevronsUpDown, Coins, Languages, LogOut, Monitor, Moon, Palette, Settings, ShieldCheck, Sun } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import type { ReactNode } from "react";
@@ -14,6 +14,7 @@ import { useAuth } from "@/components/AuthProvider";
 import { CheckoutReturnDialog } from "@/components/credits/CheckoutReturnDialog";
 import { useLanguage } from "@/components/LanguageProvider";
 import { useTheme } from "@/components/ThemeProvider";
+import { useIsAdmin } from "@/lib/admin/useIsAdmin";
 import { signOut } from "@/lib/auth";
 import { cn } from "@/lib/cn";
 import { useCreditBalance } from "@/lib/credits/balance";
@@ -37,10 +38,10 @@ function Avatar({ email, size = "md" }: { email: string; size?: "sm" | "md" }) {
   );
 }
 
-function SubMenu({ icon, label, value, children }: { icon: ReactNode; label: string; value: string; children: ReactNode }) {
+function SubMenu({ icon, label, value, trackId, children }: { icon: ReactNode; label: string; value: string; trackId: string; children: ReactNode }) {
   return (
     <Menu.Sub>
-      <Menu.SubTrigger className={cn(itemClass, "data-[state=open]:bg-element")}>
+      <Menu.SubTrigger data-track={trackId} className={cn(itemClass, "data-[state=open]:bg-element")}>
         {icon}
         <span className="flex-1">{label}</span>
         <span className="truncate text-sm text-muted">{value}</span>
@@ -59,9 +60,9 @@ function SubMenu({ icon, label, value, children }: { icon: ReactNode; label: str
   );
 }
 
-function RadioItem({ value, children }: { value: string; children: ReactNode }) {
+function RadioItem({ value, trackId, children }: { value: string; trackId: string; children: ReactNode }) {
   return (
-    <Menu.RadioItem value={value} className={itemClass}>
+    <Menu.RadioItem value={value} data-track={trackId} className={itemClass}>
       <span className="grid w-4 place-items-center">
         <Menu.ItemIndicator>
           <Check aria-hidden className="h-4 w-4 text-primary" />
@@ -81,7 +82,7 @@ function CreditsItem() {
   const empty = quota != null && quota.totalCredits <= 0;
   return (
     <Menu.Item asChild className={itemClass}>
-      <Link href="/settings/credits">
+      <Link href="/settings/credits" data-track="nav.account_menu.credits">
         <Coins aria-hidden className="h-4 w-4" />
         <span className="flex-1">{t("settings.recipeCredits")}</span>
         {quota ? (
@@ -107,6 +108,8 @@ export function AccountMenu({ variant }: { variant: "full" | "compact" }) {
   const { user } = useAuth();
   const { preference, setPreference, pack, setPack } = useTheme();
   const { language, setLanguage } = useLanguage();
+  // Only admins see the way to the admin pages; the pages and their data check again (the database decides).
+  const { isAdmin } = useIsAdmin();
   const email = user?.email ?? "";
 
   const modes: { value: ThemePreference; label: string; icon: ReactNode }[] = [
@@ -129,6 +132,7 @@ export function AccountMenu({ variant }: { variant: "full" | "compact" }) {
       <Menu.Root>
         <Menu.Trigger
           aria-label={t("web.accountMenu")}
+          data-track="nav.account_menu"
           className={cn(
             "group flex items-center rounded-2xl text-start transition-colors hover:bg-element data-[state=open]:bg-element",
             variant === "full" ? "w-full gap-3 p-2" : "p-1",
@@ -168,10 +172,10 @@ export function AccountMenu({ variant }: { variant: "full" | "compact" }) {
             <CreditsItem />
             <Menu.Separator className="mx-1 my-1 h-px bg-border" />
 
-            <SubMenu icon={currentMode.icon} label={t("settings.appearance")} value={currentMode.label}>
+            <SubMenu icon={currentMode.icon} label={t("settings.appearance")} value={currentMode.label} trackId="nav.account_menu.appearance">
               <Menu.RadioGroup value={preference} onValueChange={(value) => setPreference(value as ThemePreference)}>
                 {modes.map((mode) => (
-                  <RadioItem key={mode.value} value={mode.value}>
+                  <RadioItem key={mode.value} value={mode.value} trackId={`nav.account_menu.theme.${mode.value}`}>
                     {mode.icon}
                     {mode.label}
                   </RadioItem>
@@ -179,10 +183,10 @@ export function AccountMenu({ variant }: { variant: "full" | "compact" }) {
               </Menu.RadioGroup>
             </SubMenu>
 
-            <SubMenu icon={<Palette aria-hidden className="h-4 w-4" />} label={t("web.colorTheme")} value={t(`themes.${pack}.name`)}>
+            <SubMenu icon={<Palette aria-hidden className="h-4 w-4" />} label={t("web.colorTheme")} value={t(`themes.${pack}.name`)} trackId="nav.account_menu.color_theme">
               <Menu.RadioGroup value={pack} onValueChange={(value) => setPack(value as typeof pack)}>
                 {THEME_PACK_ORDER.map((id) => (
-                  <RadioItem key={id} value={id}>
+                  <RadioItem key={id} value={id} trackId={`nav.account_menu.theme_pack.${id}`}>
                     <span aria-hidden className="flex -space-x-1 rtl:space-x-reverse">
                       {ThemePacks[id].swatches.map((color) => (
                         <span key={color} className="h-3.5 w-3.5 rounded-full ring-2 ring-surface" style={{ backgroundColor: color }} />
@@ -198,10 +202,11 @@ export function AccountMenu({ variant }: { variant: "full" | "compact" }) {
               icon={<Languages aria-hidden className="h-4 w-4" />}
               label={t("settings.language")}
               value={currentLanguage?.nativeLabel ?? language}
+              trackId="nav.account_menu.language"
             >
               <Menu.RadioGroup value={language} onValueChange={(value) => setLanguage(value as AppLanguageCode)}>
                 {APP_LANGUAGES.map((lang) => (
-                  <RadioItem key={lang.code} value={lang.code}>
+                  <RadioItem key={lang.code} value={lang.code} trackId={`nav.account_menu.language.${lang.code}`}>
                     <span lang={lang.code}>{lang.nativeLabel}</span>
                   </RadioItem>
                 ))}
@@ -210,12 +215,20 @@ export function AccountMenu({ variant }: { variant: "full" | "compact" }) {
 
             <Menu.Separator className="mx-1 my-1 h-px bg-border" />
             <Menu.Item asChild className={itemClass}>
-              <Link href="/settings">
+              <Link href="/settings" data-track="nav.account_menu.settings">
                 <Settings aria-hidden className="h-4 w-4" />
                 {t("tabs.settings")}
               </Link>
             </Menu.Item>
-            <Menu.Item className={cn(itemClass, "text-danger")} onSelect={() => void handleSignOut()}>
+            {isAdmin ? (
+              <Menu.Item asChild className={itemClass}>
+                <Link href="/admin/dashboard" data-track="nav.account_menu.admin">
+                  <ShieldCheck aria-hidden className="h-4 w-4" />
+                  {t("settings.adminTitle")}
+                </Link>
+              </Menu.Item>
+            ) : null}
+            <Menu.Item className={cn(itemClass, "text-danger")} data-track="nav.account_menu.sign_out" onSelect={() => void handleSignOut()}>
               <LogOut aria-hidden className="h-4 w-4 rtl:rotate-180" />
               {t("settings.signOut")}
             </Menu.Item>

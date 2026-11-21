@@ -60,6 +60,7 @@ function NoticeButton({
   busy,
   strong,
   haspopup,
+  trackId,
 }: {
   icon: ReactNode;
   children: ReactNode;
@@ -68,9 +69,11 @@ function NoticeButton({
   /** The main action (an allergy fix); otherwise a quieter one. */
   strong?: boolean;
   haspopup?: boolean;
+  /** Activity-log id (ADR 020). */
+  trackId?: string;
 }) {
   return (
-    <Button size="sm" variant={strong ? "primary" : "outline"} busy={busy} onClick={onClick} aria-haspopup={haspopup ? "dialog" : undefined}>
+    <Button size="sm" variant={strong ? "primary" : "outline"} trackId={trackId} busy={busy} onClick={onClick} aria-haspopup={haspopup ? "dialog" : undefined}>
       {busy ? null : <span aria-hidden className="[&>svg]:h-4 [&>svg]:w-4">{icon}</span>}
       {children}
     </Button>
@@ -108,7 +111,7 @@ export function RecipeNotices({ display, avoid }: { display: RecipeDisplay; avoi
   const adaptedSummary = recipe.kitchen_adapted_summary?.trim();
   const fixButton =
     actions?.canFix && (allergies.length > 0 || dislikes.length > 0) ? (
-      <NoticeButton icon={<WandSparkles />} strong={allergies.length > 0} haspopup onClick={() => actions.open({ kind: "fix" })}>
+      <NoticeButton icon={<WandSparkles />} strong={allergies.length > 0} haspopup trackId="recipe.avoid.make_without" onClick={() => actions.open({ kind: "fix" })}>
         {t("avoid.makeWithout")}
       </NoticeButton>
     ) : null;
@@ -151,7 +154,7 @@ export function RecipeNotices({ display, avoid }: { display: RecipeDisplay; avoi
         title={t("recipe.partialExtraction")}
         action={
           actions?.canRepair ? (
-            <NoticeButton icon={<Wrench />} haspopup busy={actions.busy.repair} onClick={() => actions.open({ kind: "repair" })}>
+            <NoticeButton icon={<Wrench />} haspopup trackId="recipe.repair" busy={actions.busy.repair} onClick={() => actions.open({ kind: "repair" })}>
               {t("recipe.repairAction")}
             </NoticeButton>
           ) : null
@@ -180,7 +183,7 @@ export function RecipeNotices({ display, avoid }: { display: RecipeDisplay; avoi
         title={t("recipe.showingLanguage", { language: t(`languages.${display.contentLanguage}`) })}
         action={
           actions ? (
-            <NoticeButton icon={<Undo2 className="rtl:-scale-x-100" />} onClick={actions.showOriginalLanguage}>
+            <NoticeButton icon={<Undo2 className="rtl:-scale-x-100" />} trackId="recipe.show_original_language" onClick={actions.showOriginalLanguage}>
               {t("recipe.showOriginal")}
             </NoticeButton>
           ) : null
@@ -198,7 +201,7 @@ export function RecipeNotices({ display, avoid }: { display: RecipeDisplay; avoi
         icon={<Languages />}
         title={t("web.recipeActions.inOtherLanguage", { language: t(`languages.${source}`, { defaultValue: source }) })}
         action={
-          <NoticeButton icon={<Languages />} busy={actions.busy.translate} onClick={actions.translateToAppLanguage}>
+          <NoticeButton icon={<Languages />} trackId="recipe.translate_to_app_language" busy={actions.busy.translate} onClick={actions.translateToAppLanguage}>
             {t("web.recipeActions.translateTo", { language: target })}
           </NoticeButton>
         }
@@ -227,7 +230,7 @@ function adaptationNotice(actions: RecipeActions, t: (key: string, values?: Reco
       title={title}
       action={
         actions.canRevert ? (
-          <NoticeButton icon={<Undo2 className="rtl:-scale-x-100" />} busy={actions.busy.revert} onClick={actions.revert}>
+          <NoticeButton icon={<Undo2 className="rtl:-scale-x-100" />} trackId="recipe.remix.revert" busy={actions.busy.revert} onClick={actions.revert}>
             {t("recipe.revertOriginal")}
           </NoticeButton>
         ) : null

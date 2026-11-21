@@ -70,11 +70,11 @@ function Body({
       footer={
         <>
           <DialogClose asChild>
-            <Button variant="ghost" disabled={saving}>
+            <Button variant="ghost" trackId="tags.edit.cancel" disabled={saving}>
               {t("common.cancel")}
             </Button>
           </DialogClose>
-          <Button busy={saving} onClick={() => void save()}>
+          <Button trackId="tags.edit.save" busy={saving} onClick={() => void save()}>
             {t("common.save")}
           </Button>
         </>
@@ -91,6 +91,7 @@ function Body({
                 {label}
                 <button
                   type="button"
+                  data-track="tags.edit.remove"
                   aria-label={t("tags.remove", { tag: label })}
                   onClick={() => setDraft((previous) => previous.filter((item) => item !== tag))}
                   className="grid h-7 w-7 place-items-center rounded-full text-muted transition-colors hover:bg-selected hover:text-text"
@@ -116,7 +117,7 @@ function Body({
           onChange={(event) => setInput(event.target.value)}
           className="h-11 min-w-0 flex-1 rounded-2xl border border-border bg-surface px-4 text-[15px] text-text placeholder:text-muted/80 hover:border-muted/60 focus:border-primary focus:ring-4 focus:ring-primary/15"
         />
-        <Button type="submit" variant="secondary" disabled={!input.trim()} aria-label={t("tags.add")}>
+        <Button type="submit" variant="secondary" trackId="tags.edit.add" disabled={!input.trim()} aria-label={t("tags.add")}>
           <Plus aria-hidden className="h-4 w-4" />
           {t("avoid.add")}
         </Button>

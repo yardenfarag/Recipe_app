@@ -1,8 +1,8 @@
 import { describe, expect, it, vi } from 'vitest';
 
-import type { InAppMessage, MessageEvent, MessageReceipt } from '@shared/lib/inAppMessages';
+import type { InAppMessage, MessageEvent, MessageReceipt } from './inAppMessages';
 
-import { createMessagesController, mergeReceipt, type FetchParams } from './controller';
+import { createMessagesController, mergeReceipt, type FetchParams } from './inAppMessagesController';
 
 const PARAMS: FetchParams = { platform: 'ios', appVersion: '1.0.9', language: 'en' };
 const T0 = Date.parse('2026-11-15T12:00:00Z');
@@ -36,7 +36,7 @@ function receipt(messageId: string, extra: Partial<MessageReceipt> = {}): Messag
 
 function setup(
   fetched: { messages: InAppMessage[]; receipts?: Record<string, MessageReceipt> } = { messages: [] },
-  options: { chainGapMs?: number; minRefreshIntervalMs?: number } = {},
+  options: { chainGapMs?: number; minRefreshIntervalMs?: number; canShowBanner?: (route: string | null) => boolean } = {},
 ) {
   let clock = T0;
   const state = { fetched };
@@ -55,6 +55,7 @@ function setup(
     launchedAt: T0 - 1000,
     chainGapMs: options.chainGapMs ?? 0,
     minRefreshIntervalMs: options.minRefreshIntervalMs,
+    canShowBanner: options.canShowBanner,
     setTimer: (fn, ms) => {
       const timer = { fn, ms, cancelled: false };
       timers.push(timer);
@@ -415,6 +416,16 @@ describe('seen is recorded only when the message is really on screen', () => {
     t.controller.setRoute('/recipe/1');
     await t.controller.refresh(PARAMS, { force: true });
     expect(t.active()).toBe('s');
+  });
+
+  it('shows a banner on any page an app allows (the web app draws its slot on every signed-in page)', async () => {
+    const t = setup({ messages: [message('b', { presentation: 'banner' })] }, { canShowBanner: (route) => route !== null });
+    t.controller.setUser('u1');
+    t.controller.setRoute('/recipe/[id]');
+    await t.controller.refresh(PARAMS, { force: true });
+    expect(t.active()).toBe('b');
+    t.controller.reportShown('b');
+    expect(t.recorded.map((r) => r.event)).toEqual(['seen']);
   });
 });
 

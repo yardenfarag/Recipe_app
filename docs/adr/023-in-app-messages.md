@@ -53,6 +53,16 @@ Two corrections to the first plan, both from the research: `sheet` uses `SheetMo
 
 **Web.** `window.open` is blocked after an `await`, so links and the store button start straight from the tap handler. The store button opens a new tab (`Linking.openURL` on web would navigate the app's own tab away). `BackHandler` is guarded on web. Escape closes dismissible modals and a banner with focus; a required message ignores Escape and keeps focus inside. Links accept `https` only, and routes accept a single leading slash only.
 
+### The new web app (PIN-143, 2026-11-21)
+
+The Next.js app in `web/` shows messages with the same rules: the controller, the view model and the tab-as-launch storage moved to `shared/lib/` (`inAppMessagesController.ts`, `inAppMessageView.ts`, `inAppMessageLaunch.ts`), and the mobile app imports them from there.
+
+- **Targeting.** It asks for platform `web`, so a message aimed at `web` reaches the Expo web app and the new one alike. Its app version is the mobile version plus `-next` (`1.0.10-next`, ADR 020). Version bounds ignore the suffix, so it compares as the Expo web build from the same commit. Nothing new on the server.
+- **Ways of showing**, all from the UI kit's Radix dialogs: `alert` is a centred card, `sheet` the kit's sheet (from the bottom on phones, from the end side on wider screens), `fullscreen` a page over everything, `banner` a strip at the top or bottom of the content column in the app shell. A banner may show on any signed-in page, not only the main tabs (the controller's `canShowBanner`). Icons are the admin's Ionicons name mapped to its lucide match, else the tone's icon.
+- **Links are real links.** A web address opens in a new tab from an `<a target="_blank">`, an app route is a Next link (mobile `(group)` segments dropped), and the store button opens the App Store, or Google Play on Android, in a new tab from the click.
+- **Seen** is recorded when the dialog or the banner has mounted, once per showing (the controller ignores repeats). Escape, the backdrop and the close control dismiss a dismissible message; a required one has none of them and keeps focus inside. The admin-only hide control ("hide until this tab is closed") shows only for `profiles.is_admin`.
+- **Preview.** `InAppMessagePreview` draws a message from the same parts, inline and `inert`, for the admin composer.
+
 ## Considered options
 
 - **Push notifications.** Out of scope (ticket line 13).

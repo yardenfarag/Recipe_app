@@ -25,6 +25,7 @@ import { RecipeReadingWidth } from '@/constants/theme';
 import { useBreakpoint } from '@/hooks/useBreakpoint';
 import { useCollections } from '@/hooks/useCollections';
 import { useKitchenProfile } from '@/hooks/useKitchenProfile';
+import { useOwnedAppliances } from '@/hooks/useOwnedAppliances';
 import { useLanguagePreference } from '@/hooks/useLanguagePreference';
 import { useMeasurementPreference } from '@/hooks/useMeasurementPreference';
 import { useRtl } from '@/hooks/useRtl';
@@ -58,7 +59,13 @@ import { resolveRecipeSourceLanguage } from '@shared/lib/recipeSourceLanguage';
 import { normalizeRecipeTags, translateRecipeTag } from '@shared/lib/recipeTags';
 import { RecipeVariantKey } from '@shared/lib/recipeVariants';
 import { recipeSourceShareUrl, shareRecipe } from '@/lib/shareRecipe';
-import { recipeAppliancesOf } from '@shared/lib/appliances';
+import { isApplianceKey, recipeAppliancesOf } from '@shared/lib/appliances';
+import { applianceNameKey } from '@shared/lib/applianceDisplay';
+import {
+  applianceWorkaroundInstruction,
+  checkKitchen,
+  worthAskingAboutAppliances,
+} from '@shared/lib/ownedAppliances';
 import { ExtractedRecipe } from '@/lib/supabase/extractRecipe';
 import { createRecipeShare } from '@shared/lib/supabase/recipeShare';
 import { showToast } from '@shared/lib/toast';
@@ -265,6 +272,23 @@ export function RecipeView({
   const cookHasAllergies = hasAllergies(kitchen);
   /** Set while the remix sheet is open for "Make it without these". */
   const [avoidInstruction, setAvoidInstruction] = useState<string | null>(null);
+
+  // "My appliances" (PIN-155). Not set (never saved, or signed out): nothing is checked, as before.
+  const { kitchen: ownedKitchen, userId: applianceUserId } = useOwnedAppliances();
+  const kitchenCheck = useMemo(() => checkKitchen(appliances, ownedKitchen), [appliances, ownedKitchen]);
+  const askAboutAppliances = applianceUserId !== null && worthAskingAboutAppliances(appliances, ownedKitchen);
+
+  /** "Make it without these": allergies, dislikes in this recipe, and appliances the kitchen doesn't have. */
+  function openMakeWithout() {
+    setAvoidInstruction(
+      makeWithoutInstruction(
+        kitchen,
+        avoidMatches,
+        applianceWorkaroundInstruction(kitchenCheck.missing, ownedKitchen),
+      ),
+    );
+    setVariantModalOpen(true);
+  }
 
   function openCookAlong(startSeconds = 0) {
     setCookAlongStartSeconds(Math.max(0, Math.round(startSeconds)));
@@ -1175,10 +1199,7 @@ export function RecipeView({
             {allowAdaptations ? (
               <Pressable
                 trackId="recipe.avoid.make_without"
-                onPress={() => {
-                  setAvoidInstruction(makeWithoutInstruction(kitchen, avoidMatches));
-                  setVariantModalOpen(true);
-                }}
+                onPress={openMakeWithout}
                 className="mt-3 min-h-[44px] items-center justify-center rounded-3xl px-4 active:opacity-80"
                 style={{ backgroundColor: hasAllergyMatches ? colors.warning : colors.primarySoft }}
                 accessibilityRole="button"
@@ -1265,7 +1286,97 @@ export function RecipeView({
           instructions={displayInstructions}
           stepDirection={textDirection}
           updating={isUpdating('appliances')}
+          kitchen={ownedKitchen}
         />
+
+        {kitchenCheck.missing.length > 0 ? (
+          <View
+            testID="appliances-missing"
+            className="-mt-2 mb-5 rounded-3xl border p-4"
+            style={{ borderColor: colors.warningSoft, backgroundColor: colors.warningSoft }}
+          >
+            <View className="flex-row items-center gap-2">
+              <Ionicons name="alert-circle" size={18} color={colors.warning} />
+              <Text
+                className="min-w-0 flex-1 text-sm font-semibold"
+                style={{ color: colors.warning }}
+                accessibilityRole="header"
+              >
+                {t('myAppliances.missingTitle')}
+              </Text>
+            </View>
+            <Text className="mt-1.5 text-sm font-semibold leading-5" style={{ color: colors.text }}>
+              {kitchenCheck.missing.map((key) => t(applianceNameKey(key))).join(', ')}
+            </Text>
+            <Text className="mt-1 text-xs leading-4" style={{ color: colors.textSecondary }}>
+              {allowAdaptations
+                ? t('myAppliances.missingFix', { count: kitchenCheck.missing.length })
+                : t('myAppliances.missingNoFix', { count: kitchenCheck.missing.length })}
+            </Text>
+            {allowAdaptations ? (
+              <Pressable
+                trackId="recipe.appliances.make_without"
+                onPress={openMakeWithout}
+                className="mt-3 min-h-[44px] items-center justify-center rounded-3xl px-4 active:opacity-80"
+                style={{ backgroundColor: colors.primarySoft }}
+                accessibilityRole="button"
+              >
+                <Text className="text-sm font-semibold" style={{ color: colors.primary }}>
+                  {t('avoid.makeWithout')}
+                </Text>
+              </Pressable>
+            ) : null}
+            <Pressable
+              trackId="recipe.appliances.edit"
+              onPress={() => router.push('/settings/recipe')}
+              className="mt-1 min-h-[44px] items-center justify-center"
+              accessibilityRole="link"
+            >
+              <Text className="text-xs font-semibold" style={{ color: colors.primary }}>
+                {t('myAppliances.editLink')}
+              </Text>
+            </Pressable>
+          </View>
+        ) : null}
+
+        {kitchenCheck.covered.length > 0 || kitchenCheck.ready || askAboutAppliances ? (
+          <View className="-mt-2 mb-5 gap-1.5">
+            {kitchenCheck.covered.map(({ key, alternative }) => (
+              <View key={key} testID={`appliance-covered-${key}`} className="flex-row items-center gap-1.5">
+                <Ionicons name="checkmark" size={14} color={colors.success} />
+                <Text className="min-w-0 flex-1 text-xs leading-4" style={{ color: colors.textSecondary }}>
+                  <Text className="font-semibold" style={{ color: colors.text }}>
+                    {t(applianceNameKey(key))}:{' '}
+                  </Text>
+                  {isApplianceKey(alternative)
+                    ? t('myAppliances.standInWorks', { alternative: t(applianceNameKey(alternative)) })
+                    : t('appliances.alternative', { alternative: t(`appliances.alternatives.${alternative}`) })}
+                </Text>
+              </View>
+            ))}
+            {kitchenCheck.ready ? (
+              <View testID="appliances-ready" className="flex-row items-center gap-1.5">
+                <Ionicons name="checkmark-circle" size={14} color={colors.success} />
+                <Text className="text-xs font-semibold" style={{ color: colors.success }}>
+                  {t('myAppliances.haveEverything')}
+                </Text>
+              </View>
+            ) : null}
+            {askAboutAppliances ? (
+              <Pressable
+                trackId="recipe.appliances.ask"
+                testID="appliances-ask"
+                onPress={() => router.push('/settings/recipe')}
+                className="min-h-[44px] justify-center active:opacity-70"
+                accessibilityRole="link"
+              >
+                <Text className="text-xs font-semibold leading-4" style={{ color: colors.primary }}>
+                  {t('myAppliances.askLink')}
+                </Text>
+              </Pressable>
+            ) : null}
+          </View>
+        ) : null}
 
         <View className={splitRecipeBody ? 'flex-row items-start gap-6' : undefined}>
           <View className={splitRecipeBody ? 'min-w-0 flex-1' : undefined}>

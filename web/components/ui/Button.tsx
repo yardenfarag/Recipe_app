@@ -26,6 +26,12 @@ export type ButtonProps = ButtonHTMLAttributes<HTMLButtonElement> & {
   /** Shows a spinner and blocks clicks, keeping the label for screen readers. */
   busy?: boolean;
   fullWidth?: boolean;
+  /**
+   * A stable id for the activity log (ADR 020), such as "recipe.remix": every press is logged under it (written as
+   * `data-track`, read by ActivityTracker). Use the mobile app's id when the action is the same. Never put anything
+   * a person typed, a title or an email in it. A press without one is logged as "unnamed".
+   */
+  trackId?: string;
 };
 
 export const buttonClasses = ({
@@ -44,13 +50,14 @@ export const buttonClasses = ({
   );
 
 export const Button = forwardRef<HTMLButtonElement, ButtonProps>(function Button(
-  { variant = "primary", size = "md", busy = false, fullWidth = false, className, children, disabled, type = "button", ...props },
+  { variant = "primary", size = "md", busy = false, fullWidth = false, className, children, disabled, type = "button", trackId, ...props },
   ref,
 ) {
   return (
     <button
       ref={ref}
       type={type}
+      data-track={trackId}
       {...props}
       disabled={disabled || busy}
       aria-busy={busy || undefined}

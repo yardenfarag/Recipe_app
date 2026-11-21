@@ -102,6 +102,7 @@ function ViewRow({
         ref={checkboxRef}
         type="button"
         role="checkbox"
+        data-track="shopping_list.item.toggle"
         aria-checked={item.checked}
         aria-label={[item.name, amount, duplicate ? t("list.alsoListed", { count: duplicateCount }) : null].filter(Boolean).join(", ")}
         aria-keyshortcuts="ArrowDown ArrowUp E Delete"
@@ -136,6 +137,7 @@ function ViewRow({
       {duplicate ? (
         <button
           type="button"
+          data-track="shopping_list.item.duplicate_badge"
           onClick={() => onCombine(item)}
           className="shrink-0 rounded-full bg-warning-soft px-2.5 py-1 text-xs font-bold whitespace-nowrap text-warning hover:brightness-95"
         >
@@ -146,13 +148,15 @@ function ViewRow({
         {!item.checked ? (
           <IconButton
             label={t("list.keepThisLabel", { name: item.name })}
+            trackId="shopping_list.item.keep_in_pantry"
             icon={<Home className="h-[18px] w-[18px]" />}
             onClick={() => onKeepAtHome(item)}
           />
         ) : null}
-        <IconButton label={t("list.editItemLabel", { name: item.name })} icon={<Pencil className="h-[18px] w-[18px]" />} onClick={onEdit} />
+        <IconButton label={t("list.editItemLabel", { name: item.name })} trackId="shopping_list.item.edit" icon={<Pencil className="h-[18px] w-[18px]" />} onClick={onEdit} />
         <IconButton
           label={t("list.removeItemLabel", { name: item.name })}
+          trackId="shopping_list.item.remove"
           icon={<Trash2 className="h-[18px] w-[18px]" />}
           onClick={() => onRemove(item)}
           className="hover:text-danger"
@@ -250,11 +254,12 @@ function EditRow({ item, onSave, onDone }: ShoppingItemRowProps & { onDone: () =
           <IconButton
             type="submit"
             label={t("common.save")}
+            trackId="shopping_list.edit.save"
             icon={<Check className="h-5 w-5" />}
             disabled={busy}
             className="text-primary hover:text-primary"
           />
-          <IconButton label={t("common.cancel")} icon={<X className="h-5 w-5" />} onClick={onDone} disabled={busy} />
+          <IconButton label={t("common.cancel")} trackId="shopping_list.edit.cancel" icon={<X className="h-5 w-5" />} onClick={onDone} disabled={busy} />
         </div>
       </form>
       {error ? (
