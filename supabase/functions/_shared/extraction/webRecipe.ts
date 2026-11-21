@@ -7,6 +7,7 @@ import { FetchError } from '../core/errors.ts';
 import { EMPTY_PLATFORM_META, type PlatformMeta } from './platformMeta.ts';
 import { extractYouTubeId } from './platform.ts';
 import { safeFetch } from '../core/safeFetch.ts';
+import { configuredPageReader, type PageRead, type PageReader, type PageReadEvent } from './pageReader.ts';
 
 const FETCH_TIMEOUT_MS = 18_000;
 /** How much of a page is downloaded. Recipe pages are well under this; nothing past it is read. */
@@ -22,9 +23,18 @@ export interface WebRecipeMeta extends PlatformMeta {
   pageHost?: string;
 }
 
+export interface WebFetchOptions {
+  /** The service that reads pages that refuse our servers. Defaults to the configured one; null turns it off. */
+  pageReader?: PageReader | null;
+  /** Called after every service read, whether or not it got the page, so its cost is logged. */
+  onPageRead?: (event: PageReadEvent) => Promise<void> | void;
+}
+
 /** Fetches a public recipe page and normalizes it for the Gemini text ladder. */
-export async function fetchWebRecipeMeta(url: string): Promise<WebRecipeMeta> {
-  const html = await fetchHtml(googleDocExportUrl(url) ?? url);
+export async function fetchWebRecipeMeta(url: string, options: WebFetchOptions = {}): Promise<WebRecipeMeta> {
+  const docExport = googleDocExportUrl(url);
+  // A private Google Doc is private to the service too, so only ordinary pages fall back.
+  const html = docExport ? await fetchHtml(docExport) : await fetchHtmlOrRead(url, options);
   const jsonLd = extractJsonLdBlocks(html);
   const recipeLd = findRecipeJsonLd(jsonLd);
   const thumbnailUrl =
@@ -97,6 +107,57 @@ function isGoogleSignIn(finalUrl: string): boolean {
     return new URL(finalUrl).hostname.toLowerCase() === 'accounts.google.com';
   } catch {
     return false;
+  }
+}
+
+/**
+ * The page's HTML. When the site refuses our servers (403), the page-reading service fetches it
+ * once from its own addresses (PIN-152). Every other failure, and a page the service can't get
+ * either, throws the normal fetch's error, so the user sees the same message as before.
+ */
+export async function fetchHtmlOrRead(url: string, options: WebFetchOptions = {}): Promise<string> {
+  try {
+    return await fetchHtml(url);
+  } catch (err) {
+    if (!(err instanceof FetchError) || err.details?.status !== 403) throw err;
+    const reader = options.pageReader === undefined ? configuredPageReader() : options.pageReader;
+    if (!reader) throw err;
+
+    const started = Date.now();
+    let read: PageRead | null = null;
+    let failure: string | undefined;
+    try {
+      read = await reader.read(url);
+    } catch (readErr) {
+      failure = readErr instanceof Error ? readErr.message : String(readErr);
+    }
+    const event: PageReadEvent = {
+      provider: reader.provider,
+      host: hostOf(url),
+      status: read?.html ? 'ok' : read ? 'blocked' : 'error',
+      siteStatus: read?.siteStatus ?? null,
+      units: read?.units ?? 0,
+      costUsd: read?.costUsd ?? 0,
+      durationMs: Date.now() - started,
+      error: failure,
+    };
+    console.log('[webRecipe] page reader', { ...event, error: failure ? 'failed' : undefined });
+    try {
+      await options.onPageRead?.(event);
+    } catch (logErr) {
+      console.error('[webRecipe] onPageRead failed', logErr);
+    }
+
+    if (!read?.html) throw err;
+    return read.html.length > MAX_HTML_CHARS ? read.html.slice(0, MAX_HTML_CHARS) : read.html;
+  }
+}
+
+function hostOf(url: string): string | null {
+  try {
+    return new URL(url).hostname;
+  } catch {
+    return null;
   }
 }
 
