@@ -41,6 +41,7 @@ import { keepUploadedPhoto, persistSocialThumbnail } from '../_shared/extraction
 import { estimateScrapeCredits, GUEST_EXTRACT_LIMIT } from '../_shared/llm/pricing.ts';
 import {
   canStartExtract,
+  CREDIT_REPLAY_WINDOW_MS,
   finalizeSignedInExtract,
   finalizeGuestExtraction,
   getGuestExtractCount,
@@ -86,6 +87,18 @@ declare const EdgeRuntime: { waitUntil(promise: Promise<unknown>): void } | unde
 type ExtractionStatus = 'full' | 'partial' | 'failed' | 'coming_soon';
 
 /**
+ * Supabase answers 504 when a request sends nothing for 150 s, and the app then can't tell
+ * whether the credit was spent. Every extraction answers by this point instead.
+ */
+const RESPONSE_DEADLINE_MS = 138_000;
+/** Kept free after the ladder for the thumbnail, appliances, the credit and the Hub. */
+const AFTER_LADDER_MS = 22_000;
+/** Below this much time left, the appliance call is skipped (ADR 017: saved as not analysed). */
+const MIN_APPLIANCES_MS = 8_000;
+/** Below this much time left, a social thumbnail isn't copied to Storage; the CDN URL is kept. */
+const MIN_THUMBNAIL_COPY_MS = 15_000;
+
+/**
  * POST { url, guest_install_id? } -> { status, platform, recipe?, message?, cached?, ... }
  *
  * Detects the platform, rejects anything not yet live (ADR 003), then for
@@ -106,6 +119,8 @@ serve('extract-recipe', async (req) => {
   }
 
   const started = Date.now();
+  const deadlineAt = started + RESPONSE_DEADLINE_MS;
+  const ladderDeadlineAt = deadlineAt - AFTER_LADDER_MS;
   let url = '';
   let imageBase64: string | null = null;
   let imageMime = 'image/jpeg';
@@ -247,6 +262,33 @@ serve('extract-recipe', async (req) => {
     );
   }
 
+  // No credits: say so now, before the scrape and model calls below cost anything. The
+  // reservation further down is still the real check (credits can run out in between).
+  if (admin) {
+    const precheck = await canStartExtract(admin, userId);
+    if (!precheck.ok && precheck.code === 'insufficient_credits') {
+      await logUsageEvent(admin, {
+        userId,
+        action: 'extract',
+        platform,
+        status: 'insufficient_credits',
+        tokensCharged: 0,
+        durationMs: Date.now() - started,
+        metadata: { request_id: requestId, precheck: true },
+      });
+      return jsonResponse(
+        {
+          status: 'failed' as ExtractionStatus,
+          platform,
+          code: 'insufficient_credits',
+          message: quotaBlockMessage('insufficient_credits'),
+          ...quotaFields(precheck.snapshot),
+        },
+        402,
+      );
+    }
+  }
+
   // Every uploaded photo is kept, whatever the outcome, until the account is deleted.
   const uploadedPhoto = keepUploadedPhoto(platform, imageBase64, imageMime, userId);
 
@@ -263,7 +305,7 @@ serve('extract-recipe', async (req) => {
     let source: 'description' | 'comments' | 'captions' | 'video' | 'web' | 'photo';
     let usages: import('../_shared/llm/pricing.ts').GeminiUsageSnapshot[] = [];
     let usedInstagramVideoDownload = false;
-    let videoSkippedReason: 'too_long' | undefined;
+    let videoSkippedReason: 'too_long' | 'out_of_time' | undefined;
     let scrapeCredits = 0;
     let imageUrl: string | null = null;
     let sourceVideoUrl: string | null = null;
@@ -354,7 +396,7 @@ serve('extract-recipe', async (req) => {
           const route = appliedExtractRoute(decision);
           if (route === 'no_recipe' && !forceExtract) return null;
           if (skipsTextStep(route, ladderInput)) return null;
-          return beginTextExtraction(ladderInput);
+          return beginTextExtraction(ladderInput, ladderDeadlineAt);
         })
       : null;
 
@@ -505,6 +547,8 @@ serve('extract-recipe', async (req) => {
       userId,
       guestInstallId,
       requestId,
+      // The credit pays for this link or photo only; a reused request id can't buy another.
+      scope: imageBase64 ? `photo|${imageBase64}` : `${platform}|${meta?.contentId ?? contentId ?? url}`,
       platform,
       started,
     });
@@ -523,7 +567,11 @@ serve('extract-recipe', async (req) => {
       source = 'photo';
       originalUrl = null;
     } else {
-      const ladder = await extractRecipeWithLadder(ladderInput!, { pendingText, skipText });
+      const ladder = await extractRecipeWithLadder(ladderInput!, {
+        pendingText,
+        skipText,
+        deadlineAt: ladderDeadlineAt,
+      });
       gemini = ladder.recipe;
       source = ladder.source;
       usages = ladder.usages;
@@ -531,7 +579,10 @@ serve('extract-recipe', async (req) => {
       videoSkippedReason = ladder.videoSkippedReason;
       scrapeCredits = estimateScrapeCredits(platform, usedInstagramVideoDownload);
       const resolvedContentId = meta?.contentId ?? contentId;
-      imageUrl = await resolveThumbnail(platform, resolvedContentId, meta ?? { topComments: [] });
+      imageUrl = deadlineAt - Date.now() >= MIN_THUMBNAIL_COPY_MS
+        ? await resolveThumbnail(platform, resolvedContentId, meta ?? { topComments: [] })
+        : (meta?.thumbnailUrl ??
+          (platform === 'youtube' && resolvedContentId ? youTubeThumbnail(resolvedContentId) : null));
       sourceVideoUrl = platform === 'web' ? meta?.videoUrl ?? null : null;
       originalUrl = canonicalOriginalUrl(platform, resolvedContentId, url, meta?.canonicalUrl);
       durationSeconds = meta?.durationSeconds;
@@ -548,12 +599,13 @@ serve('extract-recipe', async (req) => {
 
     if (status === 'failed') {
       const rejectedAsTooLong = videoSkippedReason === 'too_long';
+      const ranOutOfTime = videoSkippedReason === 'out_of_time';
       if (userId && creditReservation) {
         const refunded = await compensateSignedInExtract(
           admin,
           userId,
           creditReservation,
-          rejectedAsTooLong ? 'video_too_long' : 'no_recipe_found',
+          rejectedAsTooLong ? 'video_too_long' : ranOutOfTime ? 'out_of_time' : 'no_recipe_found',
         );
         compensationPending = !refunded;
         if (refunded) creditReservation = null;
@@ -579,7 +631,7 @@ serve('extract-recipe', async (req) => {
         guestInstallId: userId ? null : guestInstallId,
         action: 'extract',
         platform,
-        status: rejectedAsTooLong ? 'video_too_long' : 'failed',
+        status: rejectedAsTooLong ? 'video_too_long' : ranOutOfTime ? 'out_of_time' : 'failed',
         extractionSource: source,
         usages,
         scrapecreatorsCredits: scrapeCredits,
@@ -587,6 +639,8 @@ serve('extract-recipe', async (req) => {
         durationMs: Date.now() - started,
         errorMessage: rejectedAsTooLong
           ? `duration_seconds=${durationSeconds ?? 'unknown'}`
+          : ranOutOfTime
+          ? `out_of_time duration_seconds=${durationSeconds ?? 'unknown'}`
           : 'No recipe found',
         metadata: {
           ...compensationMetadata(creditReservation, guestReservation, compensationPending),
@@ -601,9 +655,11 @@ serve('extract-recipe', async (req) => {
       return jsonResponse({
         status,
         platform,
-        code: rejectedAsTooLong ? 'video_too_long' : 'no_recipe',
+        code: rejectedAsTooLong ? 'video_too_long' : ranOutOfTime ? 'extraction_timeout' : 'no_recipe',
         message: rejectedAsTooLong
           ? `This video is longer than ${formatMaxVideoDurationLabel()}. Try a shorter clip, or a post with the recipe written in the caption.`
+          : ranOutOfTime
+          ? 'This video took too long to read. Your credit was not used. Try again in a moment, or use a post with the recipe in the caption.'
           : platform === 'photo'
             ? "Couldn't find a recipe in this photo. Try a clearer picture of the ingredients and steps."
             : platform === 'web'
@@ -629,9 +685,16 @@ serve('extract-recipe', async (req) => {
     const isPartial = status === 'partial';
 
     // ADR 017: never throws; a failure saves as "not analysed" (null).
+    // Two sequential calls share what's left before the deadline; too little left, and the
+    // recipe saves as "not analysed", which the editor's Save fills in later.
+    const appliancesMs = deadlineAt - Date.now() - 3_000;
     const { appliances, metadata: applianceMetadata } = isPartial
       ? { appliances: null, metadata: {} }
-      : await appliancesForRecipe(gemini, usages);
+      : appliancesMs < MIN_APPLIANCES_MS
+      ? { appliances: null, metadata: { appliances_skipped: 'out_of_time' } }
+      : await appliancesForRecipe(gemini, usages, {
+          timeoutMs: Math.min(15_000, Math.floor(appliancesMs / 2)),
+        });
 
     const recipe = fitRecipeToLimits({
       title: gemini.title,
@@ -923,6 +986,8 @@ async function compensateSignedInExtract(
   reason: string,
   afterFinalizeFailure = false,
 ): Promise<boolean> {
+  // A replay rides on a credit that already bought this recipe: there is nothing to give back.
+  if (reservation.replayed) return true;
   const result = afterFinalizeFailure
     ? await refundSignedInExtractAfterFinalizeFailure(
         admin,
@@ -943,6 +1008,7 @@ async function compensateSignedInExtract(
     reservation.reservationId,
     reason,
     result.error,
+    { afterFinalizeFailure },
   );
   console.error('[extract-recipe] signed-in compensation pending', {
     reservationId: reservation.reservationId,
@@ -1165,6 +1231,7 @@ async function reserveExtractCredits(opts: {
   userId: string | null;
   guestInstallId: string | null;
   requestId: string;
+  scope: string;
   platform: Platform;
   started: number;
 }): Promise<{
@@ -1173,9 +1240,12 @@ async function reserveExtractCredits(opts: {
   guestRemaining: number | null;
   response?: Response;
 }> {
-  const { admin, userId, guestInstallId, requestId, platform, started } = opts;
+  const { admin, userId, guestInstallId, requestId, scope, platform, started } = opts;
   if (userId) {
-    const reserved = await reserveSignedInExtract(admin, userId, requestId);
+    const reserved = await reserveSignedInExtract(admin, userId, requestId, {
+      scope,
+      replayWindowMs: CREDIT_REPLAY_WINDOW_MS,
+    });
     if (!reserved.ok) {
       const code = reserved.code;
       await logUsageEvent(admin, {
