@@ -83,9 +83,13 @@ export function useCookbookBuild(deps: Partial<Deps> = {}) {
           setState({ step: "photos", done: 0, total: 0 });
           loaded = await loadImages(urls, {
             signal: abort.signal,
-            onProgress: (done, total) => setState({ step: "photos", done, total }),
+            // Cancelled: the loader may still report or finish, but the dialog stays closed.
+            onProgress: (done, total) => {
+              if (!abort.signal.aborted) setState({ step: "photos", done, total });
+            },
           });
         }
+        if (abort.signal.aborted) return;
         setState({ step: "pages" });
         await nextPaint();
         if (abort.signal.aborted) return;

@@ -55,7 +55,8 @@ async function stubPrint(page: Page) {
           }
         }
       }
-    }).observe(document.documentElement, { childList: true, subtree: true });
+    // The document, not documentElement: this runs before the page has a root element.
+    }).observe(document, { childList: true, subtree: true });
   });
 }
 
@@ -185,7 +186,7 @@ test("Hebrew: the book reads right to left, and a Hebrew recipe stays right to l
   await expect(page.locator("html")).toHaveAttribute("dir", "rtl");
   await page.goto("/app/cookbook");
   await expect(page.locator("#main h1")).toHaveText("ספר מתכונים ב־PDF");
-  await expect(bookList(page).getByRole("listitem")).toHaveCount(2);
+  await expect(page.getByRole("list", { name: "הספר שלך" }).getByRole("listitem")).toHaveCount(2);
   await page.getByRole("button", { name: "יצירת PDF" }).click();
   await expect(page.getByRole("dialog")).toContainText("הספר מוכן");
   html = await bookHtml(page);

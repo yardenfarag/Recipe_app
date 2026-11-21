@@ -42,7 +42,8 @@ export function WelcomeScreen() {
   if (loading || user) return <LoadingState className="min-h-dvh" />;
 
   return (
-    <div className="flex min-h-dvh flex-col">
+    // The illustration's glow and floating badge reach past its edges; on narrow screens that must not scroll sideways.
+    <div className="flex min-h-dvh flex-col overflow-x-clip">
       <a
         href="#main"
         data-track="nav.skip_to_content"

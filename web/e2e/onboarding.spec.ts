@@ -162,6 +162,8 @@ test.describe("phone, in Hebrew", () => {
     await expect(page.locator("html")).toHaveAttribute("dir", "rtl");
     await expect(page.locator("html")).toHaveAttribute("lang", "he");
     await expect(page.getByRole("heading", { level: 1 })).toHaveText("שומרים כל מתכון בשניות. מבשלים אותו הערב.");
+    // Nothing reaches past the side of a phone (the illustration's glow and badge used to).
+    expect(await page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth)).toBeLessThanOrEqual(0);
 
     await page.getByRole("link", { name: "מתחילים בחינם" }).click();
     await signUp(page, email);

@@ -62,6 +62,14 @@ function noDescription(view: MessageView) {
 /** Escape and the backdrop close a dismissible message and do nothing otherwise. */
 function modalGuards(view: MessageView, track: string) {
   return {
+    // Focus starts on the message's main action, not on whatever control comes first in the markup.
+    onOpenAutoFocus: (event: Event) => {
+      const root = event.target instanceof HTMLElement ? event.target : null;
+      const primary = root?.querySelector<HTMLElement>('[data-track$=".primary"]');
+      if (!primary) return;
+      event.preventDefault();
+      primary.focus();
+    },
     onEscapeKeyDown: (event: KeyboardEvent) => {
       if (!view.dismissible) event.preventDefault();
     },

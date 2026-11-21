@@ -128,7 +128,8 @@ test("a kitchen with nothing special can say so, and stop checking later", async
   await dialog.getByRole("button", { name: "Clear my list" }).click();
   await expect(dialog).toBeHidden();
   await expect(appliancesCard(page).getByTestId("appliances-status")).toContainText("Not set up yet");
-  await expect.poll(async () => await readAccountAppliances()).toBeNull();
+  // Cleared: GoTrue drops a key set to null, so it reads back as missing.
+  await expect.poll(async () => (await readAccountAppliances()) ?? null).toBeNull();
 });
 
 test("“Make it without these” asks to work around the missing appliance, and the note goes once it's done", async ({ page }) => {

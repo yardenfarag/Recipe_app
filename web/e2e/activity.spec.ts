@@ -106,12 +106,11 @@ test("product events: an import, its save and Share Pinch, each once, with the v
   await context.grantPermissions(["clipboard-read", "clipboard-write"]);
   await resetLibrary([]);
   await stubImports(page, {
-    "extract-recipe": { body: { status: "full", platform: "website", recipe: importedRecipe("Secret Lemon Pasta", { platform: "website" }) } },
+    "extract-recipe": { body: { status: "full", platform: "web", recipe: importedRecipe("Secret Lemon Pasta", { platform: "web" }) } },
   });
   await page.goto("/app/auth?mode=signin&next=%2Fadd");
   await signInWithPassword(page, TEST_USER.email, TEST_USER.password);
   await expect(page.getByRole("heading", { level: 1, name: "Snap a recipe" })).toBeVisible();
-  const { visitorId } = await visitorAndSession(page);
 
   await page.getByLabel("Recipe URL").fill("https://example.com/secret-lemon-pasta");
   await page.getByRole("button", { name: "Snap", exact: true }).click();
@@ -126,6 +125,9 @@ test("product events: an import, its save and Share Pinch, each once, with the v
 
   await expect.poll(async () => (await productEvents({ since })).filter((row) => row.user_id === userId).length, { timeout: 15_000 }).toBe(3);
   const rows = (await productEvents({ since })).filter((row) => row.user_id === userId);
+  // The visitor id is made on first use, so it is read once the events are in.
+  const { visitorId } = await visitorAndSession(page);
+  expect(visitorId).toBeTruthy();
   const byName = Object.fromEntries(rows.map((row) => [row.name, row]));
   expect(byName.recipe_extracted.properties).toMatchObject({ source: "url", mode: "extract" });
   expect(byName.recipe_saved.properties).toMatchObject({ from: "extract" });

@@ -396,14 +396,20 @@ test("welcome and onboarding", async ({ browser }) => {
       await context.close();
     }
   }
-  // Onboarding is only offered to a new account: one per run.
-  const email = uniqueEmail("e2e-shots-onboarding");
-  await createUser(email, TEST_USER.password);
+  // Onboarding is only offered to a new account that hasn't finished it: a fresh one for each picture.
   for (const viewport of ["desktop", "phone"] as const) {
     for (const language of ["en", "he"] as const) {
-      const { page, context } = await openSignedOut(browser, viewport, language, "/app/auth?mode=signin&next=%2Fonboarding");
+      const email = uniqueEmail("e2e-shots-onboarding");
+      await createUser(email, TEST_USER.password);
+      // Signed in in English (the sign-in helper finds fields by their English labels), then switched on the account.
+      const { page, context } = await openSignedOut(browser, viewport, "en", "/app/auth?mode=signin&next=%2Fonboarding");
       await signInWithPassword(page, email, TEST_USER.password);
       await page.waitForURL(/\/app\/onboarding/);
+      if (language !== "en") {
+        await writeAccountPrefs({ locale: language }, email, TEST_USER.password);
+        await page.evaluate((lang) => localStorage.setItem("pinch:appLanguage", lang), language);
+        await page.reload();
+      }
       await page.locator("h1").first().waitFor();
       await page.waitForTimeout(400);
       await page.screenshot({ path: `${OUT}/onboarding-${viewport}-${language}.png`, fullPage: true });
