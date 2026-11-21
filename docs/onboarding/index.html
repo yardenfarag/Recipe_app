@@ -562,7 +562,7 @@ details>*:not(summary){margin-bottom:12px}
     </tbody>
   </table></div>
 
-  <div class="note blue"><b>Not in master yet:</b> PR #4 (branch <code>cost-guards-welcome-public-recipe</code>) adds <code>public-recipe</code> and <code>welcome-email</code> functions and migrations 0041 to 0044. <code>public-recipe</code> is already deployed in production. Ask Yarden before touching that area.</div>
+  <div class="note blue"><b>Not in master yet:</b> PR #4 (branch <code>cost-guards-welcome-public-recipe</code>) adds <code>public-recipe</code> and <code>welcome-email</code> functions and migrations 0041 to 0044. The <code>public-recipe</code> function it deployed was deleted from production on 2026-11-21: the public recipe pages (<code>pinch-app.io/r/&lt;slug&gt;</code>) come from the share-page worker. Ask Yarden before touching that area.</div>
 
   <h3>Shared code: <code>supabase/functions/_shared/</code></h3>
   <table>
