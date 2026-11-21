@@ -185,7 +185,12 @@ serve('repair-recipe', async (req) => {
   const guestReservation: GuestExtractionReservation | null = null;
   const guestInstallId: string | null = null;
 
-  const reserved = await reserveSignedInExtract(admin, userId, requestId);
+  // The credit pays for repairing this recipe only. A spent credit is never replayed here:
+  // the repaired recipe is released by commit, so a new generate is a new purchase.
+  const reserved = await reserveSignedInExtract(admin, userId, requestId, {
+    scope: `repair|${originalUrl}|${JSON.stringify(body.recipe)}`,
+    replayWindowMs: 0,
+  });
   if (!reserved.ok) {
     return jsonResponse(
       {
@@ -357,13 +362,35 @@ async function settleRepairCredit(opts: {
       'user_cancelled',
     );
     if (!refunded.confirmed) {
-      await markSignedInExtractCompensationPending(
+      // Only an unspent credit can be queued. A committed (spent) one is refused, so abort
+      // can't give back a credit that already paid for a recipe.
+      const queued = await markSignedInExtractCompensationPending(
         admin,
         userId,
         reservationId,
         'user_cancelled',
         refunded.error,
       );
+      if (!queued) {
+        await logUsageEvent(admin, {
+          userId,
+          action: 'repair',
+          platform: 'unknown',
+          status: 'abort_refused',
+          tokensCharged: 0,
+          durationMs: Date.now() - started,
+          metadata: { request_id: requestId, reservation_id: reservationId, settle: 'abort' },
+        });
+        return jsonResponse(
+          {
+            status: 'failed',
+            code: 'reservation_settled',
+            message: 'This credit was already used.',
+            ...quotaFields(snapshot),
+          },
+          409,
+        );
+      }
       await logUsageEvent(admin, {
         userId,
         action: 'repair',
@@ -431,6 +458,7 @@ async function settleRepairCredit(opts: {
         reservationId,
         'commit_failed',
         refunded.error,
+        { afterFinalizeFailure: true },
       );
     }
     await logUsageEvent(admin, {
@@ -596,6 +624,7 @@ async function compensateSignedIn(
   reason: string,
   afterFinalizeFailure: boolean,
 ): Promise<boolean> {
+  if (reservation.replayed) return true;
   const result = afterFinalizeFailure
     ? await refundSignedInExtractAfterFinalizeFailure(admin, userId, reservation.reservationId)
     : await refundSignedInExtract(admin, userId, reservation.reservationId, reason);
@@ -606,6 +635,7 @@ async function compensateSignedIn(
     reservation.reservationId,
     reason,
     result.error,
+    { afterFinalizeFailure },
   );
   return false;
 }

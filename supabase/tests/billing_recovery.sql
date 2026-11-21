@@ -1,7 +1,7 @@
 begin;
 
 create extension if not exists pgtap with schema extensions;
-select plan(14);
+select plan(18);
 
 insert into auth.users (
   instance_id, id, aud, role, email, encrypted_password,
@@ -102,13 +102,30 @@ select ok(
   public.finalize_recipe_credit(
     '20000000-0000-4000-8000-000000000002',
     (select (result->>'reservation_id')::uuid from finalized_signed)
-  ) and public.mark_recipe_credit_compensation_pending(
+  ),
+  'signed-in credit is finalized'
+);
+select ok(
+  not public.mark_recipe_credit_compensation_pending(
     '20000000-0000-4000-8000-000000000002',
     (select (result->>'reservation_id')::uuid from finalized_signed),
-    'finalize_failed',
+    'user_cancelled',
+    null
+  ),
+  'a spent credit cannot be queued for a refund through the general function'
+);
+select is(
+  public.refund_stale_extraction_reservations('2001-01-01')->>'signed_in_refunded',
+  '0',
+  'cleanup leaves a spent credit alone'
+);
+select ok(
+  public.mark_recipe_credit_compensation_after_finalize_failure(
+    '20000000-0000-4000-8000-000000000002',
+    (select (result->>'reservation_id')::uuid from finalized_signed),
     'simulated transport failure'
   ),
-  'finalized signed-in compensation is marked pending'
+  'finalized signed-in compensation is marked pending after a finalize failure'
 );
 select is(
   public.refund_stale_extraction_reservations('2001-01-01')->>'signed_in_refunded',
@@ -150,6 +167,19 @@ select is(
   public.refund_stale_extraction_reservations('2001-01-01')->>'guest_refunded',
   '0',
   'guest cleanup is idempotent'
+);
+
+select ok(
+  not has_function_privilege(
+    'anon',
+    'public.mark_recipe_credit_compensation_after_finalize_failure(uuid, uuid, text)',
+    'execute'
+  ) and not has_function_privilege(
+    'authenticated',
+    'public.mark_recipe_credit_compensation_after_finalize_failure(uuid, uuid, text)',
+    'execute'
+  ),
+  'clients cannot queue after-finalize compensation'
 );
 
 select * from finish();

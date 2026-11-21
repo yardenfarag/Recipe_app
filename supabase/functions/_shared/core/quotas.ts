@@ -23,6 +23,32 @@ export interface CreditReservation {
   reservationId: string;
   source: 'monthly_free' | 'purchased';
   snapshot: QuotaSnapshot;
+  /**
+   * The credit was already spent on this same request moments ago (the app is retrying after a
+   * lost response). The work runs again without a new charge, and a failure refunds nothing.
+   */
+  replayed?: boolean;
+}
+
+/**
+ * How long after a credit is spent the same request (same request id, same input) may run again
+ * for free. It covers the app retrying after it lost the response; after that, it's a new purchase.
+ */
+export const CREDIT_REPLAY_WINDOW_MS = 15 * 60_000;
+
+/** A spent key is followed by at most this many paid generations before we stop and report. */
+const MAX_KEY_GENERATIONS = 25;
+
+/**
+ * The reservation key is the app's request id bound to a hash of what is being bought, so one
+ * request id can't pay for different work (a different link, photo or recipe).
+ */
+export async function scopedIdempotencyKey(requestId: string, scope: string): Promise<string> {
+  const digest = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(scope));
+  const hex = Array.from(new Uint8Array(digest).slice(0, 8))
+    .map((byte) => byte.toString(16).padStart(2, '0'))
+    .join('');
+  return `${requestId.trim()}:${hex}`;
 }
 
 export interface GuestExtractionReservation {
@@ -158,20 +184,68 @@ export async function canStartExtract(
   return { ok: true, snapshot };
 }
 
-/**
- * Atomically reserves one extract against Free or Plus monthly quota.
- */
-export async function reserveSignedInExtract(
-  admin: Db,
-  userId: string,
-  idempotencyKey: string,
-): Promise<
+type ReserveResult =
   | { ok: true; reservation: CreditReservation }
   | {
       ok: false;
       code: 'insufficient_credits' | 'metering_error';
       snapshot: QuotaSnapshot | null;
+    };
+
+/**
+ * Reserves one credit for `requestId` + `scope` (see scopedIdempotencyKey).
+ *
+ * - A new key, or one still `reserved` (a duplicate of a request in flight), behaves as before.
+ * - A key whose credit was spent within `replayWindowMs` comes back with `replayed: true`: the
+ *   app lost the response and is retrying, so the work runs again for free.
+ * - A key spent longer ago is chained to a new key derived from the spent reservation, so the
+ *   retry is a new, idempotent purchase instead of free work forever.
+ */
+export async function reserveSignedInExtract(
+  admin: Db,
+  userId: string,
+  requestId: string,
+  opts: { scope: string; replayWindowMs: number },
+): Promise<ReserveResult> {
+  const baseKey = await scopedIdempotencyKey(requestId, opts.scope);
+  let key = baseKey;
+  for (let generation = 0; generation < MAX_KEY_GENERATIONS; generation++) {
+    const reserved = await reserveRecipeCredit(admin, userId, key);
+    if (!reserved.ok || reserved.status !== 'finalized') return reserved;
+
+    const finalizedAt = await reservationFinalizedAt(admin, userId, reserved.reservation.reservationId);
+    if (finalizedAt !== null && Date.now() - finalizedAt < opts.replayWindowMs) {
+      return { ok: true, reservation: { ...reserved.reservation, replayed: true } };
     }
+    key = `${baseKey}:${reserved.reservation.reservationId}`;
+  }
+  console.error('[quotas] reserveSignedInExtract: too many spent generations', { userId });
+  return { ok: false, code: 'metering_error', snapshot: await getQuotaSnapshot(admin, userId) };
+}
+
+async function reservationFinalizedAt(
+  admin: Db,
+  userId: string,
+  reservationId: string,
+): Promise<number | null> {
+  const { data, error } = await admin
+    .from('credit_reservations')
+    .select('finalized_at')
+    .eq('id', reservationId)
+    .eq('user_id', userId)
+    .maybeSingle();
+  if (error) console.error('[quotas] reservationFinalizedAt', error);
+  const at = typeof data?.finalized_at === 'string' ? Date.parse(data.finalized_at) : NaN;
+  return Number.isFinite(at) ? at : null;
+}
+
+async function reserveRecipeCredit(
+  admin: Db,
+  userId: string,
+  idempotencyKey: string,
+): Promise<
+  | { ok: true; reservation: CreditReservation; status: string }
+  | Extract<ReserveResult, { ok: false }>
 > {
   const reserveArgs = {
     p_user_id: userId,
@@ -240,6 +314,7 @@ export async function reserveSignedInExtract(
   }
   return {
     ok: true,
+    status: typeof row?.status === 'string' ? row.status : 'reserved',
     reservation: {
       reservationId,
       source,
@@ -314,20 +389,32 @@ export async function refundSignedInExtractAfterFinalizeFailure(
   };
 }
 
+/**
+ * Queues a refund the cleanup job retries. Only an unspent (`reserved`) credit can be queued,
+ * unless the server itself just saw finalize fail (`afterFinalizeFailure`): a request from the
+ * app must never be able to refund a credit that already paid for a recipe.
+ */
 export async function markSignedInExtractCompensationPending(
   admin: Db,
   userId: string,
   reservationId: string,
   reason: string,
   errorMessage: string | null,
+  opts?: { afterFinalizeFailure?: boolean },
 ): Promise<boolean> {
-  const { data, error } = await admin.rpc('mark_recipe_credit_compensation_pending', {
-    p_user_id: userId,
-    p_reservation_id: reservationId,
-    p_reason: reason,
-    p_error: sqlNullable(errorMessage),
-  });
-  if (error) console.error('[quotas] mark_recipe_credit_compensation_pending', error);
+  const { data, error } = opts?.afterFinalizeFailure
+    ? await admin.rpc('mark_recipe_credit_compensation_after_finalize_failure', {
+        p_user_id: userId,
+        p_reservation_id: reservationId,
+        p_error: sqlNullable(errorMessage),
+      })
+    : await admin.rpc('mark_recipe_credit_compensation_pending', {
+        p_user_id: userId,
+        p_reservation_id: reservationId,
+        p_reason: reason,
+        p_error: sqlNullable(errorMessage),
+      });
+  if (error) console.error('[quotas] mark compensation pending', error);
   return !error && data === true;
 }
 
