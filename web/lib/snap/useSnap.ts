@@ -5,6 +5,7 @@ import { useCallback, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 
 import { FREE_MONTHLY_EXTRACT_LIMIT } from "@shared/lib/quotas";
+import { importErrorText } from "@shared/lib/serverErrors";
 import { requestSettledWithoutRecipe, snapOutcome } from "@shared/lib/snapOutcome";
 import {
   extractionOutcomeIsUncertain,
@@ -113,7 +114,11 @@ export function useSnap({ onSettled }: { onSettled?: () => void } = {}) {
             router.push(signInPathFor("/add"));
             break;
           case "message":
-            setBanner({ tone: outcome.tone, message: outcome.serverMessage ?? t(outcome.messageKey) });
+            // The server's own words are English: a known code gets the app's translation instead (PIN-153).
+            setBanner({
+              tone: outcome.tone,
+              message: outcome.serverMessage ? importErrorText(result, t, language, outcome.messageKey) : t(outcome.messageKey),
+            });
             break;
           case "offer_invent":
             setOffer({ source: next.source, dishGuess: outcome.dishGuess, allowExtract: outcome.allowExtract });

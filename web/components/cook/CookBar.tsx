@@ -33,7 +33,7 @@ export function CookBar({
   if (!video && !onCookMode) return null;
 
   return (
-    <div className="mb-6 flex flex-wrap items-center gap-2" data-testid="cook-bar">
+    <div className="flex flex-wrap items-center gap-2" data-testid="cook-bar">
       {onCookMode ? (
         <Button variant={emphasis === "primary" ? "primary" : "secondary"} onClick={onCookMode}>
           <ChefHat aria-hidden className="h-[18px] w-[18px]" />

@@ -97,7 +97,8 @@ export function IngredientRowEditor({
           {...field("unit", false)}
           value={row.unit}
           onChange={(event) => onChange({ unit: event.target.value })}
-          placeholder={t("recipeEditor.placeholders.unit")}
+          // Only as an example on a new row: on a filled one ("4 garlic cloves") a grey "g" reads as grams.
+          placeholder={blank ? t("recipeEditor.placeholders.unit") : undefined}
           aria-label={`${t("recipeEditor.fields.unit")}, ${rowLabel}`}
           dir="auto"
           autoCapitalize="none"

@@ -42,7 +42,7 @@ export function RecipeActionBar({ actions }: { actions: RecipeActions }) {
   const cooked = Boolean(recipe.last_cooked_at);
 
   return (
-    <div role="group" aria-label={t("a11y.recipeActionsFor", { name: display.title })} className="mb-6 flex flex-wrap items-center gap-2">
+    <div role="group" aria-label={t("a11y.recipeActionsFor", { name: display.title })} className="flex flex-wrap items-center gap-2">
       <Button variant="secondary" aria-haspopup="dialog" onClick={() => actions.open({ kind: "remix" })}>
         <WandSparkles aria-hidden className="h-[18px] w-[18px]" />
         {t("recipe.remix")}

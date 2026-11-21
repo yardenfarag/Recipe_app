@@ -115,16 +115,19 @@ export function RecipeView({
     <article className="mx-auto max-w-6xl">
       <RecipeHeader display={display} servings={choices.servings} onToggleFavorite={onToggleFavorite} back={back} />
       {actions ? <div className="-mt-2 mb-6 flex flex-wrap gap-2">{actions}</div> : null}
-      <CookBar
-        video={video}
-        playerOpen={playerOpen}
-        playerId={PLAYER_ID}
-        onTogglePlayer={cookAlong.toggle}
-        onCookMode={openCookMode}
-        emphasis={actions ? "quiet" : "primary"}
-      />
+      {/* One toolbar: cooking first, then what changes the recipe. Each group wraps as a whole on narrow screens. */}
+      <div className="mb-6 flex flex-wrap items-center gap-2 empty:hidden">
+        <CookBar
+          video={video}
+          playerOpen={playerOpen}
+          playerId={PLAYER_ID}
+          onTogglePlayer={cookAlong.toggle}
+          onCookMode={openCookMode}
+          emphasis={actions ? "quiet" : "primary"}
+        />
+        {readOnly ? null : <RecipeActionsSlot display={display} />}
+      </div>
       <RecipeNotices display={display} avoid={avoid} />
-      {readOnly ? null : <RecipeActionsSlot display={display} />}
       <RecipeAppliancesSection display={display} system={system} />
       <div
         className={cn(

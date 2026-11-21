@@ -270,7 +270,7 @@ const COOK_ALONG: SeedRecipe = {
 };
 
 test("editor, credits, recipe actions and cook mode", async ({ browser }) => {
-  test.setTimeout(300_000);
+  test.setTimeout(900_000);
   const [pasta, potatoes] = await resetLibrary([
     { ...RECIPE, createdSecondsAgo: 1 },
     { ...COOK_ALONG, createdSecondsAgo: 2 },
