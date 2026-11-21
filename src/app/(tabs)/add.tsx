@@ -66,6 +66,7 @@ import {
   extractRecipe,
   extractRecipeFromImage,
   extractionOutcomeIsUncertain,
+  NO_RESPONSE_CODE,
 } from "@/lib/supabase/extractRecipe";
 import {
   inventRecipe,
@@ -317,6 +318,18 @@ export default function AddRecipeScreen() {
         kind: "error",
         message: result.message ?? t("snap.videoTooLong"),
       });
+      return false;
+    }
+
+    // Out of time: the server refunded the credit. No answer: the server's text never came, so
+    // don't show the client library's English error.
+    if (result.code === "extraction_timeout") {
+      setBanner({ kind: "error", message: t("snap.timedOut") });
+      return false;
+    }
+
+    if (result.code === NO_RESPONSE_CODE) {
+      setBanner({ kind: "error", message: t("snap.genericError") });
       return false;
     }
 

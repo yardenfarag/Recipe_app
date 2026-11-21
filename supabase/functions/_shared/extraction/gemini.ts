@@ -19,6 +19,31 @@ export type { GeminiUsageSnapshot } from '../llm/pricing.ts';
 
 const TEXT_TIMEOUT_MS = 35_000;
 const VIDEO_TIMEOUT_MS = 120_000;
+/** Below this much time left, a call isn't started: it would be cut off before it could answer. */
+const MIN_TEXT_MS = 8_000;
+const MIN_VIDEO_MS = 25_000;
+/** The download needs time too, so the video rung isn't started with less than this left. */
+const MIN_VIDEO_RUNG_MS = MIN_VIDEO_MS + 10_000;
+
+/** Resolves to the promise's value, or null if `at` (epoch ms) comes first. No deadline: waits. */
+async function beforeDeadline<T>(promise: Promise<T>, at: number | undefined): Promise<T | null> {
+  if (at === undefined) return await promise;
+  let timer: ReturnType<typeof setTimeout> | undefined;
+  const expired = new Promise<null>((resolve) => {
+    timer = setTimeout(() => resolve(null), Math.max(0, at - Date.now()));
+  });
+  try {
+    return await Promise.race([promise, expired]);
+  } finally {
+    clearTimeout(timer);
+  }
+}
+
+/** A step's timeout: its own cap, or less when the caller's deadline is closer. */
+function stepTimeout(capMs: number, deadlineAt: number | undefined): number {
+  if (deadlineAt === undefined) return capMs;
+  return Math.max(0, Math.min(capMs, deadlineAt - Date.now()));
+}
 const TEXT_MAX_OUTPUT_TOKENS = 6_144;
 const VIDEO_MAX_OUTPUT_TOKENS = 6_144;
 const MAX_DESCRIPTION_CHARS = 10_000;
@@ -176,8 +201,11 @@ export interface LadderResult {
   usages: GeminiUsageSnapshot[];
   /** True when Instagram download_media was needed for the video rung. */
   usedInstagramVideoDownload?: boolean;
-  /** Set when multimodal video was skipped (e.g. duration cap). */
-  videoSkippedReason?: 'too_long';
+  /**
+   * Set when the video rung didn't produce a recipe for a reason other than the video itself:
+   * `too_long` (duration cap) or `out_of_time` (the caller's deadline came first).
+   */
+  videoSkippedReason?: 'too_long' | 'out_of_time';
 }
 
 const EMPTY_RECIPE: GeminiRecipe = {
@@ -250,18 +278,26 @@ export type EarlyTextExtract =
   | { ok: false; timedOut: boolean; error: unknown };
 
 /** Starts the text rung so it can overlap the content gate. Null when there is no text. */
-export function beginTextExtraction(input: ExtractInput): Promise<EarlyTextExtract> | null {
+export function beginTextExtraction(
+  input: ExtractInput,
+  deadlineAt?: number,
+): Promise<EarlyTextExtract> | null {
   const hasDescription = Boolean(input.description?.trim());
   const hasComments = input.topComments.length > 0;
   const hasCaptions = Boolean(input.captions?.trim());
   if (!hasDescription && !hasComments && !hasCaptions) return null;
 
-  console.log('[gemini] text step start', { timeoutMs: TEXT_TIMEOUT_MS, early: true });
+  const timeoutMs = stepTimeout(TEXT_TIMEOUT_MS, deadlineAt);
+  if (timeoutMs < MIN_TEXT_MS) {
+    console.log('[gemini] text step skipped — out of time', { timeoutMs, early: true });
+    return Promise.resolve({ ok: false as const, timedOut: true, error: new Error('out_of_time') });
+  }
+  console.log('[gemini] text step start', { timeoutMs, early: true });
   const textStarted = Date.now();
   return extractRecipeFromText(
     input,
     { description: hasDescription, comments: hasComments, captions: hasCaptions },
-    TEXT_TIMEOUT_MS,
+    timeoutMs,
   ).then(
     (result) => {
       console.log('[gemini] text step done', {
@@ -293,8 +329,15 @@ export async function extractRecipeWithLadder(
     pendingText?: Promise<EarlyTextExtract | null> | null;
     /** The extract gate said the text has no recipe: go straight to video. */
     skipText?: boolean;
+    /**
+     * Epoch ms by which the ladder must be done. Each call's timeout shrinks to fit, and a rung
+     * that can't fit isn't started, so the caller can still answer before the platform's request
+     * timeout (Supabase: 150 s without a response).
+     */
+    deadlineAt?: number;
   },
 ): Promise<LadderResult> {
+  const deadlineAt = options?.deadlineAt;
   const hasDescription = Boolean(input.description?.trim());
   const hasComments = input.topComments.length > 0;
   const hasCaptions = Boolean(input.captions?.trim());
@@ -328,8 +371,11 @@ export async function extractRecipeWithLadder(
       } else {
         fromText = settled.result;
       }
+    } else if (stepTimeout(TEXT_TIMEOUT_MS, deadlineAt) < MIN_TEXT_MS) {
+      console.log('[gemini] text step skipped — out of time');
     } else {
-      console.log('[gemini] text step start', { timeoutMs: TEXT_TIMEOUT_MS });
+      const timeoutMs = stepTimeout(TEXT_TIMEOUT_MS, deadlineAt);
+      console.log('[gemini] text step start', { timeoutMs });
       try {
         fromText = await extractRecipeFromText(
           input,
@@ -338,7 +384,7 @@ export async function extractRecipeWithLadder(
             comments: hasComments,
             captions: hasCaptions,
           },
-          TEXT_TIMEOUT_MS,
+          timeoutMs,
         );
       } catch (err) {
         console.error('[gemini] text step failed', {
@@ -407,8 +453,27 @@ export async function extractRecipeWithLadder(
     };
   }
 
+  if (stepTimeout(Number.POSITIVE_INFINITY, deadlineAt) < MIN_VIDEO_RUNG_MS) {
+    console.log('[gemini] video step skipped — out of time', {
+      msLeft: stepTimeout(Number.POSITIVE_INFINITY, deadlineAt),
+    });
+    if (textCandidate) {
+      return { recipe: textCandidate.recipe, source: textCandidate.source, usages };
+    }
+    return { recipe: EMPTY_RECIPE, source: 'video', usages, videoSkippedReason: 'out_of_time' };
+  }
+
   try {
-    const fromVideo = await extractRecipeWithVideo(input);
+    const fromVideo = await extractRecipeWithVideo(input, deadlineAt);
+    if (fromVideo.outOfTime && !textCandidate) {
+      return {
+        recipe: EMPTY_RECIPE,
+        source: 'video',
+        usages,
+        usedInstagramVideoDownload: fromVideo.usedInstagramVideoDownload === true,
+        videoSkippedReason: 'out_of_time',
+      };
+    }
     if (fromVideo.usage) usages.push(fromVideo.usage);
     usedInstagramVideoDownload = fromVideo.usedInstagramVideoDownload === true;
     const videoRecipe = normalizeGeminiRecipe(fromVideo.recipe);
@@ -446,7 +511,16 @@ export async function extractRecipeWithLadder(
       return { recipe: textCandidate.recipe, source: textCandidate.source, usages };
     }
     if (isGeminiTimeout(err)) {
-      return { recipe: EMPTY_RECIPE, source: 'video', usages, usedInstagramVideoDownload };
+      return {
+        recipe: EMPTY_RECIPE,
+        source: 'video',
+        usages,
+        usedInstagramVideoDownload,
+        // Cut short by the caller's deadline: the video may well hold a recipe.
+        ...(deadlineAt !== undefined && Date.now() >= deadlineAt - 1_000
+          ? { videoSkippedReason: 'out_of_time' as const }
+          : {}),
+      };
     }
     throw err;
   }
@@ -592,10 +666,13 @@ export async function repairPartialRecipe(input: {
 
 async function extractRecipeWithVideo(
   input: ExtractInput,
+  deadlineAt?: number,
 ): Promise<{
   recipe: GeminiRecipe;
   usage: GeminiUsageSnapshot | null;
   usedInstagramVideoDownload?: boolean;
+  /** The download used up the time the model call needed, so it wasn't made. */
+  outOfTime?: boolean;
 }> {
   const textContext = buildTextContext(input, {
     description: true,
@@ -605,11 +682,27 @@ async function extractRecipeWithVideo(
 
   if (!input.videoUrl?.trim()) {
     console.log('[gemini] video step — no videoUrl, falling back to text-only');
-    return callGemini(TEXT_SYSTEM_PROMPT, [{ text: textContext }], TEXT_TIMEOUT_MS, 'text');
+    return callGemini(
+      TEXT_SYSTEM_PROMPT,
+      [{ text: textContext }],
+      stepTimeout(TEXT_TIMEOUT_MS, deadlineAt),
+      'text',
+    );
   }
 
   const resolveStarted = Date.now();
-  const video = await resolveVideoPart(input);
+  // The Instagram fallback can chain a hosted resolve and a second download, so the download
+  // is raced against the deadline too (an abandoned download finishes in the background).
+  const video = await beforeDeadline(
+    resolveVideoPart(input),
+    deadlineAt === undefined ? undefined : deadlineAt - MIN_VIDEO_MS,
+  );
+  if (video === null) {
+    console.log('[gemini] video download abandoned — out of time', {
+      ms: Date.now() - resolveStarted,
+    });
+    return { recipe: EMPTY_RECIPE, usage: null, outOfTime: true };
+  }
   if (!video.part) {
     // `too_large` with a long durationSeconds is the inline cap at work (PIN-100).
     console.log('[gemini] skipping multimodal — no usable video', {
@@ -625,8 +718,22 @@ async function extractRecipeWithVideo(
     };
   }
 
+  const timeoutMs = stepTimeout(VIDEO_TIMEOUT_MS, deadlineAt);
+  if (timeoutMs < MIN_VIDEO_MS) {
+    console.log('[gemini] multimodal call skipped — out of time', {
+      timeoutMs,
+      resolveMs: Date.now() - resolveStarted,
+    });
+    return {
+      recipe: EMPTY_RECIPE,
+      usage: null,
+      usedInstagramVideoDownload: video.usedInstagramVideoDownload,
+      outOfTime: true,
+    };
+  }
+
   console.log('[gemini] multimodal call', {
-    timeoutMs: VIDEO_TIMEOUT_MS,
+    timeoutMs,
     inline: 'imageBase64' in video.part,
     bytes: video.bytes,
     durationSeconds: input.durationSeconds ?? null,
@@ -636,7 +743,7 @@ async function extractRecipeWithVideo(
   const result = await callGemini(
     VIDEO_SYSTEM_PROMPT,
     [video.part, { text: textContext }],
-    VIDEO_TIMEOUT_MS,
+    timeoutMs,
     'video',
   );
   return { ...result, usedInstagramVideoDownload: video.usedInstagramVideoDownload };

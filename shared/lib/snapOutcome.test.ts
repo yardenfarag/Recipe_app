@@ -70,13 +70,13 @@ describe('snapOutcome', () => {
     expect(snapOutcome(result({ status: 'full', recipe }), true)).toEqual({ kind: 'preview', recipe });
   });
 
-  it('no answer, or a refunded timeout, asks to try again in friendly words', () => {
+  it('no answer asks to try again; a refunded timeout says the credit was not used', () => {
     const noAnswer = result({ code: 'no_response', message: 'Could not reach the extraction service. Please try again.' });
     expect(snapOutcome(noAnswer, true)).toEqual({ kind: 'message', tone: 'error', messageKey: 'snap.genericError' });
     expect(snapOutcome(result({ code: 'extraction_timeout', message: 'timeout' }), true)).toEqual({
       kind: 'message',
       tone: 'error',
-      messageKey: 'snap.genericError',
+      messageKey: 'snap.timedOut',
     });
   });
 

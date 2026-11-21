@@ -737,6 +737,7 @@ export default {
     "photoTooLarge": "That photo is too large. Try a closer crop or a smaller image.",
     "genericError": "Something went wrong. Please try again.",
     "videoTooLong": "This video is too long to analyze. Try a clip under 12 minutes, or one with the recipe in the caption.",
+    "timedOut": "This video took too long to read, so your credit wasn't used. Try again, or try a shorter clip.",
     "comingSoon": "That platform is coming soon.",
     "notFound": "Couldn’t find a recipe in this link. Try a different one.",
     "statusReadingPhoto": "Reading the photo…",

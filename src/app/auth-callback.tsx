@@ -11,7 +11,8 @@ import { useOnboarding } from '@/hooks/useOnboarding';
 import { useThemePreference } from '@/hooks/useThemePreference';
 import { announce } from '@/lib/a11y';
 import { captureOnboardingCompleted } from '@/lib/analytics';
-import { takePendingOAuthReason } from '@/lib/pendingOAuth';
+import { safeReturnPath } from '@/lib/authReturnPath';
+import { takePendingOAuthReason, takePendingOAuthReturnTo } from '@/lib/pendingOAuth';
 import { completeOAuthFromCallbackUrl } from '@/lib/supabase/auth';
 
 const CALLBACK_WAIT_MS = 4_000;
@@ -21,14 +22,16 @@ export default function AuthCallbackScreen() {
   const { t } = useTranslation();
   const callbackUrl = Linking.useLinkingURL();
   const { colors } = useThemePreference();
-  const { completeOnboarding } = useOnboarding();
+  const { ready, completed, completeOnboarding } = useOnboarding();
   const { language } = useLanguagePreference();
   const [error, setError] = useState<string | null>(null);
   // Read through a ref: re-running the effect would reuse the one-time OAuth code.
-  const onboardingRef = useRef({ completeOnboarding, language });
+  // `completed` only counts once storage has loaded (`ready`), so a returning user isn't
+  // marked as new and shown the walkthrough again.
+  const onboardingRef = useRef({ completed: completed || !ready, completeOnboarding, language });
   useEffect(() => {
-    onboardingRef.current = { completeOnboarding, language };
-  }, [completeOnboarding, language]);
+    onboardingRef.current = { completed: completed || !ready, completeOnboarding, language };
+  }, [ready, completed, completeOnboarding, language]);
 
   useEffect(() => {
     let active = true;
@@ -39,11 +42,19 @@ export default function AuthCallbackScreen() {
         await completeOAuthFromCallbackUrl(url);
         if (!active) return;
         // Web: same next step the auth screen takes after an in-page sign-in.
-        if (takePendingOAuthReason() === 'onboarding') {
-          const { completeOnboarding: complete, language: locale } = onboardingRef.current;
+        const reason = takePendingOAuthReason();
+        const returnTo = safeReturnPath(takePendingOAuthReturnTo());
+        const { completed: done, completeOnboarding: complete, language: locale } = onboardingRef.current;
+        if (reason === 'onboarding') {
           captureOnboardingCompleted({ locale, platform: Platform.OS });
           await complete();
           if (active) router.dismissTo('/add');
+          return;
+        }
+        if (returnTo) {
+          // Back to the shared or Hub recipe they were saving; it saves itself now.
+          if (!done) await complete();
+          if (active) router.replace(returnTo);
           return;
         }
         router.dismissTo('/');

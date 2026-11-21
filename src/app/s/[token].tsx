@@ -8,6 +8,7 @@ import { RecipeView } from '@/components/RecipeView';
 import { Screen } from '@/components/Screen';
 import { useAuth } from '@/hooks/useAuth';
 import { useThemePreference } from '@/hooks/useThemePreference';
+import { saveAfterSignInPath } from '@/lib/authReturnPath';
 import {
   claimRecipeShare,
   getRecipeShare,
@@ -16,7 +17,7 @@ import {
 
 export default function SharedRecipeScreen() {
   const { t } = useTranslation();
-  const { token: tokenParam } = useLocalSearchParams<{ token: string }>();
+  const { token: tokenParam, save } = useLocalSearchParams<{ token: string; save?: string }>();
   const token = Array.isArray(tokenParam) ? tokenParam[0] : tokenParam;
   const { session, loading: authLoading } = useAuth();
   const { colors } = useThemePreference();
@@ -28,7 +29,8 @@ export default function SharedRecipeScreen() {
   const [claimError, setClaimError] = useState<string | null>(null);
   const claimInFlight = useRef(false);
   // Set when Save sent a guest to sign up, so the recipe saves once they come back signed in.
-  const saveAfterAuth = useRef(false);
+  // `?save=1` carries the same intent across a page load (web Google sign-in leaves the page).
+  const saveAfterAuth = useRef(save === '1');
 
   useEffect(() => {
     let cancelled = false;
@@ -66,9 +68,10 @@ export default function SharedRecipeScreen() {
 
     if (!session?.user) {
       saveAfterAuth.current = true;
+      const returnTo = saveAfterSignInPath('s', token);
       router.push({
         pathname: '/auth',
-        params: { mode: 'signup', reason: 'shared_recipe' },
+        params: { mode: 'signup', reason: 'shared_recipe', ...(returnTo ? { returnTo } : {}) },
       });
       return false;
     }

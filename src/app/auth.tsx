@@ -30,7 +30,8 @@ import {
   normalizeEmail,
   validatePassword,
 } from '@shared/lib/authValidation';
-import { savePendingOAuthReason } from '@/lib/pendingOAuth';
+import { safeReturnPath } from '@/lib/authReturnPath';
+import { savePendingOAuthReason, savePendingOAuthReturnTo } from '@/lib/pendingOAuth';
 import { logTap } from '@/lib/interactionLog';
 import {
   isAppleAuthAvailable,
@@ -138,9 +139,10 @@ function AuthShell({ children }: { children: ReactNode }) {
 
 export default function AuthScreen() {
   const { t } = useTranslation();
-  const params = useLocalSearchParams<{ mode?: string; reason?: string }>();
+  const params = useLocalSearchParams<{ mode?: string; reason?: string; returnTo?: string }>();
   const initialMode = useMemo(() => parseMode(params.mode), [params.mode]);
   const reason = useMemo(() => parseReason(params.reason), [params.reason]);
+  const returnTo = useMemo(() => safeReturnPath(params.returnTo), [params.returnTo]);
 
   const [mode, setMode] = useState<Mode>(initialMode);
   const [waitingFor, setWaitingFor] = useState<WaitingFor>(null);
@@ -153,7 +155,7 @@ export default function AuthScreen() {
   const [isAppleAvailable, setIsAppleAvailable] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const { colors, scheme } = useThemePreference();
-  const { completeOnboarding } = useOnboarding();
+  const { completed: onboardingCompleted, completeOnboarding } = useOnboarding();
   const { language } = useLanguagePreference();
 
   useEffect(() => {
@@ -177,6 +179,14 @@ export default function AuthScreen() {
       captureOnboardingCompleted({ locale: language, platform: Platform.OS });
       await completeOnboarding();
       router.dismissTo('/add');
+      return;
+    }
+    if (returnTo) {
+      // They came from a shared or Hub recipe and skipped onboarding: don't send them to it now.
+      if (!onboardingCompleted) await completeOnboarding();
+      // The recipe screen is still underneath and saves on return; if not, open it to save.
+      if (router.canGoBack()) router.back();
+      else router.replace(returnTo);
       return;
     }
     if (router.canGoBack()) router.back();
@@ -321,7 +331,10 @@ export default function AuthScreen() {
     setError(null);
     setLoading(true);
     try {
-      if (Platform.OS === 'web') savePendingOAuthReason(reason);
+      if (Platform.OS === 'web') {
+        savePendingOAuthReason(reason);
+        savePendingOAuthReturnTo(returnTo);
+      }
       const result = await signInWithGoogle();
       if (!result.cancelled) done();
     } catch (err) {

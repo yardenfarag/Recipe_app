@@ -4,6 +4,7 @@ import { Platform } from 'react-native';
 
 import { useAuth } from '@/hooks/useAuth';
 import { useOnboarding } from '@/hooks/useOnboarding';
+import { isPublicRecipePath } from '@/lib/authReturnPath';
 
 /**
  * The app requires an account. Incomplete installs stay on `/onboarding` or
@@ -36,8 +37,11 @@ export function OnboardingGate() {
     // The web admin dashboard asks for sign-in itself; an admin on a new
     // computer shouldn't be walked through onboarding to reach it.
     const onAdminDashboard = pathname === '/admin/dashboard';
+    // Shared and Hub recipes show the recipe first and ask for sign-in only on Save, so someone
+    // following a link sees what they came for instead of onboarding.
+    const onPublicRecipe = isPublicRecipePath(pathname);
 
-    if (onWelcome || onLegal || onAdminDashboard) return;
+    if (onWelcome || onLegal || onAdminDashboard || onPublicRecipe) return;
 
     if (!completed && !onOnboarding && !onAuth) {
       router.replace('/onboarding');

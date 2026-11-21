@@ -235,3 +235,47 @@ Deno.test('ladder: a failed YouTube video call keeps the partial text', () =>
       stub.restore();
     }
   }));
+
+Deno.test('ladder: with no time left for the video, it is skipped as out_of_time, not "no recipe"', async () => {
+  const stub = stubFetch(() => {
+    throw new Error('no network call expected');
+  });
+  try {
+    const result = await extractRecipeWithLadder(youtubeInput({ description: undefined }), {
+      deadlineAt: Date.now() + 5_000,
+    });
+    assertEquals(result.videoSkippedReason, 'out_of_time');
+    assertEquals(stub.calls.length, 0);
+  } finally {
+    stub.restore();
+  }
+});
+
+Deno.test('ladder: out of time after partial text keeps the text instead of failing', () =>
+  withEnv({ OPENROUTER_API_KEY: 'test' }, async () => {
+    const stub = stubFetch(() => completion(PARTIAL));
+    try {
+      // Enough for the text step, not for the video rung after it.
+      const result = await extractRecipeWithLadder(youtubeInput(), { deadlineAt: Date.now() + 20_000 });
+      assertEquals(result.videoSkippedReason, undefined);
+      assertEquals(result.recipe.title, 'Tomato soup');
+      assertEquals(stub.calls.length, 1);
+    } finally {
+      stub.restore();
+    }
+  }));
+
+Deno.test('ladder: a deadline shortens the video call to the time left', () =>
+  withEnv({ OPENROUTER_API_KEY: 'test' }, async () => {
+    const stub = stubFetch(() => completion(VIDEO_RECIPE));
+    try {
+      const result = await extractRecipeWithLadder(youtubeInput({ description: undefined }), {
+        deadlineAt: Date.now() + 60_000,
+      });
+      assertEquals(result.source, 'video');
+      assertEquals(result.videoSkippedReason, undefined);
+      assertEquals(stub.calls.length, 1);
+    } finally {
+      stub.restore();
+    }
+  }));

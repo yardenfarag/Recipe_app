@@ -27,6 +27,7 @@ import { keepUploadedPhoto, persistSocialThumbnail, fetchImageAsBase64 } from '.
 import { estimateScrapeCredits, GUEST_EXTRACT_LIMIT } from '../_shared/llm/pricing.ts';
 import {
   canStartExtract,
+  CREDIT_REPLAY_WINDOW_MS,
   finalizeSignedInExtract,
   finalizeGuestExtraction,
   getGuestExtractCount,
@@ -220,6 +221,30 @@ serve('invent-recipe', async (req) => {
     );
   }
 
+  // No credits: say so now, before the scrape and model calls below cost anything. The
+  // reservation further down is still the real check.
+  if (admin) {
+    const precheck = await canStartExtract(admin, userId);
+    if (!precheck.ok && precheck.code === 'insufficient_credits') {
+      return jsonResponse(
+        {
+          status: 'failed' as JobStatus,
+          platform,
+          code: 'insufficient_credits',
+          message: quotaBlockMessage('insufficient_credits'),
+          ...quotaFields(precheck.snapshot),
+        },
+        402,
+      );
+    }
+  }
+
+  // The credit pays for this link or photo only; a reused request id can't buy another.
+  // Taken before the thumbnail fallback below can replace imageBase64.
+  const creditScope = url
+    ? `invent|${platform}|${contentId ?? url}`
+    : `invent|photo|${imageBase64 ?? ''}`;
+
   // Every uploaded photo is kept, whatever the outcome, until the account is deleted.
   const uploadedPhoto = keepUploadedPhoto(platform, imageBase64, imageMime, userId);
 
@@ -231,7 +256,8 @@ serve('invent-recipe', async (req) => {
     let originalUrl: string | null = null;
     let durationSeconds: number | undefined;
     let usedInstagramVideoDownload = false;
-    let videoSkippedReason: 'too_long' | undefined;
+    // `out_of_time` only comes back when a deadline is passed to the ladder, which invent doesn't.
+    let videoSkippedReason: 'too_long' | 'out_of_time' | undefined;
 
     if (platform !== 'photo') {
       meta = await fetchPlatformMeta(platform, url, contentId);
@@ -363,7 +389,10 @@ serve('invent-recipe', async (req) => {
     }
 
     if (userId) {
-      const reserved = await reserveSignedInExtract(admin, userId, requestId);
+      const reserved = await reserveSignedInExtract(admin, userId, requestId, {
+        scope: creditScope,
+        replayWindowMs: CREDIT_REPLAY_WINDOW_MS,
+      });
       if (!reserved.ok) {
         return jsonResponse(
           {
@@ -666,6 +695,8 @@ async function compensateSignedIn(
   reason: string,
   afterFinalizeFailure = false,
 ): Promise<boolean> {
+  // A replay rides on a credit that already bought this recipe: there is nothing to give back.
+  if (reservation.replayed) return true;
   const result = afterFinalizeFailure
     ? await refundSignedInExtractAfterFinalizeFailure(admin, userId, reservation.reservationId)
     : await refundSignedInExtract(admin, userId, reservation.reservationId, reason);
@@ -676,6 +707,7 @@ async function compensateSignedIn(
     reservation.reservationId,
     reason,
     result.error,
+    { afterFinalizeFailure },
   );
   return false;
 }

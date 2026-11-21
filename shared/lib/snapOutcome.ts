@@ -27,6 +27,7 @@ export type SnapOutcome =
 
 export type SnapMessageKey =
   | 'snap.videoTooLong'
+  | 'snap.timedOut'
   | 'snap.invalidUrl'
   | 'snap.gateFailed'
   | 'snap.gateDailyLimit'
@@ -53,10 +54,10 @@ export function snapOutcome(result: ExtractResult, canOfferInvent: boolean): Sna
   if (code === 'invalid_url') return { kind: 'message', tone: 'error', messageKey: 'snap.invalidUrl' };
   if (code === 'gate_unavailable') return { kind: 'message', tone: 'error', messageKey: 'snap.gateFailed' };
   if (code === 'daily_limit') return { kind: 'message', tone: 'info', messageKey: 'snap.gateDailyLimit' };
-  // No answer, or out of time (refunded): try again. Never the transport's own text.
-  if (code === NO_RESPONSE_CODE || code === 'extraction_timeout') {
-    return { kind: 'message', tone: 'error', messageKey: 'snap.genericError' };
-  }
+  // Out of time: the server refunded the credit, so say so. No answer at all: try again, never the transport's
+  // own text.
+  if (code === 'extraction_timeout') return { kind: 'message', tone: 'error', messageKey: 'snap.timedOut' };
+  if (code === NO_RESPONSE_CODE) return { kind: 'message', tone: 'error', messageKey: 'snap.genericError' };
   if (isFoodGateReject(code)) {
     return { kind: 'message', tone: 'error', messageKey: result.platform === 'photo' ? 'snap.notFood' : 'snap.notFoodLink' };
   }

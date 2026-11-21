@@ -1,5 +1,5 @@
 import { router, useLocalSearchParams, useNavigation } from 'expo-router';
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { ActivityIndicator, Alert, Text, View } from 'react-native';
 import { Pressable } from '@/components/ui/Pressable';
 import { useTranslation } from 'react-i18next';
@@ -9,6 +9,7 @@ import { RecipeView } from '@/components/RecipeView';
 import { Screen } from '@/components/Screen';
 import { useAuth } from '@/hooks/useAuth';
 import { useThemePreference } from '@/hooks/useThemePreference';
+import { saveAfterSignInPath } from '@/lib/authReturnPath';
 import { recipeCardToExtracted } from '@shared/lib/recipeCardMap';
 import { claimHubCard, fetchHubCard, fetchLibraryRecipeForCard } from '@shared/lib/supabase/cookingHub';
 import { translateAppError } from '@shared/lib/translateAppError';
@@ -16,8 +17,11 @@ import type { RecipeCard } from '@shared/types/recipeCard';
 
 export default function HubRecipeScreen() {
   const { t } = useTranslation();
-  const { id: idParam } = useLocalSearchParams<{ id: string }>();
+  const { id: idParam, save } = useLocalSearchParams<{ id: string; save?: string }>();
   const id = Array.isArray(idParam) ? idParam[0] : idParam;
+  // Set when Add sent a guest to sign up (or `?save=1` after web Google sign-in left the page),
+  // so the recipe is added once they're back and signed in.
+  const saveAfterAuth = useRef(save === '1');
   const { session, loading: authLoading } = useAuth();
   const { colors } = useThemePreference();
   const navigation = useNavigation();
@@ -82,9 +86,11 @@ export default function HubRecipeScreen() {
     if (!card || claiming) return;
 
     if (!session?.user) {
+      saveAfterAuth.current = true;
+      const returnTo = id ? saveAfterSignInPath('hub', id) : null;
       router.push({
         pathname: '/auth',
-        params: { mode: 'signup', reason: 'hub_recipe' },
+        params: { mode: 'signup', reason: 'hub_recipe', ...(returnTo ? { returnTo } : {}) },
       });
       return;
     }
@@ -101,7 +107,14 @@ export default function HubRecipeScreen() {
     } finally {
       setClaiming(false);
     }
-  }, [card, claiming, session?.user, t]);
+  }, [card, claiming, id, session?.user, t]);
+
+  useEffect(() => {
+    if (authLoading || loading || !card || !session?.user || !saveAfterAuth.current) return;
+    saveAfterAuth.current = false;
+    if (existingRecipeId) router.replace(`/recipe/${existingRecipeId}`);
+    else void addToLibrary();
+  }, [authLoading, loading, card, session?.user, existingRecipeId, addToLibrary]);
 
   // The stack header (root layout) already has the back button and the title.
   const screenEdges: Edge[] = ['bottom'];

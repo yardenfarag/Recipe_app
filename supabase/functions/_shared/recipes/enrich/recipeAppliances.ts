@@ -221,8 +221,9 @@ export function unmatchedApplianceNames(value: unknown): string[] {
 export async function appliancesForRecipe(
   recipe: AppliancesRecipeInput,
   usages: GeminiUsageSnapshot[],
+  options: { timeoutMs?: number } = {},
 ): Promise<{ appliances: RecipeAppliance[] | null; metadata: Record<string, unknown> }> {
-  const result = await deriveRecipeAppliances(recipe);
+  const result = await deriveRecipeAppliances(recipe, { timeoutMs: options.timeoutMs });
   usages.push(...result.usages);
   const metadata: Record<string, unknown> = { appliances_count: result.appliances?.length ?? null };
   if (result.tipsProposed > 0) {

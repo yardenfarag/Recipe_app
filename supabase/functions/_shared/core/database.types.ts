@@ -1633,6 +1633,10 @@ export type Database = {
         }
         Returns: boolean
       }
+      mark_recipe_credit_compensation_after_finalize_failure: {
+        Args: { p_error?: string; p_reservation_id: string; p_user_id: string }
+        Returns: boolean
+      }
       mark_recipe_credit_compensation_pending: {
         Args: {
           p_error?: string
