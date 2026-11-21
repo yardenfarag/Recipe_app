@@ -69,6 +69,27 @@ test("a photo chosen from the computer imports and saves", async ({ page }) => {
   await expect(page.getByRole("link", { name: "Grandma's Cake" })).toBeVisible();
 });
 
+test("a PDF chosen from the computer imports as is, and one with no recipe says so", async ({ page }) => {
+  await resetLibrary([]);
+  const calls = await stubImports(page, {
+    "extract-recipe": [
+      { body: { status: "failed", platform: "photo", code: "pdf_no_recipe", message: "Couldn't find a recipe in this PDF." } },
+      { body: { status: "full", platform: "photo", recipe: importedRecipe("Printed Lasagne", { platform: "photo", extraction_source: "photo" }) } },
+    ],
+  });
+  await openSnap(page);
+  const pdf = { name: "lasagne.pdf", mimeType: "application/pdf", buffer: Buffer.from("%PDF-1.7\nLasagne\n%%EOF") };
+
+  await page.locator('input[type="file"]').setInputFiles(pdf);
+  await expect(page.getByRole("alert").filter({ hasText: "Couldn’t find a recipe in this PDF" })).toBeVisible();
+  await expect(page.getByRole("dialog")).toHaveCount(0);
+
+  await page.locator('input[type="file"]').setInputFiles(pdf);
+  await expect(page.locator("#main h1")).toHaveText("Printed Lasagne");
+  expect(calls[1].body.pdf_base64).toBe(pdf.buffer.toString("base64"));
+  expect(calls[1].body.image_base64).toBeUndefined();
+});
+
 test("a photo dropped onto the page imports", async ({ page }) => {
   await resetLibrary([]);
   const calls = await stubImports(page, {

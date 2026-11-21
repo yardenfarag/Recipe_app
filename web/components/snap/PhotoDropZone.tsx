@@ -8,14 +8,16 @@ import { cn } from "@/lib/cn";
 import type { SnapIntent } from "@/lib/snap/useSnap";
 
 /**
- * Import from a photo: one big target that opens the file picker (the camera too, on a phone), and says it also
- * takes a dropped or pasted photo. The page itself handles the drop and the paste.
+ * Import from a photo, or in Snap a PDF too (PIN-72): one big target that opens the file picker (the camera too, on a
+ * phone), and says it also takes a dropped or pasted file. The page itself handles the drop and the paste.
  */
 export function PhotoDropZone({ intent, onFile, disabled }: { intent: SnapIntent; onFile: (file: File) => void; disabled?: boolean }) {
   const { t } = useTranslation();
   const input = useRef<HTMLInputElement>(null);
   const invent = intent === "invent";
   const Icon = invent ? UtensilsCrossed : Camera;
+  const title = invent ? t("snap.inventPhotoAction") : t("web.snap.photoOrPdfAction");
+  const hint = invent ? t("snap.inventPhotoHint") : t("web.snap.photoOrPdfHint");
   return (
     <>
       <button
@@ -31,15 +33,15 @@ export function PhotoDropZone({ intent, onFile, disabled }: { intent: SnapIntent
           <Icon className="h-6 w-6" />
         </span>
         <span className="min-w-0 flex-1">
-          <span className="block text-base font-bold text-text">{invent ? t("snap.inventPhotoAction") : t("snap.photoAction")}</span>
-          <span className="mt-0.5 block text-sm leading-relaxed text-muted">{invent ? t("snap.inventPhotoHint") : t("snap.photoHint")}</span>
-          <span className="mt-0.5 hidden text-xs text-muted sm:block">{t("web.snap.dropOrPaste")}</span>
+          <span className="block text-base font-bold text-text">{title}</span>
+          <span className="mt-0.5 block text-sm leading-relaxed text-muted">{hint}</span>
+          <span className="mt-0.5 hidden text-xs text-muted sm:block">{t(invent ? "web.snap.dropOrPaste" : "web.snap.dropOrPastePdf")}</span>
         </span>
       </button>
       <input
         ref={input}
         type="file"
-        accept="image/*"
+        accept={invent ? "image/*" : "image/*,application/pdf"}
         hidden
         tabIndex={-1}
         aria-hidden

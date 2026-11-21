@@ -38,7 +38,23 @@ import {
 } from '../_shared/extraction/platform.ts';
 import type { PlatformMeta } from '../_shared/extraction/platformMeta.ts';
 import { keepUploadedPhoto, persistSocialThumbnail } from '../_shared/extraction/persistThumbnail.ts';
-import { estimateScrapeCredits, GUEST_EXTRACT_LIMIT } from '../_shared/llm/pricing.ts';
+import {
+  type DecodedPdf,
+  decodePdfBase64,
+  extractRecipeFromPdf,
+  pdfRejectMessage,
+  type PdfRejectCode,
+  type PdfRoute,
+  type PdfText,
+  readPdfText,
+  scannedPageCount,
+} from '../_shared/extraction/pdfRecipe.ts';
+import { reserveDailyAiUsage } from '../_shared/core/dailyAiUsage.ts';
+import {
+  CONTENT_GATE_DAILY_LIMIT,
+  estimateScrapeCredits,
+  GUEST_EXTRACT_LIMIT,
+} from '../_shared/llm/pricing.ts';
 import {
   canStartExtract,
   CREDIT_REPLAY_WINDOW_MS,
@@ -100,7 +116,9 @@ const MIN_APPLIANCES_MS = 8_000;
 const MIN_THUMBNAIL_COPY_MS = 15_000;
 
 /**
- * POST { url, guest_install_id? } -> { status, platform, recipe?, message?, cached?, ... }
+ * POST { url | image_base64 | pdf_base64, guest_install_id? } -> { status, platform, recipe?, message?, cached?, ... }
+ *
+ * A PDF (PIN-72) imports like a photo: platform `photo`, one credit, never published to the Hub.
  *
  * Detects the platform, rejects anything not yet live (ADR 003), then for
  * YouTube: returns an existing saved recipe when the URL is already in the
@@ -125,6 +143,7 @@ serve('extract-recipe', async (req) => {
   let url = '';
   let imageBase64: string | null = null;
   let imageMime = 'image/jpeg';
+  let pdf: DecodedPdf | null = null;
   let guestInstallId: string | null = null;
   let requestId: string = crypto.randomUUID();
   let forceExtract = false;
@@ -148,6 +167,12 @@ serve('extract-recipe', async (req) => {
         return jsonResponse({ error: 'Image is too large. Try a smaller photo.' }, 400);
       }
     }
+    const rawPdf = body.pdf_base64 ?? body.pdfBase64;
+    if (!imageBase64 && typeof rawPdf === 'string' && rawPdf.trim().length > 80) {
+      const decoded = decodePdfBase64(rawPdf);
+      if (!decoded.ok) return pdfRejectResponse(decoded.code);
+      pdf = decoded.pdf;
+    }
     const rawInstall = body.guest_install_id ?? body.guestInstallId;
     if (typeof rawInstall === 'string' && rawInstall.trim().length >= 8) {
       guestInstallId = rawInstall.trim().slice(0, 128);
@@ -161,11 +186,11 @@ serve('extract-recipe', async (req) => {
     return jsonResponse({ error: 'Invalid JSON body' }, 400);
   }
 
-  if (!url && !imageBase64) {
-    return jsonResponse({ error: 'Missing "url" or "image_base64" in request body' }, 400);
+  if (!url && !imageBase64 && !pdf) {
+    return jsonResponse({ error: 'Missing "url", "image_base64" or "pdf_base64" in request body' }, 400);
   }
 
-  const platform: Platform = imageBase64 ? 'photo' : detectPlatform(url);
+  const platform: Platform = imageBase64 || pdf ? 'photo' : detectPlatform(url);
 
   // ADR 003 — staged rollout: reject non-live platforms with a clear message.
   if (platform !== 'photo' && !LIVE_PLATFORMS.includes(platform)) {
@@ -290,6 +315,30 @@ serve('extract-recipe', async (req) => {
     }
   }
 
+  // A PDF's pages and text are read before anything is charged: too many pages, or one that won't open, is
+  // turned away here.
+  let pdfText: PdfText | null = null;
+  let pdfRoute: PdfRoute | null = null;
+  if (pdf) {
+    const read = await readPdfText(pdf.bytes);
+    if (!read.ok) {
+      if (admin) {
+        await logUsageEvent(admin, {
+          userId,
+          action: 'extract',
+          platform,
+          status: 'failed',
+          tokensCharged: 0,
+          durationMs: Date.now() - started,
+          errorMessage: read.code,
+          metadata: { request_id: requestId, input: 'pdf', pdf_bytes: pdf.bytes.length },
+        });
+      }
+      return pdfRejectResponse(read.code);
+    }
+    pdfText = read.text;
+  }
+
   // Every uploaded photo is kept, whatever the outcome, until the account is deleted.
   const uploadedPhoto = keepUploadedPhoto(platform, imageBase64, imageMime, userId);
 
@@ -298,6 +347,7 @@ serve('extract-recipe', async (req) => {
       platform,
       url: url || null,
       hasImage: Boolean(imageBase64),
+      pdfPages: pdfText?.pageCount ?? null,
       contentId,
       userId: Boolean(userId),
     });
@@ -406,7 +456,10 @@ serve('extract-recipe', async (req) => {
         })
       : null;
 
-    const skipGate = shouldSkipThinSocialGate({
+    // A PDF skips the food check: it can't send a PDF, and there is no Guess the recipe from a PDF to hand off to.
+    // Reading it is the check (no recipe found is free). It still takes one of the check's daily slots, so PDFs
+    // with no recipe are capped like photos with none.
+    const skipGate = pdf !== null || shouldSkipThinSocialGate({
       platform,
       imageBase64,
       contentId,
@@ -415,6 +468,35 @@ serve('extract-recipe', async (req) => {
 
     let gateKind: import('../_shared/extraction/contentGate.ts').ContentKind = 'mixed';
     let dishGuess = '';
+
+    if (pdf) {
+      const slot = await reserveDailyAiUsage(admin, userId, 'content_gate', CONTENT_GATE_DAILY_LIMIT);
+      if (slot !== 'ok') {
+        await logUsageEvent(admin, {
+          userId,
+          action: 'content_gate',
+          platform,
+          status: slot === 'limited' ? 'daily_limit' : 'error',
+          tokensCharged: 0,
+          durationMs: Date.now() - started,
+          metadata: { input: 'pdf', job: 'extract' },
+        });
+        return slot === 'limited'
+          ? jsonResponse(
+            { status: 'failed' as ExtractionStatus, platform, code: 'daily_limit', message: 'daily_limit' },
+            429,
+          )
+          : jsonResponse(
+            {
+              status: 'failed' as ExtractionStatus,
+              platform,
+              code: 'gate_unavailable',
+              message: 'Could not check if this is food. Please try again.',
+            },
+            503,
+          );
+      }
+    }
 
     if (!skipGate) {
       const gate = await runContentGate({
@@ -554,7 +636,11 @@ serve('extract-recipe', async (req) => {
       guestInstallId,
       requestId,
       // The credit pays for this link or photo only; a reused request id can't buy another.
-      scope: imageBase64 ? `photo|${imageBase64}` : `${platform}|${meta?.contentId ?? contentId ?? url}`,
+      scope: imageBase64
+        ? `photo|${imageBase64}`
+        : pdf
+        ? `pdf|${pdf.base64}`
+        : `${platform}|${meta?.contentId ?? contentId ?? url}`,
       platform,
       started,
     });
@@ -563,7 +649,22 @@ serve('extract-recipe', async (req) => {
     guestReservation = reserved.guestReservation;
     guestRemaining = reserved.guestRemaining;
 
-    if (platform === 'photo' && imageBase64) {
+    if (pdf && pdfText) {
+      const fromPdf = await extractRecipeFromPdf({ pdf, text: pdfText, deadlineAt: ladderDeadlineAt });
+      gemini = fromPdf.recipe;
+      usages = fromPdf.usages;
+      source = 'photo';
+      originalUrl = null;
+      pdfRoute = fromPdf.route;
+      // Same answer as a video cut short: refunded, and the app says to try again.
+      if (fromPdf.fileSkipped) videoSkippedReason = 'out_of_time';
+      console.log('[extract-recipe] pdf done', {
+        route: fromPdf.route,
+        foundRecipe: gemini.found_recipe,
+        ingredients: gemini.ingredients?.length ?? 0,
+        instructions: gemini.instructions?.length ?? 0,
+      });
+    } else if (platform === 'photo' && imageBase64) {
       const fromImage = await extractRecipeFromImage({
         imageBase64,
         mimeType: imageMime,
@@ -652,6 +753,7 @@ serve('extract-recipe', async (req) => {
           ...compensationMetadata(creditReservation, guestReservation, compensationPending),
           ...extractRouteMetadata(extractGate, extractRoute, requestId),
           ...videoMetadata(durationSeconds, usedInstagramVideoDownload),
+          ...pdfMetadata(pdf, pdfText, pdfRoute),
         },
       });
 
@@ -661,11 +763,22 @@ serve('extract-recipe', async (req) => {
       return jsonResponse({
         status,
         platform,
-        code: rejectedAsTooLong ? 'video_too_long' : ranOutOfTime ? 'extraction_timeout' : 'no_recipe',
+        // A PDF gets its own code: `no_recipe` makes the apps offer Guess the recipe, which a PDF can't do.
+        code: rejectedAsTooLong
+          ? 'video_too_long'
+          : ranOutOfTime
+          ? (pdf ? 'pdf_timed_out' : 'extraction_timeout')
+          : pdf
+          ? 'pdf_no_recipe'
+          : 'no_recipe',
         message: rejectedAsTooLong
           ? `This video is longer than ${formatMaxVideoDurationLabel()}. Try a shorter clip, or a post with the recipe written in the caption.`
+          : ranOutOfTime && pdf
+          ? 'This PDF took too long to read. Your credit was not used. Try again in a moment.'
           : ranOutOfTime
           ? 'This video took too long to read. Your credit was not used. Try again in a moment, or use a post with the recipe in the caption.'
+          : pdf
+          ? "Couldn't find a recipe in this PDF. Try one with the recipe's ingredients and steps."
           : platform === 'photo'
             ? "Couldn't find a recipe in this photo. Try a clearer picture of the ingredients and steps."
             : platform === 'web'
@@ -881,6 +994,7 @@ serve('extract-recipe', async (req) => {
           : {}),
         ...extractRouteMetadata(extractGate, extractRoute, requestId),
         ...videoMetadata(durationSeconds, usedInstagramVideoDownload),
+        ...pdfMetadata(pdf, pdfText, pdfRoute),
         ...applianceMetadata,
       },
     });
@@ -948,7 +1062,10 @@ serve('extract-recipe', async (req) => {
       durationMs: Date.now() - started,
       errorMessage: errorMessage.slice(0, 500),
       scrapecreatorsCredits: estimateScrapeCredits(platform, false),
-      metadata: compensationMetadata(creditReservation, guestReservation, compensationPending),
+      metadata: {
+        ...compensationMetadata(creditReservation, guestReservation, compensationPending),
+        ...pdfMetadata(pdf, pdfText, pdfRoute),
+      },
     });
 
     if (compensationPending) {
@@ -1110,6 +1227,29 @@ function videoMetadata(durationSeconds: number | undefined, videoDownloaded: boo
       typeof durationSeconds === 'number' && Number.isFinite(durationSeconds) ? Math.round(durationSeconds) : null,
     video_downloaded: videoDownloaded,
   };
+}
+
+/** A PDF import's size and how it was read, for ai_usage_events (the recipe itself says `photo`). */
+function pdfMetadata(pdf: DecodedPdf | null, text: PdfText | null, route: PdfRoute | null): Record<string, unknown> {
+  if (!pdf) return {};
+  return {
+    input: 'pdf',
+    pdf_bytes: pdf.bytes.length,
+    pdf_pages: text?.pageCount ?? null,
+    pdf_scanned_pages: text ? scannedPageCount(text) : null,
+    pdf_route: route,
+  };
+}
+
+/** A PDF turned away before any model call (too big, too many pages, won't open). Nothing was charged. */
+function pdfRejectResponse(code: PdfRejectCode): Response {
+  return jsonResponse({
+    status: 'failed' as ExtractionStatus,
+    platform: 'photo',
+    code,
+    message: pdfRejectMessage(code),
+    tokens_charged: 0,
+  });
 }
 
 function compensationMetadata(

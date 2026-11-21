@@ -2,7 +2,15 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { FunctionsHttpError } from '@supabase/supabase-js';
 
-import { extractionOutcomeIsUncertain, extractRecipe, extractRecipeFromImage, NO_RESPONSE_CODE, photoRequestKey } from './extractRecipe';
+import {
+  extractionOutcomeIsUncertain,
+  extractRecipe,
+  extractRecipeFromImage,
+  extractRecipeFromPdf,
+  NO_RESPONSE_CODE,
+  pdfRequestKey,
+  photoRequestKey,
+} from './extractRecipe';
 import { inventRecipe } from './inventRecipe';
 
 const mocks = vi.hoisted(() => ({ invoke: vi.fn() }));
@@ -39,6 +47,20 @@ describe('import calls without a guest install id', () => {
     expect(mocks.invoke).toHaveBeenLastCalledWith('invent-recipe', {
       body: { url: 'https://example.com/soup', language: 'he', request_id: 'request-1' },
     });
+  });
+
+  it('sends a PDF as pdf_base64, keyed apart from a photo', async () => {
+    await extractRecipeFromPdf(webContext, 'JVBERi0xLjcKcdf');
+    expect(keys).toEqual([pdfRequestKey('JVBERi0xLjcKcdf')]);
+    expect(mocks.invoke).toHaveBeenCalledWith('extract-recipe', {
+      body: { pdf_base64: 'JVBERi0xLjcKcdf', request_id: 'request-1' },
+    });
+  });
+
+  it('keys two PDFs of the same size apart, though every PDF starts the same', () => {
+    const header = 'JVBERi0xLjcK'.padEnd(400, 'A');
+    expect(pdfRequestKey(`${header}${'B'.repeat(200)}`)).not.toBe(pdfRequestKey(`${header}${'C'.repeat(200)}`));
+    expect(pdfRequestKey(`${header}${'B'.repeat(200)}`)).toBe(pdfRequestKey(`${header}${'B'.repeat(200)}`));
   });
 
   it('without a JSON answer: no_response, an uncertain charge, friendly words and the same request id', async () => {

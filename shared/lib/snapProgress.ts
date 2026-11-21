@@ -6,12 +6,13 @@ import { detectPlatform } from './platformUrls';
  * takes, measured from `ai_usage_events.duration_ms`.
  */
 
-export type SnapTimingKind = 'tiktok' | 'instagram' | 'youtube' | 'facebook' | 'web' | 'photo' | 'invent';
+export type SnapTimingKind = 'tiktok' | 'instagram' | 'youtube' | 'facebook' | 'web' | 'photo' | 'pdf' | 'invent';
 
 /**
  * Seconds. `usual` is about the median and `slow` about the 90th percentile of successful imports. The links come
  * from 30 days of `ai_usage_events` up to 2026-11-21. Facebook had too few rows and borrows Instagram's numbers;
- * photo and Guess the recipe are estimates until they are measured.
+ * photo, PDF and Guess the recipe are estimates until they are measured. A PDF with text reads about as fast as a web
+ * page; a scanned one goes to the photo model page by page, so it is slower than one photo (PIN-72).
  */
 export const SNAP_TIMINGS: Record<SnapTimingKind, { usual: number; slow: number }> = {
   tiktok: { usual: 17, slow: 28 },
@@ -20,6 +21,7 @@ export const SNAP_TIMINGS: Record<SnapTimingKind, { usual: number; slow: number 
   youtube: { usual: 13, slow: 30 },
   web: { usual: 9, slow: 13 },
   photo: { usual: 12, slow: 22 },
+  pdf: { usual: 15, slow: 35 },
   invent: { usual: 10, slow: 18 },
 };
 
@@ -27,8 +29,13 @@ export const SNAP_TIMINGS: Record<SnapTimingKind, { usual: number; slow: number 
 export const PROGRESS_AT_COUNTDOWN_END = 0.9;
 const PROGRESS_CEILING = 0.97;
 
-/** Which timing a Snap uses. A link that isn't a known platform is read as a web page. */
-export function snapTimingKind(intent: 'extract' | 'invent', url: string | null | undefined): SnapTimingKind {
+/** Which timing a Snap uses. A link that isn't a known platform is read as a web page. A PDF is only ever a Snap. */
+export function snapTimingKind(
+  intent: 'extract' | 'invent',
+  url: string | null | undefined,
+  pdf = false,
+): SnapTimingKind {
+  if (pdf) return 'pdf';
   if (intent === 'invent') return 'invent';
   if (!url) return 'photo';
   const platform = detectPlatform(url);
@@ -93,9 +100,15 @@ export function snapEtaText(eta: SnapEta, t: Translate): string {
 
 export type SnapStatusLine = { key: string; from: number };
 
-/** What Pinch says it is doing, and the progress at which each line starts. A photo has no link. */
-export function snapStatusLines(intent: 'extract' | 'invent', url: string | null | undefined): SnapStatusLine[] {
-  const reading = !url
+/** What Pinch says it is doing, and the progress at which each line starts. A photo or a PDF has no link. */
+export function snapStatusLines(
+  intent: 'extract' | 'invent',
+  url: string | null | undefined,
+  pdf = false,
+): SnapStatusLine[] {
+  const reading = pdf
+    ? 'snap.statusReadingPdf'
+    : !url
     ? 'snap.statusReadingPhoto'
     : detectPlatform(url) === 'web'
       ? 'snap.statusReadingPage'

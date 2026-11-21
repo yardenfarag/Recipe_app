@@ -37,8 +37,10 @@ const AnimatedCircle = Animated.createAnimatedComponent(Circle);
 
 type SnapExtractingViewProps = {
   intent: 'extract' | 'invent';
-  /** The link being read; null for a photo. */
+  /** The link being read; null for a photo or a PDF. */
   url: string | null;
+  /** A PDF is being read (PIN-72). */
+  pdf?: boolean;
 };
 
 /**
@@ -46,13 +48,13 @@ type SnapExtractingViewProps = {
  * Nothing reports real progress, so the ring and the countdown follow how long this kind of source usually takes
  * (shared/lib/snapProgress.ts).
  */
-export function SnapExtractingView({ intent, url }: SnapExtractingViewProps) {
+export function SnapExtractingView({ intent, url, pdf = false }: SnapExtractingViewProps) {
   const { t } = useTranslation();
   const { colors } = useThemePreference();
   const [reduceMotion, setReduceMotion] = useState(false);
   const [elapsed, setElapsed] = useState(0);
-  const kind = snapTimingKind(intent, url);
-  const lines = useMemo(() => snapStatusLines(intent, url), [intent, url]);
+  const kind = snapTimingKind(intent, url, pdf);
+  const lines = useMemo(() => snapStatusLines(intent, url, pdf), [intent, url, pdf]);
 
   const progress = snapProgressAt(kind, elapsed);
   const lineKey = snapStatusKeyAt(lines, progress);

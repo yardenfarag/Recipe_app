@@ -32,6 +32,10 @@ describe('snapTimingKind', () => {
   it('treats a link it cannot place as a web page', () => {
     expect(snapTimingKind('extract', 'not a link')).toBe('web');
   });
+
+  it('uses the PDF timing for a PDF', () => {
+    expect(snapTimingKind('extract', null, true)).toBe('pdf');
+  });
 });
 
 describe('snapProgressAt', () => {
@@ -111,6 +115,7 @@ describe('snapEtaText', () => {
 describe('snapStatusLines', () => {
   it('names what is being read', () => {
     expect(snapStatusLines('extract', null)[0].key).toBe('snap.statusReadingPhoto');
+    expect(snapStatusLines('extract', null, true)[0].key).toBe('snap.statusReadingPdf');
     expect(snapStatusLines('extract', 'https://www.seriouseats.com/x')[0].key).toBe('snap.statusReadingPage');
     expect(snapStatusLines('extract', 'https://www.tiktok.com/@a/video/7312345678901234567')[0].key).toBe(
       'snap.statusReadingVideo',

@@ -11,8 +11,10 @@ import {
   extractionOutcomeIsUncertain,
   extractRecipe,
   extractRecipeFromImage,
+  extractRecipeFromPdf,
   inventPhotoRequestKey,
   inventUrlRequestKey,
+  pdfRequestKey,
   photoRequestKey,
   type ExtractResult,
 } from "@shared/lib/supabase/extractRecipe";
@@ -33,7 +35,9 @@ export type SnapIntent = "extract" | "invent";
 export type SnapSource =
   | { type: "url"; url: string }
   /** A photo, already shrunk to a JPEG (web/lib/compressImage.ts). */
-  | { type: "photo"; base64: string; mimeType: string };
+  | { type: "photo"; base64: string; mimeType: string }
+  /** A PDF, as is (PIN-72). Only ever a Snap: there is no Guess the recipe from a PDF. */
+  | { type: "pdf"; base64: string; name: string };
 
 export type SnapJob = { intent: SnapIntent; source: SnapSource };
 
@@ -52,11 +56,13 @@ type RunOptions = { forceExtract?: boolean; alreadyGated?: boolean };
 /** The request-id key each kind of import is stored under (the same keys as on mobile). */
 function requestKey({ intent, source }: SnapJob): string {
   if (source.type === "url") return intent === "invent" ? inventUrlRequestKey(source.url) : source.url;
+  if (source.type === "pdf") return pdfRequestKey(source.base64);
   return intent === "invent" ? inventPhotoRequestKey(source.base64) : photoRequestKey(source.base64);
 }
 
 function callImport({ intent, source }: SnapJob, language: string, options: RunOptions): Promise<ExtractResult> {
   const context = webExtractionContext;
+  if (source.type === "pdf") return extractRecipeFromPdf(context, source.base64);
   if (intent === "invent") {
     const gated = { alreadyGated: options.alreadyGated };
     return source.type === "url"
@@ -102,7 +108,7 @@ export function useSnap({ onSettled }: { onSettled?: () => void } = {}) {
         if (result.request_id && requestSettledWithoutRecipe(result)) await acknowledgeRequest(key, result.request_id);
         onSettled?.();
 
-        const outcome = snapOutcome(result, next.intent === "extract");
+        const outcome = snapOutcome(result, next.intent === "extract" && next.source.type !== "pdf");
         switch (outcome.kind) {
           case "credits":
             setBanner({

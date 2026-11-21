@@ -37,6 +37,13 @@ export interface ExtractResult {
     | 'no_response'
     /** The import ran out of time; the credit was refunded and a retry is fine. */
     | 'extraction_timeout'
+    /** PDF imports (PIN-72). None of these charge, and none offer Guess the recipe. */
+    | 'pdf_no_recipe'
+    | 'pdf_too_large'
+    | 'pdf_too_many_pages'
+    | 'pdf_unreadable'
+    /** Refunded, like extraction_timeout. */
+    | 'pdf_timed_out'
     | string;
   tokens_charged?: number;
   guest_extracts_remaining?: number | null;
@@ -65,6 +72,18 @@ export interface ExtractionRequestContext {
 export function photoRequestKey(imageBase64: string): string {
   return `photo:${imageBase64.length}:${imageBase64.slice(0, 64)}`;
 }
+
+/**
+ * The request-id key for a PDF. Every PDF's base64 starts the same way (`JVBERi0x`, which is `%PDF-1`), so its middle
+ * and its end stand in for it: the end holds the file's own cross-reference offset.
+ */
+export function pdfRequestKey(pdfBase64: string): string {
+  const middle = Math.floor(pdfBase64.length / 2);
+  return `pdf:${pdfBase64.length}:${pdfBase64.slice(middle, middle + 48)}:${pdfBase64.slice(-48)}`;
+}
+
+/** The largest PDF the server takes (supabase/functions/_shared/extraction/pdfRecipe.ts), checked before sending. */
+export const MAX_PDF_BYTES = 10 * 1024 * 1024;
 
 /** The request-id key for Guess the recipe from a photo. */
 export function inventPhotoRequestKey(imageBase64: string): string {
@@ -182,6 +201,18 @@ export async function extractRecipeFromImage(
     ...ids,
     ...(opts?.forceExtract ? { force_extract: true } : {}),
   });
+}
+
+/**
+ * Sends a PDF (base64) to `extract-recipe` (PIN-72). One recipe per PDF, one credit, like a photo. There is no
+ * Guess the recipe for a PDF.
+ */
+export async function extractRecipeFromPdf(
+  context: ExtractionRequestContext,
+  pdfBase64: string,
+): Promise<ExtractResult> {
+  const { requestId, ids } = await importRequestIds(context, pdfRequestKey(pdfBase64));
+  return invokeImport('extract-recipe', requestId, { pdf_base64: pdfBase64, ...ids });
 }
 
 const NO_REACH: Record<string, string> = {

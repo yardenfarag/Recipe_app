@@ -21,6 +21,7 @@ import { PageHeader } from "@/components/ui/PageHeader";
 import { TextField } from "@/components/ui/TextField";
 import { compressImageFile } from "@/lib/compressImage";
 import { useCreditBalance } from "@/lib/credits/balance";
+import { isPdfFile, readPdfFile } from "@/lib/readPdfFile";
 import { getSnapDraft } from "@/lib/snap/draft";
 import { useSnap, type SnapIntent } from "@/lib/snap/useSnap";
 
@@ -89,11 +90,21 @@ export function SnapScreen() {
   }, [target, intent]);
   const saved = existing && existing.url === target && existing.intent === intent ? existing.recipe : null;
 
-  const importPhoto = useCallback(
+  /** A photo, or in Snap a PDF too (PIN-72). Guess the recipe takes photos only. */
+  const importFile = useCallback(
     async (file: File) => {
       if (busy) return;
+      if (!invent && isPdfFile(file)) {
+        const pdf = await readPdfFile(file);
+        if (!pdf.ok) {
+          setBanner({ tone: "error", message: t(pdf.reason === "too_large" ? "snap.pdfTooLarge" : "snap.pdfUnreadable") });
+          return;
+        }
+        await run({ intent: "extract", source: { type: "pdf", base64: pdf.base64, name: file.name } });
+        return;
+      }
       if (!file.type.startsWith("image/")) {
-        setBanner({ tone: "error", message: t("web.snap.notAnImage") });
+        setBanner({ tone: "error", message: t(invent ? "web.snap.notAnImage" : "web.snap.notAPhotoOrPdf") });
         return;
       }
       const image = await compressImageFile(file);
@@ -103,7 +114,7 @@ export function SnapScreen() {
       }
       await run({ intent, source: { type: "photo", base64: image.base64, mimeType: image.mimeType } });
     },
-    [busy, intent, run, setBanner, t],
+    [busy, intent, invent, run, setBanner, t],
   );
 
   const takeLink = useCallback((link: string) => {
@@ -138,7 +149,7 @@ export function SnapScreen() {
       const photo = Array.from(data.files).find((file) => file.type.startsWith("image/"));
       if (photo) {
         event.preventDefault();
-        void importPhoto(photo);
+        void importFile(photo);
         return;
       }
       if (isTypingTarget(event.target)) return;
@@ -150,9 +161,9 @@ export function SnapScreen() {
     };
     window.addEventListener("paste", onPaste);
     return () => window.removeEventListener("paste", onPaste);
-  }, [busy, importPhoto, takeLink]);
+  }, [busy, importFile, takeLink]);
 
-  // Drop anywhere: a photo imports it, a link fills the field.
+  // Drop anywhere: a photo (or, in Snap, a PDF) imports it, a link fills the field.
   useEffect(() => {
     let depth = 0;
     const onEnter = (event: DragEvent) => {
@@ -176,7 +187,7 @@ export function SnapScreen() {
       event.preventDefault();
       const file = event.dataTransfer.files[0];
       if (file) {
-        void importPhoto(file);
+        void importFile(file);
         return;
       }
       const link = droppedUrl(event.dataTransfer);
@@ -193,7 +204,7 @@ export function SnapScreen() {
       window.removeEventListener("dragleave", onLeave);
       window.removeEventListener("drop", onDrop);
     };
-  }, [busy, importPhoto, setBanner, t, takeLink]);
+  }, [busy, importFile, setBanner, t, takeLink]);
 
   return (
     <>
@@ -273,7 +284,7 @@ export function SnapScreen() {
                 <span aria-hidden className="h-px flex-1 bg-border" />
               </div>
 
-              <PhotoDropZone intent={intent} onFile={(file) => void importPhoto(file)} />
+              <PhotoDropZone intent={intent} onFile={(file) => void importFile(file)} />
             </section>
           )}
         </div>
@@ -291,7 +302,7 @@ export function SnapScreen() {
         <div aria-hidden className="pointer-events-none fixed inset-0 z-50 grid place-items-center bg-overlay p-6 backdrop-blur-[2px] animate-fade-in">
           <div className="flex flex-col items-center gap-3 rounded-3xl border-2 border-dashed border-primary bg-surface px-10 py-8 text-center shadow-lift">
             <ImageUp className="h-10 w-10 text-primary" />
-            <p className="text-lg font-bold text-text">{t("web.snap.dropTitle")}</p>
+            <p className="text-lg font-bold text-text">{t(invent ? "web.snap.dropTitle" : "web.snap.dropTitlePdf")}</p>
           </div>
         </div>
       ) : null}

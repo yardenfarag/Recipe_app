@@ -1,6 +1,6 @@
 "use client";
 
-import { Link2 } from "lucide-react";
+import { FileText, Link2 } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 
@@ -41,8 +41,9 @@ function useElapsedSeconds(): number {
 export function SnapProgress({ job, finished = false }: { job: SnapJob; finished?: boolean }) {
   const { t } = useTranslation();
   const url = job.source.type === "url" ? job.source.url : null;
-  const kind = snapTimingKind(job.intent, url);
-  const lines = useMemo(() => snapStatusLines(job.intent, url), [job.intent, url]);
+  const pdf = job.source.type === "pdf";
+  const kind = snapTimingKind(job.intent, url, pdf);
+  const lines = useMemo(() => snapStatusLines(job.intent, url, pdf), [job.intent, url, pdf]);
   const elapsed = useElapsedSeconds();
 
   const progress = finished ? 1 : snapProgressAt(kind, elapsed);
@@ -99,6 +100,11 @@ export function SnapProgress({ job, finished = false }: { job: SnapJob; finished
           alt=""
           className="h-28 w-28 rounded-2xl object-cover shadow-soft"
         />
+      ) : job.source.type === "pdf" ? (
+        <p className="flex max-w-full items-center gap-2 text-sm text-muted">
+          <FileText aria-hidden className="h-4 w-4 shrink-0" />
+          <span className="truncate">{job.source.name}</span>
+        </p>
       ) : (
         <p className="flex max-w-full items-center gap-2 text-sm text-muted">
           <Link2 aria-hidden className="h-4 w-4 shrink-0" />
