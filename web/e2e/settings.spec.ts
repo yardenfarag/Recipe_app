@@ -5,8 +5,8 @@ import { signInWithPassword } from "./helpers";
 import { canSignIn, readProfileSettings, resetTestUserSettings, writeProfileSettings } from "./settingsSeed";
 import { TEST_USER } from "./testUser";
 
-// Settings (PIN-139). Everything but the browser-only choices (spoons or grams, theme) is saved on the account, which
-// is what the mobile app reads, so "applies on the other app after a refresh" is checked on the account itself.
+// Settings (PIN-139). Everything is saved on the account, which is what the mobile app reads, so "applies on the
+// other app after a refresh" is checked on the account itself. Theme, language and spoons/grams: prefs-sync.spec.ts.
 
 test.use({ locale: "en-US" });
 

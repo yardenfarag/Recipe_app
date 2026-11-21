@@ -20,6 +20,7 @@ import { ConfirmDialog } from "@/components/ui/Dialog";
 import { usePageTitle } from "@/components/ui/PageHeader";
 import { EmptyState, LoadingState } from "@/components/ui/States";
 import { buildRecipeDisplay } from "@/lib/recipe/recipeDisplay";
+import { useAutoTranslation } from "@/lib/recipe/useAutoTranslation";
 import { clearSnapDraft, getSnapDraft, PREVIEW_RECIPE_ID, type SnapDraft } from "@/lib/snap/draft";
 
 /** The draft as the recipe page reads it: not saved, so it has the preview's id and no favorite. */
@@ -47,7 +48,10 @@ export function SnapPreview() {
     setDraft(getSnapDraft());
   }, []);
 
-  const display = useMemo(() => (draft ? buildRecipeDisplay(asPreviewRecipe(draft.recipe), language, null) : null), [draft, language]);
+  const recipe = useMemo(() => (draft ? asPreviewRecipe(draft.recipe) : null), [draft]);
+  // In another language than the app's: shown translated, as on mobile.
+  const { translation } = useAutoTranslation(recipe, language);
+  const display = useMemo(() => (recipe ? buildRecipeDisplay(recipe, language, translation) : null), [recipe, language, translation]);
   usePageTitle(display?.title || t("recipe.preview"));
 
   if (draft === undefined) return <LoadingState label={t("a11y.loading")} />;

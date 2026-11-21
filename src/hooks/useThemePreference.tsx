@@ -8,19 +8,22 @@ import {
   useContext,
   useEffect,
   useMemo,
+  useRef,
   useState,
   type ReactNode,
 } from 'react';
 import { Appearance, Platform, StatusBar as RNStatusBar } from 'react-native';
 
+import { accountPreferences, useAccountPreferences } from '@/hooks/useAccountPreferences';
+
 import {
   DEFAULT_THEME_PACK,
   getThemePackColors,
-  normalizeThemePackId,
   ThemePacks,
   type ThemePackColors,
   type ThemePackId,
 } from '@shared/constants/themes';
+import { parseSchemePreference, parseThemePack } from '@shared/lib/userPreferences';
 
 const SCHEME_KEY = 'pinch.themePreference';
 const PACK_KEY = 'pinch.themePack';
@@ -103,18 +106,43 @@ function applyAppearance(preference: ThemePreference, packId: ThemePackId) {
   })();
 }
 
+/**
+ * Light/dark/auto and the theme pack. The device keeps a copy (first paint, signed out); the signed-in account's
+ * choice wins and is copied to the device (PIN-154). Changes made here are saved on both.
+ */
 export function ThemeProvider({ children }: { children: ReactNode }) {
   const [preference, setPreferenceState] = useState<ThemePreference>('system');
   const [packId, setPackIdState] = useState<ThemePackId>(DEFAULT_THEME_PACK);
   const [resolvedScheme, setResolvedScheme] = useState<ResolvedScheme>(() =>
     resolveScheme('system'),
   );
+  // What is showing, for callbacks; every change goes through applyLocal or the first read, which set it.
+  const current = useRef({ preference, packId });
+
+  const account = useAccountPreferences().prefs;
+  const accountScheme = account.scheme;
+  const accountPack = account.pack;
 
   const syncAppearance = useCallback((nextPreference: ThemePreference, nextPack: ThemePackId) => {
     const resolved = resolveScheme(nextPreference);
     applyAppearance(nextPreference, nextPack);
     setResolvedScheme(resolved);
   }, []);
+
+  /** Shows a choice and keeps it as the device's copy. Saving on the account is the caller's business. */
+  const applyLocal = useCallback(
+    (nextPreference: ThemePreference, nextPack: ThemePackId) => {
+      current.current = { preference: nextPreference, packId: nextPack };
+      setPreferenceState(nextPreference);
+      setPackIdState(nextPack);
+      syncAppearance(nextPreference, nextPack);
+      void AsyncStorage.multiSet([
+        [SCHEME_KEY, nextPreference],
+        [PACK_KEY, nextPack],
+      ]).catch(() => {});
+    },
+    [syncAppearance],
+  );
 
   useEffect(() => {
     syncAppearance('system', DEFAULT_THEME_PACK);
@@ -125,18 +153,24 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
           AsyncStorage.getItem(SCHEME_KEY),
           AsyncStorage.getItem(PACK_KEY),
         ]);
-        const nextScheme: ThemePreference =
-          savedScheme === 'light' || savedScheme === 'dark' || savedScheme === 'system'
-            ? savedScheme
-            : 'system';
-        const nextPack = normalizeThemePackId(savedPack);
-        if (!cancelled) {
-          setPreferenceState(nextScheme);
-          setPackIdState(nextPack);
-          syncAppearance(nextScheme, nextPack);
-          if (savedPack === 'potter') {
-            void AsyncStorage.setItem(PACK_KEY, nextPack);
-          }
+        if (cancelled) return;
+        const deviceScheme = parseSchemePreference(savedScheme);
+        const devicePack = parseThemePack(savedPack);
+        // Only choices made on this device fill an account that has none.
+        accountPreferences.reportDevice({ scheme: deviceScheme, pack: devicePack });
+        // The account's choice may have arrived first; it wins.
+        const fromAccount = accountPreferences.getSnapshot().prefs;
+        const nextScheme = fromAccount.scheme ?? deviceScheme ?? 'system';
+        const nextPack = fromAccount.pack ?? devicePack ?? DEFAULT_THEME_PACK;
+        current.current = { preference: nextScheme, packId: nextPack };
+        setPreferenceState(nextScheme);
+        setPackIdState(nextPack);
+        syncAppearance(nextScheme, nextPack);
+        if (savedPack === 'potter' || nextScheme !== savedScheme || nextPack !== savedPack) {
+          void AsyncStorage.multiSet([
+            [SCHEME_KEY, nextScheme],
+            [PACK_KEY, nextPack],
+          ]).catch(() => {});
         }
       } catch {
         // Keep defaults.
@@ -146,6 +180,15 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
       cancelled = true;
     };
   }, [syncAppearance]);
+
+  // The account's choice (on sign-in, app start, or from another device) wins. Not saved back: it came from there.
+  useEffect(() => {
+    if (!accountScheme && !accountPack) return;
+    const nextPreference = accountScheme ?? current.current.preference;
+    const nextPack = accountPack ?? current.current.packId;
+    if (nextPreference === current.current.preference && nextPack === current.current.packId) return;
+    applyLocal(nextPreference, nextPack);
+  }, [accountScheme, accountPack, applyLocal]);
 
   useEffect(() => {
     const sub = Appearance.addChangeListener(() => {
@@ -158,31 +201,25 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
 
   const setPreference = useCallback(
     (next: ThemePreference) => {
-      setPreferenceState(next);
-      syncAppearance(next, packId);
-      void AsyncStorage.setItem(SCHEME_KEY, next);
+      applyLocal(next, current.current.packId);
+      accountPreferences.save({ scheme: next });
     },
-    [packId, syncAppearance],
+    [applyLocal],
   );
 
   const setPackId = useCallback(
     (next: ThemePackId) => {
-      setPackIdState(next);
-      syncAppearance(preference, next);
-      void AsyncStorage.setItem(PACK_KEY, next);
+      applyLocal(current.current.preference, next);
+      accountPreferences.save({ pack: next });
     },
-    [preference, syncAppearance],
+    [applyLocal],
   );
 
   const cyclePreference = useCallback(() => {
-    setPreferenceState((prev) => {
-      const order: ThemePreference[] = ['system', 'light', 'dark'];
-      const next = order[(order.indexOf(prev) + 1) % order.length];
-      syncAppearance(next, packId);
-      void AsyncStorage.setItem(SCHEME_KEY, next);
-      return next;
-    });
-  }, [packId, syncAppearance]);
+    const order: ThemePreference[] = ['system', 'light', 'dark'];
+    const next = order[(order.indexOf(current.current.preference) + 1) % order.length];
+    setPreference(next);
+  }, [setPreference]);
 
   const scheme = resolvedScheme;
 

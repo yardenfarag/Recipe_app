@@ -1,15 +1,10 @@
 import { Platform } from 'react-native';
 import type { PurchasesPackage } from 'react-native-purchases';
 
-export const CREDIT_PACKS = [
-  { id: 'pinch_credits_10', credits: 10, catalogPrice: '$1.99' },
-  { id: 'pinch_credits_30', credits: 30, catalogPrice: '$4.99' },
-  { id: 'pinch_credits_100', credits: 100, catalogPrice: '$7.99' },
-] as const;
+import { CREDIT_PACKS, type CreditPackId } from '@shared/lib/creditPacks';
 
-export type CreditPackId = (typeof CREDIT_PACKS)[number]['id'];
-
-export const BEST_VALUE_PACK_ID: CreditPackId = 'pinch_credits_100';
+// The pack catalog is shared with the new web app.
+export { BEST_VALUE_PACK_ID, CREDIT_PACKS, type CreditPackId } from '@shared/lib/creditPacks';
 
 /**
  * The website sells packs through Polar (supabase/functions/polar-checkout), only while
@@ -134,15 +129,14 @@ export async function purchaseCreditPack(
   if (Platform.OS === 'web') {
     // Polar's hosted checkout opens in this tab and comes back here with ?checkout_id=…;
     // polar-webhook adds the credits once the order is paid.
-    const { supabase } = await import('@/lib/supabase/client');
+    // The app's client module sets up the shared client first.
+    await import('@/lib/supabase/client');
+    const { startCreditCheckout } = await import('@shared/lib/supabase/creditPurchases');
     const returnUrl = typeof window === 'undefined' ? undefined : window.location.href;
-    const { data, error } = await supabase.functions.invoke<{ url?: string }>('polar-checkout', {
-      body: { pack_id: pack.id, return_url: returnUrl },
-    });
-    if (error || !data?.url) throw error ?? new Error('web_checkout_unavailable');
+    const checkoutUrl = await startCreditCheckout(pack.id, returnUrl);
     const { markCheckoutStarted } = await import('./webCheckoutReturn');
     markCheckoutStarted();
-    window.location.assign(data.url);
+    window.location.assign(checkoutUrl);
     return 'opened_web_checkout';
   }
 

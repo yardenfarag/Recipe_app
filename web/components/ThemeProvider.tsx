@@ -4,6 +4,7 @@ import { createContext, useCallback, useContext, useEffect, useMemo, useState, t
 
 import type { ThemePackId } from "@shared/constants/themes";
 
+import { accountPreferences, useAccountPreferences } from "@/lib/accountPreferences";
 import { THEME_STORAGE, parsePack, parsePreference, resolveScheme, type Scheme, type ThemePreference } from "@/lib/theme";
 
 interface ThemeState {
@@ -40,12 +41,14 @@ function apply(pack: ThemePackId, scheme: Scheme) {
 
 /**
  * Light, dark or the system's setting, and one of the seven theme packs. The head script (lib/theme.ts) already
- * applied the saved choice before the first paint; this keeps it in step and remembers changes.
+ * applied this browser's copy before the first paint; this keeps it in step and remembers changes. Signed in, the
+ * account's choice wins once loaded and becomes this browser's copy; a change here is saved on both (PIN-154).
  */
 export function ThemeProvider({ children }: { children: ReactNode }) {
   const [preference, setPreferenceState] = useState<ThemePreference>("system");
   const [pack, setPackState] = useState<ThemePackId>("mist");
   const [scheme, setScheme] = useState<Scheme>("light");
+  const account = useAccountPreferences().prefs;
 
   useEffect(() => {
     const savedPreference = parsePreference(read(THEME_STORAGE.preference));
@@ -57,6 +60,23 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
     setScheme(resolveScheme(savedPreference));
     /* eslint-enable react-hooks/set-state-in-effect */
   }, []);
+
+  // The account's choice (after sign-in, on load, or from the phone) wins. Not saved back: it came from there.
+  // Declared after the read above, so on the first render it runs second and the account's value stays.
+  useEffect(() => {
+    if (!account.scheme) return;
+    write(THEME_STORAGE.preference, account.scheme);
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    setPreferenceState(account.scheme);
+    setScheme(resolveScheme(account.scheme));
+  }, [account.scheme]);
+
+  useEffect(() => {
+    if (!account.pack) return;
+    write(THEME_STORAGE.pack, account.pack);
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    setPackState(account.pack);
+  }, [account.pack]);
 
   // "Auto" follows the system as it changes, e.g. at sunset.
   useEffect(() => {
@@ -76,11 +96,13 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
     write(THEME_STORAGE.preference, next);
     setPreferenceState(next);
     setScheme(resolveScheme(next));
+    accountPreferences().save({ scheme: next });
   }, []);
 
   const setPack = useCallback((next: ThemePackId) => {
     write(THEME_STORAGE.pack, next);
     setPackState(next);
+    accountPreferences().save({ pack: next });
   }, []);
 
   const value = useMemo(

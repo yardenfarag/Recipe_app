@@ -87,7 +87,6 @@ function MeasurementCard() {
         }))}
       />
       {/* The mobile app keeps this choice on the phone, not the account, so each keeps its own. */}
-      <p className="mt-3 text-sm text-muted">{t("web.settings.measurementsDeviceNote")}</p>
     </SettingsCard>
   );
 }

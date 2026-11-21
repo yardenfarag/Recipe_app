@@ -4,6 +4,7 @@ import { useCallback, useEffect, useState } from "react";
 
 import { isAdminUser } from "@shared/lib/admin";
 import { fetchProfile, profileQuota } from "@shared/lib/supabase/profile";
+import { onCreditsChanged } from "@shared/lib/webCheckoutReturn";
 
 import { useAuth } from "@/components/AuthProvider";
 
@@ -48,6 +49,9 @@ export function useProfile() {
     if (!userId) return;
     setLoaded(await load(userId));
   }, [userId, load]);
+
+  // A purchase or a spent credit anywhere on the page updates the balance shown in Settings too.
+  useEffect(() => onCreditsChanged(() => void refresh()), [refresh]);
 
   // Never show another account's profile after switching.
   const current = loaded && loaded.userId === userId ? loaded : null;

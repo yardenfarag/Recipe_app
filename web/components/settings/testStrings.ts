@@ -13,7 +13,6 @@ export const SETTINGS_STRINGS_EN = {
         "The language of Pinch’s menus and buttons, and the one recipes are translated into. Hebrew and Arabic read right to left.",
       saving: "Saving…",
       saved: "Saved",
-      measurementsDeviceNote: "Saved in this browser. The Pinch app on your phone keeps its own choice.",
       deleteTypeEmail: "To confirm, type your email: {{email}}",
       feedbackBrowserNote: "We’ll include your browser and system so we know where it came from.",
     },

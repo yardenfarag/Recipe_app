@@ -1,15 +1,16 @@
 "use client";
 
-import { ChevronRight, ClipboardPaste, Coins, ExternalLink, MousePointerClick, PenLine } from "lucide-react";
-import { useSyncExternalStore } from "react";
+import { ChevronRight, ClipboardPaste, Coins, MousePointerClick, PenLine } from "lucide-react";
+import Link from "next/link";
+import { useState, useSyncExternalStore } from "react";
 import { useTranslation } from "react-i18next";
 
 import { FREE_MONTHLY_EXTRACT_LIMIT } from "@shared/lib/quotas";
 import type { ProfileQuota } from "@shared/lib/supabase/profile";
 
-import { buttonClasses } from "@/components/ui/Button";
+import { OutOfCreditsDialog } from "@/components/credits/OutOfCreditsDialog";
+import { Button, buttonClasses } from "@/components/ui/Button";
 import { cn } from "@/lib/cn";
-import { EXPO_WEB_LINKS } from "@/lib/snap/expoWebLinks";
 
 const card = "rounded-3xl border border-frosted-border bg-surface p-5 shadow-soft";
 
@@ -17,6 +18,7 @@ const card = "rounded-3xl border border-frosted-border bg-surface p-5 shadow-sof
 export function CreditsCard({ quota }: { quota: ProfileQuota | null }) {
   const { t } = useTranslation();
   const empty = quota != null && quota.totalCredits <= 0;
+  const [buying, setBuying] = useState(false);
   return (
     <section aria-labelledby="snap-credits" className={cn(card, empty && "border-accent bg-accent-soft")}>
       <h2 id="snap-credits" className="flex items-center gap-2 text-sm font-semibold text-muted">
@@ -33,28 +35,29 @@ export function CreditsCard({ quota }: { quota: ProfileQuota | null }) {
       <p className="mt-2 text-sm leading-relaxed text-muted">
         {empty ? t("snap.creditLimitBody", { limit: FREE_MONTHLY_EXTRACT_LIMIT }) : t("credits.buyHint")}
       </p>
-      <a
-        href={EXPO_WEB_LINKS.credits}
-        target="_blank"
-        rel="noopener noreferrer"
-        className={buttonClasses({ variant: empty ? "primary" : "outline", size: "sm", className: "mt-4" })}
-      >
-        {t("credits.buyAction")}
-        <span className="sr-only"> ({t("web.recipe.opensInNewTab")})</span>
-        <ExternalLink aria-hidden className="h-3.5 w-3.5 rtl:-scale-x-100" />
-      </a>
+      {empty ? (
+        // Out: buy a pack right here, without leaving Snap.
+        <>
+          <Button size="sm" className="mt-4" onClick={() => setBuying(true)}>
+            {t("credits.buyAction")}
+          </Button>
+          <OutOfCreditsDialog open={buying} onOpenChange={setBuying} />
+        </>
+      ) : (
+        <Link href="/settings/credits" className={buttonClasses({ variant: "outline", size: "sm", className: "mt-4" })}>
+          {t("credits.buyAction")}
+        </Link>
+      )}
     </section>
   );
 }
 
-/** Write a recipe by hand (ADR 018). In the Expo web app until the editor comes to the web (PIN-137). */
+/** Write a recipe by hand (ADR 018). */
 export function WriteRecipeCard() {
   const { t } = useTranslation();
   return (
-    <a
-      href={EXPO_WEB_LINKS.writeRecipe}
-      target="_blank"
-      rel="noopener noreferrer"
+    <Link
+      href="/recipe/edit"
       className={cn(card, "group flex items-center gap-3 transition-colors hover:bg-surface-soft focus-visible:outline-2 focus-visible:outline-primary")}
     >
       <span aria-hidden className="grid h-10 w-10 shrink-0 place-items-center rounded-2xl bg-primary-soft text-primary">
@@ -63,10 +66,9 @@ export function WriteRecipeCard() {
       <span className="min-w-0 flex-1">
         <span className="block text-[15px] font-bold text-text">{t("recipeEditor.entry.write")}</span>
         <span className="mt-0.5 block text-xs leading-relaxed text-muted">{t("recipeEditor.entry.writeHint")}</span>
-        <span className="sr-only"> ({t("web.recipe.opensInNewTab")})</span>
       </span>
       <ChevronRight aria-hidden className="h-4 w-4 shrink-0 text-muted transition-transform group-hover:translate-x-0.5 rtl:rotate-180 rtl:group-hover:-translate-x-0.5" />
-    </a>
+    </Link>
   );
 }
 

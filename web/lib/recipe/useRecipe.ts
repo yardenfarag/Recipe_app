@@ -3,7 +3,9 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 
+import type { RecipeLanguageCode } from "@shared/lib/recipeLanguages";
 import { fetchRecipeTranslation } from "@shared/lib/supabase/recipeTranslations";
+import { resolveRecipeSourceLanguage } from "@shared/lib/recipeSourceLanguage";
 import { fetchRecipeById, setRecipeFavorite } from "@shared/lib/supabase/recipes";
 import { showToast } from "@shared/lib/toast";
 import type { Recipe, RecipeTranslationContent } from "@shared/types/recipe";
@@ -13,11 +15,35 @@ import { useLanguage } from "@/components/LanguageProvider";
 import type { RecipeDisplay } from "@/components/recipe/types";
 import { buildRecipeDisplay, needsTranslation } from "@/lib/recipe/recipeDisplay";
 
+/**
+ * Which language the page shows. `auto` follows the app's language (a saved translation into it, else the recipe's
+ * own); `source` is the recipe's own words; a language is one picked with Translate, with its content.
+ */
+export type RecipeView =
+  | { kind: "auto" }
+  | { kind: "source" }
+  | { kind: "language"; language: RecipeLanguageCode; translation: RecipeTranslationContent };
+
+export type ReadyRecipe = {
+  status: "ready";
+  display: RecipeDisplay;
+  toggleFavorite: () => void;
+  reload: () => void;
+  /**
+   * Puts a newer copy of the row on the page (after an action saved it). `textChanged` drops the saved translation
+   * on the page as well, since saving new words deletes the stored ones (ADR 012), and goes back to `auto`.
+   */
+  replaceRecipe: (next: Recipe | ((current: Recipe) => Recipe), options?: { textChanged?: boolean }) => void;
+  /** Shows the recipe in another language for this visit (Translate), or its own words (`source`). */
+  setView: (view: RecipeView) => void;
+  view: RecipeView;
+};
+
 export type RecipeState =
   | { status: "loading" }
   | { status: "missing" }
   | { status: "error"; reload: () => void }
-  | { status: "ready"; display: RecipeDisplay; toggleFavorite: () => void; reload: () => void };
+  | ReadyRecipe;
 
 type Loaded =
   /** `language`: the app language the translation was looked up for. */
@@ -25,7 +51,7 @@ type Loaded =
   | { id: string; kind: "missing" }
   | { id: string; kind: "error" };
 
-/** A saved translation into `language`, if there is one. Never translates: that costs a credit (a later ticket). */
+/** A saved translation into `language`, if there is one. Never translates by itself: the reader asks (Translate). */
 async function savedTranslation(recipe: Recipe, language: string): Promise<RecipeTranslationContent | null> {
   if (!needsTranslation(recipe, language)) return null;
   const onRow = recipe.translations?.[language];
@@ -48,6 +74,8 @@ export function useRecipe(id: string): RecipeState {
   const { language } = useLanguage();
   const userId = user?.id;
   const [loaded, setLoaded] = useState<Loaded | null>(null);
+  /** Kept with the recipe id and app language it was chosen under, so it never carries to another recipe. */
+  const [chosenView, setChosenView] = useState<{ id: string; language: string; view: RecipeView } | null>(null);
   const requestId = useRef(0);
 
   const load = useCallback(async () => {
@@ -88,7 +116,32 @@ export function useRecipe(id: string): RecipeState {
   // Until the lookup for a new app language returns, the page keeps showing what it was built for.
   const builtFor = current?.kind === "ready" ? current.language : language;
   const translation = current?.kind === "ready" ? current.translation : null;
-  const display = useMemo(() => (recipe ? buildRecipeDisplay(recipe, builtFor, translation) : null), [recipe, builtFor, translation]);
+  const view: RecipeView = chosenView && chosenView.id === id && chosenView.language === language ? chosenView.view : AUTO;
+  const display = useMemo(() => {
+    if (!recipe) return null;
+    if (view.kind === "source") return buildRecipeDisplay(recipe, resolveRecipeSourceLanguage(recipe), null, builtFor);
+    if (view.kind === "language") return buildRecipeDisplay(recipe, view.language, view.translation, builtFor);
+    return buildRecipeDisplay(recipe, builtFor, translation);
+  }, [recipe, builtFor, translation, view]);
+
+  const setView = useCallback((next: RecipeView) => setChosenView({ id, language, view: next }), [id, language]);
+
+  const replaceRecipe = useCallback(
+    (next: Recipe | ((current: Recipe) => Recipe), options?: { textChanged?: boolean }) => {
+      setLoaded((previous) => {
+        if (previous?.kind !== "ready") return previous;
+        const recipe = typeof next === "function" ? next(previous.recipe) : next;
+        if (recipe.id !== previous.recipe.id) return previous;
+        return {
+          ...previous,
+          recipe: { ...recipe, is_favorite: recipe.is_favorite === true },
+          translation: options?.textChanged ? null : previous.translation,
+        };
+      });
+      if (options?.textChanged) setChosenView(null);
+    },
+    [],
+  );
 
   const setFavorite = useCallback((recipeId: string, isFavorite: boolean) => {
     setLoaded((previous) =>
@@ -112,5 +165,7 @@ export function useRecipe(id: string): RecipeState {
   if (!current) return { status: "loading" };
   if (current.kind === "missing") return { status: "missing" };
   if (current.kind === "error" || !display) return { status: "error", reload: retry };
-  return { status: "ready", display, toggleFavorite, reload };
+  return { status: "ready", display, toggleFavorite, reload, replaceRecipe, setView, view };
 }
+
+const AUTO: RecipeView = { kind: "auto" };

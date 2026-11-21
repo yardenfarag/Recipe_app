@@ -1,11 +1,9 @@
 import * as Linking from 'expo-linking';
 import { Platform } from 'react-native';
 
-export const APP_STORE_URL =
-  'https://apps.apple.com/us/app/pinch-recipe-library/id6796310453';
+import { APP_STORE_URL, PLAY_STORE_URL } from '@shared/lib/appStoreLinks';
 
-export const PLAY_STORE_URL =
-  'https://play.google.com/store/apps/details?id=com.pinch.myapp';
+export { APP_STORE_URL, PLAY_STORE_URL } from '@shared/lib/appStoreLinks';
 
 /** Android, native or an Android browser on the website, gets Google Play. */
 export function storeUrlFor(platform: typeof Platform.OS, userAgent = ''): string {

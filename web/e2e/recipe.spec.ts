@@ -3,6 +3,7 @@ import { expect, test, type Page } from "@playwright/test";
 import { resetLibrary, resetTestUserLanguage, type SeedRecipe } from "./admin";
 import { signInWithPassword } from "./helpers";
 import { TEST_USER } from "./testUser";
+import { writeAccountPrefs } from "./prefsSeed";
 
 const PANCAKES: SeedRecipe = {
   title: "Fluffy Pancakes",
@@ -137,12 +138,12 @@ test("a saved translation shows in the app language", async ({ page }) => {
       },
     },
   ]);
-  await page.evaluate(() => localStorage.setItem("pinch:appLanguage", "he"));
+  await writeAccountPrefs({ locale: "he" });
   await page.reload();
   await expect(page.locator("#main h1")).toHaveText("פנקייק אוורירי");
   await expect(page.locator("html")).toHaveAttribute("dir", "rtl");
   await expect(page.getByRole("region", { name: "מצרכים" })).toContainText("קמח");
-  await page.evaluate(() => localStorage.setItem("pinch:appLanguage", "en"));
+  await writeAccountPrefs({ locale: "en" });
 });
 
 test("a recipe that doesn't exist says so", async ({ page }) => {

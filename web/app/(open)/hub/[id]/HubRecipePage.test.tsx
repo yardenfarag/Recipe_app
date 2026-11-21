@@ -76,12 +76,15 @@ describe("Hub recipe page for a guest", () => {
 
   it("back from signing in with save=1, adds it on its own, once", async () => {
     search = "save=1";
+    const dropSave = vi.spyOn(window.history, "replaceState");
     const addToLibrary = vi.fn().mockResolvedValue("recipe-9");
     state = ready({ addToLibrary });
     renderPage();
     await waitFor(() => expect(push).toHaveBeenCalledWith("/recipe/recipe-9"));
     expect(addToLibrary).toHaveBeenCalledOnce();
-    expect(replace).toHaveBeenCalledWith("/hub/card-1");
+    // save=1 leaves the address through history, not a router navigation that could race the move on.
+    expect(dropSave).toHaveBeenCalledOnce();
+    expect(String(dropSave.mock.calls[0][2])).not.toContain("save=1");
   });
 });
 

@@ -4,6 +4,7 @@ import { resetLibrary, resetTestUserLanguage } from "./admin";
 import { signInWithPassword } from "./helpers";
 import { creditState, HUB_TITLE_PREFIX, hubTitles, resetHub, setKitchenDiets, type SeedCard } from "./hubSeed";
 import { TEST_USER } from "./testUser";
+import { writeAccountPrefs } from "./prefsSeed";
 
 // Five cards with known sources, saves, tags, diets and ages. Popular order: Ramen, Pancakes, Salad, Curry, Tacos.
 const FIVE: SeedCard[] = [
@@ -194,7 +195,7 @@ test.describe("phone", () => {
     const overflow = () => page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth);
     expect(await overflow()).toBeLessThanOrEqual(0);
 
-    await page.evaluate(() => localStorage.setItem("pinch:appLanguage", "he"));
+    await writeAccountPrefs({ locale: "he" });
     await page.reload();
     await expect(page.locator("html")).toHaveAttribute("dir", "rtl");
     await expect(page.getByRole("searchbox", { name: "חיפוש ב־Hub" })).toHaveValue(HUB_TITLE_PREFIX);
@@ -204,6 +205,6 @@ test.describe("phone", () => {
     await page.getByRole("link", { name: `${HUB_TITLE_PREFIX} Ramen` }).click();
     await expect(page.getByRole("button", { name: "הוספה לספרייה" })).toBeVisible();
     expect(await overflow()).toBeLessThanOrEqual(0);
-    await page.evaluate(() => localStorage.setItem("pinch:appLanguage", "en"));
+    await writeAccountPrefs({ locale: "en" });
   });
 });

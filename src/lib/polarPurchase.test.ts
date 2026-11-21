@@ -130,6 +130,9 @@ describe('checkoutReturnUrl', () => {
     expect(checkoutReturnUrl('https://pinch-app.io/app/add?x=1#top', fallback)).toBe(
       'https://pinch-app.io/app/add?checkout_id={CHECKOUT_ID}',
     );
+    expect(checkoutReturnUrl('https://next.pinch-app.io/app/settings/credits', fallback)).toBe(
+      'https://next.pinch-app.io/app/settings/credits?checkout_id={CHECKOUT_ID}',
+    );
     expect(checkoutReturnUrl('http://localhost:8081/settings/credits', fallback)).toBe(
       'http://localhost:8081/settings/credits?checkout_id={CHECKOUT_ID}',
     );
@@ -137,6 +140,7 @@ describe('checkoutReturnUrl', () => {
 
   it('never sends the buyer to another site', () => {
     expect(checkoutReturnUrl('https://evil.example/app', fallback)).toBe(`${fallback}?checkout_id={CHECKOUT_ID}`);
+    expect(checkoutReturnUrl('https://next.pinch-app.io.evil.example/app', fallback)).toBe(`${fallback}?checkout_id={CHECKOUT_ID}`);
     expect(checkoutReturnUrl('not a url', fallback)).toBe(`${fallback}?checkout_id={CHECKOUT_ID}`);
     expect(checkoutReturnUrl(undefined, fallback)).toBe(`${fallback}?checkout_id={CHECKOUT_ID}`);
   });

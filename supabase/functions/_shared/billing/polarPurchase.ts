@@ -168,6 +168,9 @@ export function polarEventSummary(body: unknown, eventId: string | null) {
   };
 }
 
+/** The sites a checkout may return to. next.pinch-app.io is the new web app until it moves to pinch-app.io (ADR 027). */
+const TRUSTED_RETURN_HOSTS = new Set(['pinch-app.io', 'www.pinch-app.io', 'next.pinch-app.io']);
+
 /** Where the buyer lands after paying: the page they started from, on a site we trust. */
 export function checkoutReturnUrl(requested: unknown, fallback: string): string {
   let url: URL;
@@ -177,7 +180,7 @@ export function checkoutReturnUrl(requested: unknown, fallback: string): string 
     url = new URL(fallback);
   }
   const trusted =
-    (url.protocol === 'https:' && (url.hostname === 'pinch-app.io' || url.hostname === 'www.pinch-app.io')) ||
+    (url.protocol === 'https:' && TRUSTED_RETURN_HOSTS.has(url.hostname)) ||
     (url.protocol === 'http:' && (url.hostname === 'localhost' || url.hostname === '127.0.0.1'));
   if (!trusted) url = new URL(fallback);
   url.hash = '';

@@ -10,11 +10,12 @@ import {
   type ReactNode,
 } from 'react';
 
+import { accountPreferences, useAccountPreferences } from '@/hooks/useAccountPreferences';
 import {
-  isAppLanguageCode,
   resolveAppLanguageFromDevice,
   type AppLanguageCode,
 } from '@shared/lib/appLanguages';
+import { parseAppLanguage } from '@shared/lib/userPreferences';
 
 const STORAGE_KEY = 'pinch:appLanguage';
 
@@ -32,17 +33,26 @@ function deviceDefaultLanguage(): AppLanguageCode {
   return resolveAppLanguageFromDevice(locales[0]?.languageCode);
 }
 
+/**
+ * The app language. The device keeps a copy (first paint, signed out); the signed-in account's language
+ * (`user_metadata.locale`, also used for emails) wins and is copied to the device (PIN-154). It is worked out in
+ * render, not in an effect, so it is never a step behind the account `AccountLocaleSync` compares it with.
+ */
 export function LanguageProvider({ children }: { children: ReactNode }) {
-  const [language, setLanguageState] = useState<AppLanguageCode>(deviceDefaultLanguage);
+  const [deviceLanguage, setDeviceLanguage] = useState<AppLanguageCode>(deviceDefaultLanguage);
   const [ready, setReady] = useState(false);
+  const accountLanguage = useAccountPreferences().prefs.language;
+  const language = accountLanguage ?? deviceLanguage;
 
   useEffect(() => {
     let cancelled = false;
     (async () => {
       try {
-        const saved = await AsyncStorage.getItem(STORAGE_KEY);
-        if (!cancelled && saved && isAppLanguageCode(saved)) {
-          setLanguageState(saved);
+        const saved = parseAppLanguage(await AsyncStorage.getItem(STORAGE_KEY));
+        if (!cancelled && saved) {
+          // Only a language picked on this device fills an account that has none.
+          accountPreferences.reportDevice({ language: saved });
+          setDeviceLanguage(accountPreferences.getSnapshot().prefs.language ?? saved);
         }
       } catch {
         // Keep device default.
@@ -55,9 +65,17 @@ export function LanguageProvider({ children }: { children: ReactNode }) {
     };
   }, []);
 
+  // The account's language becomes the device's copy.
+  useEffect(() => {
+    if (!accountLanguage) return;
+    setDeviceLanguage(accountLanguage);
+    void AsyncStorage.setItem(STORAGE_KEY, accountLanguage).catch(() => {});
+  }, [accountLanguage]);
+
   const setLanguage = useCallback((next: AppLanguageCode) => {
-    setLanguageState(next);
-    void AsyncStorage.setItem(STORAGE_KEY, next);
+    setDeviceLanguage(next);
+    void AsyncStorage.setItem(STORAGE_KEY, next).catch(() => {});
+    accountPreferences.save({ language: next });
   }, []);
 
   const value = useMemo(

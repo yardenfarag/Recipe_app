@@ -20,8 +20,8 @@ import { Button, buttonClasses } from "@/components/ui/Button";
 import { PageHeader } from "@/components/ui/PageHeader";
 import { TextField } from "@/components/ui/TextField";
 import { compressImageFile } from "@/lib/compressImage";
+import { useCreditBalance } from "@/lib/credits/balance";
 import { getSnapDraft } from "@/lib/snap/draft";
-import { useCredits } from "@/lib/snap/useCredits";
 import { useSnap, type SnapIntent } from "@/lib/snap/useSnap";
 
 /** True while typing somewhere, so a paste there is left alone. */
@@ -47,7 +47,7 @@ const dragHasContent = (data: DataTransfer | null) =>
 export function SnapScreen() {
   const { t } = useTranslation();
   const router = useRouter();
-  const { quota, refresh } = useCredits();
+  const { quota, refresh } = useCreditBalance();
   const snap = useSnap({ onSettled: () => void refresh() });
   const { job, banner, setBanner, run } = snap;
   const [intent, setIntent] = useState<SnapIntent>("extract");

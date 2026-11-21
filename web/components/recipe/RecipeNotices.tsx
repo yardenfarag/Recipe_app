@@ -1,13 +1,16 @@
 "use client";
 
-import { CircleAlert, Info, Languages, Sparkles, TriangleAlert } from "lucide-react";
+import { CircleAlert, Info, Languages, Sparkles, TriangleAlert, Undo2, WandSparkles, Wrench } from "lucide-react";
 import type { ReactNode } from "react";
 import { useTranslation } from "react-i18next";
 
 import type { AvoidHit } from "@shared/lib/avoidList";
 import { recipeHasSource, recipeIsInvented } from "@shared/lib/recipeOrigin";
+import { resolveRecipeSourceLanguage } from "@shared/lib/recipeSourceLanguage";
 
+import { useRecipeActions, type RecipeActions } from "@/components/recipe/actions/RecipeActionsContext";
 import type { AvoidMatches, RecipeDisplay } from "@/components/recipe/types";
+import { Button } from "@/components/ui/Button";
 import { cn } from "@/lib/cn";
 
 type Tone = "danger" | "warning" | "accent" | "primary";
@@ -19,17 +22,58 @@ const tones: Record<Tone, { box: string; title: string }> = {
   primary: { box: "bg-primary-soft", title: "text-primary" },
 };
 
-function Notice({ tone, icon, title, children }: { tone: Tone; icon: ReactNode; title: string; children?: ReactNode }) {
+function Notice({
+  tone,
+  icon,
+  title,
+  children,
+  action,
+  testId,
+}: {
+  tone: Tone;
+  icon: ReactNode;
+  title: string;
+  children?: ReactNode;
+  /** A button that acts on what the notice says ("Make it without these", "Repair recipe"). */
+  action?: ReactNode;
+  testId?: string;
+}) {
   return (
-    <div className={cn("flex items-start gap-3 rounded-2xl px-4 py-3.5", tones[tone].box)}>
+    <div data-testid={testId} className={cn("flex items-start gap-3 rounded-2xl px-4 py-3.5", tones[tone].box)}>
       <span aria-hidden className={cn("mt-0.5 shrink-0 [&>svg]:h-5 [&>svg]:w-5", tones[tone].title)}>
         {icon}
       </span>
       <div className="min-w-0 flex-1 text-sm leading-relaxed">
         <p className={cn("font-semibold", tones[tone].title)}>{title}</p>
         {children}
+        {action ? <div className="mt-3 flex flex-wrap gap-2">{action}</div> : null}
       </div>
     </div>
+  );
+}
+
+/** A small button inside a notice, in the notice's colour family. */
+function NoticeButton({
+  icon,
+  children,
+  onClick,
+  busy,
+  strong,
+  haspopup,
+}: {
+  icon: ReactNode;
+  children: ReactNode;
+  onClick: () => void;
+  busy?: boolean;
+  /** The main action (an allergy fix); otherwise a quieter one. */
+  strong?: boolean;
+  haspopup?: boolean;
+}) {
+  return (
+    <Button size="sm" variant={strong ? "primary" : "outline"} busy={busy} onClick={onClick} aria-haspopup={haspopup ? "dialog" : undefined}>
+      {busy ? null : <span aria-hidden className="[&>svg]:h-4 [&>svg]:w-4">{icon}</span>}
+      {children}
+    </Button>
   );
 }
 
@@ -49,23 +93,31 @@ function HitList({ hits, label, direction }: { hits: AvoidHit[]; label: (hit: Av
 
 /**
  * What the reader should know before cooking: ingredients from their allergies or dislikes, an import that missed
- * details or was guessed, a version adapted to their kitchen, and a translation. Text only for now; the actions
- * ("Make it without these", repair, show the original) arrive with PIN-133.
+ * details or was guessed, a version adapted to their kitchen or remixed, and a translation. On a saved recipe each
+ * one offers its fix: "Make it without these", Repair, "Revert to original", "Show original language", and
+ * "Translate" when the recipe is in another language than the app's (PIN-135).
  */
 export function RecipeNotices({ display, avoid }: { display: RecipeDisplay; avoid: AvoidMatches | null }) {
   const { t } = useTranslation();
+  const actions = useRecipeActions();
   const { recipe } = display;
   const allergies = avoid?.allergies ?? [];
   const dislikes = avoid?.dislikes ?? [];
   const invented = recipeIsInvented(recipe);
   const partial = recipe.extraction_status === "partial";
   const adaptedSummary = recipe.kitchen_adapted_summary?.trim();
+  const fixButton =
+    actions?.canFix && (allergies.length > 0 || dislikes.length > 0) ? (
+      <NoticeButton icon={<WandSparkles />} strong={allergies.length > 0} haspopup onClick={() => actions.open({ kind: "fix" })}>
+        {t("avoid.makeWithout")}
+      </NoticeButton>
+    ) : null;
 
   const notices: ReactNode[] = [];
 
   if (allergies.length > 0) {
     notices.push(
-      <Notice key="allergies" tone="danger" icon={<CircleAlert />} title={t("avoid.bannerAllergyTitle")}>
+      <Notice key="allergies" tone="danger" icon={<CircleAlert />} title={t("avoid.bannerAllergyTitle")} action={fixButton}>
         <HitList hits={allergies} direction={display.direction} label={(hit) => (hit.allergen ? t(`avoid.allergens.${hit.allergen}`) : hit.item)} />
         <p className="mt-2 text-xs text-muted">{t("avoid.checkLabels")}</p>
       </Notice>,
@@ -73,7 +125,13 @@ export function RecipeNotices({ display, avoid }: { display: RecipeDisplay; avoi
   }
   if (dislikes.length > 0) {
     notices.push(
-      <Notice key="dislikes" tone="warning" icon={<TriangleAlert />} title={t("avoid.bannerDislikeTitle")}>
+      <Notice
+        key="dislikes"
+        tone="warning"
+        icon={<TriangleAlert />}
+        title={t("avoid.bannerDislikeTitle")}
+        action={allergies.length > 0 ? null : fixButton}
+      >
         <HitList hits={dislikes} direction={display.direction} label={(hit) => hit.item} />
       </Notice>,
     );
@@ -85,9 +143,28 @@ export function RecipeNotices({ display, avoid }: { display: RecipeDisplay; avoi
       </Notice>,
     );
   } else if (partial && recipeHasSource(recipe)) {
-    notices.push(<Notice key="partial" tone="warning" icon={<TriangleAlert />} title={t("recipe.partialExtraction")} />);
+    notices.push(
+      <Notice
+        key="partial"
+        tone="warning"
+        icon={<TriangleAlert />}
+        title={t("recipe.partialExtraction")}
+        action={
+          actions?.canRepair ? (
+            <NoticeButton icon={<Wrench />} haspopup busy={actions.busy.repair} onClick={() => actions.open({ kind: "repair" })}>
+              {t("recipe.repairAction")}
+            </NoticeButton>
+          ) : null
+        }
+      >
+        {actions?.canRepair ? <p className="text-muted">{t("recipe.repairHint")}</p> : null}
+      </Notice>,
+    );
   }
-  if (adaptedSummary) {
+  if (actions) {
+    const adapted = adaptationNotice(actions, t);
+    if (adapted) notices.push(adapted);
+  } else if (adaptedSummary) {
     notices.push(
       <Notice key="adapted" tone="primary" icon={<Info />} title={t("recipe.kitchenAdapted")}>
         <p className="text-text">{adaptedSummary}</p>
@@ -101,10 +178,62 @@ export function RecipeNotices({ display, avoid }: { display: RecipeDisplay; avoi
         tone="primary"
         icon={<Languages />}
         title={t("recipe.showingLanguage", { language: t(`languages.${display.contentLanguage}`) })}
+        action={
+          actions ? (
+            <NoticeButton icon={<Undo2 className="rtl:-scale-x-100" />} onClick={actions.showOriginalLanguage}>
+              {t("recipe.showOriginal")}
+            </NoticeButton>
+          ) : null
+        }
+      />,
+    );
+  } else if (actions?.translateOffer) {
+    const source = resolveRecipeSourceLanguage(recipe);
+    const target = t(`languages.${actions.translateOffer}`);
+    notices.push(
+      <Notice
+        key="translate"
+        testId="translate-offer"
+        tone="primary"
+        icon={<Languages />}
+        title={t("web.recipeActions.inOtherLanguage", { language: t(`languages.${source}`, { defaultValue: source }) })}
+        action={
+          <NoticeButton icon={<Languages />} busy={actions.busy.translate} onClick={actions.translateToAppLanguage}>
+            {t("web.recipeActions.translateTo", { language: target })}
+          </NoticeButton>
+        }
       />,
     );
   }
 
   if (notices.length === 0) return null;
   return <div className="mb-6 grid gap-3">{notices}</div>;
+}
+
+/** A remix made on this visit, or a saved kitchen adaptation, with what changed and the way back. */
+function adaptationNotice(actions: RecipeActions, t: (key: string, values?: Record<string, unknown>) => string): ReactNode {
+  const { adaptation } = actions;
+  if (!adaptation) return null;
+  const title =
+    adaptation.kind === "remix"
+      ? t("recipe.variantVersion", { variant: t(`recipe.variants.${adaptation.variant}.label`) })
+      : t("recipe.kitchenAdapted");
+  return (
+    <Notice
+      key="adapted"
+      testId="adaptation-notice"
+      tone="primary"
+      icon={adaptation.kind === "remix" ? <WandSparkles /> : <Info />}
+      title={title}
+      action={
+        actions.canRevert ? (
+          <NoticeButton icon={<Undo2 className="rtl:-scale-x-100" />} busy={actions.busy.revert} onClick={actions.revert}>
+            {t("recipe.revertOriginal")}
+          </NoticeButton>
+        ) : null
+      }
+    >
+      {adaptation.summary ? <p className="text-text">{adaptation.summary}</p> : null}
+    </Notice>
+  );
 }
