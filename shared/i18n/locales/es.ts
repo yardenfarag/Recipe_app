@@ -1356,10 +1356,13 @@ export default {
     "notFoundTitle": "No encontramos esa página",
     "notFoundBody": "Puede que el enlace sea antiguo o que la página se haya movido.",
     "comingSoon": "Muy pronto en la web",
+    "library": {
+      "sortBy": "Ordenar por"
+    },
     "soon": {
-      "library": {
-        "title": "Tus recetas, en una pantalla más grande",
-        "body": "Todo lo que guardaste en la app estará aquí. Búscalo, fíltralo por etiqueta y cocina con los pasos justo al lado de los ingredientes."
+      "recipe": {
+        "title": "Las páginas de receta están en camino",
+        "body": "Pronto podrás leer y cocinar una receta en la web. Mientras tanto, ábrela en la app de Pinch."
       },
       "hub": {
         "title": "Recetas que otros encontraron, gratis para guardar",

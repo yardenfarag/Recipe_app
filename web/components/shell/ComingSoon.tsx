@@ -11,7 +11,7 @@ import { EmptyState } from "@/components/ui/States";
 
 /**
  * A section that isn't on the web yet: its real header, and a card that says what it will do for you.
- * Each screen ticket (PIN-131 to PIN-141) replaces one of these.
+ * Each screen ticket (PIN-132 to PIN-141) replaces one of these.
  */
 export function ComingSoon({
   section,
@@ -19,7 +19,7 @@ export function ComingSoon({
   subtitle,
   action,
 }: {
-  section: NavItem["id"];
+  section: Exclude<NavItem["id"], "library">;
   title: string;
   subtitle?: string;
   action?: ReactNode;
