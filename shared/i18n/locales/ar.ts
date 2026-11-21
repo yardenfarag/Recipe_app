@@ -1359,6 +1359,11 @@ export default {
     "library": {
       "sortBy": "الترتيب حسب"
     },
+    "recipe": {
+      "viewOriginal": "عرض الأصل",
+      "opensInNewTab": "يفتح في علامة تبويب جديدة",
+      "stepVideoTime": "في الفيديو عند {{time}}"
+    },
     "soon": {
       "recipe": {
         "title": "صفحات الوصفات في الطريق",

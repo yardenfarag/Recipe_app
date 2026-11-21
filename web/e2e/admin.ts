@@ -59,6 +59,15 @@ export type SeedRecipe = {
   cost_estimate?: "$" | "$$" | "$$$";
   tags?: string[];
   image_url?: string;
+  servings?: number;
+  calories?: number;
+  ingredients?: { name: string; quantity: number; unit: string; metric?: { quantity: number; unit: string }; spoons?: { quantity: number; unit: string } }[];
+  instructions?: { step: number; text: string }[];
+  source_language?: string;
+  extraction_status?: "full" | "partial";
+  original_url?: string;
+  /** Saved translations, by language code. */
+  translations?: Record<string, { title: string; ingredients: unknown[]; instructions: unknown[] }>;
   /** Seconds before now, so the order of "newest first" is known. */
   createdSecondsAgo?: number;
 };
@@ -67,7 +76,7 @@ export type SeedRecipe = {
  * Empties the shared test account's library (recipes and collections), then fills it with `recipes`. Done as the
  * account itself, through the normal API, so the same row-level security applies as in the app.
  */
-export async function resetLibrary(recipes: SeedRecipe[]) {
+export async function resetLibrary(recipes: SeedRecipe[]): Promise<string[]> {
   const { url, anonKey } = localSupabase();
   const signIn = await fetch(`${url}/auth/v1/token?grant_type=password`, {
     method: "POST",
@@ -82,7 +91,7 @@ export async function resetLibrary(recipes: SeedRecipe[]) {
     const response = await fetch(`${url}/rest/v1/${table}?user_id=eq.${user.id}`, { method: "DELETE", headers });
     if (!response.ok) throw new Error(`Could not clear ${table} (${response.status}): ${await response.text()}`);
   }
-  if (recipes.length === 0) return;
+  if (recipes.length === 0) return [];
 
   const now = Date.now();
   const rows = recipes.map((recipe, index) => ({
@@ -94,11 +103,30 @@ export async function resetLibrary(recipes: SeedRecipe[]) {
     cost_estimate: recipe.cost_estimate ?? null,
     tags: recipe.tags ?? [],
     image_url: recipe.image_url ?? null,
-    ingredients: [{ name: "salt", quantity: 1, unit: "pinch" }],
-    instructions: [{ step: 1, text: "Cook it." }],
+    ingredients: recipe.ingredients ?? [{ name: "salt", quantity: 1, unit: "pinch" }],
+    instructions: recipe.instructions ?? [{ step: 1, text: "Cook it." }],
+    servings: recipe.servings ?? 1,
+    calories: recipe.calories ?? null,
+    source_language: recipe.source_language ?? "en",
+    extraction_status: recipe.extraction_status ?? "full",
+    original_url: recipe.original_url ?? null,
     platform: "web",
     created_at: new Date(now - (recipe.createdSecondsAgo ?? index) * 1000).toISOString(),
   }));
-  const insert = await fetch(`${url}/rest/v1/recipes`, { method: "POST", headers, body: JSON.stringify(rows) });
+  const insert = await fetch(`${url}/rest/v1/recipes?select=id`, {
+    method: "POST",
+    headers: { ...headers, Prefer: "return=representation" },
+    body: JSON.stringify(rows),
+  });
   if (!insert.ok) throw new Error(`Could not add recipes (${insert.status}): ${await insert.text()}`);
+  const ids = ((await insert.json()) as { id: string }[]).map((row) => row.id);
+
+  const translations = recipes.flatMap((recipe, index) =>
+    Object.entries(recipe.translations ?? {}).map(([language_code, content]) => ({ recipe_id: ids[index], language_code, ...content })),
+  );
+  if (translations.length > 0) {
+    const added = await fetch(`${url}/rest/v1/recipe_translations`, { method: "POST", headers, body: JSON.stringify(translations) });
+    if (!added.ok) throw new Error(`Could not add translations (${added.status}): ${await added.text()}`);
+  }
+  return ids;
 }

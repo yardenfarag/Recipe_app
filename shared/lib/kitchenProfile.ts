@@ -1,0 +1,165 @@
+/**
+ * The kitchen profile (diets, swaps, pantry, the avoid list): its shape and the rules that clean it. Both apps use
+ * it; where a guest's copy is stored is each app's business (mobile: src/lib/kitchenProfile.ts).
+ */
+import {
+  ALLERGEN_KEYS,
+  MAX_DISLIKES,
+  MAX_OTHER_ALLERGIES,
+  allergyInstruction,
+  cleanAvoidItems,
+  dislikeInstruction,
+  fitInstruction,
+  isAllergenKey,
+  type AllergenKey,
+} from './avoidList';
+import { RECIPE_VARIANTS, type RecipeVariantKey } from './recipeVariants';
+
+export type KitchenSwap = { from: string; to: string };
+
+export type KitchenDietKey = Exclude<RecipeVariantKey, 'custom'>;
+
+export type KitchenProfile = {
+  diets: KitchenDietKey[];
+  defaultServings?: number;
+  alwaysSwap: KitchenSwap[];
+  autoApplyOnExtract: boolean;
+  /** Ingredient names that stay off the shopping list unless added by hand. */
+  pantryStaples: string[];
+  /** The avoid list (PIN-105): flagged on every recipe, and part of the kitchen instruction. */
+  allergies: AllergenKey[];
+  /** Allergies typed in, outside the fixed list. */
+  otherAllergies: string[];
+  dislikes: string[];
+  /** When the cook confirmed the allergy notice (ISO date). Asked once, before the first allergy. */
+  allergyNoticeAcceptedAt?: string;
+};
+
+export const EMPTY_KITCHEN_PROFILE: KitchenProfile = {
+  diets: [],
+  alwaysSwap: [],
+  autoApplyOnExtract: false,
+  pantryStaples: [],
+  allergies: [],
+  otherAllergies: [],
+  dislikes: [],
+};
+
+export const MAX_PANTRY_STAPLES = 40;
+const MAX_PANTRY_NAME = 60;
+
+const DIET_KEYS = new Set<string>(RECIPE_VARIANTS.map((v) => v.key));
+
+export function sanitizeKitchenProfile(value: unknown): KitchenProfile {
+  if (!value || typeof value !== 'object' || Array.isArray(value)) {
+    return { ...EMPTY_KITCHEN_PROFILE };
+  }
+  const raw = value as Record<string, unknown>;
+  const diets = Array.isArray(raw.diets)
+    ? raw.diets.filter((key): key is KitchenDietKey => typeof key === 'string' && DIET_KEYS.has(key))
+    : [];
+  const alwaysSwap = Array.isArray(raw.alwaysSwap)
+    ? raw.alwaysSwap.flatMap((row) => {
+        if (!row || typeof row !== 'object') return [];
+        const from = typeof (row as KitchenSwap).from === 'string' ? (row as KitchenSwap).from.trim() : '';
+        const to = typeof (row as KitchenSwap).to === 'string' ? (row as KitchenSwap).to.trim() : '';
+        if (!from || !to) return [];
+        return [{ from: from.slice(0, 60), to: to.slice(0, 60) }];
+      }).slice(0, 8)
+    : [];
+  const servings = raw.defaultServings;
+  const defaultServings =
+    typeof servings === 'number' && Number.isInteger(servings) && servings >= 1 && servings <= 24
+      ? servings
+      : undefined;
+  const pantryStaples = Array.isArray(raw.pantryStaples)
+    ? [
+        ...new Set(
+          raw.pantryStaples.flatMap((item) => {
+            if (typeof item !== 'string') return [];
+            const name = item.trim().slice(0, MAX_PANTRY_NAME);
+            return name ? [name] : [];
+          }),
+        ),
+      ].slice(0, MAX_PANTRY_STAPLES)
+    : [];
+  const allergies = Array.isArray(raw.allergies)
+    ? ALLERGEN_KEYS.filter((key) => (raw.allergies as unknown[]).some((item) => isAllergenKey(item) && item === key))
+    : [];
+  const acceptedAt = raw.allergyNoticeAcceptedAt;
+  const allergyNoticeAcceptedAt =
+    typeof acceptedAt === 'string' && acceptedAt.length <= 40 && !Number.isNaN(Date.parse(acceptedAt))
+      ? acceptedAt
+      : undefined;
+  return {
+    diets: [...new Set(diets)].slice(0, 4),
+    defaultServings,
+    alwaysSwap,
+    autoApplyOnExtract: raw.autoApplyOnExtract === true,
+    pantryStaples,
+    allergies,
+    otherAllergies: cleanAvoidItems(raw.otherAllergies, MAX_OTHER_ALLERGIES),
+    dislikes: cleanAvoidItems(raw.dislikes, MAX_DISLIKES),
+    ...(allergyNoticeAcceptedAt ? { allergyNoticeAcceptedAt } : {}),
+  };
+}
+
+export function addPantryStaple(profile: KitchenProfile, name: string): KitchenProfile {
+  const trimmed = name.trim().slice(0, MAX_PANTRY_NAME);
+  if (!trimmed) return profile;
+  const key = trimmed.toLowerCase();
+  if (profile.pantryStaples.some((item) => item.toLowerCase() === key)) return profile;
+  return {
+    ...profile,
+    pantryStaples: [...profile.pantryStaples, trimmed].slice(0, MAX_PANTRY_STAPLES),
+  };
+}
+
+export function removePantryStaple(profile: KitchenProfile, name: string): KitchenProfile {
+  const key = name.trim().toLowerCase();
+  return {
+    ...profile,
+    pantryStaples: profile.pantryStaples.filter((item) => item.toLowerCase() !== key),
+  };
+}
+
+/**
+ * The request sent when a new extract is adapted automatically. Allergies come first, so they are
+ * never the part that is left out when the text is too long.
+ */
+export function kitchenInstruction(profile: KitchenProfile): string | null {
+  const parts: (string | null)[] = [allergyInstruction(profile)];
+  for (const diet of profile.diets) {
+    parts.push(`Adapt this recipe to be ${diet.replace(/_/g, ' ')}`);
+  }
+  if (profile.defaultServings) {
+    parts.push(`Scale it to ${profile.defaultServings} servings`);
+  }
+  for (const swap of profile.alwaysSwap) {
+    parts.push(`Always swap ${swap.from} for ${swap.to}`);
+  }
+  parts.push(dislikeInstruction(profile.dislikes));
+  return fitInstruction(parts);
+}
+
+export const MAX_KITCHEN_JSON_BYTES = 8192;
+
+export function assertKitchenProfileSize(profile: KitchenProfile): void {
+  const bytes = new TextEncoder().encode(JSON.stringify(sanitizeKitchenProfile(profile))).length;
+  if (bytes > MAX_KITCHEN_JSON_BYTES) {
+    throw new Error('kitchen_too_large');
+  }
+}
+
+export function kitchenProfileIsEmpty(profile: KitchenProfile): boolean {
+  return (
+    profile.diets.length === 0 &&
+    profile.alwaysSwap.length === 0 &&
+    profile.defaultServings == null &&
+    profile.autoApplyOnExtract === false &&
+    profile.pantryStaples.length === 0 &&
+    profile.allergies.length === 0 &&
+    profile.otherAllergies.length === 0 &&
+    profile.dislikes.length === 0
+  );
+}

@@ -1,32 +1,11 @@
-import { supabase } from '@/lib/supabase/client';
 import {
-  assertKitchenProfileSize,
   clearGuestKitchenProfile,
   kitchenProfileIsEmpty,
   loadGuestKitchenProfile,
-  sanitizeKitchenProfile,
-  type KitchenProfile,
 } from '@/lib/kitchenProfile';
+import { fetchCloudKitchenProfile, saveCloudKitchenProfile } from '@shared/lib/supabase/kitchen';
 
-export async function fetchCloudKitchenProfile(userId: string): Promise<KitchenProfile> {
-  const { data, error } = await supabase
-    .from('profiles')
-    .select('kitchen')
-    .eq('id', userId)
-    .maybeSingle();
-  if (error) throw error;
-  return sanitizeKitchenProfile(data?.kitchen);
-}
-
-export async function saveCloudKitchenProfile(
-  userId: string,
-  profile: KitchenProfile,
-): Promise<void> {
-  const next = sanitizeKitchenProfile(profile);
-  assertKitchenProfileSize(next);
-  const { error } = await supabase.from('profiles').update({ kitchen: next }).eq('id', userId);
-  if (error) throw error;
-}
+export { fetchCloudKitchenProfile, saveCloudKitchenProfile };
 
 export async function migrateGuestKitchenToCloud(userId: string): Promise<void> {
   const guest = await loadGuestKitchenProfile();

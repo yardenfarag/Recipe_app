@@ -1359,6 +1359,11 @@ export default {
     "library": {
       "sortBy": "מיון לפי"
     },
+    "recipe": {
+      "viewOriginal": "לצפייה במקור",
+      "opensInNewTab": "נפתח בכרטיסייה חדשה",
+      "stepVideoTime": "בסרטון ב־{{time}}"
+    },
     "soon": {
       "recipe": {
         "title": "דפי המתכון בדרך",
