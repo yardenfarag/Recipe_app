@@ -1,11 +1,13 @@
 // npx deno test -A --no-lock supabase/functions/_shared/extraction/webRecipe_test.ts
 //
 // The page download is capped in size and in time, body included (PIN-153).
+// Google Docs links are read through the document's HTML export (PIN-73).
 
 import { assert, assertEquals, assertRejects } from 'jsr:@std/assert@1';
 
 import { FetchError } from '../core/errors.ts';
-import { fetchHtml } from './webRecipe.ts';
+import { fetchErrorInfo } from './fetchErrorMessage.ts';
+import { fetchHtml, googleDocExportUrl } from './webRecipe.ts';
 
 // An address literal, so safeFetch needs no DNS lookup.
 const PAGE = 'http://93.184.216.34/recipe';
@@ -84,6 +86,52 @@ Deno.test('a file that is not a page is refused without downloading it', async (
   try {
     await assertRejects(() => fetchHtml(PAGE), FetchError, "doesn't look like a recipe webpage");
     assert(state.cancelled);
+  } finally {
+    restore();
+  }
+});
+
+const DOC_ID = '1nz2yrR77amxBmtKIR57BJi1qn9aZabWKCpldXtTEMvw';
+const DOC_EXPORT = `https://docs.google.com/document/d/${DOC_ID}/export?format=html`;
+
+Deno.test('a Google Docs link is read through its HTML export', () => {
+  for (const link of [
+    `https://docs.google.com/document/d/${DOC_ID}/edit`,
+    `https://docs.google.com/document/d/${DOC_ID}/edit?usp=sharing`,
+    `https://docs.google.com/document/d/${DOC_ID}/edit#heading=h.abc`,
+    `https://docs.google.com/document/d/${DOC_ID}/view`,
+    `https://docs.google.com/document/d/${DOC_ID}`,
+    `https://docs.google.com/document/u/1/d/${DOC_ID}/edit`,
+    `http://docs.google.com/document/d/${DOC_ID}/preview?hgd=1`,
+  ]) {
+    assertEquals(googleDocExportUrl(link), DOC_EXPORT, link);
+  }
+});
+
+Deno.test('other links are fetched as they are', () => {
+  for (const link of [
+    'https://cookieandkate.com/socca/',
+    // Published to the web: an ordinary page already.
+    'https://docs.google.com/document/d/e/2PACX-1vQabcdefghijklmnopqrstuvwxyz/pub',
+    `https://docs.google.com/spreadsheets/d/${DOC_ID}/edit`,
+    `https://drive.google.com/file/d/${DOC_ID}/view`,
+    `https://docs.google.com.evil.example/document/d/${DOC_ID}/edit`,
+    'https://docs.google.com/document/d/short/edit',
+    'not a url',
+  ]) {
+    assertEquals(googleDocExportUrl(link), null, link);
+  }
+});
+
+Deno.test('a private Google Doc, which lands on the sign-in page, is reported as private', async () => {
+  const restore = stubFetch(() => {
+    const res = new Response('<html><body>Sign in</body></html>', { headers: { 'content-type': 'text/html' } });
+    Object.defineProperty(res, 'url', { value: 'https://accounts.google.com/v3/signin/identifier?continue=x' });
+    return res;
+  });
+  try {
+    const err = await assertRejects(() => fetchHtml(PAGE), FetchError);
+    assertEquals(fetchErrorInfo(err, 'web').code, 'post_private');
   } finally {
     restore();
   }
