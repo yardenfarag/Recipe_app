@@ -1,8 +1,7 @@
 import { FunctionsHttpError } from '@supabase/supabase-js';
 
-import type { FridgeCatalogItem } from '@shared/lib/fridgeCatalog';
-import { getInstallId } from '@/lib/installId';
-import { supabase } from '@/lib/supabase/client';
+import type { FridgeCatalogItem } from '../fridgeCatalog';
+import { supabase } from './client';
 
 export type { FridgeCatalogItem };
 
@@ -25,8 +24,9 @@ export async function matchFridge(
   imageBase64: string,
   mimeType: string,
   catalog: FridgeCatalogItem[],
+  /** The app's install id. Only the mobile app has one; the web app requires sign-in and sends none. */
+  guestInstallId?: string,
 ): Promise<MatchFridgeResult> {
-  const guestInstallId = await getInstallId();
   const { data, error } = await supabase.functions.invoke<MatchFridgeResult>('match-fridge', {
     body: {
       image_base64: imageBase64,

@@ -10,7 +10,8 @@ import { useThemePreference } from '@/hooks/useThemePreference';
 import { announce } from '@/lib/a11y';
 import { pickCompressedRecipeImage } from '@/lib/pickCompressedImage';
 import { buildFridgeCatalog } from '@shared/lib/fridgeCatalog';
-import { matchFridge, type FridgeMatchRow } from '@/lib/supabase/matchFridge';
+import { getInstallId } from '@/lib/installId';
+import { matchFridge, type FridgeMatchRow } from '@shared/lib/supabase/matchFridge';
 import type { Recipe } from '@shared/types/recipe';
 
 type FridgeMatchModalProps = {
@@ -62,6 +63,7 @@ export function FridgeMatchModal({ visible, recipes, onClose }: FridgeMatchModal
         image.base64,
         image.mimeType,
         buildFridgeCatalog(recipes),
+        await getInstallId(),
       );
       if (requestGen.current !== gen) return;
       if (result.code === 'auth_required') {

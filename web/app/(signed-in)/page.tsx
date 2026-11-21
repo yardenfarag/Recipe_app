@@ -1,11 +1,410 @@
 "use client";
 
+import { BookOpen, Flame, Heart, SearchX } from "lucide-react";
+import { useSearchParams } from "next/navigation";
+import { Suspense, useCallback, useDeferredValue, useEffect, useMemo, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 
-import { ComingSoon, SnapLink } from "@/components/shell/ComingSoon";
+import { rankCookTonight } from "@shared/lib/cookTonight";
+import { filterAndSortRecipes, isRecipeLibraryFiltered, RECIPE_SORT_OPTIONS, type RecipeSortKey } from "@shared/lib/recipeListQuery";
+import { collectLibraryTags } from "@shared/lib/recipeTags";
+import { showToast } from "@shared/lib/toast";
+import { upsertRecipeTranslation } from "@shared/lib/supabase/recipeTranslations";
+import { deleteRecipe, renameRecipe } from "@shared/lib/supabase/recipes";
+import { translateAppError } from "@shared/lib/translateAppError";
+import { isCollectionNameTaken, isRecipeNameTaken } from "@shared/lib/uniqueNames";
+import type { Recipe } from "@shared/types/recipe";
 
-/** Library: the home screen. The real one arrives with PIN-131. */
-export default function LibraryPage() {
+import { AddToCollectionDialog } from "@/components/library/AddToCollectionDialog";
+import { FridgeMatchDialog } from "@/components/library/FridgeMatchDialog";
+import { LibraryToolbar } from "@/components/library/LibraryToolbar";
+import { NameDialog } from "@/components/library/NameDialog";
+import { RecipeCard } from "@/components/recipes/RecipeCard";
+import { SnapLink } from "@/components/shell/ComingSoon";
+import { Notice } from "@/components/ui/Alert";
+import { Button } from "@/components/ui/Button";
+import { ConfirmDialog } from "@/components/ui/Dialog";
+import { PageHeader } from "@/components/ui/PageHeader";
+import { EmptyState, ErrorState } from "@/components/ui/States";
+import { Spinner } from "@/components/ui/Spinner";
+import { cn } from "@/lib/cn";
+import { useCollections } from "@/lib/library/useCollections";
+import { useLibraryLayout } from "@/lib/library/useLibraryLayout";
+import { useRecipes } from "@/lib/library/useRecipes";
+
+const SORT_KEYS = RECIPE_SORT_OPTIONS.map((option) => option.key);
+
+/** What the address says the Library should show: so a filtered view can be linked, reloaded and come Back to. */
+function filtersFromAddress(params: URLSearchParams) {
+  const sort = params.get("sort");
+  return {
+    search: params.get("q") ?? "",
+    sort: (SORT_KEYS as string[]).includes(sort ?? "") ? (sort as RecipeSortKey) : ("newest" as RecipeSortKey),
+    tags: params.getAll("tag").flatMap((tag) => tag.split(",")).map((tag) => tag.trim().toLowerCase()).filter(Boolean),
+    collectionId: params.get("collection"),
+    favoritesOnly: params.get("favorites") === "1" || params.get("favorites") === "true",
+    cookTonight: params.get("tonight") === "1",
+    saved: params.get("saved") === "1" || params.get("saved") === "true",
+  };
+}
+
+type CollectionDialog = { mode: "create" } | { mode: "rename"; id: string; name: string } | null;
+
+/**
+ * Library: every saved recipe, and the tools to find one. Search, favorites, "cook tonight", sort, tags and
+ * collections all narrow the list with the same shared logic the mobile app uses, so the same filters give the
+ * same recipes. The chosen filters live in the address.
+ */
+function LibraryScreen() {
   const { t } = useTranslation();
-  return <ComingSoon section="library" title={t("library.title")} action={<SnapLink />} />;
+  const params = useSearchParams();
+  const initial = useMemo(() => filtersFromAddress(new URLSearchParams(params.toString())), []); // eslint-disable-line react-hooks/exhaustive-deps
+  const { recipes, loading, loadingMore, hasMore, total, error, refresh, loadMore, ensureAllLoaded, patchRecipe, toggleFavorite } = useRecipes(40);
+  const { collections, createCollection, renameCollection, deleteCollection, setMembershipsForRecipe } = useCollections();
+  const { layout, setLayout } = useLibraryLayout();
+
+  const [search, setSearch] = useState(initial.search);
+  const [sort, setSort] = useState<RecipeSortKey>(initial.sort);
+  const [selectedTags, setSelectedTags] = useState<string[]>(initial.tags);
+  const [selectedCollectionId, setSelectedCollectionId] = useState<string | null>(initial.collectionId);
+  const [favoritesOnly, setFavoritesOnly] = useState(initial.favoritesOnly);
+  const [cookTonight, setCookTonight] = useState(initial.cookTonight);
+  const [filtersOpen, setFiltersOpen] = useState(initial.sort !== "newest" || initial.tags.length > 0);
+  const [savedBanner, setSavedBanner] = useState(initial.saved);
+  const [fridgeOpen, setFridgeOpen] = useState(false);
+  const [collectionDialog, setCollectionDialog] = useState<CollectionDialog>(null);
+  const [deleteCollectionId, setDeleteCollectionId] = useState<string | null>(null);
+  const [collectionRecipe, setCollectionRecipe] = useState<Recipe | null>(null);
+  const [renameTarget, setRenameTarget] = useState<Recipe | null>(null);
+  const [deleteTarget, setDeleteTarget] = useState<Recipe | null>(null);
+  const searchRef = useRef<HTMLInputElement>(null);
+  const sentinelRef = useRef<HTMLDivElement>(null);
+  const deferredSearch = useDeferredValue(search);
+
+  // Keep the address in step with the filters, without adding a history entry for every keystroke.
+  useEffect(() => {
+    const next = new URLSearchParams();
+    if (search.trim()) next.set("q", search.trim());
+    if (sort !== "newest") next.set("sort", sort);
+    if (selectedTags.length > 0) next.set("tag", selectedTags.join(","));
+    if (selectedCollectionId) next.set("collection", selectedCollectionId);
+    if (favoritesOnly) next.set("favorites", "1");
+    if (cookTonight) next.set("tonight", "1");
+    const query = next.toString();
+    window.history.replaceState(window.history.state, "", `${window.location.pathname}${query ? `?${query}` : ""}`);
+  }, [search, sort, selectedTags, selectedCollectionId, favoritesOnly, cookTonight]);
+
+  // "/" jumps to the search field from anywhere on the page, unless you are already typing somewhere.
+  useEffect(() => {
+    const onKey = (event: KeyboardEvent) => {
+      if (event.key !== "/" || event.metaKey || event.ctrlKey || event.altKey) return;
+      const target = event.target as HTMLElement | null;
+      if (target && (target.isContentEditable || /^(INPUT|TEXTAREA|SELECT)$/.test(target.tagName))) return;
+      if (document.querySelector("[role=dialog], [role=menu]")) return;
+      event.preventDefault();
+      searchRef.current?.focus();
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, []);
+
+  const availableTags = useMemo(() => collectLibraryTags(recipes), [recipes]);
+
+  const collectionAllowlist = useMemo(() => {
+    if (!selectedCollectionId) return null;
+    return new Set(collections.find((c) => c.id === selectedCollectionId)?.recipeIds ?? []);
+  }, [collections, selectedCollectionId]);
+
+  const displayed = useMemo(() => {
+    const filtered = filterAndSortRecipes(recipes, { searchQuery: deferredSearch, sort, selectedTags, recipeIdAllowlist: collectionAllowlist });
+    if (cookTonight) return rankCookTonight(filtered, { maxMinutes: 45, maxEffort: "Medium", favoritesOnly });
+    return favoritesOnly ? filtered.filter((recipe) => recipe.is_favorite === true) : filtered;
+  }, [recipes, deferredSearch, sort, selectedTags, collectionAllowlist, favoritesOnly, cookTonight]);
+
+  const filtered = isRecipeLibraryFiltered(deferredSearch, sort, selectedTags, selectedCollectionId) || favoritesOnly || cookTonight;
+
+  // A search or filter must look at the whole library to be right, so load the rest.
+  useEffect(() => {
+    if (filtered) void ensureAllLoaded();
+  }, [ensureAllLoaded, filtered]);
+
+  // Without a filter, load the next page when the end of the list comes near.
+  useEffect(() => {
+    const sentinel = sentinelRef.current;
+    if (!sentinel || filtered || !hasMore) return;
+    const observer = new IntersectionObserver((entries) => entries[0]?.isIntersecting && void loadMore(), { rootMargin: "800px" });
+    observer.observe(sentinel);
+    return () => observer.disconnect();
+  }, [filtered, hasMore, loadMore, recipes.length]);
+
+  const clearFilters = useCallback(() => {
+    setSearch("");
+    setSort("newest");
+    setSelectedTags([]);
+    setSelectedCollectionId(null);
+    setFavoritesOnly(false);
+    setCookTonight(false);
+  }, []);
+
+  const handleFavorite = useCallback(
+    async (recipe: Recipe) => {
+      try {
+        await toggleFavorite(recipe);
+      } catch {
+        showToast(t("recipe.favoriteFailedTitle"), "info");
+      }
+    },
+    [t, toggleFavorite],
+  );
+
+  const recipeActions = useMemo(() => ({ onAddToCollection: setCollectionRecipe, onRename: setRenameTarget, onDelete: setDeleteTarget }), []);
+
+  async function renameSelected(name: string) {
+    if (!renameTarget) return;
+    await renameRecipe(renameTarget.id, name);
+    // A translated copy keeps the old title unless it is renamed too.
+    const translations = renameTarget.translations
+      ? Object.fromEntries(Object.entries(renameTarget.translations).map(([code, content]) => [code, { ...content, title: name }]))
+      : undefined;
+    if (translations) {
+      await Promise.all(Object.entries(translations).map(([code, content]) => upsertRecipeTranslation(renameTarget.id, code, content)));
+    }
+    patchRecipe(renameTarget.id, { title: name, display_title: name, translations });
+  }
+
+  async function deleteSelected() {
+    if (!deleteTarget) return;
+    try {
+      await deleteRecipe(deleteTarget.id);
+      void refresh();
+    } catch (caught) {
+      showToast(`${t("library.couldNotDelete")}: ${translateAppError(caught, t)}`, "info");
+    }
+  }
+
+  async function deleteSelectedCollection() {
+    if (!deleteCollectionId) return;
+    try {
+      await deleteCollection(deleteCollectionId);
+      if (selectedCollectionId === deleteCollectionId) setSelectedCollectionId(null);
+    } catch (caught) {
+      showToast(`${t("library.couldNotDelete")}: ${translateAppError(caught, t)}`, "info");
+    }
+  }
+
+  const collectionToDelete = collections.find((c) => c.id === deleteCollectionId);
+  const count = filtered ? displayed.length : total || displayed.length;
+  const countText = count === 1 ? t("library.recipeCountOne", { count }) : t("library.recipeCountOther", { count });
+  const libraryEmpty = !loading && !error && recipes.length === 0 && total === 0;
+
+  return (
+    <>
+      <PageHeader title={t("library.title")} />
+
+      {savedBanner ? (
+        <div className="mb-4 flex items-center gap-3 rounded-2xl bg-success-soft px-4 py-3 text-sm font-medium text-success" role="status">
+          <span className="flex-1">{t("library.saved")}</span>
+          <button type="button" onClick={() => setSavedBanner(false)} className="rounded-full px-2 py-1 font-semibold hover:bg-success/10">
+            {t("common.dismiss")}
+          </button>
+        </div>
+      ) : null}
+
+      <LibraryToolbar
+        searchInput={searchRef}
+        search={search}
+        onSearchChange={setSearch}
+        sort={sort}
+        onSortChange={setSort}
+        favoritesOnly={favoritesOnly}
+        onToggleFavorites={() => setFavoritesOnly((value) => !value)}
+        cookTonight={cookTonight}
+        onToggleCookTonight={() => setCookTonight((value) => !value)}
+        onFridgeMatch={() => void ensureAllLoaded().then(() => setFridgeOpen(true))}
+        availableTags={availableTags}
+        selectedTags={selectedTags}
+        onToggleTag={(tag) => setSelectedTags((previous) => (previous.includes(tag) ? previous.filter((item) => item !== tag) : [...previous, tag]))}
+        collections={collections}
+        selectedCollectionId={selectedCollectionId}
+        onSelectCollection={setSelectedCollectionId}
+        onCreateCollection={() => setCollectionDialog({ mode: "create" })}
+        onRenameCollection={(id) => {
+          const collection = collections.find((c) => c.id === id);
+          if (collection) setCollectionDialog({ mode: "rename", id, name: collection.name });
+        }}
+        onDeleteCollection={setDeleteCollectionId}
+        layout={layout}
+        onLayoutChange={setLayout}
+        filtersOpen={filtersOpen}
+        onFiltersOpenChange={setFiltersOpen}
+      />
+
+      <div className="mt-6">
+        {error && recipes.length > 0 ? (
+          <div className="mb-4">
+            <Notice>
+              {t("library.refreshFailed")}{" "}
+              <button type="button" onClick={() => void refresh()} className="font-semibold underline underline-offset-2">
+                {t("common.retry")}
+              </button>
+            </Notice>
+          </div>
+        ) : null}
+
+        {loading ? (
+          <Skeleton layout={layout} label={t("library.title")} />
+        ) : error && recipes.length === 0 ? (
+          <ErrorState title={t("library.loadFailedTitle")} onRetry={() => void refresh()} />
+        ) : libraryEmpty ? (
+          <EmptyState
+            icon={<BookOpen aria-hidden />}
+            title={t("library.emptyTitle")}
+            body={t("library.emptyBody")}
+            action={<SnapLink />}
+          />
+        ) : (
+          <>
+            <p aria-live="polite" className="mb-3 text-sm font-semibold text-muted">
+              {countText}
+            </p>
+            {displayed.length === 0 ? (
+              <NoResults
+                kind={cookTonight ? "tonight" : favoritesOnly && !search.trim() && selectedTags.length === 0 && !selectedCollectionId ? "favorites" : "matches"}
+                onClear={clearFilters}
+              />
+            ) : (
+              <ul
+                className={cn(
+                  "grid list-none",
+                  layout === "grid" ? "gap-4 [grid-template-columns:repeat(auto-fill,minmax(min(100%,17rem),1fr))]" : "gap-3 xl:grid-cols-2",
+                )}
+              >
+                {displayed.map((recipe) => (
+                  <li key={recipe.id} className="min-w-0">
+                    <RecipeCard recipe={recipe} variant={layout} onToggleFavorite={handleFavorite} actions={recipeActions} />
+                  </li>
+                ))}
+              </ul>
+            )}
+            <div ref={sentinelRef} aria-hidden className="h-px" />
+            {loadingMore ? (
+              <div className="flex justify-center py-8">
+                <Spinner label={t("a11y.loadingMoreRecipes")} />
+              </div>
+            ) : null}
+          </>
+        )}
+      </div>
+
+      <FridgeMatchDialog open={fridgeOpen} onOpenChange={setFridgeOpen} recipes={recipes} />
+
+      <AddToCollectionDialog
+        recipe={collectionRecipe}
+        collections={collections}
+        onClose={() => setCollectionRecipe(null)}
+        onCreate={createCollection}
+        onSave={setMembershipsForRecipe}
+      />
+
+      <NameDialog
+        open={collectionDialog != null}
+        onOpenChange={(open) => !open && setCollectionDialog(null)}
+        title={collectionDialog?.mode === "rename" ? t("library.renameCollection") : t("library.newCollection")}
+        label={t("library.collectionNamePlaceholder")}
+        initialValue={collectionDialog?.mode === "rename" ? collectionDialog.name : ""}
+        submitLabel={collectionDialog?.mode === "rename" ? t("common.save") : t("library.new")}
+        validate={(name) => {
+          if (!name.trim()) return t("library.collectionNameRequired");
+          const excludeId = collectionDialog?.mode === "rename" ? collectionDialog.id : undefined;
+          return isCollectionNameTaken(collections, name, excludeId) ? t("library.collectionNameTaken") : null;
+        }}
+        onSubmit={async (name) => {
+          if (collectionDialog?.mode === "rename") await renameCollection(collectionDialog.id, name);
+          else setSelectedCollectionId((await createCollection(name)).id);
+        }}
+      />
+
+      <NameDialog
+        open={renameTarget != null}
+        onOpenChange={(open) => !open && setRenameTarget(null)}
+        title={t("library.renameRecipe")}
+        label={t("library.recipeNamePlaceholder")}
+        initialValue={renameTarget ? (renameTarget.display_title ?? renameTarget.title) : ""}
+        submitLabel={t("common.save")}
+        validate={(name) => {
+          if (!name.trim()) return t("library.recipeNameRequired");
+          return renameTarget && isRecipeNameTaken(recipes, name, renameTarget.id) ? t("library.recipeNameTaken") : null;
+        }}
+        onSubmit={renameSelected}
+      />
+
+      <ConfirmDialog
+        open={deleteTarget != null}
+        onOpenChange={(open) => !open && setDeleteTarget(null)}
+        title={t("library.deleteRecipeTitle")}
+        description={t("library.deleteRecipeBody", { name: deleteTarget ? (deleteTarget.display_title ?? deleteTarget.title) : "" })}
+        confirmLabel={t("common.delete")}
+        onConfirm={deleteSelected}
+      />
+
+      <ConfirmDialog
+        open={deleteCollectionId != null}
+        onOpenChange={(open) => !open && setDeleteCollectionId(null)}
+        title={t("library.deleteCollectionTitle")}
+        description={collectionToDelete ? t("library.deleteCollectionBody", { name: collectionToDelete.name }) : t("library.deleteCollectionBodyGeneric")}
+        confirmLabel={t("library.deleteCollection")}
+        onConfirm={deleteSelectedCollection}
+      />
+    </>
+  );
+}
+
+function NoResults({ kind, onClear }: { kind: "tonight" | "favorites" | "matches"; onClear: () => void }) {
+  const { t } = useTranslation();
+  const copy = {
+    tonight: { icon: <Flame aria-hidden />, title: t("library.noCookTonight"), body: t("library.noCookTonightHint") },
+    favorites: { icon: <Heart aria-hidden />, title: t("library.noFavorites"), body: t("library.noFavoritesHint") },
+    matches: { icon: <SearchX aria-hidden />, title: t("library.noMatches"), body: t("library.noMatchesHint") },
+  }[kind];
+  return (
+    <EmptyState
+      icon={copy.icon}
+      title={copy.title}
+      body={copy.body}
+      action={
+        <Button variant="secondary" onClick={onClear}>
+          {t("library.clearFilters")}
+        </Button>
+      }
+    />
+  );
+}
+
+/** Grey outlines of the cards while the first page loads, so the page doesn't jump when they arrive. */
+function Skeleton({ layout, label }: { layout: "grid" | "list"; label: string }) {
+  return (
+    <div role="status" aria-busy="true">
+      <span className="sr-only">{label}</span>
+      <div
+        aria-hidden
+        className={cn(
+          "grid motion-safe:animate-pulse",
+          layout === "grid" ? "gap-4 [grid-template-columns:repeat(auto-fill,minmax(min(100%,17rem),1fr))]" : "gap-3 xl:grid-cols-2",
+        )}
+      >
+        {Array.from({ length: layout === "grid" ? 8 : 6 }, (_, index) => (
+          <div key={index} className={cn("rounded-3xl border border-frosted-border bg-surface", layout === "grid" ? "h-72" : "h-24")} />
+        ))}
+      </div>
+    </div>
+  );
+}
+
+export default function LibraryPage() {
+  return (
+    // useSearchParams needs a boundary; the page itself loads after sign-in, in the browser.
+    <Suspense>
+      <LibraryScreen />
+    </Suspense>
+  );
 }

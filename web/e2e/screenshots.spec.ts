@@ -1,5 +1,6 @@
 import { test, type Browser } from "@playwright/test";
 
+import { resetLibrary, type SeedRecipe } from "./admin";
 import { signInWithPassword } from "./helpers";
 import { TEST_USER } from "./testUser";
 
@@ -88,6 +89,45 @@ test("sign-in page", async ({ browser }) => {
     await page.goto("/app/auth?mode=signin");
     await page.getByRole("heading", { name: "Welcome back" }).waitFor();
     await page.screenshot({ path: `${OUT}/signin-${viewport}.png` });
+    await context.close();
+  }
+});
+
+/** A flat picture standing in for a recipe photo, so the cards look as they do with real ones. */
+const picture = (hue: number) =>
+  `data:image/svg+xml;utf8,${encodeURIComponent(
+    `<svg xmlns="http://www.w3.org/2000/svg" width="640" height="400"><defs><linearGradient id="g" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="hsl(${hue} 70% 62%)"/><stop offset="1" stop-color="hsl(${hue + 40} 70% 45%)"/></linearGradient></defs><rect width="640" height="400" fill="url(#g)"/></svg>`,
+  )}`;
+
+const LIBRARY: SeedRecipe[] = [
+  { title: "Creamy lemon pasta with garlic and parmesan", is_favorite: true, estimated_time_minutes: 25, effort_level: "Easy", cost_estimate: "$", tags: ["pasta", "dinner"], image_url: picture(40) },
+  { title: "Chocolate lava cake", estimated_time_minutes: 90, effort_level: "Hard", cost_estimate: "$$", tags: ["dessert"], image_url: picture(15) },
+  { title: "Green salad", estimated_time_minutes: 10, effort_level: "Easy", cost_estimate: "$", tags: ["salad"] },
+  { title: "Slow-cooked beef ragu", estimated_time_minutes: 195, effort_level: "Medium", cost_estimate: "$$$", tags: ["pasta", "dinner"], image_url: picture(0) },
+  { title: "Shakshuka", is_favorite: true, estimated_time_minutes: 30, effort_level: "Easy", cost_estimate: "$", tags: ["breakfast"], image_url: picture(8) },
+  { title: "Miso soup", estimated_time_minutes: 15, effort_level: "Easy", tags: ["soup"], image_url: picture(100) },
+  { title: "Pad thai", estimated_time_minutes: 35, effort_level: "Medium", cost_estimate: "$$", tags: ["dinner"], image_url: picture(30) },
+  { title: "Banana bread", estimated_time_minutes: 70, effort_level: "Easy", cost_estimate: "$", tags: ["dessert", "breakfast"] },
+  { title: "Falafel wrap", estimated_time_minutes: 45, effort_level: "Medium", tags: ["dinner"], image_url: picture(70) },
+];
+
+test("library", async ({ browser }) => {
+  await resetLibrary(LIBRARY.map((recipe, index) => ({ ...recipe, createdSecondsAgo: index + 1 })));
+  for (const viewport of Object.keys(VIEWPORTS) as (keyof typeof VIEWPORTS)[]) {
+    for (const [language, scheme] of [["en", "light"], ["en", "dark"], ["he", "light"]] as const) {
+      const { page, context } = await open(browser, viewport, { language, scheme });
+      await page.locator("#main article").first().waitFor();
+      await page.screenshot({ path: `${OUT}/library-${viewport}-${language}-${scheme}.png`, fullPage: viewport !== "desktop" });
+      await context.close();
+    }
+  }
+  // Filters open, and the list layout, on desktop and phone.
+  for (const viewport of ["desktop", "phone"] as const) {
+    const { page, context } = await open(browser, viewport, { language: "en", scheme: "light" }, "/app?sort=title_asc&tag=dinner");
+    await page.locator("#main article").first().waitFor();
+    await page.getByRole("radio", { name: "Show as list" }).click();
+    await page.waitForTimeout(200);
+    await page.screenshot({ path: `${OUT}/library-list-filters-${viewport}.png`, fullPage: true });
     await context.close();
   }
 });

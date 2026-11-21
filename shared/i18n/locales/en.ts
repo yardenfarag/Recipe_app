@@ -1356,10 +1356,13 @@ export default {
     "notFoundTitle": "We couldn’t find that page",
     "notFoundBody": "The link may be old, or the page has moved.",
     "comingSoon": "Coming soon to the web",
+    "library": {
+      "sortBy": "Sort by"
+    },
     "soon": {
-      "library": {
-        "title": "Your recipes, on a bigger screen",
-        "body": "Everything you saved in the app will be here. Search it, filter by tag, and cook with the steps right beside the ingredients."
+      "recipe": {
+        "title": "Recipe pages are on their way",
+        "body": "Reading and cooking a recipe on the web arrives next. Until then, open it in the Pinch app."
       },
       "hub": {
         "title": "Recipes other people found, free to keep",
