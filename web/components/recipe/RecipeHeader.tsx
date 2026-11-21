@@ -44,7 +44,19 @@ function CostMeter({ filled }: { filled: number }) {
  * facts (calories, time, cost, effort), its tags and collections, when it was last cooked, the heart and a link to
  * where it came from.
  */
-export function RecipeHeader({ display, servings, onToggleFavorite }: { display: RecipeDisplay; servings: number; onToggleFavorite: () => void }) {
+export function RecipeHeader({
+  display,
+  servings,
+  onToggleFavorite,
+  back,
+}: {
+  display: RecipeDisplay;
+  servings: number;
+  /** The heart. Leave out for a recipe that isn't saved (a Snap preview, a Hub recipe). */
+  onToggleFavorite?: () => void;
+  /** Where the back link goes. Defaults to the Library; null hides it. */
+  back?: { href: string; label: string } | null;
+}) {
   const { t } = useTranslation();
   const { language } = useLanguage();
   const { collections } = useCollections();
@@ -64,13 +76,15 @@ export function RecipeHeader({ display, servings, onToggleFavorite }: { display:
 
   return (
     <header className="pb-6">
-      <Link
-        href="/"
-        className="inline-flex items-center gap-1.5 rounded-full py-1 pe-2 text-sm font-semibold text-muted transition-colors hover:text-text focus-visible:outline-2 focus-visible:outline-primary"
-      >
-        <ArrowLeft aria-hidden className="h-4 w-4 rtl:rotate-180" />
-        {t("cookbook.backToLibrary")}
-      </Link>
+      {back === null ? null : (
+        <Link
+          href={back?.href ?? "/"}
+          className="inline-flex items-center gap-1.5 rounded-full py-1 pe-2 text-sm font-semibold text-muted transition-colors hover:text-text focus-visible:outline-2 focus-visible:outline-primary"
+        >
+          <ArrowLeft aria-hidden className="h-4 w-4 rtl:rotate-180" />
+          {back?.label ?? t("cookbook.backToLibrary")}
+        </Link>
+      )}
 
       <div className={cn("mt-4 grid gap-5", hasPicture && "md:grid-cols-[minmax(0,5fr)_minmax(0,7fr)] md:items-center md:gap-8")}>
         {hasPicture ? (
@@ -90,6 +104,7 @@ export function RecipeHeader({ display, servings, onToggleFavorite }: { display:
             >
               {title}
             </h1>
+            {onToggleFavorite ? (
             <IconButton
               label={isFavorite ? t("a11y.removeRecipeFromFavorites", { name: title }) : t("a11y.addRecipeToFavorites", { name: title })}
               aria-pressed={isFavorite}
@@ -97,6 +112,7 @@ export function RecipeHeader({ display, servings, onToggleFavorite }: { display:
               className="-mt-0.5 h-11 w-11"
               icon={<Heart aria-hidden className={cn("h-6 w-6 transition-colors", isFavorite ? "fill-primary text-primary" : "text-muted")} />}
             />
+            ) : null}
           </div>
 
           <ul className="mt-4 flex flex-wrap gap-2">

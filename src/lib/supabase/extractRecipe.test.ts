@@ -14,7 +14,8 @@ vi.mock('@/lib/extractionRequestId', () => ({
   clearExtractionRequestId: mocks.clearRequestId,
 }));
 vi.mock('@/lib/installId', () => ({ getInstallId: mocks.getInstallId }));
-vi.mock('@/lib/supabase/client', () => ({
+// The call lives in shared/lib/supabase/extractRecipe.ts, which uses the shared client.
+vi.mock('@shared/lib/supabase/client', () => ({
   supabase: { functions: { invoke: mocks.invoke } },
 }));
 
@@ -56,6 +57,7 @@ describe('extractRecipe request recovery', () => {
 
     await expect(extractRecipe('https://example.com/soup')).resolves.toMatchObject({
       status: 'failed',
+      code: 'no_response',
       request_id: 'request-1',
     });
     expect(mocks.clearRequestId).not.toHaveBeenCalled();
@@ -66,6 +68,9 @@ describe('extractRecipe request recovery', () => {
     expect(extractionOutcomeIsUncertain('metering_error')).toBe(true);
     expect(extractionOutcomeIsUncertain('guest_limit')).toBe(false);
     expect(extractionOutcomeIsUncertain('gate_unavailable')).toBe(false);
+    // No JSON answer: the charge is unknown. A timeout was refunded, so a retry is new.
+    expect(extractionOutcomeIsUncertain('no_response')).toBe(true);
+    expect(extractionOutcomeIsUncertain('extraction_timeout')).toBe(false);
   });
 
   it('reuses the durable id in the function request body', async () => {

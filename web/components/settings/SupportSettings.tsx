@@ -1,0 +1,177 @@
+"use client";
+
+import { ExternalLink, Info, Mail } from "lucide-react";
+import { useState, type FormEvent } from "react";
+import { useTranslation } from "react-i18next";
+
+import { FEEDBACK_MAX_LENGTH, FEEDBACK_MIN_LENGTH, submitFeedback } from "@shared/lib/supabase/feedback";
+import { submitSupportTicket, type SupportTicketCategory } from "@shared/lib/supabase/supportTickets";
+import { showToast } from "@shared/lib/toast";
+
+import { useAuth } from "@/components/AuthProvider";
+import { useLanguage } from "@/components/LanguageProvider";
+import { ChoiceGroup, SettingsCard, TextArea } from "@/components/settings/controls";
+import { SettingsPageHeader } from "@/components/settings/SettingsPageHeader";
+import { ErrorAlert } from "@/components/ui/Alert";
+import { Button } from "@/components/ui/Button";
+import { LEGAL_BASE_URL, LEGAL_URLS, SUPPORT_EMAIL } from "@/lib/legal";
+import { webFeedbackContext } from "@/lib/settings/feedbackContext";
+
+const CATEGORIES: SupportTicketCategory[] = ["bug", "billing", "account", "other"];
+/** The shortest ticket the server accepts (shared/lib/supabase/supportTickets.ts). */
+const TICKET_MIN_LENGTH = 5;
+const TICKET_MAX_LENGTH = 4000;
+
+/**
+ * Getting help: a support ticket (a person replies by email), feedback, or an email to support. The mobile app
+ * opens these as sheets; here they are forms on the page, since there is room for them.
+ */
+export function SupportSettings() {
+  const { t } = useTranslation();
+  return (
+    <>
+      <SettingsPageHeader id="support" />
+      <div className="flex flex-col gap-5">
+        <SupportTicketForm />
+        <FeedbackForm />
+        <SettingsCard title={t("settings.emailSupport")}>
+          <div className="flex flex-col gap-2 sm:flex-row sm:flex-wrap">
+            <a
+              href={LEGAL_URLS.supportMailto}
+              className="inline-flex h-11 items-center gap-2 rounded-full border border-border bg-surface px-5 text-[15px] font-semibold text-text transition-colors hover:bg-surface-soft"
+            >
+              <Mail aria-hidden className="h-4 w-4 text-primary" />
+              <span dir="ltr">{SUPPORT_EMAIL}</span>
+            </a>
+            <a
+              href={LEGAL_BASE_URL}
+              target="_blank"
+              rel="noreferrer"
+              className="inline-flex h-11 items-center gap-2 rounded-full border border-border bg-surface px-5 text-[15px] font-semibold text-text transition-colors hover:bg-surface-soft"
+            >
+              <Info aria-hidden className="h-4 w-4 text-primary" />
+              {t("settings.aboutPinch")}
+              <ExternalLink aria-hidden className="h-3.5 w-3.5 text-muted" />
+              <span className="sr-only">({t("web.recipe.opensInNewTab")})</span>
+            </a>
+          </div>
+        </SettingsCard>
+      </div>
+    </>
+  );
+}
+
+function SupportTicketForm() {
+  const { t } = useTranslation();
+  const { user } = useAuth();
+  const { language } = useLanguage();
+  const [category, setCategory] = useState<SupportTicketCategory>("bug");
+  const [message, setMessage] = useState("");
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const ready = message.trim().length >= TICKET_MIN_LENGTH;
+
+  async function submit(event: FormEvent) {
+    event.preventDefault();
+    if (!ready || busy) return;
+    setBusy(true);
+    setError(null);
+    try {
+      await submitSupportTicket({ category, message, email: user?.email ?? null, context: webFeedbackContext(language) });
+      setMessage("");
+      setCategory("bug");
+      showToast(`${t("support.sentTitle")}. ${t("support.sentBody")}`);
+    } catch (err) {
+      setError(err instanceof Error && err.message ? err.message : t("common.tryAgain"));
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  return (
+    <SettingsCard title={t("settings.reportIssue")} hint={t("support.hint")}>
+      <form onSubmit={(event) => void submit(event)} className="flex flex-col gap-4">
+        <div>
+          <p className="mb-2 text-sm font-semibold text-text">{t("support.category")}</p>
+          <ChoiceGroup
+            label={t("support.category")}
+            value={category}
+            onChange={setCategory}
+            className="flex flex-wrap gap-2"
+            optionClassName="inline-flex h-10 items-center rounded-full border border-border bg-surface px-4 text-sm font-semibold text-text transition-colors hover:bg-element data-[checked]:border-primary data-[checked]:bg-primary-soft data-[checked]:text-primary"
+            options={CATEGORIES.map((item) => ({ value: item, label: t(`support.categories.${item}`) }))}
+          />
+        </div>
+        <TextArea
+          label={t("support.whatHappened")}
+          placeholder={t("support.placeholder")}
+          value={message}
+          maxLength={TICKET_MAX_LENGTH}
+          onChange={(event) => setMessage(event.target.value)}
+          disabled={busy}
+          hint={user?.email ? t("support.replyTo", { email: user.email }) : undefined}
+        />
+        {error ? (
+          <ErrorAlert>
+            <strong className="font-semibold">{t("support.sendFailed")}.</strong> {error}
+          </ErrorAlert>
+        ) : null}
+        <div>
+          <Button type="submit" busy={busy} disabled={!ready}>
+            {t("support.submit")}
+          </Button>
+        </div>
+      </form>
+    </SettingsCard>
+  );
+}
+
+function FeedbackForm() {
+  const { t } = useTranslation();
+  const { language } = useLanguage();
+  const [message, setMessage] = useState("");
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const ready = message.trim().length >= FEEDBACK_MIN_LENGTH;
+
+  async function submit(event: FormEvent) {
+    event.preventDefault();
+    if (!ready || busy) return;
+    setBusy(true);
+    setError(null);
+    try {
+      await submitFeedback({ message, context: webFeedbackContext(language) });
+      setMessage("");
+      showToast(`${t("feedback.sentTitle")} ${t("feedback.sentBody")}`);
+    } catch (err) {
+      setError(err instanceof Error && err.message ? err.message : t("common.tryAgain"));
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  return (
+    <SettingsCard title={t("settings.sendFeedback")} hint={t("feedback.hint")}>
+      <form onSubmit={(event) => void submit(event)} className="flex flex-col gap-4">
+        <TextArea
+          label={t("feedback.placeholder")}
+          value={message}
+          maxLength={FEEDBACK_MAX_LENGTH}
+          onChange={(event) => setMessage(event.target.value)}
+          disabled={busy}
+          hint={t("web.settings.feedbackBrowserNote")}
+        />
+        {error ? (
+          <ErrorAlert>
+            <strong className="font-semibold">{t("feedback.sendFailed")}.</strong> {error}
+          </ErrorAlert>
+        ) : null}
+        <div>
+          <Button type="submit" variant="secondary" busy={busy} disabled={!ready}>
+            {t("feedback.submit")}
+          </Button>
+        </div>
+      </form>
+    </SettingsCard>
+  );
+}

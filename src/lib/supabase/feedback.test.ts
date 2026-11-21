@@ -13,7 +13,8 @@ const mocks = vi.hoisted(() => {
   return { insert, from, getUser, platform, device };
 });
 
-vi.mock('@/lib/supabase/client', () => ({
+// The insert itself lives in shared/lib/supabase/feedback.ts, which uses the shared client.
+vi.mock('@shared/lib/supabase/client', () => ({
   supabase: { from: mocks.from, auth: { getUser: mocks.getUser } },
 }));
 vi.mock('react-native', () => ({ Platform: mocks.platform }));

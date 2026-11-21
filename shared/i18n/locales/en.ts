@@ -1364,6 +1364,48 @@ export default {
       "opensInNewTab": "opens in a new tab",
       "stepVideoTime": "In the video at {{time}}"
     },
+    "hub": {
+      "source": "Source",
+      "dietFirst": "Recipes that fit {{diets}} come first.",
+      "addIsFree": "Free: adding it uses no credits.",
+      "added": "Added to your library"
+    },
+    "list": {
+      "chooseIngredients": "Choose ingredients",
+      "undo": "Undo",
+      "removed": "{{name}} removed.",
+      "keyboardHint": "↑ ↓ to move · Space to check off · E to edit · Delete to remove · / to add",
+      "emptyBody": "Type what you need above, or add the ingredients of recipes you plan to cook."
+    },
+    "guest": {
+      "saveNeedsAccount": "Sign in or create a free account to save it."
+    },
+    "settings": {
+      "accountHint": "Your email, profile photo, and signing out.",
+      "helpGroup": "Help & legal",
+      "languageHint": "The language of Pinch’s menus and buttons, and the one recipes are translated into. Hebrew and Arabic read right to left.",
+      "saving": "Saving…",
+      "saved": "Saved",
+      "measurementsDeviceNote": "Saved in this browser. The Pinch app on your phone keeps its own choice.",
+      "deleteTypeEmail": "To confirm, type your email: {{email}}",
+      "feedbackBrowserNote": "We’ll include your browser and system so we know where it came from."
+    },
+    "snap": {
+      "or": "or",
+      "dropOrPaste": "Or drop a photo here, or paste one.",
+      "dropTitle": "Drop a photo or a link",
+      "notAnImage": "That file isn’t a photo. Try a JPG or PNG image.",
+      "partialMissingSteps": "We found the ingredients, but not the steps. This import was free. Try another link, or a photo of the full recipe.",
+      "partialMissingIngredients": "We found the steps, but not the ingredients. This import was free. Try another link, or a photo of the full recipe.",
+      "tipsTitle": "Quicker ways in",
+      "tipPaste": "Copy a link, come back and press {{shortcut}} anywhere on this page.",
+      "tipDrop": "Drag a photo, or a link from another tab, onto this page.",
+      "draftWaiting": "You have a recipe that isn’t saved yet: {{title}}",
+      "backToSnap": "Back to Snap",
+      "discard": "Discard",
+      "discardTitle": "Discard this recipe?",
+      "discardBody": "It won’t be saved to your library, and the credit it used isn’t given back."
+    },
     "soon": {
       "recipe": {
         "title": "Recipe pages are on their way",
