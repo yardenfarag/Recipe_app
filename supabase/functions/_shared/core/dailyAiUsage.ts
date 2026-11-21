@@ -14,6 +14,22 @@ export function currentUtcDate(date = new Date()): string {
   return date.toISOString().slice(0, 10);
 }
 
+/**
+ * Admins have no daily caps (they seed the Hub and test at volume). Their use is still counted,
+ * so the RPC gets the largest int instead of skipping it. Credits still apply.
+ */
+export const ADMIN_DAILY_LIMIT = 2_147_483_647;
+
+async function isAdminUser(admin: Db, userId: string): Promise<boolean> {
+  const { data, error } = await admin.from('profiles').select('is_admin').eq('id', userId).maybeSingle();
+  if (error) {
+    // Fail closed: a lookup error keeps the normal limit.
+    console.error('[dailyAiUsage] admin lookup', error);
+    return false;
+  }
+  return data?.is_admin === true;
+}
+
 export async function reserveDailyAiUsage(
   admin: Db,
   userId: string,
@@ -21,11 +37,12 @@ export async function reserveDailyAiUsage(
   limit: number,
   usageDate = currentUtcDate(),
 ): Promise<'ok' | 'limited' | 'error'> {
+  const effectiveLimit = (await isAdminUser(admin, userId)) ? ADMIN_DAILY_LIMIT : limit;
   const { data, error } = await admin.rpc('reserve_daily_ai_usage', {
     p_user_id: userId,
     p_action: action,
     p_usage_date: usageDate,
-    p_limit: limit,
+    p_limit: effectiveLimit,
   });
   if (error) {
     console.error('[dailyAiUsage] reserve_daily_ai_usage', error);
