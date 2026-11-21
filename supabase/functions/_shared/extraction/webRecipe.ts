@@ -24,7 +24,7 @@ export interface WebRecipeMeta extends PlatformMeta {
 
 /** Fetches a public recipe page and normalizes it for the Gemini text ladder. */
 export async function fetchWebRecipeMeta(url: string): Promise<WebRecipeMeta> {
-  const html = await fetchHtml(url);
+  const html = await fetchHtml(googleDocExportUrl(url) ?? url);
   const jsonLd = extractJsonLdBlocks(html);
   const recipeLd = findRecipeJsonLd(jsonLd);
   const thumbnailUrl =
@@ -72,6 +72,35 @@ export async function fetchWebRecipeMeta(url: string): Promise<WebRecipeMeta> {
 }
 
 /**
+ * A Google Docs link, rewritten to the document's HTML export. The editor page is a script app with
+ * no recipe text in it; the export is plain HTML. A doc shared with "anyone with the link" exports
+ * without signing in. A private one sends the request to Google's sign-in page, which fetchHtml
+ * reports as private (PIN-73). Returns null for any other link, including "publish to the web"
+ * pages (`/document/d/e/…/pub`), which are ordinary pages already.
+ */
+export function googleDocExportUrl(url: string): string | null {
+  let parsed: URL;
+  try {
+    parsed = new URL(url);
+  } catch {
+    return null;
+  }
+  if (parsed.protocol !== 'https:' && parsed.protocol !== 'http:') return null;
+  if (parsed.hostname.toLowerCase() !== 'docs.google.com') return null;
+  const id = parsed.pathname.match(/^\/document\/(?:u\/\d+\/)?d\/([A-Za-z0-9_-]{20,})(?:\/|$)/)?.[1];
+  return id ? `https://docs.google.com/document/d/${id}/export?format=html` : null;
+}
+
+/** Google's sign-in page, where a link to a private Google Doc ends up. */
+function isGoogleSignIn(finalUrl: string): boolean {
+  try {
+    return new URL(finalUrl).hostname.toLowerCase() === 'accounts.google.com';
+  } catch {
+    return false;
+  }
+}
+
+/**
  * The page's HTML. One timer covers the headers and the body, and the body is read at most
  * MAX_HTML_BYTES deep, so a huge or drip-fed page can't hang the function or fill its memory.
  * A page longer than the cap is cut there, not refused: the recipe is rarely past 2 MB.
@@ -95,6 +124,12 @@ export async function fetchHtml(url: string, timeoutMs: number = FETCH_TIMEOUT_M
         url,
         status: res.status,
       });
+    }
+
+    if (isGoogleSignIn(res.url)) {
+      await res.body?.cancel();
+      // fetchErrorInfo maps "not publicly accessible" to post_private.
+      throw new FetchError('webRecipe.ts: googleDoc', 'This document is not publicly accessible', { url });
     }
 
     const contentType = (res.headers.get('content-type') ?? '').toLowerCase();
@@ -371,8 +406,26 @@ function stripHtmlToText(html: string): string {
   return truncate(text, MAX_DESCRIPTION_CHARS);
 }
 
+/** Named entities common in recipe text (Google Docs exports use them for quotes and degrees). */
+const NAMED_ENTITIES: Record<string, string> = {
+  rsquo: '’',
+  lsquo: '‘',
+  rdquo: '”',
+  ldquo: '“',
+  ndash: '–',
+  mdash: '—',
+  hellip: '…',
+  deg: '°',
+  ordm: 'º',
+  frac12: '½',
+  frac14: '¼',
+  frac34: '¾',
+  times: '×',
+};
+
 function decodeHtmlEntities(value: string): string {
   return value
+    .replace(/&([a-z]+\d*);/g, (entity, name: string) => NAMED_ENTITIES[name] ?? entity)
     .replace(/&amp;/g, '&')
     .replace(/&lt;/g, '<')
     .replace(/&gt;/g, '>')
