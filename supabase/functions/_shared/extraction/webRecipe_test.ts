@@ -7,7 +7,8 @@ import { assert, assertEquals, assertRejects } from 'jsr:@std/assert@1';
 
 import { FetchError } from '../core/errors.ts';
 import { fetchErrorInfo } from './fetchErrorMessage.ts';
-import { fetchHtml, googleDocExportUrl } from './webRecipe.ts';
+import type { PageRead, PageReader, PageReadEvent } from './pageReader.ts';
+import { fetchHtml, fetchHtmlOrRead, googleDocExportUrl } from './webRecipe.ts';
 
 // An address literal, so safeFetch needs no DNS lookup.
 const PAGE = 'http://93.184.216.34/recipe';
@@ -132,6 +133,125 @@ Deno.test('a private Google Doc, which lands on the sign-in page, is reported as
   try {
     const err = await assertRejects(() => fetchHtml(PAGE), FetchError);
     assertEquals(fetchErrorInfo(err, 'web').code, 'post_private');
+  } finally {
+    restore();
+  }
+});
+
+// --- A page our servers are refused (403) is read once through the page-reading service (PIN-152).
+
+function siteAnswers(status: number): () => void {
+  return stubFetch(() => new Response('Forbidden', { status, headers: { 'content-type': 'text/html' } }));
+}
+
+function fakeReader(result: PageRead | Error): PageReader & { calls: string[] } {
+  const calls: string[] = [];
+  return {
+    provider: 'firecrawl',
+    calls,
+    read(url) {
+      calls.push(url);
+      return result instanceof Error ? Promise.reject(result) : Promise.resolve(result);
+    },
+  };
+}
+
+const READ_OK: PageRead = { html: '<html><body>Socca: chickpea flour</body></html>', siteStatus: 200, units: 1, costUsd: 0.005 };
+
+Deno.test('a 403 page is read once through the service, and the read is logged with its cost', async () => {
+  const restore = siteAnswers(403);
+  const reader = fakeReader(READ_OK);
+  const events: PageReadEvent[] = [];
+  try {
+    const html = await fetchHtmlOrRead(PAGE, { pageReader: reader, onPageRead: (e) => void events.push(e) });
+    assertEquals(html, READ_OK.html);
+    assertEquals(reader.calls, [PAGE]);
+    assertEquals(events.length, 1);
+    assertEquals(events[0].status, 'ok');
+    assertEquals(events[0].provider, 'firecrawl');
+    assertEquals(events[0].costUsd, 0.005);
+    assertEquals(events[0].host, '93.184.216.34');
+  } finally {
+    restore();
+  }
+});
+
+Deno.test('other errors never call the service', async () => {
+  for (const status of [401, 404, 429, 500]) {
+    const restore = siteAnswers(status);
+    const reader = fakeReader(READ_OK);
+    try {
+      const err = await assertRejects(() => fetchHtmlOrRead(PAGE, { pageReader: reader }), FetchError);
+      assertEquals(err.details?.status, status);
+      assertEquals(reader.calls.length, 0, `status ${status}`);
+    } finally {
+      restore();
+    }
+  }
+});
+
+Deno.test('a page that loads normally never calls the service', async () => {
+  const restore = stubFetch(() => new Response('<html>ok</html>', { headers: { 'content-type': 'text/html' } }));
+  const reader = fakeReader(READ_OK);
+  try {
+    assertEquals(await fetchHtmlOrRead(PAGE, { pageReader: reader }), '<html>ok</html>');
+    assertEquals(reader.calls.length, 0);
+  } finally {
+    restore();
+  }
+});
+
+Deno.test('when the site refuses the service too, the user sees the usual blocked message and the charge is logged', async () => {
+  const restore = siteAnswers(403);
+  const reader = fakeReader({ html: null, siteStatus: 403, units: 1, costUsd: 0.005 });
+  const events: PageReadEvent[] = [];
+  try {
+    const err = await assertRejects(
+      () => fetchHtmlOrRead(PAGE, { pageReader: reader, onPageRead: (e) => void events.push(e) }),
+      FetchError,
+    );
+    assertEquals(fetchErrorInfo(err, 'web').code, 'site_blocked');
+    assertEquals(events.map((e) => [e.status, e.siteStatus, e.costUsd]), [['blocked', 403, 0.005]]);
+  } finally {
+    restore();
+  }
+});
+
+Deno.test('when the service fails, the user sees the usual blocked message', async () => {
+  const restore = siteAnswers(403);
+  const reader = fakeReader(new FetchError('pageReader.ts: firecrawl', 'Page reader request failed', { status: 402 }));
+  const events: PageReadEvent[] = [];
+  try {
+    const err = await assertRejects(
+      () => fetchHtmlOrRead(PAGE, { pageReader: reader, onPageRead: (e) => void events.push(e) }),
+      FetchError,
+    );
+    assertEquals(fetchErrorInfo(err, 'web').code, 'site_blocked');
+    assertEquals(events[0].status, 'error');
+    assertEquals(events[0].costUsd, 0);
+  } finally {
+    restore();
+  }
+});
+
+Deno.test('a failing usage log does not fail the import', async () => {
+  const restore = siteAnswers(403);
+  try {
+    const html = await fetchHtmlOrRead(PAGE, {
+      pageReader: fakeReader(READ_OK),
+      onPageRead: () => Promise.reject(new Error('db down')),
+    });
+    assertEquals(html, READ_OK.html);
+  } finally {
+    restore();
+  }
+});
+
+Deno.test('with no service configured, a 403 fails as before', async () => {
+  const restore = siteAnswers(403);
+  try {
+    const err = await assertRejects(() => fetchHtmlOrRead(PAGE, { pageReader: null }), FetchError);
+    assertEquals(err.details?.status, 403);
   } finally {
     restore();
   }

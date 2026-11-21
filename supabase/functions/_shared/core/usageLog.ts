@@ -29,7 +29,9 @@ export interface UsageEventInput {
     /** save-recipe-edit's Jev call: ok, blocked or jev_failed (PIN-79). */
     | 'recipe_edit_check'
     /** save-recipe-edit's background recalculation (PIN-79). */
-    | 'recipe_edit_recalc';
+    | 'recipe_edit_recalc'
+    /** A blocked recipe page read through the page-reading service: ok, blocked or error (PIN-152). */
+    | 'page_read';
   platform?: string | null;
   status: string;
   extractionSource?: string | null;
@@ -37,6 +39,8 @@ export interface UsageEventInput {
   /** A call that reports its own cost (Jev) instead of token counts. */
   pricedCall?: { model: string; costUsd: number; promptTokens: number };
   scrapecreatorsCredits?: number;
+  /** What the page-reading service charged (PIN-152). Counted in total_cost_usd only. */
+  pageReaderCostUsd?: number;
   tokensCharged?: number;
   durationMs?: number | null;
   errorMessage?: string | null;
@@ -54,7 +58,7 @@ export async function logUsageEvent(
   const scrapecreatorsCostUsd = estimateScrapeCreatorsCostUsd(scrapecreatorsCredits);
   const priced = input.pricedCall;
   const llmCostUsd = summed.geminiCostUsd + (priced?.costUsd ?? 0);
-  const totalCostUsd = llmCostUsd + scrapecreatorsCostUsd;
+  const totalCostUsd = llmCostUsd + scrapecreatorsCostUsd + Math.max(0, input.pageReaderCostUsd ?? 0);
 
   // One entry per model call, so the admin dashboard can attribute cost and
   // tokens to each model even when an extract made several calls.
