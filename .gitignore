@@ -52,3 +52,6 @@ example
 
 # Teamwork run folders
 .teamwork/
+
+# Progress file written by scripts/seed-hub.mjs
+scripts/*.results.json
