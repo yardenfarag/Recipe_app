@@ -22,8 +22,8 @@ vi.mock("next/link", () => ({
 }));
 vi.mock("@/components/AuthProvider", () => ({ useAuth: () => ({ user: { id: "user-1" }, session: null, loading: false }) }));
 vi.mock("@/components/LanguageProvider", () => ({ useLanguage: () => ({ language: "en", setLanguage: vi.fn() }) }));
-vi.mock("@/lib/snap/useCredits", () => ({
-  useCredits: () => ({
+vi.mock("@/lib/credits/balance", () => ({
+  useCreditBalance: () => ({
     quota: { totalCredits: 12, freeExtractsRemaining: 7, purchasedCredits: 5 },
     refresh: vi.fn(async () => {}),
   }),

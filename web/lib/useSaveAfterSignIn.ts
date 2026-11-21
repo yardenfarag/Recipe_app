@@ -1,6 +1,6 @@
 "use client";
 
-import { usePathname, useRouter, useSearchParams } from "next/navigation";
+import { useSearchParams } from "next/navigation";
 import { useEffect, useRef } from "react";
 
 import { useAuth } from "@/components/AuthProvider";
@@ -15,19 +15,19 @@ import { useAuth } from "@/components/AuthProvider";
 export function useSaveAfterSignIn({ ready, save }: { ready: boolean; save: () => void }) {
   const { user } = useAuth();
   const params = useSearchParams();
-  const pathname = usePathname();
-  const router = useRouter();
   const done = useRef(false);
   const wanted = params.get("save") === "1";
 
   useEffect(() => {
     if (!wanted || !user || !ready || done.current) return;
     done.current = true;
-    const rest = new URLSearchParams(params.toString());
-    rest.delete("save");
-    router.replace(rest.toString() ? `${pathname}?${rest.toString()}` : pathname);
+    // A history update, not a router navigation: the save usually moves on to the saved copy, and a router
+    // replace racing it could land last and leave the page here with Save stuck on busy.
+    const url = new URL(window.location.href);
+    url.searchParams.delete("save");
+    window.history.replaceState(window.history.state, "", url);
     save();
-  }, [wanted, user, ready, save, params, pathname, router]);
+  }, [wanted, user, ready, save]);
 
   // Until the address drops `save=1`, a signed-in visitor is about to save: the button shows it is busy.
   return { pending: wanted && Boolean(user) };

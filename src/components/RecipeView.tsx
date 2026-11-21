@@ -449,6 +449,17 @@ export function RecipeView({
 
   function handleApplyVariant(result: TransformedRecipePayload, variant: RecipeVariantKey) {
     const canonicalTitle = translationSourceRef.current?.title ?? recipe.title;
+    // "Make it without these" (the kitchen fix) keeps the recipe as it was before, so Revert still works after
+    // leaving the page, here and on the web. An earlier kept original stays the one to go back to. A remix keeps none.
+    const kitchenFix = avoidInstruction != null;
+    const canonical = translationSourceRef.current ?? {
+      title: canonicalTitle,
+      servings: baseServings,
+      ingredients: baseIngredients,
+      instructions: baseInstructions,
+      calories,
+    };
+    const before: RecipeContentSnapshot = recipe.kitchen_original ?? { ...canonical, appliances: recipe.appliances };
     setTitle(canonicalTitle);
     setBaseServings(result.servings);
     setBaseIngredients(result.ingredients);
@@ -457,7 +468,8 @@ export function RecipeView({
     setServings(result.servings);
     setActiveVariant(variant);
     setVariantSummary(result.summary);
-    setKitchenAdapted(false);
+    setKitchenAdapted(kitchenFix);
+    if (kitchenFix) originalRef.current = before;
     setActiveLanguage(null);
     translationSourceRef.current = {
       title: canonicalTitle,
@@ -472,8 +484,8 @@ export function RecipeView({
       ingredients: result.ingredients,
       instructions: result.instructions,
       calories: result.calories,
-      kitchen_adapted_summary: null,
-      kitchen_original: null,
+      kitchen_adapted_summary: kitchenFix ? result.summary : null,
+      kitchen_original: kitchenFix ? before : null,
       // The server only sends appliances when the remix changed the steps (ADR 017).
       ...(result.appliances !== undefined ? { appliances: result.appliances } : {}),
     });

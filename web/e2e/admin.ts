@@ -46,7 +46,8 @@ export async function resetTestUserLanguage() {
   const reset = await fetch(`${url}/auth/v1/user`, {
     method: "PUT",
     headers: { apikey: anonKey, Authorization: `Bearer ${token}`, "Content-Type": "application/json" },
-    body: JSON.stringify({ data: { locale: "en" } }),
+    // `prefs: null` also drops the synced theme and measurement choices (PIN-154).
+    body: JSON.stringify({ data: { locale: "en", prefs: null } }),
   });
   if (!reset.ok) throw new Error(`Could not reset the test user's language (${reset.status}): ${await reset.text()}`);
 }

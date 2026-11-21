@@ -49,7 +49,7 @@ export function RecipeActionsMenu({
             {t("library.addToCollection")}
           </Menu.Item>
           <Menu.Item asChild className={itemClass}>
-            <Link href={`/recipe/${recipe.id}/edit`}>
+            <Link href={`/recipe/edit?id=${recipe.id}`}>
               <PenLine aria-hidden className="h-[18px] w-[18px] text-muted" />
               {t("recipeEditor.titleEdit")}
             </Link>

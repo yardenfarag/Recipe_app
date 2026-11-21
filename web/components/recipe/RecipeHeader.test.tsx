@@ -1,10 +1,13 @@
 import { fireEvent, render, screen } from "@testing-library/react";
 import { I18nextProvider } from "react-i18next";
-import { describe, expect, it, vi } from "vitest";
+import { beforeAll, describe, expect, it, vi } from "vitest";
 
 import type { AvoidMatches } from "@shared/lib/avoidList";
 import type { Recipe } from "@shared/types/recipe";
 
+import { fakeActions } from "@/components/recipe/actions/fakeActions";
+import { RecipeActionsContext, type RecipeActions } from "@/components/recipe/actions/RecipeActionsContext";
+import { addRecipeActionStrings } from "@/components/recipe/actions/testStrings";
 import { RecipeHeader } from "@/components/recipe/RecipeHeader";
 import { RecipeNotices } from "@/components/recipe/RecipeNotices";
 import type { RecipeDisplay } from "@/components/recipe/types";
@@ -116,5 +119,111 @@ describe("RecipeNotices", () => {
     expect(screen.getByText(i18n.t("recipe.partialExtraction"))).toBeDefined();
     expect(screen.getByText("Swapped butter for oil.")).toBeDefined();
     expect(screen.getByText("Showing Hebrew")).toBeDefined();
+  });
+});
+
+describe("with recipe actions (a saved recipe's page)", () => {
+  beforeAll(() => addRecipeActionStrings());
+
+  const inContext = (ui: React.ReactNode, actions: RecipeActions) =>
+    wrap(<RecipeActionsContext.Provider value={actions}>{ui}</RecipeActionsContext.Provider>);
+
+  it("adds Edit and Share beside the title, and takes the collections from the page", () => {
+    const display = displayOf();
+    const actions = fakeActions(display, { collections: [{ id: "c9", name: "Sundays", recipeIds: ["r1"] }] as RecipeActions["collections"] });
+    inContext(<RecipeHeader display={display} servings={2} onToggleFavorite={vi.fn()} />, actions);
+    expect(screen.getByRole("link", { name: "Edit recipe" }).getAttribute("href")).toBe("/recipe/edit?id=r1");
+    fireEvent.click(screen.getByRole("button", { name: "Share" }));
+    expect(actions.share).toHaveBeenCalledOnce();
+    expect(screen.getByRole("link", { name: "Open collection Sundays" })).toBeDefined();
+    expect(screen.queryByText("Weeknights")).toBeNull();
+  });
+
+  it("offers Add tags, or Edit tags once there are some", () => {
+    const actions = fakeActions(displayOf());
+    const { unmount } = inContext(<RecipeHeader display={displayOf()} servings={2} />, actions);
+    fireEvent.click(screen.getByRole("button", { name: "Add tags" }));
+    expect(actions.open).toHaveBeenCalledWith({ kind: "tags" });
+    unmount();
+    inContext(<RecipeHeader display={displayOf({ tags: ["dinner"] })} servings={2} />, actions);
+    expect(screen.getByRole("button", { name: "Edit tags" })).toBeDefined();
+  });
+
+  it("shows 'Updating…' for the facts Pinch is recalculating, read out with the field", () => {
+    const display = displayOf();
+    inContext(<RecipeHeader display={display} servings={2} />, fakeActions(display, { updatingFields: ["calories", "tags"] }));
+    expect(screen.queryByText("~200 cal/serving")).toBeNull();
+    const updating = screen.getAllByTestId("updating-fact");
+    expect(updating).toHaveLength(1);
+    expect(updating[0].textContent).toBe("Calories: Updating…");
+    expect(screen.getByText("25 min")).toBeDefined();
+  });
+
+  it("lets the cook add or edit the note next to when it was last cooked", () => {
+    const display = displayOf({ last_cooked_at: "2026-11-01T10:00:00Z" });
+    const actions = fakeActions(display);
+    inContext(<RecipeHeader display={display} servings={2} />, actions);
+    fireEvent.click(screen.getByRole("button", { name: "Add a note" }));
+    expect(actions.open).toHaveBeenCalledWith({ kind: "note" });
+  });
+});
+
+describe("RecipeNotices with recipe actions", () => {
+  beforeAll(() => addRecipeActionStrings());
+
+  const inContext = (display: RecipeDisplay, actions: RecipeActions, avoid: AvoidMatches | null = null) =>
+    wrap(
+      <RecipeActionsContext.Provider value={actions}>
+        <RecipeNotices display={display} avoid={avoid} />
+      </RecipeActionsContext.Provider>,
+    );
+
+  it("offers 'Make it without these' on the allergy notice", () => {
+    const display = displayOf();
+    const actions = fakeActions(display, { canFix: true });
+    inContext(display, actions, {
+      allergies: [{ item: "peanuts", allergen: "peanuts", ingredients: ["peanut butter"] }],
+      dislikes: [{ item: "cilantro", ingredients: ["cilantro"] }],
+      byIngredient: [],
+    });
+    const buttons = screen.getAllByRole("button", { name: "Make it without these" });
+    expect(buttons).toHaveLength(1);
+    fireEvent.click(buttons[0]);
+    expect(actions.open).toHaveBeenCalledWith({ kind: "fix" });
+  });
+
+  it("offers Repair on a partial import, with what it costs", () => {
+    const display = displayOf({ extraction_status: "partial" });
+    const actions = fakeActions(display, { canRepair: true });
+    inContext(display, actions);
+    expect(screen.getByText(i18n.t("recipe.repairHint"))).toBeDefined();
+    fireEvent.click(screen.getByRole("button", { name: "Repair recipe" }));
+    expect(actions.open).toHaveBeenCalledWith({ kind: "repair" });
+  });
+
+  it("names a remix, says what changed and goes back to the original", () => {
+    const display = displayOf();
+    const actions = fakeActions(display, { adaptation: { kind: "remix", variant: "vegan", summary: "Used tofu." }, canRevert: true });
+    inContext(display, actions);
+    expect(screen.getByText("Vegan version")).toBeDefined();
+    expect(screen.getByText("Used tofu.")).toBeDefined();
+    fireEvent.click(screen.getByRole("button", { name: "Revert to original" }));
+    expect(actions.revert).toHaveBeenCalledOnce();
+  });
+
+  it("goes back from a translation, and offers one when the recipe is in another language", () => {
+    const translated = displayOf({}, { translated: true, contentLanguage: "he" });
+    const first = fakeActions(translated);
+    const { unmount } = inContext(translated, first);
+    fireEvent.click(screen.getByRole("button", { name: "Show original language" }));
+    expect(first.showOriginalLanguage).toHaveBeenCalledOnce();
+    unmount();
+
+    const hebrew = displayOf({ title: "שקשוקה", source_language: "he" }, { contentLanguage: "he" });
+    const second = fakeActions(hebrew, { translateOffer: "en" });
+    inContext(hebrew, second);
+    expect(screen.getByText("This recipe is in Hebrew")).toBeDefined();
+    fireEvent.click(screen.getByRole("button", { name: "Translate to English" }));
+    expect(second.translateToAppLanguage).toHaveBeenCalledOnce();
   });
 });

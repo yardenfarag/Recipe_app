@@ -1,6 +1,6 @@
-import { render, screen, within } from "@testing-library/react";
+import { fireEvent, render, screen, within } from "@testing-library/react";
 import { I18nextProvider } from "react-i18next";
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 
 import { convertStepAmounts } from "@shared/lib/convertStepAmounts";
 import type { Ingredient, Instruction, Recipe } from "@shared/types/recipe";
@@ -65,12 +65,35 @@ describe("StepsPanel", () => {
     expect(screen.getByText("חממו את התנור.").getAttribute("lang")).toBe("he");
   });
 
-  it("shows when a step happens in the video, without making it a button yet", () => {
+  it("without a playable video, shows when a step happens in the video, without a button", () => {
     wrap(<StepsPanel display={displayOf()} system="original" />);
     const step = screen.getByTestId("recipe-step-2");
     expect(within(step).getByText("1:23")).toBeDefined();
     expect(within(step).queryByRole("button")).toBeNull();
     expect(within(screen.getByTestId("recipe-step-1")).queryByText(/\d:\d\d/)).toBeNull();
+  });
+
+  it("with a video, a step's time plays the video from there", () => {
+    const onPlayAt = vi.fn();
+    wrap(<StepsPanel display={displayOf()} system="original" video={{ onPlayAt, activeStep: null }} />);
+    const button = within(screen.getByTestId("recipe-step-2")).getByRole("button");
+    expect(button.textContent).toContain("1:23");
+    fireEvent.click(button);
+    expect(onPlayAt).toHaveBeenCalledWith(83);
+    expect(within(screen.getByTestId("recipe-step-1")).queryByRole("button")).toBeNull();
+  });
+
+  it("marks the step the video is on", () => {
+    wrap(<StepsPanel display={displayOf()} system="original" video={{ onPlayAt: vi.fn(), activeStep: 2 }} />);
+    expect(screen.getByTestId("recipe-step-2").getAttribute("aria-current")).toBe("step");
+    expect(screen.getByTestId("recipe-step-1").getAttribute("aria-current")).toBeNull();
+  });
+
+  it("offers cook mode by the heading when asked", () => {
+    const onCookMode = vi.fn();
+    wrap(<StepsPanel display={displayOf()} system="original" onCookMode={onCookMode} />);
+    fireEvent.click(screen.getByRole("button", { name: /web\.cook\.cookMode|Cook mode/ }));
+    expect(onCookMode).toHaveBeenCalled();
   });
 
   it("shows nothing for a recipe without steps", () => {

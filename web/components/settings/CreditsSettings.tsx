@@ -1,35 +1,38 @@
 "use client";
 
-import { Coins } from "lucide-react";
 import { useTranslation } from "react-i18next";
 
-import { FREE_MONTHLY_EXTRACT_LIMIT } from "@shared/lib/quotas";
-
+import { BalanceCard } from "@/components/credits/BalanceCard";
+import { CreditCosts } from "@/components/credits/CreditCosts";
+import { GetTheAppCard } from "@/components/credits/GetTheAppCard";
+import { PackList } from "@/components/credits/PackList";
 import { SettingsPageHeader } from "@/components/settings/SettingsPageHeader";
-import { useSettingsProfile } from "@/components/settings/SettingsProfile";
+import { useWebSalesOn } from "@/lib/credits/salesSwitch";
 
 /**
- * The balance, until the credits page arrives (PIN-141 replaces this file: packs, buying on the web, history).
- * Settings links here so old `/settings/credits` links keep working.
+ * Credits (PIN-141): the balance, buying a pack, and what credits are for. Buying on the web skips the app stores'
+ * cut, so the packs sit right under the balance, one click from Polar's checkout. Coming back from the checkout is
+ * handled for every page by CheckoutReturnDialog.
  */
 export function CreditsSettings() {
   const { t } = useTranslation();
-  const { totalCredits } = useSettingsProfile();
+  const salesOn = useWebSalesOn();
   return (
     <>
       <SettingsPageHeader id="credits" />
-      <section className="flex items-start gap-4 rounded-3xl border border-frosted-border bg-surface/80 p-5 shadow-soft backdrop-blur-sm sm:p-6">
-        <span aria-hidden className="grid h-12 w-12 shrink-0 place-items-center rounded-2xl bg-accent-soft text-accent">
-          <Coins className="h-6 w-6" />
-        </span>
-        <div className="min-w-0">
-          <h2 className="text-lg font-bold text-text">
-            {totalCredits == null ? t("settings.recipeCredits") : t("settings.creditsTotal", { count: totalCredits })}
+      <div className="space-y-8">
+        <BalanceCard />
+
+        <section aria-labelledby="credits-buy">
+          <h2 id="credits-buy" className="text-lg font-bold text-text">
+            {t("credits.buyTitle")}
           </h2>
-          <p className="mt-1 text-sm leading-relaxed text-muted">{t("settings.creditsMonthlyNote", { limit: FREE_MONTHLY_EXTRACT_LIMIT })}</p>
-        </div>
-      </section>
-      {/* PIN-141: buying credit packs on the web goes here. */}
+          <p className="mt-1 mb-5 text-sm leading-relaxed text-muted">{t("web.credits.buySubtitle")}</p>
+          {salesOn ? <PackList variant="cards" /> : <GetTheAppCard />}
+        </section>
+
+        <CreditCosts />
+      </div>
     </>
   );
 }

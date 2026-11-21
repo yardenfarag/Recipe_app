@@ -7,6 +7,7 @@ import { useTranslation } from "react-i18next";
 
 import { Button, type ButtonVariant } from "@/components/ui/Button";
 import { IconButton } from "@/components/ui/IconButton";
+import { useReturnFocus } from "@/components/ui/returnFocus";
 import { cn } from "@/lib/cn";
 
 export const Dialog = RadixDialog.Root;
@@ -32,10 +33,12 @@ export function DialogContent({
   className?: string;
 }) {
   const { t } = useTranslation();
+  const returnFocus = useReturnFocus();
   return (
     <RadixDialog.Portal>
       <RadixDialog.Overlay className="fixed inset-0 z-40 animate-fade-in bg-overlay backdrop-blur-[2px]" />
       <RadixDialog.Content
+        {...returnFocus}
         className={cn(
           "fixed start-1/2 top-1/2 z-50 w-[calc(100%-2rem)] max-w-md -translate-y-1/2 animate-pop-in rounded-3xl border border-frosted-border bg-surface p-6 shadow-lift",
           "ltr:-translate-x-1/2 rtl:translate-x-1/2",

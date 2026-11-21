@@ -21,6 +21,7 @@ import { showToast } from "@shared/lib/toast";
 
 import { useAuth } from "@/components/AuthProvider";
 import { useLanguage } from "@/components/LanguageProvider";
+import { webSalesOn } from "@/lib/credits/salesSwitch";
 import { signInPathFor } from "@/lib/nextPath";
 import { setSnapDraft } from "@/lib/snap/draft";
 import { acknowledgeRequest, webExtractionContext } from "@/lib/snap/requestIds";
@@ -100,7 +101,11 @@ export function useSnap({ onSettled }: { onSettled?: () => void } = {}) {
         const outcome = snapOutcome(result, next.intent === "extract");
         switch (outcome.kind) {
           case "credits":
-            setBanner({ tone: "credits", message: t("snap.creditLimitBody", { limit: FREE_MONTHLY_EXTRACT_LIMIT }) });
+            setBanner({
+              tone: "credits",
+              // With web sales off the prompt can only point at the app.
+              message: t(webSalesOn() ? "snap.creditLimitBody" : "snap.creditLimitBodyWeb", { limit: FREE_MONTHLY_EXTRACT_LIMIT }),
+            });
             break;
           case "auth":
           case "guest_limit":

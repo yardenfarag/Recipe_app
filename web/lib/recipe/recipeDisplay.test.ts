@@ -74,3 +74,15 @@ describe("buildRecipeDisplay", () => {
     expect(buildRecipeDisplay(other, "es", null)).toMatchObject({ contentLanguage: null, direction: "ltr", unitLanguage: "es" });
   });
 });
+
+describe("buildRecipeDisplay in a language picked with Translate", () => {
+  it("shows that language in an app set to another", () => {
+    const display = buildRecipeDisplay(recipe, "he", hebrew, "es");
+    expect(display).toMatchObject({ title: "פסטה לימון", contentLanguage: "he", translated: true, direction: "rtl" });
+  });
+
+  it("the recipe's own language is its own words, with unit words from the app when unknown", () => {
+    const display = buildRecipeDisplay(recipe, "en", null, "he");
+    expect(display).toMatchObject({ title: "Lemon Pasta", translated: false, contentLanguage: "en" });
+  });
+});

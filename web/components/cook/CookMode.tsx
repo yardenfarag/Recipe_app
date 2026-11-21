@@ -1,0 +1,333 @@
+"use client";
+
+import * as RadixDialog from "@radix-ui/react-dialog";
+import { useDirection } from "@radix-ui/react-direction";
+import { ArrowLeft, ArrowRight, Check, Maximize, Minimize, RotateCcw, Sun, Timer, X } from "lucide-react";
+import { useMemo, useRef, type KeyboardEvent, type PointerEvent } from "react";
+import { useTranslation } from "react-i18next";
+
+import { formatCountdown, parseStepTimers } from "@shared/lib/stepTimers";
+
+import { Button } from "@/components/ui/Button";
+import { IconButton } from "@/components/ui/IconButton";
+import { cn } from "@/lib/cn";
+import { cookModeMove, swipeMove } from "@/lib/cook/cookModeKeys";
+import { secondsLeft, type CookTimer } from "@/lib/cook/useCookTimers";
+import { useFullscreen } from "@/lib/cook/useFullscreen";
+import { useWakeLock } from "@/lib/cook/useWakeLock";
+
+export type CookModeStep = { step: number; text: string };
+
+export type CookModeTimers = {
+  timers: CookTimer[];
+  now: number;
+  start: (label: string, seconds: number, step: number) => void;
+  stop: (id: string) => void;
+};
+
+/**
+ * One step at a time, large enough to read from across the counter. Back and Next are big targets at the bottom;
+ * the arrow keys, Space and Page Up/Down (a presentation clicker) move too, and a swipe on touch screens. The
+ * screen stays awake while it is open, where the browser allows, and a laptop can go full screen.
+ *
+ * Times in a step ("simmer 10 min") become timers. They keep running across steps and after closing (the page
+ * holds them, see useCookTimers), and chime when done.
+ *
+ * The step's position is held by the page, so closing by mistake and reopening comes back to the same step.
+ */
+export function CookMode({
+  open,
+  onOpenChange,
+  title,
+  steps,
+  direction,
+  contentLanguage,
+  index,
+  onIndexChange,
+  timers,
+  onCooked,
+}: {
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+  title: string;
+  /** The steps as shown on the page (amounts in the chosen system). */
+  steps: CookModeStep[];
+  /** The recipe text's direction and language, which can differ from the app's. */
+  direction: "ltr" | "rtl";
+  contentLanguage?: string | null;
+  /** 0…steps.length; steps.length is the "That's it" screen. */
+  index: number;
+  onIndexChange: (index: number) => void;
+  timers: CookModeTimers;
+  /** "I cooked this" on the last screen. Left out where the recipe isn't saved. */
+  onCooked?: () => void;
+}) {
+  const { t } = useTranslation();
+  const appDirection = useDirection() === "rtl" ? "rtl" : "ltr";
+  const wakeLock = useWakeLock(open);
+  const fullscreen = useFullscreen();
+  const swipe = useRef<{ x: number; y: number; pointer: number } | null>(null);
+  const contentRef = useRef<HTMLDivElement>(null);
+
+  const total = steps.length;
+  const position = Math.min(Math.max(0, index), total);
+  const done = total > 0 && position >= total;
+  const step = done ? null : steps[position];
+  const stepTimers = useMemo(() => (step ? parseStepTimers(step.text) : []), [step]);
+  const isLast = position === total - 1;
+
+  const go = (next: number) => onIndexChange(Math.min(Math.max(0, next), total));
+  const goNext = () => go(position + 1);
+  const goBack = () => go(position - 1);
+
+  const close = (next: boolean) => {
+    if (!next) fullscreen.exit();
+    onOpenChange(next);
+  };
+
+  const onKeyDown = (event: KeyboardEvent<HTMLDivElement>) => {
+    const target = event.target as HTMLElement;
+    const onControl = Boolean(target.closest("button, a, input, textarea, select, [role='separator']"));
+    const move = cookModeMove(event, { direction: appDirection, onControl });
+    if (!move) return;
+    event.preventDefault();
+    if (move === "next") goNext();
+    else if (move === "back") goBack();
+    else if (move === "first") go(0);
+    else go(Math.max(0, total - 1));
+  };
+
+  const onPointerDown = (event: PointerEvent<HTMLDivElement>) => {
+    if (event.pointerType === "mouse") return;
+    swipe.current = { x: event.clientX, y: event.clientY, pointer: event.pointerId };
+  };
+  const onPointerUp = (event: PointerEvent<HTMLDivElement>) => {
+    const start = swipe.current;
+    swipe.current = null;
+    if (!start || start.pointer !== event.pointerId) return;
+    const move = swipeMove(event.clientX - start.x, event.clientY - start.y, appDirection);
+    if (move === "next") goNext();
+    else if (move === "back") goBack();
+  };
+
+  const stepLabel = t("recipe.cookModeStep", { current: position + 1, total });
+  const doneTimers = timers.timers.filter((timer) => secondsLeft(timer, timers.now) === 0);
+
+  return (
+    <RadixDialog.Root open={open} onOpenChange={close}>
+      <RadixDialog.Portal>
+        <RadixDialog.Content
+          ref={contentRef}
+          aria-describedby={undefined}
+          onKeyDown={onKeyDown}
+          // Focus the whole view, not the close button: the keys work at once, and no tooltip pops up on opening.
+          onOpenAutoFocus={(event) => {
+            event.preventDefault();
+            contentRef.current?.focus();
+          }}
+          tabIndex={-1}
+          data-testid="cook-mode"
+          className="fixed inset-0 z-50 flex animate-fade-in flex-col bg-bg text-text outline-none"
+        >
+          <header className="flex items-center gap-2 px-3 pt-[max(env(safe-area-inset-top),0.75rem)] sm:px-5">
+            <RadixDialog.Close asChild>
+              <IconButton label={t("recipe.cookModeClose")} icon={<X className="h-6 w-6" />} className="h-12 w-12" />
+            </RadixDialog.Close>
+            <RadixDialog.Title
+              dir={direction}
+              lang={contentLanguage ?? undefined}
+              className="min-w-0 flex-1 truncate text-center text-sm font-semibold text-muted sm:text-base"
+            >
+              {title}
+            </RadixDialog.Title>
+            {wakeLock === "on" ? (
+              <span className="hidden items-center gap-1.5 rounded-full bg-success-soft px-3 py-1.5 text-xs font-semibold text-success sm:inline-flex">
+                <Sun aria-hidden className="h-3.5 w-3.5" />
+                {t("web.cook.screenOn")}
+              </span>
+            ) : null}
+            {fullscreen.supported ? (
+              <IconButton
+                label={fullscreen.active ? t("web.cook.exitFullScreen") : t("web.cook.fullScreen")}
+                aria-pressed={fullscreen.active}
+                icon={fullscreen.active ? <Minimize className="h-5 w-5" /> : <Maximize className="h-5 w-5" />}
+                onClick={fullscreen.toggle}
+                className="h-12 w-12"
+              />
+            ) : (
+              // Keeps the title centred.
+              <span aria-hidden className="h-12 w-12" />
+            )}
+          </header>
+
+          {total > 1 ? (
+            <nav aria-label={t("web.cook.progress")} className="mx-auto mt-2 w-full max-w-5xl px-5 sm:px-8">
+              <ol className="flex gap-1.5">
+                {steps.map((item, itemIndex) => (
+                  <li key={`${item.step}-${itemIndex}`} className="flex-1">
+                    <button
+                      type="button"
+                      onClick={() => go(itemIndex)}
+                      aria-label={t("web.cook.goToStep", { step: itemIndex + 1 })}
+                      aria-current={itemIndex === position ? "step" : undefined}
+                      className="group block w-full py-2"
+                    >
+                      <span
+                        aria-hidden
+                        className={cn(
+                          "block h-1.5 rounded-full transition-colors group-hover:brightness-95",
+                          itemIndex <= position || done ? "bg-primary" : "bg-element",
+                          itemIndex === position && !done && "ring-2 ring-primary-soft",
+                        )}
+                      />
+                    </button>
+                  </li>
+                ))}
+              </ol>
+            </nav>
+          ) : null}
+
+          <div
+            className="min-h-0 flex-1 touch-pan-y overflow-y-auto"
+            onPointerDown={onPointerDown}
+            onPointerUp={onPointerUp}
+            onPointerCancel={() => (swipe.current = null)}
+          >
+            <div className="mx-auto flex min-h-full w-full max-w-5xl flex-col justify-center px-6 py-8 sm:px-10 lg:px-14">
+              {done || total === 0 ? (
+                <div className="flex flex-col items-center text-center">
+                  <span aria-hidden className="grid h-20 w-20 place-items-center rounded-full bg-success-soft text-success">
+                    <Check className="h-10 w-10" strokeWidth={2.5} />
+                  </span>
+                  <h2 className="mt-6 text-4xl font-bold tracking-tight text-balance sm:text-5xl">{t("recipe.cookModeDone")}</h2>
+                  <div className="mt-10 flex w-full max-w-sm flex-col gap-3">
+                    {onCooked ? (
+                      <Button
+                        size="lg"
+                        className="h-14 text-lg"
+                        onClick={() => {
+                          onCooked();
+                          close(false);
+                        }}
+                      >
+                        {t("recipe.cookedAction")}
+                      </Button>
+                    ) : null}
+                    {total > 0 ? (
+                      <Button variant="ghost" onClick={() => go(0)}>
+                        <RotateCcw aria-hidden className="h-4 w-4" />
+                        {t("web.cook.startOver")}
+                      </Button>
+                    ) : null}
+                  </div>
+                </div>
+              ) : (
+                <>
+                  <p className="text-sm font-bold tracking-wide text-primary uppercase sm:text-base">{stepLabel}</p>
+                  <p
+                    key={position}
+                    dir={direction}
+                    lang={contentLanguage ?? undefined}
+                    data-testid="cook-mode-step"
+                    className="mt-4 animate-fade-in text-start text-[clamp(1.625rem,1rem+2.4vw,3rem)] leading-[1.35] font-semibold text-pretty"
+                  >
+                    {step?.text}
+                  </p>
+                  {stepTimers.length > 0 ? (
+                    <ul className="mt-8 flex flex-wrap gap-2.5">
+                      {stepTimers.map((timer) => (
+                        <li key={`${timer.seconds}-${timer.label}`}>
+                          <button
+                            type="button"
+                            onClick={() => timers.start(timer.label, timer.seconds, position + 1)}
+                            aria-label={t("recipe.cookModeTimer", { label: timer.label })}
+                            className="inline-flex h-12 items-center gap-2 rounded-full bg-accent-soft px-5 text-base font-bold text-accent transition-[filter] hover:brightness-95 active:brightness-90"
+                          >
+                            <Timer aria-hidden className="h-5 w-5" />
+                            <span dir={direction}>{timer.label}</span>
+                          </button>
+                        </li>
+                      ))}
+                    </ul>
+                  ) : null}
+                </>
+              )}
+            </div>
+          </div>
+
+          {/* Read out the new step after Next or Back; the step's own text isn't a live region, so it isn't read twice. */}
+          <p aria-live="polite" className="sr-only">
+            {done ? t("recipe.cookModeDone") : step ? `${stepLabel}. ${step.text}` : ""}
+          </p>
+          <p aria-live="assertive" className="sr-only">
+            {doneTimers.map((timer) => t("web.cook.timerDone", { label: timer.label })).join(". ")}
+          </p>
+
+          {timers.timers.length > 0 ? (
+            <section aria-label={t("web.cook.timers")} className="mx-auto w-full max-w-5xl px-5 sm:px-8">
+              <ul className="flex flex-wrap justify-center gap-2 pb-3">
+                {timers.timers.map((timer) => {
+                  const left = secondsLeft(timer, timers.now);
+                  const finished = left === 0;
+                  return (
+                    <li
+                      key={timer.id}
+                      data-testid="cook-timer"
+                      className={cn(
+                        "inline-flex items-center gap-2 rounded-full py-1.5 ps-4 pe-1.5 text-sm font-semibold",
+                        finished ? "animate-pulse bg-accent text-surface" : "bg-primary-soft text-primary",
+                      )}
+                    >
+                      <Timer aria-hidden className="h-4 w-4" />
+                      <span role="timer" className="text-lg font-bold tabular-nums" dir="ltr">
+                        {finished ? t("recipe.cookModeTimerDone") : formatCountdown(left)}
+                      </span>
+                      <span className={cn("text-xs font-medium", finished ? "text-surface" : "text-muted")}>
+                        <span dir={direction}>{timer.label}</span> · {t("web.cook.timerStep", { step: timer.step })}
+                      </span>
+                      <button
+                        type="button"
+                        onClick={() => timers.stop(timer.id)}
+                        aria-label={t("web.cook.stopTimer", { label: timer.label })}
+                        className="grid h-8 w-8 place-items-center rounded-full hover:bg-surface/40"
+                      >
+                        <X aria-hidden className="h-4 w-4" />
+                      </button>
+                    </li>
+                  );
+                })}
+              </ul>
+            </section>
+          ) : null}
+
+          <footer className="border-t border-border bg-surface px-4 pt-3 pb-[max(env(safe-area-inset-bottom),1rem)] sm:px-6">
+            <p className="mb-3 hidden text-center text-xs text-muted pointer-fine:block">{t("web.cook.keysHint")}</p>
+            <p className="mb-3 hidden text-center text-xs text-muted pointer-coarse:block">{t("web.cook.swipeHint")}</p>
+            <div className="mx-auto flex max-w-5xl gap-3">
+              <Button
+                variant="outline"
+                size="lg"
+                className="h-16 flex-1 text-lg"
+                onClick={goBack}
+                disabled={position === 0 || total === 0}
+              >
+                <ArrowLeft aria-hidden className="h-5 w-5 rtl:rotate-180" />
+                {t("recipe.cookModeBack")}
+              </Button>
+              {done || total === 0 ? (
+                <Button size="lg" className="h-16 flex-[1.6] text-lg" onClick={() => close(false)}>
+                  {t("web.cook.backToRecipe")}
+                </Button>
+              ) : (
+                <Button size="lg" className="h-16 flex-[1.6] text-lg" onClick={goNext}>
+                  {isLast ? t("web.cook.finish") : t("recipe.cookModeNext")}
+                  {isLast ? <Check aria-hidden className="h-5 w-5" /> : <ArrowRight aria-hidden className="h-5 w-5 rtl:rotate-180" />}
+                </Button>
+              )}
+            </div>
+          </footer>
+        </RadixDialog.Content>
+      </RadixDialog.Portal>
+    </RadixDialog.Root>
+  );
+}

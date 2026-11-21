@@ -67,7 +67,9 @@ test.describe("desktop", () => {
     await accountButton.focus();
     await page.keyboard.press("Enter");
     await expect(page.getByRole("menu")).toBeVisible();
-    // Opening from the keyboard puts focus on the first item.
+    // Opening from the keyboard puts focus on the first item, the credit balance; the arrow moves on.
+    await expect(page.getByRole("menuitem", { name: /Recipe credits/ })).toBeFocused();
+    await page.keyboard.press("ArrowDown");
     await expect(page.getByRole("menuitem", { name: /Appearance/ })).toBeFocused();
     await page.keyboard.press("ArrowRight"); // opens the submenu
     await expect(page.getByRole("menuitemradio", { name: "Dark" })).toBeVisible();

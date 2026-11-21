@@ -4,6 +4,7 @@ import { resetLibrary, resetTestUserLanguage, type SeedRecipe } from "./admin";
 import { signInWithPassword } from "./helpers";
 import { addListItems, checkListItem, readPantryStaples, readShoppingList, resetShoppingList, setPantryStaples, type SeedItem } from "./listSeed";
 import { TEST_USER } from "./testUser";
+import { writeAccountPrefs } from "./prefsSeed";
 
 const WEEK: SeedItem[] = [
   { name: "onion", quantity: 2, unit: null },
@@ -214,13 +215,13 @@ test.describe("phone", () => {
 
   test("reads right to left in Hebrew, with nothing off the side", async ({ page }) => {
     await openList(page);
-    await page.evaluate(() => localStorage.setItem("pinch:appLanguage", "he"));
+    await writeAccountPrefs({ locale: "he" });
     await page.reload();
     await expect(page.locator("html")).toHaveAttribute("dir", "rtl");
     await expect(page.locator("#main h1")).toHaveText("רשימה");
     await expect(page.locator("#main section h2").first()).toBeVisible();
     const overflow = await page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth);
     expect(overflow).toBeLessThanOrEqual(0);
-    await page.evaluate(() => localStorage.setItem("pinch:appLanguage", "en"));
+    await writeAccountPrefs({ locale: "en" });
   });
 });

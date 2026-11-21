@@ -12,18 +12,20 @@ export function needsTranslation(recipe: Recipe, appLanguage: string): boolean {
 }
 
 /**
- * The recipe as the page shows it. With a saved translation into the app's language, its words are shown, its units
- * put into that language and the grams/spoons taken from the stored row, row by row (as the mobile app does), so an
- * amount fixed after the translation was saved still shows. Without one, the recipe's own text.
+ * The recipe as the page shows it. With a saved translation into `language` (the app's, or one picked with
+ * Translate), its words are shown, its units put into that language and the grams/spoons taken from the stored row,
+ * row by row (as the mobile app does), so an amount fixed after the translation was saved still shows. Without one,
+ * the recipe's own text. `appLanguage` decides unit words when the recipe's language is unknown.
  */
 export function buildRecipeDisplay(
   recipe: Recipe,
-  appLanguage: string,
+  language: string,
   translation: RecipeTranslationContent | null,
+  appLanguage: string = language,
 ): RecipeDisplay {
   const source = resolveRecipeSourceLanguage(recipe);
   const translatedTo =
-    translation && source !== appLanguage && isRecipeLanguageCode(appLanguage) ? appLanguage : null;
+    translation && source !== language && isRecipeLanguageCode(language) ? language : null;
 
   const text =
     translatedTo && translation

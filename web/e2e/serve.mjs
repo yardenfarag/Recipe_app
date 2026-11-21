@@ -10,7 +10,8 @@ const env = {
   ...process.env,
   NEXT_PUBLIC_SUPABASE_URL: url,
   NEXT_PUBLIC_SUPABASE_KEY: anonKey,
-  NEXT_PUBLIC_CREDIT_PURCHASES_ENABLED: "false",
+  // On, so the credits tests can buy; every Edge Function is stubbed and the database is local.
+  NEXT_PUBLIC_CREDIT_PURCHASES_ENABLED: "true",
 };
 
 execSync("npx next build", { stdio: "inherit", env });

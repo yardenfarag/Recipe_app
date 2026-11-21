@@ -12,6 +12,8 @@ export type Scheme = "light" | "dark";
 /** The same keys the Expo web app stores them under, so choices carry over when /app switches (PIN-147). */
 export const THEME_STORAGE = { preference: "pinch.themePreference", pack: "pinch.themePack" } as const;
 export const LANGUAGE_STORAGE_KEY = "pinch:appLanguage";
+/** Spoons or grams: the same key and values as the mobile app (src/hooks/useMeasurementPreference.tsx). */
+export const MEASUREMENT_STORAGE_KEY = "pinch:measurementSystem";
 
 /** Theme pack colour → CSS variable. Tailwind reads these through @theme in globals.css. */
 const VARIABLES: Partial<Record<keyof ThemePackColors, string>> = {
@@ -71,7 +73,8 @@ export function themeCss(): string {
 
 /**
  * Runs in <head> before the page paints: applies the saved theme and language, so nothing flashes.
- * Kept small and dependency-free; it is inlined as a string.
+ * Kept small and dependency-free; it is inlined as a string. It reads this browser's copy; when signed in, the
+ * account's choice replaces it once loaded and is copied back here, so the next visit paints it straight away.
  */
 export function bootScript(): string {
   const packs = JSON.stringify(THEME_PACK_ORDER);

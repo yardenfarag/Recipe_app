@@ -11,8 +11,8 @@ import { useTheme } from "@/components/ThemeProvider";
 import type { ThemePreference } from "@/lib/theme";
 
 /**
- * Light, dark or automatic, and the theme pack. They apply at once, as in the account menu, and this browser
- * remembers them (the mobile app keeps its own, like on the device).
+ * Light, dark or automatic, and the theme pack. They apply at once, as in the account menu, and are saved on the
+ * account, so the mobile app picks them up too (PIN-154).
  */
 export function AppearanceSettings() {
   const { t } = useTranslation();

@@ -4,6 +4,7 @@ import { resetLibrary, resetTestUserLanguage } from "./admin";
 import { signInWithPassword } from "./helpers";
 import { importedRecipe, PHOTO_PNG, SOURCE_LINKS, stubImports } from "./snapSeed";
 import { TEST_USER } from "./testUser";
+import { writeAccountPrefs } from "./prefsSeed";
 
 // Every import here is answered by a stub (snapSeed.ts): a real one spends credits and calls paid models.
 
@@ -157,7 +158,10 @@ test("failures say what the mobile app says, and nothing opens", async ({ page }
   await linkField(page).fill(url);
   await snapButton(page).click();
   await expect(page.getByRole("status").filter({ hasText: "You’ve used all 10 free recipe credits this month." })).toBeVisible();
-  await expect(page.getByRole("link", { name: /Buy credits/ }).first()).toHaveAttribute("href", "https://pinch-app.io/app/settings/credits");
+  // Buying opens the out-of-credits prompt right on Snap.
+  await page.getByRole("status").getByRole("button", { name: "Buy credits" }).click();
+  await expect(page.getByRole("dialog", { name: "You’re out of credits" })).toBeVisible();
+  await page.keyboard.press("Escape");
 
   await linkField(page).fill(url);
   await snapButton(page).click();
@@ -210,13 +214,13 @@ test.describe("phone, in Hebrew", () => {
     await resetLibrary([]);
     await stubImports(page, {});
     await openSnap(page);
-    await page.evaluate(() => localStorage.setItem("pinch:appLanguage", "he"));
+    await writeAccountPrefs({ locale: "he" });
     await page.reload();
     await expect(page.locator("html")).toHaveAttribute("dir", "rtl");
     await expect(page.getByRole("heading", { level: 1, name: "שליפת מתכון" })).toBeVisible();
     await expect(page.getByLabel("קישור למתכון")).toBeVisible();
     const overflow = await page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth);
     expect(overflow).toBeLessThanOrEqual(0);
-    await page.evaluate(() => localStorage.setItem("pinch:appLanguage", "en"));
+    await writeAccountPrefs({ locale: "en" });
   });
 });

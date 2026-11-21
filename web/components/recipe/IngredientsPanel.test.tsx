@@ -7,6 +7,9 @@ import { displayIngredientAmount } from "@shared/lib/displayIngredientAmount";
 import { scaleIngredients } from "@shared/lib/ingredientAmounts";
 import type { Ingredient, Recipe } from "@shared/types/recipe";
 
+import { fakeActions } from "@/components/recipe/actions/fakeActions";
+import { RecipeActionsContext, type RecipeActions } from "@/components/recipe/actions/RecipeActionsContext";
+import { addRecipeActionStrings } from "@/components/recipe/actions/testStrings";
 import { IngredientsPanel } from "@/components/recipe/IngredientsPanel";
 import type { AvoidMatches, ReadingChoices, RecipeDisplay } from "@/components/recipe/types";
 import i18n, { changeLanguage } from "@/lib/i18n";
@@ -184,5 +187,49 @@ describe("IngredientsPanel", () => {
     renderPanel({ avoid: { allergies: [], dislikes: [], byIngredient: [null, "dislike", null, null] } });
     expect(screen.getByRole("list").getAttribute("dir")).toBe("ltr");
     expect(rowCells()[0]).toEqual(["1½ cups", "flour"]);
+  });
+});
+
+describe("IngredientsPanel with recipe actions", () => {
+  beforeAll(() => addRecipeActionStrings());
+
+  function renderWithActions(patch: Partial<RecipeActions> = {}, servings = 4) {
+    const display = makeDisplay();
+    const actions = fakeActions(display, patch);
+    const choices: ReadingChoices = { servings, onServingsChange: vi.fn(), system: "original", onSystemChange: vi.fn() };
+    render(
+      <I18nextProvider i18n={i18n}>
+        <RecipeActionsContext.Provider value={actions}>
+          <IngredientsPanel display={display} choices={choices} avoid={null} />
+        </RecipeActionsContext.Provider>
+      </I18nextProvider>,
+    );
+    return actions;
+  }
+
+  it("has no Swap or Add to list where the recipe can't be changed", () => {
+    renderPanel();
+    expect(screen.queryByRole("button", { name: /^Swap / })).toBeNull();
+    expect(screen.queryByRole("button", { name: "Add to list" })).toBeNull();
+  });
+
+  it("swaps an ingredient at the servings on screen", () => {
+    const actions = renderWithActions({}, 8);
+    fireEvent.click(screen.getByRole("button", { name: "Swap milk" }));
+    expect(actions.open).toHaveBeenCalledWith({
+      kind: "swap",
+      target: { index: 1, servingsShown: 8, ingredient: expect.objectContaining({ name: "milk", quantity: 2.5 }) },
+    });
+  });
+
+  it("adds the ingredients to the list at the servings on screen", () => {
+    const actions = renderWithActions({}, 2);
+    fireEvent.click(screen.getByRole("button", { name: "Add to list" }));
+    expect(actions.open).toHaveBeenCalledWith({ kind: "list", servings: 2 });
+  });
+
+  it("says the amounts are updating while Pinch recalculates them", () => {
+    renderWithActions({ updatingFields: ["ingredient_amounts"] });
+    expect(screen.getByTestId("amounts-updating").textContent).toBe("Amount: Updating…");
   });
 });

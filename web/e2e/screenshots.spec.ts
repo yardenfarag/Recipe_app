@@ -1,9 +1,11 @@
-import { test, type Browser } from "@playwright/test";
+import { test, type Browser, type Page } from "@playwright/test";
 
-import { resetLibrary, type SeedRecipe } from "./admin";
+import { resetLibrary, resetTestUserLanguage, type SeedRecipe } from "./admin";
 import { signInWithPassword } from "./helpers";
 import { resetHub } from "./hubSeed";
 import { resetShoppingList } from "./listSeed";
+import { writeAccountPrefs } from "./prefsSeed";
+import { resetShares, stubRecipeShare } from "./shareSeed";
 import { TEST_USER } from "./testUser";
 
 /**
@@ -22,6 +24,10 @@ const VIEWPORTS = {
 type Prefs = { language: "en" | "he"; scheme: "light" | "dark"; pack?: string };
 
 let storageState: Awaited<ReturnType<Awaited<ReturnType<Browser["newContext"]>>["storageState"]>>;
+
+test.afterAll(async () => {
+  await resetTestUserLanguage();
+});
 
 test.beforeAll(async ({ browser }) => {
   const context = await browser.newContext({ baseURL: test.info().project.use.baseURL });
@@ -46,6 +52,8 @@ async function open(browser: Browser, viewport: keyof typeof VIEWPORTS, prefs: P
     localStorage.setItem("pinch.themePreference", p.scheme);
     localStorage.setItem("pinch.themePack", p.pack ?? "mist");
   }, prefs);
+  // The account's choices win over this browser's once loaded (PIN-154), so set them there too.
+  await writeAccountPrefs({ locale: prefs.language, prefs: { scheme: prefs.scheme, pack: prefs.pack ?? "mist", measurement: "original" } });
   const page = await context.newPage();
   await page.goto(path);
   await page.locator("#main h1").waitFor();
@@ -252,4 +260,87 @@ test("hub recipe, as a guest", async ({ browser }) => {
     await context.close();
   }
   await resetHub([]);
+});
+
+const COOK_ALONG: SeedRecipe = {
+  ...RECIPE,
+  title: "Smashed potatoes",
+  original_url: "https://www.youtube.com/watch?v=dQw4w9WgXcQ",
+  image_url: picture(25),
+};
+
+test("editor, credits, recipe actions and cook mode", async ({ browser }) => {
+  test.setTimeout(300_000);
+  const [pasta, potatoes] = await resetLibrary([
+    { ...RECIPE, createdSecondsAgo: 1 },
+    { ...COOK_ALONG, createdSecondsAgo: 2 },
+  ]);
+  const screens = [
+    ["editor-edit", `/app/recipe/edit?id=${pasta}`],
+    ["editor-new", "/app/recipe/edit"],
+    ["credits", "/app/settings/credits"],
+  ] as const;
+  for (const viewport of Object.keys(VIEWPORTS) as (keyof typeof VIEWPORTS)[]) {
+    for (const [language, scheme] of [["en", "light"], ["he", "light"], ["en", "dark"]] as const) {
+      if (viewport === "tablet" && scheme === "dark") continue;
+      for (const [name, path] of screens) {
+        const { page, context } = await open(browser, viewport, { language, scheme }, path);
+        await page.waitForTimeout(500);
+        await page.screenshot({ path: `${OUT}/${name}-${viewport}-${language}-${scheme}.png`, fullPage: true });
+        await context.close();
+      }
+    }
+  }
+
+  for (const viewport of ["desktop", "phone"] as const) {
+    for (const [language, scheme] of [["en", "light"], ["he", "dark"]] as const) {
+      const prefs = { language, scheme };
+      // The open dialogs: Remix, Translate and More.
+      for (const [name, open_] of [
+        ["remix", (p: Page) => p.getByRole("group", { name: /^(Actions for|פעולות)/ }).getByRole("button").first().click()],
+        ["more", (p: Page) => p.getByRole("group", { name: /^(Actions for|פעולות)/ }).getByRole("button").last().click()],
+      ] as const) {
+        const { page, context } = await open(browser, viewport, prefs, `/app/recipe/${pasta}`);
+        await open_(page);
+        await page.waitForTimeout(500);
+        await page.screenshot({ path: `${OUT}/action-${name}-${viewport}-${language}-${scheme}.png` });
+        await context.close();
+      }
+
+      // Cook mode, on the second step.
+      {
+        const { page, context } = await open(browser, viewport, prefs, `/app/recipe/${pasta}`);
+        await page.getByRole("button", { name: /^(Cook mode|מצב בישול)$/ }).first().click();
+        await page.keyboard.press(language === "he" ? "ArrowLeft" : "ArrowRight");
+        await page.waitForTimeout(500);
+        await page.screenshot({ path: `${OUT}/cook-mode-${viewport}-${language}-${scheme}.png` });
+        await context.close();
+      }
+
+      // Cook along, with the player open (the video site is blocked, so the frame stays empty).
+      {
+        const { page, context } = await open(browser, viewport, prefs, `/app/recipe/${potatoes}`);
+        await context.route(/youtube|ytimg|googlevideo/, (route) => route.fulfill({ status: 200, contentType: "text/html", body: "<html></html>" }));
+        await page.locator("[aria-expanded]").filter({ hasText: "YouTube" }).first().click();
+        await page.waitForTimeout(500);
+        await page.screenshot({ path: `${OUT}/cook-along-${viewport}-${language}-${scheme}.png` });
+        await context.close();
+      }
+    }
+  }
+});
+
+test("shared recipe, as a guest", async ({ browser }) => {
+  const [share] = await resetShares(["Shared lentil soup"]);
+  for (const viewport of ["desktop", "phone"] as const) {
+    const context = await browser.newContext({ baseURL: test.info().project.use.baseURL, viewport: VIEWPORTS[viewport], deviceScaleFactor: viewport === "desktop" ? 1 : 2 });
+    const page = await context.newPage();
+    await stubRecipeShare(page);
+    await page.goto(`/app/s/${share.token}`);
+    await page.locator("#main h1").waitFor();
+    await page.waitForTimeout(300);
+    await page.screenshot({ path: `${OUT}/share-guest-${viewport}.png`, fullPage: true });
+    await context.close();
+  }
+  await resetShares([]);
 });
