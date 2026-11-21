@@ -1,11 +1,11 @@
 "use client";
 
-import { useTranslation } from "react-i18next";
+import { AccountSettings } from "@/components/settings/AccountSettings";
 
-import { ComingSoon } from "@/components/shell/ComingSoon";
-
-/** Settings. The real one arrives with PIN-139. */
+/**
+ * The settings home. On a desktop it opens Account beside the menu; on a phone the layout shows the menu here
+ * instead (components/settings/SettingsFrame.tsx).
+ */
 export default function SettingsPage() {
-  const { t } = useTranslation();
-  return <ComingSoon section="settings" title={t("settings.title")} subtitle={t("settings.subtitle")} />;
+  return <AccountSettings />;
 }

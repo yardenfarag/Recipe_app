@@ -83,7 +83,9 @@ function LibraryScreen() {
 
   // Keep the address in step with the filters, without adding a history entry for every keystroke.
   useEffect(() => {
-    const next = new URLSearchParams();
+    // Parameters that aren't the Library's filters stay in the address; `saved` is shown once, then dropped.
+    const next = new URLSearchParams(window.location.search);
+    for (const key of ["q", "sort", "tag", "collection", "favorites", "tonight", "saved"]) next.delete(key);
     if (search.trim()) next.set("q", search.trim());
     if (sort !== "newest") next.set("sort", sort);
     if (selectedTags.length > 0) next.set("tag", selectedTags.join(","));

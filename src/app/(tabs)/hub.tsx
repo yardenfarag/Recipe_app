@@ -12,7 +12,6 @@ import {
   type NativeSyntheticEvent,
 } from 'react-native';
 import { Pressable } from '@/components/ui/Pressable';
-import type { TFunction } from 'i18next';
 import { useTranslation } from 'react-i18next';
 
 import { BrandHeader } from '@/components/BrandHeader';
@@ -25,34 +24,9 @@ import { useLibraryLayout } from '@/hooks/useLibraryLayout';
 import { useThemePreference } from '@/hooks/useThemePreference';
 import { announce, CHROME_MAX_FONT_SCALE } from '@/lib/a11y';
 import { logTap } from '@/lib/interactionLog';
+import { hubCardDetail, HUB_PLATFORMS, platformLabelKey } from '@shared/lib/hubCards';
 import { recipeCardToListRecipe } from '@shared/lib/recipeCardMap';
 import { translateRecipeTag } from '@shared/lib/recipeTags';
-import type { HubPlatform, RecipeCard } from '@shared/types/recipeCard';
-
-const HUB_PLATFORMS = ['all', 'youtube', 'instagram', 'tiktok', 'web'] as const;
-
-function platformLabelKey(platform: HubPlatform | 'all') {
-  switch (platform) {
-    case 'youtube':
-      return 'hub.platformYoutube';
-    case 'instagram':
-      return 'hub.platformInstagram';
-    case 'tiktok':
-      return 'hub.platformTiktok';
-    case 'web':
-      return 'hub.platformWeb';
-    default:
-      return 'hub.platformAll';
-  }
-}
-
-function hubCardDetail(card: RecipeCard, t: TFunction) {
-  const source = t(platformLabelKey(card.platform));
-  const saves = t(card.save_count === 1 ? 'hub.saveCountOne' : 'hub.saveCountOther', {
-    count: card.save_count,
-  });
-  return `${source} · ${saves}`;
-}
 
 export default function CookingHubScreen() {
   const { t } = useTranslation();

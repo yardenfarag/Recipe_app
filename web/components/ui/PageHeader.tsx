@@ -2,10 +2,20 @@
 
 import { useEffect, type ReactNode } from "react";
 
-/** Sets the browser tab's title: "Library · Pinch". */
+/**
+ * Sets the browser tab's title: "Library · Pinch". Next.js writes the root layout's default title ("Pinch") into the
+ * page head on its own schedule, which can land after this effect on a slow load, so the title is put back whenever
+ * something else changes it while this page is showing.
+ */
 export function usePageTitle(title: string) {
   useEffect(() => {
-    document.title = title ? `${title} · Pinch` : "Pinch";
+    const wanted = title ? `${title} · Pinch` : "Pinch";
+    document.title = wanted;
+    const observer = new MutationObserver(() => {
+      if (document.title !== wanted) document.title = wanted;
+    });
+    observer.observe(document.head, { childList: true, subtree: true, characterData: true });
+    return () => observer.disconnect();
   }, [title]);
 }
 

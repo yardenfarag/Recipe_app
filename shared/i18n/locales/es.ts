@@ -1364,6 +1364,48 @@ export default {
       "opensInNewTab": "se abre en una pestaña nueva",
       "stepVideoTime": "En el vídeo, en {{time}}"
     },
+    "hub": {
+      "source": "Fuente",
+      "dietFirst": "Primero, las recetas aptas para {{diets}}.",
+      "addIsFree": "Gratis: añadirla no usa créditos.",
+      "added": "Añadida a tu biblioteca"
+    },
+    "list": {
+      "chooseIngredients": "Elegir ingredientes",
+      "undo": "Deshacer",
+      "removed": "Se quitó {{name}}.",
+      "keyboardHint": "↑ ↓ para moverte · Espacio para marcar · E para editar · Supr para quitar · / para añadir",
+      "emptyBody": "Escribe arriba lo que necesitas o añade los ingredientes de las recetas que vas a cocinar."
+    },
+    "guest": {
+      "saveNeedsAccount": "Inicia sesión o crea una cuenta gratis para guardarla."
+    },
+    "settings": {
+      "accountHint": "Tu correo, tu foto de perfil y cerrar sesión.",
+      "helpGroup": "Ayuda y aspectos legales",
+      "languageHint": "El idioma de los menús y botones de Pinch, y al que se traducen las recetas. El hebreo y el árabe se leen de derecha a izquierda.",
+      "saving": "Guardando…",
+      "saved": "Guardado",
+      "measurementsDeviceNote": "Se guarda en este navegador. La app de Pinch en tu teléfono guarda su propia elección.",
+      "deleteTypeEmail": "Para confirmar, escribe tu correo: {{email}}",
+      "feedbackBrowserNote": "Incluiremos tu navegador y sistema para saber desde dónde nos escribes."
+    },
+    "snap": {
+      "or": "o",
+      "dropOrPaste": "O suelta una foto aquí, o pégala.",
+      "dropTitle": "Suelta una foto o un enlace",
+      "notAnImage": "Ese archivo no es una foto. Prueba con una imagen JPG o PNG.",
+      "partialMissingSteps": "Encontramos los ingredientes, pero no los pasos. Esta importación fue gratis. Prueba con otro enlace o con una foto de la receta completa.",
+      "partialMissingIngredients": "Encontramos los pasos, pero no los ingredientes. Esta importación fue gratis. Prueba con otro enlace o con una foto de la receta completa.",
+      "tipsTitle": "Formas más rápidas",
+      "tipPaste": "Copia un enlace, vuelve y pulsa {{shortcut}} en cualquier parte de esta página.",
+      "tipDrop": "Arrastra una foto, o un enlace desde otra pestaña, a esta página.",
+      "draftWaiting": "Tienes una receta sin guardar: {{title}}",
+      "backToSnap": "Volver a Snap",
+      "discard": "Descartar",
+      "discardTitle": "¿Descartar esta receta?",
+      "discardBody": "No se guardará en tu biblioteca y el crédito usado no se devuelve."
+    },
     "soon": {
       "recipe": {
         "title": "Las páginas de receta están en camino",

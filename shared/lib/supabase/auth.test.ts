@@ -11,11 +11,13 @@ const auth = vi.hoisted(() => ({
   updateUser: vi.fn(),
   signOut: vi.fn(),
 }));
-vi.mock('./client', () => ({ supabase: { auth } }));
+const functions = vi.hoisted(() => ({ invoke: vi.fn() }));
+vi.mock('./client', () => ({ supabase: { auth, functions } }));
 
 import {
   completeOAuthFromCallbackUrl,
   consumePasswordRecoveryUrl,
+  deleteAccount,
   friendlyAuthError,
   requestPasswordReset,
   saveAccountLocale,
@@ -134,5 +136,25 @@ describe('shared auth', () => {
     expect(auth.updateUser).not.toHaveBeenCalled();
     await saveAccountLocale({ user_metadata: {} }, 'es');
     expect(auth.updateUser).toHaveBeenCalledWith({ data: { locale: 'es' } });
+  });
+});
+
+describe('deleteAccount', () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
+
+  it('asks the delete-account function, then forgets the session on this device', async () => {
+    functions.invoke.mockResolvedValue({ data: { ok: true }, error: null });
+    auth.signOut.mockResolvedValue({ error: null });
+    await deleteAccount();
+    expect(functions.invoke).toHaveBeenCalledWith('delete-account', { body: { apple_authorization_code: undefined } });
+    expect(auth.signOut).toHaveBeenCalledWith({ scope: 'local' });
+  });
+
+  it('passes on the error the function returns, and keeps the session', async () => {
+    functions.invoke.mockResolvedValue({ data: { error: 'Nope' }, error: null });
+    await expect(deleteAccount()).rejects.toThrow('Nope');
+    expect(auth.signOut).not.toHaveBeenCalled();
   });
 });

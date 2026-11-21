@@ -19,6 +19,7 @@ import {
 
 export {
   consumePasswordRecoveryUrl,
+  deleteAccount,
   hasSession,
   saveAccountLocale,
   sendSignInCode,
@@ -41,34 +42,6 @@ export async function signOut() {
   await flushInteractions().catch(() => {});
   const { error } = await supabase.auth.signOut();
   if (error) throw error;
-}
-
-/**
- * Permanently deletes the signed-in account via Edge Function (avatars + auth user).
- * For Apple identities, pass a fresh `authorizationCode` from Sign in with Apple so
- * the server can revoke tokens (TN3194).
- */
-export async function deleteAccount(options?: {
-  appleAuthorizationCode?: string | null;
-}): Promise<void> {
-  const { data, error } = await supabase.functions.invoke<{ ok?: boolean; error?: string }>(
-    'delete-account',
-    {
-      body: {
-        apple_authorization_code: options?.appleAuthorizationCode ?? undefined,
-      },
-    },
-  );
-
-  if (error) {
-    throw new Error(error.message || 'Could not delete account. Please try again.');
-  }
-  if (data && typeof data === 'object' && 'error' in data && data.error) {
-    throw new Error(String(data.error));
-  }
-
-  // Session may already be invalid after server-side delete.
-  await supabase.auth.signOut({ scope: 'local' });
 }
 
 /** True when the current session includes an Apple identity. */

@@ -53,6 +53,12 @@ describe("RecipeCard", () => {
     expect(screen.getByRole("button", { name: "Remove Lemon Pasta from favorites" }).getAttribute("aria-pressed")).toBe("true");
   });
 
+  it("can lead somewhere other than the saved recipe, e.g. a Hub recipe", () => {
+    wrap(<RecipeCard recipe={recipe} href="/hub/c1" detail="Saved by 12 people" />);
+    expect(screen.getByRole("link", { name: "Lemon Pasta" }).getAttribute("href")).toBe("/hub/c1");
+    expect(screen.getByText("Saved by 12 people")).toBeDefined();
+  });
+
   it("shows the translated title when there is one, and no buttons when nothing can be done", () => {
     wrap(<RecipeCard recipe={{ ...recipe, display_title: "Pasta al limone" }} />);
     expect(screen.getByRole("link", { name: "Pasta al limone" })).toBeDefined();
