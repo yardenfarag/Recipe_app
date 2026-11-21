@@ -129,10 +129,19 @@ test.describe("desktop", () => {
     await expect(page.locator("html")).toHaveAttribute("dir", "ltr");
   });
 
-  test("deleting the account asks first, then removes it for good", async ({ page }) => {
+  test("deleting the account asks first, then calls the delete function and signs out", async ({ page }) => {
     const email = uniqueEmail("e2e-delete");
     const password = "delete-me-123";
     await createUser(email, password);
+    // The browser tests run local Supabase without the Edge Function runtime (CI excludes it), so the
+    // delete-account function is stubbed: this checks the page's side. The function deletes for real in production.
+    const deleteCalls: string[] = [];
+    await page.route("**/functions/v1/delete-account", async (route) => {
+      const cors = { "Access-Control-Allow-Origin": "*", "Access-Control-Allow-Headers": "*", "Access-Control-Allow-Methods": "POST, OPTIONS" };
+      if (route.request().method() === "OPTIONS") return route.fulfill({ status: 204, headers: cors });
+      deleteCalls.push(route.request().method());
+      return route.fulfill({ status: 200, headers: cors, contentType: "application/json", body: JSON.stringify({ ok: true }) });
+    });
     await signIn(page, email, password);
     await page.goto("/app/settings/account");
 
@@ -154,7 +163,7 @@ test.describe("desktop", () => {
 
     await expect(page).toHaveURL(/\/app\/auth/);
     await expect(page.getByText("Your Pinch account and data are gone.")).toBeVisible();
-    await expect.poll(() => canSignIn(email, password)).toBe(false);
+    expect(deleteCalls).toEqual(["POST"]);
   });
 
   test("signing out from Account goes to sign-in", async ({ page }) => {
