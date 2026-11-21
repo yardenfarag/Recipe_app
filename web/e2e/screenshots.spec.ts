@@ -240,6 +240,25 @@ test("snap, list, hub and settings", async ({ browser }) => {
   }
 });
 
+test("snap, waiting for an import", async ({ browser }) => {
+  test.setTimeout(120_000);
+  for (const viewport of ["phone", "desktop"] as const) {
+    for (const [language, scheme] of [["en", "light"], ["he", "light"], ["en", "dark"]] as const) {
+      const { page, context } = await open(browser, viewport, { language, scheme }, "/app/add");
+      // The import never answers, and the clock is moved on 8 seconds so the ring and countdown are part way.
+      await page.route("**/functions/v1/extract-recipe", () => new Promise(() => {}));
+      await page.clock.install();
+      await page.locator('#main input[type="url"]').fill("https://www.tiktok.com/@cook/video/7312345678901234567");
+      await page.locator('#main input[type="url"]').press("Enter");
+      await page.getByRole("progressbar").waitFor();
+      await page.clock.runFor(8_000);
+      await page.waitForTimeout(400);
+      await page.screenshot({ path: `${OUT}/snap-waiting-${viewport}-${language}-${scheme}.png`, fullPage: true });
+      await context.close();
+    }
+  }
+});
+
 test("hub recipe, as a guest", async ({ browser }) => {
   const [card] = await resetHub([{ name: "Guest gnocchi", platform: "web", save_count: 3 }]);
   for (const viewport of ["desktop", "phone"] as const) {

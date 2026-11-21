@@ -49,7 +49,7 @@ export function SnapScreen() {
   const router = useRouter();
   const { quota, refresh } = useCredits();
   const snap = useSnap({ onSettled: () => void refresh() });
-  const { job, banner, setBanner, run } = snap;
+  const { job, finished, banner, setBanner, run } = snap;
   const [intent, setIntent] = useState<SnapIntent>("extract");
   const [url, setUrl] = useState("");
   const [urlError, setUrlError] = useState<string | null>(null);
@@ -216,7 +216,7 @@ export function SnapScreen() {
       <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_20rem] lg:items-start">
         <div className="min-w-0">
           {job ? (
-            <SnapProgress job={job} />
+            <SnapProgress job={job} finished={finished} />
           ) : (
             <section className="rounded-3xl border border-frosted-border bg-surface p-5 shadow-soft md:p-7">
               <SnapIntentSwitch value={intent} onChange={(next) => {
