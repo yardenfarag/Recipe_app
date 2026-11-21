@@ -3,7 +3,7 @@ import { FunctionsHttpError } from '@supabase/supabase-js';
 import { getOrCreateExtractionRequestId } from '@/lib/extractionRequestId';
 import { getInstallId } from '@/lib/installId';
 import { supabase } from '@/lib/supabase/client';
-import type { ExtractResult } from '@/lib/supabase/extractRecipe';
+import { type ExtractResult, NO_RESPONSE_CODE } from '@/lib/supabase/extractRecipe';
 
 export type InventResult = ExtractResult;
 
@@ -38,10 +38,8 @@ async function inventErrorMessage(error: unknown): Promise<{
       // Fall through.
     }
   }
-  if (error instanceof Error && error.message && !error.message.includes('non-2xx')) {
-    return { message: error.message };
-  }
-  return { message: 'Could not reach the invent service. Please try again.' };
+  // No answer from the function itself (504, network): keep the request id for the retry.
+  return { message: 'Could not reach the invent service. Please try again.', code: NO_RESPONSE_CODE };
 }
 
 async function invokeInvent(

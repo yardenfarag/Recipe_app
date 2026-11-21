@@ -61,9 +61,22 @@ describe('extractRecipe request recovery', () => {
     expect(mocks.clearRequestId).not.toHaveBeenCalled();
   });
 
+  it('marks a failure with no answer from the function (504, network) as uncertain', async () => {
+    mocks.invoke.mockResolvedValue({
+      data: null,
+      error: new Error('Failed to send a request to the Edge Function'),
+    });
+
+    const result = await extractRecipe('https://example.com/soup');
+
+    expect(result).toMatchObject({ status: 'failed', code: 'no_response', request_id: 'request-1' });
+    expect(extractionOutcomeIsUncertain(result.code)).toBe(true);
+  });
+
   it('treats compensation and metering failures as uncertain charges', () => {
     expect(extractionOutcomeIsUncertain('compensation_pending')).toBe(true);
     expect(extractionOutcomeIsUncertain('metering_error')).toBe(true);
+    expect(extractionOutcomeIsUncertain('no_response')).toBe(true);
     expect(extractionOutcomeIsUncertain('guest_limit')).toBe(false);
     expect(extractionOutcomeIsUncertain('gate_unavailable')).toBe(false);
   });

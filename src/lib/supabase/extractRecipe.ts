@@ -82,16 +82,17 @@ async function invokeErrorMessage(error: unknown): Promise<{
     }
   }
 
-  if (error instanceof Error && error.message && !error.message.includes('non-2xx')) {
-    return { message: error.message };
-  }
-
-  return { message: 'Could not reach the extraction service. Please try again.' };
+  // No answer from the function itself: a gateway timeout (504), a dropped connection, or a
+  // killed worker. The credit may have been spent, so the retry must reuse the request id.
+  return { message: 'Could not reach the extraction service. Please try again.', code: NO_RESPONSE_CODE };
 }
+
+/** Set by the app when the function never answered (504, network). Never sent by the server. */
+export const NO_RESPONSE_CODE = 'no_response';
 
 /** True when a retry must reuse the same request id to avoid a second charge. */
 export function extractionOutcomeIsUncertain(code?: string): boolean {
-  return code === 'compensation_pending' || code === 'metering_error';
+  return code === 'compensation_pending' || code === 'metering_error' || code === NO_RESPONSE_CODE;
 }
 
 /**
