@@ -55,7 +55,8 @@ test.describe("desktop", () => {
     await page.keyboard.press("Tab"); // skip link
     await page.keyboard.press("Tab"); // logo
     await page.keyboard.press("Tab");
-    await expect(page.getByRole("link", { name: "Snap a recipe" }).filter({ visible: true })).toBeFocused();
+    // The sidebar's Snap (an empty Library has its own "Snap a recipe" button further down).
+    await expect(page.getByRole("link", { name: "Snap a recipe" }).filter({ visible: true }).first()).toBeFocused();
     await page.keyboard.press("Tab");
     await expect(page.getByRole("link", { name: "Library", exact: true }).filter({ visible: true })).toBeFocused();
     await page.keyboard.press("Enter");

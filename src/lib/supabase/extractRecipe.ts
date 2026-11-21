@@ -1,187 +1,43 @@
-import { FunctionsHttpError } from '@supabase/supabase-js';
-
 import { getOrCreateExtractionRequestId } from '@/lib/extractionRequestId';
 import { getInstallId } from '@/lib/installId';
-import { supabase } from '@/lib/supabase/client';
-import type { ExtractedRecipe, Recipe } from '@shared/types/recipe';
+import {
+  extractRecipe as extractRecipeShared,
+  extractRecipeFromImage as extractRecipeFromImageShared,
+  type ExtractionRequestContext,
+  type ExtractResult,
+} from '@shared/lib/supabase/extractRecipe';
 
-export type { ExtractedRecipe };
+export {
+  extractionOutcomeIsUncertain,
+  NO_RESPONSE_CODE,
+  type ExtractedRecipe,
+  type ExtractResult,
+  type ExtractStatus,
+} from '@shared/lib/supabase/extractRecipe';
 
-export type ExtractStatus = 'full' | 'partial' | 'failed' | 'coming_soon';
-
-export interface ExtractResult {
-  status: ExtractStatus;
-  platform: 'youtube' | 'instagram' | 'tiktok' | 'facebook' | 'web' | 'photo' | 'unknown';
-  /** Unsaved extraction, or a full saved recipe when `cached` is true. */
-  recipe?: ExtractedRecipe | Recipe;
-  message?: string;
-  /** True when the URL was already in the user's library — no extraction ran. */
-  cached?: boolean;
-  /** True when the recipe came from the Cooking Hub cache (unsaved, no credit). */
-  from_hub?: boolean;
-  code?:
-    | 'subscription_required'
-    | 'monthly_limit'
-    | 'guest_limit'
-    | 'guest_id_required'
-    | 'metering_error'
-    | 'video_too_long'
-    | 'insufficient_credits'
-    | 'insufficient_tokens'
-    | 'compensation_pending'
-    | 'not_food'
-    | 'looks_like_dish'
-    | 'no_recipe'
-    | 'daily_limit'
-    | 'gate_unavailable'
-    | 'invalid_url'
-    | string;
-  tokens_charged?: number;
-  guest_extracts_remaining?: number | null;
-  extracts_remaining?: number | null;
-  free_extracts_remaining?: number | null;
-  monthly_extracts_remaining?: number | null;
-  subscription_status?: string | null;
-  purchased_credits?: number | null;
-  total_credits?: number | null;
-  /** Client-side idempotency key; acknowledged only after durable handling. */
-  request_id?: string;
-  /** Food-gate dish name when extract should hand off to invent. */
-  dish_guess?: string;
-}
-
-async function invokeErrorMessage(error: unknown): Promise<{
-  message: string;
-  code?: string;
-  guest_extracts_remaining?: number | null;
-  extracts_remaining?: number | null;
-  free_extracts_remaining?: number | null;
-  monthly_extracts_remaining?: number | null;
-  subscription_status?: string | null;
-  purchased_credits?: number | null;
-  total_credits?: number | null;
-}> {
-  if (error instanceof FunctionsHttpError) {
-    try {
-      const body = (await error.context.json()) as ExtractResult & { error?: string };
-      if (body.message || body.error) {
-        return {
-          message: body.message ?? body.error ?? 'Request failed',
-          code: body.code,
-          guest_extracts_remaining: body.guest_extracts_remaining,
-          extracts_remaining: body.extracts_remaining,
-          free_extracts_remaining: body.free_extracts_remaining,
-          monthly_extracts_remaining: body.monthly_extracts_remaining,
-          subscription_status: body.subscription_status,
-          purchased_credits: body.purchased_credits,
-          total_credits: body.total_credits,
-        };
-      }
-    } catch {
-      // Fall through to generic message.
-    }
-  }
-
-  // No answer from the function itself: a gateway timeout (504), a dropped connection, or a
-  // killed worker. The credit may have been spent, so the retry must reuse the request id.
-  return { message: 'Could not reach the extraction service. Please try again.', code: NO_RESPONSE_CODE };
-}
-
-/** Set by the app when the function never answered (504, network). Never sent by the server. */
-export const NO_RESPONSE_CODE = 'no_response';
-
-/** True when a retry must reuse the same request id to avoid a second charge. */
-export function extractionOutcomeIsUncertain(code?: string): boolean {
-  return code === 'compensation_pending' || code === 'metering_error' || code === NO_RESPONSE_CODE;
-}
+/** The mobile app's request ids (device storage) and the install id that meters guests. */
+export const mobileExtractionContext: ExtractionRequestContext = {
+  getOrCreateRequestId: (key) => getOrCreateExtractionRequestId(key),
+  getGuestInstallId: () => getInstallId(),
+};
 
 /**
  * Sends a social URL to the `extract-recipe` Edge Function and returns the
  * structured result. Does not persist — the caller decides where to save
- * (local guest store or Supabase) per ADR 002.
+ * (local guest store or Supabase) per ADR 002. The call itself is shared with the web app
+ * (shared/lib/supabase/extractRecipe.ts).
  */
-export async function extractRecipe(
-  url: string,
-  opts?: { forceExtract?: boolean },
-): Promise<ExtractResult> {
-  const guestInstallId = await getInstallId();
-  const requestId = await getOrCreateExtractionRequestId(url);
-  return invokeExtract(requestId, {
-    url,
-    guest_install_id: guestInstallId,
-    request_id: requestId,
-    ...(opts?.forceExtract ? { force_extract: true } : {}),
-  });
+export function extractRecipe(url: string, opts?: { forceExtract?: boolean }): Promise<ExtractResult> {
+  return extractRecipeShared(mobileExtractionContext, url, opts);
 }
 
 /**
  * Sends a recipe photo (base64) to `extract-recipe`. Same credits as a URL Snap.
  */
-export async function extractRecipeFromImage(
+export function extractRecipeFromImage(
   imageBase64: string,
   mimeType = 'image/jpeg',
   opts?: { forceExtract?: boolean },
 ): Promise<ExtractResult> {
-  const guestInstallId = await getInstallId();
-  const key = `photo:${imageBase64.length}:${imageBase64.slice(0, 64)}`;
-  const requestId = await getOrCreateExtractionRequestId(key);
-  return invokeExtract(requestId, {
-    image_base64: imageBase64,
-    image_mime: mimeType,
-    guest_install_id: guestInstallId,
-    request_id: requestId,
-    ...(opts?.forceExtract ? { force_extract: true } : {}),
-  });
-}
-
-async function invokeExtract(
-  requestId: string,
-  body: Record<string, unknown>,
-): Promise<ExtractResult> {
-  const { data, error } = await supabase.functions.invoke<ExtractResult>('extract-recipe', {
-    body,
-  });
-
-  if (error) {
-    // Keep the key after HTTP and transport failures. A 5xx can mean the
-    // reservation is still charged and waiting for compensation.
-    const details = await invokeErrorMessage(error);
-    return {
-      status: 'failed',
-      platform: 'unknown',
-      message: details.message,
-      code: details.code,
-      request_id: requestId,
-      guest_extracts_remaining: details.guest_extracts_remaining,
-      extracts_remaining: details.extracts_remaining,
-      free_extracts_remaining: details.free_extracts_remaining,
-      monthly_extracts_remaining: details.monthly_extracts_remaining,
-      subscription_status: details.subscription_status,
-      purchased_credits: details.purchased_credits,
-      total_credits: details.total_credits,
-    };
-  }
-
-  if (data && typeof data === 'object' && 'error' in data) {
-    const errBody = data as { error?: string };
-    if (typeof errBody.error === 'string') {
-      return {
-        status: 'failed',
-        platform: 'unknown',
-        message: errBody.error,
-        request_id: requestId,
-      };
-    }
-  }
-
-  return (
-    data
-      ? { ...data, request_id: requestId }
-      : {
-          status: 'failed',
-          platform: 'unknown',
-          message: 'No response from the extraction service.',
-          request_id: requestId,
-        }
-  );
+  return extractRecipeFromImageShared(mobileExtractionContext, imageBase64, mimeType, opts);
 }

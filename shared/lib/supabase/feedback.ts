@@ -1,0 +1,71 @@
+/**
+ * Feedback from Settings → Send feedback. Where it came from (app version, device) is each app's business, so the
+ * caller passes it in (mobile: src/lib/supabase/feedback.ts, web: web/lib/settings/feedbackContext.ts).
+ */
+import { supabase } from './client';
+
+export const FEEDBACK_MIN_LENGTH = 2;
+export const FEEDBACK_MAX_LENGTH = 4000;
+
+/** Where the feedback came from, stored next to the message. */
+export interface FeedbackContext {
+  app_version: string | null;
+  build_number: string | null;
+  platform: 'ios' | 'android' | 'web';
+  os_version: string | null;
+  device_model: string | null;
+  locale: string | null;
+}
+
+export interface Feedback extends FeedbackContext {
+  id: string;
+  user_id: string | null;
+  message: string;
+  created_at: string;
+  /** app: Settings → Send feedback. website: the support form on pinch-app.io. */
+  source: 'app' | 'website';
+  /** Reply-to address from the website form (app feedback uses the profile email). */
+  contact_email: string | null;
+  /** Sender's email, via the profiles join (null once the account is deleted). */
+  profile: { email: string | null } | null;
+}
+
+export async function submitFeedback(input: {
+  message: string;
+  context: FeedbackContext;
+}): Promise<void> {
+  const message = input.message.trim();
+  if (message.length < FEEDBACK_MIN_LENGTH) {
+    throw new Error('Write a few words first.');
+  }
+  if (message.length > FEEDBACK_MAX_LENGTH) {
+    throw new Error(`Feedback is too long (max ${FEEDBACK_MAX_LENGTH} characters).`);
+  }
+
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) {
+    throw new Error('Sign in to send feedback.');
+  }
+
+  const { error } = await supabase.from('feedback').insert({
+    user_id: user.id,
+    message,
+    ...input.context,
+  });
+  if (error) throw error;
+}
+
+export async function fetchFeedback(limit = 80): Promise<Feedback[]> {
+  const { data, error } = await supabase
+    .from('feedback')
+    .select(
+      'id, user_id, message, app_version, build_number, platform, os_version, device_model, locale, created_at, source, contact_email, profile:profiles(email)',
+    )
+    .order('created_at', { ascending: false })
+    .limit(limit);
+  if (error) throw error;
+  // Many-to-one embed: PostgREST returns an object, the untyped client guesses an array.
+  return (data ?? []) as unknown as Feedback[];
+}

@@ -1,6 +1,6 @@
 import { fireEvent, render, screen, within } from "@testing-library/react";
 import { I18nextProvider } from "react-i18next";
-import { afterEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeAll, describe, expect, it, vi } from "vitest";
 
 import type { MeasurementSystem } from "@shared/lib/convertMeasurement";
 import { displayIngredientAmount } from "@shared/lib/displayIngredientAmount";
@@ -55,6 +55,13 @@ const rowCells = () =>
   within(screen.getByRole("list"))
     .getAllByRole("listitem")
     .map((row) => Array.from(row.children).map((cell) => cell.textContent));
+
+// The Hebrew strings load on first use. Load them once up front, so a busy full run can't make a test time out
+// halfway through switching language.
+beforeAll(async () => {
+  await changeLanguage("he");
+  await changeLanguage("en");
+}, 30_000);
 
 afterEach(async () => {
   await changeLanguage("en");

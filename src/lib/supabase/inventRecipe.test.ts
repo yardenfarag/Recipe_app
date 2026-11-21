@@ -12,7 +12,8 @@ vi.mock('@/lib/extractionRequestId', () => ({
   getOrCreateExtractionRequestId: mocks.getRequestId,
 }));
 vi.mock('@/lib/installId', () => ({ getInstallId: mocks.getInstallId }));
-vi.mock('@/lib/supabase/client', () => ({
+// The call lives in shared/lib/supabase/extractRecipe.ts, which uses the shared client.
+vi.mock('@shared/lib/supabase/client', () => ({
   supabase: { functions: { invoke: mocks.invoke } },
 }));
 

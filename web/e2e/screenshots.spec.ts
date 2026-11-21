@@ -2,6 +2,8 @@ import { test, type Browser } from "@playwright/test";
 
 import { resetLibrary, type SeedRecipe } from "./admin";
 import { signInWithPassword } from "./helpers";
+import { resetHub } from "./hubSeed";
+import { resetShoppingList } from "./listSeed";
 import { TEST_USER } from "./testUser";
 
 /**
@@ -198,4 +200,56 @@ test("recipe page", async ({ browser }) => {
     await page.screenshot({ path: `${OUT}/recipe-hebrew-in-en-${viewport}.png`, fullPage: true });
     await context.close();
   }
+});
+
+const SCREENS = [
+  ["snap", "/app/add"],
+  ["list", "/app/list"],
+  ["hub", "/app/hub"],
+  ["settings", "/app/settings"],
+  ["settings-recipe", "/app/settings/recipe"],
+] as const;
+
+test("snap, list, hub and settings", async ({ browser }) => {
+  test.setTimeout(240_000);
+  await resetShoppingList([
+    { name: "onion", quantity: 2 },
+    { name: "garlic", quantity: 1, unit: "head" },
+    { name: "milk", quantity: 1, unit: "l" },
+    { name: "eggs", quantity: 6 },
+    { name: "parmesan", quantity: 100, unit: "g" },
+    { name: "salt" },
+    { name: "olive oil", checked: true },
+  ]);
+  await resetHub([
+    { name: "Crispy smashed potatoes", platform: "tiktok", save_count: 41, tags: ["dinner"] },
+    { name: "Miso ramen", platform: "youtube", save_count: 22, tags: ["soup"] },
+    { name: "Lemon olive oil cake", platform: "instagram", save_count: 9, tags: ["dessert"] },
+    { name: "One-pan gnocchi", platform: "web", save_count: 5, tags: ["dinner"] },
+  ]);
+  for (const viewport of Object.keys(VIEWPORTS) as (keyof typeof VIEWPORTS)[]) {
+    for (const [language, scheme] of [["en", "light"], ["he", "light"], ["en", "dark"]] as const) {
+      if (viewport === "tablet" && scheme === "dark") continue;
+      for (const [name, path] of SCREENS) {
+        const { page, context } = await open(browser, viewport, { language, scheme }, path);
+        await page.waitForTimeout(500);
+        await page.screenshot({ path: `${OUT}/${name}-${viewport}-${language}-${scheme}.png`, fullPage: true });
+        await context.close();
+      }
+    }
+  }
+});
+
+test("hub recipe, as a guest", async ({ browser }) => {
+  const [card] = await resetHub([{ name: "Guest gnocchi", platform: "web", save_count: 3 }]);
+  for (const viewport of ["desktop", "phone"] as const) {
+    const context = await browser.newContext({ baseURL: test.info().project.use.baseURL, viewport: VIEWPORTS[viewport], deviceScaleFactor: viewport === "desktop" ? 1 : 2 });
+    const page = await context.newPage();
+    await page.goto(`/app/hub/${card.id}`);
+    await page.locator("#main h1").waitFor();
+    await page.waitForTimeout(300);
+    await page.screenshot({ path: `${OUT}/hub-guest-${viewport}.png`, fullPage: true });
+    await context.close();
+  }
+  await resetHub([]);
 });

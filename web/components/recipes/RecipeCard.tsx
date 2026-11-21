@@ -28,6 +28,8 @@ export type RecipeCardProps = {
   actions?: RecipeActions;
   /** An extra line under the title, e.g. who saved it. */
   detail?: ReactNode;
+  /** Where the card leads. Defaults to the saved recipe's page; the Hub passes its own. */
+  href?: string;
 };
 
 /**
@@ -35,7 +37,7 @@ export type RecipeCardProps = {
  * middle-click and is one stop for a screen reader; the heart and the menu sit above that link as their own
  * buttons. Shared by the Library and the Hub.
  */
-function RecipeCardBase({ recipe, variant = "grid", onToggleFavorite, actions, detail }: RecipeCardProps) {
+function RecipeCardBase({ recipe, variant = "grid", onToggleFavorite, actions, detail, href }: RecipeCardProps) {
   const { t } = useTranslation();
   const { language } = useLanguage();
   const title = recipe.display_title ?? recipe.title;
@@ -83,7 +85,7 @@ function RecipeCardBase({ recipe, variant = "grid", onToggleFavorite, actions, d
       <div className={cn("min-w-0 flex-1", list ? "py-0.5" : "flex flex-col gap-1.5 p-4")}>
         <h3 className={cn("font-bold text-text text-pretty", list ? "line-clamp-2 text-base leading-snug" : "line-clamp-3 text-[17px] leading-snug")}>
           <Link
-            href={`/recipe/${recipe.id}`}
+            href={href ?? `/recipe/${recipe.id}`}
             className="rounded-md outline-none after:absolute after:inset-0 after:z-0 after:content-[''] focus-visible:after:rounded-[inherit] focus-visible:after:ring-2 focus-visible:after:ring-primary"
           >
             {title}

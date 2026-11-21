@@ -44,7 +44,6 @@ import {
   getGuestExtractionsRemaining,
   setGuestExtractionsRemaining,
 } from "@/lib/guestExtractionUsage";
-import { kitchenInstruction } from "@/lib/kitchenProfile";
 import { openRecipeEditor } from "@/lib/openRecipeEditor";
 import {
   fileUriToBase64,
@@ -72,8 +71,7 @@ import {
   inventRecipe,
   inventRecipeFromImage,
 } from "@/lib/supabase/inventRecipe";
-import { fetchCloudKitchenProfile } from "@/lib/supabase/kitchen";
-import { transformRecipe } from "@shared/lib/supabase/transformRecipe";
+import { applyKitchenOnExtract } from "@shared/lib/supabase/kitchenAutoApply";
 
 type Banner = {
   kind: "error" | "info" | "limit" | "credits";
@@ -411,60 +409,11 @@ export default function AddRecipeScreen() {
       source,
       mode: recipeIsInvented(recipeToPreview) ? "invent" : "extract",
     });
-    if (
-      user &&
-      recipeToPreview.ingredients.length > 0 &&
-      !recipeIsInvented(recipeToPreview)
-    ) {
-      try {
-        const kitchen = await fetchCloudKitchenProfile(user.id);
-        const instruction = kitchen.autoApplyOnExtract
-          ? kitchenInstruction(kitchen)
-          : null;
-        if (instruction) {
-          const adapted = await transformRecipe(
-            kitchen.diets[0] ?? "custom",
-            {
-              title: recipeToPreview.title,
-              servings: recipeToPreview.servings,
-              ingredients: recipeToPreview.ingredients,
-              instructions: recipeToPreview.instructions,
-              calories: recipeToPreview.calories,
-              original_url: recipeToPreview.original_url,
-            },
-            instruction,
-            { kitchenAutoApply: true },
-          );
-          if (adapted.status === "ok" && adapted.recipe) {
-            recipeToPreview = {
-              ...recipeToPreview,
-              servings: adapted.recipe.servings,
-              ingredients: adapted.recipe.ingredients,
-              instructions: adapted.recipe.instructions,
-              calories: adapted.recipe.calories,
-              // ADR 017: present only when the adaptation changed the steps.
-              ...(adapted.recipe.appliances !== undefined
-                ? { appliances: adapted.recipe.appliances }
-                : {}),
-              kitchen_adapted_summary: adapted.recipe.summary,
-              kitchen_original: {
-                title: result.recipe.title,
-                servings: result.recipe.servings,
-                ingredients: result.recipe.ingredients,
-                instructions: result.recipe.instructions,
-                calories: result.recipe.calories,
-                appliances: result.recipe.appliances,
-              },
-            };
-          } else {
-            await showNotice(
-              t("recipe.kitchenAutoApplyFailedTitle"),
-              t("recipe.kitchenAutoApplyFailed"),
-            );
-          }
-        }
-      } catch (error) {
-        console.warn("[kitchen] auto-apply skipped", error);
+    if (user) {
+      // Shared with the web app: shared/lib/supabase/kitchenAutoApply.ts.
+      const kitchen = await applyKitchenOnExtract(user.id, recipeToPreview);
+      recipeToPreview = kitchen.recipe;
+      if (kitchen.failed) {
         await showNotice(
           t("recipe.kitchenAutoApplyFailedTitle"),
           t("recipe.kitchenAutoApplyFailed"),
