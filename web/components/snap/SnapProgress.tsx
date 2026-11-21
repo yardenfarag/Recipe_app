@@ -1,67 +1,97 @@
 "use client";
 
 import { FileText, Link2 } from "lucide-react";
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 
-import { detectPlatform } from "@shared/lib/platformUrls";
+import {
+  snapEtaAt,
+  snapEtaText,
+  snapProgressAt,
+  snapStatusKeyAt,
+  snapStatusLines,
+  snapTimingKind,
+} from "@shared/lib/snapProgress";
 
 import { CookieMark } from "@/components/CookieMark";
 import type { SnapJob } from "@/lib/snap/useSnap";
 
-/** How long each line shows, as on mobile. */
-export const STATUS_INTERVAL_MS = 2800;
+/** How often the ring and the countdown move. The ring eases between steps, so it looks continuous. */
+export const TICK_MS = 250;
 
-/** What Pinch says it is doing, in order (the mobile app's lines). */
-export function statusLineKeys(job: SnapJob): string[] {
-  const reading =
-    job.source.type === "photo"
-      ? "snap.statusReadingPhoto"
-      : job.source.type === "pdf"
-        ? "snap.statusReadingPdf"
-        : detectPlatform(job.source.url) === "web"
-        ? "snap.statusReadingPage"
-        : "snap.statusReadingVideo";
-  return job.intent === "invent"
-    ? [reading, "snap.statusFiguringDish", "snap.statusWritingHome"]
-    : [reading, "snap.statusIngredients", "snap.statusWritingSteps", "snap.statusAlmost"];
+const RADIUS = 44;
+const CIRCUMFERENCE = 2 * Math.PI * RADIUS;
+
+/** Seconds since the wait started, updated every tick. */
+function useElapsedSeconds(): number {
+  const [elapsed, setElapsed] = useState(0);
+  useEffect(() => {
+    const started = Date.now();
+    const id = setInterval(() => setElapsed((Date.now() - started) / 1000), TICK_MS);
+    return () => clearInterval(id);
+  }, []);
+  return elapsed;
 }
 
 /**
- * While Pinch reads the link or photo: the cookie beating, a line saying what it is doing, and what it is reading.
- * Each line is read out once; after that the loop is quiet, so it doesn't drown out everything else.
+ * While Pinch reads the link or photo: a ring filling around the cookie, a line saying what it is doing, the time
+ * left, and what it is reading. Nothing reports real progress, so the ring and the countdown follow how long this
+ * kind of source usually takes (shared/lib/snapProgress.ts). `finished` fills the ring while the result opens.
  */
-export function SnapProgress({ job }: { job: SnapJob }) {
+export function SnapProgress({ job, finished = false }: { job: SnapJob; finished?: boolean }) {
   const { t } = useTranslation();
-  const lines = statusLineKeys(job);
-  const [index, setIndex] = useState(0);
+  const url = job.source.type === "url" ? job.source.url : null;
+  const pdf = job.source.type === "pdf";
+  const kind = snapTimingKind(job.intent, url, pdf);
+  const lines = useMemo(() => snapStatusLines(job.intent, url, pdf), [job.intent, url, pdf]);
+  const elapsed = useElapsedSeconds();
 
-  useEffect(() => {
-    const id = setInterval(() => setIndex((i) => i + 1), STATUS_INTERVAL_MS);
-    return () => clearInterval(id);
-  }, []);
-
-  const line = t(lines[index % lines.length]);
-  const speak = index < lines.length;
+  const progress = finished ? 1 : snapProgressAt(kind, elapsed);
+  const line = t(snapStatusKeyAt(lines, progress));
+  const eta = finished ? "" : snapEtaText(snapEtaAt(kind, elapsed), t);
 
   return (
     <section
       aria-busy="true"
-      className="flex min-h-[22rem] flex-col items-center justify-center gap-8 rounded-3xl border border-frosted-border bg-surface px-6 py-12 text-center shadow-soft"
+      className="flex min-h-[22rem] flex-col items-center justify-center gap-7 rounded-3xl border border-frosted-border bg-surface px-6 py-12 text-center shadow-soft"
     >
-      <div aria-hidden className="relative grid h-36 w-36 place-items-center">
-        <span className="absolute h-32 w-32 rounded-full border-2 border-primary opacity-30 motion-safe:animate-ping" />
-        <span className="absolute h-24 w-24 rounded-full bg-primary-soft" />
-        <span className="relative text-primary motion-safe:animate-pulse">
-          <CookieMark size={72} />
+      <div
+        role="progressbar"
+        aria-label={line}
+        aria-valuemin={0}
+        aria-valuemax={100}
+        aria-valuenow={Math.round(progress * 100)}
+        aria-valuetext={eta || line}
+        className="relative grid h-40 w-40 place-items-center"
+      >
+        <svg aria-hidden viewBox="0 0 100 100" className="absolute inset-0 h-full w-full -rotate-90">
+          <circle cx="50" cy="50" r={RADIUS} fill="none" strokeWidth="6" className="stroke-primary-soft" />
+          <circle
+            cx="50"
+            cy="50"
+            r={RADIUS}
+            fill="none"
+            strokeWidth="6"
+            strokeLinecap="round"
+            strokeDasharray={CIRCUMFERENCE}
+            strokeDashoffset={CIRCUMFERENCE * (1 - progress)}
+            className={`transition-[stroke-dashoffset,stroke] duration-300 ease-linear ${finished ? "stroke-success" : "stroke-primary"}`}
+          />
+        </svg>
+        <span aria-hidden className="relative text-primary motion-safe:animate-pulse">
+          <CookieMark size={64} />
         </span>
       </div>
 
-      <p role="status" aria-live={speak ? "polite" : "off"} className="text-xl font-semibold text-text md:text-2xl">
-        <span key={index} className="inline-block animate-fade-in">
-          {line}
-        </span>
-      </p>
+      <div className="grid gap-1">
+        {/* The lines go in order and never loop, so each one is read out once. */}
+        <p role="status" aria-live="polite" className="text-xl font-semibold text-text md:text-2xl">
+          <span key={line} className="inline-block animate-fade-in">
+            {line}
+          </span>
+        </p>
+        <p className="min-h-5 text-sm text-muted tabular-nums">{eta}</p>
+      </div>
 
       {job.source.type === "photo" ? (
         // eslint-disable-next-line @next/next/no-img-element -- a local photo, already shrunk

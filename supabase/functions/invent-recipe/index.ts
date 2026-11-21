@@ -53,6 +53,7 @@ import { fetchTikTokMeta } from '../_shared/extraction/sources/tiktok.ts';
 import { logUsageEvent } from '../_shared/core/usageLog.ts';
 import { isVideoTooLong } from '../_shared/extraction/videoLimits.ts';
 import { fetchWebRecipeMeta } from '../_shared/extraction/webRecipe.ts';
+import { pageReadLogger, type PageReadEvent } from '../_shared/extraction/pageReader.ts';
 import { fetchYouTubeMeta } from '../_shared/extraction/sources/youtube.ts';
 
 type JobStatus = 'full' | 'partial' | 'failed' | 'coming_soon';
@@ -260,7 +261,12 @@ serve('invent-recipe', async (req) => {
     let videoSkippedReason: 'too_long' | 'out_of_time' | undefined;
 
     if (platform !== 'photo') {
-      meta = await fetchPlatformMeta(platform, url, contentId);
+      meta = await fetchPlatformMeta(
+        platform,
+        url,
+        contentId,
+        pageReadLogger(admin, { userId, guestInstallId, forAction: 'invent' }),
+      );
     }
 
     if (!admin) {
@@ -789,6 +795,7 @@ async function fetchPlatformMeta(
   platform: Platform,
   url: string,
   contentId: string | null,
+  onPageRead?: (event: PageReadEvent) => Promise<void>,
 ): Promise<PlatformMeta> {
   switch (platform) {
     case 'youtube':
@@ -800,7 +807,7 @@ async function fetchPlatformMeta(
     case 'facebook':
       return await fetchFacebookMeta(url);
     case 'web':
-      return await fetchWebRecipeMeta(url);
+      return await fetchWebRecipeMeta(url, { onPageRead });
     default:
       return { topComments: [] };
   }

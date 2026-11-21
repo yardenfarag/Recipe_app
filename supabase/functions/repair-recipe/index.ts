@@ -36,6 +36,7 @@ import { fitRecipeToLimits } from '../_shared/recipes/recipeLimits.ts';
 import { fetchTikTokMeta } from '../_shared/extraction/sources/tiktok.ts';
 import { logUsageEvent } from '../_shared/core/usageLog.ts';
 import { fetchWebRecipeMeta } from '../_shared/extraction/webRecipe.ts';
+import { pageReadLogger, type PageReadEvent } from '../_shared/extraction/pageReader.ts';
 import { fetchYouTubeMeta } from '../_shared/extraction/sources/youtube.ts';
 
 const MAX_BODY_BYTES = 96_000;
@@ -211,7 +212,12 @@ serve('repair-recipe', async (req) => {
     if (originalUrl && platform !== 'unknown' && platform !== 'photo') {
       try {
         const contentId = extractVideoIdForPlatform(originalUrl, platform);
-        const meta = await fetchPlatformMeta(platform, originalUrl, contentId);
+        const meta = await fetchPlatformMeta(
+          platform,
+          originalUrl,
+          contentId,
+          pageReadLogger(admin, { userId, guestInstallId, forAction: 'repair' }),
+        );
         extraText = buildExtraText(meta);
       } catch (err) {
         console.error('[repair-recipe] meta fetch failed', err);
@@ -579,6 +585,7 @@ async function fetchPlatformMeta(
   platform: Platform,
   url: string,
   contentId: string | null,
+  onPageRead?: (event: PageReadEvent) => Promise<void>,
 ): Promise<PlatformMeta> {
   switch (platform) {
     case 'youtube':
@@ -590,7 +597,7 @@ async function fetchPlatformMeta(
     case 'facebook':
       return await fetchFacebookMeta(url);
     case 'web':
-      return await fetchWebRecipeMeta(url);
+      return await fetchWebRecipeMeta(url, { onPageRead });
     default:
       return { topComments: [] };
   }

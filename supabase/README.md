@@ -291,6 +291,10 @@ npx supabase secrets set SCRAPECREATORS_API_KEY=your_scrapecreators_api_key
 # Optional — enriches YouTube extraction with description + top 10 comments (ADR 004).
 npx supabase secrets set YOUTUBE_API_KEY=your_youtube_data_api_key
 
+# Optional — recipe sites that refuse our servers (403) are read once through Firecrawl (PIN-152).
+# Unset, those imports fail as before. Each read is a `page_read` row in ai_usage_events.
+npx supabase secrets set FIRECRAWL_API_KEY=fc-your_key
+
 # Optional — per-task model overrides. <KIND> is the upper-cased task kind:
 # TEXT, VIDEO, PHOTO, REPAIR, INVENT_TEXT, INVENT_PHOTO, INVENT_VIDEO, TRANSLATE,
 # TRANSFORM, SUBSTITUTION, FRIDGE_MATCH, CONTENT_GATE, REMIX_RELATED.

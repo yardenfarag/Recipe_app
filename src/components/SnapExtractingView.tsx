@@ -1,45 +1,74 @@
-import { useEffect, useState } from 'react';
-import { AccessibilityInfo, View } from 'react-native';
+import { useEffect, useMemo, useState } from 'react';
+import { AccessibilityInfo, Text, View } from 'react-native';
 import Animated, {
   Easing,
   FadeIn,
   FadeInDown,
   FadeOut,
-  interpolate,
+  useAnimatedProps,
   useAnimatedStyle,
   useSharedValue,
   withRepeat,
-  withSequence,
   withTiming,
 } from 'react-native-reanimated';
+import { useTranslation } from 'react-i18next';
+import Svg, { Circle } from 'react-native-svg';
+
+import {
+  snapEtaAt,
+  snapEtaText,
+  snapProgressAt,
+  snapStatusKeyAt,
+  snapStatusLines,
+  snapTimingKind,
+} from '@shared/lib/snapProgress';
 
 import { CookieMark } from '@/components/CookieMark';
 import { useThemePreference } from '@/hooks/useThemePreference';
 import { announce } from '@/lib/a11y';
 
+/** How often the ring and the countdown move. The ring eases between steps, so it looks continuous. */
+const TICK_MS = 250;
+const RING_SIZE = 168;
+const RADIUS = 44;
+const CIRCUMFERENCE = 2 * Math.PI * RADIUS;
+
+const AnimatedCircle = Animated.createAnimatedComponent(Circle);
+
 type SnapExtractingViewProps = {
-  statusLines: readonly string[];
-  statusIndex: number;
+  intent: 'extract' | 'invent';
+  /** The link being read; null for a photo or a PDF. */
+  url: string | null;
+  /** A PDF is being read (PIN-72). */
+  pdf?: boolean;
 };
 
-/** Full-screen Snap extract wait — heartbeat cookie + rotating status. */
-export function SnapExtractingView({ statusLines, statusIndex }: SnapExtractingViewProps) {
+/**
+ * Full-screen Snap wait: a ring filling around the cookie, a line saying what Pinch is doing, and the time left.
+ * Nothing reports real progress, so the ring and the countdown follow how long this kind of source usually takes
+ * (shared/lib/snapProgress.ts).
+ */
+export function SnapExtractingView({ intent, url, pdf = false }: SnapExtractingViewProps) {
+  const { t } = useTranslation();
   const { colors } = useThemePreference();
   const [reduceMotion, setReduceMotion] = useState(false);
-  const beat = useSharedValue(0);
-  const ring = useSharedValue(0);
-  const currentLine = statusLines[statusIndex % statusLines.length];
-  // Speak each status once; the lines loop every few seconds and repeating
-  // them forever would drown out everything else.
-  const [linesSpoken, setLinesSpoken] = useState(0);
-  const speakStatus = linesSpoken < statusLines.length;
+  const [elapsed, setElapsed] = useState(0);
+  const kind = snapTimingKind(intent, url, pdf);
+  const lines = useMemo(() => snapStatusLines(intent, url, pdf), [intent, url, pdf]);
+
+  const progress = snapProgressAt(kind, elapsed);
+  const lineKey = snapStatusKeyAt(lines, progress);
+  const currentLine = t(lineKey);
+  const eta = snapEtaText(snapEtaAt(kind, elapsed), t);
+
+  const fill = useSharedValue(0);
+  const breath = useSharedValue(0);
 
   useEffect(() => {
-    if (!speakStatus) return;
-    announce(currentLine, { liveRegion: true });
-    setLinesSpoken((n) => n + 1);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [statusIndex]);
+    const started = Date.now();
+    const id = setInterval(() => setElapsed((Date.now() - started) / 1000), TICK_MS);
+    return () => clearInterval(id);
+  }, []);
 
   useEffect(() => {
     void AccessibilityInfo.isReduceMotionEnabled().then(setReduceMotion);
@@ -47,47 +76,30 @@ export function SnapExtractingView({ statusLines, statusIndex }: SnapExtractingV
     return () => sub.remove();
   }, []);
 
+  // The lines go in order and never loop, so each one is spoken once.
   useEffect(() => {
-    if (reduceMotion) {
-      beat.value = 0;
-      return;
-    }
-    beat.value = withRepeat(
-      withSequence(
-        withTiming(1, { duration: 180, easing: Easing.out(Easing.cubic) }),
-        withTiming(0.2, { duration: 140, easing: Easing.in(Easing.cubic) }),
-        withTiming(1, { duration: 180, easing: Easing.out(Easing.cubic) }),
-        withTiming(0, { duration: 620, easing: Easing.inOut(Easing.sin) }),
-      ),
-      -1,
-      false,
-    );
-  }, [beat, reduceMotion]);
+    announce(currentLine, { liveRegion: true });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [lineKey]);
+
+  useEffect(() => {
+    fill.value = withTiming(progress, { duration: TICK_MS, easing: Easing.linear });
+  }, [fill, progress]);
 
   useEffect(() => {
     if (reduceMotion) {
-      ring.value = 0.35;
+      breath.value = 0;
       return;
     }
-    ring.value = withRepeat(
-      withTiming(1, { duration: 1600, easing: Easing.out(Easing.cubic) }),
-      -1,
-      false,
-    );
-  }, [reduceMotion, ring]);
+    breath.value = withRepeat(withTiming(1, { duration: 1100, easing: Easing.inOut(Easing.sin) }), -1, true);
+  }, [breath, reduceMotion]);
+
+  const arcProps = useAnimatedProps(() => ({
+    strokeDashoffset: CIRCUMFERENCE * (1 - fill.value),
+  }));
 
   const cookieStyle = useAnimatedStyle(() => ({
-    transform: [{ scale: 1 + beat.value * 0.14 }],
-  }));
-
-  const ringStyle = useAnimatedStyle(() => ({
-    opacity: interpolate(ring.value, [0, 0.2, 1], [0.45, 0.28, 0]),
-    transform: [{ scale: interpolate(ring.value, [0, 1], [0.85, 1.55]) }],
-  }));
-
-  const ring2Style = useAnimatedStyle(() => ({
-    opacity: interpolate(ring.value, [0, 0.35, 1], [0.3, 0.18, 0]),
-    transform: [{ scale: interpolate(ring.value, [0, 1], [0.95, 1.9]) }],
+    transform: [{ scale: 1 + breath.value * 0.06 }],
   }));
 
   return (
@@ -96,47 +108,41 @@ export function SnapExtractingView({ statusLines, statusIndex }: SnapExtractingV
       accessible
       accessibilityRole="progressbar"
       accessibilityLabel={currentLine}
+      accessibilityValue={{ min: 0, max: 100, now: Math.round(progress * 100), text: eta }}
       accessibilityState={{ busy: true }}
-      accessibilityLiveRegion={speakStatus ? 'polite' : 'none'}
     >
       <View
-        className="mb-10 h-44 w-44 items-center justify-center"
+        className="mb-8 items-center justify-center"
+        style={{ width: RING_SIZE, height: RING_SIZE }}
         accessible={false}
         importantForAccessibility="no-hide-descendants"
       >
-        <Animated.View
-          style={[
-            {
-              position: 'absolute',
-              width: 140,
-              height: 140,
-              borderRadius: 70,
-              borderWidth: 2,
-              borderColor: colors.primary,
-            },
-            ring2Style,
-          ]}
-        />
-        <Animated.View
-          style={[
-            {
-              position: 'absolute',
-              width: 120,
-              height: 120,
-              borderRadius: 60,
-              borderWidth: 2,
-              borderColor: colors.accent,
-            },
-            ringStyle,
-          ]}
-        />
+        <Svg
+          width={RING_SIZE}
+          height={RING_SIZE}
+          viewBox="0 0 100 100"
+          style={{ position: 'absolute', transform: [{ rotate: '-90deg' }] }}
+        >
+          <Circle cx={50} cy={50} r={RADIUS} fill="none" stroke={colors.primarySoft} strokeWidth={6} />
+          <AnimatedCircle
+            cx={50}
+            cy={50}
+            r={RADIUS}
+            fill="none"
+            stroke={colors.primary}
+            strokeWidth={6}
+            strokeLinecap="round"
+            strokeDasharray={`${CIRCUMFERENCE} ${CIRCUMFERENCE}`}
+            animatedProps={arcProps}
+          />
+        </Svg>
         <Animated.View style={cookieStyle}>
-          <CookieMark size={88} color={colors.primary} />
+          <CookieMark size={72} color={colors.primary} />
         </Animated.View>
       </View>
 
       <Animated.Text
-        key={statusIndex}
+        key={lineKey}
         entering={reduceMotion ? FadeIn.duration(160) : FadeInDown.springify().damping(18)}
         exiting={FadeOut.duration(160)}
         className="text-center text-xl font-semibold"
@@ -144,6 +150,9 @@ export function SnapExtractingView({ statusLines, statusIndex }: SnapExtractingV
       >
         {currentLine}
       </Animated.Text>
+      <Text className="mt-2 text-center text-sm" style={{ color: colors.textSecondary, fontVariant: ['tabular-nums'] }}>
+        {eta}
+      </Text>
     </View>
   );
 }
