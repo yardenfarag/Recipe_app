@@ -1,6 +1,7 @@
 import { expect, test } from "@playwright/test";
 
 import { createUser, uniqueEmail } from "./admin";
+import { accountMenuButton } from "./helpers";
 
 test.use({ locale: "en-US" });
 
@@ -18,10 +19,13 @@ test("the app speaks the account's saved language, right to left for Hebrew", as
   await page.getByRole("button", { name: "Sign in", exact: true }).click();
 
   // Signed in, the account's Hebrew wins over the browser.
-  await expect(page.getByTestId("signed-in-email")).toHaveText(email);
+  await expect(page.locator("#main")).toBeVisible();
   await expect(page.locator("html")).toHaveAttribute("lang", "he");
   await expect(page.locator("html")).toHaveAttribute("dir", "rtl");
-  await expect(page.getByRole("button", { name: "התנתקות" })).toBeVisible();
+  await expect(page.getByRole("heading", { level: 1, name: "המתכונים שלכם" })).toBeVisible();
+  await expect(page.getByRole("link", { name: "מתכונים" }).filter({ visible: true }).first()).toBeVisible();
+  await accountMenuButton(page).click();
+  await expect(page.getByRole("menuitem", { name: "התנתקות" })).toBeVisible();
 });
 
 test.describe("an account without a saved language", () => {
@@ -35,7 +39,7 @@ test.describe("an account without a saved language", () => {
     await page.getByLabel(/Correo|Email/).fill(email);
     await page.getByLabel(/Contraseña|Password/).fill("hola-pass-123");
     await page.locator("form button[type=submit]").click();
-    await expect(page.getByTestId("signed-in-email")).toHaveText(email);
+    await expect(page.locator("#main")).toBeVisible();
 
     // Signing up saved the language on the account, so a reload in an English browser stays Spanish.
     const context = await page.context().browser()!.newContext({ locale: "en-US", baseURL: test.info().project.use.baseURL });
@@ -44,7 +48,7 @@ test.describe("an account without a saved language", () => {
     await english.getByLabel("Email").fill(email);
     await english.getByLabel("Password").fill("hola-pass-123");
     await english.getByRole("button", { name: "Sign in", exact: true }).click();
-    await expect(english.getByTestId("signed-in-email")).toHaveText(email);
+    await expect(english.locator("#main")).toBeVisible();
     await expect(english.locator("html")).toHaveAttribute("lang", "es");
     await context.close();
   });

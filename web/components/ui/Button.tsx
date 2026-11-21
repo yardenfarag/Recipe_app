@@ -1,35 +1,65 @@
-import type { ButtonHTMLAttributes } from "react";
+import { forwardRef, type ButtonHTMLAttributes } from "react";
 
-type Variant = "primary" | "outline" | "link";
+import { cn } from "@/lib/cn";
 
-const styles: Record<Variant, string> = {
-  primary:
-    "w-full rounded-full bg-primary px-5 py-3 text-base font-semibold text-surface hover:opacity-90 disabled:bg-border disabled:text-muted",
-  outline:
-    "w-full rounded-full border border-border bg-surface px-5 py-3 text-base font-semibold text-text hover:bg-primary-soft disabled:opacity-60",
-  link: "px-1 py-1 text-sm font-semibold text-primary underline-offset-4 hover:underline disabled:opacity-60",
+export type ButtonVariant = "primary" | "secondary" | "outline" | "ghost" | "danger" | "link";
+type Size = "sm" | "md" | "lg";
+
+const variants: Record<ButtonVariant, string> = {
+  primary: "bg-primary text-on-primary shadow-soft hover:brightness-105 active:brightness-95",
+  secondary: "bg-primary-soft text-primary hover:brightness-97 active:brightness-95",
+  outline: "border border-border bg-surface text-text hover:bg-surface-soft active:bg-selected",
+  ghost: "text-text hover:bg-element active:bg-selected",
+  danger: "bg-danger text-surface hover:brightness-105 active:brightness-95",
+  link: "text-primary underline-offset-4 hover:underline",
 };
 
-export function Button({
+const sizes: Record<Size, string> = {
+  sm: "h-9 px-3.5 text-sm gap-1.5",
+  md: "h-11 px-5 text-[15px] gap-2",
+  lg: "h-12 px-6 text-base gap-2",
+};
+
+export type ButtonProps = ButtonHTMLAttributes<HTMLButtonElement> & {
+  variant?: ButtonVariant;
+  size?: Size;
+  /** Shows a spinner and blocks clicks, keeping the label for screen readers. */
+  busy?: boolean;
+  fullWidth?: boolean;
+};
+
+export const buttonClasses = ({
   variant = "primary",
-  busy = false,
-  className = "",
-  children,
-  disabled,
-  ...props
-}: ButtonHTMLAttributes<HTMLButtonElement> & { variant?: Variant; busy?: boolean }) {
+  size = "md",
+  fullWidth = false,
+  className,
+}: Pick<ButtonProps, "variant" | "size" | "fullWidth" | "className">) =>
+  cn(
+    "inline-flex shrink-0 select-none items-center justify-center rounded-full font-semibold whitespace-nowrap transition-[filter,background-color,color,box-shadow] duration-150",
+    "disabled:pointer-events-none disabled:opacity-50",
+    variant === "link" ? "h-auto px-1 py-0.5 text-sm" : sizes[size],
+    variants[variant],
+    fullWidth && "w-full",
+    className,
+  );
+
+export const Button = forwardRef<HTMLButtonElement, ButtonProps>(function Button(
+  { variant = "primary", size = "md", busy = false, fullWidth = false, className, children, disabled, type = "button", ...props },
+  ref,
+) {
   return (
     <button
-      type="button"
+      ref={ref}
+      type={type}
       {...props}
       disabled={disabled || busy}
       aria-busy={busy || undefined}
-      className={`inline-flex items-center justify-center gap-2 transition focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary ${styles[variant]} ${className}`}
+      className={buttonClasses({ variant, size, fullWidth, className })}
     >
       {busy ? (
-        <span aria-hidden className="h-5 w-5 animate-spin rounded-full border-2 border-current border-t-transparent" />
+        <span aria-hidden className="h-4 w-4 animate-spin rounded-full border-2 border-current border-t-transparent" />
       ) : null}
       {children}
     </button>
   );
-}
+});

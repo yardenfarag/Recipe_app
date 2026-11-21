@@ -19,6 +19,7 @@ import { useAuth } from "@/components/AuthProvider";
 import { ErrorAlert, Notice } from "@/components/ui/Alert";
 import { Button } from "@/components/ui/Button";
 import { TextField } from "@/components/ui/TextField";
+import { usePageTitle } from "@/components/ui/PageHeader";
 import { requestPasswordReset, signInWithGoogle } from "@/lib/auth";
 import i18n from "@/lib/i18n";
 import { LEGAL_URLS } from "@/lib/legal";
@@ -70,6 +71,7 @@ export function AuthForm() {
   const [notice, setNotice] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
+  usePageTitle(mode === "signup" ? t("auth.signUp") : mode === "forgot" ? t("auth.resetPassword") : t("auth.signIn"));
 
   // Signed in (here, in another tab, or already when the page opened): go where the visitor was headed.
   // A reset code signs in too, but that flow continues to /reset-password instead.
@@ -104,10 +106,16 @@ export function AuthForm() {
     else await requestPasswordReset(address);
   }
 
-  async function handleSubmit(event: FormEvent) {
+  async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     setError(null);
-    const address = normalizeEmail(email);
+    // Read the fields themselves: text typed or autofilled before the page finished loading is in the field
+    // but never reached React's state.
+    const fields = new FormData(event.currentTarget);
+    const typedEmail = String(fields.get("email") ?? email);
+    const password = usesPassword ? String(fields.get("password") ?? "") : "";
+    if (typedEmail !== email) setEmail(typedEmail);
+    const address = normalizeEmail(typedEmail);
     if (!isValidEmail(address)) return setError(t("auth.validEmail"));
     if (usesPassword && !password) return setError(t("auth.enterPassword"));
     if (mode === "signup") {
@@ -230,7 +238,7 @@ export function AuthForm() {
           />
           {error ? <ErrorAlert>{error}</ErrorAlert> : null}
           {notice && !error ? <Notice>{notice}</Notice> : null}
-          <Button type="submit" disabled={!codeComplete} busy={busy}>
+          <Button fullWidth size="lg" type="submit" disabled={!codeComplete} busy={busy}>
             {t("auth.verifyCode")}
           </Button>
         </form>
@@ -265,7 +273,7 @@ export function AuthForm() {
         <p className="mb-6 text-center font-semibold text-text" dir="ltr">
           {normalizeEmail(email)}
         </p>
-        <Button onClick={() => switchMode("signin")}>{t("auth.confirmedSignIn")}</Button>
+        <Button fullWidth size="lg" onClick={() => switchMode("signin")}>{t("auth.confirmedSignIn")}</Button>
       </AuthCard>
     );
   }
@@ -350,7 +358,7 @@ export function AuthForm() {
 
         {error ? <ErrorAlert>{error}</ErrorAlert> : null}
 
-        <Button type="submit" busy={busy} disabled={!email.trim() || (usesPassword && !password)}>
+        <Button fullWidth size="lg" type="submit" busy={busy}>
           {mode === "signup"
             ? t("auth.signUp")
             : mode === "forgot"
@@ -384,7 +392,7 @@ export function AuthForm() {
             {t("auth.orContinueWith")}
             <span className="h-px flex-1 bg-border" />
           </div>
-          <Button variant="outline" disabled={busy} onClick={() => void handleGoogle()}>
+          <Button variant="outline" fullWidth size="lg" disabled={busy} onClick={() => void handleGoogle()}>
             <GoogleLogo />
             {t("auth.continueGoogle")}
           </Button>

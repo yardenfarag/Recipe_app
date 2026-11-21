@@ -17,7 +17,12 @@ The Next.js app in `web/` replaces the Expo web app screen by screen. Decisions 
 
 - It is a separate npm project. Run its commands from `web/`: `npm ci`, `npm run dev`, `npm test`, `npm run typecheck`, `npm run lint`, `npm run preview`.
 - Browser tests (`npm run test:e2e`, Playwright) run only against local Supabase (`npx supabase start` at the repo root). `web/e2e/env.mjs` refuses any other address. Never point them at production.
-- Signed-in pages go in `web/app/(signed-in)/`; its layout sends signed-out visitors to sign-in and back. The session lives in the browser, so read it with `useAuth()`, not on the server.
+- Signed-in pages go in `web/app/(signed-in)/`; its layout sends signed-out visitors to sign-in and back, and wraps them in the app shell (navigation, account menu). The session lives in the browser, so read it with `useAuth()`, not on the server.
+- A screen starts with `<PageHeader>` (heading and browser tab title) and uses the kit in `web/components/ui/`: Button, IconButton, TextField, Dialog, ConfirmDialog, Sheet, Tooltip, toasts (`showToast` from `@shared/lib/toast`), LoadingState, ErrorState, EmptyState. Don't add another component library.
+- Colours come from the theme packs: use the Tailwind tokens (`bg-surface`, `text-muted`, `bg-primary text-on-primary`, `border-border`, `text-danger`…), never hex values or Tailwind's own palette, or the seven themes and dark mode break.
+- Layout uses logical properties only (`ms-`, `pe-`, `start-`, `end-`, `border-e`, `text-start`), so Hebrew and Arabic flip without special cases. Icons that point a direction get `rtl:rotate-180`.
+- New strings go in all five files in `shared/i18n/locales/`; the locale test fails otherwise.
+- For UI changes, look at the result: `SCREENSHOTS=<folder> npm run test:e2e -- screenshots` (local Supabase running) shows phone, tablet and desktop in English and Hebrew, light and dark.
 - Next.js here is newer than your training data. Read `web/AGENTS.md` and the guides in `web/node_modules/next/dist/docs/` before writing code.
 - Cache Components stay off: OpenNext does not fully support them on Cloudflare yet.
 - Don't copy code from `src/` into `web/`. Code both apps need goes in `shared/` (next section).

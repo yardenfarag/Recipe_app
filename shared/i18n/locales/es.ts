@@ -1344,5 +1344,39 @@ export default {
     },
     "updating": "Actualizando…",
     "originChip": "Escrita"
+  },
+  "web": {
+    "skipToContent": "Ir al contenido",
+    "mainNavigation": "Principal",
+    "account": "Cuenta",
+    "accountMenu": "Cuenta, tema e idioma",
+    "signedInAs": "Sesión iniciada como",
+    "colorTheme": "Tema de color",
+    "errorTitle": "Algo salió mal",
+    "notFoundTitle": "No encontramos esa página",
+    "notFoundBody": "Puede que el enlace sea antiguo o que la página se haya movido.",
+    "comingSoon": "Muy pronto en la web",
+    "soon": {
+      "library": {
+        "title": "Tus recetas, en una pantalla más grande",
+        "body": "Todo lo que guardaste en la app estará aquí. Búscalo, fíltralo por etiqueta y cocina con los pasos justo al lado de los ingredientes."
+      },
+      "hub": {
+        "title": "Recetas que otros encontraron, gratis para guardar",
+        "body": "Explora recetas que otras personas ya capturaron y añade las que te gusten a tu biblioteca, sin coste."
+      },
+      "snap": {
+        "title": "Pega un enlace y obtén la receta",
+        "body": "Pega un enlace de TikTok, Instagram, YouTube o de una web de recetas y obtén los ingredientes y los pasos en segundos. Sin escribir nada."
+      },
+      "list": {
+        "title": "Una sola lista para toda la semana",
+        "body": "Elige las recetas que piensas cocinar y obtén una lista de la compra, ordenada como los pasillos de la tienda."
+      },
+      "settings": {
+        "title": "Haz Pinch a tu medida",
+        "body": "Tu cuenta, cómo cocinas, las unidades y más. El tema y el idioma ya están en el menú de la cuenta."
+      }
+    }
   }
 } as const;

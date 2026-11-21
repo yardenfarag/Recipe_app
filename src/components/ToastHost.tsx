@@ -5,7 +5,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { useThemePreference } from '@/hooks/useThemePreference';
 import { announce } from '@/lib/a11y';
-import { subscribeToast, type ToastMessage } from '@/lib/toast';
+import { subscribeToast, type ToastMessage } from '@shared/lib/toast';
 
 /**
  * Renders `showToast()` messages: a small pill at the bottom of the screen that fades in and

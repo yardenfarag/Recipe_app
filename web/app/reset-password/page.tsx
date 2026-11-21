@@ -11,6 +11,7 @@ import { AuthCard, PinchMark } from "@/components/AuthCard";
 import { ErrorAlert } from "@/components/ui/Alert";
 import { Button } from "@/components/ui/Button";
 import { Spinner } from "@/components/ui/Spinner";
+import { usePageTitle } from "@/components/ui/PageHeader";
 import { TextField } from "@/components/ui/TextField";
 import { getSupabase } from "@/lib/supabase";
 
@@ -37,6 +38,7 @@ export default function ResetPasswordPage() {
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
+  usePageTitle(t("resetPassword.chooseTitle"));
   const started = useRef(false);
 
   useEffect(() => {
@@ -101,7 +103,7 @@ export default function ResetPasswordPage() {
           <h1 className="mb-2 text-center text-2xl font-bold text-text">{t("resetPassword.updatedTitle")}</h1>
           <p className="mb-6 text-center text-muted">{t("resetPassword.updatedBody")}</p>
         </div>
-        <Button onClick={() => router.replace("/")}>{t("recipe.goToLibrary")}</Button>
+        <Button fullWidth size="lg" onClick={() => router.replace("/")}>{t("recipe.goToLibrary")}</Button>
       </AuthCard>
     );
   }
@@ -112,7 +114,7 @@ export default function ResetPasswordPage() {
         <PinchMark />
         <div className="flex flex-col gap-4">
           {error ? <ErrorAlert>{error}</ErrorAlert> : null}
-          <Button onClick={() => router.replace("/auth?mode=forgot")}>{t("resetPassword.requestNewLink")}</Button>
+          <Button fullWidth size="lg" onClick={() => router.replace("/auth?mode=forgot")}>{t("resetPassword.requestNewLink")}</Button>
         </div>
       </AuthCard>
     );
@@ -153,7 +155,7 @@ export default function ResetPasswordPage() {
           dir="ltr"
         />
         {error ? <ErrorAlert>{error}</ErrorAlert> : null}
-        <Button type="submit" busy={busy} disabled={!password || !confirmation}>
+        <Button fullWidth size="lg" type="submit" busy={busy}>
           {t("resetPassword.update")}
         </Button>
       </form>
