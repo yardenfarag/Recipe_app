@@ -73,8 +73,11 @@ test("a visit is logged as the new web app, joined across sign-in, once per acti
   }
 
   // Each action once: the login, the library and the recipe page by their patterns, the press by its id.
-  expect(rows.filter((row) => row.kind === "auth" && row.name === "auth.login")).toHaveLength(1);
-  expect(rows.find((row) => row.name === "auth.login")?.properties).toEqual({ method: "email" });
+  // An account made in the last two minutes counts as a signup (shared/lib/authActivity.ts); in CI the test account is
+  // created when the run starts, and these tests run first.
+  const isSignIn = (row: { kind: string; name: string }) => row.kind === "auth" && (row.name === "auth.login" || row.name === "auth.signup");
+  expect(rows.filter(isSignIn)).toHaveLength(1);
+  expect(rows.find(isSignIn)?.properties).toEqual({ method: "email" });
   expect(rows.filter((row) => row.kind === "screen" && row.name === "/(tabs)/hub")).toHaveLength(1);
   expect(rows.filter((row) => row.kind === "tap" && row.name === "library.recipe.open")).toHaveLength(1);
   expect(rows.some((row) => row.name.includes("[id]") || row.screen === "/recipe/[id]")).toBe(true);
