@@ -74,7 +74,7 @@ npm run lint
 npm run preview      # build the Worker with OpenNext and serve it locally in workerd
 ```
 
-- CI runs test, type-check, lint and the Worker build in the `web` job of [`quality.yml`](.github/workflows/quality.yml), and the browser tests in `web-e2e`, against a local Supabase started in that job.
+- CI runs test, type-check, lint and the Worker build in the `web` job of [`quality.yml`](.github/workflows/quality.yml), and the browser tests in `web-e2e`, against a local Supabase started in that job. The browser tests run on PRs only, split across four machines; deploys and releases skip them, so merge a PR rather than pushing to `master` directly.
 - Sign-in returns to `<origin>/app/auth-callback` (Google) and `<origin>/app/reset-password` (reset emails). Every address the app runs on must be in Supabase → Authentication → URL Configuration → Redirect URLs, e.g. `https://next.pinch-app.io/app/**`.
 - Every merge to `master` that touches `web/` deploys through [`deploy-web-app.yml`](.github/workflows/deploy-web-app.yml). It reuses the `EXPO_PUBLIC_SUPABASE_*` secrets as `NEXT_PUBLIC_*` and the `CLOUDFLARE_*` secrets of the share Worker.
 - The app is built with `basePath: '/app'`. Links through `next/link` get the prefix automatically. Plain `/...` paths to files in `public/` need it written out.

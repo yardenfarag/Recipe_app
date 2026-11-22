@@ -989,7 +989,7 @@ npx supabase test db                                             <span class="c"
   <table>
     <thead><tr><th>Thing</th><th>Automatic?</th><th>How</th></tr></thead>
     <tbody>
-      <tr><td>Checks on every PR</td><td><span class="tag ok">yes</span></td><td><code>.github/workflows/quality.yml</code>: <code>npm test</code>, <code>typecheck</code>, <code>lint</code>, <code>export:web</code>. Node 22.</td></tr>
+      <tr><td>Checks on every PR</td><td><span class="tag ok">yes</span></td><td><code>.github/workflows/quality.yml</code>: <code>npm test</code>, <code>typecheck</code>, <code>lint</code>, <code>export:web</code>, the same for <code>web/</code>, and its Playwright browser tests split across four machines. Node 22. Deploys rerun the fast checks but not the browser tests, so changes reach <code>master</code> through a PR.</td></tr>
       <tr><td>Website (landing and /app)</td><td><span class="tag ok">yes</span></td><td><code>deploy-web.yml</code> on push to <code>master</code> → GitHub Pages → pinch-app.io.</td></tr>
       <tr><td>New web app</td><td><span class="tag ok">yes</span></td><td><code>deploy-web-app.yml</code> on push to <code>master</code> when <code>web/</code> or <code>shared/</code> changed → Cloudflare → next.pinch-app.io/app.</td></tr>
       <tr><td>Web app preview per PR</td><td><span class="tag ok">yes</span></td><td><code>web-preview.yml</code> comments a <code>workers.dev</code> link on every PR that changes <code>web/</code> or <code>shared/</code>. Production data, purchases off.</td></tr>

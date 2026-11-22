@@ -4,6 +4,12 @@ on:
   pull_request:
   workflow_dispatch:
   workflow_call:
+    inputs:
+      # Deploys and releases pass true: the browser tests already passed on the PR, and they take
+      # longer than everything else here put together.
+      skip-browser-tests:
+        type: boolean
+        default: false
 
 jobs:
   checks:
@@ -76,8 +82,17 @@ jobs:
         run: npm run build:worker
 
   # Browser tests for the new web app, against local Supabase in this job (never production). ADR 026.
+  # They run one at a time (web/playwright.config.ts), so they are split across machines instead, each
+  # with its own Supabase and server. Raise the shard count as the suite grows.
   web-e2e:
+    # Empty on pull_request and workflow_dispatch, so they always run there.
+    if: ${{ !inputs.skip-browser-tests }}
+    name: web-e2e (${{ matrix.shard }}/4)
     runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        shard: [1, 2, 3, 4]
     defaults:
       run:
         working-directory: web
@@ -109,12 +124,12 @@ jobs:
         run: npx playwright install --with-deps chromium
 
       - name: Browser tests
-        run: npm run test:e2e
+        run: npm run test:e2e -- --shard=${{ matrix.shard }}/4
 
       - name: Keep the failure traces
         if: failure()
         uses: actions/upload-artifact@v4
         with:
-          name: playwright-traces
+          name: playwright-traces-${{ matrix.shard }}
           path: web/test-results/
           retention-days: 7
