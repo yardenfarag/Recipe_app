@@ -42,12 +42,13 @@ export function PhotoField({
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img src={shown} alt="" onError={() => setFailedSrc(shown)} className="aspect-[4/3] w-full object-cover" />
           <div className="absolute inset-x-0 bottom-0 flex items-center justify-end gap-2 bg-gradient-to-t from-overlay to-transparent p-3 pt-10">
-            <Button id={FIELD_IDS.photo} size="sm" variant="outline" onClick={choose} disabled={busy} aria-describedby={error ? errorId : undefined}>
+            <Button id={FIELD_IDS.photo} size="sm" variant="outline" trackId="recipe_editor.photo.replace" onClick={choose} disabled={busy} aria-describedby={error ? errorId : undefined}>
               <ImageUp aria-hidden className="h-4 w-4" />
               {t("recipeEditor.photo.replace")}
             </Button>
             <IconButton
               label={t("recipeEditor.photo.remove")}
+              trackId="recipe_editor.photo.remove"
               icon={<Trash2 className="h-[18px] w-[18px]" />}
               onClick={onRemove}
               disabled={busy}
@@ -60,6 +61,7 @@ export function PhotoField({
         <button
           id={FIELD_IDS.photo}
           type="button"
+          data-track="recipe_editor.photo.add"
           onClick={choose}
           disabled={busy}
           aria-describedby={error ? errorId : undefined}

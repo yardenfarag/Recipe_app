@@ -218,7 +218,7 @@ export function SnapScreen() {
         <div role="status" className="mb-4 flex flex-wrap items-center gap-3 rounded-2xl bg-primary-soft px-4 py-3 text-sm">
           <NotebookPen aria-hidden className="h-4 w-4 shrink-0 text-primary" />
           <span className="min-w-0 flex-1 font-medium text-text">{t("web.snap.draftWaiting", { title: draftTitle })}</span>
-          <Link href="/recipe/preview" className={buttonClasses({ variant: "primary", size: "sm" })}>
+          <Link href="/recipe/preview" data-track="snap.draft.preview" className={buttonClasses({ variant: "primary", size: "sm" })}>
             {t("recipe.preview")}
           </Link>
         </div>
@@ -257,7 +257,7 @@ export function SnapScreen() {
                     enterKeyHint="go"
                   />
                 </div>
-                <Button type="submit" size="lg" disabled={!url.trim()} className="sm:mt-[26px]">
+                <Button type="submit" size="lg" trackId={`snap.submit.${intent}`} disabled={!url.trim()} className="sm:mt-[26px]">
                   {invent ? t("snap.modeInvent") : t("tabs.snap")}
                   <ArrowRight aria-hidden className="h-4 w-4 rtl:rotate-180" />
                 </Button>
@@ -266,7 +266,7 @@ export function SnapScreen() {
               {saved ? (
                 <div role="status" className="mt-3 flex flex-wrap items-center gap-3 rounded-2xl bg-success-soft px-4 py-3 text-sm">
                   <span className="min-w-0 flex-1 font-medium text-success">{t("recipe.alreadySaved")}</span>
-                  <Link href={`/recipe/${saved.id}`} className={buttonClasses({ variant: "outline", size: "sm" })}>
+                  <Link href={`/recipe/${saved.id}`} data-track="snap.already_saved.open" className={buttonClasses({ variant: "outline", size: "sm" })}>
                     {t("hub.openInLibrary")}
                   </Link>
                 </div>

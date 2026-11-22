@@ -26,7 +26,7 @@ export function Sidebar() {
   return (
     <aside className="sticky top-0 hidden h-dvh shrink-0 flex-col border-e border-frosted-border bg-tab-bar/70 backdrop-blur-xl md:flex md:w-[76px] lg:w-[248px]">
       <div className="flex h-20 items-center justify-center px-4 lg:justify-start lg:px-5">
-        <Link href="/" className="rounded-xl" aria-label={`Pinch — ${t("tabs.library")}`}>
+        <Link href="/" data-track="nav.sidebar.logo" className="rounded-xl" aria-label={`Pinch — ${t("tabs.library")}`}>
           <span className="lg:hidden">
             <PinchLogo compact />
           </span>
@@ -40,6 +40,7 @@ export function Sidebar() {
         <Tooltip label={t(snap.labelKey)} side="end" className="lg:hidden">
           <Link
             href={snap.href}
+            data-track="nav.sidebar.snap"
             aria-current={pathname === snap.href ? "page" : undefined}
             className={cn(
               "mx-auto mb-5 flex h-12 w-12 items-center justify-center gap-2.5 rounded-2xl bg-primary lg:mx-0 lg:w-auto font-semibold text-on-primary shadow-soft transition-[filter,box-shadow] hover:shadow-lift hover:brightness-105 lg:justify-start lg:px-4",
@@ -80,6 +81,7 @@ function SideLink({ item, active, current }: { item: NavItem; active: boolean; c
     <Tooltip label={label} side="end" className="lg:hidden">
       <Link
         href={item.href}
+        data-track={`nav.sidebar.${item.id}`}
         aria-current={current ? "page" : undefined}
         className={cn(
           "group flex h-11 items-center justify-center gap-3 rounded-xl text-[15px] font-semibold transition-colors lg:justify-start lg:px-3",

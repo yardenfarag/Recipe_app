@@ -55,6 +55,7 @@ function Frame({ children }: { children: ReactNode }) {
     <div className="@container mx-auto w-full max-w-2xl">
       <Link
         href="/settings"
+        data-track="settings.back"
         className="-ms-2 mb-3 inline-flex h-9 items-center gap-1 rounded-full pe-3 ps-1.5 text-sm font-semibold text-primary transition-colors hover:bg-primary-soft"
       >
         <ChevronLeft aria-hidden className="h-5 w-5 rtl:rotate-180" />

@@ -68,7 +68,7 @@ function Body({ recipes }: { recipes: Recipe[] }) {
       {empty ? (
         <div className="flex flex-col items-start gap-4">
           <p className="text-[15px] text-muted">{t("library.fridgeMatchEmptyLibrary")}</p>
-          <Link href="/add" className={buttonClasses({ variant: "primary" })}>
+          <Link href="/add" data-track="fridge_match.add_recipes" className={buttonClasses({ variant: "primary" })}>
             {t("library.snapFirst")}
           </Link>
         </div>
@@ -86,7 +86,7 @@ function Body({ recipes }: { recipes: Recipe[] }) {
               event.target.value = "";
             }}
           />
-          <Button fullWidth size="lg" busy={loading} onClick={() => input.current?.click()}>
+          <Button fullWidth size="lg" trackId="fridge_match.snap" busy={loading} onClick={() => input.current?.click()}>
             {loading ? null : <ImagePlus aria-hidden className="h-5 w-5" />}
             {t("library.fridgeMatchSnap")}
           </Button>
@@ -108,6 +108,7 @@ function Body({ recipes }: { recipes: Recipe[] }) {
                   <li key={match.id}>
                     <Link
                       href={`/recipe/${recipe.id}`}
+                data-track="fridge_match.open_recipe"
                       className="block rounded-2xl border border-border bg-bg px-4 py-3 transition-colors hover:bg-element"
                     >
                       <span className="block text-base font-semibold text-text">{recipe.display_title ?? recipe.title}</span>

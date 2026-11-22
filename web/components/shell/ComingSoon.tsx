@@ -47,11 +47,11 @@ export function ComingSoon({
 }
 
 /** "Snap a recipe" as a link, for empty sections that fill up from Snap. */
-export function SnapLink() {
+export function SnapLink({ trackId = "snap_link" }: { trackId?: string }) {
   const { t } = useTranslation();
   const snap = navItem("snap");
   return (
-    <Link href={snap.href} className={buttonClasses({ variant: "primary" })}>
+    <Link href={snap.href} data-track={trackId} className={buttonClasses({ variant: "primary" })}>
       <snap.icon aria-hidden className="h-4 w-4" />
       {t("snap.title")}
     </Link>

@@ -100,6 +100,7 @@ export function PackList({ variant }: { variant: "cards" | "rows" }) {
               <li key={pack.id}>
                 <button
                   type="button"
+                  data-track="credits.pack.buy"
                   aria-label={text.label}
                   aria-describedby={noteId}
                   aria-busy={busy || undefined}
@@ -177,6 +178,7 @@ export function PackList({ variant }: { variant: "cards" | "rows" }) {
                 disabled={Boolean(busyId) && busyId !== pack.id}
                 aria-label={text.label}
                 aria-describedby={noteId}
+                trackId="credits.pack.buy"
                 onClick={() => void buy(pack.id)}
               >
                 {t("web.credits.buy")}

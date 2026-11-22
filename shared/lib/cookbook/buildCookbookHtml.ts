@@ -3,6 +3,7 @@ import { convertStepAmounts } from '../convertStepAmounts';
 import { withSourceAmounts } from '../ingredientAmounts';
 import { formatRecipeDuration } from '../formatRecipeDuration';
 import { resolveCulinaryLanguage } from '../culinaryUnits';
+import { resolveRecipeSourceLanguage } from '../recipeSourceLanguage';
 import type { MeasurementSystem } from '../convertMeasurement';
 import type { Platform, Recipe } from '../../types/recipe';
 
@@ -15,7 +16,14 @@ export const COOKBOOK_PAGE_PX = {
 
 export type CookbookHtmlRecipe = {
   title: string;
+  /** The photo as a `data:` URI (mobile embeds it) or a plain URL (the browser loads it itself). */
   imageDataUri?: string | null;
+  /**
+   * The language the recipe's text is in, when it differs from the book's. A Hebrew recipe in an English book keeps
+   * its own right-to-left page.
+   */
+  lang?: string;
+  dir?: 'ltr' | 'rtl';
   source: string;
   servingsLabel: string;
   timeLabel: string;
@@ -53,6 +61,13 @@ export function cookbookFileName(title: string): string {
 export function cookbookPageSizeForLocale(localeTag: string | null | undefined): CookbookPageSize {
   const tag = localeTag?.trim().toLowerCase().replace('_', '-') ?? '';
   return tag === 'en-us' || tag.endsWith('-us') ? 'letter' : 'a4';
+}
+
+const RTL_LANGUAGES = new Set(['he', 'ar', 'fa', 'ur', 'yi']);
+
+/** Hebrew, Arabic and the other right-to-left scripts. */
+export function isRtlLanguage(language: string | null | undefined): boolean {
+  return RTL_LANGUAGES.has(language?.trim().toLowerCase().split(/[-_]/)[0] ?? '');
 }
 
 export function escapeHtml(value: string): string {
@@ -104,10 +119,15 @@ export function toCookbookHtmlRecipe(
   const instructions =
     translation?.instructions?.length ? translation.instructions : recipe.instructions;
   const culinary = resolveCulinaryLanguage(options.language);
+  // Untranslated text stays in the language it was saved in, and that decides which way the page reads.
+  const translated = Boolean(translation?.ingredients?.length || translation?.instructions?.length);
+  const contentLanguage = translated ? options.language : resolveRecipeSourceLanguage(recipe);
 
   return {
     title,
     imageDataUri: options.imageDataUri,
+    lang: contentLanguage,
+    dir: isRtlLanguage(contentLanguage) ? 'rtl' : 'ltr',
     source: cookbookSourceLabel(recipe.original_url, recipe.platform, options.platformLabels),
     servingsLabel: options.servingsLabel,
     timeLabel: formatRecipeDuration(recipe.estimated_time_minutes ?? 0, {
@@ -128,17 +148,30 @@ export function toCookbookHtmlRecipe(
   };
 }
 
-export function buildCookbookHtml(options: {
+/** Everything a book is made of, already in the reader's words: what `buildCookbookHtml` lays out. */
+export type CookbookBook = {
   title: string;
   recipes: CookbookHtmlRecipe[];
   language: string;
   rtl: boolean;
   pageSize: CookbookPageSize;
   copy: CookbookHtmlCopy;
-}): string {
+  /** Leave the photos out (saves ink): no photo and no placeholder, the title starts the page. */
+  hideImages?: boolean;
+};
+
+export function buildCookbookHtml(options: CookbookBook): string {
   const dir = options.rtl ? 'rtl' : 'ltr';
   const pageCss = options.pageSize === 'letter' ? 'letter' : 'A4';
-  const recipePages = options.recipes.map((recipe, index) => renderRecipePage(recipe, index, options.copy)).join('');
+  const recipePages = options.recipes
+    .map((recipe, index) =>
+      renderRecipePage(recipe, index, options.copy, {
+        hideImages: options.hideImages === true,
+        bookLanguage: options.language,
+        bookDir: dir,
+      }),
+    )
+    .join('');
 
   return `<!DOCTYPE html>
 <html lang="${escapeHtml(options.language)}" dir="${dir}">
@@ -296,10 +329,21 @@ export function buildCookbookHtml(options: {
 </html>`;
 }
 
-function renderRecipePage(recipe: CookbookHtmlRecipe, index: number, copy: CookbookHtmlCopy): string {
-  const image = recipe.imageDataUri
-    ? `<img class="hero" src="${recipe.imageDataUri}" alt="" />`
-    : `<div class="hero-fallback" data-cookbook-fallback="image">${PLACEHOLDER_SVG}</div>`;
+function renderRecipePage(
+  recipe: CookbookHtmlRecipe,
+  index: number,
+  copy: CookbookHtmlCopy,
+  book: { hideImages: boolean; bookLanguage: string; bookDir: 'ltr' | 'rtl' },
+): string {
+  const image = book.hideImages
+    ? ''
+    : recipe.imageDataUri
+      ? `<img class="hero" src="${escapeHtml(recipe.imageDataUri)}" alt="" />`
+      : `<div class="hero-fallback" data-cookbook-fallback="image">${PLACEHOLDER_SVG}</div>`;
+  // Only said when it differs from the book, so a book in one language reads exactly as before.
+  const lang =
+    recipe.lang && recipe.lang !== book.bookLanguage ? ` lang="${escapeHtml(recipe.lang)}"` : '';
+  const dir = recipe.dir && recipe.dir !== book.bookDir ? ` dir="${recipe.dir}"` : '';
   const source = recipe.source
     ? `<p class="source">${escapeHtml(recipe.source)}</p>`
     : '';
@@ -322,7 +366,7 @@ function renderRecipePage(recipe: CookbookHtmlRecipe, index: number, copy: Cookb
     )
     .join('');
 
-  return `<section class="recipe" data-cookbook-page="recipe" data-recipe-index="${index}">
+  return `<section class="recipe" data-cookbook-page="recipe" data-recipe-index="${index}"${lang}${dir}>
     ${image}
     <h1 class="recipe-title">${escapeHtml(recipe.title)}</h1>
     ${source}

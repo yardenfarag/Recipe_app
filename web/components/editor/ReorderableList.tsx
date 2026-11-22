@@ -130,6 +130,7 @@ export function ReorderableList<T extends { id: string }>({
           const handle = (
             <button
               type="button"
+              data-track="recipe_editor.reorder_handle"
               aria-label={t("web.editor.moveItem", { item: itemLabel(item, index) })}
               aria-describedby={hintId}
               disabled={items.length < 2}

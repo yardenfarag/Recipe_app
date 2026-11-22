@@ -22,6 +22,7 @@ export function PhotoDropZone({ intent, onFile, disabled }: { intent: SnapIntent
     <>
       <button
         type="button"
+        data-track="snap.photo"
         disabled={disabled}
         onClick={() => input.current?.click()}
         className={cn(

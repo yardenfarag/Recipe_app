@@ -57,7 +57,7 @@ export function DialogContent({
             )}
           </div>
           <RadixDialog.Close asChild>
-            <IconButton label={t("common.close")} icon={<X className="h-5 w-5" />} tooltip={false} className="-me-2 -mt-1" />
+            <IconButton label={t("common.close")} trackId="dialog.close" icon={<X className="h-5 w-5" />} tooltip={false} className="-me-2 -mt-1" />
           </RadixDialog.Close>
         </div>
         {children ? <div className="mt-5">{children}</div> : null}
@@ -76,6 +76,7 @@ export function ConfirmDialog({
   confirmLabel,
   confirmVariant = "danger",
   onConfirm,
+  trackId,
 }: {
   open: boolean;
   onOpenChange: (open: boolean) => void;
@@ -84,6 +85,8 @@ export function ConfirmDialog({
   confirmLabel: string;
   confirmVariant?: ButtonVariant;
   onConfirm: () => Promise<void> | void;
+  /** Activity-log id prefix (ADR 020): the buttons log `<trackId>.confirm` and `<trackId>.cancel`. */
+  trackId?: string;
 }) {
   const { t } = useTranslation();
   const [busy, setBusy] = useState(false);
@@ -95,12 +98,13 @@ export function ConfirmDialog({
         footer={
           <>
             <DialogClose asChild>
-              <Button variant="ghost" disabled={busy}>
+              <Button variant="ghost" trackId={trackId ? `${trackId}.cancel` : undefined} disabled={busy}>
                 {t("common.cancel")}
               </Button>
             </DialogClose>
             <Button
               variant={confirmVariant}
+              trackId={trackId ? `${trackId}.confirm` : undefined}
               busy={busy}
               onClick={async () => {
                 setBusy(true);

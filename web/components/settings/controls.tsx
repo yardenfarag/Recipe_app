@@ -60,14 +60,17 @@ export function ToggleChip({
   onToggle,
   disabled,
   children,
+  trackId,
 }: {
   pressed: boolean;
   onToggle: () => void;
   disabled?: boolean;
   children: ReactNode;
+  /** An id for the activity log (ADR 020); never anything the person typed. */
+  trackId?: string;
 }) {
   return (
-    <button type="button" aria-pressed={pressed} disabled={disabled} onClick={onToggle} className={cn(chipBase, pressed ? chipOn : chipOff)}>
+    <button type="button" aria-pressed={pressed} disabled={disabled} onClick={onToggle} data-track={trackId} className={cn(chipBase, pressed ? chipOn : chipOff)}>
       {pressed ? <Check aria-hidden className="h-4 w-4" /> : null}
       {children}
     </button>
@@ -75,13 +78,14 @@ export function ToggleChip({
 }
 
 /** Something the cook typed in (an allergy, a pantry staple), with a button to take it off. */
-export function RemovableChip({ label, onRemove }: { label: string; onRemove: () => void }) {
+export function RemovableChip({ label, onRemove, trackId }: { label: string; onRemove: () => void; trackId?: string }) {
   const { t } = useTranslation();
   return (
     <span className={cn(chipBase, chipOn, "pe-1.5")}>
       <bdi>{label}</bdi>
       <button
         type="button"
+        data-track={trackId}
         onClick={onRemove}
         aria-label={t("a11y.removeItem", { item: label })}
         className="grid h-7 w-7 place-items-center rounded-full transition-colors hover:bg-primary/15"
@@ -101,11 +105,14 @@ export function SwitchRow({
   hint,
   checked,
   onChange,
+  trackId,
 }: {
   label: string;
   hint?: string;
   checked: boolean;
   onChange: (next: boolean) => void;
+  /** An id for the activity log (ADR 020). */
+  trackId?: string;
 }) {
   const labelId = useId();
   const hintId = useId();
@@ -113,6 +120,7 @@ export function SwitchRow({
     <button
       type="button"
       role="switch"
+      data-track={trackId}
       aria-checked={checked}
       aria-labelledby={labelId}
       aria-describedby={hint ? hintId : undefined}
@@ -162,6 +170,7 @@ export function ChoiceGroup<T extends string>({
   onChange,
   className,
   optionClassName,
+  trackId,
 }: {
   label: string;
   value: T;
@@ -170,6 +179,8 @@ export function ChoiceGroup<T extends string>({
   className?: string;
   /** Classes for each option; `data-checked` is set on the chosen one. */
   optionClassName?: string;
+  /** An id for the activity log (ADR 020); each option logs `<trackId>.<value>`, so values must be fixed keys. */
+  trackId?: string;
 }) {
   const buttons = useRef<(HTMLButtonElement | null)[]>([]);
   const selectedIndex = Math.max(
@@ -200,6 +211,7 @@ export function ChoiceGroup<T extends string>({
             }}
             type="button"
             role="radio"
+            data-track={trackId ? `${trackId}.${option.value}` : undefined}
             aria-checked={on}
             aria-label={option.content ? option.label : undefined}
             lang={option.lang}
@@ -275,6 +287,7 @@ export function AddItemField({
   onAdd,
   maxLength,
   addLabel,
+  trackId,
 }: {
   /** Also the placeholder: the box is self-explanatory inside its card. */
   label: string;
@@ -283,6 +296,8 @@ export function AddItemField({
   onAdd: () => void;
   maxLength?: number;
   addLabel?: string;
+  /** An id for the activity log (ADR 020), on the Add button. */
+  trackId?: string;
 }) {
   const { t } = useTranslation();
   const empty = !value.trim();
@@ -306,6 +321,7 @@ export function AddItemField({
       />
       <button
         type="submit"
+        data-track={trackId}
         disabled={empty}
         className="inline-flex h-11 shrink-0 items-center rounded-full bg-primary-soft px-5 text-sm font-semibold text-primary transition-[filter] hover:brightness-97 disabled:opacity-45"
       >

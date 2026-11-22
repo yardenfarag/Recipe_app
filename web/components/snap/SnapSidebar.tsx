@@ -38,13 +38,13 @@ export function CreditsCard({ quota }: { quota: ProfileQuota | null }) {
       {empty ? (
         // Out: buy a pack right here, without leaving Snap.
         <>
-          <Button size="sm" className="mt-4" onClick={() => setBuying(true)}>
+          <Button size="sm" className="mt-4" trackId="snap.credits.buy" onClick={() => setBuying(true)}>
             {t("credits.buyAction")}
           </Button>
           <OutOfCreditsDialog open={buying} onOpenChange={setBuying} />
         </>
       ) : (
-        <Link href="/settings/credits" className={buttonClasses({ variant: "outline", size: "sm", className: "mt-4" })}>
+        <Link href="/settings/credits" data-track="snap.credits.open" className={buttonClasses({ variant: "outline", size: "sm", className: "mt-4" })}>
           {t("credits.buyAction")}
         </Link>
       )}
@@ -58,6 +58,7 @@ export function WriteRecipeCard() {
   return (
     <Link
       href="/recipe/edit"
+      data-track="snap.write_recipe"
       className={cn(card, "group flex items-center gap-3 transition-colors hover:bg-surface-soft focus-visible:outline-2 focus-visible:outline-primary")}
     >
       <span aria-hidden className="grid h-10 w-10 shrink-0 place-items-center rounded-2xl bg-primary-soft text-primary">

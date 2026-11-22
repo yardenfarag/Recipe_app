@@ -29,7 +29,16 @@ const sameItem = (a: string, b: string) => normalizeFoodText(a) === normalizeFoo
  * (src/components/AvoidListEditor.tsx). Adding the first allergy asks the cook to confirm a short notice; after that
  * the reminder stays under the list. Removing never asks.
  */
-export function AvoidListEditor({ profile, onChange }: { profile: KitchenProfile; onChange: (next: KitchenProfile) => void }) {
+export function AvoidListEditor({
+  profile,
+  onChange,
+  trackPrefix = "settings.kitchen",
+}: {
+  profile: KitchenProfile;
+  onChange: (next: KitchenProfile) => void;
+  /** Starts the activity-log ids of its buttons, as on mobile ("settings.kitchen", "onboarding.avoid"). */
+  trackPrefix?: string;
+}) {
   const { t } = useTranslation();
   const [allergyDraft, setAllergyDraft] = useState("");
   const [dislikeDraft, setDislikeDraft] = useState("");
@@ -97,7 +106,7 @@ export function AvoidListEditor({ profile, onChange }: { profile: KitchenProfile
       <SettingsCard title={t("avoid.allergiesTitle")} hint={t("avoid.allergiesHint")}>
         <div role="group" aria-label={t("avoid.allergiesTitle")} className="flex flex-wrap gap-2">
           {ALLERGEN_KEYS.map((key) => (
-            <ToggleChip key={key} pressed={profile.allergies.includes(key)} onToggle={() => toggleAllergen(key)}>
+            <ToggleChip key={key} pressed={profile.allergies.includes(key)} onToggle={() => toggleAllergen(key)} trackId={`${trackPrefix}.allergy.toggle`}>
               {t(`avoid.allergens.${key}`)}
             </ToggleChip>
           ))}
@@ -105,6 +114,7 @@ export function AvoidListEditor({ profile, onChange }: { profile: KitchenProfile
             <RemovableChip
               key={item}
               label={item}
+              trackId={`${trackPrefix}.allergy.remove`}
               onRemove={() => onChange({ ...profile, otherAllergies: profile.otherAllergies.filter((existing) => existing !== item) })}
             />
           ))}
@@ -118,6 +128,7 @@ export function AvoidListEditor({ profile, onChange }: { profile: KitchenProfile
               value={allergyDraft}
               onChange={setAllergyDraft}
               onAdd={addOtherAllergy}
+              trackId={`${trackPrefix}.allergy.add`}
               maxLength={MAX_AVOID_ITEM_CHARS}
             />
           )}
@@ -135,7 +146,7 @@ export function AvoidListEditor({ profile, onChange }: { profile: KitchenProfile
           {DISLIKE_SUGGESTION_KEYS.map((key) => {
             const active = profile.dislikes.some((item) => dislikeSuggestionFor(item) === key);
             return (
-              <ToggleChip key={key} pressed={active} disabled={dislikesFull && !active} onToggle={() => toggleSuggestion(key)}>
+              <ToggleChip key={key} pressed={active} disabled={dislikesFull && !active} onToggle={() => toggleSuggestion(key)} trackId={`${trackPrefix}.dislike.toggle`}>
                 {t(`avoid.suggestions.${key}`)}
               </ToggleChip>
             );
@@ -144,6 +155,7 @@ export function AvoidListEditor({ profile, onChange }: { profile: KitchenProfile
             <RemovableChip
               key={item}
               label={item}
+              trackId={`${trackPrefix}.dislike.remove`}
               onRemove={() => onChange({ ...profile, dislikes: profile.dislikes.filter((existing) => existing !== item) })}
             />
           ))}
@@ -157,6 +169,7 @@ export function AvoidListEditor({ profile, onChange }: { profile: KitchenProfile
               value={dislikeDraft}
               onChange={setDislikeDraft}
               onAdd={addDislike}
+              trackId={`${trackPrefix}.dislike.add`}
               maxLength={MAX_AVOID_ITEM_CHARS}
             />
           )}
@@ -171,6 +184,7 @@ export function AvoidListEditor({ profile, onChange }: { profile: KitchenProfile
         title={t("avoid.noticeTitle")}
         description={t("avoid.noticeBody")}
         confirmLabel={t("avoid.noticeConfirm")}
+        trackId={`${trackPrefix}.allergy_notice_dialog`}
         confirmVariant="primary"
         onConfirm={acceptNotice}
       />

@@ -2,7 +2,7 @@ import Constants from 'expo-constants';
 import { AppState, Platform } from 'react-native';
 
 import { getInstallId } from '@/lib/installId';
-import { createInteractionQueue, type InteractionEvent } from '@/lib/interactionQueue';
+import { createInteractionQueue, newSessionId, type InteractionEvent } from '@shared/lib/interactionQueue';
 
 /**
  * Screen views and taps for the admin Activity page (admin/activity).
@@ -12,16 +12,6 @@ import { createInteractionQueue, type InteractionEvent } from '@/lib/interaction
  * be fixed ids: never put a recipe title, email, or anything typed into a name
  * or property.
  */
-
-function newSessionId(): string {
-  const cryptoObj = globalThis.crypto as { randomUUID?: () => string } | undefined;
-  if (cryptoObj?.randomUUID) return cryptoObj.randomUUID();
-  // RFC 4122 v4 shape, for runtimes without randomUUID.
-  return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, (c) => {
-    const r = (Math.random() * 16) | 0;
-    return (c === 'x' ? r : (r & 0x3) | 0x8).toString(16);
-  });
-}
 
 export const platform = Platform.OS === 'ios' || Platform.OS === 'android' ? Platform.OS : 'web';
 export const appVersion = (() => {

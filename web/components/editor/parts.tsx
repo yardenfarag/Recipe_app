@@ -86,6 +86,7 @@ export function LockedNote({ onReset, field }: { onReset: () => void; field: str
       </span>
       <button
         type="button"
+        data-track="recipe_editor.field.reset"
         onClick={onReset}
         aria-label={`${t("recipeEditor.locked.reset")}: ${field}`}
         className="inline-flex items-center gap-1 rounded-full px-1 py-0.5 font-semibold text-muted underline-offset-2 hover:text-text hover:underline focus-visible:outline-2 focus-visible:outline-primary"

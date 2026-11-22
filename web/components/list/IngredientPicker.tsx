@@ -45,6 +45,7 @@ export function IngredientPicker({
         </p>
         <button
           type="button"
+          data-track="add_to_list.toggle_all"
           onClick={() => onChange(allSelected ? new Set() : new Set(all.map((choice) => choice.key)))}
           className="rounded-full px-2 py-1 text-sm font-semibold text-primary hover:bg-primary-soft"
         >
@@ -92,6 +93,7 @@ function Section({
               <button
                 type="button"
                 role="checkbox"
+                data-track="add_to_list.item.toggle"
                 aria-checked={on}
                 aria-label={[choice.name, amount, staple ? t("addToList.inPantry") : null].filter(Boolean).join(", ")}
                 onClick={() => onToggle(choice.key)}
@@ -117,6 +119,7 @@ function Section({
               {!staple ? (
                 <button
                   type="button"
+                  data-track="add_to_list.item.keep_staple"
                   onClick={() => onKeepStaple(choice)}
                   aria-label={t("addToList.keepThisLabel", { name: choice.name })}
                   className="inline-flex min-h-10 shrink-0 items-center gap-1 rounded-full px-2 text-xs font-semibold text-accent hover:bg-accent-soft"

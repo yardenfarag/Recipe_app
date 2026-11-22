@@ -179,7 +179,7 @@ test("the grid or list choice is remembered", async ({ page }) => {
 
 test("an empty library offers Snap", async ({ page }) => {
   await openLibrary(page, []);
-  await expect(page.getByRole("heading", { name: "Your kitchen awaits" })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Save your first recipe" })).toBeVisible();
   await expect(page.locator("#main").getByRole("link", { name: "Snap a recipe" })).toHaveAttribute("href", "/app/add");
 });
 

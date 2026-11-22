@@ -57,7 +57,7 @@ export function SheetContent({
             )}
           </div>
           <RadixDialog.Close asChild>
-            <IconButton label={t("common.close")} icon={<X className="h-5 w-5" />} tooltip={false} className="-me-2" />
+            <IconButton label={t("common.close")} trackId="dialog.close" icon={<X className="h-5 w-5" />} tooltip={false} className="-me-2" />
           </RadixDialog.Close>
         </div>
         <div className="min-h-0 flex-1 overflow-y-auto px-6 py-5">{children}</div>

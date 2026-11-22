@@ -25,7 +25,7 @@ export default function RecipePage() {
 
   if (state.status === "loading") return <LoadingState label={t("a11y.loading")} />;
   if (state.status === "missing") return <EmptyState icon={null} title={t("library.recipeNotFound")} />;
-  if (state.status === "error" || !display) return <ErrorState title={t("recipe.loadFailedTitle")} onRetry={state.reload} />;
+  if (state.status === "error" || !display) return <ErrorState title={t("recipe.loadFailedTitle")} trackId="recipe.load_error" onRetry={state.reload} />;
 
   return (
     <RecipeActionsProvider state={state}>

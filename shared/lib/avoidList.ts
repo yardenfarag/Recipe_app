@@ -758,12 +758,19 @@ export function fitInstruction(parts: (string | null)[], max = MAX_AVOID_INSTRUC
 
 /**
  * The request behind "Make it without these": every allergy on the list (the model can catch one
- * the word lists missed) and the dislikes found in this recipe.
+ * the word lists missed), the dislikes found in this recipe, and the appliances the recipe needs that
+ * the cook doesn't have (PIN-155; `applianceWorkaroundInstruction` in ownedAppliances.ts). Allergies
+ * come first, so they are the last thing left out when the request runs long.
  */
-export function makeWithoutInstruction(list: AvoidList, matches: AvoidMatches): string | null {
+export function makeWithoutInstruction(
+  list: AvoidList,
+  matches: AvoidMatches,
+  appliances: string | null = null,
+): string | null {
   return fitInstruction([
     allergyInstruction(list),
     dislikeInstruction(matches.dislikes.map((hit) => hit.item)),
+    appliances,
     'Keep the rest of the dish the same',
   ]);
 }

@@ -35,7 +35,7 @@ export function CookBar({
   return (
     <div className="flex flex-wrap items-center gap-2" data-testid="cook-bar">
       {onCookMode ? (
-        <Button variant={emphasis === "primary" ? "primary" : "secondary"} onClick={onCookMode}>
+        <Button variant={emphasis === "primary" ? "primary" : "secondary"} trackId="recipe.cook_mode.open" onClick={onCookMode}>
           <ChefHat aria-hidden className="h-[18px] w-[18px]" />
           {t("web.cook.cookMode")}
         </Button>
@@ -43,6 +43,7 @@ export function CookBar({
       {video?.embedUrl ? (
         <Button
           variant={playerOpen ? "secondary" : "outline"}
+          trackId="recipe.video.toggle"
           onClick={onTogglePlayer}
           aria-expanded={playerOpen}
           aria-controls={playerOpen ? playerId : undefined}
@@ -56,6 +57,7 @@ export function CookBar({
           href={video.pageUrl}
           target="_blank"
           rel="noopener noreferrer"
+          data-track="recipe.video.open_external"
           className={buttonClasses({ variant: "outline" })}
         >
           <Play aria-hidden className="h-4 w-4 fill-current" />

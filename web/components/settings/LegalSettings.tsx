@@ -9,19 +9,19 @@ import { LEGAL_URLS } from "@/lib/legal";
 /** The legal pages on pinch-app.io (the static files in legal/). They open in a new tab, so Settings stays put. */
 export function LegalSettings() {
   const { t } = useTranslation();
-  const links: { href: string; label: string; Icon: LucideIcon }[] = [
-    { href: LEGAL_URLS.privacy, label: t("settings.privacyPolicy"), Icon: Lock },
-    { href: LEGAL_URLS.terms, label: t("settings.termsOfUse"), Icon: FileText },
-    { href: LEGAL_URLS.deleteAccount, label: t("settings.deleteAccountGuide"), Icon: Trash2 },
-    { href: LEGAL_URLS.deleteData, label: t("settings.deleteDataGuide"), Icon: Globe },
+  const links: { href: string; label: string; Icon: LucideIcon; trackId: string }[] = [
+    { href: LEGAL_URLS.privacy, label: t("settings.privacyPolicy"), Icon: Lock, trackId: "support.privacy_policy" },
+    { href: LEGAL_URLS.terms, label: t("settings.termsOfUse"), Icon: FileText, trackId: "support.terms_of_use" },
+    { href: LEGAL_URLS.deleteAccount, label: t("settings.deleteAccountGuide"), Icon: Trash2, trackId: "support.delete_account_guide" },
+    { href: LEGAL_URLS.deleteData, label: t("settings.deleteDataGuide"), Icon: Globe, trackId: "support.delete_data_guide" },
   ];
   return (
     <>
       <SettingsPageHeader id="legal" />
       <ul className="overflow-hidden rounded-3xl border border-frosted-border bg-surface/80 shadow-soft backdrop-blur-sm">
-        {links.map(({ href, label, Icon }) => (
+        {links.map(({ href, label, Icon, trackId }) => (
           <li key={href} className="border-b border-border last:border-b-0">
-            <a href={href} target="_blank" rel="noreferrer" className="flex min-h-14 items-center gap-3 px-4 py-3 transition-colors hover:bg-element">
+            <a href={href} target="_blank" rel="noreferrer" data-track={trackId} className="flex min-h-14 items-center gap-3 px-4 py-3 transition-colors hover:bg-element">
               <span aria-hidden className="grid h-9 w-9 shrink-0 place-items-center rounded-[14px] bg-primary-soft text-primary">
                 <Icon className="h-[18px] w-[18px]" />
               </span>

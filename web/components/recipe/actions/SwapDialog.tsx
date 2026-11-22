@@ -121,6 +121,7 @@ function Body({
             <Button
               variant="link"
               className="mt-2 -ms-1"
+              trackId="substitution.retry"
               onClick={() => {
                 setLoad({ status: "loading" });
                 setAttempt((n) => n + 1);
@@ -146,6 +147,7 @@ function Body({
                     <Button
                       size="sm"
                       className="mt-3"
+                      trackId="substitution.apply"
                       busy={busy}
                       disabled={applying != null && !busy}
                       aria-label={busy ? t("recipe.swapUpdatingSteps") : t("a11y.useSubstitute", { name: alternative.name })}

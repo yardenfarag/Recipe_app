@@ -20,6 +20,7 @@ import { useThemePreference } from '@/hooks/useThemePreference';
 import { errorText } from '@shared/lib/errorText';
 import { ADMIN_PRICE_CARD } from '@shared/lib/quotas';
 import { formatTokens, shortModelName } from '@shared/lib/aiCostSummary';
+import { feedbackMeta, feedbackSender, formatWhen as fmtWhen, shortId, usd4 as usd } from '@shared/lib/adminFormat';
 import { creditHealthWarnings, type CreditHealth } from '@shared/lib/creditHealth';
 import {
   fetchAdminTokenLedger,
@@ -36,23 +37,6 @@ import {
   type SupportTicket,
 } from '@/lib/supabase/supportTickets';
 import { fetchFeedback, type Feedback } from '@/lib/supabase/feedback';
-
-function usd(value: number): string {
-  return `$${value.toFixed(4)}`;
-}
-
-function shortId(id: string | null): string {
-  if (!id) return '—';
-  return id.slice(0, 8);
-}
-
-function fmtWhen(iso: string): string {
-  try {
-    return new Date(iso).toLocaleString();
-  } catch {
-    return iso;
-  }
-}
 
 export default function AdminUsageScreen() {
   const { t } = useTranslation();
@@ -342,22 +326,11 @@ export default function AdminUsageScreen() {
                     style={{ borderBottomColor: colors.frostedBorder }}
                   >
                     <Text className="mb-1 text-xs font-semibold" style={{ color: colors.text }}>
-                      {item.profile?.email ?? item.contact_email ?? shortId(item.user_id)} ·{' '}
+                      {feedbackSender(item)} ·{' '}
                       {fmtWhen(item.created_at)}
                     </Text>
                     <Text className="mb-1 text-xs" style={{ color: colors.textSecondary }}>
-                      {[
-                        item.source === 'website' ? 'website form' : null,
-                        item.app_version
-                          ? `v${item.app_version}${item.build_number ? ` (${item.build_number})` : ''}`
-                          : null,
-                        item.platform,
-                        item.device_model,
-                        item.os_version,
-                        item.locale,
-                      ]
-                        .filter(Boolean)
-                        .join(' · ')}
+                      {feedbackMeta(item)}
                     </Text>
                     <Text className="text-sm leading-5" style={{ color: colors.text }}>
                       {item.message}

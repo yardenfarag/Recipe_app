@@ -11,9 +11,11 @@ import {
   type AvoidList,
   type AvoidMatches,
 } from "@shared/lib/avoidList";
+import { recipeAppliancesOf } from "@shared/lib/appliances";
 import { scaleIngredients } from "@shared/lib/ingredientAmounts";
 import { isRecipeLanguageCode, type RecipeLanguageCode } from "@shared/lib/recipeLanguages";
 import { recipeHasSource } from "@shared/lib/recipeOrigin";
+import { applianceWorkaroundInstruction, checkKitchen } from "@shared/lib/ownedAppliances";
 import { normalizeRecipeTags } from "@shared/lib/recipeTags";
 import type { RecipeVariantKey } from "@shared/lib/recipeVariants";
 import { setRecipeCooked, setRecipeTags } from "@shared/lib/supabase/recipes";
@@ -54,6 +56,7 @@ import { needsTranslation } from "@/lib/recipe/recipeDisplay";
 import { useKitchenProfile } from "@/lib/recipe/useKitchenProfile";
 import { useMeasurementSystem } from "@/lib/recipe/useMeasurementSystem";
 import type { ReadyRecipe } from "@/lib/recipe/useRecipe";
+import { useOwnedAppliances } from "@/lib/settings/ownedAppliances";
 
 /** The text before a remix made on this visit, and the language it was in, for "Revert to original". */
 type Session = { original: OriginalContent; language: string | null; remix: { variant: RecipeVariantKey; summary: string } | null };
@@ -73,6 +76,7 @@ export function RecipeActionsProvider({ state, children }: { state: ReadyRecipe;
   const { recipe } = display;
   const { system } = useMeasurementSystem();
   const { profile } = useKitchenProfile();
+  const { kitchen } = useOwnedAppliances();
   const { collections, createCollection, setMembershipsForRecipe } = useCollections();
 
   const [dialog, setDialog] = useState<RecipeDialog | null>(null);
@@ -84,7 +88,9 @@ export function RecipeActionsProvider({ state, children }: { state: ReadyRecipe;
   const updatingFields = useRecipeRecalc(recipe, (next) => replaceRecipe(next));
 
   const avoid = useMemo(() => (profile ? findAvoidMatches(display.ingredients.map((i) => i.name), profile) : null), [display.ingredients, profile]);
-  const canFix = Boolean(avoid && (avoid.allergies.length > 0 || avoid.dislikes.length > 0));
+  // "My appliances" (PIN-155): a required appliance the reader doesn't have is worth fixing too.
+  const missingAppliances = useMemo(() => checkKitchen(recipeAppliancesOf(recipe), kitchen).missing, [recipe, kitchen]);
+  const canFix = Boolean((avoid && (avoid.allergies.length > 0 || avoid.dislikes.length > 0)) || missingAppliances.length > 0);
 
   const close = () => setDialog(null);
 
@@ -250,7 +256,11 @@ export function RecipeActionsProvider({ state, children }: { state: ReadyRecipe;
       />
       <RemixSheet
         open={kind === "remix" || kind === "fix"}
-        preset={kind === "fix" ? makeWithoutInstruction(profile ?? EMPTY_AVOID, avoid ?? EMPTY_MATCHES) : null}
+        preset={
+          kind === "fix"
+            ? makeWithoutInstruction(profile ?? EMPTY_AVOID, avoid ?? EMPTY_MATCHES, applianceWorkaroundInstruction(missingAppliances, kitchen))
+            : null
+        }
         allergies={profile ? allergyInstruction(profile) : null}
         notice={profile && hasAllergies(profile) ? t("avoid.checkLabels") : undefined}
         display={display}

@@ -31,6 +31,7 @@ export function AppearanceSettings() {
         <SettingsCard title={t("settings.lightDark")}>
           <ChoiceGroup
             label={t("settings.lightDark")}
+            trackId="settings.theme"
             value={preference}
             onChange={setPreference}
             className="grid grid-cols-3 gap-2 rounded-2xl bg-primary-soft p-1"
@@ -51,6 +52,7 @@ export function AppearanceSettings() {
         <SettingsCard title={t("settings.driftTheme")}>
           <ChoiceGroup<ThemePackId>
             label={t("settings.driftTheme")}
+            trackId="settings.theme_pack"
             value={pack}
             onChange={setPack}
             className="grid gap-3 @lg:grid-cols-2"

@@ -20,10 +20,13 @@ import {
 } from "@shared/lib/supabase/extractRecipe";
 import { inventRecipe, inventRecipeFromImage } from "@shared/lib/supabase/inventRecipe";
 import { applyKitchenOnExtract } from "@shared/lib/supabase/kitchenAutoApply";
+import type { RecipeEntrySource } from "@shared/lib/productEvents";
+import { recipeIsInvented } from "@shared/lib/recipeOrigin";
 import { showToast } from "@shared/lib/toast";
 
 import { useAuth } from "@/components/AuthProvider";
 import { useLanguage } from "@/components/LanguageProvider";
+import { captureRecipeExtracted } from "@/lib/analytics";
 import { webSalesOn } from "@/lib/credits/salesSwitch";
 import { signInPathFor } from "@/lib/nextPath";
 import { setSnapDraft } from "@/lib/snap/draft";
@@ -52,6 +55,11 @@ export type SnapBanner = {
 export type InventOffer = { source: SnapSource; dishGuess?: string; allowExtract: boolean };
 
 type RunOptions = { forceExtract?: boolean; alreadyGated?: boolean };
+
+/** How the Snap started, as the product event names it: a photo on the web is always a picked or dropped file. */
+function entrySource(source: SnapSource): RecipeEntrySource {
+  return source.type === "photo" ? "library" : source.type;
+}
 
 /** The request-id key each kind of import is stored under (the same keys as on mobile). */
 function requestKey({ intent, source }: SnapJob): string {
@@ -149,6 +157,10 @@ export function useSnap({ onSettled }: { onSettled?: () => void } = {}) {
             break;
           case "preview": {
             setFinished(true);
+            captureRecipeExtracted({
+              source: entrySource(next.source),
+              mode: recipeIsInvented(outcome.recipe) ? "invent" : "extract",
+            });
             const kitchen = user ? await applyKitchenOnExtract(user.id, outcome.recipe) : { recipe: outcome.recipe, failed: false };
             await setSnapDraft(kitchen.recipe, {
               kitchenFailed: kitchen.failed,

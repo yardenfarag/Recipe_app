@@ -68,25 +68,26 @@ export default function HubRecipePage() {
         icon={null}
         title={t("hub.notFound")}
         action={
-          <Link href="/hub" className={buttonClasses({ variant: "secondary" })}>
+          <Link href="/hub" data-track="hub_recipe.back_to_hub" className={buttonClasses({ variant: "secondary" })}>
             {t("hub.backToHub")}
           </Link>
         }
       />
     );
   }
-  if (state.status === "error") return <ErrorState title={t("recipe.loadFailedTitle")} onRetry={state.reload} />;
+  if (state.status === "error") return <ErrorState title={t("recipe.loadFailedTitle")} trackId="hub_recipe.load_error" onRetry={state.reload} />;
 
   const actions = (
     <>
       {state.libraryRecipeId ? (
-        <Link href={`/recipe/${state.libraryRecipeId}`} className={buttonClasses({ size: "lg" })}>
+        <Link href={`/recipe/${state.libraryRecipeId}`} data-track="hub_recipe.open_in_library" className={buttonClasses({ size: "lg" })}>
           <BookOpenCheck aria-hidden className="h-5 w-5" />
           {t("hub.openInLibrary")}
         </Link>
       ) : (
         <Button
           size="lg"
+          trackId="hub_recipe.add_to_library"
           busy={adding || savingAfterSignIn}
           onClick={() => (user ? void add() : router.push(signInHere("signin", "save=1")))}
         >

@@ -39,6 +39,7 @@ export function SupportSettings() {
           <div className="flex flex-col gap-2 sm:flex-row sm:flex-wrap">
             <a
               href={LEGAL_URLS.supportMailto}
+              data-track="support.email_support"
               className="inline-flex h-11 items-center gap-2 rounded-full border border-border bg-surface px-5 text-[15px] font-semibold text-text transition-colors hover:bg-surface-soft"
             >
               <Mail aria-hidden className="h-4 w-4 text-primary" />
@@ -46,6 +47,7 @@ export function SupportSettings() {
             </a>
             <a
               href={LEGAL_BASE_URL}
+              data-track="support.about_pinch"
               target="_blank"
               rel="noreferrer"
               className="inline-flex h-11 items-center gap-2 rounded-full border border-border bg-surface px-5 text-[15px] font-semibold text-text transition-colors hover:bg-surface-soft"
@@ -97,6 +99,7 @@ function SupportTicketForm() {
           <p className="mb-2 text-sm font-semibold text-text">{t("support.category")}</p>
           <ChoiceGroup
             label={t("support.category")}
+            trackId="support_ticket.category"
             value={category}
             onChange={setCategory}
             className="flex flex-wrap gap-2"
@@ -119,7 +122,7 @@ function SupportTicketForm() {
           </ErrorAlert>
         ) : null}
         <div>
-          <Button type="submit" busy={busy} disabled={!ready}>
+          <Button type="submit" trackId="support_ticket.submit" busy={busy} disabled={!ready}>
             {t("support.submit")}
           </Button>
         </div>
@@ -170,7 +173,7 @@ function FeedbackForm() {
           </ErrorAlert>
         ) : null}
         <div>
-          <Button type="submit" variant="secondary" busy={busy} disabled={!ready}>
+          <Button type="submit" variant="secondary" trackId="feedback.submit" busy={busy} disabled={!ready}>
             {t("feedback.submit")}
           </Button>
         </div>

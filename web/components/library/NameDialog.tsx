@@ -21,6 +21,7 @@ export function NameDialog({
   submitLabel,
   validate,
   onSubmit,
+  trackId = "name_dialog",
 }: {
   open: boolean;
   onOpenChange: (open: boolean) => void;
@@ -30,6 +31,8 @@ export function NameDialog({
   submitLabel: string;
   validate: (name: string) => string | null;
   onSubmit: (name: string) => Promise<void>;
+  /** Activity-log id prefix: its buttons log `<trackId>.cancel` and `<trackId>.save`, as on mobile. */
+  trackId?: string;
 }) {
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -42,6 +45,7 @@ export function NameDialog({
           validate={validate}
           onSubmit={onSubmit}
           onDone={() => onOpenChange(false)}
+          trackId={trackId}
         />
       ) : null}
     </Dialog>
@@ -56,7 +60,9 @@ function NameForm({
   validate,
   onSubmit,
   onDone,
+  trackId,
 }: {
+  trackId: string;
   title: string;
   label: string;
   initialValue: string;
@@ -106,11 +112,11 @@ function NameForm({
         />
         <div className="flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
           <DialogClose asChild>
-            <Button variant="ghost" disabled={busy}>
+            <Button variant="ghost" trackId={`${trackId}.cancel`} disabled={busy}>
               {t("common.cancel")}
             </Button>
           </DialogClose>
-          <Button type="submit" busy={busy}>
+          <Button type="submit" trackId={`${trackId}.save`} busy={busy}>
             {submitLabel}
           </Button>
         </div>

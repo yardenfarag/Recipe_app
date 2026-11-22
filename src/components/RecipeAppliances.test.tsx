@@ -231,3 +231,21 @@ describe('RecipeAppliances: recipe direction differs from the app', () => {
     expect(flat(screen.getByText('בשימוש בשלבים 1, 3').props.style)).toMatchObject({ writingDirection: 'rtl' });
   });
 });
+
+describe('RecipeAppliances: My appliances (PIN-155)', () => {
+  const kitchen = { owned: ['oven' as const], notOwned: ['air_fryer' as const, 'mortar_and_pestle' as const] };
+
+  it('marks nothing before the reader saves a list', async () => {
+    await render(<RecipeAppliances appliances={ALL} instructions={STEPS_EN} />);
+    expect(screen.queryByTestId('icon-checkmark')).toBeNull();
+    expect(screen.queryByTestId('icon-alert-circle')).toBeNull();
+  });
+
+  it('ticks what the kitchen has and flags a required appliance it lacks', async () => {
+    await render(<RecipeAppliances appliances={ALL} instructions={STEPS_EN} kitchen={kitchen} />);
+    expect(screen.getAllByTestId('icon-checkmark')).toHaveLength(1);
+    // The air fryer is required and missing; the mortar is optional, so it is not flagged.
+    expect(screen.getAllByTestId('icon-alert-circle')).toHaveLength(1);
+    expect(screen.getByTestId('appliance-chip-air_fryer').props.accessibilityLabel).toMatch(/Not in your kitchen|myAppliances.notInKitchen/);
+  });
+});

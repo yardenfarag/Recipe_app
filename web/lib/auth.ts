@@ -4,6 +4,7 @@
  */
 import { friendlyAuthError, requestPasswordReset as requestSharedPasswordReset } from "@shared/lib/supabase/auth";
 
+import { flushActivity, logAuth } from "@/lib/activity/activityLog";
 import { rememberNextPath } from "@/lib/nextPath";
 import { authRedirectUrl, getSupabase } from "@/lib/supabase";
 
@@ -28,6 +29,9 @@ export async function requestPasswordReset(email: string): Promise<void> {
 }
 
 export async function signOut(): Promise<void> {
+  // Logged and sent before the session goes, so these rows stay with the account (ADR 020).
+  logAuth("auth.logout");
+  await flushActivity();
   const { error } = await getSupabase().auth.signOut();
   if (error) throw error;
 }

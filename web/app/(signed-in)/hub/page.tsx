@@ -107,7 +107,7 @@ function HubScreen() {
   const retryAlert = (
     <ErrorAlert>
       {t("hub.loadFailedTitle")}{" "}
-      <button type="button" onClick={hub.retry} className="font-semibold underline underline-offset-2">
+      <button type="button" data-track="hub.error_retry_inline" onClick={hub.retry} className="font-semibold underline underline-offset-2">
         {t("common.retry")}
       </button>
     </ErrorAlert>
@@ -139,7 +139,7 @@ function HubScreen() {
         {loading ? (
           <Skeleton layout={layout} label={t("hub.searching")} />
         ) : error && cards.length === 0 ? (
-          <ErrorState title={t("hub.loadFailedTitle")} onRetry={hub.retry} />
+          <ErrorState title={t("hub.loadFailedTitle")} trackId="hub.load_error" onRetry={hub.retry} />
         ) : (
           <>
             <div className="mb-3 flex flex-wrap items-baseline gap-x-3 gap-y-1 text-sm">
@@ -158,7 +158,7 @@ function HubScreen() {
                   title={t("hub.noMatches")}
                   body={t("hub.noMatchesHint")}
                   action={
-                    <Button variant="secondary" onClick={hub.clearFilters}>
+                    <Button variant="secondary" trackId="hub.filters.clear" onClick={hub.clearFilters}>
                       {t("library.clearFilters")}
                     </Button>
                   }
@@ -173,6 +173,7 @@ function HubScreen() {
                     <RecipeCard
                       recipe={recipeCardToListRecipe(card)}
                       href={`/hub/${card.id}`}
+                      trackId="hub.recipe"
                       variant={layout}
                       detail={hubCardDetail(card, t)}
                     />
@@ -201,7 +202,7 @@ function SnapFirstLink() {
   const { t } = useTranslation();
   const snap = navItem("snap");
   return (
-    <Link href={snap.href} className={buttonClasses({ variant: "primary" })}>
+    <Link href={snap.href} data-track="hub.empty.snap_first" className={buttonClasses({ variant: "primary" })}>
       <snap.icon aria-hidden className="h-4 w-4" />
       {t("hub.snapFirst")}
     </Link>

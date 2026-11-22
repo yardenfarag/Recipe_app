@@ -38,7 +38,7 @@ export default function RecipeEditPage() {
     return (
       <>
         {tab}
-        <ErrorState title={t("recipe.loadFailedTitle")} onRetry={load.retry} />
+        <ErrorState title={t("recipe.loadFailedTitle")} trackId="recipe_editor.load_error" onRetry={load.retry} />
       </>
     );
   }

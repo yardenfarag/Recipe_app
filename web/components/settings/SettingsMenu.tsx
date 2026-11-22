@@ -18,6 +18,20 @@ import { shareApp } from "@/lib/settings/shareApp";
 
 const MODE_LABEL = { system: "theme.auto", light: "theme.light", dark: "theme.dark" } as const;
 
+/** Activity-log ids for the section links: the mobile settings rows' ids where there is one. */
+const SECTION_TRACK_ID: Record<SettingsSectionId, string> = {
+  account: "settings.account",
+  credits: "settings.plan",
+  recipe: "settings.recipe_preferences",
+  appearance: "settings.appearance",
+  language: "settings.language",
+  support: "settings.help_support",
+  legal: "settings.legal_support",
+};
+
+/** "/admin/dashboard" → "settings.admin.dashboard". */
+const adminTrackId = (href: string) => `settings.admin.${href.slice(href.lastIndexOf("/") + 1)}`;
+
 /** What a row shows after its name in the phone menu: the current choice where there is one, else what it's for. */
 function useRowValues(): Partial<Record<SettingsSectionId, string>> {
   const { t } = useTranslation();
@@ -49,7 +63,7 @@ export function SettingsRail({ current }: { current: SettingsSectionId }) {
           <ul className="flex flex-col gap-0.5">
             {group.sections.map((section) => (
               <li key={section.id}>
-                <RailLink href={section.href} icon={<section.icon aria-hidden className="h-[18px] w-[18px] shrink-0" />} current={section.id === current}>
+                <RailLink href={section.href} trackId={SECTION_TRACK_ID[section.id]} icon={<section.icon aria-hidden className="h-[18px] w-[18px] shrink-0" />} current={section.id === current}>
                   {t(section.labelKey)}
                 </RailLink>
               </li>
@@ -58,6 +72,7 @@ export function SettingsRail({ current }: { current: SettingsSectionId }) {
               <li>
                 <button
                   type="button"
+                  data-track="settings.share_app"
                   onClick={() => void shareApp(t)}
                   className="flex h-10 w-full items-center gap-3 rounded-xl px-3 text-start text-[15px] font-semibold text-muted transition-colors hover:bg-element hover:text-text"
                 >
@@ -75,7 +90,7 @@ export function SettingsRail({ current }: { current: SettingsSectionId }) {
           <ul className="flex flex-col gap-0.5">
             {ADMIN_LINKS.map((link) => (
               <li key={link.href}>
-                <RailLink href={link.href} icon={<ShieldCheck aria-hidden className="h-[18px] w-[18px] shrink-0" />} current={false}>
+                <RailLink href={link.href} trackId={adminTrackId(link.href)} icon={<ShieldCheck aria-hidden className="h-[18px] w-[18px] shrink-0" />} current={false}>
                   {t(link.labelKey)}
                 </RailLink>
               </li>
@@ -87,10 +102,11 @@ export function SettingsRail({ current }: { current: SettingsSectionId }) {
   );
 }
 
-function RailLink({ href, icon, current, children }: { href: string; icon: ReactNode; current: boolean; children: ReactNode }) {
+function RailLink({ href, icon, current, children, trackId }: { href: string; icon: ReactNode; current: boolean; children: ReactNode; trackId: string }) {
   return (
     <Link
       href={href}
+      data-track={trackId}
       aria-current={current ? "page" : undefined}
       className={cn(
         "flex h-10 items-center gap-3 rounded-xl px-3 text-[15px] font-semibold transition-colors",
@@ -114,6 +130,7 @@ export function SettingsList() {
     <nav aria-label={t("settings.title")} className="flex flex-col gap-6">
       <Link
         href="/settings/account"
+        data-track="settings.account"
         className="flex items-center gap-4 rounded-3xl border border-frosted-border bg-surface/80 p-4 shadow-soft backdrop-blur-sm transition-colors hover:bg-surface"
       >
         <ProfileAvatar url={avatarUrl} className="h-14 w-14" />
@@ -142,7 +159,7 @@ export function SettingsList() {
             ))}
             {group.titleKey === "web.settings.helpGroup" ? (
               <li>
-                <button type="button" onClick={() => void shareApp(t)} className={cn(rowClass, "w-full text-start")}>
+                <button type="button" data-track="settings.share_app" onClick={() => void shareApp(t)} className={cn(rowClass, "w-full text-start")}>
                   <RowIcon>
                     <Share2 aria-hidden className="h-[18px] w-[18px]" />
                   </RowIcon>
@@ -160,7 +177,7 @@ export function SettingsList() {
           <ul className="overflow-hidden rounded-3xl border border-frosted-border bg-surface/80 shadow-soft backdrop-blur-sm">
             {ADMIN_LINKS.map((link) => (
               <li key={link.href} className="border-b border-border last:border-b-0">
-                <Link href={link.href} className={rowClass}>
+                <Link href={link.href} data-track={adminTrackId(link.href)} className={rowClass}>
                   <RowIcon>
                     <ShieldCheck aria-hidden className="h-[18px] w-[18px]" />
                   </RowIcon>
@@ -194,7 +211,7 @@ function RowText({ label, value }: { label: string; value?: string }) {
 function ListRow({ section, value }: { section: SettingsSection; value?: string }) {
   const { t } = useTranslation();
   return (
-    <Link href={section.href} className={rowClass}>
+    <Link href={section.href} data-track={SECTION_TRACK_ID[section.id]} className={rowClass}>
       <RowIcon>
         <section.icon aria-hidden className="h-[18px] w-[18px]" />
       </RowIcon>

@@ -1,6 +1,7 @@
 import { test, type Browser, type Page } from "@playwright/test";
 
-import { resetLibrary, resetTestUserLanguage, type SeedRecipe } from "./admin";
+import { createUser, resetLibrary, resetTestUserLanguage, uniqueEmail, type SeedRecipe } from "./admin";
+import { createAdminPagesUsers, deleteAdminPagesUsers } from "./adminSeed";
 import { signInWithPassword } from "./helpers";
 import { resetHub } from "./hubSeed";
 import { resetShoppingList } from "./listSeed";
@@ -369,4 +370,126 @@ test("shared recipe, as a guest", async ({ browser }) => {
     await context.close();
   }
   await resetShares([]);
+});
+
+/** A context with no session, in a language, for the pages people see before signing in. */
+async function openSignedOut(browser: Browser, viewport: keyof typeof VIEWPORTS, language: "en" | "he", path: string) {
+  const context = await browser.newContext({
+    baseURL: test.info().project.use.baseURL,
+    viewport: VIEWPORTS[viewport],
+    deviceScaleFactor: viewport === "desktop" ? 1 : 2,
+  });
+  await context.addInitScript((lang: string) => localStorage.setItem("pinch:appLanguage", lang), language);
+  const page = await context.newPage();
+  await page.goto(path);
+  return { page, context };
+}
+
+test("welcome and onboarding", async ({ browser }) => {
+  test.setTimeout(300_000);
+  for (const viewport of ["desktop", "tablet", "phone"] as const) {
+    for (const language of ["en", "he"] as const) {
+      const { page, context } = await openSignedOut(browser, viewport, language, "/app/welcome");
+      await page.locator("h1").first().waitFor();
+      await page.waitForTimeout(400);
+      await page.screenshot({ path: `${OUT}/welcome-${viewport}-${language}.png`, fullPage: true });
+      await context.close();
+    }
+  }
+  // Onboarding is only offered to a new account that hasn't finished it: a fresh one for each picture.
+  for (const viewport of ["desktop", "phone"] as const) {
+    for (const language of ["en", "he"] as const) {
+      const email = uniqueEmail("e2e-shots-onboarding");
+      await createUser(email, TEST_USER.password);
+      // Signed in in English (the sign-in helper finds fields by their English labels), then switched on the account.
+      const { page, context } = await openSignedOut(browser, viewport, "en", "/app/auth?mode=signin&next=%2Fonboarding");
+      await signInWithPassword(page, email, TEST_USER.password);
+      await page.waitForURL(/\/app\/onboarding/);
+      if (language !== "en") {
+        await writeAccountPrefs({ locale: language }, email, TEST_USER.password);
+        await page.evaluate((lang) => localStorage.setItem("pinch:appLanguage", lang), language);
+        await page.reload();
+      }
+      await page.locator("h1").first().waitFor();
+      await page.waitForTimeout(400);
+      await page.screenshot({ path: `${OUT}/onboarding-${viewport}-${language}.png`, fullPage: true });
+      await context.close();
+    }
+  }
+});
+
+test("cookbook and first recipe", async ({ browser }) => {
+  test.setTimeout(300_000);
+  await resetLibrary(LIBRARY.map((recipe, index) => ({ ...recipe, createdSecondsAgo: index + 1 })));
+  for (const viewport of ["desktop", "phone"] as const) {
+    for (const [language, scheme] of [["en", "light"], ["he", "dark"]] as const) {
+      const { page, context } = await open(browser, viewport, { language, scheme }, "/app/cookbook");
+      await page.waitForTimeout(600);
+      // Pick the first three recipes so the book panel has contents.
+      const options = page.locator("#main").getByRole("checkbox");
+      for (let i = 0; i < 3 && i < (await options.count()); i += 1) await options.nth(i).click();
+      await page.waitForTimeout(300);
+      await page.screenshot({ path: `${OUT}/cookbook-${viewport}-${language}-${scheme}.png`, fullPage: true });
+
+      // The dialog while the server makes the PDF, once it's downloaded, and when it couldn't be made.
+      let answer: "slow" | "pdf" | "fail" = "slow";
+      await page.route("**/app/api/cookbook/pdf", async (route) => {
+        if (answer === "slow") await new Promise((resolve) => setTimeout(resolve, 4_000));
+        await route
+          .fulfill(
+            answer === "fail"
+              ? { status: 503, body: "{}" }
+              : { status: 200, contentType: "application/pdf", headers: { "X-Cookbook-Missing-Photos": "1" }, body: "%PDF-1.7" },
+          )
+          .catch(() => undefined);
+      });
+      const create = page.locator("#main").getByRole("button", { name: /PDF/ }).last();
+      await create.click();
+      await page.getByRole("dialog").getByRole("progressbar").waitFor();
+      await page.waitForTimeout(300);
+      await page.screenshot({ path: `${OUT}/cookbook-making-${viewport}-${language}-${scheme}.png` });
+      await page.getByRole("dialog").getByRole("button").last().waitFor();
+      await page.keyboard.press("Escape");
+      answer = "pdf";
+      await create.click();
+      await page.getByRole("dialog").getByRole("button").nth(2).waitFor();
+      await page.waitForTimeout(400);
+      await page.screenshot({ path: `${OUT}/cookbook-ready-${viewport}-${language}-${scheme}.png` });
+      await page.keyboard.press("Escape");
+      answer = "fail";
+      await create.click();
+      await page.getByRole("dialog").getByRole("button").nth(2).waitFor();
+      await page.waitForTimeout(400);
+      await page.screenshot({ path: `${OUT}/cookbook-failed-${viewport}-${language}-${scheme}.png` });
+      await context.close();
+    }
+  }
+  await resetLibrary([]);
+  for (const viewport of ["desktop", "phone"] as const) {
+    const { page, context } = await open(browser, viewport, { language: "en", scheme: "light" });
+    await page.waitForTimeout(500);
+    await page.screenshot({ path: `${OUT}/first-recipe-${viewport}.png`, fullPage: true });
+    await context.close();
+  }
+});
+
+test("admin pages", async ({ browser }) => {
+  test.setTimeout(300_000);
+  const users = await createAdminPagesUsers();
+  try {
+    const context = await browser.newContext({ baseURL: test.info().project.use.baseURL, viewport: { width: 1366, height: 860 } });
+    const page = await context.newPage();
+    await page.goto("/app/auth?mode=signin");
+    await signInWithPassword(page, users.admin.email, users.admin.password);
+    await page.locator("#main").waitFor();
+    for (const name of ["dashboard", "insights", "users", "usage", "activity", "messages"]) {
+      await page.goto(`/app/admin/${name}`);
+      await page.locator("#main h1").first().waitFor();
+      await page.waitForTimeout(1200);
+      await page.screenshot({ path: `${OUT}/admin-${name}.png`, fullPage: true });
+    }
+    await context.close();
+  } finally {
+    await deleteAdminPagesUsers(users);
+  }
 });

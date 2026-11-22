@@ -40,7 +40,7 @@ export default function AuthCallbackPage() {
       {error ? (
         <div className="flex flex-col gap-4">
           <ErrorAlert>{error}</ErrorAlert>
-          <Button fullWidth size="lg" onClick={() => router.replace("/auth?mode=signin")}>{t("auth.backToSignIn")}</Button>
+          <Button fullWidth size="lg" trackId="auth_callback.back_to_sign_in" onClick={() => router.replace("/auth?mode=signin")}>{t("auth.backToSignIn")}</Button>
         </div>
       ) : (
         <div className="flex justify-center py-6">

@@ -2,7 +2,7 @@
 
 import { ChevronRight, Coins } from "lucide-react";
 import Link from "next/link";
-import { useEffect } from "react";
+import { useEffect, useRef } from "react";
 import { useTranslation } from "react-i18next";
 
 import { FREE_MONTHLY_EXTRACT_LIMIT } from "@shared/lib/quotas";
@@ -10,6 +10,7 @@ import { FREE_MONTHLY_EXTRACT_LIMIT } from "@shared/lib/quotas";
 import { GetTheAppCard } from "@/components/credits/GetTheAppCard";
 import { PackList } from "@/components/credits/PackList";
 import { Dialog, DialogContent } from "@/components/ui/Dialog";
+import { capturePaywallViewed } from "@/lib/analytics";
 import { useCreditBalance } from "@/lib/credits/balance";
 import { formatResetDate, nextFreeReset } from "@/lib/credits/format";
 import { useWebSalesOn } from "@/lib/credits/salesSwitch";
@@ -42,6 +43,19 @@ export function OutOfCreditsDialog({
     if (open) void refresh();
   }, [open, refresh]);
 
+  // Once per opening, and only when it offers packs (mobile counts the purchase sheet the same way).
+  const counted = useRef(false);
+  useEffect(() => {
+    if (!open) {
+      counted.current = false;
+      return;
+    }
+    if (salesOn && !counted.current) {
+      counted.current = true;
+      capturePaywallViewed("out_of_credits");
+    }
+  }, [open, salesOn]);
+
   const total = quota?.totalCredits;
   // Some credits, but fewer than this needs: say how many it takes. Otherwise they're simply out.
   const short = needed != null && needed > 1 && total != null && total > 0 && total < needed;
@@ -64,6 +78,7 @@ export function OutOfCreditsDialog({
           {salesOn ? <PackList variant="rows" /> : <GetTheAppCard compact />}
           <Link
             href="/settings/credits"
+            data-track="credits.see_all"
             onClick={() => onOpenChange(false)}
             className="inline-flex items-center gap-1 rounded-lg text-sm font-semibold text-primary underline-offset-4 hover:underline"
           >

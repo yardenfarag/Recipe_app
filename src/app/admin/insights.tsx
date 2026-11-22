@@ -16,6 +16,7 @@ import {
   type InsightSummary,
   type RankedItem,
 } from '@shared/lib/adminInsights';
+import { eventLabel as label, formatWhen as fmtWhen } from '@shared/lib/adminFormat';
 import {
   fetchAdminFailures,
   fetchAdminProductEvents,
@@ -23,18 +24,6 @@ import {
   type AdminPurchase,
 } from '@shared/lib/supabase/adminUsage';
 import { errorText } from '@shared/lib/errorText';
-
-function fmtWhen(iso: string): string {
-  try {
-    return new Date(iso).toLocaleString();
-  } catch {
-    return iso;
-  }
-}
-
-function label(name: string): string {
-  return name.replaceAll('_', ' ');
-}
 
 export default function AdminInsightsScreen() {
   return (

@@ -31,6 +31,7 @@ export function SnapIntentSwitch({ value, onChange, disabled }: { value: SnapInt
           >
             <input
               type="radio"
+              data-track={`snap.intent.${option.value}`}
               name={name}
               value={option.value}
               checked={checked}

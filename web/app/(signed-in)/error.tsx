@@ -9,5 +9,5 @@ export default function SignedInError({ error, reset }: { error: Error & { diges
   useEffect(() => {
     console.error(error);
   }, [error]);
-  return <ErrorState onRetry={reset} className="flex-1 justify-center" />;
+  return <ErrorState trackId="error_boundary" onRetry={reset} className="flex-1 justify-center" />;
 }

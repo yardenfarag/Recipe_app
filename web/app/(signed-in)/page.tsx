@@ -1,6 +1,6 @@
 "use client";
 
-import { BookOpen, Flame, Heart, SearchX } from "lucide-react";
+import { Flame, Heart, SearchX } from "lucide-react";
 import { useSearchParams } from "next/navigation";
 import { Suspense, useCallback, useDeferredValue, useEffect, useMemo, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
@@ -19,8 +19,8 @@ import { AddToCollectionDialog } from "@/components/library/AddToCollectionDialo
 import { FridgeMatchDialog } from "@/components/library/FridgeMatchDialog";
 import { LibraryToolbar } from "@/components/library/LibraryToolbar";
 import { NameDialog } from "@/components/library/NameDialog";
+import { FirstRecipeGuide } from "@/components/onboarding/FirstRecipeGuide";
 import { RecipeCard } from "@/components/recipes/RecipeCard";
-import { SnapLink } from "@/components/shell/ComingSoon";
 import { Notice } from "@/components/ui/Alert";
 import { Button } from "@/components/ui/Button";
 import { ConfirmDialog } from "@/components/ui/Dialog";
@@ -206,7 +206,7 @@ function LibraryScreen() {
       {savedBanner ? (
         <div className="mb-4 flex items-center gap-3 rounded-2xl bg-success-soft px-4 py-3 text-sm font-medium text-success" role="status">
           <span className="flex-1">{t("library.saved")}</span>
-          <button type="button" onClick={() => setSavedBanner(false)} className="rounded-full px-2 py-1 font-semibold hover:bg-success/10">
+          <button type="button" data-track="library.saved_banner.dismiss" onClick={() => setSavedBanner(false)} className="rounded-full px-2 py-1 font-semibold hover:bg-success/10">
             {t("common.dismiss")}
           </button>
         </div>
@@ -246,7 +246,7 @@ function LibraryScreen() {
           <div className="mb-4">
             <Notice>
               {t("library.refreshFailed")}{" "}
-              <button type="button" onClick={() => void refresh()} className="font-semibold underline underline-offset-2">
+              <button type="button" data-track="library.load_error.retry" onClick={() => void refresh()} className="font-semibold underline underline-offset-2">
                 {t("common.retry")}
               </button>
             </Notice>
@@ -256,14 +256,10 @@ function LibraryScreen() {
         {loading ? (
           <Skeleton layout={layout} label={t("library.title")} />
         ) : error && recipes.length === 0 ? (
-          <ErrorState title={t("library.loadFailedTitle")} onRetry={() => void refresh()} />
+          <ErrorState title={t("library.loadFailedTitle")} trackId="library.load_error" onRetry={() => void refresh()} />
         ) : libraryEmpty ? (
-          <EmptyState
-            icon={<BookOpen aria-hidden />}
-            title={t("library.emptyTitle")}
-            body={t("library.emptyBody")}
-            action={<SnapLink />}
-          />
+          // The first thing a new account sees after onboarding: the way to a first recipe (PIN-140).
+          <FirstRecipeGuide />
         ) : (
           <>
             <p aria-live="polite" className="mb-3 text-sm font-semibold text-muted">
@@ -320,6 +316,7 @@ function LibraryScreen() {
           const excludeId = collectionDialog?.mode === "rename" ? collectionDialog.id : undefined;
           return isCollectionNameTaken(collections, name, excludeId) ? t("library.collectionNameTaken") : null;
         }}
+        trackId="library.collection_name"
         onSubmit={async (name) => {
           if (collectionDialog?.mode === "rename") await renameCollection(collectionDialog.id, name);
           else setSelectedCollectionId((await createCollection(name)).id);
@@ -337,6 +334,7 @@ function LibraryScreen() {
           if (!name.trim()) return t("library.recipeNameRequired");
           return renameTarget && isRecipeNameTaken(recipes, name, renameTarget.id) ? t("library.recipeNameTaken") : null;
         }}
+        trackId="library.rename_recipe"
         onSubmit={renameSelected}
       />
 
@@ -346,6 +344,7 @@ function LibraryScreen() {
         title={t("library.deleteRecipeTitle")}
         description={t("library.deleteRecipeBody", { name: deleteTarget ? (deleteTarget.display_title ?? deleteTarget.title) : "" })}
         confirmLabel={t("common.delete")}
+        trackId="library.delete_recipe_dialog"
         onConfirm={deleteSelected}
       />
 
@@ -355,6 +354,7 @@ function LibraryScreen() {
         title={t("library.deleteCollectionTitle")}
         description={collectionToDelete ? t("library.deleteCollectionBody", { name: collectionToDelete.name }) : t("library.deleteCollectionBodyGeneric")}
         confirmLabel={t("library.deleteCollection")}
+        trackId="library.delete_collection_dialog"
         onConfirm={deleteSelectedCollection}
       />
     </>
@@ -374,7 +374,7 @@ function NoResults({ kind, onClear }: { kind: "tonight" | "favorites" | "matches
       title={copy.title}
       body={copy.body}
       action={
-        <Button variant="secondary" onClick={onClear}>
+        <Button variant="secondary" trackId="library.filters.clear" onClick={onClear}>
           {t("library.clearFilters")}
         </Button>
       }

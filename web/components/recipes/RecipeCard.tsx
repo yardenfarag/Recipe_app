@@ -30,6 +30,8 @@ export type RecipeCardProps = {
   detail?: ReactNode;
   /** Where the card leads. Defaults to the saved recipe's page; the Hub passes its own. */
   href?: string;
+  /** Activity-log prefix, as on mobile: the card logs `<trackId>.open`, `.favorite` and `.more`. */
+  trackId?: string;
 };
 
 /**
@@ -37,7 +39,7 @@ export type RecipeCardProps = {
  * middle-click and is one stop for a screen reader; the heart and the menu sit above that link as their own
  * buttons. Shared by the Library and the Hub.
  */
-function RecipeCardBase({ recipe, variant = "grid", onToggleFavorite, actions, detail, href }: RecipeCardProps) {
+function RecipeCardBase({ recipe, variant = "grid", onToggleFavorite, actions, detail, href, trackId = "library.recipe" }: RecipeCardProps) {
   const { t } = useTranslation();
   const { language } = useLanguage();
   const title = recipe.display_title ?? recipe.title;
@@ -86,6 +88,7 @@ function RecipeCardBase({ recipe, variant = "grid", onToggleFavorite, actions, d
         <h3 className={cn("font-bold text-text text-pretty", list ? "line-clamp-2 text-base leading-snug" : "line-clamp-3 text-[17px] leading-snug")}>
           <Link
             href={href ?? `/recipe/${recipe.id}`}
+            data-track={`${trackId}.open`}
             className="rounded-md outline-none after:absolute after:inset-0 after:z-0 after:content-[''] focus-visible:after:rounded-[inherit] focus-visible:after:ring-2 focus-visible:after:ring-primary"
           >
             {title}
@@ -116,6 +119,7 @@ function RecipeCardBase({ recipe, variant = "grid", onToggleFavorite, actions, d
           {onToggleFavorite ? (
             <button
               type="button"
+              data-track={`${trackId}.favorite`}
               aria-pressed={isFavorite}
               aria-label={isFavorite ? t("a11y.removeRecipeFromFavorites", { name: title }) : t("a11y.addRecipeToFavorites", { name: title })}
               onClick={() => onToggleFavorite(recipe)}
@@ -132,6 +136,7 @@ function RecipeCardBase({ recipe, variant = "grid", onToggleFavorite, actions, d
               trigger={
                 <button
                   type="button"
+                  data-track={`${trackId}.more`}
                   aria-label={t("a11y.recipeActionsFor", { name: title })}
                   className="grid h-10 w-10 place-items-center rounded-full text-muted transition-colors hover:bg-element hover:text-text active:scale-95 data-[state=open]:bg-element"
                 >

@@ -131,7 +131,7 @@ export function CookMode({
         >
           <header className="flex items-center gap-2 px-3 pt-[max(env(safe-area-inset-top),0.75rem)] sm:px-5">
             <RadixDialog.Close asChild>
-              <IconButton label={t("recipe.cookModeClose")} icon={<X className="h-6 w-6" />} className="h-12 w-12" />
+              <IconButton label={t("recipe.cookModeClose")} trackId="cook_mode.close" icon={<X className="h-6 w-6" />} className="h-12 w-12" />
             </RadixDialog.Close>
             <RadixDialog.Title
               dir={direction}
@@ -150,6 +150,7 @@ export function CookMode({
               <IconButton
                 label={fullscreen.active ? t("web.cook.exitFullScreen") : t("web.cook.fullScreen")}
                 aria-pressed={fullscreen.active}
+                trackId="cook_mode.fullscreen.toggle"
                 icon={fullscreen.active ? <Minimize className="h-5 w-5" /> : <Maximize className="h-5 w-5" />}
                 onClick={fullscreen.toggle}
                 className="h-12 w-12"
@@ -167,6 +168,7 @@ export function CookMode({
                   <li key={`${item.step}-${itemIndex}`} className="flex-1">
                     <button
                       type="button"
+                      data-track="cook_mode.progress.go_to_step"
                       onClick={() => go(itemIndex)}
                       aria-label={t("web.cook.goToStep", { step: itemIndex + 1 })}
                       aria-current={itemIndex === position ? "step" : undefined}
@@ -205,6 +207,7 @@ export function CookMode({
                       <Button
                         size="lg"
                         className="h-14 text-lg"
+                        trackId="cook_mode.mark_cooked"
                         onClick={() => {
                           onCooked();
                           close(false);
@@ -214,7 +217,7 @@ export function CookMode({
                       </Button>
                     ) : null}
                     {total > 0 ? (
-                      <Button variant="ghost" onClick={() => go(0)}>
+                      <Button variant="ghost" trackId="cook_mode.start_over" onClick={() => go(0)}>
                         <RotateCcw aria-hidden className="h-4 w-4" />
                         {t("web.cook.startOver")}
                       </Button>
@@ -239,6 +242,7 @@ export function CookMode({
                         <li key={`${timer.seconds}-${timer.label}`}>
                           <button
                             type="button"
+                            data-track="cook_mode.timer.start"
                             onClick={() => timers.start(timer.label, timer.seconds, position + 1)}
                             aria-label={t("recipe.cookModeTimer", { label: timer.label })}
                             className="inline-flex h-12 items-center gap-2 rounded-full bg-accent-soft px-5 text-base font-bold text-accent transition-[filter] hover:brightness-95 active:brightness-90"
@@ -287,6 +291,7 @@ export function CookMode({
                       </span>
                       <button
                         type="button"
+                        data-track="cook_mode.timer.stop"
                         onClick={() => timers.stop(timer.id)}
                         aria-label={t("web.cook.stopTimer", { label: timer.label })}
                         className="grid h-8 w-8 place-items-center rounded-full hover:bg-surface/40"
@@ -308,6 +313,7 @@ export function CookMode({
                 variant="outline"
                 size="lg"
                 className="h-16 flex-1 text-lg"
+                trackId="cook_mode.prev_step"
                 onClick={goBack}
                 disabled={position === 0 || total === 0}
               >
@@ -315,11 +321,11 @@ export function CookMode({
                 {t("recipe.cookModeBack")}
               </Button>
               {done || total === 0 ? (
-                <Button size="lg" className="h-16 flex-[1.6] text-lg" onClick={() => close(false)}>
+                <Button size="lg" className="h-16 flex-[1.6] text-lg" trackId="cook_mode.finished.close" onClick={() => close(false)}>
                   {t("web.cook.backToRecipe")}
                 </Button>
               ) : (
-                <Button size="lg" className="h-16 flex-[1.6] text-lg" onClick={goNext}>
+                <Button size="lg" className="h-16 flex-[1.6] text-lg" trackId="cook_mode.next_step" onClick={goNext}>
                   {isLast ? t("web.cook.finish") : t("recipe.cookModeNext")}
                   {isLast ? <Check aria-hidden className="h-5 w-5" /> : <ArrowRight aria-hidden className="h-5 w-5 rtl:rotate-180" />}
                 </Button>

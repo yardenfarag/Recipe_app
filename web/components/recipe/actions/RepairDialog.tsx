@@ -119,7 +119,7 @@ function Body({ recipe, onClose, onRepaired, onOutOfCredits, onLock }: Props & {
         description={stage.message}
         footer={
           <DialogClose asChild>
-            <Button>{t("common.close")}</Button>
+            <Button trackId="recipe_repair.failed.close">{t("common.close")}</Button>
           </DialogClose>
         }
       />
@@ -132,11 +132,11 @@ function Body({ recipe, onClose, onRepaired, onOutOfCredits, onLock }: Props & {
       footer={
         <>
           <DialogClose asChild>
-            <Button variant="ghost" disabled={stage.applying}>
+            <Button variant="ghost" trackId="recipe_repair.cancel" disabled={stage.applying}>
               {t("common.cancel")}
             </Button>
           </DialogClose>
-          <Button busy={stage.applying} onClick={() => void apply(stage.offer)}>
+          <Button trackId="recipe_repair.apply" busy={stage.applying} onClick={() => void apply(stage.offer)}>
             <Wrench aria-hidden className="h-4 w-4" />
             {t("recipe.repairApply")}
           </Button>

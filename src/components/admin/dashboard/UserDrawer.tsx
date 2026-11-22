@@ -1,58 +1,11 @@
 import { useEffect, useMemo, useState } from 'react';
 
-import {
-  featureName,
-  formatCount,
-  formatDate,
-  formatUsd,
-  humanize,
-  num,
-  relativeTime,
-  type UserDetail,
-} from '@shared/lib/adminDashboard';
+import { formatCount, formatDate, formatUsd, relativeTime, type UserDetail } from '@shared/lib/adminDashboard';
+import { buildUserTimeline, userDetailStats } from '@shared/lib/adminDashboardView';
 import { errorText } from '@shared/lib/errorText';
 import { fetchAdminUserDetail } from '@shared/lib/supabase/adminDashboard';
 
 import { Badge, Card, Skeleton, Thumb, platformName } from './ui';
-
-type TimelineItem = { when: string; text: string; detail?: string; tone?: 'bad' | 'muted'; cost?: number };
-
-const FAILED = new Set(['error', 'failed', 'metering_error']);
-
-function eventDetail(properties: Record<string, unknown>): string {
-  const parts = ['source', 'from', 'trigger', 'mode', 'platform', 'locale', 'outcome', 'action']
-    .map((key) => properties?.[key])
-    .filter((v): v is string => typeof v === 'string' && v.trim() !== '');
-  return parts.join(' · ');
-}
-
-function buildTimeline(detail: UserDetail): TimelineItem[] {
-  const items: TimelineItem[] = [];
-  for (const r of detail.recipes) {
-    items.push({ when: r.created_at, text: `Saved “${r.title || 'Untitled recipe'}”`, detail: platformName(r.platform) });
-  }
-  for (const e of detail.ai_events) {
-    const failed = FAILED.has(e.status);
-    items.push({
-      when: e.created_at,
-      text: `${featureName(e.action)} · ${humanize(e.status).toLowerCase()}`,
-      detail: [e.platform ? platformName(e.platform) : null, e.message].filter(Boolean).join(' · ') || undefined,
-      tone: failed ? 'bad' : e.action.endsWith('_gate') ? 'muted' : undefined,
-      cost: num(e.cost_usd),
-    });
-  }
-  for (const e of detail.events) {
-    items.push({ when: e.created_at, text: humanize(e.name), detail: eventDetail(e.properties) || undefined, tone: 'muted' });
-  }
-  for (const p of detail.purchases) {
-    items.push({
-      when: p.created_at,
-      text: `Bought ${p.credits} credits${p.revoked_at ? ' (refunded)' : ''}`,
-      detail: p.provider === 'revenuecat' ? 'App store' : p.provider,
-    });
-  }
-  return items.sort((a, b) => b.when.localeCompare(a.when)).slice(0, 200);
-}
 
 export function UserDrawer({
   userId,
@@ -90,18 +43,8 @@ export function UserDrawer({
     return () => window.removeEventListener('keydown', onKey);
   }, [onClose]);
 
-  const timeline = useMemo(() => (detail ? buildTimeline(detail) : []), [detail]);
-  const stats = useMemo(() => {
-    if (!detail) return null;
-    return {
-      extractions: num(detail.profile.extractions),
-      failures: num(detail.profile.failures),
-      cost: num(detail.profile.ai_cost_usd),
-      bought: detail.purchases.filter((p) => !p.revoked_at).reduce((sum, p) => sum + num(p.credits), 0),
-      lastActive: timeline[0]?.when ?? null,
-      cooked: detail.recipes.filter((r) => r.last_cooked_at).length,
-    };
-  }, [detail, timeline]);
+  const timeline = useMemo(() => (detail ? buildUserTimeline(detail) : []), [detail]);
+  const stats = useMemo(() => (detail ? userDetailStats(detail, timeline) : null), [detail, timeline]);
 
   return (
     <>

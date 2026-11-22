@@ -104,7 +104,7 @@ export default function ResetPasswordPage() {
           <h1 className="mb-2 text-center text-2xl font-bold text-text">{t("resetPassword.updatedTitle")}</h1>
           <p className="mb-6 text-center text-muted">{t("resetPassword.updatedBody")}</p>
         </div>
-        <Button fullWidth size="lg" onClick={() => router.replace("/")}>{t("recipe.goToLibrary")}</Button>
+        <Button fullWidth size="lg" trackId="reset_password.done.continue" onClick={() => router.replace("/")}>{t("recipe.goToLibrary")}</Button>
       </AuthCard>
     );
   }
@@ -115,7 +115,7 @@ export default function ResetPasswordPage() {
         <PinchMark />
         <div className="flex flex-col gap-4">
           {error ? <ErrorAlert>{error}</ErrorAlert> : null}
-          <Button fullWidth size="lg" onClick={() => router.replace("/auth?mode=forgot")}>{t("resetPassword.requestNewLink")}</Button>
+          <Button fullWidth size="lg" trackId="reset_password.request_new_link" onClick={() => router.replace("/auth?mode=forgot")}>{t("resetPassword.requestNewLink")}</Button>
         </div>
       </AuthCard>
     );
@@ -139,6 +139,7 @@ export default function ResetPasswordPage() {
           trailing={
             <button
               type="button"
+              data-track="reset_password.password.toggle_visibility"
               className="rounded-full px-3 py-1 text-sm font-semibold text-primary hover:bg-primary-soft"
               onClick={() => setShowPassword((value) => !value)}
               aria-pressed={showPassword}
@@ -156,7 +157,7 @@ export default function ResetPasswordPage() {
           dir="ltr"
         />
         {error ? <ErrorAlert>{error}</ErrorAlert> : null}
-        <Button fullWidth size="lg" type="submit" busy={busy}>
+        <Button fullWidth size="lg" type="submit" trackId="reset_password.submit" busy={busy}>
           {t("resetPassword.update")}
         </Button>
       </form>

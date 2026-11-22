@@ -68,7 +68,7 @@ export default function SharedRecipePage() {
         body={t("web.share.notFoundBody")}
         action={
           user ? (
-            <Link href="/" className={buttonClasses({ variant: "secondary" })}>
+            <Link href="/" data-track="shared_recipe.go_home" className={buttonClasses({ variant: "secondary" })}>
               {t("recipe.goToLibrary")}
             </Link>
           ) : null
@@ -76,18 +76,19 @@ export default function SharedRecipePage() {
       />
     );
   }
-  if (state.status === "error") return <ErrorState title={t("recipe.loadFailedTitle")} onRetry={state.reload} />;
+  if (state.status === "error") return <ErrorState title={t("recipe.loadFailedTitle")} trackId="shared_recipe.load_error" onRetry={state.reload} />;
 
   const actions = (
     <>
       {state.libraryRecipeId ? (
-        <Link href={`/recipe/${state.libraryRecipeId}`} className={buttonClasses({ size: "lg" })}>
+        <Link href={`/recipe/${state.libraryRecipeId}`} data-track="shared_recipe.open_in_library" className={buttonClasses({ size: "lg" })}>
           <BookOpenCheck aria-hidden className="h-5 w-5" />
           {t("hub.openInLibrary")}
         </Link>
       ) : (
         <Button
           size="lg"
+          trackId="shared_recipe.save"
           busy={saving || savingAfterSignIn}
           onClick={() => (user ? void save() : router.push(`${signInHere("signup", "save=1")}&reason=shared_recipe`))}
         >

@@ -252,6 +252,20 @@ describe('remix instructions', () => {
     expect(text).not.toContain('olives');
   });
 
+  it('asks to work around missing appliances, after allergies and dislikes', () => {
+    const list: AvoidList = { allergies: ['peanuts'], otherAllergies: [], dislikes: ['olives'] };
+    const matches = findAvoidMatches(['olives'], list);
+    const text = makeWithoutInstruction(list, matches, 'My kitchen has no stand mixer: change the steps so I can make it without it')!;
+    expect(text.indexOf('allergic')).toBeLessThan(text.indexOf('do not like'));
+    expect(text.indexOf('do not like')).toBeLessThan(text.indexOf('stand mixer'));
+    expect(text.endsWith('Keep the rest of the dish the same')).toBe(true);
+  });
+
+  it('works for appliances alone, with nothing on the avoid list', () => {
+    const text = makeWithoutInstruction(NOTHING, findAvoidMatches(['flour'], NOTHING), 'My kitchen has no blender: change the steps so I can make it without it');
+    expect(text).toBe('My kitchen has no blender: change the steps so I can make it without it. Keep the rest of the dish the same');
+  });
+
   it('has no allergy sentence without allergies', () => {
     expect(allergyInstruction(NOTHING)).toBeNull();
   });

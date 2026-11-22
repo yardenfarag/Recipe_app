@@ -4,17 +4,9 @@ import * as WebBrowser from 'expo-web-browser';
 import { Platform } from 'react-native';
 
 import { openAppStore, storeUrlFor } from '@/lib/appStore';
-import type { ButtonAction } from '@shared/lib/inAppMessages';
+import { isSafeRoute, isSafeWebUrl, type ButtonAction } from '@shared/lib/inAppMessages';
 
-/** A web address the in-app browser may open. The server checks too; this is the app's own guard. */
-export function isSafeWebUrl(url: string): boolean {
-  return /^https:\/\/\S+$/i.test(url);
-}
-
-/** An app path ("/hub"), not a web address ("//evil.example") and not empty. */
-export function isSafeRoute(href: string): boolean {
-  return /^\/([^/\s]\S*)?$/.test(href);
-}
+export { isSafeRoute, isSafeWebUrl } from '@shared/lib/inAppMessages';
 
 /**
  * The store page. On web it opens in a new tab and leaves the app where it

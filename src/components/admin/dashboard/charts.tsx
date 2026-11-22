@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 
 import { formatDay, formatPercent, type DashboardDay } from '@shared/lib/adminDashboard';
+import { barPath, niceTicks } from '@shared/lib/adminDashboardView';
 
 function useElementWidth<T extends HTMLElement>() {
   const ref = useRef<T | null>(null);
@@ -16,24 +17,6 @@ function useElementWidth<T extends HTMLElement>() {
     return () => observer.disconnect();
   }, []);
   return [ref, width] as const;
-}
-
-/** A round axis maximum and evenly spaced ticks for it. */
-function niceTicks(max: number, count = 4): number[] {
-  if (max <= 0) return [0, 1];
-  const rough = max / count;
-  const magnitude = 10 ** Math.floor(Math.log10(rough));
-  const step = [1, 2, 2.5, 5, 10].map((m) => m * magnitude).find((s) => s >= rough) ?? rough;
-  const ticks: number[] = [];
-  for (let v = 0; v <= max + step * 0.001; v += step) ticks.push(Number(v.toFixed(10)));
-  if (ticks[ticks.length - 1] < max) ticks.push(Number((ticks[ticks.length - 1] + step).toFixed(10)));
-  return ticks;
-}
-
-/** Bar path with 4px rounded top corners, anchored flat on the baseline. */
-function barPath(x: number, y: number, w: number, h: number): string {
-  const r = Math.min(4, w / 2, h);
-  return `M${x},${y + h}V${y + r}Q${x},${y} ${x + r},${y}H${x + w - r}Q${x + w},${y} ${x + w},${y + r}V${y + h}Z`;
 }
 
 export type DayMetric = {

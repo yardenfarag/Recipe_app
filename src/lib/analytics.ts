@@ -3,31 +3,24 @@ import * as Localization from 'expo-localization';
 import { getInstallId } from '@/lib/installId';
 import { supabase } from '@/lib/supabase/client';
 
-/** How the person started this Snap. `pdf`: Snap from a PDF (PIN-72); a PDF shared into Pinch counts as `share`. */
-export type RecipeEntrySource = 'share' | 'url' | 'camera' | 'library' | 'pdf';
-export type RecipeEntryMode = 'extract' | 'invent';
-/** Why the credit purchase sheet opened. */
-export type PaywallTrigger = 'out_of_credits' | 'settings';
-/** What happened after "Share Pinch". */
-export type AppShareOutcome = 'shared' | 'copied' | 'dismissed';
-/** Answers to "How did you hear about Pinch?" in onboarding, in the order shown. */
-export const HEARD_ABOUT_SOURCES = [
-  'tiktok_instagram',
-  'friend',
-  'app_store',
-  'google',
-  'ai_assistant',
-  'other',
-] as const;
-export type HeardAboutSource = (typeof HEARD_ABOUT_SOURCES)[number];
+import type {
+  AppShareOutcome,
+  HeardAboutSource,
+  ProductEventName,
+  PaywallTrigger,
+  RecipeEntryMode,
+  RecipeEntrySource,
+} from '@shared/lib/productEvents';
 
-type ProductEventName =
-  | 'recipe_extracted'
-  | 'recipe_saved'
-  | 'paywall_viewed'
-  | 'onboarding_completed'
-  | 'app_shared'
-  | 'heard_about';
+export {
+  HEARD_ABOUT_SOURCES,
+  type AppShareOutcome,
+  type HeardAboutSource,
+  type PaywallTrigger,
+  type RecipeEntryMode,
+  type RecipeEntrySource,
+} from '@shared/lib/productEvents';
+
 // web_intro_viewed / web_intro_clicked come from the static landing page (landing/index.html).
 
 function capture(name: ProductEventName, properties: Record<string, string>): void {

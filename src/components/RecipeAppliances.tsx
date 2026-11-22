@@ -17,6 +17,7 @@ import {
   isBasicAppliance,
 } from '@shared/lib/applianceDisplay';
 import type { RecipeAppliance } from '@shared/lib/appliances';
+import { applianceFit, type KitchenAppliances } from '@shared/lib/ownedAppliances';
 
 type RecipeAppliancesProps = {
   /** Already cleaned with recipeAppliancesOf(). null = not analysed: nothing is shown. */
@@ -33,6 +34,11 @@ type RecipeAppliancesProps = {
    * "Updating…" beside the title; with no list yet (a written recipe), only the title and that.
    */
   updating?: boolean;
+  /**
+   * The reader's "My appliances" (PIN-155), or null when they never saved a list: then nothing is marked. Once saved,
+   * an appliance they have gets a tick and a required one they don't gets the warning colour.
+   */
+  kitchen?: KitchenAppliances | null;
 };
 
 /** "What you'll need" (ADR 017 decision 4): Required, then "Makes it better" with benefits and tips. */
@@ -41,6 +47,7 @@ export function RecipeAppliances({
   instructions,
   stepDirection,
   updating = false,
+  kitchen = null,
 }: RecipeAppliancesProps) {
   const { t } = useTranslation();
   const { colors } = useThemePreference();
@@ -85,9 +92,14 @@ export function RecipeAppliances({
   const chip = (item: RecipeAppliance) => {
     const name = t(applianceNameKey(item.key));
     const basic = item.required && isBasicAppliance(item.key);
-    const filled = item.required && !basic;
-    const color = filled ? colors.primary : colors.textSecondary;
-    const detail = describe(item);
+    const fit = applianceFit(item, kitchen);
+    // A required appliance the reader doesn't have (and has no stand-in for) is the one thing worth a warning.
+    const warn = fit === 'missing' && item.required;
+    const filled = item.required && !basic && !warn;
+    const color = warn ? colors.warning : filled ? colors.primary : colors.textSecondary;
+    const fitLabel =
+      fit === 'owned' ? t('myAppliances.inKitchen') : fit ? t('myAppliances.notInKitchen') : null;
+    const detail = [fitLabel, describe(item)].filter(Boolean).join(', ');
     return (
       <Pressable
         key={item.key}
@@ -97,8 +109,8 @@ export function RecipeAppliances({
         hitSlop={4}
         className="min-h-[36px] flex-row items-center gap-1.5 rounded-full border px-3 active:opacity-70"
         style={{
-          backgroundColor: filled ? colors.primarySoft : 'transparent',
-          borderColor: filled ? colors.primarySoft : colors.border,
+          backgroundColor: warn ? colors.warningSoft : filled ? colors.primarySoft : 'transparent',
+          borderColor: warn ? colors.warningSoft : filled ? colors.primarySoft : colors.border,
         }}
         accessibilityRole="button"
         accessibilityLabel={[name, kindLabel(item), detail].filter(Boolean).join(', ')}
@@ -112,6 +124,8 @@ export function RecipeAppliances({
         >
           {name}
         </Text>
+        {fit === 'owned' ? <Ionicons name="checkmark" size={14} color={colors.success} /> : null}
+        {warn ? <Ionicons name="alert-circle" size={14} color={colors.warning} /> : null}
       </Pressable>
     );
   };

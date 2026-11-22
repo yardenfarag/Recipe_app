@@ -1,12 +1,42 @@
 import { fireEvent, render, screen, within } from "@testing-library/react";
 import { I18nextProvider } from "react-i18next";
-import { describe, expect, it } from "vitest";
+import { afterEach, beforeAll, describe, expect, it, vi } from "vitest";
 
+import type { KitchenAppliances } from "@shared/lib/ownedAppliances";
+import type { OwnedAppliancesSnapshot } from "@shared/lib/supabase/ownedAppliances";
 import type { Instruction, Recipe } from "@shared/types/recipe";
 
+import { fakeActions } from "@/components/recipe/actions/fakeActions";
+import { RecipeActionsContext } from "@/components/recipe/actions/RecipeActionsContext";
 import { RecipeAppliancesSection } from "@/components/recipe/RecipeAppliancesSection";
 import type { RecipeDisplay } from "@/components/recipe/types";
 import i18n from "@/lib/i18n";
+import { addMyAppliancesStrings } from "@/lib/settings/ownedAppliancesTestStrings";
+
+const owned = vi.hoisted(() => ({
+  snapshot: { userId: null, loaded: true, kitchen: null, status: "idle" } as OwnedAppliancesSnapshot,
+}));
+vi.mock("@/lib/settings/ownedAppliances", () => ({ useOwnedAppliances: () => owned.snapshot }));
+vi.mock("next/link", () => ({
+  default: ({ href, children, ...rest }: { href: string; children: React.ReactNode }) => (
+    <a href={href} {...rest}>
+      {children}
+    </a>
+  ),
+}));
+
+/** The signed-in reader's saved list: these ticked, every other appliance not owned. */
+function signedInWith(kitchen: KitchenAppliances | null) {
+  owned.snapshot = { userId: "u1", loaded: true, kitchen, status: "idle" };
+}
+
+function kitchenWith(ownedKeys: KitchenAppliances["owned"]): KitchenAppliances {
+  return { owned: ownedKeys, notOwned: ALL.filter((key) => !ownedKeys.includes(key)) };
+}
+
+const ALL = [
+  "stovetop", "oven", "microwave", "blender", "immersion_blender", "stand_mixer", "hand_mixer", "kitchen_thermometer", "wok",
+] as KitchenAppliances["owned"];
 
 const instructions: Instruction[] = [
   { step: 1, text: "Heat the oven to 180°C." },
@@ -35,6 +65,11 @@ function displayOf(recipeAppliances: unknown, overrides: Partial<RecipeDisplay> 
 }
 
 const wrap = (ui: React.ReactNode) => render(<I18nextProvider i18n={i18n}>{ui}</I18nextProvider>);
+
+beforeAll(() => addMyAppliancesStrings());
+afterEach(() => {
+  owned.snapshot = { userId: null, loaded: true, kitchen: null, status: "idle" };
+});
 
 describe("RecipeAppliancesSection", () => {
   it("shows what the recipe needs, then what makes it better", () => {
@@ -88,5 +123,76 @@ describe("RecipeAppliancesSection", () => {
     wrap(<RecipeAppliancesSection display={displayOf([])} system="original" />);
     expect(screen.getByText("No special equipment needed")).toBeDefined();
     expect(screen.queryAllByRole("button")).toHaveLength(0);
+  });
+});
+
+describe("RecipeAppliancesSection and My appliances", () => {
+  it("marks nothing and warns about nothing before the reader saves a list", () => {
+    signedInWith(null);
+    wrap(<RecipeAppliancesSection display={displayOf(appliances)} system="original" />);
+    expect(screen.queryByTestId("appliances-missing")).toBeNull();
+    expect(screen.queryByTestId("appliances-ready")).toBeNull();
+    expect(screen.getByTestId("appliance-chip-stand_mixer").getAttribute("data-fit")).toBeNull();
+    // The recipe needs something special: one quiet line offers to set the list up.
+    expect(screen.getByRole("link", { name: /Tell Pinch what's in your kitchen/ }).getAttribute("href")).toBe("/settings/recipe#appliances");
+  });
+
+  it("does not ask a guest, or about a recipe that only needs the basics", () => {
+    wrap(<RecipeAppliancesSection display={displayOf(appliances)} system="original" />);
+    expect(screen.queryByTestId("appliances-ask")).toBeNull();
+    signedInWith(null);
+    wrap(<RecipeAppliancesSection display={displayOf([{ key: "oven", required: true, steps: [1], origin: "source" }])} system="original" />);
+    expect(screen.queryByTestId("appliances-ask")).toBeNull();
+  });
+
+  it("says which required appliance the kitchen is missing, and offers the fix on a saved recipe", () => {
+    signedInWith(kitchenWith(["stovetop", "oven", "hand_mixer"]));
+    const display = displayOf(appliances);
+    const actions = fakeActions(display, { canFix: true });
+    wrap(
+      <RecipeActionsContext.Provider value={actions}>
+        <RecipeAppliancesSection display={display} system="original" />
+      </RecipeActionsContext.Provider>,
+    );
+    const mixer = screen.getByTestId("appliance-chip-stand_mixer");
+    expect(mixer.getAttribute("data-fit")).toBe("missing");
+    expect(mixer.getAttribute("aria-label")).toContain("Not in your kitchen");
+    expect(screen.getByTestId("appliance-chip-oven").getAttribute("data-fit")).toBe("owned");
+    const note = screen.getByTestId("appliances-missing");
+    expect(within(note).getByText("Stand mixer")).toBeDefined();
+    expect(within(note).getByRole("link", { name: "Edit my appliances" })).toBeDefined();
+    fireEvent.click(within(note).getByRole("button", { name: "Make it without these" }));
+    expect(actions.open).toHaveBeenCalledWith({ kind: "fix" });
+    expect(screen.queryByTestId("appliances-ready")).toBeNull();
+    expect(screen.queryByTestId("appliances-ask")).toBeNull();
+  });
+
+  it("never warns about an optional appliance or a tip", () => {
+    signedInWith(kitchenWith(["stovetop", "oven", "stand_mixer"]));
+    wrap(<RecipeAppliancesSection display={displayOf(appliances)} system="original" />);
+    expect(screen.getByTestId("appliance-chip-kitchen_thermometer").getAttribute("data-fit")).toBe("missing");
+    expect(screen.queryByTestId("appliances-missing")).toBeNull();
+    expect(screen.getByTestId("appliances-ready").textContent).toBe("You have everything");
+  });
+
+  it("has no fix button where the recipe can't be changed (Hub, shared, preview)", () => {
+    signedInWith(kitchenWith(["oven"]));
+    wrap(<RecipeAppliancesSection display={displayOf(appliances)} system="original" />);
+    const note = screen.getByTestId("appliances-missing");
+    expect(within(note).queryByRole("button")).toBeNull();
+    expect(within(note).getByText(/Save the recipe/)).toBeDefined();
+  });
+
+  it("says a stand-in the reader has works, instead of warning", () => {
+    signedInWith(kitchenWith(["stovetop", "immersion_blender"]));
+    wrap(
+      <RecipeAppliancesSection
+        display={displayOf([{ key: "blender", required: true, alternative: "immersion_blender", steps: [2], origin: "source" }])}
+        system="original"
+      />,
+    );
+    expect(screen.queryByTestId("appliances-missing")).toBeNull();
+    expect(screen.getByTestId("appliances-covered").textContent).toContain("Stick blender works too");
+    expect(screen.getByTestId("appliances-ready")).toBeDefined();
   });
 });

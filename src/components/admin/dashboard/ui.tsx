@@ -1,6 +1,6 @@
 import { useState, type ReactNode } from 'react';
 
-import { deltaOf, humanize } from '@shared/lib/adminDashboard';
+import { deltaOf } from '@shared/lib/adminDashboard';
 
 import { Sparkline } from './charts';
 
@@ -98,20 +98,8 @@ export function PersonCell({ email, sub }: { email: string | null; sub?: ReactNo
   );
 }
 
-const PLATFORM_NAMES: Record<string, string> = {
-  instagram: 'Instagram',
-  tiktok: 'TikTok',
-  youtube: 'YouTube',
-  facebook: 'Facebook',
-  web: 'Website',
-  photo: 'Photo',
-  unknown: 'Unknown',
-};
-
-export function platformName(platform: string | null | undefined): string {
-  if (!platform) return 'Unknown';
-  return PLATFORM_NAMES[platform] ?? humanize(platform);
-}
+/** Moved to shared/lib/adminDashboardView.ts; the new web app's dashboard uses it too. */
+export { platformName } from '@shared/lib/adminDashboardView';
 
 /** Recipe photo, or a plain tile when there is none or it fails to load. */
 export function Thumb({ src, className = 'ph' }: { src: string | null; className?: string }) {

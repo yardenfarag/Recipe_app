@@ -21,6 +21,19 @@
 - **Retention.** No timed purge for now (decided 2026-11-14): rows are kept until the account is deleted. Deleting the account erases them, including guest rows from that account's sessions (`erase_user_personal_data`). Guest-only rows have no account to delete, so they stay. Revisit once volume or a policy need calls for a cut-off.
 - **Admin page.** Settings → Admin → Activity log (`/admin/activity`) shows the most-used screens and taps, sessions by person, and each session's timeline.
 
+## The new web app (PIN-143, 2026-11-21)
+
+The Next.js app in `web/` logs into the same table, through the same queue (`shared/lib/interactionQueue.ts`), with the same names where the action is the same.
+
+- **Told apart by the app version.** Platform is `web` (the only browser value the table accepts). The app version is the mobile version from `app.json` plus `-next`, e.g. `1.0.10-next` (`1.0.10-next-dev` from `next dev`), set in `web/lib/activity/appInfo.ts`. The Expo web app sends `1.0.10`, so the Activity page shows which app a session came from. Product events from the new web app carry the same value as an `app_version` property, and `platform: web` where mobile sends a platform.
+- **Presses through `data-track`.** `Button` and `IconButton` take `trackId` and write it as `data-track`; a Link or a plain element gets `data-track="…"` (or `TrackedLink`). One capture-phase click listener (`ActivityTracker`, mounted in `app/providers.tsx`) logs the nearest pressable element's id, or `unnamed`. The click path only reads an attribute and pushes onto the queue. A press that a tap can't express (a keyboard shortcut) calls `logTap()`.
+- **Screens by route pattern, with the mobile names.** `/recipe/[id]` comes from Next's params, and id-looking segments of an address no page matched become `[id]`. The five main pages log as the mobile tabs (`/(tabs)`, `/(tabs)/hub`, `/(tabs)/add`, `/(tabs)/list`, `/(tabs)/settings`), so both apps count together and an in-app message's screen list works on both.
+- **Sending.** Batches go straight to `rpc/log_interaction_events` with `fetch(…, { keepalive: true })`, so the last batch survives the tab closing; supabase-js can't ask for keepalive. Whatever is queued goes out when the tab is hidden or the page is left (`visibilitychange`, `pagehide`).
+- **Sessions per tab.** The session id is kept in the tab's `sessionStorage` when the tab is hidden, so a reload or a Google sign-in redirect keeps it; it is replaced after 30 minutes hidden, as on mobile.
+- **One visitor id.** The visitor id is `localStorage['pinch:install-id']`, the key the landing page (`landing/track.js`) and the Expo web app use. Rows before sign-in carry it, rows after carry the account, and both share the session id. Product events carry it signed in or not (as PR #73 did for mobile). Once the app is served at `pinch-app.io/app`, a landing-page visit joins the app activity through it; on `next.pinch-app.io` it is a different origin, so the two ids differ until the switch.
+- **Auth.** Logins and signups follow the same rules on both apps (`shared/lib/authActivity.ts`). A sign-in in one tab reaches the others through supabase-js; only a visible tab logs it. Sign-out logs `auth.logout` and sends it (waiting at most 2 s) before the session ends.
+- **Off in unit tests** (`NODE_ENV=test`) and on the server.
+
 ## Considered options
 
 - **PostHog autocapture.** Captures taps without code changes and comes with funnels. But it adds a third-party processor, and autocaptured names come from labels, which here are translated text and can contain recipe titles.
