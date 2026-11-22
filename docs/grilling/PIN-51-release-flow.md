@@ -3,7 +3,7 @@
 **Ticket:** [PIN-51](https://linear.app/pinch-recipe/issue/PIN-51/deployment-flow-for-web-ios-and-android)
 **Started:** 2026-11-22
 **Who decides:** Yarden
-**Status:** All decisions made (2026-11-22). Next, this file becomes an ADR (`docs/adr/030-release-flow.md`) and a how-to (`docs/RELEASING.md`).
+**Status:** All decisions made (2026-11-22). Written up as [ADR 030](../adr/030-release-flow.md) and the how-to [`docs/RELEASING.md`](../RELEASING.md). This file keeps the reasons.
 
 This file is the plain-English record of what we decided and why. If you forget how releases work or why we chose something, start here.
 
@@ -62,7 +62,7 @@ Why a tag: it marks exactly which code went to the stores, so later we can see w
 
 We create a Google Play "service account" (a robot user for Play Console), give it permission to upload Pinch releases, and store its key on Expo. Then CI can send Android builds to Play Console without anyone uploading a file.
 
-Only a person can do this, in Google Cloud and Play Console. The agent writes a step-by-step script (`/wizard`) to walk through it.
+Only a person can do this, in Google Cloud and Play Console. `bash scripts/release-setup-wizard.sh` walks through it step by step.
 
 ### D5. Real users get a release only after a person approves it
 
@@ -109,7 +109,7 @@ When a tag like `v1.0.11` is pushed, the workflow stops without building unless 
 
 - The tag matches the version in `app.json` and `package.json`.
 - The tagged commit is on `master`.
-- `docs/releases/1.0.11.md` exists.
+- `docs/releases/1.0.11.md` exists, and What's New is filled in for every language, at most 500 characters each (Google Play's limit). This was added while building, since an empty file would pass a check for "exists".
 - The usual quality checks (tests, typecheck, lint) pass.
 
 Why: each check catches a mistake that would otherwise waste a build or ship the wrong code.

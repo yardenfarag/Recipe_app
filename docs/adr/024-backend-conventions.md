@@ -103,6 +103,7 @@ handler(
 - New functions answer `{ status: 'ok', ... }` or `{ status: 'failed', code, message }`.
 - A function converted to the wrapper keeps its current shapes exactly, including the old `{ error }` bodies. The wrapper has a `legacyErrorShape` option for this.
 - To change a shape, ship app support for both shapes first, and drop the old one only once no supported build depends on it.
+- Over-the-air updates (ADR 030) don't change this. A phone can stay on the code its store version came with, and the backend deploys on every merge. To retire an old version, send an in-app message to users below it (`maxAppVersion`) with a button to the store.
 
 ### 4. Where data is accessed from
 
