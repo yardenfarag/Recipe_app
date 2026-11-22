@@ -4,6 +4,7 @@ import { ExternalLink, FileText, Globe, Lock, Trash2, type LucideIcon } from "lu
 import { useTranslation } from "react-i18next";
 
 import { SettingsPageHeader } from "@/components/settings/SettingsPageHeader";
+import { Tile } from "@/components/ui/Tile";
 import { LEGAL_URLS } from "@/lib/legal";
 
 /** The legal pages on pinch-app.io (the static files in legal/). They open in a new tab, so Settings stays put. */
@@ -18,20 +19,20 @@ export function LegalSettings() {
   return (
     <>
       <SettingsPageHeader id="legal" />
-      <ul className="overflow-hidden rounded-3xl border border-frosted-border bg-surface/80 shadow-soft backdrop-blur-sm">
+      <Tile as="ul" className="p-2">
         {links.map(({ href, label, Icon, trackId }) => (
-          <li key={href} className="border-b border-border last:border-b-0">
-            <a href={href} target="_blank" rel="noreferrer" data-track={trackId} className="flex min-h-14 items-center gap-3 px-4 py-3 transition-colors hover:bg-element">
-              <span aria-hidden className="grid h-9 w-9 shrink-0 place-items-center rounded-[14px] bg-primary-soft text-primary">
-                <Icon className="h-[18px] w-[18px]" />
+          <li key={href}>
+            <a href={href} target="_blank" rel="noreferrer" data-track={trackId} className="flex min-h-14 items-center gap-3 rounded-2xl p-2 pe-3 transition-colors hover:bg-element active:bg-selected">
+              <span aria-hidden className="grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-accent-soft text-accent-text">
+                <Icon className="h-5 w-5" />
               </span>
               <span className="min-w-0 flex-1 text-[15px] font-semibold text-text">{label}</span>
               <span className="sr-only">({t("web.recipe.opensInNewTab")})</span>
-              <ExternalLink aria-hidden className="h-4 w-4 shrink-0 text-muted" />
+              <ExternalLink aria-hidden className="h-4 w-4 shrink-0 text-muted rtl:-scale-x-100" />
             </a>
           </li>
         ))}
-      </ul>
+      </Tile>
     </>
   );
 }

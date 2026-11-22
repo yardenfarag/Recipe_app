@@ -4,6 +4,9 @@ import { Check, Home } from "lucide-react";
 import { useId } from "react";
 import { useTranslation } from "react-i18next";
 
+import { Button } from "@/components/ui/Button";
+import { Chip } from "@/components/ui/Chip";
+import { TileLabel } from "@/components/ui/Tile";
 import { cn } from "@/lib/cn";
 import type { IngredientChoice } from "@/lib/list/ingredientChoices";
 
@@ -43,14 +46,9 @@ export function IngredientPicker({
         <p aria-live="polite" className="text-sm text-muted">
           {t("addToList.selected", { selected: all.filter((choice) => selected.has(choice.key)).length, total: all.length })}
         </p>
-        <button
-          type="button"
-          data-track="add_to_list.toggle_all"
-          onClick={() => onChange(allSelected ? new Set() : new Set(all.map((choice) => choice.key)))}
-          className="rounded-full px-2 py-1 text-sm font-semibold text-primary hover:bg-primary-soft"
-        >
+        <Button variant="link" trackId="add_to_list.toggle_all" onClick={() => onChange(allSelected ? new Set() : new Set(all.map((choice) => choice.key)))}>
           {t(allSelected ? "addToList.deselectAll" : "addToList.selectAll")}
-        </button>
+        </Button>
       </div>
       <div className="flex flex-col gap-4">
         {sections.map((section) => (
@@ -79,9 +77,9 @@ function Section({
   return (
     <section aria-labelledby={section.title ? headingId : undefined}>
       {section.title ? (
-        <h3 id={headingId} className="mb-1 px-1 text-sm font-bold text-text">
+        <TileLabel as="h3" id={headingId} className="mb-1 px-1">
           {section.title}
-        </h3>
+        </TileLabel>
       ) : null}
       <ul className="flex flex-col">
         {section.choices.map((choice) => {
@@ -102,11 +100,11 @@ function Section({
                 <span
                   aria-hidden
                   className={cn(
-                    "grid h-6 w-6 shrink-0 place-items-center rounded-lg border-2 transition-colors",
-                    on ? "border-primary bg-primary text-on-primary" : "border-border",
+                    "grid h-5 w-5 shrink-0 place-items-center rounded-md border-2 transition-colors",
+                    on ? "border-primary bg-primary text-on-primary" : "border-muted/60",
                   )}
                 >
-                  {on ? <Check className="h-4 w-4" strokeWidth={3} /> : null}
+                  {on ? <Check className="h-3.5 w-3.5" strokeWidth={3.5} /> : null}
                 </span>
                 <span className="min-w-0 flex-1">
                   <span className="block text-[15px] font-medium text-text [overflow-wrap:anywhere]">{choice.name}</span>
@@ -117,16 +115,16 @@ function Section({
                 </span>
               </button>
               {!staple ? (
-                <button
-                  type="button"
-                  data-track="add_to_list.item.keep_staple"
+                <Chip
+                  size="sm"
+                  trackId="add_to_list.item.keep_staple"
                   onClick={() => onKeepStaple(choice)}
                   aria-label={t("addToList.keepThisLabel", { name: choice.name })}
-                  className="inline-flex min-h-10 shrink-0 items-center gap-1 rounded-full px-2 text-xs font-semibold text-accent hover:bg-accent-soft"
+                  className="gap-1 px-2.5"
                 >
-                  <Home aria-hidden className="h-3.5 w-3.5" />
+                  <Home aria-hidden className="h-3.5 w-3.5 text-accent-text" />
                   {t("addToList.keepThis")}
-                </button>
+                </Chip>
               ) : null}
             </li>
           );

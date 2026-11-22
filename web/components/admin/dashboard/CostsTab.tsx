@@ -278,7 +278,7 @@ export function CostsTab({
               </thead>
               <tbody>
                 {data.purchases.map((p) => (
-                  <tr key={`${p.created_at}-${p.user_id}`} className="hover:bg-surface-soft">
+                  <tr key={`${p.created_at}-${p.user_id}`} className="hover:bg-element">
                     <td className={cn(tdClass, "whitespace-nowrap")}>{formatDate(p.created_at, true)}</td>
                     <td className={tdClass}>
                       <Button

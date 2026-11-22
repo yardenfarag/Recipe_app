@@ -8,11 +8,13 @@ import { normalizeShoppingName } from "@shared/lib/shoppingListMerge";
 import type { ShoppingListItem } from "@shared/types/shoppingList";
 
 import { Button } from "@/components/ui/Button";
+import { Tile } from "@/components/ui/Tile";
 import { cn } from "@/lib/cn";
 import { parseQuantity } from "@/lib/list/shoppingListView";
 
+// The kit's text field (components/ui/TextField.tsx), without the label above it: these are named by aria-label.
 const fieldClass =
-  "h-11 min-w-0 rounded-2xl border border-border bg-bg px-3.5 text-[15px] text-text placeholder:text-muted/80 transition-[border-color,box-shadow] hover:border-muted/60 focus:border-primary focus:ring-4 focus:ring-primary/15";
+  "h-12 min-w-0 rounded-btn border border-border bg-surface px-4 text-base text-text placeholder:text-muted/80 transition-[border-color,box-shadow] hover:border-muted/60 focus:border-primary focus:ring-4 focus:ring-primary/15";
 
 /**
  * Always ready to type into: name, then optionally amount and unit, Enter adds. The fields empty at once and focus
@@ -64,7 +66,7 @@ export const AddItemForm = forwardRef<
 
   return (
     <form onSubmit={(event) => void submit(event)} noValidate aria-label={t("list.addItemToggle")}>
-      <div className="flex flex-wrap gap-2 rounded-3xl border border-frosted-border bg-surface p-2 shadow-soft sm:flex-nowrap">
+      <Tile className="flex flex-wrap gap-2 p-3 sm:flex-nowrap">
         <div className="relative min-w-0 basis-full sm:flex-1 sm:basis-auto">
           <input
             ref={nameRef}
@@ -86,7 +88,7 @@ export const AddItemForm = forwardRef<
           {!name ? (
             <kbd
               aria-hidden
-              className="pointer-events-none absolute end-3 top-1/2 hidden -translate-y-1/2 rounded-md border border-border px-1.5 font-sans text-xs text-muted pointer-fine:block"
+              className="pointer-events-none absolute end-3.5 top-1/2 hidden -translate-y-1/2 rounded-md border border-border px-1.5 font-sans text-xs text-muted pointer-fine:block"
             >
               /
             </kbd>
@@ -106,7 +108,7 @@ export const AddItemForm = forwardRef<
           autoComplete="off"
           enterKeyHint="done"
           maxLength={10}
-          className={cn(fieldClass, "w-20 text-center tabular-nums", error?.field === "quantity" && "border-danger")}
+          className={cn(fieldClass, "w-20 px-2 text-center tabular-nums", error?.field === "quantity" && "border-danger")}
         />
         <input
           value={unit}
@@ -118,17 +120,17 @@ export const AddItemForm = forwardRef<
           maxLength={30}
           className={cn(fieldClass, "w-0 flex-1 sm:w-32 sm:flex-none")}
         />
-        <Button type="submit" trackId="shopping_list.add.submit" className="h-11 px-4">
+        <Button type="submit" trackId="shopping_list.add.submit" className="px-4">
           <Plus aria-hidden className="h-5 w-5" />
           <span className="sr-only sm:not-sr-only">{t("list.addItem")}</span>
         </Button>
-      </div>
+      </Tile>
       {error ? (
-        <p id="add-item-error" role="alert" className="mt-2 px-3 text-sm font-medium text-danger">
+        <p id="add-item-error" role="alert" className="mt-2 px-4 text-sm font-medium text-danger">
           {error.message}
         </p>
       ) : typingDuplicates > 0 ? (
-        <p id="add-item-duplicate" aria-live="polite" className="mt-2 px-3 text-sm font-medium text-warning">
+        <p id="add-item-duplicate" aria-live="polite" className="mt-2 px-4 text-sm font-medium text-warning">
           {t(typingDuplicates === 1 ? "list.typingDuplicateOne" : "list.typingDuplicateOther", { count: typingDuplicates })}
         </p>
       ) : null}

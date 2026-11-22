@@ -42,7 +42,7 @@ export function RecipeActionsMenu({
           sideOffset={6}
           collisionPadding={12}
           aria-label={t("a11y.recipeActionsFor", { name: title })}
-          className="z-50 min-w-56 animate-pop-in rounded-2xl border border-frosted-border bg-surface p-1.5 shadow-lift"
+          className="z-50 min-w-56 animate-pop-in rounded-2xl border border-border bg-surface p-1.5 shadow-lift"
         >
           <Menu.Item className={itemClass} data-track="recipe_actions.add_to_collection" onSelect={() => actions.onAddToCollection(recipe)}>
             <FolderPlus aria-hidden className="h-[18px] w-[18px] text-muted" />

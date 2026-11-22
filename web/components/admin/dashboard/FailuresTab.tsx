@@ -171,7 +171,7 @@ export function FailuresTab({
               </thead>
               <tbody>
                 {data.recent_failures.map((f, i) => (
-                  <tr key={`${f.created_at}-${i}`} className="hover:bg-surface-soft">
+                  <tr key={`${f.created_at}-${i}`} className="hover:bg-element">
                     <td className={cn(tdClass, "whitespace-nowrap")}>{formatDate(f.created_at, true)}</td>
                     <td className={cn(tdClass, "max-w-56")}>
                       {f.guest ? (

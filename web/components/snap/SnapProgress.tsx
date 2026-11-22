@@ -14,6 +14,7 @@ import {
 } from "@shared/lib/snapProgress";
 
 import { CookieMark } from "@/components/CookieMark";
+import { Tile } from "@/components/ui/Tile";
 import type { SnapJob } from "@/lib/snap/useSnap";
 
 /** How often the ring and the countdown move. The ring eases between steps, so it looks continuous. */
@@ -21,6 +22,9 @@ export const TICK_MS = 250;
 
 const RADIUS = 44;
 const CIRCUMFERENCE = 2 * Math.PI * RADIUS;
+
+/** What is being read (the link, the PDF's name): a block inside the tile. */
+const sourceLine = "flex max-w-full items-center gap-2 rounded-2xl bg-element px-4 py-2.5 text-sm text-muted";
 
 /** Seconds since the wait started, updated every tick. */
 function useElapsedSeconds(): number {
@@ -51,10 +55,7 @@ export function SnapProgress({ job, finished = false }: { job: SnapJob; finished
   const eta = finished ? "" : snapEtaText(snapEtaAt(kind, elapsed), t);
 
   return (
-    <section
-      aria-busy="true"
-      className="flex min-h-[22rem] flex-col items-center justify-center gap-7 rounded-3xl border border-frosted-border bg-surface px-6 py-12 text-center shadow-soft"
-    >
+    <Tile as="section" aria-busy="true" className="flex min-h-[26rem] flex-col items-center justify-center gap-7 px-6 py-12 text-center">
       <div
         role="progressbar"
         aria-label={line}
@@ -78,14 +79,14 @@ export function SnapProgress({ job, finished = false }: { job: SnapJob; finished
             className={`transition-[stroke-dashoffset,stroke] duration-300 ease-linear ${finished ? "stroke-success" : "stroke-primary"}`}
           />
         </svg>
-        <span aria-hidden className="relative text-primary motion-safe:animate-pulse">
+        <span aria-hidden className="relative text-primary-text motion-safe:animate-pulse">
           <CookieMark size={64} />
         </span>
       </div>
 
-      <div className="grid gap-1">
+      <div className="grid gap-1.5">
         {/* The lines go in order and never loop, so each one is read out once. */}
-        <p role="status" aria-live="polite" className="text-xl font-semibold text-text md:text-2xl">
+        <p role="status" aria-live="polite" className="font-display text-xl font-bold text-balance text-text md:text-[26px] md:leading-tight">
           <span key={line} className="inline-block animate-fade-in">
             {line}
           </span>
@@ -98,21 +99,21 @@ export function SnapProgress({ job, finished = false }: { job: SnapJob; finished
         <img
           src={`data:${job.source.mimeType};base64,${job.source.base64}`}
           alt=""
-          className="h-28 w-28 rounded-2xl object-cover shadow-soft"
+          className="h-28 w-28 rounded-[22px] object-cover"
         />
       ) : job.source.type === "pdf" ? (
-        <p className="flex max-w-full items-center gap-2 text-sm text-muted">
+        <p className={sourceLine}>
           <FileText aria-hidden className="h-4 w-4 shrink-0" />
           <span className="truncate">{job.source.name}</span>
         </p>
       ) : (
-        <p className="flex max-w-full items-center gap-2 text-sm text-muted">
+        <p className={sourceLine}>
           <Link2 aria-hidden className="h-4 w-4 shrink-0" />
           <span dir="ltr" className="truncate">
             {job.source.url}
           </span>
         </p>
       )}
-    </section>
+    </Tile>
   );
 }

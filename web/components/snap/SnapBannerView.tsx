@@ -12,9 +12,9 @@ import type { SnapBanner } from "@/lib/snap/useSnap";
 
 const tones = {
   error: { box: "bg-danger-soft", text: "text-danger", Icon: CircleAlert },
-  info: { box: "bg-primary-soft", text: "text-primary", Icon: Info },
+  info: { box: "bg-primary-soft", text: "text-primary-text", Icon: Info },
   partial: { box: "bg-warning-soft", text: "text-warning", Icon: Info },
-  credits: { box: "bg-accent-soft", text: "text-accent", Icon: Coins },
+  credits: { box: "bg-accent-soft", text: "text-accent-text", Icon: Coins },
 } as const;
 
 /**
@@ -43,7 +43,7 @@ export function SnapBannerView({ banner, onDismiss }: { banner: NonNullable<Snap
           </>
         ) : null}
       </div>
-      <IconButton label={t("common.dismiss")} trackId="snap.banner.dismiss" icon={<X className="h-4 w-4" />} onClick={onDismiss} className="-me-2 -mt-1.5 h-9 w-9" />
+      <IconButton label={t("common.dismiss")} trackId="snap.banner.dismiss" icon={<X className="h-4 w-4" />} onClick={onDismiss} className="-me-2 -mt-1.5 h-9 w-9 pointer-coarse:h-11 pointer-coarse:w-11" />
     </div>
   );
 }

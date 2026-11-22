@@ -1,6 +1,6 @@
 "use client";
 
-import { Check, Search, X } from "lucide-react";
+import { Search, X } from "lucide-react";
 import { useDeferredValue, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 
@@ -11,13 +11,12 @@ import type { Recipe } from "@shared/types/recipe";
 
 import { RecipeThumb } from "@/components/cookbook/RecipeThumb";
 import { Button } from "@/components/ui/Button";
+import { Chip } from "@/components/ui/Chip";
+import { IconButton } from "@/components/ui/IconButton";
 import { Spinner } from "@/components/ui/Spinner";
+import { TileLabel } from "@/components/ui/Tile";
 import { cn } from "@/lib/cn";
 import { addAllToBook, removeFromBook, toggleInBook } from "@/lib/cookbook/bookSelection";
-
-const chip = "inline-flex h-9 shrink-0 select-none items-center rounded-full border px-3.5 text-sm font-semibold transition-colors";
-const chipOff = "border-border bg-surface text-text hover:bg-element";
-const chipOn = "border-primary bg-primary-soft text-primary";
 
 export const recipeTitle = (recipe: Recipe) => recipe.display_title?.trim() || recipe.title;
 
@@ -74,53 +73,51 @@ export function RecipePicker({
           placeholder={t("list.searchRecipes")}
           autoComplete="off"
           enterKeyHint="search"
-          className="h-12 w-full rounded-full border border-border bg-surface ps-12 pe-12 text-base text-text shadow-soft transition-[border-color,box-shadow] placeholder:text-muted/80 hover:border-muted/60 focus:border-primary focus:ring-4 focus:ring-primary/15 [&::-webkit-search-cancel-button]:hidden"
+          className="h-12 w-full rounded-btn border border-border bg-surface ps-12 pe-12 text-base text-text transition-[border-color,box-shadow] placeholder:text-muted/80 hover:border-muted/60 focus:border-primary focus:ring-4 focus:ring-primary/15 [&::-webkit-search-cancel-button]:hidden"
         />
         {search ? (
-          <button
-            type="button"
-            data-track="select_recipes.search.clear"
+          <IconButton
+            trackId="select_recipes.search.clear"
             onClick={() => setSearch("")}
-            aria-label={t("a11y.clearSearch")}
-            className="absolute end-2 top-1/2 grid h-8 w-8 -translate-y-1/2 place-items-center rounded-full text-muted hover:bg-element hover:text-text"
-          >
-            <X aria-hidden className="h-4 w-4" />
-          </button>
+            label={t("a11y.clearSearch")}
+            tooltip={false}
+            icon={<X aria-hidden className="h-[18px] w-[18px]" />}
+            className="absolute end-0.5 top-0.5"
+          />
         ) : null}
       </div>
 
       {collections.length > 0 ? (
-        <div role="group" aria-label={t("library.collections")} className="-mx-4 flex items-center gap-2 overflow-x-auto px-4 pb-1 md:mx-0 md:flex-wrap md:overflow-visible md:px-0 md:pb-0">
-          <span className="me-1 shrink-0 text-sm font-bold text-muted">{t("library.collections")}</span>
-          <button
-            type="button"
-            data-track="select_recipes.collection.all"
-            aria-pressed={collectionId == null}
-            aria-label={t("a11y.allCollections")}
-            onClick={() => setCollectionId(null)}
-            className={cn(chip, collectionId == null ? chipOn : chipOff)}
-          >
+        // On a phone the chips scroll sideways, out to the tile's edges. The padding leaves room for a focus outline.
+        <div
+          role="group"
+          aria-label={t("library.collections")}
+          className="scroll-row -mx-5 -my-1 flex items-center gap-2 px-5 py-1 sm:-mx-6 sm:px-6 md:mx-0 md:flex-wrap md:overflow-visible md:px-0"
+        >
+          <TileLabel as="span" className="me-1 shrink-0">
+            {t("library.collections")}
+          </TileLabel>
+          <Chip trackId="select_recipes.collection.all" selected={collectionId == null} aria-label={t("a11y.allCollections")} onClick={() => setCollectionId(null)}>
             {t("library.allCollections")}
-          </button>
+          </Chip>
           {collections.map((collection) => {
             const on = collection.id === collectionId;
             return (
-              <button
+              <Chip
                 key={collection.id}
-                type="button"
-                data-track="select_recipes.collection.select"
-                aria-pressed={on}
+                trackId="select_recipes.collection.select"
+                selected={on}
                 onClick={() => setCollectionId(on ? null : collection.id)}
-                className={cn(chip, "max-w-56", on ? chipOn : chipOff)}
+                className="max-w-56"
               >
                 <span className="truncate">{collection.name}</span>
-              </button>
+              </Chip>
             );
           })}
         </div>
       ) : null}
 
-      <div className="flex min-h-9 flex-wrap items-center justify-between gap-x-3 gap-y-1">
+      <div className="flex min-h-10 flex-wrap items-center justify-between gap-x-3 gap-y-1">
         <p aria-live="polite" className="text-sm font-semibold text-muted">
           {selectedIds.length > 0
             ? t("addToList.selected", { selected: selectedIds.length, total: recipes.length })
@@ -144,11 +141,11 @@ export function RecipePicker({
       </div>
 
       {shown.length === 0 ? (
-        <p className="rounded-3xl border border-dashed border-border px-6 py-12 text-center text-[15px] text-muted">
+        <p className="rounded-2xl bg-element px-6 py-12 text-center text-[15px] text-muted">
           {recipes.length === 0 ? t("list.noRecipesYet") : t("list.noRecipesMatch")}
         </p>
       ) : (
-        <ul className="grid gap-2 xl:grid-cols-2" aria-label={t("cookbook.pickStepTitle")}>
+        <ul className="-mx-2 grid gap-1 xl:grid-cols-2 xl:gap-x-3" aria-label={t("cookbook.pickStepTitle")}>
           {shown.map((recipe) => (
             <PickerRow
               key={recipe.id}
@@ -176,7 +173,7 @@ function PickerRow({ recipe, position, onToggle }: { recipe: Recipe; position: n
   const meta = [time, ingredients].filter(Boolean).join(" · ");
   return (
     // Off-screen rows are not painted, so a library of hundreds scrolls smoothly.
-    <li className="[contain-intrinsic-size:auto_72px] [content-visibility:auto]">
+    <li className="[contain-intrinsic-size:auto_68px] [content-visibility:auto]">
       <button
         type="button"
         role="checkbox"
@@ -185,18 +182,20 @@ function PickerRow({ recipe, position, onToggle }: { recipe: Recipe; position: n
         aria-label={`${title}, ${meta}`}
         onClick={onToggle}
         className={cn(
-          "flex min-h-[72px] w-full items-center gap-3 rounded-2xl border p-2.5 text-start transition-colors",
-          on ? "border-primary/40 bg-primary-soft/60" : "border-frosted-border bg-surface hover:bg-surface-soft",
+          // The row is painted only inside its own box (content-visibility), so the focus outline is drawn inside it.
+          "flex min-h-[68px] w-full items-center gap-3 rounded-2xl p-2 text-start transition-colors focus-visible:-outline-offset-2",
+          on ? "bg-element hover:bg-selected" : "hover:bg-element active:bg-selected",
         )}
       >
+        {/* A tick box that shows the recipe's place in the book once picked; it widens for "100". */}
         <span
           aria-hidden
           className={cn(
-            "grid h-7 w-7 shrink-0 place-items-center rounded-lg border-2 text-xs font-bold tabular-nums transition-colors",
-            on ? "border-primary bg-primary text-on-primary" : "border-border bg-surface text-transparent",
+            "grid h-5 min-w-5 shrink-0 place-items-center rounded-md border-2 px-px text-[11px] leading-none font-bold tabular-nums transition-colors",
+            on ? "border-primary bg-primary text-on-primary" : "border-muted/60 bg-surface",
           )}
         >
-          {on ? position : <Check className="h-4 w-4" strokeWidth={3} />}
+          {on ? position : null}
         </span>
         <RecipeThumb src={recipe.image_url} className="h-12 w-12" />
         <span className="min-w-0 flex-1">

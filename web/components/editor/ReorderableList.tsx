@@ -140,8 +140,8 @@ export function ReorderableList<T extends { id: string }>({
               onPointerUp={onPointerEnd}
               onPointerCancel={() => setDrag(null)}
               className={cn(
-                "grid h-11 w-8 shrink-0 touch-none place-items-center rounded-lg text-muted transition-colors",
-                "hover:bg-element hover:text-text focus-visible:outline-2 focus-visible:outline-primary disabled:opacity-30",
+                "grid h-11 w-8 shrink-0 touch-none place-items-center rounded-btn text-muted transition-colors",
+                "hover:bg-element hover:text-text focus-visible:outline-2 focus-visible:outline-primary active:bg-selected disabled:opacity-30",
                 items.length > 1 && (dragging ? "cursor-grabbing" : "cursor-grab"),
               )}
             >
@@ -159,7 +159,7 @@ export function ReorderableList<T extends { id: string }>({
               style={shift ? { transform: `translateY(${shift}px)` } : undefined}
               data-dragging={dragging || undefined}
               className={cn(
-                "relative rounded-2xl",
+                "relative rounded-btn",
                 drag && !dragging && "transition-transform duration-150 ease-out",
                 dragging && "z-10 bg-surface shadow-lift ring-2 ring-primary/40",
               )}

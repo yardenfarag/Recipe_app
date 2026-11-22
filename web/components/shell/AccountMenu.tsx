@@ -52,7 +52,7 @@ function SubMenu({ icon, label, value, trackId, children }: { icon: ReactNode; l
         <Menu.SubContent
           sideOffset={6}
           collisionPadding={12}
-          className="z-50 min-w-56 animate-pop-in rounded-2xl border border-frosted-border bg-surface p-1.5 shadow-lift"
+          className="z-50 min-w-56 animate-pop-in rounded-2xl border border-border bg-surface p-1.5 shadow-lift"
         >
           {children}
         </Menu.SubContent>
@@ -66,7 +66,7 @@ function RadioItem({ value, trackId, children }: { value: string; trackId: strin
     <Menu.RadioItem value={value} data-track={trackId} className={itemClass}>
       <span className="grid w-4 place-items-center">
         <Menu.ItemIndicator>
-          <Check aria-hidden className="h-4 w-4 text-primary" />
+          <Check aria-hidden className="h-4 w-4 text-primary-text" />
         </Menu.ItemIndicator>
       </span>
       {children}
@@ -147,7 +147,7 @@ export function AccountMenu({ variant }: { variant: "rail" | "compact" }) {
             side={variant === "rail" ? (rtl ? "left" : "right") : "bottom"}
             sideOffset={8}
             collisionPadding={12}
-            className="z-50 w-72 animate-pop-in rounded-2xl border border-frosted-border bg-surface p-1.5 shadow-lift"
+            className="z-50 w-72 animate-pop-in rounded-2xl border border-border bg-surface p-1.5 shadow-lift"
           >
             <div className="flex items-center gap-3 px-3 pt-2 pb-3">
               <Avatar email={email} />

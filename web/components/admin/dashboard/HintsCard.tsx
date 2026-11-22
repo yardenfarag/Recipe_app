@@ -52,7 +52,7 @@ export function HintsCard({
             <li key={h.id} className="flex flex-wrap items-start gap-x-3 gap-y-2 py-3 first:pt-0 last:pb-0">
               <span
                 className={cn(
-                  "mt-0.5 inline-flex w-16 shrink-0 justify-center rounded-full px-2 py-0.5 text-xs font-bold",
+                  "mt-0.5 inline-flex w-16 shrink-0 justify-center rounded-md px-2 py-0.5 text-xs font-bold",
                   h.tone === "fix" ? "bg-danger-soft text-danger" : h.tone === "good" ? "bg-success-soft text-success" : "bg-element text-muted",
                 )}
               >

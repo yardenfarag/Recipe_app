@@ -7,6 +7,7 @@ import { useTranslation } from "react-i18next";
 import { PinchLogo } from "@/components/CookieMark";
 import { LanguageSelect } from "@/components/onboarding/LanguageChoice";
 import { Button } from "@/components/ui/Button";
+import { TileLabel } from "@/components/ui/Tile";
 import { cn } from "@/lib/cn";
 import { ONBOARDING_STEPS, STEP_LABEL_KEYS, stepIndex, type OnboardingStep } from "@/lib/onboarding/steps";
 
@@ -36,11 +37,11 @@ export function OnboardingFrame({
       <a
         href="#main"
         data-track="nav.skip_to_content"
-        className="fixed start-3 top-3 z-50 -translate-y-20 rounded-full bg-primary px-4 py-2.5 font-semibold text-on-primary shadow-lift transition-transform focus:translate-y-0"
+        className="fixed start-3 top-3 z-50 -translate-y-20 rounded-btn bg-primary px-4 py-2.5 font-display font-bold text-on-primary shadow-lift transition-transform focus:translate-y-0"
       >
         {t("web.skipToContent")}
       </a>
-      <header className="sticky top-0 z-30 border-b border-frosted-border bg-frosted backdrop-blur-md">
+      <header className="sticky top-0 z-30 border-b border-border bg-bg/90 backdrop-blur-md">
         <div className="mx-auto flex h-16 w-full max-w-6xl items-center justify-between gap-2 px-4 sm:px-8">
           <span className="sm:hidden">
             <PinchLogo compact />
@@ -62,9 +63,9 @@ export function OnboardingFrame({
       <div className="mx-auto grid w-full max-w-6xl flex-1 gap-10 px-4 pt-6 sm:px-8 lg:grid-cols-[16.5rem_minmax(0,1fr)] lg:gap-14 lg:pt-12">
         <aside className="hidden lg:block">
           <div className="sticky top-28">
-            <p className="text-sm font-bold text-primary">{t("web.onboarding.tabTitle")}</p>
+            <TileLabel className="text-primary-text">{t("web.onboarding.tabTitle")}</TileLabel>
             <p className="mt-2 text-[15px] leading-relaxed text-pretty text-muted">{t("web.onboarding.railBody")}</p>
-            <ol className="mt-8 space-y-1" aria-label={t("web.onboarding.tabTitle")}>
+            <ol className="mt-7 space-y-1" aria-label={t("web.onboarding.tabTitle")}>
               {ONBOARDING_STEPS.map((item, index) => {
                 const done = index < current;
                 const here = index === current;
@@ -73,9 +74,9 @@ export function OnboardingFrame({
                     <span
                       aria-hidden
                       className={cn(
-                        "grid h-7 w-7 shrink-0 place-items-center rounded-full text-sm font-bold",
-                        done && "bg-primary text-on-primary",
-                        here && "bg-primary-soft text-primary ring-2 ring-primary",
+                        "grid h-8 w-8 shrink-0 place-items-center rounded-[10px] font-display text-sm font-bold tabular-nums",
+                        done && "bg-primary-soft text-primary-text",
+                        here && "bg-primary text-on-primary",
                         !done && !here && "bg-element text-muted",
                       )}
                     >
@@ -93,12 +94,15 @@ export function OnboardingFrame({
                         variant="ghost"
                         trackId={`onboarding.rail.${item}`}
                         onClick={() => onGoTo(item)}
-                        className="h-auto w-full justify-start gap-3 rounded-2xl px-3 py-2.5 text-start whitespace-normal"
+                        className="h-auto min-h-12 w-full justify-start gap-3 rounded-btn px-2 py-2 text-start whitespace-normal"
                       >
                         {content}
                       </Button>
                     ) : (
-                      <div aria-current={here ? "step" : undefined} className="flex items-center gap-3 px-3 py-2.5">
+                      <div
+                        aria-current={here ? "step" : undefined}
+                        className={cn("flex min-h-12 items-center gap-3 rounded-btn px-2 py-2", here && "bg-element")}
+                      >
                         {content}
                       </div>
                     )}
@@ -106,13 +110,13 @@ export function OnboardingFrame({
                 );
               })}
             </ol>
-            <p className="mt-8 border-t border-frosted-border pt-5 text-sm leading-relaxed text-muted">{t("onboarding.changeLater")}</p>
+            <p className="mt-7 border-t border-border pt-5 text-sm leading-relaxed text-muted">{t("onboarding.changeLater")}</p>
           </div>
         </aside>
 
         <main id="main" tabIndex={-1} className="flex min-w-0 flex-col outline-none">
           <div className="mb-6 lg:hidden">
-            <p className="text-sm font-semibold text-primary">{t("a11y.stepOf", { current: current + 1, total })}</p>
+            <TileLabel className="text-primary-text">{t("a11y.stepOf", { current: current + 1, total })}</TileLabel>
             <div aria-hidden className="mt-2 flex gap-1.5">
               {ONBOARDING_STEPS.map((item, index) => (
                 <span
@@ -148,7 +152,7 @@ export function StepFooter({
 }) {
   const { t } = useTranslation();
   return (
-    <div className="sticky bottom-0 z-20 -mx-4 mt-auto border-t border-frosted-border bg-bg/90 px-4 pt-3 pb-[max(0.75rem,env(safe-area-inset-bottom))] backdrop-blur-md sm:static sm:mx-0 sm:mt-10 sm:border-0 sm:bg-transparent sm:px-0 sm:pt-0 sm:pb-12 sm:backdrop-blur-none">
+    <div className="sticky bottom-0 z-20 -mx-4 mt-auto border-t border-border bg-bg/90 px-4 pt-3 pb-[max(0.75rem,env(safe-area-inset-bottom))] backdrop-blur-md sm:static sm:mx-0 sm:mt-10 sm:border-0 sm:bg-transparent sm:px-0 sm:pt-0 sm:pb-12 sm:backdrop-blur-none">
       <div className="flex items-center gap-3">
         {onBack ? (
           <Button variant="ghost" size="lg" trackId={`onboarding.${step}.back`} onClick={onBack} className="px-4">

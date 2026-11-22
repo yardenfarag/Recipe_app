@@ -92,7 +92,7 @@ function PersonSheetBody({ userId, load }: { userId: string; load: (userId: stri
                       </span>
                     </span>
                     {r.url ? (
-                      <a href={r.url} target="_blank" rel="noreferrer noopener" data-track="admin.dashboard.person.recipe_source" className="inline-flex items-center gap-1 text-xs font-semibold text-primary hover:underline">
+                      <a href={r.url} target="_blank" rel="noreferrer noopener" data-track="admin.dashboard.person.recipe_source" className="inline-flex items-center gap-1 text-xs font-semibold text-primary-text hover:underline">
                         Source
                         <ExternalLink aria-hidden className="h-3.5 w-3.5" />
                       </a>

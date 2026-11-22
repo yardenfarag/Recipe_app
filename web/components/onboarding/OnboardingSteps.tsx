@@ -15,6 +15,7 @@ import { SaveStatusLine, SubHeading, SwitchRow } from "@/components/settings/con
 import { MeasurementChoice, UnitsChoice } from "@/components/settings/RecipeSettings";
 import { Button } from "@/components/ui/Button";
 import { PageHeader } from "@/components/ui/PageHeader";
+import { Tile } from "@/components/ui/Tile";
 import { cn } from "@/lib/cn";
 import { hasSomethingToApply, MAX_DIETS } from "@/lib/onboarding/steps";
 import type { SaveStatus } from "@/lib/settings/useKitchenSettings";
@@ -50,25 +51,25 @@ function KitchenBody({ kitchen, children }: { kitchen: KitchenState; children: (
   if (kitchen.profile) return <>{children(kitchen.profile)}</>;
   if (kitchen.loadFailed) {
     return (
-      <div role="alert" className="rounded-3xl border border-frosted-border bg-surface p-6 shadow-soft">
+      <Tile role="alert" className="p-5 sm:p-6">
         <p className="text-[15px] leading-relaxed text-muted">{t("web.onboarding.loadFailed")}</p>
         <Button variant="secondary" className="mt-4" trackId="onboarding.kitchen.retry" onClick={kitchen.retry}>
           {t("common.tryAgainAction")}
         </Button>
-      </div>
+      </Tile>
     );
   }
   return (
-    <div role="status" aria-busy="true" className="grid grid-cols-2 gap-2.5 motion-safe:animate-pulse sm:gap-3 xl:grid-cols-3">
+    <div role="status" aria-busy="true" className="grid grid-cols-2 gap-3 motion-safe:animate-pulse sm:gap-4 xl:grid-cols-3">
       <span className="sr-only">{t("a11y.loading")}</span>
       {Array.from({ length: 9 }, (_, index) => (
-        <div key={index} aria-hidden className="h-16 rounded-2xl border border-frosted-border bg-surface sm:h-20" />
+        <Tile key={index} size="md" aria-hidden className="h-16 sm:h-24" />
       ))}
     </div>
   );
 }
 
-/** A choice that is on or off, as a card with room for a line about it. */
+/** A choice that is on or off, as a small tile with room for a line about it. */
 function ChoiceCard({
   pressed,
   disabled,
@@ -92,18 +93,18 @@ function ChoiceCard({
       trackId={trackId}
       onClick={onToggle}
       className={cn(
-        "h-auto min-h-14 w-full items-start justify-start gap-3 rounded-2xl px-4 py-3 text-start whitespace-normal disabled:opacity-45",
+        "h-auto min-h-14 w-full items-start justify-start gap-3 rounded-3xl px-4 py-3.5 text-start whitespace-normal disabled:opacity-45 sm:p-5",
         pressed && "border-primary bg-primary-soft hover:bg-primary-soft active:bg-primary-soft",
       )}
     >
       <span className="min-w-0 flex-1">
-        <span className={cn("block text-[15px] leading-snug font-semibold", pressed ? "text-primary" : "text-text")}>{title}</span>
+        <span className={cn("block font-display text-base leading-snug font-bold", pressed ? "text-primary-text" : "text-text")}>{title}</span>
         {body ? <span className="mt-1 hidden text-sm leading-snug font-normal text-muted sm:block">{body}</span> : null}
       </span>
       <span
         aria-hidden
         className={cn(
-          "mt-px grid h-5 w-5 shrink-0 place-items-center rounded-full border-2 transition-colors",
+          "mt-px grid h-5 w-5 shrink-0 place-items-center rounded-md border-2 transition-colors",
           pressed ? "border-primary bg-primary text-on-primary" : "border-border",
         )}
       >
@@ -141,7 +142,7 @@ export function DietStep({ kitchen, onNext }: { kitchen: KitchenState; onNext: (
       <KitchenBody kitchen={kitchen}>
         {(profile) => (
           <>
-            <div role="group" aria-label={t("onboarding.cookTitle")} className="grid grid-cols-2 gap-2.5 sm:gap-3 xl:grid-cols-3">
+            <div role="group" aria-label={t("onboarding.cookTitle")} className="grid grid-cols-2 gap-3 sm:gap-4 xl:grid-cols-3">
               {DIET_KEYS.map((key) => {
                 const pressed = profile.diets.includes(key);
                 return (
@@ -184,12 +185,12 @@ export function DietStep({ kitchen, onNext }: { kitchen: KitchenState; onNext: (
 function MeasureChoices() {
   const { t } = useTranslation();
   return (
-    <section aria-labelledby="onboarding-measure" className="mt-8 rounded-3xl border border-frosted-border bg-surface p-5 shadow-soft">
-      <h2 id="onboarding-measure" className="text-base font-bold text-text">
+    <Tile as="section" aria-labelledby="onboarding-measure" className="mt-6 p-5 sm:p-6">
+      <h2 id="onboarding-measure" className="text-xl font-bold text-text">
         {t("onboarding.measureTitle")}
       </h2>
-      <p className="mt-1 mb-4 text-sm leading-relaxed text-muted">{t("measurement.unitsHint")}</p>
-      <div className="grid gap-4 lg:grid-cols-2">
+      <p className="mt-1 mb-5 text-sm leading-relaxed text-muted">{t("measurement.unitsHint")}</p>
+      <div className="grid gap-5 lg:grid-cols-2">
         <div>
           <SubHeading>{t("settings.measurements")}</SubHeading>
           <MeasurementChoice trackId="onboarding.measurement" />
@@ -199,7 +200,7 @@ function MeasureChoices() {
           <UnitsChoice trackId="onboarding.units" />
         </div>
       </div>
-    </section>
+    </Tile>
   );
 }
 
@@ -256,7 +257,7 @@ export function HeardStep({
   return (
     <>
       <StepHeader title={t("onboarding.heardTitle")} subtitle={t("onboarding.heardSubtitle")} />
-      <ul className="grid gap-2.5 sm:grid-cols-2 sm:gap-3">
+      <ul className="grid gap-3 sm:grid-cols-2 sm:gap-4">
         {HEARD_ABOUT_SOURCES.map((source) => {
           const Icon = HEARD_ICONS[source];
           return (
@@ -266,12 +267,12 @@ export function HeardStep({
                 trackId={`onboarding.heard.${source}`}
                 disabled={busy}
                 onClick={() => onAnswer(source)}
-                className="h-auto min-h-16 w-full justify-start gap-3 rounded-2xl px-4 py-3 text-start whitespace-normal"
+                className="h-auto min-h-[72px] w-full justify-start gap-3.5 rounded-3xl px-4 py-4 text-start whitespace-normal"
               >
-                <span aria-hidden className="grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-primary-soft text-primary">
+                <span aria-hidden className="grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-accent-soft text-accent-text">
                   <Icon className="h-5 w-5" />
                 </span>
-                <span className="min-w-0 flex-1 text-[15px] leading-snug font-semibold text-text">
+                <span className="min-w-0 flex-1 font-display text-base leading-snug font-bold text-text">
                   {t(`onboarding.heardSources.${source}`)}
                 </span>
               </Button>

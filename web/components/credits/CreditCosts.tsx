@@ -5,6 +5,8 @@ import { useTranslation } from "react-i18next";
 
 import { RECIPE_REMIX_LIMIT } from "@shared/lib/quotas";
 
+import { Tile, TileBadge, TileLabel } from "@/components/ui/Tile";
+
 /**
  * What a credit buys, so nobody is surprised: imports cost one (ADR 012, 025), and so does a repair you keep. The
  * free list matters as much: most of Pinch costs nothing. Keep it in step with the Edge Functions that reserve
@@ -28,29 +30,29 @@ const FREE_KEYS = [
 export function CreditCosts() {
   const { t } = useTranslation();
   return (
-    <section aria-labelledby="credits-costs" className="rounded-3xl border border-frosted-border bg-surface p-5 shadow-soft sm:p-6">
-      <h2 id="credits-costs" className="text-lg font-bold text-text">
+    <Tile as="section" aria-labelledby="credits-costs" className="p-5 sm:p-6">
+      <h2 id="credits-costs" className="text-xl font-bold text-text">
         {t("web.credits.costsTitle")}
       </h2>
-      <ul className="mt-4 divide-y divide-border">
+      <ul className="mt-4 flex flex-col gap-2">
         {PAID.map(({ icon: Icon, labelKey, noteKey }) => (
-          <li key={labelKey} className="flex items-center gap-3 py-3 first:pt-0">
-            <span aria-hidden className="grid h-9 w-9 shrink-0 place-items-center rounded-xl bg-primary-soft text-primary">
-              <Icon className="h-[18px] w-[18px]" />
+          <li key={labelKey} className="flex min-h-14 items-center gap-3 rounded-2xl bg-element p-2 pe-3">
+            <span aria-hidden className="grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-surface text-primary-text">
+              <Icon className="h-5 w-5" />
             </span>
             <span className="min-w-0 flex-1">
-              <span className="block text-[15px] text-text">{t(labelKey)}</span>
-              {noteKey ? <span className="block text-xs text-muted">{t(noteKey)}</span> : null}
+              <span className="block text-[15px] font-semibold text-text">{t(labelKey)}</span>
+              {noteKey ? <span className="block text-[13px] text-muted">{t(noteKey)}</span> : null}
             </span>
-            <span className="shrink-0 rounded-full bg-accent-soft px-2.5 py-1 text-xs font-bold whitespace-nowrap text-accent">
-              {t("web.credits.costOne")}
-            </span>
+            <TileBadge className="shrink-0 bg-accent-soft whitespace-nowrap text-accent-text">{t("web.credits.costOne")}</TileBadge>
           </li>
         ))}
       </ul>
 
-      <h3 className="mt-5 text-sm font-semibold text-text">{t("web.credits.freeTitle")}</h3>
-      <ul className="mt-2 grid gap-x-6 gap-y-2 text-sm text-muted sm:grid-cols-2">
+      <TileLabel as="h3" className="mt-6">
+        {t("web.credits.freeTitle")}
+      </TileLabel>
+      <ul className="mt-3 grid gap-x-6 gap-y-2.5 text-sm text-muted sm:grid-cols-2">
         {FREE_KEYS.map((key) => (
           <li key={key} className="flex items-start gap-2">
             <Check aria-hidden className="mt-0.5 h-4 w-4 shrink-0 text-success" />
@@ -58,6 +60,6 @@ export function CreditCosts() {
           </li>
         ))}
       </ul>
-    </section>
+    </Tile>
   );
 }

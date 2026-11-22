@@ -11,10 +11,10 @@ import { showToast } from "@shared/lib/toast";
 
 import { useAuth } from "@/components/AuthProvider";
 import { useLanguage } from "@/components/LanguageProvider";
-import { ChoiceGroup, SettingsCard, TextArea } from "@/components/settings/controls";
+import { ChoiceGroup, SettingsCard, TextArea, choiceChipClass } from "@/components/settings/controls";
 import { SettingsPageHeader } from "@/components/settings/SettingsPageHeader";
 import { ErrorAlert } from "@/components/ui/Alert";
-import { Button } from "@/components/ui/Button";
+import { Button, buttonClasses } from "@/components/ui/Button";
 import { LEGAL_BASE_URL, LEGAL_URLS, SUPPORT_EMAIL } from "@/lib/legal";
 import { webFeedbackContext } from "@/lib/settings/feedbackContext";
 
@@ -32,29 +32,21 @@ export function SupportSettings() {
   return (
     <>
       <SettingsPageHeader id="support" />
-      <div className="flex flex-col gap-5">
+      <div className="flex flex-col gap-4">
         <SupportTicketForm />
         <FeedbackForm />
         <SettingsCard title={t("settings.emailSupport")}>
           <div className="flex flex-col gap-2 sm:flex-row sm:flex-wrap">
-            <a
-              href={LEGAL_URLS.supportMailto}
-              data-track="support.email_support"
-              className="inline-flex h-11 items-center gap-2 rounded-full border border-border bg-surface px-5 text-[15px] font-semibold text-text transition-colors hover:bg-surface-soft"
-            >
-              <Mail aria-hidden className="h-4 w-4 text-primary" />
-              <span dir="ltr">{SUPPORT_EMAIL}</span>
+            <a href={LEGAL_URLS.supportMailto} data-track="support.email_support" className={buttonClasses({ variant: "outline", className: "min-w-0 shrink" })}>
+              <Mail aria-hidden className="h-4 w-4 shrink-0 text-primary-text" />
+              <span dir="ltr" className="truncate">
+                {SUPPORT_EMAIL}
+              </span>
             </a>
-            <a
-              href={LEGAL_BASE_URL}
-              data-track="support.about_pinch"
-              target="_blank"
-              rel="noreferrer"
-              className="inline-flex h-11 items-center gap-2 rounded-full border border-border bg-surface px-5 text-[15px] font-semibold text-text transition-colors hover:bg-surface-soft"
-            >
-              <Info aria-hidden className="h-4 w-4 text-primary" />
+            <a href={LEGAL_BASE_URL} data-track="support.about_pinch" target="_blank" rel="noreferrer" className={buttonClasses({ variant: "outline" })}>
+              <Info aria-hidden className="h-4 w-4 text-primary-text" />
               {t("settings.aboutPinch")}
-              <ExternalLink aria-hidden className="h-3.5 w-3.5 text-muted" />
+              <ExternalLink aria-hidden className="h-3.5 w-3.5 text-muted rtl:-scale-x-100" />
               <span className="sr-only">({t("web.recipe.opensInNewTab")})</span>
             </a>
           </div>
@@ -103,7 +95,7 @@ function SupportTicketForm() {
             value={category}
             onChange={setCategory}
             className="flex flex-wrap gap-2"
-            optionClassName="inline-flex h-10 items-center rounded-full border border-border bg-surface px-4 text-sm font-semibold text-text transition-colors hover:bg-element data-[checked]:border-primary data-[checked]:bg-primary-soft data-[checked]:text-primary"
+            optionClassName={choiceChipClass}
             options={CATEGORIES.map((item) => ({ value: item, label: t(`support.categories.${item}`) }))}
           />
         </div>

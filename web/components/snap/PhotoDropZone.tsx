@@ -26,17 +26,18 @@ export function PhotoDropZone({ intent, onFile, disabled }: { intent: SnapIntent
         disabled={disabled}
         onClick={() => input.current?.click()}
         className={cn(
-          "group flex w-full items-center gap-4 rounded-2xl border-2 border-dashed border-border bg-surface-soft px-5 py-5 text-start transition-colors",
-          "hover:border-primary hover:bg-primary-soft/40 focus-visible:outline-2 focus-visible:outline-primary disabled:opacity-60",
+          "group flex min-h-44 w-full flex-col items-center justify-center gap-3 rounded-2xl border-2 border-dashed border-border bg-element px-5 py-8 text-center transition-colors md:min-h-56",
+          "hover:border-primary active:bg-selected disabled:opacity-60",
         )}
       >
-        <span aria-hidden className="grid h-12 w-12 shrink-0 place-items-center rounded-2xl bg-primary-soft text-primary transition-transform group-hover:scale-105">
-          <Icon className="h-6 w-6" />
+        {/* On the surface colour: primary-soft is the element colour in most packs, so it would not show here. */}
+        <span aria-hidden className="grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-surface text-primary-text transition-transform group-hover:scale-105">
+          <Icon className="h-5 w-5" />
         </span>
-        <span className="min-w-0 flex-1">
-          <span className="block text-base font-bold text-text">{title}</span>
-          <span className="mt-0.5 block text-sm leading-relaxed text-muted">{hint}</span>
-          <span className="mt-0.5 hidden text-xs text-muted sm:block">{t(invent ? "web.snap.dropOrPaste" : "web.snap.dropOrPastePdf")}</span>
+        <span className="min-w-0 max-w-md">
+          <span className="block font-display text-xl font-bold text-balance text-text">{title}</span>
+          <span className="mt-1 block text-sm leading-relaxed text-pretty text-muted">{hint}</span>
+          <span className="mt-1 hidden text-[13px] text-muted sm:block">{t(invent ? "web.snap.dropOrPaste" : "web.snap.dropOrPastePdf")}</span>
         </span>
       </button>
       <input

@@ -9,11 +9,11 @@ import { APPLIANCE_KEYS, MAX_RECIPE_APPLIANCES, type ApplianceKey } from "@share
 import type { ApplianceRow, StepRow } from "@shared/lib/recipeEditor";
 
 import { inputClasses } from "@/components/editor/parts";
-import { ChoiceGroup } from "@/components/settings/controls";
 import { Button } from "@/components/ui/Button";
+import { Chip } from "@/components/ui/Chip";
 import { Dialog, DialogContent } from "@/components/ui/Dialog";
 import { IconButton } from "@/components/ui/IconButton";
-import { cn } from "@/lib/cn";
+import { SegmentedControl } from "@/components/ui/SegmentedControl";
 
 type AppliancesFieldProps = {
   appliances: ApplianceRow[] | null;
@@ -45,53 +45,46 @@ export function AppliancesField({ appliances, steps, onAdd, onRemove, onSetRequi
           {rows.map((row) => {
             const name = t(applianceNameKey(row.key));
             return (
-              <li key={row.key} className="rounded-2xl border border-border bg-surface p-3">
+              <li key={row.key} className="rounded-2xl border border-border p-3 ps-4">
                 <div className="flex items-center gap-2">
-                  <span className="min-w-0 flex-1 truncate text-[15px] font-semibold text-text">{name}</span>
+                  <span className="min-w-0 flex-1 truncate font-display text-base font-bold text-text">{name}</span>
                   <IconButton
                     label={t("a11y.removeItem", { item: name })}
                     trackId="recipe_editor.appliance.remove"
                     icon={<Trash2 className="h-[18px] w-[18px]" />}
                     onClick={() => onRemove(row.key)}
-                    className="h-9 w-9 hover:bg-danger-soft hover:text-danger"
+                    className="hover:bg-danger-soft hover:text-danger"
                   />
                 </div>
-                <ChoiceGroup
+                <SegmentedControl
+                  size="sm"
                   label={name}
-                  trackId="recipe_editor.appliance.required"
                   value={row.required ? "required" : "optional"}
                   onChange={(value) => onSetRequired(row.key, value === "required")}
                   options={[
-                    { value: "required", label: t("recipeEditor.appliance.required") },
-                    { value: "optional", label: t("recipeEditor.appliance.optional") },
+                    { value: "required", label: t("recipeEditor.appliance.required"), trackId: "recipe_editor.appliance.required.required" },
+                    { value: "optional", label: t("recipeEditor.appliance.optional"), trackId: "recipe_editor.appliance.required.optional" },
                   ]}
-                  className="mt-2 inline-flex rounded-full bg-element p-1"
-                  optionClassName="h-8 rounded-full px-3.5 text-sm font-semibold text-muted transition-colors hover:text-text data-[checked]:bg-surface data-[checked]:text-text data-[checked]:shadow-soft focus-visible:outline-2 focus-visible:outline-primary"
+                  className="mt-1"
                 />
                 {steps.length > 0 ? (
                   <div role="group" aria-label={`${name}: ${t("web.editor.usedInSteps")}`} className="mt-3 flex flex-wrap items-center gap-1.5">
                     <span aria-hidden className="me-1 text-xs font-semibold text-muted">
                       {t("web.editor.usedInSteps")}
                     </span>
-                    {steps.map((step, index) => {
-                      const linked = row.stepIds.includes(step.id);
-                      return (
-                        <button
-                          key={step.id}
-                          type="button"
-                          data-track="recipe_editor.appliance.step_toggle"
-                          aria-pressed={linked}
-                          aria-label={t("recipeEditor.fields.step", { n: index + 1 })}
-                          onClick={() => onToggleStep(row.key, step.id)}
-                          className={cn(
-                            "grid h-8 min-w-8 place-items-center rounded-full border px-2 text-xs font-bold tabular-nums transition-colors focus-visible:outline-2 focus-visible:outline-primary",
-                            linked ? "border-primary bg-primary-soft text-primary" : "border-border text-muted hover:bg-element",
-                          )}
-                        >
-                          {index + 1}
-                        </button>
-                      );
-                    })}
+                    {steps.map((step, index) => (
+                      <Chip
+                        key={step.id}
+                        size="sm"
+                        selected={row.stepIds.includes(step.id)}
+                        trackId="recipe_editor.appliance.step_toggle"
+                        aria-label={t("recipeEditor.fields.step", { n: index + 1 })}
+                        onClick={() => onToggleStep(row.key, step.id)}
+                        className="min-w-9 justify-center px-2.5 tabular-nums pointer-coarse:min-w-11"
+                      >
+                        {index + 1}
+                      </Chip>
+                    ))}
                   </div>
                 ) : null}
               </li>
@@ -171,7 +164,7 @@ function AppliancePicker({
                 type="button"
                 data-track="recipe_editor.appliance.pick"
                 onClick={() => onPick(option.key)}
-                className="flex min-h-11 w-full items-center rounded-xl px-3 text-start text-[15px] text-text transition-colors hover:bg-element focus-visible:bg-element focus-visible:outline-2 focus-visible:outline-primary"
+                className="flex min-h-11 w-full items-center rounded-btn px-3 text-start text-[15px] font-medium text-text transition-colors hover:bg-element focus-visible:bg-element focus-visible:outline-2 focus-visible:outline-primary active:bg-selected"
               >
                 {option.name}
               </button>

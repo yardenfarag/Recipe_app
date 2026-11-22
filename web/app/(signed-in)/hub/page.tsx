@@ -18,13 +18,14 @@ import { Button, buttonClasses } from "@/components/ui/Button";
 import { PageHeader } from "@/components/ui/PageHeader";
 import { EmptyState, ErrorState } from "@/components/ui/States";
 import { Spinner } from "@/components/ui/Spinner";
+import { tileClasses } from "@/components/ui/Tile";
 import { cn } from "@/lib/cn";
 import { hubAddressQuery, hubFiltersActive, hubFiltersFromAddress, rememberHubQuery } from "@/lib/hub/hubAddress";
 import { useHub } from "@/lib/hub/useHub";
 import { useLibraryLayout } from "@/lib/library/useLibraryLayout";
 
 const GRID = "gap-4 [grid-template-columns:repeat(auto-fill,minmax(min(100%,17rem),1fr))]";
-const LIST = "gap-3 xl:grid-cols-2";
+const LIST = "gap-4 xl:grid-cols-2";
 
 /**
  * Cooking Hub: recipes other people already snapped from public links, free to add to your library. Search, source,
@@ -216,7 +217,7 @@ function Skeleton({ layout, label }: { layout: "grid" | "list"; label: string })
       <span className="sr-only">{label}</span>
       <div aria-hidden className={cn("grid motion-safe:animate-pulse", layout === "grid" ? GRID : LIST)}>
         {Array.from({ length: layout === "grid" ? 8 : 6 }, (_, index) => (
-          <div key={index} className={cn("rounded-3xl border border-frosted-border bg-surface", layout === "grid" ? "h-72" : "h-24")} />
+          <div key={index} className={layout === "grid" ? "aspect-square rounded-[18px] bg-element md:aspect-[4/3] md:rounded-[22px]" : tileClasses({ size: "md", className: "h-24" })} />
         ))}
       </div>
     </div>

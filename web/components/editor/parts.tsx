@@ -6,6 +6,7 @@ import { useTranslation } from "react-i18next";
 
 import type { EditorMessage } from "@shared/lib/recipeEditor";
 
+import { Tile, TileBadge } from "@/components/ui/Tile";
 import { cn } from "@/lib/cn";
 
 /** Translates an editor message (an i18n key and its numbers), or null. */
@@ -18,14 +19,17 @@ export function useEditorMessage() {
 /** The look of every text box in the editor, so rows, fields and the title line up. */
 export function inputClasses(invalid: boolean, className?: string) {
   return cn(
-    "w-full min-w-0 rounded-xl border bg-surface px-3 text-[15px] text-text shadow-[inset_0_1px_2px_rgb(0_0_0/0.03)] transition-[border-color,box-shadow] placeholder:text-muted/70",
+    "w-full min-w-0 rounded-btn border bg-surface px-3.5 text-base text-text shadow-[inset_0_1px_2px_rgb(0_0_0/0.03)] transition-[border-color,box-shadow] placeholder:text-muted/80",
     "hover:border-muted/60 focus:border-primary focus:outline-none focus:ring-4 focus:ring-primary/15 disabled:opacity-60",
     invalid ? "border-danger focus:border-danger focus:ring-danger/15" : "border-border",
     className,
   );
 }
 
-/** One part of the form: a heading, an optional line under it, an optional control at its end. */
+/**
+ * One part of the form, as a tile: a heading, an optional line under it, an optional control at its end. `size="lg"`
+ * is for the two main parts (ingredients, steps), whose heading is a section heading.
+ */
 export function EditorCard({
   title,
   hint,
@@ -33,6 +37,7 @@ export function EditorCard({
   children,
   className,
   id,
+  size = "md",
 }: {
   title: string;
   hint?: string;
@@ -40,25 +45,22 @@ export function EditorCard({
   children: ReactNode;
   className?: string;
   id?: string;
+  size?: "md" | "lg";
 }) {
   const headingId = useId();
   return (
-    <section
-      id={id}
-      aria-labelledby={headingId}
-      className={cn("scroll-mt-24 rounded-3xl border border-frosted-border bg-surface/85 p-4 shadow-soft backdrop-blur-sm sm:p-6", className)}
-    >
+    <Tile as="section" id={id} aria-labelledby={headingId} className={cn("scroll-mt-24 p-4 sm:p-6", className)}>
       <div className="flex flex-wrap items-start justify-between gap-x-4 gap-y-2">
         <div className="min-w-0">
-          <h2 id={headingId} className="text-lg font-bold text-text">
+          <h2 id={headingId} className={cn("leading-tight font-bold text-text", size === "lg" ? "text-[26px]" : "text-xl")}>
             {title}
           </h2>
-          {hint ? <p className="mt-1 text-sm leading-relaxed text-pretty text-muted">{hint}</p> : null}
+          {hint ? <p className="mt-1.5 text-sm leading-relaxed text-pretty text-muted">{hint}</p> : null}
         </div>
         {action}
       </div>
       <div className="mt-4">{children}</div>
-    </section>
+    </Tile>
   );
 }
 
@@ -80,16 +82,16 @@ export function LockedNote({ onReset, field }: { onReset: () => void; field: str
   const { t } = useTranslation();
   return (
     <span className="inline-flex flex-wrap items-center gap-x-2 gap-y-1 text-xs">
-      <span className="inline-flex items-center gap-1 rounded-full bg-primary-soft px-2 py-0.5 font-semibold text-primary">
+      <TileBadge className="gap-1 px-2 py-1 text-[11px]">
         <UserPen aria-hidden className="h-3.5 w-3.5" />
         {t("recipeEditor.locked.setByYou")}
-      </span>
+      </TileBadge>
       <button
         type="button"
         data-track="recipe_editor.field.reset"
         onClick={onReset}
         aria-label={`${t("recipeEditor.locked.reset")}: ${field}`}
-        className="inline-flex items-center gap-1 rounded-full px-1 py-0.5 font-semibold text-muted underline-offset-2 hover:text-text hover:underline focus-visible:outline-2 focus-visible:outline-primary"
+        className="inline-flex min-h-6 items-center gap-1 rounded-md px-1 py-0.5 font-semibold text-muted underline-offset-2 hover:text-text hover:underline focus-visible:outline-2 focus-visible:outline-primary pointer-coarse:min-h-11"
       >
         <RotateCcw aria-hidden className="h-3.5 w-3.5" />
         {t("recipeEditor.locked.reset")}

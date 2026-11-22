@@ -16,6 +16,7 @@ import { CheckoutError } from "@shared/lib/supabase/creditPurchases";
 
 import { ErrorAlert } from "@/components/ui/Alert";
 import { Button } from "@/components/ui/Button";
+import { Tile, TileBadge } from "@/components/ui/Tile";
 import { cn } from "@/lib/cn";
 import { startCheckout } from "@/lib/credits/checkout";
 import { formatPercent, formatUsd } from "@/lib/credits/format";
@@ -78,7 +79,7 @@ export function PackList({ variant }: { variant: "cards" | "rows" }) {
 
   const status = (
     <div aria-live="polite" className="empty:hidden">
-      {busyId ? <p className="text-sm font-semibold text-primary">{t("credits.webCheckoutOpened")}</p> : null}
+      {busyId ? <p className="text-sm font-semibold text-primary-text">{t("credits.webCheckoutOpened")}</p> : null}
     </div>
   );
   const error = failed ? <ErrorAlert>{t("credits.purchaseFailed")}</ErrorAlert> : null;
@@ -107,30 +108,28 @@ export function PackList({ variant }: { variant: "cards" | "rows" }) {
                   disabled={Boolean(busyId)}
                   onClick={() => void buy(pack.id)}
                   className={cn(
-                    "group flex w-full items-center gap-3 rounded-2xl border bg-surface p-3.5 text-start transition-colors hover:bg-surface-soft focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary disabled:cursor-default",
-                    text.featured ? "border-primary" : "border-border",
+                    "group flex min-h-16 w-full items-center gap-3 rounded-2xl bg-element p-3 text-start transition-colors hover:bg-selected disabled:cursor-default",
+                    text.featured && "ring-2 ring-primary ring-inset",
                     busyId && !busy && "opacity-50",
                   )}
                 >
-                  <span aria-hidden className="grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-primary-soft text-primary">
+                  <span aria-hidden className="grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-surface text-accent-text">
                     <Coins className="h-5 w-5" />
                   </span>
                   <span className="min-w-0 flex-1">
                     <span className="flex flex-wrap items-center gap-x-2 gap-y-1">
-                      <span className="font-bold text-text">{text.name}</span>
-                      {text.featured ? (
-                        <span className="rounded-full bg-primary px-2 py-0.5 text-[11px] font-bold text-on-primary">{t("credits.bestValue")}</span>
-                      ) : null}
+                      <span className="font-display text-[17px] font-bold text-text">{text.name}</span>
+                      {text.featured ? <TileBadge className="bg-primary px-2 py-1 text-[11px] text-on-primary">{t("credits.bestValue")}</TileBadge> : null}
                     </span>
-                    <span className="mt-0.5 block text-xs text-muted">
+                    <span className="mt-0.5 block text-[13px] text-muted">
                       {text.perCredit}
                       {text.saving ? <> · <span className="font-semibold text-success">{text.saving}</span></> : null}
                     </span>
                   </span>
                   {busy ? (
-                    <span aria-hidden className="h-5 w-5 animate-spin rounded-full border-2 border-primary-soft border-t-primary" />
+                    <span aria-hidden className="h-5 w-5 animate-spin rounded-full border-2 border-primary/25 border-t-primary" />
                   ) : (
-                    <span className="flex items-center gap-1 text-[15px] font-bold text-primary tabular-nums">
+                    <span className="flex items-center gap-1 font-display text-lg font-bold text-primary-text tabular-nums">
                       {text.price}
                       <ChevronRight aria-hidden className="h-4 w-4 transition-transform group-hover:translate-x-0.5 rtl:rotate-180 rtl:group-hover:-translate-x-0.5" />
                     </span>
@@ -149,29 +148,20 @@ export function PackList({ variant }: { variant: "cards" | "rows" }) {
 
   return (
     <div className="@container space-y-4">
-      <ul className="grid gap-3 @xl:grid-cols-3">
+      <ul className="grid gap-4 @xl:grid-cols-3">
         {CREDIT_PACKS.map((pack) => {
           const text = describe(pack);
           return (
-            <li
-              key={pack.id}
-              className={cn(
-                "relative flex flex-col rounded-3xl border bg-surface p-5 shadow-soft",
-                text.featured ? "border-primary ring-1 ring-primary" : "border-frosted-border",
-                text.featured && "mt-3 @xl:mt-0",
-              )}
-            >
-              {text.featured ? (
-                <span className="absolute -top-3 start-5 rounded-full bg-primary px-3 py-1 text-xs font-bold text-on-primary shadow-soft">
-                  {t("credits.bestValue")}
-                </span>
-              ) : null}
-              <h3 className="text-base font-bold text-text">{text.name}</h3>
-              <p className="mt-3 text-3xl font-bold tracking-tight text-text tabular-nums">{text.price}</p>
-              <p className="mt-1 text-sm text-muted">{text.perCredit}</p>
+            <Tile as="li" size="md" key={pack.id} className={cn("flex flex-col p-5", text.featured && "border-primary ring-1 ring-primary")}>
+              <div className="flex flex-wrap items-center justify-between gap-x-3 gap-y-1.5">
+                <h3 className="text-lg font-bold text-text">{text.name}</h3>
+                {text.featured ? <TileBadge>{t("credits.bestValue")}</TileBadge> : null}
+              </div>
+              <p className="mt-4 font-display text-5xl leading-none font-bold text-text tabular-nums">{text.price}</p>
+              <p className="mt-2.5 text-sm text-muted">{text.perCredit}</p>
               <p className="mt-1 min-h-5 text-sm font-semibold text-success">{text.saving}</p>
               <Button
-                className="mt-4 @xl:mt-auto"
+                className="mt-5 @xl:mt-auto"
                 fullWidth
                 variant={text.featured ? "primary" : "secondary"}
                 busy={busyId === pack.id}
@@ -183,7 +173,7 @@ export function PackList({ variant }: { variant: "cards" | "rows" }) {
               >
                 {t("web.credits.buy")}
               </Button>
-            </li>
+            </Tile>
           );
         })}
       </ul>

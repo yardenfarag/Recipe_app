@@ -101,7 +101,7 @@ export default function ResetPasswordPage() {
         <PinchMark />
         {/* Announced when it appears, without taking the heading role away from the title. */}
         <div role="status">
-          <h1 className="mb-2 text-center text-2xl font-bold text-text">{t("resetPassword.updatedTitle")}</h1>
+          <h1 className="mb-2 text-center text-[28px] leading-tight font-bold text-balance text-text">{t("resetPassword.updatedTitle")}</h1>
           <p className="mb-6 text-center text-muted">{t("resetPassword.updatedBody")}</p>
         </div>
         <Button fullWidth size="lg" trackId="reset_password.done.continue" onClick={() => router.replace("/")}>{t("recipe.goToLibrary")}</Button>
@@ -124,7 +124,7 @@ export default function ResetPasswordPage() {
   return (
     <AuthCard>
       <PinchMark />
-      <h1 className="mb-2 text-center text-2xl font-bold text-text">{t("resetPassword.chooseTitle")}</h1>
+      <h1 className="mb-2 text-center text-[28px] leading-tight font-bold text-balance text-text">{t("resetPassword.chooseTitle")}</h1>
       <p className="mb-6 text-center text-muted">{t("resetPassword.chooseHint")}</p>
       <form className="flex flex-col gap-4" onSubmit={(event) => void handleSubmit(event)} noValidate>
         <TextField
@@ -137,15 +137,16 @@ export default function ResetPasswordPage() {
           dir="ltr"
           autoFocus
           trailing={
-            <button
-              type="button"
-              data-track="reset_password.password.toggle_visibility"
-              className="rounded-full px-3 py-1 text-sm font-semibold text-primary hover:bg-primary-soft"
+            <Button
+              variant="ghost"
+              size="sm"
+              trackId="reset_password.password.toggle_visibility"
+              className="rounded-[10px] px-3 text-primary-text"
               onClick={() => setShowPassword((value) => !value)}
               aria-pressed={showPassword}
             >
               {showPassword ? t("auth.hidePassword") : t("auth.showPassword")}
-            </button>
+            </Button>
           }
         />
         <TextField

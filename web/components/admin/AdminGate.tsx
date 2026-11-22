@@ -8,6 +8,7 @@ import { useTranslation } from "react-i18next";
 import { buttonClasses } from "@/components/ui/Button";
 import { usePageTitle } from "@/components/ui/PageHeader";
 import { EmptyState, LoadingState } from "@/components/ui/States";
+import { Tile } from "@/components/ui/Tile";
 import { useIsAdmin } from "@/lib/admin/useIsAdmin";
 
 /**
@@ -28,7 +29,7 @@ export function AdminNotFound() {
   usePageTitle(t("web.notFoundTitle"));
   return (
     <div className="flex flex-1 flex-col items-center justify-center">
-      <div className="w-full max-w-md rounded-3xl border border-frosted-border bg-surface shadow-soft">
+      <Tile className="w-full max-w-md">
         <EmptyState
           icon={<MapPinOff aria-hidden />}
           title={t("web.notFoundTitle")}
@@ -39,7 +40,7 @@ export function AdminNotFound() {
             </Link>
           }
         />
-      </div>
+      </Tile>
     </div>
   );
 }

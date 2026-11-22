@@ -105,13 +105,13 @@ export function messageButtonClass(button: Pick<ViewButton, "style">, tone: Tone
     : buttonClasses({ variant: "outline", size, className: "whitespace-normal text-center" });
 }
 
-/** The tone's icon (or the admin's) in its soft badge. Decorative: the title says it all. */
+/** The tone's icon (or the admin's) in its soft square. Decorative: the title says it all. */
 export function MessageIcon({ view, className }: { view: MessageView; className?: string }) {
   const tone = TONE_CLASSES[view.message.tone];
   // A lookup in a fixed map, not a component made here.
   const icon = createElement(messageIcon(view.message.icon, view.message.tone), { className: cn("h-6 w-6", tone.text) });
   return (
-    <span aria-hidden className={cn("grid h-11 w-11 shrink-0 place-items-center rounded-full", tone.soft, className)}>
+    <span aria-hidden className={cn("grid h-12 w-12 shrink-0 place-items-center rounded-2xl", tone.soft, className)}>
       {icon}
     </span>
   );
@@ -151,10 +151,10 @@ export function MessageBody({
       {message.imageUrl ? (
         // A remote, admin-chosen image of any size; next/image would need its host listed. Decorative.
         // eslint-disable-next-line @next/next/no-img-element
-        <img src={message.imageUrl} alt="" className={cn("mb-4 aspect-video w-full rounded-2xl object-cover", tone.soft)} />
+        <img src={message.imageUrl} alt="" className={cn("mb-4 aspect-video w-full rounded-[22px] object-cover", tone.soft)} />
       ) : null}
       <MessageIcon view={view} className={centered ? "mx-auto" : undefined} />
-      {wrapTitle(<h2 className="mt-3 text-xl font-bold text-text">{view.title}</h2>)}
+      {wrapTitle(<h2 className="mt-4 text-2xl leading-tight font-bold text-balance text-text">{view.title}</h2>)}
       {view.body ? wrapBody(<p className="mt-2 text-[15px] leading-relaxed whitespace-pre-line text-muted">{view.body}</p>) : null}
       {view.buttons.length > 0 || closeButton ? (
         <div className="mt-5 flex flex-col gap-2">
@@ -191,7 +191,7 @@ export function MessageBody({
             trackId={`${trackPrefix}.link`}
             className={cn(
               "inline-flex min-h-11 items-center gap-1.5 rounded-lg text-[15px] font-semibold underline underline-offset-4 focus-visible:outline-2 focus-visible:outline-primary",
-              message.tone === "info" ? "text-primary" : "text-text",
+              message.tone === "info" ? "text-primary-text" : "text-text",
             )}
             handlers={handlers}
             newTabNote={newTabNote}

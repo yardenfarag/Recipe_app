@@ -8,6 +8,7 @@ import { PinchLogo } from "@/components/CookieMark";
 import { buttonClasses } from "@/components/ui/Button";
 import { usePageTitle } from "@/components/ui/PageHeader";
 import { EmptyState } from "@/components/ui/States";
+import { Tile } from "@/components/ui/Tile";
 
 /** A page that doesn't exist: say so kindly and offer the way home. */
 export default function NotFound() {
@@ -18,7 +19,7 @@ export default function NotFound() {
       <Link href="/" data-track="not_found.logo" className="mb-6 rounded-xl" aria-label="Pinch">
         <PinchLogo />
       </Link>
-      <div className="w-full max-w-md rounded-3xl border border-frosted-border bg-surface shadow-soft">
+      <Tile className="w-full max-w-md">
         <EmptyState
           icon={<MapPinOff aria-hidden />}
           title={t("web.notFoundTitle")}
@@ -29,7 +30,7 @@ export default function NotFound() {
             </Link>
           }
         />
-      </div>
+      </Tile>
     </main>
   );
 }

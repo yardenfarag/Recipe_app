@@ -42,12 +42,12 @@ export function OpenShell({ children }: { children: ReactNode }) {
       <a
         href="#main"
         data-track="nav.skip_to_content"
-        className="fixed start-3 top-3 z-50 -translate-y-20 rounded-full bg-primary px-4 py-2.5 font-semibold text-on-primary shadow-lift transition-transform focus:translate-y-0"
+        className="fixed start-3 top-3 z-50 -translate-y-20 rounded-btn bg-primary px-4 py-2.5 font-display font-bold text-on-primary shadow-lift transition-transform focus:translate-y-0"
       >
         {t("web.skipToContent")}
       </a>
-      <header className="sticky top-0 z-30 border-b border-frosted-border bg-frosted backdrop-blur-md">
-        <div className="mx-auto flex h-16 w-full max-w-6xl items-center justify-between gap-3 px-5 sm:px-8">
+      <header className="sticky top-0 z-30 bg-bg/90 backdrop-blur-xl">
+        <div className="mx-auto flex h-16 w-full max-w-[84rem] items-center justify-between gap-3 px-4 sm:px-6 md:px-8">
           <a href="https://pinch-app.io/" data-track="open_shell.logo" className="rounded-xl focus-visible:outline-2 focus-visible:outline-primary">
             <PinchLogo />
           </a>
@@ -62,7 +62,7 @@ export function OpenShell({ children }: { children: ReactNode }) {
         </div>
       </header>
       <main id="main" tabIndex={-1} className="flex flex-1 flex-col outline-none">
-        <div className="mx-auto flex w-full max-w-6xl flex-1 flex-col px-5 pt-6 pb-12 sm:px-8 md:pt-10">{children}</div>
+        <div className="mx-auto flex w-full max-w-[84rem] flex-1 flex-col px-4 pt-4 pb-12 sm:px-6 md:px-8 md:pt-6">{children}</div>
       </main>
     </div>
   );
