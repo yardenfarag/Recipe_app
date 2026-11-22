@@ -54,6 +54,16 @@ test("the welcome page is drawn by the server, so it shows before the app's scri
   await expect(page.getByRole("heading", { level: 1, name: WELCOME_HEADING })).toBeVisible();
 });
 
+test("a welcome page held for another language still shows if the app's scripts never arrive", async ({ page }) => {
+  // Held hidden so a Hebrew reader doesn't see English first; with no scripts to settle it, it shows after 3 s anyway.
+  await page.addInitScript(() => localStorage.setItem("pinch:appLanguage", "he"));
+  // Scripts only: the stylesheet that holds the page hidden still loads.
+  await page.route("**/_next/static/**", (route) => (route.request().resourceType() === "script" ? route.abort() : route.fallback()));
+  await page.goto("/app");
+  await expect(page).toHaveURL(/\/app\/welcome$/);
+  await expect(page.getByRole("heading", { level: 1, name: WELCOME_HEADING })).toBeVisible({ timeout: 6_000 });
+});
+
 test("a browser that has signed in before goes to sign-in, and comes back to the Library's address", async ({ page }) => {
   await resetLibrary([]);
   await page.addInitScript(() => localStorage.setItem("pinch:onboardingComplete", "true"));
