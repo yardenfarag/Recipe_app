@@ -8,7 +8,11 @@ const FETCH_TIMEOUT_MS = 12_000;
 /** Matches the recipe-thumbnails bucket's file_size_limit. */
 const MAX_THUMBNAIL_BYTES = 10 * 1024 * 1024;
 
-/** Image types a browser shows as a picture. SVG is left out: it can carry scripts. */
+/**
+ * Image types every browser shows as a picture. SVG is left out: it can carry scripts. HEIC is
+ * left out too: only Apple devices show it, and TikTok serves it first (it left every TikTok
+ * thumbnail blank on the web until 2026-11-22).
+ */
 const WEB_IMAGE_TYPES = new Set(['image/jpeg', 'image/png', 'image/webp', 'image/gif', 'image/avif']);
 
 /**
@@ -69,8 +73,7 @@ export async function persistSocialThumbnail(opts: {
     }
 
     contentType = (res.headers.get('content-type') ?? 'image/jpeg').split(';')[0].trim().toLowerCase();
-    const isImage = platform === 'web' ? WEB_IMAGE_TYPES.has(contentType) : contentType.startsWith('image/');
-    if (!isImage) {
+    if (!WEB_IMAGE_TYPES.has(contentType)) {
       await res.body?.cancel();
       console.warn('[persistThumbnail] not an image', { contentType, host: safeHost(sourceUrl) });
       return undefined;
@@ -101,9 +104,11 @@ export async function persistSocialThumbnail(opts: {
   // A web image is named by a hash of its bytes. Uploads overwrite, so a name taken from the
   // address would let the site change a picture we already published by changing its file and
   // getting the page imported again. A different picture is a different file here.
+  // A social image keeps its post id and adds a short hash of its bytes: files are cached for a
+  // year, so a new picture for the same post (the JPEG that replaced a HEIC) needs a new name.
   const idPart = platform === 'web'
     ? await sha256Hex(bytes, 32)
-    : (contentId?.trim() || hashShort(sourceUrl)).replace(/[^A-Za-z0-9_-]/g, '');
+    : `${(contentId?.trim() || hashShort(sourceUrl)).replace(/[^A-Za-z0-9_-]/g, '')}-${await sha256Hex(bytes, 8)}`;
   const path = `${platform}/${idPart}.${ext}`;
 
   const supabase = createClient<Database>(supabaseUrl, serviceKey);
