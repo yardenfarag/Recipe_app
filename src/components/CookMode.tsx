@@ -12,10 +12,12 @@ import {
 import { Pressable } from '@/components/ui/Pressable';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
+import { useReadAloud, useReadAloudPreference } from '@/hooks/useReadAloud';
 import { useRtl } from '@/hooks/useRtl';
 import { useThemePreference } from '@/hooks/useThemePreference';
 import { announce } from '@/lib/a11y';
 import { logTap } from '@/lib/interactionLog';
+import { stepSpeech, voiceAvailability } from '@shared/lib/readAloud';
 import { formatCountdown, parseStepTimers } from '@shared/lib/stepTimers';
 import type { Instruction } from '@shared/types/recipe';
 
@@ -26,10 +28,15 @@ type CookModeProps = {
   onClose: () => void;
   onCooked?: () => void;
   textDirection?: 'ltr' | 'rtl';
+  /** The language the steps are shown in (after translation); read aloud picks its voice from it. */
+  contentLanguage?: string | null;
 };
 
 /**
  * Full-screen, greasy-hands cook view: huge type, tap to advance, screen stays on.
+ *
+ * The speaker button reads each step aloud as it appears, in the recipe's language (expo-speech, see
+ * useReadAloud). It is greyed out when the phone has no voice for that language; tapping it then says why.
  */
 export function CookMode({
   visible,
@@ -38,8 +45,9 @@ export function CookMode({
   onClose,
   onCooked,
   textDirection = 'ltr',
+  contentLanguage = null,
 }: CookModeProps) {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const { colors } = useThemePreference();
   const { rtl } = useRtl();
   const [index, setIndex] = useState(0);
@@ -82,7 +90,64 @@ export function CookMode({
     return () => clearInterval(id);
   }, [timerActive]);
 
-  // Speak the new step (or the finish screen) after Next / Back / swipe.
+  // Read aloud: the step as shown (translated, amounts converted), in the recipe's language.
+  const { voices, queue } = useReadAloud(visible);
+  const [readAloudOn, setReadAloudOn] = useReadAloudPreference();
+  const [noVoiceHint, setNoVoiceHint] = useState(false);
+  const appLanguage = i18n.language;
+  const speechLanguage = contentLanguage ?? appLanguage;
+  const stepVoice = voiceAvailability(voices, speechLanguage);
+  const appVoice = voiceAvailability(voices, appLanguage);
+  const voiceMissing = stepVoice.status === 'missing';
+  const reading = visible && readAloudOn && !voiceMissing;
+  const stepLabel = t('recipe.cookModeStep', { current: index + 1, total: steps.length });
+  const speech =
+    done || steps.length === 0
+      ? appVoice.status === 'missing'
+        ? null
+        : {
+            text: t('recipe.cookModeDone'),
+            language: appLanguage,
+            voice: appVoice.status === 'ready' ? appVoice.voice : null,
+          }
+      : step
+        ? {
+            text: stepSpeech({
+              text: step.text,
+              label: stepLabel,
+              textLanguage: speechLanguage,
+              labelLanguage: appLanguage,
+            }),
+            language: speechLanguage,
+            voice: stepVoice.status === 'ready' ? stepVoice.voice : null,
+          }
+        : null;
+  const speechText = speech?.text;
+  const speechLang = speech?.language;
+  const speechVoiceId = speech?.voice?.id;
+  const speechVoiceLang = speech?.voice?.language;
+  useEffect(() => {
+    if (!reading) {
+      queue.stop();
+      return;
+    }
+    // A new step, or turning the speaker on, reads it. The voice list arriving late reads it again in the right voice.
+    if (!speechText || !speechLang) return;
+    queue.say(
+      speechText,
+      speechLang,
+      speechVoiceId && speechVoiceLang ? { id: speechVoiceId, language: speechVoiceLang } : null,
+    );
+  }, [reading, speechText, speechLang, speechVoiceId, speechVoiceLang, queue]);
+
+  const readAgain = () => {
+    if (speech) queue.say(speech.text, speech.language, speech.voice);
+  };
+
+  const languageName = t(`languages.${speechLanguage.split('-')[0]}`, { defaultValue: speechLanguage });
+
+  // Speak the new step (or the finish screen) after Next / Back / swipe, for screen readers. Not while the
+  // speaker reads it, or it would be heard twice.
   const announcedIndex = useRef<number | null>(null);
   useEffect(() => {
     if (!visible) {
@@ -95,6 +160,7 @@ export function CookMode({
     }
     if (announcedIndex.current === index) return;
     announcedIndex.current = index;
+    if (reading) return;
     if (index >= steps.length) {
       announce(t('recipe.cookModeDone'));
       return;
@@ -104,11 +170,24 @@ export function CookMode({
     announce(
       `${t('recipe.cookModeStep', { current: index + 1, total: steps.length })}. ${current.text}`,
     );
-  }, [index, visible, steps, t]);
+  }, [index, visible, steps, t, reading]);
 
+  // With the speaker on, a finished timer is read after the current step, not over it.
+  const readingRef = useRef(reading);
+  const appVoiceRef = useRef(appVoice);
   useEffect(() => {
-    if (timerDone) announce(t('recipe.cookModeTimerDone'));
-  }, [timerDone, t]);
+    readingRef.current = reading;
+    appVoiceRef.current = appVoice;
+  });
+  useEffect(() => {
+    if (!timerDone) return;
+    const voice = appVoiceRef.current;
+    if (!readingRef.current) {
+      announce(t('recipe.cookModeTimerDone'));
+    } else if (voice.status !== 'missing') {
+      queue.append(t('recipe.cookModeTimerDone'), appLanguage, voice.status === 'ready' ? voice.voice : null);
+    }
+  }, [timerDone, t, appLanguage, queue]);
 
   const goNext = useCallback(() => {
     setIndex((current) => Math.min(steps.length, current + 1));
@@ -185,7 +264,34 @@ export function CookMode({
             >
               {title}
             </Text>
-            <View className="h-12 w-12" />
+            <Pressable trackId="cook_mode.read_aloud.toggle"
+              onPress={() => {
+                if (voiceMissing) {
+                  setNoVoiceHint(true);
+                  return;
+                }
+                setReadAloudOn(!readAloudOn);
+              }}
+              hitSlop={12}
+              className="h-12 w-12 items-center justify-center rounded-full active:opacity-80"
+              style={{
+                backgroundColor: reading ? colors.primarySoft : colors.frosted,
+                opacity: voiceMissing ? 0.45 : 1,
+              }}
+              accessibilityRole="switch"
+              accessibilityLabel={
+                voiceMissing
+                  ? t('recipe.cookModeNoVoice', { language: languageName })
+                  : t('recipe.cookModeReadAloud')
+              }
+              accessibilityState={{ checked: reading, disabled: voiceMissing }}
+            >
+              <Ionicons
+                name={reading ? 'volume-high-outline' : 'volume-mute-outline'}
+                size={22}
+                color={reading ? colors.primary : colors.text}
+              />
+            </Pressable>
           </View>
 
           {done || steps.length === 0 ? (
@@ -223,12 +329,29 @@ export function CookMode({
             </View>
           ) : (
             <>
-              <Text
-                className="mt-6 text-sm font-semibold uppercase tracking-wide"
-                style={{ color: colors.textSecondary }}
-              >
-                {t('recipe.cookModeStep', { current: index + 1, total: steps.length })}
-              </Text>
+              <View className="mt-6 min-h-[36px] flex-row items-center justify-between gap-3">
+                <Text
+                  className="text-sm font-semibold uppercase tracking-wide"
+                  style={{ color: colors.textSecondary }}
+                >
+                  {stepLabel}
+                </Text>
+                {reading ? (
+                  <Pressable trackId="cook_mode.read_aloud.replay"
+                    onPress={readAgain}
+                    hitSlop={8}
+                    className="min-h-[36px] flex-row items-center gap-1.5 rounded-full px-3 active:opacity-80"
+                    style={{ backgroundColor: colors.primarySoft }}
+                    accessibilityRole="button"
+                    accessibilityLabel={t('recipe.cookModeReadAgain')}
+                  >
+                    <Ionicons name="volume-high-outline" size={16} color={colors.primary} />
+                    <Text className="text-sm font-semibold" style={{ color: colors.primary }}>
+                      {t('recipe.cookModeReadAgain')}
+                    </Text>
+                  </Pressable>
+                ) : null}
+              </View>
 
               <View className="mt-4 min-h-0 flex-1" {...pan.panHandlers}>
                 <Pressable trackId="cook_mode.step_card.next"
@@ -291,6 +414,20 @@ export function CookMode({
                 </View>
               ) : null}
 
+              {noVoiceHint && voiceMissing ? (
+                <Text
+                  className="mb-2 text-center text-xs font-semibold"
+                  style={{ color: colors.text }}
+                  accessibilityLiveRegion="polite"
+                >
+                  {t('recipe.cookModeNoVoice', { language: languageName })}
+                </Text>
+              ) : null}
+              {reading && Platform.OS === 'ios' ? (
+                <Text className="mb-2 text-center text-xs" style={{ color: colors.textSecondary }}>
+                  {t('recipe.cookModeSilentHint')}
+                </Text>
+              ) : null}
               <Text className="mb-3 text-center text-xs" style={{ color: colors.textSecondary }}>
                 {t('recipe.cookModeTapHint')}
               </Text>

@@ -23,11 +23,13 @@ function Harness({
   onCooked,
   timers = noTimers(),
   onClose = vi.fn(),
+  contentLanguage = "en",
 }: {
   dir?: "ltr" | "rtl";
   onCooked?: () => void;
   timers?: CookModeTimers;
   onClose?: () => void;
+  contentLanguage?: string;
 }) {
   const [index, setIndex] = useState(0);
   const [open, setOpen] = useState(true);
@@ -44,7 +46,7 @@ function Harness({
             title="Fluffy Pancakes"
             steps={steps}
             direction="ltr"
-            contentLanguage="en"
+            contentLanguage={contentLanguage}
             index={index}
             onIndexChange={setIndex}
             timers={timers}
@@ -61,7 +63,35 @@ const dialog = () => screen.getByRole("dialog", { name: "Fluffy Pancakes" });
 
 afterEach(() => {
   Reflect.deleteProperty(navigator, "wakeLock");
+  Reflect.deleteProperty(window, "speechSynthesis");
+  vi.unstubAllGlobals();
+  window.localStorage.clear();
 });
+
+class FakeUtterance {
+  lang = "";
+  voice: unknown = null;
+  onend: (() => void) | null = null;
+  onerror: (() => void) | null = null;
+  constructor(public text: string) {}
+}
+
+/** A stand-in for the browser's speechSynthesis: records what would be spoken. */
+function stubSpeech(voices: { voiceURI: string; lang: string; name?: string; localService?: boolean; default?: boolean }[]) {
+  const spoken: FakeUtterance[] = [];
+  const synth = {
+    speak: vi.fn((utterance: FakeUtterance) => spoken.push(utterance)),
+    cancel: vi.fn(),
+    getVoices: () => voices.map((voice) => ({ name: voice.voiceURI, localService: true, default: false, ...voice })),
+    addEventListener: vi.fn(),
+    removeEventListener: vi.fn(),
+  };
+  Object.defineProperty(window, "speechSynthesis", { value: synth, configurable: true });
+  vi.stubGlobal("SpeechSynthesisUtterance", FakeUtterance);
+  return { synth, spoken, texts: () => spoken.map((utterance) => utterance.text) };
+}
+
+const speaker = () => screen.getByRole("button", { name: "Read steps aloud" });
 
 describe("CookMode", () => {
   it("shows one step at a time, with Next and Back", () => {
@@ -164,5 +194,105 @@ describe("CookMode", () => {
 
     fireEvent.click(screen.getByRole("button", { name: "Close cook mode" }));
     expect(release).toHaveBeenCalled();
+  });
+});
+
+describe("CookMode read aloud", () => {
+  it("has no speaker button where the browser can't speak", () => {
+    render(<Harness />);
+    expect(screen.queryByRole("button", { name: "Read steps aloud" })).toBeNull();
+  });
+
+  it("reads the step when turned on, then each new step, in the recipe's voice", () => {
+    const speech = stubSpeech([
+      { voiceURI: "samantha", lang: "en-US" },
+      { voiceURI: "carmit", lang: "he-IL" },
+    ]);
+    render(<Harness />);
+    expect(speaker().getAttribute("aria-pressed")).toBe("false");
+    expect(speech.synth.speak).not.toHaveBeenCalled();
+
+    fireEvent.click(speaker());
+    expect(speaker().getAttribute("aria-pressed")).toBe("true");
+    expect(speech.texts()).toEqual(["Step 1 of 3."]);
+    expect(speech.spoken[0]?.lang).toBe("en-US");
+    expect((speech.spoken[0]?.voice as { voiceURI: string }).voiceURI).toBe("samantha");
+    // The next sentence is queued until the first is done.
+    act(() => speech.spoken[0]?.onend?.());
+    expect(speech.texts()).toEqual(["Step 1 of 3.", "Whisk the flour and milk."]);
+
+    fireEvent.click(screen.getByRole("button", { name: /Next/ }));
+    expect(speech.synth.cancel).toHaveBeenCalled();
+    expect(speech.texts().at(-1)).toBe("Step 2 of 3.");
+    expect(window.localStorage.getItem("pinch:cookReadAloud")).toBe("on");
+  });
+
+  it("reads again on request, and stops when turned off or closed", () => {
+    const speech = stubSpeech([{ voiceURI: "samantha", lang: "en-US" }]);
+    const onClose = vi.fn();
+    render(<Harness onClose={onClose} />);
+    fireEvent.click(speaker());
+    const before = speech.spoken.length;
+    fireEvent.click(screen.getByRole("button", { name: "Read again" }));
+    expect(speech.spoken.length).toBe(before + 1);
+    expect(speech.texts().at(-1)).toBe("Step 1 of 3.");
+
+    fireEvent.click(speaker());
+    expect(speech.synth.cancel).toHaveBeenCalled();
+    expect(screen.queryByRole("button", { name: "Read again" })).toBeNull();
+    expect(window.localStorage.getItem("pinch:cookReadAloud")).toBe("off");
+
+    fireEvent.click(speaker());
+    speech.synth.cancel.mockClear();
+    fireEvent.click(screen.getByRole("button", { name: "Close cook mode" }));
+    expect(speech.synth.cancel).toHaveBeenCalled();
+  });
+
+  it("remembers the choice and stops when the tab is hidden", () => {
+    window.localStorage.setItem("pinch:cookReadAloud", "on");
+    const speech = stubSpeech([{ voiceURI: "samantha", lang: "en-US" }]);
+    render(<Harness />);
+    expect(speaker().getAttribute("aria-pressed")).toBe("true");
+    expect(speech.texts()).toEqual(["Step 1 of 3."]);
+
+    Object.defineProperty(document, "visibilityState", { value: "hidden", configurable: true });
+    fireEvent(document, new Event("visibilitychange"));
+    expect(speech.synth.cancel).toHaveBeenCalled();
+    Reflect.deleteProperty(document, "visibilityState");
+  });
+
+  it("only reads the step text when the recipe is in another language than the app", () => {
+    const speech = stubSpeech([
+      { voiceURI: "samantha", lang: "en-US" },
+      { voiceURI: "carmit", lang: "he-IL" },
+    ]);
+    render(<Harness contentLanguage="he" />);
+    fireEvent.click(speaker());
+    expect(speech.texts()).toEqual(["Whisk the flour and milk."]);
+    expect(speech.spoken[0]?.lang).toBe("he-IL");
+  });
+
+  it("is greyed out with the reason when there is no voice for the recipe's language", () => {
+    const speech = stubSpeech([{ voiceURI: "samantha", lang: "en-US" }]);
+    render(<Harness contentLanguage="he" />);
+    const button = screen.getByRole("button", { name: "No Hebrew voice on this device" });
+    expect(button.getAttribute("aria-disabled")).toBe("true");
+    fireEvent.click(button);
+    expect(speech.synth.speak).not.toHaveBeenCalled();
+  });
+
+  it("reads a finished timer after the step instead of cutting it off", () => {
+    const speech = stubSpeech([{ voiceURI: "samantha", lang: "en-US" }]);
+    const running = noTimers({ now: 0, timers: [{ id: "a", label: "10 minutes", step: 1, seconds: 600, endsAt: 600_000 }] });
+    const { rerender } = render(<Harness timers={running} />);
+    fireEvent.click(speaker());
+    expect(speech.texts()).toEqual(["Step 1 of 3."]);
+    speech.synth.cancel.mockClear();
+
+    rerender(<Harness timers={{ ...running, now: 600_000 }} />);
+    expect(speech.synth.cancel).not.toHaveBeenCalled();
+    act(() => speech.spoken[0]?.onend?.());
+    act(() => speech.spoken[1]?.onend?.());
+    expect(speech.texts()).toEqual(["Step 1 of 3.", "Whisk the flour and milk.", "Timer’s up"]);
   });
 });

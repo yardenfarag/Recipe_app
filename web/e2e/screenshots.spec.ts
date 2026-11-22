@@ -53,6 +53,27 @@ async function open(browser: Browser, viewport: keyof typeof VIEWPORTS, prefs: P
     localStorage.setItem("pinch:appLanguage", p.language);
     localStorage.setItem("pinch.themePreference", p.scheme);
     localStorage.setItem("pinch.themePack", p.pack ?? "mist");
+    // Silent speech with an English and a Hebrew voice, so cook mode's speaker button looks the same on every
+    // machine and a screenshot run never talks.
+    class Utterance {
+      onend: (() => void) | null = null;
+      onerror: (() => void) | null = null;
+      constructor(public text: string) {}
+    }
+    Object.assign(window, { SpeechSynthesisUtterance: Utterance });
+    Object.defineProperty(window, "speechSynthesis", {
+      configurable: true,
+      value: {
+        getVoices: () => [
+          { voiceURI: "en", lang: "en-US", name: "English", localService: true, default: true },
+          { voiceURI: "he", lang: "he-IL", name: "Hebrew", localService: true, default: false },
+        ],
+        speak: (utterance: Utterance) => setTimeout(() => utterance.onend?.(), 50),
+        cancel: () => undefined,
+        addEventListener: () => undefined,
+        removeEventListener: () => undefined,
+      },
+    });
   }, prefs);
   // The account's choices win over this browser's once loaded (PIN-154), so set them there too.
   await writeAccountPrefs({ locale: prefs.language, prefs: { scheme: prefs.scheme, pack: prefs.pack ?? "mist", measurement: "original" } });
@@ -342,6 +363,11 @@ test("editor, credits, recipe actions and cook mode", async ({ browser }) => {
         await page.keyboard.press(language === "he" ? "ArrowLeft" : "ArrowRight");
         await page.waitForTimeout(500);
         await page.screenshot({ path: `${OUT}/cook-mode-${viewport}-${language}-${scheme}.png` });
+        // With the speaker on: the button lit, and "Read again" by the step number.
+        await page.getByRole("dialog").getByRole("button", { name: /^(Read steps aloud|הקראת השלבים)$/ }).click();
+        await page.mouse.move(0, 0);
+        await page.waitForTimeout(500);
+        await page.screenshot({ path: `${OUT}/cook-mode-reading-${viewport}-${language}-${scheme}.png` });
         await context.close();
       }
 

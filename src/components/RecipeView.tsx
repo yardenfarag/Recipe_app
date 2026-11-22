@@ -1966,6 +1966,7 @@ export function RecipeView({
           title={title}
           instructions={displayInstructions}
           textDirection={textDirection}
+          contentLanguage={contentLanguage}
           onClose={() => setCookModeOpen(false)}
           onCooked={
             onCookedChange
