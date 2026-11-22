@@ -1,8 +1,8 @@
 "use client";
 
-import { ChevronRight, ClipboardPaste, Coins, MousePointerClick, PenLine } from "lucide-react";
+import { ChevronRight, Coins, PenLine } from "lucide-react";
 import Link from "next/link";
-import { useState, useSyncExternalStore } from "react";
+import { useState } from "react";
 import { useTranslation } from "react-i18next";
 
 import { FREE_MONTHLY_EXTRACT_LIMIT } from "@shared/lib/quotas";
@@ -68,37 +68,5 @@ export function WriteRecipeCard() {
       </span>
       <ChevronRight aria-hidden className="h-4 w-4 shrink-0 text-muted transition-transform group-hover:translate-x-0.5 rtl:rotate-180 rtl:group-hover:-translate-x-0.5" />
     </Link>
-  );
-}
-
-const subscribeNothing = () => () => {};
-const isMac = () => /Mac|iPhone|iPad/.test(navigator.platform || navigator.userAgent);
-
-/** The web's answer to mobile's "Share into Pinch": paste or drop straight onto the page. Not shown on phones. */
-export function QuickTipsCard() {
-  const { t } = useTranslation();
-  const mac = useSyncExternalStore(subscribeNothing, isMac, () => false);
-  return (
-    <Tile as="section" aria-labelledby="snap-tips" className="hidden p-5 md:block">
-      <TileLabel as="h2" id="snap-tips">
-        {t("web.snap.tipsTitle")}
-      </TileLabel>
-      <ul className="mt-3 flex flex-col gap-3 text-sm leading-relaxed text-muted">
-        <li className="flex items-center gap-3">
-          <span aria-hidden className="grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-accent-soft text-accent-text">
-            <ClipboardPaste className="h-5 w-5" />
-          </span>
-          <span>
-            {t("web.snap.tipPaste", { shortcut: mac ? "⌘V" : "Ctrl+V" })}
-          </span>
-        </li>
-        <li className="flex items-center gap-3">
-          <span aria-hidden className="grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-accent-soft text-accent-text">
-            <MousePointerClick className="h-5 w-5" />
-          </span>
-          <span>{t("web.snap.tipDrop")}</span>
-        </li>
-      </ul>
-    </Tile>
   );
 }

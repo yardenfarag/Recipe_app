@@ -15,7 +15,7 @@ import { PhotoDropZone } from "@/components/snap/PhotoDropZone";
 import { SnapBannerView } from "@/components/snap/SnapBannerView";
 import { SnapIntentSwitch } from "@/components/snap/SnapIntentSwitch";
 import { SnapProgress } from "@/components/snap/SnapProgress";
-import { CreditsCard, QuickTipsCard, WriteRecipeCard } from "@/components/snap/SnapSidebar";
+import { CreditsCard, WriteRecipeCard } from "@/components/snap/SnapSidebar";
 import { Button, buttonClasses } from "@/components/ui/Button";
 import { PageHeader } from "@/components/ui/PageHeader";
 import { TextField } from "@/components/ui/TextField";
@@ -342,7 +342,6 @@ export function SnapScreen() {
         <aside className="flex flex-col gap-4">
           <CreditsCard quota={quota} />
           <WriteRecipeCard />
-          <QuickTipsCard />
         </aside>
       </div>
 
