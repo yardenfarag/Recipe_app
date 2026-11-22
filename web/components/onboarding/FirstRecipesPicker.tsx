@@ -143,7 +143,8 @@ export function FirstRecipesPicker() {
         <div className="fixed inset-x-0 bottom-0 z-30 border-t border-frosted-border bg-frosted backdrop-blur-md">
           <div className="mx-auto flex w-full max-w-6xl items-center justify-between gap-4 px-4 py-3 sm:px-8">
             <p aria-live="polite" className="text-sm text-muted">
-              {picked.length > 0 ? t("firstRecipes.pickedCount", { count: picked.length }) : t("firstRecipes.pickOne")}
+              {/* Before a pick, the button itself says "Pick at least one". */}
+              {picked.length > 0 ? t("firstRecipes.pickedCount", { count: picked.length }) : null}
             </p>
             <Button size="lg" trackId="first_recipes.save" disabled={!canSave} busy={saving} onClick={() => void save()}>
               {picked.length > 0 ? t("firstRecipes.save", { count: picked.length }) : t("firstRecipes.pickOne")}
