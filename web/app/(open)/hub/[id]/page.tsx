@@ -7,7 +7,7 @@ import { useCallback, useState } from "react";
 import { useTranslation } from "react-i18next";
 
 import { showToast } from "@shared/lib/toast";
-import { translateAppError } from "@shared/lib/translateAppError";
+import { joinErrorSentences, translateAppError } from "@shared/lib/translateAppError";
 
 import { useAuth } from "@/components/AuthProvider";
 import { RecipeView } from "@/components/recipe/RecipeView";
@@ -20,6 +20,9 @@ import { Tile } from "@/components/ui/Tile";
 import { lastHubHref } from "@/lib/hub/hubAddress";
 import { useHubRecipe } from "@/lib/hub/useHubRecipe";
 import { useSaveAfterSignIn } from "@/lib/useSaveAfterSignIn";
+
+/** On a phone the button takes the whole row and may wrap: "Добавить в библиотеку" is wider than a 360 px screen allows. */
+const PHONE_FULL_WIDTH = "max-sm:h-auto max-sm:min-h-14 max-sm:w-full max-sm:whitespace-normal max-sm:py-2.5";
 
 /**
  * A Hub recipe, read-only: the same recipe page as a saved one, without the heart, and with "Add to library" (free,
@@ -54,7 +57,7 @@ export default function HubRecipePage() {
       showToast(t("web.hub.added"));
       router.push(`/recipe/${recipeId}`);
     } catch (caught) {
-      setAddError(`${t("hub.addFailedTitle")}: ${translateAppError(caught, t)}`);
+      setAddError(joinErrorSentences(t("hub.addFailedTitle"), translateAppError(caught, t)));
       setAdding(false);
     }
   }, [addToLibrary, router, t]);
@@ -89,13 +92,14 @@ export default function HubRecipePage() {
           {t("hub.attribution")}
         </p>
         {state.libraryRecipeId ? (
-          <Link href={`/recipe/${state.libraryRecipeId}`} data-track="hub_recipe.open_in_library" className={buttonClasses({ size: "lg" })}>
+          <Link href={`/recipe/${state.libraryRecipeId}`} data-track="hub_recipe.open_in_library" className={buttonClasses({ size: "lg", className: PHONE_FULL_WIDTH })}>
             <BookOpenCheck aria-hidden className="h-5 w-5" />
             {t("hub.openInLibrary")}
           </Link>
         ) : (
           <Button
             size="lg"
+            className={PHONE_FULL_WIDTH}
             trackId="hub_recipe.add_to_library"
             busy={adding || savingAfterSignIn}
             onClick={() => (user ? void add() : router.push(signInHere("signin", "save=1")))}

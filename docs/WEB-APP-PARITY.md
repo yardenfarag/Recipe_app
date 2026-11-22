@@ -261,11 +261,11 @@ On the PIN-146 branch, 2026-11-22. Browser tests run against local Supabase only
 | Check | How | Result |
 |---|---|---|
 | Browser tests, Chromium | `npm run test:e2e` in `web/` | All pass. The first run also failed tests that #104 had left expecting the import preview (auto-save now skips it); they are updated. CI runs the whole suite on the PR. |
-| Every page fits the window: phone (360 px), tablet and desktop, in all five languages; Hebrew and Arabic right to left | `e2e/layout.spec.ts` (new): 20 pages each, signed in and out | Found two pages that ran off a phone in Spanish and Russian: the guest bar on Hub and shared links, and the recipe editor. Both fixed; all 15 combinations pass. |
+| Every page fits the window: phone (360 px), tablet and desktop, in all five languages; Hebrew and Arabic right to left | `e2e/layout.spec.ts` (new): 20 pages each, signed in and out | Found three things that ran off a phone in Spanish and Russian: the guest bar on Hub and shared links, the Hub recipe's Add button, and the recipe editor. All fixed; all 15 combinations pass. |
 | Keyboard only: sign in, import a recipe, open it, add it to the list | `e2e/keyboard.spec.ts` (new): Tab, typing and Enter only | Passes. |
 | The fixes above | `e2e/parity.spec.ts` (new), `snap.spec.ts` (partial import, failed save, Remove), unit tests | Pass. While testing, "Add to collection" turned out to save without a collection that was still being created when Save was pressed; Save now waits. |
-| Download size, first visit | Production, signed out, Chrome | Expo web: 928 KB of JavaScript in 10 requests before anything shows. New app: 393 KB in 40 smaller requests, with the page itself rendered on the server. |
-| Speed: first load and moving between screens | Production signed out; local signed in with 300 recipes | Measured after the PR opened, on an idle machine; see the PR. |
+| First visit, production, signed out | Chrome, cold cache, median of 5; phone = 4× slower CPU on 4G | Desktop: first paint 0.5 s (Expo) vs 2.1 s (new); usable 1.8 s vs 2.5 s. Phone: first paint 0.7 s vs 3.4 s; usable 4.1 s vs 3.4 s. JavaScript: 928 KB in 10 requests vs 393 KB in 40. The new app paints late because `/app` arrives as an empty "Loading" page until the session check: PIN-174. |
+| Signed in, 300 recipes, local builds of both apps | Desktop, median of 5 | First load to the Library: 2.0 s vs 3.0 s. Hub 1.1 vs 1.5 s, List 2.6 vs 0.9 s, Settings 0.5 vs 0.1 s, opening a recipe 1.0 vs 1.0 s. Back to the Library: 0.2 vs 1.4 s, because the new app reloads the whole library each time (Expo keeps its tabs in memory): PIN-174. |
 | Firefox and WebKit (Safari's engine) | — | Not run here. Covered by Yarden's checks on a real iPhone and Android phone (below). |
 
 ### Left for Yarden
