@@ -145,8 +145,8 @@ async function commonsImage(title: string): Promise<{ url: string; license: stri
   };
 }
 
-async function fetchImages() {
-  const manifestPath = `${ROOT}cases/images.json`;
+/** Downloads every image in a manifest. Extra fields on each entry (labels) are kept as they are. */
+async function fetchImages(manifestPath = `${ROOT}cases/images.json`) {
   const images = await readJson<ImageCase[]>(manifestPath);
   for (const img of images) {
     try {
@@ -168,6 +168,8 @@ async function fetchImages() {
 
 export async function fetchCommand(args: string[]) {
   const force = args.includes('--force');
+  // PIN-64: the clarifying-questions photos (cases/clarify.json) only.
+  if (args.includes('--clarify')) return await fetchImages(`${ROOT}cases/clarify.json`);
   if (!args.includes('--images-only')) await fetchPosts(force);
   if (!args.includes('--posts-only')) await fetchImages();
 }

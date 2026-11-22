@@ -1,0 +1,719 @@
+[
+  {
+    "id": "clarify-u-wiener-schnitzel",
+    "group": "unclear",
+    "query": "Wiener Schnitzel",
+    "dish": "Veal schnitzel",
+    "answer": [
+      "veal",
+      "עגל"
+    ],
+    "accept": [
+      "veal",
+      "עגל"
+    ],
+    "title": "File:Wiener-Schnitzel02.jpg",
+    "license": "CC BY-SA 2.5"
+  },
+  {
+    "id": "clarify-u-chicken-schnitzel",
+    "group": "unclear",
+    "query": "chicken schnitzel plate",
+    "dish": "Chicken schnitzel",
+    "answer": [
+      "chicken",
+      "עוף"
+    ],
+    "accept": [
+      "chicken",
+      "עוף"
+    ],
+    "title": "File:Chicken schnitzel from Brotzeit.jpg",
+    "license": "CC BY-SA 4.0"
+  },
+  {
+    "id": "clarify-u-tonkatsu",
+    "group": "unclear",
+    "query": "tonkatsu pork cutlet",
+    "dish": "Pork cutlet (tonkatsu)",
+    "answer": [
+      "pork",
+      "חזיר"
+    ],
+    "accept": [
+      "pork",
+      "חזיר"
+    ],
+    "title": "File:Pork-cutlet.jpg",
+    "license": "CC BY-SA 4.0"
+  },
+  {
+    "id": "clarify-u-grilled-cod",
+    "group": "unclear",
+    "query": "grilled cod fillet",
+    "dish": "Grilled cod",
+    "answer": [
+      "fish",
+      "cod",
+      "דג",
+      "בקלה"
+    ],
+    "accept": [
+      "cod",
+      "fish",
+      "דג",
+      "בקלה"
+    ],
+    "title": "File:Grilled deep sea cod fillet.jpg",
+    "license": "CC BY 2.0"
+  },
+  {
+    "id": "clarify-u-chicken-breast",
+    "group": "unclear",
+    "query": "grilled chicken breast plate",
+    "dish": "Grilled chicken breast",
+    "answer": [
+      "chicken",
+      "עוף"
+    ],
+    "accept": [
+      "chicken",
+      "עוף"
+    ],
+    "title": "File:Pesto Chicken and Grilled Zucchini.jpg",
+    "license": "CC BY-SA 4.0"
+  },
+  {
+    "id": "clarify-u-lamb-kebab",
+    "group": "unclear",
+    "query": "lamb kebab skewers",
+    "dish": "Lamb kebab",
+    "answer": [
+      "lamb",
+      "כבש",
+      "טלה"
+    ],
+    "accept": [
+      "lamb",
+      "כבש",
+      "טלה"
+    ],
+    "title": "File:Lamb kebab skewer.jpg",
+    "license": "CC BY 4.0"
+  },
+  {
+    "id": "clarify-u-chicken-kebab",
+    "group": "unclear",
+    "query": "chicken shish kebab",
+    "dish": "Chicken kebab",
+    "answer": [
+      "chicken",
+      "עוף"
+    ],
+    "accept": [
+      "chicken",
+      "עוף"
+    ],
+    "title": "File:Tavuk Şiş.jpg",
+    "license": "CC BY-SA 4.0"
+  },
+  {
+    "id": "clarify-u-lamb-stew",
+    "group": "unclear",
+    "query": "lamb stew bowl",
+    "dish": "Lamb stew",
+    "answer": [
+      "lamb",
+      "כבש",
+      "טלה"
+    ],
+    "accept": [
+      "lamb",
+      "כבש",
+      "טלה"
+    ],
+    "title": "File:Lamb stew, Wiesbaden.jpg",
+    "license": "CC BY-SA 4.0"
+  },
+  {
+    "id": "clarify-u-pulled-pork",
+    "group": "unclear",
+    "query": "pulled pork sandwich",
+    "dish": "Pulled pork sandwich",
+    "answer": [
+      "pork",
+      "חזיר"
+    ],
+    "accept": [
+      "pork",
+      "חזיר"
+    ],
+    "title": "File:Pulled pork sandwich - \"Naked\".jpg",
+    "license": "CC BY-SA 4.0"
+  },
+  {
+    "id": "clarify-u-tofu-stir-fry",
+    "group": "unclear",
+    "query": "tofu stir fry",
+    "dish": "Tofu stir-fry",
+    "answer": [
+      "tofu",
+      "טופו"
+    ],
+    "accept": [
+      "tofu",
+      "טופו"
+    ],
+    "title": "File:Black pepper tofu fried udon - Stir Fry by CK.jpg",
+    "license": "CC0"
+  },
+  {
+    "id": "clarify-u-paneer-tikka",
+    "group": "unclear",
+    "query": "paneer tikka",
+    "dish": "Paneer tikka",
+    "answer": [
+      "paneer",
+      "פניר",
+      "cheese",
+      "גבינה"
+    ],
+    "accept": [
+      "paneer",
+      "פניר"
+    ],
+    "title": "File:Panir Tikka Indian cheese grilled.jpg",
+    "license": "CC BY 2.0 de"
+  },
+  {
+    "id": "clarify-u-chickpea-curry",
+    "group": "unclear",
+    "query": "chickpea curry chana masala",
+    "dish": "Chickpea curry",
+    "answer": [
+      "chickpea",
+      "chana",
+      "חומוס",
+      "גרגרי"
+    ],
+    "accept": [
+      "chickpea",
+      "chana",
+      "חומוס",
+      "גרגרי"
+    ],
+    "title": "File:Chana Masala in Paulínia, 2023-10-16.jpg",
+    "license": "CC BY-SA 4.0"
+  },
+  {
+    "id": "clarify-u-chicken-curry",
+    "group": "unclear",
+    "query": "chicken curry bowl",
+    "dish": "Chicken curry",
+    "answer": [
+      "chicken",
+      "עוף"
+    ],
+    "accept": [
+      "chicken",
+      "עוף"
+    ],
+    "title": "File:Chicken curry bowl and berry ice tea at Shishinori (15700024614).jpg",
+    "license": "CC BY 2.0"
+  },
+  {
+    "id": "clarify-u-veggie-burger",
+    "group": "unclear",
+    "query": "veggie burger",
+    "dish": "Veggie burger",
+    "answer": [
+      "veg",
+      "bean",
+      "plant",
+      "צמחוני",
+      "טבעוני",
+      "שעועית"
+    ],
+    "accept": [
+      "bean",
+      "lentil",
+      "chickpea",
+      "mushroom",
+      "veg",
+      "quinoa",
+      "שעועית",
+      "עדשים",
+      "צמחוני"
+    ],
+    "title": "File:Fancy Veggie Burger and Fries - Joe's Burger House 2024-07-07.jpg",
+    "license": "CC0"
+  },
+  {
+    "id": "clarify-u-pork-dumplings",
+    "group": "unclear",
+    "query": "pork dumplings jiaozi",
+    "dish": "Pork dumplings",
+    "answer": [
+      "pork",
+      "חזיר"
+    ],
+    "accept": [
+      "pork",
+      "חזיר"
+    ],
+    "title": "File:Mushroom pork dumplings for lunch.jpg",
+    "license": "CC BY-SA 4.0"
+  },
+  {
+    "id": "clarify-u-shrimp-tacos",
+    "group": "unclear",
+    "title": "File:Valentines's Day is for Shrimp Tacos!.jpg",
+    "dish": "Shrimp tacos",
+    "answer": [
+      "shrimp",
+      "prawn",
+      "שרימפס"
+    ],
+    "accept": [
+      "shrimp",
+      "prawn",
+      "שרימפס"
+    ],
+    "license": "CC0"
+  },
+  {
+    "id": "clarify-u-savoury-crepe",
+    "group": "unclear",
+    "query": "galette complete ham egg cheese",
+    "dish": "Savoury buckwheat crepe (galette)",
+    "answer": [
+      "savo",
+      "ham",
+      "egg",
+      "מלוח",
+      "ביצה"
+    ],
+    "accept": [
+      "ham",
+      "egg",
+      "cheese",
+      "buckwheat",
+      "ביצה",
+      "גבינה",
+      "כוסמת"
+    ],
+    "title": "File:Galette complète in Annecy, France - 20130714.jpg",
+    "license": "CC BY-SA 4.0"
+  },
+  {
+    "id": "clarify-u-beef-tacos",
+    "group": "unclear",
+    "query": "beef tacos",
+    "dish": "Beef tacos",
+    "answer": [
+      "beef",
+      "בקר"
+    ],
+    "accept": [
+      "beef",
+      "בקר"
+    ],
+    "title": "File:Tacos de (carne) asada.jpg",
+    "license": "CC BY-SA 4.0"
+  },
+  {
+    "id": "clarify-u-swedish-meatballs",
+    "group": "unclear",
+    "query": "swedish meatballs plate",
+    "dish": "Swedish meatballs (beef and pork)",
+    "answer": [
+      "beef",
+      "pork",
+      "בקר",
+      "חזיר"
+    ],
+    "accept": [
+      "beef",
+      "pork",
+      "בקר",
+      "חזיר"
+    ],
+    "title": "File:Swedish meatballs with egg noodles.jpg",
+    "license": "CC0"
+  },
+  {
+    "id": "clarify-u-fish-fingers",
+    "group": "unclear",
+    "title": "File:Fischstaebchen.jpg",
+    "dish": "Fish fingers",
+    "answer": [
+      "fish",
+      "cod",
+      "דג"
+    ],
+    "accept": [
+      "fish",
+      "cod",
+      "pollock",
+      "haddock",
+      "דג",
+      "בקלה"
+    ],
+    "license": "CC BY-SA 2.0 de"
+  },
+  {
+    "id": "clarify-c-grilled-salmon",
+    "group": "clear",
+    "query": "grilled salmon steak plate",
+    "dish": "Grilled salmon",
+    "answer": [
+      "salmon",
+      "fish",
+      "סלמון",
+      "דג"
+    ],
+    "accept": [
+      "salmon",
+      "סלמון"
+    ],
+    "title": "File:Grilled plated salmon fillet.jpg",
+    "license": "CC0"
+  },
+  {
+    "id": "clarify-c-margherita",
+    "group": "clear",
+    "query": "Margherita pizza",
+    "dish": "Margherita pizza",
+    "answer": [
+      "margherita",
+      "pizza",
+      "פיצה"
+    ],
+    "accept": [
+      "pizza",
+      "פיצה"
+    ],
+    "title": "File:Margherita Originale.JPG",
+    "license": "CC BY-SA 3.0"
+  },
+  {
+    "id": "clarify-c-nigiri",
+    "group": "clear",
+    "query": "nigiri sushi plate",
+    "dish": "Nigiri sushi",
+    "answer": [
+      "sushi",
+      "nigiri",
+      "סושי"
+    ],
+    "accept": [
+      "sushi",
+      "nigiri",
+      "סושי"
+    ],
+    "title": "File:Nigiri Moriawase (Sushi Sei) (42217840971).jpg",
+    "license": "CC BY-SA 2.0"
+  },
+  {
+    "id": "clarify-c-shakshuka",
+    "group": "clear",
+    "query": "shakshuka pan",
+    "dish": "Shakshuka",
+    "answer": [
+      "shakshuka",
+      "שקשוקה"
+    ],
+    "accept": [
+      "shakshuka",
+      "שקשוקה"
+    ],
+    "title": "File:Liat Portal for Foodie Disorder - Shakshuka with tomatoes and spinach.jpg",
+    "license": "CC BY-SA 4.0"
+  },
+  {
+    "id": "clarify-c-carbonara",
+    "group": "clear",
+    "query": "spaghetti carbonara",
+    "dish": "Spaghetti carbonara",
+    "answer": [
+      "carbonara",
+      "קרבונרה"
+    ],
+    "accept": [
+      "carbonara",
+      "קרבונרה"
+    ],
+    "title": "File:Espaguetis carbonara.jpg",
+    "license": "CC BY-SA 4.0"
+  },
+  {
+    "id": "clarify-c-caesar-salad",
+    "group": "clear",
+    "query": "caesar salad",
+    "dish": "Caesar salad",
+    "answer": [
+      "caesar",
+      "קיסר"
+    ],
+    "accept": [
+      "caesar",
+      "קיסר"
+    ],
+    "title": "File:Caesar Salad - Purezza 2023-11-22.jpg",
+    "license": "CC0"
+  },
+  {
+    "id": "clarify-c-pancakes",
+    "group": "clear",
+    "query": "pancakes with maple syrup stack",
+    "dish": "Pancakes",
+    "answer": [
+      "pancake",
+      "פנקייק"
+    ],
+    "accept": [
+      "pancake",
+      "פנקייק"
+    ],
+    "title": "File:The Smoking Stack Pancakes - Laughing Dog 2026-08-25.jpg",
+    "license": "CC0"
+  },
+  {
+    "id": "clarify-c-croissant",
+    "group": "clear",
+    "query": "croissant plate",
+    "dish": "Croissant",
+    "answer": [
+      "croissant",
+      "קרואסון"
+    ],
+    "accept": [
+      "croissant",
+      "קרואסון"
+    ],
+    "title": "File:Croissant, whole.jpg",
+    "license": "CC BY-SA 3.0"
+  },
+  {
+    "id": "clarify-c-hummus",
+    "group": "clear",
+    "query": "hummus plate olive oil",
+    "dish": "Hummus",
+    "answer": [
+      "hummus",
+      "חומוס"
+    ],
+    "accept": [
+      "hummus",
+      "חומוס"
+    ],
+    "title": "File:Hummus with chickpeas 230px.jpg",
+    "license": "Public domain"
+  },
+  {
+    "id": "clarify-c-falafel",
+    "group": "clear",
+    "query": "falafel balls plate",
+    "dish": "Falafel",
+    "answer": [
+      "falafel",
+      "פלאפל"
+    ],
+    "accept": [
+      "falafel",
+      "פלאפל"
+    ],
+    "title": "File:Falafel balls.jpg",
+    "license": "CC BY 2.0"
+  },
+  {
+    "id": "clarify-c-choc-chip-cookies",
+    "group": "clear",
+    "query": "chocolate chip cookies",
+    "dish": "Chocolate chip cookies",
+    "answer": [
+      "chocolate",
+      "cookie",
+      "שוקולד",
+      "עוגיות"
+    ],
+    "accept": [
+      "cookie",
+      "עוגיות",
+      "עוגייה"
+    ],
+    "title": "File:6cookies.JPG",
+    "license": "GFDL 1.2"
+  },
+  {
+    "id": "clarify-c-guacamole",
+    "group": "clear",
+    "query": "guacamole bowl",
+    "dish": "Guacamole",
+    "answer": [
+      "guacamole",
+      "גוואקמולי"
+    ],
+    "accept": [
+      "guacamole",
+      "avocado",
+      "גוואקמולי",
+      "אבוקדו"
+    ],
+    "title": "File:Guacamole with Homemade Tortilla Chips.jpg",
+    "license": "CC BY-SA 4.0"
+  },
+  {
+    "id": "clarify-c-apple-pie",
+    "group": "clear",
+    "query": "apple pie slice",
+    "dish": "Apple pie",
+    "answer": [
+      "apple",
+      "תפוח"
+    ],
+    "accept": [
+      "apple",
+      "תפוח"
+    ],
+    "title": "File:Slice of apple pie 2.jpg",
+    "license": "CC BY 4.0"
+  },
+  {
+    "id": "clarify-c-tomato-soup",
+    "group": "clear",
+    "query": "tomato soup bowl",
+    "dish": "Tomato soup",
+    "answer": [
+      "tomato",
+      "עגבני"
+    ],
+    "accept": [
+      "tomato",
+      "עגבני"
+    ],
+    "title": "File:Tomato soup in a sourdough bread bowl (20179439271).jpg",
+    "license": "CC BY 2.0"
+  },
+  {
+    "id": "clarify-c-greek-salad",
+    "group": "clear",
+    "query": "greek salad feta",
+    "dish": "Greek salad",
+    "answer": [
+      "greek",
+      "יווני"
+    ],
+    "accept": [
+      "feta",
+      "greek",
+      "פטה",
+      "יווני"
+    ],
+    "title": "File:Flickr - cyclonebill - Græsk salat.jpg",
+    "license": "CC BY-SA 2.0"
+  },
+  {
+    "id": "clarify-c-fried-egg",
+    "group": "clear",
+    "query": "fried egg sunny side up",
+    "dish": "Fried egg",
+    "answer": [
+      "egg",
+      "ביצ"
+    ],
+    "accept": [
+      "egg",
+      "ביצ"
+    ],
+    "title": "File:Fried egg sunny side up 2.jpg",
+    "license": "CC0"
+  },
+  {
+    "id": "clarify-c-cheesecake",
+    "group": "clear",
+    "query": "new york cheesecake slice",
+    "dish": "Cheesecake",
+    "answer": [
+      "cheesecake",
+      "עוגת גבינה"
+    ],
+    "accept": [
+      "cheesecake",
+      "cream cheese",
+      "עוגת גבינה"
+    ],
+    "title": "File:New York cheesecake 2.jpg",
+    "license": "CC BY-SA 4.0"
+  },
+  {
+    "id": "clarify-c-bagel",
+    "group": "clear",
+    "query": "bagel cream cheese lox",
+    "dish": "Bagel with cream cheese and lox",
+    "answer": [
+      "bagel",
+      "בייגל"
+    ],
+    "accept": [
+      "bagel",
+      "בייגל"
+    ],
+    "title": "File:Lox Bagel Sandwich with Cream Cheese Schmear Onion Tomato.jpg",
+    "license": "CC0"
+  },
+  {
+    "id": "clarify-c-omelette",
+    "group": "clear",
+    "query": "french omelette plate",
+    "dish": "Omelette",
+    "answer": [
+      "omelet",
+      "חביתה"
+    ],
+    "accept": [
+      "omelet",
+      "egg",
+      "חביתה",
+      "ביצ"
+    ],
+    "title": "File:Omelette aux truffes.jpg",
+    "license": "CC BY 2.0"
+  },
+  {
+    "id": "clarify-c-french-fries",
+    "group": "clear",
+    "query": "french fries basket",
+    "dish": "French fries",
+    "answer": [
+      "fries",
+      "צ'יפס",
+      "chips"
+    ],
+    "accept": [
+      "potato",
+      "fries",
+      "תפוחי אדמה",
+      "צ'יפס"
+    ],
+    "title": "File:French fries at Chez Jolie.jpg",
+    "license": "CC BY-SA 4.0"
+  },
+  {
+    "id": "clarify-c-ice-cream",
+    "group": "clear",
+    "query": "ice cream scoops bowl",
+    "dish": "Ice cream",
+    "answer": [
+      "ice cream",
+      "גלידה"
+    ],
+    "accept": [
+      "ice cream",
+      "גלידה",
+      "cream"
+    ],
+    "title": "File:Bowl ~ Ice cream.jpg",
+    "license": "CC BY-SA 4.0"
+  }
+]
