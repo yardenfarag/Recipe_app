@@ -412,7 +412,6 @@ export default {
     "pickedCount_other": "مختار: {{count}}",
     "fitsDiet": "مناسبة لنظامك",
     "loadFailed": "ما قدرنا نحمّل وصفات هلّق.",
-    "empty": "ما في وصفات نقترحها هلّق.",
     "continueToSnap": "زيد وصفة من رابط بدالها",
     "saveFailed": "ما قدرنا نحفظها. جرّب مرة ثانية.",
   },

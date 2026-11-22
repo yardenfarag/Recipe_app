@@ -944,7 +944,11 @@ export default function AddRecipeScreen() {
                 <FailedLinkActions
                   onRetry={() => void handleGetRecipe(banner.failedUrl, "extract")}
                   onScreenshot={handlePhotoEntry}
-                  onGuess={() => void handleGetRecipe(banner.failedUrl, "invent")}
+                  onGuess={() => {
+                    // As on the web: the switch moves to Guess the recipe, so the screen says what's running.
+                    setMode("invent");
+                    void handleGetRecipe(banner.failedUrl, "invent");
+                  }}
                 />
               ) : null}
               {banner.kind === "credits" && (

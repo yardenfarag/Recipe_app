@@ -412,7 +412,6 @@ export default {
     "pickedCount_other": "{{count}} picked",
     "fitsDiet": "Fits your diet",
     "loadFailed": "We couldn't load recipes right now.",
-    "empty": "No recipes to suggest right now.",
     "continueToSnap": "Add a recipe from a link instead",
     "saveFailed": "Couldn't save them. Please try again.",
   },

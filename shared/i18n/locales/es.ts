@@ -412,7 +412,6 @@ export default {
     "pickedCount_other": "{{count}} elegidas",
     "fitsDiet": "Va con tu dieta",
     "loadFailed": "No pudimos cargar recetas ahora.",
-    "empty": "Ahora no hay recetas para sugerir.",
     "continueToSnap": "Mejor añadir una receta desde un enlace",
     "saveFailed": "No se pudieron guardar. Inténtalo de nuevo.",
   },

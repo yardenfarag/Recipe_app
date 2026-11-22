@@ -1,5 +1,8 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
+import { autoSaveRecipe } from './autoSaveRecipe';
+
+// vi.mock calls are hoisted above the imports.
 const mocks = vi.hoisted(() => ({
   saveRecipeDraft: vi.fn(),
   clearRecipeDraft: vi.fn(),
@@ -9,8 +12,6 @@ const mocks = vi.hoisted(() => ({
 vi.mock('@/lib/saveRecipeDraft', () => ({ saveRecipeDraft: mocks.saveRecipeDraft }));
 vi.mock('@/lib/recipeDraft', () => ({ clearRecipeDraft: mocks.clearRecipeDraft }));
 vi.mock('@/lib/analytics', () => ({ captureRecipeSaved: mocks.captureRecipeSaved }));
-
-import { autoSaveRecipe } from './autoSaveRecipe';
 
 const recipe = {
   title: 'Shakshuka',

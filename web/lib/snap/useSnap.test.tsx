@@ -67,6 +67,18 @@ describe("useSnap", () => {
     expect(getSnapDraft()).toBeNull();
   });
 
+  it("still saves when the kitchen preferences couldn't be applied, and says so", async () => {
+    mocks.extractRecipe.mockResolvedValue({ status: "full", platform: "youtube", recipe, request_id: "req-1" });
+    mocks.applyKitchen.mockImplementation(async (_user: string, input: typeof recipe) => ({ recipe: input, failed: true }));
+    mocks.saveDraft.mockResolvedValue({ recipe: { ...recipe, id: "r-9" }, recoveredDuplicate: false });
+    const { result } = renderHook(() => useSnap(), { wrapper });
+
+    await act(() => result.current.run({ intent: "extract", source: url }));
+
+    expect(mocks.push).toHaveBeenCalledWith("/recipe/r-9?justSaved=1");
+    expect(mocks.toast).toHaveBeenCalledWith(expect.any(String), "info");
+  });
+
   it("offers ways on when a link can't be read", async () => {
     mocks.extractRecipe.mockResolvedValue({ status: "failed", platform: "tiktok", code: "extraction_timeout" });
     const { result } = renderHook(() => useSnap(), { wrapper });

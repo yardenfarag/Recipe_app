@@ -54,6 +54,11 @@ export default function FirstRecipesScreen() {
         return;
       }
       const cards = await fetchFirstRecipeChoices(kitchen);
+      // Nothing to offer (as on the web): no reason to hold anyone here.
+      if (cards.length === 0) {
+        router.replace('/add');
+        return;
+      }
       setState({ kind: 'ready', cards });
     } catch (error) {
       console.warn('[first-recipes] load failed', error);
@@ -118,25 +123,23 @@ export default function FirstRecipesScreen() {
         <View className="flex-1 items-center justify-center">
           <ActivityIndicator color={colors.primary} accessibilityLabel={t('a11y.loading')} />
         </View>
-      ) : state.kind === 'error' || state.cards.length === 0 ? (
+      ) : state.kind === 'error' ? (
         <View className="flex-1 justify-center px-6">
           {header}
           <Text className="mb-5 text-base" style={{ color: colors.textSecondary, ...rtlText }}>
-            {state.kind === 'error' ? t('firstRecipes.loadFailed') : t('firstRecipes.empty')}
+            {t('firstRecipes.loadFailed')}
           </Text>
-          {state.kind === 'error' ? (
-            <Pressable
-              trackId="first_recipes.retry"
-              onPress={() => void load()}
-              accessibilityRole="button"
-              className="mb-3 min-h-12 items-center justify-center rounded-3xl px-5 active:opacity-80"
-              style={{ backgroundColor: colors.primary }}
-            >
-              <Text className="text-base font-bold" style={{ color: colors.onPrimary }}>
-                {t('common.tryAgain')}
-              </Text>
-            </Pressable>
-          ) : null}
+          <Pressable
+            trackId="first_recipes.retry"
+            onPress={() => void load()}
+            accessibilityRole="button"
+            className="mb-3 min-h-12 items-center justify-center rounded-3xl px-5 active:opacity-80"
+            style={{ backgroundColor: colors.primary }}
+          >
+            <Text className="text-base font-bold" style={{ color: colors.onPrimary }}>
+              {t('common.tryAgain')}
+            </Text>
+          </Pressable>
           {/* Never a dead end: without the Hub, Snap is the way to a first recipe. */}
           <Pressable
             trackId="first_recipes.continue_without"

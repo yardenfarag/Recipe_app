@@ -210,9 +210,11 @@ export function useSnap({ onSettled }: { onSettled?: () => void } = {}) {
             leaving = true;
             // Saved straight away: many people left the preview without saving and lost the recipe. If the save
             // fails, the draft is still stored and the preview keeps its Save button.
-            const savedId = kitchen.failed ? null : await autoSaveSnap(kitchen.recipe);
+            const savedId = await autoSaveSnap(kitchen.recipe);
             if (savedId) {
               clearSnapDraft();
+              // As on mobile: the recipe is kept as written, and the cook is told their kitchen wasn't applied.
+              if (kitchen.failed) showToast(`${t("recipe.kitchenAutoApplyFailedTitle")}. ${t("recipe.kitchenAutoApplyFailed")}`, "info");
               router.push(`/recipe/${savedId}?justSaved=1`);
             } else {
               router.push("/recipe/preview");

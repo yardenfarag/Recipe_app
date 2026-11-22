@@ -412,7 +412,6 @@ export default {
     "pickedCount_other": "נבחרו {{count}}",
     "fitsDiet": "מתאים לתזונה שלכם",
     "loadFailed": "לא הצלחנו לטעון מתכונים כרגע.",
-    "empty": "אין כרגע מתכונים להציע.",
     "continueToSnap": "להוסיף מתכון מקישור במקום",
     "saveFailed": "לא הצלחנו לשמור. נסו שוב.",
   },
