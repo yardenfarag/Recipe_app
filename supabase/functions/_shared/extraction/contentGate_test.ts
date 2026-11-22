@@ -218,3 +218,8 @@ Deno.test('inventKindAfterGate: a first food check still rejects non-food', () =
   assertEquals(inventKindAfterGate(planInventGate({ ...PLAN_DEFAULTS, canClarify: true }), 'unrelated'), 'unrelated');
   assertEquals(inventKindAfterGate(planInventGate(PLAN_DEFAULTS), 'unrelated'), 'unrelated');
 });
+
+Deno.test('shouldAskClarifyingQuestions takes another threshold for the eval sweep', () => {
+  assertFalse(shouldAskClarifyingQuestions({ ...ASKABLE, confidence: 0.55 }, 0.5));
+  assert(shouldAskClarifyingQuestions({ ...ASKABLE, confidence: 0.55 }, 0.6));
+});

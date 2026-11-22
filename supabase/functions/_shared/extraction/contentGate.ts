@@ -155,11 +155,15 @@ export function parseDishClarification(data: Record<string, unknown>): DishClari
 /**
  * ADR 031 D1: ask only when the gate is unsure *and* the candidates would make different recipes.
  * The model signals the second by writing questions. With no usable confidence we guess as today.
+ * `threshold` is for the eval's sweep; production uses the default.
  */
-export function shouldAskClarifyingQuestions(clarification: DishClarification | undefined): boolean {
+export function shouldAskClarifyingQuestions(
+  clarification: DishClarification | undefined,
+  threshold = CLARIFY_CONFIDENCE_THRESHOLD,
+): boolean {
   if (!clarification || clarification.confidence === null) return false;
   return (
-    clarification.confidence < CLARIFY_CONFIDENCE_THRESHOLD &&
+    clarification.confidence < threshold &&
     clarification.candidates.length >= 2 &&
     clarification.questions.length > 0
   );

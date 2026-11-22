@@ -1,8 +1,9 @@
 // PIN-44 eval entry point. See eval/README.md.
-//   npx deno run -A --no-lock --unstable-sloppy-imports --env-file=.env eval/cli.ts <fetch|label|run|judge|report|appliances|translate> [flags]
+//   npx deno run -A --no-lock --unstable-sloppy-imports --env-file=.env eval/cli.ts <fetch|label|run|judge|report|appliances|translate|clarify> [flags]
 // --unstable-sloppy-imports: translate.ts uses shared/, whose imports have no file extensions.
 
 import { appliancesCommand } from './appliances.ts';
+import { clarifyCommand } from './clarify.ts';
 import { fetchCommand } from './fetch.ts';
 import { labelCommand } from './label.ts';
 import { judgeCommand } from './judge.ts';
@@ -19,6 +20,7 @@ const commands: Record<string, (args: string[]) => Promise<void>> = {
   report: reportCommand,
   appliances: appliancesCommand,
   translate: translateCommand,
+  clarify: clarifyCommand,
 };
 
 const fn = commands[command ?? ''];
