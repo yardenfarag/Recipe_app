@@ -32,6 +32,18 @@ _Avoid_: Parsing, scraping (use "scraping" only for the server-side content-fetc
 The order the Edge Function tries sources in: all text first (description, top comments, captions) in one model call, then the video only if the text gave a partial recipe.
 _Avoid_: Scrape order, fetch pipeline
 
+**Guess the recipe**:
+The Snap mode that writes a likely recipe for a dish from a photo or link that has no written recipe (`invent-recipe`, ADR 014).
+_Avoid_: Invent (in user-facing text)
+
+**Content gate**:
+The first, free model call on a Snap or Guess. It decides whether the input is food (`kind`) and names the dish (`dish_guess`). Non-food is rejected here with no charge.
+_Avoid_: Classifier, filter
+
+**Clarifying question**:
+A short multiple-choice question Pinch asks before guessing a recipe from a photo, when the dish is unclear and the candidates would make different recipes. At most 3, each with "Other" and "Just guess". Asking is free. See ADR 031.
+_Avoid_: Follow-up, quiz
+
 **Appliance**:
 A piece of kitchen equipment a recipe uses, from the fixed **appliance catalog**: machines (oven, blender, stand mixer…) and tools that change the result (mortar and pestle, meat thermometer, kitchen scale…). Everyday basics (knife, pot, bowl) are never listed. Each one on a recipe is **required** (no workaround) or **optional** (shown under "Makes it better", with a **benefit** and a workaround), and points to the step that uses it. A recipe's appliance list is either "not analysed" (older recipes; nothing shown) or a list, which may be empty. See ADR 017.
 _Avoid_: Gadgets, equipment (in code)
