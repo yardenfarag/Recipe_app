@@ -90,6 +90,7 @@ function TonightTile({ recipe, onAnother, className }: { recipe: Recipe; onAnoth
       aria-labelledby={headingId}
       src={recipe.image_url}
       fallback={<CookieMark size={88} />}
+      fade="strong"
       className={className}
       contentClassName="gap-2 p-[18px] md:gap-3 md:p-7"
       data-testid="tonights-pick"

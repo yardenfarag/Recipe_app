@@ -80,8 +80,12 @@ export function PhotoTile({
   alt?: string;
   /** Shown behind the content when there is no photo. */
   fallback?: ReactNode;
-  /** "bottom" darkens the lower part for text; "none" leaves the photo alone (buttons on it bring their own backing). */
-  fade?: "bottom" | "none";
+  /**
+   * "bottom" darkens the lower part for text; "strong" darkens more of it and blurs it too, for a tall block of text
+   * over any photo, even a light one or one with words in it; "none" leaves the photo alone (buttons on it bring
+   * their own backing).
+   */
+  fade?: "bottom" | "strong" | "none";
   children?: ReactNode;
   contentClassName?: string;
   as?: ElementType;
@@ -105,6 +109,13 @@ export function PhotoTile({
         </div>
       )}
       {fade === "bottom" ? <div aria-hidden className="absolute inset-0 -z-10 bg-linear-to-b from-scrim/0 from-30% to-scrim/90" /> : null}
+      {fade === "strong" ? (
+        <>
+          {/* The blur comes in under the text, so writing in the photo can't be read through ours; the top stays sharp. */}
+          <div aria-hidden className="absolute inset-0 -z-10 backdrop-blur-2xl [mask-image:linear-gradient(to_bottom,transparent_20%,black_45%)]" />
+          <div aria-hidden className="absolute inset-0 -z-10 bg-linear-to-b from-scrim/0 from-10% via-scrim/80 via-45% to-scrim/95" />
+        </>
+      ) : null}
       {children ? <div className={cn("relative flex h-full flex-col justify-end", contentClassName)}>{children}</div> : null}
     </Component>
   );

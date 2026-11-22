@@ -30,6 +30,8 @@ export type DrawRecipeImageResult =
 export interface DrawRecipeImageOptions {
   /** Tests pass their own. */
   generate?: (options: GenerateImageOptions) => ReturnType<typeof generateImage>;
+  /** Per model tried; the image client's own default when left out. */
+  timeoutMs?: number;
 }
 
 /** One line of plain text: no quotes or line breaks for the title to escape the prompt with. */
@@ -82,7 +84,7 @@ export function toStoredImage(bytes: Uint8Array, mediaType: string): { bytes: Ui
 }
 
 /** 8-bit RGB, RGBA, grey or grey+alpha as RGBA. Null for what jpeg-js can't take directly (16-bit, palette). */
-function toRgba(png: { width: number; height: number; channels: number; depth: number; data: ArrayLike<number>; palette?: unknown }): Uint8Array | null {
+export function toRgba(png:{ width: number; height: number; channels: number; depth: number; data: ArrayLike<number>; palette?: unknown }): Uint8Array | null {
   if (png.depth !== 8 || png.palette) return null;
   const { channels, data } = png;
   const pixels = png.width * png.height;
@@ -119,7 +121,11 @@ export async function drawRecipeImage(
   const prompt = recipeImagePrompt(recipe);
   if (!prompt) return { ok: false, error: 'no title', usage: null, ms: 0 };
 
-  const result = await (options.generate ?? generateImage)({ kind: 'recipe_image', prompt });
+  const result = await (options.generate ?? generateImage)({
+    kind: 'recipe_image',
+    prompt,
+    ...(options.timeoutMs ? { timeoutMs: options.timeoutMs } : {}),
+  });
   if (!result.ok) {
     return { ok: false, error: result.error, usage: null, ms: Date.now() - started };
   }
