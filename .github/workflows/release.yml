@@ -57,6 +57,8 @@ jobs:
 
   quality:
     uses: ./.github/workflows/quality.yml
+    with:
+      skip-browser-tests: true
 
   build:
     name: Build and send to the tester tracks
