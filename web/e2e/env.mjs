@@ -6,7 +6,16 @@ import { execSync } from "node:child_process";
 // so no import.meta here.
 const repoRoot = execSync("git rev-parse --show-toplevel", { encoding: "utf8" }).trim();
 
+// Asking the CLI takes a second or two on Windows, and a test that calls the database twenty times would spend
+// most of its time here, so the answer is read once per process. The local-only check below still runs on it.
+let cached;
+
 export function localSupabase() {
+  cached ??= readLocalSupabase();
+  return cached;
+}
+
+function readLocalSupabase() {
   let output;
   try {
     // The CLI on the PATH (CI installs it), else the copy in the repo root's node_modules.

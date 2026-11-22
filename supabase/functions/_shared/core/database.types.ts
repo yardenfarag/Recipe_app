@@ -1438,6 +1438,10 @@ export type Database = {
         Args: { p_days?: number; p_include_admins?: boolean; p_tz?: string }
         Returns: Json
       }
+      admin_dashboard_insights: {
+        Args: { p_days?: number; p_include_admins?: boolean; p_tz?: string }
+        Returns: Json
+      }
       admin_delete_in_app_message: {
         Args: { p_id: string }
         Returns: undefined
