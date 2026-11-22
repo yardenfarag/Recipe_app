@@ -58,6 +58,7 @@ import {
 import { pdfRequestKey } from "@shared/lib/supabase/extractRecipe";
 import { normalizeSocialUrl } from "@shared/lib/platformUrls";
 import { FREE_MONTHLY_EXTRACT_LIMIT } from "@shared/lib/quotas";
+import { recipePlatformProperty } from "@shared/lib/productEvents";
 import {
   captureRecipeExtracted,
   type RecipeEntrySource,
@@ -423,6 +424,7 @@ export default function AddRecipeScreen() {
     captureRecipeExtracted({
       source,
       mode: recipeIsInvented(recipeToPreview) ? "invent" : "extract",
+      recipe_platform: recipePlatformProperty(recipeToPreview.platform),
     });
     if (user) {
       // Shared with the web app: shared/lib/supabase/kitchenAutoApply.ts.

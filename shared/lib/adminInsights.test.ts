@@ -64,6 +64,22 @@ describe('summarizeInsights', () => {
     });
   });
 
+  it('shows where an extracted recipe came from when the event says', () => {
+    const summary = summarizeInsights(
+      [
+        {
+          name: 'recipe_extracted',
+          properties: { source: 'url', mode: 'extract', recipe_platform: 'pinterest' },
+          created_at: '2026-09-24T14:00:00.000Z',
+          user_id: 'user-3',
+          guest_install_id: null,
+        },
+      ],
+      new Date('2026-09-24T18:00:00.000Z'),
+    );
+    expect(summary.recent[0]?.detail).toBe('url · extract · pinterest');
+  });
+
   it('counts web intro visits separately from the people who clicked', () => {
     const summary = summarizeInsights(
       [
