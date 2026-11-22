@@ -8,6 +8,12 @@ import {
   reserveGuestDailyAiUsage,
 } from '../core/dailyAiUsage.ts';
 import { generateLlmJson } from '../llm/llmClient.ts';
+import {
+  type ClarifyingQuestion,
+  cleanClarifyingText,
+  MAX_OPTION_LENGTH,
+  sanitizeClarifyingQuestions,
+} from './clarifyingQuestions.ts';
 import { fetchImageAsBase64 } from './persistThumbnail.ts';
 import {
   CONTENT_GATE_DAILY_LIMIT,
@@ -28,11 +34,34 @@ export type ClassifyContentInput = {
   thumbnailReferer?: string | null;
 };
 
+/**
+ * Ask clarifying questions only below this confidence, and only when the model wrote some
+ * (ADR 031, PIN-64). Starting value; eval/clarify.ts picks the final one.
+ */
+export const CLARIFY_CONFIDENCE_THRESHOLD = 0.7;
+export const MAX_DISH_CANDIDATES = 3;
+
+/** How sure the gate is of the dish, asked for only by Guess from a photo (`clarify` option). */
+export type DishClarification = {
+  /** 0–1, or null when the model gave no usable number. */
+  confidence: number | null;
+  /** Most likely first. */
+  candidates: string[];
+  questions: ClarifyingQuestion[];
+};
+
+export type ClassifyContentOptions = {
+  /** Also rate the dish guess and write clarifying questions, in this language code. */
+  clarify?: { language: string };
+};
+
 export type ContentGateOk = {
   status: 'ok';
   kind: ContentKind;
   dishGuess: string;
   usage: GeminiUsageSnapshot | null;
+  /** Only when `clarify` was asked for and the content is food. */
+  clarification?: DishClarification;
 };
 
 export type ContentGateResult =
@@ -69,9 +98,82 @@ const SCHEMA = {
   required: ['kind', 'dish_guess'],
 };
 
+function clarifyPrompt(language: string): string {
+  const code = /^[a-z]{2}$/i.test(language.trim()) ? language.trim().toLowerCase() : 'en';
+  return `
+
+Also say how sure you are of the dish, for a cook who will write its recipe.
+confidence: 0 to 1, how likely dish_guess is the right dish.
+candidates: your 1-${MAX_DISH_CANDIDATES} most likely dishes, most likely first, as short names.
+questions: ask only when the candidates would be cooked clearly differently (a different main ingredient or protein, cooking method, sweet vs savoury, or cuisine). Then write 1-3 short multiple-choice questions whose 2-4 options come from the candidates. Never ask about garnish, plating or small details. Most photos need no questions: return [] when one dish is clearly most likely, or when the candidates would be cooked the same way.
+Write candidates, questions and options in language code "${code}". Keep each question under 80 characters and each option under 40.
+When kind is unrelated: confidence 0, candidates [], questions [].`;
+}
+
+const CLARIFY_SCHEMA = {
+  type: 'object',
+  properties: {
+    ...SCHEMA.properties,
+    confidence: { type: 'number' },
+    candidates: { type: 'array', items: { type: 'string' } },
+    questions: {
+      type: 'array',
+      items: {
+        type: 'object',
+        properties: {
+          question: { type: 'string' },
+          options: { type: 'array', items: { type: 'string' } },
+        },
+        required: ['question', 'options'],
+      },
+    },
+  },
+  required: [...SCHEMA.required, 'confidence', 'candidates', 'questions'],
+};
+
+/** Reads the clarify fields of a gate answer. Never throws: missing or invalid parts come back empty. */
+export function parseDishClarification(data: Record<string, unknown>): DishClarification {
+  const rawConfidence = data.confidence;
+  const confidence =
+    typeof rawConfidence === 'number' && Number.isFinite(rawConfidence)
+      ? Math.min(1, Math.max(0, rawConfidence))
+      : null;
+
+  const candidates: string[] = [];
+  if (Array.isArray(data.candidates)) {
+    for (const raw of data.candidates) {
+      const name = cleanClarifyingText(raw, MAX_OPTION_LENGTH);
+      if (!name || candidates.some((c) => c.toLocaleLowerCase() === name.toLocaleLowerCase())) continue;
+      candidates.push(name);
+      if (candidates.length === MAX_DISH_CANDIDATES) break;
+    }
+  }
+
+  return { confidence, candidates, questions: sanitizeClarifyingQuestions(data.questions) };
+}
+
+/**
+ * ADR 031 D1: ask only when the gate is unsure *and* the candidates would make different recipes.
+ * The model signals the second by writing questions. With no usable confidence we guess as today.
+ */
+export function shouldAskClarifyingQuestions(clarification: DishClarification | undefined): boolean {
+  if (!clarification || clarification.confidence === null) return false;
+  return (
+    clarification.confidence < CLARIFY_CONFIDENCE_THRESHOLD &&
+    clarification.candidates.length >= 2 &&
+    clarification.questions.length > 0
+  );
+}
+
 export async function classifyContent(
   input: ClassifyContentInput,
-): Promise<{ kind: ContentKind; dishGuess: string; usage: GeminiUsageSnapshot | null }> {
+  options: ClassifyContentOptions = {},
+): Promise<{
+  kind: ContentKind;
+  dishGuess: string;
+  usage: GeminiUsageSnapshot | null;
+  clarification?: DishClarification;
+}> {
   let imageBase64 = input.imageBase64?.trim() || null;
   let mimeType = input.mimeType ?? 'image/jpeg';
 
@@ -106,12 +208,13 @@ export async function classifyContent(
   }
   parts.push({ text });
 
-  const { data, usage } = await generateLlmJson<{ kind?: string; dish_guess?: string }>({
-    systemPrompt: SYSTEM_PROMPT,
+  const clarify = options.clarify;
+  const { data, usage } = await generateLlmJson<Record<string, unknown>>({
+    systemPrompt: clarify ? SYSTEM_PROMPT + clarifyPrompt(clarify.language) : SYSTEM_PROMPT,
     parts,
-    responseSchema: SCHEMA,
+    responseSchema: clarify ? CLARIFY_SCHEMA : SCHEMA,
     timeoutMs: 20_000,
-    maxOutputTokens: 256,
+    maxOutputTokens: clarify ? 700 : 256,
     kind: 'content_gate',
     context: 'contentGate.ts: classifyContent',
   });
@@ -126,7 +229,8 @@ export async function classifyContent(
         ? data.dish_guess.trim().slice(0, 80)
         : '';
 
-  return { kind, dishGuess, usage };
+  if (!clarify || kind === 'unrelated') return { kind, dishGuess, usage };
+  return { kind, dishGuess, usage, clarification: parseDishClarification(data) };
 }
 
 export async function runContentGate(opts: {
@@ -134,8 +238,9 @@ export async function runContentGate(opts: {
   userId: string | null;
   guestInstallId: string | null;
   input: ClassifyContentInput;
+  options?: ClassifyContentOptions;
 }): Promise<ContentGateResult> {
-  const { admin, userId, guestInstallId, input } = opts;
+  const { admin, userId, guestInstallId, input, options } = opts;
   const usageDate = currentUtcDate();
   const reserved = userId
     ? await reserveDailyAiUsage(admin, userId, 'content_gate', CONTENT_GATE_DAILY_LIMIT, usageDate)
@@ -151,12 +256,13 @@ export async function runContentGate(opts: {
   if (reserved === 'limited') return { status: 'limited' };
 
   try {
-    const classified = await classifyContent(input);
+    const classified = await classifyContent(input, options);
     return {
       status: 'ok',
       kind: classified.kind,
       dishGuess: classified.dishGuess,
       usage: classified.usage,
+      ...(classified.clarification ? { clarification: classified.clarification } : {}),
     };
   } catch (err) {
     if (userId) {
