@@ -475,7 +475,9 @@ function webAppLink(route: string): string {
 
 /**
  * "Open in Pinch" without a dead end. Android gets an intent:// URL that falls back to Google
- * Play by itself. iOS tries the app and goes to the App Store if the page is still showing.
+ * Play by itself. iOS tries the app and goes to the App Store only if nothing happened: the
+ * page never lost focus or went hidden. Anything that takes the page away (the app opening,
+ * iOS asking "Open in Pinch?") cancels it, or the App Store opened on top of the app.
  * Desktop has no app, so those buttons are hidden by CSS and the web app is offered instead.
  * Installed apps usually never see this page: universal links / App Links open them directly.
  */
@@ -492,11 +494,16 @@ function openAppScript(route: string): string {
     if (android) links[i].setAttribute('href', ${JSON.stringify(intent)});
     else if (ios) links[i].addEventListener('click', function (event) {
       event.preventDefault();
+      var left = false;
+      var leave = function () { left = true; };
+      window.addEventListener('blur', leave, { once: true });
+      window.addEventListener('pagehide', leave, { once: true });
+      document.addEventListener('visibilitychange', function () { if (document.hidden) left = true; });
       var started = Date.now();
       window.location.href = ${JSON.stringify(scheme)};
       setTimeout(function () {
-        if (!document.hidden && Date.now() - started < 3000) window.location.href = ${JSON.stringify(APP_STORE_URL)};
-      }, 1500);
+        if (!left && !document.hidden && document.hasFocus() && Date.now() - started < 3500) window.location.href = ${JSON.stringify(APP_STORE_URL)};
+      }, 2000);
     });
   }
   // Show only the store that fits the phone.

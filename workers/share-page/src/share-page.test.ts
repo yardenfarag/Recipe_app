@@ -133,6 +133,65 @@ describe('render', () => {
     expect(renderSharePage(recipe, TOKEN)).not.toMatch(/setTimeout\(function \(\) \{ window\.location\.href = 'pinch:/);
   });
 
+  describe('"Open in Pinch" on an iPhone', () => {
+    /** Runs the page's open-app script in a fake iPhone browser and taps the button. */
+    function tapOpenInPinch() {
+      const script = /<script>\n(\(function \(\) \{[\s\S]*?\}\)\(\);)\n<\/script>/.exec(renderSharePage(recipe, TOKEN))?.[1];
+      if (!script) throw new Error('no open-app script on the page');
+      const listeners: Record<string, (() => void)[]> = {};
+      const listen = (prefix: string) => (type: string, listener: () => void) => {
+        (listeners[prefix + type] ??= []).push(listener);
+      };
+      let onTap: ((event: { preventDefault: () => void }) => void) | undefined;
+      const button = { setAttribute: () => {}, addEventListener: (_type: string, listener: typeof onTap) => (onTap = listener) };
+      const fakeDocument = {
+        hidden: false,
+        hasFocus: () => true,
+        querySelectorAll: (selector: string) => (selector === '[data-open-app]' ? [button] : []),
+        addEventListener: listen('document:'),
+      };
+      const fakeWindow = { location: { href: '' }, addEventListener: listen('window:') };
+      const fakeNavigator = { userAgent: 'Mozilla/5.0 (iPhone; CPU iPhone OS 18_0 like Mac OS X)', platform: 'iPhone', maxTouchPoints: 5 };
+      new Function('window', 'document', 'navigator', script)(fakeWindow, fakeDocument, fakeNavigator);
+      onTap?.({ preventDefault: () => {} });
+      const fire = (name: string) => listeners[name]?.forEach((listener) => listener());
+      return { location: fakeWindow.location, document: fakeDocument, fire };
+    }
+
+    afterEach(() => {
+      vi.useRealTimers();
+    });
+
+    it('opens the app, then the App Store only when nothing happened (no app)', () => {
+      vi.useFakeTimers();
+      const page = tapOpenInPinch();
+      expect(page.location.href).toBe(`pinch://s/${TOKEN}`);
+      vi.advanceTimersByTime(2000);
+      expect(page.location.href).toBe(APP_STORE_URL);
+    });
+
+    it.each([
+      ['the page loses focus (iOS asks "Open in Pinch?")', 'window:blur'],
+      ['the page is put away', 'window:pagehide'],
+    ])('stays out of the App Store when %s', (_case, event) => {
+      vi.useFakeTimers();
+      const page = tapOpenInPinch();
+      page.fire(event);
+      vi.advanceTimersByTime(5000);
+      expect(page.location.href).toBe(`pinch://s/${TOKEN}`);
+    });
+
+    it('stays out of the App Store when the app comes to the front', () => {
+      vi.useFakeTimers();
+      const page = tapOpenInPinch();
+      page.document.hidden = true;
+      page.fire('document:visibilitychange');
+      page.document.hidden = false; // back in Safari before the timer runs
+      vi.advanceTimersByTime(5000);
+      expect(page.location.href).toBe(`pinch://s/${TOKEN}`);
+    });
+  });
+
   it('writes the page in the chosen language and direction', () => {
     const html = renderSharePage(recipe, TOKEN, 'he');
     expect(html).toContain('<html lang="he" dir="rtl">');
