@@ -59,7 +59,7 @@ jobs:
           npx opennextjs-cloudflare upload --preview-alias "$ALIAS" --tag "$ALIAS-${SHA::7}" 2>&1 | tee upload.log
           url=$(grep -oE "https://$ALIAS-pinch-web\.[a-z0-9-]+\.workers\.dev" upload.log | head -1)
           if [ -z "$url" ]; then
-            echo "::error::The upload didn't print a preview link for $ALIAS."
+            echo "::error::The upload didn't print a preview link for $ALIAS. Version links turn on with a production deploy of preview_urls (web/wrangler.jsonc), so this fails until the PR that adds it has merged."
             exit 1
           fi
           echo "url=$url/app" >> "$GITHUB_OUTPUT"
