@@ -2,6 +2,7 @@
 // CSS, so this is tables and inline styles on purpose. Colours follow the website (landing/site.css):
 // the Pinch pink on a warm cream page, with a white rounded card.
 import { COPY, fill, isRtl, type EmailCopy, type EmailLocale } from './copy.ts';
+import { NUDGE_COPY, type NudgeKind } from './nudgeCopy.ts';
 
 export const SITE_URL = 'https://pinch-app.io';
 export const APP_URL = `${SITE_URL}/app`;
@@ -66,13 +67,15 @@ interface LayoutParts {
   title: string;
   /** Already-safe HTML for the card body. */
   body: string;
+  /** Reminder emails only: a line in the footer with a one-click unsubscribe link. */
+  unsubscribe?: { intro: string; label: string; url: string };
 }
 
 function layout(parts: LayoutParts): string {
   return withFont(baseLayout(parts), parts.locale);
 }
 
-function baseLayout({ locale, subject, preheader, title, body }: LayoutParts): string {
+function baseLayout({ locale, subject, preheader, title, body, unsubscribe }: LayoutParts): string {
   const copy = COPY[locale];
   const dir = isRtl(locale) ? 'rtl' : 'ltr';
   const align = dir === 'rtl' ? 'right' : 'left';
@@ -103,6 +106,7 @@ function baseLayout({ locale, subject, preheader, title, body }: LayoutParts): s
       <div style="font-weight:700;color:${C.pink};font-size:14px;margin-bottom:6px;">${escapeHtml(copy.footerTagline)}</div>
       <div>${escapeHtml(copy.footerHelp)}</div>
       <div style="margin-top:10px;">${escapeHtml(copy.footerWhy)}<br><a href="${SITE_URL}" style="color:${C.muted};">pinch-app.io</a></div>
+      ${unsubscribe ? `<div style="margin-top:10px;">${escapeHtml(unsubscribe.intro)} <a href="${escapeHtml(unsubscribe.url)}" style="color:${C.muted};">${escapeHtml(unsubscribe.label)}</a></div>` : ''}
     </td></tr>
   </table>
 </td></tr>
@@ -325,3 +329,42 @@ ${rows
   };
 }
 
+
+// ── Nudges (day 1 / day 3 reminders) ──────────────────────────────────────
+
+/**
+ * A reminder email. `title` is the saved recipe's title for day3 (already shortened), `link` where
+ * the button goes, `unsubscribeUrl` the one-click link that turns reminders off.
+ */
+export function renderNudgeEmail(input: {
+  locale: EmailLocale;
+  kind: NudgeKind;
+  title: string;
+  link: string;
+  unsubscribeUrl: string;
+}): RenderedEmail {
+  const all = NUDGE_COPY[input.locale];
+  const c = all[input.kind];
+  const values = { title: input.title };
+  const subject = fill(c.subject, values);
+  const title = fill(c.title, values);
+  const body = [p(c.intro), button(c.button, input.link), p(c.tip, { muted: true, small: true })].join('\n');
+  return {
+    subject,
+    html: layout({
+      locale: input.locale,
+      subject,
+      preheader: fill(c.preheader, values),
+      title,
+      body,
+      unsubscribe: { intro: all.unsubscribeIntro, label: all.unsubscribeLink, url: input.unsubscribeUrl },
+    }),
+    text: textBlock(
+      title,
+      c.intro,
+      `${c.button}: ${input.link}`,
+      c.tip,
+      `${all.unsubscribeIntro} ${all.unsubscribeLink}: ${input.unsubscribeUrl}`,
+    ),
+  };
+}

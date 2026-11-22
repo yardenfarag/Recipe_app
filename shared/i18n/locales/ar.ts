@@ -1,4 +1,11 @@
 export default {
+  "push": {
+    "promptTitle": "بدك تذكير لتطبخها؟",
+    "promptBody": "Pinch رح يبعتلك كم تذكير ليساعدك تطبخ يلي حفظته. فيك توقفهن بأي وقت.",
+    "allow": "شغّل التذكيرات",
+    "notNow": "مش هلق",
+    "blocked": "إشعارات Pinch مطفية. فيك تشغلها من إعدادات تلفونك."
+  },
   "common": {
     "tryAgain": "جرّب مرة ثانية.",
     "notNow": "ليس الآن",
@@ -392,7 +399,28 @@ export default {
     "resendCode": "إرسال رمز جديد",
     "codeResent": "أُرسل رمز جديد. تحقق من بريدك."
   },
+  "firstRecipes": {
+    "title": "اختار أول وصفاتك",
+    "subtitle": "أكلات مشهورة حفظها طبّاخين غيرك. اختار وحدة على الأقل لتبلّش.",
+    "subtitleDiets": "مختارة حسب نظامك الغذائي، وما فيها شي من اللي بتتجنبه. اختار وحدة على الأقل لتبلّش.",
+    "pickOne": "اختار وحدة على الأقل",
+    "save_one": "احفظ الوصفة ({{count}})",
+    "save_other": "احفظ الوصفات ({{count}})",
+    "saved_one": "انحفظت الوصفة ({{count}})",
+    "saved_other": "انحفظت الوصفات ({{count}})",
+    "pickedCount_one": "مختار: {{count}}",
+    "pickedCount_other": "مختار: {{count}}",
+    "fitsDiet": "مناسبة لنظامك",
+    "loadFailed": "ما قدرنا نحمّل وصفات هلّق.",
+    "empty": "ما في وصفات نقترحها هلّق.",
+    "continueToSnap": "زيد وصفة من رابط بدالها",
+    "saveFailed": "ما قدرنا نحفظها. جرّب مرة ثانية.",
+  },
   "recipe": {
+    "autoSaved": "انحفظت بوصفاتك",
+    "autoSavedRemove": "شيل",
+    "autoSavedRemoved": "انشالت من وصفاتك",
+    "autoSavedRemoveFailed": "ما قدرنا نشيلها. جرّب مرة ثانية.",
     "preview": "معاينة",
     "save": "حفظ الوصفة",
     "noPreview": "لا يوجد شيء للعرض بعد. الصق رابطًا في Snap أولًا.",
@@ -581,6 +609,9 @@ export default {
     }
   },
   "library": {
+    "cookFirstTitle": "بتطبخ وحدة الليلة؟",
+    "cookFirstBody": "وضع الطبخ خطوة بخطوة، بلا ما ترجع للفيديو",
+    "cookFirstAction": "يلا نطبخ",
     "title": "وصفاتك",
     "subtitle": "مطبخك",
     "empty": "لا توجد وصفات بعد",
@@ -762,6 +793,10 @@ export default {
     "illustrationShare": "مشاركة وصفة"
   },
   "snap": {
+    "failedWaysOn": "طرق ثانية لتاخد هالوصفة:",
+    "failedRetry": "جرّب مرة ثانية",
+    "failedScreenshot": "استعمل لقطة شاشة",
+    "failedGuess": "خمّن الوصفة",
     "partialTitle": "لم نجد الوصفة كاملة",
     "partialMissingSteps": "وجدنا المكونات، لكن لم نجد الخطوات. هل تريد إضافة الخطوات بنفسك؟ هذا الاستيراد مجاني.",
     "partialMissingIngredients": "وجدنا الخطوات، لكن لم نجد المكونات. هل تريد إضافة المكونات بنفسك؟ هذا الاستيراد مجاني.",

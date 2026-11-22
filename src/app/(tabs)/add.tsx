@@ -63,6 +63,7 @@ import {
   captureRecipeExtracted,
   type RecipeEntrySource,
 } from "@/lib/analytics";
+import { autoSaveRecipe } from "@/lib/autoSaveRecipe";
 import { clearRecipeDraft, setRecipeDraft } from "@/lib/recipeDraft";
 import { resolveShareIntentAction } from "@/lib/shareIntentGate";
 import { recipeIsInvented } from "@shared/lib/recipeOrigin";
@@ -87,6 +88,11 @@ import { applyKitchenOnExtract } from "@shared/lib/supabase/kitchenAutoApply";
 type Banner = {
   kind: "error" | "info" | "limit" | "credits";
   message: string;
+  /**
+   * A link that couldn't be read: the banner offers ways on instead of a dead end (try again, a screenshot of the
+   * recipe, or Guess the recipe). A failed first try used to be where new people gave up.
+   */
+  failedUrl?: string;
 } | null;
 
 type InventFollowUp =
@@ -315,10 +321,13 @@ export default function AddRecipeScreen() {
       return false;
     }
 
+    const failedUrl = followUp?.kind === "url" ? followUp.url : undefined;
+
     if (result.code === "video_too_long") {
       setBanner({
         kind: "error",
         message: importErrorText(result, t, language, "snap.videoTooLong"),
+        failedUrl,
       });
       return false;
     }
@@ -326,12 +335,12 @@ export default function AddRecipeScreen() {
     // Out of time: the server refunded the credit. No answer: the server's text never came, so
     // don't show the client library's English error.
     if (result.code === "extraction_timeout") {
-      setBanner({ kind: "error", message: t("snap.timedOut") });
+      setBanner({ kind: "error", message: t("snap.timedOut"), failedUrl });
       return false;
     }
 
     if (result.code === NO_RESPONSE_CODE) {
-      setBanner({ kind: "error", message: t("snap.genericError") });
+      setBanner({ kind: "error", message: t("snap.genericError"), failedUrl });
       return false;
     }
 
@@ -341,7 +350,7 @@ export default function AddRecipeScreen() {
     }
 
     if (result.code === "gate_unavailable") {
-      setBanner({ kind: "error", message: t("snap.gateFailed") });
+      setBanner({ kind: "error", message: t("snap.gateFailed"), failedUrl });
       return false;
     }
 
@@ -392,6 +401,7 @@ export default function AddRecipeScreen() {
         kind: "error",
         // The server's words are English; show ours for its code (PIN-153).
         message: importErrorText(result, t, language, result.code ? "snap.genericError" : "snap.notFound"),
+        failedUrl,
       });
       return false;
     }
@@ -448,8 +458,15 @@ export default function AddRecipeScreen() {
     } catch (error) {
       console.warn("[recipe-draft] persistence failed", error);
     }
+    // Saved straight away: many people closed the preview without saving and lost the recipe.
+    // If the save fails, the preview still has the draft and its Save button.
+    const savedId = user ? await autoSaveRecipe(recipeToPreview) : null;
     announce(t("a11y.recipeReady"));
-    router.push("/recipe/preview");
+    if (savedId) {
+      router.push({ pathname: "/recipe/[id]", params: { id: savedId, justSaved: "1" } });
+    } else {
+      router.push("/recipe/preview");
+    }
     setUrl("");
     return true;
   }
@@ -689,7 +706,11 @@ export default function AddRecipeScreen() {
         source,
       });
     } catch {
-      setBanner({ kind: "error", message: t("snap.genericError") });
+      setBanner({
+        kind: "error",
+        message: t("snap.genericError"),
+        failedUrl: intent === "extract" ? target : undefined,
+      });
     } finally {
       setLoading(false);
     }
@@ -919,6 +940,13 @@ export default function AddRecipeScreen() {
               >
                 {banner.message}
               </Text>
+              {banner.kind === "error" && banner.failedUrl ? (
+                <FailedLinkActions
+                  onRetry={() => void handleGetRecipe(banner.failedUrl, "extract")}
+                  onScreenshot={handlePhotoEntry}
+                  onGuess={() => void handleGetRecipe(banner.failedUrl, "invent")}
+                />
+              ) : null}
               {banner.kind === "credits" && (
                 <Pressable
                   className="mt-3 self-start rounded-2xl px-4 py-2"
@@ -1141,5 +1169,51 @@ export default function AddRecipeScreen() {
         />
       </View>
     </Screen>
+  );
+}
+
+/**
+ * Ways on after a link couldn't be read: try again (a failed read doesn't use a credit), snap a screenshot of the
+ * recipe in the caption or comments, or Guess the recipe from the dish.
+ */
+function FailedLinkActions({
+  onRetry,
+  onScreenshot,
+  onGuess,
+}: {
+  onRetry: () => void;
+  onScreenshot: () => void;
+  onGuess: () => void;
+}) {
+  const { t } = useTranslation();
+  const { colors } = useThemePreference();
+  const actions = [
+    { key: "retry", label: t("snap.failedRetry"), icon: "refresh" as const, onPress: onRetry },
+    { key: "screenshot", label: t("snap.failedScreenshot"), icon: "camera-outline" as const, onPress: onScreenshot },
+    { key: "guess", label: t("snap.failedGuess"), icon: "restaurant-outline" as const, onPress: onGuess },
+  ];
+  return (
+    <View className="mt-3 gap-2">
+      <Text className="text-xs font-semibold" style={{ color: colors.textSecondary }}>
+        {t("snap.failedWaysOn")}
+      </Text>
+      <View className="flex-row flex-wrap gap-2">
+        {actions.map((action) => (
+          <Pressable
+            key={action.key}
+            trackId={`snap.failed.${action.key}`}
+            onPress={action.onPress}
+            accessibilityRole="button"
+            className="min-h-[40px] flex-row items-center gap-1.5 rounded-full px-3.5 active:opacity-80"
+            style={{ backgroundColor: colors.surface }}
+          >
+            <Ionicons name={action.icon} size={15} color={colors.primary} accessible={false} />
+            <Text className="text-xs font-bold" style={{ color: colors.text }}>
+              {action.label}
+            </Text>
+          </Pressable>
+        ))}
+      </View>
+    </View>
   );
 }

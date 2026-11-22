@@ -94,6 +94,12 @@
       "expo-localization",
       "expo-apple-authentication",
       [
+        "expo-notifications",
+        {
+          "color": "#B24F6D"
+        }
+      ],
+      [
         "expo-web-browser",
         {
           "experimentalLauncherActivity": false

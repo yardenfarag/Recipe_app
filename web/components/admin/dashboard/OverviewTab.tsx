@@ -90,6 +90,7 @@ export function OverviewTab({
               { label: "Extracted a recipe", count: num(f.extracted) },
               { label: "Saved a recipe", count: num(f.saved) },
               { label: "Saved 3+ recipes", count: num(f.saved_3) },
+              { label: "Cooked a recipe", count: num(f.cooked) },
               { label: "Bought credits", count: num(f.purchased) },
             ]}
           />

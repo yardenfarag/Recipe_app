@@ -8,7 +8,14 @@ export type ProductEventName =
   | 'paywall_viewed'
   | 'onboarding_completed'
   | 'app_shared'
-  | 'heard_about';
+  | 'heard_about'
+  | 'recipe_cooked'
+  | 'first_recipes_picked';
+
+/** Where "cooked" was marked: the button at the end of cook mode, or the one on the recipe. */
+export type RecipeCookedFrom = 'cook_mode' | 'recipe';
+/** How a Snap's recipe reached the library: saved for the cook as soon as it came in, or with the preview's Save. */
+export type RecipeSaveMode = 'auto' | 'manual';
 
 /** How the person started this Snap. `pdf`: Snap from a PDF (PIN-72); a PDF shared into Pinch counts as `share`. */
 export type RecipeEntrySource = 'share' | 'url' | 'camera' | 'library' | 'pdf';

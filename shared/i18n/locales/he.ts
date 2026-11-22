@@ -1,4 +1,11 @@
 export default {
+  "push": {
+    "promptTitle": "רוצים תזכורת לבשל את זה?",
+    "promptBody": "Pinch ישלח לכם כמה תזכורות שיעזרו לבשל את מה ששמרתם. אפשר לכבות אותן מתי שרוצים.",
+    "allow": "להפעיל תזכורות",
+    "notNow": "לא עכשיו",
+    "blocked": "ההתראות של Pinch כבויות. אפשר להפעיל אותן בהגדרות הטלפון."
+  },
   "common": {
     "tryAgain": "נסו שוב.",
     "notNow": "לא עכשיו",
@@ -392,7 +399,28 @@ export default {
     "resendCode": "שליחת קוד חדש",
     "codeResent": "קוד חדש נשלח. כדאי לבדוק את המייל."
   },
+  "firstRecipes": {
+    "title": "בחרו את המתכונים הראשונים שלכם",
+    "subtitle": "ארוחות פופולריות שבשלנים אחרים שמרו. בחרו לפחות אחת כדי להתחיל.",
+    "subtitleDiets": "נבחרו לפי התזונה שלכם, בלי שום דבר מהרשימה שאתם נמנעים ממנה. בחרו לפחות אחד כדי להתחיל.",
+    "pickOne": "בחרו לפחות אחד",
+    "save_one": "שמירת {{count}} מתכון",
+    "save_other": "שמירת {{count}} מתכונים",
+    "saved_one": "{{count}} מתכון נשמר",
+    "saved_other": "{{count}} מתכונים נשמרו",
+    "pickedCount_one": "נבחר {{count}}",
+    "pickedCount_other": "נבחרו {{count}}",
+    "fitsDiet": "מתאים לתזונה שלכם",
+    "loadFailed": "לא הצלחנו לטעון מתכונים כרגע.",
+    "empty": "אין כרגע מתכונים להציע.",
+    "continueToSnap": "להוסיף מתכון מקישור במקום",
+    "saveFailed": "לא הצלחנו לשמור. נסו שוב.",
+  },
   "recipe": {
+    "autoSaved": "נשמר במתכונים שלכם",
+    "autoSavedRemove": "הסרה",
+    "autoSavedRemoved": "הוסר מהמתכונים שלכם",
+    "autoSavedRemoveFailed": "לא הצלחנו להסיר. נסו שוב.",
     "preview": "תצוגה מקדימה",
     "save": "שמירת המתכון",
     "noPreview": "עדיין אין מה להראות. קודם מדביקים קישור ב־Snap.",
@@ -581,6 +609,9 @@ export default {
     }
   },
   "library": {
+    "cookFirstTitle": "מבשלים משהו הערב?",
+    "cookFirstBody": "מצב בישול צעד אחר צעד, בלי לחזור לסרטון",
+    "cookFirstAction": "יאללה לבשל",
     "title": "המתכונים שלכם",
     "subtitle": "המטבח שלכם",
     "empty": "עדיין אין מתכונים",
@@ -762,6 +793,10 @@ export default {
     "illustrationShare": "שיתוף מתכון"
   },
   "snap": {
+    "failedWaysOn": "דרכים אחרות לקבל את המתכון:",
+    "failedRetry": "נסו שוב",
+    "failedScreenshot": "צילום מסך",
+    "failedGuess": "לנחש מתכון",
     "partialTitle": "לא מצאנו את המתכון המלא",
     "partialMissingSteps": "מצאנו את המצרכים, אבל לא את השלבים. רוצה להוסיף את השלבים בעצמך? הייבוא הזה בחינם.",
     "partialMissingIngredients": "מצאנו את השלבים, אבל לא את המצרכים. רוצה להוסיף את המצרכים בעצמך? הייבוא הזה בחינם.",

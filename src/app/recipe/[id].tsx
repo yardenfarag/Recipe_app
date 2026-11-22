@@ -1,7 +1,8 @@
+import Ionicons from '@expo/vector-icons/Ionicons';
 import { useFocusEffect, useNavigation } from '@react-navigation/native';
-import { useLocalSearchParams } from 'expo-router';
+import { router, useLocalSearchParams } from 'expo-router';
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { ActivityIndicator, Alert, Text } from 'react-native';
+import { ActivityIndicator, Alert, Text, View } from 'react-native';
 import { Pressable } from '@/components/ui/Pressable';
 import { useTranslation } from 'react-i18next';
 
@@ -14,17 +15,23 @@ import { useThemePreference } from '@/hooks/useThemePreference';
 import { announce } from '@/lib/a11y';
 import { backfillRecipeThumbnails } from '@/lib/backfillRecipeThumbnails';
 import { openRecipeEditor } from '@/lib/openRecipeEditor';
+import { offerRemindersOnce } from '@/lib/pushPrompt';
 import { getGuestRecipeById, setGuestRecipeCooked, updateGuestRecipeContent } from '@/lib/guestRecipes';
 import { recipeContentEquals } from '@shared/lib/recipeContentEquals';
 import { toggleRecipeFavorite } from '@/lib/recipeFavorites';
-import { fetchRecipeById, setRecipeCooked, updateRecipeContent } from '@shared/lib/supabase/recipes';
+import { deleteRecipe, fetchRecipeById, setRecipeCooked, updateRecipeContent } from '@shared/lib/supabase/recipes';
+import { showToast } from '@shared/lib/toast';
+import { translateAppError } from '@shared/lib/translateAppError';
 import type { RepairedRecipePayload } from '@/lib/supabase/repairRecipe';
 import { Recipe } from '@shared/types/recipe';
 
 export default function RecipeDetailScreen() {
   const { t } = useTranslation();
-  const { id } = useLocalSearchParams<{ id: string }>();
+  const { id, justSaved } = useLocalSearchParams<{ id: string; justSaved?: string }>();
   const navigation = useNavigation();
+  /** Snap saved it for them (no Save tap): say so once, with a way to take it back. */
+  const [autoSavedNotice, setAutoSavedNotice] = useState(justSaved === '1');
+  const [removing, setRemoving] = useState(false);
   const [recipe, setRecipe] = useState<Recipe | null | undefined>(undefined);
   const [loadError, setLoadError] = useState<string | null>(null);
   const { colors } = useThemePreference();
@@ -66,6 +73,15 @@ export default function RecipeDetailScreen() {
   useEffect(() => {
     if (loadError) announce(`${t('recipe.loadFailedTitle')}. ${loadError}`);
   }, [loadError, t]);
+
+  // A Snap was just saved for them: now there is something to cook, so offer the cooking reminders (once).
+  const userId = user?.id;
+  const offeredReminders = useRef(false);
+  useEffect(() => {
+    if (justSaved !== '1' || !userId || !recipe || offeredReminders.current) return;
+    offeredReminders.current = true;
+    void offerRemindersOnce(userId, t);
+  }, [justSaved, userId, recipe, t]);
 
   const loadRecipe = useCallback(async () => {
     setLoadError(null);
@@ -251,6 +267,20 @@ export default function RecipeDetailScreen() {
     [id, t],
   );
 
+  async function removeAutoSaved() {
+    if (!id || removing) return;
+    setRemoving(true);
+    try {
+      await deleteRecipe(id);
+      showToast(t('recipe.autoSavedRemoved'), 'info');
+      if (router.canGoBack()) router.back();
+      else router.replace('/add');
+    } catch (err) {
+      setRemoving(false);
+      Alert.alert(t('recipe.autoSavedRemoveFailed'), translateAppError(err, t));
+    }
+  }
+
   if (recipe === undefined) {
     return (
       <Screen className="items-center justify-center" edges={['bottom']}>
@@ -307,6 +337,45 @@ export default function RecipeDetailScreen() {
 
   return (
     <Screen edges={['bottom']}>
+      {autoSavedNotice ? (
+        <View
+          className="flex-row items-center gap-3 px-5 py-2.5"
+          style={{ backgroundColor: colors.primarySoft }}
+          accessibilityLiveRegion="polite"
+        >
+          <Ionicons name="checkmark-circle" size={18} color={colors.primary} accessible={false} />
+          <Text className="min-w-0 flex-1 text-sm font-semibold" style={{ color: colors.primary }}>
+            {t('recipe.autoSaved')}
+          </Text>
+          <Pressable
+            trackId="recipe.auto_saved.remove"
+            onPress={() => void removeAutoSaved()}
+            disabled={removing}
+            hitSlop={8}
+            className="min-h-[36px] justify-center px-2 active:opacity-70"
+            accessibilityRole="button"
+            accessibilityState={{ disabled: removing, busy: removing }}
+          >
+            {removing ? (
+              <ActivityIndicator color={colors.primary} />
+            ) : (
+              <Text className="text-sm font-bold" style={{ color: colors.primary }}>
+                {t('recipe.autoSavedRemove')}
+              </Text>
+            )}
+          </Pressable>
+          <Pressable
+            trackId="recipe.auto_saved.dismiss"
+            onPress={() => setAutoSavedNotice(false)}
+            hitSlop={8}
+            className="min-h-[36px] justify-center active:opacity-70"
+            accessibilityRole="button"
+            accessibilityLabel={t('common.close')}
+          >
+            <Ionicons name="close" size={18} color={colors.primary} />
+          </Pressable>
+        </View>
+      ) : null}
       <RecipeView
         recipe={recipe}
         recipeId={recipe.id}

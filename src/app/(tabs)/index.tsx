@@ -42,7 +42,8 @@ import { useThemePreference } from '@/hooks/useThemePreference';
 import { announce } from '@/lib/a11y';
 import { removeGuestRecipe, renameGuestRecipe } from '@/lib/guestRecipes';
 import { openRecipeEditor } from '@/lib/openRecipeEditor';
-import { rankCookTonight } from '@shared/lib/cookTonight';
+import { firstCookSuggestion, rankCookTonight } from '@shared/lib/cookTonight';
+import { CookFirstCard } from '@/components/CookFirstCard';
 import {
   filterAndSortRecipes,
   isRecipeLibraryFiltered,
@@ -70,6 +71,7 @@ export default function HomeScreen() {
     recipes,
     loading,
     loadingMore,
+    hasMore,
     total,
     error,
     refresh,
@@ -185,6 +187,13 @@ export default function HomeScreen() {
     isRecipeLibraryFiltered(deferredSearch, sort, selectedTags, selectedCollectionId) ||
     favoritesOnly ||
     cookTonight;
+
+  // Saved some, cooked none: put one to make tonight first. Only with the whole Library loaded, so an older cooked
+  // recipe can't be missed. Signed in only (guests' recipes stay on the device).
+  const cookFirst = useMemo(
+    () => (!user || hasMore || hasActiveFilters ? null : firstCookSuggestion(recipes)),
+    [user, hasMore, hasActiveFilters, recipes],
+  );
 
   useEffect(() => {
     if (hasActiveFilters) void ensureAllLoaded();
@@ -457,6 +466,8 @@ export default function HomeScreen() {
           </View>
         )}
 
+        {cookFirst ? <CookFirstCard recipe={cookFirst} /> : null}
+
         {showRefreshFailed && (
           <View
             className="flex-row items-center gap-2 rounded-[20px] px-3.5 py-2.5"
@@ -552,6 +563,7 @@ export default function HomeScreen() {
       openCreateCollection,
       refresh,
       savedBanner,
+      cookFirst,
       showRefreshFailed,
       search,
       selectedCollectionId,

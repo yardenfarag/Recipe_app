@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { afterOnboardingPath, onboardingPathFor, signInFromWelcome, signUpFromWelcome, welcomePathFor } from "./paths";
+import { afterOnboardingPath, afterQuestionsPath, onboardingPathFor, signInFromWelcome, signUpFromWelcome, welcomePathFor } from "./paths";
 
 describe("onboarding paths", () => {
   it("goes on to the page the visitor wanted, or the Library", () => {
@@ -34,5 +34,13 @@ describe("onboarding paths", () => {
   it("I already have an account signs in and goes straight on", () => {
     expect(signInFromWelcome()).toBe("/auth?mode=signin");
     expect(signInFromWelcome("/list")).toBe("/auth?mode=signin&next=%2Flist");
+  });
+});
+
+describe("first-recipes picker", () => {
+  it("comes after the questions only when headed for the Library, and is never a next of its own", () => {
+    expect(afterQuestionsPath("/")).toBe("/first-recipes");
+    expect(afterQuestionsPath("/s/abc")).toBe("/s/abc");
+    expect(afterOnboardingPath("/first-recipes")).toBe("/");
   });
 });

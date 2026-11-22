@@ -634,6 +634,27 @@ export type Database = {
           },
         ]
       }
+      nudge_sends: {
+        Row: {
+          channel: string
+          kind: string
+          sent_at: string
+          user_id: string
+        }
+        Insert: {
+          channel: string
+          kind: string
+          sent_at?: string
+          user_id: string
+        }
+        Update: {
+          channel?: string
+          kind?: string
+          sent_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       preview_remix_usage: {
         Row: {
           remix_count: number
@@ -711,6 +732,7 @@ export type Database = {
           id: string
           is_admin: boolean
           kitchen: Json
+          nudges_opt_out: boolean
           subscription_expires_at: string | null
           subscription_status: string
           token_balance: number
@@ -725,6 +747,7 @@ export type Database = {
           id: string
           is_admin?: boolean
           kitchen?: Json
+          nudges_opt_out?: boolean
           subscription_expires_at?: string | null
           subscription_status?: string
           token_balance?: number
@@ -739,6 +762,7 @@ export type Database = {
           id?: string
           is_admin?: boolean
           kitchen?: Json
+          nudges_opt_out?: boolean
           subscription_expires_at?: string | null
           subscription_status?: string
           token_balance?: number
@@ -858,6 +882,38 @@ export type Database = {
           transaction_id?: string | null
         }
         Relationships: []
+      }
+      push_tokens: {
+        Row: {
+          created_at: string
+          platform: string
+          token: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          platform: string
+          token: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          platform?: string
+          token?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "push_tokens_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       recipe_cards: {
         Row: {
@@ -1734,6 +1790,25 @@ export type Database = {
         Args: { p_items: Json; p_user_id: string }
         Returns: number
       }
+      nudge_candidates: {
+        Args: { p_kind: string; p_limit?: number; p_now?: string }
+        Returns: {
+          email: string
+          email_sent: boolean
+          locale: string
+          push_sent: boolean
+          push_tokens: string[]
+          recipe_id: string
+          recipe_title: string
+          unsubscribe_token: string
+          user_id: string
+        }[]
+      }
+      nudge_unsubscribe: {
+        Args: { p_token: string; p_user_id: string }
+        Returns: boolean
+      }
+      nudge_unsubscribe_token: { Args: { p_user_id: string }; Returns: string }
       purge_expired_personal_data: { Args: never; Returns: undefined }
       recipe_card_canonical_key: {
         Args: { p_platform: string; p_url: string }
@@ -1811,6 +1886,10 @@ export type Database = {
       refund_stale_recipe_credits: {
         Args: { p_before?: string }
         Returns: number
+      }
+      register_push_token: {
+        Args: { p_platform: string; p_token: string }
+        Returns: undefined
       }
       reopen_refunded_recipe_credit: {
         Args: {
@@ -1922,6 +2001,7 @@ export type Database = {
         Returns: boolean
       }
       touch_recipe_card_hit: { Args: { p_card_id: string }; Returns: undefined }
+      unregister_push_token: { Args: { p_token: string }; Returns: undefined }
       welcome_email_candidates: {
         Args: { p_limit?: number }
         Returns: {

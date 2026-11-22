@@ -8,8 +8,10 @@ import type {
   HeardAboutSource,
   ProductEventName,
   PaywallTrigger,
+  RecipeCookedFrom,
   RecipeEntryMode,
   RecipeEntrySource,
+  RecipeSaveMode,
 } from '@shared/lib/productEvents';
 
 export {
@@ -17,6 +19,7 @@ export {
   type AppShareOutcome,
   type HeardAboutSource,
   type PaywallTrigger,
+  type RecipeCookedFrom,
   type RecipeEntryMode,
   type RecipeEntrySource,
 } from '@shared/lib/productEvents';
@@ -69,8 +72,18 @@ export function captureRecipeExtracted(properties: {
   capture('recipe_extracted', properties);
 }
 
-export function captureRecipeSaved(properties: { from: RecipeEntryMode }): void {
+export function captureRecipeSaved(properties: { from: RecipeEntryMode; save?: RecipeSaveMode }): void {
   capture('recipe_saved', properties);
+}
+
+/** The habit that keeps people coming back: every time a recipe is marked cooked. */
+export function captureRecipeCooked(properties: { from: RecipeCookedFrom; again: boolean }): void {
+  capture('recipe_cooked', { from: properties.from, again: String(properties.again) });
+}
+
+/** A new account saved its first recipes from the Hub picker after onboarding. */
+export function captureFirstRecipesPicked(properties: { count: number; diets: number }): void {
+  capture('first_recipes_picked', { count: String(properties.count), diets: String(properties.diets) });
 }
 
 export function capturePaywallViewed(trigger: PaywallTrigger): void {

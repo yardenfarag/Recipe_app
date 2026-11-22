@@ -48,7 +48,8 @@ export default function AuthCallbackScreen() {
         if (reason === 'onboarding') {
           captureOnboardingCompleted({ locale, platform: Platform.OS });
           await complete();
-          if (active) router.dismissTo('/add');
+          // New accounts pick their first recipes from the Hub; one with recipes already goes on to Snap.
+          if (active) router.dismissTo('/first-recipes');
           return;
         }
         if (returnTo) {

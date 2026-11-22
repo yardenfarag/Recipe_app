@@ -9,6 +9,7 @@ import { Platform } from 'react-native';
 
 import { authRedirectUri } from '@/lib/authRedirect';
 import { flushInteractions, logAuth } from '@/lib/interactionLog';
+import { unregisterPushNotifications } from '@/lib/pushNotifications';
 import { supabase } from '@/lib/supabase/client';
 import {
   completeOAuthFromCallbackUrl as completeSharedOAuth,
@@ -40,6 +41,8 @@ export async function signOut() {
   // Log and send before the session goes, so these rows stay with the account.
   logAuth('auth.logout');
   await flushInteractions().catch(() => {});
+  // While the session still exists: this phone stops getting the old account's cooking reminders.
+  await unregisterPushNotifications();
   const { error } = await supabase.auth.signOut();
   if (error) throw error;
 }

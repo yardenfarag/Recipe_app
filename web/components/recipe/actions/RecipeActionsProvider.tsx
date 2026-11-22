@@ -16,6 +16,7 @@ import { scaleIngredients } from "@shared/lib/ingredientAmounts";
 import { isRecipeLanguageCode, type RecipeLanguageCode } from "@shared/lib/recipeLanguages";
 import { recipeHasSource } from "@shared/lib/recipeOrigin";
 import { applianceWorkaroundInstruction, checkKitchen } from "@shared/lib/ownedAppliances";
+import type { RecipeCookedFrom } from "@shared/lib/productEvents";
 import { normalizeRecipeTags } from "@shared/lib/recipeTags";
 import type { RecipeVariantKey } from "@shared/lib/recipeVariants";
 import { setRecipeCooked, setRecipeTags } from "@shared/lib/supabase/recipes";
@@ -35,6 +36,7 @@ import { RemixSheet } from "@/components/recipe/actions/RemixSheet";
 import { RepairDialog } from "@/components/recipe/actions/RepairDialog";
 import { SwapDialog } from "@/components/recipe/actions/SwapDialog";
 import { TranslateDialog } from "@/components/recipe/actions/TranslateDialog";
+import { captureRecipeCooked } from "@/lib/analytics";
 import { useRecipeRecalc } from "@/lib/editor/useRecipeRecalc";
 import { useCollections } from "@/lib/library/useCollections";
 import {
@@ -149,9 +151,11 @@ export function RecipeActionsProvider({ state, children }: { state: ReadyRecipe;
   }
 
   /** Shows at once; put back with a message if saving fails. The first time, asks for a note (as on mobile). */
-  function markCooked() {
+  function markCooked(from: RecipeCookedFrom = "recipe") {
     const before = { last_cooked_at: recipe.last_cooked_at, cook_note: recipe.cook_note };
     const at = new Date().toISOString();
+    // Cooking is what makes people save (and come back for) more recipes, so it is the number to watch.
+    captureRecipeCooked({ from, again: Boolean(before.last_cooked_at) });
     replaceRecipe((current) => ({ ...current, last_cooked_at: at }));
     if (!before.last_cooked_at) setDialog({ kind: "note" });
     else showToast(t("web.recipeActions.markedCooked"));

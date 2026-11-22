@@ -1,8 +1,10 @@
 "use client";
 
 import { useParams } from "next/navigation";
+import { Suspense } from "react";
 import { useTranslation } from "react-i18next";
 
+import { AutoSavedNotice } from "@/components/recipe/AutoSavedNotice";
 import { useRecipeActions } from "@/components/recipe/actions/RecipeActionsContext";
 import { RecipeActionsProvider } from "@/components/recipe/actions/RecipeActionsProvider";
 import { RecipeView } from "@/components/recipe/RecipeView";
@@ -37,5 +39,16 @@ export default function RecipePage() {
 /** Inside the actions, so cook mode's last screen can offer "I cooked this". */
 function SavedRecipeView({ display, onToggleFavorite }: { display: RecipeDisplay; onToggleFavorite: () => void }) {
   const actions = useRecipeActions();
-  return <RecipeView display={display} onToggleFavorite={onToggleFavorite} onCooked={actions?.markCooked} />;
+  return (
+    <>
+      <Suspense fallback={null}>
+        <AutoSavedNotice />
+      </Suspense>
+      <RecipeView
+        display={display}
+        onToggleFavorite={onToggleFavorite}
+        onCooked={actions ? () => actions.markCooked("cook_mode") : undefined}
+      />
+    </>
+  );
 }

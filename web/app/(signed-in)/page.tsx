@@ -5,7 +5,7 @@ import { useSearchParams } from "next/navigation";
 import { Suspense, useCallback, useDeferredValue, useEffect, useMemo, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 
-import { rankCookTonight } from "@shared/lib/cookTonight";
+import { firstCookSuggestion, rankCookTonight } from "@shared/lib/cookTonight";
 import { filterAndSortRecipes, isRecipeLibraryFiltered, RECIPE_SORT_OPTIONS, type RecipeSortKey } from "@shared/lib/recipeListQuery";
 import { collectLibraryTags } from "@shared/lib/recipeTags";
 import { showToast } from "@shared/lib/toast";
@@ -16,6 +16,7 @@ import { isCollectionNameTaken, isRecipeNameTaken } from "@shared/lib/uniqueName
 import type { Recipe } from "@shared/types/recipe";
 
 import { AddToCollectionDialog } from "@/components/library/AddToCollectionDialog";
+import { CookFirstCard } from "@/components/library/CookFirstCard";
 import { FridgeMatchDialog } from "@/components/library/FridgeMatchDialog";
 import { LibraryToolbar } from "@/components/library/LibraryToolbar";
 import { NameDialog } from "@/components/library/NameDialog";
@@ -198,6 +199,9 @@ function LibraryScreen() {
   const count = filtered ? displayed.length : total || displayed.length;
   const countText = count === 1 ? t("library.recipeCountOne", { count }) : t("library.recipeCountOther", { count });
   const libraryEmpty = !loading && !error && recipes.length === 0 && total === 0;
+  // Saved some, cooked none: put one to make tonight first. Only with the whole Library loaded, so an older cooked
+  // recipe can't be missed.
+  const cookFirst = useMemo(() => (hasMore || filtered ? null : firstCookSuggestion(recipes)), [filtered, hasMore, recipes]);
 
   return (
     <>
@@ -262,6 +266,7 @@ function LibraryScreen() {
           <FirstRecipeGuide />
         ) : (
           <>
+            {cookFirst ? <CookFirstCard recipe={cookFirst} /> : null}
             <p aria-live="polite" className="mb-3 text-sm font-semibold text-muted">
               {countText}
             </p>

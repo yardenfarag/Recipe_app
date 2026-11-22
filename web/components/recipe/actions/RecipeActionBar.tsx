@@ -51,7 +51,7 @@ export function RecipeActionBar({ actions }: { actions: RecipeActions }) {
         <Languages aria-hidden className="h-[18px] w-[18px] text-primary" />
         {t("recipe.translate")}
       </Button>
-      <Button variant="outline" trackId="recipe.cooked.toggle" onClick={actions.markCooked}>
+      <Button variant="outline" trackId="recipe.cooked.toggle" onClick={() => actions.markCooked("recipe")}>
         <ChefHat aria-hidden className="h-[18px] w-[18px] text-primary" />
         {cooked ? t("recipe.cookedAgain") : t("recipe.cookedAction")}
       </Button>

@@ -1,4 +1,11 @@
 export default {
+  "push": {
+    "promptTitle": "¿Quieres un recordatorio para cocinarla?",
+    "promptBody": "Pinch te enviará un par de recordatorios para ayudarte a cocinar lo que guardas. Puedes desactivarlos cuando quieras.",
+    "allow": "Activar recordatorios",
+    "notNow": "Ahora no",
+    "blocked": "Las notificaciones de Pinch están desactivadas. Puedes activarlas en los Ajustes del teléfono."
+  },
   "common": {
     "tryAgain": "Inténtalo de nuevo.",
     "notNow": "Ahora no",
@@ -392,7 +399,28 @@ export default {
     "resendCode": "Enviar un código nuevo",
     "codeResent": "Código nuevo enviado. Revisa tu correo."
   },
+  "firstRecipes": {
+    "title": "Elige tus primeras recetas",
+    "subtitle": "Cenas populares que otros cocineros guardaron. Elige al menos una para empezar.",
+    "subtitleDiets": "Elegidas para tu dieta, sin nada de lo que evitas. Elige al menos una para empezar.",
+    "pickOne": "Elige al menos una",
+    "save_one": "Guardar {{count}} receta",
+    "save_other": "Guardar {{count}} recetas",
+    "saved_one": "{{count}} receta guardada",
+    "saved_other": "{{count}} recetas guardadas",
+    "pickedCount_one": "{{count}} elegida",
+    "pickedCount_other": "{{count}} elegidas",
+    "fitsDiet": "Va con tu dieta",
+    "loadFailed": "No pudimos cargar recetas ahora.",
+    "empty": "Ahora no hay recetas para sugerir.",
+    "continueToSnap": "Mejor añadir una receta desde un enlace",
+    "saveFailed": "No se pudieron guardar. Inténtalo de nuevo.",
+  },
   "recipe": {
+    "autoSaved": "Guardada en tus recetas",
+    "autoSavedRemove": "Quitar",
+    "autoSavedRemoved": "Quitada de tus recetas",
+    "autoSavedRemoveFailed": "No se pudo quitar. Inténtalo de nuevo.",
     "preview": "Vista previa",
     "save": "Guardar receta",
     "noPreview": "Todavía no hay nada que mostrar. Primero pega un enlace en Snap.",
@@ -581,6 +609,9 @@ export default {
     }
   },
   "library": {
+    "cookFirstTitle": "¿Cocinas una esta noche?",
+    "cookFirstBody": "Modo cocina paso a paso, sin volver al video",
+    "cookFirstAction": "A cocinar",
     "title": "Tus recetas",
     "subtitle": "Tu cocina",
     "empty": "Todavía no hay recetas",
@@ -762,6 +793,10 @@ export default {
     "illustrationShare": "Compartir receta"
   },
   "snap": {
+    "failedWaysOn": "Otras formas de conseguir esta receta:",
+    "failedRetry": "Intentar de nuevo",
+    "failedScreenshot": "Usar una captura",
+    "failedGuess": "Adivinar la receta",
     "partialTitle": "No encontramos la receta completa",
     "partialMissingSteps": "Encontramos los ingredientes, pero no los pasos. ¿Quieres añadir los pasos tú? Esta importación es gratis.",
     "partialMissingIngredients": "Encontramos los pasos, pero no los ingredientes. ¿Quieres añadir los ingredientes tú? Esta importación es gratis.",

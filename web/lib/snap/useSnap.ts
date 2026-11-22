@@ -4,9 +4,12 @@ import { useRouter } from "next/navigation";
 import { useCallback, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 
+import { DEFAULT_SOURCE_LANGUAGE } from "@shared/lib/appLanguages";
 import { FREE_MONTHLY_EXTRACT_LIMIT } from "@shared/lib/quotas";
 import { importErrorText } from "@shared/lib/serverErrors";
-import { requestSettledWithoutRecipe, snapOutcome } from "@shared/lib/snapOutcome";
+import { requestSettledWithoutRecipe, snapOutcome, type SnapMessageKey } from "@shared/lib/snapOutcome";
+import { saveRecipeDraft } from "@shared/lib/supabase/saveRecipeDraft";
+import type { ExtractedRecipe } from "@shared/types/recipe";
 import {
   extractionOutcomeIsUncertain,
   extractRecipe,
@@ -26,11 +29,26 @@ import { showToast } from "@shared/lib/toast";
 
 import { useAuth } from "@/components/AuthProvider";
 import { useLanguage } from "@/components/LanguageProvider";
-import { captureRecipeExtracted } from "@/lib/analytics";
+import { captureRecipeExtracted, captureRecipeSaved } from "@/lib/analytics";
 import { webSalesOn } from "@/lib/credits/salesSwitch";
 import { signInPathFor } from "@/lib/nextPath";
-import { setSnapDraft } from "@/lib/snap/draft";
+import { clearSnapDraft, setSnapDraft } from "@/lib/snap/draft";
 import { acknowledgeRequest, webExtractionContext } from "@/lib/snap/requestIds";
+
+/** Saves a Snap's recipe for the cook. Returns its id, or null when the save failed (the preview takes over). */
+async function autoSaveSnap(recipe: ExtractedRecipe): Promise<string | null> {
+  try {
+    const { recipe: saved, recoveredDuplicate } = await saveRecipeDraft({
+      ...recipe,
+      source_language: recipe.source_language ?? DEFAULT_SOURCE_LANGUAGE,
+    });
+    if (!recoveredDuplicate) captureRecipeSaved({ from: recipeIsInvented(recipe) ? "invent" : "extract", save: "auto" });
+    return saved.id;
+  } catch (error) {
+    console.warn("[snap] auto-save failed, opening the preview", error);
+    return null;
+  }
+}
 
 /** Snap a recipe that is written down, or Guess the recipe for a dish. */
 export type SnapIntent = "extract" | "invent";
@@ -49,7 +67,28 @@ export type SnapBanner = {
   tone: "error" | "info" | "credits" | "partial";
   title?: string;
   message: string;
+  /**
+   * A link that couldn't be read: the banner offers ways on (try again, a screenshot, Guess the recipe) instead of a
+   * dead end. A failed first try used to be where new people gave up.
+   */
+  failedUrl?: string;
 } | null;
+
+/** Failures where another try, a screenshot or a guess may still get the recipe (not "not food" or a bad link). */
+const RECOVERABLE_MESSAGES = new Set<SnapMessageKey>([
+  "snap.videoTooLong",
+  "snap.timedOut",
+  "snap.gateFailed",
+  "snap.notFound",
+  "snap.genericError",
+]);
+
+/** The link to offer ways on for, when a Snap of a link failed in a way worth another route. */
+function recoverableUrl(job: SnapJob, messageKey?: SnapMessageKey): string | undefined {
+  if (job.intent !== "extract" || job.source.type !== "url") return undefined;
+  if (messageKey && !RECOVERABLE_MESSAGES.has(messageKey)) return undefined;
+  return job.source.url;
+}
 
 /** No written recipe was found, but a dish was: offer to guess one. */
 export type InventOffer = { source: SnapSource; dishGuess?: string; allowExtract: boolean };
@@ -135,6 +174,7 @@ export function useSnap({ onSettled }: { onSettled?: () => void } = {}) {
             setBanner({
               tone: outcome.tone,
               message: outcome.serverMessage ? importErrorText(result, t, language, outcome.messageKey) : t(outcome.messageKey),
+              failedUrl: outcome.tone === "error" ? recoverableUrl(next, outcome.messageKey) : undefined,
             });
             break;
           case "offer_invent":
@@ -168,12 +208,24 @@ export function useSnap({ onSettled }: { onSettled?: () => void } = {}) {
               pending: result.request_id ? { key, requestId: result.request_id } : undefined,
             });
             leaving = true;
-            router.push("/recipe/preview");
+            // Saved straight away: many people left the preview without saving and lost the recipe. If the save
+            // fails, the draft is still stored and the preview keeps its Save button.
+            const savedId = kitchen.failed ? null : await autoSaveSnap(kitchen.recipe);
+            if (savedId) {
+              clearSnapDraft();
+              router.push(`/recipe/${savedId}?justSaved=1`);
+            } else {
+              router.push("/recipe/preview");
+            }
             break;
           }
         }
       } catch {
-        setBanner({ tone: "error", message: t(next.intent === "invent" ? "snap.inventFailed" : "snap.genericError") });
+        setBanner({
+          tone: "error",
+          message: t(next.intent === "invent" ? "snap.inventFailed" : "snap.genericError"),
+          failedUrl: recoverableUrl(next),
+        });
       } finally {
         running.current = false;
         // Leaving for another page keeps the progress showing until it opens, instead of flashing the form.

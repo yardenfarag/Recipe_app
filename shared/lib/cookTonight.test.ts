@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
-import { rankCookTonight, scoreCookTonight } from './cookTonight';
+import { firstCookSuggestion, rankCookTonight, scoreCookTonight } from './cookTonight';
 import type { Recipe } from '../types/recipe';
 
 function recipe(overrides: Partial<Recipe>): Recipe {
@@ -47,5 +47,21 @@ describe('scoreCookTonight', () => {
       {},
     );
     expect(ranked.map((item) => item.id)).toEqual(['fast', 'slow']);
+  });
+});
+
+describe('firstCookSuggestion', () => {
+  it('suggests nothing with no recipes, or once one has been cooked', () => {
+    expect(firstCookSuggestion([])).toBeNull();
+    expect(
+      firstCookSuggestion([recipe({ id: 'a' }), recipe({ id: 'b', last_cooked_at: '2026-11-20T18:00:00Z' })]),
+    ).toBeNull();
+  });
+
+  it('prefers a quick, easy recipe, and falls back to the newest', () => {
+    const slow = recipe({ id: 'slow', estimated_time_minutes: 120, effort_level: 'Hard' });
+    const quick = recipe({ id: 'quick', estimated_time_minutes: 20, effort_level: 'Easy' });
+    expect(firstCookSuggestion([slow, quick])?.id).toBe('quick');
+    expect(firstCookSuggestion([slow])?.id).toBe('slow');
   });
 });

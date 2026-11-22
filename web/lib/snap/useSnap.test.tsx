@@ -16,6 +16,7 @@ const mocks = vi.hoisted(() => ({
   inventRecipeFromImage: vi.fn(),
   applyKitchen: vi.fn(),
   toast: vi.fn(),
+  saveDraft: vi.fn(),
 }));
 
 vi.mock("next/navigation", () => ({ useRouter: () => ({ push: mocks.push, replace: vi.fn() }) }));
@@ -30,6 +31,8 @@ vi.mock("@shared/lib/supabase/extractRecipe", async (importOriginal) => ({
 vi.mock("@shared/lib/supabase/inventRecipe", () => ({ inventRecipe: mocks.inventRecipe, inventRecipeFromImage: mocks.inventRecipeFromImage }));
 vi.mock("@shared/lib/supabase/kitchenAutoApply", () => ({ applyKitchenOnExtract: mocks.applyKitchen }));
 vi.mock("@shared/lib/toast", () => ({ showToast: mocks.toast }));
+vi.mock("@shared/lib/supabase/saveRecipeDraft", () => ({ saveRecipeDraft: mocks.saveDraft }));
+vi.mock("@/lib/analytics", () => ({ captureRecipeExtracted: vi.fn(), captureRecipeSaved: vi.fn() }));
 
 const recipe = {
   title: "Shakshuka",
@@ -48,6 +51,29 @@ describe("useSnap", () => {
     window.localStorage.clear();
     clearSnapDraft();
     mocks.applyKitchen.mockImplementation(async (_user: string, input: typeof recipe) => ({ recipe: input, failed: false }));
+    // Unless a test says otherwise the save for the cook fails, so the preview takes over (as before auto-save).
+    mocks.saveDraft.mockRejectedValue(new Error("offline"));
+  });
+
+  it("saves a whole recipe for the cook and opens it, with nothing left waiting in the preview", async () => {
+    mocks.extractRecipe.mockResolvedValue({ status: "full", platform: "youtube", recipe, request_id: "req-1" });
+    mocks.saveDraft.mockResolvedValue({ recipe: { ...recipe, id: "r-9" }, recoveredDuplicate: false });
+    const { result } = renderHook(() => useSnap(), { wrapper });
+
+    await act(() => result.current.run({ intent: "extract", source: url }));
+
+    expect(mocks.saveDraft).toHaveBeenCalledWith(expect.objectContaining({ title: "Shakshuka" }));
+    expect(mocks.push).toHaveBeenCalledWith("/recipe/r-9?justSaved=1");
+    expect(getSnapDraft()).toBeNull();
+  });
+
+  it("offers ways on when a link can't be read", async () => {
+    mocks.extractRecipe.mockResolvedValue({ status: "failed", platform: "tiktok", code: "extraction_timeout" });
+    const { result } = renderHook(() => useSnap(), { wrapper });
+
+    await act(() => result.current.run({ intent: "extract", source: url }));
+
+    expect(result.current.banner?.failedUrl).toBe(url.url);
   });
 
   it("stores a whole recipe as the draft, then opens the preview", async () => {

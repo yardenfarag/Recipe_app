@@ -44,7 +44,8 @@ export type RecipeActions = {
   busy: { share: boolean; revert: boolean; translate: boolean; repair: boolean };
   open: (dialog: RecipeDialog) => void;
   share: () => void;
-  markCooked: () => void;
+  /** `from`: the button on the recipe (default) or the one at the end of cook mode, for the `recipe_cooked` event. */
+  markCooked: (from?: "recipe" | "cook_mode") => void;
   revert: () => void;
   showOriginalLanguage: () => void;
   /** Translates into the app's language straight from the notice. */

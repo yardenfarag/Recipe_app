@@ -43,7 +43,8 @@ const dragHasContent = (data: DataTransfer | null) =>
 /**
  * Snap: paste a link or bring a photo, and get the recipe (or, in Guess the recipe, a best guess for a dish). On the
  * web a link or photo can be pasted anywhere on the page, and a photo or link dropped onto it. While Pinch works the
- * form gives way to the progress; then the recipe opens in the preview (/recipe/preview) to save.
+ * form gives way to the progress; then the recipe is saved for them and opens (or, if that save fails, opens in the
+ * preview at /recipe/preview to save).
  */
 export function SnapScreen() {
   const { t } = useTranslation();
@@ -60,6 +61,8 @@ export function SnapScreen() {
   /** Wraps the link field, to focus its input. */
   const urlField = useRef<HTMLDivElement>(null);
   const focusUrl = useCallback(() => urlField.current?.querySelector("input")?.focus(), []);
+  /** Wraps the photo drop zone, to open its picker from a failed link's "Use a screenshot". */
+  const photoZone = useRef<HTMLDivElement>(null);
   const busy = job != null;
   const invent = intent === "invent";
 
@@ -274,7 +277,19 @@ export function SnapScreen() {
 
               {banner ? (
                 <div className="mt-3">
-                  <SnapBannerView banner={banner} onDismiss={() => setBanner(null)} />
+                  <SnapBannerView
+                    banner={banner}
+                    onDismiss={() => setBanner(null)}
+                    failedLink={{
+                      onRetry: (link) => void run({ intent: "extract", source: { type: "url", url: link } }),
+                      // Opens the photo picker: a screenshot of the caption or comments often has the recipe.
+                      onScreenshot: () => photoZone.current?.querySelector<HTMLButtonElement>("button")?.click(),
+                      onGuess: (link) => {
+                        setIntent("invent");
+                        void run({ intent: "invent", source: { type: "url", url: link } });
+                      },
+                    }}
+                  />
                 </div>
               ) : null}
 
@@ -284,7 +299,9 @@ export function SnapScreen() {
                 <span aria-hidden className="h-px flex-1 bg-border" />
               </div>
 
-              <PhotoDropZone intent={intent} onFile={(file) => void importFile(file)} />
+              <div ref={photoZone}>
+                <PhotoDropZone intent={intent} onFile={(file) => void importFile(file)} />
+              </div>
             </section>
           )}
         </div>
