@@ -7,7 +7,7 @@ import { useCallback, useState } from "react";
 import { useTranslation } from "react-i18next";
 
 import { showToast } from "@shared/lib/toast";
-import { joinErrorSentences, translateAppError } from "@shared/lib/translateAppError";
+import { translateAppError } from "@shared/lib/translateAppError";
 
 import { useAuth } from "@/components/AuthProvider";
 import { RecipeView } from "@/components/recipe/RecipeView";
@@ -57,7 +57,7 @@ export default function HubRecipePage() {
       showToast(t("web.hub.added"));
       router.push(`/recipe/${recipeId}`);
     } catch (caught) {
-      setAddError(joinErrorSentences(t("hub.addFailedTitle"), translateAppError(caught, t)));
+      setAddError(`${t("hub.addFailedTitle")}: ${translateAppError(caught, t)}`);
       setAdding(false);
     }
   }, [addToLibrary, router, t]);
