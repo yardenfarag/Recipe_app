@@ -74,7 +74,7 @@ describe("Shared recipe page for a guest", () => {
     renderPage();
     expect(screen.getByText("Sign in or create a free account to save it.", { exact: false })).toBeDefined();
     expect(screen.queryByRole("link", { name: "back" })).toBeNull();
-    fireEvent.click(screen.getByRole("button", { name: "Save to my kitchen" }));
+    fireEvent.click(screen.getByRole("button", { name: "Save to my Library" }));
     expect(push).toHaveBeenCalledWith(`/auth?mode=signup&next=${encodeURIComponent("/s/tok-1?save=1")}&reason=shared_recipe`);
   });
 
@@ -97,7 +97,7 @@ describe("Shared recipe page", () => {
     state = ready();
     renderPage();
     expect(document.title).toBe("Shared Soup · Pinch");
-    fireEvent.click(screen.getByRole("button", { name: "Save to my kitchen" }));
+    fireEvent.click(screen.getByRole("button", { name: "Save to my Library" }));
     await waitFor(() => expect(replace).toHaveBeenCalledWith("/recipe/recipe-9"));
     expect(push).not.toHaveBeenCalled();
   });
@@ -105,24 +105,24 @@ describe("Shared recipe page", () => {
   it("opens the saved copy when the cook already has it", () => {
     state = ready({ libraryRecipeId: "recipe-3" });
     renderPage();
-    expect(screen.queryByRole("button", { name: "Save to my kitchen" })).toBeNull();
-    expect(screen.getByRole("link", { name: "Open in library" }).getAttribute("href")).toBe("/recipe/recipe-3");
+    expect(screen.queryByRole("button", { name: "Save to my Library" })).toBeNull();
+    expect(screen.getByRole("link", { name: "Open in Library" }).getAttribute("href")).toBe("/recipe/recipe-3");
   });
 
   it("says so when saving fails, and stays on the page", async () => {
     state = ready({ save: vi.fn().mockRejectedValue(new ShareSaveError("Could not save shared recipe", "claim_failed")) });
     renderPage();
-    fireEvent.click(screen.getByRole("button", { name: "Save to my kitchen" }));
+    fireEvent.click(screen.getByRole("button", { name: "Save to my Library" }));
     const alert = await screen.findByRole("alert");
     expect(alert.textContent).toContain("Couldn’t save shared recipe");
-    expect(alert.textContent).toContain("Please try again.");
+    expect(alert.textContent).toContain("Try again.");
     expect(replace).not.toHaveBeenCalled();
   });
 
   it("puts the server's code in the app's words", async () => {
     state = ready({ save: vi.fn().mockRejectedValue(new ShareSaveError("Could not load share", "share_unavailable")) });
     renderPage();
-    fireEvent.click(screen.getByRole("button", { name: "Save to my kitchen" }));
+    fireEvent.click(screen.getByRole("button", { name: "Save to my Library" }));
     expect(await screen.findByRole("alert")).toHaveProperty("textContent", expect.stringContaining(en.serverErrors.shareUnavailable));
   });
 
@@ -143,17 +143,17 @@ describe("Shared recipe page", () => {
   it("says the link stopped working when it is revoked while open", async () => {
     state = ready({ save: vi.fn().mockRejectedValue(new ShareSaveError("Share not found", "share_not_found")) });
     renderPage();
-    fireEvent.click(screen.getByRole("button", { name: "Save to my kitchen" }));
+    fireEvent.click(screen.getByRole("button", { name: "Save to my Library" }));
     expect(await screen.findByRole("alert")).toHaveProperty(
       "textContent",
-      expect.stringContaining("This share link is invalid or no longer available."),
+      expect.stringContaining("This link doesn't work anymore."),
     );
   });
 
   it("a link that no longer works says so plainly, with a way to the library", () => {
     state = { status: "missing" };
     renderPage();
-    expect(screen.getByRole("heading", { name: "This share link is invalid or no longer available." })).toBeDefined();
+    expect(screen.getByRole("heading", { name: "This link doesn't work anymore." })).toBeDefined();
     expect(screen.getByRole("link", { name: "Go to Library" }).getAttribute("href")).toBe("/");
     expect(document.title).toBe("Shared recipe · Pinch");
   });
@@ -162,7 +162,7 @@ describe("Shared recipe page", () => {
     user = null;
     state = { status: "missing" };
     renderPage();
-    expect(screen.getByRole("heading", { name: "This share link is invalid or no longer available." })).toBeDefined();
+    expect(screen.getByRole("heading", { name: "This link doesn't work anymore." })).toBeDefined();
     expect(screen.queryByRole("link", { name: "Go to Library" })).toBeNull();
   });
 

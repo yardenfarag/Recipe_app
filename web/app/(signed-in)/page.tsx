@@ -22,7 +22,7 @@ import { showToast } from "@shared/lib/toast";
 import { upsertRecipeTranslation } from "@shared/lib/supabase/recipeTranslations";
 import { deleteRecipe, renameRecipe } from "@shared/lib/supabase/recipes";
 import { COOK_TONIGHT_LIMITS } from "@shared/lib/tonightsPick";
-import { translateAppError } from "@shared/lib/translateAppError";
+import { joinErrorSentences, translateAppError } from "@shared/lib/translateAppError";
 import { isCollectionNameTaken, isRecipeNameTaken } from "@shared/lib/uniqueNames";
 import type { Recipe } from "@shared/types/recipe";
 
@@ -206,7 +206,7 @@ function LibraryScreen() {
       try {
         await toggleFavorite(recipe);
       } catch {
-        showToast(t("recipe.favoriteFailedTitle"), "info");
+        showToast(t("recipe.favoriteFailedTitle"), "error");
       }
     },
     [t, toggleFavorite],
@@ -233,7 +233,7 @@ function LibraryScreen() {
       await deleteRecipe(deleteTarget.id);
       void refresh();
     } catch (caught) {
-      showToast(`${t("library.couldNotDelete")}: ${translateAppError(caught, t)}`, "info");
+      showToast(joinErrorSentences(t("library.couldNotDelete"), translateAppError(caught, t)), "error");
     }
   }
 
@@ -243,7 +243,7 @@ function LibraryScreen() {
       await deleteCollection(deleteCollectionId);
       if (selectedCollectionId === deleteCollectionId) setSelectedCollectionId(null);
     } catch (caught) {
-      showToast(`${t("library.couldNotDelete")}: ${translateAppError(caught, t)}`, "info");
+      showToast(joinErrorSentences(t("library.couldNotDelete"), translateAppError(caught, t)), "error");
     }
   }
 

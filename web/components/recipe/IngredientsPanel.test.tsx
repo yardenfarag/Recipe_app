@@ -197,7 +197,7 @@ describe("IngredientsPanel", () => {
     expect(cellsOf(rows[2])[0].querySelector("bdi")?.getAttribute("dir")).toBe("rtl");
     expect(rowCells()[0][0]).toBe("2 כוסות");
     // The flag is in the app's language and direction.
-    expect(within(rows[2]).getByText("מרשימת האלרגיות שלכם").getAttribute("dir")).toBe("rtl");
+    expect(within(rows[2]).getByText("אלרגיה שלכם").getAttribute("dir")).toBe("rtl");
   });
 
   it("keeps an English recipe left-to-right in the Hebrew app", async () => {

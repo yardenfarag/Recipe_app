@@ -124,7 +124,7 @@ function Picker({
     const next = new Set(selected);
     next.delete(choice.key);
     setSelected(next);
-    keepStaple(choice.name).catch(() => showToast(t("settings.kitchenSaveFailed"), "info"));
+    keepStaple(choice.name).catch(() => showToast(t("settings.kitchenSaveFailed"), "error"));
   }
 
   return (

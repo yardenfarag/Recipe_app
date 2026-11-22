@@ -97,7 +97,7 @@ describe("SnapScreen", () => {
     mocks.fetchRecipeByUrl.mockResolvedValue({ id: "r7", title: "Soup" });
     wrap();
     fireEvent.change(linkField(), { target: { value: VIDEO } });
-    const open = await screen.findByRole("link", { name: "Open in library" }, { timeout: 2000 });
+    const open = await screen.findByRole("link", { name: "Open in Library" }, { timeout: 2000 });
     expect(open.getAttribute("href")).toBe("/recipe/r7");
     fireEvent.click(screen.getByRole("button", { name: "Snap" }));
     expect(mocks.push).toHaveBeenCalledWith("/recipe/r7");

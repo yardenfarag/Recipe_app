@@ -6,7 +6,7 @@ import type { ReactNode } from "react";
 import { useTranslation } from "react-i18next";
 
 import { IconButton } from "@/components/ui/IconButton";
-import { useReturnFocus } from "@/components/ui/returnFocus";
+import { useDialogFocus } from "@/components/ui/returnFocus";
 import { cn } from "@/lib/cn";
 
 export const Sheet = RadixDialog.Root;
@@ -31,14 +31,14 @@ export function SheetContent({
   className?: string;
 }) {
   const { t } = useTranslation();
-  const returnFocus = useReturnFocus();
+  const returnFocus = useDialogFocus();
   return (
     <RadixDialog.Portal>
       <RadixDialog.Overlay className="fixed inset-0 z-40 animate-fade-in bg-overlay backdrop-blur-[2px]" />
       <RadixDialog.Content
         {...returnFocus}
         className={cn(
-          "fixed z-50 flex flex-col bg-surface shadow-lift",
+          "fixed z-50 flex flex-col bg-surface shadow-lift outline-none",
           // Phones: from the bottom, rounded on top, at most most of the screen.
           "inset-x-0 bottom-0 max-h-[88dvh] animate-slide-up rounded-t-tile pb-[env(safe-area-inset-bottom)]",
           // Wider: a full-height panel on the end side.

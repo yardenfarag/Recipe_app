@@ -45,7 +45,7 @@ export const buttonClasses = ({
   cn(
     "inline-flex shrink-0 select-none items-center justify-center whitespace-nowrap transition-[filter,background-color,color,box-shadow] duration-150",
     "disabled:pointer-events-none disabled:opacity-50",
-    variant === "link" ? "h-auto rounded-md px-1 py-0.5 text-sm" : sizes[size],
+    variant === "link" ? "h-auto gap-1.5 rounded-md px-1 py-0.5 text-sm" : sizes[size],
     variants[variant],
     fullWidth && "w-full",
     className,

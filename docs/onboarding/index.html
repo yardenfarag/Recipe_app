@@ -904,7 +904,8 @@ npm start                                            <span class="c"># scan the 
   <p>Profiles are in <code>eas.json</code>: <code>development</code>, <code>preview</code>, <code>production</code>. Background: <code>docs/adr/009-dev-build-tooling.md</code>.</p>
 
   <h3>Web and the checks you run before a PR</h3>
-  <pre><button class="copy" data-copy>Copy</button><code>npm run web          <span class="c"># http://localhost:8081</span>
+  <pre><button class="copy" data-copy>Copy</button><code>npm run web          <span class="c"># new Next.js app in web/, http://localhost:3000 (npm ci in web/ first)</span>
+npm run web:expo     <span class="c"># old Expo web app, http://localhost:8081</span>
 npm test             <span class="c"># vitest</span>
 npm run typecheck    <span class="c"># tsc --noEmit</span>
 npm run lint         <span class="c"># expo lint</span>

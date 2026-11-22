@@ -370,7 +370,7 @@ export default function SettingsScreen() {
       await refresh();
       setAvatarPickerOpen(false);
     } catch {
-      showToast(t('settings.avatarSaveFailed'), 'info');
+      showToast(t('settings.avatarSaveFailed'), 'error');
     } finally {
       setAvatarBusy(null);
     }

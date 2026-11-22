@@ -32,7 +32,7 @@ export function InventOfferDialog({
           footer={
             <>
               <DialogClose asChild>
-                <Button variant="ghost" trackId="snap.invent_offer_dialog.cancel">{t("common.notNow")}</Button>
+                <Button variant="ghost" trackId="snap.invent_offer_dialog.cancel">{t("common.cancel")}</Button>
               </DialogClose>
               {offer.allowExtract ? (
                 <Button variant="outline" trackId="snap.invent_offer_dialog.secondary" onClick={onExtractAnyway}>

@@ -102,7 +102,7 @@ export default function HubRecipeScreen() {
     } catch (err) {
       Alert.alert(
         t('hub.addFailedTitle'),
-        translateAppError(err instanceof Error ? err.message : t('common.tryAgain'), t),
+        translateAppError(err, t),
       );
     } finally {
       setClaiming(false);

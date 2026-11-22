@@ -82,7 +82,7 @@ describe("AuthForm", () => {
     typeInto("Email", "cook@example.com");
     typeInto("Password", "wrong-pass1");
     fireEvent.click(screen.getByRole("button", { name: "Sign in" }));
-    expect((await screen.findByRole("alert")).textContent).toBe("Something went wrong. Please try again.");
+    expect((await screen.findByRole("alert")).textContent).toBe("Something went wrong. Try again.");
   });
 
   it("checks the email and the new password before signing up", async () => {

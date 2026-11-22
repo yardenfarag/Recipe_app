@@ -263,6 +263,6 @@ describe("CookbookScreen", () => {
   it("says what to do when the library is empty", () => {
     library.recipes = [];
     renderScreen();
-    expect(screen.getByText("Save recipes to your library first, then you can make a cookbook.")).toBeDefined();
+    expect(screen.getByText("Save recipes to your Library first, then you can make a cookbook.")).toBeDefined();
   });
 });

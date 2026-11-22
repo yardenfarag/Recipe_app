@@ -78,7 +78,13 @@ export function ToastHost() {
         }}
       >
         <Ionicons
-          name={toast.icon === 'success' ? 'checkmark-circle' : 'information-circle'}
+          name={
+            toast.icon === 'success'
+              ? 'checkmark-circle'
+              : toast.icon === 'error'
+                ? 'alert-circle'
+                : 'information-circle'
+          }
           size={20}
           color={colors.surface}
         />

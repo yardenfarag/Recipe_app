@@ -13,6 +13,7 @@ export function fakeActions(display: RecipeDisplay, patch: Partial<RecipeActions
     canRevert: false,
     canRepair: false,
     canFix: false,
+    kitchenSetUp: { avoid: false, appliances: false },
     translateOffer: null,
     busy: { share: false, revert: false, translate: false, repair: false },
     open: vi.fn(),

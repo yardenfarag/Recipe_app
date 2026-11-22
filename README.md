@@ -47,7 +47,8 @@ Desktop web (wide viewport). On smaller screens the same flows use bottom tabs i
 
    ```bash
    npm start          # Expo dev server
-   npm run web        # Web (desktop-friendly layout)
+   npm run web        # New web app (Next.js in web/; run npm ci in web/ first)
+   npm run web:expo   # Old Expo web app
    npm run ios        # iOS (dev client / simulator)
    npm run android    # Android
    ```

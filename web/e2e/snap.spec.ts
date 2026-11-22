@@ -179,7 +179,7 @@ test("a dish without a written recipe offers Guess the recipe", async ({ page })
   await snapButton(page).click();
   const dialog = page.getByRole("dialog", { name: "Guess the recipe?" });
   await expect(dialog).toContainText("This looks like pad thai");
-  await expect(dialog.getByRole("button", { name: "Extract anyway" })).toBeVisible();
+  await expect(dialog.getByRole("button", { name: "It has a recipe — read it" })).toBeVisible();
   await dialog.getByRole("button", { name: "Guess the recipe" }).click();
   await expect(page.locator("#main h1")).toHaveText("Pad Thai");
   expect(calls[1]).toMatchObject({ fn: "invent-recipe", body: { already_gated: true } });
@@ -222,7 +222,7 @@ test("failures say what the mobile app says, and nothing opens", async ({ page }
 
   await linkField(page).fill(url);
   await snapButton(page).click();
-  await expect(page.getByRole("alert").filter({ hasText: "Something went wrong. Please try again." })).toBeVisible();
+  await expect(page.getByRole("alert").filter({ hasText: "Something went wrong. Try again." })).toBeVisible();
   await expect(page.getByText(/Edge Function/)).toHaveCount(0);
   await expect(page).toHaveURL(/\/app\/add$/);
 });
@@ -232,7 +232,7 @@ test("a link that is already saved opens the saved recipe, without importing", a
   const calls = await stubImports(page, {});
   await openSnap(page);
   await linkField(page).fill(SOURCE_LINKS[4].url);
-  await expect(page.getByText("This link was already in your library.")).toBeVisible();
+  await expect(page.getByText("This link was already in your Library.")).toBeVisible();
   await snapButton(page).click();
   await expect(page).toHaveURL(new RegExp(`/app/recipe/${id}$`));
   await expect(page.locator("#main h1")).toHaveText("Saved Pasta");
@@ -247,6 +247,10 @@ test("Remove takes a recipe that was just saved back out, and goes back to Snap"
   await snapButton(page).click();
   await expect(page).toHaveURL(JUST_SAVED);
   await savedStrip(page).getByRole("button", { name: "Remove" }).click();
+  // It cost a credit, so it asks first and says the credit isn't given back.
+  const confirm = page.getByRole("dialog", { name: "Remove this recipe?" });
+  await expect(confirm).toContainText("the credit it used isn't given back");
+  await confirm.getByRole("button", { name: "Remove" }).click();
   await expect(page).toHaveURL(/\/app\/add$/);
   await expect(page.getByText("Removed from your Library")).toBeVisible();
   await page.goto("/app");

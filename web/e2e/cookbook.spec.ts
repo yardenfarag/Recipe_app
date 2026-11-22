@@ -294,7 +294,7 @@ test("Hebrew: the book reads right to left, and a Hebrew recipe stays right to l
   await expect(page.locator("html")).toHaveAttribute("dir", "rtl");
   await page.goto("/app/cookbook");
   await expect(page.locator("#main h1")).toHaveText("ספר מתכונים ב־PDF");
-  await expect(page.getByRole("list", { name: "הספר שלך" }).getByRole("listitem")).toHaveCount(2);
+  await expect(page.getByRole("list", { name: "הספר שלכם" }).getByRole("listitem")).toHaveCount(2);
   await page.getByRole("button", { name: "יצירת PDF" }).click();
   await expect(page.getByRole("dialog")).toContainText("הספר מוכן");
   expect(books[1]).toMatchObject({ language: "he", rtl: true, title: "ספר המתכונים שלי" });
@@ -367,7 +367,7 @@ test("cancel stops making the book, and nothing is downloaded", async ({ page })
 test("an empty library says to save recipes first", async ({ page }) => {
   await signIn(page, []);
   await page.goto("/app/cookbook");
-  await expect(page.getByText("Save recipes to your library first, then you can make a cookbook.")).toBeVisible();
+  await expect(page.getByText("Save recipes to your Library first, then you can make a cookbook.")).toBeVisible();
 });
 
 /** Signs in as the test account through the API, for the few writes the app has no screen for here. */

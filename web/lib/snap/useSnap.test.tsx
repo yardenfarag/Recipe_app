@@ -76,7 +76,7 @@ describe("useSnap", () => {
     await act(() => result.current.run({ intent: "extract", source: url }));
 
     expect(mocks.push).toHaveBeenCalledWith("/recipe/r-9?justSaved=1");
-    expect(mocks.toast).toHaveBeenCalledWith(expect.any(String), "info");
+    expect(mocks.toast).toHaveBeenCalledWith(expect.any(String), "error");
   });
 
   it("offers ways on when a link can't be read", async () => {

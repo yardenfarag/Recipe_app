@@ -8,7 +8,7 @@ import { useTranslation } from "react-i18next";
 import { resolveCulinaryLanguage } from "@shared/lib/culinaryUnits";
 import { getDuplicateNameCounts, normalizeShoppingName } from "@shared/lib/shoppingListMerge";
 import { showToast } from "@shared/lib/toast";
-import { translateAppError } from "@shared/lib/translateAppError";
+import { joinErrorSentences, translateAppError } from "@shared/lib/translateAppError";
 import type { ShoppingListItem } from "@shared/types/shoppingList";
 
 import { useLanguage } from "@/components/LanguageProvider";
@@ -89,7 +89,7 @@ export default function ListPage() {
   );
 
   const failed = useCallback(
-    (titleKey: string) => (caught: unknown) => showToast(`${t(titleKey)}: ${translateAppError(caught, t)}`, "info"),
+    (titleKey: string) => (caught: unknown) => showToast(joinErrorSentences(t(titleKey), translateAppError(caught, t)), "error"),
     [t],
   );
 
@@ -131,7 +131,7 @@ export default function ListPage() {
   const keepAtHome = useCallback(
     (item: ShoppingListItem) => {
       passFocusOn(item, false);
-      keepStaple(item.name).catch(() => showToast(t("settings.kitchenSaveFailed"), "info"));
+      keepStaple(item.name).catch(() => showToast(t("settings.kitchenSaveFailed"), "error"));
       removeItem(item.id)
         .then(() =>
           setNotice({

@@ -86,7 +86,7 @@ describe("HubToolbar", () => {
 
   it("Escape clears the search", () => {
     render(<Harness />);
-    const input = screen.getByRole("searchbox", { name: "Search the hub" });
+    const input = screen.getByRole("searchbox", { name: "Search the Hub" });
     fireEvent.change(input, { target: { value: "soup" } });
     expect((input as HTMLInputElement).value).toBe("soup");
     fireEvent.keyDown(input, { key: "Escape" });
