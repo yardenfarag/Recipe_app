@@ -20,6 +20,9 @@
   // Five cookbooks a minute per account: each keeps a browser busy, and browser time is billed past 10 hours a month.
   "ratelimits": [{ "name": "COOKBOOK_PDF_LIMITER", "namespace_id": "1042", "simple": { "limit": 5, "period": 60 } }],
   "workers_dev": false,
+  // A preview link per PR on workers.dev (.github/workflows/web-preview.yml). It runs that PR's code
+  // against the same production bindings. The app itself stays off workers.dev (workers_dev above).
+  "preview_urls": true,
   // While we build. After the switch (PIN-147) this becomes the zone routes
   // pinch-app.io/app and pinch-app.io/app/* (never /app*, which also matches /apple-app-site-association).
   "routes": [{ "pattern": "next.pinch-app.io", "custom_domain": true }]
