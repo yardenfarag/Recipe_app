@@ -16,6 +16,7 @@ import type { ShoppingListIncomingItem } from "@shared/types/shoppingList";
 import { useLanguage } from "@/components/LanguageProvider";
 import { IngredientPicker, type IngredientSection } from "@/components/list/IngredientPicker";
 import { Button } from "@/components/ui/Button";
+import { Chip } from "@/components/ui/Chip";
 import { Dialog, DialogClose, DialogContent } from "@/components/ui/Dialog";
 import { ErrorState, LoadingState } from "@/components/ui/States";
 import { cn } from "@/lib/cn";
@@ -224,7 +225,7 @@ function RecipeChooser({
           placeholder={t("list.searchRecipes")}
           autoComplete="off"
           autoFocus
-          className="h-11 w-full rounded-2xl border border-border bg-surface ps-10 pe-10 text-[15px] text-text placeholder:text-muted/80 hover:border-muted/60 focus:border-primary focus:ring-4 focus:ring-primary/15 [&::-webkit-search-cancel-button]:hidden"
+          className="h-12 w-full rounded-btn border border-border bg-surface ps-11 pe-12 text-base text-text transition-[border-color,box-shadow] placeholder:text-muted/80 hover:border-muted/60 focus:border-primary focus:ring-4 focus:ring-primary/15 [&::-webkit-search-cancel-button]:hidden"
         />
         {search ? (
           <button
@@ -232,7 +233,7 @@ function RecipeChooser({
             data-track="select_recipes.search.clear"
             onClick={() => setSearch("")}
             aria-label={t("a11y.clearSearch")}
-            className="absolute end-1.5 top-1/2 grid h-8 w-8 -translate-y-1/2 place-items-center rounded-full text-muted hover:bg-element hover:text-text"
+            className="absolute end-1.5 top-1/2 grid h-9 w-9 -translate-y-1/2 place-items-center rounded-xl text-muted hover:bg-element hover:text-text pointer-coarse:end-0.5 pointer-coarse:h-11 pointer-coarse:w-11"
           >
             <X aria-hidden className="h-4 w-4" />
           </button>
@@ -240,24 +241,20 @@ function RecipeChooser({
       </div>
 
       {collections.length > 0 ? (
-        <div className="-mx-1 flex gap-2 overflow-x-auto px-1 pb-1">
+        <div className="-mx-1 flex gap-2 scroll-row px-1 py-1">
           {[{ id: null, name: t("list.allCollections") }, ...collections].map((collection) => {
             const on = collectionId === collection.id;
             return (
-              <button
+              <Chip
                 key={collection.id ?? "all"}
-                type="button"
-                data-track={collection.id ? "select_recipes.collection.select" : "select_recipes.collection.all"}
-                aria-pressed={on}
+                size="sm"
+                selected={on}
+                trackId={collection.id ? "select_recipes.collection.select" : "select_recipes.collection.all"}
                 aria-label={collection.id ? undefined : t("a11y.allCollections")}
                 onClick={() => setCollectionId(on && collection.id ? null : collection.id)}
-                className={cn(
-                  "h-9 shrink-0 rounded-full px-3.5 text-sm font-semibold transition-colors",
-                  on ? "bg-primary text-on-primary" : "bg-element text-text hover:bg-selected",
-                )}
               >
                 {collection.name}
-              </button>
+              </Chip>
             );
           })}
         </div>
@@ -271,25 +268,24 @@ function RecipeChooser({
         </p>
         <div className="flex items-center gap-1">
           {selectedIds.length > 0 ? (
-            <button
-              type="button"
-              data-track="select_recipes.selection.clear"
+            <Button
+              variant="link"
+              trackId="select_recipes.selection.clear"
               onClick={() => onChange([])}
               aria-label={t("a11y.clearSelectedRecipes")}
-              className="rounded-full px-2 py-1 font-semibold text-muted hover:bg-element hover:text-text"
+              className="text-muted hover:text-text"
             >
               {t("list.clearSelection")}
-            </button>
+            </Button>
           ) : null}
           {!allShownSelected && shownIds.length > 0 ? (
-            <button
-              type="button"
-              data-track="select_recipes.select_all_visible"
+            <Button
+              variant="link"
+              trackId="select_recipes.select_all_visible"
               onClick={() => onChange([...selectedIds, ...shownIds.filter((id) => !selectedIds.includes(id))])}
-              className="rounded-full px-2 py-1 font-semibold text-primary hover:bg-primary-soft"
             >
               {t("list.selectAll")}
-            </button>
+            </Button>
           ) : null}
         </div>
       </div>
@@ -316,11 +312,11 @@ function RecipeChooser({
                   <span
                     aria-hidden
                     className={cn(
-                      "grid h-6 w-6 shrink-0 place-items-center rounded-lg border-2 transition-colors",
-                      on ? "border-primary bg-primary text-on-primary" : "border-border",
+                      "grid h-5 w-5 shrink-0 place-items-center rounded-md border-2 transition-colors",
+                      on ? "border-primary bg-primary text-on-primary" : "border-muted/60",
                     )}
                   >
-                    {on ? <Check className="h-4 w-4" strokeWidth={3} /> : null}
+                    {on ? <Check className="h-3.5 w-3.5" strokeWidth={3.5} /> : null}
                   </span>
                   <span className="min-w-0 flex-1">
                     <span className="line-clamp-2 text-[15px] font-semibold text-text">{recipeTitle(recipe)}</span>

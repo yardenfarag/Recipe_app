@@ -6,7 +6,7 @@ import { useTranslation } from "react-i18next";
 import { APP_LANGUAGES, type AppLanguageCode } from "@shared/lib/appLanguages";
 
 import { useLanguage } from "@/components/LanguageProvider";
-import { Button } from "@/components/ui/Button";
+import { Chip } from "@/components/ui/Chip";
 import { cn } from "@/lib/cn";
 
 /**
@@ -17,23 +17,21 @@ export function LanguagePills({ trackPrefix, className }: { trackPrefix: string;
   const { t } = useTranslation();
   const { language, setLanguage } = useLanguage();
   return (
-    <div role="group" aria-label={t("settings.language")} className={cn("flex flex-wrap items-center gap-1", className)}>
-      <Languages aria-hidden className="me-1.5 h-4 w-4 shrink-0 text-muted" />
+    <div role="group" aria-label={t("settings.language")} className={cn("flex flex-wrap items-center gap-2", className)}>
+      <Languages aria-hidden className="me-0.5 h-5 w-5 shrink-0 text-muted" />
       {APP_LANGUAGES.map((lang) => {
         const active = lang.code === language;
         return (
-          <Button
+          <Chip
             key={lang.code}
             size="sm"
-            variant={active ? "secondary" : "ghost"}
-            aria-pressed={active}
+            selected={active}
             lang={lang.code}
             trackId={`${trackPrefix}.${lang.code}`}
             onClick={() => setLanguage(lang.code)}
-            className={cn("h-8 px-3", !active && "text-muted hover:text-text")}
           >
             {lang.nativeLabel}
-          </Button>
+          </Chip>
         );
       })}
     </div>
@@ -51,7 +49,7 @@ export function LanguageSelect({ className }: { className?: string }) {
       <select
         value={language}
         onChange={(event) => setLanguage(event.target.value as AppLanguageCode)}
-        className="h-9 cursor-pointer appearance-none rounded-full border border-border bg-surface ps-9 pe-8 text-sm font-semibold text-text transition-colors hover:bg-surface-soft focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
+        className="h-10 cursor-pointer appearance-none rounded-xl border border-border bg-surface ps-9 pe-8 text-sm font-semibold text-text transition-colors hover:bg-element focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary pointer-coarse:h-11"
       >
         {APP_LANGUAGES.map((lang) => (
           <option key={lang.code} value={lang.code} lang={lang.code}>

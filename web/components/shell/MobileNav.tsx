@@ -6,34 +6,42 @@ import { useTranslation } from "react-i18next";
 
 import { PinchLogo } from "@/components/CookieMark";
 import { AccountMenu } from "@/components/shell/AccountMenu";
-import { NAV_ITEMS, activeSection } from "@/components/shell/nav";
+import { NAV_ITEMS, activeSection, isImmersivePath } from "@/components/shell/nav";
 import { cn } from "@/lib/cn";
 
-/** Phones: a slim bar on top with the account menu. */
+/** Phones: a slim bar on top with the logo and the account menu. Not on a recipe's own page (see isImmersivePath). */
 export function MobileTopBar() {
   const { t } = useTranslation();
+  const pathname = usePathname();
+  if (isImmersivePath(pathname)) return null;
   return (
-    <header className="sticky top-0 z-30 flex h-14 items-center justify-between border-b border-frosted-border bg-tab-bar/80 px-4 pt-[env(safe-area-inset-top)] backdrop-blur-xl md:hidden">
-      <Link href="/" data-track="nav.top_bar.logo" className="rounded-xl" aria-label={`Pinch — ${t("tabs.library")}`}>
-        <PinchLogo />
-      </Link>
-      <AccountMenu variant="compact" />
+    <header className="sticky top-0 z-30 flex items-center justify-between bg-bg/90 px-4 pt-[env(safe-area-inset-top)] backdrop-blur-xl md:hidden">
+      <div className="flex h-14 w-full items-center justify-between">
+        <Link href="/" data-track="nav.top_bar.logo" className="rounded-btn" aria-label={`Pinch — ${t("tabs.library")}`}>
+          <PinchLogo />
+        </Link>
+        <AccountMenu variant="compact" />
+      </div>
     </header>
   );
 }
 
-/** Phones: the five sections at the bottom, within thumb reach. Snap, the main action, sits raised in the middle. */
+/**
+ * Phones: the five sections at the bottom, within thumb reach. Snap, the main action, is a raised button in the
+ * middle. The bar clears the phone's home indicator (safe area).
+ */
 export function BottomNav() {
   const { t } = useTranslation();
   const pathname = usePathname();
   const active = activeSection(pathname);
+  if (isImmersivePath(pathname)) return null;
 
   return (
     <nav
       aria-label={t("web.mainNavigation")}
-      className="fixed inset-x-0 bottom-0 z-30 border-t border-frosted-border bg-tab-bar/90 pb-[env(safe-area-inset-bottom)] backdrop-blur-xl md:hidden"
+      className="fixed inset-x-0 bottom-0 z-30 border-t border-border bg-tab-bar pb-[env(safe-area-inset-bottom)] backdrop-blur-xl md:hidden"
     >
-      <ul className="mx-auto grid h-16 max-w-lg grid-cols-5">
+      <ul className="mx-auto grid h-16 max-w-lg grid-cols-5 items-start">
         {NAV_ITEMS.map((item) => {
           const isActive = active === item.id;
           const label = t(item.labelKey);
@@ -43,36 +51,30 @@ export function BottomNav() {
                 <Link
                   href={item.href}
                   data-track={`nav.tab.${item.id}`}
+                  aria-label={t("snap.title")}
                   aria-current={pathname === item.href ? "page" : undefined}
-                  className="-mt-5 flex flex-col items-center gap-1"
+                  className={cn(
+                    "-mt-6 grid h-15 w-15 place-items-center rounded-[22px] bg-primary text-on-primary shadow-lift ring-4 ring-bg transition-transform active:scale-95",
+                    isActive && "ring-primary-soft",
+                  )}
                 >
-                  <span
-                    className={cn(
-                      "grid h-14 w-14 place-items-center rounded-full bg-primary text-on-primary shadow-lift ring-4 ring-bg transition-transform active:scale-95",
-                      isActive && "ring-primary-soft",
-                    )}
-                  >
-                    <item.icon aria-hidden className="h-6 w-6" />
-                  </span>
-                  <span className={cn("text-[11px] font-semibold", isActive ? "text-primary" : "text-muted")}>{label}</span>
+                  <item.icon aria-hidden className="h-7 w-7" strokeWidth={2.4} />
                 </Link>
               </li>
             );
           }
           return (
-            <li key={item.id}>
+            <li key={item.id} className="h-full">
               <Link
                 href={item.href}
                 data-track={`nav.tab.${item.id}`}
                 aria-current={pathname === item.href ? "page" : undefined}
                 className={cn(
-                  "flex h-full flex-col items-center justify-center gap-1 text-[11px] font-semibold",
-                  isActive ? "text-primary" : "text-muted",
+                  "flex h-full flex-col items-center justify-center gap-1 text-[11px] font-semibold transition-colors",
+                  isActive ? "text-text" : "text-muted",
                 )}
               >
-                <span className={cn("grid h-7 w-12 place-items-center rounded-full transition-colors", isActive && "bg-primary-soft")}>
-                  <item.icon aria-hidden className="h-5 w-5" strokeWidth={isActive ? 2.4 : 2} />
-                </span>
+                <item.icon aria-hidden className={cn("h-[22px] w-[22px]", item.flip && "rtl:-scale-x-100")} strokeWidth={isActive ? 2.4 : 2} />
                 {label}
               </Link>
             </li>

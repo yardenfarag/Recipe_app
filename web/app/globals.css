@@ -4,6 +4,9 @@
  * Colours come from the theme packs in shared/constants/themes.ts. lib/theme.ts turns each pack, in light and
  * dark, into the --c-* variables (rendered in <head> by app/layout.tsx); <html data-pack data-scheme> picks one.
  * Tailwind classes use the names below: bg-surface, text-muted, border-border, bg-primary, text-on-primary…
+ *
+ * The look is "Night Market" (PIN-160): flat pages, tiles with 28 px corners and a hairline border, Space Grotesk
+ * for headings, big numbers and main buttons, Inter for everything else.
  */
 @theme inline {
   --color-text: var(--c-text);
@@ -16,8 +19,11 @@
   --color-primary: var(--c-primary);
   --color-primary-soft: var(--c-primary-soft);
   --color-on-primary: var(--c-on-primary);
+  /* The brand colour as text: use this, not text-primary, for words on a surface, an element or primary-soft. */
+  --color-primary-text: var(--c-primary-text);
   --color-accent: var(--c-accent);
   --color-accent-soft: var(--c-accent-soft);
+  --color-accent-text: var(--c-accent-text);
   --color-border: var(--c-border);
   --color-danger: var(--c-danger);
   --color-danger-soft: var(--c-danger-soft);
@@ -29,9 +35,26 @@
   --color-overlay: var(--c-overlay);
   --color-frosted: var(--c-frosted);
   --color-frosted-border: var(--c-frosted-border);
+  /* Over a photo: the same in light and dark (lib/theme.ts). */
+  --color-scrim: var(--c-scrim);
+  --color-on-scrim: var(--c-on-scrim);
+  --color-on-scrim-muted: var(--c-on-scrim-muted);
+  --color-scrim-primary: var(--c-scrim-primary);
+  --color-on-scrim-primary: var(--c-on-scrim-primary);
 
-  --font-sans: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, "Noto Sans", "Noto Sans Hebrew",
-    "Noto Sans Arabic", Arial, sans-serif;
+  /*
+   * Inter and Space Grotesk are loaded in app/layout.tsx. Neither has Hebrew or Arabic letters, so those fall
+   * through to the system's own fonts; Space Grotesk has no Cyrillic, so Russian headings fall to Inter.
+   */
+  --font-sans: var(--font-inter), ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, "Noto Sans",
+    "Noto Sans Hebrew", "Noto Sans Arabic", Arial, sans-serif;
+  --font-display: var(--font-space-grotesk), var(--font-inter), ui-sans-serif, system-ui, -apple-system, "Segoe UI",
+    Roboto, "Noto Sans", "Noto Sans Hebrew", "Noto Sans Arabic", Arial, sans-serif;
+
+  /* Tiles and the controls inside them. */
+  --radius-tile: 1.75rem;
+  --radius-card: 1.375rem;
+  --radius-btn: 0.875rem;
 
   --shadow-soft: 0 1px 2px rgb(20 16 30 / 0.06), 0 4px 16px rgb(20 16 30 / 0.06);
   --shadow-lift: 0 2px 4px rgb(20 16 30 / 0.08), 0 12px 32px rgb(20 16 30 / 0.12);
@@ -40,6 +63,7 @@
   --animate-pop-in: pop-in 180ms cubic-bezier(0.2, 0.9, 0.3, 1.1);
   --animate-slide-up: slide-up 220ms cubic-bezier(0.2, 0.9, 0.3, 1);
   --animate-slide-in-end: slide-in-end 220ms cubic-bezier(0.2, 0.9, 0.3, 1);
+  --animate-drop-in: drop-in 180ms cubic-bezier(0.2, 0.9, 0.3, 1);
   /* A bar that sweeps across while the length of a wait is unknown (the cookbook PDF). */
   --animate-indeterminate: indeterminate 1.4s ease-in-out infinite;
 }
@@ -65,6 +89,12 @@
     transform: translateX(calc(100% * var(--dir-sign, 1)));
   }
 }
+@keyframes drop-in {
+  from {
+    opacity: 0;
+    transform: translateY(-8px);
+  }
+}
 
 @keyframes indeterminate {
   from {
@@ -86,13 +116,23 @@
 
   body {
     background-color: var(--c-background);
-    /* The brand's soft mist, drifting behind every page. */
-    background-image:
-      radial-gradient(48rem 32rem at 12% -8%, color-mix(in srgb, var(--c-orb-a) 55%, transparent), transparent 70%),
-      radial-gradient(40rem 28rem at 105% 10%, color-mix(in srgb, var(--c-orb-b) 45%, transparent), transparent 70%);
-    background-attachment: fixed;
     color: var(--c-text);
     font-family: var(--font-sans);
+  }
+
+  /* Every heading is set in the display face, a touch tighter than body text. */
+  h1,
+  h2,
+  h3 {
+    font-family: var(--font-display);
+    letter-spacing: -0.015em;
+  }
+
+  /* Tight tracking pulls Arabic letters apart and does nothing for Hebrew. */
+  [dir="rtl"] h1,
+  [dir="rtl"] h2,
+  [dir="rtl"] h3 {
+    letter-spacing: normal;
   }
 
   ::selection {
@@ -110,6 +150,22 @@
   input:focus-visible,
   textarea:focus-visible {
     outline: none;
+  }
+
+  /* Tick boxes and radio buttons in the pack's colour. */
+  input[type="checkbox"],
+  input[type="radio"] {
+    accent-color: var(--c-primary);
+  }
+}
+
+/* A row that scrolls sideways under the thumb, without a scrollbar (filter chips on a phone). */
+@utility scroll-row {
+  overflow-x: auto;
+  scrollbar-width: none;
+  -webkit-overflow-scrolling: touch;
+  &::-webkit-scrollbar {
+    display: none;
   }
 }
 

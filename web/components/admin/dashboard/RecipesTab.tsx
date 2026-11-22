@@ -45,7 +45,7 @@ export function RecipesTab({ data, onOpenPerson }: { data: Dashboard; onOpenPers
       ) : (
         <ul className="grid gap-4 @2xl:grid-cols-2 @4xl:grid-cols-3">
           {rows.map((r) => (
-            <li key={r.id} className="flex min-w-0 gap-3 rounded-3xl border border-frosted-border bg-surface p-3 shadow-soft">
+            <li key={r.id} className="flex min-w-0 gap-3 rounded-3xl border border-border bg-surface p-3">
               <Thumb src={r.image_url} className="h-24 w-24 rounded-2xl" />
               <div className="flex min-w-0 flex-1 flex-col gap-1.5 text-sm">
                 <div className="line-clamp-2 font-semibold text-text">{r.title || "Untitled recipe"}</div>
@@ -65,7 +65,7 @@ export function RecipesTab({ data, onOpenPerson }: { data: Dashboard; onOpenPers
                 <div className="flex flex-wrap items-center justify-between gap-2 text-xs text-muted">
                   <span>{formatDate(r.created_at, true)}</span>
                   {r.url ? (
-                    <a href={r.url} target="_blank" rel="noreferrer noopener" data-track="admin.dashboard.recipes.source" className="inline-flex items-center gap-1 font-semibold text-primary hover:underline">
+                    <a href={r.url} target="_blank" rel="noreferrer noopener" data-track="admin.dashboard.recipes.source" className="inline-flex items-center gap-1 font-semibold text-primary-text hover:underline">
                       Source
                       <ExternalLink aria-hidden className="h-3.5 w-3.5" />
                     </a>

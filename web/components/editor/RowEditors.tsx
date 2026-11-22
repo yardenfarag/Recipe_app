@@ -81,7 +81,7 @@ export function IngredientRowEditor({
   return (
     <div className="border-b border-border/60 pb-2.5 sm:border-0 [li:last-child>&]:border-0 sm:py-0.5">
       {/* Phones: amount and unit on top, the ingredient under them, so its name has room. Wider: one line. */}
-      <div className="grid grid-cols-[2rem_4.5rem_minmax(0,1fr)_2.5rem] items-start gap-1.5 sm:flex sm:gap-2">
+      <div className="grid grid-cols-[2rem_4.5rem_minmax(0,1fr)_2.75rem] items-start gap-1.5 sm:flex sm:gap-2">
         <span className="row-span-2 sm:row-span-1">{handle}</span>
         <input
           {...field("quantity", Boolean(errors?.quantity))}
@@ -91,7 +91,7 @@ export function IngredientRowEditor({
           aria-label={`${t("recipeEditor.fields.quantity")}, ${rowLabel}`}
           inputMode="decimal"
           enterKeyHint="next"
-          className={inputClasses(Boolean(errors?.quantity), "h-11 text-center tabular-nums sm:w-20")}
+          className={inputClasses(Boolean(errors?.quantity), "h-11 px-2 text-center tabular-nums sm:w-20")}
         />
         <input
           {...field("unit", false)}
@@ -120,7 +120,7 @@ export function IngredientRowEditor({
           trackId="recipe_editor.ingredient.remove"
           icon={<Trash2 className="h-[18px] w-[18px]" />}
           onClick={onRemove}
-          className="col-start-4 row-start-1 h-11 w-10 hover:bg-danger-soft hover:text-danger"
+          className="col-start-4 row-start-1 hover:bg-danger-soft hover:text-danger"
         />
       </div>
       {message ? (
@@ -169,7 +169,7 @@ export function StepRowEditor({ row, position, handle, error, onChange, onRemove
         {handle}
         <span
           aria-hidden
-          className="mt-2 grid h-7 w-7 shrink-0 place-items-center rounded-full bg-primary-soft text-sm font-bold text-primary tabular-nums"
+          className="mt-2 grid h-7 w-7 shrink-0 place-items-center rounded-lg bg-primary-soft font-display text-sm font-bold text-primary-text tabular-nums"
         >
           {position}
         </span>
@@ -210,7 +210,7 @@ export function StepRowEditor({ row, position, handle, error, onChange, onRemove
           trackId="recipe_editor.step.remove"
           icon={<Trash2 className="h-[18px] w-[18px]" />}
           onClick={onRemove}
-          className="h-11 w-10 hover:bg-danger-soft hover:text-danger"
+          className="hover:bg-danger-soft hover:text-danger"
         />
       </div>
     </div>

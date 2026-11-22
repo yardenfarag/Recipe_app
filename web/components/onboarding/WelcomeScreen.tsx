@@ -13,6 +13,7 @@ import { WelcomeIllustration } from "@/components/onboarding/WelcomeIllustration
 import { buttonClasses } from "@/components/ui/Button";
 import { usePageTitle } from "@/components/ui/PageHeader";
 import { LoadingState } from "@/components/ui/States";
+import { Tile, TileBadge } from "@/components/ui/Tile";
 import { LEGAL_URLS } from "@/lib/legal";
 import { setOnboardingPending } from "@/lib/onboarding/device";
 import { afterOnboardingPath, signInFromWelcome, signUpFromWelcome } from "@/lib/onboarding/paths";
@@ -47,12 +48,12 @@ export function WelcomeScreen() {
       <a
         href="#main"
         data-track="nav.skip_to_content"
-        className="fixed start-3 top-3 z-50 -translate-y-20 rounded-full bg-primary px-4 py-2.5 font-semibold text-on-primary shadow-lift transition-transform focus:translate-y-0"
+        className="fixed start-3 top-3 z-50 -translate-y-20 rounded-btn bg-primary px-4 py-2.5 font-display font-bold text-on-primary shadow-lift transition-transform focus:translate-y-0"
       >
         {t("web.skipToContent")}
       </a>
       <header className="mx-auto flex h-16 w-full max-w-6xl items-center justify-between gap-3 px-4 sm:px-8">
-        <a href="https://pinch-app.io/" data-track="welcome.logo" className="rounded-xl focus-visible:outline-2 focus-visible:outline-primary">
+        <a href="https://pinch-app.io/" data-track="welcome.logo" className="rounded-btn focus-visible:outline-2 focus-visible:outline-primary">
           <PinchLogo />
         </a>
         <Link href={signInFromWelcome(next)} data-track="welcome.header_sign_in" className={buttonClasses({ variant: "ghost", size: "sm" })}>
@@ -61,15 +62,15 @@ export function WelcomeScreen() {
       </header>
 
       <main id="main" tabIndex={-1} className="flex flex-1 flex-col outline-none">
-        <div className="mx-auto grid w-full max-w-6xl items-center gap-12 px-4 pt-6 pb-16 sm:px-8 lg:grid-cols-[1.05fr_1fr] lg:gap-16 lg:pt-12 lg:pb-20">
-          <section className="animate-fade-in">
-            <p className="inline-flex items-center gap-2 rounded-full bg-accent-soft px-3 py-1 text-sm font-semibold text-accent">
-              {t("web.welcome.eyebrow")}
+        <div className="mx-auto grid w-full max-w-6xl items-center gap-12 px-4 pt-6 pb-14 sm:px-8 lg:grid-cols-[1.2fr_1fr] lg:gap-14 lg:pt-12 lg:pb-16">
+          <section className="min-w-0 animate-fade-in">
+            <p className="flex">
+              <TileBadge className="bg-accent-soft py-2 leading-tight text-accent-text">{t("web.welcome.eyebrow")}</TileBadge>
             </p>
-            <h1 className="mt-5 text-4xl leading-[1.08] font-bold tracking-tight text-balance text-text sm:text-5xl lg:text-[3.5rem]">
+            <h1 className="mt-5 font-display text-5xl leading-[0.95] font-bold tracking-tight text-balance wrap-break-word text-text rtl:leading-[1.15] rtl:tracking-normal sm:text-6xl xl:text-7xl">
               {t("web.welcome.title")}
             </h1>
-            <p className="mt-5 max-w-xl text-lg leading-relaxed text-pretty text-muted">{t("web.welcome.body")}</p>
+            <p className="mt-6 max-w-xl text-lg leading-relaxed text-pretty text-muted">{t("web.welcome.body")}</p>
 
             <div className="mt-8 flex flex-col gap-3 sm:flex-row sm:items-center">
               <Link
@@ -94,20 +95,20 @@ export function WelcomeScreen() {
           </div>
         </div>
 
-        <section aria-labelledby="welcome-benefits" className="border-t border-frosted-border bg-surface-soft/60">
-          <div className="mx-auto w-full max-w-6xl px-4 py-12 sm:px-8 lg:py-16">
-            <h2 id="welcome-benefits" className="text-xl font-bold text-text">
+        <section aria-labelledby="welcome-benefits">
+          <div className="mx-auto w-full max-w-6xl px-4 pb-12 sm:px-8 lg:pb-16">
+            <h2 id="welcome-benefits" className="text-[26px] leading-tight font-bold text-text">
               {t("web.welcome.benefitsTitle")}
             </h2>
-            <ul className="mt-6 grid gap-4 md:grid-cols-3">
+            <ul className="mt-5 grid gap-4 md:grid-cols-3">
               {BENEFITS.map(({ icon: Icon, title, body }) => (
-                <li key={title} className="rounded-3xl border border-frosted-border bg-surface p-6 shadow-soft">
-                  <span className="grid h-11 w-11 place-items-center rounded-2xl bg-primary-soft text-primary">
+                <Tile as="li" key={title} className="p-5 sm:p-6">
+                  <span className="grid h-10 w-10 place-items-center rounded-xl bg-accent-soft text-accent-text">
                     <Icon aria-hidden className="h-5 w-5" />
                   </span>
-                  <h3 className="mt-4 text-base font-bold text-text">{t(title)}</h3>
+                  <h3 className="mt-4 text-lg font-bold text-text">{t(title)}</h3>
                   <p className="mt-1.5 text-[15px] leading-relaxed text-pretty text-muted">{t(body)}</p>
-                </li>
+                </Tile>
               ))}
             </ul>
           </div>

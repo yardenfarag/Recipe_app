@@ -16,6 +16,7 @@ import { ErrorAlert } from "@/components/ui/Alert";
 import { Button, buttonClasses } from "@/components/ui/Button";
 import { usePageTitle } from "@/components/ui/PageHeader";
 import { EmptyState, ErrorState, LoadingState } from "@/components/ui/States";
+import { Tile } from "@/components/ui/Tile";
 import { ShareSaveError, useSharedRecipe } from "@/lib/share/useSharedRecipe";
 import { useSaveAfterSignIn } from "@/lib/useSaveAfterSignIn";
 
@@ -82,36 +83,33 @@ export default function SharedRecipePage() {
   }
   if (state.status === "error") return <ErrorState title={t("recipe.loadFailedTitle")} trackId="shared_recipe.load_error" onRetry={state.reload} />;
 
+  // One tile: what saving means, and the button that does it.
   const actions = (
-    <>
-      {state.libraryRecipeId ? (
-        <Link href={`/recipe/${state.libraryRecipeId}`} data-track="shared_recipe.open_in_library" className={buttonClasses({ size: "lg" })}>
-          <BookOpenCheck aria-hidden className="h-5 w-5" />
-          {t("hub.openInLibrary")}
-        </Link>
-      ) : (
-        <Button
-          size="lg"
-          trackId="shared_recipe.save"
-          busy={saving || savingAfterSignIn}
-          onClick={() => (user ? void save() : router.push(`${signInHere("signup", "save=1")}&reason=shared_recipe`))}
-        >
-          {saving ? null : <BookmarkPlus aria-hidden className="h-5 w-5" />}
-          {t("recipe.shareSave")}
-        </Button>
-      )}
-      <div className="basis-full">
-        {saveError ? (
-          <div className="mb-2">
-            <ErrorAlert>{saveError}</ErrorAlert>
-          </div>
-        ) : null}
-        <p className="max-w-2xl text-sm leading-relaxed text-pretty text-muted">
+    <Tile className="flex basis-full flex-col gap-4 p-5">
+      {saveError ? <ErrorAlert>{saveError}</ErrorAlert> : null}
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between sm:gap-6">
+        <p className="max-w-2xl min-w-0 text-sm leading-relaxed text-pretty text-muted">
           {user ? null : <span className="font-semibold text-text">{t("web.guest.saveNeedsAccount")} </span>}
           {state.libraryRecipeId ? t("web.share.inLibrary") : t("recipe.shareSaveHint")}
         </p>
+        {state.libraryRecipeId ? (
+          <Link href={`/recipe/${state.libraryRecipeId}`} data-track="shared_recipe.open_in_library" className={buttonClasses({ size: "lg" })}>
+            <BookOpenCheck aria-hidden className="h-5 w-5" />
+            {t("hub.openInLibrary")}
+          </Link>
+        ) : (
+          <Button
+            size="lg"
+            trackId="shared_recipe.save"
+            busy={saving || savingAfterSignIn}
+            onClick={() => (user ? void save() : router.push(`${signInHere("signup", "save=1")}&reason=shared_recipe`))}
+          >
+            {saving ? null : <BookmarkPlus aria-hidden className="h-5 w-5" />}
+            {t("recipe.shareSave")}
+          </Button>
+        )}
       </div>
-    </>
+    </Tile>
   );
 
   return <RecipeView display={state.display} back={user ? undefined : null} actions={actions} readOnly />;

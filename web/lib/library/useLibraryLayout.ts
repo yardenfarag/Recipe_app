@@ -15,8 +15,8 @@ function read(): LibraryLayout {
   } catch {
     // Storage blocked: use the default.
   }
-  // A grid suits a wide screen; on a phone a list shows more at a glance.
-  return window.matchMedia("(min-width: 768px)").matches ? "grid" : "list";
+  // Photo cards everywhere: five or so across on a desktop, two on a phone (PIN-163).
+  return "grid";
 }
 
 const subscribe = (listener: () => void) => {
@@ -28,7 +28,7 @@ const subscribe = (listener: () => void) => {
   };
 };
 
-/** Cards or rows. Until chosen it follows the screen size; a choice is remembered in this browser. */
+/** Cards or rows. Cards until chosen otherwise; a choice is remembered in this browser. */
 export function useLibraryLayout() {
   const layout = useSyncExternalStore(subscribe, read, () => "grid" as LibraryLayout);
 

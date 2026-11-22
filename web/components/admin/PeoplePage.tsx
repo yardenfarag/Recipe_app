@@ -153,7 +153,7 @@ export function PeoplePage({
                             placeholder="+10 or -5"
                             value={amounts[person.id] ?? ""}
                             onChange={(e) => setAmounts((current) => ({ ...current, [person.id]: e.target.value }))}
-                            className="h-9 w-24 rounded-full border border-border bg-surface px-3 text-sm text-text placeholder:text-muted/80 focus:border-primary focus:ring-4 focus:ring-primary/15"
+                            className="h-10 w-28 rounded-btn border border-border bg-surface px-3 text-sm text-text transition-[border-color,box-shadow] placeholder:text-muted/80 hover:border-muted/60 focus:border-primary focus:ring-4 focus:ring-primary/15"
                           />
                           <Button
                             type="submit"

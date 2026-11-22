@@ -62,7 +62,7 @@ function CheckoutReturn() {
           <span
             aria-hidden
             className={cn(
-              "grid h-16 w-16 place-items-center rounded-full",
+              "grid h-16 w-16 place-items-center rounded-[20px]",
               added ? "animate-pop-in bg-success-soft text-success" : state.kind === "slow" ? "bg-warning-soft text-warning" : "bg-primary-soft",
             )}
           >
@@ -78,7 +78,7 @@ function CheckoutReturn() {
             {message}
           </p>
           {added && quota ? (
-            <p className="mt-2 rounded-full bg-accent-soft px-3 py-1.5 text-sm font-semibold text-accent">
+            <p className="mt-3 rounded-lg bg-accent-soft px-3 py-1.5 font-display text-sm font-bold text-accent-text tabular-nums">
               {t("settings.creditsTotal", { count: quota.totalCredits })}
             </p>
           ) : null}

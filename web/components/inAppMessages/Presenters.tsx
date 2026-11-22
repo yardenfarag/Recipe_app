@@ -6,6 +6,7 @@ import { useEffect, type ReactNode } from "react";
 
 import { needsCloseButton, type MessageView } from "@shared/lib/inAppMessageView";
 
+import { Button } from "@/components/ui/Button";
 import { IconButton } from "@/components/ui/IconButton";
 import { logTap } from "@/lib/activity/activityLog";
 import { cn } from "@/lib/cn";
@@ -102,7 +103,7 @@ function ModalRoot({ view, handlers, children }: { view: MessageView; handlers: 
 
 const ALERT = "in_app_message.alert";
 export const ALERT_CARD_CLASS =
-  "relative w-full max-w-md rounded-3xl border border-frosted-border bg-surface p-6 shadow-lift";
+  "relative w-full max-w-md rounded-tile border border-border bg-surface p-6 shadow-lift";
 
 /** The alert card's inside. A dismissible alert whose buttons all lead somewhere also gets a Close button. */
 export function AlertCard({ view, handlers, dialog = false }: { view: MessageView; handlers: MessageHandlers; dialog?: boolean }) {
@@ -152,7 +153,7 @@ export function SheetPanel({ view, handlers, dialog = false }: { view: MessageVi
     <>
       <div aria-hidden className="mx-auto mt-2.5 h-1.5 w-10 rounded-full bg-border sm:hidden" />
       <div className="flex justify-end px-4 pt-3 sm:pt-4">
-        {view.dismissible ? <CloseControl view={view} trackId={`${SHEET}.close`} onClose={handlers.onClose} /> : <span className="h-10" />}
+        {view.dismissible ? <CloseControl view={view} trackId={`${SHEET}.close`} onClose={handlers.onClose} /> : <span className="h-11" />}
       </div>
       <div className="min-h-0 flex-1 overflow-y-auto px-6 pb-6">
         <MessageBody
@@ -179,8 +180,8 @@ export function SheetPresenter({ view, handlers, onShown }: PresenterProps) {
         {...modalGuards(view, SHEET)}
         className={cn(
           "fixed z-[60] flex flex-col bg-surface shadow-lift outline-none",
-          "inset-x-0 bottom-0 max-h-[88dvh] animate-slide-up rounded-t-3xl pb-[env(safe-area-inset-bottom)]",
-          "sm:inset-x-auto sm:inset-y-0 sm:end-0 sm:max-h-none sm:w-full sm:max-w-md sm:animate-slide-in-end sm:rounded-none sm:rounded-s-3xl sm:pb-0",
+          "inset-x-0 bottom-0 max-h-[88dvh] animate-slide-up rounded-t-tile pb-[env(safe-area-inset-bottom)]",
+          "sm:inset-x-auto sm:inset-y-0 sm:end-0 sm:max-h-none sm:w-full sm:max-w-md sm:animate-slide-in-end sm:rounded-none sm:rounded-s-tile sm:pb-0",
         )}
       >
         <SheetPanel view={view} handlers={handlers} dialog />
@@ -211,14 +212,9 @@ export function FullscreenPage({
       <div className="flex items-center justify-between gap-3 px-4 pt-[max(env(safe-area-inset-top),0.75rem)]">
         {onAdminHide ? (
           // English only, like the admin pages: only admins ever see it.
-          <button
-            type="button"
-            data-track={`${FULLSCREEN}.admin_hide`}
-            onClick={onAdminHide}
-            className="min-h-10 rounded-full border border-border bg-surface px-3.5 text-[13px] font-semibold text-muted hover:bg-surface-soft"
-          >
+          <Button variant="outline" size="sm" trackId={`${FULLSCREEN}.admin_hide`} onClick={onAdminHide} className="text-[13px] text-muted">
             Admin only: hide until this tab is closed
-          </button>
+          </Button>
         ) : (
           <span />
         )}

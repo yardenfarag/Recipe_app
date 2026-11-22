@@ -6,7 +6,7 @@ import type { Recipe } from "@shared/types/recipe";
 
 import { EditTagsDialog } from "@/components/recipe/actions/EditTagsDialog";
 import { fakeActions } from "@/components/recipe/actions/fakeActions";
-import { RecipeActionBar } from "@/components/recipe/actions/RecipeActionBar";
+import { MakeItYours } from "@/components/recipe/actions/MakeItYours";
 import { RemixSheet } from "@/components/recipe/actions/RemixSheet";
 import { SwapDialog } from "@/components/recipe/actions/SwapDialog";
 import { addRecipeActionStrings } from "@/components/recipe/actions/testStrings";
@@ -241,21 +241,38 @@ describe("EditTagsDialog", () => {
   });
 });
 
-describe("RecipeActionBar", () => {
-  it("has Remix, Translate and I cooked this, each doing its thing", () => {
+describe("MakeItYours", () => {
+  it("has Remix and Translate, each opening its dialog", () => {
     const actions = fakeActions(display);
-    wrap(<RecipeActionBar actions={actions} />);
+    wrap(<MakeItYours actions={actions} servings={2} />);
     const bar = screen.getByRole("group", { name: "Actions for Pancakes" });
-    fireEvent.click(within(bar).getByRole("button", { name: "Remix" }));
+    fireEvent.click(within(bar).getByRole("button", { name: /Remix it/ }));
     expect(actions.open).toHaveBeenCalledWith({ kind: "remix" });
-    fireEvent.click(within(bar).getByRole("button", { name: "Translate" }));
+    fireEvent.click(within(bar).getByRole("button", { name: /Translate/ }));
     expect(actions.open).toHaveBeenCalledWith({ kind: "translate" });
-    fireEvent.click(within(bar).getByRole("button", { name: "I cooked this" }));
-    expect(actions.markCooked).toHaveBeenCalledOnce();
   });
 
-  it("says 'Cooked it again' once it has been cooked", () => {
-    wrap(<RecipeActionBar actions={fakeActions({ ...display, recipe: { ...recipe, last_cooked_at: "2026-11-01T00:00:00Z" } })} />);
-    expect(screen.getByRole("button", { name: "Cooked it again" })).toBeDefined();
+  it("Swap asks which ingredient, then opens the swap for it at the servings on screen", async () => {
+    const actions = fakeActions(display);
+    wrap(<MakeItYours actions={actions} servings={display.recipe.servings * 2} />);
+    fireEvent.click(screen.getByRole("button", { name: /Swap an ingredient/ }));
+    const picker = await screen.findByRole("dialog", { name: "Swap an ingredient" });
+    const first = display.ingredients[0];
+    fireEvent.click(within(picker).getByRole("button", { name: first.name }));
+    expect(actions.open).toHaveBeenCalledWith({
+      kind: "swap",
+      target: { index: 0, servingsShown: display.recipe.servings * 2, ingredient: expect.objectContaining({ name: first.name }) },
+    });
+  });
+
+  it("the kitchen fix starts the fix when there is something to fix, and otherwise leads to the kitchen settings", () => {
+    const fixable = fakeActions(display, { canFix: true });
+    const { unmount } = wrap(<MakeItYours actions={fixable} servings={2} />);
+    fireEvent.click(screen.getByRole("button", { name: /Fix for my kitchen/ }));
+    expect(fixable.open).toHaveBeenCalledWith({ kind: "fix" });
+    unmount();
+
+    wrap(<MakeItYours actions={fakeActions(display)} servings={2} />);
+    expect(screen.getByRole("link", { name: /Fix for my kitchen/ }).getAttribute("href")).toBe("/settings/recipe");
   });
 });

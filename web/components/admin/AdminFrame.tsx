@@ -44,8 +44,8 @@ export function AdminFrame({ children }: { children: ReactNode }) {
             data-track={`admin.nav.${page.id}`}
             aria-current={current === page.id ? "page" : undefined}
             className={cn(
-              "inline-flex h-9 items-center rounded-full px-3.5 text-sm font-semibold transition-colors",
-              current === page.id ? "bg-primary-soft text-primary" : "text-muted hover:bg-element hover:text-text",
+              "inline-flex h-10 items-center rounded-btn px-3.5 text-sm font-semibold transition-colors pointer-coarse:h-11",
+              current === page.id ? "bg-element text-text" : "text-muted hover:bg-element hover:text-text active:bg-selected",
             )}
           >
             {page.label}

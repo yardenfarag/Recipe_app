@@ -9,6 +9,7 @@ import { FREE_MONTHLY_EXTRACT_LIMIT } from "@shared/lib/quotas";
 
 import { GetTheAppCard } from "@/components/credits/GetTheAppCard";
 import { PackList } from "@/components/credits/PackList";
+import { buttonClasses } from "@/components/ui/Button";
 import { Dialog, DialogContent } from "@/components/ui/Dialog";
 import { capturePaywallViewed } from "@/lib/analytics";
 import { useCreditBalance } from "@/lib/credits/balance";
@@ -70,7 +71,7 @@ export function OutOfCreditsDialog({
       >
         <div className="space-y-4">
           {total != null ? (
-            <p className="inline-flex items-center gap-2 rounded-full bg-accent-soft px-3 py-1.5 text-sm font-semibold text-accent">
+            <p className="inline-flex items-center gap-2 rounded-lg bg-accent-soft px-3 py-1.5 font-display text-sm font-bold text-accent-text tabular-nums">
               <Coins aria-hidden className="h-4 w-4" />
               {t("settings.creditsTotal", { count: total })}
             </p>
@@ -80,7 +81,7 @@ export function OutOfCreditsDialog({
             href="/settings/credits"
             data-track="credits.see_all"
             onClick={() => onOpenChange(false)}
-            className="inline-flex items-center gap-1 rounded-lg text-sm font-semibold text-primary underline-offset-4 hover:underline"
+            className={buttonClasses({ variant: "link", className: "-ms-1 gap-1" })}
           >
             {t("web.credits.seeAll")}
             <ChevronRight aria-hidden className="h-4 w-4 rtl:rotate-180" />

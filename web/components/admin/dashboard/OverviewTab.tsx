@@ -72,7 +72,7 @@ export function OverviewTab({
                 <span
                   aria-hidden
                   className={cn(
-                    "grid h-5 w-5 shrink-0 place-items-center rounded-full text-xs font-bold",
+                    "grid h-5 w-5 shrink-0 place-items-center rounded-md text-xs font-bold",
                     h.tone === "good" ? "bg-success-soft text-success" : h.tone === "bad" ? "bg-danger-soft text-danger" : "bg-element text-muted",
                   )}
                 >

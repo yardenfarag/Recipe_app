@@ -30,8 +30,24 @@ const pairs: [Key, Key][] = [
   ['primary', 'surface'],
   ['primary', 'primarySoft'],
   ['onPrimary', 'primary'],
+  // The brand colour as text (chips, amounts, small-caps labels), on every surface it sits on.
+  ['primaryText', 'background'],
+  ['primaryText', 'surface'],
+  ['primaryText', 'backgroundElement'],
+  ['primaryText', 'backgroundSelected'],
+  ['primaryText', 'primarySoft'],
+  ['accentText', 'background'],
+  ['accentText', 'surface'],
+  ['accentText', 'backgroundElement'],
+  ['accentText', 'accentSoft'],
+  // Small-caps labels on tinted tiles.
+  ['textSecondary', 'primarySoft'],
+  ['textSecondary', 'accentSoft'],
+  ['text', 'primarySoft'],
   // Accent fills (e.g. Guess mode) reuse onPrimary for their label.
   ['onPrimary', 'accent'],
+  // The danger button's label.
+  ['surface', 'danger'],
   ['accent', 'background'],
   ['accent', 'surface'],
   ['accent', 'accentSoft'],

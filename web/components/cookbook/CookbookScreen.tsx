@@ -17,6 +17,7 @@ import { SnapLink } from "@/components/shell/ComingSoon";
 import { Button } from "@/components/ui/Button";
 import { PageHeader } from "@/components/ui/PageHeader";
 import { EmptyState, ErrorState, LoadingState } from "@/components/ui/States";
+import { Tile } from "@/components/ui/Tile";
 import { addAllToBook, moveInBook, readDraft, removeFromBook, writeDraft } from "@/lib/cookbook/bookSelection";
 import { useCookbookBuild } from "@/lib/cookbook/useCookbookBuild";
 import { useCollections } from "@/lib/library/useCollections";
@@ -150,23 +151,26 @@ export function CookbookScreen() {
   return (
     <>
       {header}
-      <div className="grid items-start gap-8 lg:grid-cols-[minmax(0,1fr)_minmax(21rem,25rem)]">
-        <section aria-labelledby="cookbook-pick-heading" className="min-w-0">
-          <h2 id="cookbook-pick-heading" className="text-lg font-bold text-text">
-            {t("cookbook.pickStepTitle")}
-          </h2>
-          <p className="mt-1 mb-4 text-[15px] text-muted">{t("web.cookbook.pickHint")}</p>
-          <RecipePicker
-            recipes={recipes}
-            collections={collections}
-            selectedIds={ids}
-            onChange={changeIds}
-            loadingMore={loadingMore}
-            initialCollectionId={startCollectionId}
-          />
+      <div className="grid items-start gap-4 lg:grid-cols-[minmax(0,1fr)_minmax(21rem,25rem)]">
+        <div className="min-w-0">
+          <Tile as="section" aria-labelledby="cookbook-pick-heading" className="p-5 sm:p-6">
+            <h2 id="cookbook-pick-heading" className="text-[26px] leading-tight font-bold text-text">
+              {t("cookbook.pickStepTitle")}
+            </h2>
+            <p className="mt-1.5 mb-5 text-[15px] text-muted">{t("web.cookbook.pickHint")}</p>
+            <RecipePicker
+              recipes={recipes}
+              collections={collections}
+              selectedIds={ids}
+              onChange={changeIds}
+              loadingMore={loadingMore}
+              initialCollectionId={startCollectionId}
+            />
+          </Tile>
           {book.length > 0 ? (
-            // Phones and tablets: the book is below the list, so its button stays in reach while picking.
-            <div className="sticky bottom-[calc(5rem+env(safe-area-inset-bottom))] z-20 mt-4 flex items-center gap-3 rounded-full border border-frosted-border bg-surface/95 p-2 ps-5 shadow-lift backdrop-blur md:bottom-6 lg:hidden">
+            // Phones and tablets: the book is below the list, so its button stays in reach while picking. The bar
+            // floats over the list's tile, so it keeps a shadow.
+            <div className="sticky bottom-[calc(5rem+env(safe-area-inset-bottom))] z-20 mt-4 flex items-center gap-3 rounded-[22px] border border-border bg-surface/95 p-2 ps-5 shadow-lift backdrop-blur md:bottom-6 lg:hidden">
               <a href="#cookbook-book" data-track="cookbook.jump_to_book" className="min-w-0 flex-1 truncate text-sm font-semibold text-text hover:underline">
                 {t("web.cookbook.yourBook")} · <span className="tabular-nums">{countText}</span>
               </a>
@@ -175,9 +179,9 @@ export function CookbookScreen() {
               </Button>
             </div>
           ) : null}
-        </section>
+        </div>
 
-        <aside id="cookbook-book" aria-labelledby="cookbook-book-heading" className="scroll-mt-20 lg:sticky lg:top-10 lg:self-start">
+        <aside id="cookbook-book" aria-labelledby="cookbook-book-heading" className="scroll-mt-20 lg:sticky lg:top-7 lg:self-start">
           <BookPanel
             title={shownTitle}
             onTitleChange={(next) => {

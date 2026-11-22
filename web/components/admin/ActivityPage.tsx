@@ -95,7 +95,7 @@ export function ActivityPage({
             {data.sessions.map((session) => {
               const open = openSession === session.sessionId;
               return (
-                <article key={session.sessionId} className="rounded-3xl border border-frosted-border bg-surface p-4 shadow-soft">
+                <article key={session.sessionId} className="rounded-3xl border border-border bg-surface p-4">
                   <Button
                     variant="ghost"
                     trackId="admin.activity.session.toggle"
@@ -113,12 +113,12 @@ export function ActivityPage({
                         {session.screenCount} screens · {session.tapCount} taps
                       </span>
                       {session.authEvents.length ? (
-                        <span className="mt-1 block text-xs font-semibold text-primary">
+                        <span className="mt-1 block text-xs font-semibold text-primary-text">
                           {session.authEvents.map((name) => name.replace("auth.", "")).join(" · ")}
                         </span>
                       ) : null}
                     </span>
-                    <span className="flex shrink-0 items-center gap-1 text-xs font-semibold text-primary">
+                    <span className="flex shrink-0 items-center gap-1 text-xs font-semibold text-primary-text">
                       {open ? "Hide" : "Show"} timeline
                       <ChevronDown aria-hidden className={cn("h-4 w-4 transition-transform", open && "rotate-180")} />
                     </span>
@@ -168,7 +168,7 @@ function SessionTimeline({ sessionId, load }: { sessionId: string; load: typeof 
           <span
             className={cn(
               "min-w-0 flex-1 break-words",
-              event.kind === "tap" ? "text-text" : event.kind === "auth" ? "font-bold text-warning" : "font-bold text-primary",
+              event.kind === "tap" ? "text-text" : event.kind === "auth" ? "font-bold text-warning" : "font-bold text-primary-text",
             )}
           >
             {event.kind === "screen" ? `→ ${event.name}` : event.kind === "auth" ? `auth ${event.name}` : `   tap ${event.name}`}

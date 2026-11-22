@@ -58,7 +58,7 @@ export type ToneClasses = {
 };
 
 export const TONE_CLASSES: Record<Tone, ToneClasses> = {
-  info: { fill: "bg-primary text-on-primary", soft: "bg-primary-soft", text: "text-primary", border: "border-primary" },
+  info: { fill: "bg-primary text-on-primary", soft: "bg-primary-soft", text: "text-primary-text", border: "border-primary" },
   success: { fill: "bg-success text-bg", soft: "bg-success-soft", text: "text-success", border: "border-success" },
   warning: { fill: "bg-warning text-bg", soft: "bg-warning-soft", text: "text-warning", border: "border-warning" },
   critical: { fill: "bg-danger text-bg", soft: "bg-danger-soft", text: "text-danger", border: "border-danger" },

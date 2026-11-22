@@ -18,7 +18,7 @@ const FILTERS: Filter[] = ["all", "live", "scheduled", "draft", "stopped", "ende
 
 const STATUS_CLASS: Record<MessageStatus, string> = {
   draft: "border-border text-muted",
-  scheduled: "border-primary text-primary",
+  scheduled: "border-primary text-primary-text",
   live: "border-success text-success",
   stopped: "border-warning text-warning",
   ended: "border-border text-muted",
@@ -100,7 +100,7 @@ export function MessageList({
       {loading && messages.length === 0 ? (
         <Skeleton className="h-40" />
       ) : shown.length === 0 ? (
-        <div className="rounded-3xl border border-frosted-border bg-surface px-5 shadow-soft">
+        <div className="rounded-3xl border border-border bg-surface px-5">
           <EmptyLine>
             {messages.length === 0
               ? "No messages yet. Start with “New message”: pick a preset, write the words, then send it to yourself first."
@@ -114,10 +114,10 @@ export function MessageList({
             const busy = busyId === message.id;
             const english = pickContent(message, "en");
             return (
-              <li key={message.id} className="flex min-w-0 flex-col rounded-3xl border border-frosted-border bg-surface p-5 shadow-soft">
+              <li key={message.id} className="flex min-w-0 flex-col rounded-3xl border border-border bg-surface p-5">
                 <div className="flex items-start justify-between gap-3">
                   <h2 className="min-w-0 text-base font-bold break-words text-text">{message.name}</h2>
-                  <span className={cn("shrink-0 rounded-full border px-2.5 py-0.5 text-xs font-bold", STATUS_CLASS[message.status])}>
+                  <span className={cn("shrink-0 rounded-md border px-2 py-0.5 text-xs font-bold", STATUS_CLASS[message.status])}>
                     <span className="sr-only">Status </span>
                     {STATUS_LABELS[message.status]}
                   </span>

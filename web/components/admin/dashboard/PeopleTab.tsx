@@ -147,7 +147,7 @@ export function PeopleTab({ data, onOpenPerson }: { data: Dashboard; onOpenPerso
               </thead>
               <tbody>
                 {rows.map((p) => (
-                  <tr key={p.id} className="hover:bg-surface-soft">
+                  <tr key={p.id} className="hover:bg-element">
                     <td className={cn(tdClass, "max-w-64")}>
                       <Button
                         variant="ghost"

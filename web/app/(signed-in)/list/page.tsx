@@ -20,6 +20,7 @@ import { ConfirmDialog } from "@/components/ui/Dialog";
 import { IconButton } from "@/components/ui/IconButton";
 import { PageHeader } from "@/components/ui/PageHeader";
 import { EmptyState, ErrorState, LoadingState } from "@/components/ui/States";
+import { Tile, TileBadge, TileLabel } from "@/components/ui/Tile";
 import { cn } from "@/lib/cn";
 import { displayOrder, groupShoppingList, neighbourId } from "@/lib/list/shoppingListView";
 import { usePantryStaples } from "@/lib/list/usePantryStaples";
@@ -29,7 +30,7 @@ type Notice = { message: string; action?: { label: string; trackId: string; run:
 type Confirm = { kind: "checked" } | { kind: "all" } | { kind: "combine"; name: string; count: number } | null;
 
 const menuItemClass =
-  "relative flex h-10 cursor-pointer select-none items-center gap-3 rounded-xl px-3 text-[15px] text-text outline-none data-[disabled]:pointer-events-none data-[disabled]:opacity-50 data-[highlighted]:bg-element";
+  "relative flex h-10 cursor-pointer select-none items-center gap-3 rounded-xl px-3 text-[15px] text-text outline-none pointer-coarse:h-11 data-[disabled]:pointer-events-none data-[disabled]:opacity-50 data-[highlighted]:bg-element";
 
 /**
  * The shopping list: what to buy, grouped the way a shop is laid out (aisles in columns on a wide screen), with
@@ -212,14 +213,20 @@ export default function ListPage() {
             </Button>
             <Menu.Root>
               <Menu.Trigger asChild>
-                <IconButton label={t("a11y.moreOptions")} trackId="shopping_list.more" icon={<MoreHorizontal className="h-5 w-5" />} disabled={items.length === 0} />
+                <IconButton
+                  variant="tile"
+                  label={t("a11y.moreOptions")}
+                  trackId="shopping_list.more"
+                  icon={<MoreHorizontal className="h-5 w-5" />}
+                  disabled={items.length === 0}
+                />
               </Menu.Trigger>
               <Menu.Portal>
                 <Menu.Content
                   align="end"
                   sideOffset={6}
                   collisionPadding={12}
-                  className="z-50 min-w-52 animate-pop-in rounded-2xl border border-frosted-border bg-surface p-1.5 shadow-lift"
+                  className="z-50 min-w-52 animate-pop-in rounded-2xl border border-border bg-surface p-1.5 shadow-lift"
                 >
                   <Menu.Item className={menuItemClass} data-track="shopping_list.clear_checked" disabled={checkedCount === 0} onSelect={() => setConfirm({ kind: "checked" })}>
                     <Eraser aria-hidden className="h-[18px] w-[18px] text-muted" />
@@ -274,7 +281,7 @@ export default function ListPage() {
           ) : (
             <>
               {groups.length > 0 ? (
-                <div className={cn(wide && "xl:columns-2 xl:gap-5")}>
+                <div className={cn(wide && "xl:columns-2 xl:gap-4")}>
                   {groups.map((group) => (
                     <Group key={group.aisle} title={t(`list.aisles.${group.aisle}`)} count={group.items.length}>
                       {group.items.map((item) => (
@@ -362,19 +369,20 @@ function Group({
 }) {
   const { t } = useTranslation();
   return (
-    <section className={cn("mb-4 break-inside-avoid rounded-3xl border border-frosted-border bg-surface p-2 shadow-soft", muted && "bg-surface-soft shadow-none")}>
-      <div className="flex min-h-10 items-center justify-between gap-3 px-3 pt-1">
-        <h2 className="flex items-center gap-2 text-base font-bold text-text">
+    // The checked group is an outline with no fill, so what is left to buy stands out.
+    <Tile as="section" className={cn("mb-4 break-inside-avoid p-2 sm:p-3", muted && "bg-transparent")}>
+      <div className="flex min-h-11 items-center justify-between gap-3 ps-3 pe-1">
+        <TileLabel as="h2" className="flex min-w-0 items-center gap-2.5">
           {title}
-          <span aria-hidden className="grid h-6 min-w-6 place-items-center rounded-full bg-primary-soft px-2 text-xs font-bold text-primary tabular-nums">
+          <TileBadge aria-hidden className="tabular-nums">
             {count}
-          </span>
+          </TileBadge>
           <span className="sr-only">, {t(count === 1 ? "a11y.itemCountOne" : "a11y.itemCountOther", { count })}</span>
-        </h2>
+        </TileLabel>
         {action}
       </div>
       <ul className="mt-1 flex flex-col">{children}</ul>
-    </section>
+    </Tile>
   );
 }
 
@@ -408,7 +416,14 @@ function NoticeBar({ notice, onDismiss, onError }: { notice: Notice; onDismiss: 
           {notice.action.label}
         </Button>
       ) : null}
-      <IconButton label={t("common.dismiss")} trackId="shopping_list.notice.dismiss" icon={<X className="h-4 w-4" />} tooltip={false} onClick={onDismiss} className="h-8 w-8" />
+      <IconButton
+        label={t("common.dismiss")}
+        trackId="shopping_list.notice.dismiss"
+        icon={<X className="h-4 w-4" />}
+        tooltip={false}
+        onClick={onDismiss}
+        className="h-9 w-9 pointer-coarse:h-11 pointer-coarse:w-11"
+      />
     </div>
   );
 }

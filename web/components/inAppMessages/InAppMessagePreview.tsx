@@ -29,18 +29,22 @@ export function InAppMessagePreview({ message, language }: { message: InAppMessa
   let frame: ReactNode;
   switch (view.presentation) {
     case "banner":
-      frame = <BannerPresenter view={view} handlers={inertHandlers} edge={message.bannerPosition ?? "top"} />;
+      frame = (
+        <div className="p-3">
+          <BannerPresenter view={view} handlers={inertHandlers} edge={message.bannerPosition ?? "top"} />
+        </div>
+      );
       break;
     case "sheet":
       frame = (
-        <div {...own} className="ms-auto flex max-h-[32rem] w-full max-w-md flex-col rounded-3xl bg-surface shadow-lift">
+        <div {...own} className="ms-auto flex max-h-[32rem] w-full max-w-md flex-col rounded-2xl bg-surface shadow-lift">
           <SheetPanel view={view} handlers={inertHandlers} />
         </div>
       );
       break;
     case "fullscreen":
       frame = (
-        <div {...own} className="min-h-[28rem] overflow-hidden rounded-3xl bg-bg">
+        <div {...own} className="min-h-[28rem] overflow-hidden rounded-2xl bg-bg">
           <FullscreenPage view={view} handlers={inertHandlers} />
         </div>
       );
@@ -60,7 +64,7 @@ export function InAppMessagePreview({ message, language }: { message: InAppMessa
       inert
       data-presentation={view.presentation}
       className={cn(
-        "overflow-hidden rounded-3xl border border-border",
+        "overflow-hidden rounded-tile border border-border",
         view.presentation === "banner" ? "bg-bg" : "bg-overlay p-3",
       )}
     >

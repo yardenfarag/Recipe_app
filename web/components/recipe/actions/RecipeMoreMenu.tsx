@@ -1,26 +1,12 @@
 "use client";
 
 import * as Menu from "@radix-ui/react-dropdown-menu";
-import {
-  ChefHat,
-  Ellipsis,
-  FolderPlus,
-  Languages,
-  NotebookPen,
-  PencilLine,
-  Share2,
-  Tags,
-  Undo2,
-  WandSparkles,
-  Wrench,
-  type LucideIcon,
-} from "lucide-react";
+import { Ellipsis, FolderPlus, Languages, NotebookPen, PencilLine, Tags, Trash2, Undo2, Wrench, type LucideIcon } from "lucide-react";
 import Link from "next/link";
-import { forwardRef, type ComponentPropsWithoutRef } from "react";
 import { useTranslation } from "react-i18next";
 
 import type { RecipeActions } from "@/components/recipe/actions/RecipeActionsContext";
-import { Button } from "@/components/ui/Button";
+import { IconButton, type IconButtonVariant } from "@/components/ui/IconButton";
 import { cn } from "@/lib/cn";
 
 const itemClass =
@@ -31,59 +17,22 @@ function ItemIcon({ icon: Icon, className }: { icon: LucideIcon; className?: str
 }
 
 /**
- * The saved recipe's actions, under its notices: Remix, Translate and "I cooked this" as buttons, everything else
- * in "More". Each button opens its dialog, and focus comes back to the button when the dialog closes. Swap sits on
- * each ingredient, Add to list on the ingredients, Edit and Share beside the title.
+ * The saved recipe's "more" menu, in the page's top bar (and on the photo on a phone): edit, collections, tags, the
+ * cook note, then what puts the recipe right (repair, revert, the original language), then delete. Arrow keys move,
+ * Enter chooses, Escape closes and puts focus back on the button. Remix, the kitchen fix, swap and translate have
+ * their own tiles under the photo ("Make it yours"); Share has its own button.
  */
-export function RecipeActionBar({ actions }: { actions: RecipeActions }) {
-  const { t } = useTranslation();
-  const { display } = actions;
-  const { recipe } = display;
-  const cooked = Boolean(recipe.last_cooked_at);
-
-  return (
-    <div role="group" aria-label={t("a11y.recipeActionsFor", { name: display.title })} className="flex flex-wrap items-center gap-2">
-      <Button variant="secondary" trackId="recipe.remix.open" aria-haspopup="dialog" onClick={() => actions.open({ kind: "remix" })}>
-        <WandSparkles aria-hidden className="h-[18px] w-[18px]" />
-        {t("recipe.remix")}
-      </Button>
-      <Button variant="outline" trackId="recipe.translate" aria-haspopup="dialog" onClick={() => actions.open({ kind: "translate" })}>
-        <Languages aria-hidden className="h-[18px] w-[18px] text-primary" />
-        {t("recipe.translate")}
-      </Button>
-      <Button variant="outline" trackId="recipe.cooked.toggle" onClick={() => actions.markCooked("recipe")}>
-        <ChefHat aria-hidden className="h-[18px] w-[18px] text-primary" />
-        {cooked ? t("recipe.cookedAgain") : t("recipe.cookedAction")}
-      </Button>
-      <MoreMenu actions={actions} />
-    </div>
-  );
-}
-
-const MoreButton = forwardRef<HTMLButtonElement, ComponentPropsWithoutRef<"button">>(function MoreButton(props, ref) {
-  const { t } = useTranslation();
-  return (
-    <Button ref={ref} variant="outline" trackId="recipe.more" aria-label={t("a11y.moreOptions")} className="px-3.5" {...props}>
-      <Ellipsis aria-hidden className="h-5 w-5" />
-      <span aria-hidden className="max-sm:sr-only">
-        {t("web.recipeActions.more")}
-      </span>
-    </Button>
-  );
-});
-
-/** Arrow keys move, Enter chooses, Escape closes and puts focus back on the button. */
-function MoreMenu({ actions }: { actions: RecipeActions }) {
+export function RecipeMoreMenu({ actions, onDelete, variant = "tile" }: { actions: RecipeActions; onDelete?: () => void; variant?: IconButtonVariant }) {
   const { t } = useTranslation();
   const { display } = actions;
   const { recipe } = display;
   const tagCount = recipe.tags?.length ?? 0;
-  const fixes = actions.canFix || actions.canRepair || actions.canRevert || display.translated;
+  const fixes = actions.canRepair || actions.canRevert || display.translated;
 
   return (
     <Menu.Root>
       <Menu.Trigger asChild>
-        <MoreButton />
+        <IconButton variant={variant} label={t("a11y.moreOptions")} trackId="recipe.more" tooltip={false} icon={<Ellipsis aria-hidden className="h-5 w-5" />} />
       </Menu.Trigger>
       <Menu.Portal>
         <Menu.Content
@@ -91,17 +40,13 @@ function MoreMenu({ actions }: { actions: RecipeActions }) {
           sideOffset={6}
           collisionPadding={12}
           aria-label={t("a11y.recipeActionsFor", { name: display.title })}
-          className="z-50 min-w-60 animate-pop-in rounded-2xl border border-frosted-border bg-surface p-1.5 shadow-lift"
+          className="z-50 min-w-60 animate-pop-in rounded-2xl border border-border bg-surface p-1.5 shadow-lift"
         >
           <Menu.Item asChild className={itemClass}>
             <Link href={`/recipe/edit?id=${encodeURIComponent(recipe.id)}`} data-track="recipe_actions.edit">
               <ItemIcon icon={PencilLine} className="rtl:-scale-x-100" />
               {t("recipeEditor.titleEdit")}
             </Link>
-          </Menu.Item>
-          <Menu.Item className={itemClass} data-track="recipe.share" disabled={actions.busy.share} onSelect={actions.share}>
-            <ItemIcon icon={Share2} />
-            {t("recipe.share")}
           </Menu.Item>
           <Menu.Item className={itemClass} data-track="recipe.add_to_collection" onSelect={() => actions.open({ kind: "collection" })}>
             <ItemIcon icon={FolderPlus} />
@@ -119,12 +64,6 @@ function MoreMenu({ actions }: { actions: RecipeActions }) {
           ) : null}
 
           {fixes ? <Menu.Separator className="my-1.5 h-px bg-border" /> : null}
-          {actions.canFix ? (
-            <Menu.Item className={itemClass} data-track="recipe.avoid.make_without" onSelect={() => actions.open({ kind: "fix" })}>
-              <ItemIcon icon={WandSparkles} />
-              {t("avoid.makeWithout")}
-            </Menu.Item>
-          ) : null}
           {actions.canRepair ? (
             <Menu.Item className={itemClass} data-track="recipe.repair" disabled={actions.busy.repair} onSelect={() => actions.open({ kind: "repair" })}>
               <ItemIcon icon={Wrench} />
@@ -145,6 +84,16 @@ function MoreMenu({ actions }: { actions: RecipeActions }) {
               <ItemIcon icon={Languages} />
               {t("recipe.showOriginal")}
             </Menu.Item>
+          ) : null}
+
+          {onDelete ? (
+            <>
+              <Menu.Separator className="my-1.5 h-px bg-border" />
+              <Menu.Item className={cn(itemClass, "text-danger")} data-track="recipe.delete" onSelect={onDelete}>
+                <Trash2 aria-hidden className="h-[18px] w-[18px] shrink-0" />
+                {t("common.delete")}
+              </Menu.Item>
+            </>
           ) : null}
         </Menu.Content>
       </Menu.Portal>

@@ -1488,12 +1488,62 @@ export default {
     "notFoundBody": "The link may be old, or the page has moved.",
     "comingSoon": "Coming soon to the web",
     "library": {
-      "sortBy": "Sort by"
+      "sortBy": "Sort by",
+      "tonightsPick": "Tonight’s pick",
+      "startCooking": "Start cooking",
+      "cookAlongVideo": "Cook along with the video",
+      "showAnother": "Show me another",
+      "savedFrom": "saved from {{source}}",
+      "savedFromPhoto": "saved from a photo",
+      "sourcePhoto": "Photo",
+      "sourceWebsite": "Website",
+      "snapNewTitle": "Snap something new",
+      "snapNewBody": "Links, photos, screenshots. One tap and it’s a real recipe.",
+      "listLeft": "List · {{count}} left",
+      "listEmpty": "Nothing to buy. Add ingredients from any recipe.",
+      "listDone": "All ticked off",
+      "listMore": "+{{count}} more",
+      "listOpen": "Open the shopping list",
+      "cookedThisWeek": "Cooked this week",
+      "cookedThisWeekCount": "{{count}} cooked this week",
+      "credits": "{{count}} credits",
+      "creditsOne": "1 credit",
+      "filterAll": "All",
+      "quick": {
+        "under30": "Under 30 min",
+        "veggie": "Veggie",
+        "tiktok": "From TikTok",
+        "neverCooked": "Never cooked"
+      },
+      "quickFilters": "Quick filters",
+      "kitchenTiles": "Tonight",
+      "openRecipe": "Open the recipe",
+      "servingsOne": "1 serving"
     },
     "recipe": {
       "viewOriginal": "View the original",
       "opensInNewTab": "opens in a new tab",
-      "stepVideoTime": "In the video at {{time}}"
+      "stepVideoTime": "In the video at {{time}}",
+      "factTime": "Total time",
+      "factCalories": "Cal / serving",
+      "factCost": "Est. cost",
+      "savedFrom": "Saved from {{source}}",
+      "savedFromPhoto": "Saved from a photo",
+      "cookAlongHint": "{{platform}} · jumps to each step",
+      "makeItYours": "Make it yours",
+      "remixTitle": "Remix it",
+      "remixBody": "Spicier, vegan, for two. Or say what you want in your own words.",
+      "fixTitle": "Fix for my kitchen",
+      "fixBody": "Takes out your allergies and dislikes, and works around tools you don’t have.",
+      "fixNothing": "Nothing to fix here. Set your allergies, dislikes and tools, and Pinch will watch for them.",
+      "swapTitle": "Swap an ingredient",
+      "swapBody": "Missing something? Pick a swap and the steps follow.",
+      "swapPick": "Which ingredient?",
+      "translateBody": "Read it in any of your languages. The original is one tap away.",
+      "addMissing": "Add the missing ones to my list",
+      "haveIt": "I have {{name}}",
+      "tabs": "Ingredients or steps",
+      "steps": "Steps"
     },
     "hub": {
       "source": "Source",
@@ -1532,14 +1582,12 @@ export default {
       "notAPhotoOrPdf": "That file isn’t a photo or a PDF. Try a JPG, PNG, or PDF.",
       "partialMissingSteps": "We found the ingredients, but not the steps. This import was free. Try another link, or a photo of the full recipe.",
       "partialMissingIngredients": "We found the steps, but not the ingredients. This import was free. Try another link, or a photo of the full recipe.",
-      "tipsTitle": "Quicker ways in",
-      "tipPaste": "Copy a link, come back and press {{shortcut}} anywhere on this page.",
-      "tipDrop": "Drag a photo, or a link from another tab, onto this page.",
       "draftWaiting": "You have a recipe that isn’t saved yet: {{title}}",
       "backToSnap": "Back to Snap",
       "discard": "Discard",
       "discardTitle": "Discard this recipe?",
-      "discardBody": "It won’t be saved to your library, and the credit it used isn’t given back."
+      "discardBody": "It won’t be saved to your library, and the credit it used isn’t given back.",
+      "creditsOne": "1 credit available"
     },
     "share": {
       "notFoundBody": "The person who sent it may have stopped sharing it. Ask them for a new link.",
@@ -1744,6 +1792,18 @@ export default {
         "title": "Make Pinch yours",
         "body": "Your account, how you cook, units and more. Theme and language are already in the account menu."
       }
+    },
+    "snapBar": {
+      "label": "Snap a recipe or search yours",
+      "placeholder": "Paste a link, drop a photo, or search “something with eggs”",
+      "placeholderShort": "Paste a link or search",
+      "action": "Snap it",
+      "title": "Snap or search",
+      "hintLink": "Paste a link from TikTok, Instagram, YouTube or any recipe site",
+      "hintPhoto": "Drop or paste a photo, a screenshot or a PDF",
+      "hintSearch": "Type to search the recipes you saved",
+      "addPhoto": "Add a photo or PDF",
+      "open": "Snap or search ({{keys}})"
     }
   }
 } as const;

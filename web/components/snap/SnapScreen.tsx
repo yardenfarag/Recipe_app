@@ -15,14 +15,16 @@ import { PhotoDropZone } from "@/components/snap/PhotoDropZone";
 import { SnapBannerView } from "@/components/snap/SnapBannerView";
 import { SnapIntentSwitch } from "@/components/snap/SnapIntentSwitch";
 import { SnapProgress } from "@/components/snap/SnapProgress";
-import { CreditsCard, QuickTipsCard, WriteRecipeCard } from "@/components/snap/SnapSidebar";
+import { CreditsCard, WriteRecipeCard } from "@/components/snap/SnapSidebar";
 import { Button, buttonClasses } from "@/components/ui/Button";
 import { PageHeader } from "@/components/ui/PageHeader";
 import { TextField } from "@/components/ui/TextField";
+import { Tile, TileLabel } from "@/components/ui/Tile";
 import { compressImageFile } from "@/lib/compressImage";
 import { useCreditBalance } from "@/lib/credits/balance";
 import { isPdfFile, readPdfFile } from "@/lib/readPdfFile";
 import { getSnapDraft } from "@/lib/snap/draft";
+import { takeSnapHandoff } from "@/lib/snap/handoff";
 import { useSnap, type SnapIntent } from "@/lib/snap/useSnap";
 
 /** True while typing somewhere, so a paste there is left alone. */
@@ -120,6 +122,42 @@ export function SnapScreen() {
     [busy, intent, invent, run, setBanner, t],
   );
 
+  /**
+   * A link that arrived without the form (pasted onto the page, or handed over by the Snap bar): show it in the
+   * field and start at once. Already saved? Open it instead of importing (and charging) again.
+   */
+  const startLink = useCallback(
+    (link: string, as: SnapIntent) => {
+      setUrl(link);
+      setUrlError(null);
+      setBanner(null);
+      void fetchRecipeByUrl(link, as === "invent" ? "invented" : "extracted")
+        .catch(() => null)
+        .then((recipe) => {
+          if (recipe) router.push(`/recipe/${recipe.id}`);
+          else void run({ intent: as, source: { type: "url", url: link } });
+        });
+    },
+    [router, run, setBanner],
+  );
+
+  // Sent here by the Snap bar (⌘K, or the one on the Library): start on what it handed over, as if entered here.
+  const handoffTaken = useRef(false);
+  useEffect(() => {
+    if (handoffTaken.current) return;
+    handoffTaken.current = true;
+    const handoff = takeSnapHandoff();
+    if (!handoff) return;
+    if ("file" in handoff) {
+      void importFile(handoff.file);
+      return;
+    }
+    // Starting what the Snap bar handed over is the point of this effect; it runs once.
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    startLink(handoff.url, "extract");
+  }, [importFile, startLink]);
+
+  /** A dropped link waits in the field, since a drag can land by mistake. */
   const takeLink = useCallback((link: string) => {
     setUrl(link);
     setUrlError(null);
@@ -143,7 +181,7 @@ export function SnapScreen() {
     void run({ intent, source: { type: "url", url: target } });
   }
 
-  // Paste anywhere: a photo imports it; a link outside a field lands in the link field, ready to go.
+  // Paste anywhere: a photo imports it, and so does a link pasted outside a field (the tip on this page says so).
   useEffect(() => {
     const onPaste = (event: ClipboardEvent) => {
       if (busy || document.querySelector("[role=dialog], [role=menu]")) return;
@@ -159,12 +197,12 @@ export function SnapScreen() {
       const link = normalizeSocialUrl(data.getData("text/plain"));
       if (link) {
         event.preventDefault();
-        takeLink(link);
+        startLink(link, intent);
       }
     };
     window.addEventListener("paste", onPaste);
     return () => window.removeEventListener("paste", onPaste);
-  }, [busy, importFile, takeLink]);
+  }, [busy, importFile, intent, startLink]);
 
   // Drop anywhere: a photo (or, in Snap, a PDF) imports it, a link fills the field.
   useEffect(() => {
@@ -218,98 +256,109 @@ export function SnapScreen() {
       />
 
       {draftTitle && !busy ? (
-        <div role="status" className="mb-4 flex flex-wrap items-center gap-3 rounded-2xl bg-primary-soft px-4 py-3 text-sm">
-          <NotebookPen aria-hidden className="h-4 w-4 shrink-0 text-primary" />
-          <span className="min-w-0 flex-1 font-medium text-text">{t("web.snap.draftWaiting", { title: draftTitle })}</span>
-          <Link href="/recipe/preview" data-track="snap.draft.preview" className={buttonClasses({ variant: "primary", size: "sm" })}>
+        <Tile role="status" size="md" className="mb-4 flex flex-wrap items-center gap-3 p-4">
+          <span aria-hidden className="grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-primary-soft text-primary-text">
+            <NotebookPen className="h-5 w-5" />
+          </span>
+          <span className="min-w-0 flex-1 basis-40 text-[15px] font-semibold text-text">{t("web.snap.draftWaiting", { title: draftTitle })}</span>
+          <Link href="/recipe/preview" data-track="snap.draft.preview" className={buttonClasses({ variant: "secondary", size: "sm" })}>
             {t("recipe.preview")}
           </Link>
-        </div>
+        </Tile>
       ) : null}
 
-      <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_20rem] lg:items-start">
-        <div className="min-w-0">
+      <div className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_20rem] lg:items-start">
+        <div className="flex min-w-0 flex-col gap-4">
           {job ? (
             <SnapProgress job={job} finished={finished} />
           ) : (
-            <section className="rounded-3xl border border-frosted-border bg-surface p-5 shadow-soft md:p-7">
-              <SnapIntentSwitch value={intent} onChange={(next) => {
-                  setIntent(next);
-                  setBanner(null);
-                }} />
-              {invent ? <p className="mt-3 text-sm leading-relaxed text-muted">{t("snap.inventDisclaimer")}</p> : null}
+            <>
+              <div>
+                <SnapIntentSwitch value={intent} onChange={(next) => {
+                    setIntent(next);
+                    setBanner(null);
+                  }} />
+                {invent ? <p className="mt-3 max-w-2xl px-1 text-sm leading-relaxed text-muted">{t("snap.inventDisclaimer")}</p> : null}
+              </div>
 
-              <form onSubmit={submit} noValidate className="mt-5 flex flex-col gap-3 sm:flex-row sm:items-start">
-                <div ref={urlField} className="min-w-0 flex-1">
-                  <TextField
-                    label={invent ? t("snap.inventUrlLabel") : t("snap.urlLabel")}
-                    placeholder={invent ? t("snap.inventUrlPlaceholder") : t("snap.urlPlaceholder")}
-                    value={url}
-                    onChange={(event) => {
-                      setUrl(event.target.value);
-                      setUrlError(null);
-                      if (banner) setBanner(null);
-                    }}
-                    error={urlError ?? undefined}
-                    type="url"
-                    inputMode="url"
-                    dir="ltr"
-                    autoComplete="off"
-                    autoCapitalize="none"
-                    spellCheck={false}
-                    enterKeyHint="go"
-                  />
-                </div>
-                <Button type="submit" size="lg" trackId={`snap.submit.${intent}`} disabled={!url.trim()} className="sm:mt-[26px]">
-                  {invent ? t("snap.modeInvent") : t("tabs.snap")}
-                  <ArrowRight aria-hidden className="h-4 w-4 rtl:rotate-180" />
-                </Button>
-              </form>
+              {/* The link and its button. */}
+              <Tile as="section" className="p-5 md:p-6">
+                <form onSubmit={submit} noValidate className="flex flex-col gap-3 sm:flex-row sm:items-start">
+                  <div ref={urlField} className="min-w-0 flex-1">
+                    <TextField
+                      label={invent ? t("snap.inventUrlLabel") : t("snap.urlLabel")}
+                      placeholder={invent ? t("snap.inventUrlPlaceholder") : t("snap.urlPlaceholder")}
+                      value={url}
+                      onChange={(event) => {
+                        setUrl(event.target.value);
+                        setUrlError(null);
+                        if (banner) setBanner(null);
+                      }}
+                      error={urlError ?? undefined}
+                      type="url"
+                      inputMode="url"
+                      dir="ltr"
+                      autoComplete="off"
+                      autoCapitalize="none"
+                      spellCheck={false}
+                      enterKeyHint="go"
+                      className="h-14"
+                    />
+                  </div>
+                  {/* 26 px: the field's label and the gap under it, so the button lines up with the field. */}
+                  <Button type="submit" size="lg" trackId={`snap.submit.${intent}`} disabled={!url.trim()} className="sm:mt-[26px]">
+                    {invent ? t("snap.modeInvent") : t("tabs.snap")}
+                    <ArrowRight aria-hidden className="h-4 w-4 rtl:rotate-180" />
+                  </Button>
+                </form>
 
-              {saved ? (
-                <div role="status" className="mt-3 flex flex-wrap items-center gap-3 rounded-2xl bg-success-soft px-4 py-3 text-sm">
-                  <span className="min-w-0 flex-1 font-medium text-success">{t("recipe.alreadySaved")}</span>
-                  <Link href={`/recipe/${saved.id}`} data-track="snap.already_saved.open" className={buttonClasses({ variant: "outline", size: "sm" })}>
-                    {t("hub.openInLibrary")}
-                  </Link>
-                </div>
-              ) : null}
+                {saved ? (
+                  <div role="status" className="mt-3 flex flex-wrap items-center gap-3 rounded-2xl bg-success-soft py-2.5 ps-4 pe-2.5 text-sm">
+                    <span className="min-w-0 flex-1 font-medium text-success">{t("recipe.alreadySaved")}</span>
+                    <Link href={`/recipe/${saved.id}`} data-track="snap.already_saved.open" className={buttonClasses({ variant: "outline", size: "sm" })}>
+                      {t("hub.openInLibrary")}
+                    </Link>
+                  </div>
+                ) : null}
 
-              {banner ? (
-                <div className="mt-3">
-                  <SnapBannerView
-                    banner={banner}
-                    onDismiss={() => setBanner(null)}
-                    failedLink={{
-                      onRetry: (link) => void run({ intent: "extract", source: { type: "url", url: link } }),
-                      // Opens the photo picker: a screenshot of the caption or comments often has the recipe.
-                      onScreenshot: () => photoZone.current?.querySelector<HTMLButtonElement>("button")?.click(),
-                      onGuess: (link) => {
-                        setIntent("invent");
-                        void run({ intent: "invent", source: { type: "url", url: link } });
-                      },
-                    }}
-                  />
-                </div>
-              ) : null}
+                {banner ? (
+                  <div className="mt-3">
+                    <SnapBannerView
+                      banner={banner}
+                      onDismiss={() => setBanner(null)}
+                      failedLink={{
+                        onRetry: (link) => void run({ intent: "extract", source: { type: "url", url: link } }),
+                        // Opens the photo picker: a screenshot of the caption or comments often has the recipe.
+                        onScreenshot: () => photoZone.current?.querySelector<HTMLButtonElement>("button")?.click(),
+                        onGuess: (link) => {
+                          setIntent("invent");
+                          void run({ intent: "invent", source: { type: "url", url: link } });
+                        },
+                      }}
+                    />
+                  </div>
+                ) : null}
+              </Tile>
 
-              <div className="my-5 flex items-center gap-3 text-xs font-semibold uppercase tracking-wide text-muted">
+              <TileLabel as="div" className="flex items-center gap-3 px-2">
                 <span aria-hidden className="h-px flex-1 bg-border" />
                 {t("web.snap.or")}
                 <span aria-hidden className="h-px flex-1 bg-border" />
-              </div>
+              </TileLabel>
 
-              <div ref={photoZone}>
-                <PhotoDropZone intent={intent} onFile={(file) => void importFile(file)} />
-              </div>
-            </section>
+              {/* The photo (or PDF). Wrapped so a failed link's "Use a screenshot" can open its picker. */}
+              <Tile className="p-3 md:p-4">
+                <div ref={photoZone}>
+                  <PhotoDropZone intent={intent} onFile={(file) => void importFile(file)} />
+                </div>
+              </Tile>
+            </>
           )}
         </div>
 
-        <aside className="space-y-4">
+        <aside className="flex flex-col gap-4">
           <CreditsCard quota={quota} />
           <WriteRecipeCard />
-          <QuickTipsCard />
         </aside>
       </div>
 
@@ -317,9 +366,11 @@ export function SnapScreen() {
 
       {dragging ? (
         <div aria-hidden className="pointer-events-none fixed inset-0 z-50 grid place-items-center bg-overlay p-6 backdrop-blur-[2px] animate-fade-in">
-          <div className="flex flex-col items-center gap-3 rounded-3xl border-2 border-dashed border-primary bg-surface px-10 py-8 text-center shadow-lift">
-            <ImageUp className="h-10 w-10 text-primary" />
-            <p className="text-lg font-bold text-text">{t(invent ? "web.snap.dropTitle" : "web.snap.dropTitlePdf")}</p>
+          <div className="flex flex-col items-center gap-3 rounded-tile border-2 border-dashed border-primary bg-surface px-10 py-8 text-center shadow-lift">
+            <span className="grid h-14 w-14 place-items-center rounded-2xl bg-primary-soft text-primary-text">
+              <ImageUp className="h-7 w-7" />
+            </span>
+            <p className="font-display text-xl font-bold text-text">{t(invent ? "web.snap.dropTitle" : "web.snap.dropTitlePdf")}</p>
           </div>
         </div>
       ) : null}

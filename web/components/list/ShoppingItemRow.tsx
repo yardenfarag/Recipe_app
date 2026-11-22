@@ -97,7 +97,7 @@ function ViewRow({
   }
 
   return (
-    <li className="group flex items-center gap-1 rounded-2xl pe-1 transition-colors hover:bg-surface-soft">
+    <li className="group flex items-center gap-1 rounded-2xl pe-1 transition-colors hover:bg-element">
       <button
         ref={checkboxRef}
         type="button"
@@ -114,11 +114,11 @@ function ViewRow({
         <span
           aria-hidden
           className={cn(
-            "grid h-6 w-6 shrink-0 place-items-center rounded-lg border-2 transition-colors",
+            "grid h-5 w-5 shrink-0 place-items-center rounded-md border-2 transition-colors",
             item.checked ? "border-primary bg-primary text-on-primary" : "border-muted/60 group-hover:border-primary",
           )}
         >
-          {item.checked ? <Check className="h-4 w-4" strokeWidth={3} /> : null}
+          {item.checked ? <Check className="h-3.5 w-3.5" strokeWidth={3.5} /> : null}
         </span>
         <span
           className={cn(
@@ -139,7 +139,8 @@ function ViewRow({
           type="button"
           data-track="shopping_list.item.duplicate_badge"
           onClick={() => onCombine(item)}
-          className="shrink-0 rounded-full bg-warning-soft px-2.5 py-1 text-xs font-bold whitespace-nowrap text-warning hover:brightness-95"
+          // The ::after makes the small badge 44 px tall to a finger without making it look bigger.
+          className="relative shrink-0 rounded-full bg-warning-soft px-2.5 py-1 text-xs font-bold whitespace-nowrap text-warning after:absolute after:inset-x-0 after:-inset-y-2.5 hover:brightness-95"
         >
           {t("list.alsoListed", { count: duplicateCount })}
         </button>
@@ -196,10 +197,10 @@ function EditRow({ item, onSave, onDone }: ShoppingItemRowProps & { onDone: () =
   }
 
   const field =
-    "h-10 min-w-0 rounded-xl border border-border bg-bg px-3 text-[15px] text-text placeholder:text-muted/80 focus:border-primary focus:ring-4 focus:ring-primary/15";
+    "h-11 min-w-0 rounded-btn border border-border bg-surface px-3 text-base text-text placeholder:text-muted/80 transition-[border-color,box-shadow] hover:border-muted/60 focus:border-primary focus:ring-4 focus:ring-primary/15";
 
   return (
-    <li className="rounded-2xl bg-primary-soft/50 p-2">
+    <li className="rounded-2xl bg-element p-2">
       <form
         onSubmit={(event) => void save(event)}
         onKeyDown={(event) => {
@@ -239,7 +240,7 @@ function EditRow({ item, onSave, onDone }: ShoppingItemRowProps & { onDone: () =
           inputMode="decimal"
           maxLength={10}
           autoComplete="off"
-          className={cn(field, "w-20 text-center tabular-nums")}
+          className={cn(field, "w-20 px-2 text-center tabular-nums")}
         />
         <input
           value={unit}
@@ -257,7 +258,7 @@ function EditRow({ item, onSave, onDone }: ShoppingItemRowProps & { onDone: () =
             trackId="shopping_list.edit.save"
             icon={<Check className="h-5 w-5" />}
             disabled={busy}
-            className="text-primary hover:text-primary"
+            className="text-primary-text hover:text-primary-text"
           />
           <IconButton label={t("common.cancel")} trackId="shopping_list.edit.cancel" icon={<X className="h-5 w-5" />} onClick={onDone} disabled={busy} />
         </div>

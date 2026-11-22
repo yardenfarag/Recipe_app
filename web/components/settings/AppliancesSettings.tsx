@@ -11,6 +11,7 @@ import { APPLIANCE_CHECKLIST, specialOwnedCount, tickedAppliances, toggleApplian
 import { ApplianceIcon } from "@/components/recipe/RecipeAppliancesSection";
 import { SettingsCard, SubHeading } from "@/components/settings/controls";
 import { Button } from "@/components/ui/Button";
+import { Chip } from "@/components/ui/Chip";
 import { ConfirmDialog } from "@/components/ui/Dialog";
 import { cn } from "@/lib/cn";
 import { ownedAppliances, useOwnedAppliances } from "@/lib/settings/ownedAppliances";
@@ -62,9 +63,9 @@ export function AppliancesSettings() {
             </Button>
           </div>
         ) : (
-          <div data-testid="appliances-status" className="mb-5 flex flex-col gap-3 rounded-2xl bg-surface-soft px-4 py-3.5 sm:flex-row sm:items-center">
+          <div data-testid="appliances-status" className="mb-5 flex flex-col gap-3 rounded-2xl bg-element px-4 py-3.5 sm:flex-row sm:items-center">
             <p className="flex min-w-0 flex-1 items-start gap-2.5 text-sm leading-relaxed text-muted">
-              <Info aria-hidden className="mt-0.5 h-4 w-4 shrink-0 text-primary" />
+              <Info aria-hidden className="mt-0.5 h-4 w-4 shrink-0 text-primary-text" />
               {t("myAppliances.notSet")}
             </p>
             <Button
@@ -117,28 +118,21 @@ export function AppliancesSettings() {
 function ApplianceToggle({ appliance, pressed, onToggle }: { appliance: ApplianceKey; pressed: boolean; onToggle: () => void }) {
   const { t } = useTranslation();
   return (
-    <button
-      type="button"
-      aria-pressed={pressed}
+    <Chip
+      selected={pressed}
       onClick={onToggle}
-      data-track={`settings.appliances.toggle.${appliance}`}
+      trackId={`settings.appliances.toggle.${appliance}`}
       data-testid={`my-appliance-${appliance}`}
-      className={cn(
-        "inline-flex min-h-11 shrink-0 select-none items-center gap-2 rounded-full border ps-3 pe-3.5 text-sm font-semibold transition-colors active:scale-[0.98]",
-        pressed ? "border-primary bg-primary-soft text-primary" : "border-border bg-surface text-text hover:bg-element",
-      )}
+      className="ps-3 pe-3"
     >
-      <ApplianceIcon appliance={appliance} className={cn("h-[18px] w-[18px]", pressed ? "text-primary" : "text-muted")} />
+      <ApplianceIcon appliance={appliance} className={cn("h-[18px] w-[18px]", pressed ? undefined : "text-muted")} />
       {t(applianceNameKey(appliance))}
       <span
         aria-hidden
-        className={cn(
-          "grid h-5 w-5 place-items-center rounded-full transition-colors",
-          pressed ? "bg-primary text-on-primary" : "border border-border",
-        )}
+        className={cn("grid h-5 w-5 place-items-center rounded-full transition-colors", pressed ? "bg-bg text-text" : "border border-border")}
       >
         {pressed ? <Check className="h-3 w-3" strokeWidth={3} /> : null}
       </span>
-    </button>
+    </Chip>
   );
 }

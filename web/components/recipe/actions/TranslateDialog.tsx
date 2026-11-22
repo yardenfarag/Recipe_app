@@ -101,7 +101,7 @@ function Body({
                 <span className="block text-[15px] font-semibold text-text">{t("recipe.originalLanguage")}</span>
                 <span className="block text-[13px] text-muted">{t("recipe.originalLanguageHint")}</span>
               </span>
-              <Undo2 aria-hidden className="h-[18px] w-[18px] shrink-0 text-primary rtl:-scale-x-100" />
+              <Undo2 aria-hidden className="h-[18px] w-[18px] shrink-0 text-primary-text rtl:-scale-x-100" />
             </button>
           </li>
         ) : null}
@@ -137,7 +137,7 @@ function Body({
                 {busy ? (
                   <span aria-hidden className="h-5 w-5 animate-spin rounded-full border-2 border-primary-soft border-t-primary" />
                 ) : current ? (
-                  <Check aria-hidden className="h-5 w-5 shrink-0 text-primary" />
+                  <Check aria-hidden className="h-5 w-5 shrink-0 text-primary-text" />
                 ) : null}
               </button>
             </li>

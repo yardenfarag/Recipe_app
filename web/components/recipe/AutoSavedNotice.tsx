@@ -39,7 +39,11 @@ export function AutoSavedNotice() {
   }
 
   return (
-    <div role="status" className="mb-4 flex items-center gap-3 rounded-2xl bg-primary-soft px-4 py-2.5 text-sm">
+    // On a phone the recipe page is immersive (the photo runs to the top), so the strip floats at the bottom there.
+    <div
+      role="status"
+      className="fixed inset-x-4 bottom-[max(1rem,env(safe-area-inset-bottom))] z-40 flex items-center gap-3 rounded-2xl border border-frosted-border bg-primary-soft px-4 py-2.5 text-sm shadow-lift md:static md:mb-4 md:border-0 md:shadow-none"
+    >
       <CircleCheck aria-hidden className="h-4 w-4 shrink-0 text-primary" />
       <span className="min-w-0 flex-1 font-semibold text-primary">{t("recipe.autoSaved")}</span>
       <Button size="sm" variant="ghost" busy={removing} trackId="recipe.auto_saved.remove" onClick={() => void remove()}>

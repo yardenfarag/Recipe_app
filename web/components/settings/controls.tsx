@@ -4,10 +4,13 @@ import { Check, CircleAlert, X } from "lucide-react";
 import { useId, useRef, type KeyboardEvent, type ReactNode, type TextareaHTMLAttributes } from "react";
 import { useTranslation } from "react-i18next";
 
+import { Button } from "@/components/ui/Button";
+import { Chip, chipClasses } from "@/components/ui/Chip";
+import { Tile, TileLabel } from "@/components/ui/Tile";
 import { cn } from "@/lib/cn";
 import type { SaveStatus } from "@/lib/settings/useKitchenSettings";
 
-/** One group of settings: a heading, an optional line under it, and its controls. */
+/** One group of settings as a tile: a heading, an optional line under it, and its controls. */
 export function SettingsCard({
   title,
   hint,
@@ -23,36 +26,46 @@ export function SettingsCard({
 }) {
   const id = useId();
   return (
-    <section
-      aria-labelledby={id}
-      className={cn(
-        "rounded-3xl border bg-surface/80 p-5 shadow-soft backdrop-blur-sm sm:p-6",
-        tone === "danger" ? "border-danger/40" : "border-frosted-border",
-        className,
-      )}
-    >
-      <h2 id={id} className={cn("text-base font-bold", tone === "danger" ? "text-danger" : "text-text")}>
+    <Tile as="section" aria-labelledby={id} className={cn("p-5 sm:p-6", tone === "danger" && "border-danger/40", className)}>
+      <h2 id={id} className={cn("text-xl font-bold", tone === "danger" ? "text-danger" : "text-text")}>
         {title}
       </h2>
-      {hint ? <p className="mt-1 max-w-2xl text-sm leading-relaxed text-pretty text-muted">{hint}</p> : null}
-      <div className="mt-4">{children}</div>
-    </section>
+      {hint ? <p className="mt-1.5 max-w-2xl text-[15px] leading-relaxed text-pretty text-muted">{hint}</p> : null}
+      <div className="mt-5">{children}</div>
+    </Tile>
   );
 }
 
-/** A smaller heading inside a card, for a second group of controls. */
+/** A small-caps heading inside a card, for a second group of controls. */
 export function SubHeading({ children, id }: { children: ReactNode; id?: string }) {
   return (
-    <h3 id={id} className="mb-2 text-xs font-bold tracking-wide text-muted uppercase">
+    <TileLabel as="h3" id={id} className="mb-2.5">
       {children}
-    </h3>
+    </TileLabel>
   );
 }
 
-const chipBase =
-  "inline-flex min-h-10 shrink-0 select-none items-center gap-1.5 rounded-full border px-4 text-sm font-semibold transition-colors disabled:pointer-events-none disabled:opacity-45";
-const chipOff = "border-border bg-surface text-text hover:bg-element";
-const chipOn = "border-primary bg-primary-soft text-primary";
+/**
+ * The look of a two- or three-way choice drawn by ChoiceGroup, matching the kit's SegmentedControl. For choices
+ * whose names are too long for that one on a phone: here they shorten or wrap instead of running off the tile.
+ */
+export const segmentedGroupClass = "grid gap-1 rounded-btn bg-element p-1";
+export const segmentedOptionClass =
+  "flex min-h-10 min-w-0 items-center justify-center gap-2 rounded-[10px] px-3 py-1.5 text-center text-sm font-semibold text-muted transition-colors hover:text-text data-[checked]:bg-surface data-[checked]:text-text data-[checked]:shadow-soft";
+
+/** The look of one option in a list drawn by ChoiceGroup (a language): a block in the tile, ringed when chosen. */
+export const optionRowClass =
+  "group flex min-h-14 items-center gap-3 rounded-2xl bg-element px-4 py-3 text-start transition-colors hover:bg-selected data-[checked]:ring-2 data-[checked]:ring-primary data-[checked]:ring-inset";
+
+/** A kit chip as a ChoiceGroup option: filled when chosen, like `<Chip kind="radio" selected>`. */
+export const choiceChipClass = cn(
+  chipClasses(),
+  "data-[checked]:border-text data-[checked]:bg-text data-[checked]:text-bg data-[checked]:hover:bg-text data-[checked]:active:bg-text",
+);
+
+/** A one-line text box with no label above it (it has an `aria-label`), shaped like TextField. */
+export const inputClass =
+  "h-12 w-full min-w-0 rounded-btn border border-border bg-surface px-4 text-base text-text transition-[border-color,box-shadow] placeholder:text-muted/80 hover:border-muted/60 focus:border-primary focus:ring-4 focus:ring-primary/15";
 
 /** A choice that is on or off (a diet, an allergy), pressed like a toggle button. */
 export function ToggleChip({
@@ -70,10 +83,10 @@ export function ToggleChip({
   trackId?: string;
 }) {
   return (
-    <button type="button" aria-pressed={pressed} disabled={disabled} onClick={onToggle} data-track={trackId} className={cn(chipBase, pressed ? chipOn : chipOff)}>
+    <Chip selected={pressed} disabled={disabled} onClick={onToggle} trackId={trackId} className="disabled:pointer-events-none disabled:opacity-45">
       {pressed ? <Check aria-hidden className="h-4 w-4" /> : null}
       {children}
-    </button>
+    </Chip>
   );
 }
 
@@ -81,14 +94,20 @@ export function ToggleChip({
 export function RemovableChip({ label, onRemove, trackId }: { label: string; onRemove: () => void; trackId?: string }) {
   const { t } = useTranslation();
   return (
-    <span className={cn(chipBase, chipOn, "pe-1.5")}>
-      <bdi>{label}</bdi>
+    // A soft fill, so a row of them reads as a list, not as chosen filters. A long name wraps instead of running off a phone.
+    <span
+      className={chipClasses({
+        className:
+          "h-auto min-h-10 max-w-full shrink gap-1 border-transparent bg-element py-1 pe-1 whitespace-normal hover:bg-element pointer-coarse:h-auto pointer-coarse:min-h-11 pointer-coarse:pe-0",
+      })}
+    >
+      <bdi className="min-w-0 break-words">{label}</bdi>
       <button
         type="button"
         data-track={trackId}
         onClick={onRemove}
         aria-label={t("a11y.removeItem", { item: label })}
-        className="grid h-7 w-7 place-items-center rounded-full transition-colors hover:bg-primary/15"
+        className="grid h-8 w-8 shrink-0 place-items-center rounded-full text-muted transition-colors hover:bg-selected hover:text-text pointer-coarse:h-11 pointer-coarse:w-11"
       >
         <X aria-hidden className="h-4 w-4" />
       </button>
@@ -125,7 +144,7 @@ export function SwitchRow({
       aria-labelledby={labelId}
       aria-describedby={hint ? hintId : undefined}
       onClick={() => onChange(!checked)}
-      className="flex w-full items-start gap-4 rounded-2xl border border-border bg-surface px-4 py-3.5 text-start transition-colors hover:bg-surface-soft"
+      className="flex min-h-14 w-full items-start gap-4 rounded-2xl bg-element px-4 py-3.5 text-start transition-colors hover:bg-selected"
     >
       <span className="min-w-0 flex-1">
         <span id={labelId} className="block text-[15px] font-semibold text-text">
@@ -141,10 +160,10 @@ export function SwitchRow({
         aria-hidden
         className={cn(
           "mt-0.5 flex h-7 w-12 shrink-0 rounded-full p-0.5 transition-colors",
-          checked ? "justify-end bg-primary" : "justify-start bg-border",
+          checked ? "justify-end bg-primary" : "justify-start bg-text/25",
         )}
       >
-        <span className="h-6 w-6 rounded-full bg-surface shadow-soft" />
+        <span className={cn("h-6 w-6 rounded-full", checked ? "bg-on-primary" : "bg-surface")} />
       </span>
     </button>
   );
@@ -243,7 +262,7 @@ export function TextArea({ label, hint, className, ...props }: TextareaHTMLAttri
         aria-describedby={hintId}
         {...props}
         className={cn(
-          "min-h-32 w-full resize-y rounded-2xl border border-border bg-surface px-4 py-3 text-base text-text shadow-[inset_0_1px_2px_rgb(0_0_0/0.03)] transition-[border-color,box-shadow] placeholder:text-muted/80",
+          "min-h-32 w-full resize-y rounded-btn border border-border bg-surface px-4 py-3 text-base text-text shadow-[inset_0_1px_2px_rgb(0_0_0/0.03)] transition-[border-color,box-shadow] placeholder:text-muted/80",
           "hover:border-muted/60 focus:border-primary focus:ring-4 focus:ring-primary/15 disabled:opacity-60",
           className,
         )}
@@ -317,16 +336,11 @@ export function AddItemField({
         value={value}
         maxLength={maxLength}
         onChange={(event) => onChange(event.target.value)}
-        className="h-11 min-w-0 flex-1 rounded-full border border-border bg-surface px-4 text-[15px] text-text transition-[border-color,box-shadow] placeholder:text-muted/80 hover:border-muted/60 focus:border-primary focus:ring-4 focus:ring-primary/15"
+        className={cn(inputClass, "flex-1")}
       />
-      <button
-        type="submit"
-        data-track={trackId}
-        disabled={empty}
-        className="inline-flex h-11 shrink-0 items-center rounded-full bg-primary-soft px-5 text-sm font-semibold text-primary transition-[filter] hover:brightness-97 disabled:opacity-45"
-      >
+      <Button type="submit" variant="secondary" trackId={trackId} disabled={empty}>
         {addLabel ?? t("avoid.add")}
-      </button>
+      </Button>
     </form>
   );
 }

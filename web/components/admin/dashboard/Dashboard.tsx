@@ -116,11 +116,11 @@ function DashboardBody({
           onChange={(next) => onPrefs({ days: next, includeAdmins })}
           trackPrefix="admin.dashboard.range"
         />
-        <label className="inline-flex cursor-pointer items-center gap-2 text-sm text-muted select-none" title="Your own and other admin accounts. AI cost always includes them.">
+        <label className="inline-flex min-h-11 cursor-pointer items-center gap-2.5 text-sm text-muted select-none" title="Your own and other admin accounts. AI cost always includes them.">
           <input
             type="checkbox"
             data-track="admin.dashboard.include_admins.toggle"
-            className="h-4 w-4 accent-primary"
+            className="h-5 w-5"
             checked={includeAdmins}
             onChange={(e) => onPrefs({ days, includeAdmins: e.target.checked })}
           />
@@ -146,7 +146,7 @@ function DashboardBody({
             )}
           >
             {t.label}
-            {t.count ? <span className="rounded-full bg-element px-1.5 text-xs font-semibold text-muted tabular-nums">{t.count}</span> : null}
+            {t.count ? <span className="rounded-md bg-element px-1.5 text-xs font-semibold text-muted tabular-nums">{t.count}</span> : null}
           </Button>
         ))}
       </div>

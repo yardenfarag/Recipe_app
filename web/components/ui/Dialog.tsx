@@ -40,7 +40,7 @@ export function DialogContent({
       <RadixDialog.Content
         {...returnFocus}
         className={cn(
-          "fixed start-1/2 top-1/2 z-50 w-[calc(100%-2rem)] max-w-md -translate-y-1/2 animate-pop-in rounded-3xl border border-frosted-border bg-surface p-6 shadow-lift",
+          "fixed start-1/2 top-1/2 z-50 w-[calc(100%-2rem)] max-w-md -translate-y-1/2 animate-pop-in rounded-tile border border-border bg-surface p-6 shadow-lift",
           "ltr:-translate-x-1/2 rtl:translate-x-1/2",
           className,
         )}

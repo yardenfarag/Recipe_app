@@ -20,11 +20,12 @@ import { PhotoField } from "@/components/editor/PhotoField";
 import { ReorderableList } from "@/components/editor/ReorderableList";
 import { IngredientRowEditor, StepRowEditor } from "@/components/editor/RowEditors";
 import { TagsField } from "@/components/editor/TagsField";
-import { ToggleChip } from "@/components/settings/controls";
 import { Button } from "@/components/ui/Button";
+import { Chip } from "@/components/ui/Chip";
 import { Dialog, DialogClose, DialogContent } from "@/components/ui/Dialog";
 import { IconButton } from "@/components/ui/IconButton";
 import { PageHeader } from "@/components/ui/PageHeader";
+import { Tile } from "@/components/ui/Tile";
 import { cn } from "@/lib/cn";
 import { FIELD_IDS, focusById, ingredientFieldId, stepFieldId } from "@/lib/editor/fieldIds";
 import { dragHasFiles, imageFileFrom, photoFromFile, photoPreviewSrc } from "@/lib/editor/photoFile";
@@ -390,11 +391,11 @@ export function RecipeEditor({ initial }: { initial: RecipeEditorState }) {
         onSubmit={onSubmit}
         noValidate
         aria-label={title}
-        className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_22rem] lg:items-start xl:grid-cols-[minmax(0,1fr)_24rem]"
+        className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_22rem] lg:items-start xl:grid-cols-[minmax(0,1fr)_24rem]"
       >
-        <div className="flex min-w-0 flex-col gap-6">
+        <div className="flex min-w-0 flex-col gap-4">
           {/* Title and servings */}
-          <section className="rounded-3xl border border-frosted-border bg-surface/85 p-5 shadow-soft backdrop-blur-sm sm:p-6">
+          <Tile as="section" className="p-4 sm:p-6">
             <div className="flex flex-col gap-5 sm:flex-row sm:items-start">
               <div className="min-w-0 flex-1">
                 <FieldLabel htmlFor={FIELD_IDS.title} end={<CharCount length={Array.from(state.title.trim()).length} max={RECIPE_LIMITS.titleChars} />}>
@@ -419,20 +420,20 @@ export function RecipeEditor({ initial }: { initial: RecipeEditorState }) {
                   autoComplete="off"
                   enterKeyHint="next"
                   {...errorAttrs(FIELD_IDS.title, titleError)}
-                  className={inputClasses(Boolean(titleError), "h-14 rounded-2xl px-4 text-xl font-bold")}
+                  className={inputClasses(Boolean(titleError), "h-14 rounded-2xl px-4 font-display text-xl font-bold")}
                 />
                 <FieldMessage id={`${FIELD_IDS.title}-error`} message={titleError} />
               </div>
               <div className="shrink-0">
                 <FieldLabel htmlFor={FIELD_IDS.servings}>{t("recipeEditor.fields.servings")}</FieldLabel>
-                <div className="flex items-center gap-1">
+                <div className="flex h-14 items-center gap-1.5">
                   <IconButton
+                    variant="tile"
                     label={t("recipe.decreaseServings")}
                     trackId="recipe_editor.servings.decrease"
-                    icon={<Minus className="h-4 w-4" />}
+                    icon={<Minus className="h-[18px] w-[18px]" />}
                     onClick={() => setServingsBy(-1)}
                     disabled={Number.isFinite(servingsValue) && servingsValue <= RECIPE_LIMITS.servingsMin}
-                    className="h-11 w-11 border border-border bg-surface"
                   />
                   <input
                     id={FIELD_IDS.servings}
@@ -447,15 +448,15 @@ export function RecipeEditor({ initial }: { initial: RecipeEditorState }) {
                     inputMode="numeric"
                     autoComplete="off"
                     {...errorAttrs(FIELD_IDS.servings, servingsError)}
-                    className={inputClasses(Boolean(servingsError), "h-11 w-16 text-center text-lg font-bold tabular-nums")}
+                    className={inputClasses(Boolean(servingsError), "h-11 w-16 px-2 text-center font-display text-lg font-bold tabular-nums")}
                   />
                   <IconButton
+                    variant="tile"
                     label={t("recipe.increaseServings")}
                     trackId="recipe_editor.servings.increase"
-                    icon={<Plus className="h-4 w-4" />}
+                    icon={<Plus className="h-[18px] w-[18px]" />}
                     onClick={() => setServingsBy(1)}
                     disabled={Number.isFinite(servingsValue) && servingsValue >= RECIPE_LIMITS.servingsMax}
-                    className="h-11 w-11 border border-border bg-surface"
                   />
                 </div>
                 <FieldMessage id={`${FIELD_IDS.servings}-error`} message={servingsError} />
@@ -473,7 +474,7 @@ export function RecipeEditor({ initial }: { initial: RecipeEditorState }) {
                     target="_blank"
                     rel="noopener noreferrer"
                     dir="ltr"
-                    className="inline-flex items-center gap-1 font-medium text-primary underline-offset-2 hover:underline"
+                    className="inline-flex items-center gap-1 font-semibold text-primary-text underline-offset-2 hover:underline"
                   >
                     {sourceHost(state.sourceUrl)}
                     <ExternalLink aria-hidden className="h-3.5 w-3.5" />
@@ -482,11 +483,11 @@ export function RecipeEditor({ initial }: { initial: RecipeEditorState }) {
                 ) : null}
               </p>
             ) : null}
-          </section>
+          </Tile>
 
-          <EditorCard title={t("recipeEditor.sections.ingredients")} hint={t("web.editor.ingredientsHint")}>
+          <EditorCard size="lg" title={t("recipeEditor.sections.ingredients")} hint={t("web.editor.ingredientsHint")}>
             {state.ingredients.length > 0 ? (
-              <div aria-hidden className="mb-1.5 hidden items-center gap-2 ps-10 pe-12 text-xs font-semibold text-muted sm:flex">
+              <div aria-hidden className="mb-1.5 hidden items-center gap-2 ps-10 pe-[3.25rem] text-xs font-semibold text-muted sm:flex">
                 <span className="w-20 text-center">{t("recipeEditor.fields.quantity")}</span>
                 <span className="w-24">{t("recipeEditor.fields.unit")}</span>
                 <span className="flex-1">{t("recipeEditor.fields.ingredientName")}</span>
@@ -529,7 +530,7 @@ export function RecipeEditor({ initial }: { initial: RecipeEditorState }) {
             </Button>
           </EditorCard>
 
-          <EditorCard title={t("recipeEditor.sections.steps")} hint={t("web.editor.stepsHint")}>
+          <EditorCard size="lg" title={t("recipeEditor.sections.steps")} hint={t("web.editor.stepsHint")}>
             <ReorderableList
               ordered
               items={state.steps}
@@ -569,7 +570,7 @@ export function RecipeEditor({ initial }: { initial: RecipeEditorState }) {
           </EditorCard>
         </div>
 
-        <div className="flex min-w-0 flex-col gap-6">
+        <div className="flex min-w-0 flex-col gap-4">
           <EditorCard title={t("recipeEditor.fields.photo")}>
             <PhotoField
               src={photoPreviewSrc(state.photo, state.imageUrl)}
@@ -624,14 +625,14 @@ export function RecipeEditor({ initial }: { initial: RecipeEditorState }) {
                 </FieldLabel>
                 <div role="group" aria-labelledby={effortLabelId} className="flex flex-wrap gap-2">
                   {effortOptions.map((option) => (
-                    <ToggleChip
+                    <Chip
                       key={option.value}
-                      pressed={state.effort === option.value}
+                      selected={state.effort === option.value}
                       trackId={`recipe_editor.effort.${option.value}`}
-                      onToggle={() => change((s) => editor.setEffort(s, s.effort === option.value ? null : option.value))}
+                      onClick={() => change((s) => editor.setEffort(s, s.effort === option.value ? null : option.value))}
                     >
                       {option.label}
-                    </ToggleChip>
+                    </Chip>
                   ))}
                 </div>
               </div>
@@ -642,14 +643,14 @@ export function RecipeEditor({ initial }: { initial: RecipeEditorState }) {
                 </FieldLabel>
                 <div role="group" aria-labelledby={costLabelId} className="flex flex-wrap gap-2">
                   {costOptions.map((option) => (
-                    <ToggleChip
+                    <Chip
                       key={option.value}
-                      pressed={state.cost === option.value}
+                      selected={state.cost === option.value}
                       trackId={`recipe_editor.cost.${option.value.length}`}
-                      onToggle={() => change((s) => editor.setCost(s, s.cost === option.value ? null : option.value))}
+                      onClick={() => change((s) => editor.setCost(s, s.cost === option.value ? null : option.value))}
                     >
                       {option.label}
-                    </ToggleChip>
+                    </Chip>
                   ))}
                 </div>
               </div>
@@ -702,8 +703,9 @@ export function RecipeEditor({ initial }: { initial: RecipeEditorState }) {
         </div>
 
         {/* Always in reach: sticks to the bottom of the window (above the tab bar on phones) while the form scrolls. */}
-        <div className="sticky bottom-[calc(4.75rem+env(safe-area-inset-bottom))] z-20 lg:col-span-2 md:bottom-4">
-          <div className="flex items-center gap-2 rounded-2xl border border-frosted-border bg-surface/90 px-3 py-2.5 shadow-lift backdrop-blur-xl sm:gap-3 sm:px-4">
+        {/* Flat, with a line on top. On phones it sits on the tab bar, with room under the buttons for the raised Snap button. */}
+        <div className="sticky bottom-[calc(4rem+env(safe-area-inset-bottom))] z-20 mt-2 lg:col-span-2 md:bottom-0">
+          <div className="flex items-center gap-2 border-t border-border bg-bg/95 pt-3 pb-10 backdrop-blur-md sm:gap-3 md:pb-3">
             <p className="flex min-w-0 flex-1 items-center gap-2 text-sm text-muted" aria-live="polite">
               <span aria-hidden className={cn("h-2 w-2 shrink-0 rounded-full", dirty ? "bg-accent" : "bg-border")} />
               <span className="truncate font-medium">{dirty ? t("web.editor.unsaved") : t("web.editor.noChanges")}</span>
@@ -749,9 +751,9 @@ export function RecipeEditor({ initial }: { initial: RecipeEditorState }) {
 
       {draggingFile ? (
         <div aria-hidden className="pointer-events-none fixed inset-0 z-50 grid animate-fade-in place-items-center bg-overlay p-6 backdrop-blur-[2px]">
-          <div className="flex flex-col items-center gap-3 rounded-3xl border-2 border-dashed border-primary bg-surface px-10 py-8 text-center shadow-lift">
-            <ImageUp className="h-10 w-10 text-primary" />
-            <p className="text-lg font-bold text-text">{t("web.editor.dropPhoto")}</p>
+          <div className="flex flex-col items-center gap-3 rounded-tile border-2 border-dashed border-primary bg-surface px-10 py-8 text-center shadow-lift">
+            <ImageUp className="h-10 w-10 text-primary-text" />
+            <p className="font-display text-lg font-bold text-text">{t("web.editor.dropPhoto")}</p>
           </div>
         </div>
       ) : null}

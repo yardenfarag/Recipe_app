@@ -16,6 +16,7 @@ import { ErrorAlert } from "@/components/ui/Alert";
 import { Button, buttonClasses } from "@/components/ui/Button";
 import { usePageTitle } from "@/components/ui/PageHeader";
 import { EmptyState, ErrorState, LoadingState } from "@/components/ui/States";
+import { Tile } from "@/components/ui/Tile";
 import { lastHubHref } from "@/lib/hub/hubAddress";
 import { useHubRecipe } from "@/lib/hub/useHubRecipe";
 import { useSaveAfterSignIn } from "@/lib/useSaveAfterSignIn";
@@ -77,37 +78,34 @@ export default function HubRecipePage() {
   }
   if (state.status === "error") return <ErrorState title={t("recipe.loadFailedTitle")} trackId="hub_recipe.load_error" onRetry={state.reload} />;
 
+  // One tile: what adding means, and the button that does it.
   const actions = (
-    <>
-      {state.libraryRecipeId ? (
-        <Link href={`/recipe/${state.libraryRecipeId}`} data-track="hub_recipe.open_in_library" className={buttonClasses({ size: "lg" })}>
-          <BookOpenCheck aria-hidden className="h-5 w-5" />
-          {t("hub.openInLibrary")}
-        </Link>
-      ) : (
-        <Button
-          size="lg"
-          trackId="hub_recipe.add_to_library"
-          busy={adding || savingAfterSignIn}
-          onClick={() => (user ? void add() : router.push(signInHere("signin", "save=1")))}
-        >
-          {adding ? null : <Plus aria-hidden className="h-5 w-5" />}
-          {t("hub.addToLibrary")}
-        </Button>
-      )}
-      <div className="basis-full">
-        {addError ? (
-          <div className="mb-2">
-            <ErrorAlert>{addError}</ErrorAlert>
-          </div>
-        ) : null}
-        <p className="max-w-2xl text-sm leading-relaxed text-pretty text-muted">
+    <Tile className="flex basis-full flex-col gap-4 p-5">
+      {addError ? <ErrorAlert>{addError}</ErrorAlert> : null}
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between sm:gap-6">
+        <p className="max-w-2xl min-w-0 text-sm leading-relaxed text-pretty text-muted">
           {state.libraryRecipeId ? null : <span className="font-semibold text-text">{t("web.hub.addIsFree")} </span>}
           {user ? null : <span className="font-semibold text-text">{t("web.guest.saveNeedsAccount")} </span>}
           {t("hub.attribution")}
         </p>
+        {state.libraryRecipeId ? (
+          <Link href={`/recipe/${state.libraryRecipeId}`} data-track="hub_recipe.open_in_library" className={buttonClasses({ size: "lg" })}>
+            <BookOpenCheck aria-hidden className="h-5 w-5" />
+            {t("hub.openInLibrary")}
+          </Link>
+        ) : (
+          <Button
+            size="lg"
+            trackId="hub_recipe.add_to_library"
+            busy={adding || savingAfterSignIn}
+            onClick={() => (user ? void add() : router.push(signInHere("signin", "save=1")))}
+          >
+            {adding ? null : <Plus aria-hidden className="h-5 w-5" />}
+            {t("hub.addToLibrary")}
+          </Button>
+        )}
       </div>
-    </>
+    </Tile>
   );
 
   return <RecipeView display={state.display} back={user ? { href: backHref, label: t("hub.backToHub") } : null} actions={actions} readOnly />;

@@ -15,7 +15,7 @@ import { messageDir } from "./useMessageView";
 const TRACK = "in_app_message.banner";
 
 /**
- * A strip in the content column, coloured by the message's tone. It never covers the page or takes focus. The
+ * A tile in the content column, coloured by the message's tone. It never covers the page or takes focus. The
  * buttons sit beside the text when the strip is wide and under it when narrow (a container query, so it follows the
  * column, not the window). Escape closes a dismissible banner while focus is inside it.
  */
@@ -42,32 +42,33 @@ export function BannerPresenter({
       onKeyDown={(event) => {
         if (event.key === "Escape" && view.dismissible) handlers.onClose();
       }}
-      className={cn("@container w-full", tone.soft, tone.border, edge === "top" ? "border-b-2" : "border-t-2")}
+      // A tile in the tone's colours. Stuck to the bottom of the window it floats over the page, so it gets a shadow.
+      className={cn("@container w-full rounded-3xl border", tone.soft, tone.border, edge === "bottom" && "shadow-lift")}
     >
-      <div className="mx-auto flex w-full max-w-6xl items-start gap-3 px-4 py-3 sm:px-8">
+      <div className="flex w-full items-start gap-3 p-3 ps-4 sm:p-4 sm:ps-5">
         <div className="flex min-w-0 flex-1 flex-col gap-3 @2xl:flex-row @2xl:items-center">
           <div className="flex min-w-0 flex-1 items-center gap-3">
             {message.imageUrl ? (
               // A remote, admin-chosen image; next/image would need its host listed. Decorative.
               // eslint-disable-next-line @next/next/no-img-element
-              <img src={message.imageUrl} alt="" className="h-9 w-9 shrink-0 rounded-lg bg-surface object-cover" />
+              <img src={message.imageUrl} alt="" className="h-10 w-10 shrink-0 rounded-xl bg-surface object-cover" />
             ) : (
-              <MessageIcon view={view} className="h-9 w-9 bg-transparent" />
+              <MessageIcon view={view} className="h-10 w-10 rounded-xl bg-surface [&>svg]:h-5 [&>svg]:w-5" />
             )}
             <div className="min-w-0 text-start">
-              <p className="line-clamp-2 text-[15px] leading-5 font-bold text-text">{view.title}</p>
+              <p className="line-clamp-2 font-display text-[15px] leading-5 font-bold text-text">{view.title}</p>
               {view.body ? <p className="mt-0.5 line-clamp-3 text-[13px] leading-[18px] text-muted">{view.body}</p> : null}
             </div>
           </div>
           {hasActions ? (
-            <div className="flex shrink-0 flex-wrap items-center gap-2 ps-12 @2xl:ps-0">
+            <div className="flex shrink-0 flex-wrap items-center gap-2 ps-13 @2xl:ps-0">
               {view.link ? (
                 <MessageAction
                   kind="link"
                   action={{ type: "link", url: view.link.url }}
                   label={view.link.label}
                   trackId={`${TRACK}.link`}
-                  className="inline-flex min-h-9 items-center gap-1 rounded-lg px-1 text-sm font-semibold text-text underline underline-offset-4 focus-visible:outline-2 focus-visible:outline-primary"
+                  className="inline-flex min-h-10 items-center gap-1 rounded-lg px-1 text-sm font-semibold text-text underline underline-offset-4 focus-visible:outline-2 focus-visible:outline-primary pointer-coarse:min-h-11"
                   handlers={handlers}
                   newTabNote={newTabNote}
                 />
@@ -94,7 +95,7 @@ export function BannerPresenter({
             tooltip={false}
             trackId={`${TRACK}.close`}
             onClick={handlers.onClose}
-            className="-me-2 h-9 w-9"
+            className="-my-0.5 -me-1 hover:bg-surface"
           />
         ) : null}
       </div>

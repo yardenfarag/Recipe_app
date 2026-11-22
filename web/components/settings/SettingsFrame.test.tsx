@@ -57,9 +57,9 @@ describe("SettingsFrame on a desktop", () => {
     expect(screen.getByText("Page content")).toBeDefined();
   });
 
-  it("shows admin links to admins only", () => {
+  it("shows the way to the admin pages to admins only", () => {
     show();
-    expect(screen.queryByRole("link", { name: "Insights" })).toBeNull();
+    expect(screen.queryByRole("link", { name: "Admin" })).toBeNull();
   });
 });
 
@@ -85,9 +85,10 @@ describe("SettingsFrame on a phone", () => {
     expect(screen.queryByRole("navigation", { name: "Settings" })).toBeNull();
   });
 
-  it("lists the admin pages for an admin", () => {
+  it("has one row into the admin pages for an admin", () => {
     state.isAdmin = true;
     show();
-    expect(screen.getByRole("link", { name: "Insights" }).getAttribute("href")).toBe("/admin/insights");
+    expect(screen.getByRole("link", { name: /^Admin/ }).getAttribute("href")).toBe("/admin/dashboard");
+    expect(screen.queryByRole("link", { name: "Insights" })).toBeNull();
   });
 });

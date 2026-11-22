@@ -193,9 +193,9 @@ export function CookAlongPlayer({
         className,
       )}
     >
-      <div className="overflow-hidden border-b border-frosted-border bg-surface shadow-soft md:rounded-3xl md:border">
+      <div className="overflow-hidden border-b border-border bg-surface md:rounded-tile md:border">
         <div className="flex items-center gap-2 py-1.5 ps-4 pe-1.5 md:py-2 md:ps-5">
-          <span aria-hidden className="grid h-8 w-8 shrink-0 place-items-center rounded-full bg-primary-soft text-primary">
+          <span aria-hidden className="grid h-8 w-8 shrink-0 place-items-center rounded-[10px] bg-primary-soft text-primary-text">
             <Play className="h-4 w-4 fill-current" />
           </span>
           <div className="min-w-0 flex-1 leading-tight">
@@ -262,7 +262,7 @@ export function CookAlongPlayer({
                   target="_blank"
                   rel="noopener noreferrer"
                   data-track="cook_along.load_error.open_in_browser"
-                  className="inline-flex h-10 items-center gap-1.5 rounded-full bg-primary px-4 text-sm font-semibold text-on-primary shadow-soft hover:brightness-105"
+                  className="inline-flex h-10 items-center gap-1.5 rounded-xl bg-primary px-4 font-display text-sm font-bold text-on-primary hover:brightness-105"
                 >
                   {watchOn}
                   <span className="sr-only"> ({t("web.recipe.opensInNewTab")})</span>
@@ -275,7 +275,7 @@ export function CookAlongPlayer({
 
         {skipTo != null ? (
           <div role="status" className="flex items-start gap-2 border-t border-border bg-accent-soft px-4 py-2.5 text-sm text-text">
-            <Info aria-hidden className="mt-0.5 h-4 w-4 shrink-0 text-accent" />
+            <Info aria-hidden className="mt-0.5 h-4 w-4 shrink-0 text-accent-text" />
             <p className="min-w-0 flex-1 leading-snug">
               {t("web.cook.noSeek", { platform: video.label, time: formatVideoTimestamp(skipTo) })}
             </p>

@@ -6,9 +6,10 @@ import { deltaOf } from "@shared/lib/adminDashboard";
 
 import { Sparkline } from "@/components/admin/charts";
 import { Button } from "@/components/ui/Button";
+import { Tile, TileLabel } from "@/components/ui/Tile";
 import { cn } from "@/lib/cn";
 
-/** A white panel with an optional heading, a line under it, and actions at the end of the heading. */
+/** A tile with an optional heading, a line under it, and actions at the end of the heading. */
 export function Card({
   title,
   subtitle,
@@ -23,7 +24,7 @@ export function Card({
   className?: string;
 }) {
   return (
-    <section className={cn("min-w-0 rounded-3xl border border-frosted-border bg-surface p-5 shadow-soft", className)}>
+    <Tile as="section" className={cn("min-w-0 p-5", className)}>
       {title ? (
         <div className="mb-4 flex flex-wrap items-start justify-between gap-3">
           <div className="min-w-0">
@@ -34,13 +35,17 @@ export function Card({
         </div>
       ) : null}
       {children}
-    </section>
+    </Tile>
   );
 }
 
 /** A small heading inside a card. */
 export function SubHeading({ children }: { children: ReactNode }) {
-  return <h3 className="mb-2 text-xs font-bold tracking-wide text-muted uppercase">{children}</h3>;
+  return (
+    <TileLabel as="h3" className="mb-2">
+      {children}
+    </TileLabel>
+  );
 }
 
 /** A quiet line when a list or chart has nothing in it. */
@@ -83,9 +88,9 @@ export function StatTile({
   const tone = delta.direction === "flat" || upIsGood === null ? "flat" : up === upIsGood ? "good" : "bad";
   const arrow = delta.direction === "flat" ? "" : up ? "↑" : "↓";
   return (
-    <div role="group" aria-label={label} className="flex min-w-0 flex-col rounded-3xl border border-frosted-border bg-surface p-4 shadow-soft">
+    <Tile size="md" role="group" aria-label={label} className="flex min-w-0 flex-col p-4">
       <div className="text-sm text-muted">{label}</div>
-      <div data-stat-value className="mt-1 text-2xl font-bold tracking-tight text-text tabular-nums">
+      <div data-stat-value className="mt-1 font-display text-2xl font-bold tracking-tight text-text tabular-nums">
         {value}
       </div>
       <div
@@ -103,16 +108,16 @@ export function StatTile({
           <Sparkline values={spark} tone={upIsGood === false ? "bad" : undefined} />
         </div>
       ) : null}
-    </div>
+    </Tile>
   );
 }
 
 /** A plain figure: a label over a number, with an optional line under it. */
 export function Figure({ label, value, sub, strong }: { label: string; value: string; sub?: string; strong?: boolean }) {
   return (
-    <div className="min-w-0 rounded-2xl border border-border bg-surface-soft px-3 py-2.5">
+    <div className="min-w-0 rounded-2xl bg-element px-3.5 py-2.5">
       <div className="text-xs text-muted">{label}</div>
-      <div className={cn("text-text tabular-nums", strong ? "text-xl font-bold" : "text-base font-semibold")}>{value}</div>
+      <div className={cn("text-text tabular-nums", strong ? "font-display text-xl font-bold" : "text-base font-semibold")}>{value}</div>
       {sub ? <div className="mt-0.5 text-xs text-muted">{sub}</div> : null}
     </div>
   );
@@ -132,7 +137,7 @@ export function Badge({ children, tone }: { children: ReactNode; tone?: "good" |
   return (
     <span
       className={cn(
-        "inline-flex items-center rounded-full px-2 py-0.5 text-xs font-semibold whitespace-nowrap",
+        "inline-flex items-center rounded-md px-2 py-0.5 text-xs font-semibold whitespace-nowrap",
         tone === "good" ? "bg-success-soft text-success" : tone === "bad" ? "bg-danger-soft text-danger" : "bg-element text-muted",
       )}
     >
@@ -146,7 +151,7 @@ export function PersonCell({ email, sub }: { email: string | null; sub?: ReactNo
   const name = email ?? "No email";
   return (
     <span className="flex min-w-0 items-center gap-2.5 text-start">
-      <span aria-hidden className="grid h-8 w-8 shrink-0 place-items-center rounded-full bg-primary-soft text-sm font-bold text-primary uppercase">
+      <span aria-hidden className="grid h-8 w-8 shrink-0 place-items-center rounded-full bg-primary-soft text-sm font-bold text-primary-text uppercase">
         {name.slice(0, 1)}
       </span>
       <span className="min-w-0">
@@ -193,21 +198,24 @@ export function Segmented<T extends string | number>({
   className?: string;
 }) {
   return (
-    <div role="group" aria-label={label} className={cn("inline-flex flex-wrap gap-1 rounded-3xl border border-border bg-surface p-1", className)}>
+    <div role="group" aria-label={label} className={cn("inline-flex flex-wrap gap-1 rounded-btn bg-element p-1", className)}>
       {options.map((option) => {
         const active = option.value === value;
         return (
-          <Button
+          // The look of the kit's SegmentedControl; toggle buttons, as these have always been.
+          <button
             key={String(option.value)}
-            size="sm"
-            variant={active ? "secondary" : "ghost"}
+            type="button"
             aria-pressed={active}
-            trackId={`${trackPrefix}.${option.trackName ?? String(option.value)}`}
-            className={cn("h-8 px-3 font-semibold", active ? "" : "text-muted")}
+            data-track={`${trackPrefix}.${option.trackName ?? String(option.value)}`}
+            className={cn(
+              "inline-flex h-9 items-center justify-center gap-1.5 rounded-[10px] px-3.5 text-sm font-semibold whitespace-nowrap transition-colors pointer-coarse:h-10",
+              active ? "bg-surface text-text shadow-soft" : "text-muted hover:text-text",
+            )}
             onClick={() => onChange(option.value)}
           >
             {option.label}
-          </Button>
+          </button>
         );
       })}
     </div>
@@ -221,7 +229,7 @@ export function MiniRow({ onClick, trackId, children }: { onClick: () => void; t
       variant="ghost"
       trackId={trackId}
       onClick={onClick}
-      className="h-auto w-full justify-start gap-3 rounded-2xl px-2 py-2 text-start font-normal whitespace-normal"
+      className="h-auto w-full justify-start gap-3 rounded-btn px-2 py-2 text-start font-normal whitespace-normal"
     >
       {children}
     </Button>
@@ -239,7 +247,7 @@ export function SearchBox({ label, value, onChange, placeholder }: { label: stri
       onChange={(e) => onChange(e.target.value)}
       autoComplete="off"
       spellCheck={false}
-      className="h-9 w-56 max-w-full rounded-full border border-border bg-surface px-4 text-sm text-text placeholder:text-muted/80 focus:border-primary focus:ring-4 focus:ring-primary/15"
+      className="h-10 w-56 max-w-full rounded-btn border border-border bg-surface px-3.5 text-sm text-text transition-[border-color,box-shadow] placeholder:text-muted/80 hover:border-muted/60 focus:border-primary focus:ring-4 focus:ring-primary/15"
     />
   );
 }

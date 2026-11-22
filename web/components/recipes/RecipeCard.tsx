@@ -2,7 +2,7 @@
 
 import { Heart, MoreVertical } from "lucide-react";
 import Link from "next/link";
-import { memo, type ReactNode } from "react";
+import { memo, useState, type ReactNode } from "react";
 import { useTranslation } from "react-i18next";
 
 import { applianceNameKey, cardApplianceKeys } from "@shared/lib/applianceDisplay";
@@ -11,6 +11,7 @@ import { COST_I18N_KEYS } from "@shared/lib/formatCostEstimate";
 import { formatCookedDate } from "@shared/lib/formatCookedDate";
 import { formatRecipeDuration } from "@shared/lib/formatRecipeDuration";
 import { recipeOriginChip } from "@shared/lib/recipeOrigin";
+import { recipeSource } from "@shared/lib/recipeSource";
 import type { Recipe } from "@shared/types/recipe";
 
 import { CookieMark } from "@/components/CookieMark";
@@ -20,7 +21,7 @@ import { cn } from "@/lib/cn";
 
 export type RecipeCardProps = {
   recipe: Recipe;
-  /** `grid`: a card with a large picture. `list`: a compact row with a thumbnail. */
+  /** `grid`: a photo card. `list`: a compact row with a thumbnail. */
   variant?: "grid" | "list";
   /** The heart, when the card may be favorited. */
   onToggleFavorite?: (recipe: Recipe) => void;
@@ -35,13 +36,18 @@ export type RecipeCardProps = {
 };
 
 /**
- * One recipe, as a card or a row. The whole card is one link to the recipe, so it opens in a new tab with a
- * middle-click and is one stop for a screen reader; the heart and the menu sit above that link as their own
- * buttons. Shared by the Library and the Hub.
+ * One recipe, as a photo card or a row (PIN-161). The card is the photo with a chip saying where the recipe came
+ * from, and the name and facts under it, with no box around them. The whole card is one link to the recipe, so it
+ * opens in a new tab with a middle-click and is one stop for a screen reader; the heart and the menu sit above
+ * that link as their own buttons. Shared by the Library and the Hub.
  */
+// A button on the photo. On a phone each has its own dark backing; from tablet up the pill around them has it.
+const onPhotoButton = "pointer-events-auto max-md:bg-scrim/60 max-md:backdrop-blur-md";
+
 function RecipeCardBase({ recipe, variant = "grid", onToggleFavorite, actions, detail, href, trackId = "library.recipe" }: RecipeCardProps) {
   const { t } = useTranslation();
   const { language } = useLanguage();
+  const [pictureFailed, setPictureFailed] = useState(false);
   const title = recipe.display_title ?? recipe.title;
   const isFavorite = recipe.is_favorite === true;
   const list = variant === "list";
@@ -62,91 +68,153 @@ function RecipeCardBase({ recipe, variant = "grid", onToggleFavorite, actions, d
   const origin = recipeOriginChip(recipe);
   const originLabel = origin === "invented" ? t("recipe.inventedChip") : origin === "written" ? t("recipeEditor.originChip") : null;
 
-  const picture = recipe.image_url ? (
-    // The pictures are already small thumbnails from other sites, so there is nothing for next/image to optimise.
-    // eslint-disable-next-line @next/next/no-img-element
-    <img src={recipe.image_url} alt="" loading="lazy" decoding="async" className="h-full w-full object-cover" />
-  ) : (
-    <span className="grid h-full w-full place-items-center bg-primary-soft text-primary">
-      <CookieMark size={list ? 28 : 44} />
-    </span>
-  );
+  // "TikTok", "Instagram"… or, for a website or a photo, the plain word.
+  const source = recipeSource(recipe);
+  const sourceLabel = source
+    ? source.platform === "photo"
+      ? t("web.library.sourcePhoto")
+      : source.platform === "web"
+        ? t("web.library.sourceWebsite")
+        : source.name
+    : null;
 
-  return (
-    <article
-      className={cn(
-        "group relative isolate h-full overflow-hidden border border-frosted-border bg-surface shadow-soft transition-[box-shadow,transform] duration-200",
-        "hover:shadow-lift focus-within:shadow-lift motion-safe:hover:-translate-y-0.5",
-        // The browser skips painting cards that are off screen, which keeps a library of hundreds smooth.
-        "[content-visibility:auto]",
-        list ? "flex items-center gap-4 rounded-2xl p-2.5 pe-2 [contain-intrinsic-size:auto_92px]" : "flex flex-col rounded-3xl [contain-intrinsic-size:auto_300px]",
-      )}
-    >
-      <div className={cn("shrink-0 overflow-hidden bg-primary-soft", list ? "h-18 w-18 rounded-2xl" : "aspect-[16/10] w-full")}>{picture}</div>
+  const picture =
+    recipe.image_url && !pictureFailed ? (
+      // The pictures are already small thumbnails from other sites, so there is nothing for next/image to optimise.
+      // eslint-disable-next-line @next/next/no-img-element
+      <img
+        src={recipe.image_url}
+        alt=""
+        loading="lazy"
+        decoding="async"
+        onError={() => setPictureFailed(true)}
+        className="h-full w-full object-cover transition-transform duration-300 motion-safe:group-hover:scale-[1.03]"
+      />
+    ) : (
+      <span className="grid h-full w-full place-items-center bg-element text-primary-text">
+        <CookieMark size={list ? 28 : 44} />
+      </span>
+    );
 
-      <div className={cn("min-w-0 flex-1", list ? "py-0.5" : "flex flex-col gap-1.5 p-4")}>
-        <h3 className={cn("font-bold text-text text-pretty", list ? "line-clamp-2 text-base leading-snug" : "line-clamp-3 text-[17px] leading-snug")}>
-          <Link
-            href={href ?? `/recipe/${recipe.id}`}
-            data-track={`${trackId}.open`}
-            className="rounded-md outline-none after:absolute after:inset-0 after:z-0 after:content-[''] focus-visible:after:rounded-[inherit] focus-visible:after:ring-2 focus-visible:after:ring-primary"
-          >
-            {title}
-          </Link>
-        </h3>
-        {detail ? <p className="truncate text-xs text-muted">{detail}</p> : null}
-        {originLabel ? (
-          <span
+  const buttons =
+    onToggleFavorite || actions ? (
+      <div
+        className={cn(
+          "z-10 flex items-center gap-0.5",
+          list
+            ? "relative shrink-0"
+            : // One pill at the top corner; on a phone's narrow card, the heart at the top and the menu at the bottom.
+              "pointer-events-none absolute inset-y-1.5 end-1.5 flex-col justify-between md:inset-y-auto md:end-2.5 md:top-2.5 md:flex-row md:rounded-btn md:bg-scrim/60 md:p-0.5 md:backdrop-blur-md",
+        )}
+      >
+        {onToggleFavorite ? (
+          <button
+            type="button"
+            data-track={`${trackId}.favorite`}
+            aria-pressed={isFavorite}
+            aria-label={isFavorite ? t("a11y.removeRecipeFromFavorites", { name: title }) : t("a11y.addRecipeToFavorites", { name: title })}
+            onClick={() => onToggleFavorite(recipe)}
             className={cn(
-              "w-fit rounded-full px-2 py-0.5 text-[11px] font-bold",
-              origin === "written" ? "bg-primary-soft text-primary" : "bg-accent-soft text-accent",
+              "grid h-10 w-10 place-items-center rounded-xl transition-colors active:scale-95 pointer-coarse:h-11 pointer-coarse:w-11",
+              list ? "hover:bg-element" : cn(onPhotoButton, "hover:bg-on-scrim/15"),
             )}
           >
-            {originLabel}
-          </span>
+            <Heart
+              aria-hidden
+              className={cn(
+                "h-5 w-5 transition-colors",
+                list ? (isFavorite ? "fill-primary text-primary" : "text-muted") : isFavorite ? "fill-scrim-primary text-scrim-primary" : "text-on-scrim",
+              )}
+            />
+          </button>
         ) : null}
-        {meta.length > 0 ? <p className="text-[13px] text-muted">{meta.join(" · ")}</p> : null}
-        {needs ? <p className="truncate text-[13px] text-muted">{needs}</p> : null}
+        {actions ? (
+          <RecipeActionsMenu
+            recipe={recipe}
+            title={title}
+            actions={actions}
+            trigger={
+              <button
+                type="button"
+                data-track={`${trackId}.more`}
+                aria-label={t("a11y.recipeActionsFor", { name: title })}
+                className={cn(
+                  "grid h-10 w-10 place-items-center rounded-xl transition-colors active:scale-95 pointer-coarse:h-11 pointer-coarse:w-11",
+                  list
+                    ? "text-muted hover:bg-element hover:text-text data-[state=open]:bg-element"
+                    : cn(onPhotoButton, "text-on-scrim hover:bg-on-scrim/15 data-[state=open]:bg-on-scrim/15"),
+                )}
+              >
+                <MoreVertical aria-hidden className="h-5 w-5" />
+              </button>
+            }
+          />
+        ) : null}
       </div>
+    ) : null;
 
-      {onToggleFavorite || actions ? (
-        <div
+  const link = (
+    <Link
+      href={href ?? `/recipe/${recipe.id}`}
+      data-track={`${trackId}.open`}
+      className="rounded-md outline-none after:absolute after:inset-0 after:z-0 after:content-[''] focus-visible:after:rounded-[22px] focus-visible:after:ring-2 focus-visible:after:ring-primary"
+    >
+      {title}
+    </Link>
+  );
+
+  const facts = (
+    <>
+      {detail ? <p className="truncate text-xs text-muted">{detail}</p> : null}
+      {originLabel ? (
+        <span
           className={cn(
-            "relative z-10 flex items-center gap-0.5",
-            list ? "shrink-0" : "absolute end-2.5 top-2.5 rounded-full bg-frosted p-0.5 backdrop-blur-md",
+            "w-fit rounded-md px-2 py-0.5 text-[11px] font-bold",
+            origin === "written" ? "bg-primary-soft text-primary-text" : "bg-accent-soft text-accent-text",
           )}
         >
-          {onToggleFavorite ? (
-            <button
-              type="button"
-              data-track={`${trackId}.favorite`}
-              aria-pressed={isFavorite}
-              aria-label={isFavorite ? t("a11y.removeRecipeFromFavorites", { name: title }) : t("a11y.addRecipeToFavorites", { name: title })}
-              onClick={() => onToggleFavorite(recipe)}
-              className="grid h-10 w-10 place-items-center rounded-full transition-colors hover:bg-element active:scale-95"
-            >
-              <Heart aria-hidden className={cn("h-5 w-5 transition-colors", isFavorite ? "fill-primary text-primary" : "text-muted")} />
-            </button>
-          ) : null}
-          {actions ? (
-            <RecipeActionsMenu
-              recipe={recipe}
-              title={title}
-              actions={actions}
-              trigger={
-                <button
-                  type="button"
-                  data-track={`${trackId}.more`}
-                  aria-label={t("a11y.recipeActionsFor", { name: title })}
-                  className="grid h-10 w-10 place-items-center rounded-full text-muted transition-colors hover:bg-element hover:text-text active:scale-95 data-[state=open]:bg-element"
-                >
-                  <MoreVertical aria-hidden className="h-5 w-5" />
-                </button>
-              }
-            />
-          ) : null}
-        </div>
+          {originLabel}
+        </span>
       ) : null}
+      {meta.length > 0 ? <p className={cn("text-muted", list ? "text-[13px]" : "text-[13px] max-md:line-clamp-1 md:text-sm")}>{meta.join(" · ")}</p> : null}
+      {needs ? <p className="truncate text-[13px] text-muted">{needs}</p> : null}
+    </>
+  );
+
+  if (list) {
+    return (
+      <article
+        className={cn(
+          "group relative isolate flex h-full items-center gap-4 rounded-[22px] border border-border bg-surface p-2.5 pe-2 transition-colors hover:bg-element/60",
+          // The browser skips painting rows that are off screen, which keeps a library of hundreds smooth.
+          "[content-visibility:auto] [contain-intrinsic-size:auto_92px]",
+        )}
+      >
+        <div className="h-18 w-18 shrink-0 overflow-hidden rounded-2xl bg-element">{picture}</div>
+        <div className="min-w-0 flex-1 py-0.5">
+          <h3 className="line-clamp-2 text-base leading-snug font-bold text-pretty text-text">{link}</h3>
+          {facts}
+        </div>
+        {buttons}
+      </article>
+    );
+  }
+
+  return (
+    <article className="group relative isolate flex h-full flex-col gap-3 [content-visibility:auto] [contain-intrinsic-size:auto_300px]">
+      <div className="relative aspect-square w-full shrink-0 overflow-hidden rounded-[18px] bg-element md:aspect-[4/3] md:rounded-[22px]">
+        {picture}
+        {sourceLabel ? (
+          <span className="absolute start-2 top-2 max-w-[55%] truncate rounded-full bg-scrim/70 px-2.5 py-1.5 text-xs leading-none font-semibold text-on-scrim backdrop-blur-sm md:start-3 md:top-3 md:max-w-[60%]">
+            {sourceLabel}
+          </span>
+        ) : null}
+        {buttons}
+      </div>
+      <div className="flex min-w-0 flex-col gap-1 px-1">
+        <h3 className="line-clamp-2 text-[15px] leading-tight font-bold text-pretty text-text md:text-lg md:leading-snug">{link}</h3>
+        {facts}
+      </div>
     </article>
   );
 }

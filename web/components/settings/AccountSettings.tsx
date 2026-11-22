@@ -19,6 +19,7 @@ import { ErrorAlert } from "@/components/ui/Alert";
 import { Button } from "@/components/ui/Button";
 import { Dialog, DialogClose, DialogContent } from "@/components/ui/Dialog";
 import { TextField } from "@/components/ui/TextField";
+import { Tile, TileLabel } from "@/components/ui/Tile";
 import { signOut } from "@/lib/auth";
 import { squareAvatarFromFile } from "@/lib/settings/avatarImage";
 
@@ -65,11 +66,8 @@ export function AccountSettings() {
   return (
     <>
       <SettingsPageHeader id="account" />
-      <div className="flex flex-col gap-5">
-        <section
-          aria-label={t("web.account")}
-          className="flex flex-col gap-5 rounded-3xl border border-frosted-border bg-surface/80 p-5 shadow-soft backdrop-blur-sm @md:flex-row @md:items-center sm:p-6"
-        >
+      <div className="flex flex-col gap-4">
+        <Tile as="section" aria-label={t("web.account")} className="flex flex-col gap-5 p-5 @md:flex-row @md:items-center sm:p-6">
           <div className="relative w-fit">
             <ProfileAvatar url={avatarUrl} className="h-24 w-24" />
             <button
@@ -80,7 +78,7 @@ export function AccountSettings() {
               aria-busy={uploading || undefined}
               aria-label={t("settings.changeAvatarTitle")}
               title={t("settings.changeAvatarTitle")}
-              className="absolute -end-1 bottom-0 grid h-9 w-9 place-items-center rounded-full border-2 border-surface bg-primary text-on-primary shadow-soft transition-[filter] hover:brightness-105 disabled:opacity-70"
+              className="absolute -end-2 -bottom-1 grid h-10 w-10 place-items-center rounded-xl border-2 border-surface bg-primary text-on-primary transition-[filter] hover:brightness-105 disabled:opacity-70 pointer-coarse:h-11 pointer-coarse:w-11"
             >
               {uploading ? (
                 <span aria-hidden className="h-4 w-4 animate-spin rounded-full border-2 border-current border-t-transparent" />
@@ -103,17 +101,17 @@ export function AccountSettings() {
             />
           </div>
           <div className="min-w-0 flex-1">
-            <p className="text-sm text-muted">{t("web.signedInAs")}</p>
-            <p className="truncate text-lg font-bold text-text" dir="ltr">
+            <TileLabel>{t("web.signedInAs")}</TileLabel>
+            <p className="mt-1 truncate font-display text-xl font-bold text-text" dir="ltr">
               {user?.email}
             </p>
-            {totalCredits != null ? <p className="mt-0.5 text-sm text-muted">{t("settings.creditsTotal", { count: totalCredits })}</p> : null}
+            {totalCredits != null ? <p className="mt-1 text-sm text-muted">{t("settings.creditsTotal", { count: totalCredits })}</p> : null}
           </div>
-          <Button variant="secondary" trackId="settings.sign_out" busy={signingOut} onClick={() => void handleSignOut()}>
+          <Button variant="outline" className="self-start @md:self-auto" trackId="settings.sign_out" busy={signingOut} onClick={() => void handleSignOut()}>
             <LogOut aria-hidden className="h-4 w-4 rtl:rotate-180" />
             {t("settings.signOut")}
           </Button>
-        </section>
+        </Tile>
 
         <SettingsCard title={t("settings.dangerZone")} hint={t("settings.dangerZoneHint")} tone="danger">
           <Button variant="danger" trackId="settings.delete_account" onClick={() => setDeleteOpen(true)}>
