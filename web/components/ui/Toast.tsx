@@ -22,7 +22,7 @@ export function ToastHost() {
         <div
           key={toast.id}
           role="status"
-          className="flex animate-pop-in items-center gap-2.5 rounded-full bg-text px-5 py-3 text-[15px] font-semibold text-surface shadow-lift"
+          className="flex animate-pop-in items-center gap-2.5 rounded-2xl bg-text px-5 py-3 text-[15px] font-semibold text-surface shadow-lift"
         >
           {toast.icon === "success" ? (
             <CircleCheck aria-hidden className="h-5 w-5" />

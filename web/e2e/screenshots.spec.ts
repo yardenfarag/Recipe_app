@@ -520,3 +520,48 @@ test("admin pages", async ({ browser }) => {
     await deleteAdminPagesUsers(users);
   }
 });
+
+const PACKS = ["mist", "fruity", "cat", "wizard", "dracula", "sunny", "starry"] as const;
+
+// The Night Market kit (PIN-160) in every theme pack, light and dark, English and Hebrew: 28 pictures of the page
+// at /admin/kit, plus the phone width in Mist.
+test("kit, every theme pack", async ({ browser }) => {
+  test.setTimeout(900_000);
+  const users = await createAdminPagesUsers();
+  try {
+    for (const viewport of ["desktop", "phone"] as const) {
+      const context = await browser.newContext({
+        baseURL: test.info().project.use.baseURL,
+        viewport: VIEWPORTS[viewport],
+        deviceScaleFactor: viewport === "desktop" ? 1 : 2,
+      });
+      const page = await context.newPage();
+      await page.goto("/app/auth?mode=signin");
+      await signInWithPassword(page, users.admin.email, users.admin.password);
+      await page.locator("#main").waitFor();
+      for (const pack of viewport === "desktop" ? PACKS : (["mist"] as const)) {
+        for (const scheme of ["light", "dark"] as const) {
+          for (const language of ["en", "he"] as const) {
+            // The account's choices win over this browser's once loaded (PIN-154), so both are set.
+            await writeAccountPrefs({ locale: language, prefs: { scheme, pack, measurement: "original" } }, users.admin.email, users.admin.password);
+            await page.evaluate(
+              ([l, s, p]) => {
+                localStorage.setItem("pinch:appLanguage", l);
+                localStorage.setItem("pinch.themePreference", s);
+                localStorage.setItem("pinch.themePack", p);
+              },
+              [language, scheme, pack],
+            );
+            await page.goto("/app/admin/kit");
+            await page.locator("#main h1").first().waitFor();
+            await page.waitForTimeout(500);
+            await page.screenshot({ path: `${OUT}/kit-${viewport}-${pack}-${scheme}-${language}.png`, fullPage: true });
+          }
+        }
+      }
+      await context.close();
+    }
+  } finally {
+    await deleteAdminPagesUsers(users);
+  }
+});

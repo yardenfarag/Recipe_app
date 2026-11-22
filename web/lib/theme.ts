@@ -2,6 +2,7 @@ import {
   DEFAULT_THEME_PACK,
   THEME_PACK_ORDER,
   ThemePacks,
+  type ThemePack,
   type ThemePackColors,
   type ThemePackId,
 } from "@shared/constants/themes";
@@ -29,8 +30,10 @@ const VARIABLES: Partial<Record<keyof ThemePackColors, string>> = {
   primary: "--c-primary",
   primarySoft: "--c-primary-soft",
   onPrimary: "--c-on-primary",
+  primaryText: "--c-primary-text",
   accent: "--c-accent",
   accentSoft: "--c-accent-soft",
+  accentText: "--c-accent-text",
   border: "--c-border",
   danger: "--c-danger",
   dangerSoft: "--c-danger-soft",
@@ -47,10 +50,26 @@ const VARIABLES: Partial<Record<keyof ThemePackColors, string>> = {
   mistOrbC: "--c-orb-c",
 };
 
-function declarations(colors: ThemePackColors): string {
-  return Object.entries(VARIABLES)
+/**
+ * Text over a photo (the fade at the bottom of a photo tile) can't follow light and dark: a photo is a photo. It
+ * always uses the pack's dark colours, so a light page still gets light text on a dark fade, in the pack's own hue.
+ */
+const PHOTO_VARIABLES: Partial<Record<keyof ThemePackColors, string>> = {
+  background: "--c-scrim",
+  text: "--c-on-scrim",
+  textSecondary: "--c-on-scrim-muted",
+  primary: "--c-scrim-primary",
+  onPrimary: "--c-on-scrim-primary",
+};
+
+function variables(map: Partial<Record<keyof ThemePackColors, string>>, colors: ThemePackColors): string {
+  return Object.entries(map)
     .map(([key, variable]) => `${variable}:${colors[key as keyof ThemePackColors] as string};`)
     .join("");
+}
+
+function declarations(pack: ThemePack, scheme: Scheme): string {
+  return variables(VARIABLES, pack[scheme]) + variables(PHOTO_VARIABLES, pack.dark);
 }
 
 /**
@@ -60,13 +79,13 @@ function declarations(colors: ThemePackColors): string {
 export function themeCss(): string {
   const fallback = ThemePacks[DEFAULT_THEME_PACK];
   const rules = [
-    `:root{color-scheme:light;${declarations(fallback.light)}}`,
-    `@media (prefers-color-scheme: dark){:root:not([data-scheme]){color-scheme:dark;${declarations(fallback.dark)}}}`,
+    `:root{color-scheme:light;${declarations(fallback, "light")}}`,
+    `@media (prefers-color-scheme: dark){:root:not([data-scheme]){color-scheme:dark;${declarations(fallback, "dark")}}}`,
   ];
   for (const id of THEME_PACK_ORDER) {
     for (const scheme of ["light", "dark"] as const) {
       rules.push(
-        `:root[data-pack="${id}"][data-scheme="${scheme}"]{color-scheme:${scheme};${declarations(ThemePacks[id][scheme])}}`,
+        `:root[data-pack="${id}"][data-scheme="${scheme}"]{color-scheme:${scheme};${declarations(ThemePacks[id], scheme)}}`,
       );
     }
   }

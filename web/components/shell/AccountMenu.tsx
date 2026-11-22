@@ -1,7 +1,8 @@
 "use client";
 
 import * as Menu from "@radix-ui/react-dropdown-menu";
-import { Check, ChevronRight, ChevronsUpDown, Coins, Languages, LogOut, Monitor, Moon, Palette, Settings, ShieldCheck, Sun } from "lucide-react";
+import { useDirection } from "@radix-ui/react-direction";
+import { Check, ChevronRight, Coins, Languages, LogOut, Monitor, Moon, Palette, Settings, ShieldCheck, Sun } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import type { ReactNode } from "react";
@@ -29,7 +30,7 @@ function Avatar({ email, size = "md" }: { email: string; size?: "sm" | "md" }) {
     <span
       aria-hidden
       className={cn(
-        "grid shrink-0 place-items-center rounded-full bg-primary font-bold text-on-primary uppercase",
+        "grid shrink-0 place-items-center rounded-full bg-primary font-display font-bold text-on-primary uppercase",
         size === "sm" ? "h-8 w-8 text-sm" : "h-9 w-9 text-[15px]",
       )}
     >
@@ -102,8 +103,9 @@ function CreditsItem() {
  * language. One click away from every page; the full set lives in Settings. Opens with Enter, Space or the
  * arrow keys, and Escape closes it.
  */
-export function AccountMenu({ variant }: { variant: "full" | "compact" }) {
+export function AccountMenu({ variant }: { variant: "rail" | "compact" }) {
   const { t } = useTranslation();
+  const rtl = useDirection() === "rtl";
   const router = useRouter();
   const { user } = useAuth();
   const { preference, setPreference, pack, setPack } = useTheme();
@@ -133,29 +135,16 @@ export function AccountMenu({ variant }: { variant: "full" | "compact" }) {
         <Menu.Trigger
           aria-label={t("web.accountMenu")}
           data-track="nav.account_menu"
-          className={cn(
-            "group flex items-center rounded-2xl text-start transition-colors hover:bg-element data-[state=open]:bg-element",
-            variant === "full" ? "w-full gap-3 p-2" : "p-1",
-          )}
+          className="group grid h-11 w-11 place-items-center rounded-btn transition-colors hover:bg-element data-[state=open]:bg-element"
         >
-          <Avatar email={email} size={variant === "full" ? "md" : "sm"} />
-          {variant === "full" ? (
-            <>
-              <span className="min-w-0 flex-1">
-                <span className="block text-xs text-muted">{t("web.account")}</span>
-                <span className="block truncate text-sm font-semibold text-text" dir="ltr">
-                  {email}
-                </span>
-              </span>
-              <ChevronsUpDown aria-hidden className="h-4 w-4 shrink-0 text-muted" />
-            </>
-          ) : null}
+          <Avatar email={email} size={variant === "rail" ? "md" : "sm"} />
         </Menu.Trigger>
 
         <Menu.Portal>
           <Menu.Content
-            align={variant === "full" ? "start" : "end"}
-            side={variant === "full" ? "top" : "bottom"}
+            // At the foot of the rail the menu opens beside it; in the phone's top bar, under it.
+            align="end"
+            side={variant === "rail" ? (rtl ? "left" : "right") : "bottom"}
             sideOffset={8}
             collisionPadding={12}
             className="z-50 w-72 animate-pop-in rounded-2xl border border-frosted-border bg-surface p-1.5 shadow-lift"

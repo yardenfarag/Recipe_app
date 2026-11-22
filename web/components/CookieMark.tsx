@@ -19,14 +19,14 @@ export function CookieMark({ size = 24, className = "", label }: { size?: number
   );
 }
 
-/** Mark and name together, for the sidebar and sign-in pages. */
+/** Mark and name together, for the phone's top bar and the sign-in pages. The mark sits on a tile in the brand colour. */
 export function PinchLogo({ compact = false }: { compact?: boolean }) {
   return (
     <span className="inline-flex items-center gap-2.5">
-      <span className="grid h-9 w-9 place-items-center rounded-xl bg-primary-soft text-primary">
-        <CookieMark size={20} />
+      <span className="grid h-10 w-10 place-items-center rounded-[13px] bg-primary text-on-primary">
+        <CookieMark size={22} />
       </span>
-      {compact ? <span className="sr-only">Pinch</span> : <span className="text-lg font-bold tracking-tight text-text">Pinch</span>}
+      {compact ? <span className="sr-only">Pinch</span> : <span className="font-display text-xl font-bold tracking-tight text-text">Pinch</span>}
     </span>
   );
 }

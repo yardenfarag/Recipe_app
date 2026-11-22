@@ -6,6 +6,7 @@ export const ADMIN_PAGES = [
   { id: "usage", href: "/admin/usage", label: "Cost & support" },
   { id: "activity", href: "/admin/activity", label: "Activity log" },
   { id: "messages", href: "/admin/messages", label: "Messages" },
+  { id: "kit", href: "/admin/kit", label: "Kit" },
 ] as const;
 
 export type AdminPageId = (typeof ADMIN_PAGES)[number]["id"];

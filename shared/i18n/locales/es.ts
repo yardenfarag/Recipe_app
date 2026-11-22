@@ -1710,6 +1710,18 @@ export default {
         "title": "Haz Pinch a tu medida",
         "body": "Tu cuenta, cómo cocinas, las unidades y más. El tema y el idioma ya están en el menú de la cuenta."
       }
+    },
+    "snapBar": {
+      "label": "Saca una receta o busca en las tuyas",
+      "placeholder": "Pega un enlace, suelta una foto o busca «algo con huevos»",
+      "placeholderShort": "Pega un enlace o busca",
+      "action": "Sacar",
+      "title": "Sacar o buscar",
+      "hintLink": "Pega un enlace de TikTok, Instagram, YouTube o cualquier web de recetas",
+      "hintPhoto": "Suelta o pega una foto, una captura o un PDF",
+      "hintSearch": "Escribe para buscar en tus recetas guardadas",
+      "addPhoto": "Añadir una foto o un PDF",
+      "open": "Sacar o buscar ({{keys}})"
     }
   }
 } as const;

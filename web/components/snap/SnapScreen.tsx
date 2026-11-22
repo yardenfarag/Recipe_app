@@ -23,6 +23,7 @@ import { compressImageFile } from "@/lib/compressImage";
 import { useCreditBalance } from "@/lib/credits/balance";
 import { isPdfFile, readPdfFile } from "@/lib/readPdfFile";
 import { getSnapDraft } from "@/lib/snap/draft";
+import { takeSnapHandoff } from "@/lib/snap/handoff";
 import { useSnap, type SnapIntent } from "@/lib/snap/useSnap";
 
 /** True while typing somewhere, so a paste there is left alone. */
@@ -116,6 +117,29 @@ export function SnapScreen() {
     },
     [busy, intent, invent, run, setBanner, t],
   );
+
+  // Sent here by the Snap bar (⌘K, or the one on the Library): start on what it handed over, as if entered here.
+  const handoffTaken = useRef(false);
+  useEffect(() => {
+    if (handoffTaken.current) return;
+    handoffTaken.current = true;
+    const handoff = takeSnapHandoff();
+    if (!handoff) return;
+    if ("file" in handoff) {
+      void importFile(handoff.file);
+      return;
+    }
+    // The link is shown in the field while it imports; that isn't a cascading render, it happens once.
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    setUrl(handoff.url);
+    // Already saved? Open it instead of importing (and charging) again.
+    void fetchRecipeByUrl(handoff.url, "extracted")
+      .catch(() => null)
+      .then((recipe) => {
+        if (recipe) router.replace(`/recipe/${recipe.id}`);
+        else void run({ intent: "extract", source: { type: "url", url: handoff.url } });
+      });
+  }, [importFile, router, run]);
 
   const takeLink = useCallback((link: string) => {
     setUrl(link);

@@ -40,9 +40,9 @@ export function SheetContent({
         className={cn(
           "fixed z-50 flex flex-col bg-surface shadow-lift",
           // Phones: from the bottom, rounded on top, at most most of the screen.
-          "inset-x-0 bottom-0 max-h-[88dvh] animate-slide-up rounded-t-3xl pb-[env(safe-area-inset-bottom)]",
+          "inset-x-0 bottom-0 max-h-[88dvh] animate-slide-up rounded-t-tile pb-[env(safe-area-inset-bottom)]",
           // Wider: a full-height panel on the end side.
-          "sm:inset-x-auto sm:inset-y-0 sm:end-0 sm:max-h-none sm:w-full sm:max-w-md sm:animate-slide-in-end sm:rounded-none sm:rounded-s-3xl sm:pb-0",
+          "sm:inset-x-auto sm:inset-y-0 sm:end-0 sm:max-h-none sm:w-full sm:max-w-md sm:animate-slide-in-end sm:rounded-none sm:rounded-s-tile sm:pb-0",
           className,
         )}
       >

@@ -1710,6 +1710,18 @@ export default {
         "title": "Make Pinch yours",
         "body": "Your account, how you cook, units and more. Theme and language are already in the account menu."
       }
+    },
+    "snapBar": {
+      "label": "Snap a recipe or search yours",
+      "placeholder": "Paste a link, drop a photo, or search “something with eggs”",
+      "placeholderShort": "Paste a link or search",
+      "action": "Snap it",
+      "title": "Snap or search",
+      "hintLink": "Paste a link from TikTok, Instagram, YouTube or any recipe site",
+      "hintPhoto": "Drop or paste a photo, a screenshot or a PDF",
+      "hintSearch": "Type to search the recipes you saved",
+      "addPhoto": "Add a photo or PDF",
+      "open": "Snap or search ({{keys}})"
     }
   }
 } as const;
