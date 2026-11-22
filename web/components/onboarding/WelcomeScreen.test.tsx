@@ -5,22 +5,20 @@ import { beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
 import i18n from "@/lib/i18n";
 import { addOnboardingStrings } from "@/lib/onboarding/testStrings";
 
-const nav = vi.hoisted(() => ({ replace: vi.fn(), search: "" }));
-vi.mock("next/navigation", () => ({
-  useRouter: () => ({ replace: nav.replace }),
-  useSearchParams: () => new URLSearchParams(nav.search),
-}));
+const nav = vi.hoisted(() => ({ replace: vi.fn() }));
+vi.mock("next/navigation", () => ({ useRouter: () => ({ replace: nav.replace }) }));
 
-const auth = vi.hoisted(() => ({ state: { user: null as null | { id: string }, loading: false, session: null } }));
+const auth = vi.hoisted(() => ({ state: { user: null as null | { id: string }, loading: false as boolean, session: null } }));
 vi.mock("@/components/AuthProvider", () => ({ useAuth: () => auth.state }));
 
-const lang = vi.hoisted(() => ({ setLanguage: vi.fn() }));
-vi.mock("@/components/LanguageProvider", () => ({ useLanguage: () => ({ language: "en", setLanguage: lang.setLanguage }) }));
+const lang = vi.hoisted(() => ({ setLanguage: vi.fn(), ready: true }));
+vi.mock("@/components/LanguageProvider", () => ({ useLanguage: () => ({ language: "en", setLanguage: lang.setLanguage, ready: lang.ready }) }));
 
 import { WelcomeScreen } from "./WelcomeScreen";
 
 function renderWelcome(search = "") {
-  nav.search = search;
+  // `next` is read from the address bar itself, so the server can draw the page ahead of time (PIN-174).
+  window.history.replaceState(null, "", `/welcome${search ? `?${search}` : ""}`);
   return render(
     <I18nextProvider i18n={i18n}>
       <WelcomeScreen />
@@ -34,6 +32,8 @@ describe("WelcomeScreen", () => {
     vi.clearAllMocks();
     window.localStorage.clear();
     auth.state = { user: null, loading: false, session: null };
+    lang.ready = true;
+    document.documentElement.removeAttribute("data-welcome-wait");
   });
 
   it("leads with what Pinch saves, and two clear ways on", () => {
@@ -76,5 +76,37 @@ describe("WelcomeScreen", () => {
     renderWelcome("next=%2Fadd");
     expect(nav.replace).toHaveBeenCalledWith("/add");
     expect(screen.queryByRole("heading", { level: 1 })).toBeNull();
+  });
+
+  it("is all there before the session has been read, as the server draws it (PIN-174)", () => {
+    auth.state = { user: null, loading: true, session: null };
+    renderWelcome();
+    expect(screen.getByRole("heading", { level: 1, name: "Save any recipe in seconds. Cook it tonight." })).toBeDefined();
+    expect(nav.replace).not.toHaveBeenCalled();
+  });
+
+  it("shows itself once the visitor is known to be signed out and their language is in", () => {
+    const root = document.documentElement;
+    root.setAttribute("data-welcome-wait", "");
+    auth.state = { user: null, loading: true, session: null };
+    const view = renderWelcome();
+    expect(root.hasAttribute("data-welcome-wait")).toBe(true);
+
+    auth.state = { user: null, loading: false, session: null };
+    lang.ready = false;
+    view.rerender(
+      <I18nextProvider i18n={i18n}>
+        <WelcomeScreen />
+      </I18nextProvider>,
+    );
+    expect(root.hasAttribute("data-welcome-wait")).toBe(true);
+
+    lang.ready = true;
+    view.rerender(
+      <I18nextProvider i18n={i18n}>
+        <WelcomeScreen />
+      </I18nextProvider>,
+    );
+    expect(root.hasAttribute("data-welcome-wait")).toBe(false);
   });
 });

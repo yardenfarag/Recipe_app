@@ -13,6 +13,7 @@ import type { Recipe, RecipeTranslationContent } from "@shared/types/recipe";
 import { useAuth } from "@/components/AuthProvider";
 import { useLanguage } from "@/components/LanguageProvider";
 import type { RecipeDisplay } from "@/components/recipe/types";
+import { patchLibrary } from "@/lib/library/libraryCache";
 import { buildRecipeDisplay, needsTranslation } from "@/lib/recipe/recipeDisplay";
 
 /**
@@ -156,8 +157,11 @@ export function useRecipe(id: string): RecipeState {
     if (!recipe) return;
     const next = recipe.is_favorite !== true;
     setFavorite(recipe.id, next);
+    // The Library shows it straight away when you go back (it keeps its recipes in memory, PIN-174).
+    patchLibrary(recipe.id, { is_favorite: next });
     setRecipeFavorite(recipe.id, next).catch(() => {
       setFavorite(recipe.id, !next);
+      patchLibrary(recipe.id, { is_favorite: !next });
       showToast(t("recipe.favoriteFailedTitle"), "error");
     });
   }, [recipe, setFavorite, t]);

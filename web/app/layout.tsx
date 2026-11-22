@@ -1,6 +1,7 @@
 import type { Metadata, Viewport } from "next";
 import { Inter, Space_Grotesk } from "next/font/google";
 
+import { frontDoorScript } from "@/lib/onboarding/frontDoor";
 import { bootScript, themeCss } from "@/lib/theme";
 
 import { Providers } from "./providers";
@@ -28,6 +29,8 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
     // The head script sets lang, dir, data-pack and data-scheme from saved choices before the first paint.
     <html lang="en" className={`${inter.variable} ${spaceGrotesk.variable} h-full antialiased`} suppressHydrationWarning>
       <head>
+        {/* First, before anything loads: a signed-out visit to /app goes on to the welcome page or sign-in (PIN-174). */}
+        <script dangerouslySetInnerHTML={{ __html: frontDoorScript() }} />
         <style id="pinch-themes" dangerouslySetInnerHTML={{ __html: themeCss() }} />
         <script dangerouslySetInnerHTML={{ __html: bootScript() }} />
       </head>

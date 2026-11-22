@@ -12,13 +12,18 @@ import {
 import type { RecipeCollection } from "@shared/types/collection";
 
 import { useAuth } from "@/components/AuthProvider";
+import { readCollections, writeCollections } from "@/lib/library/libraryCache";
 
-/** The signed-in person's collections, each with the ids of the recipes in it. Changes show at once. */
+/**
+ * The signed-in person's collections, each with the ids of the recipes in it. Changes show at once. Coming back
+ * shows the ones from last time while they refresh (lib/library/libraryCache.ts).
+ */
 export function useCollections() {
   const { user } = useAuth();
   const userId = user?.id;
-  const [collections, setCollections] = useState<RecipeCollection[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [remembered] = useState(() => (userId ? readCollections(userId) : null));
+  const [collections, setCollections] = useState<RecipeCollection[]>(() => remembered ?? []);
+  const [loading, setLoading] = useState(!remembered);
   const [error, setError] = useState<string | null>(null);
 
   const refresh = useCallback(async () => {
@@ -37,6 +42,10 @@ export function useCollections() {
     // eslint-disable-next-line react-hooks/set-state-in-effect
     void refresh();
   }, [refresh]);
+
+  useEffect(() => {
+    if (userId && !loading) writeCollections(userId, collections);
+  }, [userId, loading, collections]);
 
   const createCollection = useCallback(async (name: string) => {
     const created = await createRemote(name.trim());

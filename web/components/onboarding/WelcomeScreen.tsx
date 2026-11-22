@@ -2,11 +2,12 @@
 
 import { ArrowRight, ChefHat, Heart, PiggyBank, Timer } from "lucide-react";
 import Link from "next/link";
-import { useRouter, useSearchParams } from "next/navigation";
-import { useEffect } from "react";
+import { useRouter } from "next/navigation";
+import { useEffect, useSyncExternalStore } from "react";
 import { useTranslation } from "react-i18next";
 
 import { useAuth } from "@/components/AuthProvider";
+import { useLanguage } from "@/components/LanguageProvider";
 import { PinchLogo } from "@/components/CookieMark";
 import { LanguagePills } from "@/components/onboarding/LanguageChoice";
 import { WelcomeIllustration } from "@/components/onboarding/WelcomeIllustration";
@@ -17,6 +18,7 @@ import { Tile } from "@/components/ui/Tile";
 import { LEGAL_URLS } from "@/lib/legal";
 import { FREE_MONTHLY_EXTRACT_LIMIT } from "@shared/lib/quotas";
 import { setOnboardingPending } from "@/lib/onboarding/device";
+import { WELCOME_WAIT_ATTRIBUTE } from "@/lib/onboarding/frontDoor";
 import { afterOnboardingPath, signInFromWelcome, signUpFromWelcome } from "@/lib/onboarding/paths";
 
 const BENEFITS = [
@@ -25,27 +27,54 @@ const BENEFITS = [
   { icon: ChefHat, title: "web.welcome.easeTitle", body: "web.welcome.easeBody", tone: "bg-success-soft text-success" },
 ] as const;
 
+const noSubscription = () => () => {};
+
+/**
+ * Where the visitor was headed (`?next=`). Read from the address in the browser, not with useSearchParams, so the
+ * server can draw the whole page ahead of time and it shows before the app's scripts have loaded (PIN-174).
+ */
+function useNextFromAddress(): string | null {
+  return useSyncExternalStore(
+    noSubscription,
+    () => new URLSearchParams(window.location.search).get("next"),
+    () => null,
+  );
+}
+
 /**
  * The front door for someone new (PIN-140): what Pinch saves them, the language picked on the way in, and two clear
  * ways on: create an account (then the first-run questions) or sign in. Signed-in visitors go straight to the app.
+ *
+ * The server draws it in English, so it paints at once for a first-time visitor (PIN-174). When the head script
+ * expects otherwise (a stored session, or another language) it sets WELCOME_WAIT_ATTRIBUTE and the page stays hidden
+ * until the session and the language are known.
  */
 export function WelcomeScreen() {
   const { t } = useTranslation();
   const router = useRouter();
-  const params = useSearchParams();
   const { user, loading } = useAuth();
-  const next = params.get("next");
+  const { ready: languageReady } = useLanguage();
+  const next = useNextFromAddress();
   usePageTitle(t("web.welcome.tabTitle"));
 
   useEffect(() => {
     if (!loading && user) router.replace(afterOnboardingPath(next));
   }, [loading, user, next, router]);
 
-  if (loading || user) return <LoadingState className="min-h-dvh" />;
+  // Signed out, in the right language: show it. Leaving the page lets go too, so nothing else is ever held hidden.
+  const settled = !loading && !user && languageReady;
+  useEffect(() => {
+    const root = document.documentElement;
+    if (settled) root.removeAttribute(WELCOME_WAIT_ATTRIBUTE);
+    return () => root.removeAttribute(WELCOME_WAIT_ATTRIBUTE);
+  }, [settled]);
+
+  if (user) return <LoadingState className="min-h-dvh" />;
 
   return (
     // The illustration's glow and floating badge reach past its edges; on narrow screens that must not scroll sideways.
-    <div className="relative isolate flex min-h-dvh flex-col overflow-x-clip">
+    // `data-welcome` lets globals.css hide it while the head script says to wait.
+    <div data-welcome className="relative isolate flex min-h-dvh flex-col overflow-x-clip">
       {/* Soft colour behind the page, so the first screen feels warm rather than stark. Decoration only. */}
       <div aria-hidden className="pointer-events-none absolute inset-x-0 top-0 -z-10 h-[46rem] overflow-hidden">
         <div className="absolute -start-32 -top-40 h-[28rem] w-[28rem] rounded-full bg-primary-soft opacity-70 blur-3xl" />

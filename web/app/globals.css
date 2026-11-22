@@ -3,7 +3,7 @@
 /*
  * Colours come from the theme packs in shared/constants/themes.ts. lib/theme.ts turns each pack, in light and
  * dark, into the --c-* variables (rendered in <head> by app/layout.tsx); <html data-pack data-scheme> picks one.
- * Tailwind classes use the names below: bg-surface, text-muted, border-border, bg-primary, text-on-primary…
+ * Tailwind classes use the names below: bg-surface, text-muted, border-border, bg-primary, text-on-primaryâ€¦
  *
  * The look is "Night Market" (PIN-160): flat pages, tiles with 28 px corners and a hairline border, Space Grotesk
  * for headings, big numbers and main buttons, Inter for everything else.
@@ -156,6 +156,20 @@
   input[type="checkbox"],
   input[type="radio"] {
     accent-color: var(--c-primary);
+  }
+
+  /* The welcome page waits, unseen, while it is about to forward a signed-in visitor or switch language
+     (lib/onboarding/frontDoor.ts). */
+  html[data-welcome-wait] [data-welcome] {
+    visibility: hidden;
+    /* Never for good: if the app's scripts don't arrive to settle it, show the page anyway after 3 s. */
+    animation: welcome-reveal 0s 3s forwards;
+  }
+}
+
+@keyframes welcome-reveal {
+  to {
+    visibility: visible;
   }
 }
 

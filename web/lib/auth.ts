@@ -5,6 +5,7 @@
 import { friendlyAuthError, requestPasswordReset as requestSharedPasswordReset } from "@shared/lib/supabase/auth";
 
 import { flushActivity, logAuth } from "@/lib/activity/activityLog";
+import { forgetLibrary } from "@/lib/library/libraryCache";
 import { rememberNextPath } from "@/lib/nextPath";
 import { authRedirectUrl, getSupabase } from "@/lib/supabase";
 
@@ -34,4 +35,6 @@ export async function signOut(): Promise<void> {
   await flushActivity();
   const { error } = await getSupabase().auth.signOut();
   if (error) throw error;
+  // The Library's recipes are kept in memory between visits; they don't outlast the session.
+  forgetLibrary();
 }
