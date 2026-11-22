@@ -126,6 +126,10 @@ export function estimateScrapeCredits(platform: string | null | undefined, usedV
   if (platform === 'tiktok') {
     return 2;
   }
+  if (platform === 'pinterest') {
+    // The pin page and the site it links to are read directly (PIN-70). A Firecrawl read is logged on its own.
+    return 0;
+  }
   if (platform === 'facebook') {
     // Post plus comments. A photo post skips the comments call, so this rounds up.
     return 2;

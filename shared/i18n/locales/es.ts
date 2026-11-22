@@ -773,7 +773,7 @@ export default {
     "creditsRemaining": "{{total}} créditos · {{free}} gratis + {{purchased}} comprados",
     "creditLimitBody": "Ya usaste los {{limit}} créditos gratis de este mes. Compra más o espera a que se renueven.",
     "creditLimitBodyWeb": "Ya usaste los {{limit}} créditos gratis de este mes. Compra más en la app o espera a que se renueven.",
-    "invalidUrl": "Pon un enlace de receta que valga (YouTube, Instagram, TikTok, Facebook o una web de recetas).",
+    "invalidUrl": "Pon un enlace de receta que valga (YouTube, Instagram, TikTok, Facebook, Pinterest o una web de recetas).",
     "invalidShare": "Eso que compartiste no traía un enlace de receta válido.",
     "invalidShareImage": "No pudimos leer esa foto. Prueba a elegirla desde tu galería.",
     "photoAction": "Sacar de una foto",
@@ -1142,6 +1142,7 @@ export default {
     "platformInstagram": "Instagram",
     "platformTiktok": "TikTok",
     "platformFacebook": "Facebook",
+    "platformPinterest": "Pinterest",
     "platformWeb": "Sitio web",
     "platformPhoto": "Foto",
     "stepOf": "Paso {{current}} de {{total}}"

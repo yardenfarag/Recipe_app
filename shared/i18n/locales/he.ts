@@ -773,7 +773,7 @@ export default {
     "creditsRemaining": "{{total}} קרדיטים · {{free}} חינם + {{purchased}} שנקנו",
     "creditLimitBody": "ניצלתם את כל {{limit}} הקרדיטים החינמיים החודש. אפשר לקנות עוד, או לחכות לחידוש החודשי.",
     "creditLimitBodyWeb": "ניצלתם את כל {{limit}} הקרדיטים החינמיים החודש. אפשר לקנות עוד באפליקציה, או לחכות לחידוש החודשי.",
-    "invalidUrl": "צריך קישור מתכון תקין (יוטיוב, אינסטגרם, טיקטוק, פייסבוק או אתר מתכונים).",
+    "invalidUrl": "צריך קישור מתכון תקין (יוטיוב, אינסטגרם, טיקטוק, פייסבוק, פינטרסט או אתר מתכונים).",
     "invalidShare": "בשיתוף הזה לא היה קישור מתכון תקין.",
     "invalidShareImage": "לא הצלחנו לקרוא את התמונה. נסו לבחור אותה מהגלריה.",
     "photoAction": "שליפה מתמונה",
@@ -1142,6 +1142,7 @@ export default {
     "platformInstagram": "Instagram",
     "platformTiktok": "TikTok",
     "platformFacebook": "Facebook",
+    "platformPinterest": "Pinterest",
     "platformWeb": "אתר",
     "platformPhoto": "תמונה",
     "stepOf": "שלב {{current}} מתוך {{total}}"

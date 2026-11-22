@@ -773,7 +773,7 @@ export default {
     "creditsRemaining": "{{total}} кредитов · {{free}} бесплатных + {{purchased}} купленных",
     "creditLimitBody": "Вы потратили все {{limit}} бесплатных кредитов за этот месяц. Купите ещё или подождите обновления.",
     "creditLimitBodyWeb": "Вы потратили все {{limit}} бесплатных кредитов за этот месяц. Купите ещё в приложении или подождите обновления.",
-    "invalidUrl": "Нужна нормальная ссылка на рецепт (YouTube, Instagram, TikTok, Facebook или сайт с рецептом).",
+    "invalidUrl": "Нужна нормальная ссылка на рецепт (YouTube, Instagram, TikTok, Facebook, Pinterest или сайт с рецептом).",
     "invalidShare": "В этой отправке не было нормальной ссылки на рецепт.",
     "invalidShareImage": "Не получилось прочитать фото. Попробуйте выбрать его из галереи.",
     "photoAction": "Снять с фото",
@@ -1142,6 +1142,7 @@ export default {
     "platformInstagram": "Instagram",
     "platformTiktok": "TikTok",
     "platformFacebook": "Facebook",
+    "platformPinterest": "Pinterest",
     "platformWeb": "Сайт",
     "platformPhoto": "Фото",
     "stepOf": "Шаг {{current}} из {{total}}"

@@ -40,6 +40,24 @@ export function fetchErrorInfo(err: FetchError, platform: string): FetchErrorInf
   const lower = err.message.toLowerCase();
   const fromScrapeCreators = err.context.startsWith('scrapecreators.ts');
   const fromWebPage = err.context === WEB_FETCH_CONTEXT;
+  const fromPinterest = err.context.startsWith('pinterest.ts');
+
+  if (fromPinterest) {
+    // The pin page itself (PIN-70). A failure on the page it links to never gets here: the pin is read instead.
+    if (err.details?.timedOut === true) {
+      return { code: 'source_timeout', message: 'Pinterest took too long to respond — try again.' };
+    }
+    if (lower.includes('not a pinterest pin')) {
+      return { code: 'invalid_url', message: "That doesn't look like a Pinterest pin. Open the pin and share it." };
+    }
+    if (lower.includes('not found') || err.details?.status === 404 || err.details?.status === 410) {
+      return { code: 'post_private', message: "We couldn't find that pin. It may have been deleted." };
+    }
+    if (err.details?.status === 429) {
+      return { code: 'rate_limited', message: 'Too many requests right now — try again in a minute.' };
+    }
+    return { code: 'source_unavailable', message: "Couldn't load this pin — try again." };
+  }
 
   if (err.details?.timedOut === true) {
     if (fromScrapeCreators) {
@@ -127,6 +145,7 @@ function webStatusInfo(status: number): FetchErrorInfo {
 function sourceName(platform: string): string {
   if (platform === 'tiktok') return 'TikTok';
   if (platform === 'facebook') return 'Facebook';
+  if (platform === 'pinterest') return 'Pinterest';
   if (platform === 'youtube') return 'YouTube';
   return 'Instagram';
 }

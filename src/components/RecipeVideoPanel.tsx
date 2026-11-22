@@ -30,6 +30,7 @@ const PLATFORM_ICON: Record<Platform, keyof typeof Ionicons.glyphMap> = {
   instagram: 'logo-instagram',
   tiktok: 'logo-tiktok',
   facebook: 'logo-facebook',
+  pinterest: 'logo-pinterest',
   web: 'globe-outline',
   photo: 'camera-outline',
   unknown: 'play-circle-outline',

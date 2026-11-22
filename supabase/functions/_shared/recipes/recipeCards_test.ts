@@ -2,7 +2,7 @@
 
 import { assertEquals } from 'jsr:@std/assert@1';
 
-import { hubCardToExtractRecipe } from './recipeCards.ts';
+import { findRecipeCard, hubCardToExtractRecipe, isHubPlatform, publishRecipeCard } from './recipeCards.ts';
 
 const card = {
   title: 'Blender soup',
@@ -40,4 +40,31 @@ Deno.test('hub cache hits return the card nutrition only next to its calories (P
   assertEquals(hubCardToExtractRecipe({ ...card, calories: null, nutrition }).nutrition, null);
   assertEquals(hubCardToExtractRecipe({ ...card, calories: 900, nutrition: { protein_g: 'x' } }).nutrition, null);
   assertEquals(hubCardToExtractRecipe({ ...card, calories: 900 }).nutrition, null);
+});
+
+Deno.test('Pinterest and Facebook recipes stay out of the Hub (ADR 021, ADR 029)', async () => {
+  assertEquals(isHubPlatform('pinterest'), false);
+  assertEquals(isHubPlatform('facebook'), false);
+  // Neither call may touch the database for them: the admin client here would throw.
+  const admin = new Proxy({}, { get: () => { throw new Error('database touched'); } }) as never;
+  assertEquals(
+    await findRecipeCard(admin, 'pinterest', 'https://www.pinterest.com/pin/452611831329517145/', '452611831329517145'),
+    null,
+  );
+  assertEquals(
+    await publishRecipeCard(
+      admin,
+      {
+        title: 'Tortellini soup',
+        platform: 'pinterest',
+        original_url: 'https://www.pinterest.com/pin/452611831329517145/',
+        ingredients: [{ name: 'tortellini', quantity: 14, unit: 'oz' }],
+        instructions: [{ step: 1, text: 'Simmer.' }],
+        servings: 6,
+        extraction_status: 'full',
+      } as never,
+      '452611831329517145',
+    ),
+    null,
+  );
 });

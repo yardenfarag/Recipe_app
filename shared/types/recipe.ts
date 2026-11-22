@@ -7,6 +7,7 @@ export type Platform =
   | 'instagram'
   | 'tiktok'
   | 'facebook'
+  | 'pinterest'
   | 'web'
   | 'photo'
   | 'unknown';

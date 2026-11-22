@@ -20,6 +20,7 @@ describe('snapTimingKind', () => {
     expect(snapTimingKind('extract', 'https://www.tiktok.com/@cook/video/7312345678901234567')).toBe('tiktok');
     expect(snapTimingKind('extract', 'https://www.instagram.com/reel/C9xAbCdEfGh/')).toBe('instagram');
     expect(snapTimingKind('extract', 'https://www.youtube.com/watch?v=dQw4w9WgXcQ')).toBe('youtube');
+    expect(snapTimingKind('extract', 'https://pin.it/53posxf7Z')).toBe('pinterest');
     expect(snapTimingKind('extract', 'https://www.seriouseats.com/crispy-roast-potatoes')).toBe('web');
   });
 

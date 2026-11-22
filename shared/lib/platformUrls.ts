@@ -3,7 +3,17 @@ import type { Platform } from '../types/recipe';
 import { extractYouTubeId } from './youtube';
 
 const SOCIAL_DOMAIN_PATTERN =
-  /(?:www\.)?(?:youtube\.com|youtu\.be|instagram\.com|tiktok\.com|vm\.tiktok\.com|vt\.tiktok\.com|(?:m\.|web\.)?facebook\.com|fb\.watch)\/[^\s<>"']+/i;
+  /(?:www\.)?(?:youtube\.com|youtu\.be|instagram\.com|tiktok\.com|vm\.tiktok\.com|vt\.tiktok\.com|(?:m\.|web\.)?facebook\.com|fb\.watch|(?:[a-z]{2}\.)?pinterest\.(?:com|[a-z]{2}|co\.[a-z]{2}|com\.[a-z]{2})|pin\.it)\/[^\s<>"']+/i;
+
+/**
+ * pinterest.com with any subdomain (www., uk., de., …) and Pinterest's country domains
+ * (pinterest.co.uk, pinterest.de, pinterest.com.au, …). `pin.it` is its short link (PIN-70).
+ */
+const PINTEREST_HOST = /^(?:[a-z0-9-]+\.)?pinterest\.(?:com|[a-z]{2}|co\.[a-z]{2}|com\.[a-z]{2})$/;
+
+function isPinterestHost(host: string): boolean {
+  return host === 'pin.it' || PINTEREST_HOST.test(host);
+}
 
 /** Bare host/path without scheme (share text sometimes omits https). */
 const BARE_URL_PATTERN =
@@ -11,7 +21,7 @@ const BARE_URL_PATTERN =
 
 /**
  * Pulls a recipe URL from pasted/share-sheet text and normalizes scheme-less
- * links. Accepts YouTube / Instagram / TikTok / Facebook and other public http(s) pages.
+ * links. Accepts YouTube / Instagram / TikTok / Facebook / Pinterest and other public http(s) pages.
  */
 export function normalizeSocialUrl(input: string): string | null {
   const trimmed = input.trim();
@@ -75,6 +85,9 @@ export function detectPlatform(url: string): Platform | 'unknown' {
   if (host === 'facebook.com' || host.endsWith('.facebook.com') || host === 'fb.watch') {
     return 'facebook';
   }
+  if (isPinterestHost(host)) {
+    return 'pinterest';
+  }
 
   if (host && host !== 'localhost' && !host.endsWith('.localhost') && !host.endsWith('.local')) {
     return 'web';
@@ -127,6 +140,18 @@ export function extractFacebookId(url: string): string | null {
   }
 }
 
+/** The numeric pin id from `/pin/<id>/`, `/pin/<slug>--<id>/` and `/pin/<id>/sent/…`. `pin.it` links give null. */
+export function extractPinterestId(url: string): string | null {
+  try {
+    const u = new URL(url);
+    if (!isPinterestHost(u.hostname.toLowerCase().replace(/^www\./, ''))) return null;
+    const match = u.pathname.match(/^\/pin\/(?:[^/]*--)?(\d{5,25})(?:\/|$)/);
+    return match?.[1] ?? null;
+  } catch {
+    return null;
+  }
+}
+
 /** True when two URLs refer to the same content on a supported platform. */
 export function recipeUrlsMatch(
   inputUrl: string,
@@ -158,6 +183,12 @@ export function recipeUrlsMatch(
   if (resolvedPlatform === 'facebook') {
     const inputId = extractFacebookId(inputUrl);
     const storedId = extractFacebookId(storedUrl);
+    if (inputId && storedId) return inputId === storedId;
+  }
+
+  if (resolvedPlatform === 'pinterest') {
+    const inputId = extractPinterestId(inputUrl);
+    const storedId = extractPinterestId(storedUrl);
     if (inputId && storedId) return inputId === storedId;
   }
 
@@ -197,6 +228,8 @@ export function extractContentId(url: string, platform?: Platform | 'unknown'): 
       return extractTikTokId(url);
     case 'facebook':
       return extractFacebookId(url);
+    case 'pinterest':
+      return extractPinterestId(url);
     default:
       return null;
   }

@@ -4,9 +4,12 @@ import { assertEquals } from 'jsr:@std/assert@1';
 
 import {
   canonicalFacebookUrl,
+  canonicalPinterestUrl,
   detectPlatform,
   extractFacebookId,
+  extractPinterestId,
   isFacebookShareLink,
+  isPinterestShortLink,
   LIVE_PLATFORMS,
   recipeUrlsMatch,
 } from './platform.ts';
@@ -131,4 +134,75 @@ Deno.test('detectPlatform keeps the existing platforms', () => {
   assertEquals(detectPlatform('https://www.allrecipes.com/recipe/21151/'), 'web');
   assertEquals(detectPlatform('ftp://facebook.com/reel/1'), 'unknown');
   assertEquals(detectPlatform('not a url'), 'unknown');
+});
+
+Deno.test('Pinterest imports are live', () => {
+  assertEquals(LIVE_PLATFORMS.includes('pinterest'), true);
+});
+
+Deno.test('detectPlatform knows Pinterest, its country domains and pin.it, and nothing that only looks like it', () => {
+  const pinterest = [
+    'https://www.pinterest.com/pin/452611831329517145/',
+    'https://pinterest.com/pin/452611831329517145/',
+    'https://uk.pinterest.com/pin/521713938098528836/',
+    'https://in.pinterest.com/pin/521713938098528836/',
+    'https://www.pinterest.co.uk/pin/521713938098528836/',
+    'https://www.pinterest.de/pin/521713938098528836/',
+    'https://www.pinterest.com.au/pin/521713938098528836/',
+    'https://www.pinterest.ru/pin/474707616995081285/sent/?invite_code=x&sender=y&sfo=1',
+    'https://pin.it/53posxf7Z',
+    'https://www.pinterest.com/someone/soups/',
+  ];
+  for (const url of pinterest) assertEquals(detectPlatform(url), 'pinterest', url);
+  for (const url of [
+    'https://notpinterest.com/pin/1234567/',
+    'https://pinterest.com.evil.example/pin/1234567/',
+    'https://pinterest-recipes.com/pin/1234567/',
+    'https://pin.it.example/abc',
+  ]) {
+    assertEquals(detectPlatform(url), 'web', url);
+  }
+});
+
+Deno.test('extractPinterestId reads the pin id from every pin URL shape', () => {
+  const cases: Array<[string, string | null]> = [
+    ['https://www.pinterest.com/pin/452611831329517145/', '452611831329517145'],
+    ['https://www.pinterest.com/pin/452611831329517145', '452611831329517145'],
+    ['https://www.pinterest.com/pin/one-pot-toblerone-cheesecake--521713938098528836/', '521713938098528836'],
+    ['https://www.pinterest.com/pin/1109433689594637913/sent/?invite_code=c4df&sender=1151795810859058468&sfo=1', '1109433689594637913'],
+    ['https://uk.pinterest.com/pin/521713938098528836/', '521713938098528836'],
+    ['https://www.pinterest.co.uk/pin/521713938098528836/', '521713938098528836'],
+    ['https://pin.it/53posxf7Z', null],
+    ['https://www.pinterest.com/someone/soups/', null],
+    ['https://www.pinterest.com/', null],
+    ['https://example.com/pin/452611831329517145/', null],
+    ['not a url', null],
+  ];
+  for (const [url, id] of cases) assertEquals(extractPinterestId(url), id, url);
+});
+
+Deno.test('isPinterestShortLink is true for pin.it and its redirect hop only', () => {
+  assertEquals(isPinterestShortLink('https://pin.it/53posxf7Z'), true);
+  assertEquals(isPinterestShortLink('https://api.pinterest.com/url_shortener/53posxf7Z/redirect/'), true);
+  assertEquals(isPinterestShortLink('https://www.pinterest.com/pin/452611831329517145/'), false);
+  assertEquals(isPinterestShortLink('https://example.com/url_shortener/x/'), false);
+});
+
+Deno.test('the canonical pin URL drops the sharer and the region', () => {
+  assertEquals(canonicalPinterestUrl('521713938098528836'), 'https://www.pinterest.com/pin/521713938098528836/');
+});
+
+Deno.test('recipeUrlsMatch compares pins by id, across shapes', () => {
+  const saved = 'https://www.pinterest.com/pin/521713938098528836/';
+  assertEquals(
+    recipeUrlsMatch('https://uk.pinterest.com/pin/one-pot-toblerone-cheesecake--521713938098528836/', null, saved, 'pinterest'),
+    true,
+  );
+  assertEquals(recipeUrlsMatch('https://www.pinterest.com/pin/1/', '521713938098528836', saved, 'pinterest'), true);
+  assertEquals(recipeUrlsMatch('https://www.pinterest.com/pin/452611831329517145/', null, saved, 'pinterest'), false);
+  // A pin never matches a saved web recipe from the site it links to.
+  assertEquals(
+    recipeUrlsMatch(saved, '521713938098528836', 'https://pinchofyum.com/tortellini-soup', 'web'),
+    false,
+  );
 });

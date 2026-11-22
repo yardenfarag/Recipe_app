@@ -3,12 +3,25 @@ export type Platform =
   | 'instagram'
   | 'tiktok'
   | 'facebook'
+  | 'pinterest'
   | 'web'
   | 'photo'
   | 'unknown';
 
 /** Which platforms have live extraction (ADR 003 staged rollout). */
-export const LIVE_PLATFORMS: Platform[] = ['youtube', 'instagram', 'tiktok', 'facebook', 'web'];
+export const LIVE_PLATFORMS: Platform[] = ['youtube', 'instagram', 'tiktok', 'facebook', 'pinterest', 'web'];
+
+/**
+ * pinterest.com with any subdomain (www., uk., de., in., …) and Pinterest's country domains
+ * (pinterest.co.uk, pinterest.de, pinterest.com.au, …). `pin.it` is matched separately (PIN-70).
+ */
+const PINTEREST_HOST = /^(?:[a-z0-9-]+\.)?pinterest\.(?:com|[a-z]{2}|co\.[a-z]{2}|com\.[a-z]{2})$/;
+
+/** True for any Pinterest host, short links included. `host` is lower case. */
+export function isPinterestHost(host: string): boolean {
+  const bare = host.replace(/^www\./, '');
+  return bare === 'pin.it' || PINTEREST_HOST.test(bare);
+}
 
 export function detectPlatform(url: string): Platform {
   let parsed: URL;
@@ -39,6 +52,9 @@ export function detectPlatform(url: string): Platform {
   // m., web. and mbasic. are the same posts on Facebook's other front ends; fb.watch is its video short link.
   if (host === 'facebook.com' || host.endsWith('.facebook.com') || host === 'fb.watch') {
     return 'facebook';
+  }
+  if (isPinterestHost(host)) {
+    return 'pinterest';
   }
 
   // Any other public http(s) URL is treated as a recipe webpage.
@@ -188,6 +204,34 @@ export function canonicalFacebookUrl(url: string): string {
   }
 }
 
+/** The numeric pin id from `/pin/<id>/`, `/pin/<slug>--<id>/` and `/pin/<id>/sent/…` on any Pinterest host. */
+export function extractPinterestId(url: string): string | null {
+  try {
+    const u = new URL(url);
+    if (!isPinterestHost(u.hostname.toLowerCase())) return null;
+    const match = u.pathname.match(/^\/pin\/(?:[^/]*--)?(\d{5,25})(?:\/|$)/);
+    return match?.[1] ?? null;
+  } catch {
+    return null;
+  }
+}
+
+/** True for `pin.it/<code>` and the `api.pinterest.com/url_shortener/…` hop it redirects through. */
+export function isPinterestShortLink(url: string): boolean {
+  try {
+    const u = new URL(url);
+    const host = u.hostname.toLowerCase().replace(/^www\./, '');
+    return host === 'pin.it' || (isPinterestHost(host) && u.pathname.startsWith('/url_shortener/'));
+  } catch {
+    return false;
+  }
+}
+
+/** Stable pin URL for saving and dedup. Drops the sharer's `invite_code` and `sender` parameters. */
+export function canonicalPinterestUrl(pinId: string): string {
+  return `https://www.pinterest.com/pin/${pinId}/`;
+}
+
 /** Extracts the 11-char YouTube video id from watch/shorts/youtu.be URLs. */
 export function extractYouTubeId(url: string): string | null {
   try {
@@ -237,6 +281,13 @@ export function recipeUrlsMatch(
     storedYouTubeId
   ) {
     return inputYouTubeId === storedYouTubeId;
+  }
+
+  if (storedPlatform === 'pinterest' || detectPlatform(storedUrl) === 'pinterest') {
+    const inputPinId = inputContentId ?? extractPinterestId(inputUrl);
+    const storedPinId = extractPinterestId(storedUrl);
+    if (inputPinId && storedPinId) return inputPinId === storedPinId;
+    return canonicalizeUrlForCompare(inputUrl) === canonicalizeUrlForCompare(storedUrl);
   }
 
   // Before Instagram: a Facebook `/reel/<id>` path also fits the Instagram shortcode pattern.

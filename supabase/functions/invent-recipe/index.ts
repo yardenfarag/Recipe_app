@@ -12,9 +12,11 @@ import { corsHeaders, jsonResponse } from '../_shared/core/cors.ts';
 import { FetchError } from '../_shared/core/errors.ts';
 import { inventRecipeFromImage, inventRecipeWithLadder } from '../_shared/recipes/inventRecipe.ts';
 import { fetchFacebookMeta, resolveFacebookShareLink } from '../_shared/extraction/sources/facebook.ts';
+import { fetchPinterestMeta, resolvePinterestShortLink } from '../_shared/extraction/sources/pinterest.ts';
 import { fetchInstagramMeta } from '../_shared/extraction/sources/instagram.ts';
 import {
   canonicalFacebookUrl,
+  canonicalPinterestUrl,
   canonicalInstagramUrl,
   canonicalTikTokUrl,
   canonicalYouTubeWatchUrl,
@@ -126,7 +128,7 @@ serve('invent-recipe', async (req) => {
       platform,
       message:
         platform === 'unknown'
-          ? "We couldn't recognize that link. Try a YouTube, Instagram, TikTok, Facebook, or recipe website link."
+          ? "We couldn't recognize that link. Try a YouTube, Instagram, TikTok, Facebook, Pinterest, or recipe website link."
           : `${capitalize(platform)} support is coming soon — we're starting with YouTube.`,
     });
   }
@@ -135,6 +137,10 @@ serve('invent-recipe', async (req) => {
   if (platform === 'facebook' && authHeader) {
     // PIN-66: resolve a share link to its reel or post, so a repeat is recognised before a scrape.
     url = await resolveFacebookShareLink(url);
+  }
+  if (platform === 'pinterest') {
+    // PIN-70: pin.it names its pin only after two redirects.
+    url = await resolvePinterestShortLink(url);
   }
 
   const contentId = platform === 'photo' ? null : extractVideoIdForPlatform(url, platform);
@@ -152,6 +158,14 @@ serve('invent-recipe', async (req) => {
       platform,
       code: 'invalid_url',
       message: "That doesn't look like a valid Instagram reel or post link.",
+    });
+  }
+  if (platform === 'pinterest' && !contentId) {
+    return jsonResponse({
+      status: 'failed' as JobStatus,
+      platform,
+      code: 'invalid_url',
+      message: "That doesn't look like a Pinterest pin. Open the pin and share it.",
     });
   }
 
@@ -286,9 +300,12 @@ serve('invent-recipe', async (req) => {
         meta,
       });
 
+    // PIN-70: a pin that links to a recipe site came back as that page, and is read as one.
+    const ladderPlatform: Platform = meta?.readAs === 'web' ? 'web' : platform;
+
     const tooLongNoText =
-      platform !== 'photo' &&
-      platform !== 'web' &&
+      ladderPlatform !== 'photo' &&
+      ladderPlatform !== 'web' &&
       isVideoTooLong(meta?.durationSeconds) &&
       !hasTextSources(meta ?? { topComments: [] });
 
@@ -463,10 +480,10 @@ serve('invent-recipe', async (req) => {
     } else {
       const ladder = await inventRecipeWithLadder(
         {
-          platform,
+          platform: ladderPlatform,
           sourceUrl: url,
-          videoUrl: platform === 'web' ? undefined : meta?.videoUrl,
-          durationSeconds: platform === 'web' ? undefined : meta?.durationSeconds,
+          videoUrl: ladderPlatform === 'web' ? undefined : meta?.videoUrl,
+          durationSeconds: ladderPlatform === 'web' ? undefined : meta?.durationSeconds,
           description: meta?.description,
           captions: meta?.captions,
           topComments: meta?.topComments ?? [],
@@ -480,7 +497,7 @@ serve('invent-recipe', async (req) => {
       scrapeCredits = estimateScrapeCredits(platform, usedInstagramVideoDownload) + (meta?.scrapeCredits ?? 0);
       const resolvedContentId = meta?.contentId ?? contentId;
       imageUrl = await resolveThumbnail(platform, resolvedContentId, meta ?? { topComments: [] });
-      sourceVideoUrl = platform === 'web' ? meta?.videoUrl ?? null : null;
+      sourceVideoUrl = ladderPlatform === 'web' ? meta?.videoUrl ?? null : null;
       originalUrl = canonicalOriginalUrl(platform, resolvedContentId, url, meta?.canonicalUrl);
       durationSeconds = meta?.durationSeconds;
     }
@@ -790,6 +807,7 @@ function canonicalOriginalUrl(
   if (platform === 'instagram' && contentId) return canonicalInstagramUrl(contentId);
   if (platform === 'tiktok' && contentId) return canonicalTikTokUrl(contentId);
   if (platform === 'facebook') return resolvedUrl?.trim() || canonicalFacebookUrl(url);
+  if (platform === 'pinterest' && contentId) return canonicalPinterestUrl(contentId);
   return url.trim();
 }
 
@@ -808,6 +826,8 @@ async function fetchPlatformMeta(
       return await fetchTikTokMeta(url);
     case 'facebook':
       return await fetchFacebookMeta(url);
+    case 'pinterest':
+      return await fetchPinterestMeta(url, { onPageRead });
     case 'web':
       return await fetchWebRecipeMeta(url, { onPageRead });
     default:
@@ -824,7 +844,8 @@ async function resolveThumbnail(
     return meta.thumbnailUrl ?? (contentId ? youTubeThumbnail(contentId) : null);
   }
   if (
-    (platform === 'instagram' || platform === 'tiktok' || platform === 'facebook' || platform === 'web') &&
+    (platform === 'instagram' || platform === 'tiktok' || platform === 'facebook' || platform === 'pinterest' ||
+      platform === 'web') &&
     meta.thumbnailUrl
   ) {
     const hosted = await persistSocialThumbnail({

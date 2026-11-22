@@ -9,7 +9,7 @@ export type ExtractStatus = 'full' | 'partial' | 'failed' | 'coming_soon';
 
 export interface ExtractResult {
   status: ExtractStatus;
-  platform: 'youtube' | 'instagram' | 'tiktok' | 'facebook' | 'web' | 'photo' | 'unknown';
+  platform: 'youtube' | 'instagram' | 'tiktok' | 'facebook' | 'pinterest' | 'web' | 'photo' | 'unknown';
   /** Unsaved extraction, or a full saved recipe when `cached` is true. */
   recipe?: ExtractedRecipe | Recipe;
   message?: string;

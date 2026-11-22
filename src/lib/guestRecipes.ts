@@ -344,7 +344,7 @@ export function sanitizeStoredRecipe(value: unknown): Recipe | null {
   if (translations) recipe.translations = translations;
 
   if (
-    ['youtube', 'instagram', 'tiktok', 'facebook', 'web', 'photo', 'unknown'].includes(
+    ['youtube', 'instagram', 'tiktok', 'facebook', 'pinterest', 'web', 'photo', 'unknown'].includes(
       String(value.platform),
     )
   ) {

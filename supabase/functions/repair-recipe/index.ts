@@ -9,6 +9,7 @@ import { corsHeaders, jsonResponse } from '../_shared/core/cors.ts';
 import { repairPartialRecipe, type GeminiRecipe } from '../_shared/extraction/gemini.ts';
 import { parseIngredientAmount } from '../_shared/recipes/ingredientAmounts.ts';
 import { fetchFacebookMeta } from '../_shared/extraction/sources/facebook.ts';
+import { fetchPinterestMeta } from '../_shared/extraction/sources/pinterest.ts';
 import { fetchInstagramMeta } from '../_shared/extraction/sources/instagram.ts';
 import {
   detectPlatform,
@@ -603,6 +604,8 @@ async function fetchPlatformMeta(
       return await fetchTikTokMeta(url);
     case 'facebook':
       return await fetchFacebookMeta(url);
+    case 'pinterest':
+      return await fetchPinterestMeta(url, { onPageRead });
     case 'web':
       return await fetchWebRecipeMeta(url, { onPageRead });
     default:

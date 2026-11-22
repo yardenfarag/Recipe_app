@@ -77,6 +77,7 @@ export default function CookbookScreen() {
       instagram: t('cookbook.platformInstagram'),
       tiktok: t('cookbook.platformTiktok'),
       facebook: t('cookbook.platformFacebook'),
+      pinterest: t('cookbook.platformPinterest'),
       web: t('cookbook.platformWeb'),
       photo: t('cookbook.platformPhoto'),
     }),
