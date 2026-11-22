@@ -3,6 +3,12 @@
     "name": "Pinch",
     "slug": "pinch",
     "version": "1.0.10",
+    "runtimeVersion": {
+      "policy": "fingerprint"
+    },
+    "updates": {
+      "url": "https://u.expo.dev/58f56906-4b2d-49ca-9e87-a706b5d7cf1f"
+    },
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",
     "scheme": "pinch",

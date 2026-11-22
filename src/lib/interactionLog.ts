@@ -20,9 +20,28 @@ export const appVersion = (() => {
 })();
 
 let installId: string | null = null;
+let updateId: string | null | undefined;
+
+/**
+ * The over-the-air update this phone is running (ADR 030). Null when it runs the code that came
+ * with the store version, and on web and in development, where there are no updates. Loaded on
+ * first send like the Supabase client; if it can't be read, events are logged without it.
+ */
+async function runningUpdateId(): Promise<string | null> {
+  if (updateId === undefined) {
+    try {
+      const Updates = await import('expo-updates');
+      updateId = Updates.isEnabled && !Updates.isEmbeddedLaunch ? Updates.updateId : null;
+    } catch {
+      updateId = null;
+    }
+  }
+  return updateId;
+}
 
 async function sendBatch(sessionId: string, events: InteractionEvent[]): Promise<void> {
   installId ??= await getInstallId();
+  const update = await runningUpdateId();
   // Loaded on first send so every button doesn't import the Supabase client.
   const { supabase } = await import('@/lib/supabase/client');
   const { error } = await supabase.rpc('log_interaction_events', {
@@ -35,7 +54,7 @@ async function sendBatch(sessionId: string, events: InteractionEvent[]): Promise
       name,
       screen,
       at,
-      properties: properties ?? {},
+      properties: update ? { ...properties, update_id: update } : (properties ?? {}),
     })),
   });
   if (error) {
