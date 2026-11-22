@@ -1481,6 +1481,7 @@ export default {
     "basics": "الأساسيات"
   },
   "web": {
+    "confirmEmailInstructions": "افتح الرابط في تلك الرسالة، ثم عد إلى هنا وسجّل الدخول.",
     "skipToContent": "تخطَّ إلى المحتوى",
     "mainNavigation": "التنقل الرئيسي",
     "account": "الحساب",
@@ -1584,8 +1585,6 @@ export default {
       "dropOrPastePdf": "أو اسحب صورة أو ملف PDF إلى هنا، أو الصق صورة.",
       "dropTitlePdf": "أفلت صورة أو ملف PDF أو رابطًا",
       "notAPhotoOrPdf": "هذا الملف ليس صورة ولا ملف PDF. جرّب JPG أو PNG أو PDF.",
-      "partialMissingSteps": "وجدنا المكونات، لكن لم نجد الخطوات. كان هذا الاستيراد مجانيًا. جرّب رابطًا آخر، أو صورة للوصفة كاملة.",
-      "partialMissingIngredients": "وجدنا الخطوات، لكن لم نجد المكونات. كان هذا الاستيراد مجانيًا. جرّب رابطًا آخر، أو صورة للوصفة كاملة.",
       "draftWaiting": "لديك وصفة لم تُحفظ بعد: {{title}}",
       "backToSnap": "العودة إلى Snap",
       "discard": "تجاهل",

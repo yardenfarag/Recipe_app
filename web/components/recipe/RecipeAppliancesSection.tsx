@@ -54,7 +54,7 @@ import {
 import { isApplianceKey, recipeAppliancesOf, type ApplianceKey, type RecipeAppliance } from "@shared/lib/appliances";
 import { applianceFit, checkKitchen, worthAskingAboutAppliances, type ApplianceFit, type KitchenCheck } from "@shared/lib/ownedAppliances";
 
-import { useRecipeActions } from "@/components/recipe/actions/RecipeActionsContext";
+import { isUpdating, useRecipeActions } from "@/components/recipe/actions/RecipeActionsContext";
 import type { RecipeDisplay } from "@/components/recipe/types";
 import { Button } from "@/components/ui/Button";
 import { Dialog, DialogContent } from "@/components/ui/Dialog";
@@ -128,9 +128,11 @@ export function RecipeAppliancesSection({ display, system }: { display: RecipeDi
   const check = useMemo(() => checkKitchen(appliances, kitchen), [appliances, kitchen]);
   const [open, setOpen] = useState<RecipeAppliance | null>(null);
 
-  if (appliances === null) return null;
+  // After a hand edit Pinch works the appliances out again (ADR 018): say so, as every other recalculated field does.
+  const updating = isUpdating(actions, "appliances");
+  if (appliances === null && !updating) return null;
 
-  const { required, better } = groupAppliances(appliances);
+  const { required, better } = groupAppliances(appliances ?? []);
   const ask = owned.userId !== null && worthAskingAboutAppliances(appliances, kitchen);
 
   const describe = (item: RecipeAppliance) => {
@@ -201,7 +203,14 @@ export function RecipeAppliancesSection({ display, system }: { display: RecipeDi
         ) : null}
       </div>
 
-      {appliances.length === 0 ? <p className="mt-2 text-[15px] text-muted">{t("appliances.none")}</p> : null}
+      {updating ? (
+        <p data-testid="appliances-updating" aria-busy="true" className="mt-2 text-[15px] font-semibold text-muted motion-safe:animate-pulse">
+          <span className="sr-only">{t("appliances.title")}: </span>
+          {t("recipeEditor.updating")}
+        </p>
+      ) : appliances?.length === 0 ? (
+        <p className="mt-2 text-[15px] text-muted">{t("appliances.none")}</p>
+      ) : null}
 
       {required.length > 0 || better.length > 0 ? (
         <div className="mt-4 flex flex-wrap gap-x-12 gap-y-6">

@@ -9,6 +9,7 @@ import { useTranslation } from "react-i18next";
 import { RECIPE_QUICK_FILTERS, RECIPE_SORT_OPTIONS, type RecipeQuickFilter, type RecipeSortKey } from "@shared/lib/recipeListQuery";
 import { translateRecipeTag } from "@shared/lib/recipeTags";
 
+import { Button } from "@/components/ui/Button";
 import { Chip, chipClasses } from "@/components/ui/Chip";
 import { SegmentedControl } from "@/components/ui/SegmentedControl";
 import { Tile } from "@/components/ui/Tile";
@@ -36,6 +37,7 @@ export type LibraryToolbarProps = {
   availableTags: string[];
   selectedTags: string[];
   onToggleTag: (tag: string) => void;
+  onClearTags: () => void;
   collections: { id: string; name: string }[];
   selectedCollectionId: string | null;
   onSelectCollection: (id: string | null) => void;
@@ -139,8 +141,13 @@ export function LibraryToolbar(props: LibraryToolbarProps) {
           </div>
         </fieldset>
         {props.availableTags.length > 0 ? (
-          <fieldset className="mt-5">
+          <fieldset className="relative mt-5">
             <legend className="text-sm font-bold text-text">{t("library.tags")}</legend>
+            {selectedTags.length > 0 ? (
+              <Button variant="link" trackId="library.tags.clear" aria-label={t("a11y.clearTags")} className="absolute -top-0.5 end-0" onClick={props.onClearTags}>
+                {t("common.clear")}
+              </Button>
+            ) : null}
             <div className="mt-3 flex flex-wrap gap-2">
               {props.availableTags.map((tag) => (
                 <Chip key={tag} size="sm" selected={selectedTags.includes(tag)} trackId="library.tag.toggle" onClick={() => props.onToggleTag(tag)}>

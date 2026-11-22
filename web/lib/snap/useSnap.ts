@@ -33,6 +33,7 @@ import { captureRecipeExtracted, captureRecipeSaved } from "@/lib/analytics";
 import { webSalesOn } from "@/lib/credits/salesSwitch";
 import { signInPathFor } from "@/lib/nextPath";
 import { clearSnapDraft, setSnapDraft } from "@/lib/snap/draft";
+import { setImportDraft } from "@/lib/editor/importDraft";
 import { acknowledgeRequest, webExtractionContext } from "@/lib/snap/requestIds";
 
 /** Saves a Snap's recipe for the cook. Returns its id, or null when the save failed (the preview takes over). */
@@ -72,6 +73,8 @@ export type SnapBanner = {
    * dead end. A failed first try used to be where new people gave up.
    */
   failedUrl?: string;
+  /** A partial import kept for the editor: the banner offers "Fill it in myself" (`/recipe/edit?from=import`). */
+  fillIn?: boolean;
 } | null;
 
 /** Failures where another try, a screenshot or a guess may still get the recipe (not "not food" or a bad link). */
@@ -187,12 +190,14 @@ export function useSnap({ onSettled }: { onSettled?: () => void } = {}) {
             router.push(`/recipe/${outcome.recipe.id}`);
             break;
           case "partial":
-            // Nothing to keep: the editor to fill it in isn't on the web yet (PIN-137), and a partial import is free.
+            // Free (ADR 019), and kept for the editor, where the cook adds what the source left out (as on mobile).
+            setImportDraft(outcome.recipe);
             if (result.request_id && !extractionOutcomeIsUncertain(result.code)) await acknowledgeRequest(key, result.request_id);
             setBanner({
               tone: "partial",
               title: t("snap.partialTitle"),
-              message: t(outcome.missingIngredients ? "web.snap.partialMissingIngredients" : "web.snap.partialMissingSteps"),
+              message: t(outcome.missingIngredients ? "snap.partialMissingIngredients" : "snap.partialMissingSteps"),
+              fillIn: true,
             });
             break;
           case "preview": {

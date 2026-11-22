@@ -14,17 +14,24 @@ export type SwapTarget = {
   servingsShown: number;
 };
 
-/** Two or three alternatives from `suggest-substitution` (ADR 005), or null when there are none. Free, as on mobile. */
+/** Why no alternatives came back: the server's code (`daily_limit`, `no_substitute`…) when it sent one. */
+export type SwapFailure = { code: string | null; message: string | null };
+
+/**
+ * Two or three alternatives from `suggest-substitution` (ADR 005), or why there are none. Free, as on mobile, but
+ * limited per day: the failure carries `daily_limit` so the dialog can say so instead of "try again".
+ */
 export async function findAlternatives(
   target: SwapTarget,
   context: { title: string; ingredients: Ingredient[]; language: RecipeLanguageCode | null },
-): Promise<SubstitutionAlternative[] | null> {
+): Promise<SubstitutionAlternative[] | SwapFailure> {
   const others = context.ingredients.filter((_, i) => i !== target.index).map((ingredient) => ingredient.name);
   try {
     const result = await suggestSubstitution(target.ingredient, context.title, others, context.language);
-    return result.status === "ok" && result.alternatives?.length ? result.alternatives : null;
+    if (result.status === "ok" && result.alternatives?.length) return result.alternatives;
+    return { code: result.code ?? null, message: result.message ?? null };
   } catch {
-    return null;
+    return { code: null, message: null };
   }
 }
 

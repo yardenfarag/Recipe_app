@@ -98,6 +98,19 @@ describe("AuthForm", () => {
     expect(calls.signUpWithEmail).not.toHaveBeenCalled();
   });
 
+  it("after signing up, says what to do with the email, and lets a mistyped address be fixed", async () => {
+    calls.signUpWithEmail.mockResolvedValue({ needsConfirmation: true });
+    renderForm("mode=signup");
+    typeInto("Email", "cook@exmaple.com");
+    typeInto("Password", "long-enough-1");
+    fireEvent.click(screen.getByRole("button", { name: "Sign up" }));
+    expect(await screen.findByText(i18n.t("web.confirmEmailInstructions"))).toBeDefined();
+    fireEvent.click(screen.getByRole("button", { name: i18n.t("auth.differentEmail") }));
+    // Back on the sign-up form, with the address there to correct.
+    expect((screen.getByLabelText("Email") as HTMLInputElement).value).toBe("cook@exmaple.com");
+    expect(screen.getByRole("button", { name: "Sign up" })).toBeDefined();
+  });
+
   it("goes back to the page the visitor wanted once signed in", () => {
     auth.state = { user: { id: "u1" }, loading: false, session: null };
     renderForm("mode=signin&next=%2Frecipe%2F7");

@@ -13,6 +13,7 @@ import { ProfileAvatar } from "@/components/settings/ProfileAvatar";
 import { useSettingsProfile } from "@/components/settings/SettingsProfile";
 import { useTheme } from "@/components/ThemeProvider";
 import { Tile, TileLabel, tileClasses } from "@/components/ui/Tile";
+import { APP_VERSION } from "@/lib/activity/appInfo";
 import { cn } from "@/lib/cn";
 import { ADMIN_LINK, SETTINGS_GROUPS, type SettingsSection, type SettingsSectionId } from "@/lib/settings/sections";
 import { shareApp } from "@/lib/settings/shareApp";
@@ -24,6 +25,7 @@ const SECTION_TRACK_ID: Record<SettingsSectionId, string> = {
   account: "settings.account",
   credits: "settings.plan",
   recipe: "settings.recipe_preferences",
+  recipes: "settings.your_recipes",
   appearance: "settings.appearance",
   language: "settings.language",
   support: "settings.help_support",
@@ -85,6 +87,7 @@ export function SettingsRail({ current }: { current: SettingsSectionId }) {
           {t(ADMIN_LINK.labelKey)}
         </RailLink>
       ) : null}
+      <AppVersion />
     </nav>
   );
 }
@@ -166,7 +169,17 @@ export function SettingsList() {
           </Link>
         </Tile>
       ) : null}
+      <AppVersion />
     </nav>
+  );
+}
+
+/** The version at the foot of Settings, as on mobile: what support asks for. "-next" marks this web app. */
+function AppVersion() {
+  return (
+    <p data-testid="app-version" dir="ltr" className="px-1 text-center text-xs text-muted">
+      v{APP_VERSION}
+    </p>
   );
 }
 

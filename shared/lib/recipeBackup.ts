@@ -1,8 +1,8 @@
-import { recipeAppliancesOf } from '@shared/lib/appliances';
-import { sanitizeStoredRecipe } from '@/lib/guestRecipes';
-import { detectPlatform, recipeUrlsMatch } from '@shared/lib/platformUrls';
-import { recipeUrlOrigin } from '@shared/lib/recipeOrigin';
-import type { Recipe, RecipeTranslationContent } from '@shared/types/recipe';
+import { recipeAppliancesOf } from './appliances';
+import { sanitizeStoredRecipe } from './storedRecipe';
+import { detectPlatform, recipeUrlsMatch } from './platformUrls';
+import { recipeUrlOrigin } from './recipeOrigin';
+import type { Recipe, RecipeTranslationContent } from '../types/recipe';
 
 export const RECIPE_BACKUP_FORMAT = 'pinch-recipe-backup';
 export const RECIPE_BACKUP_VERSION = 1;

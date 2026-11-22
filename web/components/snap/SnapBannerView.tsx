@@ -1,11 +1,12 @@
 "use client";
 
-import { Camera, ChefHat, CircleAlert, Coins, Info, RotateCcw, X } from "lucide-react";
+import { Camera, ChefHat, CircleAlert, Coins, Info, PenLine, RotateCcw, X } from "lucide-react";
+import Link from "next/link";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
 
 import { OutOfCreditsDialog } from "@/components/credits/OutOfCreditsDialog";
-import { Button } from "@/components/ui/Button";
+import { Button, buttonClasses } from "@/components/ui/Button";
 import { IconButton } from "@/components/ui/IconButton";
 import { cn } from "@/lib/cn";
 import type { SnapBanner } from "@/lib/snap/useSnap";
@@ -50,6 +51,12 @@ export function SnapBannerView({
             </Button>
             <OutOfCreditsDialog open={buying} onOpenChange={setBuying} needed={1} />
           </>
+        ) : null}
+        {banner.fillIn ? (
+          <Link href="/recipe/edit?from=import" data-track="snap.partial.fill_in" className={buttonClasses({ size: "sm", className: "mt-3" })}>
+            <PenLine aria-hidden className="h-4 w-4" />
+            {t("snap.partialFillIn")}
+          </Link>
         ) : null}
         {banner.failedUrl && failedLink ? (
           <FailedLinkActions url={banner.failedUrl} {...failedLink} />

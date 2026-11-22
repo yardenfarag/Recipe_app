@@ -324,6 +324,7 @@ function LibraryScreen() {
             availableTags={availableTags}
             selectedTags={selectedTags}
             onToggleTag={(tag) => setSelectedTags((previous) => (previous.includes(tag) ? previous.filter((item) => item !== tag) : [...previous, tag]))}
+            onClearTags={() => setSelectedTags([])}
             collections={collections}
             selectedCollectionId={selectedCollectionId}
             onSelectCollection={setSelectedCollectionId}

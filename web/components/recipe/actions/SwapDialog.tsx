@@ -6,6 +6,7 @@ import { useTranslation } from "react-i18next";
 
 import type { MeasurementSystem } from "@shared/lib/convertMeasurement";
 import { displayIngredientAmount } from "@shared/lib/displayIngredientAmount";
+import { serverErrorText, SWAP_ERROR_KEYS } from "@shared/lib/serverErrors";
 import type { SubstitutionAlternative } from "@shared/lib/supabase/suggestSubstitution";
 import type { Instruction } from "@shared/types/recipe";
 
@@ -49,7 +50,11 @@ export function SwapDialog({ target, display, system, onClose, onApply }: Props)
   );
 }
 
-type Load = { status: "loading" } | { status: "failed" } | { status: "ready"; alternatives: SubstitutionAlternative[] };
+type Load =
+  | { status: "loading" }
+  /** `canRetry` is false when asking again can't help (the day's swaps are used up). */
+  | { status: "failed"; message: string; canRetry: boolean }
+  | { status: "ready"; alternatives: SubstitutionAlternative[] };
 
 function Body({
   target,
@@ -59,7 +64,7 @@ function Body({
   onApplied,
   onApply,
 }: Omit<Props, "target" | "onClose"> & { target: SwapTarget; onApplying: (busy: boolean) => void; onApplied: () => void }) {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const [load, setLoad] = useState<Load>({ status: "loading" });
   const [attempt, setAttempt] = useState(0);
   const [applying, setApplying] = useState<string | null>(null);
@@ -71,9 +76,18 @@ function Body({
 
   useEffect(() => {
     let cancelled = false;
-    findAlternatives(target, { title: display.title, ingredients: display.ingredients, language }).then((alternatives) => {
+    findAlternatives(target, { title: display.title, ingredients: display.ingredients, language }).then((result) => {
       if (cancelled) return;
-      setLoad(alternatives ? { status: "ready", alternatives } : { status: "failed" });
+      if (Array.isArray(result)) {
+        setLoad({ status: "ready", alternatives: result });
+        return;
+      }
+      const failure = result ?? { code: null, message: null };
+      setLoad({
+        status: "failed",
+        message: serverErrorText(failure, t, i18n.language, "recipe.swapFailed", SWAP_ERROR_KEYS),
+        canRetry: failure.code !== "daily_limit",
+      });
     });
     return () => {
       cancelled = true;
@@ -119,18 +133,20 @@ function Body({
 
         {load.status === "failed" ? (
           <div role="alert" className="rounded-2xl bg-danger-soft px-4 py-3 text-sm">
-            <p className="font-semibold text-danger">{t("recipe.swapFailed")}</p>
-            <Button
-              variant="link"
-              className="mt-2 -ms-1"
-              trackId="substitution.retry"
-              onClick={() => {
-                setLoad({ status: "loading" });
-                setAttempt((n) => n + 1);
-              }}
-            >
-              {t("common.tryAgainAction")}
-            </Button>
+            <p className="font-semibold text-danger">{load.message}</p>
+            {load.canRetry ? (
+              <Button
+                variant="link"
+                className="mt-2 -ms-1"
+                trackId="substitution.retry"
+                onClick={() => {
+                  setLoad({ status: "loading" });
+                  setAttempt((n) => n + 1);
+                }}
+              >
+                {t("common.tryAgainAction")}
+              </Button>
+            ) : null}
           </div>
         ) : null}
 

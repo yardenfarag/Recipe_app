@@ -1,6 +1,6 @@
 "use client";
 
-import { ArrowRight, Camera, Compass, Link2, Sparkles, type LucideIcon } from "lucide-react";
+import { ArrowRight, Camera, Compass, Link2, PenLine, Sparkles, type LucideIcon } from "lucide-react";
 import Link from "next/link";
 import { useTranslation } from "react-i18next";
 
@@ -10,8 +10,8 @@ import { buttonClasses } from "@/components/ui/Button";
 type Way = { icon: LucideIcon; title: string; body: string; href: string; trackId: string };
 
 /**
- * The empty Library, and so the first thing a new account sees after onboarding: a pointer to Snap, with the three
- * ways to a first recipe. Each one is a link to where it happens, so there is no dead end.
+ * The empty Library, and so the first thing a new account sees after onboarding: a pointer to Snap, with the four
+ * ways to a first recipe (writing one down by hand too, as the mobile Library offers). Each one is a link to where it happens, so there is no dead end.
  */
 export function FirstRecipeGuide() {
   const { t } = useTranslation();
@@ -20,6 +20,7 @@ export function FirstRecipeGuide() {
     { icon: Link2, title: t("web.firstRecipe.linkTitle"), body: t("web.firstRecipe.linkBody"), href: snap, trackId: "first_recipe.way.link" },
     { icon: Camera, title: t("web.firstRecipe.photoTitle"), body: t("web.firstRecipe.photoBody"), href: snap, trackId: "first_recipe.way.photo" },
     { icon: Compass, title: t("web.firstRecipe.hubTitle"), body: t("web.firstRecipe.hubBody"), href: navItem("hub").href, trackId: "first_recipe.way.hub" },
+    { icon: PenLine, title: t("recipeEditor.entry.write"), body: t("recipeEditor.entry.writeHint"), href: "/recipe/edit", trackId: "first_recipe.way.write" },
   ];
 
   return (

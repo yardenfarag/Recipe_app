@@ -28,6 +28,7 @@ import { PageHeader } from "@/components/ui/PageHeader";
 import { Tile } from "@/components/ui/Tile";
 import { cn } from "@/lib/cn";
 import { FIELD_IDS, focusById, ingredientFieldId, stepFieldId } from "@/lib/editor/fieldIds";
+import { clearImportDraft } from "@/lib/editor/importDraft";
 import { dragHasFiles, imageFileFrom, photoFromFile, photoPreviewSrc } from "@/lib/editor/photoFile";
 import { parseIngredientPaste, parseStepPaste } from "@/lib/editor/pasteRows";
 import { insertIngredientAfter, insertStepAfter, pasteIngredients, pasteSteps } from "@/lib/editor/rows";
@@ -87,8 +88,11 @@ export function RecipeEditor({ initial }: { initial: RecipeEditorState }) {
   const [draggingFile, setDraggingFile] = useState(false);
   /** Asking before throwing changes away; holds what to do on "Discard". */
   const [pendingLeave, setPendingLeave] = useState<(() => void) | null>(null);
-  /** A field to focus once the render that adds it is done (a new row, the first error). */
-  const pendingFocus = useRef<string | null>(null);
+  /**
+   * A field to focus once the render that adds it is done (a new row, the first error). A partial import starts on
+   * the empty row of what the source left out, as mobile scrolls to it.
+   */
+  const pendingFocus = useRef<string | null>(firstMissingFieldId(initial));
 
   const dirty = editor.needsDiscardConfirm(state);
   const errors = useMemo(() => visibleErrors(state, attempted, serverErrors), [state, attempted, serverErrors]);
@@ -276,6 +280,7 @@ export function RecipeEditor({ initial }: { initial: RecipeEditorState }) {
               ? t("web.editor.savedUpdating")
               : t("web.editor.saved");
         showToast(text, result.recalculation === "limited" ? "info" : "success");
+        if (state.mode === "import") clearImportDraft();
         const id = result.recipe.id;
         goTo(() => router.replace(`/recipe/${id}`));
         return;
@@ -340,7 +345,8 @@ export function RecipeEditor({ initial }: { initial: RecipeEditorState }) {
   }));
 
   const isEdit = state.mode === "edit";
-  const title = isEdit ? t("recipeEditor.titleEdit") : t("recipeEditor.titleWrite");
+  const isImport = state.mode === "import";
+  const title = isEdit ? t("recipeEditor.titleEdit") : isImport ? t("recipeEditor.titleImport") : t("recipeEditor.titleWrite");
   const servingsValue = Number.parseInt(state.servings, 10);
   const setServingsBy = (delta: number) => {
     const base = Number.isFinite(servingsValue) ? servingsValue : 0;
@@ -363,7 +369,14 @@ export function RecipeEditor({ initial }: { initial: RecipeEditorState }) {
 
   return (
     <>
-      <PageHeader title={title} subtitle={isEdit ? undefined : t("recipeEditor.entry.writeHint")} />
+      <PageHeader title={title} subtitle={isEdit || isImport ? undefined : t("recipeEditor.entry.writeHint")} />
+
+      {isImport && initial.missing.length > 0 ? (
+        <p role="status" className="mb-6 flex items-start gap-3 rounded-2xl bg-warning-soft px-4 py-3 text-[15px] font-semibold text-text">
+          <CircleAlert aria-hidden className="mt-0.5 h-5 w-5 shrink-0 text-warning" />
+          {t(initial.missing.includes("ingredients") ? "recipeEditor.importMissingIngredients" : "recipeEditor.importMissingSteps")}
+        </p>
+      ) : null}
 
       {banner ? (
         <div
@@ -391,7 +404,7 @@ export function RecipeEditor({ initial }: { initial: RecipeEditorState }) {
         onSubmit={onSubmit}
         noValidate
         aria-label={title}
-        className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_22rem] lg:items-start xl:grid-cols-[minmax(0,1fr)_24rem]"
+        className="grid grid-cols-1 gap-4 lg:grid-cols-[minmax(0,1fr)_22rem] lg:items-start xl:grid-cols-[minmax(0,1fr)_24rem]"
       >
         <div className="flex min-w-0 flex-col gap-4">
           {/* Title and servings */}
@@ -759,4 +772,18 @@ export function RecipeEditor({ initial }: { initial: RecipeEditorState }) {
       ) : null}
     </>
   );
+}
+
+/** Where a partial import starts: the empty ingredient or step row added for what the source left out. */
+function firstMissingFieldId(state: RecipeEditorState): string | null {
+  if (state.mode !== "import") return null;
+  if (state.missing.includes("ingredients")) {
+    const row = state.ingredients.at(-1);
+    return row ? ingredientFieldId(row.id, "quantity") : FIELD_IDS.ingredients;
+  }
+  if (state.missing.includes("instructions")) {
+    const row = state.steps.at(-1);
+    return row ? stepFieldId(row.id) : FIELD_IDS.steps;
+  }
+  return null;
 }

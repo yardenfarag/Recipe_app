@@ -120,6 +120,16 @@ describe("RecipeAppliancesSection", () => {
     expect(container.innerHTML).toBe("");
   });
 
+  it("says Updating… while Pinch works the appliances out again after a hand edit, as every other field does", () => {
+    const display = displayOf(null);
+    wrap(
+      <RecipeActionsContext.Provider value={fakeActions(display, { updatingFields: ["appliances"] })}>
+        <RecipeAppliancesSection display={display} system="original" />
+      </RecipeActionsContext.Provider>,
+    );
+    expect(screen.getByTestId("appliances-updating").textContent).toContain(i18n.t("recipeEditor.updating"));
+  });
+
   it("says so when the recipe needs no special equipment", () => {
     wrap(<RecipeAppliancesSection display={displayOf([])} system="original" />);
     expect(screen.getByText("No special equipment needed")).toBeDefined();

@@ -1,4 +1,5 @@
 import {
+  Archive,
   CircleHelp,
   Coins,
   Languages,
@@ -9,7 +10,7 @@ import {
   type LucideIcon,
 } from "lucide-react";
 
-export type SettingsSectionId = "account" | "credits" | "recipe" | "appearance" | "language" | "support" | "legal";
+export type SettingsSectionId = "account" | "credits" | "recipe" | "recipes" | "appearance" | "language" | "support" | "legal";
 
 export type SettingsSection = {
   id: SettingsSectionId;
@@ -24,9 +25,7 @@ export type SettingsSection = {
 /**
  * The settings pages, in menu order. The paths are the mobile app's (`/settings/recipe`, `/settings/appearance`…), so
  * old links keep working. Account is new on the web: on a wide screen it is also what `/settings` shows.
- *
- * Not here yet, each its own ticket: the PDF cookbook (PIN-142, `/cookbook`, `settings.cookbook`) and downloading or
- * restoring a recipe backup (mobile Settings → Your recipes).
+ * "Your recipes" (`/settings/recipes`) is mobile's group of the same name: the PDF cookbook and the recipe backup.
  */
 export const SETTINGS_GROUPS: { titleKey: string; sections: SettingsSection[] }[] = [
   {
@@ -41,6 +40,7 @@ export const SETTINGS_GROUPS: { titleKey: string; sections: SettingsSection[] }[
     titleKey: "settings.yourSettings",
     sections: [
       { id: "recipe", href: "/settings/recipe", labelKey: "settings.recipePreferences", hintKey: "settings.recipePreferencesHint", icon: UtensilsCrossed },
+      { id: "recipes", href: "/settings/recipes", labelKey: "settings.yourRecipes", hintKey: "settings.yourRecipesHint", icon: Archive },
       { id: "appearance", href: "/settings/appearance", labelKey: "settings.appearance", hintKey: "settings.appearanceHint", icon: Palette },
       { id: "language", href: "/settings/language", labelKey: "settings.languageAndRegion", hintKey: "web.settings.languageHint", icon: Languages },
     ],

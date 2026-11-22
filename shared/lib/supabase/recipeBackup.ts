@@ -3,12 +3,12 @@ import {
   planRecipeRestore,
   type ParsedRecipeBackup,
   type RecipeBackup,
-} from '@/lib/recipeBackup';
-import { recipeUrlOrigin } from '@shared/lib/recipeOrigin';
-import { supabase } from '@/lib/supabase/client';
-import { untypedInsert, untypedSupabase } from '@shared/lib/supabase/dbTypes';
-import { fetchRecipeByUrl, fetchRecipesPage } from '@shared/lib/supabase/recipes';
-import type { Recipe, RecipeTranslationContent } from '@shared/types/recipe';
+} from '../recipeBackup';
+import { recipeUrlOrigin } from '../recipeOrigin';
+import { supabase } from './client';
+import { untypedInsert, untypedSupabase } from './dbTypes';
+import { fetchRecipeByUrl, fetchRecipesPage } from './recipes';
+import type { Recipe, RecipeTranslationContent } from '../../types/recipe';
 
 /** PostgREST caps a response at 1000 rows, so whole-library reads page through. */
 const PAGE_SIZE = 1000;

@@ -1,6 +1,7 @@
 import { expect, test, type Page, type Route } from "@playwright/test";
 
 import { resetLibrary, resetTestUserLanguage } from "./admin";
+import { stubSaveRecipeEdit } from "./editorSeed";
 import { signInWithPassword } from "./helpers";
 import { importedRecipe, PHOTO_PNG, SOURCE_LINKS, stubImports } from "./snapSeed";
 import { TEST_USER } from "./testUser";
@@ -296,6 +297,27 @@ test("a link that can't be read offers ways on, and Try again gets the recipe", 
   await expect(page).toHaveURL(JUST_SAVED);
   await expect(page.locator("#main h1")).toHaveText("Second Try Noodles");
   expect(calls.map((call) => call.body.url)).toEqual([SOURCE_LINKS[2].url, SOURCE_LINKS[2].url]);
+});
+
+test("a partial import opens in the editor to be finished, and saves (PIN-146)", async ({ page }) => {
+  await resetLibrary([]);
+  await stubImports(page, {
+    "extract-recipe": { body: { status: "partial", platform: "web", recipe: importedRecipe("Half Soup", { instructions: [], extraction_status: "partial", original_url: SOURCE_LINKS[4].url }) } },
+  });
+  await stubSaveRecipeEdit(page, undefined, { othersFallBack: true });
+  await openSnap(page);
+  await linkField(page).fill(SOURCE_LINKS[4].url);
+  await snapButton(page).click();
+  await expect(page.getByRole("status").filter({ hasText: "Want to add the steps yourself?" })).toBeVisible();
+  await page.getByRole("link", { name: "Fill it in myself" }).click();
+  await expect(page).toHaveURL(/\/app\/recipe\/edit\?from=import$/);
+  await expect(page.getByRole("heading", { level: 1, name: "Finish the recipe" })).toBeVisible();
+  await expect(page.getByText("The source left out the steps.")).toBeVisible();
+  // The empty step the source left out has the focus.
+  await page.keyboard.type("Simmer for 20 minutes.");
+  await page.getByRole("button", { name: "Save", exact: true }).click();
+  await expect(page.locator("#main h1")).toHaveText("Half Soup");
+  await expect(page.getByText("Simmer for 20 minutes.")).toBeVisible();
 });
 
 test.describe("phone, in Hebrew", () => {

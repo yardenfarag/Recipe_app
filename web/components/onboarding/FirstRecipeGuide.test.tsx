@@ -21,5 +21,7 @@ describe("FirstRecipeGuide", () => {
     expect(screen.getByRole("link", { name: /Paste a link/ }).getAttribute("href")).toBe("/add");
     expect(screen.getByRole("link", { name: /Snap a photo/ }).getAttribute("href")).toBe("/add");
     expect(screen.getByRole("link", { name: /Pick one from the Hub/ }).getAttribute("href")).toBe("/hub");
+    // As the mobile Library offers: write one down by hand (PIN-146).
+    expect(screen.getByRole("link", { name: new RegExp(i18n.t("recipeEditor.entry.write")) }).getAttribute("href")).toBe("/recipe/edit");
   });
 });
