@@ -1489,7 +1489,27 @@ export default {
     "recipe": {
       "viewOriginal": "לצפייה במקור",
       "opensInNewTab": "נפתח בכרטיסייה חדשה",
-      "stepVideoTime": "בסרטון ב־{{time}}"
+      "stepVideoTime": "בסרטון ב־{{time}}",
+      "factTime": "זמן כולל",
+      "factCalories": "קל׳ למנה",
+      "factCost": "עלות משוערת",
+      "savedFrom": "נשמר מ־{{source}}",
+      "savedFromPhoto": "נשמר מתמונה",
+      "cookAlongHint": "{{platform}} · קופץ לכל שלב",
+      "makeItYours": "מתאימים אליכם",
+      "remixTitle": "רימיקס",
+      "remixBody": "חריף יותר, טבעוני, לשניים. או כתבו במילים שלכם מה בא לכם.",
+      "fixTitle": "להתאים למטבח שלי",
+      "fixBody": "מוציא את האלרגיות ומה שאתם לא אוהבים, ומסתדר בלי כלים שאין לכם.",
+      "fixNothing": "אין כאן מה לתקן. הגדירו אלרגיות, מה שלא אוהבים וכלים, ו־Pinch ישים לב אליהם.",
+      "swapTitle": "להחליף מצרך",
+      "swapBody": "חסר משהו? בוחרים תחליף וההכנה מתעדכנת.",
+      "swapPick": "איזה מצרך?",
+      "translateBody": "קוראים בכל אחת מהשפות שלכם. המקור במרחק לחיצה.",
+      "addMissing": "להוסיף את החסרים לרשימה",
+      "haveIt": "יש לי {{name}}",
+      "tabs": "מצרכים או הכנה",
+      "steps": "שלבים"
     },
     "hub": {
       "source": "מקור",

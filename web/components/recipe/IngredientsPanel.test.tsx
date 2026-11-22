@@ -53,11 +53,14 @@ function renderPanel({
   return { ...view, choices };
 }
 
+/** A row's cells after its tick box: the amount, then the name. */
+const cellsOf = (row: Element) => Array.from(row.children).slice(1);
+
 /** Each row's amount and name, as the two cells show them. */
 const rowCells = () =>
   within(screen.getByRole("list"))
     .getAllByRole("listitem")
-    .map((row) => Array.from(row.children).map((cell) => cell.textContent));
+    .map((row) => cellsOf(row).map((cell) => cell.textContent));
 
 // The Hebrew strings load on first use. Load them once up front, so a busy full run can't make a test time out
 // halfway through switching language.
@@ -187,11 +190,11 @@ describe("IngredientsPanel", () => {
     expect(list.getAttribute("dir")).toBe("rtl");
     const rows = within(list).getAllByRole("listitem");
     // The untranslated English name sits in its own isolated cell, apart from its Hebrew amount.
-    const [amount, name] = Array.from(rows[1].children);
+    const [amount, name] = cellsOf(rows[1]);
     expect(amount.querySelector("bdi")?.textContent).toBe("1 כפית");
     expect(name.querySelector("bdi")?.textContent).toBe("vanilla extract");
     // A bare count takes the units' direction, so "3" stays beside the Hebrew around it.
-    expect(rows[2].children[0].querySelector("bdi")?.getAttribute("dir")).toBe("rtl");
+    expect(cellsOf(rows[2])[0].querySelector("bdi")?.getAttribute("dir")).toBe("rtl");
     expect(rowCells()[0][0]).toBe("2 כוסות");
     // The flag is in the app's language and direction.
     expect(within(rows[2]).getByText("מרשימת האלרגיות שלכם").getAttribute("dir")).toBe("rtl");
@@ -225,7 +228,7 @@ describe("IngredientsPanel with recipe actions", () => {
   it("has no Swap or Add to list where the recipe can't be changed", () => {
     renderPanel();
     expect(screen.queryByRole("button", { name: /^Swap / })).toBeNull();
-    expect(screen.queryByRole("button", { name: "Add to list" })).toBeNull();
+    expect(screen.queryByRole("button", { name: "Add the missing ones to my list" })).toBeNull();
   });
 
   it("swaps an ingredient at the servings on screen", () => {
@@ -237,10 +240,16 @@ describe("IngredientsPanel with recipe actions", () => {
     });
   });
 
-  it("adds the ingredients to the list at the servings on screen", () => {
+  it("adds the ingredients to the list at the servings on screen, leaving out the ones ticked as already at home", () => {
     const actions = renderWithActions({}, 2);
-    fireEvent.click(screen.getByRole("button", { name: "Add to list" }));
-    expect(actions.open).toHaveBeenCalledWith({ kind: "list", servings: 2 });
+    fireEvent.click(screen.getByRole("button", { name: "Add the missing ones to my list" }));
+    expect(actions.open).toHaveBeenCalledWith({ kind: "list", servings: 2, have: [] });
+
+    const milk = screen.getByRole("checkbox", { name: "I have milk" });
+    fireEvent.click(milk);
+    expect((milk as HTMLInputElement).checked).toBe(true);
+    fireEvent.click(screen.getByRole("button", { name: "Add the missing ones to my list" }));
+    expect(actions.open).toHaveBeenLastCalledWith({ kind: "list", servings: 2, have: [1] });
   });
 
   it("says the amounts are updating while Pinch recalculates them", () => {

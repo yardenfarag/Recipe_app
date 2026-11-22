@@ -1489,7 +1489,27 @@ export default {
     "recipe": {
       "viewOriginal": "عرض الأصل",
       "opensInNewTab": "يفتح في علامة تبويب جديدة",
-      "stepVideoTime": "في الفيديو عند {{time}}"
+      "stepVideoTime": "في الفيديو عند {{time}}",
+      "factTime": "الوقت الكلي",
+      "factCalories": "سعرة / حصة",
+      "factCost": "التكلفة التقديرية",
+      "savedFrom": "محفوظة من {{source}}",
+      "savedFromPhoto": "محفوظة من صورة",
+      "cookAlongHint": "{{platform}} · ينتقل إلى كل خطوة",
+      "makeItYours": "اجعلها على طريقتك",
+      "remixTitle": "ريميكس",
+      "remixBody": "أكثر حرارة، نباتية، لشخصين. أو اكتب ما تريده بكلماتك.",
+      "fixTitle": "عدّلها لمطبخي",
+      "fixBody": "يزيل ما يسبب لك الحساسية وما لا تحبه، ويتدبر الأمر بدون الأدوات التي لا تملكها.",
+      "fixNothing": "لا شيء لتعديله هنا. حدّد الحساسية وما لا تحبه وأدواتك، وسينتبه Pinch لها.",
+      "swapTitle": "بدّل مكوّنًا",
+      "swapBody": "ينقصك شيء؟ اختر بديلًا وتتبعه الخطوات.",
+      "swapPick": "أي مكوّن؟",
+      "translateBody": "اقرأها بأي من لغاتك. الأصل على بُعد نقرة.",
+      "addMissing": "أضف الناقص إلى قائمتي",
+      "haveIt": "عندي {{name}}",
+      "tabs": "المكونات أو الخطوات",
+      "steps": "الخطوات"
     },
     "hub": {
       "source": "المصدر",

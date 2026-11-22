@@ -67,12 +67,15 @@ export function PhotoTile({
   alt = "",
   fallback,
   fade = "bottom",
+  onPhotoError,
   children,
   className,
   contentClassName,
   as: Component = "div",
   ...props
 }: Omit<HTMLAttributes<HTMLElement>, "children"> & {
+  /** Called when the photo fails to load, for an owner that lays itself out differently without one. */
+  onPhotoError?: () => void;
   src?: string | null;
   alt?: string;
   /** Shown behind the content when there is no photo. */
@@ -90,7 +93,12 @@ export function PhotoTile({
       {showPhoto ? (
         // Recipe photos come from other sites, already sized, so there is nothing for next/image to optimise.
         // eslint-disable-next-line @next/next/no-img-element
-        <img src={src ?? undefined} alt={alt} decoding="async" onError={() => setFailed(true)} className="absolute inset-0 -z-20 h-full w-full object-cover" />
+        <img src={src ?? undefined} alt={alt} decoding="async" onError={() => {
+            setFailed(true);
+            onPhotoError?.();
+          }}
+          className="absolute inset-0 -z-20 h-full w-full object-cover"
+        />
       ) : (
         <div aria-hidden className="absolute inset-0 -z-20 grid place-items-center bg-scrim text-on-scrim-muted">
           {fallback}

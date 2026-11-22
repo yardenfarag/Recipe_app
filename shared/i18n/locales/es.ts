@@ -1489,7 +1489,27 @@ export default {
     "recipe": {
       "viewOriginal": "Ver el original",
       "opensInNewTab": "se abre en una pestaña nueva",
-      "stepVideoTime": "En el vídeo, en {{time}}"
+      "stepVideoTime": "En el vídeo, en {{time}}",
+      "factTime": "Tiempo total",
+      "factCalories": "Cal / ración",
+      "factCost": "Coste aprox.",
+      "savedFrom": "Guardada de {{source}}",
+      "savedFromPhoto": "Guardada de una foto",
+      "cookAlongHint": "{{platform}} · salta a cada paso",
+      "makeItYours": "Hazla tuya",
+      "remixTitle": "Remix",
+      "remixBody": "Más picante, vegana, para dos. O di lo que quieres con tus palabras.",
+      "fixTitle": "Adaptar a mi cocina",
+      "fixBody": "Quita tus alergias y lo que no te gusta, y se apaña sin los utensilios que no tienes.",
+      "fixNothing": "Aquí no hay nada que adaptar. Indica tus alergias, lo que no te gusta y tus utensilios, y Pinch estará atento.",
+      "swapTitle": "Cambiar un ingrediente",
+      "swapBody": "¿Te falta algo? Elige un cambio y los pasos se ajustan.",
+      "swapPick": "¿Qué ingrediente?",
+      "translateBody": "Léela en cualquiera de tus idiomas. El original está a un toque.",
+      "addMissing": "Añadir lo que falta a mi lista",
+      "haveIt": "Tengo {{name}}",
+      "tabs": "Ingredientes o pasos",
+      "steps": "Pasos"
     },
     "hub": {
       "source": "Fuente",

@@ -1489,7 +1489,27 @@ export default {
     "recipe": {
       "viewOriginal": "View the original",
       "opensInNewTab": "opens in a new tab",
-      "stepVideoTime": "In the video at {{time}}"
+      "stepVideoTime": "In the video at {{time}}",
+      "factTime": "Total time",
+      "factCalories": "Cal / serving",
+      "factCost": "Est. cost",
+      "savedFrom": "Saved from {{source}}",
+      "savedFromPhoto": "Saved from a photo",
+      "cookAlongHint": "{{platform}} · jumps to each step",
+      "makeItYours": "Make it yours",
+      "remixTitle": "Remix it",
+      "remixBody": "Spicier, vegan, for two. Or say what you want in your own words.",
+      "fixTitle": "Fix for my kitchen",
+      "fixBody": "Takes out your allergies and dislikes, and works around tools you don’t have.",
+      "fixNothing": "Nothing to fix here. Set your allergies, dislikes and tools, and Pinch will watch for them.",
+      "swapTitle": "Swap an ingredient",
+      "swapBody": "Missing something? Pick a swap and the steps follow.",
+      "swapPick": "Which ingredient?",
+      "translateBody": "Read it in any of your languages. The original is one tap away.",
+      "addMissing": "Add the missing ones to my list",
+      "haveIt": "I have {{name}}",
+      "tabs": "Ingredients or steps",
+      "steps": "Steps"
     },
     "hub": {
       "source": "Source",

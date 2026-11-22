@@ -1,19 +1,28 @@
 "use client";
 
-import { useParams } from "next/navigation";
+import Link from "next/link";
+import { useParams, useRouter } from "next/navigation";
+import { useState } from "react";
 import { useTranslation } from "react-i18next";
+
+import { deleteRecipe } from "@shared/lib/supabase/recipes";
+import { showToast } from "@shared/lib/toast";
+import { translateAppError } from "@shared/lib/translateAppError";
 
 import { useRecipeActions } from "@/components/recipe/actions/RecipeActionsContext";
 import { RecipeActionsProvider } from "@/components/recipe/actions/RecipeActionsProvider";
 import { RecipeView } from "@/components/recipe/RecipeView";
 import type { RecipeDisplay } from "@/components/recipe/types";
+import { buttonClasses } from "@/components/ui/Button";
+import { ConfirmDialog } from "@/components/ui/Dialog";
 import { usePageTitle } from "@/components/ui/PageHeader";
 import { EmptyState, ErrorState, LoadingState } from "@/components/ui/States";
 import { useRecipe } from "@/lib/recipe/useRecipe";
 
 /**
  * A saved recipe, to read, cook from and change: swap, remix, translate, share and the rest (PIN-135), through
- * `RecipeActionsProvider`. Cook mode (PIN-136) offers "I cooked this" on its last screen.
+ * `RecipeActionsProvider`. Cook mode (PIN-136) offers "I cooked this" on its last screen. On a phone this page has
+ * no app bars (the photo runs to the top, PIN-163), so every state here carries its own way back to the Library.
  */
 export default function RecipePage() {
   const { t } = useTranslation();
@@ -23,9 +32,22 @@ export default function RecipePage() {
 
   usePageTitle(display?.title ?? (state.status === "missing" ? t("library.recipeNotFound") : t("tabs.library")));
 
+  const backToLibrary = (
+    <Link href="/" data-track="recipe.back" className={buttonClasses({ variant: "secondary" })}>
+      {t("cookbook.backToLibrary")}
+    </Link>
+  );
+
   if (state.status === "loading") return <LoadingState label={t("a11y.loading")} />;
-  if (state.status === "missing") return <EmptyState icon={null} title={t("library.recipeNotFound")} />;
-  if (state.status === "error" || !display) return <ErrorState title={t("recipe.loadFailedTitle")} trackId="recipe.load_error" onRetry={state.reload} />;
+  if (state.status === "missing") return <EmptyState icon={null} title={t("library.recipeNotFound")} action={backToLibrary} />;
+  if (state.status === "error" || !display) {
+    return (
+      <div className="flex flex-col items-center">
+        <ErrorState title={t("recipe.loadFailedTitle")} trackId="recipe.load_error" onRetry={state.reload} className="pb-4" />
+        {backToLibrary}
+      </div>
+    );
+  }
 
   return (
     <RecipeActionsProvider state={state}>
@@ -36,6 +58,32 @@ export default function RecipePage() {
 
 /** Inside the actions, so cook mode's last screen can offer "I cooked this". */
 function SavedRecipeView({ display, onToggleFavorite }: { display: RecipeDisplay; onToggleFavorite: () => void }) {
+  const { t } = useTranslation();
+  const router = useRouter();
   const actions = useRecipeActions();
-  return <RecipeView display={display} onToggleFavorite={onToggleFavorite} onCooked={actions?.markCooked} />;
+  const [deleting, setDeleting] = useState(false);
+
+  async function remove() {
+    try {
+      await deleteRecipe(display.recipe.id);
+      router.replace("/");
+    } catch (caught) {
+      showToast(`${t("library.couldNotDelete")}: ${translateAppError(caught, t)}`, "info");
+    }
+  }
+
+  return (
+    <>
+      <RecipeView display={display} onToggleFavorite={onToggleFavorite} onCooked={actions?.markCooked} onDelete={() => setDeleting(true)} immersive />
+      <ConfirmDialog
+        open={deleting}
+        onOpenChange={setDeleting}
+        title={t("library.deleteRecipeTitle")}
+        description={t("library.deleteRecipeBody", { name: display.title })}
+        confirmLabel={t("common.delete")}
+        trackId="recipe.delete_dialog"
+        onConfirm={remove}
+      />
+    </>
+  );
 }

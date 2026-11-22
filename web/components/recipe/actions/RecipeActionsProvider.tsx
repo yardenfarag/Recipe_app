@@ -293,7 +293,7 @@ export function RecipeActionsProvider({ state, children }: { state: ReadyRecipe;
         onOpenChange={(open) => !open && close()}
         recipeId={recipe.id}
         recipeTitle={display.title}
-        ingredients={dialog?.kind === "list" ? scaledFor(display, dialog.servings) : []}
+        ingredients={dialog?.kind === "list" ? missingFor(display, dialog.servings, dialog.have) : []}
         system={system}
         unitLanguage={display.unitLanguage}
       />
@@ -314,6 +314,9 @@ function withDisplayTitle(recipe: Recipe, title: string): Recipe {
 }
 
 
-function scaledFor(display: { ingredients: Recipe["ingredients"]; recipe: Recipe }, servings: number) {
-  return scaleIngredients(display.ingredients, display.recipe.servings, servings);
+/** The ingredients at the servings on screen, without the ones the cook ticked as already at home (unless that is all of them). */
+function missingFor(display: { ingredients: Recipe["ingredients"]; recipe: Recipe }, servings: number, have: number[] = []) {
+  const scaled = scaleIngredients(display.ingredients, display.recipe.servings, servings);
+  const missing = scaled.filter((_, index) => !have.includes(index));
+  return missing.length > 0 ? missing : scaled;
 }

@@ -92,8 +92,27 @@ describe("StepsPanel", () => {
   it("offers cook mode by the heading when asked", () => {
     const onCookMode = vi.fn();
     wrap(<StepsPanel display={displayOf()} system="original" onCookMode={onCookMode} />);
-    fireEvent.click(screen.getByRole("button", { name: /web\.cook\.cookMode|Cook mode/ }));
+    fireEvent.click(screen.getByRole("button", { name: "Start cooking" }));
     expect(onCookMode).toHaveBeenCalled();
+  });
+
+  it("turns a time in a step into a timer, and shows the countdown while it runs", () => {
+    const steps = [{ step: 1, text: "Simmer for 10 minutes." }];
+    const start = vi.fn();
+    const stop = vi.fn();
+    const { rerender } = wrap(<StepsPanel display={displayOf({ instructions: steps })} system="original" timers={{ timers: [], now: 0, start, stop }} />);
+    fireEvent.click(screen.getByRole("button", { name: "Start 10 minutes timer" }));
+    expect(start).toHaveBeenCalledWith("10 minutes", 600, 1);
+
+    const running = { id: "t1", label: "10 minutes", step: 1, seconds: 600, endsAt: 600_000 };
+    rerender(
+      <I18nextProvider i18n={i18n}>
+        <StepsPanel display={displayOf({ instructions: steps })} system="original" timers={{ timers: [running], now: 15_000, start, stop }} />
+      </I18nextProvider>,
+    );
+    expect(screen.getByRole("timer").textContent).toBe("9:45");
+    fireEvent.click(screen.getByRole("button", { name: "Stop the 10 minutes timer" }));
+    expect(stop).toHaveBeenCalledWith("t1");
   });
 
   it("shows nothing for a recipe without steps", () => {

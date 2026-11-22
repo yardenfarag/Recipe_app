@@ -18,8 +18,8 @@ type Tone = "danger" | "warning" | "accent" | "primary";
 const tones: Record<Tone, { box: string; title: string }> = {
   danger: { box: "bg-danger-soft", title: "text-danger" },
   warning: { box: "bg-warning-soft", title: "text-warning" },
-  accent: { box: "bg-accent-soft", title: "text-accent" },
-  primary: { box: "bg-primary-soft", title: "text-primary" },
+  accent: { box: "bg-accent-soft", title: "text-accent-text" },
+  primary: { box: "bg-primary-soft", title: "text-primary-text" },
 };
 
 function Notice({
@@ -39,7 +39,7 @@ function Notice({
   testId?: string;
 }) {
   return (
-    <div data-testid={testId} className={cn("flex items-start gap-3 rounded-2xl px-4 py-3.5", tones[tone].box)}>
+    <div data-testid={testId} className={cn("flex items-start gap-3 rounded-3xl px-5 py-4", tones[tone].box)}>
       <span aria-hidden className={cn("mt-0.5 shrink-0 [&>svg]:h-5 [&>svg]:w-5", tones[tone].title)}>
         {icon}
       </span>
@@ -210,7 +210,7 @@ export function RecipeNotices({ display, avoid }: { display: RecipeDisplay; avoi
   }
 
   if (notices.length === 0) return null;
-  return <div className="mb-6 grid gap-3">{notices}</div>;
+  return <div className="grid gap-3">{notices}</div>;
 }
 
 /** A remix made on this visit, or a saved kitchen adaptation, with what changed and the way back. */
