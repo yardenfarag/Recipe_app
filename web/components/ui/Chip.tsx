@@ -10,7 +10,7 @@ type ChipSize = "sm" | "md";
  */
 export const chipClasses = ({ selected = false, size = "md", className }: { selected?: boolean; size?: ChipSize; className?: string } = {}) =>
   cn(
-    "inline-flex shrink-0 select-none items-center gap-2 rounded-full border font-semibold whitespace-nowrap transition-colors",
+    "inline-flex shrink-0 select-none items-center gap-2 rounded-full border font-semibold whitespace-nowrap transition-colors disabled:pointer-events-none disabled:opacity-50",
     size === "sm" ? "h-9 px-3.5 text-[13px] pointer-coarse:h-11" : "h-10 px-4 text-sm pointer-coarse:h-11",
     selected ? "border-text bg-text text-bg" : "border-border bg-transparent text-text hover:bg-element active:bg-selected",
     className,

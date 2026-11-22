@@ -33,6 +33,14 @@ export const NAV_ITEMS: NavItem[] = [
 
 export const navItem = (id: NavItem["id"]) => NAV_ITEMS.find((item) => item.id === id)!;
 
+/**
+ * A saved recipe's own page. On a phone it has no app bars: the photo runs to the top of the screen with its own
+ * back button on it, and "Start cooking" is fixed at the bottom (PIN-163).
+ */
+export function isImmersivePath(path: string): boolean {
+  return /^\/recipe\/(?!preview$|edit$)[^/]+\/?$/.test(path);
+}
+
 /** The section a page belongs to, for highlighting. */
 export function activeSection(path: string): NavItem["id"] | null {
   return NAV_ITEMS.find((item) => item.owns(path))?.id ?? null;

@@ -137,7 +137,7 @@ export function SnapBarField({
       data-testid="snap-bar"
       className={cn(
         "flex min-w-0 items-center border bg-surface text-muted transition-[border-color,box-shadow] focus-within:border-primary focus-within:ring-4 focus-within:ring-primary/15",
-        lg ? "min-h-15 gap-3 rounded-[20px] ps-5 pe-2" : "min-h-13 gap-2.5 rounded-2xl ps-4 pe-1.5",
+        lg ? "min-h-15 gap-3 rounded-[20px] ps-5 pe-2" : "min-h-13 gap-1.5 rounded-2xl ps-3.5 pe-1",
         dragging ? "border-primary ring-4 ring-primary/15" : "border-border",
         className,
       )}
@@ -175,11 +175,13 @@ export function SnapBarField({
           aria-label={t("library.clearSearch")}
           data-track="snap_bar.clear"
           onClick={() => setText("")}
-          className="grid h-9 w-9 shrink-0 place-items-center rounded-xl text-muted hover:bg-element hover:text-text"
+          className="grid h-9 w-9 shrink-0 place-items-center rounded-xl text-muted hover:bg-element hover:text-text pointer-coarse:h-11 pointer-coarse:w-11"
         >
           <X aria-hidden className="h-4 w-4" />
         </button>
-      ) : (
+      ) : lg ? (
+        // The compact bar (a phone) keeps its width for the words: the shortcut hint and the photo button are left
+        // out there, and its Snap button leads to the Snap page, which takes photos.
         <>
           {keys ? (
             <kbd
@@ -195,12 +197,12 @@ export function SnapBarField({
             title={t("web.snapBar.addPhoto")}
             data-track="snap_bar.add_photo"
             onClick={() => fileInput.current?.click()}
-            className="grid h-9 w-9 shrink-0 place-items-center rounded-xl text-muted hover:bg-element hover:text-text"
+            className="grid h-9 w-9 shrink-0 place-items-center rounded-xl text-muted hover:bg-element hover:text-text pointer-coarse:h-11 pointer-coarse:w-11"
           >
             <ImagePlus aria-hidden className="h-5 w-5" />
           </button>
         </>
-      )}
+      ) : null}
       <input
         ref={fileInput}
         type="file"
@@ -219,7 +221,7 @@ export function SnapBarField({
         data-track={link ? "snap_bar.snap_link" : "snap_bar.submit"}
         className={cn(
           "shrink-0 bg-primary font-display font-bold text-on-primary transition-[filter] hover:brightness-105 active:brightness-95",
-          lg ? "h-11 rounded-btn px-5 text-[15px]" : "h-10 rounded-xl px-3.5 text-sm",
+          lg ? "h-11 rounded-btn px-5 text-[15px]" : "h-11 rounded-xl px-3.5 text-sm",
         )}
       >
         {lg ? t("web.snapBar.action") : t("tabs.snap")}

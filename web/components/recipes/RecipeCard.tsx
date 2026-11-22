@@ -41,6 +41,9 @@ export type RecipeCardProps = {
  * opens in a new tab with a middle-click and is one stop for a screen reader; the heart and the menu sit above
  * that link as their own buttons. Shared by the Library and the Hub.
  */
+// A button on the photo. On a phone each has its own dark backing; from tablet up the pill around them has it.
+const onPhotoButton = "pointer-events-auto max-md:bg-scrim/60 max-md:backdrop-blur-md";
+
 function RecipeCardBase({ recipe, variant = "grid", onToggleFavorite, actions, detail, href, trackId = "library.recipe" }: RecipeCardProps) {
   const { t } = useTranslation();
   const { language } = useLanguage();
@@ -95,7 +98,15 @@ function RecipeCardBase({ recipe, variant = "grid", onToggleFavorite, actions, d
 
   const buttons =
     onToggleFavorite || actions ? (
-      <div className={cn("relative z-10 flex items-center gap-0.5", list ? "shrink-0" : "absolute end-2.5 top-2.5 rounded-btn bg-scrim/60 p-0.5 backdrop-blur-md")}>
+      <div
+        className={cn(
+          "z-10 flex items-center gap-0.5",
+          list
+            ? "relative shrink-0"
+            : // One pill at the top corner; on a phone's narrow card, the heart at the top and the menu at the bottom.
+              "pointer-events-none absolute inset-y-1.5 end-1.5 flex-col justify-between md:inset-y-auto md:end-2.5 md:top-2.5 md:flex-row md:rounded-btn md:bg-scrim/60 md:p-0.5 md:backdrop-blur-md",
+        )}
+      >
         {onToggleFavorite ? (
           <button
             type="button"
@@ -105,7 +116,7 @@ function RecipeCardBase({ recipe, variant = "grid", onToggleFavorite, actions, d
             onClick={() => onToggleFavorite(recipe)}
             className={cn(
               "grid h-10 w-10 place-items-center rounded-xl transition-colors active:scale-95 pointer-coarse:h-11 pointer-coarse:w-11",
-              list ? "hover:bg-element" : "hover:bg-on-scrim/15",
+              list ? "hover:bg-element" : cn(onPhotoButton, "hover:bg-on-scrim/15"),
             )}
           >
             <Heart
@@ -131,7 +142,7 @@ function RecipeCardBase({ recipe, variant = "grid", onToggleFavorite, actions, d
                   "grid h-10 w-10 place-items-center rounded-xl transition-colors active:scale-95 pointer-coarse:h-11 pointer-coarse:w-11",
                   list
                     ? "text-muted hover:bg-element hover:text-text data-[state=open]:bg-element"
-                    : "text-on-scrim hover:bg-on-scrim/15 data-[state=open]:bg-on-scrim/15",
+                    : cn(onPhotoButton, "text-on-scrim hover:bg-on-scrim/15 data-[state=open]:bg-on-scrim/15"),
                 )}
               >
                 <MoreVertical aria-hidden className="h-5 w-5" />
@@ -165,7 +176,7 @@ function RecipeCardBase({ recipe, variant = "grid", onToggleFavorite, actions, d
           {originLabel}
         </span>
       ) : null}
-      {meta.length > 0 ? <p className={cn("text-muted", list ? "text-[13px]" : "text-sm")}>{meta.join(" · ")}</p> : null}
+      {meta.length > 0 ? <p className={cn("text-muted", list ? "text-[13px]" : "text-[13px] max-md:line-clamp-1 md:text-sm")}>{meta.join(" · ")}</p> : null}
       {needs ? <p className="truncate text-[13px] text-muted">{needs}</p> : null}
     </>
   );
@@ -191,19 +202,19 @@ function RecipeCardBase({ recipe, variant = "grid", onToggleFavorite, actions, d
 
   return (
     <article className="group relative isolate flex h-full flex-col gap-3 [content-visibility:auto] [contain-intrinsic-size:auto_300px]">
-      <div className="relative aspect-[4/3] w-full shrink-0 overflow-hidden rounded-[22px] bg-element">
+      <div className="relative aspect-square w-full shrink-0 overflow-hidden rounded-[18px] bg-element md:aspect-[4/3] md:rounded-[22px]">
         {picture}
         {sourceLabel ? (
-          <span className="absolute start-3 top-3 max-w-[60%] truncate rounded-full bg-scrim/70 px-2.5 py-1.5 text-xs leading-none font-semibold text-on-scrim backdrop-blur-sm">
+          <span className="absolute start-2 top-2 max-w-[55%] truncate rounded-full bg-scrim/70 px-2.5 py-1.5 text-xs leading-none font-semibold text-on-scrim backdrop-blur-sm md:start-3 md:top-3 md:max-w-[60%]">
             {sourceLabel}
           </span>
         ) : null}
+        {buttons}
       </div>
       <div className="flex min-w-0 flex-col gap-1 px-1">
-        <h3 className="line-clamp-2 text-lg leading-snug font-bold text-pretty text-text">{link}</h3>
+        <h3 className="line-clamp-2 text-[15px] leading-tight font-bold text-pretty text-text md:text-lg md:leading-snug">{link}</h3>
         {facts}
       </div>
-      {buttons}
     </article>
   );
 }

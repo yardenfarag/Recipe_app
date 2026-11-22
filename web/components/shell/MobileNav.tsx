@@ -6,12 +6,14 @@ import { useTranslation } from "react-i18next";
 
 import { PinchLogo } from "@/components/CookieMark";
 import { AccountMenu } from "@/components/shell/AccountMenu";
-import { NAV_ITEMS, activeSection } from "@/components/shell/nav";
+import { NAV_ITEMS, activeSection, isImmersivePath } from "@/components/shell/nav";
 import { cn } from "@/lib/cn";
 
-/** Phones: a slim bar on top with the logo and the account menu. */
+/** Phones: a slim bar on top with the logo and the account menu. Not on a recipe's own page (see isImmersivePath). */
 export function MobileTopBar() {
   const { t } = useTranslation();
+  const pathname = usePathname();
+  if (isImmersivePath(pathname)) return null;
   return (
     <header className="sticky top-0 z-30 flex items-center justify-between bg-bg/90 px-4 pt-[env(safe-area-inset-top)] backdrop-blur-xl md:hidden">
       <div className="flex h-14 w-full items-center justify-between">
@@ -32,6 +34,7 @@ export function BottomNav() {
   const { t } = useTranslation();
   const pathname = usePathname();
   const active = activeSection(pathname);
+  if (isImmersivePath(pathname)) return null;
 
   return (
     <nav

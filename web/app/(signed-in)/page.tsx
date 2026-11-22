@@ -49,6 +49,7 @@ import { useCookedThisWeek } from "@/lib/library/useCookedThisWeek";
 import { useLibraryLayout } from "@/lib/library/useLibraryLayout";
 import { useRecipes } from "@/lib/library/useRecipes";
 import { useTonightsPick } from "@/lib/library/useTonightsPick";
+import { usePhoneLayout } from "@/lib/usePhoneLayout";
 
 const SORT_KEYS = RECIPE_SORT_OPTIONS.map((option) => option.key);
 
@@ -70,7 +71,7 @@ function filtersFromAddress(params: URLSearchParams) {
 type CollectionDialog = { mode: "create" } | { mode: "rename"; id: string; name: string } | null;
 
 // The photo cards and the rows of the list.
-const GRID = "gap-x-[18px] gap-y-6 [grid-template-columns:repeat(auto-fill,minmax(min(100%,13rem),1fr))]";
+const GRID = "grid-cols-2 gap-x-3 gap-y-5 md:gap-x-[18px] md:gap-y-6 md:[grid-template-columns:repeat(auto-fill,minmax(13rem,1fr))]";
 const ROWS = "gap-3 xl:grid-cols-2";
 
 /**
@@ -198,6 +199,7 @@ function LibraryScreen() {
   const { pick, another } = useTonightsPick(recipes);
   const cooked = useCookedThisWeek(recipes, total);
   const { quota } = useCreditBalance();
+  const phone = usePhoneLayout();
 
   const handleFavorite = useCallback(
     async (recipe: Recipe) => {
@@ -255,17 +257,21 @@ function LibraryScreen() {
 
   return (
     <>
-      <div className="flex flex-wrap items-stretch gap-3 md:gap-3.5">
-        <SnapBarField value={barText} onChange={setBarText} liveSearch inputRef={searchRef} className="flex-[1_1_20rem]" />
+      <div className="flex items-stretch gap-2.5 md:flex-wrap md:gap-3.5">
+        <SnapBarField value={barText} onChange={setBarText} liveSearch inputRef={searchRef} size={phone ? "md" : "lg"} className="min-w-0 flex-1 md:flex-[1_1_20rem]" />
         {credits != null ? (
           <Link
             href="/settings/credits"
             data-track="library.credits"
             aria-label={t("settings.creditsTotal", { count: credits })}
-            className="flex min-h-15 shrink-0 items-center gap-2 rounded-[20px] border border-border bg-surface px-[18px] font-semibold whitespace-nowrap text-text transition-colors hover:bg-element max-md:hidden"
+            className="flex min-h-13 shrink-0 items-center gap-2 rounded-2xl border border-border bg-surface px-3.5 font-semibold whitespace-nowrap text-text transition-colors hover:bg-element md:min-h-15 md:rounded-[20px] md:px-[18px]"
           >
-            <span aria-hidden className="h-2.5 w-2.5 rounded-full bg-accent" />
-            {credits === 1 ? t("web.library.creditsOne") : t("web.library.credits", { count: formatCount(credits, i18n.language) })}
+            <span aria-hidden className="h-2 w-2 rounded-full bg-accent md:h-2.5 md:w-2.5" />
+            {/* Just the number on a phone, where the bar needs the width. */}
+            <span className="md:hidden">{formatCount(credits, i18n.language)}</span>
+            <span className="max-md:hidden">
+              {credits === 1 ? t("web.library.creditsOne") : t("web.library.credits", { count: formatCount(credits, i18n.language) })}
+            </span>
           </Link>
         ) : null}
       </div>

@@ -212,9 +212,9 @@ test("the address keeps the filters: a linked search opens already filtered", as
 test.describe("phone", () => {
   test.use({ viewport: { width: 390, height: 844 }, hasTouch: true });
 
-  test("is a list, and every control fits the width", async ({ page }) => {
+  test("is photo cards two across, and every control fits the width", async ({ page }) => {
     await openLibrary(page);
-    await expect(page.getByRole("radio", { name: "Show as list" })).toBeChecked();
+    await expect(page.getByRole("radio", { name: "Show as grid" })).toBeChecked();
     await expect(cards(page)).toHaveCount(3);
     const overflow = await page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth);
     expect(overflow).toBeLessThanOrEqual(0);
