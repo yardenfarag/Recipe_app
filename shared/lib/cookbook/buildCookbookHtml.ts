@@ -148,7 +148,8 @@ export function toCookbookHtmlRecipe(
   };
 }
 
-export function buildCookbookHtml(options: {
+/** Everything a book is made of, already in the reader's words: what `buildCookbookHtml` lays out. */
+export type CookbookBook = {
   title: string;
   recipes: CookbookHtmlRecipe[];
   language: string;
@@ -157,7 +158,9 @@ export function buildCookbookHtml(options: {
   copy: CookbookHtmlCopy;
   /** Leave the photos out (saves ink): no photo and no placeholder, the title starts the page. */
   hideImages?: boolean;
-}): string {
+};
+
+export function buildCookbookHtml(options: CookbookBook): string {
   const dir = options.rtl ? 'rtl' : 'ltr';
   const pageCss = options.pageSize === 'letter' ? 'letter' : 'A4';
   const recipePages = options.recipes

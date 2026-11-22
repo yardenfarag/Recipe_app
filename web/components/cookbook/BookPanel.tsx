@@ -1,6 +1,6 @@
 "use client";
 
-import { ChevronDown, ChevronUp, GripVertical, Printer, X } from "lucide-react";
+import { ChevronDown, ChevronUp, Download, GripVertical, X } from "lucide-react";
 import { useLayoutEffect, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 
@@ -282,10 +282,10 @@ export function BookPanel(props: BookPanelProps) {
           </p>
         ) : null}
         <Button size="lg" fullWidth trackId="cookbook.create" busy={props.busy} onClick={props.onCreate}>
-          <Printer aria-hidden className="h-5 w-5" />
+          <Download aria-hidden className="h-5 w-5" />
           {t("cookbook.generate")}
         </Button>
-        <p className="mt-2.5 text-center text-[13px] text-muted">{t("cookbook.webPrintHint")}</p>
+        <p className="mt-2.5 text-center text-[13px] text-muted">{t("web.cookbook.createHint")}</p>
       </div>
     </div>
   );

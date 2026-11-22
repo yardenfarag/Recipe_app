@@ -1613,7 +1613,18 @@ export default {
       "moved": "{{name}} is now {{position}} of {{total}}.",
       "removed": "{{name}} was taken out of the book.",
       "dragToReorder": "Drag to change the order",
-      "contents": "Contents"
+      "contents": "Contents",
+      "createHint": "Downloads a PDF you can keep, share or print.",
+      "makingStep": "Making your PDF…",
+      "makingHint": "A big book with photos can take up to a minute.",
+      "downloaded": "{{file}} is in your downloads.",
+      "downloadAgain": "Download again",
+      "print": "Print",
+      "done": "Done",
+      "printInstead": "Print instead",
+      "pdfFailed": "We couldn’t make the PDF file. Try again, or print the book and choose Save as PDF.",
+      "pdfBusy": "You’ve made several cookbooks in a row. Wait a minute, then try again.",
+      "pdfSignedOut": "You’ve been signed out. Sign in again, then make the book."
     },
     "welcome": {
       "tabTitle": "Welcome",

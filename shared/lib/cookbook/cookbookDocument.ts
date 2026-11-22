@@ -6,6 +6,7 @@ import type { Platform, Recipe } from '../../types/recipe';
 import {
   buildCookbookHtml,
   toCookbookHtmlRecipe,
+  type CookbookBook,
   type CookbookHtmlCopy,
   type CookbookPageSize,
 } from './buildCookbookHtml';
@@ -35,14 +36,7 @@ export function cookbookCopy(t: TFunction, recipeCount: number): CookbookHtmlCop
   };
 }
 
-/**
- * The whole book as one HTML page: a cover, then one recipe per page, in the order given. Both apps make the same
- * book from the same recipes; only turning it into a PDF differs (the phone's print service, the browser's print
- * dialog).
- *
- * `images` lines up with `recipes`: a `data:` URI, a URL the page can load, or nothing for the placeholder.
- */
-export function buildCookbookDocument(options: {
+export type CookbookDocumentOptions = {
   title: string;
   recipes: Recipe[];
   images?: (string | null | undefined)[];
@@ -52,7 +46,15 @@ export function buildCookbookDocument(options: {
   /** False leaves the photos out of the book. */
   includePhotos?: boolean;
   t: TFunction;
-}): string {
+};
+
+/**
+ * The book's content, in the app's language and the reader's measurements: the cover, then one recipe per page, in
+ * the order given. Plain data, so the web app can send it to its server to be made into a PDF there.
+ *
+ * `images` lines up with `recipes`: a `data:` URI, a URL the page can load, or nothing for the placeholder.
+ */
+export function buildCookbookBook(options: CookbookDocumentOptions): CookbookBook {
   const { t, language } = options;
   const platformLabels = cookbookPlatformLabels(t);
   const recipes = options.recipes.map((recipe, index) =>
@@ -66,7 +68,7 @@ export function buildCookbookDocument(options: {
       platformLabels,
     }),
   );
-  return buildCookbookHtml({
+  return {
     title: options.title.trim(),
     recipes,
     language,
@@ -74,5 +76,13 @@ export function buildCookbookDocument(options: {
     pageSize: options.pageSize,
     copy: cookbookCopy(t, recipes.length),
     hideImages: options.includePhotos === false,
-  });
+  };
+}
+
+/**
+ * The whole book as one HTML page. Both apps make the same book from the same recipes; only turning it into a PDF
+ * differs (the phone's print service, the web app's server).
+ */
+export function buildCookbookDocument(options: CookbookDocumentOptions): string {
+  return buildCookbookHtml(buildCookbookBook(options));
 }

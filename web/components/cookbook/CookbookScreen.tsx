@@ -2,7 +2,7 @@
 
 import { BookOpen } from "lucide-react";
 import { useRouter, useSearchParams } from "next/navigation";
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 
 import { cookbookPageSizeForLocale, type CookbookPageSize } from "@shared/lib/cookbook/buildCookbookHtml";
@@ -18,13 +18,13 @@ import { Button } from "@/components/ui/Button";
 import { PageHeader } from "@/components/ui/PageHeader";
 import { EmptyState, ErrorState, LoadingState } from "@/components/ui/States";
 import { addAllToBook, moveInBook, readDraft, removeFromBook, writeDraft } from "@/lib/cookbook/bookSelection";
-import { useCookbookBuild, type CookbookBuildInput } from "@/lib/cookbook/useCookbookBuild";
+import { useCookbookBuild } from "@/lib/cookbook/useCookbookBuild";
 import { useCollections } from "@/lib/library/useCollections";
 import { useRecipes } from "@/lib/library/useRecipes";
 
 /**
  * PDF cookbook: pick saved recipes (by hand, or a whole collection at once), set the cover title, paper and photos,
- * put them in order, and print the book or save it as a PDF from the browser's print dialog. The same book the
+ * put them in order, and download the book as a PDF (made on the web app's server), or print it. The same book the
  * mobile app makes from the same recipes.
  *
  * `/cookbook?collection=<id>` starts with that collection's recipes and its name as the title (the Library's
@@ -37,7 +37,7 @@ export function CookbookScreen() {
   const router = useRouter();
   const { recipes, loading, loadingMore, hasMore, error, refresh, ensureAllLoaded } = useRecipes();
   const { collections, loading: collectionsLoading } = useCollections();
-  const { state, build, close, printAgain, openInTab } = useCookbookBuild();
+  const { state, build, print, retry, close, downloadAgain, openInTab } = useCookbookBuild();
 
   const [title, setTitle] = useState<string | null>(null);
   const [ids, setIds] = useState<string[]>([]);
@@ -47,7 +47,6 @@ export function CookbookScreen() {
   const [createError, setCreateError] = useState<string | null>(null);
   const [started, setStarted] = useState(false);
   const [startCollectionId, setStartCollectionId] = useState<string | null>(null);
-  const lastInput = useRef<CookbookBuildInput | null>(null);
 
   // Picking from the whole library, not only its first page.
   useEffect(() => {
@@ -115,12 +114,10 @@ export function CookbookScreen() {
       setCreateError(t("cookbook.pickRecipes"));
       return;
     }
-    const input = { title: bookTitle, recipes: book, pageSize, includePhotos };
-    lastInput.current = input;
-    void build(input);
+    void build({ title: bookTitle, recipes: book, pageSize, includePhotos });
   }
 
-  const busy = state.step === "photos" || state.step === "pages";
+  const busy = state.step === "making" || state.step === "photos" || state.step === "pages";
   const header = <PageHeader title={t("cookbook.title")} subtitle={t("settings.cookbookHint")} />;
 
   if (loading || (!started && !error)) {
@@ -206,10 +203,9 @@ export function CookbookScreen() {
       <BuildDialog
         state={state}
         onClose={close}
-        onRetry={() => {
-          if (lastInput.current) void build(lastInput.current);
-        }}
-        onPrintAgain={printAgain}
+        onRetry={retry}
+        onPrint={() => void print()}
+        onDownloadAgain={downloadAgain}
         onOpenInTab={() => {
           if (!openInTab()) showToast(t("web.cookbook.tabBlocked"), "info");
         }}

@@ -430,6 +430,37 @@ test("cookbook and first recipe", async ({ browser }) => {
       for (let i = 0; i < 3 && i < (await options.count()); i += 1) await options.nth(i).click();
       await page.waitForTimeout(300);
       await page.screenshot({ path: `${OUT}/cookbook-${viewport}-${language}-${scheme}.png`, fullPage: true });
+
+      // The dialog while the server makes the PDF, once it's downloaded, and when it couldn't be made.
+      let answer: "slow" | "pdf" | "fail" = "slow";
+      await page.route("**/app/api/cookbook/pdf", async (route) => {
+        if (answer === "slow") await new Promise((resolve) => setTimeout(resolve, 4_000));
+        await route
+          .fulfill(
+            answer === "fail"
+              ? { status: 503, body: "{}" }
+              : { status: 200, contentType: "application/pdf", headers: { "X-Cookbook-Missing-Photos": "1" }, body: "%PDF-1.7" },
+          )
+          .catch(() => undefined);
+      });
+      const create = page.locator("#main").getByRole("button", { name: /PDF/ }).last();
+      await create.click();
+      await page.getByRole("dialog").getByRole("progressbar").waitFor();
+      await page.waitForTimeout(300);
+      await page.screenshot({ path: `${OUT}/cookbook-making-${viewport}-${language}-${scheme}.png` });
+      await page.getByRole("dialog").getByRole("button").last().waitFor();
+      await page.keyboard.press("Escape");
+      answer = "pdf";
+      await create.click();
+      await page.getByRole("dialog").getByRole("button").nth(2).waitFor();
+      await page.waitForTimeout(400);
+      await page.screenshot({ path: `${OUT}/cookbook-ready-${viewport}-${language}-${scheme}.png` });
+      await page.keyboard.press("Escape");
+      answer = "fail";
+      await create.click();
+      await page.getByRole("dialog").getByRole("button").nth(2).waitFor();
+      await page.waitForTimeout(400);
+      await page.screenshot({ path: `${OUT}/cookbook-failed-${viewport}-${language}-${scheme}.png` });
       await context.close();
     }
   }

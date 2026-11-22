@@ -7,7 +7,8 @@ import type { RecipeCollection } from "@shared/types/collection";
 import type { Recipe } from "@shared/types/recipe";
 
 import { CookbookScreen } from "@/components/cookbook/CookbookScreen";
-import { preparePrintFrame } from "@/lib/cookbook/printFrame";
+import type { CookbookBook } from "@shared/lib/cookbook/buildCookbookHtml";
+import { requestCookbookPdf } from "@/lib/cookbook/requestPdf";
 import { TooltipProvider } from "@/components/ui/Tooltip";
 import i18n from "@/lib/i18n";
 
@@ -55,6 +56,15 @@ vi.mock("@/lib/cookbook/printFrame", () => ({
   }),
   openInNewTab: vi.fn(() => true),
 }));
+vi.mock("@/lib/supabase", () => ({
+  getSupabase: () => ({ auth: { getSession: async () => ({ data: { session: { access_token: "token" } } }) } }),
+}));
+const server = vi.hoisted(() => ({ saved: [] as { name: string }[] }));
+vi.mock("@/lib/cookbook/requestPdf", async (original) => ({
+  ...(await original<typeof import("@/lib/cookbook/requestPdf")>()),
+  requestCookbookPdf: vi.fn(async () => ({ file: new Blob(["%PDF"], { type: "application/pdf" }), missingPhotos: [1] })),
+  saveFile: vi.fn((_file: Blob, name: string) => server.saved.push({ name })),
+}));
 vi.mock("@/lib/cookbook/loadImages", () => ({
   loadImages: vi.fn(async (urls: (string | null)[], options: { onProgress?: (done: number, total: number) => void }) => {
     const wanted = urls.filter(Boolean).length;
@@ -84,6 +94,8 @@ beforeEach(() => {
   printing.print.mockReset();
   printing.html = "";
   printing.photoResults = [];
+  server.saved = [];
+  vi.mocked(requestCookbookPdf).mockClear();
   library = {
     recipes: [
       recipe("r1", "Lemon Pasta", { image_url: "https://cdn.example.com/pasta.jpg" }),
@@ -159,8 +171,7 @@ describe("CookbookScreen", () => {
     expect(document.activeElement).toBe(screen.getByLabelText("Cookbook title"));
   });
 
-  it("builds the book with the chosen options, prints it, and offers to print again", async () => {
-    printing.photoResults = [true, false];
+  it("makes the book on the server with the chosen options and downloads it, and can print it too", async () => {
     params = new URLSearchParams("recipe=r1&recipe=r2");
     renderScreen();
     fireEvent.change(screen.getByLabelText("Cookbook title"), { target: { value: "Family book" } });
@@ -171,17 +182,25 @@ describe("CookbookScreen", () => {
     });
 
     const dialog = await screen.findByRole("dialog", { name: "Cookbook created" });
-    await vi.waitFor(() => expect(printing.print).toHaveBeenCalledTimes(1));
-    expect(printing.html).toContain("<title>Family book</title>");
-    expect(printing.html).toContain("@page { size: letter;");
-    expect(printing.html.indexOf("Lemon Pasta")).toBeLessThan(printing.html.indexOf("Chocolate Cake"));
-    expect(printing.html).toContain('src="https://cdn.example.com/pasta.jpg"');
-    // The cake's photo did not load, so its page gets the placeholder.
-    expect(printing.html).not.toContain("cake.jpg");
+    const sent = vi.mocked(requestCookbookPdf).mock.calls[0]![0] as CookbookBook;
+    expect(sent).toMatchObject({ title: "Family book", pageSize: "letter", language: "en" });
+    expect(sent.recipes.map((entry) => entry.title)).toEqual(["Lemon Pasta", "Chocolate Cake"]);
+    expect(sent.recipes[0]!.imageDataUri).toBe("https://cdn.example.com/pasta.jpg");
+    expect(server.saved).toEqual([{ name: "Family-book.pdf" }]);
+    expect(within(dialog).getByText(/Family-book\.pdf\W* is in your downloads\./)).toBeDefined();
+    // The server couldn't load the cake's photo, so its page gets the placeholder.
     expect(within(dialog).getByText(/couldn’t be loaded/)).toBeDefined();
 
-    fireEvent.click(within(dialog).getByRole("button", { name: "Print again" }));
-    expect(printing.print).toHaveBeenCalledTimes(2);
+    await act(async () => {
+      fireEvent.click(within(dialog).getByRole("button", { name: "Print" }));
+    });
+    await vi.waitFor(() => expect(printing.print).toHaveBeenCalledTimes(1));
+    expect(printing.html).toContain("@page { size: letter;");
+    expect(printing.html).toContain('src="https://cdn.example.com/pasta.jpg"');
+    expect(printing.html).not.toContain("cake.jpg");
+
+    fireEvent.click(within(screen.getByRole("dialog", { name: "Cookbook created" })).getByRole("button", { name: "Download again" }));
+    expect(server.saved).toHaveLength(2);
   });
 
   it("leaves the photos out when switched off", async () => {
@@ -192,25 +211,44 @@ describe("CookbookScreen", () => {
       fireEvent.click(screen.getAllByRole("button", { name: "Create PDF" })[0]!);
     });
     await screen.findByRole("dialog", { name: "Cookbook created" });
-    expect(printing.html).not.toContain('class="hero"');
+    expect(vi.mocked(requestCookbookPdf).mock.calls[0]![0]).toMatchObject({ hideImages: true });
   });
 
-  it("says plainly when the book could not be made, and tries again", async () => {
-    vi.spyOn(console, "warn").mockImplementation(() => undefined);
-    vi.mocked(preparePrintFrame).mockRejectedValueOnce(new Error("Print is unavailable"));
-    params = new URLSearchParams("recipe=r3");
+  it("says plainly when the file could not be made, and offers to print it instead", async () => {
+    const { PdfRequestError } = await vi.importActual<typeof import("@/lib/cookbook/requestPdf")>("@/lib/cookbook/requestPdf");
+    vi.mocked(requestCookbookPdf).mockRejectedValueOnce(new PdfRequestError("unavailable"));
+    printing.photoResults = [true];
+    params = new URLSearchParams("recipe=r1");
     renderScreen();
     await act(async () => {
       fireEvent.click(screen.getAllByRole("button", { name: "Create PDF" })[0]!);
     });
     const failed = await screen.findByRole("dialog", { name: "Couldn’t create cookbook" });
-    expect(within(failed).getByText("Couldn’t create the PDF. Please try again.")).toBeDefined();
+    expect(within(failed).getByText(/couldn’t make the PDF file/)).toBeDefined();
 
     await act(async () => {
-      fireEvent.click(within(failed).getByRole("button", { name: "Try again" }));
+      fireEvent.click(within(failed).getByRole("button", { name: "Print instead" }));
+    });
+    await vi.waitFor(() => expect(printing.print).toHaveBeenCalledTimes(1));
+    const printed = await screen.findByRole("dialog", { name: "Cookbook created" });
+    expect(within(printed).getByRole("button", { name: "Print again" })).toBeDefined();
+    expect(server.saved).toEqual([]);
+
+    // Trying again goes back to the server.
+    vi.mocked(requestCookbookPdf).mockRejectedValueOnce(new PdfRequestError("failed"));
+    await act(async () => {
+      fireEvent.click(within(printed).getByRole("button", { name: "Close" }));
+    });
+    await act(async () => {
+      fireEvent.click(screen.getAllByRole("button", { name: "Create PDF" })[0]!);
+    });
+    const again = await screen.findByRole("dialog", { name: "Couldn’t create cookbook" });
+    await act(async () => {
+      fireEvent.click(within(again).getByRole("button", { name: "Try again" }));
     });
     await screen.findByRole("dialog", { name: "Cookbook created" });
-    expect(printing.print).toHaveBeenCalledTimes(1);
+    expect(requestCookbookPdf).toHaveBeenCalledTimes(3);
+    expect(server.saved).toHaveLength(1);
   });
 
   it("brings back this tab's book after a reload", () => {

@@ -1613,7 +1613,18 @@ export default {
       "moved": "{{name}} ahora es la {{position}} de {{total}}.",
       "removed": "{{name}} se quitó del libro.",
       "dragToReorder": "Arrastra para cambiar el orden",
-      "contents": "Contenido"
+      "contents": "Contenido",
+      "createHint": "Descarga un PDF que puedes guardar, compartir o imprimir.",
+      "makingStep": "Creando tu PDF…",
+      "makingHint": "Un libro grande con fotos puede tardar hasta un minuto.",
+      "downloaded": "{{file}} está en tus descargas.",
+      "downloadAgain": "Descargar de nuevo",
+      "print": "Imprimir",
+      "done": "Listo",
+      "printInstead": "Imprimir en su lugar",
+      "pdfFailed": "No pudimos crear el PDF. Inténtalo de nuevo, o imprime el libro y elige Guardar como PDF.",
+      "pdfBusy": "Has creado varios libros seguidos. Espera un minuto y vuelve a intentarlo.",
+      "pdfSignedOut": "Se cerró tu sesión. Vuelve a iniciar sesión y crea el libro."
     },
     "welcome": {
       "tabTitle": "Bienvenida",
