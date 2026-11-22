@@ -229,6 +229,8 @@ step "In the same list, click the three dots on $SERVICE_ACCOUNT_EMAIL → 'Mana
 step "Click 'Add key' → 'Create new key' → JSON → 'Create'. A .json file downloads."
 warn "This file is a password. Keep it out of the repo, and don't send it in chat."
 ask KEY_FILE "Path of the downloaded .json file (e.g. ~/Downloads/pinch-play-upload-1234.json):"
+# Windows "Copy as path" adds quotes.
+KEY_FILE=$(printf '%s' "$KEY_FILE" | sed -e "s/^[\"']//" -e "s/[\"']\$//")
 KEY_FILE="${KEY_FILE/#\~/$HOME}"
 if [[ ! -f "$KEY_FILE" ]]; then
   warn "There's no file at $KEY_FILE. You can still upload it by hand in stage 5."
@@ -276,7 +278,9 @@ step "Open the account that has the pinch-web Worker. On 'Workers & Pages', the 
 step "workers.dev subdomain is shown in the panel on the right (e.g. 'yarden.workers.dev')."
 note "If it offers to set up a workers.dev subdomain instead, do that first: previews need one."
 ask WORKERS_SUBDOMAIN "The subdomain, without .workers.dev (e.g. yarden):"
-WORKERS_SUBDOMAIN="${WORKERS_SUBDOMAIN%.workers.dev}"
+# Accept a whole Worker address too: https://pinch-web.yarden.workers.dev/ → yarden.
+WORKERS_SUBDOMAIN="${WORKERS_SUBDOMAIN#https://}"; WORKERS_SUBDOMAIN="${WORKERS_SUBDOMAIN%%/*}"
+WORKERS_SUBDOMAIN="${WORKERS_SUBDOMAIN%.workers.dev}"; WORKERS_SUBDOMAIN="${WORKERS_SUBDOMAIN##*.}"
 PREVIEW_REDIRECT="https://*-pinch-web.${WORKERS_SUBDOMAIN}.workers.dev/app/**"
 
 stage "Supabase: allow sign-in to return to previews"

@@ -53,9 +53,10 @@ jobs:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
           ALIAS: pr-${{ github.event.pull_request.number }}
-          MESSAGE: PR ${{ github.event.pull_request.number }} at ${{ github.event.pull_request.head.sha }}
+          SHA: ${{ github.event.pull_request.head.sha }}
+        # OpenNext passes these on to wrangler without keeping quoted words together: no spaces.
         run: |
-          npx opennextjs-cloudflare upload --preview-alias "$ALIAS" --message "$MESSAGE" 2>&1 | tee upload.log
+          npx opennextjs-cloudflare upload --preview-alias "$ALIAS" --tag "$ALIAS-${SHA::7}" 2>&1 | tee upload.log
           url=$(grep -oE "https://$ALIAS-pinch-web\.[a-z0-9-]+\.workers\.dev" upload.log | head -1)
           if [ -z "$url" ]; then
             echo "::error::The upload didn't print a preview link for $ALIAS."
