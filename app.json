@@ -29,6 +29,7 @@
       ]
     },
     "android": {
+      "googleServicesFile": "./google-services.json",
       "package": "com.pinch.myapp",
       "backgroundColor": "#F4F1F8",
       "permissions": [

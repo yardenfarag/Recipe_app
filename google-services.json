@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "869808158425",
+    "project_id": "pinch-project-2b275",
+    "storage_bucket": "pinch-project-2b275.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:869808158425:android:082c75bdfef44dff45b0c8",
+        "android_client_info": {
+          "package_name": "com.pinch.myapp"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCgZluUtb8XUDLfbeWdTR58pP3vuFeIWJE"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
