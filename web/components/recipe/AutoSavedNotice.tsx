@@ -10,6 +10,7 @@ import { showToast } from "@shared/lib/toast";
 
 import { Button } from "@/components/ui/Button";
 import { IconButton } from "@/components/ui/IconButton";
+import { removeFromLibrary } from "@/lib/library/libraryCache";
 
 /**
  * Snap saved this recipe for the cook as soon as it came in (`?justSaved=1`), with no Save tap: say so once, with a
@@ -30,6 +31,7 @@ export function AutoSavedNotice() {
     setRemoving(true);
     try {
       await deleteRecipe(id);
+      removeFromLibrary(id);
       showToast(t("recipe.autoSavedRemoved"), "info");
       router.replace("/add");
     } catch {

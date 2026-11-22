@@ -3,7 +3,7 @@
 import { Flame, Heart, SearchX } from "lucide-react";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
-import { Suspense, useCallback, useDeferredValue, useEffect, useMemo, useRef, useState } from "react";
+import { Suspense, useCallback, useDeferredValue, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 
 import { rankCookTonight } from "@shared/lib/cookTonight";
@@ -44,6 +44,7 @@ import { Spinner } from "@/components/ui/Spinner";
 import { cn } from "@/lib/cn";
 import { useCreditBalance } from "@/lib/credits/balance";
 import { formatCount } from "@/lib/credits/format";
+import { rememberedLibraryScroll, rememberLibraryScroll } from "@/lib/library/libraryCache";
 import { useCollections } from "@/lib/library/useCollections";
 import { useCookedThisWeek } from "@/lib/library/useCookedThisWeek";
 import { useLibraryLayout } from "@/lib/library/useLibraryLayout";
@@ -127,6 +128,43 @@ function LibraryScreen() {
     const query = next.toString();
     window.history.replaceState(window.history.state, "", `${window.location.pathname}${query ? `?${query}` : ""}`);
   }, [search, sort, selectedTags, selectedCollectionId, favoritesOnly, cookTonight, quick]);
+
+  // Back to the Library returns to where you were (PIN-174). The recipes from last time are already on screen, so
+  // that place exists before the first paint. A link to the Library opens a new history entry, at the top.
+  const openedWithRecipes = useRef(!loading);
+  useLayoutEffect(() => {
+    const y = rememberedLibraryScroll();
+    if (!openedWithRecipes.current || y == null) return;
+    window.scrollTo(0, y);
+    // In Chrome the page still moves once more a moment later, to a place a couple of hundred pixels short (seen
+    // in the browser tests, from no script call: the browser's own restoring). Hold the place for a second, or
+    // until the reader scrolls themselves.
+    const inputs = ["wheel", "touchstart", "keydown", "pointerdown"] as const;
+    const release = () => {
+      clearTimeout(timer);
+      window.removeEventListener("scroll", hold);
+      for (const input of inputs) window.removeEventListener(input, release);
+    };
+    const hold = () => {
+      if (Math.abs(window.scrollY - y) > 1) window.scrollTo(0, y);
+    };
+    const timer = setTimeout(release, 1_000);
+    window.addEventListener("scroll", hold);
+    for (const input of inputs) window.addEventListener(input, release, { passive: true });
+    return release;
+  }, []);
+  useEffect(() => {
+    let frame = 0;
+    const onScroll = () => {
+      cancelAnimationFrame(frame);
+      frame = requestAnimationFrame(() => rememberLibraryScroll(window.scrollY));
+    };
+    window.addEventListener("scroll", onScroll, { passive: true });
+    return () => {
+      cancelAnimationFrame(frame);
+      window.removeEventListener("scroll", onScroll);
+    };
+  }, []);
 
   // Cmd+K / Ctrl+K lands in the Snap bar on this page, where it is always at the top.
   const snapBar = useSnapBar();

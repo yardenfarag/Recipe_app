@@ -157,6 +157,12 @@
   input[type="radio"] {
     accent-color: var(--c-primary);
   }
+
+  /* The welcome page waits, unseen, while it is about to forward a signed-in visitor or switch language
+     (lib/onboarding/frontDoor.ts). */
+  html[data-welcome-wait] [data-welcome] {
+    visibility: hidden;
+  }
 }
 
 /* A row that scrolls sideways under the thumb, without a scrollbar (filter chips on a phone). */

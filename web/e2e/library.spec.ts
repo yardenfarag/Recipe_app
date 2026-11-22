@@ -1,6 +1,7 @@
 import { expect, test, type Page } from "@playwright/test";
 
 import { resetLibrary, resetTestUserLanguage, type SeedRecipe } from "./admin";
+import { localSupabase } from "./env.mjs";
 import { signInWithPassword } from "./helpers";
 import { TEST_USER } from "./testUser";
 
@@ -17,11 +18,12 @@ test.afterEach(async () => {
 });
 
 async function openLibrary(page: Page, recipes: SeedRecipe[] = THREE, path = "/app") {
-  await resetLibrary(recipes);
+  const ids = await resetLibrary(recipes);
   await page.goto("/app/auth?mode=signin");
   await signInWithPassword(page, TEST_USER.email, TEST_USER.password);
   await expect(page.locator("#main h1")).toBeVisible();
   if (path !== "/app") await page.goto(path);
+  return ids;
 }
 
 const cards = (page: Page) => page.locator("#main article");
@@ -207,6 +209,80 @@ test("the address keeps the filters: a linked search opens already filtered", as
   await openLibrary(page, THREE, "/app?q=cake");
   await expect(page.getByRole("searchbox", { name: "Snap a recipe or search yours" })).toHaveValue("cake");
   await expect(cards(page)).toHaveCount(1);
+});
+
+/** A change made outside this tab (the phone app, say): renames a recipe straight in the database. */
+async function renameElsewhere(id: string, title: string) {
+  const { url, serviceRoleKey } = localSupabase();
+  const response = await fetch(`${url}/rest/v1/recipes?id=eq.${id}`, {
+    method: "PATCH",
+    headers: { apikey: serviceRoleKey, Authorization: `Bearer ${serviceRoleKey}`, "Content-Type": "application/json" },
+    body: JSON.stringify({ title }),
+  });
+  if (!response.ok) throw new Error(`Could not rename the recipe (${response.status}): ${await response.text()}`);
+}
+
+/** The recipe list answers slowly from now on, so anything on screen at once came from memory. */
+async function slowRecipeList(page: Page) {
+  await page.route(/\/rest\/v1\/recipes\?/, async (route) => {
+    await new Promise((resolve) => setTimeout(resolve, 2_000));
+    await route.continue();
+  });
+}
+
+test.describe("coming back (PIN-174)", () => {
+  test("from another section, the recipes are there at once, then what changed meanwhile", async ({ page }) => {
+    const ids = await openLibrary(page);
+    await expect(cards(page)).toHaveCount(3);
+    const nav = page.getByRole("navigation", { name: "Main" }).filter({ visible: true });
+    await nav.getByRole("link", { name: "Hub" }).click();
+    await expect(page.getByRole("heading", { level: 1 })).toHaveText("Cooking Hub");
+
+    // Renamed on another device while the Hub was open.
+    await renameElsewhere(ids[2], "Green Salad with Feta");
+    await slowRecipeList(page);
+    await nav.getByRole("link", { name: "Library", exact: true }).click();
+
+    // Well before the slowed list could answer: last time's recipes, no loading outlines.
+    await expect(cards(page)).toHaveCount(3, { timeout: 1_000 });
+    await expect(page.locator("#main [aria-busy=true]")).toHaveCount(0);
+    // Then the quiet refresh brings the change.
+    await expect(card(page, "Green Salad with Feta")).toBeVisible({ timeout: 10_000 });
+    await expect(cards(page)).toHaveCount(3);
+  });
+
+  test("a heart given on the recipe's page shows at once back in the Library", async ({ page }) => {
+    await openLibrary(page);
+    await page.getByRole("link", { name: "Chocolate Cake" }).click();
+    await expect(page.locator("#main h1")).toHaveText("Chocolate Cake");
+    await page.getByRole("button", { name: "Add Chocolate Cake to favorites" }).filter({ visible: true }).first().click();
+    await expect(page.getByRole("button", { name: "Remove Chocolate Cake from favorites" }).filter({ visible: true }).first()).toBeVisible();
+
+    await slowRecipeList(page);
+    await page.goBack();
+    await expect(page.getByRole("button", { name: "Remove Chocolate Cake from favorites" })).toBeVisible({ timeout: 1_000 });
+  });
+
+  test("Back from a recipe returns to the same place in a long list, at once", async ({ page }) => {
+    const many: SeedRecipe[] = Array.from({ length: 60 }, (_, index) => ({
+      title: `Stew number ${String(index + 1).padStart(2, "0")}`,
+      createdSecondsAgo: index + 1,
+    }));
+    await openLibrary(page, many);
+    await expect(cards(page)).toHaveCount(40);
+    const target = card(page, "Stew number 30");
+    await target.scrollIntoViewIfNeeded();
+    const before = await page.evaluate(() => window.scrollY);
+    expect(before).toBeGreaterThan(300);
+
+    await page.getByRole("link", { name: "Stew number 30" }).click();
+    await expect(page.locator("#main h1")).toHaveText("Stew number 30");
+    await slowRecipeList(page);
+    await page.goBack();
+
+    await expect(target).toBeInViewport({ timeout: 1_000 });
+    expect(Math.abs((await page.evaluate(() => window.scrollY)) - before)).toBeLessThan(5);
+  });
 });
 
 test.describe("phone", () => {

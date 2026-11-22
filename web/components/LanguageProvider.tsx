@@ -13,6 +13,11 @@ import { LANGUAGE_STORAGE_KEY } from "@/lib/theme";
 interface LanguageState {
   language: AppLanguageCode;
   setLanguage: (next: AppLanguageCode) => void;
+  /**
+   * The language has been worked out and its strings are loaded. Until then the page speaks English, the language
+   * the server draws it in, which the welcome page hides from someone who reads another (lib/onboarding/frontDoor.ts).
+   */
+  ready: boolean;
 }
 
 const LanguageContext = createContext<LanguageState | null>(null);
@@ -47,6 +52,7 @@ export function LanguageProvider({ children }: { children: ReactNode }) {
   const accountLanguage = useAccountPreferences().prefs.language;
   const [picked, setPicked] = useState<AppLanguageCode | null>(null);
   const [language, setLanguageState] = useState<AppLanguageCode>("en");
+  const [ready, setReady] = useState(false);
 
   useEffect(() => {
     // The saved pick only exists in the browser, so it is read after the first render.
@@ -70,7 +76,10 @@ export function LanguageProvider({ children }: { children: ReactNode }) {
     root.dir = textDirection(next);
     // eslint-disable-next-line react-hooks/set-state-in-effect
     setLanguageState(next);
-    void changeLanguage(next).catch((error) => console.warn("[i18n] language load failed", error));
+    void changeLanguage(next)
+      .catch((error) => console.warn("[i18n] language load failed", error))
+      // Failed or not, the page now shows what it can: hiding it longer wouldn't help.
+      .finally(() => setReady(true));
     // Fills an account that has no language yet (saved once it has been read from the server).
     if (!accountLanguage) accountPreferences().reportDevice({ language: next });
   }, [loading, accountLanguage, picked, sessionLocale]);
@@ -81,7 +90,7 @@ export function LanguageProvider({ children }: { children: ReactNode }) {
     accountPreferences().save({ language: next });
   }, []);
 
-  const value = useMemo(() => ({ language, setLanguage }), [language, setLanguage]);
+  const value = useMemo(() => ({ language, setLanguage, ready }), [language, setLanguage, ready]);
   return (
     <LanguageContext.Provider value={value}>
       <I18nextProvider i18n={i18n}>{children}</I18nextProvider>

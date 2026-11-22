@@ -18,6 +18,7 @@ import { buttonClasses } from "@/components/ui/Button";
 import { ConfirmDialog } from "@/components/ui/Dialog";
 import { usePageTitle } from "@/components/ui/PageHeader";
 import { EmptyState, ErrorState, LoadingState } from "@/components/ui/States";
+import { removeFromLibrary } from "@/lib/library/libraryCache";
 import { useRecipe } from "@/lib/recipe/useRecipe";
 
 /**
@@ -67,6 +68,8 @@ function SavedRecipeView({ display, onToggleFavorite }: { display: RecipeDisplay
   async function remove() {
     try {
       await deleteRecipe(display.recipe.id);
+      // Gone from the Library at once, not after its refresh (PIN-174).
+      removeFromLibrary(display.recipe.id);
       router.replace("/");
     } catch (caught) {
       showToast(`${t("library.couldNotDelete")}: ${translateAppError(caught, t)}`, "info");
