@@ -176,8 +176,6 @@ test.describe("phone, in Hebrew", () => {
   test("the language picked on the way in carries through sign-up, the questions and the first recipes", async ({ page }) => {
     await resetHub([{ name: "Hummus Bowl", save_count: 10 }]);
     const email = uniqueEmail("e2e-first-visit-he");
-    // No Hub recipes to pick from, so finishing goes straight to the Library (the picker has its own tests).
-    await resetHub([]);
     await page.goto("/app");
     await expect(page).toHaveURL(/\/app\/welcome$/);
     await page.getByRole("button", { name: "עברית" }).click();
