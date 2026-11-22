@@ -6,7 +6,9 @@ import {
   classifyContent,
   CLARIFY_CONFIDENCE_THRESHOLD,
   type DishClarification,
+  inventKindAfterGate,
   parseDishClarification,
+  planInventGate,
   shouldAskClarifyingQuestions,
 } from './contentGate.ts';
 
@@ -158,4 +160,61 @@ Deno.test('does not ask without questions, without two candidates, or without a 
   assertFalse(shouldAskClarifyingQuestions({ ...ASKABLE, candidates: ['Chicken breast'] }));
   assertFalse(shouldAskClarifyingQuestions({ ...ASKABLE, confidence: null }));
   assertFalse(shouldAskClarifyingQuestions(undefined));
+});
+
+const PLAN_DEFAULTS = {
+  platform: 'photo',
+  alreadyGated: false,
+  thinSocialPost: false,
+  canClarify: false,
+  questionsDone: false,
+};
+
+Deno.test('planInventGate: an app that cannot show questions is planned as before', () => {
+  assertEquals(planInventGate(PLAN_DEFAULTS), { runGate: true, clarify: false, onlyToAsk: false });
+  assertEquals(planInventGate({ ...PLAN_DEFAULTS, alreadyGated: true }), { runGate: false, clarify: false, onlyToAsk: false });
+  assertEquals(planInventGate({ ...PLAN_DEFAULTS, platform: 'instagram', thinSocialPost: true }), {
+    runGate: false,
+    clarify: false,
+    onlyToAsk: false,
+  });
+});
+
+Deno.test('planInventGate: a photo from an app that can ask is checked with questions on', () => {
+  assertEquals(planInventGate({ ...PLAN_DEFAULTS, canClarify: true }), { runGate: true, clarify: true, onlyToAsk: false });
+});
+
+Deno.test('planInventGate: the Extract offer path (already gated) is checked again to ask (D7)', () => {
+  assertEquals(planInventGate({ ...PLAN_DEFAULTS, canClarify: true, alreadyGated: true }), {
+    runGate: true,
+    clarify: true,
+    onlyToAsk: true,
+  });
+});
+
+Deno.test('planInventGate: once questions are done, it never asks again', () => {
+  assertEquals(planInventGate({ ...PLAN_DEFAULTS, canClarify: true, alreadyGated: true, questionsDone: true }), {
+    runGate: false,
+    clarify: false,
+    onlyToAsk: false,
+  });
+});
+
+Deno.test('planInventGate: links never ask, even from an app that can', () => {
+  assertEquals(planInventGate({ ...PLAN_DEFAULTS, platform: 'youtube', canClarify: true }), {
+    runGate: true,
+    clarify: false,
+    onlyToAsk: false,
+  });
+});
+
+Deno.test('inventKindAfterGate: a re-check only to ask cannot reject a photo the food check passed', () => {
+  const onlyToAsk = planInventGate({ ...PLAN_DEFAULTS, canClarify: true, alreadyGated: true });
+  assertEquals(inventKindAfterGate(onlyToAsk, 'unrelated'), 'plated_dish');
+  assertEquals(inventKindAfterGate(onlyToAsk, 'mixed'), 'mixed');
+});
+
+Deno.test('inventKindAfterGate: a first food check still rejects non-food', () => {
+  assertEquals(inventKindAfterGate(planInventGate({ ...PLAN_DEFAULTS, canClarify: true }), 'unrelated'), 'unrelated');
+  assertEquals(inventKindAfterGate(planInventGate(PLAN_DEFAULTS), 'unrelated'), 'unrelated');
 });

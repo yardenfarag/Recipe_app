@@ -165,6 +165,47 @@ export function shouldAskClarifyingQuestions(clarification: DishClarification | 
   );
 }
 
+export type InventGatePlan = {
+  runGate: boolean;
+  clarify: boolean;
+  /**
+   * The food check already passed (Extract → "Guess instead?") and the gate runs only to ask.
+   * Its verdict on food then doesn't count: a limit, an error or "unrelated" all mean guess as before.
+   */
+  onlyToAsk: boolean;
+};
+
+/** ADR 031 D2, D5: only photos, only from an app that can show questions, and only once. */
+export function mayAskClarifyingQuestions(opts: {
+  platform: string;
+  canClarify: boolean;
+  questionsDone: boolean;
+}): boolean {
+  return opts.platform === 'photo' && opts.canClarify && !opts.questionsDone;
+}
+
+/**
+ * Whether invent-recipe runs the content gate, and with clarifying questions (ADR 031).
+ * A photo from an app that can show questions is checked even after an earlier food check
+ * (the Extract → "Guess instead?" offer, D7), unless its questions are already done.
+ * Every other request is planned exactly as before PIN-64.
+ */
+export function planInventGate(opts: {
+  platform: string;
+  alreadyGated: boolean;
+  thinSocialPost: boolean;
+  canClarify: boolean;
+  questionsDone: boolean;
+}): InventGatePlan {
+  if (mayAskClarifyingQuestions(opts)) return { runGate: true, clarify: true, onlyToAsk: opts.alreadyGated };
+  return { runGate: !opts.alreadyGated && !opts.thinSocialPost, clarify: false, onlyToAsk: false };
+}
+
+/** The content kind invent-recipe acts on after the gate ran (D7: a re-check only to ask can't reject). */
+export function inventKindAfterGate(plan: InventGatePlan, kind: ContentKind): ContentKind {
+  return plan.onlyToAsk && kind === 'unrelated' ? 'plated_dish' : kind;
+}
+
 export async function classifyContent(
   input: ClassifyContentInput,
   options: ClassifyContentOptions = {},

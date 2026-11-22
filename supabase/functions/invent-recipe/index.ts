@@ -4,10 +4,20 @@ import { normalizeStoredNutrition } from '../_shared/recipes/nutrition.ts';
 import { classifyGeminiRecipe } from '../_shared/extraction/classifyRecipe.ts';
 import {
   buildContentGateInput,
+  type DishClarification,
+  inventKindAfterGate,
+  mayAskClarifyingQuestions,
+  planInventGate,
   runContentGate,
+  shouldAskClarifyingQuestions,
   shouldSkipThinSocialGate,
   thumbnailRefererForPlatform,
 } from '../_shared/extraction/contentGate.ts';
+import {
+  type ClarificationReply,
+  sanitizeClarificationReply,
+  sanitizeDishGuess,
+} from '../_shared/extraction/clarifyingQuestions.ts';
 import { corsHeaders, jsonResponse } from '../_shared/core/cors.ts';
 import { FetchError } from '../_shared/core/errors.ts';
 import { inventRecipeFromImage, inventRecipeWithLadder } from '../_shared/recipes/inventRecipe.ts';
@@ -59,11 +69,16 @@ import { fetchWebRecipeMeta } from '../_shared/extraction/webRecipe.ts';
 import { pageReadLogger, type PageReadEvent } from '../_shared/extraction/pageReader.ts';
 import { fetchYouTubeMeta } from '../_shared/extraction/sources/youtube.ts';
 
-type JobStatus = 'full' | 'partial' | 'failed' | 'coming_soon';
+/** `needs_clarification` is sent only to apps that send `can_clarify: true` (ADR 031). */
+type JobStatus = 'full' | 'partial' | 'failed' | 'coming_soon' | 'needs_clarification';
 
 /**
- * POST { url | image_base64, guest_install_id?, language? }
+ * POST { url | image_base64, guest_install_id?, language?, already_gated?,
+ *        can_clarify?, clarification?: { answers, skipped }, dish_guess? }
  * Invents a home-cook recipe after a food gate. Same 1-credit charge as Snap.
+ * PIN-64: a photo from an app with `can_clarify` may first get { status: 'needs_clarification',
+ * questions, dish_guess } with no charge; the app sends the same photo and request_id back with
+ * `clarification` (and `already_gated`, `dish_guess`), and the answers steer the recipe.
  */
 serve('invent-recipe', async (req) => {
   if (req.method === 'OPTIONS') {
@@ -81,6 +96,9 @@ serve('invent-recipe', async (req) => {
   let requestId: string = crypto.randomUUID();
   let language = 'en';
   let alreadyGated = false;
+  let canClarify = false;
+  let clarificationReply: ClarificationReply | null = null;
+  let echoedDishGuess = '';
   try {
     const body = await req.json();
     url = String(body.url ?? '').trim();
@@ -113,6 +131,9 @@ serve('invent-recipe', async (req) => {
       language = body.language.trim().toLowerCase();
     }
     alreadyGated = body.already_gated === true || body.alreadyGated === true;
+    canClarify = body.can_clarify === true;
+    clarificationReply = sanitizeClarificationReply(body.clarification);
+    echoedDishGuess = sanitizeDishGuess(body.dish_guess);
   } catch {
     return jsonResponse({ error: 'Invalid JSON body' }, 400);
   }
@@ -261,8 +282,13 @@ serve('invent-recipe', async (req) => {
     ? `invent|${platform}|${contentId ?? url}`
     : `invent|photo|${imageBase64 ?? ''}`;
 
-  // Every uploaded photo is kept, whatever the outcome, until the account is deleted.
-  const uploadedPhoto = keepUploadedPhoto(platform, imageBase64, imageMime, userId);
+  // Every uploaded photo is kept, whatever the outcome, until the account is deleted. When this
+  // call may answer with clarifying questions only, it is kept once the gate has decided, so a
+  // photo that gets questions is stored by the call that writes its recipe, not twice (PIN-64).
+  const questionsDone = clarificationReply !== null;
+  let uploadedPhoto: Promise<string | undefined> | null = null;
+  const keepPhoto = () => (uploadedPhoto ??= keepUploadedPhoto(platform, imageBase64, imageMime, userId));
+  if (!mayAskClarifyingQuestions({ platform, canClarify, questionsDone })) keepPhoto();
 
   try {
     let meta: PlatformMeta | null = null;
@@ -291,14 +317,18 @@ serve('invent-recipe', async (req) => {
       );
     }
 
-    const skipGate =
-      alreadyGated ||
-      shouldSkipThinSocialGate({
+    const gatePlan = planInventGate({
+      platform,
+      alreadyGated,
+      thinSocialPost: shouldSkipThinSocialGate({
         platform,
         imageBase64,
         contentId,
         meta,
-      });
+      }),
+      canClarify,
+      questionsDone,
+    });
 
     // PIN-70: a pin that links to a recipe site came back as that page, and is read as one.
     const ladderPlatform: Platform = meta?.readAs === 'web' ? 'web' : platform;
@@ -310,9 +340,11 @@ serve('invent-recipe', async (req) => {
       !hasTextSources(meta ?? { topComments: [] });
 
     let gateKind: import('../_shared/extraction/contentGate.ts').ContentKind = alreadyGated ? 'plated_dish' : 'mixed';
-    let dishGuess = '';
+    // The second call of a clarified photo skips the gate, so the app echoes the first call's guess.
+    let dishGuess = echoedDishGuess;
+    let clarification: DishClarification | undefined;
 
-    if (!skipGate) {
+    if (gatePlan.runGate) {
       const gate = await runContentGate({
         admin,
         userId,
@@ -325,9 +357,25 @@ serve('invent-recipe', async (req) => {
           meta,
           youtubeThumbnailUrl: contentId ? youTubeThumbnail(contentId) : null,
         }),
+        options: gatePlan.clarify ? { clarify: { language } } : undefined,
       });
+      if (gate.status !== 'ok') keepPhoto();
 
-      if (gate.status === 'limited') {
+      // D7: on the Extract → "Guess instead?" path the food check already passed and this run is
+      // only to ask. If it is unavailable, guess as before instead of failing.
+      if (gate.status !== 'ok' && gatePlan.onlyToAsk) {
+        await logUsageEvent(admin, {
+          userId,
+          guestInstallId: userId ? null : guestInstallId,
+          action: 'content_gate',
+          platform,
+          status: gate.status === 'limited' ? 'daily_limit' : 'error',
+          tokensCharged: 0,
+          durationMs: Date.now() - started,
+          errorMessage: gate.status === 'error' ? gate.error.slice(0, 500) : undefined,
+          metadata: { job: 'invent', clarify: true, asked: false },
+        });
+      } else if (gate.status === 'limited') {
         await logUsageEvent(admin, {
           userId,
           guestInstallId: userId ? null : guestInstallId,
@@ -346,8 +394,7 @@ serve('invent-recipe', async (req) => {
           },
           429,
         );
-      }
-      if (gate.status === 'error') {
+      } else if (gate.status === 'error') {
         await logUsageEvent(admin, {
           userId,
           guestInstallId: userId ? null : guestInstallId,
@@ -367,22 +414,38 @@ serve('invent-recipe', async (req) => {
           },
           503,
         );
+      } else {
+        gateKind = inventKindAfterGate(gatePlan, gate.kind);
+        dishGuess = gate.dishGuess || dishGuess;
+        clarification = gate.clarification;
+        const ask = shouldAskClarifyingQuestions(clarification);
+        if (!ask) keepPhoto();
+
+        await logUsageEvent(admin, {
+          userId,
+          guestInstallId: userId ? null : guestInstallId,
+          action: 'content_gate',
+          platform,
+          status: gate.kind === 'unrelated' ? 'rejected' : 'ok',
+          usages: gate.usage ? [gate.usage] : [],
+          tokensCharged: 0,
+          durationMs: Date.now() - started,
+          metadata: {
+            kind: gate.kind,
+            dish_guess: gate.dishGuess,
+            job: 'invent',
+            ...(gatePlan.clarify
+              ? {
+                clarify: true,
+                confidence: clarification?.confidence ?? null,
+                candidates: clarification?.candidates ?? [],
+                asked: ask,
+                question_count: ask ? clarification?.questions.length ?? 0 : 0,
+              }
+              : {}),
+          },
+        });
       }
-
-      gateKind = gate.kind;
-      dishGuess = gate.dishGuess;
-
-      await logUsageEvent(admin, {
-        userId,
-        guestInstallId: userId ? null : guestInstallId,
-        action: 'content_gate',
-        platform,
-        status: gate.kind === 'unrelated' ? 'rejected' : 'ok',
-        usages: gate.usage ? [gate.usage] : [],
-        tokensCharged: 0,
-        durationMs: Date.now() - started,
-        metadata: { kind: gate.kind, dish_guess: gate.dishGuess, job: 'invent' },
-      });
     }
 
     if (gateKind === 'unrelated') {
@@ -393,6 +456,17 @@ serve('invent-recipe', async (req) => {
         message: imageBase64
           ? 'We can only invent recipes from food, drinks, or recipe photos.'
           : "That doesn't look like food or a recipe.",
+        tokens_charged: 0,
+      });
+    }
+
+    // PIN-64: ask before any credit is held, so asking is free and walking away costs nothing.
+    if (clarification && shouldAskClarifyingQuestions(clarification)) {
+      return jsonResponse({
+        status: 'needs_clarification' as JobStatus,
+        platform,
+        dish_guess: dishGuess,
+        questions: clarification.questions,
         tokens_charged: 0,
       });
     }
@@ -467,6 +541,7 @@ serve('invent-recipe', async (req) => {
         imageBase64,
         mimeType: imageMime,
         language,
+        clarifications: platform === 'photo' ? clarificationReply?.answers : undefined,
       });
       gemini = fromImage.recipe;
       if (fromImage.usage) usages = [fromImage.usage];
@@ -557,7 +632,7 @@ serve('invent-recipe', async (req) => {
     }
 
     if (platform === 'photo' && imageBase64) {
-      imageUrl = (await uploadedPhoto) ?? imageUrl;
+      imageUrl = (await keepPhoto()) ?? imageUrl;
     }
 
     // ADR 017: never throws; a failure saves as "not analysed" (null).
@@ -651,7 +726,18 @@ serve('invent-recipe', async (req) => {
       scrapecreatorsCredits: scrapeCredits,
       tokensCharged: userId ? 1 : 0,
       durationMs: Date.now() - started,
-      metadata: applianceMetadata,
+      metadata: {
+        ...applianceMetadata,
+        ...(clarificationReply
+          ? {
+            clarification: {
+              answered_count: clarificationReply.answers.length,
+              skipped: clarificationReply.skipped,
+              used_other: clarificationReply.answers.some((a) => a.other),
+            },
+          }
+          : {}),
+      },
     });
 
     return jsonResponse({

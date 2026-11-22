@@ -107,9 +107,37 @@ The server treats everything in `clarifications` as untrusted user data: questio
 
 **Why:** the ticket's main risk is annoying people with questions, so "clear photos ask 10% of the time or less" is the rule that breaks ties. Logging lets us retune from real use.
 
+### D7. Photos from the Extract → "Guess instead?" offer are checked again, to ask
+
+A photo reaches Guess in two ways: Guess mode (the gate runs in `invent-recipe`), or Extract mode, where `extract-recipe`'s gate offers to guess and the app calls Guess with `already_gated: true` (`src/app/(tabs)/add.tsx`, `web/lib/snap/useSnap.ts`). Without a re-check, the second way could never ask.
+
+So for a photo from an app that sends `can_clarify`, `invent-recipe` runs the gate with questions on even when `already_gated`, unless the questions are done. If that re-check hits the daily limit, fails, or calls the photo non-food, it guesses as before, because the food check already passed (`inventKindAfterGate`).
+
+**Why:** one extra cheap gate call (1 of the 40-per-day gate limit) is worth asking on both paths.
+
+**"Done" is explicit.** The second call carries `clarification: { answers, skipped }`. Its presence means answered or skipped, so "Just guess" never loops back into the same questions.
+
+---
+
+## Local test (2026-11-22)
+
+Local Supabase, real model calls, a schnitzel photo (chicken, pork or veal?) and a margherita pizza from Wikimedia Commons:
+
+| Call | Result |
+|---|---|
+| Schnitzel, `can_clarify` | `needs_clarification`, 0 credits: "Which meat is the breaded cutlet made from? Pork · Chicken · Veal" |
+| Same photo, answered "Veal" | "Veal Schnitzel…", 1 credit |
+| Pizza, `can_clarify` | No questions, recipe |
+| Schnitzel, old app (no `can_clarify`) | No questions, recipe as today |
+| Schnitzel, "Just guess" | Gate not run again, recipe as today |
+| Schnitzel, `can_clarify`, Hebrew | "ממה עשוי השניצל?" עגל · חזיר · חזה עוף, confidence 0.55, 0 credits |
+
+**Finding:** that run used Claude Sonnet 5.5 for the gate (a local-only `OPENROUTER_MODEL_CONTENT_GATE` override). With today's gate model, Mistral Small, the gate never asked: it named the schnitzel "chicken and vegetable fried rice" at 0.95 confidence and the pizza "chicken schnitzel sandwich" at 0.98. Its confidence can't decide when to ask. With Sonnet the question call took 4.8 s, against about 2 s on Mistral Small, so latency and cost go into the eval too. Which model runs the clarify gate is for the eval (D6) and Yarden.
+
 ---
 
 ## Still open
 
 - Yarden to confirm both apps (`src/` and `web/`) are in scope for v1 (D3).
+- Which model runs the gate when questions are on (see the local test).
 - How the answers travel back to the server.

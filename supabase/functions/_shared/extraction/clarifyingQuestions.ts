@@ -90,6 +90,23 @@ export function sanitizeClarifications(value: unknown): Clarification[] {
   return result;
 }
 
+/**
+ * What the app sends on the second call. Its presence means the questions are done, answered or
+ * skipped with "Just guess", so the server never asks again for this photo.
+ */
+export type ClarificationReply = {
+  answers: Clarification[];
+  /** True when the user tapped "Just guess" before answering every question. */
+  skipped: boolean;
+};
+
+/** The `clarification` field of a request body, or null when there is none. */
+export function sanitizeClarificationReply(value: unknown): ClarificationReply | null {
+  if (!value || typeof value !== 'object' || Array.isArray(value)) return null;
+  const item = value as Record<string, unknown>;
+  return { answers: sanitizeClarifications(item.answers), skipped: item.skipped === true };
+}
+
 /** The first call's dish guess, sent back on the second call so the response keeps it. */
 export function sanitizeDishGuess(value: unknown): string {
   return cleanClarifyingText(value, MAX_DISH_GUESS_LENGTH);
