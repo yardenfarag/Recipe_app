@@ -21,6 +21,8 @@ export type SeedCard = {
   diets?: string[];
   /** Seconds before now, so "Newest" has a known order. */
   createdSecondsAgo?: number;
+  /** Ingredient names, for avoid-list tests. Default: flour and water. */
+  ingredients?: string[];
 };
 
 export type SeededCard = { id: string; title: string; public_slug: string };
@@ -72,10 +74,12 @@ export async function resetHub(cards: SeedCard[]): Promise<SeededCard[]> {
       original_url: link,
       platform: card.platform ?? "web",
       title: `${HUB_TITLE_PREFIX} ${card.name}`,
-      ingredients: [
-        { name: "flour", quantity: 1, unit: "cup" },
-        { name: "water", quantity: 0.5, unit: "cup" },
-      ],
+      ingredients: card.ingredients
+        ? card.ingredients.map((name) => ({ name, quantity: 1, unit: "cup" }))
+        : [
+            { name: "flour", quantity: 1, unit: "cup" },
+            { name: "water", quantity: 0.5, unit: "cup" },
+          ],
       instructions: [
         { step: 1, text: "Mix the flour and water." },
         { step: 2, text: "Bake until golden." },

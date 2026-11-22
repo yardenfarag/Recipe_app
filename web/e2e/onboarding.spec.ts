@@ -24,6 +24,12 @@ test.describe("desktop", () => {
   test.use({ viewport: { width: 1280, height: 900 } });
 
   test("a new visitor goes from the front door to a saved first recipe", async ({ page }) => {
+    // The Hub recipes the first-recipes picker chooses from: one fits the answers below, one has peanuts in it.
+    await resetHub([
+      { name: "Peanut Noodles", diets: ["vegetarian"], ingredients: ["peanuts", "noodles"], save_count: 30 },
+      { name: "Veggie Lasagna", diets: ["vegetarian"], save_count: 20 },
+      { name: "Beef Stew", save_count: 10 },
+    ]);
     await stubImports(page, {
       "extract-recipe": { body: { status: "full", platform: "web", recipe: importedRecipe("First Visit Pasta", { platform: "web" }) } },
     });
@@ -72,9 +78,21 @@ test.describe("desktop", () => {
     await expect(page.locator("#main h1")).toHaveText("How did you hear about Pinch?");
     await page.getByRole("button", { name: "A friend or family member" }).click();
 
-    // The empty Library points at Snap.
+    // Then the first recipes, from the Hub: fitting the diet first, never anything on the avoid list, at least one.
+    await expect(page).toHaveURL(/\/app\/first-recipes$/);
+    await expect(page.locator("#main h1")).toHaveText("Pick your first recipes");
+    await expect(page.getByText("Picked for your diet, with nothing on your avoid list.")).toBeVisible();
+    await expect(page.getByRole("button", { name: "Pick at least one" })).toBeDisabled();
+    await expect(page.getByRole("button", { name: /Peanut Noodles/ })).toHaveCount(0);
+    const lasagna = page.getByRole("button", { name: /Veggie Lasagna/ });
+    await expect(lasagna).toContainText("Fits your diet");
+    await lasagna.click();
+    await expect(lasagna).toHaveAttribute("aria-pressed", "true");
+    await page.getByRole("button", { name: "Save 1 recipe" }).click();
+
+    // The Library starts with it.
     await expect(page).toHaveURL(/\/app\/?$/);
-    await expect(page.getByRole("heading", { name: "Save your first recipe" })).toBeVisible();
+    await expect(page.getByRole("link", { name: "E2E Hub Veggie Lasagna" })).toBeVisible();
 
     // The answers are on the account, where the mobile app and Settings read them.
     await expect
@@ -89,16 +107,15 @@ test.describe("desktop", () => {
       })
       .toEqual({ onboarded: true, diets: ["vegetarian"], allergies: ["peanuts"], notice: true });
 
-    // And on to the first saved recipe.
-    await page.locator("#main").getByRole("link", { name: "Snap a recipe" }).click();
-    await expect(page).toHaveURL(/\/app\/add$/);
+    // And a Snap of their own, saved as it comes in.
+    await page.goto("/app/add");
     await page.getByLabel("Recipe URL").fill("https://www.example-recipes.com/first-visit-pasta");
     await page.getByRole("button", { name: "Snap", exact: true }).click();
+    await expect(page).toHaveURL(/\/app\/recipe\/[0-9a-f-]{36}\?justSaved=1$/);
     await expect(page.locator("#main h1")).toHaveText("First Visit Pasta");
-    await page.getByRole("button", { name: "Save recipe" }).click();
-    await expect(page.getByText("In your kitchen")).toBeVisible();
     await page.goto("/app");
     await expect(page.getByRole("link", { name: "First Visit Pasta" })).toBeVisible();
+    await resetHub([]);
   });
 
   test("someone who finished onboarding on the phone isn't asked again", async ({ page }) => {
@@ -154,7 +171,8 @@ test.describe("desktop", () => {
 test.describe("phone, in Hebrew", () => {
   test.use({ viewport: { width: 390, height: 844 } });
 
-  test("the language picked on the way in carries through sign-up and the questions", async ({ page }) => {
+  test("the language picked on the way in carries through sign-up, the questions and the first recipes", async ({ page }) => {
+    await resetHub([{ name: "Hummus Bowl", save_count: 10 }]);
     const email = uniqueEmail("e2e-first-visit-he");
     await page.goto("/app");
     await expect(page).toHaveURL(/\/app\/welcome$/);
@@ -175,8 +193,16 @@ test.describe("phone, in Hebrew", () => {
     await expect(page.locator("aside")).toBeHidden();
     await page.getByRole("button", { name: "דלגו בינתיים" }).click();
 
+    // Skipping the questions still leads to the first recipes, in Hebrew, fitting a phone.
+    await expect(page).toHaveURL(/\/app\/first-recipes$/);
+    await expect(page.locator("html")).toHaveAttribute("dir", "rtl");
+    await expect(page.locator("#main h1")).toHaveText("בחרו את המתכונים הראשונים שלכם");
+    expect(await page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth)).toBeLessThanOrEqual(0);
+    await page.getByRole("button", { name: /Hummus Bowl/ }).click();
+    await page.getByRole("button", { name: "שמירת 1 מתכון" }).click();
     await expect(page).toHaveURL(/\/app\/?$/);
-    await expect(page.getByRole("heading", { name: "שמרו את המתכון הראשון" })).toBeVisible();
+    await expect(page.getByRole("link", { name: "E2E Hub Hummus Bowl" })).toBeVisible();
+    await resetHub([]);
     await expect
       .poll(async () => {
         const account = await readOnboardingAccount(email, PASSWORD);

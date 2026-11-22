@@ -103,7 +103,7 @@ test("signing out logs auth.logout under the account before the session ends", a
     .toBe(1);
 });
 
-test("product events: an import, its save and Share Pinch, each once, with the visitor id and no recipe title", async ({ page, context }) => {
+test("product events: an import, its automatic save and Share Pinch, each once, with the visitor id and no recipe title", async ({ page, context }) => {
   const since = new Date(Date.now() - 1000).toISOString();
   const userId = await testUserId();
   await context.grantPermissions(["clipboard-read", "clipboard-write"]);
@@ -117,9 +117,9 @@ test("product events: an import, its save and Share Pinch, each once, with the v
 
   await page.getByLabel("Recipe URL").fill("https://example.com/secret-lemon-pasta");
   await page.getByRole("button", { name: "Snap", exact: true }).click();
+  // Saved for the cook as it comes in (no Save to tap), and opened.
+  await expect(page).toHaveURL(/\/app\/recipe\/[0-9a-f-]{36}\?justSaved=1$/);
   await expect(page.locator("#main h1")).toHaveText("Secret Lemon Pasta");
-  await page.getByRole("button", { name: "Save recipe" }).click();
-  await expect(page.getByRole("link", { name: "Secret Lemon Pasta" })).toBeVisible();
 
   // No share sheet in a desktop browser: the link is copied.
   await page.evaluate(() => Object.defineProperty(navigator, "share", { value: undefined, configurable: true }));
@@ -133,7 +133,7 @@ test("product events: an import, its save and Share Pinch, each once, with the v
   expect(visitorId).toBeTruthy();
   const byName = Object.fromEntries(rows.map((row) => [row.name, row]));
   expect(byName.recipe_extracted.properties).toMatchObject({ source: "url", mode: "extract" });
-  expect(byName.recipe_saved.properties).toMatchObject({ from: "extract" });
+  expect(byName.recipe_saved.properties).toMatchObject({ from: "extract", save: "auto" });
   expect(byName.app_shared.properties).toMatchObject({ outcome: "copied", platform: "web" });
   for (const row of rows) {
     expect(row.guest_install_id).toBe(visitorId);
