@@ -14,28 +14,28 @@ import { APP_LANGUAGES, type AppLanguageCode } from "@shared/lib/appLanguages";
 import { useAuth } from "@/components/AuthProvider";
 import { CheckoutReturnDialog } from "@/components/credits/CheckoutReturnDialog";
 import { useLanguage } from "@/components/LanguageProvider";
+import { ProfileAvatar } from "@/components/settings/ProfileAvatar";
 import { useTheme } from "@/components/ThemeProvider";
 import { useIsAdmin } from "@/lib/admin/useIsAdmin";
 import { signOut } from "@/lib/auth";
 import { cn } from "@/lib/cn";
 import { useCreditBalance } from "@/lib/credits/balance";
 import { formatCount } from "@/lib/credits/format";
+import { useAvatar } from "@/lib/settings/useAvatar";
 import type { ThemePreference } from "@/lib/theme";
 
 const itemClass =
   "relative flex h-10 cursor-pointer select-none items-center gap-3 rounded-xl px-3 text-[15px] text-text outline-none data-[highlighted]:bg-element data-[disabled]:opacity-50";
 
+/** The profile picture (a food avatar or a photo), or the email's first letter when there is none. */
 function Avatar({ email, size = "md" }: { email: string; size?: "sm" | "md" }) {
+  const avatar = useAvatar();
   return (
-    <span
-      aria-hidden
-      className={cn(
-        "grid shrink-0 place-items-center rounded-full bg-primary font-display font-bold text-on-primary uppercase",
-        size === "sm" ? "h-8 w-8 text-sm" : "h-9 w-9 text-[15px]",
-      )}
-    >
-      {email.charAt(0) || "?"}
-    </span>
+    <ProfileAvatar
+      url={avatar}
+      fallback={email.charAt(0) || "?"}
+      className={cn("bg-primary font-display font-bold text-on-primary uppercase", size === "sm" ? "h-8 w-8 text-sm" : "h-9 w-9 text-[15px]")}
+    />
   );
 }
 

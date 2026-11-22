@@ -1,6 +1,5 @@
 import Ionicons from '@expo/vector-icons/Ionicons';
 import Constants from 'expo-constants';
-import { Image } from 'expo-image';
 import * as ImagePicker from 'expo-image-picker';
 import { router } from 'expo-router';
 import { type ReactNode, useEffect, useState } from 'react';
@@ -14,9 +13,11 @@ import {
 } from 'react-native';
 import { Pressable } from '@/components/ui/Pressable';
 
+import { AvatarPickerModal } from '@/components/AvatarPickerModal';
 import { BrandHeader } from '@/components/BrandHeader';
 import { CookieMark } from '@/components/CookieMark';
 import { FeedbackModal } from '@/components/FeedbackModal';
+import { ProfileAvatar } from '@/components/ProfileAvatar';
 import { Screen } from '@/components/Screen';
 import { SupportTicketModal } from '@/components/SupportTicketModal';
 import { FormContentWidth } from '@/constants/theme';
@@ -45,7 +46,8 @@ import {
   signOut,
   userHasAppleIdentity,
 } from '@/lib/supabase/auth';
-import { uploadAvatar } from '@shared/lib/supabase/profile';
+import type { FoodAvatarId } from '@shared/lib/foodAvatars';
+import { chooseFoodAvatar, uploadAvatar } from '@shared/lib/supabase/profile';
 import { fetchRecipeBackup, restoreRecipeBackup } from '@shared/lib/supabase/recipeBackup';
 
 const RESTORE_ERROR_KEYS = {
@@ -193,7 +195,9 @@ export default function SettingsScreen() {
   } = useProfile();
   const { colors } = useThemePreference();
   const { isMediumUp } = useBreakpoint();
-  const [uploading, setUploading] = useState(false);
+  const [avatarPickerOpen, setAvatarPickerOpen] = useState(false);
+  const [avatarBusy, setAvatarBusy] = useState<FoodAvatarId | 'camera' | 'library' | null>(null);
+  const uploading = avatarBusy != null;
   const [deleting, setDeleting] = useState(false);
   const [feedbackOpen, setFeedbackOpen] = useState(false);
   const [supportOpen, setSupportOpen] = useState(false);
@@ -355,20 +359,26 @@ export default function SettingsScreen() {
       return;
     }
 
-    if (Platform.OS === 'web') {
-      void pickImage('library');
-      return;
-    }
-
-    Alert.alert(t('settings.changeAvatarTitle'), undefined, [
-      { text: t('settings.takePhoto'), onPress: () => pickImage('camera') },
-      { text: t('settings.chooseLibrary'), onPress: () => pickImage('library') },
-      { text: t('common.cancel'), style: 'cancel' },
-    ]);
+    setAvatarPickerOpen(true);
   }
 
+  async function pickFoodAvatar(id: FoodAvatarId) {
+    if (!user || avatarBusy) return;
+    setAvatarBusy(id);
+    try {
+      await chooseFoodAvatar(user.id, id);
+      await refresh();
+      setAvatarPickerOpen(false);
+    } catch {
+      showToast(t('settings.avatarSaveFailed'), 'info');
+    } finally {
+      setAvatarBusy(null);
+    }
+  }
+
+  /** Runs while the picker sheet is still open: the system picker opens over it, and the sheet closes once saved. */
   async function pickImage(source: 'camera' | 'library') {
-    if (!user) return;
+    if (!user || avatarBusy) return;
 
     try {
       const permission =
@@ -405,7 +415,7 @@ export default function SettingsScreen() {
         return;
       }
 
-      setUploading(true);
+      setAvatarBusy(source);
       // Web gives a data: URI, so prefer the picker's mime type over the path.
       const fileExt =
         asset.mimeType?.split('/')[1]?.toLowerCase() ??
@@ -413,13 +423,14 @@ export default function SettingsScreen() {
         'jpg';
       await uploadAvatar(user.id, asset.base64, fileExt);
       await refresh();
+      setAvatarPickerOpen(false);
     } catch (err) {
       Alert.alert(
         t('settings.uploadFailedTitle'),
         err instanceof Error ? err.message : t('common.tryAgain'),
       );
     } finally {
-      setUploading(false);
+      setAvatarBusy(null);
     }
   }
 
@@ -463,24 +474,7 @@ export default function SettingsScreen() {
                 accessibilityState={{ disabled: uploading, busy: uploading }}
                 className="relative"
               >
-                <View
-                  className="h-[72px] w-[72px] items-center justify-center overflow-hidden rounded-full"
-                  style={{ backgroundColor: colors.primarySoft }}
-                  accessible={false}
-                  importantForAccessibility="no-hide-descendants"
-                >
-                  {avatarUrl ? (
-                    <Image
-                      source={{ uri: avatarUrl }}
-                      style={{ width: 72, height: 72, backgroundColor: colors.primarySoft }}
-                      contentFit="cover"
-                      contentPosition="center"
-                      transition={200}
-                    />
-                  ) : (
-                    <Ionicons name="person" size={31} color={colors.primary} />
-                  )}
-                </View>
+                <ProfileAvatar url={avatarUrl} size={72} />
                 <View
                   className="absolute bottom-0 h-7 w-7 items-center justify-center rounded-full border-2"
                   style={{
@@ -494,7 +488,7 @@ export default function SettingsScreen() {
                   {uploading ? (
                     <ActivityIndicator size="small" color={colors.onPrimary} />
                   ) : (
-                    <Ionicons name="camera" size={12} color={colors.onPrimary} />
+                    <Ionicons name="pencil" size={12} color={colors.onPrimary} />
                   )}
                 </View>
               </Pressable>
@@ -742,6 +736,14 @@ export default function SettingsScreen() {
 
       <FeedbackModal visible={feedbackOpen} onClose={() => setFeedbackOpen(false)} />
       <SupportTicketModal visible={supportOpen} onClose={() => setSupportOpen(false)} />
+      <AvatarPickerModal
+        visible={avatarPickerOpen}
+        onClose={() => setAvatarPickerOpen(false)}
+        current={avatarUrl}
+        busy={avatarBusy}
+        onPick={(id) => void pickFoodAvatar(id)}
+        onPhoto={(source) => void pickImage(source)}
+      />
     </Screen>
   );
 }

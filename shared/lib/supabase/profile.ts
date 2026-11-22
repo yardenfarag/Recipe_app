@@ -1,5 +1,6 @@
 import { decode } from 'base64-arraybuffer';
 
+import { foodAvatarValue, type FoodAvatarId } from '../foodAvatars';
 import {
   currentYearMonthUtc,
   freeExtractsRemaining,
@@ -153,6 +154,21 @@ export async function adminAdjustRecipeCredits(
   });
   if (error) throw error;
   return Number(data);
+}
+
+/** Makes a food avatar the profile picture. Returns the stored `avatar_url`. */
+export async function chooseFoodAvatar(userId: string, id: FoodAvatarId): Promise<string> {
+  const value = foodAvatarValue(id);
+  const { error } = await supabase.from('profiles').update({ avatar_url: value }).eq('id', userId);
+  if (error) throw error;
+  return value;
+}
+
+/** Just the `avatar_url`, for the web app's account menu. Null when there is none. */
+export async function fetchAvatarValue(userId: string): Promise<string | null> {
+  const { data, error } = await supabase.from('profiles').select('avatar_url').eq('id', userId).maybeSingle();
+  if (error) throw error;
+  return (data as { avatar_url: string | null } | null)?.avatar_url ?? null;
 }
 
 /**
