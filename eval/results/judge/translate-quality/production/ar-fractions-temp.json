@@ -1,0 +1,60 @@
+{
+  "caseId": "ar-fractions-temp",
+  "judge": "google/gemini-3.1-pro-preview",
+  "translation": "Title: خبز الموز الكلاسيكي\nIngredients:\n1. ½ أكواب زبدة غير مملحة، مذابة\n2. ¾ أكواب سكر بني\n3. ¼ ملاعق صغيرة ملح\n4. 1 ملعقة صغيرة بيكربونات الصوديوم\n5. 2 ملاعق كبيرة حليب\n6. 3 موز ناضج، مهروس\n7. 1½ أكواب دقيق متعدد الاستعمالات\nSteps:\n1. سخّن الفرن إلى 350 درجة فهرنهايت، وبطّن قالب خبز مستطيل بورق الزبدة.\n2. اخلط الزبدة والسكر والموز والحليب.\n3. أضف الدقيق وبيكربونات الصوديوم والملح، وقلّب برفق بطريقة الطي حتى تتجانس المكونات فقط.\n4. اخبز لمدة 55–60 دقيقة، حتى يخرج عود خشبي نظيفًا عند غرسه في الخبز.",
+  "verdict": {
+    "native_score": 3,
+    "errors": [
+      {
+        "where": "ingredient 1",
+        "category": "grammar",
+        "severity": "minor",
+        "excerpt": "½ أكواب",
+        "fix": "½ كوب"
+      },
+      {
+        "where": "ingredient 2",
+        "category": "grammar",
+        "severity": "minor",
+        "excerpt": "¾ أكواب",
+        "fix": "¾ كوب"
+      },
+      {
+        "where": "ingredient 3",
+        "category": "grammar",
+        "severity": "minor",
+        "excerpt": "¼ ملاعق صغيرة",
+        "fix": "¼ ملعقة صغيرة"
+      },
+      {
+        "where": "ingredient 5",
+        "category": "grammar",
+        "severity": "minor",
+        "excerpt": "2 ملاعق كبيرة",
+        "fix": "2 ملعقة كبيرة"
+      },
+      {
+        "where": "ingredient 6",
+        "category": "grammar",
+        "severity": "minor",
+        "excerpt": "3 موز",
+        "fix": "3 حبات موز"
+      },
+      {
+        "where": "ingredient 7",
+        "category": "grammar",
+        "severity": "minor",
+        "excerpt": "1½ أكواب",
+        "fix": "1½ كوب"
+      },
+      {
+        "where": "step 1",
+        "category": "unit",
+        "severity": "major",
+        "excerpt": "350 درجة فهرنهايت",
+        "fix": "175 درجة مئوية (350 فهرنهايت)"
+      }
+    ]
+  },
+  "costUsd": 0.0149
+}

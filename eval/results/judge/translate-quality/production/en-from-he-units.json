@@ -1,0 +1,32 @@
+{
+  "caseId": "en-from-he-units",
+  "judge": "google/gemini-3.1-pro-preview",
+  "translation": "Title: Vanilla and Chocolate Chip Cake\nIngredients:\n1. 3 ביצים L Large eggs\n2. 150 g Sugar\n3. 240 ml Oil\n4. ½ cups Chocolate chips\n5. 1 packet Baking powder\n6. 280 g Self-rising flour\n7. 1 pinch Salt\nSteps:\n1. Preheat the oven to 180 degrees.\n2. Beat the eggs with the sugar until the mixture is pale and fluffy.\n3. Add the oil, then the flour, baking powder, and salt, and mix until the batter is smooth.\n4. Fold in the chocolate chips, pour into a baking pan, and bake for 40 minutes.",
+  "verdict": {
+    "native_score": 3,
+    "errors": [
+      {
+        "where": "ingredient 1",
+        "category": "untranslated",
+        "severity": "major",
+        "excerpt": "ביצים L Large eggs",
+        "fix": "Large eggs"
+      },
+      {
+        "where": "ingredient 4",
+        "category": "grammar",
+        "severity": "minor",
+        "excerpt": "½ cups",
+        "fix": "½ cup"
+      },
+      {
+        "where": "step 1",
+        "category": "unit",
+        "severity": "major",
+        "excerpt": "180 degrees",
+        "fix": "180°C"
+      }
+    ]
+  },
+  "costUsd": 0.009564
+}

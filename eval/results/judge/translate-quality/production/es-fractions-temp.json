@@ -1,0 +1,67 @@
+{
+  "caseId": "es-fractions-temp",
+  "judge": "google/gemini-3.1-pro-preview",
+  "translation": "Title: Muffins de arándanos\nIngredients:\n1. ½ tazas leche\n2. ½ cdtas sal\n3. 2 tazas harina de trigo de uso general\n4. 1 cda polvo de hornear\n5. ¾ tazas azúcar\n6. 1 taza arándanos frescos\n7. ⅓ tazas aceite vegetal\n8. 1 huevo\nSteps:\n1. Precalienta el horno a 400 °F y coloca cápsulas de papel en un molde para 12 muffins.\n2. Mezcla la harina, el azúcar, el polvo de hornear y la sal con un batidor de varillas.\n3. Incorpora la leche, el aceite y el huevo; luego añade los arándanos con movimientos envolventes suaves.\n4. Hornea durante 20–25 minutos.",
+  "verdict": {
+    "native_score": 3,
+    "errors": [
+      {
+        "where": "ingredient 1",
+        "category": "unit",
+        "severity": "minor",
+        "excerpt": "½ tazas leche",
+        "fix": "½ taza de leche"
+      },
+      {
+        "where": "ingredient 2",
+        "category": "unit",
+        "severity": "minor",
+        "excerpt": "½ cdtas sal",
+        "fix": "½ cdta de sal"
+      },
+      {
+        "where": "ingredient 3",
+        "category": "grammar",
+        "severity": "minor",
+        "excerpt": "2 tazas harina",
+        "fix": "2 tazas de harina"
+      },
+      {
+        "where": "ingredient 4",
+        "category": "grammar",
+        "severity": "minor",
+        "excerpt": "1 cda polvo",
+        "fix": "1 cda de polvo"
+      },
+      {
+        "where": "ingredient 5",
+        "category": "unit",
+        "severity": "minor",
+        "excerpt": "¾ tazas azúcar",
+        "fix": "¾ taza de azúcar"
+      },
+      {
+        "where": "ingredient 6",
+        "category": "grammar",
+        "severity": "minor",
+        "excerpt": "1 taza arándanos",
+        "fix": "1 taza de arándanos"
+      },
+      {
+        "where": "ingredient 7",
+        "category": "unit",
+        "severity": "minor",
+        "excerpt": "⅓ tazas aceite",
+        "fix": "⅓ taza de aceite"
+      },
+      {
+        "where": "step 1",
+        "category": "unit",
+        "severity": "major",
+        "excerpt": "400 °F",
+        "fix": "200 °C (o 400 °F)"
+      }
+    ]
+  },
+  "costUsd": 0.01305
+}

@@ -1,0 +1,46 @@
+{
+  "caseId": "ru-genitive",
+  "judge": "google/gemini-3.1-pro-preview",
+  "translation": "Title: Тонкие блинчики на большую компанию\nIngredients:\n1. 500 г мука\n2. 5 стакана молоко\n3. 3 яйца\n4. 2 ст. л. сахар\n5. ½ ч. л. соль\n6. 50 г сливочное масло, растопленное\nSteps:\n1. Взбейте яйца с сахаром и солью венчиком.\n2. Постепенно введите молоко, затем муку, перемешивая венчиком до однородности.\n3. Вмешайте растопленное сливочное масло и дайте тесту отдохнуть 20 минут.\n4. Жарьте тонкие блинчики на горячей смазанной сковороде примерно по 1 минуте с каждой стороны.",
+  "verdict": {
+    "native_score": 3,
+    "errors": [
+      {
+        "where": "ingredient 1",
+        "category": "grammar",
+        "severity": "minor",
+        "excerpt": "мука",
+        "fix": "муки"
+      },
+      {
+        "where": "ingredient 2",
+        "category": "grammar",
+        "severity": "major",
+        "excerpt": "стакана молоко",
+        "fix": "стаканов молока"
+      },
+      {
+        "where": "ingredient 4",
+        "category": "grammar",
+        "severity": "minor",
+        "excerpt": "сахар",
+        "fix": "сахара"
+      },
+      {
+        "where": "ingredient 5",
+        "category": "grammar",
+        "severity": "minor",
+        "excerpt": "соль",
+        "fix": "соли"
+      },
+      {
+        "where": "ingredient 6",
+        "category": "grammar",
+        "severity": "minor",
+        "excerpt": "сливочное масло, растопленное",
+        "fix": "растопленного сливочного масла"
+      }
+    ]
+  },
+  "costUsd": 0.013994
+}

@@ -1,0 +1,800 @@
+{
+  "about": "PIN-53 translation-quality eval. Hand-written recipes that reproduce the failure classes found in production translations (docs/research/09-translation-quality.md). No user data: every recipe here was written for this file. Ingredients are [quantity, unit, name]. Checks run on what the app shows: units go through shared/lib/culinaryUnits.ts and formatQuantity, like the recipe screen shows the recipe as written (no Spoons/Grams conversion). 'at' is title | ing:N (name) | amount:N (rendered amount) | line:N (amount + name) | steps | all, with N starting at 1. expect: one of any_of must appear. forbid: none of terms may appear. forbid_re: JavaScript regexes (flag u) that must not match. allow_latin: Latin words that may stay in a Hebrew, Arabic or Russian translation (brand names). Matching ignores case, Hebrew geresh/gershayim variants and niqqud. Labelled by Claude on 2026-11-22; review the Arabic and Russian labels with a native speaker before trusting small differences.",
+  "cases": [
+    {
+      "id": "he-fractions-temp",
+      "target": "he",
+      "source_lang": "en",
+      "classes": ["unit_plural", "temperature", "ingredient_term"],
+      "recipe": {
+        "title": "Lemon Drizzle Loaf",
+        "ingredients": [
+          [1.5, "cups", "all-purpose flour"],
+          [0.75, "cup", "caster sugar"],
+          [0.5, "tsp", "salt"],
+          [0.25, "tsp", "vanilla extract"],
+          [3, "count", "large eggs"],
+          [2, "tbsp", "lemon juice"],
+          [0.5, "cup", "heavy cream"]
+        ],
+        "steps": [
+          "Preheat the oven to 350°F and grease a 9x5-inch loaf pan.",
+          "Whisk the eggs and sugar until pale, then fold in the flour and salt.",
+          "Stir in the cream, vanilla and lemon juice, pour the batter into the pan and bake for 45 minutes.",
+          "Let it cool for 10 minutes, then drizzle with the lemon glaze."
+        ]
+      },
+      "expect": [
+        { "at": "amount:1", "any_of": ["1½ כוסות"] },
+        { "at": "amount:2", "any_of": ["¾ כוס"] },
+        { "at": "amount:3", "any_of": ["½ כפית"] },
+        { "at": "amount:4", "any_of": ["¼ כפית"] },
+        { "at": "ing:2", "any_of": ["סוכר דק", "סוכר לבן דק", "סוכר קסטר"] },
+        { "at": "ing:7", "any_of": ["שמנת מתוקה", "שמנת להקצפה"] },
+        { "at": "steps", "any_of": ["180", "175", "177"] }
+      ],
+      "forbid": [
+        { "at": "ing:2", "terms": ["סוכר חום", "סוכר קנים"] },
+        { "at": "steps", "terms": ["°F", "פרנהייט"] }
+      ]
+    },
+    {
+      "id": "he-unit-is-noun",
+      "target": "he",
+      "source_lang": "en",
+      "classes": ["untranslated_unit", "unit_plural", "ingredient_term"],
+      "recipe": {
+        "title": "Roasted Cabbage with Tahini",
+        "ingredients": [
+          [1, "green cabbage", "green cabbage, cut into wedges"],
+          [1, "lemon", "lemon, juiced"],
+          [2, "eggs", "hard-boiled eggs"],
+          [3, "pieces", "garlic cloves, crushed"],
+          [1, "bunch", "parsley, chopped"],
+          [0.33, "cup", "tahini"],
+          [2, "tablespoons", "silan"]
+        ],
+        "steps": [
+          "Preheat the oven to 220°C.",
+          "Brush the cabbage wedges with olive oil and roast for 30 minutes until charred.",
+          "Whisk the tahini with the lemon juice, garlic and a little water.",
+          "Drizzle the tahini and silan over the cabbage and top with the parsley and chopped eggs."
+        ]
+      },
+      "expect": [
+        { "at": "amount:5", "any_of": ["צרור", "אגודה"] },
+        { "at": "amount:6", "any_of": ["⅓ כוס"] },
+        { "at": "ing:7", "any_of": ["סילאן"] }
+      ],
+      "forbid": [
+        { "at": "amount:4", "terms": ["יחידות", "חתיכות"] }
+      ]
+    },
+    {
+      "id": "he-from-fr",
+      "target": "he",
+      "source_lang": "fr",
+      "classes": ["untranslated_unit", "ingredient_term"],
+      "recipe": {
+        "title": "Brownie express",
+        "ingredients": [
+          [1, "c. à soupe", "huile"],
+          [1, "pincée", "sel"],
+          [2, "c. à café", "sucre vanillé"],
+          [1, "sachet", "levure chimique"],
+          [3, "", "oeufs"],
+          [100, "g", "chocolat noir"],
+          [0, "selon le goût", "noisettes concassées"]
+        ],
+        "steps": [
+          "Faites fondre le chocolat noir avec l'huile au bain-marie.",
+          "Fouettez les oeufs avec le sucre vanillé et le sel, puis incorporez le chocolat fondu.",
+          "Ajoutez la levure chimique, versez dans un moule et parsemez de noisettes.",
+          "Faites cuire 20 minutes à 180°C."
+        ]
+      },
+      "expect": [
+        { "at": "amount:1", "any_of": ["כף"] },
+        { "at": "amount:2", "any_of": ["קמצוץ", "קורט"] },
+        { "at": "amount:3", "any_of": ["2 כפיות"] },
+        { "at": "amount:4", "any_of": ["שקית", "שקיק"] },
+        { "at": "amount:7", "any_of": ["לפי הטעם"] },
+        { "at": "ing:3", "any_of": ["סוכר וניל", "סוכר ווניל"] },
+        { "at": "ing:4", "any_of": ["אבקת אפייה", "אבקת אפיה"] }
+      ]
+    },
+    {
+      "id": "he-from-tr",
+      "target": "he",
+      "source_lang": "tr",
+      "classes": ["untranslated_unit", "unit_plural"],
+      "recipe": {
+        "title": "Tavada Patatesli Yumurta",
+        "ingredients": [
+          [1, "adet", "büyük boy patates"],
+          [0.5, "çay kaşığı", "tuz"],
+          [1, "yemek kaşığı", "sıvı yağ"],
+          [2, "adet", "yumurta"],
+          [1, "tutam", "karabiber"],
+          [50, "gr", "kaşar peyniri, rendelenmiş"]
+        ],
+        "steps": [
+          "Patatesi rendeleyin ve suyunu sıkın.",
+          "Tavaya yağı ekleyin, patatesi yayın ve spatulayla bastırın.",
+          "Yumurtaları üstüne kırın, tuz ve karabiber serpin.",
+          "Kaşarı ekleyip kapağı kapatın ve 5 dakika pişirin."
+        ]
+      },
+      "expect": [
+        { "at": "amount:2", "any_of": ["½ כפית"] },
+        { "at": "amount:3", "any_of": ["כף"] },
+        { "at": "amount:5", "any_of": ["קמצוץ", "קורט"] },
+        { "at": "amount:6", "any_of": ["50 גרם"] },
+        { "at": "ing:6", "any_of": ["קשקבל", "צהובה"] }
+      ]
+    },
+    {
+      "id": "he-from-de",
+      "target": "he",
+      "source_lang": "de",
+      "classes": ["untranslated_unit", "unit_in_name"],
+      "allow_latin": ["Kinder"],
+      "recipe": {
+        "title": "Schoko-Blätterteigtaschen",
+        "ingredients": [
+          [1, "Packung", "Blätterteig"],
+          [8, "Stück", "Kinderschokolade-Riegel"],
+          [1, "Päckchen", "Vanillezucker"],
+          [1, "", "Eigelb"],
+          [2, "EL", "Milch"],
+          [0, "nach Geschmack", "Puderzucker"]
+        ],
+        "steps": [
+          "Den Ofen auf 200 °C Ober-/Unterhitze vorheizen.",
+          "Den Blätterteig in 8 Rechtecke schneiden und je einen Riegel darauflegen.",
+          "Den Teig zuklappen, die Ränder mit einer Gabel andrücken und mit Eigelb und Milch bestreichen.",
+          "12 bis 15 Minuten goldbraun backen und mit Puderzucker bestäuben."
+        ]
+      },
+      "expect": [
+        { "at": "amount:1", "any_of": ["חבילה", "אריזה"] },
+        { "at": "amount:3", "any_of": ["שקית", "שקיק"] },
+        { "at": "amount:5", "any_of": ["2 כפות"] },
+        { "at": "amount:6", "any_of": ["לפי הטעם"] },
+        { "at": "ing:1", "any_of": ["בצק עלים"] }
+      ],
+      "forbid": [
+        { "at": "ing:1", "terms": ["חבילת", "אריזת"] },
+        { "at": "ing:3", "terms": ["שקית", "שקיק"] }
+      ]
+    },
+    {
+      "id": "he-glossary-baking",
+      "target": "he",
+      "source_lang": "en",
+      "classes": ["ingredient_term", "cooking_verb"],
+      "recipe": {
+        "title": "Chocolate Chip Skillet Cookie",
+        "ingredients": [
+          [115, "g", "unsalted butter, melted"],
+          [100, "g", "light brown sugar"],
+          [1, "count", "large egg"],
+          [190, "g", "self-raising flour"],
+          [1, "tsp", "baking soda"],
+          [1, "tbsp", "cornstarch"],
+          [150, "g", "semi-sweet chocolate chips"],
+          [0.5, "tsp", "flaky sea salt"]
+        ],
+        "steps": [
+          "Preheat the oven to 180°C.",
+          "Whisk the melted butter with the sugar, then beat in the egg.",
+          "Fold in the flour, baking soda and cornstarch until just combined, then fold in the chocolate chips.",
+          "Press into a 25 cm skillet, sprinkle with the flaky salt and bake for 18–20 minutes, until the edges are golden but the center is still gooey."
+        ]
+      },
+      "expect": [
+        { "at": "ing:2", "any_of": ["סוכר חום"] },
+        { "at": "ing:4", "any_of": ["קמח תופח"] },
+        { "at": "ing:5", "any_of": ["סודה לשתייה", "סודה לשתיה"] },
+        { "at": "ing:6", "any_of": ["קורנפלור", "עמילן תירס"] },
+        { "at": "ing:7", "any_of": ["שוקולד צ'יפס", "שוקולד ציפס", "שבבי שוקולד"] },
+        { "at": "amount:8", "any_of": ["½ כפית"] }
+      ]
+    },
+    {
+      "id": "he-cooking-verbs",
+      "target": "he",
+      "source_lang": "en",
+      "classes": ["cooking_verb", "grammar", "unit_plural"],
+      "recipe": {
+        "title": "Pan-Seared Salmon with Lemon Cream Sauce",
+        "ingredients": [
+          [2, "count", "salmon fillets"],
+          [1, "tbsp", "olive oil"],
+          [2, "tbsp", "butter"],
+          [2, "cloves", "garlic, minced"],
+          [0.5, "cup", "dry white wine"],
+          [0.75, "cup", "heavy cream"],
+          [1, "tbsp", "capers"]
+        ],
+        "steps": [
+          "Pat the salmon dry and season with salt and pepper.",
+          "Sear skin-side down in the hot oil for 4 minutes, flip and cook 3 more minutes. Set aside.",
+          "Melt the butter in the same pan and sauté the garlic for 30 seconds.",
+          "Deglaze with the wine, scraping up the browned bits, and simmer until reduced by half.",
+          "Stir in the cream and capers, simmer until slightly thickened, and spoon the sauce over the salmon."
+        ]
+      },
+      "expect": [
+        { "at": "line:4", "any_of": ["2 שיני שום"] },
+        { "at": "amount:5", "any_of": ["½ כוס"] },
+        { "at": "amount:6", "any_of": ["¾ כוס"] },
+        { "at": "ing:6", "any_of": ["שמנת מתוקה", "שמנת להקצפה", "שמנת לבישול"] },
+        { "at": "ing:7", "any_of": ["צלפים"] }
+      ]
+    },
+    {
+      "id": "he-mixed-source",
+      "target": "he",
+      "source_lang": "en",
+      "classes": ["partial_translation", "source_language"],
+      "allow_latin": ["Milka"],
+      "recipe": {
+        "title": "Оладки з шоколадом Milka (Milka Chocolate Pancakes)",
+        "ingredients": [
+          [300, "мл", "Кефір (Kefir)"],
+          [1, "шт.", "Яйце (Egg)"],
+          [2, "ст. л.", "Цукор (Sugar)"],
+          [0.5, "ч. л.", "Сода (Baking soda)"],
+          [250, "г", "Борошно (Flour)"],
+          [1, "шт.", "Шоколад Milka (Milka chocolate)"]
+        ],
+        "steps": [
+          "Змішайте кефір, яйце, цукор і соду (Mix the kefir, egg, sugar and baking soda).",
+          "Додайте борошно та розмішайте до однорідності (Add the flour and stir until smooth).",
+          "Покладіть шматочок шоколаду на кожну оладку та смажте з обох боків (Put a piece of chocolate on each pancake and fry on both sides)."
+        ]
+      },
+      "expect": [
+        { "at": "amount:4", "any_of": ["½ כפית"] },
+        { "at": "ing:1", "any_of": ["קפיר"] }
+      ],
+      "forbid": [
+        { "at": "title", "terms": ["Pancakes", "Chocolate"] },
+        { "at": "amount:2", "terms": ["שט", "יח", "יחידה"] }
+      ]
+    },
+    {
+      "id": "he-taste-phrases",
+      "target": "he",
+      "source_lang": "en",
+      "classes": ["untranslated_unit", "unit_in_name"],
+      "recipe": {
+        "title": "Sugar-Coated Doughnut Holes",
+        "ingredients": [
+          [250, "g", "bread flour"],
+          [7, "g", "instant yeast"],
+          [0, "to taste", "salt"],
+          [1, "for frying", "neutral oil"],
+          [1, "for coating", "granulated sugar"],
+          [2, "units", "large eggs"],
+          [1, "unit", "lemon zest"]
+        ],
+        "steps": [
+          "Mix the flour, yeast, eggs, lemon zest and a pinch of salt into a soft dough and let it rise for 1 hour.",
+          "Roll into small balls and fry in the hot oil until golden.",
+          "Roll the warm doughnut holes in the sugar."
+        ]
+      },
+      "expect": [
+        { "at": "amount:3", "any_of": ["לפי הטעם"] },
+        { "at": "ing:1", "any_of": ["קמח לחם"] }
+      ],
+      "forbid": [
+        { "at": "amount:6", "terms": ["יחידות"] },
+        { "at": "amount:7", "terms": ["יחידה"] }
+      ]
+    },
+    {
+      "id": "he-from-es",
+      "target": "he",
+      "source_lang": "es",
+      "classes": ["ingredient_term", "untranslated_unit"],
+      "allow_latin": ["María", "Maria"],
+      "recipe": {
+        "title": "Mini cheesecakes",
+        "ingredients": [
+          [150, "gr.", "galletas María"],
+          [60, "gr.", "mantequilla derretida"],
+          [300, "gr.", "queso crema"],
+          [2, "", "huevos"],
+          [1, "cucharada", "esencia de vainilla"],
+          [150, "ml.", "nata para montar"]
+        ],
+        "steps": [
+          "Tritura las galletas y mézclalas con la mantequilla.",
+          "Bate el queso crema con los huevos, la vainilla y la nata.",
+          "Reparte en moldes de magdalena y hornea a 170 grados durante 15 minutos.",
+          "Deja enfriar y refrigera durante 2 horas."
+        ]
+      },
+      "expect": [
+        { "at": "amount:1", "any_of": ["150 גרם"] },
+        { "at": "amount:5", "any_of": ["כף"] },
+        { "at": "amount:6", "any_of": ["150 מ\"ל"] },
+        { "at": "ing:3", "any_of": ["גבינת שמנת"] },
+        { "at": "ing:6", "any_of": ["שמנת מתוקה", "שמנת להקצפה"] },
+        { "at": "steps", "any_of": ["170"] }
+      ]
+    },
+    {
+      "id": "ar-fractions-temp",
+      "target": "ar",
+      "source_lang": "en",
+      "classes": ["unit_plural", "temperature"],
+      "recipe": {
+        "title": "Classic Banana Bread",
+        "ingredients": [
+          [0.5, "cup", "unsalted butter, melted"],
+          [0.75, "cup", "brown sugar"],
+          [0.25, "tsp", "salt"],
+          [1, "tsp", "baking soda"],
+          [2, "tbsp", "milk"],
+          [3, "count", "ripe bananas, mashed"],
+          [1.5, "cups", "all-purpose flour"]
+        ],
+        "steps": [
+          "Preheat the oven to 350°F and line a loaf pan with parchment paper.",
+          "Mix the butter, sugar, bananas and milk.",
+          "Fold in the flour, baking soda and salt until just combined.",
+          "Bake for 55–60 minutes, until a skewer comes out clean."
+        ]
+      },
+      "expect": [
+        { "at": "amount:1", "any_of": ["½ كوب"] },
+        { "at": "amount:2", "any_of": ["¾ كوب"] },
+        { "at": "amount:3", "any_of": ["¼ ملعقة صغيرة"] },
+        { "at": "ing:4", "any_of": ["بيكربونات*", "صودا الخبز", "بيكنج صودا", "بيكينج صودا"] },
+        { "at": "steps", "any_of": ["180", "175", "177"] }
+      ],
+      "forbid": [
+        { "at": "steps", "terms": ["°F", "فهرنهايت"] }
+      ]
+    },
+    {
+      "id": "ar-glossary",
+      "target": "ar",
+      "source_lang": "en",
+      "classes": ["ingredient_term", "cooking_verb", "untranslated_unit"],
+      "recipe": {
+        "title": "Buttermilk Fried Chicken",
+        "ingredients": [
+          [1, "kg", "chicken thighs"],
+          [2, "cups", "buttermilk"],
+          [1, "cup", "all-purpose flour"],
+          [0.5, "cup", "cornstarch"],
+          [1, "tbsp", "smoked paprika"],
+          [1, "tsp", "garlic powder"],
+          [0, "for frying", "vegetable oil"]
+        ],
+        "steps": [
+          "Marinate the chicken in the buttermilk for at least 4 hours.",
+          "Whisk the flour, cornstarch, paprika and garlic powder in a shallow dish.",
+          "Dredge each piece in the flour mixture, shaking off the excess.",
+          "Deep-fry at 175°C for 12–14 minutes, until golden and cooked through."
+        ]
+      },
+      "expect": [
+        { "at": "ing:2", "any_of": ["لبن رائب", "لبن مخيض", "لبن"] },
+        { "at": "ing:4", "any_of": ["نشا*"] },
+        { "at": "ing:5", "any_of": ["بابريكا مدخنة", "بابريكا مدخّنة", "فلفل أحمر مدخن", "بابريكا مدخن"] },
+        { "at": "amount:4", "any_of": ["½ كوب"] }
+      ]
+    },
+    {
+      "id": "ar-from-he",
+      "target": "ar",
+      "source_lang": "he",
+      "classes": ["untranslated_unit", "unit_plural"],
+      "recipe": {
+        "title": "שקשוקה",
+        "ingredients": [
+          [1, "יחידה", "בצל, קצוץ"],
+          [2, "יחידות", "פלפלים אדומים"],
+          [4, "שיניים", "שום"],
+          [800, "גרם", "עגבניות מרוסקות"],
+          [1, "כפית", "פפריקה מתוקה"],
+          [0.5, "כפית", "כמון"],
+          [4, "ביצים", "ביצים"],
+          [1, "קורט", "מלח"]
+        ],
+        "steps": [
+          "מחממים שמן במחבת רחבה ומטגנים את הבצל והפלפלים עד שהם מתרככים.",
+          "מוסיפים את השום והתבלינים ומערבבים דקה.",
+          "מוסיפים את העגבניות ומבשלים על אש נמוכה 15 דקות.",
+          "שוברים את הביצים לתוך הרוטב, מכסים ומבשלים 5–7 דקות, עד שהחלבון נקרש."
+        ]
+      },
+      "expect": [
+        { "at": "amount:6", "any_of": ["½ ملعقة صغيرة"] },
+        { "at": "amount:8", "any_of": ["رشة"] },
+        { "at": "ing:6", "any_of": ["كمون"] },
+        { "at": "title", "any_of": ["شكشوكة", "شكشوك"] }
+      ]
+    },
+    {
+      "id": "ar-brands",
+      "target": "ar",
+      "source_lang": "en",
+      "classes": ["ingredient_term", "untranslated_unit"],
+      "allow_latin": ["Kinder", "Bueno"],
+      "recipe": {
+        "title": "Kinder Bueno Cheesecake Cups",
+        "ingredients": [
+          [120, "g", "digestive biscuits"],
+          [30, "g", "butter, melted"],
+          [380, "g", "cream cheese"],
+          [200, "ml", "whipping cream"],
+          [2, "bars", "Kinder Bueno"],
+          [2, "tbsp", "hazelnut spread"]
+        ],
+        "steps": [
+          "Crush the biscuits, mix with the butter and press into 6 cups.",
+          "Whip the cream to stiff peaks.",
+          "Beat the cream cheese with the hazelnut spread, then fold in the whipped cream.",
+          "Spoon over the base, chill for 4 hours and top with chopped Kinder Bueno."
+        ]
+      },
+      "expect": [
+        { "at": "ing:3", "any_of": ["جبن كريمي", "جبنة كريمية", "جبنة كريم", "جبن الكريمة", "جبنة الكريمة"] },
+        { "at": "ing:6", "any_of": ["بندق"] }
+      ]
+    },
+    {
+      "id": "ru-genitive",
+      "target": "ru",
+      "source_lang": "en",
+      "classes": ["grammar", "unit_plural"],
+      "recipe": {
+        "title": "Big-Batch Crepes",
+        "ingredients": [
+          [500, "g", "flour"],
+          [5, "cups", "milk"],
+          [3, "count", "eggs"],
+          [2, "tbsp", "sugar"],
+          [0.5, "tsp", "salt"],
+          [50, "g", "butter, melted"]
+        ],
+        "steps": [
+          "Whisk the eggs with the sugar and salt.",
+          "Gradually whisk in the milk, then the flour, until smooth.",
+          "Stir in the melted butter and rest the batter for 20 minutes.",
+          "Cook thin crepes in a hot greased pan, about 1 minute per side."
+        ]
+      },
+      "expect": [
+        { "at": "ing:1", "any_of": ["муки"] },
+        { "at": "amount:2", "any_of": ["5 стаканов"] },
+        { "at": "ing:2", "any_of": ["молока"] },
+        { "at": "ing:4", "any_of": ["сахара"] },
+        { "at": "ing:6", "any_of": ["масла"] },
+        { "at": "amount:5", "any_of": ["½ ч. л."] }
+      ]
+    },
+    {
+      "id": "ru-imperial-temp",
+      "target": "ru",
+      "source_lang": "en",
+      "classes": ["temperature", "ingredient_term", "grammar"],
+      "recipe": {
+        "title": "Pumpkin Pie",
+        "ingredients": [
+          [1, "count", "9-inch unbaked pie crust"],
+          [425, "g", "pumpkin puree"],
+          [0.75, "cup", "sugar"],
+          [1, "tsp", "ground cinnamon"],
+          [2, "count", "eggs"],
+          [350, "ml", "evaporated milk"]
+        ],
+        "steps": [
+          "Preheat the oven to 425°F.",
+          "Whisk the pumpkin, sugar, cinnamon, eggs and evaporated milk until smooth.",
+          "Pour into the crust and bake for 15 minutes, then reduce the heat to 350°F and bake 40 minutes more.",
+          "Cool on a wire rack for 2 hours."
+        ]
+      },
+      "expect": [
+        { "at": "steps", "any_of": ["220", "218"] },
+        { "at": "steps", "any_of": ["180", "175", "177"] },
+        { "at": "ing:6", "any_of": ["концентрированн*", "сгущ*"] }
+      ],
+      "forbid": [
+        { "at": "steps", "terms": ["°F", "Фаренгейт"] }
+      ]
+    },
+    {
+      "id": "ru-appliances",
+      "target": "ru",
+      "source_lang": "en",
+      "classes": ["ingredient_term", "partial_translation", "grammar"],
+      "recipe": {
+        "title": "Air Fryer Lava Cakes",
+        "ingredients": [
+          [60, "g", "dark chocolate"],
+          [30, "g", "butter"],
+          [1, "count", "egg"],
+          [2, "tbsp", "sugar"],
+          [1, "tbsp", "flour"]
+        ],
+        "steps": [
+          "Melt the chocolate and butter in the microwave.",
+          "Whisk the egg and sugar, then stir in the chocolate and flour.",
+          "Divide between two greased ramekins.",
+          "Air fry at 180°C for 7–8 minutes, until the edges are set but the center is molten."
+        ]
+      },
+      "expect": [
+        { "at": "steps", "any_of": ["аэрогрил*", "аэрофритюрниц*"] },
+        { "at": "steps", "any_of": ["формочк*", "рамекин*"] },
+        { "at": "ing:1", "any_of": ["шоколада"] },
+        { "at": "ing:4", "any_of": ["сахара"] }
+      ],
+      "forbid_re": [
+        { "at": "steps", "patterns": ["(^|[^а-яё])фритюрниц"] }
+      ]
+    },
+    {
+      "id": "ru-from-he",
+      "target": "ru",
+      "source_lang": "he",
+      "classes": ["untranslated_unit", "unit_in_name"],
+      "recipe": {
+        "title": "לביבות קישואים",
+        "ingredients": [
+          [2, "קישואים", "קישואים"],
+          [1, "ביצה", "ביצה"],
+          [3, "כפות", "קמח"],
+          [0.5, "כפית", "מלח"],
+          [0, "לפי הטעם", "פלפל שחור"],
+          [0, "לטיגון", "שמן"]
+        ],
+        "steps": [
+          "מגררים את הקישואים, ממליחים וסוחטים היטב מהנוזלים.",
+          "מערבבים עם הביצה, הקמח והפלפל.",
+          "מטגנים כפות מהתערובת בשמן חם 2–3 דקות מכל צד, עד להזהבה.",
+          "מניחים על נייר סופג ומגישים חם."
+        ]
+      },
+      "expect": [
+        { "at": "amount:4", "any_of": ["½ ч. л."] },
+        { "at": "amount:5", "any_of": ["по вкусу"] },
+        { "at": "ing:1", "any_of": ["кабачк*", "цукини"] }
+      ]
+    },
+    {
+      "id": "es-fractions-temp",
+      "target": "es",
+      "source_lang": "en",
+      "classes": ["unit_plural", "temperature"],
+      "recipe": {
+        "title": "Blueberry Muffins",
+        "ingredients": [
+          [0.5, "cup", "milk"],
+          [0.5, "tsp", "salt"],
+          [2, "cups", "all-purpose flour"],
+          [1, "tbsp", "baking powder"],
+          [0.75, "cup", "sugar"],
+          [1, "cup", "fresh blueberries"],
+          [0.33, "cup", "vegetable oil"],
+          [1, "count", "egg"]
+        ],
+        "steps": [
+          "Preheat the oven to 400°F and line a 12-cup muffin tin.",
+          "Whisk the flour, sugar, baking powder and salt.",
+          "Stir in the milk, oil and egg, then gently fold in the blueberries.",
+          "Bake for 20–25 minutes."
+        ]
+      },
+      "expect": [
+        { "at": "amount:1", "any_of": ["½ taza"] },
+        { "at": "amount:2", "any_of": ["½ cdta", "½ cucharadita"] },
+        { "at": "amount:5", "any_of": ["¾ taza"] },
+        { "at": "amount:7", "any_of": ["⅓ taza"] },
+        { "at": "steps", "any_of": ["200", "205", "204"] }
+      ]
+    },
+    {
+      "id": "es-dialect",
+      "target": "es",
+      "source_lang": "en",
+      "classes": ["ingredient_term", "style_consistency"],
+      "recipe": {
+        "title": "Chocolate Chip Cookies",
+        "ingredients": [
+          [115, "g", "butter, softened"],
+          [100, "g", "brown sugar"],
+          [50, "g", "granulated sugar"],
+          [1, "count", "egg"],
+          [1, "tsp", "vanilla extract"],
+          [180, "g", "all-purpose flour"],
+          [0.5, "tsp", "baking soda"],
+          [150, "g", "chocolate chips"],
+          [60, "ml", "heavy cream"]
+        ],
+        "steps": [
+          "Cream the butter and both sugars in a large bowl until fluffy.",
+          "Beat in the egg, vanilla and cream.",
+          "Stir in the flour and baking soda, then the chocolate chips.",
+          "Scoop onto a lined baking sheet and bake at 180°C for 10–12 minutes."
+        ]
+      },
+      "expect": [
+        { "at": "ing:2", "any_of": ["azúcar moreno", "azúcar morena", "azúcar mascabado", "azúcar rubia", "azúcar rubio"] },
+        { "at": "ing:7", "any_of": ["bicarbonato"] },
+        { "at": "ing:8", "any_of": ["chispas", "pepitas", "trocitos", "chips"] },
+        { "at": "ing:9", "any_of": ["nata", "crema"] },
+        { "at": "amount:7", "any_of": ["½ cdta", "½ cucharadita"] }
+      ]
+    },
+    {
+      "id": "es-from-he",
+      "target": "es",
+      "source_lang": "he",
+      "classes": ["untranslated_unit", "ingredient_term"],
+      "recipe": {
+        "title": "קציצות עוף ברוטב עגבניות",
+        "ingredients": [
+          [500, "גרם", "חזה עוף טחון"],
+          [1, "יחידה", "בצל מגורר"],
+          [2, "כפות", "פירורי לחם"],
+          [1, "צרור", "פטרוזיליה קצוצה"],
+          [1, "כפית", "פפריקה"],
+          [2, "כוסות", "רסק עגבניות"]
+        ],
+        "steps": [
+          "מערבבים את העוף, הבצל, הפירורים, הפטרוזיליה והפפריקה ויוצרים קציצות.",
+          "צורבים את הקציצות במחבת עם מעט שמן.",
+          "מוסיפים את רסק העגבניות ומבשלים 20 דקות על אש נמוכה."
+        ]
+      },
+      "expect": [
+        { "at": "amount:4", "any_of": ["manojo", "ramillete"] },
+        { "at": "ing:6", "any_of": ["tomate*"] }
+      ]
+    },
+    {
+      "id": "en-from-he-units",
+      "target": "en",
+      "source_lang": "he",
+      "classes": ["untranslated_unit", "unit_plural", "ingredient_term"],
+      "recipe": {
+        "title": "עוגת וניל ושוקולד צ׳יפס",
+        "ingredients": [
+          [3, "ביצים L", "ביצים L"],
+          [150, "גרם", "סוכר"],
+          [240, "מ״ל", "שמן"],
+          [0.5, "כוס", "שוקולד צ׳יפס"],
+          [1, "שקית", "אבקת אפייה"],
+          [280, "גרם", "קמח תופח"],
+          [1, "קורט", "מלח"]
+        ],
+        "steps": [
+          "מחממים תנור ל-180 מעלות.",
+          "מקציפים את הביצים עם הסוכר עד שהתערובת בהירה ותפוחה.",
+          "מוסיפים את השמן, ואז את הקמח, אבקת האפייה והמלח ומערבבים עד לקבלת בלילה חלקה.",
+          "מקפלים פנימה את השוקולד צ׳יפס, יוצקים לתבנית ואופים 40 דקות."
+        ]
+      },
+      "expect": [
+        { "at": "amount:4", "any_of": ["½ cup"] },
+        { "at": "amount:5", "any_of": ["packet", "sachet", "pack", "envelope"] },
+        { "at": "amount:7", "any_of": ["pinch"] },
+        { "at": "ing:6", "any_of": ["self-rising", "self-raising"] }
+      ],
+      "forbid": [
+        { "at": "amount:4", "terms": ["½ cups"] }
+      ]
+    },
+    {
+      "id": "en-from-he-terms",
+      "target": "en",
+      "source_lang": "he",
+      "classes": ["ingredient_term", "untranslated_unit"],
+      "recipe": {
+        "title": "פנקייק גבינה",
+        "ingredients": [
+          [1, "כוס", "גבינה לבנה 5%"],
+          [2, "יחידות", "ביצים"],
+          [0.5, "כוס", "קמח"],
+          [2, "כפות", "סילאן"],
+          [1, "כוס", "שמנת מתוקה"],
+          [4, "יחידות", "ביסקוויטים פתי בר"]
+        ],
+        "steps": [
+          "מערבבים את הגבינה הלבנה עם הביצים והקמח לבלילה סמיכה.",
+          "מטגנים כפות מהבלילה במחבת משומנת עד להזהבה משני הצדדים.",
+          "מקציפים את השמנת המתוקה לקצפת.",
+          "מגישים עם הקצפת, ביסקוויטים מפוררים וסילאן."
+        ]
+      },
+      "expect": [
+        { "at": "ing:1", "any_of": ["quark", "white cheese", "fromage blanc", "soft cheese", "farmer*"] },
+        { "at": "ing:4", "any_of": ["date syrup", "date honey", "silan"] },
+        { "at": "ing:5", "any_of": ["heavy cream", "whipping cream", "double cream"] },
+        { "at": "ing:6", "any_of": ["petit beurre", "petit-beurre", "tea biscuit*"] },
+        { "at": "amount:3", "any_of": ["½ cup"] }
+      ],
+      "forbid": [
+        { "at": "amount:2", "terms": ["units"] }
+      ]
+    },
+    {
+      "id": "en-from-fr",
+      "target": "en",
+      "source_lang": "fr",
+      "classes": ["untranslated_unit", "unit_in_name"],
+      "recipe": {
+        "title": "Rougail saucisses",
+        "ingredients": [
+          [6, "saucisses", "saucisses fumées"],
+          [2, "oignons", "oignons jaunes"],
+          [3, "gousses", "ail"],
+          [1, "filet", "huile d'olive"],
+          [15, "cl environ", "crème"],
+          [2, "CAS", "concentré de tomate"],
+          [1, "beau bouquet", "persil"],
+          [0.5, "citron vert", "jus de citron vert"]
+        ],
+        "steps": [
+          "Piquez les saucisses et faites-les blanchir 5 minutes dans l'eau bouillante.",
+          "Coupez-les en rondelles et faites-les dorer dans l'huile.",
+          "Ajoutez les oignons émincés, l'ail et le concentré de tomate, puis mouillez avec un verre d'eau.",
+          "Laissez mijoter 30 minutes à couvert, ajoutez la crème et le persil, puis le jus de citron vert."
+        ]
+      },
+      "expect": [
+        { "at": "amount:3", "any_of": ["cloves"] },
+        { "at": "amount:6", "any_of": ["tablespoons", "tbsp"] },
+        { "at": "amount:7", "any_of": ["bunch"] }
+      ],
+      "forbid": [
+        { "at": "all", "terms": ["saucisses", "oignons", "environ", "beau", "citron", "gousses"] }
+      ],
+      "forbid_re": [
+        { "at": "all", "patterns": ["\\bCAS\\b", "\\bfilet\\b"] }
+      ]
+    },
+    {
+      "id": "en-from-tr",
+      "target": "en",
+      "source_lang": "tr",
+      "classes": ["untranslated_unit", "unit_plural"],
+      "recipe": {
+        "title": "Kakaolu Kek",
+        "ingredients": [
+          [3, "adet", "yumurta"],
+          [1, "su bardağı", "toz şeker"],
+          [1, "su bardağı", "süt"],
+          [0.5, "su bardağı", "sıvı yağ"],
+          [2, "yemek kaşığı", "kakao"],
+          [1, "paket", "kabartma tozu"],
+          [2, "su bardağı", "un"]
+        ],
+        "steps": [
+          "Yumurta ve şekeri köpük gibi olana kadar çırpın.",
+          "Süt ve sıvı yağı ekleyip karıştırın.",
+          "Unu, kakaoyu ve kabartma tozunu eleyerek ekleyin.",
+          "Yağlanmış kalıba dökün ve önceden ısıtılmış 180 derece fırında 35 dakika pişirin."
+        ]
+      },
+      "expect": [
+        { "at": "amount:2", "any_of": ["cup", "glass"] },
+        { "at": "amount:5", "any_of": ["tablespoons", "tbsp"] },
+        { "at": "amount:6", "any_of": ["packet", "sachet", "pack", "envelope"] }
+      ],
+      "forbid": [
+        { "at": "all", "terms": ["adet", "bardağı", "kaşığı", "paket", "½ cups", "½ glasses"] }
+      ]
+    }
+  ]
+}

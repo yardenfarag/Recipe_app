@@ -1,0 +1,46 @@
+{
+  "caseId": "he-unit-is-noun",
+  "judge": "google/gemini-3.1-pro-preview",
+  "translation": "Title: כרוב צלוי עם טחינה\nIngredients:\n1. 1 green cabbage כרוב ירוק, חתוך לפלחים\n2. 1 lemon לימון, סחוט\n3. 2 eggs ביצים קשות\n4. 3 שיני שום כתושות\n5. 1 צרור פטרוזיליה קצוצה\n6. ⅓ כוסות טחינה\n7. 2 כפות סילאן\nSteps:\n1. מחממים את התנור מראש ל-220°C.\n2. מברישים את פלחי הכרוב בשמן זית וצולים במשך 30 דקות עד שהם חרוכים.\n3. טורפים את הטחינה עם מיץ הלימון, השום ומעט מים.\n4. מזלפים את הטחינה והסילאן על הכרוב ומפזרים מעל את הפטרוזיליה והביצים הקצוצות.",
+  "verdict": {
+    "native_score": 3,
+    "errors": [
+      {
+        "where": "ingredient 1",
+        "category": "untranslated",
+        "severity": "major",
+        "excerpt": "1 green cabbage",
+        "fix": "1"
+      },
+      {
+        "where": "ingredient 2",
+        "category": "untranslated",
+        "severity": "major",
+        "excerpt": "1 lemon",
+        "fix": "1"
+      },
+      {
+        "where": "ingredient 3",
+        "category": "untranslated",
+        "severity": "major",
+        "excerpt": "2 eggs",
+        "fix": "2"
+      },
+      {
+        "where": "ingredient 6",
+        "category": "grammar",
+        "severity": "minor",
+        "excerpt": "כוסות",
+        "fix": "כוס"
+      },
+      {
+        "where": "step 1",
+        "category": "style_consistency",
+        "severity": "minor",
+        "excerpt": "מחממים את התנור מראש",
+        "fix": "מחממים תנור"
+      }
+    ]
+  },
+  "costUsd": 0.013424
+}

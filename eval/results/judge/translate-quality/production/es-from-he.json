@@ -1,0 +1,18 @@
+{
+  "caseId": "es-from-he",
+  "judge": "google/gemini-3.1-pro-preview",
+  "translation": "Title: Albóndigas de pollo en salsa de tomate\nIngredients:\n1. 500 g Pechuga de pollo picada\n2. 1 יחידה Cebolla rallada\n3. 2 cucharadas Pan rallado\n4. 1 manojo Perejil picado\n5. 1 cucharadita Pimentón\n6. 2 tazas Concentrado de tomate\nSteps:\n1. Mezclar el pollo, la cebolla, el pan rallado, el perejil y el pimentón y formar albóndigas.\n2. Dorar las albóndigas en una sartén con un poco de aceite.\n3. Añadir el concentrado de tomate y cocinar durante 20 minutos a fuego lento.",
+  "verdict": {
+    "native_score": 4,
+    "errors": [
+      {
+        "where": "ingredient 2",
+        "category": "untranslated",
+        "severity": "major",
+        "excerpt": "1 יחידה Cebolla rallada",
+        "fix": "1 unidad Cebolla rallada"
+      }
+    ]
+  },
+  "costUsd": 0.010066
+}

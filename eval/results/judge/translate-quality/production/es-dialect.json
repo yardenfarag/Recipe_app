@@ -1,0 +1,25 @@
+{
+  "caseId": "es-dialect",
+  "judge": "google/gemini-3.1-pro-preview",
+  "translation": "Title: Galletas con chispas de chocolate\nIngredients:\n1. 115 g mantequilla ablandada\n2. 100 g azúcar moreno\n3. 50 g azúcar granulado\n4. 1 huevo\n5. 1 cdta extracto de vainilla\n6. 180 g harina de trigo de uso general\n7. ½ cdtas bicarbonato de sodio\n8. 150 g chispas de chocolate\n9. 60 ml nata para montar\nSteps:\n1. Bate la mantequilla con los dos tipos de azúcar en un bol grande hasta obtener una mezcla esponjosa.\n2. Incorpora el huevo, la vainilla y la nata batiendo.\n3. Incorpora la harina y el bicarbonato de sodio mezclando y, después, las chispas de chocolate.\n4. Coloca porciones de masa con una cuchara sobre una bandeja de horno forrada con papel de hornear y hornea a 180 °C durante 10–12 minutos.",
+  "verdict": {
+    "native_score": 4,
+    "errors": [
+      {
+        "where": "ingredient 6",
+        "category": "ingredient_term",
+        "severity": "minor",
+        "excerpt": "harina de trigo de uso general",
+        "fix": "harina de todo uso"
+      },
+      {
+        "where": "ingredient 7",
+        "category": "grammar",
+        "severity": "minor",
+        "excerpt": "½ cdtas",
+        "fix": "½ cdta"
+      }
+    ]
+  },
+  "costUsd": 0.011662
+}

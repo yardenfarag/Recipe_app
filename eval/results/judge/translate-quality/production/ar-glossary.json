@@ -1,0 +1,39 @@
+{
+  "caseId": "ar-glossary",
+  "judge": "google/gemini-3.1-pro-preview",
+  "translation": "Title: دجاج مقلي بمخيض اللبن\nIngredients:\n1. 1 كغ أفخاذ دجاج\n2. 2 أكواب مخيض اللبن\n3. 1 كوب دقيق متعدد الاستعمالات\n4. ½ أكواب نشا الذرة\n5. 1 ملعقة كبيرة بابريكا مدخنة\n6. 1 ملعقة صغيرة مسحوق الثوم\n7. زيت نباتي\nSteps:\n1. انقع الدجاج في مخيض اللبن لمدة 4 ساعات على الأقل.\n2. اخلط الدقيق ونشا الذرة والبابريكا ومسحوق الثوم بمضرب يدوي في طبق ضحل.\n3. غلّف كل قطعة بخليط الدقيق، مع نفض الفائض.\n4. اقلِ الدجاج في زيت غزير على درجة حرارة 175°م لمدة 12–14 دقيقة، حتى يصبح ذهبي اللون وينضج تمامًا.",
+  "verdict": {
+    "native_score": 4,
+    "errors": [
+      {
+        "where": "ingredient 2",
+        "category": "grammar",
+        "severity": "minor",
+        "excerpt": "2 أكواب",
+        "fix": "2 كوب"
+      },
+      {
+        "where": "ingredient 4",
+        "category": "grammar",
+        "severity": "major",
+        "excerpt": "½ أكواب",
+        "fix": "½ كوب"
+      },
+      {
+        "where": "ingredient 6",
+        "category": "ingredient_term",
+        "severity": "minor",
+        "excerpt": "مسحوق الثوم",
+        "fix": "بودرة الثوم"
+      },
+      {
+        "where": "step 2",
+        "category": "style_consistency",
+        "severity": "minor",
+        "excerpt": "طبق ضحل",
+        "fix": "طبق مسطح"
+      }
+    ]
+  },
+  "costUsd": 0.012522
+}
