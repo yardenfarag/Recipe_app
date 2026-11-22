@@ -145,15 +145,39 @@ describe("with recipe actions (a saved recipe's page)", () => {
   const inContext = (ui: React.ReactNode, actions: RecipeActions) =>
     wrap(<RecipeActionsContext.Provider value={actions}>{ui}</RecipeActionsContext.Provider>);
 
-  it("adds Edit and Share beside the title, and takes the collections from the page", () => {
+  it("adds Share and a more menu with Edit and Delete, and takes the collections from the page", async () => {
     const display = displayOf();
     const actions = fakeActions(display, { collections: [{ id: "c9", name: "Sundays", recipeIds: ["r1"] }] as RecipeActions["collections"] });
-    inContext(<RecipeHeader display={display} servings={2} onToggleFavorite={vi.fn()} />, actions);
-    expect(screen.getByRole("link", { name: "Edit recipe" }).getAttribute("href")).toBe("/recipe/edit?id=r1");
+    const onDelete = vi.fn();
+    inContext(<RecipeHeader display={display} servings={2} onToggleFavorite={vi.fn()} onDelete={onDelete} />, actions);
+    fireEvent.keyDown(screen.getByRole("button", { name: "More options" }), { key: "Enter" });
+    expect((await screen.findByRole("menuitem", { name: "Edit recipe" })).getAttribute("href")).toBe("/recipe/edit?id=r1");
+    fireEvent.click(screen.getByRole("menuitem", { name: "Delete" }));
+    expect(onDelete).toHaveBeenCalledOnce();
     fireEvent.click(screen.getByRole("button", { name: "Share" }));
     expect(actions.share).toHaveBeenCalledOnce();
     expect(screen.getByRole("link", { name: "Open collection Sundays" })).toBeDefined();
     expect(screen.queryByText("Weeknights")).toBeNull();
+  });
+
+  it("has 'I cooked this', and 'Cooked it again' once it has been cooked", () => {
+    const display = displayOf();
+    const actions = fakeActions(display);
+    const { unmount } = inContext(<RecipeHeader display={display} servings={2} />, actions);
+    fireEvent.click(screen.getByRole("button", { name: "I cooked this" }));
+    expect(actions.markCooked).toHaveBeenCalledOnce();
+    unmount();
+
+    const cooked = displayOf({ last_cooked_at: "2026-11-01T00:00:00Z" });
+    inContext(<RecipeHeader display={cooked} servings={2} />, fakeActions(cooked));
+    expect(screen.getByRole("button", { name: "Cooked it again" })).toBeDefined();
+  });
+
+  it("shows where the recipe was saved from, and the cost as a tier, never an amount", () => {
+    wrap(<RecipeHeader display={displayOf({ platform: "tiktok", original_url: "https://www.tiktok.com/@lazy.chef/video/1" })} servings={2} />);
+    expect(screen.getByText("Saved from TikTok · @lazy.chef")).toBeDefined();
+    expect(screen.getByText("Budget")).toBeDefined();
+    expect(screen.queryByText(/\$/)).toBeNull();
   });
 
   it("offers Add tags, or Edit tags once there are some", () => {

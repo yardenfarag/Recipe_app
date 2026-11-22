@@ -29,14 +29,14 @@ export function ComingSoon({
   return (
     <>
       <PageHeader title={title} subtitle={subtitle} tabTitle={t(item.labelKey)} />
-      <section className="rounded-3xl border border-frosted-border bg-surface/70 shadow-soft backdrop-blur-sm md:py-6">
+      <section className="rounded-tile border border-border bg-surface md:py-6">
         <EmptyState
           icon={<item.icon aria-hidden />}
           title={t(`web.soon.${section}.title`)}
           body={t(`web.soon.${section}.body`)}
           action={
             <div className="flex flex-col items-center gap-4">
-              <span className="rounded-full bg-accent-soft px-3 py-1 text-xs font-semibold text-accent">{t("web.comingSoon")}</span>
+              <span className="rounded-lg bg-accent-soft px-3 py-1 text-xs font-semibold text-accent-text">{t("web.comingSoon")}</span>
               {action}
             </div>
           }

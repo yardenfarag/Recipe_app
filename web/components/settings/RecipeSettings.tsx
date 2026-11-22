@@ -1,6 +1,6 @@
 "use client";
 
-import { ArrowRight, Flag, Minus, Plus, Scale, Thermometer, UtensilsCrossed, X } from "lucide-react";
+import { ArrowRight, Flag, Scale, Thermometer, UtensilsCrossed, X } from "lucide-react";
 import { useId, useState } from "react";
 import { useTranslation } from "react-i18next";
 
@@ -18,9 +18,26 @@ import type { UnitSystem } from "@shared/lib/unitSystem";
 
 import { AppliancesSettings } from "@/components/settings/AppliancesSettings";
 import { AvoidListEditor } from "@/components/settings/AvoidListEditor";
-import { AddItemField, ChoiceGroup, RemovableChip, SaveStatusLine, SettingsCard, SubHeading, SwitchRow, ToggleChip } from "@/components/settings/controls";
+import {
+  AddItemField,
+  ChoiceGroup,
+  RemovableChip,
+  SaveStatusLine,
+  SettingsCard,
+  SubHeading,
+  SwitchRow,
+  ToggleChip,
+  inputClass,
+  segmentedGroupClass,
+  segmentedOptionClass,
+} from "@/components/settings/controls";
 import { SettingsPageHeader } from "@/components/settings/SettingsPageHeader";
+import { Button } from "@/components/ui/Button";
+import { IconButton } from "@/components/ui/IconButton";
+import { SegmentedControl } from "@/components/ui/SegmentedControl";
 import { ErrorState, LoadingState } from "@/components/ui/States";
+import { Stepper } from "@/components/ui/Stepper";
+import { cn } from "@/lib/cn";
 import { useMeasurementSystem } from "@/lib/recipe/useMeasurementSystem";
 import { useUnitSystem } from "@/lib/recipe/useUnitSystem";
 import { useOwnedAppliances } from "@/lib/settings/ownedAppliances";
@@ -46,7 +63,7 @@ export function RecipeSettings() {
   return (
     <>
       <SettingsPageHeader id="recipe" actions={<SaveStatusLine status={combinedStatus(kitchen.status, appliancesStatus)} />} />
-      <div className="flex flex-col gap-5">
+      <div className="flex flex-col gap-4">
         <MeasurementCard />
         <UnitsCard />
         {kitchen.loadFailed ? (
@@ -75,22 +92,17 @@ export function MeasurementChoice({ trackId }: { trackId: string }) {
     { value: "metric", label: t("measurement.grams"), Icon: Scale },
   ];
   return (
-    <ChoiceGroup
+    <SegmentedControl
       label={t("settings.measurements")}
       value={system}
       onChange={setSystem}
-      trackId={trackId}
-      className="grid max-w-md grid-cols-2 gap-2 rounded-2xl bg-primary-soft p-1"
-      optionClassName="flex h-11 items-center justify-center gap-2 rounded-xl px-3 text-sm font-semibold text-muted transition-colors hover:text-text data-[checked]:bg-surface data-[checked]:text-primary data-[checked]:shadow-soft"
+      fullWidth
+      className="max-w-md"
       options={options.map(({ value, label, Icon }) => ({
         value,
         label,
-        content: (
-          <>
-            <Icon aria-hidden className="h-4 w-4" />
-            {label}
-          </>
-        ),
+        icon: <Icon aria-hidden className="h-4 w-4 shrink-0" />,
+        trackId: `${trackId}.${value}`,
       }))}
     />
   );
@@ -114,13 +126,14 @@ export function UnitsChoice({ trackId }: { trackId: string }) {
     { value: "us", label: t("measurement.unitsUs"), Icon: Flag },
   ];
   return (
+    // Not the kit's SegmentedControl: "Metric (°C, g, cm)" has to wrap on a phone, and that one is a fixed height.
     <ChoiceGroup
       label={t("measurement.unitsTitle")}
       value={units}
       onChange={setUnits}
       trackId={trackId}
-      className="grid max-w-md grid-cols-2 gap-2 rounded-2xl bg-primary-soft p-1"
-      optionClassName="flex min-h-11 items-center justify-center gap-2 rounded-xl px-3 py-2 text-center text-sm font-semibold text-muted transition-colors hover:text-text data-[checked]:bg-surface data-[checked]:text-primary data-[checked]:shadow-soft"
+      className={cn(segmentedGroupClass, "max-w-md grid-cols-2")}
+      optionClassName={segmentedOptionClass}
       options={options.map(({ value, label, Icon }) => ({
         value,
         label,
@@ -202,9 +215,6 @@ function KitchenCards({
           .filter(Boolean)
           .join(" · ");
 
-  const stepper =
-    "grid h-10 w-10 place-items-center rounded-full bg-element text-text transition-colors hover:bg-selected aria-disabled:pointer-events-none aria-disabled:opacity-40";
-
   return (
     <>
       <SettingsCard title={t("settings.kitchenHowICook")} hint={t("settings.kitchenHint")}>
@@ -223,41 +233,28 @@ function KitchenCards({
 
         <div className="mt-6">
           <SubHeading id={servingsLabelId}>{t("settings.kitchenServings")}</SubHeading>
-          <div role="group" aria-labelledby={servingsLabelId} className="flex flex-wrap items-center gap-3">
-            <button
-              type="button"
-              aria-label={t("recipe.decreaseServings")}
-              aria-disabled={servings == null}
-              data-track="settings.kitchen.servings.decrease"
-              onClick={() => servings != null && setServings(servings - 1)}
-              className={stepper}
+          <div className="flex flex-wrap items-center gap-2">
+            {/*
+              "Off" (the recipe's own servings) sits below 1: minus is greyed there, plus goes to 2, and minus at 1
+              turns it off again, as before.
+            */}
+            <Stepper
+              value={servings ?? 1}
+              onChange={setServings}
+              min={servings == null ? 1 : 0}
+              max={MAX_SERVINGS}
+              labelledBy={servingsLabelId}
+              decreaseLabel={t("recipe.decreaseServings")}
+              increaseLabel={t("recipe.increaseServings")}
+              spokenValue={servings == null ? undefined : t("settings.kitchenPreviewServings", { count: servings })}
+              trackId="settings.kitchen.servings"
             >
-              <Minus aria-hidden className="h-[18px] w-[18px]" />
-            </button>
-            <output aria-live="polite" className="min-w-12 text-center text-lg font-bold tabular-nums text-text">
               {servings == null ? t("settings.kitchenServingsOff") : servings}
-              {servings != null ? <span className="sr-only"> {t("settings.kitchenPreviewServings", { count: servings })}</span> : null}
-            </output>
-            <button
-              type="button"
-              aria-label={t("recipe.increaseServings")}
-              aria-disabled={servings === MAX_SERVINGS}
-              data-track="settings.kitchen.servings.increase"
-              onClick={() => servings !== MAX_SERVINGS && setServings(servings == null ? 2 : servings + 1)}
-              className={stepper}
-            >
-              <Plus aria-hidden className="h-[18px] w-[18px]" />
-            </button>
+            </Stepper>
             {servings != null ? (
-              <button
-                type="button"
-                data-track="settings.kitchen.servings.clear"
-                onClick={() => setServings(undefined)}
-                aria-label={t("a11y.clearDefaultServings")}
-                className="h-9 rounded-full px-3 text-sm font-semibold text-primary transition-colors hover:bg-primary-soft"
-              >
+              <Button variant="ghost" size="sm" trackId="settings.kitchen.servings.clear" onClick={() => setServings(undefined)} aria-label={t("a11y.clearDefaultServings")}>
                 {t("common.clear")}
-              </button>
+              </Button>
             ) : null}
           </div>
           <p className="mt-2 text-sm text-muted">{t("settings.kitchenServingsHint")}</p>
@@ -274,7 +271,7 @@ function KitchenCards({
             {profile.alwaysSwap.map((swap, index) => (
               <li
                 key={`${swap.from}-${swap.to}-${index}`}
-                className="flex items-center gap-3 rounded-2xl border border-border bg-surface px-4 py-2"
+                className="flex min-h-14 items-center gap-3 rounded-2xl bg-element py-1.5 ps-4 pe-1.5"
               >
                 <span className="sr-only">{t("a11y.swapFromTo", { from: swap.from, to: swap.to })}</span>
                 <span aria-hidden className="flex min-w-0 flex-1 flex-wrap items-center gap-2 text-[15px] text-text">
@@ -282,15 +279,14 @@ function KitchenCards({
                   <ArrowRight className="h-4 w-4 shrink-0 text-muted rtl:rotate-180" />
                   <bdi>{swap.to}</bdi>
                 </span>
-                <button
-                  type="button"
-                  data-track="settings.kitchen.swap.remove"
+                <IconButton
+                  trackId="settings.kitchen.swap.remove"
                   onClick={() => onChange({ ...profile, alwaysSwap: profile.alwaysSwap.filter((_, i) => i !== index) })}
-                  aria-label={t("a11y.removeSwap", { from: swap.from, to: swap.to })}
-                  className="grid h-9 w-9 place-items-center rounded-full text-muted transition-colors hover:bg-element hover:text-danger"
-                >
-                  <X aria-hidden className="h-4 w-4" />
-                </button>
+                  label={t("a11y.removeSwap", { from: swap.from, to: swap.to })}
+                  tooltip={false}
+                  icon={<X aria-hidden className="h-[18px] w-[18px]" />}
+                  className="hover:bg-selected hover:text-danger"
+                />
               </li>
             ))}
           </ul>
@@ -313,7 +309,7 @@ function KitchenCards({
               value={swapFrom}
               maxLength={60}
               onChange={(event) => setSwapFrom(event.target.value)}
-              className={inputClass}
+              className={cn(inputClass, "@md:flex-1")}
             />
             <ArrowRight aria-hidden className="hidden h-4 w-4 shrink-0 text-muted @md:block rtl:rotate-180" />
             <input
@@ -323,16 +319,11 @@ function KitchenCards({
               value={swapTo}
               maxLength={60}
               onChange={(event) => setSwapTo(event.target.value)}
-              className={inputClass}
+              className={cn(inputClass, "@md:flex-1")}
             />
-            <button
-              type="submit"
-              data-track="settings.kitchen.swap.add"
-              disabled={!swapFrom.trim() || !swapTo.trim()}
-              className="inline-flex h-11 shrink-0 items-center justify-center rounded-full bg-primary-soft px-5 text-sm font-semibold text-primary transition-[filter] hover:brightness-97 disabled:opacity-45"
-            >
+            <Button type="submit" variant="secondary" trackId="settings.kitchen.swap.add" disabled={!swapFrom.trim() || !swapTo.trim()}>
               {t("settings.kitchenAddSwap")}
-            </button>
+            </Button>
           </form>
         )}
       </SettingsCard>
@@ -387,6 +378,3 @@ function combinedStatus(a: SaveStatus, b: SaveStatus): SaveStatus {
   if (a === "saved" || b === "saved") return "saved";
   return "idle";
 }
-
-const inputClass =
-  "h-11 min-w-0 flex-1 rounded-full border border-border bg-surface px-4 text-[15px] text-text transition-[border-color,box-shadow] placeholder:text-muted/80 hover:border-muted/60 focus:border-primary focus:ring-4 focus:ring-primary/15";

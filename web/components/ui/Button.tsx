@@ -5,19 +5,21 @@ import { cn } from "@/lib/cn";
 export type ButtonVariant = "primary" | "secondary" | "outline" | "ghost" | "danger" | "link";
 type Size = "sm" | "md" | "lg";
 
+// The page's main action is set in the display face; quieter buttons stay in the body face.
 const variants: Record<ButtonVariant, string> = {
-  primary: "bg-primary text-on-primary shadow-soft hover:brightness-105 active:brightness-95",
-  secondary: "bg-primary-soft text-primary hover:brightness-97 active:brightness-95",
-  outline: "border border-border bg-surface text-text hover:bg-surface-soft active:bg-selected",
-  ghost: "text-text hover:bg-element active:bg-selected",
-  danger: "bg-danger text-surface hover:brightness-105 active:brightness-95",
-  link: "text-primary underline-offset-4 hover:underline",
+  primary: "bg-primary font-display font-bold text-on-primary hover:brightness-105 active:brightness-95",
+  secondary: "bg-primary-soft font-semibold text-primary-text hover:brightness-97 active:brightness-95",
+  outline: "border border-border bg-surface font-semibold text-text hover:bg-element active:bg-selected",
+  ghost: "font-semibold text-text hover:bg-element active:bg-selected",
+  danger: "bg-danger font-display font-bold text-surface hover:brightness-105 active:brightness-95",
+  link: "font-semibold text-primary-text underline-offset-4 hover:underline",
 };
 
+// 40, 48 and 56 px tall, with 12, 14 and 16 px corners (PIN-160).
 const sizes: Record<Size, string> = {
-  sm: "h-9 px-3.5 text-sm gap-1.5",
-  md: "h-11 px-5 text-[15px] gap-2",
-  lg: "h-12 px-6 text-base gap-2",
+  sm: "h-10 gap-1.5 rounded-xl px-4 text-sm",
+  md: "h-12 gap-2 rounded-btn px-5 text-[15px]",
+  lg: "h-14 gap-2.5 rounded-2xl px-6 text-[17px]",
 };
 
 export type ButtonProps = ButtonHTMLAttributes<HTMLButtonElement> & {
@@ -41,9 +43,9 @@ export const buttonClasses = ({
   className,
 }: Pick<ButtonProps, "variant" | "size" | "fullWidth" | "className">) =>
   cn(
-    "inline-flex shrink-0 select-none items-center justify-center rounded-full font-semibold whitespace-nowrap transition-[filter,background-color,color,box-shadow] duration-150",
+    "inline-flex shrink-0 select-none items-center justify-center whitespace-nowrap transition-[filter,background-color,color,box-shadow] duration-150",
     "disabled:pointer-events-none disabled:opacity-50",
-    variant === "link" ? "h-auto px-1 py-0.5 text-sm" : sizes[size],
+    variant === "link" ? "h-auto rounded-md px-1 py-0.5 text-sm" : sizes[size],
     variants[variant],
     fullWidth && "w-full",
     className,

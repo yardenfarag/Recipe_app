@@ -20,6 +20,7 @@ import { Button, buttonClasses } from "@/components/ui/Button";
 import { ConfirmDialog } from "@/components/ui/Dialog";
 import { usePageTitle } from "@/components/ui/PageHeader";
 import { EmptyState, LoadingState } from "@/components/ui/States";
+import { Tile } from "@/components/ui/Tile";
 import { captureRecipeSaved } from "@/lib/analytics";
 import { buildRecipeDisplay } from "@/lib/recipe/recipeDisplay";
 import { useAutoTranslation } from "@/lib/recipe/useAutoTranslation";
@@ -105,13 +106,15 @@ export function SnapPreview() {
         actions={
           <>
             {draft.kitchenFailed ? (
-              <div role="status" className="flex basis-full items-start gap-3 rounded-2xl bg-warning-soft px-4 py-3 text-sm leading-relaxed">
-                <TriangleAlert aria-hidden className="mt-0.5 h-4 w-4 shrink-0 text-warning" />
-                <p>
+              <Tile role="status" size="md" className="flex basis-full items-start gap-3 p-4 text-sm leading-relaxed">
+                <span aria-hidden className="grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-warning-soft text-warning">
+                  <TriangleAlert className="h-5 w-5" />
+                </span>
+                <p className="min-w-0 self-center">
                   <span className="font-semibold text-warning">{t("recipe.kitchenAutoApplyFailedTitle")}. </span>
                   <span className="text-text">{t("recipe.kitchenAutoApplyFailed")}</span>
                 </p>
-              </div>
+              </Tile>
             ) : null}
             <Button size="lg" busy={saving} trackId="recipe_preview.save" onClick={() => void save()}>
               {t("recipe.save")}

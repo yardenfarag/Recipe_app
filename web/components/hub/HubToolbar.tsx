@@ -9,14 +9,11 @@ import { translateRecipeTag } from "@shared/lib/recipeTags";
 import type { HubSort } from "@shared/lib/supabase/cookingHub";
 import type { HubPlatform } from "@shared/types/recipeCard";
 
-import { cn } from "@/lib/cn";
+import { Button } from "@/components/ui/Button";
+import { Chip, chipClasses } from "@/components/ui/Chip";
+import { SegmentedControl } from "@/components/ui/SegmentedControl";
+import { Tile, TileLabel } from "@/components/ui/Tile";
 import type { LibraryLayout } from "@/lib/library/useLibraryLayout";
-
-// The Library's chips (components/library/LibraryToolbar.tsx), so both screens look alike.
-const chip =
-  "inline-flex h-10 shrink-0 select-none items-center gap-2 rounded-full border px-4 text-sm font-semibold transition-colors";
-const chipOff = "border-border bg-surface text-text hover:bg-element";
-const chipOn = "border-primary bg-primary-soft text-primary";
 
 const SORTS: { value: HubSort; labelKey: string }[] = [
   { value: "popular", labelKey: "hub.sortPopular" },
@@ -82,18 +79,16 @@ function ChipRadioGroup<T extends string>({
       {options.map((option) => {
         const on = option.value === value;
         return (
-          <button
+          <Chip
             key={option.value}
-            type="button"
-            role="radio"
-            data-track={`${trackPrefix}.${option.value}`}
-            aria-checked={on}
+            kind="radio"
+            selected={on}
+            trackId={`${trackPrefix}.${option.value}`}
             tabIndex={on ? 0 : -1}
             onClick={() => onChange(option.value)}
-            className={cn(chip, on ? chipOn : chipOff)}
           >
             {option.label}
-          </button>
+          </Chip>
         );
       })}
     </div>
@@ -130,7 +125,7 @@ export function HubToolbar({ searchInput, ...props }: HubToolbarProps) {
             aria-keyshortcuts="/"
             autoComplete="off"
             enterKeyHint="search"
-            className="h-12 w-full rounded-full border border-border bg-surface ps-12 pe-14 text-base text-text shadow-soft transition-[border-color,box-shadow] placeholder:text-muted/80 hover:border-muted/60 focus:border-primary focus:ring-4 focus:ring-primary/15 [&::-webkit-search-cancel-button]:hidden"
+            className="h-12 w-full rounded-btn border border-border bg-surface ps-12 pe-14 text-base text-text transition-[border-color,box-shadow] placeholder:text-muted/80 hover:border-muted/60 focus:border-primary focus:ring-4 focus:ring-primary/15 [&::-webkit-search-cancel-button]:hidden"
           />
           {search ? (
             <button
@@ -138,7 +133,7 @@ export function HubToolbar({ searchInput, ...props }: HubToolbarProps) {
               data-track="hub.search.clear"
               aria-label={t("library.clearSearch")}
               onClick={() => props.onSearchChange("")}
-              className="absolute end-2 top-1/2 grid h-8 w-8 -translate-y-1/2 place-items-center rounded-full text-muted hover:bg-element hover:text-text"
+              className="absolute end-1.5 top-1/2 grid h-9 w-9 -translate-y-1/2 place-items-center rounded-xl text-muted hover:bg-element hover:text-text pointer-coarse:end-0.5 pointer-coarse:h-11 pointer-coarse:w-11"
             >
               <X aria-hidden className="h-4 w-4" />
             </button>
@@ -155,7 +150,7 @@ export function HubToolbar({ searchInput, ...props }: HubToolbarProps) {
         <LayoutToggle layout={props.layout} onLayoutChange={props.onLayoutChange} />
       </div>
 
-      <div className="-mx-4 flex items-center gap-2 overflow-x-auto px-4 pb-1 md:mx-0 md:flex-wrap md:overflow-visible md:px-0 md:pb-0">
+      <div className="-mx-4 flex items-center gap-2 scroll-row px-4 py-1 md:mx-0 md:flex-wrap md:overflow-visible md:p-0">
         <ChipRadioGroup
           label={t("web.hub.source")}
           trackPrefix="hub.filter.source"
@@ -180,12 +175,12 @@ export function HubToolbar({ searchInput, ...props }: HubToolbarProps) {
               aria-expanded={props.tagsOpen}
               aria-controls={panelId}
               onClick={() => props.onTagsOpenChange(!props.tagsOpen)}
-              className={cn(chip, selectedTags.length > 0 || props.tagsOpen ? chipOn : chipOff)}
+              className={chipClasses({ selected: selectedTags.length > 0 || props.tagsOpen })}
             >
               <Tags aria-hidden className="h-4 w-4" />
               {t("library.tags")}
               {selectedTags.length > 0 ? (
-                <span className="grid h-5 min-w-5 place-items-center rounded-full bg-primary px-1 text-xs font-bold text-on-primary">
+                <span className="grid h-5 min-w-5 place-items-center rounded-full bg-bg px-1 text-xs font-bold text-text tabular-nums">
                   <span className="sr-only">{t("a11y.filtersApplied")}: </span>
                   {selectedTags.length}
                 </span>
@@ -195,38 +190,28 @@ export function HubToolbar({ searchInput, ...props }: HubToolbarProps) {
         ) : null}
       </div>
 
-      <div
-        id={panelId}
-        hidden={!props.tagsOpen}
-        className="rounded-3xl border border-frosted-border bg-surface/70 p-5 shadow-soft backdrop-blur-sm"
-      >
+      <Tile id={panelId} hidden={!props.tagsOpen} className="p-5">
         <fieldset>
-          <div className="flex items-center justify-between gap-3">
-            <legend className="text-sm font-bold text-text">{t("library.tags")}</legend>
+          <div className="flex min-h-7 items-center justify-between gap-3">
+            <TileLabel as="legend">{t("library.tags")}</TileLabel>
             {selectedTags.length > 0 ? (
-              <button
-                type="button"
-                data-track="hub.filter.tags.clear"
-                onClick={props.onClearTags}
-                aria-label={t("a11y.clearTags")}
-                className="rounded-full px-2 py-1 text-sm font-semibold text-primary hover:bg-primary-soft"
-              >
+              <Button variant="link" trackId="hub.filter.tags.clear" onClick={props.onClearTags} aria-label={t("a11y.clearTags")}>
                 {t("common.clear")}
-              </button>
+              </Button>
             ) : null}
           </div>
           <div className="mt-3 flex flex-wrap gap-2">
             {props.availableTags.map((tag) => {
               const on = selectedTags.includes(tag);
               return (
-                <button key={tag} type="button" data-track="hub.filter.tag.toggle" aria-pressed={on} onClick={() => props.onToggleTag(tag)} className={cn(chip, "h-9", on ? chipOn : chipOff)}>
+                <Chip key={tag} size="sm" selected={on} trackId="hub.filter.tag.toggle" onClick={() => props.onToggleTag(tag)}>
                   {translateRecipeTag(tag, t)}
-                </button>
+                </Chip>
               );
             })}
           </div>
         </fieldset>
-      </div>
+      </Tile>
     </div>
   );
 }
@@ -235,30 +220,14 @@ export function HubToolbar({ searchInput, ...props }: HubToolbarProps) {
 function LayoutToggle({ layout, onLayoutChange }: { layout: LibraryLayout; onLayoutChange: (layout: LibraryLayout) => void }) {
   const { t } = useTranslation();
   return (
-    <div role="radiogroup" aria-label={`${t("library.showGrid")} / ${t("library.showList")}`} className="flex rounded-full border border-border bg-surface p-1 shadow-soft">
-      {(
-        [
-          ["grid", LayoutGrid, t("library.showGrid")],
-          ["list", List, t("library.showList")],
-        ] as const
-      ).map(([value, Icon, label]) => (
-        <button
-          key={value}
-          type="button"
-          role="radio"
-          data-track={`hub.layout.${value}`}
-          aria-checked={layout === value}
-          aria-label={label}
-          title={label}
-          onClick={() => onLayoutChange(value)}
-          className={cn(
-            "grid h-10 w-10 place-items-center rounded-full transition-colors",
-            layout === value ? "bg-primary-soft text-primary" : "text-muted hover:bg-element hover:text-text",
-          )}
-        >
-          <Icon aria-hidden className="h-5 w-5" />
-        </button>
-      ))}
-    </div>
+    <SegmentedControl
+      label={`${t("library.showGrid")} / ${t("library.showList")}`}
+      value={layout}
+      onChange={onLayoutChange}
+      options={[
+        { value: "grid", label: t("library.showGrid"), icon: <LayoutGrid aria-hidden className="h-5 w-5" />, iconOnly: true, trackId: "hub.layout.grid" },
+        { value: "list", label: t("library.showList"), icon: <List aria-hidden className="h-5 w-5" />, iconOnly: true, trackId: "hub.layout.list" },
+      ]}
+    />
   );
 }

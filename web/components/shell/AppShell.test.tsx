@@ -1,4 +1,4 @@
-import { render, screen, within } from "@testing-library/react";
+import { fireEvent, render, screen, within } from "@testing-library/react";
 import { I18nextProvider } from "react-i18next";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
@@ -65,9 +65,18 @@ describe("AppShell", () => {
     for (const link of current) expect(link.getAttribute("href")).toBe("/hub");
   });
 
-  it("offers the account menu with who is signed in", () => {
+  it("offers the account menu with who is signed in", async () => {
     renderShell();
-    expect(screen.getAllByRole("button", { name: "Account, theme and language" }).length).toBeGreaterThan(0);
-    expect(screen.getByText("cook@example.com")).toBeDefined();
+    const [menu] = screen.getAllByRole("button", { name: "Account, theme and language" });
+    fireEvent.keyDown(menu, { key: "Enter" });
+    expect(await screen.findByText("cook@example.com")).toBeDefined();
+  });
+
+  it("opens the Snap bar with Ctrl+K, by key position", async () => {
+    renderShell();
+    // A Hebrew keyboard sends "ל" for the K key; the shortcut still works.
+    fireEvent.keyDown(window, { key: "ל", code: "KeyK", ctrlKey: true });
+    const dialog = await screen.findByRole("dialog", { name: "Snap or search" });
+    expect(within(dialog).getByRole("searchbox", { name: "Snap a recipe or search yours" })).toBeDefined();
   });
 });

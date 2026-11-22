@@ -127,7 +127,7 @@ test("a video that can't be embedded opens on its own site", async ({ page }) =>
 
 test("a web recipe without a video has cook mode but no cook along", async ({ page }) => {
   await openRecipe(page);
-  await expect(page.getByTestId("cook-bar").getByRole("button", { name: "Cook mode" })).toBeVisible();
+  await expect(page.getByTestId("cook-bar").getByRole("button", { name: "Start cooking" })).toBeVisible();
   await expect(page.getByRole("button", { name: /Cook along/ })).toHaveCount(0);
 });
 
@@ -147,7 +147,8 @@ test.describe("on a phone", () => {
     await page.keyboard.press("ArrowDown");
     await expect.poll(async () => (await player(page).boundingBox())!.height).toBeGreaterThan(before);
 
-    // Steps scroll under it; it stays at the top.
+    // Steps scroll under it; it stays at the top. On a phone the steps are a tab of their own.
+    await page.getByRole("tab", { name: "Steps" }).click();
     await steps(page).getByText("Cook on a hot pan until golden.").scrollIntoViewIfNeeded();
     await expect(panel).toBeInViewport();
   });
@@ -155,7 +156,7 @@ test.describe("on a phone", () => {
 
 test("cook mode shows one step at a time, moves with keys and buttons, and finishes", async ({ page }) => {
   await openRecipe(page, VIDEOS.youtube);
-  await page.getByTestId("cook-bar").getByRole("button", { name: "Cook mode" }).click();
+  await page.getByTestId("cook-bar").getByRole("button", { name: "Start cooking" }).click();
   const dialog = page.getByRole("dialog", { name: PANCAKES.title });
   const step = page.getByTestId("cook-mode-step");
   await expect(dialog).toContainText("Step 1 of 3");
@@ -178,11 +179,11 @@ test("cook mode shows one step at a time, moves with keys and buttons, and finis
   // Closing and reopening comes back where you were; after finishing, it starts over.
   await dialog.getByRole("button", { name: "Back to the recipe" }).click();
   await expect(dialog).toHaveCount(0);
-  await page.getByTestId("cook-bar").getByRole("button", { name: "Cook mode" }).click();
+  await page.getByTestId("cook-bar").getByRole("button", { name: "Start cooking" }).click();
   await expect(step).toHaveText("Whisk the flour and milk.");
   await page.keyboard.press("ArrowRight");
   await page.keyboard.press("Escape");
-  await page.getByTestId("cook-bar").getByRole("button", { name: "Cook mode" }).click();
+  await page.getByTestId("cook-bar").getByRole("button", { name: "Start cooking" }).click();
   await expect(step).toHaveText("Rest the batter for 10 minutes.");
 });
 
@@ -218,7 +219,7 @@ test("cook mode reads the step shown aloud, and stops when it closes", async ({ 
     });
   });
   await openRecipe(page);
-  await page.getByTestId("cook-bar").getByRole("button", { name: "Cook mode" }).click();
+  await page.getByTestId("cook-bar").getByRole("button", { name: "Start cooking" }).click();
   const dialog = page.getByRole("dialog", { name: PANCAKES.title });
   const spoken = () => page.evaluate(() => (window as unknown as { __speech: { spoken: string[] } }).__speech.spoken);
   const speaker = dialog.getByRole("button", { name: "Read steps aloud" });
@@ -242,7 +243,7 @@ test("cook mode reads the step shown aloud, and stops when it closes", async ({ 
   expect(await cancels()).toBeGreaterThan(before);
 
   // The choice is remembered: cook mode opens reading.
-  await page.getByTestId("cook-bar").getByRole("button", { name: "Cook mode" }).click();
+  await page.getByTestId("cook-bar").getByRole("button", { name: "Start cooking" }).click();
   await expect(dialog.getByRole("button", { name: "Read steps aloud" })).toHaveAttribute("aria-pressed", "true");
 });
 

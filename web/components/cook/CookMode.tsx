@@ -201,7 +201,7 @@ export function CookMode({
               {title}
             </RadixDialog.Title>
             {wakeLock === "on" ? (
-              <span className="hidden items-center gap-1.5 rounded-full bg-success-soft px-3 py-1.5 text-xs font-semibold text-success sm:inline-flex">
+              <span className="hidden items-center gap-1.5 rounded-lg bg-success-soft px-3 py-1.5 text-xs font-semibold text-success sm:inline-flex">
                 <Sun aria-hidden className="h-3.5 w-3.5" />
                 {t("web.cook.screenOn")}
               </span>
@@ -217,7 +217,7 @@ export function CookMode({
                 onClick={voiceMissing ? undefined : () => setReadAloudOn(!readAloudOn)}
                 className={cn(
                   "h-12 w-12",
-                  reading && "bg-primary-soft text-primary hover:bg-primary-soft hover:text-primary",
+                  reading && "bg-primary-soft text-primary-text hover:bg-primary-soft hover:text-primary-text",
                   voiceMissing && "opacity-50 hover:bg-transparent hover:text-muted",
                 )}
               />
@@ -303,7 +303,7 @@ export function CookMode({
               ) : (
                 <>
                   <div className="flex min-h-9 flex-wrap items-center justify-between gap-2">
-                    <p className="text-sm font-bold tracking-wide text-primary uppercase sm:text-base">{stepLabel}</p>
+                    <p className="font-display text-sm font-bold tracking-[0.08em] text-primary-text uppercase rtl:tracking-normal sm:text-base">{stepLabel}</p>
                     {reading ? (
                       <Button variant="ghost" size="sm" trackId="cook_mode.read_aloud.replay" onClick={readCurrent}>
                         <Volume2 aria-hidden className="h-4 w-4" />
@@ -316,7 +316,7 @@ export function CookMode({
                     dir={direction}
                     lang={contentLanguage ?? undefined}
                     data-testid="cook-mode-step"
-                    className="mt-4 animate-fade-in text-start text-[clamp(1.625rem,1rem+2.4vw,3rem)] leading-[1.35] font-semibold text-pretty"
+                    className="mt-4 animate-fade-in text-start text-[clamp(1.625rem,1rem+2.4vw,3rem)] leading-[1.3] font-display font-bold tracking-[-0.015em] text-pretty rtl:tracking-normal"
                   >
                     {step?.text}
                   </p>
@@ -329,7 +329,7 @@ export function CookMode({
                             data-track="cook_mode.timer.start"
                             onClick={() => timers.start(timer.label, timer.seconds, position + 1)}
                             aria-label={t("recipe.cookModeTimer", { label: timer.label })}
-                            className="inline-flex h-12 items-center gap-2 rounded-full bg-accent-soft px-5 text-base font-bold text-accent transition-[filter] hover:brightness-95 active:brightness-90"
+                            className="inline-flex h-14 items-center gap-2.5 rounded-2xl bg-primary-soft px-5 text-lg font-bold text-primary-text transition-[filter] hover:brightness-95 active:brightness-90"
                           >
                             <Timer aria-hidden className="h-5 w-5" />
                             <span dir={direction}>{timer.label}</span>
@@ -363,15 +363,15 @@ export function CookMode({
                       key={timer.id}
                       data-testid="cook-timer"
                       className={cn(
-                        "inline-flex items-center gap-2 rounded-full py-1.5 ps-4 pe-1.5 text-sm font-semibold",
-                        finished ? "animate-pulse bg-accent text-surface" : "bg-primary-soft text-primary",
+                        "inline-flex items-center gap-3 rounded-2xl py-2 ps-4 pe-2 text-sm font-semibold",
+                        finished ? "bg-primary text-on-primary motion-safe:animate-pulse" : "bg-element text-text",
                       )}
                     >
-                      <Timer aria-hidden className="h-4 w-4" />
-                      <span role="timer" className="text-lg font-bold tabular-nums" dir="ltr">
+                      <Timer aria-hidden className="h-5 w-5" />
+                      <span role="timer" className="font-display text-[26px] leading-none font-bold tabular-nums" dir="ltr">
                         {finished ? t("recipe.cookModeTimerDone") : formatCountdown(left)}
                       </span>
-                      <span className={cn("text-xs font-medium", finished ? "text-surface" : "text-muted")}>
+                      <span className={cn("text-xs font-medium", finished ? "text-on-primary" : "text-muted")}>
                         <span dir={direction}>{timer.label}</span> · {t("web.cook.timerStep", { step: timer.step })}
                       </span>
                       <button
@@ -379,7 +379,7 @@ export function CookMode({
                         data-track="cook_mode.timer.stop"
                         onClick={() => timers.stop(timer.id)}
                         aria-label={t("web.cook.stopTimer", { label: timer.label })}
-                        className="grid h-8 w-8 place-items-center rounded-full hover:bg-surface/40"
+                        className="grid h-10 w-10 place-items-center rounded-xl hover:bg-surface/40"
                       >
                         <X aria-hidden className="h-4 w-4" />
                       </button>

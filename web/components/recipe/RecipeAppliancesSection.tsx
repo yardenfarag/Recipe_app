@@ -182,12 +182,12 @@ export function RecipeAppliancesSection({ display, system }: { display: RecipeDi
     );
   };
 
-  const groupTitle = (label: string) => <h3 className="mb-2.5 text-xs font-semibold tracking-wide text-muted uppercase">{label}</h3>;
+  const groupTitle = (label: string) => <h3 className="mb-2.5 font-sans text-[13px] font-semibold tracking-[0.06em] text-muted uppercase rtl:tracking-normal">{label}</h3>;
 
   return (
-    <section aria-labelledby="recipe-appliances-heading" className="mt-8" data-testid="recipe-appliances">
+    <section aria-labelledby="recipe-appliances-heading" className="rounded-tile border border-border bg-surface p-5 md:p-[26px]" data-testid="recipe-appliances">
       <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
-        <h2 id="recipe-appliances-heading" className="text-xl font-bold text-text">
+        <h2 id="recipe-appliances-heading" className="text-[22px] font-bold text-text md:text-[26px]">
           {t("appliances.title")}
         </h2>
         {check.ready ? (
@@ -222,7 +222,7 @@ export function RecipeAppliancesSection({ display, system }: { display: RecipeDi
                     {item.origin === "tip" ? (
                       <span
                         data-testid={`appliance-tip-${item.key}`}
-                        className="inline-flex items-center gap-1 rounded-full bg-accent-soft px-2 py-0.5 text-xs font-semibold text-accent"
+                        className="inline-flex items-center gap-1 rounded-full bg-accent-soft px-2 py-0.5 text-xs font-semibold text-accent-text"
                       >
                         <Lightbulb aria-hidden className="h-3.5 w-3.5" />
                         {t("appliances.pinchTip")}
@@ -245,7 +245,7 @@ export function RecipeAppliancesSection({ display, system }: { display: RecipeDi
 
       {ask ? (
         <p data-testid="appliances-ask" className="mt-4 text-sm text-muted">
-          <Link href={MY_APPLIANCES_HREF} data-track="recipe.appliances.ask" className="font-semibold text-primary underline-offset-4 hover:underline">
+          <Link href={MY_APPLIANCES_HREF} data-track="recipe.appliances.ask" className="font-semibold text-primary-text underline-offset-4 hover:underline">
             {t("myAppliances.askLink")}
           </Link>{" "}
           {t("myAppliances.askHint")}
@@ -295,7 +295,7 @@ function KitchenNote({ check, canFix, onFix }: { check: KitchenCheck; canFix: bo
                   {t("avoid.makeWithout")}
                 </Button>
               ) : null}
-              <Link href={MY_APPLIANCES_HREF} data-track="recipe.appliances.edit" className="text-sm font-semibold text-primary underline-offset-4 hover:underline">
+              <Link href={MY_APPLIANCES_HREF} data-track="recipe.appliances.edit" className="text-sm font-semibold text-primary-text underline-offset-4 hover:underline">
                 {t("myAppliances.editLink")}
               </Link>
             </div>
@@ -353,7 +353,7 @@ function ApplianceDialog({
     <DialogContent title={name}>
       <div data-testid="appliance-dialog" className="flex flex-col gap-4">
         <p className="flex items-center gap-2 text-[15px] font-semibold text-text">
-          <span className="grid h-9 w-9 shrink-0 place-items-center rounded-full bg-primary-soft text-primary">
+          <span className="grid h-9 w-9 shrink-0 place-items-center rounded-xl bg-primary-soft text-primary-text">
             <ApplianceIcon appliance={appliance.key} className="h-5 w-5" />
           </span>
           {kind}
@@ -375,7 +375,7 @@ function ApplianceDialog({
                   data-testid={`appliance-step-${s.step}`}
                   className="flex gap-3 rounded-2xl bg-surface-soft px-3.5 py-3 text-start text-[15px] leading-relaxed text-text"
                 >
-                  <span className="shrink-0 font-bold tabular-nums text-primary">{s.step}.</span>
+                  <span className="shrink-0 font-bold tabular-nums text-primary-text">{s.step}.</span>
                   <span className="min-w-0">{s.text}</span>
                 </li>
               ))}

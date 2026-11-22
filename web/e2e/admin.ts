@@ -73,6 +73,10 @@ export type SeedRecipe = {
   translations?: Record<string, { title: string; ingredients: unknown[]; instructions: unknown[] }>;
   /** Seconds before now, so the order of "newest first" is known. */
   createdSecondsAgo?: number;
+  /** Where it was saved from. Defaults to a website. */
+  platform?: "web" | "tiktok" | "instagram" | "youtube" | "photo";
+  /** Marked as cooked this many days ago. Left out: never cooked. */
+  cookedDaysAgo?: number;
 };
 
 /**
@@ -114,7 +118,8 @@ export async function resetLibrary(recipes: SeedRecipe[]): Promise<string[]> {
     source_language: recipe.source_language ?? "en",
     extraction_status: recipe.extraction_status ?? "full",
     original_url: recipe.original_url ?? null,
-    platform: "web",
+    platform: recipe.platform ?? "web",
+    last_cooked_at: recipe.cookedDaysAgo == null ? null : new Date(now - recipe.cookedDaysAgo * 24 * 60 * 60 * 1000).toISOString(),
     created_at: new Date(now - (recipe.createdSecondsAgo ?? index) * 1000).toISOString(),
   }));
   const insert = await fetch(`${url}/rest/v1/recipes?select=id`, {

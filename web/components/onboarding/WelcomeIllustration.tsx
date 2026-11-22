@@ -16,7 +16,7 @@ export function WelcomeIllustration() {
     <div aria-hidden className="relative mx-auto w-full max-w-md select-none lg:max-w-lg">
       <div className="absolute -inset-4 rounded-[3rem] bg-primary-soft opacity-70 blur-2xl sm:-inset-8" />
 
-      <div className="relative overflow-hidden rounded-3xl border border-frosted-border bg-surface shadow-lift">
+      <div className="relative overflow-hidden rounded-tile border border-border bg-surface">
         <div className="flex items-center gap-1.5 border-b border-border bg-surface-soft px-4 py-3">
           <span className="h-2.5 w-2.5 rounded-full bg-border" />
           <span className="h-2.5 w-2.5 rounded-full bg-border" />
@@ -38,7 +38,7 @@ export function WelcomeIllustration() {
             </span>
           </div>
 
-          <div className="mt-5 overflow-hidden rounded-2xl border border-frosted-border bg-bg">
+          <div className="mt-5 overflow-hidden rounded-2xl border border-border bg-bg">
             <div className="relative grid h-32 place-items-center bg-linear-to-br from-accent-soft via-primary-soft to-surface-soft sm:h-36">
               <div className="grid h-24 w-24 place-items-center rounded-full bg-surface shadow-soft sm:h-28 sm:w-28">
                 <div className="relative h-16 w-16 rounded-full bg-accent-soft sm:h-20 sm:w-20">
@@ -70,7 +70,7 @@ export function WelcomeIllustration() {
         </div>
       </div>
 
-      <div className="absolute -bottom-5 end-3 flex max-w-[85%] items-center gap-2.5 rounded-2xl border border-frosted-border bg-surface px-4 py-3 text-sm font-semibold text-text shadow-lift motion-safe:animate-slide-up sm:-end-6">
+      <div className="absolute -bottom-5 end-3 flex max-w-[85%] items-center gap-2.5 rounded-2xl border border-border bg-surface px-4 py-3 text-sm font-semibold text-text shadow-lift motion-safe:animate-slide-up sm:-end-6">
         <span className="grid h-8 w-8 shrink-0 place-items-center rounded-full bg-success-soft text-success">
           <ShoppingBasket className="h-4 w-4" />
         </span>

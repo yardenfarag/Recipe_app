@@ -251,7 +251,7 @@ test("share copies the recipe's Pinch link", async ({ page, context }) => {
 test("I cooked this, with a note for next time", async ({ page }) => {
   await stubFunctions(page, {});
   await openRecipe(page, [PANCAKES]);
-  await actionBar(page).getByRole("button", { name: "I cooked this" }).click();
+  await page.getByRole("button", { name: "I cooked this" }).click();
   const note = page.getByRole("dialog", { name: "A note for next time" });
   await note.getByRole("textbox").fill("less sugar");
   await note.getByRole("button", { name: "Save" }).click();
@@ -259,7 +259,7 @@ test("I cooked this, with a note for next time", async ({ page }) => {
   await expect(page.locator("#main header")).toContainText("less sugar");
   await page.reload();
   await expect(page.locator("#main header")).toContainText("less sugar");
-  await expect(actionBar(page).getByRole("button", { name: "Cooked it again" })).toBeVisible();
+  await expect(page.getByRole("button", { name: "Cooked it again" })).toBeVisible();
 });
 
 test("edit tags and add to a collection", async ({ page }) => {
@@ -273,7 +273,7 @@ test("edit tags and add to a collection", async ({ page }) => {
   await expect(tags).toBeHidden();
   await expect(page.getByRole("list", { name: "Tags" })).toContainText(/weekend/i);
 
-  await actionBar(page).getByRole("button", { name: "More options" }).click();
+  await page.getByRole("button", { name: "More options" }).click();
   await page.getByRole("menuitem", { name: "Add to collection" }).click();
   const collection = page.getByRole("dialog", { name: "Add to collection" });
   await collection.getByLabel("New collection").fill("Sundays");
@@ -285,7 +285,7 @@ test("edit tags and add to a collection", async ({ page }) => {
 test("add the ingredients to the shopping list", async ({ page }) => {
   await stubFunctions(page, {});
   await openRecipe(page, [PANCAKES]);
-  await ingredients(page).getByRole("button", { name: "Add to list" }).click();
+  await ingredients(page).getByRole("button", { name: "Add the missing ones to my list" }).click();
   const dialog = page.getByRole("dialog", { name: "Add to list" });
   await dialog.getByRole("button", { name: /^Add \d+ items?$/ }).click();
   await expect(dialog).toBeHidden();
@@ -295,7 +295,7 @@ test("add the ingredients to the shopping list", async ({ page }) => {
 test("the More menu works from the keyboard, and Escape puts focus back", async ({ page }) => {
   await stubFunctions(page, {});
   await openRecipe(page, [PANCAKES]);
-  const more = actionBar(page).getByRole("button", { name: "More options" });
+  const more = page.getByRole("button", { name: "More options" });
   await more.focus();
   await page.keyboard.press("Enter");
   await expect(page.getByRole("menu")).toBeVisible();

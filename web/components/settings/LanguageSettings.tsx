@@ -5,7 +5,7 @@ import { useTranslation } from "react-i18next";
 
 import { APP_LANGUAGES, type AppLanguageCode } from "@shared/lib/appLanguages";
 
-import { ChoiceGroup, SettingsCard } from "@/components/settings/controls";
+import { ChoiceGroup, SettingsCard, optionRowClass } from "@/components/settings/controls";
 import { SettingsPageHeader } from "@/components/settings/SettingsPageHeader";
 import { useLanguage } from "@/components/LanguageProvider";
 
@@ -36,7 +36,7 @@ export function LanguageSettings() {
           value={language}
           onChange={setLanguage}
           className="grid gap-2 @lg:grid-cols-2"
-          optionClassName="group flex min-h-14 items-center gap-3 rounded-2xl border border-border bg-surface px-4 py-3 text-start transition-colors hover:bg-surface-soft data-[checked]:border-primary data-[checked]:bg-primary-soft"
+          optionClassName={optionRowClass}
           options={APP_LANGUAGES.map((lang) => ({
             value: lang.code,
             label: lang.nativeLabel,
@@ -53,7 +53,7 @@ export function LanguageSettings() {
                     </span>
                   ) : null}
                 </span>
-                <Check aria-hidden className="h-5 w-5 shrink-0 text-primary opacity-0 group-data-[checked]:opacity-100" />
+                <Check aria-hidden className="h-5 w-5 shrink-0 text-primary-text opacity-0 group-data-[checked]:opacity-100" />
               </>
             ),
           }))}

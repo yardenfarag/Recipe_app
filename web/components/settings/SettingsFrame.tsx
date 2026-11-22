@@ -8,6 +8,7 @@ import { useTranslation } from "react-i18next";
 
 import { SettingsList, SettingsRail } from "@/components/settings/SettingsMenu";
 import { SettingsProfileProvider } from "@/components/settings/SettingsProfile";
+import { buttonClasses } from "@/components/ui/Button";
 import { PageHeader } from "@/components/ui/PageHeader";
 import { settingsSectionFor } from "@/lib/settings/sections";
 import { useWideLayout } from "@/lib/settings/useWideLayout";
@@ -32,8 +33,10 @@ function Frame({ children }: { children: ReactNode }) {
 
   if (wide) {
     return (
-      <div className="grid grid-cols-[15rem_minmax(0,1fr)] gap-10 xl:grid-cols-[16rem_minmax(0,1fr)] xl:gap-14">
-        <aside className="sticky top-10 max-h-[calc(100dvh-5rem)] self-start overflow-y-auto pb-4">
+      <div className="grid grid-cols-[16rem_minmax(0,1fr)] gap-8 xl:grid-cols-[18rem_minmax(0,1fr)] xl:gap-12">
+        {/* Stays in view while the page scrolls. In a window too short for it, it scrolls on its own, without a
+            scrollbar of its own. The small padding keeps a row's focus outline from being cut off. */}
+        <aside className="sticky top-7 -mx-1 max-h-[calc(100dvh-3.5rem)] self-start overflow-y-auto overscroll-contain px-1 pb-4 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
           <SettingsRail current={section?.id ?? "account"} />
         </aside>
         {/* A container, so the page lays itself out by its own width, not the window's. */}
@@ -56,7 +59,7 @@ function Frame({ children }: { children: ReactNode }) {
       <Link
         href="/settings"
         data-track="settings.back"
-        className="-ms-2 mb-3 inline-flex h-9 items-center gap-1 rounded-full pe-3 ps-1.5 text-sm font-semibold text-primary transition-colors hover:bg-primary-soft"
+        className={buttonClasses({ variant: "ghost", size: "sm", className: "-ms-2 mb-3 gap-1 ps-1.5 pe-3 text-primary-text pointer-coarse:h-11" })}
       >
         <ChevronLeft aria-hidden className="h-5 w-5 rtl:rotate-180" />
         {t("settings.title")}

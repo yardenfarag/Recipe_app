@@ -108,17 +108,36 @@ test("a photo dropped onto the page imports", async ({ page }) => {
   expect(calls).toHaveLength(1);
 });
 
-test("a link pasted anywhere on the page lands in the link field", async ({ page }) => {
-  await resetLibrary([]);
-  await stubImports(page, {});
-  await openSnap(page);
-  await page.evaluate((url) => {
-    const event = new ClipboardEvent("paste", { bubbles: true, cancelable: true, clipboardData: new DataTransfer() });
-    event.clipboardData?.setData("text/plain", `Try this: ${url}`);
-    document.body.dispatchEvent(event);
-  }, SOURCE_LINKS[0].url);
-  await expect(linkField(page)).toHaveValue(SOURCE_LINKS[0].url);
-  await expect(linkField(page)).toBeFocused();
+test.describe("pasting", () => {
+  test.use({ permissions: ["clipboard-read", "clipboard-write"] });
+
+  test("Ctrl+V anywhere on the page imports a copied link", async ({ page }) => {
+    await resetLibrary([]);
+    const { platform, url } = SOURCE_LINKS[0];
+    const calls = await stubImports(page, {
+      "extract-recipe": { body: { status: "full", platform, recipe: importedRecipe("Pasted Pasta", { platform, original_url: url }) } },
+    });
+    await openSnap(page);
+    // Copied with a few words around it, as a share sheet does; then a real keyboard paste, outside any field.
+    await page.evaluate((link) => navigator.clipboard.writeText(`Try this: ${link}`), url);
+    await page.locator("#main h1").click();
+    await page.keyboard.press("Control+V");
+    await expect(page.locator("#main h1")).toHaveText("Pasted Pasta");
+    expect(calls.map((call) => call.fn)).toEqual(["extract-recipe"]);
+  });
+
+  test("pasting a link already in the library opens it, without importing again", async ({ page }) => {
+    const { url } = SOURCE_LINKS[0];
+    await resetLibrary([{ title: "Saved Before", original_url: url, platform: "youtube" }]);
+    const calls = await stubImports(page, {});
+    await openSnap(page);
+    await page.evaluate((link) => navigator.clipboard.writeText(link), url);
+    await page.locator("#main h1").click();
+    await page.keyboard.press("Control+V");
+    await expect(page).toHaveURL(/\/app\/recipe\/[0-9a-f-]{36}$/);
+    await expect(page.locator("#main h1")).toHaveText("Saved Before");
+    expect(calls).toHaveLength(0);
+  });
 });
 
 test("Guess the recipe guesses from a food link", async ({ page }) => {

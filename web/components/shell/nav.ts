@@ -1,4 +1,4 @@
-import { BookOpen, Compass, Settings, ShoppingBasket, Sparkles, type LucideIcon } from "lucide-react";
+import { Compass, LayoutGrid, Plus, Settings, ShoppingCart, type LucideIcon } from "lucide-react";
 
 export type NavItem = {
   id: "library" | "hub" | "snap" | "list" | "settings";
@@ -6,6 +6,8 @@ export type NavItem = {
   /** Translation key for the label. */
   labelKey: "tabs.library" | "tabs.hub" | "tabs.snap" | "tabs.list" | "tabs.settings";
   icon: LucideIcon;
+  /** The icon points a direction (the cart), so it is mirrored in Hebrew and Arabic. */
+  flip?: boolean;
   /** Whether this section owns the page at `path` (a recipe belongs to the Library, a settings page to Settings). */
   owns: (path: string) => boolean;
 };
@@ -19,17 +21,25 @@ export const NAV_ITEMS: NavItem[] = [
     id: "library",
     href: "/",
     labelKey: "tabs.library",
-    icon: BookOpen,
+    icon: LayoutGrid,
     owns: (path) =>
       path === "/" || path.startsWith("/favorites") || path.startsWith("/cookbook") || (path.startsWith("/recipe") && !isSnapPreview(path)),
   },
   { id: "hub", href: "/hub", labelKey: "tabs.hub", icon: Compass, owns: (path) => path === "/hub" || path.startsWith("/hub/") },
-  { id: "snap", href: "/add", labelKey: "tabs.snap", icon: Sparkles, owns: (path) => path.startsWith("/add") || isSnapPreview(path) },
-  { id: "list", href: "/list", labelKey: "tabs.list", icon: ShoppingBasket, owns: (path) => path.startsWith("/list") },
+  { id: "snap", href: "/add", labelKey: "tabs.snap", icon: Plus, owns: (path) => path.startsWith("/add") || isSnapPreview(path) },
+  { id: "list", href: "/list", labelKey: "tabs.list", icon: ShoppingCart, flip: true, owns: (path) => path.startsWith("/list") },
   { id: "settings", href: "/settings", labelKey: "tabs.settings", icon: Settings, owns: (path) => path.startsWith("/settings") },
 ];
 
 export const navItem = (id: NavItem["id"]) => NAV_ITEMS.find((item) => item.id === id)!;
+
+/**
+ * A saved recipe's own page. On a phone it has no app bars: the photo runs to the top of the screen with its own
+ * back button on it, and "Start cooking" is fixed at the bottom (PIN-163).
+ */
+export function isImmersivePath(path: string): boolean {
+  return /^\/recipe\/(?!preview$|edit$)[^/]+\/?$/.test(path);
+}
 
 /** The section a page belongs to, for highlighting. */
 export function activeSection(path: string): NavItem["id"] | null {

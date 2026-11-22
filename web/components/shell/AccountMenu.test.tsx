@@ -23,7 +23,7 @@ import { AccountMenu } from "./AccountMenu";
 function openMenu() {
   render(
     <I18nextProvider i18n={i18n}>
-      <AccountMenu variant="full" />
+      <AccountMenu variant="rail" />
     </I18nextProvider>,
   );
   fireEvent.keyDown(screen.getByRole("button", { name: "Account, theme and language" }), { key: "Enter" });

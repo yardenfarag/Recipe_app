@@ -35,7 +35,7 @@ export function TextField({
           aria-describedby={[hintId, errorId].filter(Boolean).join(" ") || undefined}
           {...props}
           className={cn(
-            "h-12 w-full rounded-2xl border bg-surface px-4 text-base text-text shadow-[inset_0_1px_2px_rgb(0_0_0/0.03)] transition-[border-color,box-shadow] placeholder:text-muted/80",
+            "h-12 w-full rounded-btn border bg-surface px-4 text-base text-text shadow-[inset_0_1px_2px_rgb(0_0_0/0.03)] transition-[border-color,box-shadow] placeholder:text-muted/80",
             "hover:border-muted/60 focus:border-primary focus:ring-4 focus:ring-primary/15 disabled:opacity-60",
             isInvalid ? "border-danger focus:border-danger focus:ring-danger/15" : "border-border",
             trailing ? "pe-24" : undefined,

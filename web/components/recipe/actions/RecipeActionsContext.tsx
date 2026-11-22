@@ -19,8 +19,8 @@ export type RecipeDialog =
   | { kind: "translate" }
   | { kind: "tags" }
   | { kind: "collection" }
-  /** Add to the shopping list, at the servings on screen. */
-  | { kind: "list"; servings: number }
+  /** Add to the shopping list, at the servings on screen. `have`: the ingredients (by position) the cook ticked as already at home. */
+  | { kind: "list"; servings: number; have?: number[] }
   | { kind: "note" }
   | { kind: "repair" };
 

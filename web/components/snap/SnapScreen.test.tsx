@@ -57,7 +57,9 @@ describe("SnapScreen", () => {
 
   it("shows the balance and what an import costs", () => {
     wrap();
-    expect(screen.getByText("12 credits available · 7 free + 5 purchased")).toBeDefined();
+    // Just the balance: how it splits into free and bought is on the credits page.
+    expect(screen.getByText("12 credits available")).toBeDefined();
+    expect(screen.queryByText(/ free \+ /)).toBeNull();
     expect(screen.getByText(/Use one credit for each successful Snap/)).toBeDefined();
   });
 

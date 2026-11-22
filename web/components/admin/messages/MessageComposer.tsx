@@ -42,9 +42,9 @@ import { ErrorLine } from "@/components/admin/ui";
 import { Chip, ChipRow, FormGroup, FormSwitch, FormText, MultiChipRow, Section } from "@/components/admin/messages/fields";
 import { MessagePreviewCard } from "@/components/admin/messages/MessagePreviewCard";
 import { Button } from "@/components/ui/Button";
+import { chipClasses } from "@/components/ui/Chip";
 import { ConfirmDialog } from "@/components/ui/Dialog";
 import { readImageFile } from "@/lib/admin/readImageFile";
-import { cn } from "@/lib/cn";
 import { refreshInAppMessagesNow } from "@/components/inAppMessages/controller";
 
 type Busy = "save" | "live" | "test" | null;
@@ -374,21 +374,20 @@ export function MessageComposer({
               const written = (form.content[l.code]?.title ?? "").trim().length > 0;
               const broken = errs(`content.${l.code}`, true).length > 0;
               return (
-                <Button
+                <button
                   key={l.code}
+                  type="button"
                   role="tab"
                   aria-selected={active}
-                  size="sm"
-                  variant={active ? "primary" : "secondary"}
-                  trackId={`admin.messages.content.tab.${l.code}`}
+                  data-track={`admin.messages.content.tab.${l.code}`}
                   onClick={() => setLang(l.code)}
                   aria-label={`${l.label}${written ? ", written" : ", empty"}${broken ? ", has errors" : ""}`}
-                  className={cn("h-8 px-3 text-xs font-bold", broken && "ring-2 ring-danger")}
+                  className={chipClasses({ selected: active, size: "sm", className: broken ? "ring-2 ring-danger" : undefined })}
                 >
                   {l.label}
                   {written ? " ✓" : ""}
                   {broken ? " !" : ""}
-                </Button>
+                </button>
               );
             })}
           </div>

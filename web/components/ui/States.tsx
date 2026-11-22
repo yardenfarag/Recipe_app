@@ -65,7 +65,7 @@ export function EmptyState({
 }) {
   return (
     <div className={cn("mx-auto flex max-w-md flex-col items-center px-6 py-16 text-center", className)}>
-      <span className="mb-5 grid h-16 w-16 place-items-center rounded-3xl bg-primary-soft text-primary [&_svg]:h-8 [&_svg]:w-8">
+      <span className="mb-5 grid h-16 w-16 place-items-center rounded-[20px] bg-primary-soft text-primary-text [&_svg]:h-8 [&_svg]:w-8">
         {icon}
       </span>
       <h2 className="text-xl font-bold text-balance text-text">{title}</h2>

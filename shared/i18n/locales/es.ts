@@ -1454,12 +1454,62 @@ export default {
     "notFoundBody": "Puede que el enlace sea antiguo o que la página se haya movido.",
     "comingSoon": "Muy pronto en la web",
     "library": {
-      "sortBy": "Ordenar por"
+      "sortBy": "Ordenar por",
+      "tonightsPick": "Para esta noche",
+      "startCooking": "Empezar a cocinar",
+      "cookAlongVideo": "Cocina con el vídeo",
+      "showAnother": "Enséñame otra",
+      "savedFrom": "guardada de {{source}}",
+      "savedFromPhoto": "guardada de una foto",
+      "sourcePhoto": "Foto",
+      "sourceWebsite": "Web",
+      "snapNewTitle": "Saca algo nuevo",
+      "snapNewBody": "Enlaces, fotos, capturas. Un toque y ya es una receta de verdad.",
+      "listLeft": "Lista · quedan {{count}}",
+      "listEmpty": "Nada que comprar. Añade ingredientes desde cualquier receta.",
+      "listDone": "Todo tachado",
+      "listMore": "+{{count}} más",
+      "listOpen": "Abrir la lista de la compra",
+      "cookedThisWeek": "Cocinado esta semana",
+      "cookedThisWeekCount": "{{count}} cocinadas esta semana",
+      "credits": "{{count}} créditos",
+      "creditsOne": "1 crédito",
+      "filterAll": "Todas",
+      "quick": {
+        "under30": "Menos de 30 min",
+        "veggie": "Vegetariano",
+        "tiktok": "De TikTok",
+        "neverCooked": "Sin cocinar aún"
+      },
+      "quickFilters": "Filtros rápidos",
+      "kitchenTiles": "Esta noche",
+      "openRecipe": "Abrir la receta",
+      "servingsOne": "1 ración"
     },
     "recipe": {
       "viewOriginal": "Ver el original",
       "opensInNewTab": "se abre en una pestaña nueva",
-      "stepVideoTime": "En el vídeo, en {{time}}"
+      "stepVideoTime": "En el vídeo, en {{time}}",
+      "factTime": "Tiempo total",
+      "factCalories": "Cal / ración",
+      "factCost": "Coste aprox.",
+      "savedFrom": "Guardada de {{source}}",
+      "savedFromPhoto": "Guardada de una foto",
+      "cookAlongHint": "{{platform}} · salta a cada paso",
+      "makeItYours": "Hazla tuya",
+      "remixTitle": "Remix",
+      "remixBody": "Más picante, vegana, para dos. O di lo que quieres con tus palabras.",
+      "fixTitle": "Adaptar a mi cocina",
+      "fixBody": "Quita tus alergias y lo que no te gusta, y se apaña sin los utensilios que no tienes.",
+      "fixNothing": "Aquí no hay nada que adaptar. Indica tus alergias, lo que no te gusta y tus utensilios, y Pinch estará atento.",
+      "swapTitle": "Cambiar un ingrediente",
+      "swapBody": "¿Te falta algo? Elige un cambio y los pasos se ajustan.",
+      "swapPick": "¿Qué ingrediente?",
+      "translateBody": "Léela en cualquiera de tus idiomas. El original está a un toque.",
+      "addMissing": "Añadir lo que falta a mi lista",
+      "haveIt": "Tengo {{name}}",
+      "tabs": "Ingredientes o pasos",
+      "steps": "Pasos"
     },
     "hub": {
       "source": "Fuente",
@@ -1498,14 +1548,12 @@ export default {
       "notAPhotoOrPdf": "Ese archivo no es una foto ni un PDF. Prueba con JPG, PNG o PDF.",
       "partialMissingSteps": "Encontramos los ingredientes, pero no los pasos. Esta importación fue gratis. Prueba con otro enlace o con una foto de la receta completa.",
       "partialMissingIngredients": "Encontramos los pasos, pero no los ingredientes. Esta importación fue gratis. Prueba con otro enlace o con una foto de la receta completa.",
-      "tipsTitle": "Formas más rápidas",
-      "tipPaste": "Copia un enlace, vuelve y pulsa {{shortcut}} en cualquier parte de esta página.",
-      "tipDrop": "Arrastra una foto, o un enlace desde otra pestaña, a esta página.",
       "draftWaiting": "Tienes una receta sin guardar: {{title}}",
       "backToSnap": "Volver a Snap",
       "discard": "Descartar",
       "discardTitle": "¿Descartar esta receta?",
-      "discardBody": "No se guardará en tu biblioteca y el crédito usado no se devuelve."
+      "discardBody": "No se guardará en tu biblioteca y el crédito usado no se devuelve.",
+      "creditsOne": "1 crédito disponible"
     },
     "share": {
       "notFoundBody": "Puede que quien te lo mandó haya dejado de compartirlo. Pídele un enlace nuevo.",
@@ -1710,6 +1758,18 @@ export default {
         "title": "Haz Pinch a tu medida",
         "body": "Tu cuenta, cómo cocinas, las unidades y más. El tema y el idioma ya están en el menú de la cuenta."
       }
+    },
+    "snapBar": {
+      "label": "Saca una receta o busca en las tuyas",
+      "placeholder": "Pega un enlace, suelta una foto o busca «algo con huevos»",
+      "placeholderShort": "Pega un enlace o busca",
+      "action": "Sacar",
+      "title": "Sacar o buscar",
+      "hintLink": "Pega un enlace de TikTok, Instagram, YouTube o cualquier web de recetas",
+      "hintPhoto": "Suelta o pega una foto, una captura o un PDF",
+      "hintSearch": "Escribe para buscar en tus recetas guardadas",
+      "addPhoto": "Añadir una foto o un PDF",
+      "open": "Sacar o buscar ({{keys}})"
     }
   }
 } as const;

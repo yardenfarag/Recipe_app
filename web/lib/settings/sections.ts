@@ -56,15 +56,11 @@ export const SETTINGS_GROUPS: { titleKey: string; sections: SettingsSection[] }[
 
 export const SETTINGS_SECTIONS = SETTINGS_GROUPS.flatMap((group) => group.sections);
 
-/** Admin pages (PIN-144), shown to admins only. The same paths as the mobile app's. */
-export const ADMIN_LINKS = [
-  { href: "/admin/dashboard", labelKey: "settings.adminDashboard" },
-  { href: "/admin/insights", labelKey: "settings.adminInsights" },
-  { href: "/admin/users", labelKey: "settings.adminPeople" },
-  { href: "/admin/usage", labelKey: "settings.adminUsage" },
-  { href: "/admin/activity", labelKey: "settings.adminActivity" },
-  { href: "/admin/messages", labelKey: "settings.adminMessages" },
-] as const;
+/**
+ * The way into the admin pages (PIN-144), shown to admins only. One row: the admin pages list each other along
+ * their top, so Settings doesn't repeat them.
+ */
+export const ADMIN_LINK = { href: "/admin/dashboard", labelKey: "settings.adminTitle", hintKey: "settings.adminBody" } as const;
 
 /** The settings page at `path` (without the /app base), or null for the settings home (`/settings`). */
 export function settingsSectionFor(path: string): SettingsSection | null {

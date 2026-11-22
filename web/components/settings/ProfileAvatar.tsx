@@ -10,7 +10,7 @@ export function ProfileAvatar({ url, className }: { url: string | null; classNam
   const [failedUrl, setFailedUrl] = useState<string | null>(null);
   const showPhoto = url && failedUrl !== url;
   return (
-    <span aria-hidden className={cn("grid shrink-0 place-items-center overflow-hidden rounded-full bg-primary-soft text-primary", className)}>
+    <span aria-hidden className={cn("grid shrink-0 place-items-center overflow-hidden rounded-full bg-primary-soft text-primary-text", className)}>
       {showPhoto ? (
         // A small photo from Supabase Storage, already square: nothing for next/image to optimise.
         // eslint-disable-next-line @next/next/no-img-element

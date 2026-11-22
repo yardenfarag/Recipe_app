@@ -1,14 +1,13 @@
 import type { ReactNode } from "react";
 
 import { PinchLogo } from "@/components/CookieMark";
+import { Tile } from "@/components/ui/Tile";
 
-/** The frame around sign-in, reset and callback pages: a card on larger screens, the full page on phones. */
+/** The frame around sign-in, reset and callback pages: one tile in the middle of the page (at the top on phones). */
 export function AuthCard({ children }: { children: ReactNode }) {
   return (
-    <main className="flex flex-1 items-start justify-center sm:items-center sm:p-6">
-      <div className="w-full max-w-md animate-pop-in bg-surface px-6 pt-10 pb-8 sm:rounded-3xl sm:border sm:border-frosted-border sm:px-9 sm:shadow-lift">
-        {children}
-      </div>
+    <main className="flex flex-1 items-start justify-center p-4 sm:items-center sm:p-6">
+      <Tile className="w-full max-w-md animate-pop-in px-5 pt-8 pb-7 sm:px-9 sm:pt-10 sm:pb-8">{children}</Tile>
     </main>
   );
 }

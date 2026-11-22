@@ -12,7 +12,9 @@ import { recipeTitle } from "@/components/cookbook/RecipePicker";
 import { RecipeThumb } from "@/components/cookbook/RecipeThumb";
 import { Button } from "@/components/ui/Button";
 import { IconButton } from "@/components/ui/IconButton";
+import { SegmentedControl } from "@/components/ui/SegmentedControl";
 import { TextField } from "@/components/ui/TextField";
+import { Tile } from "@/components/ui/Tile";
 import { cn } from "@/lib/cn";
 
 type FocusTarget = { id: string; control: "up" | "down" | "remove" } | { id: null };
@@ -91,8 +93,8 @@ export function BookPanel(props: BookPanelProps) {
   const count = recipes.length;
 
   return (
-    <div className="flex min-h-0 flex-col rounded-3xl border border-frosted-border bg-surface p-5 shadow-soft lg:max-h-[calc(100dvh-5rem)]">
-      <h2 id="cookbook-book-heading" className="text-lg font-bold text-text">
+    <Tile className="flex min-h-0 flex-col p-5 lg:max-h-[calc(100dvh-3.5rem)]">
+      <h2 id="cookbook-book-heading" className="text-xl font-bold text-text">
         {t("web.cookbook.yourBook")}
       </h2>
 
@@ -111,32 +113,20 @@ export function BookPanel(props: BookPanelProps) {
         </div>
       </div>
 
-      <div className="mt-5 grid gap-4 sm:grid-cols-2 lg:grid-cols-1 xl:grid-cols-2">
-        <fieldset>
+      {/* One under the other beside the list: side by side there, "Carta (EE. UU.)" would not fit its half. */}
+      <div className="mt-5 grid gap-4 sm:grid-cols-2 lg:grid-cols-1">
+        <fieldset className="min-w-0">
           <legend className="text-sm font-semibold text-text">{t("web.cookbook.paperSize")}</legend>
-          <div role="radiogroup" aria-label={t("web.cookbook.paperSize")} className="mt-2 flex rounded-full border border-border bg-bg p-1">
-            {(
-              [
-                ["a4", t("web.cookbook.paperA4")],
-                ["letter", t("web.cookbook.paperLetter")],
-              ] as const
-            ).map(([value, label]) => (
-              <button
-                key={value}
-                type="button"
-                role="radio"
-                data-track={`cookbook.paper_size.${value}`}
-                aria-checked={props.pageSize === value}
-                onClick={() => props.onPageSizeChange(value)}
-                className={cn(
-                  "h-9 flex-1 rounded-full px-3 text-sm font-semibold whitespace-nowrap transition-colors",
-                  props.pageSize === value ? "bg-surface text-primary shadow-soft" : "text-muted hover:text-text",
-                )}
-              >
-                {label}
-              </button>
-            ))}
-          </div>
+          <SegmentedControl
+            label={t("web.cookbook.paperSize")}
+            value={props.pageSize}
+            onChange={props.onPageSizeChange}
+            className="mt-2"
+            options={[
+              { value: "a4", label: t("web.cookbook.paperA4"), trackId: "cookbook.paper_size.a4" },
+              { value: "letter", label: t("web.cookbook.paperLetter"), trackId: "cookbook.paper_size.letter" },
+            ]}
+          />
         </fieldset>
         <div>
           <span id="cookbook-photos-label" className="text-sm font-semibold text-text">
@@ -152,15 +142,16 @@ export function BookPanel(props: BookPanelProps) {
               aria-describedby="cookbook-photos-hint"
               onClick={() => props.onIncludePhotosChange(!props.includePhotos)}
               className={cn(
-                "relative h-7 w-12 shrink-0 rounded-full transition-colors",
-                props.includePhotos ? "bg-primary" : "bg-selected",
+                // The ::after widens the place a finger can land to 44 px without making the switch itself bigger.
+                "relative h-7 w-12 shrink-0 rounded-full transition-colors after:absolute after:-inset-2",
+                props.includePhotos ? "bg-primary" : "bg-text/25",
               )}
             >
               <span
                 aria-hidden
                 className={cn(
-                  "absolute top-1 h-5 w-5 rounded-full bg-surface shadow-soft transition-[inset-inline-start] duration-150",
-                  props.includePhotos ? "start-6" : "start-1",
+                  "absolute top-1 h-5 w-5 rounded-full transition-[inset-inline-start] duration-150",
+                  props.includePhotos ? "start-6 bg-on-primary" : "start-1 bg-surface",
                 )}
               />
             </button>
@@ -171,8 +162,8 @@ export function BookPanel(props: BookPanelProps) {
         </div>
       </div>
 
-      <div className="mt-6 flex items-center justify-between gap-3 border-t border-border pt-4">
-        <h3 ref={heading} tabIndex={-1} className="text-sm font-bold text-text outline-none">
+      <div className="mt-6 flex min-h-10 items-center justify-between gap-3 border-t border-border pt-4">
+        <h3 ref={heading} tabIndex={-1} className="text-lg font-bold text-text outline-none">
           {t("web.cookbook.contents")}{" "}
           <span className="font-semibold text-muted tabular-nums">({count})</span>
         </h3>
@@ -185,7 +176,7 @@ export function BookPanel(props: BookPanelProps) {
       {count > 0 ? <p className="mt-1 text-[13px] text-muted">{t("cookbook.reviewStepHint")}</p> : null}
 
       {count === 0 ? (
-        <p className="mt-3 rounded-2xl border border-dashed border-border px-4 py-6 text-center text-sm leading-relaxed text-muted">
+        <p className="mt-3 rounded-2xl bg-element px-4 py-6 text-center text-sm leading-relaxed text-muted">
           {t("web.cookbook.emptyBook")}
         </p>
       ) : (
@@ -218,9 +209,9 @@ export function BookPanel(props: BookPanelProps) {
                   setDragOver(null);
                 }}
                 className={cn(
-                  "group flex items-center gap-2 rounded-2xl border border-transparent py-1.5 ps-1 pe-1 transition-colors hover:bg-surface-soft",
+                  "group flex min-h-14 items-center gap-2 rounded-2xl border border-transparent py-1.5 ps-1 pe-1 transition-colors hover:bg-element",
                   dragFrom === index && "opacity-50",
-                  dragOver === index && dragFrom !== index && "border-primary bg-primary-soft/50",
+                  dragOver === index && dragFrom !== index && "border-primary bg-element",
                 )}
               >
                 <span title={t("web.cookbook.dragToReorder")} className="hidden cursor-grab text-muted active:cursor-grabbing [@media(hover:hover)]:block">
@@ -229,7 +220,7 @@ export function BookPanel(props: BookPanelProps) {
                 <span aria-hidden className="w-5 shrink-0 text-center text-xs font-bold text-muted tabular-nums">
                   {index + 1}
                 </span>
-                <RecipeThumb src={recipe.image_url} className="h-10 w-10 rounded-lg" />
+                <RecipeThumb src={recipe.image_url} className="h-10 w-10" />
                 <span className="min-w-0 flex-1 text-sm leading-snug font-semibold text-text">
                   <span className="sr-only">{index + 1}. </span>
                   <span className="line-clamp-2">{name}</span>
@@ -243,7 +234,7 @@ export function BookPanel(props: BookPanelProps) {
                     icon={<ChevronUp aria-hidden className="h-4 w-4" />}
                     disabled={index === 0}
                     onClick={() => move(index, index - 1, "up")}
-                    className="h-8 w-8"
+                    className={rowButton}
                   />
                   <IconButton
                     data-focus-key={`${recipe.id}:down`}
@@ -253,7 +244,7 @@ export function BookPanel(props: BookPanelProps) {
                     icon={<ChevronDown aria-hidden className="h-4 w-4" />}
                     disabled={index === count - 1}
                     onClick={() => move(index, index + 1, "down")}
-                    className="h-8 w-8"
+                    className={rowButton}
                   />
                   <IconButton
                     data-focus-key={`${recipe.id}:remove`}
@@ -262,7 +253,7 @@ export function BookPanel(props: BookPanelProps) {
                     tooltip={false}
                     icon={<X aria-hidden className="h-4 w-4" />}
                     onClick={() => remove(index)}
-                    className="h-8 w-8 hover:text-danger"
+                    className={cn(rowButton, "hover:text-danger")}
                   />
                 </span>
               </li>
@@ -287,6 +278,12 @@ export function BookPanel(props: BookPanelProps) {
         </Button>
         <p className="mt-2.5 text-center text-[13px] text-muted">{t("web.cookbook.createHint")}</p>
       </div>
-    </div>
+    </Tile>
   );
 }
+
+/**
+ * The move and remove buttons of a row: three sit side by side in a narrow panel, so under a mouse they are 36 px;
+ * under a finger they are the kit's 44.
+ */
+const rowButton = "h-9 w-9 hover:bg-selected pointer-coarse:h-11 pointer-coarse:w-11";

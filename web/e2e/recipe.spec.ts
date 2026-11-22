@@ -161,11 +161,13 @@ test("a recipe that doesn't exist says so", async ({ page }) => {
 test.describe("phone", () => {
   test.use({ viewport: { width: 390, height: 844 }, hasTouch: true });
 
-  test("ingredients come before the steps, and nothing runs off the side", async ({ page }) => {
+  test("ingredients show first with the steps a tab away, and nothing runs off the side", async ({ page }) => {
     await openRecipe(page, [PANCAKES]);
-    const ingredientsTop = (await ingredients(page).boundingBox())?.y ?? 0;
-    const stepsTop = (await steps(page).boundingBox())?.y ?? 0;
-    expect(stepsTop).toBeGreaterThan(ingredientsTop);
+    await expect(ingredients(page)).toBeVisible();
+    await expect(steps(page)).toBeHidden();
+    await page.getByRole("tab", { name: "Steps" }).click();
+    await expect(steps(page)).toBeVisible();
+    await expect(ingredients(page)).toBeHidden();
     const overflow = await page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth);
     expect(overflow).toBeLessThanOrEqual(0);
   });

@@ -31,14 +31,14 @@ export function CreditsSettings() {
   return (
     <>
       <SettingsPageHeader id="credits" />
-      <div className="space-y-8">
+      <div className="flex flex-col gap-7">
         <BalanceCard />
 
         <section aria-labelledby="credits-buy">
-          <h2 id="credits-buy" className="text-lg font-bold text-text">
+          <h2 id="credits-buy" className="text-[26px] leading-tight font-bold text-text">
             {t("credits.buyTitle")}
           </h2>
-          <p className="mt-1 mb-5 text-sm leading-relaxed text-muted">{t("web.credits.buySubtitle")}</p>
+          <p className="mt-1.5 mb-4 text-[15px] leading-relaxed text-muted">{t("web.credits.buySubtitle")}</p>
           {salesOn ? <PackList variant="cards" /> : <GetTheAppCard />}
         </section>
 

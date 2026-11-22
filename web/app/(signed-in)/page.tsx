@@ -1,36 +1,55 @@
 "use client";
 
 import { Flame, Heart, SearchX } from "lucide-react";
+import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { Suspense, useCallback, useDeferredValue, useEffect, useMemo, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 
 import { rankCookTonight } from "@shared/lib/cookTonight";
-import { filterAndSortRecipes, isRecipeLibraryFiltered, RECIPE_SORT_OPTIONS, type RecipeSortKey } from "@shared/lib/recipeListQuery";
+import { normalizeSocialUrl } from "@shared/lib/platformUrls";
+import {
+  applyQuickFilters,
+  filterAndSortRecipes,
+  isRecipeLibraryFiltered,
+  parseQuickFilters,
+  RECIPE_SORT_OPTIONS,
+  type RecipeQuickFilter,
+  type RecipeSortKey,
+} from "@shared/lib/recipeListQuery";
 import { collectLibraryTags } from "@shared/lib/recipeTags";
 import { showToast } from "@shared/lib/toast";
 import { upsertRecipeTranslation } from "@shared/lib/supabase/recipeTranslations";
 import { deleteRecipe, renameRecipe } from "@shared/lib/supabase/recipes";
+import { COOK_TONIGHT_LIMITS } from "@shared/lib/tonightsPick";
 import { translateAppError } from "@shared/lib/translateAppError";
 import { isCollectionNameTaken, isRecipeNameTaken } from "@shared/lib/uniqueNames";
 import type { Recipe } from "@shared/types/recipe";
 
 import { AddToCollectionDialog } from "@/components/library/AddToCollectionDialog";
 import { FridgeMatchDialog } from "@/components/library/FridgeMatchDialog";
-import { LibraryToolbar } from "@/components/library/LibraryToolbar";
+import { KitchenTiles, KitchenTilesSkeleton } from "@/components/library/KitchenTiles";
+import { LayoutToggle, LibraryToolbar } from "@/components/library/LibraryToolbar";
 import { NameDialog } from "@/components/library/NameDialog";
 import { FirstRecipeGuide } from "@/components/onboarding/FirstRecipeGuide";
 import { RecipeCard } from "@/components/recipes/RecipeCard";
+import { SnapBarField } from "@/components/snapbar/SnapBarField";
+import { useSnapBar } from "@/components/snapbar/SnapBarProvider";
 import { Notice } from "@/components/ui/Alert";
 import { Button } from "@/components/ui/Button";
 import { ConfirmDialog } from "@/components/ui/Dialog";
-import { PageHeader } from "@/components/ui/PageHeader";
+import { usePageTitle } from "@/components/ui/PageHeader";
 import { EmptyState, ErrorState } from "@/components/ui/States";
 import { Spinner } from "@/components/ui/Spinner";
 import { cn } from "@/lib/cn";
+import { useCreditBalance } from "@/lib/credits/balance";
+import { formatCount } from "@/lib/credits/format";
 import { useCollections } from "@/lib/library/useCollections";
+import { useCookedThisWeek } from "@/lib/library/useCookedThisWeek";
 import { useLibraryLayout } from "@/lib/library/useLibraryLayout";
 import { useRecipes } from "@/lib/library/useRecipes";
+import { useTonightsPick } from "@/lib/library/useTonightsPick";
+import { usePhoneLayout } from "@/lib/usePhoneLayout";
 
 const SORT_KEYS = RECIPE_SORT_OPTIONS.map((option) => option.key);
 
@@ -44,26 +63,38 @@ function filtersFromAddress(params: URLSearchParams) {
     collectionId: params.get("collection"),
     favoritesOnly: params.get("favorites") === "1" || params.get("favorites") === "true",
     cookTonight: params.get("tonight") === "1",
+    quick: parseQuickFilters(params.get("quick")),
     saved: params.get("saved") === "1" || params.get("saved") === "true",
   };
 }
 
 type CollectionDialog = { mode: "create" } | { mode: "rename"; id: string; name: string } | null;
 
+// The photo cards and the rows of the list.
+const GRID = "grid-cols-2 gap-x-3 gap-y-5 md:gap-x-[18px] md:gap-y-6 md:[grid-template-columns:repeat(auto-fill,minmax(13rem,1fr))]";
+const ROWS = "gap-3 xl:grid-cols-2";
+
 /**
- * Library: every saved recipe, and the tools to find one. Search, favorites, "cook tonight", sort, tags and
- * collections all narrow the list with the same shared logic the mobile app uses, so the same filters give the
- * same recipes. The chosen filters live in the address.
+ * Library (PIN-161): it answers "what am I cooking tonight?" first, then lists every recipe. On top, the Snap bar
+ * (a link or a photo starts an import, anything else searches the list) with the credit balance beside it; then
+ * the tiles (tonight's pick, Snap, the shopping list, what was cooked this week); then "Your recipes" with its
+ * filters. Search, the one-tap filters, favorites, "cook tonight", sort, tags and collections all narrow the list
+ * with the same shared logic the mobile app uses, and the chosen filters live in the address.
  */
 function LibraryScreen() {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
+  usePageTitle(t("tabs.library"));
   const params = useSearchParams();
   const initial = useMemo(() => filtersFromAddress(new URLSearchParams(params.toString())), []); // eslint-disable-line react-hooks/exhaustive-deps
   const { recipes, loading, loadingMore, hasMore, total, error, refresh, loadMore, ensureAllLoaded, patchRecipe, toggleFavorite } = useRecipes(40);
   const { collections, createCollection, renameCollection, deleteCollection, setMembershipsForRecipe } = useCollections();
   const { layout, setLayout } = useLibraryLayout();
 
-  const [search, setSearch] = useState(initial.search);
+  // What is typed in the Snap bar. A link there is about to be imported, so it isn't a search.
+  const [barText, setBarText] = useState(initial.search);
+  const search = normalizeSocialUrl(barText) ? "" : barText;
+  const setSearch = setBarText;
+  const [quick, setQuick] = useState<RecipeQuickFilter[]>(initial.quick);
   const [sort, setSort] = useState<RecipeSortKey>(initial.sort);
   const [selectedTags, setSelectedTags] = useState<string[]>(initial.tags);
   const [selectedCollectionId, setSelectedCollectionId] = useState<string | null>(initial.collectionId);
@@ -85,16 +116,28 @@ function LibraryScreen() {
   useEffect(() => {
     // Parameters that aren't the Library's filters stay in the address; `saved` is shown once, then dropped.
     const next = new URLSearchParams(window.location.search);
-    for (const key of ["q", "sort", "tag", "collection", "favorites", "tonight", "saved"]) next.delete(key);
+    for (const key of ["q", "sort", "tag", "collection", "favorites", "tonight", "quick", "saved"]) next.delete(key);
     if (search.trim()) next.set("q", search.trim());
     if (sort !== "newest") next.set("sort", sort);
     if (selectedTags.length > 0) next.set("tag", selectedTags.join(","));
     if (selectedCollectionId) next.set("collection", selectedCollectionId);
     if (favoritesOnly) next.set("favorites", "1");
     if (cookTonight) next.set("tonight", "1");
+    if (quick.length > 0) next.set("quick", quick.join(","));
     const query = next.toString();
     window.history.replaceState(window.history.state, "", `${window.location.pathname}${query ? `?${query}` : ""}`);
-  }, [search, sort, selectedTags, selectedCollectionId, favoritesOnly, cookTonight]);
+  }, [search, sort, selectedTags, selectedCollectionId, favoritesOnly, cookTonight, quick]);
+
+  // Cmd+K / Ctrl+K lands in the Snap bar on this page, where it is always at the top.
+  const snapBar = useSnapBar();
+  useEffect(
+    () =>
+      snapBar?.registerInline(() => {
+        searchRef.current?.scrollIntoView({ block: "center" });
+        searchRef.current?.focus();
+      }),
+    [snapBar],
+  );
 
   // "/" jumps to the search field from anywhere on the page, unless you are already typing somewhere.
   useEffect(() => {
@@ -118,12 +161,16 @@ function LibraryScreen() {
   }, [collections, selectedCollectionId]);
 
   const displayed = useMemo(() => {
-    const filtered = filterAndSortRecipes(recipes, { searchQuery: deferredSearch, sort, selectedTags, recipeIdAllowlist: collectionAllowlist });
-    if (cookTonight) return rankCookTonight(filtered, { maxMinutes: 45, maxEffort: "Medium", favoritesOnly });
+    const filtered = applyQuickFilters(
+      filterAndSortRecipes(recipes, { searchQuery: deferredSearch, sort, selectedTags, recipeIdAllowlist: collectionAllowlist }),
+      quick,
+    );
+    if (cookTonight) return rankCookTonight(filtered, { ...COOK_TONIGHT_LIMITS, favoritesOnly });
     return favoritesOnly ? filtered.filter((recipe) => recipe.is_favorite === true) : filtered;
-  }, [recipes, deferredSearch, sort, selectedTags, collectionAllowlist, favoritesOnly, cookTonight]);
+  }, [recipes, deferredSearch, sort, selectedTags, collectionAllowlist, favoritesOnly, cookTonight, quick]);
 
-  const filtered = isRecipeLibraryFiltered(deferredSearch, sort, selectedTags, selectedCollectionId) || favoritesOnly || cookTonight;
+  const filtered =
+    isRecipeLibraryFiltered(deferredSearch, sort, selectedTags, selectedCollectionId) || favoritesOnly || cookTonight || quick.length > 0;
 
   // A search or filter must look at the whole library to be right, so load the rest.
   useEffect(() => {
@@ -146,7 +193,13 @@ function LibraryScreen() {
     setSelectedCollectionId(null);
     setFavoritesOnly(false);
     setCookTonight(false);
-  }, []);
+    setQuick([]);
+  }, [setSearch]);
+
+  const { pick, another } = useTonightsPick(recipes);
+  const cooked = useCookedThisWeek(recipes, total);
+  const { quota } = useCreditBalance();
+  const phone = usePhoneLayout();
 
   const handleFavorite = useCallback(
     async (recipe: Recipe) => {
@@ -199,100 +252,147 @@ function LibraryScreen() {
   const countText = count === 1 ? t("library.recipeCountOne", { count }) : t("library.recipeCountOther", { count });
   const libraryEmpty = !loading && !error && recipes.length === 0 && total === 0;
 
+  const searching = search.trim().length > 0;
+  const credits = quota?.totalCredits;
+
   return (
     <>
-      <PageHeader title={t("library.title")} />
+      <div className="flex items-stretch gap-2.5 md:flex-wrap md:gap-3.5">
+        <SnapBarField value={barText} onChange={setBarText} liveSearch inputRef={searchRef} size={phone ? "md" : "lg"} className="min-w-0 flex-1 md:flex-[1_1_20rem]" />
+        {credits != null ? (
+          <Link
+            href="/settings/credits"
+            data-track="library.credits"
+            aria-label={t("settings.creditsTotal", { count: credits })}
+            className="flex min-h-13 shrink-0 items-center gap-2 rounded-2xl border border-border bg-surface px-3.5 font-semibold whitespace-nowrap text-text transition-colors hover:bg-element md:min-h-15 md:rounded-[20px] md:px-[18px]"
+          >
+            <span aria-hidden className="h-2 w-2 rounded-full bg-accent md:h-2.5 md:w-2.5" />
+            {/* Just the number on a phone, where the bar needs the width. */}
+            <span className="md:hidden">{formatCount(credits, i18n.language)}</span>
+            <span className="max-md:hidden">
+              {credits === 1 ? t("web.library.creditsOne") : t("web.library.credits", { count: formatCount(credits, i18n.language) })}
+            </span>
+          </Link>
+        ) : null}
+      </div>
 
       {savedBanner ? (
-        <div className="mb-4 flex items-center gap-3 rounded-2xl bg-success-soft px-4 py-3 text-sm font-medium text-success" role="status">
+        <div className="mt-4 flex items-center gap-3 rounded-2xl bg-success-soft px-4 py-3 text-sm font-medium text-success" role="status">
           <span className="flex-1">{t("library.saved")}</span>
-          <button type="button" data-track="library.saved_banner.dismiss" onClick={() => setSavedBanner(false)} className="rounded-full px-2 py-1 font-semibold hover:bg-success/10">
+          <button type="button" data-track="library.saved_banner.dismiss" onClick={() => setSavedBanner(false)} className="rounded-lg px-2 py-1 font-semibold hover:bg-success/10">
             {t("common.dismiss")}
           </button>
         </div>
       ) : null}
 
-      <LibraryToolbar
-        searchInput={searchRef}
-        search={search}
-        onSearchChange={setSearch}
-        sort={sort}
-        onSortChange={setSort}
-        favoritesOnly={favoritesOnly}
-        onToggleFavorites={() => setFavoritesOnly((value) => !value)}
-        cookTonight={cookTonight}
-        onToggleCookTonight={() => setCookTonight((value) => !value)}
-        onFridgeMatch={() => void ensureAllLoaded().then(() => setFridgeOpen(true))}
-        availableTags={availableTags}
-        selectedTags={selectedTags}
-        onToggleTag={(tag) => setSelectedTags((previous) => (previous.includes(tag) ? previous.filter((item) => item !== tag) : [...previous, tag]))}
-        collections={collections}
-        selectedCollectionId={selectedCollectionId}
-        onSelectCollection={setSelectedCollectionId}
-        onCreateCollection={() => setCollectionDialog({ mode: "create" })}
-        onRenameCollection={(id) => {
-          const collection = collections.find((c) => c.id === id);
-          if (collection) setCollectionDialog({ mode: "rename", id, name: collection.name });
-        }}
-        onDeleteCollection={setDeleteCollectionId}
-        layout={layout}
-        onLayoutChange={setLayout}
-        filtersOpen={filtersOpen}
-        onFiltersOpenChange={setFiltersOpen}
-      />
+      {/* The tiles step aside while searching, so what was typed and what it found sit together. */}
+      {libraryEmpty || error || searching ? null : (
+        <div className="mt-5 md:mt-7">{loading ? <KitchenTilesSkeleton /> : <KitchenTiles pick={pick} onAnother={another} cooked={cooked} />}</div>
+      )}
 
-      <div className="mt-6">
-        {error && recipes.length > 0 ? (
-          <div className="mb-4">
-            <Notice>
-              {t("library.refreshFailed")}{" "}
-              <button type="button" data-track="library.load_error.retry" onClick={() => void refresh()} className="font-semibold underline underline-offset-2">
-                {t("common.retry")}
-              </button>
-            </Notice>
-          </div>
-        ) : null}
-
-        {loading ? (
-          <Skeleton layout={layout} label={t("library.title")} />
-        ) : error && recipes.length === 0 ? (
-          <ErrorState title={t("library.loadFailedTitle")} trackId="library.load_error" onRetry={() => void refresh()} />
-        ) : libraryEmpty ? (
-          // The first thing a new account sees after onboarding: the way to a first recipe (PIN-140).
-          <FirstRecipeGuide />
-        ) : (
-          <>
-            <p aria-live="polite" className="mb-3 text-sm font-semibold text-muted">
-              {countText}
-            </p>
-            {displayed.length === 0 ? (
-              <NoResults
-                kind={cookTonight ? "tonight" : favoritesOnly && !search.trim() && selectedTags.length === 0 && !selectedCollectionId ? "favorites" : "matches"}
-                onClear={clearFilters}
-              />
-            ) : (
-              <ul
-                className={cn(
-                  "grid list-none",
-                  layout === "grid" ? "gap-4 [grid-template-columns:repeat(auto-fill,minmax(min(100%,17rem),1fr))]" : "gap-3 xl:grid-cols-2",
-                )}
-              >
-                {displayed.map((recipe) => (
-                  <li key={recipe.id} className="min-w-0">
-                    <RecipeCard recipe={recipe} variant={layout} onToggleFavorite={handleFavorite} actions={recipeActions} />
-                  </li>
-                ))}
-              </ul>
+      <section aria-labelledby="library-heading" className="mt-6 flex flex-col gap-4 md:mt-7 md:gap-[18px]">
+        <div className="flex flex-wrap items-center justify-between gap-x-4 gap-y-2">
+          <div className="flex items-baseline gap-2.5">
+            <h1 id="library-heading" className="text-[22px] leading-tight font-bold text-text md:text-[30px]">
+              {t("library.title")}
+            </h1>
+            {loading || libraryEmpty || error ? null : (
+              <span aria-hidden className="font-display text-[22px] leading-tight font-bold text-muted tabular-nums md:text-[30px]">
+                {count}
+              </span>
             )}
-            <div ref={sentinelRef} aria-hidden className="h-px" />
-            {loadingMore ? (
-              <div className="flex justify-center py-8">
-                <Spinner label={t("a11y.loadingMoreRecipes")} />
-              </div>
-            ) : null}
-          </>
+          </div>
+          {libraryEmpty ? null : <LayoutToggle layout={layout} onChange={setLayout} />}
+        </div>
+
+        {libraryEmpty ? null : (
+          <LibraryToolbar
+            quick={quick}
+            onToggleQuick={(filter) => setQuick((previous) => (previous.includes(filter) ? previous.filter((item) => item !== filter) : [...previous, filter]))}
+            onShowAll={() => {
+              setQuick([]);
+              setFavoritesOnly(false);
+              setCookTonight(false);
+            }}
+            sort={sort}
+            onSortChange={setSort}
+            favoritesOnly={favoritesOnly}
+            onToggleFavorites={() => setFavoritesOnly((value) => !value)}
+            cookTonight={cookTonight}
+            onToggleCookTonight={() => setCookTonight((value) => !value)}
+            onFridgeMatch={() => void ensureAllLoaded().then(() => setFridgeOpen(true))}
+            availableTags={availableTags}
+            selectedTags={selectedTags}
+            onToggleTag={(tag) => setSelectedTags((previous) => (previous.includes(tag) ? previous.filter((item) => item !== tag) : [...previous, tag]))}
+            collections={collections}
+            selectedCollectionId={selectedCollectionId}
+            onSelectCollection={setSelectedCollectionId}
+            onCreateCollection={() => setCollectionDialog({ mode: "create" })}
+            onRenameCollection={(id) => {
+              const collection = collections.find((c) => c.id === id);
+              if (collection) setCollectionDialog({ mode: "rename", id, name: collection.name });
+            }}
+            onDeleteCollection={setDeleteCollectionId}
+            filtersOpen={filtersOpen}
+            onFiltersOpenChange={setFiltersOpen}
+          />
         )}
-      </div>
+
+        <div>
+          {error && recipes.length > 0 ? (
+            <div className="mb-4">
+              <Notice>
+                {t("library.refreshFailed")}{" "}
+                <button type="button" data-track="library.load_error.retry" onClick={() => void refresh()} className="font-semibold underline underline-offset-2">
+                  {t("common.retry")}
+                </button>
+              </Notice>
+            </div>
+          ) : null}
+
+          {loading ? (
+            <Skeleton layout={layout} label={t("library.title")} />
+          ) : error && recipes.length === 0 ? (
+            <ErrorState title={t("library.loadFailedTitle")} trackId="library.load_error" onRetry={() => void refresh()} />
+          ) : libraryEmpty ? (
+            // The first thing a new account sees after onboarding: the way to a first recipe (PIN-140).
+            <FirstRecipeGuide />
+          ) : (
+            <>
+              {/* The number sits beside the heading; this says it in words, and again whenever a filter changes it. */}
+              <p aria-live="polite" className="sr-only">
+                {countText}
+              </p>
+              {displayed.length === 0 ? (
+                <NoResults
+                  kind={
+                    cookTonight
+                      ? "tonight"
+                      : favoritesOnly && !search.trim() && selectedTags.length === 0 && !selectedCollectionId && quick.length === 0
+                        ? "favorites"
+                        : "matches"
+                  }
+                  onClear={clearFilters}
+                />
+              ) : (
+                <ul className={cn("grid list-none", layout === "grid" ? GRID : ROWS)}>
+                  {displayed.map((recipe) => (
+                    <li key={recipe.id} className="min-w-0">
+                      <RecipeCard recipe={recipe} variant={layout} onToggleFavorite={handleFavorite} actions={recipeActions} />
+                    </li>
+                  ))}
+                </ul>
+              )}
+              <div ref={sentinelRef} aria-hidden className="h-px" />
+              {loadingMore ? (
+                <div className="flex justify-center py-8">
+                  <Spinner label={t("a11y.loadingMoreRecipes")} />
+                </div>
+              ) : null}
+            </>
+          )}
+        </div>
+      </section>
 
       <FridgeMatchDialog open={fridgeOpen} onOpenChange={setFridgeOpen} recipes={recipes} />
 
@@ -389,13 +489,10 @@ function Skeleton({ layout, label }: { layout: "grid" | "list"; label: string })
       <span className="sr-only">{label}</span>
       <div
         aria-hidden
-        className={cn(
-          "grid motion-safe:animate-pulse",
-          layout === "grid" ? "gap-4 [grid-template-columns:repeat(auto-fill,minmax(min(100%,17rem),1fr))]" : "gap-3 xl:grid-cols-2",
-        )}
+        className={cn("grid motion-safe:animate-pulse", layout === "grid" ? GRID : ROWS)}
       >
         {Array.from({ length: layout === "grid" ? 8 : 6 }, (_, index) => (
-          <div key={index} className={cn("rounded-3xl border border-frosted-border bg-surface", layout === "grid" ? "h-72" : "h-24")} />
+          <div key={index} className={cn("rounded-[22px] bg-element", layout === "grid" ? "aspect-[4/3]" : "h-24")} />
         ))}
       </div>
     </div>

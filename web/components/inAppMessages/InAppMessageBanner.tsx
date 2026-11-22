@@ -29,9 +29,12 @@ function BannerView({ message, position }: { message: InAppMessage; position: "t
   return (
     <div
       className={cn(
-        position === "bottom" &&
-          // Above the phone tab bar; at the bottom of the window beside the sidebar on wider screens.
-          "sticky bottom-[calc(4rem+env(safe-area-inset-bottom))] z-20 md:bottom-0",
+        // The same column and side margins as the page under it (AppShell), so the tile lines up with the page's tiles.
+        "mx-auto w-full max-w-[84rem] px-4 sm:px-6 md:ps-2 md:pe-8 lg:pe-10",
+        position === "top"
+          ? "pt-3 md:pt-5"
+          : // Above the phone tab bar (clear of the raised Snap button); at the bottom of the window on wider screens.
+            "sticky bottom-[calc(5.75rem+env(safe-area-inset-bottom))] z-20 md:bottom-4",
       )}
     >
       <BannerPresenter view={view} handlers={{ onClose, onPress }} edge={position} />

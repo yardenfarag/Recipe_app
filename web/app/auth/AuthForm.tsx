@@ -207,7 +207,7 @@ export function AuthForm() {
     return (
       <AuthCard>
         <PinchMark />
-        <h1 className="mb-2 text-center text-2xl font-bold text-text">{t("auth.checkEmail")}</h1>
+        <h1 className="mb-2 text-center text-[28px] leading-tight font-bold text-balance text-text">{t("auth.checkEmail")}</h1>
         <p className="text-center text-muted">{t(isReset ? "auth.resetSent" : "auth.codeSent")}</p>
         <p className="mb-6 text-center font-semibold text-text" dir="ltr">
           {normalizeEmail(email)}
@@ -237,7 +237,7 @@ export function AuthForm() {
             autoFocus
             disabled={busy}
             dir="ltr"
-            className="text-center text-2xl font-bold tracking-[0.5em]"
+            className="text-center font-display text-2xl font-bold tracking-[0.5em]"
           />
           {error ? <ErrorAlert>{error}</ErrorAlert> : null}
           {notice && !error ? <Notice>{notice}</Notice> : null}
@@ -272,7 +272,7 @@ export function AuthForm() {
     return (
       <AuthCard>
         <PinchMark />
-        <h1 className="mb-2 text-center text-2xl font-bold text-text">{t("auth.checkEmail")}</h1>
+        <h1 className="mb-2 text-center text-[28px] leading-tight font-bold text-balance text-text">{t("auth.checkEmail")}</h1>
         <p className="text-center text-muted">{t("auth.confirmSent")}</p>
         <p className="mb-6 text-center font-semibold text-text" dir="ltr">
           {normalizeEmail(email)}
@@ -307,7 +307,7 @@ export function AuthForm() {
   return (
     <AuthCard>
       <PinchMark />
-      <h1 className="mb-2 text-center text-2xl font-bold text-text">{title}</h1>
+      <h1 className="mb-2 text-center text-[28px] leading-tight font-bold text-balance text-text">{title}</h1>
       <p className="mb-6 text-center text-muted">{subtitle}</p>
 
       <form className="flex flex-col gap-4" onSubmit={(event) => void handleSubmit(event)} noValidate>
@@ -340,15 +340,16 @@ export function AuthForm() {
             dir="ltr"
             required
             trailing={
-              <button
-                type="button"
-                className="rounded-full px-3 py-1 text-sm font-semibold text-primary hover:bg-primary-soft"
+              <Button
+                variant="ghost"
+                size="sm"
+                className="rounded-[10px] px-3 text-primary-text"
                 onClick={() => setShowPassword((value) => !value)}
                 aria-pressed={showPassword}
-                data-track="auth.password.toggle_visibility"
+                trackId="auth.password.toggle_visibility"
               >
                 {showPassword ? t("auth.hidePassword") : t("auth.showPassword")}
-              </button>
+              </Button>
             }
           />
         ) : null}

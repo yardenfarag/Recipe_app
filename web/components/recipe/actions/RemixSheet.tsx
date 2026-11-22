@@ -177,7 +177,7 @@ function Body({ preset, allergies, notice, display, onClose, onApply, onOutOfCre
         {stage.kind === "preview" ? (
           <div>
             <div className="rounded-2xl bg-primary-soft px-4 py-4">
-              <h3 className="text-xs font-semibold tracking-wide text-primary uppercase">{t("recipe.remixWhatChanged")}</h3>
+              <h3 className="font-sans text-[13px] font-semibold tracking-[0.06em] text-primary-text uppercase rtl:tracking-normal">{t("recipe.remixWhatChanged")}</h3>
               <p className="mt-1.5 text-[15px] leading-relaxed text-text">{stage.result.summary}</p>
             </div>
             {notice ? <p className="mt-3 text-xs leading-5 text-muted">{notice}</p> : null}
@@ -242,10 +242,10 @@ function Body({ preset, allergies, notice, display, onClose, onApply, onOutOfCre
                       onClick={() => void run(key, { kind: "remix", variant: key })}
                       className={cn(
                         "flex w-full items-center gap-3.5 rounded-2xl border border-border bg-surface px-3.5 py-3 text-start transition-colors",
-                        "hover:border-primary/40 hover:bg-surface-soft focus-visible:outline-2 focus-visible:outline-primary",
+                        "hover:bg-element",
                       )}
                     >
-                      <span aria-hidden className="grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-primary-soft text-primary">
+                      <span aria-hidden className="grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-accent-soft text-accent-text">
                         <Icon className="h-5 w-5" />
                       </span>
                       <span className="min-w-0 flex-1">

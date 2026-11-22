@@ -3,16 +3,18 @@
 import { useId, type ReactNode } from "react";
 
 import { Button } from "@/components/ui/Button";
+import { Chip as KitChip } from "@/components/ui/Chip";
+import { Tile } from "@/components/ui/Tile";
 import { cn } from "@/lib/cn";
 
 /** A titled part of the composer, with an optional line under the title. */
 export function Section({ title, hint, children }: { title?: string; hint?: string; children: ReactNode }) {
   return (
-    <section className="rounded-3xl border border-frosted-border bg-surface p-5 shadow-soft">
+    <Tile as="section" className="p-5">
       {title ? <h2 className="text-base font-bold text-text">{title}</h2> : null}
       {hint ? <p className="mt-1 text-sm leading-relaxed text-muted">{hint}</p> : null}
       <div className={cn("flex flex-col gap-4", title || hint ? "mt-4" : "")}>{children}</div>
-    </section>
+    </Tile>
   );
 }
 
@@ -30,7 +32,7 @@ function Errors({ id, errors }: { id: string; errors: readonly string[] }) {
 }
 
 const inputClass =
-  "w-full rounded-2xl border bg-surface px-4 text-[15px] text-text shadow-[inset_0_1px_2px_rgb(0_0_0/0.03)] transition-[border-color,box-shadow] placeholder:text-muted/80 hover:border-muted/60 focus:border-primary focus:ring-4 focus:ring-primary/15 disabled:opacity-50";
+  "w-full rounded-btn border bg-surface px-4 text-[15px] text-text shadow-[inset_0_1px_2px_rgb(0_0_0/0.03)] transition-[border-color,box-shadow] placeholder:text-muted/80 hover:border-muted/60 focus:border-primary focus:ring-4 focus:ring-primary/15 disabled:opacity-50";
 
 /**
  * A labelled text box (one line, or several with `lines`), its hint, and the form's errors for it, read out with it.
@@ -145,18 +147,17 @@ function Chip({
   children: ReactNode;
 }) {
   return (
-    <Button
+    <KitChip
       size="sm"
-      variant={pressed ? "primary" : "secondary"}
-      aria-pressed={pressed}
+      selected={pressed}
       aria-label={label}
       disabled={disabled}
       trackId={trackId}
       onClick={onClick}
-      className="h-8 px-3 text-xs font-bold"
+      className="disabled:pointer-events-none disabled:opacity-50"
     >
       {children}
-    </Button>
+    </KitChip>
   );
 }
 

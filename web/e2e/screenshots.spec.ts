@@ -134,18 +134,32 @@ const picture = (hue: number) =>
 
 const LIBRARY: SeedRecipe[] = [
   { title: "Creamy lemon pasta with garlic and parmesan", is_favorite: true, estimated_time_minutes: 25, effort_level: "Easy", cost_estimate: "$", tags: ["pasta", "dinner"], image_url: picture(40) },
-  { title: "Chocolate lava cake", estimated_time_minutes: 90, effort_level: "Hard", cost_estimate: "$$", tags: ["dessert"], image_url: picture(15) },
-  { title: "Green salad", estimated_time_minutes: 10, effort_level: "Easy", cost_estimate: "$", tags: ["salad"] },
+  { title: "Chocolate lava cake", estimated_time_minutes: 90, effort_level: "Hard", cost_estimate: "$$", tags: ["dessert"], image_url: picture(15), platform: "instagram" },
+  { title: "Green salad", estimated_time_minutes: 10, effort_level: "Easy", cost_estimate: "$", tags: ["salad"], platform: "photo", cookedDaysAgo: 1 },
   { title: "Slow-cooked beef ragu", estimated_time_minutes: 195, effort_level: "Medium", cost_estimate: "$$$", tags: ["pasta", "dinner"], image_url: picture(0) },
-  { title: "Shakshuka", is_favorite: true, estimated_time_minutes: 30, effort_level: "Easy", cost_estimate: "$", tags: ["breakfast"], image_url: picture(8) },
-  { title: "Miso soup", estimated_time_minutes: 15, effort_level: "Easy", tags: ["soup"], image_url: picture(100) },
-  { title: "Pad thai", estimated_time_minutes: 35, effort_level: "Medium", cost_estimate: "$$", tags: ["dinner"], image_url: picture(30) },
+  {
+    title: "Shakshuka",
+    is_favorite: true,
+    estimated_time_minutes: 30,
+    effort_level: "Easy",
+    cost_estimate: "$",
+    servings: 4,
+    tags: ["breakfast"],
+    image_url: picture(8),
+    platform: "tiktok",
+    original_url: "https://www.tiktok.com/@lazy.chef/video/7312345678901234567",
+  },
+  { title: "Miso soup", estimated_time_minutes: 15, effort_level: "Easy", tags: ["soup"], image_url: picture(100), platform: "youtube", cookedDaysAgo: 2 },
+  { title: "Pad thai", estimated_time_minutes: 35, effort_level: "Medium", cost_estimate: "$$", tags: ["dinner"], image_url: picture(30), cookedDaysAgo: 4 },
   { title: "Banana bread", estimated_time_minutes: 70, effort_level: "Easy", cost_estimate: "$", tags: ["dessert", "breakfast"] },
   { title: "Falafel wrap", estimated_time_minutes: 45, effort_level: "Medium", tags: ["dinner"], image_url: picture(70) },
 ];
 
 test("library", async ({ browser }) => {
+  test.setTimeout(120_000);
   await resetLibrary(LIBRARY.map((recipe, index) => ({ ...recipe, createdSecondsAgo: index + 1 })));
+  // Something on the list, so its tile has rows to tick.
+  await resetShoppingList([{ name: "eggs", checked: true }, { name: "crushed tomatoes" }, { name: "feta" }, { name: "parsley" }, { name: "pita" }]);
   for (const viewport of Object.keys(VIEWPORTS) as (keyof typeof VIEWPORTS)[]) {
     for (const [language, scheme] of [["en", "light"], ["en", "dark"], ["he", "light"]] as const) {
       const { page, context } = await open(browser, viewport, { language, scheme });
@@ -213,6 +227,7 @@ const SHAKSHUKA: SeedRecipe = {
 };
 
 test("recipe page", async ({ browser }) => {
+  test.setTimeout(120_000);
   const [pasta, shakshuka] = await resetLibrary([
     { ...RECIPE, createdSecondsAgo: 1 },
     { ...SHAKSHUKA, createdSecondsAgo: 2 },
@@ -347,7 +362,7 @@ test("editor, credits, recipe actions and cook mode", async ({ browser }) => {
       // The open dialogs: Remix, Translate and More.
       for (const [name, open_] of [
         ["remix", (p: Page) => p.getByRole("group", { name: /^(Actions for|פעולות)/ }).getByRole("button").first().click()],
-        ["more", (p: Page) => p.getByRole("group", { name: /^(Actions for|פעולות)/ }).getByRole("button").last().click()],
+        ["more", (p: Page) => p.getByRole("button", { name: /^(More options|אפשרויות נוספות)$/ }).filter({ visible: true }).first().click()],
       ] as const) {
         const { page, context } = await open(browser, viewport, prefs, `/app/recipe/${pasta}`);
         await open_(page);
@@ -359,7 +374,7 @@ test("editor, credits, recipe actions and cook mode", async ({ browser }) => {
       // Cook mode, on the second step.
       {
         const { page, context } = await open(browser, viewport, prefs, `/app/recipe/${pasta}`);
-        await page.getByRole("button", { name: /^(Cook mode|מצב בישול)$/ }).first().click();
+        await page.getByRole("button", { name: /^(Start cooking|מתחילים לבשל)$/ }).filter({ visible: true }).first().click();
         await page.keyboard.press(language === "he" ? "ArrowLeft" : "ArrowRight");
         await page.waitForTimeout(500);
         await page.screenshot({ path: `${OUT}/cook-mode-${viewport}-${language}-${scheme}.png` });
@@ -375,7 +390,7 @@ test("editor, credits, recipe actions and cook mode", async ({ browser }) => {
       {
         const { page, context } = await open(browser, viewport, prefs, `/app/recipe/${potatoes}`);
         await context.route(/youtube|ytimg|googlevideo/, (route) => route.fulfill({ status: 200, contentType: "text/html", body: "<html></html>" }));
-        await page.locator("[aria-expanded]").filter({ hasText: "YouTube" }).first().click();
+        await page.getByRole("button", { name: /^(Cook along|מבשלים עם הסרטון)/ }).filter({ visible: true }).first().click();
         await page.waitForTimeout(500);
         await page.screenshot({ path: `${OUT}/cook-along-${viewport}-${language}-${scheme}.png` });
         await context.close();
@@ -518,5 +533,90 @@ test("admin pages", async ({ browser }) => {
     await context.close();
   } finally {
     await deleteAdminPagesUsers(users);
+  }
+});
+
+const PACKS = ["mist", "fruity", "cat", "wizard", "dracula", "sunny", "starry"] as const;
+
+// The Night Market kit (PIN-160) in every theme pack, light and dark, English and Hebrew: 28 pictures of the page
+// at /admin/kit, plus the phone width in Mist.
+test("kit, every theme pack", async ({ browser }) => {
+  test.setTimeout(900_000);
+  const users = await createAdminPagesUsers();
+  try {
+    for (const viewport of ["desktop", "phone"] as const) {
+      const context = await browser.newContext({
+        baseURL: test.info().project.use.baseURL,
+        viewport: VIEWPORTS[viewport],
+        deviceScaleFactor: viewport === "desktop" ? 1 : 2,
+      });
+      const page = await context.newPage();
+      await page.goto("/app/auth?mode=signin");
+      await signInWithPassword(page, users.admin.email, users.admin.password);
+      await page.locator("#main").waitFor();
+      for (const pack of viewport === "desktop" ? PACKS : (["mist"] as const)) {
+        for (const scheme of ["light", "dark"] as const) {
+          for (const language of ["en", "he"] as const) {
+            // The account's choices win over this browser's once loaded (PIN-154), so both are set.
+            await writeAccountPrefs({ locale: language, prefs: { scheme, pack, measurement: "original" } }, users.admin.email, users.admin.password);
+            await page.evaluate(
+              ([l, s, p]) => {
+                localStorage.setItem("pinch:appLanguage", l);
+                localStorage.setItem("pinch.themePreference", s);
+                localStorage.setItem("pinch.themePack", p);
+              },
+              [language, scheme, pack],
+            );
+            await page.goto("/app/admin/kit");
+            await page.locator("#main h1").first().waitFor();
+            await page.waitForTimeout(500);
+            await page.screenshot({ path: `${OUT}/kit-${viewport}-${pack}-${scheme}-${language}.png`, fullPage: true });
+          }
+        }
+      }
+      await context.close();
+    }
+  } finally {
+    await deleteAdminPagesUsers(users);
+  }
+});
+
+// Every theme pack on the main screens, in light and dark (PIN-164). Languages and widths alternate, so each pack is
+// seen in English and Hebrew and at desktop, tablet and phone width without photographing every combination; Mist
+// has every combination in the tests above.
+test("every theme pack on the main screens", async ({ browser }) => {
+  test.setTimeout(1_200_000);
+  const [pasta] = await resetLibrary([{ ...RECIPE, createdSecondsAgo: 1 }, ...LIBRARY.map((recipe, index) => ({ ...recipe, createdSecondsAgo: index + 2 }))]);
+  await resetShoppingList([{ name: "eggs", checked: true }, { name: "crushed tomatoes" }, { name: "feta" }, { name: "parsley" }, { name: "pita" }]);
+  await resetHub([
+    { name: "Crispy smashed potatoes", platform: "tiktok", save_count: 41, tags: ["dinner"] },
+    { name: "Miso ramen", platform: "youtube", save_count: 22, tags: ["soup"] },
+    { name: "Lemon olive oil cake", platform: "instagram", save_count: 9, tags: ["dessert"] },
+  ]);
+  const screens = [
+    ["library", "/app"],
+    ["recipe", `/app/recipe/${pasta}`],
+    ["snap", "/app/add"],
+    ["hub", "/app/hub"],
+    ["list", "/app/list"],
+    ["appearance", "/app/settings/appearance"],
+    ["credits", "/app/settings/credits"],
+    ["cookbook", "/app/cookbook"],
+  ] as const;
+  const widths = ["desktop", "tablet", "phone"] as const;
+  let group = 0;
+  for (const pack of PACKS) {
+    for (const scheme of ["light", "dark"] as const) {
+      group += 1;
+      for (const [index, [name, path]] of screens.entries()) {
+        // Shifted by one for each pack and scheme, so a screen isn't always in the same language or width.
+        const language = (index + group) % 2 === 0 ? "en" : "he";
+        const viewport = widths[(index + group) % 3];
+        const { page, context } = await open(browser, viewport, { language, scheme, pack }, path);
+        await page.waitForTimeout(500);
+        await page.screenshot({ path: `${OUT}/packs-${name}-${pack}-${scheme}-${viewport}-${language}.png`, fullPage: true });
+        await context.close();
+      }
+    }
   }
 });

@@ -1454,12 +1454,62 @@ export default {
     "notFoundBody": "ייתכן שהקישור ישן, או שהדף עבר למקום אחר.",
     "comingSoon": "בקרוב גם באתר",
     "library": {
-      "sortBy": "מיון לפי"
+      "sortBy": "מיון לפי",
+      "tonightsPick": "הבחירה להערב",
+      "startCooking": "מתחילים לבשל",
+      "cookAlongVideo": "מבשלים עם הסרטון",
+      "showAnother": "הציעו לי אחר",
+      "savedFrom": "נשמר מ־{{source}}",
+      "savedFromPhoto": "נשמר מתמונה",
+      "sourcePhoto": "תמונה",
+      "sourceWebsite": "אתר",
+      "snapNewTitle": "שולפים משהו חדש",
+      "snapNewBody": "קישורים, תמונות, צילומי מסך. לחיצה אחת וזה מתכון אמיתי.",
+      "listLeft": "קניות · נשארו {{count}}",
+      "listEmpty": "אין מה לקנות. אפשר להוסיף מצרכים מכל מתכון.",
+      "listDone": "הכול סומן",
+      "listMore": "ועוד {{count}}",
+      "listOpen": "פתיחת רשימת הקניות",
+      "cookedThisWeek": "בישלתם השבוע",
+      "cookedThisWeekCount": "{{count}} בושלו השבוע",
+      "credits": "{{count}} קרדיטים",
+      "creditsOne": "קרדיט אחד",
+      "filterAll": "הכול",
+      "quick": {
+        "under30": "עד 30 דק׳",
+        "veggie": "צמחוני",
+        "tiktok": "מטיקטוק",
+        "neverCooked": "עוד לא בושל"
+      },
+      "quickFilters": "סינון מהיר",
+      "kitchenTiles": "הערב",
+      "openRecipe": "פתיחת המתכון",
+      "servingsOne": "מנה אחת"
     },
     "recipe": {
       "viewOriginal": "לצפייה במקור",
       "opensInNewTab": "נפתח בכרטיסייה חדשה",
-      "stepVideoTime": "בסרטון ב־{{time}}"
+      "stepVideoTime": "בסרטון ב־{{time}}",
+      "factTime": "זמן כולל",
+      "factCalories": "קל׳ למנה",
+      "factCost": "עלות משוערת",
+      "savedFrom": "נשמר מ־{{source}}",
+      "savedFromPhoto": "נשמר מתמונה",
+      "cookAlongHint": "{{platform}} · קופץ לכל שלב",
+      "makeItYours": "מתאימים אליכם",
+      "remixTitle": "רימיקס",
+      "remixBody": "חריף יותר, טבעוני, לשניים. או כתבו במילים שלכם מה בא לכם.",
+      "fixTitle": "להתאים למטבח שלי",
+      "fixBody": "מוציא את האלרגיות ומה שאתם לא אוהבים, ומסתדר בלי כלים שאין לכם.",
+      "fixNothing": "אין כאן מה לתקן. הגדירו אלרגיות, מה שלא אוהבים וכלים, ו־Pinch ישים לב אליהם.",
+      "swapTitle": "להחליף מצרך",
+      "swapBody": "חסר משהו? בוחרים תחליף וההכנה מתעדכנת.",
+      "swapPick": "איזה מצרך?",
+      "translateBody": "קוראים בכל אחת מהשפות שלכם. המקור במרחק לחיצה.",
+      "addMissing": "להוסיף את החסרים לרשימה",
+      "haveIt": "יש לי {{name}}",
+      "tabs": "מצרכים או הכנה",
+      "steps": "שלבים"
     },
     "hub": {
       "source": "מקור",
@@ -1498,14 +1548,12 @@ export default {
       "notAPhotoOrPdf": "הקובץ הזה אינו תמונה או PDF. נסו JPG, PNG או PDF.",
       "partialMissingSteps": "מצאנו את המצרכים, אבל לא את שלבי ההכנה. הייבוא הזה היה בחינם. נסו קישור אחר, או תמונה של המתכון המלא.",
       "partialMissingIngredients": "מצאנו את שלבי ההכנה, אבל לא את המצרכים. הייבוא הזה היה בחינם. נסו קישור אחר, או תמונה של המתכון המלא.",
-      "tipsTitle": "דרכים מהירות יותר",
-      "tipPaste": "העתיקו קישור, חזרו ולחצו {{shortcut}} בכל מקום בעמוד.",
-      "tipDrop": "גררו לעמוד הזה תמונה, או קישור מכרטיסייה אחרת.",
       "draftWaiting": "יש לכם מתכון שעדיין לא נשמר: {{title}}",
       "backToSnap": "חזרה ל-Snap",
       "discard": "לא לשמור",
       "discardTitle": "לא לשמור את המתכון?",
-      "discardBody": "הוא לא יישמר בספרייה שלכם, והקרדיט שנוצל לא יוחזר."
+      "discardBody": "הוא לא יישמר בספרייה שלכם, והקרדיט שנוצל לא יוחזר.",
+      "creditsOne": "קרדיט אחד זמין"
     },
     "share": {
       "notFoundBody": "ייתכן שמי ששלח את הקישור הפסיק לשתף אותו. בקשו ממנו קישור חדש.",
@@ -1710,6 +1758,18 @@ export default {
         "title": "Pinch בדיוק כמו שאתם אוהבים",
         "body": "החשבון שלכם, איך אתם מבשלים, יחידות מידה ועוד. ערכת הנושא והשפה כבר נמצאות בתפריט החשבון."
       }
+    },
+    "snapBar": {
+      "label": "שליפת מתכון או חיפוש במתכונים שלכם",
+      "placeholder": "מדביקים קישור, גוררים תמונה, או מחפשים ״משהו עם ביצים״",
+      "placeholderShort": "מדביקים קישור או מחפשים",
+      "action": "שליפה",
+      "title": "שליפה או חיפוש",
+      "hintLink": "מדביקים קישור מטיקטוק, אינסטגרם, יוטיוב או כל אתר מתכונים",
+      "hintPhoto": "גוררים או מדביקים תמונה, צילום מסך או PDF",
+      "hintSearch": "מקלידים כדי לחפש במתכונים ששמרתם",
+      "addPhoto": "הוספת תמונה או PDF",
+      "open": "שליפה או חיפוש ({{keys}})"
     }
   }
 } as const;

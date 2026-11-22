@@ -38,7 +38,7 @@ export function MessagePreviewCard({ draft }: { draft: AdminMessageDraft }) {
         {draft.presentation === "banner" ? `, ${draft.bannerPosition ?? "top"}` : ""}
         {draft.required ? ", required (cannot be closed)" : closable ? "" : ", cannot be closed"}
       </p>
-      <div className="overflow-hidden rounded-2xl border border-border bg-bg p-3" data-testid="message-preview">
+      <div data-testid="message-preview">
         <InAppMessagePreview message={previewMessage(draft)} language={language} />
       </div>
       <p className={cn("text-xs", fellBack ? "font-semibold text-warning" : "text-muted")}>
