@@ -17,8 +17,10 @@ import {
   type Dashboard,
 } from "@shared/lib/adminDashboard";
 import { countryCounts, platformName } from "@shared/lib/adminDashboardView";
+import type { DashboardInsights, HintTab } from "@shared/lib/adminHints";
 
 import { DailyBars, Funnel, RankBars, type DayMetric } from "@/components/admin/charts";
+import { HintsCard } from "@/components/admin/dashboard/HintsCard";
 import { Card, EmptyLine, MiniRow, PersonCell, Segmented, StatTile, SubHeading, Thumb } from "@/components/admin/ui";
 import { Button } from "@/components/ui/Button";
 import { cn } from "@/lib/cn";
@@ -35,12 +37,16 @@ export const DAY_METRICS: DayMetric[] = [
 
 export function OverviewTab({
   data,
+  insights,
+  insightsError,
   onOpenPerson,
   onShowTab,
 }: {
   data: Dashboard;
+  insights: DashboardInsights | null;
+  insightsError: string | null;
   onOpenPerson: (id: string) => void;
-  onShowTab: (tab: "people" | "recipes") => void;
+  onShowTab: (tab: HintTab | "recipes") => void;
 }) {
   const [metricKey, setMetricKey] = useState<DayMetric["key"]>("signups");
   const metric = DAY_METRICS.find((m) => m.key === metricKey) ?? DAY_METRICS[0];
@@ -57,6 +63,7 @@ export function OverviewTab({
 
   return (
     <div className="flex flex-col gap-5">
+      <HintsCard data={data} insights={insights} insightsError={insightsError} onShowTab={onShowTab} />
       <div className="grid gap-5 @4xl:grid-cols-[minmax(0,1.3fr)_minmax(0,1fr)]">
         <Card title={`What happened in ${rangeLabel(data.range.days)}`} subtitle="Compared with the period just before it.">
           <ul className="flex flex-col gap-2.5">

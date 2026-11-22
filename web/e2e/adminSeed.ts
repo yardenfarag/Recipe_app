@@ -109,6 +109,7 @@ export function adminCalls(otherUserId: string): { name: string; args: Record<st
   const since = new Date(Date.now() - 7 * 86_400_000).toISOString();
   return [
     { name: "admin_dashboard", args: { p_days: 30, p_tz: "UTC", p_include_admins: false } },
+    { name: "admin_dashboard_insights", args: { p_days: 30, p_tz: "UTC", p_include_admins: false } },
     { name: "admin_user_detail", args: { p_user_id: otherUserId } },
     { name: "admin_credit_health", args: {} },
     { name: "admin_grant_recipe_credits", args: { p_user_id: otherUserId, p_amount: 5, p_reason: "support_adjustment" } },

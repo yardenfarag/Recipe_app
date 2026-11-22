@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useState, type ReactNode } from "react";
 
 import { DASHBOARD_RANGES, formatDate, num, relativeTime, type Dashboard as DashboardData } from "@shared/lib/adminDashboard";
-import { fetchAdminDashboard } from "@shared/lib/supabase/adminDashboard";
+import { fetchAdminDashboard, fetchAdminDashboardInsights } from "@shared/lib/supabase/adminDashboard";
 
 import { CostsTab } from "@/components/admin/dashboard/CostsTab";
 import { FailuresTab } from "@/components/admin/dashboard/FailuresTab";
@@ -24,7 +24,13 @@ export type DashboardTab = "overview" | "people" | "recipes" | "costs" | "failur
  * Who signed up, what they saved, what AI cost and what sold, for a range of days. One call (`admin_dashboard`,
  * admins only) feeds every tab, bucketed by day in this browser's timezone, as on the Expo web app's dashboard.
  */
-export function Dashboard({ load = fetchAdminDashboard }: { load?: typeof fetchAdminDashboard }) {
+export function Dashboard({
+  load = fetchAdminDashboard,
+  loadInsights = fetchAdminDashboardInsights,
+}: {
+  load?: typeof fetchAdminDashboard;
+  loadInsights?: typeof fetchAdminDashboardInsights;
+}) {
   // The saved range is read after the first render: the server can't see this browser's storage.
   const [prefs, setPrefs] = useState<DashboardPrefs | null>(null);
   useEffect(() => {
@@ -40,6 +46,7 @@ export function Dashboard({ load = fetchAdminDashboard }: { load?: typeof fetchA
         writeDashboardPrefs(next);
       }}
       load={load}
+      loadInsights={loadInsights}
     />
   );
 }
@@ -59,16 +66,25 @@ function DashboardBody({
   prefs,
   onPrefs,
   load,
+  loadInsights,
 }: {
   prefs: DashboardPrefs;
   onPrefs: (prefs: DashboardPrefs) => void;
   load: typeof fetchAdminDashboard;
+  loadInsights: typeof fetchAdminDashboardInsights;
 }) {
   const { days, includeAdmins } = prefs;
   const [tab, setTab] = useState<DashboardTab>("overview");
   const [personId, setPersonId] = useState<string | null>(null);
   const read = useCallback(() => load(days, includeAdmins), [load, days, includeAdmins]);
   const { data, error, loading, reload } = useAdminData(`${days}:${includeAdmins}`, read, "Could not load the dashboard.");
+  // The extra numbers behind the hints (PIN-49) come from a second call; if it fails, everything else still shows.
+  const readInsights = useCallback(() => loadInsights(days, includeAdmins), [loadInsights, days, includeAdmins]);
+  const insights = useAdminData(`${days}:${includeAdmins}`, readInsights, "Could not load the hints.");
+  const refresh = () => {
+    reload();
+    insights.reload();
+  };
 
   const failures = data ? num(data.kpis.current.extraction_failures) : 0;
   const since = data ? new Date(data.range.since).getTime() : 0;
@@ -86,7 +102,7 @@ function DashboardBody({
       <DashboardHeader
         data={data}
         actions={
-          <Button variant="outline" size="sm" trackId="admin.dashboard.refresh" onClick={reload} busy={loading && data != null}>
+          <Button variant="outline" size="sm" trackId="admin.dashboard.refresh" onClick={refresh} busy={loading && data != null}>
             Refresh
           </Button>
         }
@@ -157,11 +173,19 @@ function DashboardBody({
           aria-busy={loading || undefined}
           className={cn("transition-opacity duration-150", loading ? "opacity-60" : "opacity-100")}
         >
-          {tab === "overview" ? <OverviewTab data={data} onOpenPerson={setPersonId} onShowTab={setTab} /> : null}
+          {tab === "overview" ? (
+            <OverviewTab
+              data={data}
+              insights={insights.data}
+              insightsError={insights.error}
+              onOpenPerson={setPersonId}
+              onShowTab={setTab}
+            />
+          ) : null}
           {tab === "people" ? <PeopleTab data={data} onOpenPerson={setPersonId} /> : null}
           {tab === "recipes" ? <RecipesTab data={data} onOpenPerson={setPersonId} /> : null}
-          {tab === "costs" ? <CostsTab data={data} onOpenPerson={setPersonId} /> : null}
-          {tab === "failures" ? <FailuresTab data={data} onOpenPerson={setPersonId} /> : null}
+          {tab === "costs" ? <CostsTab data={data} insights={insights.data} onOpenPerson={setPersonId} /> : null}
+          {tab === "failures" ? <FailuresTab data={data} insights={insights.data} onOpenPerson={setPersonId} /> : null}
           <p className="mt-6 max-w-3xl text-xs leading-relaxed text-muted">
             Showing {formatDate(data.range.since)} to today
             {data.range.include_admins ? ", including admin accounts" : ", without admin accounts (AI cost still includes them)"}. “Before”
