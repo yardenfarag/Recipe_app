@@ -50,7 +50,12 @@ async function send(name: ProductEventName, properties: Record<string, string>):
   }
 }
 
-export function captureRecipeExtracted(properties: { source: RecipeEntrySource; mode: RecipeEntryMode }): void {
+export function captureRecipeExtracted(properties: {
+  source: RecipeEntrySource;
+  mode: RecipeEntryMode;
+  /** From recipePlatformProperty(): pinterest, instagram, web… */
+  recipe_platform: string;
+}): void {
   capture("recipe_extracted", properties);
 }
 

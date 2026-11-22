@@ -63,6 +63,8 @@ async function insertProductEvent(
 export function captureRecipeExtracted(properties: {
   source: RecipeEntrySource;
   mode: RecipeEntryMode;
+  /** From recipePlatformProperty(): pinterest, instagram, web… */
+  recipe_platform: string;
 }): void {
   capture('recipe_extracted', properties);
 }

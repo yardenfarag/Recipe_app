@@ -13,6 +13,14 @@ export type ProductEventName =
 /** How the person started this Snap. `pdf`: Snap from a PDF (PIN-72); a PDF shared into Pinch counts as `share`. */
 export type RecipeEntrySource = 'share' | 'url' | 'camera' | 'library' | 'pdf';
 export type RecipeEntryMode = 'extract' | 'invent';
+
+/**
+ * `recipe_platform` on `recipe_extracted`: where the recipe came from (`pinterest`, `instagram`, `web`, `photo`…).
+ * Not `platform`, which on these events means the person's device (ios, android, web) and the admin dashboard reads it.
+ */
+export function recipePlatformProperty(platform: string | null | undefined): string {
+  return platform?.trim() || 'unknown';
+}
 /** Why the credit purchase sheet opened. */
 export type PaywallTrigger = 'out_of_credits' | 'settings';
 /** What happened after "Share Pinch". */

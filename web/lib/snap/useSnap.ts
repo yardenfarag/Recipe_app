@@ -20,7 +20,7 @@ import {
 } from "@shared/lib/supabase/extractRecipe";
 import { inventRecipe, inventRecipeFromImage } from "@shared/lib/supabase/inventRecipe";
 import { applyKitchenOnExtract } from "@shared/lib/supabase/kitchenAutoApply";
-import type { RecipeEntrySource } from "@shared/lib/productEvents";
+import { type RecipeEntrySource, recipePlatformProperty } from "@shared/lib/productEvents";
 import { recipeIsInvented } from "@shared/lib/recipeOrigin";
 import { showToast } from "@shared/lib/toast";
 
@@ -160,6 +160,7 @@ export function useSnap({ onSettled }: { onSettled?: () => void } = {}) {
             captureRecipeExtracted({
               source: entrySource(next.source),
               mode: recipeIsInvented(outcome.recipe) ? "invent" : "extract",
+              recipe_platform: recipePlatformProperty(outcome.recipe.platform),
             });
             const kitchen = user ? await applyKitchenOnExtract(user.id, outcome.recipe) : { recipe: outcome.recipe, failed: false };
             await setSnapDraft(kitchen.recipe, {

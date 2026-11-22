@@ -94,7 +94,9 @@ function eventDayKey(iso: string): string {
 function detailFor(event: InsightEvent): string {
   const properties = event.properties ?? {};
   if (event.name === 'recipe_extracted') {
-    return `${prop(properties, 'source')} · ${prop(properties, 'mode')}`;
+    const recipePlatform = properties.recipe_platform;
+    const from = typeof recipePlatform === 'string' && recipePlatform.trim() ? ` · ${recipePlatform}` : '';
+    return `${prop(properties, 'source')} · ${prop(properties, 'mode')}${from}`;
   }
   if (event.name === 'recipe_saved') return prop(properties, 'from');
   if (event.name === 'paywall_viewed') return prop(properties, 'trigger');
