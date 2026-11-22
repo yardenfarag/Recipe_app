@@ -18,6 +18,8 @@ import {
   findRecipeCard,
   type HubRecipeSnapshot,
   hubImageUrl,
+  hubSkipReason,
+  logHubDecision,
   publishRecipeCard,
   recipeCardCanonicalKey,
 } from './recipeCards.ts';
@@ -245,7 +247,13 @@ Deno.test('a recipe that passes the check is published without its links', async
     drawImage: drawn,
     userId: 'user-1',
   });
-  assertEquals(published, { id: 'card-1', needsDiets: true });
+  assertEquals(published, {
+    status: 'published',
+    cardId: 'card-1',
+    canonicalKey: 'web:https://example.com/leek-soup',
+    needsDiets: true,
+    replaced: false,
+  });
   assertEquals(cards.length, 1);
   assertEquals(cards[0].canonical_key, 'web:https://example.com/leek-soup');
   assertEquals(cards[0].hidden_at, undefined);
@@ -306,14 +314,23 @@ Deno.test('a rejected recipe is stored hidden, and never served or published aga
   const cards: Row[] = [];
   const admin = fakeAdmin(cards);
   const reject = (): Promise<ModerationResult> => Promise.resolve({ verdict: 'reject', reason: 'spam', usages: [] });
-  assertEquals(await publishRecipeCard(admin, SOUP, null, { moderate: reject }), null);
+  assertEquals(await publishRecipeCard(admin, SOUP, null, { moderate: reject }), {
+    status: 'skipped',
+    reason: 'moderation_rejected',
+    canonicalKey: 'web:https://example.com/leek-soup',
+    moderationReason: 'spam',
+  });
   assertEquals(cards.length, 1);
   assert(cards[0].hidden_at);
   assertEquals(cards[0].hidden_reason, 'moderation:spam');
 
   // The same link again: the hidden card is not a cache hit, and is not replaced.
   assertEquals(await findRecipeCard(admin, 'web', SOUP.original_url!), null);
-  assertEquals(await publishRecipeCard(admin, SOUP, null, { moderate: never }), null);
+  assertEquals(await publishRecipeCard(admin, SOUP, null, { moderate: never }), {
+    status: 'skipped',
+    reason: 'card_hidden',
+    canonicalKey: 'web:https://example.com/leek-soup',
+  });
   assertEquals(cards.length, 1);
 });
 
@@ -321,7 +338,11 @@ Deno.test('when the check cannot run, nothing is published', async () => {
   const cards: Row[] = [];
   const usage: Row[] = [];
   const broken = (): Promise<ModerationResult> => Promise.resolve({ verdict: 'error', error: 'timeout', usages: [] });
-  assertEquals(await publishRecipeCard(fakeAdmin(cards, usage), SOUP, null, { moderate: broken }), null);
+  assertEquals(await publishRecipeCard(fakeAdmin(cards, usage), SOUP, null, { moderate: broken }), {
+    status: 'skipped',
+    reason: 'moderation_failed',
+    canonicalKey: 'web:https://example.com/leek-soup',
+  });
   assertEquals(cards.length, 0);
   assertEquals(usage.map((row) => [row.action, row.status, row.error_message]), [['hub_moderation', 'failed', 'timeout']]);
 });
@@ -329,7 +350,10 @@ Deno.test('when the check cannot run, nothing is published', async () => {
 Deno.test('a link that is not a plain public page is never published or checked', async () => {
   const cards: Row[] = [];
   for (const original_url of ['https://docs.google.com/document/d/abc/edit', 'https://example.com/recipe?token=s3cr3t']) {
-    assertEquals(await publishRecipeCard(fakeAdmin(cards), { ...SOUP, original_url }, null, { moderate: never }), null);
+    assertEquals(await publishRecipeCard(fakeAdmin(cards), { ...SOUP, original_url }, null, { moderate: never }), {
+      status: 'skipped',
+      reason: 'not_public_link',
+    });
   }
   assertEquals(cards.length, 0);
 });
@@ -337,7 +361,11 @@ Deno.test('a link that is not a plain public page is never published or checked'
 Deno.test('a recipe that is only links is not a recipe', async () => {
   const cards: Row[] = [];
   const spam = { ...SOUP, title: 'www.cheap-pills.example' };
-  assertEquals(await publishRecipeCard(fakeAdmin(cards), spam, null, { moderate: never }), null);
+  assertEquals(await publishRecipeCard(fakeAdmin(cards), spam, null, { moderate: never }), {
+    status: 'skipped',
+    reason: 'only_links',
+    canonicalKey: 'web:https://example.com/leek-soup',
+  });
   assertEquals(cards.length, 0);
 });
 
@@ -347,7 +375,13 @@ Deno.test('an existing public card is found again without a second check', async
   await publishRecipeCard(admin, SOUP, null, { moderate: ok, drawImage: drawn });
   cards[0].diets = ['vegetarian'];
   const again = await publishRecipeCard(admin, { ...SOUP, title: 'Changed' }, null, { moderate: never });
-  assertEquals(again, { id: 'card-1', needsDiets: false });
+  assertEquals(again, {
+    status: 'existing',
+    cardId: 'card-1',
+    canonicalKey: 'web:https://example.com/leek-soup',
+    needsDiets: false,
+    filled: [],
+  });
   assertEquals(cards[0].title, 'Leek soup', "an existing card's text is never rewritten");
   assert((await findRecipeCard(admin, 'web', 'https://www.example.com/leek-soup/'))?.id === 'card-1');
 });
@@ -367,4 +401,101 @@ Deno.test('a web card only shows our own copy of the image', () => {
     if (previous === undefined) Deno.env.delete('SUPABASE_URL');
     else Deno.env.set('SUPABASE_URL', previous);
   }
+});
+
+// Facebook (ADR 021) ---------------------------------------------------------------------------
+
+Deno.test('a Facebook card is keyed by the reel or post id, the same id SQL reads from the saved URL', () => {
+  assertEquals(recipeCardCanonicalKey('facebook', 'https://www.facebook.com/reel/1234567890'), 'facebook:1234567890');
+  assertEquals(
+    recipeCardCanonicalKey('facebook', 'https://www.facebook.com/100064/posts/987654321'),
+    'facebook:987654321',
+  );
+  assertEquals(
+    recipeCardCanonicalKey('facebook', 'https://www.facebook.com/permalink.php?story_fbid=555666777&id=100064'),
+    'facebook:555666777',
+  );
+  // The id the post named itself wins over the link's.
+  assertEquals(recipeCardCanonicalKey('facebook', 'https://www.facebook.com/share/r/abc', '424242'), 'facebook:424242');
+  // A share link that never named its post has no key, so it is neither published nor matched.
+  assertEquals(recipeCardCanonicalKey('facebook', 'https://www.facebook.com/share/r/abc'), null);
+});
+
+Deno.test('a Facebook card only shows our own copy of the image, never the expiring CDN link', () => {
+  const previous = Deno.env.get('SUPABASE_URL');
+  Deno.env.set('SUPABASE_URL', 'https://project.supabase.co');
+  try {
+    const ours = 'https://project.supabase.co/storage/v1/object/public/recipe-thumbnails/facebook/abc.jpg';
+    assertEquals(hubImageUrl('facebook', ours), ours);
+    assertEquals(hubImageUrl('facebook', 'https://scontent.xx.fbcdn.net/v/t15/abc.jpg?oh=1&oe=2'), null);
+  } finally {
+    if (previous === undefined) Deno.env.delete('SUPABASE_URL');
+    else Deno.env.set('SUPABASE_URL', previous);
+  }
+});
+
+Deno.test('a Facebook reel is published under its id', async () => {
+  const cards: Row[] = [];
+  const reel: HubRecipeSnapshot = {
+    ...SOUP,
+    platform: 'facebook',
+    original_url: 'https://www.facebook.com/reel/1234567890',
+    extraction_source: 'video',
+  };
+  const decision = await publishRecipeCard(fakeAdmin(cards), reel, '1234567890', { moderate: ok, drawImage: cannotDraw });
+  assertEquals(decision.status, 'published');
+  assertEquals(cards[0].canonical_key, 'facebook:1234567890');
+  assertEquals(cards[0].canonical_url, 'https://www.facebook.com/reel/1234567890');
+  assertEquals(cards[0].platform, 'facebook');
+});
+
+// The decision and its log row -----------------------------------------------------------------
+
+Deno.test('each rule a recipe can break has its own reason', () => {
+  assertEquals(hubSkipReason(SOUP), null);
+  assertEquals(hubSkipReason({ ...SOUP, extraction_status: 'partial' }), 'not_full');
+  assertEquals(hubSkipReason({ ...SOUP, platform: 'pinterest' }), 'platform');
+  assertEquals(hubSkipReason({ ...SOUP, platform: 'photo' }), 'platform');
+  assertEquals(hubSkipReason({ ...SOUP, extraction_source: 'invented' }), 'source');
+  assertEquals(hubSkipReason({ ...SOUP, extraction_source: 'photo' }), 'source');
+  assertEquals(hubSkipReason({ ...SOUP, title: ' ' }), 'no_title');
+  assertEquals(hubSkipReason({ ...SOUP, original_url: null }), 'no_url');
+  assertEquals(hubSkipReason({ ...SOUP, ingredients: [{ name: 'leek' }] }), 'few_ingredients');
+  assertEquals(hubSkipReason({ ...SOUP, instructions: [] }), 'few_instructions');
+});
+
+Deno.test('a Pinterest recipe is skipped without touching the database (ADR 029)', async () => {
+  const admin = new Proxy({}, { get: () => { throw new Error('database touched'); } }) as never;
+  const pin = { ...SOUP, platform: 'pinterest' as const, original_url: 'https://www.pinterest.com/pin/452611831329517145/' };
+  assertEquals(await publishRecipeCard(admin, pin, '452611831329517145'), { status: 'skipped', reason: 'platform' });
+});
+
+Deno.test('the decision is stored as one hub_publish row, with its reason', async () => {
+  const usage: Row[] = [];
+  const admin = fakeAdmin([], usage);
+  await logHubDecision(
+    admin,
+    { status: 'skipped', reason: 'moderation_rejected', canonicalKey: 'web:https://x.com/a', moderationReason: 'spam' },
+    { userId: null, guestInstallId: 'install-1', platform: 'web', durationMs: 12 },
+  );
+  await logHubDecision(
+    admin,
+    { status: 'published', cardId: 'card-9', canonicalKey: 'facebook:1', needsDiets: true, replaced: false },
+    { userId: 'user-1', guestInstallId: 'install-1', platform: 'facebook', durationMs: 30 },
+  );
+  assertEquals(
+    usage.map((row) => [row.action, row.status, row.platform, row.user_id, row.guest_install_id, row.metadata]),
+    [
+      ['hub_publish', 'skipped', 'web', null, 'install-1', {
+        reason: 'moderation_rejected',
+        canonical_key: 'web:https://x.com/a',
+        moderation_reason: 'spam',
+      }],
+      ['hub_publish', 'published', 'facebook', 'user-1', null, {
+        card_id: 'card-9',
+        canonical_key: 'facebook:1',
+        replaced: false,
+      }],
+    ],
+  );
 });

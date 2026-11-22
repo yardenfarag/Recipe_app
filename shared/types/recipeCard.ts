@@ -9,7 +9,7 @@ import type {
   RecipeNutrition,
 } from './recipe';
 
-export type HubPlatform = 'youtube' | 'instagram' | 'tiktok' | 'web';
+export type HubPlatform = 'youtube' | 'instagram' | 'tiktok' | 'facebook' | 'web';
 
 export interface RecipeCard {
   id: string;

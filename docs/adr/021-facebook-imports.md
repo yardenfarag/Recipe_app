@@ -19,7 +19,7 @@ The research is in `docs/research/06-facebook-import.md`. In short: ScrapeCreato
 - **Identity.** The content id is the reel's video id, or the post id for photo and text posts. These are the numbers in the public URL. The saved URL is `https://www.facebook.com/reel/<id>` for video and the clean post URL otherwise, never the share link.
 - **Video.** The file is on Facebook's CDN behind a signed link that expires, and ScrapeCreators has no hosted copy. The function downloads the smaller SD file straight away and sends it inline, like Instagram and TikTok. The thumbnail is copied to Storage for the same reason.
 - **In the app.** A saved Facebook reel plays in the cook-along sheet through Facebook's embedded video player. A photo or text post has no video panel.
-- **Not in the Hub yet.** Facebook recipes are not published to the Cooking Hub and get no Hub cache hit. Adding them means changing `recipe_cards_platform_check`, `recipe_card_canonical_key` and the Hub triggers and filters in SQL, which is its own piece of work.
+- **In the Hub** (added 2026-11-22, migration `20261122230000_hub_facebook`). A full Facebook import is published like any other: the same rules and moderation check, keyed `facebook:<id>` with the id above, and the Hub has a Facebook filter. The card shows only our Storage copy of the thumbnail, never Facebook's expiring link. Before this, Facebook recipes stayed out of the Hub until the SQL side (platform check, card key, triggers, filters) was done.
 
 ## Considered options
 

@@ -13,6 +13,7 @@ describe('platformLabelKey', () => {
       'hub.platformYoutube',
       'hub.platformInstagram',
       'hub.platformTiktok',
+      'hub.platformFacebook',
       'hub.platformWeb',
     ]);
   });

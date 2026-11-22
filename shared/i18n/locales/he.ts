@@ -1205,6 +1205,7 @@ export default {
     "platformAll": "הכול",
     "platformInstagram": "Instagram",
     "platformTiktok": "TikTok",
+    "platformFacebook": "Facebook",
     "platformYoutube": "YouTube",
     "platformWeb": "אתר",
     "sortPopular": "פופולרי",

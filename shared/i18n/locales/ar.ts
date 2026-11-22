@@ -1205,6 +1205,7 @@ export default {
     "platformAll": "الكل",
     "platformInstagram": "Instagram",
     "platformTiktok": "TikTok",
+    "platformFacebook": "Facebook",
     "platformYoutube": "YouTube",
     "platformWeb": "ويب",
     "sortPopular": "الأشهر",
