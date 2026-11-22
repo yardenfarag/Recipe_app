@@ -1,4 +1,5 @@
-# Build an iOS production IPA on EAS only when you start this workflow by hand.
+# A one-off iOS production IPA for testing, started by hand. It never submits to the store:
+# store releases start with a release tag (release.yml, docs/RELEASING.md).
 # Same EAS cloud queue as `eas build` locally — GitHub just starts it for you.
 # Actions → EAS Build iOS (production) → Run workflow.
 #
