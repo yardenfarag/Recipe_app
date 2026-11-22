@@ -2,10 +2,11 @@
 
 import * as RadixDialog from "@radix-ui/react-dialog";
 import { useDirection } from "@radix-ui/react-direction";
-import { ArrowLeft, ArrowRight, Check, Maximize, Minimize, RotateCcw, Sun, Timer, X } from "lucide-react";
-import { useMemo, useRef, type KeyboardEvent, type PointerEvent } from "react";
+import { ArrowLeft, ArrowRight, Check, Maximize, Minimize, RotateCcw, Sun, Timer, Volume2, VolumeX, X } from "lucide-react";
+import { useEffect, useMemo, useRef, type KeyboardEvent, type PointerEvent } from "react";
 import { useTranslation } from "react-i18next";
 
+import { stepSpeech, voiceAvailability } from "@shared/lib/readAloud";
 import { formatCountdown, parseStepTimers } from "@shared/lib/stepTimers";
 
 import { Button } from "@/components/ui/Button";
@@ -14,6 +15,7 @@ import { cn } from "@/lib/cn";
 import { cookModeMove, swipeMove } from "@/lib/cook/cookModeKeys";
 import { secondsLeft, type CookTimer } from "@/lib/cook/useCookTimers";
 import { useFullscreen } from "@/lib/cook/useFullscreen";
+import { useReadAloud, useReadAloudPreference } from "@/lib/cook/useReadAloud";
 import { useWakeLock } from "@/lib/cook/useWakeLock";
 
 export type CookModeStep = { step: number; text: string };
@@ -34,6 +36,9 @@ export type CookModeTimers = {
  * holds them, see useCookTimers), and chime when done.
  *
  * The step's position is held by the page, so closing by mistake and reopening comes back to the same step.
+ *
+ * The speaker button reads each step aloud as it appears, in the recipe's language (see useReadAloud). It is
+ * greyed out, with a tooltip saying why, when the browser has no voice for that language.
  */
 export function CookMode({
   open,
@@ -62,7 +67,7 @@ export function CookMode({
   /** "I cooked this" on the last screen. Left out where the recipe isn't saved. */
   onCooked?: () => void;
 }) {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const appDirection = useDirection() === "rtl" ? "rtl" : "ltr";
   const wakeLock = useWakeLock(open);
   const fullscreen = useFullscreen();
@@ -113,6 +118,61 @@ export function CookMode({
   const stepLabel = t("recipe.cookModeStep", { current: position + 1, total });
   const doneTimers = timers.timers.filter((timer) => secondsLeft(timer, timers.now) === 0);
 
+  // Read aloud: the step as shown (translated, amounts converted), in the recipe's language.
+  const readAloud = useReadAloud(open);
+  const { queue } = readAloud;
+  const [readAloudOn, setReadAloudOn] = useReadAloudPreference();
+  const appLanguage = i18n.language;
+  const speechLanguage = contentLanguage ?? appLanguage;
+  const stepVoice = voiceAvailability(readAloud.voices, speechLanguage);
+  const appVoice = voiceAvailability(readAloud.voices, appLanguage);
+  const voiceMissing = stepVoice.status === "missing";
+  const reading = open && readAloudOn && readAloud.supported && !voiceMissing;
+  const speech = done
+    ? appVoice.status === "missing"
+      ? null
+      : { text: t("recipe.cookModeDone"), language: appLanguage, voice: appVoice.status === "ready" ? appVoice.voice : null }
+    : step
+      ? {
+          text: stepSpeech({ text: step.text, label: stepLabel, textLanguage: speechLanguage, labelLanguage: appLanguage }),
+          language: speechLanguage,
+          voice: stepVoice.status === "ready" ? stepVoice.voice : null,
+        }
+      : null;
+  const readCurrent = () => {
+    if (speech) queue.say(speech.text, speech.language, speech.voice);
+  };
+  const speechText = speech?.text;
+  const speechLang = speech?.language;
+  const speechVoiceId = speech?.voice?.id;
+  const speechVoiceLang = speech?.voice?.language;
+  useEffect(() => {
+    if (!reading) {
+      queue.stop();
+      return;
+    }
+    // A new step, or turning the speaker on, reads it. The voice list arriving late reads it again in the right voice.
+    if (!speechText || !speechLang) return;
+    queue.say(speechText, speechLang, speechVoiceId && speechVoiceLang ? { id: speechVoiceId, language: speechVoiceLang } : null);
+  }, [reading, speechText, speechLang, speechVoiceId, speechVoiceLang, queue]);
+
+  // A finished timer is read after the current step, not over it. The chime plays as well (useCookTimers).
+  const doneTimerIds = doneTimers.map((timer) => timer.id).join(" ");
+  const spokenTimers = useRef(new Set<string>());
+  const appVoiceStatus = appVoice.status;
+  const appVoiceId = appVoice.status === "ready" ? appVoice.voice.id : undefined;
+  const appVoiceLang = appVoice.status === "ready" ? appVoice.voice.language : undefined;
+  useEffect(() => {
+    const fresh = doneTimerIds.split(" ").filter((id) => id && !spokenTimers.current.has(id));
+    if (fresh.length === 0) return;
+    for (const id of fresh) spokenTimers.current.add(id);
+    if (!reading || appVoiceStatus === "missing") return;
+    queue.append(t("recipe.cookModeTimerDone"), appLanguage, appVoiceId && appVoiceLang ? { id: appVoiceId, language: appVoiceLang } : null);
+  }, [doneTimerIds, reading, appVoiceStatus, appVoiceId, appVoiceLang, appLanguage, queue, t]);
+
+  const languageName = t(`languages.${speechLanguage.split("-")[0]}`, { defaultValue: speechLanguage });
+  const speakerLabel = voiceMissing ? t("recipe.cookModeNoVoice", { language: languageName }) : t("recipe.cookModeReadAloud");
+
   return (
     <RadixDialog.Root open={open} onOpenChange={close}>
       <RadixDialog.Portal>
@@ -145,6 +205,22 @@ export function CookMode({
                 <Sun aria-hidden className="h-3.5 w-3.5" />
                 {t("web.cook.screenOn")}
               </span>
+            ) : null}
+            {readAloud.supported ? (
+              <IconButton
+                label={speakerLabel}
+                aria-pressed={voiceMissing ? undefined : reading}
+                aria-disabled={voiceMissing || undefined}
+                trackId="cook_mode.read_aloud.toggle"
+                icon={reading ? <Volume2 className="h-5 w-5" /> : <VolumeX className="h-5 w-5" />}
+                // Not `disabled`: a disabled button gets no hover or focus, so its tooltip could never say why.
+                onClick={voiceMissing ? undefined : () => setReadAloudOn(!readAloudOn)}
+                className={cn(
+                  "h-12 w-12",
+                  reading && "bg-primary-soft text-primary hover:bg-primary-soft hover:text-primary",
+                  voiceMissing && "opacity-50 hover:bg-transparent hover:text-muted",
+                )}
+              />
             ) : null}
             {fullscreen.supported ? (
               <IconButton
@@ -226,7 +302,15 @@ export function CookMode({
                 </div>
               ) : (
                 <>
-                  <p className="text-sm font-bold tracking-wide text-primary uppercase sm:text-base">{stepLabel}</p>
+                  <div className="flex min-h-9 flex-wrap items-center justify-between gap-2">
+                    <p className="text-sm font-bold tracking-wide text-primary uppercase sm:text-base">{stepLabel}</p>
+                    {reading ? (
+                      <Button variant="ghost" size="sm" trackId="cook_mode.read_aloud.replay" onClick={readCurrent}>
+                        <Volume2 aria-hidden className="h-4 w-4" />
+                        {t("recipe.cookModeReadAgain")}
+                      </Button>
+                    ) : null}
+                  </div>
                   <p
                     key={position}
                     dir={direction}
@@ -259,9 +343,10 @@ export function CookMode({
             </div>
           </div>
 
-          {/* Read out the new step after Next or Back; the step's own text isn't a live region, so it isn't read twice. */}
+          {/* Read out the new step after Next or Back; the step's own text isn't a live region, so it isn't read twice.
+              Quiet while the speaker reads it, or a screen reader user would hear it twice. */}
           <p aria-live="polite" className="sr-only">
-            {done ? t("recipe.cookModeDone") : step ? `${stepLabel}. ${step.text}` : ""}
+            {reading ? "" : done ? t("recipe.cookModeDone") : step ? `${stepLabel}. ${step.text}` : ""}
           </p>
           <p aria-live="assertive" className="sr-only">
             {doneTimers.map((timer) => t("web.cook.timerDone", { label: timer.label })).join(". ")}

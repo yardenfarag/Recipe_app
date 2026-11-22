@@ -1,0 +1,39 @@
+{
+  "caseId": "he-glossary-baking",
+  "judge": "google/gemini-3.1-pro-preview",
+  "translation": "Title: עוגיית שוקולד צ'יפס במחבת\nIngredients:\n1. 115 גרם חמאה ללא מלח, מומסת\n2. 100 גרם סוכר חום בהיר\n3. 1 ביצה גדולה\n4. 190 גרם קמח תופח\n5. 1 כפית סודה לשתייה\n6. 1 כף קורנפלור\n7. 150 גרם שוקולד צ'יפס חצי מתוק\n8. ½ כפיות מלח ים פתיתים\nSteps:\n1. מחממים תנור מראש ל-180°C.\n2. טורפים את החמאה המומסת עם הסוכר, ואז מוסיפים את הביצה וטורפים היטב.\n3. מקפלים פנימה את הקמח, הסודה לשתייה והקורנפלור רק עד לאיחוד, ואז מקפלים פנימה את השוקולד צ'יפס.\n4. מהדקים את הבצק במחבת בקוטר 25 ס״מ, מפזרים מעל את מלח הים בפתיתים ואופים במשך 18–20 דקות, עד שהשוליים זהובים אך המרכז עדיין רך ודביק.",
+  "verdict": {
+    "native_score": 4,
+    "errors": [
+      {
+        "where": "ingredient 1",
+        "category": "ingredient_term",
+        "severity": "minor",
+        "excerpt": "חמאה ללא מלח",
+        "fix": "חמאה לא מלוחה"
+      },
+      {
+        "where": "ingredient 8",
+        "category": "unit",
+        "severity": "minor",
+        "excerpt": "כפיות",
+        "fix": "כפית"
+      },
+      {
+        "where": "ingredient 8",
+        "category": "ingredient_term",
+        "severity": "minor",
+        "excerpt": "מלח ים פתיתים",
+        "fix": "פתיתי מלח ים"
+      },
+      {
+        "where": "step 4",
+        "category": "ingredient_term",
+        "severity": "minor",
+        "excerpt": "מלח הים בפתיתים",
+        "fix": "פתיתי מלח הים"
+      }
+    ]
+  },
+  "costUsd": 0.010166
+}

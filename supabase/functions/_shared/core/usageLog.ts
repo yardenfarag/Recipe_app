@@ -24,6 +24,10 @@ export interface UsageEventInput {
     /** A Hub card's diet check after publish, and its admin backfill (PIN-83). */
     | 'hub_diets'
     | 'hub_diets_backfill'
+    /** The admin backfill of protein, carbs and fat on cards and recipes saved before PIN-80. */
+    | 'nutrition_backfill'
+    /** The admin redo of cached translations made before TRANSLATION_VERSION (PIN-53). */
+    | 'translation_backfill'
     /** The check before a card becomes a public Hub page: ok, rejected or failed (PIN-153). */
     | 'hub_moderation'
     /** save-recipe-edit's Jev call: ok, blocked or jev_failed (PIN-79). */

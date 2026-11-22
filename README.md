@@ -1,6 +1,6 @@
 # Pinch
 
-Pinch turns recipe videos and links into a calm, cookable kitchen on your phone — and now on the web too. Paste a URL from YouTube, Instagram, TikTok, Facebook, or the web; Pinch extracts ingredients and steps, saves them to your library, and helps you shop and cook along.
+Pinch turns recipe videos and links into a calm, cookable kitchen on your phone — and now on the web too. Paste a URL from YouTube, Instagram, TikTok, Facebook, Pinterest, or the web; Pinch extracts ingredients and steps, saves them to your library, and helps you shop and cook along.
 
 ## New developer? Start here
 

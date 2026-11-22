@@ -55,6 +55,15 @@ describe('pickIngredientAmount', () => {
       unit: 'ml',
     });
   });
+
+  it('shows grams in Spoons mode to a Metric reader (PIN-53)', () => {
+    const chocolate = { quantity: 100, unit: 'g', metric: { quantity: 100, unit: 'g' }, spoons: { quantity: 3.5, unit: 'oz' } };
+    expect(pickIngredientAmount(chocolate, 'original')).toEqual({ quantity: 3.5, unit: 'oz' });
+    expect(pickIngredientAmount(chocolate, 'original', 'metric')).toEqual({ quantity: 100, unit: 'g' });
+    expect(pickIngredientAmount({ quantity: 150, unit: 'g' }, 'original', 'metric')).toEqual({ quantity: 150, unit: 'g' });
+    expect(pickIngredientAmount({ quantity: 150, unit: 'g' }, 'original', 'us')).toEqual({ quantity: 5.25, unit: 'oz' });
+    expect(pickIngredientAmount(flour, 'original', 'metric')).toEqual({ quantity: 1, unit: 'cup' });
+  });
 });
 
 describe('scaleIngredients', () => {

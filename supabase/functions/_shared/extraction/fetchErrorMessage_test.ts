@@ -4,7 +4,7 @@ import { assertEquals, assertStringIncludes } from 'jsr:@std/assert@1';
 
 import { FetchError } from '../core/errors.ts';
 import { mapScraperHttpError } from './sources/scrapecreators.ts';
-import { fetchErrorMessage } from './fetchErrorMessage.ts';
+import { fetchErrorInfo, fetchErrorMessage } from './fetchErrorMessage.ts';
 
 function webError(status: number): FetchError {
   return new FetchError('webRecipe.ts: fetchHtml', 'Webpage returned an error', {
@@ -86,4 +86,16 @@ Deno.test('unknown errors fall back by platform', () => {
   const err = new FetchError('somewhere.ts', 'Something odd');
   assertEquals(fetchErrorMessage(err, 'web'), "Couldn't load this page — try again.");
   assertEquals(fetchErrorMessage(err, 'instagram'), "Couldn't load this video — try again.");
+});
+
+Deno.test('Pinterest pin failures name Pinterest and map to codes the apps know (PIN-70)', () => {
+  const info = (message: string, details: Record<string, unknown> = {}) =>
+    fetchErrorInfo(new FetchError('pinterest.ts: fetchPinterestPage', message, details), 'pinterest');
+  assertEquals(info('Could not load this Pinterest pin', { timedOut: true }).code, 'source_timeout');
+  assertStringIncludes(info('Could not load this Pinterest pin', { timedOut: true }).message, 'Pinterest');
+  assertEquals(info('Pinterest pin not found').code, 'post_private');
+  assertEquals(info('Pinterest page returned an error', { status: 404 }).code, 'post_private');
+  assertEquals(info('Pinterest page returned an error', { status: 429 }).code, 'rate_limited');
+  assertEquals(info('Not a Pinterest pin link').code, 'invalid_url');
+  assertEquals(info('Pinterest page returned an error', { status: 403 }).code, 'source_unavailable');
 });

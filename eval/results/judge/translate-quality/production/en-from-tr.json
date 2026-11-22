@@ -1,0 +1,25 @@
+{
+  "caseId": "en-from-tr",
+  "judge": "google/gemini-3.1-pro-preview",
+  "translation": "Title: Cocoa Cake\nIngredients:\n1. 3 adet eggs\n2. 1 cup granulated sugar\n3. 1 cup milk\n4. ½ cups vegetable oil\n5. 2 tablespoons cocoa powder\n6. 1 packet baking powder\n7. 2 cups flour\nSteps:\n1. Beat the eggs and sugar until foamy.\n2. Add the milk and vegetable oil and mix.\n3. Sift in the flour, cocoa powder, and baking powder.\n4. Pour into a greased cake pan and bake in a preheated oven at 180°C for 35 minutes.",
+  "verdict": {
+    "native_score": 4,
+    "errors": [
+      {
+        "where": "ingredient 1",
+        "category": "untranslated",
+        "severity": "minor",
+        "excerpt": "3 adet eggs",
+        "fix": "3 eggs"
+      },
+      {
+        "where": "ingredient 4",
+        "category": "grammar",
+        "severity": "minor",
+        "excerpt": "½ cups",
+        "fix": "½ cup"
+      }
+    ]
+  },
+  "costUsd": 0.0092
+}

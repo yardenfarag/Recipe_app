@@ -45,12 +45,15 @@ interface RequestBody {
 
 /**
  * POST suggest: { ingredient, recipe_title, other_ingredients, language? }
- *   -> { status, alternatives?, message? }
+ *   -> { status, alternatives?, code?, message? }
  *
  * POST rewrite: { mode: 'rewrite_instructions', ingredient, alternative, instructions, ... }
- *   -> { status, instructions?, message? }
+ *   -> { status, instructions?, code?, message? }
  *
  * Asks Gemini for supermarket-realistic substitutes, or patches steps after a swap (ADR 005).
+ *
+ * Failure codes (the app's words for them are in shared/lib/serverErrors.ts): auth_required, metering_error,
+ * daily_limit, no_substitute, substitution_failed, rewrite_empty, rewrite_failed. Bad requests answer { error }.
  */
 serve('suggest-substitution', async (req) => {
   if (req.method === 'OPTIONS') {
@@ -168,6 +171,7 @@ async function handleSuggest(body: RequestBody, billing: BillingContext): Promis
       });
       return jsonResponse({
         status: 'failed',
+        code: 'no_substitute',
         message: "Couldn't find a good substitute for this ingredient. Try again.",
       });
     }
@@ -192,6 +196,7 @@ async function handleSuggest(body: RequestBody, billing: BillingContext): Promis
     return jsonResponse(
       {
         status: 'failed',
+        code: 'substitution_failed',
         message: 'Something went wrong finding a substitute. Please try again.',
       },
       500,
@@ -258,6 +263,7 @@ async function handleRewrite(body: RequestBody, billing: BillingContext): Promis
       });
       return jsonResponse({
         status: 'failed',
+        code: 'rewrite_empty',
         message: "Couldn't update the recipe steps for this swap. Try again.",
       });
     }
@@ -285,6 +291,7 @@ async function handleRewrite(body: RequestBody, billing: BillingContext): Promis
     return jsonResponse(
       {
         status: 'failed',
+        code: 'rewrite_failed',
         message: 'Something went wrong updating the recipe steps. Please try again.',
       },
       500,

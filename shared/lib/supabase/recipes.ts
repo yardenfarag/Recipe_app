@@ -230,6 +230,8 @@ export type RecipeContentUpdate = {
   ingredients: Recipe['ingredients'];
   instructions: Recipe['instructions'];
   calories?: number;
+  /** PIN-80. Write it with calories: calories that change without it clear it (database trigger). */
+  nutrition?: Recipe['nutrition'];
   extraction_status?: Recipe['extraction_status'];
   missing_fields?: string[];
   estimated_time_minutes?: number | null;
@@ -250,6 +252,7 @@ export function recipeContentUpdateRow(content: RecipeContentUpdate): Record<str
     ingredients: content.ingredients,
     instructions: content.instructions,
     calories: content.calories,
+    ...(content.nutrition !== undefined ? { nutrition: content.nutrition } : {}),
     ...(content.extraction_status ? { extraction_status: content.extraction_status } : {}),
     ...(content.missing_fields ? { missing_fields: content.missing_fields } : {}),
     ...(content.estimated_time_minutes !== undefined

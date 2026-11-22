@@ -45,10 +45,14 @@ interface RequestBody {
 }
 
 /**
- * POST { variant, recipe, recipe_id?, original_url? } -> { status, recipe?, message? }
+ * POST { variant, recipe, recipe_id?, original_url? } -> { status, recipe?, code?, message? }
  *
  * Adapts a full recipe for a dietary/lifestyle goal (healthier, vegan, etc.).
  * Remix is free for signed-in users and capped at RECIPE_REMIX_LIMIT per recipe.
+ *
+ * Failure codes (the app's words for them are in shared/lib/serverErrors.ts): auth_required, server_misconfigured,
+ * daily_limit, metering_error, instruction_unrelated, recipe_identity_required, recipe_limit, remix_empty,
+ * remix_failed. Bad requests answer { error }.
  */
 serve('transform-recipe', async (req) => {
   if (req.method === 'OPTIONS') {
@@ -76,7 +80,7 @@ serve('transform-recipe', async (req) => {
 
   const authed = createAuthedSupabase(authHeader);
   if (!authed) {
-    return jsonResponse({ status: 'failed', message: 'Auth is not configured.' }, 500);
+    return jsonResponse({ status: 'failed', code: 'server_misconfigured', message: 'Auth is not configured.' }, 500);
   }
 
   const {
@@ -95,7 +99,7 @@ serve('transform-recipe', async (req) => {
 
   const admin = createServiceSupabase();
   if (!admin) {
-    return jsonResponse({ status: 'failed', message: 'Server is not configured.' }, 500);
+    return jsonResponse({ status: 'failed', code: 'server_misconfigured', message: 'Server is not configured.' }, 500);
   }
 
   let body: RequestBody;
@@ -254,6 +258,7 @@ serve('transform-recipe', async (req) => {
       return jsonResponse(
         {
           status: 'failed',
+          code: 'remix_failed',
           message: 'Something went wrong adapting the recipe. Please try again.',
         },
         500,
@@ -332,6 +337,7 @@ serve('transform-recipe', async (req) => {
       });
       return jsonResponse({
         status: 'failed',
+        code: 'remix_empty',
         message: "Couldn't adapt this recipe. Try a different option.",
       });
     }
@@ -395,6 +401,7 @@ serve('transform-recipe', async (req) => {
     return jsonResponse(
       {
         status: 'failed',
+        code: 'remix_failed',
         message: 'Something went wrong adapting the recipe. Please try again.',
       },
       500,

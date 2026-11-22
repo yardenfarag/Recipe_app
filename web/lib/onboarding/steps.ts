@@ -2,8 +2,9 @@
  * The first-run questions on the web (PIN-140), in order. The step is kept in the address (`?step=avoid`), so the
  * browser's Back goes to the previous question and a reload stays where it was.
  *
- * Fewer than on the phone: language is picked on the welcome page (and stays in the top bar), and light or dark,
- * the theme and cups or grams wait in Settings with good defaults. What's asked is what changes the recipes.
+ * Fewer than on the phone: language is picked on the welcome page (and stays in the top bar), and light or dark and
+ * the theme wait in Settings with good defaults. What's asked is what changes the recipes; cups or grams and
+ * Metric or US (PIN-53) sit under the diets on the first question.
  */
 import type { KitchenProfile } from "@shared/lib/kitchenProfile";
 import { avoidListIsEmpty } from "@shared/lib/avoidList";

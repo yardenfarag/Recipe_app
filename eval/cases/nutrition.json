@@ -1,0 +1,59 @@
+{
+  "about": "PIN-80 nutrition eval. Each reference is per serving, worked out by hand from USDA FoodData Central values for the listed amounts (Claude, 2026-11-22; review before trusting the numbers). Pinch estimates from the recipe text, so the tolerance is wide: calories within 25%, each macro within 30% or 6 g, whichever is looser.",
+  "cases": [
+    {
+      "id": "en-overnight-oats",
+      "lang": "en",
+      "title": "Overnight oats",
+      "servings": 1,
+      "ingredients": ["80 g rolled oats", "200 ml whole milk", "150 g 2% Greek yogurt", "1 tbsp honey"],
+      "steps": ["Stir everything together in a jar.", "Chill overnight and eat cold."],
+      "per_serving": { "calories": 600, "protein_g": 32, "carbs_g": 87, "fat_g": 15 }
+    },
+    {
+      "id": "en-chicken-rice-bowl",
+      "lang": "en",
+      "title": "Chicken and broccoli rice bowl",
+      "servings": 2,
+      "ingredients": ["400 g chicken breast", "150 g white rice (dry)", "2 tbsp olive oil", "200 g broccoli", "1 tsp salt"],
+      "steps": ["Cook the rice.", "Fry the chicken in the oil until cooked through.", "Steam the broccoli and serve everything over the rice."],
+      "per_serving": { "calories": 664, "protein_g": 53, "carbs_g": 66, "fat_g": 20 }
+    },
+    {
+      "id": "en-red-lentil-soup",
+      "lang": "en",
+      "title": "Red lentil soup",
+      "servings": 4,
+      "ingredients": ["250 g red lentils", "1 onion", "2 carrots", "2 tbsp olive oil", "1 l vegetable stock", "1 tsp cumin"],
+      "steps": ["Soften the onion and carrots in the oil.", "Add the lentils, cumin and stock and simmer for 25 minutes.", "Blend until smooth."],
+      "per_serving": { "calories": 324, "protein_g": 16, "carbs_g": 46, "fat_g": 8 }
+    },
+    {
+      "id": "en-chocolate-chip-cookies",
+      "lang": "en",
+      "title": "Chocolate chip cookies",
+      "servings": 24,
+      "ingredients": ["225 g butter", "200 g brown sugar", "100 g white sugar", "2 eggs", "280 g flour", "1 tsp baking soda", "300 g chocolate chips"],
+      "steps": ["Cream the butter and sugars.", "Beat in the eggs, then the flour and baking soda.", "Fold in the chips and bake 24 cookies at 180°C for 11 minutes."],
+      "per_serving": { "calories": 224, "protein_g": 2, "carbs_g": 29, "fat_g": 12 }
+    },
+    {
+      "id": "en-banana-smoothie",
+      "lang": "en",
+      "title": "Banana peanut butter smoothie",
+      "servings": 1,
+      "ingredients": ["1 banana", "250 ml whole milk", "1 tbsp peanut butter", "4 ice cubes"],
+      "steps": ["Blend everything until smooth."],
+      "per_serving": { "calories": 354, "protein_g": 13, "carbs_g": 42, "fat_g": 16 }
+    },
+    {
+      "id": "he-shakshuka",
+      "lang": "he",
+      "title": "שקשוקה",
+      "servings": 2,
+      "ingredients": ["4 ביצים", "400 גרם עגבניות מרוסקות", "1 פלפל אדום", "1 בצל", "3 כפות שמן זית", "1 כפית פפריקה"],
+      "steps": ["מטגנים את הבצל והפלפל בשמן.", "מוסיפים עגבניות ופפריקה ומבשלים 10 דקות.", "שוברים את הביצים לתוך הרוטב ומבשלים עד שהחלבון מתייצב."],
+      "per_serving": { "calories": 416, "protein_g": 16, "carbs_g": 20, "fat_g": 30 }
+    }
+  ]
+}

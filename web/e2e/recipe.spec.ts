@@ -9,6 +9,7 @@ const PANCAKES: SeedRecipe = {
   title: "Fluffy Pancakes",
   servings: 2,
   calories: 800,
+  nutrition: { protein_g: 24, carbs_g: 110, fat_g: 28 },
   estimated_time_minutes: 20,
   effort_level: "Easy",
   tags: ["breakfast"],
@@ -67,6 +68,7 @@ test("opening a recipe from the Library shows its header, ingredients and steps"
   await expect(page.locator("#main h1")).toHaveText("Fluffy Pancakes");
   await expect(page).toHaveTitle("Fluffy Pancakes · Pinch");
   await expect(page.locator("#main")).toContainText("20 min");
+  await expect(page.getByTestId("recipe-nutrition")).toHaveText("Per serving: 12 g protein · 55 g carbs · 14 g fat");
   await expect(ingredients(page)).toContainText("flour");
   await expect(ingredients(page)).toContainText("1 cup");
   await expect(steps(page)).toContainText("Whisk the flour and milk.");
@@ -80,6 +82,9 @@ test("changing servings rescales every amount and is remembered", async ({ page 
   await expect(ingredients(page)).toContainText("4 servings");
   await expect(ingredients(page)).toContainText("2 cups");
   await expect(ingredients(page)).toContainText("1 cup");
+  // The totals follow the servings; one serving's macros don't change.
+  await expect(ingredients(page)).toContainText("≈ 1,600 cal · 48 g protein · 220 g carbs · 56 g fat total");
+  await expect(page.getByTestId("recipe-nutrition")).toHaveText("Per serving: 12 g protein · 55 g carbs · 14 g fat");
 
   await page.reload();
   await expect(ingredients(page)).toContainText("4 servings");

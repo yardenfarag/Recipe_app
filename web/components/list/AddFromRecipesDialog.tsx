@@ -25,6 +25,7 @@ import { ingredientChoices, initialSelection } from "@/lib/list/ingredientChoice
 import type { AddToListResult } from "@/lib/list/shoppingListSync";
 import { usePantryStaples } from "@/lib/list/usePantryStaples";
 import { useMeasurementSystem } from "@/lib/recipe/useMeasurementSystem";
+import { useUnitSystem } from "@/lib/recipe/useUnitSystem";
 
 const recipeTitle = (recipe: Recipe) => recipe.display_title?.trim() || recipe.title;
 
@@ -48,6 +49,7 @@ function Body({ onAdd, onDone }: { onAdd: (items: ShoppingListIncomingItem[]) =>
   const { t } = useTranslation();
   const { language } = useLanguage();
   const { system } = useMeasurementSystem();
+  const { units } = useUnitSystem();
   const { recipes, loading, error, hasMore, refresh, ensureAllLoaded } = useRecipes(40);
   const { collections } = useCollections();
   const { staples, isStaple, keepStaple } = usePantryStaples();
@@ -74,10 +76,11 @@ function Body({ onAdd, onDone }: { onAdd: (items: ShoppingListIncomingItem[]) =>
             system,
             unitLanguage: resolveCulinaryLanguage(resolveRecipeSourceLanguage(recipe), language),
             recipeId: recipe.id,
+            units,
           }),
         }))
         .filter((section) => section.choices.length > 0),
-    [language, recipes, selectedIds, system],
+    [language, recipes, selectedIds, system, units],
   );
   const allChoices = sections.flatMap((section) => section.choices);
   const pickedCount = allChoices.filter((choice) => selection.has(choice.key)).length;

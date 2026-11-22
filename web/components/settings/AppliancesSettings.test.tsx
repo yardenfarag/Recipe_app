@@ -65,6 +65,25 @@ describe("AppliancesSettings", () => {
     expect(within(screen.getByRole("group", { name: "Basics" })).getAllByRole("button")).toHaveLength(3);
   });
 
+  it("shows each group's translated heading, not its key", () => {
+    wrap();
+    expect(screen.getByRole("heading", { name: "Grill, fry & toast" })).toBeDefined();
+    expect(screen.queryByText(/myAppliances\.groups/i)).toBeNull();
+  });
+
+  it("reads the group labels from the real catalog, in Hebrew too", async () => {
+    const { default: he } = await import("@shared/i18n/locales/he");
+    const label = he["myAppliances.groups"].heat;
+    i18n.addResourceBundle("he", "translation", he, true, true);
+    await i18n.changeLanguage("he");
+    try {
+      wrap();
+      expect(screen.getByRole("group", { name: label })).toBeDefined();
+    } finally {
+      await i18n.changeLanguage("en");
+    }
+  });
+
   it("shows a saved list, unticks, and can stop checking", async () => {
     savedList(["oven", "blender", "wok"]);
     wrap();

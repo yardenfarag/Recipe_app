@@ -4,6 +4,7 @@ import { DEFAULT_SOURCE_LANGUAGE } from '@shared/lib/appLanguages';
 import { readIngredientAmount } from '@shared/lib/ingredientAmounts';
 import { detectPlatform, recipeUrlsMatch } from '@shared/lib/platformUrls';
 import { recipeContentEquals } from '@shared/lib/recipeContentEquals';
+import { parseRecipeNutrition } from '@shared/lib/recipeNutrition';
 import { recipeMatchesUrlOrigin, recipeUrlOrigin } from '@shared/lib/recipeOrigin';
 import { LOCKABLE_FIELDS, type LockedField, Recipe, RecipeTranslationContent } from '@shared/types/recipe';
 
@@ -164,6 +165,8 @@ export async function updateGuestRecipeContent(
     ingredients: Recipe['ingredients'];
     instructions: Recipe['instructions'];
     calories?: number;
+    /** PIN-80. Absent = leave the stored macros alone. */
+    nutrition?: Recipe['nutrition'];
     extraction_status?: Recipe['extraction_status'];
     missing_fields?: string[];
     estimated_time_minutes?: number | null;
@@ -187,6 +190,12 @@ export async function updateGuestRecipeContent(
         ingredients: content.ingredients,
         instructions: content.instructions,
         calories: content.calories,
+        // Like the database trigger: new calories without macros clear them.
+        ...(content.nutrition !== undefined
+          ? { nutrition: content.nutrition ?? undefined }
+          : content.calories !== recipe.calories
+            ? { nutrition: undefined }
+            : {}),
         ...(content.extraction_status ? { extraction_status: content.extraction_status } : {}),
         ...(content.missing_fields ? { missing_fields: content.missing_fields } : {}),
         ...(content.estimated_time_minutes !== undefined
@@ -327,12 +336,15 @@ export function sanitizeStoredRecipe(value: unknown): Recipe | null {
   assignString(recipe, 'source_language', value.source_language);
   assignNumber(recipe, 'calories', value.calories);
   assignNumber(recipe, 'estimated_time_minutes', value.estimated_time_minutes);
+  // PIN-80: macros only next to calories, in the stored shape.
+  const nutrition = recipe.calories != null ? parseRecipeNutrition(value.nutrition) : null;
+  if (nutrition) recipe.nutrition = nutrition;
 
   const translations = sanitizeTranslations(value.translations);
   if (translations) recipe.translations = translations;
 
   if (
-    ['youtube', 'instagram', 'tiktok', 'facebook', 'web', 'photo', 'unknown'].includes(
+    ['youtube', 'instagram', 'tiktok', 'facebook', 'pinterest', 'web', 'photo', 'unknown'].includes(
       String(value.platform),
     )
   ) {
@@ -389,6 +401,8 @@ function sanitizeKitchenOriginal(value: unknown): Recipe['kitchen_original'] | u
   };
   const calories = readFiniteNumber(value.calories);
   if (calories !== null) original.calories = calories;
+  const nutrition = calories !== null ? parseRecipeNutrition(value.nutrition) : null;
+  if (nutrition) original.nutrition = nutrition;
   return original;
 }
 

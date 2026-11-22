@@ -95,7 +95,8 @@ describe("ingredientRows", () => {
       ingredientRows({ ingredients: [ing("rice", 1, "cup")], recipeServings, servings: 2, system: "original", unitLanguage: "en", avoid: null }).rows;
     expect(rows(1)[0].amount).toBe("2 cups");
     expect(rows(0)[0].amount).toBe("2 cups");
-    expect(rows(4)[0].amount).toBe("½ cups");
+    // Below one, the unit is singular (PIN-53).
+    expect(rows(4)[0].amount).toBe("½ cup");
   });
 
   it("carries the avoid list's flag for each row", () => {

@@ -6,7 +6,16 @@ import { detectPlatform } from './platformUrls';
  * takes, measured from `ai_usage_events.duration_ms`.
  */
 
-export type SnapTimingKind = 'tiktok' | 'instagram' | 'youtube' | 'facebook' | 'web' | 'photo' | 'pdf' | 'invent';
+export type SnapTimingKind =
+  | 'tiktok'
+  | 'instagram'
+  | 'youtube'
+  | 'facebook'
+  | 'pinterest'
+  | 'web'
+  | 'photo'
+  | 'pdf'
+  | 'invent';
 
 /**
  * Seconds. `usual` is about the median and `slow` about the 90th percentile of successful imports. The links come
@@ -18,6 +27,8 @@ export const SNAP_TIMINGS: Record<SnapTimingKind, { usual: number; slow: number 
   tiktok: { usual: 17, slow: 28 },
   instagram: { usual: 19, slow: 36 },
   facebook: { usual: 19, slow: 36 },
+  // Not measured yet (PIN-70): a pin page, then usually the site it links to. Video pins are slower but rarer.
+  pinterest: { usual: 11, slow: 20 },
   youtube: { usual: 13, slow: 30 },
   web: { usual: 9, slow: 13 },
   photo: { usual: 12, slow: 22 },
@@ -39,7 +50,13 @@ export function snapTimingKind(
   if (intent === 'invent') return 'invent';
   if (!url) return 'photo';
   const platform = detectPlatform(url);
-  if (platform === 'tiktok' || platform === 'instagram' || platform === 'youtube' || platform === 'facebook') {
+  if (
+    platform === 'tiktok' ||
+    platform === 'instagram' ||
+    platform === 'youtube' ||
+    platform === 'facebook' ||
+    platform === 'pinterest'
+  ) {
     return platform;
   }
   return 'web';

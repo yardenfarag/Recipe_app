@@ -85,8 +85,9 @@ export const TASK_MODELS: Record<LlmTaskKind, TaskModelConfig> = {
   diets: { model: LUNA, fallbacks: [QWEN_FLASH], reasoning: 'none' },
   // May this card be a public Hub page (PIN-153)? Classification over the recipe text, like diets.
   hub_moderation: { model: LUNA, fallbacks: [QWEN_FLASH], reasoning: 'none' },
-  // Calories, time, effort, cost, tags and metric/spoons after a hand edit (PIN-79). Not in the
-  // PIN-44 eval; these fields came from the text extract on Luna, so it follows text.
+  // Calories (with protein, carbs and fat, PIN-80), time, effort, cost, tags and metric/spoons after
+  // a hand edit (PIN-79), and the PIN-80 macros backfill. Not in the PIN-44 eval; these fields came
+  // from the text extract on Luna, so it follows text.
   recipe_estimates: { model: LUNA, fallbacks: [QWEN_FLASH], reasoning: 'none' },
   photo: { model: SONNET, fallbacks: [SOL], reasoning: 'low' },
   repair: { model: SONNET, fallbacks: [SOL], reasoning: 'low' },

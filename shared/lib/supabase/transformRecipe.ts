@@ -3,7 +3,7 @@ import { FunctionsHttpError } from '@supabase/supabase-js';
 import type { RecipeAppliance } from '../appliances';
 import { supabase } from './client';
 import { RecipeVariantKey } from '../recipeVariants';
-import { Ingredient, Instruction } from '../../types/recipe';
+import { Ingredient, Instruction, RecipeNutrition } from '../../types/recipe';
 
 export interface TransformedRecipePayload {
   ingredients: Ingredient[];
@@ -11,6 +11,8 @@ export interface TransformedRecipePayload {
   servings: number;
   calories?: number;
   calories_reasoning?: string;
+  /** PIN-80. null = no macros for the remixed recipe; absent = a server from before PIN-80. */
+  nutrition?: RecipeNutrition | null;
   summary: string;
   /**
    * Present only when the remix changed the steps (ADR 017): the new list, or null if it could not

@@ -22,6 +22,10 @@ export interface SharedRecipe {
   instructions?: unknown;
   servings?: number;
   estimated_time_minutes?: number;
+  /** Total kcal for all servings. */
+  calories?: number | null;
+  /** PIN-80: grams for all servings. */
+  nutrition?: { protein_g?: unknown; carbs_g?: unknown; fat_g?: unknown } | null;
   tags?: string[];
   source_language?: string;
 }
@@ -41,6 +45,7 @@ const PLATFORM_NAMES: Record<string, string> = {
   tiktok: 'TikTok',
   instagram: 'Instagram',
   facebook: 'Facebook',
+  pinterest: 'Pinterest',
   youtube: 'YouTube',
 };
 
@@ -168,6 +173,36 @@ export function shareDescription(recipe: SharedRecipe, lang: PageLanguage = 'en'
   return list.length ? `${lead} · ${list.join(' · ')}.` : `${lead}.`;
 }
 
+const gramsOf = (value: unknown): number | null =>
+  typeof value === 'number' && Number.isFinite(value) && value >= 0 && value <= 2500 ? value : null;
+
+/**
+ * schema.org NutritionInformation for one serving (PIN-80), the numbers the app shows: calories alone when there are
+ * no macros, nothing without calories. Same per-serving fix as the app's recipeCalories (a "total" that is really one
+ * cookie of 48).
+ */
+export function nutritionJsonLd(recipe: SharedRecipe): Record<string, string> | undefined {
+  const total = recipe.calories;
+  if (typeof total !== 'number' || !Number.isFinite(total) || total <= 0) return undefined;
+  const serves = servings(recipe) ?? 1;
+  const looksPerServing = total / serves < 20 && total >= 40 && total <= 900 && serves >= 4;
+  const perServing = Math.max(1, Math.round(looksPerServing ? total : total / serves));
+  const data: Record<string, string> = {
+    '@type': 'NutritionInformation',
+    servingSize: '1 serving',
+    calories: `${perServing} calories`,
+  };
+  const protein = gramsOf(recipe.nutrition?.protein_g);
+  const carbs = gramsOf(recipe.nutrition?.carbs_g);
+  const fat = gramsOf(recipe.nutrition?.fat_g);
+  if (protein !== null && carbs !== null && fat !== null) {
+    data.proteinContent = `${Math.round(protein / serves)} g`;
+    data.carbohydrateContent = `${Math.round(carbs / serves)} g`;
+    data.fatContent = `${Math.round(fat / serves)} g`;
+  }
+  return data;
+}
+
 export function recipeJsonLd(
   recipe: SharedRecipe,
   pageUrl: string,
@@ -189,6 +224,8 @@ export function recipeJsonLd(
   };
   if (time) data.totalTime = `PT${time}M`;
   if (serves) data.recipeYield = `${serves} servings`;
+  const nutrition = nutritionJsonLd(recipe);
+  if (nutrition) data.nutrition = nutrition;
   if (recipe.tags?.length) data.keywords = recipe.tags.join(', ');
   if (source) data.isBasedOn = source;
   if (options.datePublished) data.datePublished = options.datePublished;

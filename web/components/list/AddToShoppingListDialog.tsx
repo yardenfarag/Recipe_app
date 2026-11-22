@@ -19,6 +19,7 @@ import { LoadingState } from "@/components/ui/States";
 import { ingredientChoices, initialSelection, type IngredientChoice } from "@/lib/list/ingredientChoices";
 import { addToShoppingList, type AddToListResult } from "@/lib/list/shoppingListSync";
 import { usePantryStaples } from "@/lib/list/usePantryStaples";
+import { useUnitSystem } from "@/lib/recipe/useUnitSystem";
 
 export type AddToShoppingListDialogProps = {
   open: boolean;
@@ -50,9 +51,10 @@ export function AddToShoppingListDialog(props: AddToShoppingListDialogProps) {
 function Body({ onOpenChange, recipeId, recipeTitle, ingredients, system, unitLanguage, onAdd }: AddToShoppingListDialogProps) {
   const { t } = useTranslation();
   const { staples, isStaple, keepStaple } = usePantryStaples();
+  const { units } = useUnitSystem();
   const choices = useMemo(
-    () => ingredientChoices(ingredients, { system, unitLanguage, recipeId, keyPrefix: "i" }),
-    [ingredients, system, unitLanguage, recipeId],
+    () => ingredientChoices(ingredients, { system, unitLanguage, recipeId, keyPrefix: "i", units }),
+    [ingredients, system, unitLanguage, recipeId, units],
   );
 
   return (

@@ -9,6 +9,7 @@ import {
   resolveInstagramVideoForGemini,
 } from '../supabase/functions/_shared/extraction/sources/instagram.ts';
 import { fetchFacebookMeta } from '../supabase/functions/_shared/extraction/sources/facebook.ts';
+import { fetchPinterestMeta } from '../supabase/functions/_shared/extraction/sources/pinterest.ts';
 import { fetchTikTokMeta } from '../supabase/functions/_shared/extraction/sources/tiktok.ts';
 import { fetchWebRecipeMeta } from '../supabase/functions/_shared/extraction/webRecipe.ts';
 import { fetchYouTubeMeta } from '../supabase/functions/_shared/extraction/sources/youtube.ts';
@@ -44,6 +45,8 @@ async function fetchMeta(url: string): Promise<{ platform: string; meta: Platfor
       return { platform, meta: await fetchTikTokMeta(url) };
     case 'facebook':
       return { platform, meta: await fetchFacebookMeta(url) };
+    case 'pinterest':
+      return { platform, meta: await fetchPinterestMeta(url) };
     case 'web':
       return { platform, meta: await fetchWebRecipeMeta(url) };
     case 'youtube': {

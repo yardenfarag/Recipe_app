@@ -3,6 +3,7 @@ import { recipeAppliancesOf } from '../_shared/recipes/enrich/appliances.ts';
 import { corsHeaders, jsonResponse } from '../_shared/core/cors.ts';
 import { createAuthedSupabase } from '../_shared/core/recipeLookup.ts';
 import { createServiceSupabase, toJson } from '../_shared/core/supabaseAdmin.ts';
+import { fitNutrition } from '../_shared/recipes/recipeLimits.ts';
 
 const MAX_BODY_BYTES = 32_000;
 const TOKEN_BYTES = 18;
@@ -25,6 +26,8 @@ interface RecipeSnapshot {
   instructions: unknown;
   servings: number;
   calories?: number | null;
+  /** PIN-80. Absent in shares created before it, which show no macros. */
+  nutrition?: unknown;
   estimated_time_minutes?: number | null;
   cost_estimate?: string | null;
   effort_level?: string | null;
@@ -65,6 +68,7 @@ function snapshotFromRecipe(row: Record<string, unknown>): RecipeSnapshot {
     instructions: row.instructions ?? [],
     servings: typeof row.servings === 'number' && row.servings >= 1 ? row.servings : 1,
     calories: typeof row.calories === 'number' ? row.calories : null,
+    nutrition: typeof row.calories === 'number' ? fitNutrition(row.nutrition) : null,
     estimated_time_minutes:
       typeof row.estimated_time_minutes === 'number' ? row.estimated_time_minutes : null,
     cost_estimate: typeof row.cost_estimate === 'string' ? row.cost_estimate : null,
@@ -92,6 +96,7 @@ function publicSnapshot(snapshot: RecipeSnapshot) {
     instructions: snapshot.instructions,
     servings: snapshot.servings,
     calories: snapshot.calories ?? undefined,
+    nutrition: toJson(snapshotNutrition(snapshot)),
     estimated_time_minutes: snapshot.estimated_time_minutes ?? undefined,
     cost_estimate: snapshot.cost_estimate ?? undefined,
     effort_level: snapshot.effort_level ?? undefined,
@@ -102,6 +107,11 @@ function publicSnapshot(snapshot: RecipeSnapshot) {
     source_language: snapshot.source_language ?? undefined,
     appliances: toJson(snapshotAppliances(snapshot)),
   };
+}
+
+/** Stored JSON too: macros only next to calories, in the stored shape. */
+function snapshotNutrition(snapshot: RecipeSnapshot) {
+  return typeof snapshot.calories === 'number' ? fitNutrition(snapshot.nutrition) : null;
 }
 
 /** Snapshots are stored JSON, so clean the list again on the way out. */
@@ -121,6 +131,7 @@ function insertRowFromSnapshot(userId: string, snapshot: RecipeSnapshot) {
     instructions: toJson(snapshot.instructions ?? []),
     servings: snapshot.servings,
     calories: snapshot.calories ?? null,
+    nutrition: toJson(snapshotNutrition(snapshot)),
     estimated_time_minutes: snapshot.estimated_time_minutes ?? null,
     cost_estimate: snapshot.cost_estimate ?? null,
     effort_level: snapshot.effort_level ?? null,
@@ -137,6 +148,13 @@ function insertRowFromSnapshot(userId: string, snapshot: RecipeSnapshot) {
   };
 }
 
+/**
+ * POST { action: 'create' | 'get' | 'claim' | 'revoke' | 'status', recipe_id?, token? }
+ *
+ * Failures keep the old { error, code? } shape (ADR 024). Codes (the app's words for them are in
+ * shared/lib/serverErrors.ts): server_misconfigured, auth_required, share_not_found, share_unavailable,
+ * recipe_not_saved, recipe_not_found, recipe_invalid, share_failed, claim_failed. Bad requests have no code.
+ */
 serve('recipe-share', async (req) => {
   if (req.method === 'OPTIONS') {
     return new Response('ok', { headers: corsHeaders });
@@ -163,11 +181,11 @@ serve('recipe-share', async (req) => {
   }
 
   const admin = createServiceSupabase();
-  if (!admin) return jsonResponse({ error: 'Server misconfigured' }, 500);
+  if (!admin) return jsonResponse({ error: 'Server misconfigured', code: 'server_misconfigured' }, 500);
 
   if (action === 'get') {
     const token = typeof body.token === 'string' ? body.token.trim() : '';
-    if (!token) return jsonResponse({ error: 'Missing token' }, 400);
+    if (!token) return jsonResponse({ error: 'Missing token', code: 'share_not_found' }, 400);
 
     const { data, error } = await admin
       .from('recipe_shares')
@@ -177,7 +195,7 @@ serve('recipe-share', async (req) => {
 
     if (error) {
       console.error('recipe-share get failed:', error);
-      return jsonResponse({ error: 'Could not load share' }, 500);
+      return jsonResponse({ error: 'Could not load share', code: 'share_unavailable' }, 500);
     }
     if (!data || data.revoked_at) {
       return jsonResponse({ error: 'Share not found', code: 'share_not_found' }, 404);
@@ -192,18 +210,18 @@ serve('recipe-share', async (req) => {
 
   const authHeader = req.headers.get('Authorization');
   if (!authHeader) {
-    return jsonResponse({ error: 'Missing Authorization header' }, 401);
+    return jsonResponse({ error: 'Missing Authorization header', code: 'auth_required' }, 401);
   }
 
   const authed = createAuthedSupabase(authHeader);
-  if (!authed) return jsonResponse({ error: 'Server misconfigured' }, 500);
+  if (!authed) return jsonResponse({ error: 'Server misconfigured', code: 'server_misconfigured' }, 500);
 
   const {
     data: { user },
     error: userError,
   } = await authed.auth.getUser();
   if (userError || !user) {
-    return jsonResponse({ error: 'Unauthorized' }, 401);
+    return jsonResponse({ error: 'Unauthorized', code: 'auth_required' }, 401);
   }
 
   // Stops a link (by token) or every link to a recipe (by recipe_id). Only the
@@ -222,7 +240,7 @@ serve('recipe-share', async (req) => {
     const { data, error } = await query.select('token');
     if (error) {
       console.error('recipe-share revoke failed:', error);
-      return jsonResponse({ error: 'Could not revoke share' }, 500);
+      return jsonResponse({ error: 'Could not revoke share', code: 'share_failed' }, 500);
     }
     return jsonResponse({ status: 'ok', revoked: data?.length ?? 0 });
   }
@@ -241,7 +259,7 @@ serve('recipe-share', async (req) => {
       .limit(1);
     if (error) {
       console.error('recipe-share status failed:', error);
-      return jsonResponse({ error: 'Could not load share status' }, 500);
+      return jsonResponse({ error: 'Could not load share status', code: 'share_failed' }, 500);
     }
     return jsonResponse({ status: 'ok', shared: (data?.length ?? 0) > 0 });
   }
@@ -249,7 +267,7 @@ serve('recipe-share', async (req) => {
   if (action === 'create') {
     const recipeId = typeof body.recipe_id === 'string' ? body.recipe_id.trim() : '';
     if (!recipeId || recipeId.startsWith('guest-')) {
-      return jsonResponse({ error: 'A saved recipe is required to share' }, 400);
+      return jsonResponse({ error: 'A saved recipe is required to share', code: 'recipe_not_saved' }, 400);
     }
 
     const { data: recipe, error: recipeError } = await authed
@@ -260,7 +278,7 @@ serve('recipe-share', async (req) => {
 
     if (recipeError) {
       console.error('recipe-share create lookup failed:', recipeError);
-      return jsonResponse({ error: 'Could not load recipe' }, 500);
+      return jsonResponse({ error: 'Could not load recipe', code: 'share_failed' }, 500);
     }
     if (!recipe) {
       return jsonResponse({ error: 'Recipe not found', code: 'recipe_not_found' }, 404);
@@ -281,7 +299,7 @@ serve('recipe-share', async (req) => {
       snapshot = snapshotFromRecipe(recipe as Record<string, unknown>);
     } catch (err) {
       return jsonResponse(
-        { error: err instanceof Error ? err.message : 'Invalid recipe' },
+        { error: err instanceof Error ? err.message : 'Invalid recipe', code: 'recipe_invalid' },
         400,
       );
     }
@@ -310,17 +328,17 @@ serve('recipe-share', async (req) => {
       }
       if (insertError.code !== '23505') {
         console.error('recipe-share create insert failed:', insertError);
-        return jsonResponse({ error: 'Could not create share' }, 500);
+        return jsonResponse({ error: 'Could not create share', code: 'share_failed' }, 500);
       }
     }
 
-    return jsonResponse({ error: 'Could not create share' }, 500);
+    return jsonResponse({ error: 'Could not create share', code: 'share_failed' }, 500);
   }
 
   // claim
   const token = typeof body.token === 'string' ? body.token.trim() : '';
   if (!isNonEmptyString(token)) {
-    return jsonResponse({ error: 'Missing token' }, 400);
+    return jsonResponse({ error: 'Missing token', code: 'share_not_found' }, 400);
   }
 
   const { data: share, error: shareError } = await admin
@@ -331,7 +349,7 @@ serve('recipe-share', async (req) => {
 
   if (shareError) {
     console.error('recipe-share claim load failed:', shareError);
-    return jsonResponse({ error: 'Could not load share' }, 500);
+    return jsonResponse({ error: 'Could not load share', code: 'share_unavailable' }, 500);
   }
   if (!share || share.revoked_at) {
     return jsonResponse({ error: 'Share not found', code: 'share_not_found' }, 404);
@@ -414,7 +432,7 @@ serve('recipe-share', async (req) => {
       }
     }
     console.error('recipe-share claim insert failed:', insertError);
-    return jsonResponse({ error: 'Could not save shared recipe' }, 500);
+    return jsonResponse({ error: 'Could not save shared recipe', code: 'claim_failed' }, 500);
   }
 
   const { error: claimError } = await admin.from('recipe_share_claims').insert({

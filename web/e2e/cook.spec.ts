@@ -186,6 +186,66 @@ test("cook mode shows one step at a time, moves with keys and buttons, and finis
   await expect(step).toHaveText("Rest the batter for 10 minutes.");
 });
 
+test("cook mode reads the step shown aloud, and stops when it closes", async ({ page }) => {
+  // The browser's speech is replaced by a recorder: no sound in tests, and we can see what would be said.
+  await page.addInitScript(() => {
+    const spoken: string[] = [];
+    let cancels = 0;
+    // `hold` keeps the current utterance "speaking", so closing has something to stop.
+    const state = { hold: false };
+    class Utterance {
+      lang = "";
+      voice: unknown = null;
+      onend: (() => void) | null = null;
+      onerror: (() => void) | null = null;
+      constructor(public text: string) {}
+    }
+    Object.assign(window, { SpeechSynthesisUtterance: Utterance, __speech: { spoken, cancels: () => cancels, state } });
+    Object.defineProperty(window, "speechSynthesis", {
+      configurable: true,
+      value: {
+        getVoices: () => [{ voiceURI: "test-en", lang: "en-US", name: "Test", localService: true, default: true }],
+        speak: (utterance: Utterance) => {
+          spoken.push(utterance.text);
+          setTimeout(() => {
+            if (!state.hold) utterance.onend?.();
+          }, 10);
+        },
+        cancel: () => void (cancels += 1),
+        addEventListener: () => undefined,
+        removeEventListener: () => undefined,
+      },
+    });
+  });
+  await openRecipe(page);
+  await page.getByTestId("cook-bar").getByRole("button", { name: "Cook mode" }).click();
+  const dialog = page.getByRole("dialog", { name: PANCAKES.title });
+  const spoken = () => page.evaluate(() => (window as unknown as { __speech: { spoken: string[] } }).__speech.spoken);
+  const speaker = dialog.getByRole("button", { name: "Read steps aloud" });
+  await expect(speaker).toHaveAttribute("aria-pressed", "false");
+
+  await speaker.click();
+  await expect(speaker).toHaveAttribute("aria-pressed", "true");
+  await expect.poll(spoken).toEqual(["Step 1 of 3.", "Whisk the flour and milk."]);
+  await dialog.getByRole("button", { name: "Next" }).click();
+  await expect.poll(async () => (await spoken()).slice(-2)).toEqual(["Step 2 of 3.", "Rest the batter for 10 minutes."]);
+  await dialog.getByRole("button", { name: "Read again" }).click();
+  await expect.poll(async () => (await spoken()).length).toBe(6);
+
+  const cancels = () => page.evaluate(() => (window as unknown as { __speech: { cancels: () => number } }).__speech.cancels());
+  await page.evaluate(() => void ((window as unknown as { __speech: { state: { hold: boolean } } }).__speech.state.hold = true));
+  await dialog.getByRole("button", { name: "Read again" }).click();
+  await expect.poll(async () => (await spoken()).length).toBe(7);
+  const before = await cancels();
+  await page.keyboard.press("Escape");
+  await expect(dialog).toHaveCount(0);
+  expect(await cancels()).toBeGreaterThan(before);
+
+  // The choice is remembered: cook mode opens reading.
+  await page.getByTestId("cook-bar").getByRole("button", { name: "Cook mode" }).click();
+  await expect(dialog.getByRole("button", { name: "Read steps aloud" })).toHaveAttribute("aria-pressed", "true");
+});
+
 test("in Hebrew, the left arrow is next in cook mode", async ({ page }) => {
   await setTestUserLanguage("he");
   await openRecipe(page, VIDEOS.youtube);

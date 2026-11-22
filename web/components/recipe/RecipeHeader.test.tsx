@@ -78,6 +78,23 @@ describe("RecipeHeader", () => {
     expect(original?.getAttribute("rel")).toContain("noopener");
   });
 
+  it("shows protein, carbs and fat per serving, whatever the servings chosen (PIN-80)", () => {
+    const nutrition = { protein_g: 60, carbs_g: 80, fat_g: 36 };
+    const { unmount } = wrap(<RecipeHeader display={displayOf({ nutrition })} servings={6} />);
+    expect(screen.getByTestId("recipe-nutrition").textContent).toBe("Per serving: 30 g protein · 40 g carbs · 18 g fat");
+    unmount();
+  });
+
+  it("shows no macros without them, or next to calories the cook set by hand", () => {
+    const { unmount } = wrap(<RecipeHeader display={displayOf()} servings={2} />);
+    expect(screen.queryByTestId("recipe-nutrition")).toBeNull();
+    unmount();
+    const nutrition = { protein_g: 60, carbs_g: 80, fat_g: 36 };
+    wrap(<RecipeHeader display={displayOf({ nutrition, locked_fields: ["calories"] })} servings={2} />);
+    expect(screen.getByText("~200 cal/serving")).toBeDefined();
+    expect(screen.queryByTestId("recipe-nutrition")).toBeNull();
+  });
+
   it("the heart says what it will do and reports its state", () => {
     const toggle = vi.fn();
     wrap(<RecipeHeader display={displayOf({ is_favorite: true })} servings={2} onToggleFavorite={toggle} />);
@@ -150,9 +167,10 @@ describe("with recipe actions (a saved recipe's page)", () => {
   });
 
   it("shows 'Updating…' for the facts Pinch is recalculating, read out with the field", () => {
-    const display = displayOf();
+    const display = displayOf({ nutrition: { protein_g: 60, carbs_g: 80, fat_g: 36 } });
     inContext(<RecipeHeader display={display} servings={2} />, fakeActions(display, { updatingFields: ["calories", "tags"] }));
     expect(screen.queryByText("~200 cal/serving")).toBeNull();
+    expect(screen.queryByTestId("recipe-nutrition")).toBeNull();
     const updating = screen.getAllByTestId("updating-fact");
     expect(updating).toHaveLength(1);
     expect(updating[0].textContent).toBe("Calories: Updating…");

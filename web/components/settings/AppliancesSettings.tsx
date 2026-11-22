@@ -81,7 +81,9 @@ export function AppliancesSettings() {
 
         <div className="flex flex-col gap-5">
           {APPLIANCE_CHECKLIST.map((group) => {
-            const label = t(`myAppliances.groups.${group.id}`);
+            // The catalog keeps these under one dotted key, "myAppliances.groups", which the default "." separator
+            // can't reach; ">" splits the path at the right place.
+            const label = t(`myAppliances.groups>${group.id}`, { keySeparator: ">" });
             return (
               <div key={group.id}>
                 <SubHeading>{label}</SubHeading>

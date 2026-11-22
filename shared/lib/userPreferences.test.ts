@@ -26,6 +26,11 @@ describe('readAccountPreferences', () => {
     expect(readAccountPreferences('nope')).toEqual({});
   });
 
+  it('reads the Metric-or-US choice (PIN-53)', () => {
+    expect(readAccountPreferences({ prefs: { units: 'us' } })).toEqual({ units: 'us' });
+    expect(readAccountPreferences({ prefs: { units: 'imperial' } })).toEqual({});
+  });
+
   it('keeps the good fields next to bad ones', () => {
     expect(readAccountPreferences({ locale: 'xx', prefs: { scheme: 'light', pack: 'nope' } })).toEqual({ scheme: 'light' });
   });
@@ -55,6 +60,12 @@ describe('preferencesUpdate', () => {
     const metadata = { locale: 'he', prefs: { scheme: 'dark', measurement: 'metric' } };
     expect(preferencesUpdate(metadata, { language: 'he', scheme: 'dark', measurement: 'metric' })).toBeNull();
     expect(preferencesUpdate(metadata, {})).toBeNull();
+  });
+
+  it('saves the Metric-or-US choice inside prefs, keeping the rest', () => {
+    expect(preferencesUpdate({ prefs: { scheme: 'dark' } }, { units: 'metric' })).toEqual({
+      prefs: { scheme: 'dark', units: 'metric' },
+    });
   });
 
   it('drops bad values from the changes', () => {

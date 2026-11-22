@@ -78,11 +78,14 @@ describe('localizeIngredientUnits', () => {
       [
         { name: 'flour', quantity: 1, unit: 'cup' },
         { name: 'herbs', quantity: 1, unit: 'handful' },
+        { name: 'espresso', quantity: 1, unit: 'shot' },
       ],
       'he',
     );
     expect(result[0].unit).toBe('כוס');
-    expect(result[1].unit).toBe('handful');
+    // Known since PIN-53.
+    expect(result[1].unit).toBe('חופן');
+    expect(result[2].unit).toBe('shot');
   });
 
   it('localizes extracted grams and spoons amounts', () => {

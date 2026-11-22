@@ -13,6 +13,7 @@ import { SheetModal } from '@/components/SheetModal';
 import { useKitchenProfile } from '@/hooks/useKitchenProfile';
 import { useLanguagePreference } from '@/hooks/useLanguagePreference';
 import { useMeasurementPreference } from '@/hooks/useMeasurementPreference';
+import { useUnitSystemPreference } from '@/hooks/useUnitSystemPreference';
 import { useThemePreference } from '@/hooks/useThemePreference';
 import { announce, CHROME_MAX_FONT_SCALE } from '@/lib/a11y';
 import { resolveCulinaryLanguage } from '@shared/lib/culinaryUnits';
@@ -44,6 +45,7 @@ export function AddToShoppingListModal({
   const { colors } = useThemePreference();
   const { language: appLanguage } = useLanguagePreference();
   const { system: measurementSystem } = useMeasurementPreference();
+  const { units } = useUnitSystemPreference();
   const { pantryStaples, keepStaple, stapleSaved } = useKitchenProfile();
   const unitLanguage = resolveCulinaryLanguage(language, appLanguage);
   const [selected, setSelected] = useState<Set<number>>(() => new Set());
@@ -174,6 +176,7 @@ export function AddToShoppingListModal({
               displayIngredientAmount(ing, {
                 system: measurementSystem,
                 language: unitLanguage,
+                units,
               }) || t('recipe.amountUnknown');
             return (
               <View

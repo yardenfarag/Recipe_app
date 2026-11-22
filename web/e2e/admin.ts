@@ -62,6 +62,8 @@ export type SeedRecipe = {
   image_url?: string;
   servings?: number;
   calories?: number;
+  /** PIN-80: grams for all servings. */
+  nutrition?: { protein_g: number; carbs_g: number; fat_g: number };
   ingredients?: { name: string; quantity: number; unit: string; metric?: { quantity: number; unit: string }; spoons?: { quantity: number; unit: string } }[];
   instructions?: { step: number; text: string }[];
   source_language?: string;
@@ -108,6 +110,7 @@ export async function resetLibrary(recipes: SeedRecipe[]): Promise<string[]> {
     instructions: recipe.instructions ?? [{ step: 1, text: "Cook it." }],
     servings: recipe.servings ?? 1,
     calories: recipe.calories ?? null,
+    nutrition: recipe.nutrition ?? null,
     source_language: recipe.source_language ?? "en",
     extraction_status: recipe.extraction_status ?? "full",
     original_url: recipe.original_url ?? null,

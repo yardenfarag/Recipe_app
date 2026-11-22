@@ -1,3 +1,5 @@
+import { FunctionsHttpError } from '@supabase/supabase-js';
+
 import { RecipeLanguageCode } from '../recipeLanguages';
 import { supabase } from './client';
 import { Ingredient, Instruction } from '../../types/recipe';
@@ -13,16 +15,51 @@ export interface SubstitutionAlternative {
 
 export type SubstitutionStatus = 'ok' | 'failed';
 
+/** Codes the function sends with a failure (shared/lib/serverErrors.ts has the words for them). */
+export type SubstitutionErrorCode =
+  | 'auth_required'
+  | 'daily_limit'
+  | 'metering_error'
+  | 'no_substitute'
+  | 'substitution_failed'
+  | 'rewrite_empty'
+  | 'rewrite_failed'
+  | string;
+
 export interface SubstitutionResult {
   status: SubstitutionStatus;
   alternatives?: SubstitutionAlternative[];
   message?: string;
+  code?: SubstitutionErrorCode;
 }
 
 export interface RewriteInstructionsResult {
   status: SubstitutionStatus;
   instructions?: { step: number; text: string }[];
   message?: string;
+  code?: SubstitutionErrorCode;
+}
+
+/** The failure the function answered with, when it answered; else `fallbackMessage` with no code. */
+async function invokeFailure(
+  error: unknown,
+  fallbackMessage: string,
+): Promise<{ status: 'failed'; message: string; code?: string }> {
+  if (error instanceof FunctionsHttpError) {
+    try {
+      const body = (await error.context.json()) as { message?: string; error?: string; code?: string };
+      if (body.message || body.error) {
+        return {
+          status: 'failed',
+          message: body.message ?? body.error ?? fallbackMessage,
+          ...(typeof body.code === 'string' ? { code: body.code } : {}),
+        };
+      }
+    } catch {
+      // Fall through.
+    }
+  }
+  return { status: 'failed', message: fallbackMessage };
 }
 
 /**
@@ -51,10 +88,7 @@ export async function suggestSubstitution(
   );
 
   if (error) {
-    return {
-      status: 'failed',
-      message: 'Could not reach the substitution service. Please try again.',
-    };
+    return invokeFailure(error, 'Could not reach the substitution service. Please try again.');
   }
 
   return data ?? { status: 'failed', message: 'No response from the substitution service.' };
@@ -89,10 +123,7 @@ export async function rewriteInstructionsForSubstitution(
   );
 
   if (error) {
-    return {
-      status: 'failed',
-      message: 'Could not update the recipe steps. Please try again.',
-    };
+    return invokeFailure(error, 'Could not update the recipe steps. Please try again.');
   }
 
   return (

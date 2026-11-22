@@ -2,7 +2,7 @@ import { FunctionsHttpError } from '@supabase/supabase-js';
 
 import type { RecipeAppliance } from '../appliances';
 import { supabase } from './client';
-import type { CostEstimate, EffortLevel, Ingredient, Instruction } from '../../types/recipe';
+import type { CostEstimate, EffortLevel, Ingredient, Instruction, RecipeNutrition } from '../../types/recipe';
 
 export type RepairStatus = 'full' | 'partial' | 'failed' | 'ok';
 
@@ -12,6 +12,8 @@ export interface RepairedRecipePayload {
   ingredients: Ingredient[];
   instructions: Instruction[];
   calories?: number;
+  /** PIN-80. null = none for the repaired recipe; absent = a server from before PIN-80. */
+  nutrition?: RecipeNutrition | null;
   estimated_time_minutes?: number;
   cost_estimate?: CostEstimate;
   effort_level?: EffortLevel;

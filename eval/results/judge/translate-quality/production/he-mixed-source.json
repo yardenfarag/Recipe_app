@@ -1,0 +1,32 @@
+{
+  "caseId": "he-mixed-source",
+  "judge": "google/gemini-3.1-pro-preview",
+  "translation": "Title: פנקייקים עם שוקולד מילקה\nIngredients:\n1. 300 מ״ל קפיר\n2. 1 шт. ביצה\n3. 2 כפות סוכר\n4. ½ כפיות סודה לשתייה\n5. 250 גרם קמח\n6. 1 шт. שוקולד מילקה\nSteps:\n1. ערבבו את הקפיר, הביצה, הסוכר והסודה לשתייה.\n2. הוסיפו את הקמח וערבבו עד לקבלת תערובת אחידה.\n3. הניחו חתיכת שוקולד על כל פנקייק וטגנו משני הצדדים.",
+  "verdict": {
+    "native_score": 3,
+    "errors": [
+      {
+        "where": "ingredient 2",
+        "category": "untranslated",
+        "severity": "major",
+        "excerpt": "1 шт.",
+        "fix": "1"
+      },
+      {
+        "where": "ingredient 4",
+        "category": "grammar",
+        "severity": "minor",
+        "excerpt": "½ כפיות",
+        "fix": "½ כפית"
+      },
+      {
+        "where": "ingredient 6",
+        "category": "untranslated",
+        "severity": "major",
+        "excerpt": "1 шт.",
+        "fix": "1 חבילת"
+      }
+    ]
+  },
+  "costUsd": 0.008134
+}

@@ -1,0 +1,39 @@
+{
+  "caseId": "ru-appliances",
+  "judge": "google/gemini-3.1-pro-preview",
+  "translation": "Title: Шоколадные фонданы в аэрогриле\nIngredients:\n1. 60 г тёмный шоколад\n2. 30 г сливочное масло\n3. 1 яйцо\n4. 2 ст. л. сахар\n5. 1 ст. л. мука\nSteps:\n1. Растопите шоколад со сливочным маслом в микроволновой печи.\n2. Взбейте яйцо с сахаром, затем вмешайте шоколад и муку.\n3. Распределите смесь по двум смазанным маслом порционным керамическим формочкам.\n4. Готовьте в аэрогриле при 180°C в течение 7–8 минут, пока края не схватятся, а серединка останется жидкой.",
+  "verdict": {
+    "native_score": 4,
+    "errors": [
+      {
+        "where": "ingredient 1",
+        "category": "grammar",
+        "severity": "minor",
+        "excerpt": "тёмный шоколад",
+        "fix": "тёмного шоколада"
+      },
+      {
+        "where": "ingredient 2",
+        "category": "grammar",
+        "severity": "minor",
+        "excerpt": "сливочное масло",
+        "fix": "сливочного масла"
+      },
+      {
+        "where": "ingredient 4",
+        "category": "grammar",
+        "severity": "minor",
+        "excerpt": "сахар",
+        "fix": "сахара"
+      },
+      {
+        "where": "ingredient 5",
+        "category": "grammar",
+        "severity": "minor",
+        "excerpt": "мука",
+        "fix": "муки"
+      }
+    ]
+  },
+  "costUsd": 0.014478
+}

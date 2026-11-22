@@ -19,7 +19,7 @@ const WEB_IMAGE_TYPES = new Set(['image/jpeg', 'image/png', 'image/webp', 'image
  */
 export async function persistSocialThumbnail(opts: {
   sourceUrl: string;
-  platform: Extract<Platform, 'instagram' | 'tiktok' | 'facebook' | 'web'>;
+  platform: Extract<Platform, 'instagram' | 'tiktok' | 'facebook' | 'pinterest' | 'web'>;
   contentId?: string | null;
 }): Promise<string | undefined> {
   const { sourceUrl, platform, contentId } = opts;

@@ -1,5 +1,6 @@
 import { serve } from '../_shared/core/observe.ts';
 import { normalizeStoredCalories } from '../_shared/recipes/calories.ts';
+import { normalizeStoredNutrition } from '../_shared/recipes/nutrition.ts';
 import { corsHeaders, jsonResponse } from '../_shared/core/cors.ts';
 import { FetchError } from '../_shared/core/errors.ts';
 import { fetchErrorInfo } from '../_shared/extraction/fetchErrorMessage.ts';
@@ -17,6 +18,7 @@ import {
   GeminiRecipe,
 } from '../_shared/extraction/gemini.ts';
 import { fetchFacebookMeta, resolveFacebookShareLink } from '../_shared/extraction/sources/facebook.ts';
+import { fetchPinterestMeta, resolvePinterestShortLink } from '../_shared/extraction/sources/pinterest.ts';
 import { fetchInstagramMeta } from '../_shared/extraction/sources/instagram.ts';
 import {
   appliedExtractRoute,
@@ -29,6 +31,7 @@ import {
 import {
   canonicalFacebookUrl,
   canonicalInstagramUrl,
+  canonicalPinterestUrl,
   canonicalTikTokUrl,
   canonicalYouTubeWatchUrl,
   detectPlatform,
@@ -199,7 +202,7 @@ serve('extract-recipe', async (req) => {
       platform,
       message:
         platform === 'unknown'
-          ? "We couldn't recognize that link. Try a YouTube, Instagram, TikTok, Facebook, or recipe website link."
+          ? "We couldn't recognize that link. Try a YouTube, Instagram, TikTok, Facebook, Pinterest, or recipe website link."
           : `${capitalize(platform)} support is coming soon — we're starting with YouTube.`,
     });
   }
@@ -209,6 +212,11 @@ serve('extract-recipe', async (req) => {
     // PIN-66: a share link only names its reel or post after a redirect. Resolving it here lets
     // the saved-recipe check below recognise a repeat before any scrape is paid for.
     url = await resolveFacebookShareLink(url);
+  }
+  if (platform === 'pinterest') {
+    // PIN-70: pin.it only names its pin after two redirects, and the sharer's id rides along in the
+    // query. Resolving here gives the saved-recipe check below the pin id, for free.
+    url = await resolvePinterestShortLink(url);
   }
 
   const contentId = platform === 'photo' ? null : extractVideoIdForPlatform(url, platform);
@@ -226,6 +234,16 @@ serve('extract-recipe', async (req) => {
       status: 'failed' as ExtractionStatus,
       platform,
       message: "That doesn't look like a valid Instagram reel or post link.",
+    });
+  }
+
+  if (platform === 'pinterest' && !contentId) {
+    // A board, a profile, or a pin.it link that leads to neither.
+    return jsonResponse({
+      status: 'failed' as ExtractionStatus,
+      platform,
+      code: 'invalid_url',
+      message: "That doesn't look like a Pinterest pin. Open the pin and share it.",
     });
   }
 
@@ -424,9 +442,13 @@ serve('extract-recipe', async (req) => {
       );
     }
 
+    // PIN-70: a pin that links to a recipe site came back as that page, so the ladder reads it as one.
+    // Everything saved, logged and returned keeps the link's own platform.
+    const ladderPlatform: Platform = meta?.readAs === 'web' ? 'web' : platform;
+
     const tooLongNoText =
-      platform !== 'photo' &&
-      platform !== 'web' &&
+      ladderPlatform !== 'photo' &&
+      ladderPlatform !== 'web' &&
       isVideoTooLong(meta?.durationSeconds) &&
       !hasTextSources(meta ?? { topComments: [] });
 
@@ -434,10 +456,10 @@ serve('extract-recipe', async (req) => {
       platform === 'photo'
         ? null
         : {
-            platform,
+            platform: ladderPlatform,
             sourceUrl: url,
-            videoUrl: platform === 'web' ? undefined : meta?.videoUrl,
-            durationSeconds: platform === 'web' ? undefined : meta?.durationSeconds,
+            videoUrl: ladderPlatform === 'web' ? undefined : meta?.videoUrl,
+            durationSeconds: ladderPlatform === 'web' ? undefined : meta?.durationSeconds,
             description: meta?.description,
             captions: meta?.captions,
             topComments: meta?.topComments ?? [],
@@ -690,7 +712,7 @@ serve('extract-recipe', async (req) => {
         ? await resolveThumbnail(platform, resolvedContentId, meta ?? { topComments: [] })
         : (meta?.thumbnailUrl ??
           (platform === 'youtube' && resolvedContentId ? youTubeThumbnail(resolvedContentId) : null));
-      sourceVideoUrl = platform === 'web' ? meta?.videoUrl ?? null : null;
+      sourceVideoUrl = ladderPlatform === 'web' ? meta?.videoUrl ?? null : null;
       originalUrl = canonicalOriginalUrl(platform, resolvedContentId, url, meta?.canonicalUrl);
       durationSeconds = meta?.durationSeconds;
       console.log('[extract-recipe] ladder done', {
@@ -785,6 +807,8 @@ serve('extract-recipe', async (req) => {
             ? "Couldn't find a recipe on this page. Try a different link."
             : platform === 'facebook'
             ? "Couldn't find a recipe in this post. Try a different link."
+            : platform === 'pinterest'
+            ? "Couldn't find a recipe in this pin. Try a different link."
             : "Couldn't find a recipe in this video. Try a different link.",
         tokens_charged: 0,
         ...quotaFields(snapshot),
@@ -829,6 +853,7 @@ serve('extract-recipe', async (req) => {
         gemini.calories ?? null,
         gemini.servings > 0 ? gemini.servings : 1,
       ),
+      nutrition: normalizeStoredNutrition(gemini, gemini.servings > 0 ? gemini.servings : 1),
       estimated_time_minutes: gemini.estimated_time_minutes ?? null,
       cost_estimate: gemini.cost_estimate ?? null,
       effort_level: gemini.effort_level ?? null,
@@ -1094,6 +1119,8 @@ serve('extract-recipe', async (req) => {
         message:
           platform === 'web'
             ? 'Something went wrong while reading this page. Please try again.'
+            : platform === 'pinterest'
+            ? 'Something went wrong while reading this pin. Please try again.'
             : 'Something went wrong while reading the video. Please try again.',
         guest_extracts_remaining: guestRemaining,
       },
@@ -1515,6 +1542,8 @@ async function fetchPlatformMeta(
       return await fetchTikTokMeta(url);
     case 'facebook':
       return await fetchFacebookMeta(url);
+    case 'pinterest':
+      return await fetchPinterestMeta(url, { onPageRead });
     case 'web':
       return await fetchWebRecipeMeta(url, { onPageRead });
     default:
@@ -1532,6 +1561,7 @@ function canonicalOriginalUrl(
   if (platform === 'instagram' && contentId) return canonicalInstagramUrl(contentId);
   if (platform === 'tiktok' && contentId) return canonicalTikTokUrl(contentId);
   if (platform === 'facebook') return resolvedUrl?.trim() || canonicalFacebookUrl(url);
+  if (platform === 'pinterest' && contentId) return canonicalPinterestUrl(contentId);
   return url.trim();
 }
 
@@ -1550,7 +1580,8 @@ async function resolveThumbnail(
   }
 
   if (
-    (platform === 'instagram' || platform === 'tiktok' || platform === 'facebook' || platform === 'web') &&
+    (platform === 'instagram' || platform === 'tiktok' || platform === 'facebook' || platform === 'pinterest' ||
+      platform === 'web') &&
     meta.thumbnailUrl
   ) {
     // A web page's image is copied too, so its site can't swap the picture later (PIN-153).

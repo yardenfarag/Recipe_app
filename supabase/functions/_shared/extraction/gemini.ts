@@ -9,6 +9,7 @@ import {
   type DualIngredient,
 } from '../recipes/ingredientAmounts.ts';
 import { filledFieldsSummary } from './classifyRecipe.ts';
+import { NUTRITION_RULES, NUTRITION_SCHEMA_PROPERTIES } from '../recipes/nutrition.ts';
 import { generateLlmJson, resolveTaskModel, type LlmPart } from '../llm/llmClient.ts';
 import type { Platform } from './platform.ts';
 import type { GeminiUsageSnapshot } from '../llm/pricing.ts';
@@ -54,7 +55,8 @@ const MAX_COMMENT_CHARS = 500;
 
 export const CALORIE_RULES = `- calories_reasoning: one short phrase naming the main caloric ingredients and confirming calories is TOTAL for all servings.
 - calories: combined kcal for ALL portions at the stated servings (not per-portion). Example: 12 cookies ≈150 kcal each → servings=12, calories=1800.
-- servings: equal portions the recipe yields (usually 1–12). Do not confuse grams or item counts with servings unless each item is one portion.`;
+- servings: equal portions the recipe yields (usually 1–12). Do not confuse grams or item counts with servings unless each item is one portion.
+${NUTRITION_RULES}`;
 
 export const TIME_RULES = `- time_reasoning: one short phrase (prep + cook/bake + waits).
 - estimated_time_minutes: TOTAL wall-clock minutes until ready — include oven and mandatory waits, not just hands-on time. Example: mix 15 + chill 30 + bake 12 + cool 5 → 62.`;
@@ -147,6 +149,8 @@ export const RECIPE_SCHEMA = {
         'Brief chain-of-thought: key caloric ingredients, per-portion math, confirm total vs per-serving before setting calories.',
     },
     calories: { type: 'integer' },
+    // PIN-80: after calories, so the calorie estimate is made first.
+    ...NUTRITION_SCHEMA_PROPERTIES,
     time_reasoning: {
       type: 'string',
       description:
@@ -189,6 +193,10 @@ export interface GeminiRecipe {
   instructions: { step: number; text: string; timestamp_seconds?: number }[];
   calories_reasoning?: string;
   calories?: number;
+  /** PIN-80: grams for all servings, like calories. */
+  protein_g?: number;
+  carbs_g?: number;
+  fat_g?: number;
   time_reasoning?: string;
   estimated_time_minutes?: number;
   cost_estimate?: '$' | '$$' | '$$$';

@@ -1,0 +1,39 @@
+{
+  "caseId": "en-from-he-terms",
+  "judge": "google/gemini-3.1-pro-preview",
+  "translation": "Title: Cheese Pancakes\nIngredients:\n1. 1 cup 5% fat white cheese\n2. 2 יחידות eggs\n3. ½ cups flour\n4. 2 tablespoons date syrup\n5. 1 cup whipping cream\n6. 4 יחידות petit beurre biscuits\nSteps:\n1. Mix the white cheese with the eggs and flour to form a thick batter.\n2. Fry spoonfuls of the batter in a greased pan until golden on both sides.\n3. Whip the whipping cream until it forms whipped cream.\n4. Serve with the whipped cream, crumbled biscuits, and date syrup.",
+  "verdict": {
+    "native_score": 3,
+    "errors": [
+      {
+        "where": "ingredient 2",
+        "category": "untranslated",
+        "severity": "major",
+        "excerpt": "2 יחידות eggs",
+        "fix": "2 eggs"
+      },
+      {
+        "where": "ingredient 3",
+        "category": "grammar",
+        "severity": "minor",
+        "excerpt": "½ cups flour",
+        "fix": "½ cup flour"
+      },
+      {
+        "where": "ingredient 6",
+        "category": "untranslated",
+        "severity": "major",
+        "excerpt": "4 יחידות petit beurre biscuits",
+        "fix": "4 petit beurre biscuits"
+      },
+      {
+        "where": "step 3",
+        "category": "style_consistency",
+        "severity": "minor",
+        "excerpt": "until it forms whipped cream",
+        "fix": "until stiff peaks form"
+      }
+    ]
+  },
+  "costUsd": 0.01239
+}

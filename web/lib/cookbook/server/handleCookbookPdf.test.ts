@@ -20,6 +20,7 @@ const book = (overrides: Partial<CookbookBook> = {}): CookbookBook => ({
       source: "example.com",
       servingsLabel: "2",
       timeLabel: "20 min",
+      nutritionLabel: "Per serving: ~450 cal · 30 g protein · 40 g carbs · 18 g fat",
       ingredients: [{ amount: "4", name: "eggs" }],
       instructions: [{ step: 1, text: "Cook." }],
     },
@@ -91,9 +92,11 @@ describe("handleCookbookPdf", () => {
         { book: book({ recipes: [{ ...book().recipes[0]!, imageDataUri: "http://169.254.169.254/latest" }] }) },
         { book: book({ recipes: [{ ...book().recipes[0]!, imageDataUri: "file:///etc/passwd" }] }) },
         { book: book({ recipes: [{ ...book().recipes[0]!, title: "x".repeat(301) }] }) },
+        { book: book({ recipes: [{ ...book().recipes[0]!, nutritionLabel: "x".repeat(301) }] }) },
+        { book: { ...book(), recipes: [{ ...book().recipes[0]!, nutritionLabel: 450 }] } },
       ].map(async (body) => (await handleCookbookPdf(post(body), deps())).status),
     );
-    expect(statuses).toEqual([400, 400, 400, 400, 400, 400, 400, 400]);
+    expect(statuses).toEqual([400, 400, 400, 400, 400, 400, 400, 400, 400, 400]);
   });
 
   it("refuses a body over the limit without parsing it", async () => {

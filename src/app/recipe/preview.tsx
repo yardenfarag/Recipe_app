@@ -109,6 +109,7 @@ export default function RecipePreviewScreen() {
       ingredients: ExtractedRecipe['ingredients'];
       instructions: ExtractedRecipe['instructions'];
       calories?: number;
+      nutrition?: ExtractedRecipe['nutrition'];
       kitchen_adapted_summary?: string | null;
       kitchen_original?: ExtractedRecipe['kitchen_original'] | null;
       /** Only present when a remix or revert changes them (ADR 017). */
@@ -150,6 +151,7 @@ export default function RecipePreviewScreen() {
         ingredients: repaired.ingredients,
         instructions: repaired.instructions,
         calories: repaired.calories,
+        nutrition: repaired.nutrition ?? null,
         estimated_time_minutes: repaired.estimated_time_minutes,
         cost_estimate: repaired.cost_estimate,
         effort_level: repaired.effort_level,

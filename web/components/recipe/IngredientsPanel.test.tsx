@@ -131,6 +131,21 @@ describe("IngredientsPanel", () => {
     expect(atOne.onServingsChange).not.toHaveBeenCalled();
   });
 
+  it("adds protein, carbs and fat to the total, scaled to the servings on screen (PIN-80)", () => {
+    const nutrition = { protein_g: 120, carbs_g: 160, fat_g: 72 };
+    const { unmount } = renderPanel({ servings: 2, display: makeDisplay({}, { nutrition }) });
+    expect(screen.getByTestId("servings-total").textContent).toBe("≈ 400 cal · 60 g protein · 80 g carbs · 36 g fat total");
+    unmount();
+    renderPanel({ servings: 8, display: makeDisplay({}, { nutrition }) });
+    expect(screen.getByTestId("servings-total").textContent).toBe("≈ 1,600 cal · 240 g protein · 320 g carbs · 144 g fat total");
+  });
+
+  it("keeps the calories-only total next to calories set by hand", () => {
+    const nutrition = { protein_g: 120, carbs_g: 160, fat_g: 72 };
+    renderPanel({ servings: 2, display: makeDisplay({}, { nutrition, locked_fields: ["calories"] }) });
+    expect(screen.getByTestId("servings-total").textContent).toBe("≈ 400 cal total");
+  });
+
   it("switches between spoons and grams as a radio group, by click or arrow key", () => {
     const { choices } = renderPanel();
     const group = screen.getByRole("radiogroup");

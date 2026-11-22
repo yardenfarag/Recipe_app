@@ -10,13 +10,14 @@ import {
   type AccountPreferencesSnapshot,
   type AccountPreferencesSync,
 } from "@shared/lib/supabase/userPreferences";
+import { parseUnitSystem } from "@shared/lib/unitSystem";
 import { parseAppLanguage, parseMeasurementSystem, parseSchemePreference, parseThemePack } from "@shared/lib/userPreferences";
 
 import { getSupabase } from "@/lib/supabase";
-import { LANGUAGE_STORAGE_KEY, MEASUREMENT_STORAGE_KEY, THEME_STORAGE } from "@/lib/theme";
+import { LANGUAGE_STORAGE_KEY, MEASUREMENT_STORAGE_KEY, THEME_STORAGE, UNIT_SYSTEM_STORAGE_KEY } from "@/lib/theme";
 
 /**
- * Theme, language and spoons-or-grams as saved on the signed-in account (PIN-154). ThemeProvider, LanguageProvider
+ * Theme, language, spoons-or-grams and Metric-or-US as saved on the signed-in account (PIN-154, PIN-53). ThemeProvider, LanguageProvider
  * and useMeasurementSystem let it win over this browser's copy and save changes through it.
  */
 const INERT: AccountPreferencesSync = {
@@ -70,6 +71,7 @@ export function accountPreferences(): AccountPreferencesSync {
     pack: parseThemePack(stored(THEME_STORAGE.pack)),
     language: parseAppLanguage(stored(LANGUAGE_STORAGE_KEY)),
     measurement: parseMeasurementSystem(stored(MEASUREMENT_STORAGE_KEY)),
+    units: parseUnitSystem(stored(UNIT_SYSTEM_STORAGE_KEY)),
   });
   // Back on the tab: pick up a change made on the phone (at most once a minute).
   document.addEventListener("visibilitychange", () => {

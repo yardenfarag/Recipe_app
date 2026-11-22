@@ -67,6 +67,22 @@ describe('getRecipeVideoInfo', () => {
     expect(info.platform).toBe('youtube');
     expect(info.youtubeVideoId).toBe('dQw4w9WgXcQ');
   });
+
+  it('has nothing to play for a Pinterest pin (PIN-70)', () => {
+    const info = getRecipeVideoInfo('https://www.pinterest.com/pin/521713938098528836/', 'pinterest');
+    expect(info.mode).toBe('none');
+    expect(info.platform).toBe('pinterest');
+  });
+
+  it("plays the YouTube video of the site a pin linked to", () => {
+    const info = getRecipeVideoInfo(
+      'https://www.pinterest.com/pin/452611831329517145/',
+      'pinterest',
+      'https://www.youtube.com/watch?v=dQw4w9WgXcQ',
+    );
+    expect(info.mode).toBe('webview');
+    expect(info.platform).toBe('youtube');
+  });
 });
 
 
@@ -75,6 +91,7 @@ describe('getRecipePlatformLabel', () => {
     expect(getRecipePlatformLabel('youtube')).toBe('YouTube');
     expect(getRecipePlatformLabel('tiktok')).toBe('TikTok');
     expect(getRecipePlatformLabel('web')).toBe('Website');
+    expect(getRecipePlatformLabel('pinterest')).toBe('Pinterest');
   });
 });
 

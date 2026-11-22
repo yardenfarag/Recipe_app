@@ -879,6 +879,7 @@ export type Database = {
           image_url: string | null
           ingredients: Json
           instructions: Json
+          nutrition: Json | null
           original_url: string
           platform: string
           public_slug: string
@@ -909,6 +910,7 @@ export type Database = {
           image_url?: string | null
           ingredients?: Json
           instructions?: Json
+          nutrition?: Json | null
           original_url: string
           platform: string
           public_slug?: string
@@ -939,6 +941,7 @@ export type Database = {
           image_url?: string | null
           ingredients?: Json
           instructions?: Json
+          nutrition?: Json | null
           original_url?: string
           platform?: string
           public_slug?: string
@@ -1084,6 +1087,7 @@ export type Database = {
           language_code: string
           recipe_id: string
           title: string
+          translation_version: number | null
         }
         Insert: {
           created_at?: string
@@ -1092,6 +1096,7 @@ export type Database = {
           language_code: string
           recipe_id: string
           title: string
+          translation_version?: number | null
         }
         Update: {
           created_at?: string
@@ -1100,6 +1105,7 @@ export type Database = {
           language_code?: string
           recipe_id?: string
           title?: string
+          translation_version?: number | null
         }
         Relationships: [
           {
@@ -1134,6 +1140,7 @@ export type Database = {
           locked_fields: string[]
           migrated_from_guest: boolean
           missing_fields: string[] | null
+          nutrition: Json | null
           original_url: string | null
           platform: string | null
           recalc_pending: string[]
@@ -1168,6 +1175,7 @@ export type Database = {
           locked_fields?: string[]
           migrated_from_guest?: boolean
           missing_fields?: string[] | null
+          nutrition?: Json | null
           original_url?: string | null
           platform?: string | null
           recalc_pending?: string[]
@@ -1202,6 +1210,7 @@ export type Database = {
           locked_fields?: string[]
           migrated_from_guest?: boolean
           missing_fields?: string[] | null
+          nutrition?: Json | null
           original_url?: string | null
           platform?: string | null
           recalc_pending?: string[]
@@ -1634,6 +1643,7 @@ export type Database = {
           image_url: string | null
           ingredients: Json
           instructions: Json
+          nutrition: Json | null
           original_url: string
           platform: string
           public_slug: string
@@ -1741,6 +1751,7 @@ export type Database = {
         Args: { p_items: Json; p_require_one: boolean }
         Returns: boolean
       }
+      recipe_nutrition_valid: { Args: { p_nutrition: Json }; Returns: boolean }
       recipe_steps_within_limits: {
         Args: { p_items: Json; p_require_one: boolean }
         Returns: boolean

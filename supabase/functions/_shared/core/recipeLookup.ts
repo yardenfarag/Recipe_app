@@ -4,6 +4,7 @@ import type { Db } from './supabaseAdmin.ts';
 import {
   extractFacebookId,
   extractInstagramId,
+  extractPinterestId,
   extractTikTokId,
   extractYouTubeId,
   recipeUrlsMatch,
@@ -63,6 +64,8 @@ export function extractVideoIdForPlatform(url: string, platform: Platform): stri
       return extractTikTokId(url);
     case 'facebook':
       return extractFacebookId(url);
+    case 'pinterest':
+      return extractPinterestId(url);
     default:
       return null;
   }

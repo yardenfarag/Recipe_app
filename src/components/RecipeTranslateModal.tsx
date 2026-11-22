@@ -5,6 +5,7 @@ import { ActivityIndicator, ScrollView, Text, View } from 'react-native';
 import { Pressable } from '@/components/ui/Pressable';
 
 import { SheetModal } from '@/components/SheetModal';
+import { useLanguagePreference } from '@/hooks/useLanguagePreference';
 import { useRtl } from '@/hooks/useRtl';
 import { useThemePreference } from '@/hooks/useThemePreference';
 import { announce } from '@/lib/a11y';
@@ -13,6 +14,7 @@ import {
   RECIPE_LANGUAGES,
   RecipeLanguageCode,
 } from '@shared/lib/recipeLanguages';
+import { serverErrorText, TRANSLATE_ERROR_KEYS } from '@shared/lib/serverErrors';
 import {
   translateRecipe,
   TranslatedRecipePayload,
@@ -53,6 +55,7 @@ export function RecipeTranslateModal({
   onShowOriginal,
 }: RecipeTranslateModalProps) {
   const { t } = useTranslation();
+  const { language: appLanguage } = useLanguagePreference();
   const { colors } = useThemePreference();
   const { chevronForward } = useRtl();
   const [loadingLanguage, setLoadingLanguage] = useState<RecipeLanguageCode | null>(null);
@@ -96,10 +99,7 @@ export function RecipeTranslateModal({
       });
 
       if (result.status === 'failed' || !result.recipe) {
-        const message =
-          result.code === 'daily_limit'
-            ? t('recipe.translateDailyLimit')
-            : (result.message ?? t('recipe.translateFailedTitle'));
+        const message = serverErrorText(result, t, appLanguage, 'serverErrors.translateFailed', TRANSLATE_ERROR_KEYS);
         setError(message);
         announce(message);
         return;

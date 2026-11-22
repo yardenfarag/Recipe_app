@@ -63,7 +63,7 @@ function Body({
     try {
       const outcome = await onTranslate(language);
       if (outcome.status === "failed") {
-        setError(translateFailure(outcome, t));
+        setError(translateFailure(outcome, t, i18n.language));
         return;
       }
       onClose();

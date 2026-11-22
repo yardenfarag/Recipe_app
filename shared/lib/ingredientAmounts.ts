@@ -1,4 +1,5 @@
-import { applyMeasurementSystem, type MeasurementSystem } from './convertMeasurement';
+import { applyMeasurementSystem, isImperialWeight, type MeasurementSystem } from './convertMeasurement';
+import type { UnitSystem } from './unitSystem';
 import type { Ingredient, IngredientAmount } from '../types/recipe';
 
 export function isValidIngredientAmount(
@@ -30,14 +31,21 @@ export function readIngredientAmount(value: unknown): IngredientAmount | undefin
 export function pickIngredientAmount(
   ingredient: Pick<Ingredient, 'quantity' | 'unit' | 'metric' | 'spoons'>,
   system: MeasurementSystem,
+  units: UnitSystem = 'us',
 ): IngredientAmount {
   if (system === 'metric' && isValidIngredientAmount(ingredient.metric)) {
     return ingredient.metric;
   }
   if (system === 'original' && isValidIngredientAmount(ingredient.spoons)) {
+    // A Metric reader gets grams where the spoons side is a weight in ounces (PIN-53).
+    if (units === 'metric' && isImperialWeight(ingredient.spoons.unit)) {
+      return isValidIngredientAmount(ingredient.metric) && ingredient.metric.quantity > 0
+        ? ingredient.metric
+        : applyMeasurementSystem(ingredient.spoons.quantity, ingredient.spoons.unit, 'original', units);
+    }
     return ingredient.spoons;
   }
-  return applyMeasurementSystem(ingredient.quantity, ingredient.unit, system);
+  return applyMeasurementSystem(ingredient.quantity, ingredient.unit, system, units);
 }
 
 /**

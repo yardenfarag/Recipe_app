@@ -22,6 +22,11 @@ export interface PlatformMeta {
   contentId?: string;
   /** The post's stable URL when the fetch resolved one (a Facebook share link becomes its reel or post). */
   canonicalUrl?: string;
+  /**
+   * Set when the meta was read from another kind of source than the link's platform: a Pinterest pin
+   * that links to a recipe site comes back as that web page, and the ladder then runs as `web` (PIN-70).
+   */
+  readAs?: 'web';
 }
 
 export const EMPTY_PLATFORM_META: PlatformMeta = { topComments: [] };

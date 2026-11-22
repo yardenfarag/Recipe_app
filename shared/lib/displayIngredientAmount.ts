@@ -3,8 +3,9 @@ import { pickIngredientAmount } from './ingredientAmounts';
 import { type MeasurementSystem } from './convertMeasurement';
 import { formatQuantity, quantityReadsAsPinch } from './formatQuantity';
 import type { Ingredient } from '../types/recipe';
+import type { UnitSystem } from './unitSystem';
 
-const TASTE_UNITS = /^(to taste|al gusto|au goût|לפי הטעם|по вкусу|حسب الذوق)$/i;
+const TASTE_UNITS = /^(to taste|al gusto|au goût|nach Geschmack|לפי הטעם|по вкусу|حسب الذوق)$/i;
 
 function isTasteUnit(unit: string): boolean {
   return TASTE_UNITS.test(unit.trim());
@@ -34,10 +35,12 @@ export function displayIngredientAmount(
   options?: {
     system?: MeasurementSystem;
     language?: CulinaryUnitLanguage | null;
+    /** Metric or US weights in Spoons mode (PIN-53). Default US, as before the setting existed. */
+    units?: UnitSystem;
   },
 ): string {
   const system = options?.system ?? 'original';
-  const amount = pickIngredientAmount(ingredient, system);
+  const amount = pickIngredientAmount(ingredient, system, options?.units);
   if (isTasteUnit(ingredient.unit) || isTasteUnit(amount.unit)) {
     return (amount.unit || ingredient.unit).trim();
   }

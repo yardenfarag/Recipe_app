@@ -38,6 +38,10 @@ describe("cookAlongVideoFor", () => {
     expect(cookAlongVideoFor({ original_url: "https://www.facebook.com/1000639/posts/1582534293887922", platform: "facebook" })).toBeNull();
   });
 
+  it("has nothing to play for a Pinterest pin (PIN-70)", () => {
+    expect(cookAlongVideoFor({ original_url: "https://www.pinterest.com/pin/521713938098528836/", platform: "pinterest" })).toBeNull();
+  });
+
   it("offers a short link on its own site, since there is no id to embed", () => {
     const video = cookAlongVideoFor({ original_url: "https://vm.tiktok.com/ZMabc123/", platform: "tiktok" });
     expect(video).toMatchObject({ embedUrl: null, pageUrl: "https://vm.tiktok.com/ZMabc123/", canSeek: false });

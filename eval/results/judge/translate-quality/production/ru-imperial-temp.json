@@ -1,0 +1,60 @@
+{
+  "caseId": "ru-imperial-temp",
+  "judge": "google/gemini-3.1-pro-preview",
+  "translation": "Title: Тыквенный пирог\nIngredients:\n1. 1 невыпеченная основа для пирога диаметром 9 дюймов\n2. 425 г тыквенное пюре\n3. ¾ стакана сахар\n4. 1 ч. л. молотая корица\n5. 2 яйца\n6. 350 мл концентрированное молоко без сахара\nSteps:\n1. Разогрейте духовку до 425°F.\n2. Взбейте венчиком тыквенное пюре, сахар, корицу, яйца и концентрированное молоко без сахара до однородности.\n3. Вылейте начинку в основу для пирога и выпекайте 15 минут, затем уменьшите температуру до 350°F и выпекайте ещё 40 минут.\n4. Остужайте на решётке в течение 2 часов.",
+  "verdict": {
+    "native_score": 3,
+    "errors": [
+      {
+        "where": "ingredient 1",
+        "category": "unit",
+        "severity": "minor",
+        "excerpt": "9 дюймов",
+        "fix": "23 см"
+      },
+      {
+        "where": "ingredient 2",
+        "category": "grammar",
+        "severity": "minor",
+        "excerpt": "тыквенное пюре",
+        "fix": "тыквенного пюре"
+      },
+      {
+        "where": "ingredient 3",
+        "category": "grammar",
+        "severity": "minor",
+        "excerpt": "сахар",
+        "fix": "сахара"
+      },
+      {
+        "where": "ingredient 4",
+        "category": "grammar",
+        "severity": "minor",
+        "excerpt": "молотая корица",
+        "fix": "молотой корицы"
+      },
+      {
+        "where": "ingredient 6",
+        "category": "grammar",
+        "severity": "minor",
+        "excerpt": "концентрированное молоко без сахара",
+        "fix": "концентрированного молока без сахара"
+      },
+      {
+        "where": "step 1",
+        "category": "unit",
+        "severity": "major",
+        "excerpt": "425°F",
+        "fix": "220°C"
+      },
+      {
+        "where": "step 3",
+        "category": "unit",
+        "severity": "major",
+        "excerpt": "350°F",
+        "fix": "175°C"
+      }
+    ]
+  },
+  "costUsd": 0.010092
+}

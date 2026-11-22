@@ -42,6 +42,7 @@ export async function applyKitchenOnExtract(
         ingredients: adapted.recipe.ingredients,
         instructions: adapted.recipe.instructions,
         calories: adapted.recipe.calories,
+        nutrition: adapted.recipe.nutrition ?? null,
         // ADR 017: present only when the adaptation changed the steps.
         ...(adapted.recipe.appliances !== undefined ? { appliances: adapted.recipe.appliances } : {}),
         kitchen_adapted_summary: adapted.recipe.summary,
@@ -51,6 +52,7 @@ export async function applyKitchenOnExtract(
           ingredients: recipe.ingredients,
           instructions: recipe.instructions,
           calories: recipe.calories,
+          nutrition: recipe.nutrition ?? null,
           appliances: recipe.appliances,
         },
       },

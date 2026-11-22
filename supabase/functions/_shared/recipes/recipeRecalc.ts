@@ -3,7 +3,7 @@
  * saves the content, sets `recalc_pending` and `recalc_started_at`, answers the app, and then runs
  * this under EdgeRuntime.waitUntil.
  *
- * - Two model calls run in parallel: recipe_estimates (calories, time, effort, cost, tags,
+ * - Two model calls run in parallel: recipe_estimates (calories with their macros, time, effort, cost, tags,
  *   metric/spoons) and appliances. Each result is written as soon as it arrives and its fields are
  *   removed from `recalc_pending`. Writes go through one queue, so two results never read and
  *   rewrite the row at the same time.
@@ -140,6 +140,8 @@ export async function runRecipeRecalculation(opts: {
             if (writable.has('calories') && values.calories) {
               update.calories = values.calories.calories;
               update.calories_reasoning = values.calories.reasoning;
+              // Written with the calories, so the database trigger keeps it (PIN-80).
+              update.nutrition = values.calories.nutrition;
             }
             if (writable.has('estimated_time_minutes') && values.estimated_time_minutes) {
               update.estimated_time_minutes = values.estimated_time_minutes.minutes;

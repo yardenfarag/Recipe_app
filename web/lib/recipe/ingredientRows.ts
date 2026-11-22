@@ -1,3 +1,4 @@
+import type { UnitSystem } from "@shared/lib/unitSystem";
 import type { AvoidMatches } from "@shared/lib/avoidList";
 import type { MeasurementSystem } from "@shared/lib/convertMeasurement";
 import type { CulinaryUnitLanguage } from "@shared/lib/culinaryUnits";
@@ -24,6 +25,8 @@ export type IngredientRowsInput = {
   system: MeasurementSystem;
   unitLanguage: CulinaryUnitLanguage;
   avoid: AvoidMatches | null;
+  /** Metric or US weights in Spoons mode (PIN-53). */
+  units?: UnitSystem;
 };
 
 /**
@@ -31,7 +34,7 @@ export type IngredientRowsInput = {
  * (src/components/RecipeView.tsx) builds them: scale every amount from the recipe's own count, then show each one
  * in the chosen system with unit words in the recipe text's language.
  */
-export function ingredientRows({ ingredients, recipeServings, servings, system, unitLanguage, avoid }: IngredientRowsInput): {
+export function ingredientRows({ ingredients, recipeServings, servings, system, unitLanguage, avoid, units }: IngredientRowsInput): {
   rows: IngredientRow[];
   hasUnknownAmounts: boolean;
 } {
@@ -39,7 +42,7 @@ export function ingredientRows({ ingredients, recipeServings, servings, system, 
   const rows = scaled.map((ingredient, index) => ({
     key: `${index}-${ingredient.name}`,
     name: ingredient.name,
-    amount: displayIngredientAmount(ingredient, { system, language: unitLanguage }),
+    amount: displayIngredientAmount(ingredient, { system, language: unitLanguage, units }),
     isPinch: displayedAmountIsPinch(ingredient, { system }),
     avoid: avoid?.byIngredient[index] ?? null,
   }));

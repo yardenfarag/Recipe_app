@@ -13,6 +13,7 @@ function mapRow(row: {
   title: string;
   ingredients: Ingredient[];
   instructions: Instruction[];
+  translation_version?: number | null;
 }): RecipeTranslationRow {
   return {
     recipe_id: row.recipe_id,
@@ -20,6 +21,7 @@ function mapRow(row: {
     title: row.title,
     ingredients: row.ingredients,
     instructions: row.instructions,
+    translation_version: row.translation_version ?? null,
   };
 }
 
@@ -29,7 +31,7 @@ export async function fetchRecipeTranslation(
 ): Promise<RecipeTranslationContent | null> {
   const { data, error } = await supabase
     .from('recipe_translations')
-    .select('title, ingredients, instructions')
+    .select('title, ingredients, instructions, translation_version')
     .eq('recipe_id', recipeId)
     .eq('language_code', languageCode)
     .maybeSingle();
@@ -45,6 +47,7 @@ export async function fetchRecipeTranslation(
     title: data.title as string,
     ingredients: data.ingredients as unknown as Ingredient[],
     instructions: data.instructions as unknown as Instruction[],
+    translation_version: data.translation_version ?? null,
   };
 }
 
@@ -55,7 +58,7 @@ export async function fetchRecipeTranslationsForLanguage(
 ): Promise<Record<string, RecipeTranslationContent>> {
   let query = supabase
     .from('recipe_translations')
-    .select('recipe_id, title, ingredients, instructions')
+    .select('recipe_id, title, ingredients, instructions, translation_version')
     .eq('language_code', languageCode);
 
   if (recipeIds && recipeIds.length > 0) {
@@ -76,6 +79,7 @@ export async function fetchRecipeTranslationsForLanguage(
       title: row.title as string,
       ingredients: row.ingredients as unknown as Ingredient[],
       instructions: row.instructions as unknown as Instruction[],
+      translation_version: row.translation_version ?? null,
     };
   }
   return map;
@@ -98,6 +102,8 @@ export async function upsertRecipeTranslation(
           title: content.title,
           ingredients: toJson(content.ingredients),
           instructions: toJson(content.instructions),
+          // Null for a translation the app didn't get from the function (kept from before PIN-53).
+          translation_version: content.translation_version ?? null,
         },
         { onConflict: 'recipe_id,language_code' },
       )

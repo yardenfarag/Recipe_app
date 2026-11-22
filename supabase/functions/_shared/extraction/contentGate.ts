@@ -208,7 +208,7 @@ export function buildContentGateInput(opts: {
   };
 }
 
-/** IG/TikTok/Facebook posts with no thumbnail and no caption cannot be classified; let video/extract proceed. */
+/** IG/TikTok/Facebook/Pinterest posts with no thumbnail and no caption cannot be classified; let video/extract proceed. */
 export function shouldSkipThinSocialGate(opts: {
   platform: string;
   imageBase64?: string | null;
@@ -222,7 +222,9 @@ export function shouldSkipThinSocialGate(opts: {
 }): boolean {
   const { platform, imageBase64, meta } = opts;
   if (imageBase64?.trim()) return false;
-  if (platform !== 'instagram' && platform !== 'tiktok' && platform !== 'facebook') return false;
+  if (platform !== 'instagram' && platform !== 'tiktok' && platform !== 'facebook' && platform !== 'pinterest') {
+    return false;
+  }
   const hasText = Boolean(
     meta?.title?.trim() || meta?.description?.trim() || meta?.captions?.trim(),
   );

@@ -1,8 +1,22 @@
 import { describe, expect, it } from 'vitest';
 
+import ar from '../i18n/locales/ar';
 import en from '../i18n/locales/en';
+import es from '../i18n/locales/es';
 import he from '../i18n/locales/he';
-import { authErrorText, importErrorKey, importErrorText, supportErrorKey } from './serverErrors';
+import ru from '../i18n/locales/ru';
+import {
+  authErrorText,
+  importErrorKey,
+  importErrorText,
+  REMIX_ERROR_KEYS,
+  REPAIR_ERROR_KEYS,
+  serverErrorText,
+  SHARE_ERROR_KEYS,
+  supportErrorKey,
+  SWAP_ERROR_KEYS,
+  TRANSLATE_ERROR_KEYS,
+} from './serverErrors';
 
 /** A `t` over a real locale file, so a mapped key that doesn't exist fails the test. */
 function translator(locale: Record<string, unknown>) {
@@ -68,6 +82,115 @@ describe('import errors', () => {
     expect(importErrorText({ code: 'brand_new_code', message: 'Brand new English text' }, tEn, 'en')).toBe('Brand new English text');
     expect(importErrorText({ code: 'brand_new_code' }, tEn, 'en')).toBe(tEn('snap.genericError'));
     expect(importErrorText({ code: 'page_gone', message: 'server words' }, tEn, 'en')).toBe(tEn('serverErrors.pageGone'));
+  });
+});
+
+/**
+ * Every code each recipe action's Edge Function sends that reaches the text, and the fallback the app passes
+ * (PIN-158). Codes a caller handles first (sign-in redirects, the credits sheet, the remix limit) are left out.
+ */
+const RECIPE_ACTIONS = {
+  'translate-recipe': {
+    keys: TRANSLATE_ERROR_KEYS,
+    fallback: 'serverErrors.translateFailed',
+    codes: ['auth_required', 'daily_limit', 'metering_error', 'translation_empty', 'translation_timeout', 'translation_failed'],
+  },
+  'transform-recipe': {
+    keys: REMIX_ERROR_KEYS,
+    fallback: 'recipe.remixFailed',
+    codes: ['server_misconfigured', 'metering_error', 'instruction_unrelated', 'recipe_identity_required', 'remix_empty', 'remix_failed'],
+  },
+  'repair-recipe': {
+    keys: REPAIR_ERROR_KEYS,
+    fallback: 'recipe.repairFailed',
+    codes: [
+      'metering_error',
+      'reservation_required',
+      'not_partial',
+      'no_improvement',
+      'repair_failed',
+      'reservation_settled',
+      'compensation_pending',
+      'sealed_recipe_required',
+    ],
+  },
+  'suggest-substitution': {
+    keys: SWAP_ERROR_KEYS,
+    fallback: 'recipe.swapFailed',
+    codes: ['auth_required', 'metering_error', 'daily_limit', 'no_substitute', 'substitution_failed', 'rewrite_empty', 'rewrite_failed'],
+  },
+  'recipe-share': {
+    keys: SHARE_ERROR_KEYS,
+    fallback: 'common.tryAgain',
+    codes: [
+      'auth_required',
+      'server_misconfigured',
+      'share_not_found',
+      'share_unavailable',
+      'recipe_not_found',
+      'recipe_not_saved',
+      'recipe_invalid',
+      'share_failed',
+      'claim_failed',
+    ],
+  },
+};
+
+/** Each non-English locale, with a check that a text is really written in it. */
+const OTHER_LOCALES = [
+  { name: 'he', t: tHe, written: (text: string) => /[֐-׿]/.test(text) },
+  { name: 'ar', t: translator(ar), written: (text: string) => /[؀-ۿ]/.test(text) },
+  { name: 'ru', t: translator(ru), written: (text: string) => /[Ѐ-ӿ]/.test(text) },
+  { name: 'es', t: translator(es), written: (text: string) => text !== '' },
+];
+
+describe('recipe action and share errors', () => {
+  it.each(Object.entries(RECIPE_ACTIONS))('every %s code has words in all five languages', (_fn, action) => {
+    for (const code of action.codes) {
+      const server = { code, message: 'English from the server' };
+      const english = serverErrorText(server, tEn, 'en', action.fallback, action.keys);
+      expect(english, code).not.toBe(server.message);
+      for (const locale of OTHER_LOCALES) {
+        const text = serverErrorText(server, locale.t, locale.name, action.fallback, action.keys);
+        expect(locale.written(text), `${code} in ${locale.name}`).toBe(true);
+        if (locale.name === 'es') expect(text, code).not.toBe(english);
+      }
+    }
+  });
+
+  it('a known code gets its own words, not the fallback', () => {
+    expect(serverErrorText({ code: 'daily_limit', message: 'daily_limit' }, tHe, 'he', 'serverErrors.translateFailed', TRANSLATE_ERROR_KEYS)).toBe(
+      tHe('recipe.translateDailyLimit'),
+    );
+    expect(serverErrorText({ code: 'translation_timeout' }, tHe, 'he', 'serverErrors.translateFailed', TRANSLATE_ERROR_KEYS)).toBe(
+      tHe('serverErrors.translateTimedOut'),
+    );
+    expect(serverErrorText({ code: 'daily_limit' }, tHe, 'he', 'recipe.swapFailed', SWAP_ERROR_KEYS)).toBe(tHe('serverErrors.swapDailyLimit'));
+    expect(serverErrorText({ code: 'share_not_found' }, tHe, 'he', 'common.tryAgain', SHARE_ERROR_KEYS)).toBe(tHe('recipe.shareNotFound'));
+  });
+
+  it('a Hebrew reader never sees the server’s English', () => {
+    const unknown = { code: 'brand_new_code', message: 'Brand new English text' };
+    expect(serverErrorText(unknown, tHe, 'he', 'recipe.remixFailed', REMIX_ERROR_KEYS)).toBe(tHe('recipe.remixFailed'));
+    // A failure with no code, such as the client's own "Could not reach…" when the request didn't arrive.
+    const noCode = { message: 'Could not reach the substitution service. Please try again.' };
+    expect(serverErrorText(noCode, tHe, 'he', 'recipe.swapFailed', SWAP_ERROR_KEYS)).toBe(tHe('recipe.swapFailed'));
+  });
+
+  it('an English reader keeps the server’s words for a code the app does not know, but never an internal one', () => {
+    const unknown = { code: 'brand_new_code', message: 'Brand new English text' };
+    expect(serverErrorText(unknown, tEn, 'en', 'recipe.remixFailed', REMIX_ERROR_KEYS)).toBe('Brand new English text');
+    expect(serverErrorText({ message: 'Recipe may include at most 60 ingredients' }, tEn, 'en', 'recipe.remixFailed', REMIX_ERROR_KEYS)).toBe(
+      'Recipe may include at most 60 ingredients',
+    );
+    expect(serverErrorText({ code: 'metering_error', message: 'metering_error' }, tEn, 'en', 'recipe.repairFailed', REPAIR_ERROR_KEYS)).toBe(
+      tEn('recipe.repairFailed'),
+    );
+    expect(serverErrorText({}, tEn, 'en', 'common.tryAgain', SHARE_ERROR_KEYS)).toBe(tEn('common.tryAgain'));
+  });
+
+  it('a code named like an object property is just an unknown code', () => {
+    expect(serverErrorText({ code: 'toString' }, tHe, 'he', 'common.tryAgain', SHARE_ERROR_KEYS)).toBe(tHe('common.tryAgain'));
   });
 });
 

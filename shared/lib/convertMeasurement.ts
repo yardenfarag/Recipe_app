@@ -1,4 +1,5 @@
 import { canonicalUnitKey, isCountUnit } from './culinaryUnits';
+import type { UnitSystem } from './unitSystem';
 
 export type MeasurementSystem = 'original' | 'metric';
 
@@ -107,11 +108,13 @@ export function convertToMetric(
 
 /**
  * Converts metric amounts toward cups / spoons / ounces for "Spoons" mode.
- * Volume (ml) → cup/tbsp/tsp; weight (g) → oz/lb. Already-imperial stays put.
+ * Volume (ml) → cup/tbsp/tsp. Weight follows the reader's unit system (PIN-53): US → oz/lb, Metric → g/kg (so a
+ * Hebrew cook sees "150 גרם", not ounces, and an ounce amount becomes grams). Already-imperial volume stays put.
  */
 export function convertToSpoons(
   quantity: number,
   unit: string,
+  units: UnitSystem = 'us',
 ): { quantity: number; unit: string } {
   if (!Number.isFinite(quantity) || quantity <= 0) {
     return { quantity, unit };
@@ -121,6 +124,12 @@ export function convertToSpoons(
 
   if (isCountUnit(unit) || COUNT_LIKE.has(key)) {
     return { quantity, unit };
+  }
+
+  if (units === 'metric') {
+    if (key === 'g') return normalizeMetricWeight(quantity);
+    if (key === 'kg') return normalizeMetricWeight(quantity * 1000);
+    if (key === 'oz' || key === 'lb') return normalizeMetricWeight(quantity * G_PER_UNIT[key]);
   }
 
   // Already volumetric / imperial — keep as written (normalize aliases).
@@ -159,13 +168,20 @@ export function convertToSpoons(
 
 /**
  * Display conversion only — never mutates stored recipe units.
- * `metric` → g/ml; `original` (Spoons) → cups/tbsp/tsp/oz when convertible.
+ * `metric` → g/ml; `original` (Spoons) → cups/tbsp/tsp, with weights in oz (US) or g (Metric) when convertible.
  */
 export function applyMeasurementSystem(
   quantity: number,
   unit: string,
   system: MeasurementSystem,
+  units: UnitSystem = 'us',
 ): { quantity: number; unit: string } {
   if (system === 'metric') return convertToMetric(quantity, unit);
-  return convertToSpoons(quantity, unit);
+  return convertToSpoons(quantity, unit, units);
+}
+
+/** True for a weight in ounces or pounds. */
+export function isImperialWeight(unit: string): boolean {
+  const key = canonicalUnitKey(unit);
+  return key === 'oz' || key === 'lb';
 }

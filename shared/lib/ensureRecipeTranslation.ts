@@ -63,18 +63,19 @@ export async function ensureRecipeTranslation(options: {
 
   const language = options.targetLanguage;
 
-  if (options.cached) {
-    // Older caches may still hold source-language units and lack grams/spoons
-    // amounts — normalize on read.
-    const cached = {
-      ...options.cached,
-      ingredients: withSourceAmounts(options.cached.ingredients, canonical.ingredients),
-    };
-    return {
-      status: 'ok',
-      content: withLocalizedUnits(cached, language),
-      fromCache: true,
-    };
+  // Older caches may still hold source-language units and lack grams/spoons amounts — normalize on read.
+  const cachedContent = options.cached
+    ? withLocalizedUnits(
+        { ...options.cached, ingredients: withSourceAmounts(options.cached.ingredients, canonical.ingredients) },
+        language,
+      )
+    : null;
+
+  // A cached translation is shown as it is, whatever translator made it: opening a recipe never re-translates. Old
+  // ones (before PIN-53) are redone by the admin backfill-translations function, and the display-time unit fixes
+  // already apply to them here.
+  if (cachedContent) {
+    return { status: 'ok', content: cachedContent, fromCache: true };
   }
 
   const result = await translateRecipe(language, {
@@ -99,6 +100,7 @@ export async function ensureRecipeTranslation(options: {
         title: result.recipe.title,
         ingredients: result.recipe.ingredients,
         instructions: result.recipe.instructions,
+        translation_version: result.translation_version ?? null,
       },
       language,
     ),

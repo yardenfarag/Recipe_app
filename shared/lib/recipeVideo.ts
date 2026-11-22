@@ -23,6 +23,7 @@ const PLATFORM_LABEL: Record<Platform, string> = {
   instagram: 'Instagram',
   tiktok: 'TikTok',
   facebook: 'Facebook',
+  pinterest: 'Pinterest',
   web: 'Website',
   photo: 'Photo',
   unknown: 'Video',
@@ -54,9 +55,10 @@ export function getRecipeVideoInfo(
     return { mode: 'none', url: '', platform: 'photo' };
   }
 
-  if (platform === 'web') {
+  // A pin that linked to a recipe site keeps that site's embedded video, as a web recipe does (PIN-70).
+  if (platform === 'web' || platform === 'pinterest') {
     const embedded = sourceVideoUrl?.trim();
-    if (!embedded) return { mode: 'none', url: '', platform: 'web' };
+    if (!embedded) return { mode: 'none', url: '', platform };
     const embeddedPlatform = detectPlatform(embedded);
     if (
       embeddedPlatform === 'youtube' ||
@@ -65,7 +67,7 @@ export function getRecipeVideoInfo(
     ) {
       return getRecipeVideoInfo(embedded, embeddedPlatform);
     }
-    return { mode: 'none', url: '', platform: 'web' };
+    return { mode: 'none', url: '', platform };
   }
 
   if (platform === 'youtube') {

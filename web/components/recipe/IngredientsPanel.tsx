@@ -7,14 +7,18 @@ import { useTranslation } from "react-i18next";
 import type { MeasurementSystem } from "@shared/lib/convertMeasurement";
 import { scaleIngredients } from "@shared/lib/ingredientAmounts";
 import { getCalorieDisplay } from "@shared/lib/recipeCalories";
+import { getNutritionDisplay, recipeNutritionOf } from "@shared/lib/recipeNutrition";
+import type { RecipeNutrition } from "@shared/types/recipe";
 import { recipeHasSource } from "@shared/lib/recipeOrigin";
 
 import { isUpdating, useRecipeActions } from "@/components/recipe/actions/RecipeActionsContext";
+import { DotSeparated } from "@/components/recipe/DotSeparated";
 import type { AvoidMatches, ReadingChoices, RecipeDisplay } from "@/components/recipe/types";
 import { Button } from "@/components/ui/Button";
 import { cn } from "@/lib/cn";
 import { amountDirection, ingredientRows, type IngredientRow } from "@/lib/recipe/ingredientRows";
 import { clampServings } from "@/lib/recipe/useServings";
+import { useUnitSystem } from "@/lib/recipe/useUnitSystem";
 
 export type IngredientsPanelProps = { display: RecipeDisplay; choices: ReadingChoices; avoid: AvoidMatches | null };
 
@@ -28,6 +32,7 @@ export function IngredientsPanel({ display, choices, avoid }: IngredientsPanelPr
   const actions = useRecipeActions();
   const headingId = useId();
   const { recipe } = display;
+  const { units } = useUnitSystem();
   const { rows, hasUnknownAmounts } = useMemo(
     () =>
       ingredientRows({
@@ -37,8 +42,9 @@ export function IngredientsPanel({ display, choices, avoid }: IngredientsPanelPr
         system: choices.system,
         unitLanguage: display.unitLanguage,
         avoid,
+        units,
       }),
-    [display.ingredients, display.unitLanguage, recipe.servings, choices.servings, choices.system, avoid],
+    [display.ingredients, display.unitLanguage, recipe.servings, choices.servings, choices.system, avoid, units],
   );
   const count = rows.length;
   const amountsUpdating = isUpdating(actions, "ingredient_amounts");
@@ -81,6 +87,11 @@ export function IngredientsPanel({ display, choices, avoid }: IngredientsPanelPr
         servings={choices.servings}
         recipeServings={recipe.servings}
         calories={getCalorieDisplay(recipe.calories, recipe.servings, choices.servings)?.total ?? null}
+        nutrition={
+          isUpdating(actions, "calories")
+            ? null
+            : (getNutritionDisplay(recipeNutritionOf(recipe), recipe.servings, choices.servings)?.total ?? null)
+        }
         onChange={choices.onServingsChange}
       />
 
@@ -108,11 +119,14 @@ function ServingsStepper({
   servings,
   recipeServings,
   calories,
+  nutrition,
   onChange,
 }: {
   servings: number;
   recipeServings: number;
   calories: number | null;
+  /** PIN-80: protein, carbs and fat for the servings shown. */
+  nutrition: RecipeNutrition | null;
   onChange: (servings: number) => void;
 }) {
   const { t } = useTranslation();
@@ -131,7 +145,22 @@ function ServingsStepper({
         <p id={labelId} className="text-sm font-semibold text-text">
           {t("recipe.servings")}
         </p>
-        {calories != null ? <p className="mt-0.5 text-xs text-muted">{t("recipe.calTotal", { count: calories.toLocaleString() })}</p> : null}
+        {calories != null ? (
+          <p data-testid="servings-total" className="mt-0.5 text-xs text-muted tabular-nums">
+            {nutrition ? (
+              <DotSeparated
+                text={t("recipe.nutritionTotal", {
+                  calories: calories.toLocaleString(),
+                  protein: nutrition.protein_g.toLocaleString(),
+                  carbs: nutrition.carbs_g.toLocaleString(),
+                  fat: nutrition.fat_g.toLocaleString(),
+                })}
+              />
+            ) : (
+              t("recipe.calTotal", { count: calories.toLocaleString() })
+            )}
+          </p>
+        ) : null}
       </div>
       <div role="group" aria-labelledby={labelId} className="flex items-center gap-3">
         <button type="button" data-track="recipe.servings.decrease" aria-label={t("recipe.decreaseServings")} aria-disabled={atMin} onClick={() => !atMin && change(servings - 1)} className={stepperButton}>

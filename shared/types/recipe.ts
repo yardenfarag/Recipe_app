@@ -7,6 +7,7 @@ export type Platform =
   | 'instagram'
   | 'tiktok'
   | 'facebook'
+  | 'pinterest'
   | 'web'
   | 'photo'
   | 'unknown';
@@ -43,6 +44,16 @@ export type LockedField = (typeof LOCKABLE_FIELDS)[number];
 export const RECALC_FIELDS = [...LOCKABLE_FIELDS, 'ingredient_amounts'] as const;
 export type RecalcField = (typeof RECALC_FIELDS)[number];
 
+/**
+ * Protein, carbs and fat in grams for ALL servings, like `calories` (PIN-80). Pinch's estimate,
+ * stored only next to Pinch's calorie estimate. Read it through recipeNutritionOf().
+ */
+export interface RecipeNutrition {
+  protein_g: number;
+  carbs_g: number;
+  fat_g: number;
+}
+
 /** One measured amount, used for grams/spoons toggle values. */
 export interface IngredientAmount {
   quantity: number;
@@ -71,6 +82,8 @@ export interface RecipeTranslationContent {
   title: string;
   ingredients: Ingredient[];
   instructions: Instruction[];
+  /** The translator that made it (PIN-53); missing on translations saved before then. */
+  translation_version?: number | null;
 }
 
 /** Mirrors the `recipes` table (supabase/migrations/0001_init.sql + later). */
@@ -90,6 +103,8 @@ export interface Recipe {
   instructions: Instruction[];
   servings: number;
   calories?: number;
+  /** PIN-80. null or absent = not estimated, or calories set by hand. */
+  nutrition?: RecipeNutrition | null;
   estimated_time_minutes?: number;
   cost_estimate?: CostEstimate;
   effort_level?: EffortLevel;
@@ -128,6 +143,8 @@ export interface Recipe {
     ingredients: Ingredient[];
     instructions: Instruction[];
     calories?: number;
+    /** Absent in snapshots saved before PIN-80. */
+    nutrition?: RecipeNutrition | null;
     /** Absent in snapshots saved before PIN-26. */
     appliances?: RecipeAppliance[] | null;
   };

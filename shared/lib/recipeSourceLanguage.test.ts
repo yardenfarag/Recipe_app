@@ -42,4 +42,26 @@ describe('resolveRecipeSourceLanguage', () => {
     ).toBe('es');
     expect(resolveRecipeSourceLanguage({ ...baseRecipe, title: 'Spanish tortilla' })).toBe('en');
   });
+
+  it('does not trust a Hebrew label on English text (PIN-53)', () => {
+    expect(
+      resolveRecipeSourceLanguage({
+        ...baseRecipe,
+        source_language: 'he',
+        title: 'Keto Brownies',
+        instructions: [{ step: 1, text: 'Melt the chocolate.' }],
+      }),
+    ).toBe('en');
+  });
+
+  it('spots Turkish recipes labelled English (PIN-53)', () => {
+    expect(
+      resolveRecipeSourceLanguage({
+        ...baseRecipe,
+        source_language: 'en',
+        ingredients: [{ name: 'un', quantity: 2, unit: 'su bardağı' }],
+        instructions: [{ step: 1, text: 'Unu ekleyin ve 5 dakika karıştırın.' }],
+      }),
+    ).toBe('tr');
+  });
 });

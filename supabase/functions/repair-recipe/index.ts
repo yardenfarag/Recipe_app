@@ -1,5 +1,6 @@
 import { serve } from '../_shared/core/observe.ts';
 import { normalizeStoredCalories } from '../_shared/recipes/calories.ts';
+import { normalizeStoredNutrition } from '../_shared/recipes/nutrition.ts';
 import {
   classifyGeminiRecipe,
   recipeRepairIsUpgrade,
@@ -8,6 +9,7 @@ import { corsHeaders, jsonResponse } from '../_shared/core/cors.ts';
 import { repairPartialRecipe, type GeminiRecipe } from '../_shared/extraction/gemini.ts';
 import { parseIngredientAmount } from '../_shared/recipes/ingredientAmounts.ts';
 import { fetchFacebookMeta } from '../_shared/extraction/sources/facebook.ts';
+import { fetchPinterestMeta } from '../_shared/extraction/sources/pinterest.ts';
 import { fetchInstagramMeta } from '../_shared/extraction/sources/instagram.ts';
 import {
   detectPlatform,
@@ -83,6 +85,10 @@ interface RequestBody {
  *   -> finalize or refund the reserved credit
  *
  * Signed-in only. Charges 1 credit when the user applies an upgrade.
+ *
+ * Failure codes (the app's words for them are in shared/lib/serverErrors.ts): auth_required, metering_error,
+ * reservation_required, not_partial, insufficient_credits, no_improvement, repair_failed, reservation_settled,
+ * compensation_pending, sealed_recipe_required. Bad requests answer { error }.
  */
 serve('repair-recipe', async (req) => {
   if (req.method === 'OPTIONS') {
@@ -272,6 +278,7 @@ serve('repair-recipe', async (req) => {
         after.calories ?? null,
         after.servings > 0 ? after.servings : current.servings || 1,
       ),
+      nutrition: normalizeStoredNutrition(after, after.servings > 0 ? after.servings : current.servings || 1),
       estimated_time_minutes: after.estimated_time_minutes ?? current.estimated_time_minutes ?? null,
       cost_estimate: after.cost_estimate ?? current.cost_estimate ?? null,
       effort_level: after.effort_level ?? current.effort_level ?? null,
@@ -341,6 +348,7 @@ serve('repair-recipe', async (req) => {
     return jsonResponse(
       {
         status: 'failed',
+        code: 'repair_failed',
         message: "Couldn't repair this recipe. Your credit was not used.",
       },
       500,
@@ -596,6 +604,8 @@ async function fetchPlatformMeta(
       return await fetchTikTokMeta(url);
     case 'facebook':
       return await fetchFacebookMeta(url);
+    case 'pinterest':
+      return await fetchPinterestMeta(url, { onPageRead });
     case 'web':
       return await fetchWebRecipeMeta(url, { onPageRead });
     default:

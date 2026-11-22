@@ -1,0 +1,10 @@
+{
+  "caseId": "es-fractions-temp",
+  "judge": "google/gemini-3.1-pro-preview",
+  "translation": "Title: Magdalenas de arándanos\nIngredients:\n1. ½ taza leche\n2. ½ cdta sal\n3. 2 tazas harina de trigo\n4. 1 cda levadura química\n5. ¾ taza azúcar\n6. 1 taza arándanos frescos\n7. ⅓ taza aceite vegetal\n8. 1 huevo\nSteps:\n1. Precalienta el horno a 200°C y coloca cápsulas de papel en un molde para 12 magdalenas.\n2. Mezcla con unas varillas la harina de trigo, el azúcar, la levadura química y la sal.\n3. Añade la leche, el aceite vegetal y el huevo y mezcla; después, incorpora los arándanos con movimientos envolventes suaves.\n4. Hornea durante 20–25 minutos.",
+  "verdict": {
+    "native_score": 5,
+    "errors": []
+  },
+  "costUsd": 0.007342
+}

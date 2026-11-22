@@ -10,6 +10,8 @@ import { createAuthedSupabase } from '../_shared/core/recipeLookup.ts';
 import { createServiceSupabase } from '../_shared/core/supabaseAdmin.ts';
 import {
   isTranslateLanguageCode,
+  recipeAlreadyInLanguage,
+  TRANSLATION_VERSION,
   translateRecipeWithGemini,
 } from '../_shared/recipes/translateRecipe.ts';
 import { logUsageEvent } from '../_shared/core/usageLog.ts';
@@ -39,7 +41,10 @@ interface RequestBody {
 }
 
 /**
- * POST { target_language, recipe } -> { status, recipe?, message? }
+ * POST { target_language, recipe } -> { status, recipe?, code?, message? }
+ *
+ * Failure codes (the app's words for them are in shared/lib/serverErrors.ts): auth_required, metering_error,
+ * daily_limit, translation_empty, translation_timeout, translation_failed. Bad requests answer { error }.
  *
  * Translates recipe title, ingredients, and instructions. Free for now
  * (logged for cost tracking); no product-token charge.
@@ -171,6 +176,16 @@ serve('translate-recipe', async (req) => {
     return jsonResponse({ error: 'Recipe must include ingredients or instructions to translate' }, 400);
   }
 
+  // Already in the target language (a wrong source label): hand it back as is, with no model call and no quota.
+  if (recipeAlreadyInLanguage({ title: recipe.title.trim(), ingredients, instructions }, targetLanguage)) {
+    return jsonResponse({
+      status: 'ok',
+      target_language: targetLanguage,
+      translation_version: TRANSLATION_VERSION,
+      recipe: { title: recipe.title.trim(), ingredients, instructions },
+    });
+  }
+
   const usageDate = currentUtcDate();
   const usageGate = await reserveDailyAiUsage(
     admin,
@@ -214,6 +229,7 @@ serve('translate-recipe', async (req) => {
       });
       return jsonResponse({
         status: 'failed',
+        code: 'translation_empty',
         message: "Couldn't translate this recipe. Try again.",
       });
     }
@@ -232,6 +248,8 @@ serve('translate-recipe', async (req) => {
     return jsonResponse({
       status: 'ok',
       target_language: targetLanguage,
+      // Saved with the cache row; older app builds ignore it (PIN-53).
+      translation_version: TRANSLATION_VERSION,
       recipe: recipePayload,
     });
   } catch (err) {
@@ -251,6 +269,7 @@ serve('translate-recipe', async (req) => {
     return jsonResponse(
       {
         status: 'failed',
+        code: timedOut ? 'translation_timeout' : 'translation_failed',
         message: timedOut
           ? 'Translation timed out. Please try again in a moment.'
           : 'Something went wrong translating the recipe. Please try again.',

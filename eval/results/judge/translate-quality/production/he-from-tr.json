@@ -1,0 +1,32 @@
+{
+  "caseId": "he-from-tr",
+  "judge": "google/gemini-3.1-pro-preview",
+  "translation": "Title: ביצים עם תפוח אדמה במחבת\nIngredients:\n1. 1 adet תפוח אדמה גדול\n2. ½ כפיות מלח\n3. 1 כף שמן\n4. 2 adet ביצים\n5. 1 קורט פלפל שחור\n6. 50 גרם גבינת קשקבל מגוררת\nSteps:\n1. גררו את תפוח האדמה וסחטו ממנו את הנוזלים.\n2. הוסיפו את השמן למחבת, פזרו את תפוח האדמה בשכבה ולחצו בעזרת מרית.\n3. שברו את הביצים מעל ופזרו מלח ופלפל שחור.\n4. הוסיפו את גבינת הקשקבל, כסו במכסה ובשלו במשך 5 דקות.",
+  "verdict": {
+    "native_score": 3,
+    "errors": [
+      {
+        "where": "ingredient 1",
+        "category": "untranslated",
+        "severity": "major",
+        "excerpt": "1 adet תפוח אדמה גדול",
+        "fix": "1 תפוח אדמה גדול"
+      },
+      {
+        "where": "ingredient 2",
+        "category": "unit",
+        "severity": "minor",
+        "excerpt": "½ כפיות מלח",
+        "fix": "½ כפית מלח"
+      },
+      {
+        "where": "ingredient 4",
+        "category": "untranslated",
+        "severity": "major",
+        "excerpt": "2 adet ביצים",
+        "fix": "2 ביצים"
+      }
+    ]
+  },
+  "costUsd": 0.01372
+}

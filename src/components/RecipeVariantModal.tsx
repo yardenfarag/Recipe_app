@@ -8,12 +8,14 @@ import { Pressable } from '@/components/ui/Pressable';
 import { SheetModal } from '@/components/SheetModal';
 import { TextInput } from '@/components/text-input';
 import { useAuth } from '@/hooks/useAuth';
+import { useLanguagePreference } from '@/hooks/useLanguagePreference';
 import { useRtl } from '@/hooks/useRtl';
 import { useThemePreference } from '@/hooks/useThemePreference';
 import { announce } from '@/lib/a11y';
 import { fitInstruction } from '@shared/lib/avoidList';
 import { RECIPE_REMIX_LIMIT } from '@shared/lib/quotas';
 import { RECIPE_VARIANTS, RecipeVariantKey } from '@shared/lib/recipeVariants';
+import { REMIX_ERROR_KEYS, serverErrorText } from '@shared/lib/serverErrors';
 import { transformRecipe, TransformedRecipePayload } from '@shared/lib/supabase/transformRecipe';
 import { Ingredient, Instruction } from '@shared/types/recipe';
 
@@ -60,6 +62,7 @@ export function RecipeVariantModal({
   onApply,
 }: RecipeVariantModalProps) {
   const { t } = useTranslation();
+  const { language: appLanguage } = useLanguagePreference();
   const { colors } = useThemePreference();
   const { chevronForward, textAlign } = useRtl();
   const { user } = useAuth();
@@ -140,14 +143,8 @@ export function RecipeVariantModal({
         } else if (result.code === 'recipe_limit' || result.code === 'daily_limit') {
           setError('recipe_limit');
           announce(t('recipe.remixRecipeLimit', { limit: RECIPE_REMIX_LIMIT }));
-        } else if (result.code === 'instruction_unrelated') {
-          setError(t('recipe.remixUnrelated'));
-          announce(t('recipe.remixUnrelated'));
-        } else if (result.code === 'metering_error' || result.code === 'recipe_identity_required') {
-          setError(t('recipe.remixFailed'));
-          announce(t('recipe.remixFailed'));
         } else {
-          const message = result.message ?? t('recipe.remixFailed');
+          const message = serverErrorText(result, t, appLanguage, 'recipe.remixFailed', REMIX_ERROR_KEYS);
           setError(message);
           announce(message);
         }

@@ -192,6 +192,18 @@ describe("TranslateDialog", () => {
     expect(onClose).not.toHaveBeenCalled();
   });
 
+  it("puts the server's code in the app's words, and keeps its internal ones to itself (PIN-158)", async () => {
+    const onTranslate = vi
+      .fn()
+      .mockResolvedValueOnce({ status: "failed", code: "translation_timeout", message: "Translation timed out." })
+      .mockResolvedValueOnce({ status: "failed", code: "metering_error", message: "metering_error" });
+    wrap(<TranslateDialog open display={display} onClose={vi.fn()} onTranslate={onTranslate} onShowOriginal={vi.fn()} />);
+    fireEvent.click(screen.getByRole("button", { name: /^Español/ }));
+    expect((await screen.findByRole("alert")).textContent).toBe(i18n.t("serverErrors.translateTimedOut"));
+    fireEvent.click(screen.getByRole("button", { name: /^Español/ }));
+    await waitFor(() => expect(screen.getByRole("alert").textContent).toBe(i18n.t("web.recipeActions.translateFailed")));
+  });
+
   it("goes back to the original language from a translation", () => {
     const onShowOriginal = vi.fn();
     wrap(

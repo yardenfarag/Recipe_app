@@ -1,3 +1,4 @@
+import type { UnitSystem } from "@shared/lib/unitSystem";
 import type { MeasurementSystem } from "@shared/lib/convertMeasurement";
 import type { CulinaryUnitLanguage } from "@shared/lib/culinaryUnits";
 import { ingredientAmountIsUnknown } from "@shared/lib/displayIngredientAmount";
@@ -58,8 +59,13 @@ export function parseQuantity(text: string): { ok: true; quantity: number | null
  * One ingredient as a list line, in the measuring system the person reads recipes in. An amount the source never
  * gave goes on the list without a number, as on mobile (src/components/RecipeView.tsx and useShoppingList).
  */
-export function ingredientToListItem(ingredient: Ingredient, system: MeasurementSystem, recipeId?: string): ShoppingListIncomingItem {
-  const amount = pickIngredientAmount(ingredient, system);
+export function ingredientToListItem(
+  ingredient: Ingredient,
+  system: MeasurementSystem,
+  recipeId?: string,
+  units?: UnitSystem,
+): ShoppingListIncomingItem {
+  const amount = pickIngredientAmount(ingredient, system, units);
   const known = !ingredientAmountIsUnknown(ingredient, system) && Number.isFinite(amount.quantity) && amount.quantity > 0;
   return {
     name: ingredient.name,

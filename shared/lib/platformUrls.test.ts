@@ -5,6 +5,7 @@ import {
   extractContentId,
   extractFacebookId,
   extractInstagramId,
+  extractPinterestId,
   extractTikTokId,
   normalizeSocialUrl,
   recipeUrlsMatch,
@@ -183,5 +184,52 @@ describe('extractContentId', () => {
     expect(extractContentId('https://www.instagram.com/reel/ABC123/')).toBe('ABC123');
     expect(extractContentId('https://www.tiktok.com/@u/video/999')).toBe('999');
     expect(extractContentId('https://www.facebook.com/reel/774239929117468')).toBe('774239929117468');
+  });
+});
+
+describe('Pinterest (PIN-70)', () => {
+  it('pulls a pin.it link out of the Pinterest app share text', () => {
+    expect(normalizeSocialUrl('Check out this Pin on Pinterest https://pin.it/53posxf7Z')).toBe(
+      'https://pin.it/53posxf7Z',
+    );
+    expect(normalizeSocialUrl('pin.it/53posxf7Z')).toBe('https://pin.it/53posxf7Z');
+    expect(normalizeSocialUrl('uk.pinterest.com/pin/521713938098528836/')).toBe(
+      'https://uk.pinterest.com/pin/521713938098528836/',
+    );
+  });
+
+  it('detects Pinterest, its country domains and pin.it, and nothing that only looks like it', () => {
+    for (const url of [
+      'https://www.pinterest.com/pin/452611831329517145/',
+      'https://uk.pinterest.com/pin/521713938098528836/',
+      'https://www.pinterest.co.uk/pin/521713938098528836/',
+      'https://www.pinterest.com.au/pin/521713938098528836/',
+      'https://www.pinterest.de/pin/521713938098528836/',
+      'https://pin.it/53posxf7Z',
+    ]) {
+      expect(detectPlatform(url)).toBe('pinterest');
+    }
+    expect(detectPlatform('https://notpinterest.com/pin/1234567/')).toBe('web');
+    expect(detectPlatform('https://pinterest.com.evil.example/pin/1234567/')).toBe('web');
+  });
+
+  it('reads the pin id from every pin URL shape', () => {
+    expect(extractPinterestId('https://www.pinterest.com/pin/452611831329517145/')).toBe('452611831329517145');
+    expect(
+      extractPinterestId('https://www.pinterest.com/pin/one-pot-toblerone-cheesecake--521713938098528836/'),
+    ).toBe('521713938098528836');
+    expect(
+      extractPinterestId('https://www.pinterest.ru/pin/474707616995081285/sent/?invite_code=x&sender=y&sfo=1'),
+    ).toBe('474707616995081285');
+    expect(extractPinterestId('https://pin.it/53posxf7Z')).toBeNull();
+    expect(extractPinterestId('https://www.pinterest.com/someone/soups/')).toBeNull();
+    expect(extractPinterestId('https://example.com/pin/452611831329517145/')).toBeNull();
+    expect(extractContentId('https://uk.pinterest.com/pin/521713938098528836/')).toBe('521713938098528836');
+  });
+
+  it('matches one pin across URL shapes, and not two different pins', () => {
+    const saved = 'https://www.pinterest.com/pin/521713938098528836/';
+    expect(recipeUrlsMatch('https://uk.pinterest.com/pin/cake--521713938098528836/', saved, 'pinterest')).toBe(true);
+    expect(recipeUrlsMatch('https://www.pinterest.com/pin/452611831329517145/', saved, 'pinterest')).toBe(false);
   });
 });

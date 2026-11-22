@@ -8,6 +8,7 @@ import { logTap } from '@/lib/interactionLog';
 import { ApplianceIcon } from '@/components/ApplianceIcon';
 import { AvoidListEditor } from '@/components/AvoidListEditor';
 import { MeasurementToggle } from '@/components/MeasurementToggle';
+import { UnitSystemToggle } from '@/components/UnitSystemToggle';
 import { SettingsDetailScreen } from '@/components/SettingsDetailScreen';
 import { TextInput } from '@/components/text-input';
 import { useAuth } from '@/hooks/useAuth';
@@ -161,6 +162,14 @@ export default function RecipeSettingsScreen() {
       <MeasurementToggle trackId="settings.kitchen.measurement" />
       <Text className="mt-3 text-xs leading-5" style={{ color: colors.textSecondary }}>
         {t('settings.measurementsHint')}
+      </Text>
+
+      <Text className="mb-3 mt-6 text-sm font-semibold" style={{ color: colors.text }} accessibilityRole="header">
+        {t('measurement.unitsTitle')}
+      </Text>
+      <UnitSystemToggle trackId="settings.kitchen.units" />
+      <Text className="mt-3 text-xs leading-5" style={{ color: colors.textSecondary }}>
+        {t('measurement.unitsHint')}
       </Text>
 
       <Text className="mb-2 mt-8 text-sm font-semibold" style={{ color: colors.text }} accessibilityRole="header">
@@ -605,7 +614,8 @@ function MyAppliancesEditor() {
             style={[{ color: colors.textSecondary }, textStyle]}
             accessibilityRole="header"
           >
-            {t(`myAppliances.groups.${group.id}`)}
+            {/* "myAppliances.groups" is one dotted key in the catalog; ">" splits the path at the right place. */}
+            {t(`myAppliances.groups>${group.id}`, { keySeparator: '>' })}
           </Text>
           {group.id === 'basics' ? (
             <Text className="mb-2 text-xs leading-5" style={[{ color: colors.textSecondary }, textStyle]}>

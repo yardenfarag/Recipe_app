@@ -56,6 +56,15 @@ describe('convertToSpoons', () => {
     expect(convertToSpoons(227, 'g')).toEqual({ quantity: 8, unit: 'oz' });
   });
 
+  it('keeps grams, and turns ounces into grams, for a Metric reader (PIN-53)', () => {
+    expect(convertToSpoons(150, 'g', 'metric')).toEqual({ quantity: 150, unit: 'g' });
+    expect(convertToSpoons(150, 'גרם', 'metric')).toEqual({ quantity: 150, unit: 'g' });
+    expect(convertToSpoons(8, 'oz', 'metric')).toEqual({ quantity: 227, unit: 'g' });
+    expect(convertToSpoons(3, 'lb', 'metric')).toEqual({ quantity: 1.36, unit: 'kg' });
+    expect(convertToSpoons(240, 'ml', 'metric')).toEqual({ quantity: 1, unit: 'cup' });
+    expect(applyMeasurementSystem(150, 'g', 'original', 'metric')).toEqual({ quantity: 150, unit: 'g' });
+  });
+
   it('leaves already-spoon units unchanged', () => {
     expect(convertToSpoons(1, 'cup')).toEqual({ quantity: 1, unit: 'cup' });
     expect(convertToSpoons(2, 'tbsp')).toEqual({ quantity: 2, unit: 'tbsp' });

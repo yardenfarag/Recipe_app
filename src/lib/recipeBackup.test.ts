@@ -107,6 +107,24 @@ describe('buildRecipeBackup', () => {
     expect(parsed.recipes[0]).not.toHaveProperty('recalc_pending');
     expect(parsed.recipes[0]).not.toHaveProperty('recalc_started_at');
   });
+
+  it('round-trips protein, carbs and fat, and drops them without calories or in a bad shape (PIN-80)', () => {
+    const nutrition = { protein_g: 60, carbs_g: 80, fat_g: 36 };
+    const backup = buildRecipeBackup({
+      recipes: [
+        recipe({ id: 'a', calories: 900, nutrition }),
+        recipe({ id: 'b', nutrition }),
+        recipe({ id: 'c', calories: 900, nutrition: { protein_g: 'lots' } as never }),
+      ],
+      collections: [],
+      translations: {},
+    });
+
+    const parsed = parseRecipeBackup(JSON.stringify(backup));
+    expect(parsed.recipes[0]).toMatchObject({ calories: 900, nutrition });
+    expect(parsed.recipes[1]).not.toHaveProperty('nutrition');
+    expect(parsed.recipes[2]).not.toHaveProperty('nutrition');
+  });
 });
 
 describe('parseRecipeBackup', () => {

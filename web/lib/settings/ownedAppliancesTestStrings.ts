@@ -32,14 +32,16 @@ export function addMyAppliancesStrings() {
         "editLink": "Edit my appliances",
         "standInWorks": "{{alternative}} works too",
         "askLink": "Tell Pinch what's in your kitchen, and recipes will say what you're missing",
-        "groups": {
-          "heat": "Grill, fry & toast",
-          "slow_pressure": "Slow & pressure cookers",
-          "blend_mix": "Blend & mix",
-          "tools": "Tools & pans",
-          "specialist": "Special machines",
-          "basics": "Basics"
-        }
+      },
+      // The same shape as shared/i18n/locales: one dotted key at the top, not "groups" inside myAppliances. A nested
+      // copy here once hid that the screens couldn't reach the real one.
+      "myAppliances.groups": {
+        "heat": "Grill, fry & toast",
+        "slow_pressure": "Slow & pressure cookers",
+        "blend_mix": "Blend & mix",
+        "tools": "Tools & pans",
+        "specialist": "Special machines",
+        "basics": "Basics"
       },
     },
     true,

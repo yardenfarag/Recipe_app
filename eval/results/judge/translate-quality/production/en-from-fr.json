@@ -1,0 +1,39 @@
+{
+  "caseId": "en-from-fr",
+  "judge": "google/gemini-3.1-pro-preview",
+  "translation": "Title: Sausage Rougail\nIngredients:\n1. 6 saucisses smoked sausages\n2. 2 oignons yellow onions\n3. 3 cloves garlic\n4. 1 drizzle olive oil\n5. 15 cl, approximately cream\n6. 2 tablespoons tomato paste\n7. 1 large bunch parsley\n8. ½ lime lime juice\nSteps:\n1. Prick the sausages and blanch them in boiling water for 5 minutes.\n2. Cut them into rounds and brown them in the oil.\n3. Add the sliced onions, garlic and tomato paste, then pour in a glass of water.\n4. Simmer, covered, for 30 minutes, then add the cream and parsley, followed by the lime juice.",
+  "verdict": {
+    "native_score": 3,
+    "errors": [
+      {
+        "where": "ingredient 1",
+        "category": "untranslated",
+        "severity": "major",
+        "excerpt": "saucisses smoked sausages",
+        "fix": "smoked sausages"
+      },
+      {
+        "where": "ingredient 2",
+        "category": "untranslated",
+        "severity": "major",
+        "excerpt": "oignons yellow onions",
+        "fix": "yellow onions"
+      },
+      {
+        "where": "ingredient 5",
+        "category": "grammar",
+        "severity": "minor",
+        "excerpt": "15 cl, approximately cream",
+        "fix": "approximately 15 cl cream"
+      },
+      {
+        "where": "ingredient 8",
+        "category": "style_consistency",
+        "severity": "minor",
+        "excerpt": "½ lime lime juice",
+        "fix": "juice of ½ lime"
+      }
+    ]
+  },
+  "costUsd": 0.008114
+}
