@@ -7,7 +7,9 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { InAppMessageBanner } from '@/components/inAppMessages/InAppMessageBanner';
 import { FirstRunWalkthrough } from '@/components/onboarding/FirstRunWalkthrough';
 import { WebSidebar } from '@/components/WebSidebar';
+import { useAuth } from '@/hooks/useAuth';
 import { useBreakpoint } from '@/hooks/useBreakpoint';
+import { offerRemindersOnce } from '@/lib/pushPrompt';
 import { useOnboarding } from '@/hooks/useOnboarding';
 import { useThemePreference } from '@/hooks/useThemePreference';
 
@@ -33,6 +35,7 @@ export default function AppTabs() {
   const { isWide } = useBreakpoint();
   const tabBarPaddingBottom = Math.max(insets.bottom, 8);
   const { walkthroughPending, finishWalkthrough } = useOnboarding();
+  const { user } = useAuth();
   const segments = useSegments();
   // Tabs stay mounted under pushed screens; only coach while a tab is showing.
   const showWalkthrough = walkthroughPending && !isWide && segments[0] === '(tabs)';
@@ -154,7 +157,11 @@ export default function AppTabs() {
           <FirstRunWalkthrough
             tabBarHeight={TAB_BAR_CONTENT_HEIGHT + tabBarPaddingBottom}
             tabBarPaddingBottom={tabBarPaddingBottom}
-            onFinish={() => void finishWalkthrough()}
+            onFinish={() => {
+              void finishWalkthrough();
+              // After the tour (and the first-recipes picker before it): offer the cooking reminders.
+              if (user) void offerRemindersOnce(user.id, t);
+            }}
           />
         ) : null}
       </>

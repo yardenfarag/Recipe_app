@@ -240,7 +240,7 @@ export default function RecipePreviewScreen() {
 
       const { recipe: saved, recoveredDuplicate } = await saveRecipeDraft(canonical);
       if (!recoveredDuplicate) {
-        captureRecipeSaved({ from: recipeIsInvented(canonical) ? 'invent' : 'extract' });
+        captureRecipeSaved({ from: recipeIsInvented(canonical) ? 'invent' : 'extract', save: 'manual' });
       }
       if (translation && isRecipeLanguageCode(translation.language)) {
         try {

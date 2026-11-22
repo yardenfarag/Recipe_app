@@ -11,6 +11,7 @@ import { Platform } from 'react-native';
 
 import { ErrorBoundary } from '@/components/ErrorBoundary';
 import { InAppMessageHost } from '@/components/inAppMessages/InAppMessageHost';
+import { PushNotificationsSetup } from '@/components/PushNotificationsSetup';
 import { ScreenViewLogger } from '@/components/ScreenViewLogger';
 import { WebCheckoutReturnDialog } from '@/components/WebCheckoutReturnDialog';
 import { StackHeaderBackButton } from '@/components/StackHeaderBackButton';
@@ -61,6 +62,11 @@ function RootNavigator() {
           <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
           <Stack.Screen name="onboarding" options={{ headerShown: false, animation: 'fade' }} />
           <Stack.Screen name="welcome" options={{ headerShown: false, animation: 'fade' }} />
+          {/* Right after onboarding: pick at least one first recipe, so no swipe back past it. */}
+          <Stack.Screen
+            name="first-recipes"
+            options={{ headerShown: false, animation: 'fade', gestureEnabled: false }}
+          />
           <Stack.Screen
             name="recipe/[id]"
             options={{
@@ -198,6 +204,7 @@ export default function RootLayout() {
                       <OnboardingGate />
                       <ShareIntentRouter />
                       <ScreenViewLogger />
+                      <PushNotificationsSetup />
                       <RootNavigator />
                       <InAppMessageHost />
                       <WebCheckoutReturnDialog />

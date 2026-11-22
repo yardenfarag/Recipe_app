@@ -401,7 +401,7 @@ export function RecipeHeader({
                 <CookAlongButton video={cook.video} playerOpen={cook.playerOpen} playerId={cook.playerId} onTogglePlayer={cook.onTogglePlayer} variant="inline" />
               ) : null}
               {actions ? (
-                <Button variant="outline" size="lg" trackId="recipe.cooked.toggle" onClick={actions.markCooked} className="text-[15px] max-md:flex-1">
+                <Button variant="outline" size="lg" trackId="recipe.cooked.toggle" onClick={() => actions.markCooked("recipe")} className="text-[15px] max-md:flex-1">
                   <ChefHat aria-hidden className="h-[18px] w-[18px] text-primary-text" />
                   {cooked ? t("recipe.cookedAgain") : t("recipe.cookedAction")}
                 </Button>

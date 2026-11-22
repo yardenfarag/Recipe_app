@@ -55,3 +55,13 @@ export function rankCookTonight(recipes: Recipe[], filters: CookTonightFilters):
     .sort((a, b) => b.score - a.score || a.recipe.title.localeCompare(b.recipe.title))
     .map((row) => row.recipe);
 }
+
+/**
+ * The recipe to nudge a cook who has saved recipes but never marked one cooked: the quickest easy one, or else the
+ * newest. Null once anything has been cooked (the habit has started) or with nothing saved. Cooking is what makes
+ * people come back and save more, so the Library puts this one first (both apps).
+ */
+export function firstCookSuggestion(recipes: Recipe[]): Recipe | null {
+  if (recipes.length === 0 || recipes.some((recipe) => recipe.last_cooked_at)) return null;
+  return rankCookTonight(recipes, { maxMinutes: 45, maxEffort: 'Medium' })[0] ?? recipes[0];
+}

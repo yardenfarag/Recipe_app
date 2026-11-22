@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
-import { useState } from "react";
+import { Suspense, useState } from "react";
 import { useTranslation } from "react-i18next";
 
 import { deleteRecipe } from "@shared/lib/supabase/recipes";
@@ -11,6 +11,7 @@ import { translateAppError } from "@shared/lib/translateAppError";
 
 import { useRecipeActions } from "@/components/recipe/actions/RecipeActionsContext";
 import { RecipeActionsProvider } from "@/components/recipe/actions/RecipeActionsProvider";
+import { AutoSavedNotice } from "@/components/recipe/AutoSavedNotice";
 import { RecipeView } from "@/components/recipe/RecipeView";
 import type { RecipeDisplay } from "@/components/recipe/types";
 import { buttonClasses } from "@/components/ui/Button";
@@ -74,7 +75,17 @@ function SavedRecipeView({ display, onToggleFavorite }: { display: RecipeDisplay
 
   return (
     <>
-      <RecipeView display={display} onToggleFavorite={onToggleFavorite} onCooked={actions?.markCooked} onDelete={() => setDeleting(true)} immersive />
+      {/* A Snap saved for the cook (`?justSaved=1`): "Saved to your Library", with Remove. */}
+      <Suspense fallback={null}>
+        <AutoSavedNotice />
+      </Suspense>
+      <RecipeView
+        display={display}
+        onToggleFavorite={onToggleFavorite}
+        onCooked={actions ? () => actions.markCooked("cook_mode") : undefined}
+        onDelete={() => setDeleting(true)}
+        immersive
+      />
       <ConfirmDialog
         open={deleting}
         onOpenChange={setDeleting}

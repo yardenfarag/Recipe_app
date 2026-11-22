@@ -34,6 +34,7 @@ import { useShoppingList } from '@/hooks/useShoppingList';
 import { useThemePreference } from '@/hooks/useThemePreference';
 import { useAuth } from '@/hooks/useAuth';
 import { announce, CHROME_MAX_FONT_SCALE } from '@/lib/a11y';
+import { captureRecipeCooked, type RecipeCookedFrom } from '@/lib/analytics';
 import { allergyInstruction, findAvoidMatches, hasAllergies, makeWithoutInstruction } from '@shared/lib/avoidList';
 import { setGuestRecipeTags } from '@/lib/guestRecipes';
 import { displayStepText } from '@shared/lib/displayStepText';
@@ -716,9 +717,11 @@ export function RecipeView({
   const pinchShareRecipeId = user && recipeId && !recipeId.startsWith('guest-') ? recipeId : null;
   const canShare = Boolean(pinchShareRecipeId || sourceShareUrl);
 
-  function stampCooked(openNote: boolean) {
+  function stampCooked(openNote: boolean, from: RecipeCookedFrom) {
     if (!onCookedChange) return;
     const at = new Date().toISOString();
+    // Cooking is what makes people save (and come back for) more recipes, so it is the number to watch.
+    captureRecipeCooked({ from, again: Boolean(lastCookedAt) });
     setLastCookedAt(at);
     onCookedChange({ last_cooked_at: at, cook_note: cookNote });
     if (openNote) setCookedNoteOpen(true);
@@ -1080,7 +1083,7 @@ export function RecipeView({
                   <View className="mt-2 flex-row flex-wrap gap-2">
                     <Pressable
                       trackId="recipe.cooked.toggle"
-                      onPress={() => stampCooked(!lastCookedAt)}
+                      onPress={() => stampCooked(!lastCookedAt, 'recipe')}
                       className="min-h-[40px] items-center justify-center rounded-full px-3.5 active:opacity-80"
                       style={{ backgroundColor: colors.primarySoft }}
                       accessibilityRole="button"
@@ -1972,7 +1975,7 @@ export function RecipeView({
             onCookedChange
               ? () => {
                   setCookModeOpen(false);
-                  stampCooked(!lastCookedAt);
+                  stampCooked(!lastCookedAt, 'cook_mode');
                 }
               : undefined
           }

@@ -14,7 +14,7 @@ import { AvoidStep, DietStep, HeardStep } from "@/components/onboarding/Onboardi
 import { LoadingState } from "@/components/ui/States";
 import { captureHeardAbout, captureOnboardingCompleted } from "@/lib/analytics";
 import { finishOnboardingOnDevice } from "@/lib/onboarding/device";
-import { afterOnboardingPath } from "@/lib/onboarding/paths";
+import { afterOnboardingPath, afterQuestionsPath } from "@/lib/onboarding/paths";
 import { nextStep, parseOnboardingStep, previousStep, stepPath, type OnboardingStep } from "@/lib/onboarding/steps";
 import { useOnboardingStart } from "@/lib/onboarding/useOnboardingStart";
 import { useKitchenSettings } from "@/lib/settings/useKitchenSettings";
@@ -90,7 +90,8 @@ function Flow({ user }: { user: User }) {
     void markAccountOnboarded(getSupabase()).catch((error: unknown) =>
       console.warn("[onboarding] could not save on the account", error instanceof Error ? error.message : error),
     );
-    router.replace(next);
+    // Headed for the Library: pick a first recipe from the Hub on the way (it moves on by itself if they have some).
+    router.replace(afterQuestionsPath(next));
   }
 
   if (start === "checking") return <LoadingState className="min-h-dvh" />;

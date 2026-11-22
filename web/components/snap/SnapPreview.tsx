@@ -84,7 +84,7 @@ export function SnapPreview() {
         source_language: draft.recipe.source_language ?? DEFAULT_SOURCE_LANGUAGE,
       });
       clearSnapDraft();
-      if (!recoveredDuplicate) captureRecipeSaved({ from: recipeIsInvented(draft.recipe) ? "invent" : "extract" });
+      if (!recoveredDuplicate) captureRecipeSaved({ from: recipeIsInvented(draft.recipe) ? "invent" : "extract", save: "manual" });
       if (recoveredDuplicate) {
         showToast(t("recipe.alreadySaved"), "info");
         router.replace(`/recipe/${saved.id}`);

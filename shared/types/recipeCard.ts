@@ -37,6 +37,8 @@ export interface RecipeCard {
   appliances?: RecipeAppliance[] | null;
   save_count: number;
   extract_hit_count: number;
+  /** Kitchen-profile diets the card fits as written (PIN-83). null = not checked yet. */
+  diets?: string[] | null;
   created_at: string;
   updated_at?: string;
 }

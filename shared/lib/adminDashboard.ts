@@ -141,7 +141,8 @@ export type Dashboard = {
   traffic: TrafficRow[];
   /** Website visitors counted once across sources (missing before the Nov 18, 2026 migration). */
   web_totals?: { visits: number; visitors: number; clicked: number };
-  funnel: { signed_up: number; extracted: number; saved: number; saved_3: number; purchased: number };
+  /** `cooked`: marked at least one recipe cooked (20261122190500); absent from an older database. */
+  funnel: { signed_up: number; extracted: number; saved: number; saved_3: number; cooked?: number; purchased: number };
   people: DashboardPerson[];
   recent_recipes: DashboardRecipe[];
   recent_failures: DashboardFailure[];
@@ -383,7 +384,7 @@ export function buildHighlights(data: Dashboard): Highlight[] {
   if (num(funnel.signed_up) > 0) {
     out.push({
       tone: num(funnel.extracted) / num(funnel.signed_up) >= 0.5 ? 'good' : 'neutral',
-      text: `${funnel.extracted} of them (${formatPercent(funnel.extracted, funnel.signed_up)}) extracted a recipe and ${funnel.saved} saved one. ${funnel.saved_3} saved 3 or more.`,
+      text: `${funnel.extracted} of them (${formatPercent(funnel.extracted, funnel.signed_up)}) extracted a recipe and ${funnel.saved} saved one. ${funnel.saved_3} saved 3 or more${funnel.cooked != null ? `, and ${funnel.cooked} cooked one` : ''}.`,
     });
   }
 

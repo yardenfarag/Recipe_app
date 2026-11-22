@@ -1,4 +1,11 @@
 export default {
+  "push": {
+    "promptTitle": "Want a reminder to cook it?",
+    "promptBody": "Pinch will send you a couple of reminders to help you cook what you save. You can turn them off anytime.",
+    "allow": "Turn on reminders",
+    "notNow": "Not now",
+    "blocked": "Notifications are off for Pinch. You can turn them on in your phone's Settings."
+  },
   "common": {
     "tryAgain": "Please try again.",
     "notNow": "Not now",
@@ -392,7 +399,27 @@ export default {
     "resendCode": "Send a new code",
     "codeResent": "New code sent. Check your email."
   },
+  "firstRecipes": {
+    "title": "Pick your first recipes",
+    "subtitle": "Popular dinners other cooks saved. Pick at least one to start your Library.",
+    "subtitleDiets": "Picked for your diet, with nothing on your avoid list. Pick at least one to start your Library.",
+    "pickOne": "Pick at least one",
+    "save_one": "Save {{count}} recipe",
+    "save_other": "Save {{count}} recipes",
+    "saved_one": "{{count}} recipe saved to your Library",
+    "saved_other": "{{count}} recipes saved to your Library",
+    "pickedCount_one": "{{count}} picked",
+    "pickedCount_other": "{{count}} picked",
+    "fitsDiet": "Fits your diet",
+    "loadFailed": "We couldn't load recipes right now.",
+    "continueToSnap": "Add a recipe from a link instead",
+    "saveFailed": "Couldn't save them. Please try again.",
+  },
   "recipe": {
+    "autoSaved": "Saved to your Library",
+    "autoSavedRemove": "Remove",
+    "autoSavedRemoved": "Removed from your Library",
+    "autoSavedRemoveFailed": "Couldn't remove it. Please try again.",
     "preview": "Preview",
     "save": "Save recipe",
     "noPreview": "Nothing to preview yet. Snap a recipe first.",
@@ -581,6 +608,9 @@ export default {
     }
   },
   "library": {
+    "cookFirstTitle": "Cook one tonight?",
+    "cookFirstBody": "Step-by-step cook mode, no scrolling back to the video",
+    "cookFirstAction": "Let's cook",
     "title": "Your recipes",
     "subtitle": "Your kitchen",
     "empty": "No recipes yet",
@@ -762,6 +792,10 @@ export default {
     "illustrationShare": "Share recipe"
   },
   "snap": {
+    "failedWaysOn": "Other ways to get this recipe:",
+    "failedRetry": "Try again",
+    "failedScreenshot": "Use a screenshot",
+    "failedGuess": "Guess the recipe",
     "partialTitle": "We couldn’t find the whole recipe",
     "partialMissingSteps": "We found the ingredients, but not the steps. Want to add the steps yourself? This import is free.",
     "partialMissingIngredients": "We found the steps, but not the ingredients. Want to add the ingredients yourself? This import is free.",

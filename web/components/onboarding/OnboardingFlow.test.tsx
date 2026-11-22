@@ -148,7 +148,8 @@ describe("OnboardingFlow", () => {
     expect(events.heard).not.toHaveBeenCalled();
     expect(events.completed).toHaveBeenCalledWith({ locale: "en" });
     expect(account.mark).toHaveBeenCalledTimes(1);
-    expect(nav.replace).toHaveBeenCalledWith("/");
+    // Headed for the Library: the first-recipes picker comes first.
+    expect(nav.replace).toHaveBeenCalledWith("/first-recipes");
   });
 
   it("still lets them on when the kitchen profile can't load", async () => {

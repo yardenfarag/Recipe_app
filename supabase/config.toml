@@ -23,6 +23,11 @@ verify_jwt = false
 [functions.welcome-emails]
 verify_jwt = false
 
+# The cron job sends its own secret, and the unsubscribe link in nudge emails is opened in a
+# browser with no session.
+[functions.nudges]
+verify_jwt = false
+
 # The feedback trigger sends a Vault secret (x-support-email-secret), not a JWT.
 [functions.support-email]
 verify_jwt = false
