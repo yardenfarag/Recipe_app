@@ -1,5 +1,7 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
+import { DEFAULT_THEME_PACK, ThemePacks } from '../../../shared/constants/themes';
+
 import { handleAppLinkRequest } from './appLinks';
 import { handleShareRequest } from './index';
 import {
@@ -136,6 +138,50 @@ describe('render', () => {
     expect(html).toContain('<html lang="he" dir="rtl">');
     expect(html).toContain('מרכיבים');
     expect(html).toContain('Crispy &lt;Chili&gt; Oil Noodles');
+  });
+});
+
+describe('Night Market look (ADR 031)', () => {
+  it('takes its colours from the default theme pack, in light and dark', () => {
+    const html = renderSharePage(recipe, TOKEN);
+    const pack = ThemePacks[DEFAULT_THEME_PACK];
+    expect(html).toContain(`--bg:${pack.light.background}`);
+    expect(html).toContain(`--primary:${pack.light.primary}`);
+    expect(html).toContain(`@media (prefers-color-scheme:dark){:root{--bg:${pack.dark.background}`);
+    expect(html).toContain(`<meta name="theme-color" media="(prefers-color-scheme: dark)" content="${pack.dark.background}" />`);
+  });
+
+  it('loads Inter and Space Grotesk from the site itself', () => {
+    const html = renderSharePage(recipe, TOKEN);
+    expect(html).toContain('src:url(/fonts/inter-latin-wght-normal.woff2)');
+    expect(html).toContain('font-family:"Space Grotesk"');
+    expect(html).not.toContain('fonts.googleapis.com');
+  });
+
+  it('shows the facts as tiles, value over label', () => {
+    const html = renderSharePage({ ...recipe, calories: 900 }, TOKEN);
+    expect(html).toContain(
+      '<ul class="facts"><li><b>15 min</b><span>Total time</span></li><li><b>2</b><span>Servings</span></li><li><b>3</b><span>Ingredients</span></li><li><b>~450</b><span>Cal / serving</span></li></ul>',
+    );
+  });
+
+  it('puts each ingredient amount in its own column', () => {
+    const html = renderSharePage(recipe, TOKEN);
+    expect(html).toContain(
+      '<li><label><input type="checkbox" /><span class="amount"><bdi dir="ltr">⅓</bdi></span><span class="name" dir="auto">tbsp chili oil</span></label></li>',
+    );
+    expect(html).toContain('<span class="amount"></span><span class="name" dir="auto">salt</span>');
+  });
+
+  it('leaves out the photo tile when there is no photo', () => {
+    expect(renderSharePage(recipe, TOKEN)).toContain('<figure class="photo">');
+    expect(renderSharePage({ ...recipe, image_url: undefined }, TOKEN)).not.toContain('class="photo"');
+  });
+
+  it('sizes the headline by the length of the title', () => {
+    expect(renderSharePage({ ...recipe, title: 'Shakshuka' }, TOKEN)).toContain('class="tile details t-s"');
+    expect(renderSharePage(recipe, TOKEN)).toContain('class="tile details t-m"');
+    expect(renderSharePage({ ...recipe, title: 'A'.repeat(40) }, TOKEN)).toContain('class="tile details"');
   });
 });
 

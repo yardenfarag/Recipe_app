@@ -56,6 +56,8 @@ copy('landing/icon-192.png');
 copy('landing/icon-512.png');
 // The App Store and Google Play badges, one of each per language: /badges/app-store-<lang>.svg.
 cpSync(join(root, 'landing/badges'), join(dist, 'badges'), { recursive: true });
+// Inter and Space Grotesk (SIL OFL), for the share Worker's recipe pages: /fonts/<file>.woff2. Same origin, no Google.
+cpSync(join(root, 'landing/fonts'), join(dist, 'fonts'), { recursive: true });
 copy('dist/app/index.html', '404.html');
 
 const site = loadSite(root);

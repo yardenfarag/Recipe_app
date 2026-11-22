@@ -10,6 +10,10 @@ export interface PageStrings {
   minutes: string;
   serves: string;
   ingredientCount: string;
+  /** Labels under the fact tiles, in the web app's words (recipe.factTime, recipe.servings, recipe.factCalories). */
+  factTime: string;
+  factServings: string;
+  factCalories: string;
   ingredients: string;
   steps: string;
   openInApp: string;
@@ -43,6 +47,9 @@ const STRINGS: Record<PageLanguage, PageStrings> = {
     minutes: '{n} min',
     serves: 'Serves {n}',
     ingredientCount: '{n} ingredients',
+    factTime: 'Total time',
+    factServings: 'Servings',
+    factCalories: 'Cal / serving',
     ingredients: 'Ingredients',
     steps: 'Steps',
     openInApp: 'Open in Pinch',
@@ -74,6 +81,9 @@ const STRINGS: Record<PageLanguage, PageStrings> = {
     minutes: '{n} min',
     serves: 'Para {n}',
     ingredientCount: '{n} ingredientes',
+    factTime: 'Tiempo total',
+    factServings: 'Porciones',
+    factCalories: 'Cal / ración',
     ingredients: 'Ingredientes',
     steps: 'Pasos',
     openInApp: 'Abrir en Pinch',
@@ -105,6 +115,9 @@ const STRINGS: Record<PageLanguage, PageStrings> = {
     minutes: '{n} דק׳',
     serves: '{n} מנות',
     ingredientCount: '{n} מרכיבים',
+    factTime: 'זמן כולל',
+    factServings: 'מנות',
+    factCalories: 'קל׳ למנה',
     ingredients: 'מרכיבים',
     steps: 'שלבים',
     openInApp: 'פתיחה ב־Pinch',
@@ -136,6 +149,9 @@ const STRINGS: Record<PageLanguage, PageStrings> = {
     minutes: '{n} мин',
     serves: 'Порций: {n}',
     ingredientCount: 'Ингредиентов: {n}',
+    factTime: 'Общее время',
+    factServings: 'Порции',
+    factCalories: 'ккал / порция',
     ingredients: 'Ингредиенты',
     steps: 'Шаги',
     openInApp: 'Открыть в Pinch',
@@ -167,6 +183,9 @@ const STRINGS: Record<PageLanguage, PageStrings> = {
     minutes: '{n} دقيقة',
     serves: 'تكفي {n}',
     ingredientCount: '{n} مكونات',
+    factTime: 'الوقت الكلي',
+    factServings: 'حصص',
+    factCalories: 'سعرة / حصة',
     ingredients: 'المكونات',
     steps: 'الخطوات',
     openInApp: 'افتح في Pinch',
