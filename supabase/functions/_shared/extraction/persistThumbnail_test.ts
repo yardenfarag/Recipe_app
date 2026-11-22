@@ -99,6 +99,48 @@ Deno.test({
 });
 
 Deno.test({
+  name: 'a social image is named by its post id and its content',
+  sanitizeOps: false,
+  sanitizeResources: false,
+  fn: () =>
+    withStorageEnv(async () => {
+      let fill = 1;
+      const stub = stubNetwork(() => jpeg(fill));
+      try {
+        const first = await persistSocialThumbnail({ sourceUrl: IMAGE_URL, platform: 'tiktok', contentId: '7619040874910993667' });
+        const again = await persistSocialThumbnail({ sourceUrl: IMAGE_URL, platform: 'tiktok', contentId: '7619040874910993667' });
+        fill = 2;
+        const changed = await persistSocialThumbnail({ sourceUrl: IMAGE_URL, platform: 'tiktok', contentId: '7619040874910993667' });
+        assert(/^tiktok\/7619040874910993667-[0-9a-f]{8}\.jpg$/.test(stub.uploads[0].path), stub.uploads[0].path);
+        assertEquals(again, first, 'the same picture is the same file');
+        assertNotEquals(changed, first, 'a new picture for the same post gets a new name, past the year-long cache');
+      } finally {
+        stub.restore();
+      }
+    }),
+});
+
+Deno.test({
+  name: 'a HEIC image is not copied, since only Apple devices can show it',
+  sanitizeOps: false,
+  sanitizeResources: false,
+  fn: () =>
+    withStorageEnv(async () => {
+      for (const platform of ['tiktok', 'instagram', 'web'] as const) {
+        for (const type of ['image/heic', 'image/heif']) {
+          const stub = stubNetwork(() => new Response(new Uint8Array(2048), { headers: { 'content-type': type } }));
+          try {
+            assertEquals(await persistSocialThumbnail({ sourceUrl: IMAGE_URL, platform, contentId: '1' }), undefined, `${platform} ${type}`);
+            assertEquals(stub.uploads.length, 0);
+          } finally {
+            stub.restore();
+          }
+        }
+      }
+    }),
+});
+
+Deno.test({
   name: 'something that is not a picture is not copied',
   sanitizeOps: false,
   sanitizeResources: false,

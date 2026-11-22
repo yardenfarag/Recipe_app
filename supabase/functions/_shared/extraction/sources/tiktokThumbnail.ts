@@ -1,5 +1,3 @@
-import { firstUrlList } from './scrapecreators.ts';
-
 interface TikTokCoverFields {
   cover?: unknown;
   dynamic_cover?: unknown;
@@ -23,41 +21,41 @@ export function extractTikTokThumbnail(
 ): string | undefined {
   if (video) {
     for (const key of COVER_FIELD_ORDER) {
-      const url = firstUrlList(video[key]);
+      const url = browserImageFromList(video[key]);
       if (url) return url;
     }
   }
 
   for (const key of ['cover_url', 'thumbnail_url', 'thumbnail', 'cover']) {
     const value = response[key];
-    if (typeof value === 'string' && value.trim()) return value.trim();
-    const fromList = firstUrlList(value);
+    if (typeof value === 'string' && value.trim() && !isHeic(value)) return value.trim();
+    const fromList = browserImageFromList(value);
     if (fromList) return fromList;
   }
 
   return undefined;
 }
 
-/** Free fallback when ScrapeCreators omits cover fields — TikTok's public oEmbed endpoint. */
-export async function fetchTikTokOembedThumbnail(url: string): Promise<string | undefined> {
-  const controller = new AbortController();
-  const timeout = setTimeout(() => controller.abort(), 8_000);
+/**
+ * TikTok lists each cover in several formats, HEIC first: `[….heic, ….heic, ….jpeg]`. Only Apple
+ * devices show HEIC, so take the JPEG (or another web format) and skip HEIC altogether.
+ */
+function browserImageFromList(value: unknown): string | undefined {
+  if (!value || typeof value !== 'object') return undefined;
+  const list = (value as Record<string, unknown>).url_list;
+  if (!Array.isArray(list)) return undefined;
+  const urls = list.filter((url): url is string => typeof url === 'string' && url.trim() !== '');
+  return urls.find((url) => /\.(jpe?g|png|webp)$/i.test(urlPath(url))) ?? urls.find((url) => !isHeic(url));
+}
 
+function isHeic(url: string): boolean {
+  return /\.hei[cf]$/i.test(urlPath(url));
+}
+
+function urlPath(url: string): string {
   try {
-    const res = await fetch(
-      `https://www.tiktok.com/oembed?url=${encodeURIComponent(url)}`,
-      {
-        headers: { Accept: 'application/json' },
-        signal: controller.signal,
-      },
-    );
-    if (!res.ok) return undefined;
-
-    const data = (await res.json()) as { thumbnail_url?: string };
-    return data.thumbnail_url?.trim() || undefined;
+    return new URL(url).pathname;
   } catch {
-    return undefined;
-  } finally {
-    clearTimeout(timeout);
+    return url.split('?')[0];
   }
 }
