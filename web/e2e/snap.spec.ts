@@ -1,4 +1,4 @@
-import { expect, test, type Page } from "@playwright/test";
+import { expect, test, type Page, type Route } from "@playwright/test";
 
 import { resetLibrary, resetTestUserLanguage } from "./admin";
 import { signInWithPassword } from "./helpers";
@@ -23,8 +23,12 @@ async function openSnap(page: Page) {
 
 const linkField = (page: Page) => page.getByLabel("Recipe URL");
 const snapButton = (page: Page) => page.getByRole("button", { name: "Snap", exact: true });
+/** A Snap's recipe is saved for the cook as it comes in, and opens with this strip (PR #104). */
+const savedStrip = (page: Page) => page.getByRole("status").filter({ hasText: "Saved to your Library" });
+/** The recipe opened right after an automatic save. */
+const JUST_SAVED = /\/app\/recipe\/[0-9a-f-]{36}\?justSaved=1$/;
 
-test("a link from each supported source imports, previews and saves", async ({ page }) => {
+test("a link from each supported source imports, is saved, and opens", async ({ page }) => {
   await resetLibrary([]);
   const calls = await stubImports(page, {
     "extract-recipe": SOURCE_LINKS.map(({ platform, url }) => ({
@@ -37,13 +41,15 @@ test("a link from each supported source imports, previews and saves", async ({ p
     await page.goto("/app/add");
     await linkField(page).fill(url);
     await snapButton(page).click();
-    await expect(page).toHaveURL(/\/app\/recipe\/preview$/);
+    // No Save to tap: it's already in the Library.
+    await expect(page).toHaveURL(JUST_SAVED);
     await expect(page.locator("#main h1")).toHaveText(`Pasta from ${platform}`);
     await expect(page.getByRole("region", { name: "Ingredients" })).toContainText("spaghetti");
-    // Not saved yet: no heart.
-    await expect(page.getByRole("button", { name: /favorites/ })).toHaveCount(0);
-    await page.getByRole("button", { name: "Save recipe" }).click();
-    await expect(page.getByText("In your kitchen")).toBeVisible();
+    await expect(savedStrip(page)).toBeVisible();
+  }
+
+  await page.goto("/app");
+  for (const { platform } of SOURCE_LINKS) {
     await expect(page.getByRole("link", { name: `Pasta from ${platform}` })).toBeVisible();
   }
 
@@ -63,9 +69,11 @@ test("a photo chosen from the computer imports and saves", async ({ page }) => {
   await openSnap(page);
   await page.locator('input[type="file"]').setInputFiles({ name: "card.png", mimeType: "image/png", buffer: PHOTO_PNG });
   await expect(page.locator("#main h1")).toHaveText("Grandma's Cake");
+  await expect(page).toHaveURL(JUST_SAVED);
+  await expect(savedStrip(page)).toBeVisible();
   expect(calls[0].body.image_mime).toBe("image/jpeg");
   expect(String(calls[0].body.image_base64).length).toBeGreaterThan(100);
-  await page.getByRole("button", { name: "Save recipe" }).click();
+  await page.goto("/app");
   await expect(page.getByRole("link", { name: "Grandma's Cake" })).toBeVisible();
 });
 
@@ -230,21 +238,64 @@ test("a link that is already saved opens the saved recipe, without importing", a
   expect(calls).toHaveLength(0);
 });
 
-test("Discard drops the preview and goes back to Snap", async ({ page }) => {
+test("Remove takes a recipe that was just saved back out, and goes back to Snap", async ({ page }) => {
   await resetLibrary([]);
   await stubImports(page, { "extract-recipe": { body: { status: "full", platform: "web", recipe: importedRecipe("Unwanted Stew") } } });
   await openSnap(page);
   await linkField(page).fill(SOURCE_LINKS[4].url);
   await snapButton(page).click();
+  await expect(page).toHaveURL(JUST_SAVED);
+  await savedStrip(page).getByRole("button", { name: "Remove" }).click();
+  await expect(page).toHaveURL(/\/app\/add$/);
+  await expect(page.getByText("Removed from your Library")).toBeVisible();
+  await page.goto("/app");
+  await expect(page.getByRole("link", { name: "Unwanted Stew" })).toHaveCount(0);
+});
+
+test("when the save fails, the preview keeps the recipe, and Discard drops it", async ({ page }) => {
+  await resetLibrary([]);
+  await stubImports(page, { "extract-recipe": { body: { status: "full", platform: "web", recipe: importedRecipe("Unwanted Stew") } } });
+  // The automatic save can't reach the database: the paid import must not be lost.
+  const failSaves = async (route: Route) =>
+    route.request().method() === "POST" ? route.fulfill({ status: 503, json: { message: "Service unavailable" } }) : route.fallback();
+  const recipesTable = (url: URL) => url.pathname.endsWith("/rest/v1/recipes");
+  await page.route(recipesTable, failSaves);
+  await openSnap(page);
+  await linkField(page).fill(SOURCE_LINKS[4].url);
+  await snapButton(page).click();
+  await expect(page).toHaveURL(/\/app\/recipe\/preview$/);
   await expect(page.locator("#main h1")).toHaveText("Unwanted Stew");
-  // A reload keeps the paid import.
+  await expect(page.getByRole("button", { name: "Save recipe" })).toBeVisible();
+  // A reload keeps it.
   await page.reload();
   await expect(page.locator("#main h1")).toHaveText("Unwanted Stew");
+  await page.unroute(recipesTable, failSaves);
   await page.getByRole("button", { name: /Discard|web\.snap\.discard/ }).first().click();
   await page.getByRole("dialog").getByRole("button", { name: /Discard|web\.snap\.discard/ }).click();
   await expect(page).toHaveURL(/\/app\/add$/);
   await page.goto("/app/recipe/preview");
   await expect(page.getByText("Nothing to preview yet. Snap a recipe first.")).toBeVisible();
+});
+
+test("a link that can't be read offers ways on, and Try again gets the recipe", async ({ page }) => {
+  await resetLibrary([]);
+  const calls = await stubImports(page, {
+    "extract-recipe": [
+      { body: { status: "failed", platform: "tiktok", code: "extraction_timeout" } },
+      { body: { status: "full", platform: "tiktok", recipe: importedRecipe("Second Try Noodles", { platform: "tiktok", original_url: SOURCE_LINKS[2].url }) } },
+    ],
+  });
+  await openSnap(page);
+  await linkField(page).fill(SOURCE_LINKS[2].url);
+  await snapButton(page).click();
+  const alert = page.getByRole("alert").filter({ hasText: "took too long" });
+  await expect(alert).toContainText("Other ways to get this recipe:");
+  await expect(alert.getByRole("button", { name: "Use a screenshot" })).toBeVisible();
+  await expect(alert.getByRole("button", { name: "Guess the recipe" })).toBeVisible();
+  await alert.getByRole("button", { name: "Try again" }).click();
+  await expect(page).toHaveURL(JUST_SAVED);
+  await expect(page.locator("#main h1")).toHaveText("Second Try Noodles");
+  expect(calls.map((call) => call.body.url)).toEqual([SOURCE_LINKS[2].url, SOURCE_LINKS[2].url]);
 });
 
 test.describe("phone, in Hebrew", () => {
