@@ -1,0 +1,107 @@
+# Roll back update: undoes a bad over-the-air update (ADR 030, docs/RELEASING.md).
+#
+# Actions → Roll back update → Run workflow. Phones get the change the next time the app opens.
+#
+#   store-version   Back to the code that came with the store version (give the app version, e.g. 1.0.11).
+#   earlier-update  Send an earlier update again (give its update group ID from expo.dev → Updates).
+#   stop-rollout    Stop an update that's still going to a percentage of users. Everyone gets the update
+#                   before it. Give its update group ID if more than one rollout is running.
+
+name: Roll back update
+
+on:
+  workflow_dispatch:
+    inputs:
+      to:
+        description: 'What to go back to'
+        required: true
+        type: choice
+        options:
+          - store-version
+          - earlier-update
+          - stop-rollout
+      app_version:
+        description: 'store-version: the app version to roll back, e.g. 1.0.11'
+        required: false
+        type: string
+      update_group:
+        description: 'earlier-update or stop-rollout: the update group ID from expo.dev'
+        required: false
+        type: string
+      reason:
+        description: 'Why, in a few words (shown on expo.dev)'
+        required: true
+        type: string
+
+concurrency:
+  group: publish-update
+  cancel-in-progress: false
+
+jobs:
+  rollback:
+    runs-on: ubuntu-latest
+    steps:
+      # eas reads the project from app.json, whose config plugins need node_modules.
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - run: npm ci
+
+      - uses: expo/expo-github-action@v8
+        with:
+          eas-version: latest
+          token: ${{ secrets.EXPO_TOKEN }}
+
+      - name: Back to the store version's code
+        if: inputs.to == 'store-version'
+        env:
+          APP_VERSION: ${{ inputs.app_version }}
+          REASON: ${{ inputs.reason }}
+        run: |
+          if ! [[ "$APP_VERSION" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+            echo "::error::Give the app version to roll back, like 1.0.11."
+            exit 1
+          fi
+          for platform in ios android; do
+            runtime=$(eas build:list --platform "$platform" --build-profile production --distribution store \
+                --status finished --app-version "$APP_VERSION" --limit 1 --json --non-interactive \
+              | node -e 'let s="";process.stdin.on("data",d=>s+=d).on("end",()=>console.log(JSON.parse(s)[0]?.runtime?.version ?? ""))')
+            if [ -z "$runtime" ]; then
+              echo "::warning::No $platform store build of $APP_VERSION with updates. Nothing to roll back there."
+              continue
+            fi
+            eas update:roll-back-to-embedded --channel production --platform "$platform" \
+              --runtime-version "$runtime" --message "$REASON" --force-end-active-rollout --non-interactive
+          done
+
+      - name: Send an earlier update again
+        if: inputs.to == 'earlier-update'
+        env:
+          GROUP: ${{ inputs.update_group }}
+          REASON: ${{ inputs.reason }}
+        run: |
+          if ! [[ "$GROUP" =~ ^[0-9a-fA-F-]{36}$ ]]; then
+            echo "::error::Give the update group ID from expo.dev → Updates."
+            exit 1
+          fi
+          eas update:republish --group "$GROUP" --message "$REASON" --force-end-active-rollout --non-interactive
+
+      - name: Stop a rollout
+        if: inputs.to == 'stop-rollout'
+        env:
+          GROUP: ${{ inputs.update_group }}
+          REASON: ${{ inputs.reason }}
+        run: |
+          if [ -n "$GROUP" ]; then
+            if ! [[ "$GROUP" =~ ^[0-9a-fA-F-]{36}$ ]]; then
+              echo "::error::The update group ID looks wrong. Copy it from expo.dev → Updates."
+              exit 1
+            fi
+            eas update:revert-update-rollout --group "$GROUP" --message "$REASON" --non-interactive
+          else
+            eas update:revert-update-rollout --channel production --message "$REASON" --non-interactive
+          fi

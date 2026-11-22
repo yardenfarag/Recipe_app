@@ -1,0 +1,82 @@
+# Publish update: sends new JavaScript to phones that already have the app (ADR 030, docs/RELEASING.md).
+#
+# Actions → Publish update → Run workflow. "Use workflow from" is the branch to publish (master,
+# or hotfix/<version> when master has native changes that aren't in a store build yet).
+# Or ask the agent: gh workflow run publish-update.yml --ref master -f message="..."
+#
+# Phones download it in the background and switch to it the next time the app opens.
+# Undo with the "Roll back update" workflow.
+
+name: Publish update
+
+on:
+  workflow_dispatch:
+    inputs:
+      message:
+        description: 'What changed, in a few words (shown on expo.dev)'
+        required: true
+        type: string
+      percentage:
+        description: 'Percentage of users (1-100). Leave empty for everyone.'
+        required: false
+        type: string
+
+concurrency:
+  group: publish-update
+  cancel-in-progress: false
+
+jobs:
+  quality:
+    uses: ./.github/workflows/quality.yml
+
+  publish:
+    needs: quality
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - run: npm ci
+
+      - uses: expo/expo-github-action@v8
+        with:
+          eas-version: latest
+          token: ${{ secrets.EXPO_TOKEN }}
+
+      - name: Check the percentage
+        env:
+          PERCENTAGE: ${{ inputs.percentage }}
+        run: |
+          if [ -n "$PERCENTAGE" ] && ! [[ "$PERCENTAGE" =~ ^([1-9][0-9]?|100)$ ]]; then
+            echo "::error::The percentage must be a whole number from 1 to 100, or empty for everyone."
+            exit 1
+          fi
+
+      # An update only reaches store builds with the same fingerprint (native code and app version).
+      # With no matching build it would reach nobody, so stop instead.
+      - name: Check that store builds on phones match this code
+        run: |
+          for platform in ios android; do
+            runtime=$(npx expo-updates runtimeversion:resolve --platform "$platform" \
+              | node -e 'let s="";process.stdin.on("data",d=>s+=d).on("end",()=>console.log(JSON.parse(s).runtimeVersion))')
+            builds=$(eas build:list --platform "$platform" --build-profile production --distribution store \
+              --status finished --runtime-version "$runtime" --limit 1 --json --non-interactive)
+            version=$(echo "$builds" | node -e 'let s="";process.stdin.on("data",d=>s+=d).on("end",()=>{const b=JSON.parse(s)[0];console.log(b?`${b.appVersion} (${b.appBuildVersion})`:"")})')
+            if [ -z "$version" ]; then
+              echo "::error::No $platform store build matches this code (fingerprint $runtime). It has native changes or a version bump that isn't in a store build yet. Publish from hotfix/<version>, made from the release tag, or make a store release. See docs/RELEASING.md."
+              exit 1
+            fi
+            echo "$platform: goes to store version $version"
+          done
+
+      - name: Publish
+        env:
+          MESSAGE: ${{ inputs.message }}
+          PERCENTAGE: ${{ inputs.percentage }}
+        run: |
+          eas update --channel production --environment production --platform all --non-interactive \
+            --message "$MESSAGE" ${PERCENTAGE:+--rollout-percentage "$PERCENTAGE"}

@@ -1,0 +1,110 @@
+# Store release for iOS and Android (ADR 030, docs/RELEASING.md).
+#
+# Starts when a release tag like v1.0.11 is pushed (or a GitHub Release creates one). It checks the
+# tag, builds both apps on EAS and sends them to TestFlight and Google Play internal testing.
+# Real users get the build only after someone promotes it in App Store Connect and Play Console.
+#
+# Needs: the EXPO_TOKEN secret, the iOS credentials and App Store Connect API key on EAS, and the
+# Google Play service account key on EAS (scripts/play-service-account-wizard.sh).
+
+name: Release (iOS and Android)
+
+on:
+  push:
+    tags: ['v*']
+
+concurrency:
+  group: release
+  cancel-in-progress: false
+
+permissions:
+  contents: write
+
+jobs:
+  check:
+    name: Check the tag
+    runs-on: ubuntu-latest
+    outputs:
+      version: ${{ steps.version.outputs.version }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Tag matches the version files and the release notes are filled in
+        env:
+          TAG: ${{ github.ref_name }}
+        run: node scripts/release.mjs check "$TAG"
+
+      - name: Tagged commit is on master
+        env:
+          TAG: ${{ github.ref_name }}
+        run: |
+          git fetch origin master
+          if ! git merge-base --is-ancestor "$GITHUB_SHA" origin/master; then
+            echo "::error::$TAG is not on master. Store releases are tagged on master after the version PR merges."
+            exit 1
+          fi
+
+      - id: version
+        env:
+          TAG: ${{ github.ref_name }}
+        run: echo "version=${TAG#v}" >> "$GITHUB_OUTPUT"
+
+  quality:
+    uses: ./.github/workflows/quality.yml
+
+  build:
+    name: Build and send to the tester tracks
+    needs: [check, quality]
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - run: npm ci
+
+      - uses: expo/expo-github-action@v8
+        with:
+          eas-version: latest
+          token: ${{ secrets.EXPO_TOKEN }}
+
+      # TestFlight shows the English What's New to testers.
+      - name: Build both apps, then submit them
+        env:
+          VERSION: ${{ needs.check.outputs.version }}
+        run: |
+          WHAT_TO_TEST="$(node --input-type=module -e "
+            import { readFileSync } from 'node:fs';
+            import { readNotes } from './scripts/release.mjs';
+            console.log(readNotes(readFileSync('docs/releases/$VERSION.md', 'utf8')).en);
+          ")"
+          eas build --platform all --profile production --auto-submit --non-interactive \
+            --message "Release $VERSION" --what-to-test "$WHAT_TO_TEST"
+
+  github-release:
+    name: GitHub Release with the notes
+    needs: [check, build]
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      # Skipped when someone started the release by creating the GitHub Release themselves.
+      - env:
+          GH_TOKEN: ${{ github.token }}
+          TAG: ${{ github.ref_name }}
+          VERSION: ${{ needs.check.outputs.version }}
+        run: |
+          if gh release view "$TAG" > /dev/null 2>&1; then
+            echo "The GitHub Release for $TAG already exists."
+          else
+            gh release create "$TAG" --verify-tag --title "Pinch $VERSION" --notes-file "docs/releases/$VERSION.md"
+          fi
