@@ -1734,7 +1734,7 @@ export default {
     },
     "welcome": {
       "tabTitle": "Welcome",
-      "eyebrow": "Free to start. No card needed.",
+      "eyebrow": "{{limit}} free recipes every month. No subscription.",
       "title": "Save any recipe in seconds. Cook it tonight.",
       "body": "Paste a link from TikTok, Instagram, YouTube or any recipe site, or snap a cookbook page. Pinch writes out the ingredients and steps, so you stop pausing videos and start cooking.",
       "getStarted": "Get started free",
@@ -1749,7 +1749,15 @@ export default {
       "easeBody": "Scale servings, switch cups to grams, and adapt any recipe to your diet or allergies.",
       "sampleTitle": "Creamy tomato pasta",
       "sampleMeta": "25 min · 4 servings",
-      "sampleListed": "Ingredients added to your list"
+      "sampleListed": "Ingredients added to your list",
+      "sampleIngredient1": "Penne",
+      "sampleAmount1": "400 g",
+      "sampleIngredient2": "Crushed tomatoes",
+      "sampleAmount2": "1 can",
+      "sampleIngredient3": "Cream",
+      "sampleAmount3": "200 ml",
+      "sampleIngredient4": "Garlic",
+      "sampleAmount4": "3 cloves"
     },
     "onboarding": {
       "tabTitle": "Set up your kitchen",

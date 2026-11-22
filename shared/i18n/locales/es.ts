@@ -1734,7 +1734,7 @@ export default {
     },
     "welcome": {
       "tabTitle": "Bienvenida",
-      "eyebrow": "Gratis para empezar. Sin tarjeta.",
+      "eyebrow": "{{limit}} recetas gratis cada mes. Sin suscripción.",
       "title": "Guarda cualquier receta en segundos. Cocínala esta noche.",
       "body": "Pega un enlace de TikTok, Instagram, YouTube o cualquier web de recetas, o fotografía una página de un libro de cocina. Pinch escribe los ingredientes y los pasos, para que dejes de pausar videos y empieces a cocinar.",
       "getStarted": "Empezar gratis",
@@ -1749,7 +1749,15 @@ export default {
       "easeBody": "Ajusta las porciones, cambia tazas por gramos y adapta cualquier receta a tu dieta o alergias.",
       "sampleTitle": "Pasta cremosa de tomate",
       "sampleMeta": "25 min · 4 porciones",
-      "sampleListed": "Ingredientes añadidos a tu lista"
+      "sampleListed": "Ingredientes añadidos a tu lista",
+      "sampleIngredient1": "Penne",
+      "sampleAmount1": "400 g",
+      "sampleIngredient2": "Tomate triturado",
+      "sampleAmount2": "1 lata",
+      "sampleIngredient3": "Nata",
+      "sampleAmount3": "200 ml",
+      "sampleIngredient4": "Ajo",
+      "sampleAmount4": "3 dientes"
     },
     "onboarding": {
       "tabTitle": "Prepara tu cocina",

@@ -1734,7 +1734,7 @@ export default {
     },
     "welcome": {
       "tabTitle": "ברוכים הבאים",
-      "eyebrow": "חינם להתחלה. בלי כרטיס אשראי.",
+      "eyebrow": "{{limit}} מתכונים בחינם כל חודש. בלי מנוי.",
       "title": "שומרים כל מתכון בשניות. מבשלים אותו הערב.",
       "body": "הדביקו קישור מ־TikTok, Instagram, YouTube או מכל אתר מתכונים, או צלמו דף מספר בישול. Pinch כותב את המצרכים והשלבים, כדי שתפסיקו לעצור סרטונים ותתחילו לבשל.",
       "getStarted": "מתחילים בחינם",
@@ -1749,7 +1749,15 @@ export default {
       "easeBody": "משנים מספר מנות, עוברים מכוסות לגרמים, ומתאימים כל מתכון לתזונה או לאלרגיות שלכם.",
       "sampleTitle": "פסטה ברוטב עגבניות ושמנת",
       "sampleMeta": "25 דק׳ · 4 מנות",
-      "sampleListed": "המצרכים נוספו לרשימה"
+      "sampleListed": "המצרכים נוספו לרשימה",
+      "sampleIngredient1": "פנה",
+      "sampleAmount1": "400 גרם",
+      "sampleIngredient2": "עגבניות מרוסקות",
+      "sampleAmount2": "קופסה",
+      "sampleIngredient3": "שמנת מתוקה",
+      "sampleAmount3": "200 מ״ל",
+      "sampleIngredient4": "שום",
+      "sampleAmount4": "3 שיניים"
     },
     "onboarding": {
       "tabTitle": "מכינים את המטבח",
