@@ -558,15 +558,39 @@ ${TAG_RULES}
 ${LANGUAGE_RULE}
 - If the image genuinely contains no recipe, set found_recipe to false and leave other fields empty.
 - Do NOT invent instructions if none are present — return what you found and leave instructions empty instead.
+- The image may become the recipe's cover picture. Say whether it has a photo of the finished dish in it:
+  - dish_photo "whole": the image is that photo (the food, nothing else worth cutting away).
+  - dish_photo "part": a photo of the dish is only part of the image (a screenshot of a post, an image search, a web page, a cookbook page with a photo on it). Set dish_photo_box to the edges of that photo only, as [left, top, right, bottom], each a fraction from 0 to 1 of the image's width or height. Leave out the buttons, text, captions and frames around it.
+  - dish_photo "none": no photo of the dish (a handwritten card, a page of text, a menu, a list of ingredients).
 - Return ONLY data matching the schema.`;
 
+/** The recipe schema plus where the dish's photo is in the image, for the cover (photoCover.ts). */
+const IMAGE_RECIPE_SCHEMA = {
+  ...RECIPE_SCHEMA,
+  properties: {
+    ...RECIPE_SCHEMA.properties,
+    dish_photo: { type: 'string', enum: ['whole', 'part', 'none'] },
+    dish_photo_box: {
+      type: 'array',
+      items: { type: 'number' },
+      description: 'Only when dish_photo is "part": [left, top, right, bottom] of the dish photo, fractions 0-1.',
+    },
+  },
+};
+
 const IMAGE_TIMEOUT_MS = 45_000;
+
+/** What the photo model said about a photo of the dish in the image. Unchecked: photoCover.ts reads it. */
+export interface DishPhotoAnswer {
+  dish_photo?: unknown;
+  dish_photo_box?: unknown;
+}
 
 export async function extractRecipeFromImage(input: {
   imageBase64: string;
   mimeType?: string;
-}): Promise<{ recipe: GeminiRecipe; usage: GeminiUsageSnapshot | null }> {
-  const { data: recipe, usage, durationMs } = await generateLlmJson<GeminiRecipe>({
+}): Promise<{ recipe: GeminiRecipe; usage: GeminiUsageSnapshot | null; dishPhoto: DishPhotoAnswer }> {
+  const { data, usage, durationMs } = await generateLlmJson<GeminiRecipe & DishPhotoAnswer>({
     systemPrompt: IMAGE_SYSTEM_PROMPT,
     parts: [
       {
@@ -575,14 +599,15 @@ export async function extractRecipeFromImage(input: {
       },
       { text: 'Extract the recipe from this photo.' },
     ],
-    responseSchema: RECIPE_SCHEMA,
+    responseSchema: IMAGE_RECIPE_SCHEMA,
     timeoutMs: IMAGE_TIMEOUT_MS,
     maxOutputTokens: TEXT_MAX_OUTPUT_TOKENS,
     kind: 'photo',
     context: 'gemini.ts: extractRecipeFromImage',
   });
-  console.log('[gemini] photo extract ok', { ms: durationMs, usage });
-  return { recipe: normalizeGeminiRecipe(recipe), usage };
+  console.log('[gemini] photo extract ok', { ms: durationMs, usage, dish_photo: data.dish_photo });
+  const { dish_photo, dish_photo_box, ...recipe } = data;
+  return { recipe: normalizeGeminiRecipe(recipe), usage, dishPhoto: { dish_photo, dish_photo_box } };
 }
 
 const REPAIR_TIMEOUT_MS = 60_000;

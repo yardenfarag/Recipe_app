@@ -12,6 +12,7 @@ import {
 } from '../_shared/extraction/contentGate.ts';
 import {
   beginTextExtraction,
+  type DishPhotoAnswer,
   extractRecipeFromImage,
   extractRecipeWithLadder,
   type ExtractInput,
@@ -41,6 +42,7 @@ import {
 } from '../_shared/extraction/platform.ts';
 import type { PlatformMeta } from '../_shared/extraction/platformMeta.ts';
 import { keepUploadedPhoto, persistSocialThumbnail } from '../_shared/extraction/persistThumbnail.ts';
+import { resolvePhotoCover } from '../_shared/extraction/photoCover.ts';
 import {
   type DecodedPdf,
   decodePdfBase64,
@@ -379,6 +381,10 @@ serve('extract-recipe', async (req) => {
     let videoSkippedReason: 'too_long' | 'out_of_time' | undefined;
     let scrapeCredits = 0;
     let imageUrl: string | null = null;
+    let imageGenerated = false;
+    /** A Snapped photo: where the dish is in it, for the cover (photoCover.ts). */
+    let dishPhoto: DishPhotoAnswer | null = null;
+    let coverMetadata: Record<string, unknown> = {};
     let sourceVideoUrl: string | null = null;
     let originalUrl: string | null = null;
     let durationSeconds: number | undefined;
@@ -694,6 +700,7 @@ serve('extract-recipe', async (req) => {
         mimeType: imageMime,
       });
       gemini = fromImage.recipe;
+      dishPhoto = fromImage.dishPhoto;
       if (fromImage.usage) usages = [fromImage.usage];
       source = 'photo';
       originalUrl = null;
@@ -829,6 +836,21 @@ serve('extract-recipe', async (req) => {
     // appliances, so don't spend a model call on them here.
     const isPartial = status === 'partial';
 
+    // A Snapped photo's cover: the photo, the dish cut out of it, or a drawing (photoCover.ts).
+    // A drawing takes ~10 s, so it runs alongside the appliance call.
+    const cover = platform === 'photo' && imageBase64 && dishPhoto
+      ? resolvePhotoCover({
+        admin,
+        answer: dishPhoto,
+        imageBase64,
+        mimeType: imageMime,
+        userId,
+        recipe: { title: gemini.title, ingredients: gemini.ingredients },
+        partial: isPartial,
+        msLeft: deadlineAt - Date.now() - 3_000,
+      })
+      : null;
+
     // ADR 017: never throws; a failure saves as "not analysed" (null).
     // Two sequential calls share what's left before the deadline; too little left, and the
     // recipe saves as "not analysed", which the editor's Save fills in later.
@@ -841,12 +863,22 @@ serve('extract-recipe', async (req) => {
           timeoutMs: Math.min(15_000, Math.floor(appliancesMs / 2)),
         });
 
+    if (cover) {
+      const result = await cover;
+      if (result.imageUrl !== undefined) imageUrl = result.imageUrl;
+      imageGenerated = result.generated;
+      if (result.usage) usages.push(result.usage);
+      coverMetadata = result.metadata;
+    }
+
     const recipe = fitRecipeToLimits({
       title: gemini.title,
       source_language: normalizeLanguageCode(gemini.source_language),
       original_url: originalUrl,
       platform,
       image_url: imageUrl,
+      // The apps save the recipe as it comes back, so a drawn cover keeps its "AI image" mark.
+      ...(imageGenerated ? { image_generated: true } : {}),
       source_video_url: sourceVideoUrl,
       ingredients: gemini.ingredients,
       instructions: gemini.instructions,
@@ -1023,6 +1055,7 @@ serve('extract-recipe', async (req) => {
         ...videoMetadata(durationSeconds, usedInstagramVideoDownload),
         ...pdfMetadata(pdf, pdfText, pdfRoute),
         ...applianceMetadata,
+        ...coverMetadata,
       },
     });
 

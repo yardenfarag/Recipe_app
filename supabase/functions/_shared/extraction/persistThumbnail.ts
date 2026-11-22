@@ -142,6 +142,23 @@ export async function persistUploadedPhoto(opts: {
   mimeType?: string;
   userId: string | null;
 }): Promise<string | undefined> {
+  const bytes = decodeBase64(opts.imageBase64);
+  if (!bytes || bytes.byteLength < 100) {
+    console.warn('[persistThumbnail] uploaded photo too small');
+    return undefined;
+  }
+  return await persistUserPhotoBytes({ bytes, mimeType: opts.mimeType, userId: opts.userId });
+}
+
+/**
+ * Stores an image made from a user's photo (the dish cropped out of a Snap, photoCover.ts) next to
+ * their uploads, so delete-account removes it with them.
+ */
+export async function persistUserPhotoBytes(opts: {
+  bytes: Uint8Array;
+  mimeType?: string;
+  userId: string | null;
+}): Promise<string | undefined> {
   const supabaseUrl = Deno.env.get('SUPABASE_URL');
   const serviceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY');
   if (!supabaseUrl || !serviceKey) {
@@ -149,13 +166,8 @@ export async function persistUploadedPhoto(opts: {
     return undefined;
   }
 
+  const { bytes } = opts;
   const mime = opts.mimeType?.trim() || 'image/jpeg';
-  const bytes = decodeBase64(opts.imageBase64);
-  if (!bytes || bytes.byteLength < 100) {
-    console.warn('[persistThumbnail] uploaded photo too small');
-    return undefined;
-  }
-
   const ext = extensionForContentType(mime);
   const path = `photo/${opts.userId ?? 'guest'}/${crypto.randomUUID()}.${ext}`;
   const supabase = createClient<Database>(supabaseUrl, serviceKey);
@@ -268,7 +280,7 @@ function safeHost(url: string): string | null {
   }
 }
 
-function decodeBase64(value: string): Uint8Array | null {
+export function decodeBase64(value: string): Uint8Array | null {
   try {
     const binary = atob(value.replace(/\s/g, ''));
     const bytes = new Uint8Array(binary.length);
