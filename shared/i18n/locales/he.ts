@@ -1454,7 +1454,37 @@ export default {
     "notFoundBody": "ייתכן שהקישור ישן, או שהדף עבר למקום אחר.",
     "comingSoon": "בקרוב גם באתר",
     "library": {
-      "sortBy": "מיון לפי"
+      "sortBy": "מיון לפי",
+      "tonightsPick": "הבחירה להערב",
+      "startCooking": "מתחילים לבשל",
+      "cookAlongVideo": "מבשלים עם הסרטון",
+      "showAnother": "הציעו לי אחר",
+      "savedFrom": "נשמר מ־{{source}}",
+      "savedFromPhoto": "נשמר מתמונה",
+      "sourcePhoto": "תמונה",
+      "sourceWebsite": "אתר",
+      "snapNewTitle": "שולפים משהו חדש",
+      "snapNewBody": "קישורים, תמונות, צילומי מסך. לחיצה אחת וזה מתכון אמיתי.",
+      "listLeft": "קניות · נשארו {{count}}",
+      "listEmpty": "אין מה לקנות. אפשר להוסיף מצרכים מכל מתכון.",
+      "listDone": "הכול סומן",
+      "listMore": "ועוד {{count}}",
+      "listOpen": "פתיחת רשימת הקניות",
+      "cookedThisWeek": "בישלתם השבוע",
+      "cookedThisWeekCount": "{{count}} בושלו השבוע",
+      "credits": "{{count}} קרדיטים",
+      "creditsOne": "קרדיט אחד",
+      "filterAll": "הכול",
+      "quick": {
+        "under30": "עד 30 דק׳",
+        "veggie": "צמחוני",
+        "tiktok": "מטיקטוק",
+        "neverCooked": "עוד לא בושל"
+      },
+      "quickFilters": "סינון מהיר",
+      "kitchenTiles": "הערב",
+      "openRecipe": "פתיחת המתכון",
+      "servingsOne": "מנה אחת"
     },
     "recipe": {
       "viewOriginal": "לצפייה במקור",

@@ -1,6 +1,13 @@
 import { describe, expect, it } from 'vitest';
 
-import { filterAndSortRecipes, getFavoriteRecipes } from './recipeListQuery';
+import {
+  applyQuickFilters,
+  filterAndSortRecipes,
+  getFavoriteRecipes,
+  matchesQuickFilter,
+  parseQuickFilters,
+  type RecipeQuickFilter,
+} from './recipeListQuery';
 import { Recipe } from '../types/recipe';
 
 function mockRecipe(overrides: Partial<Recipe> & Pick<Recipe, 'id' | 'title'>): Recipe {
@@ -136,5 +143,45 @@ describe('getFavoriteRecipes', () => {
       { ...base, id: '3', is_favorite: true },
     ];
     expect(getFavoriteRecipes(list).map((r) => r.id)).toEqual(['1', '3']);
+  });
+});
+
+describe('quick filters', () => {
+  const library = [
+    mockRecipe({ id: 'quick-veg', title: 'Quick veg', estimated_time_minutes: 20, tags: ['Vegetarian', 'dinner'] }),
+    mockRecipe({ id: 'slow-vegan', title: 'Slow vegan', estimated_time_minutes: 90, tags: ['vegan'], platform: 'tiktok' }),
+    mockRecipe({ id: 'tiktok-link', title: 'TikTok link', original_url: 'https://www.tiktok.com/@cook/video/1', last_cooked_at: '2026-11-01T00:00:00.000Z' }),
+    mockRecipe({ id: 'untimed', title: 'Untimed', platform: 'web', original_url: 'https://example.com/not-tiktok.com/' }),
+  ];
+  const ids = (filters: RecipeQuickFilter[]) => applyQuickFilters(library, filters).map((r) => r.id);
+
+  it('keeps everything when none is on', () => {
+    expect(ids([])).toEqual(['quick-veg', 'slow-vegan', 'tiktok-link', 'untimed']);
+  });
+
+  it('under 30 minutes needs a time estimate', () => {
+    expect(ids(['under30'])).toEqual(['quick-veg']);
+  });
+
+  it('veggie reads the vegetarian and vegan tags, whatever their case', () => {
+    expect(ids(['veggie'])).toEqual(['quick-veg', 'slow-vegan']);
+  });
+
+  it('from TikTok reads the platform, or the link when no platform is stored', () => {
+    expect(ids(['tiktok'])).toEqual(['slow-vegan', 'tiktok-link']);
+  });
+
+  it('never cooked leaves out anything with a cook date', () => {
+    expect(ids(['neverCooked'])).toEqual(['quick-veg', 'slow-vegan', 'untimed']);
+  });
+
+  it('several filters must all match', () => {
+    expect(ids(['veggie', 'tiktok'])).toEqual(['slow-vegan']);
+    expect(matchesQuickFilter(library[0], 'under30')).toBe(true);
+  });
+
+  it('reads them from an address and drops what it does not know', () => {
+    expect(parseQuickFilters('veggie, under30,nope')).toEqual(['under30', 'veggie']);
+    expect(parseQuickFilters(null)).toEqual([]);
   });
 });

@@ -28,13 +28,13 @@ const isSnapFile = (file: File) => file.type.startsWith("image/") || file.type =
  * (pasted, dropped or picked) does too, and anything else searches your recipes. Imports are handed to the Snap
  * page, so they run exactly as they do there.
  *
- * `onSearch` makes it search as you type (the Library, which filters its own list); without it, Enter opens the
- * Library with the search.
+ * `liveSearch` is for a page that filters its own list as you type (the Library): it reads the text through
+ * `value`/`onChange`, and Enter then has nothing more to do. Without it, Enter opens the Library with the search.
  */
 export function SnapBarField({
   value,
   onChange,
-  onSearch,
+  liveSearch = false,
   onDone,
   inputRef,
   size = "lg",
@@ -44,7 +44,7 @@ export function SnapBarField({
   /** The text in the field, when the page holds it (the Library keeps it in the address). */
   value?: string;
   onChange?: (value: string) => void;
-  onSearch?: (query: string) => void;
+  liveSearch?: boolean;
   /** Called after the bar sent you somewhere (closes the ⌘K dialog). */
   onDone?: () => void;
   inputRef?: Ref<HTMLInputElement>;
@@ -65,8 +65,6 @@ export function SnapBarField({
   const setText = (next: string) => {
     if (value === undefined) setOwn(next);
     onChange?.(next);
-    // A link isn't a search: the list underneath stays as it was while one is in the field.
-    onSearch?.(normalizeSocialUrl(next) ? "" : next);
   };
 
   const snapLink = (url: string) => {
@@ -95,7 +93,7 @@ export function SnapBarField({
       router.push("/add");
       return;
     }
-    if (onSearch) return;
+    if (liveSearch) return;
     onDone?.();
     router.push(`/?q=${encodeURIComponent(query)}`);
   }

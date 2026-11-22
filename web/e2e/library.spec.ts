@@ -40,7 +40,7 @@ test("search narrows the list, '/' jumps to it, and opening a recipe goes to its
   await openLibrary(page);
   await page.locator("#main h1").click();
   await page.keyboard.press("/");
-  const search = page.getByRole("searchbox", { name: "Search recipes" });
+  const search = page.getByRole("searchbox", { name: "Snap a recipe or search yours" });
   await expect(search).toBeFocused();
 
   await search.fill("pasta");
@@ -54,13 +54,13 @@ test("search narrows the list, '/' jumps to it, and opening a recipe goes to its
 
   // Back returns to the same search.
   await page.goBack();
-  await expect(page.getByRole("searchbox", { name: "Search recipes" })).toHaveValue("pasta");
+  await expect(page.getByRole("searchbox", { name: "Snap a recipe or search yours" })).toHaveValue("pasta");
   await expect(cards(page)).toHaveCount(1);
 });
 
 test("no matches says so and can clear the filters", async ({ page }) => {
   await openLibrary(page);
-  await page.getByRole("searchbox", { name: "Search recipes" }).fill("zzzz");
+  await page.getByRole("searchbox", { name: "Snap a recipe or search yours" }).fill("zzzz");
   await expect(page.getByRole("heading", { name: "No matches" })).toBeVisible();
   await page.getByRole("button", { name: "Clear filters" }).click();
   await expect(cards(page)).toHaveCount(3);
@@ -198,14 +198,14 @@ test("a library of hundreds loads as you scroll, and searching finds one past th
   // The 251st recipe isn't loaded yet on a fresh page, but search looks at the whole library.
   await page.reload();
   await expect(cards(page)).toHaveCount(40);
-  await page.getByRole("searchbox", { name: "Search recipes" }).fill("needle");
+  await page.getByRole("searchbox", { name: "Snap a recipe or search yours" }).fill("needle");
   await expect(cards(page)).toHaveCount(1);
   await expect(cards(page).first()).toContainText("Needle Noodles");
 });
 
 test("the address keeps the filters: a linked search opens already filtered", async ({ page }) => {
   await openLibrary(page, THREE, "/app?q=cake");
-  await expect(page.getByRole("searchbox", { name: "Search recipes" })).toHaveValue("cake");
+  await expect(page.getByRole("searchbox", { name: "Snap a recipe or search yours" })).toHaveValue("cake");
   await expect(cards(page)).toHaveCount(1);
 });
 

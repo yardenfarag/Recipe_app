@@ -1454,7 +1454,37 @@ export default {
     "notFoundBody": "ربما يكون الرابط قديمًا، أو أن الصفحة نُقلت.",
     "comingSoon": "قريبًا على الويب",
     "library": {
-      "sortBy": "الترتيب حسب"
+      "sortBy": "الترتيب حسب",
+      "tonightsPick": "اختيار الليلة",
+      "startCooking": "ابدأ الطبخ",
+      "cookAlongVideo": "اطبخ مع الفيديو",
+      "showAnother": "اقترح غيرها",
+      "savedFrom": "محفوظة من {{source}}",
+      "savedFromPhoto": "محفوظة من صورة",
+      "sourcePhoto": "صورة",
+      "sourceWebsite": "موقع",
+      "snapNewTitle": "خذ وصفة جديدة",
+      "snapNewBody": "روابط، صور، لقطات شاشة. بنقرة واحدة تصبح وصفة حقيقية.",
+      "listLeft": "القائمة · بقي {{count}}",
+      "listEmpty": "لا شيء للشراء. أضف مكونات من أي وصفة.",
+      "listDone": "تم شراء كل شيء",
+      "listMore": "+{{count}} أخرى",
+      "listOpen": "افتح قائمة التسوق",
+      "cookedThisWeek": "طبخت هذا الأسبوع",
+      "cookedThisWeekCount": "{{count}} طُبخت هذا الأسبوع",
+      "credits": "{{count}} رصيد",
+      "creditsOne": "رصيد واحد",
+      "filterAll": "الكل",
+      "quick": {
+        "under30": "أقل من 30 د",
+        "veggie": "نباتي",
+        "tiktok": "من تيك توك",
+        "neverCooked": "لم تُطبخ بعد"
+      },
+      "quickFilters": "تصفية سريعة",
+      "kitchenTiles": "الليلة",
+      "openRecipe": "افتح الوصفة",
+      "servingsOne": "حصة واحدة"
     },
     "recipe": {
       "viewOriginal": "عرض الأصل",

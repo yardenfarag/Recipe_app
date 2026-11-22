@@ -1454,7 +1454,37 @@ export default {
     "notFoundBody": "Puede que el enlace sea antiguo o que la página se haya movido.",
     "comingSoon": "Muy pronto en la web",
     "library": {
-      "sortBy": "Ordenar por"
+      "sortBy": "Ordenar por",
+      "tonightsPick": "Para esta noche",
+      "startCooking": "Empezar a cocinar",
+      "cookAlongVideo": "Cocina con el vídeo",
+      "showAnother": "Enséñame otra",
+      "savedFrom": "guardada de {{source}}",
+      "savedFromPhoto": "guardada de una foto",
+      "sourcePhoto": "Foto",
+      "sourceWebsite": "Web",
+      "snapNewTitle": "Saca algo nuevo",
+      "snapNewBody": "Enlaces, fotos, capturas. Un toque y ya es una receta de verdad.",
+      "listLeft": "Lista · quedan {{count}}",
+      "listEmpty": "Nada que comprar. Añade ingredientes desde cualquier receta.",
+      "listDone": "Todo tachado",
+      "listMore": "+{{count}} más",
+      "listOpen": "Abrir la lista de la compra",
+      "cookedThisWeek": "Cocinado esta semana",
+      "cookedThisWeekCount": "{{count}} cocinadas esta semana",
+      "credits": "{{count}} créditos",
+      "creditsOne": "1 crédito",
+      "filterAll": "Todas",
+      "quick": {
+        "under30": "Menos de 30 min",
+        "veggie": "Vegetariano",
+        "tiktok": "De TikTok",
+        "neverCooked": "Sin cocinar aún"
+      },
+      "quickFilters": "Filtros rápidos",
+      "kitchenTiles": "Esta noche",
+      "openRecipe": "Abrir la receta",
+      "servingsOne": "1 ración"
     },
     "recipe": {
       "viewOriginal": "Ver el original",

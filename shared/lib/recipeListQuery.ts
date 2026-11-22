@@ -145,3 +145,37 @@ export function isRecipeLibraryFiltered(
 export function getFavoriteRecipes(recipes: Recipe[]): Recipe[] {
   return recipes.filter((recipe) => recipe.is_favorite === true);
 }
+
+/** The Library's one-tap filters. Each is on or off; several on means a recipe must pass all of them. */
+export type RecipeQuickFilter = 'under30' | 'veggie' | 'tiktok' | 'neverCooked';
+
+export const RECIPE_QUICK_FILTERS: RecipeQuickFilter[] = ['under30', 'veggie', 'tiktok', 'neverCooked'];
+
+const VEGGIE_TAGS = new Set(['vegetarian', 'vegan', 'veggie']);
+
+export function matchesQuickFilter(recipe: Recipe, filter: RecipeQuickFilter): boolean {
+  switch (filter) {
+    case 'under30':
+      // A recipe with no time estimate may take longer, so it isn't promised as quick.
+      return recipe.estimated_time_minutes != null && recipe.estimated_time_minutes <= 30;
+    case 'veggie':
+      return (recipe.tags ?? []).some((tag) => VEGGIE_TAGS.has(tag.trim().toLowerCase()));
+    case 'tiktok':
+      return recipe.platform === 'tiktok' || (!recipe.platform && /(^|\.)tiktok\.com\//i.test(recipe.original_url ?? ''));
+    case 'neverCooked':
+      return !recipe.last_cooked_at;
+    default:
+      return true;
+  }
+}
+
+export function applyQuickFilters(recipes: Recipe[], filters: RecipeQuickFilter[]): Recipe[] {
+  if (filters.length === 0) return recipes;
+  return recipes.filter((recipe) => filters.every((filter) => matchesQuickFilter(recipe, filter)));
+}
+
+/** Reads quick filters from text such as an address ("under30,veggie"), dropping anything unknown. */
+export function parseQuickFilters(value: string | null | undefined): RecipeQuickFilter[] {
+  const wanted = new Set((value ?? '').split(',').map((part) => part.trim()));
+  return RECIPE_QUICK_FILTERS.filter((filter) => wanted.has(filter));
+}

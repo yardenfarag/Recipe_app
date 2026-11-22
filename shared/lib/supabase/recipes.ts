@@ -315,3 +315,21 @@ export async function setRecipeCooked(
   if (error) throw error;
   return data as unknown as Recipe;
 }
+
+/** What a tile needs to show a cooked recipe: its name, picture and when. */
+export type CookedRecipe = Pick<Recipe, 'id' | 'title' | 'image_url' | 'last_cooked_at'>;
+
+/**
+ * The recipes marked as cooked since `sinceIso`, most recent first. A small query of its own, so the Library's
+ * "Cooked this week" is right however many recipes it has loaded.
+ */
+export async function fetchRecipesCookedSince(sinceIso: string): Promise<CookedRecipe[]> {
+  const { data, error } = await supabase
+    .from('recipes')
+    .select('id, title, image_url, last_cooked_at')
+    .gte('last_cooked_at', sinceIso)
+    .order('last_cooked_at', { ascending: false });
+
+  if (error) throw error;
+  return (data ?? []) as unknown as CookedRecipe[];
+}

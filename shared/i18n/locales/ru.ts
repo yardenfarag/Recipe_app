@@ -1454,7 +1454,37 @@ export default {
     "notFoundBody": "Возможно, ссылка устарела или страница переехала.",
     "comingSoon": "Скоро в веб-версии",
     "library": {
-      "sortBy": "Сортировать по"
+      "sortBy": "Сортировать по",
+      "tonightsPick": "На сегодня",
+      "startCooking": "Начать готовить",
+      "cookAlongVideo": "Готовим по видео",
+      "showAnother": "Показать другой",
+      "savedFrom": "сохранён из {{source}}",
+      "savedFromPhoto": "сохранён с фото",
+      "sourcePhoto": "Фото",
+      "sourceWebsite": "Сайт",
+      "snapNewTitle": "Заберите что-то новое",
+      "snapNewBody": "Ссылки, фото, скриншоты. Одно нажатие — и это настоящий рецепт.",
+      "listLeft": "Список · осталось {{count}}",
+      "listEmpty": "Покупать нечего. Добавьте ингредиенты из любого рецепта.",
+      "listDone": "Всё куплено",
+      "listMore": "ещё {{count}}",
+      "listOpen": "Открыть список покупок",
+      "cookedThisWeek": "Приготовлено за неделю",
+      "cookedThisWeekCount": "Приготовлено за неделю: {{count}}",
+      "credits": "{{count}} кредитов",
+      "creditsOne": "1 кредит",
+      "filterAll": "Все",
+      "quick": {
+        "under30": "До 30 мин",
+        "veggie": "Вегетарианское",
+        "tiktok": "Из TikTok",
+        "neverCooked": "Ещё не готовили"
+      },
+      "quickFilters": "Быстрые фильтры",
+      "kitchenTiles": "Сегодня",
+      "openRecipe": "Открыть рецепт",
+      "servingsOne": "1 порция"
     },
     "recipe": {
       "viewOriginal": "Открыть оригинал",

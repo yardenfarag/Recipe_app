@@ -134,18 +134,31 @@ const picture = (hue: number) =>
 
 const LIBRARY: SeedRecipe[] = [
   { title: "Creamy lemon pasta with garlic and parmesan", is_favorite: true, estimated_time_minutes: 25, effort_level: "Easy", cost_estimate: "$", tags: ["pasta", "dinner"], image_url: picture(40) },
-  { title: "Chocolate lava cake", estimated_time_minutes: 90, effort_level: "Hard", cost_estimate: "$$", tags: ["dessert"], image_url: picture(15) },
-  { title: "Green salad", estimated_time_minutes: 10, effort_level: "Easy", cost_estimate: "$", tags: ["salad"] },
+  { title: "Chocolate lava cake", estimated_time_minutes: 90, effort_level: "Hard", cost_estimate: "$$", tags: ["dessert"], image_url: picture(15), platform: "instagram" },
+  { title: "Green salad", estimated_time_minutes: 10, effort_level: "Easy", cost_estimate: "$", tags: ["salad"], platform: "photo", cookedDaysAgo: 1 },
   { title: "Slow-cooked beef ragu", estimated_time_minutes: 195, effort_level: "Medium", cost_estimate: "$$$", tags: ["pasta", "dinner"], image_url: picture(0) },
-  { title: "Shakshuka", is_favorite: true, estimated_time_minutes: 30, effort_level: "Easy", cost_estimate: "$", tags: ["breakfast"], image_url: picture(8) },
-  { title: "Miso soup", estimated_time_minutes: 15, effort_level: "Easy", tags: ["soup"], image_url: picture(100) },
-  { title: "Pad thai", estimated_time_minutes: 35, effort_level: "Medium", cost_estimate: "$$", tags: ["dinner"], image_url: picture(30) },
+  {
+    title: "Shakshuka",
+    is_favorite: true,
+    estimated_time_minutes: 30,
+    effort_level: "Easy",
+    cost_estimate: "$",
+    servings: 4,
+    tags: ["breakfast"],
+    image_url: picture(8),
+    platform: "tiktok",
+    original_url: "https://www.tiktok.com/@lazy.chef/video/7312345678901234567",
+  },
+  { title: "Miso soup", estimated_time_minutes: 15, effort_level: "Easy", tags: ["soup"], image_url: picture(100), platform: "youtube", cookedDaysAgo: 2 },
+  { title: "Pad thai", estimated_time_minutes: 35, effort_level: "Medium", cost_estimate: "$$", tags: ["dinner"], image_url: picture(30), cookedDaysAgo: 4 },
   { title: "Banana bread", estimated_time_minutes: 70, effort_level: "Easy", cost_estimate: "$", tags: ["dessert", "breakfast"] },
   { title: "Falafel wrap", estimated_time_minutes: 45, effort_level: "Medium", tags: ["dinner"], image_url: picture(70) },
 ];
 
 test("library", async ({ browser }) => {
   await resetLibrary(LIBRARY.map((recipe, index) => ({ ...recipe, createdSecondsAgo: index + 1 })));
+  // Something on the list, so its tile has rows to tick.
+  await resetShoppingList([{ name: "eggs", checked: true }, { name: "crushed tomatoes" }, { name: "feta" }, { name: "parsley" }, { name: "pita" }]);
   for (const viewport of Object.keys(VIEWPORTS) as (keyof typeof VIEWPORTS)[]) {
     for (const [language, scheme] of [["en", "light"], ["en", "dark"], ["he", "light"]] as const) {
       const { page, context } = await open(browser, viewport, { language, scheme });

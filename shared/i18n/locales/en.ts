@@ -1454,7 +1454,37 @@ export default {
     "notFoundBody": "The link may be old, or the page has moved.",
     "comingSoon": "Coming soon to the web",
     "library": {
-      "sortBy": "Sort by"
+      "sortBy": "Sort by",
+      "tonightsPick": "Tonight’s pick",
+      "startCooking": "Start cooking",
+      "cookAlongVideo": "Cook along with the video",
+      "showAnother": "Show me another",
+      "savedFrom": "saved from {{source}}",
+      "savedFromPhoto": "saved from a photo",
+      "sourcePhoto": "Photo",
+      "sourceWebsite": "Website",
+      "snapNewTitle": "Snap something new",
+      "snapNewBody": "Links, photos, screenshots. One tap and it’s a real recipe.",
+      "listLeft": "List · {{count}} left",
+      "listEmpty": "Nothing to buy. Add ingredients from any recipe.",
+      "listDone": "All ticked off",
+      "listMore": "+{{count}} more",
+      "listOpen": "Open the shopping list",
+      "cookedThisWeek": "Cooked this week",
+      "cookedThisWeekCount": "{{count}} cooked this week",
+      "credits": "{{count}} credits",
+      "creditsOne": "1 credit",
+      "filterAll": "All",
+      "quick": {
+        "under30": "Under 30 min",
+        "veggie": "Veggie",
+        "tiktok": "From TikTok",
+        "neverCooked": "Never cooked"
+      },
+      "quickFilters": "Quick filters",
+      "kitchenTiles": "Tonight",
+      "openRecipe": "Open the recipe",
+      "servingsOne": "1 serving"
     },
     "recipe": {
       "viewOriginal": "View the original",

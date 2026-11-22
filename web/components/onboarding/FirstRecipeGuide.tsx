@@ -23,19 +23,16 @@ export function FirstRecipeGuide() {
   ];
 
   return (
-    <section
-      aria-labelledby="first-recipe-title"
-      className="overflow-hidden rounded-3xl border border-frosted-border bg-surface/80 shadow-soft backdrop-blur-sm"
-    >
+    <section aria-labelledby="first-recipe-title" className="overflow-hidden rounded-tile border border-border bg-surface">
       <div className="grid gap-8 p-6 sm:p-8 lg:grid-cols-[minmax(0,1fr)_minmax(0,1.1fr)] lg:items-center lg:gap-12 lg:p-10">
         <div>
-          <span className="grid h-14 w-14 place-items-center rounded-2xl bg-primary-soft text-primary">
+          <span className="grid h-14 w-14 place-items-center rounded-2xl bg-primary-soft text-primary-text">
             <Sparkles aria-hidden className="h-7 w-7" />
           </span>
-          <h2 id="first-recipe-title" className="mt-5 text-2xl font-bold tracking-tight text-balance text-text">
+          <h2 id="first-recipe-title" className="mt-5 text-[28px] leading-[1.05] font-bold text-balance text-text md:text-[40px]">
             {t("web.firstRecipe.title")}
           </h2>
-          <p className="mt-2 max-w-md text-[15px] leading-relaxed text-pretty text-muted">{t("web.firstRecipe.body")}</p>
+          <p className="mt-3 max-w-md text-base leading-relaxed text-pretty text-muted">{t("web.firstRecipe.body")}</p>
           <Link href={snap} data-track="first_recipe.snap" className={buttonClasses({ variant: "primary", size: "lg", className: "mt-6" })}>
             <Sparkles aria-hidden className="h-4 w-4" />
             {t("snap.title")}
@@ -48,13 +45,13 @@ export function FirstRecipeGuide() {
               <Link
                 href={href}
                 data-track={trackId}
-                className="group flex items-center gap-4 rounded-2xl border border-border bg-surface px-4 py-4 transition-colors hover:border-primary/40 hover:bg-surface-soft focus-visible:outline-2 focus-visible:outline-primary"
+                className="group flex items-center gap-4 rounded-2xl bg-element px-4 py-4 transition-colors hover:bg-selected focus-visible:outline-2 focus-visible:outline-primary"
               >
-                <span aria-hidden className="grid h-11 w-11 shrink-0 place-items-center rounded-xl bg-primary-soft text-primary">
+                <span aria-hidden className="grid h-11 w-11 shrink-0 place-items-center rounded-xl bg-accent-soft text-accent-text">
                   <Icon className="h-5 w-5" />
                 </span>
                 <span className="min-w-0 flex-1">
-                  <span className="block text-[15px] font-semibold text-text">{title}</span>
+                  <span className="block font-display text-[17px] font-bold text-text">{title}</span>
                   <span className="mt-0.5 block text-sm leading-snug text-muted">{body}</span>
                 </span>
                 <ArrowRight
