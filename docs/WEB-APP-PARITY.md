@@ -9,7 +9,7 @@ Every screen and action of the Expo web app (`src/app/`, as it behaves in a brow
 - ➖ **Dropped on purpose**: not on the new app, and that's intended.
 - ⚠️ **Gap**: was missing or worse. Every gap found is fixed; see the table below.
 
-Rows marked *(proposed)* are a judgement Yarden confirms or changes; then every row is decided.
+Every row is decided. Yarden approved the accepted differences on 2026-11-22.
 
 Two facts make many rows look better on the new app than they really were on the old one:
 
@@ -20,7 +20,7 @@ Native-only features (Apple sign-in, push reminders, store review prompt, share 
 
 ## Gaps found, and what was done
 
-All thirteen gaps were fixed on the PIN-146 branch (Yarden, 2026-11-22: "fix everything"). The six differences under "Accept" are proposed as they are.
+All thirteen gaps were fixed on the PIN-146 branch (Yarden, 2026-11-22: "fix everything"). Yarden approved the six differences under "Accepted" as they are.
 
 | # | Gap | Fix |
 |---|---|---|
@@ -38,12 +38,12 @@ All thirteen gaps were fixed on the PIN-146 branch (Yarden, 2026-11-22: "fix eve
 | G12 | Library filters had no "Clear" for tags. | Added beside the Tags heading. |
 | G13 | The empty Library didn't offer "Write a recipe". | A fourth way in the "Save your first recipe" guide. |
 
-### Accept *(proposed)*
+### Accepted
 
 | # | Difference | Why it's fine |
 |---|---|---|
 | A1 | The import preview can't be changed before saving (servings, remix, swap, translate). | Imports save straight away and open the recipe page, which has every action. The preview only shows when the save fails. |
-| A2 | First-run coach marks over the tab bar (narrow Expo web) aren't ported. | Replaced by the welcome page, onboarding and "Save your first recipe" (PIN-140). |
+| A2 | First-run coach marks over the tab bar (narrow Expo web) aren't ported. | Replaced by the welcome page, onboarding and "Save your first recipe" (PIN-140). The iPhone and Android apps keep the tour; it is native code, and removing Expo web (PIN-148) must leave it. |
 | A3 | No "Sync purchases" button on the credits sheet. | It did nothing on Expo web. |
 | A4 | Shopping list headers don't stick while scrolling. | Groups are tiles in a readable column; long lists are rare. |
 | A5 | A guest pressing Add on a Hub recipe goes to sign-in, not sign-up. | The guest bar has both buttons. |
@@ -100,7 +100,7 @@ Expo: `src/app/(tabs)/add.tsx`, `src/app/recipe/preview.tsx`, `SnapExtractingVie
 | "Write a recipe" card | ✅ | |
 | "Share to Pinch from other apps" card | ➖ | About the phone's share menu (PIN-133). |
 | Preview: Save, back, no-draft state, survives a reload | ✅ | No-draft goes back to Snap. Adds Discard. |
-| Preview: change it before saving | ➖ *(proposed)* | A1. |
+| Preview: change it before saving | ➖ | A1. |
 
 ## Recipe page (`/recipe/<id>`)
 
@@ -173,7 +173,7 @@ Expo: `src/app/(tabs)/hub.tsx`, `src/app/hub/[id].tsx`. PIN-138.
 | Hub recipe: read-only recipe, Add to library (free), Open in library | ✅ | |
 | Hub recipe as a guest: read, Add → sign in → added | 🔄 | Sign-in instead of sign-up (A5). |
 | Hub recipe: Share | ✅ | The source link (G9). |
-| Hub recipe: Add to shopping list | ➖ *(proposed)* | Add it to the library first (free); then the recipe page has it. Signed-out guests have no list. |
+| Hub recipe: Add to shopping list | ➖ | Add it to the library first (free); then the recipe page has it. Signed-out guests have no list. |
 
 ## Shared recipe links (`/s/<token>`)
 
@@ -186,7 +186,7 @@ Expo: `src/app/s/[token].tsx`. PIN-145.
 | Already in my library: Open in library | 🔄 | Web only. |
 | Link no longer works | ✅ | Revoked and unknown links both say "not found". A server error says "couldn't load" with Retry. |
 | Change the recipe before saving (translate, remix, swap) | ➖ | Read-only until saved (PIN-145). |
-| Share / Add to list | ✅ / ➖ *(proposed)* | Share: the source link (G9). Add to list: after saving, as on the Hub. |
+| Share / Add to list | ✅ / ➖ | Share: the source link (G9). Add to list: after saving, as on the Hub. |
 
 ## Cookbook (`/cookbook`)
 
@@ -269,8 +269,8 @@ On the PIN-146 branch, 2026-11-22. Browser tests run against local Supabase only
 | Production run with a real library | next.pinch-app.io after the merge, the seed account (89 recipes, 4 collections), Chromium, Firefox and WebKit (Safari's engine), each at phone and desktop width. Read-only or reversible only: no imports, AI actions, purchases or deletions | All 49 steps pass in every browser at both widths. Sign in; Library loads 40 and scrolls to all 89; search, Favorites (18), Cook tonight (43), list and grid; `/favorites` and `/legal/*` redirect; a recipe's servings, spoons/grams and cook mode (arrow keys, Escape); Hub and a Hub recipe with Share; the list; every Settings page with the version; Your recipes downloads a backup of 89 recipes and 4 collections; the cookbook, the editor and the admin dashboard. Nothing scrolls sideways. |
 | Errors in the browser console | The same run | None in Chromium or Firefox. WebKit logs "access control checks" when a full page load cancels Next's background prefetches; a normal click from page to page logs nothing, so it doesn't affect use. |
 
-### Left for Yarden
+### Before the switch
 
-- A run through this list with your own account and library, on the phone and the laptop.
-- Safari on an iPhone and Chrome on Android. WebKit on Windows is close to Safari, not the same: it passed every step above.
-- A week of real cooking on the new app without going back.
+- **Safari on an iPhone and Chrome on Android:** passed (Yarden, 2026-11-22).
+- **Must fix before switching:** PIN-174 (the first page shows "Loading" for 2–3 seconds, and the Library reloads each time you come back). It blocks PIN-147.
+- The week of real cooking was dropped (Yarden, 2026-11-22).
