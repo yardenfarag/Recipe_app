@@ -19,8 +19,9 @@ import { type Db, untypedUpdate } from '../core/supabaseAdmin.ts';
 import { classifyGeminiRecipe } from '../extraction/classifyRecipe.ts';
 import type { GeminiUsageSnapshot } from '../llm/pricing.ts';
 import { appliancesForRecipe } from './enrich/recipeAppliances.ts';
-import type { Ingredient, Instruction, RecalcField } from './recipeEditTypes.ts';
+import type { Ingredient, Instruction, PendingField } from './recipeEditTypes.ts';
 import { type EstimateField, estimateRecipeFields } from './recipeEstimates.ts';
+import { drawRecipeImage } from './recipeImage.ts';
 import { logUsageEvent } from '../core/usageLog.ts';
 
 type Row = Record<string, unknown>;
@@ -53,7 +54,7 @@ export async function runRecipeRecalculation(opts: {
   userId: string;
   /** The row as saved, with this run's recalc_started_at. */
   recipe: Row;
-  fields: RecalcField[];
+  fields: PendingField[];
   startedAt: string;
   mode: 'edit' | 'write' | 'import' | 'retry';
 }): Promise<void> {
@@ -61,14 +62,14 @@ export async function runRecipeRecalculation(opts: {
   const recipeId = String(recipe.id);
   const started = Date.now();
   const usages: GeminiUsageSnapshot[] = [];
-  const written: RecalcField[] = [];
-  const failed: RecalcField[] = [];
+  const written: PendingField[] = [];
+  const failed: PendingField[] = [];
   const metadata: Record<string, unknown> = {};
   let stale = false;
   let queue: Promise<void> = Promise.resolve();
 
   /** Queues one result. `patch` gets the fresh row and the fields still writable. */
-  const write = (done: RecalcField[], patch: (row: Row, writable: Set<RecalcField>) => Row) => {
+  const write = (done: PendingField[], patch: (row: Row, writable: Set<PendingField>) => Row) => {
     queue = queue.then(async () => {
       if (stale) return;
       const { data: row, error } = await admin.from('recipes').select('*').eq('id', recipeId).maybeSingle();
@@ -84,7 +85,7 @@ export async function runRecipeRecalculation(opts: {
       const writable = new Set(done.filter((field) => !locked.has(field)));
       const update = patch(row, writable);
       // A field that became locked is dropped from pending too: the user's value stands.
-      update.recalc_pending = asArray<RecalcField>(row.recalc_pending).filter((field) => !done.includes(field));
+      update.recalc_pending = asArray<PendingField>(row.recalc_pending).filter((field) => !done.includes(field));
       const merged = { ...row, ...update };
       update.missing_fields = classifyGeminiRecipe({
         found_recipe: true,
@@ -118,7 +119,7 @@ export async function runRecipeRecalculation(opts: {
   const instructions = asArray<Instruction>(recipe.instructions);
   const tasks: Promise<unknown>[] = [];
 
-  const estimateFields = fields.filter((field): field is EstimateField => field !== 'appliances');
+  const estimateFields = fields.filter((field): field is EstimateField => field !== 'appliances' && field !== 'image');
   if (estimateFields.length) {
     const amountRows = rowsMissingAmounts(ingredients);
     tasks.push(
@@ -185,6 +186,23 @@ export async function runRecipeRecalculation(opts: {
           }
           return write(['appliances'], (_row, writable) => (writable.has('appliances') ? { appliances } : {}));
         }),
+    );
+  }
+
+  if (fields.includes('image')) {
+    // A recipe saved without a photo: draw one (~10 s). The page shows a loader in its place meanwhile.
+    tasks.push(
+      drawRecipeImage(admin, { title: String(recipe.title ?? ''), ingredients }).then((result) => {
+        if (result.usage) usages.push(result.usage);
+        if (!result.ok) {
+          metadata.image_error = result.error.slice(0, 300);
+          failed.push('image');
+          return;
+        }
+        metadata.image_model = result.model;
+        // A photo the user added in the meantime wins.
+        return write(['image'], (row) => (row.image_url ? {} : { image_url: result.url, image_generated: true }));
+      }),
     );
   }
 

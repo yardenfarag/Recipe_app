@@ -208,6 +208,25 @@ describe("with recipe actions (a saved recipe's page)", () => {
     fireEvent.click(screen.getByRole("button", { name: "Add a note" }));
     expect(actions.open).toHaveBeenCalledWith({ kind: "note" });
   });
+
+  it("holds the picture's place with a loader while Pinch draws one, then marks the drawing as AI", () => {
+    const drawing = displayOf();
+    const { unmount } = inContext(<RecipeHeader display={drawing} servings={2} />, fakeActions(drawing, { updatingFields: ["image"] }));
+    expect(screen.getByTestId("drawing-picture").textContent).toBe("Drawing a picture…");
+    expect(screen.getByRole("status")).toBeDefined();
+    unmount();
+
+    const drawn = displayOf({ image_url: "https://example.com/ai/soup.jpg", image_generated: true });
+    const second = inContext(<RecipeHeader display={drawn} servings={2} />, fakeActions(drawn));
+    expect(screen.queryByTestId("drawing-picture")).toBeNull();
+    expect(screen.getByRole("img", { name: "AI image" })).toBeDefined();
+    second.unmount();
+
+    // A photo is never marked, and nothing waits when no picture is being drawn.
+    inContext(<RecipeHeader display={displayOf({ image_url: "https://example.com/soup.jpg" })} servings={2} />, fakeActions(drawing));
+    expect(screen.queryByTestId("ai-image-mark")).toBeNull();
+    expect(screen.queryByTestId("drawing-picture")).toBeNull();
+  });
 });
 
 describe("RecipeNotices with recipe actions", () => {

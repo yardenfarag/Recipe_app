@@ -22,13 +22,14 @@ import { corsHeaders, jsonResponse } from '../_shared/core/cors.ts';
 import { currentUtcDate, refundDailyAiUsage, reserveDailyAiUsage } from '../_shared/core/dailyAiUsage.ts';
 import { persistUploadedPhoto } from '../_shared/extraction/persistThumbnail.ts';
 import { RECIPE_EDIT_DAILY_LIMIT } from '../_shared/llm/pricing.ts';
-import { planRecipeEdit, type RecipeEditPlan, storedEditContent } from '../_shared/recipes/recipeEditPlan.ts';
+import { imageRecalc, planRecipeEdit, type RecipeEditPlan, storedEditContent } from '../_shared/recipes/recipeEditPlan.ts';
 import {
   type Ingredient,
   type Instruction,
   type LockedField,
   parseSaveRecipeEditRequest,
-  RECALC_FIELDS,
+  PENDING_FIELDS,
+  type PendingField,
   type RecalcField,
   type RecipeEditContent,
   type RecipeImportSource,
@@ -110,12 +111,21 @@ serve('save-recipe-edit', async (req) => {
     const locked = new Set<string>(request.locked_fields);
     const unlocked = asArray<RecalcField>(existing?.locked_fields).filter((field) => !locked.has(field));
     const amountsMissing = rowsMissingAmounts(storedEditContent(request.content).ingredients).length > 0;
+    // - a picture for a recipe saved without a photo (imageRecalc).
+    const image = imageRecalc({
+      mode: request.mode,
+      photo: request.content.photo.action,
+      savedImageUrl: 'image_url' in imageUrl
+        ? imageUrl.image_url
+        : request.mode === 'import' ? request.source.image_url : existing?.image_url,
+    });
     const pending = orderedFields([
       ...plan.recalculate,
-      ...asArray<RecalcField>(existing?.recalc_pending),
+      ...asArray<PendingField>(existing?.recalc_pending),
       ...unlocked,
-      ...(amountsMissing ? (['ingredient_amounts'] as RecalcField[]) : []),
-    ]).filter((field) => !locked.has(field));
+      ...(amountsMissing ? (['ingredient_amounts'] as const) : []),
+      ...(image.draw ? (['image'] as const) : []),
+    ]).filter((field) => !locked.has(field) && !(field === 'image' && image.cancel));
 
     const reservation = pending.length ? await reserve(admin, user.id) : null;
     const startedAt = reservation?.ok ? new Date().toISOString() : null;
@@ -151,7 +161,7 @@ async function retry(admin: Admin, userId: string, recipeId: string): Promise<Re
   const row = await loadOwnRecipe(admin, userId, recipeId);
   if (!row) return failed('not_found', 'Recipe not found.', 404);
   const locked = new Set(asArray<string>(row.locked_fields));
-  const pending = orderedFields(asArray<RecalcField>(row.recalc_pending)).filter((field) => !locked.has(field));
+  const pending = orderedFields(asArray<PendingField>(row.recalc_pending)).filter((field) => !locked.has(field));
   if (!pending.length) return respond({ status: 'saved', recipe: row, recalculating: [], recalculation: 'none' });
   // A run that is still going isn't restarted: that would spend a second unit of the daily cap
   // and make the running results stale (two devices, or a quick reopen).
@@ -173,7 +183,7 @@ function startRecalculation(
   admin: Admin,
   userId: string,
   saved: Row,
-  pending: RecalcField[],
+  pending: PendingField[],
   startedAt: string | null,
   reservation: { ok: boolean } | null,
   mode: 'edit' | 'write' | 'import' | 'retry',
@@ -250,7 +260,7 @@ async function insertRecipe(admin: Admin, userId: string, columns: Row): Promise
 function contentColumns(
   content: RecipeEditContent,
   lockedFields: LockedField[],
-  pending: RecalcField[],
+  pending: PendingField[],
   amountRows: number[],
 ): Row {
   const stored = storedEditContent(content);
@@ -280,9 +290,9 @@ function contentColumns(
 async function photoColumn(content: RecipeEditContent, userId: string): Promise<Row | false> {
   const photo = content.photo;
   if (photo.action === 'keep') return {};
-  if (photo.action === 'remove') return { image_url: null };
+  if (photo.action === 'remove') return { image_url: null, image_generated: false };
   const url = await persistUploadedPhoto({ imageBase64: photo.base64, mimeType: photo.mime_type, userId });
-  return url ? { image_url: url } : false;
+  return url ? { image_url: url, image_generated: false } : false;
 }
 
 async function reserve(admin: Admin, userId: string): Promise<{ ok: boolean; date: string }> {
@@ -318,9 +328,9 @@ function runIsFresh(startedAt: unknown): boolean {
   return Number.isFinite(age) && age >= 0 && age < FRESH_RUN_MS;
 }
 
-function orderedFields(fields: RecalcField[]): RecalcField[] {
+function orderedFields(fields: readonly PendingField[]): PendingField[] {
   const set = new Set(fields);
-  return RECALC_FIELDS.filter((field) => set.has(field));
+  return PENDING_FIELDS.filter((field) => set.has(field));
 }
 
 /** Every Jev call is logged; blocked saves and saves that went through on a Jev failure always are. */

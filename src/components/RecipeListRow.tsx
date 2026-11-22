@@ -199,11 +199,12 @@ export const RecipeListRow = memo(function RecipeListRow({
               <RecipeImage
                 uri={recipe.image_url}
                 variant="hero"
+                aiGenerated={recipe.image_generated}
                 borderRadius={0}
                 style={{ height: 140 }}
               />
             ) : (
-              <RecipeImage uri={recipe.image_url} variant="thumb" borderRadius={22} />
+              <RecipeImage uri={recipe.image_url} variant="thumb" borderRadius={22} aiGenerated={recipe.image_generated} />
             )
           ) : (
             <View

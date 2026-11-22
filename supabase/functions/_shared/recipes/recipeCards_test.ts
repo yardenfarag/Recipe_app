@@ -68,3 +68,11 @@ Deno.test('Pinterest and Facebook recipes stay out of the Hub (ADR 021, ADR 029)
     null,
   );
 });
+
+Deno.test('a hub cache hit says whether its picture was drawn, so the saved copy is marked too', () => {
+  const drawn = { ...card, image_url: 'https://x/ai/a.jpg', image_generated: true };
+  assertEquals(hubCardToExtractRecipe(drawn).image_generated, true);
+  assertEquals(hubCardToExtractRecipe({ ...card, image_url: 'https://x/web/a.jpg' }).image_generated, false);
+  // No picture, nothing to mark.
+  assertEquals(hubCardToExtractRecipe({ ...card, image_url: null, image_generated: true }).image_generated, false);
+});

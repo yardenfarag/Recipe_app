@@ -7,7 +7,7 @@
 
 import { assert, assertEquals } from 'jsr:@std/assert@1';
 
-import { planRecipeEdit, type RecipeBeforeEdit, type RecipeEditPlanInput } from './recipeEditPlan.ts';
+import { imageRecalc, planRecipeEdit, type RecipeBeforeEdit, type RecipeEditPlanInput } from './recipeEditPlan.ts';
 import {
   RECALC_FIELDS,
   type RecipeEditBlockReason as Reason,
@@ -516,4 +516,16 @@ Deno.test('a cook-note-only edit is checked but recalculates nothing', async () 
     assertEquals(calls(), 1);
     assertEquals(plan.outcome === 'save' && plan.recalculate, []);
   });
+});
+
+Deno.test('a recipe saved without a photo gets a drawn picture, unless the user took it out', () => {
+  assertEquals(imageRecalc({ mode: 'write', photo: 'keep', savedImageUrl: null }), { draw: true, cancel: false });
+  assertEquals(imageRecalc({ mode: 'import', photo: 'keep', savedImageUrl: null }), { draw: true, cancel: false });
+  // The import's own picture, or a photo the user added: nothing to draw.
+  assertEquals(imageRecalc({ mode: 'import', photo: 'keep', savedImageUrl: 'https://x/a.jpg' }), { draw: false, cancel: false });
+  assertEquals(imageRecalc({ mode: 'write', photo: 'replace', savedImageUrl: 'https://x/a.jpg' }), { draw: false, cancel: true });
+  assertEquals(imageRecalc({ mode: 'import', photo: 'remove', savedImageUrl: null }), { draw: false, cancel: true });
+  // An edit never starts one, and leaves one an earlier save started alone unless the photo changed.
+  assertEquals(imageRecalc({ mode: 'edit', photo: 'keep', savedImageUrl: null }), { draw: false, cancel: false });
+  assertEquals(imageRecalc({ mode: 'edit', photo: 'remove', savedImageUrl: null }), { draw: false, cancel: true });
 });

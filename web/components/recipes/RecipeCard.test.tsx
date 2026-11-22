@@ -5,6 +5,7 @@ import { describe, expect, it, vi } from "vitest";
 import type { Recipe } from "@shared/types/recipe";
 
 import { RecipeCard } from "@/components/recipes/RecipeCard";
+import { TooltipProvider } from "@/components/ui/Tooltip";
 import i18n from "@/lib/i18n";
 
 vi.mock("@/components/LanguageProvider", () => ({ useLanguage: () => ({ language: "en", setLanguage: vi.fn() }) }));
@@ -57,6 +58,19 @@ describe("RecipeCard", () => {
     wrap(<RecipeCard recipe={recipe} href="/hub/c1" detail="Saved by 12 people" />);
     expect(screen.getByRole("link", { name: "Lemon Pasta" }).getAttribute("href")).toBe("/hub/c1");
     expect(screen.getByText("Saved by 12 people")).toBeDefined();
+  });
+
+  it("marks a picture Pinch drew, in the grid and in the list, and never a photo", () => {
+    const withTooltips = (ui: React.ReactNode) => wrap(<TooltipProvider>{ui}</TooltipProvider>);
+    const drawn = { ...recipe, image_url: "https://example.com/ai/pasta.jpg", image_generated: true };
+    const { unmount } = withTooltips(<RecipeCard recipe={drawn} />);
+    expect(screen.getByRole("img", { name: "AI image" })).toBeDefined();
+    unmount();
+    const list = withTooltips(<RecipeCard recipe={drawn} variant="list" />);
+    expect(screen.getByRole("img", { name: "AI image" })).toBeDefined();
+    list.unmount();
+    withTooltips(<RecipeCard recipe={{ ...recipe, image_url: "https://example.com/pasta.jpg" }} />);
+    expect(screen.queryByTestId("ai-image-mark")).toBeNull();
   });
 
   it("shows the translated title when there is one, and no buttons when nothing can be done", () => {

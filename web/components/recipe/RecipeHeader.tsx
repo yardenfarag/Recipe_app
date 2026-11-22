@@ -23,6 +23,8 @@ import { DotSeparated } from "@/components/recipe/DotSeparated";
 import type { RecipeDisplay } from "@/components/recipe/types";
 import { Button } from "@/components/ui/Button";
 import { IconButton, iconButtonClasses, type IconButtonVariant } from "@/components/ui/IconButton";
+import { AiImageMark } from "@/components/recipes/AiImageMark";
+import { Spinner } from "@/components/ui/Spinner";
 import { PhotoTile, Tile, TileBadge } from "@/components/ui/Tile";
 import { cn } from "@/lib/cn";
 import type { CookAlongVideo } from "@/lib/cook/cookAlongVideo";
@@ -140,6 +142,8 @@ export function RecipeHeader({
 
   // Without a photo the details take the full width: a large empty frame would only push the recipe down.
   const hasPicture = Boolean(recipe.image_url) && !pictureFailed;
+  // Except while Pinch draws one for a recipe saved without a photo: a loader holds its place.
+  const drawingPicture = !hasPicture && isUpdating(actions, "image");
   // The phone layout with the photo at the very top and the buttons on it.
   const overPhoto = immersive && hasPicture;
 
@@ -244,7 +248,18 @@ export function RecipeHeader({
                 />
               </div>
             ) : null}
+            {recipe.image_generated ? (
+              // At the end corner, clear of the cook-along button and, on a phone, of the details sheet over the photo.
+              <AiImageMark className={cn("start-auto end-4 bottom-4 md:start-auto md:end-5 md:bottom-5", overPhoto && "max-md:bottom-[60px]")} />
+            ) : null}
           </PhotoTile>
+        ) : drawingPicture ? (
+          <Tile
+            data-testid="drawing-picture"
+            className="grid min-h-[200px] place-items-center p-6 md:min-h-[460px] md:flex-[7_1_520px]"
+          >
+            <Spinner label={t("recipe.drawingImage")} className="motion-safe:animate-pulse" />
+          </Tile>
         ) : null}
 
         <Tile
