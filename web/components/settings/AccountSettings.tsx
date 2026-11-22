@@ -1,16 +1,18 @@
 "use client";
 
-import { Camera, LogOut, Trash2 } from "lucide-react";
+import { LogOut, Pencil, Trash2 } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 
 import { normalizeEmail } from "@shared/lib/authValidation";
 import { deleteAccount } from "@shared/lib/supabase/auth";
-import { uploadAvatar } from "@shared/lib/supabase/profile";
+import type { FoodAvatarId } from "@shared/lib/foodAvatars";
+import { chooseFoodAvatar, uploadAvatar } from "@shared/lib/supabase/profile";
 import { showToast } from "@shared/lib/toast";
 
 import { useAuth } from "@/components/AuthProvider";
+import { AvatarPicker } from "@/components/settings/AvatarPicker";
 import { SettingsCard } from "@/components/settings/controls";
 import { ProfileAvatar } from "@/components/settings/ProfileAvatar";
 import { SettingsPageHeader } from "@/components/settings/SettingsPageHeader";
@@ -22,8 +24,9 @@ import { TextField } from "@/components/ui/TextField";
 import { Tile, TileLabel } from "@/components/ui/Tile";
 import { signOut } from "@/lib/auth";
 import { squareAvatarFromFile } from "@/lib/settings/avatarImage";
+import { announceAvatar } from "@/lib/settings/useAvatar";
 
-/** Who is signed in: the email, the profile photo, signing out, and deleting the account. */
+/** Who is signed in: the email, the profile picture (a food avatar or a photo), signing out, and deleting the account. */
 export function AccountSettings() {
   const { t } = useTranslation();
   const router = useRouter();
@@ -33,6 +36,22 @@ export function AccountSettings() {
   const [uploading, setUploading] = useState(false);
   const [signingOut, setSigningOut] = useState(false);
   const [deleteOpen, setDeleteOpen] = useState(false);
+  const [pickerOpen, setPickerOpen] = useState(false);
+  const [savingFood, setSavingFood] = useState<FoodAvatarId | null>(null);
+
+  async function pickFood(id: FoodAvatarId) {
+    if (!user || savingFood) return;
+    setSavingFood(id);
+    try {
+      announceAvatar(user.id, await chooseFoodAvatar(user.id, id));
+      await refresh();
+      setPickerOpen(false);
+    } catch {
+      showToast(t("settings.avatarSaveFailed"), "info");
+    } finally {
+      setSavingFood(null);
+    }
+  }
 
   async function changePhoto(file: File) {
     if (!user) return;
@@ -43,7 +62,7 @@ export function AccountSettings() {
         showToast(t("settings.imageReadFailedBody"), "info");
         return;
       }
-      await uploadAvatar(user.id, base64, "jpg");
+      announceAvatar(user.id, await uploadAvatar(user.id, base64, "jpg"));
       await refresh();
     } catch {
       showToast(t("settings.uploadFailedTitle"), "info");
@@ -73,7 +92,7 @@ export function AccountSettings() {
             <button
               type="button"
               data-track="settings.avatar.change"
-              onClick={() => fileInput.current?.click()}
+              onClick={() => setPickerOpen(true)}
               disabled={uploading}
               aria-busy={uploading || undefined}
               aria-label={t("settings.changeAvatarTitle")}
@@ -83,9 +102,20 @@ export function AccountSettings() {
               {uploading ? (
                 <span aria-hidden className="h-4 w-4 animate-spin rounded-full border-2 border-current border-t-transparent" />
               ) : (
-                <Camera aria-hidden className="h-4 w-4" />
+                <Pencil aria-hidden className="h-4 w-4" />
               )}
             </button>
+            <AvatarPicker
+              open={pickerOpen}
+              onOpenChange={setPickerOpen}
+              current={avatarUrl}
+              savingId={savingFood}
+              onPick={(id) => void pickFood(id)}
+              onUpload={() => {
+                setPickerOpen(false);
+                fileInput.current?.click();
+              }}
+            />
             <input
               ref={fileInput}
               type="file"
