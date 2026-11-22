@@ -59,7 +59,13 @@ export const THRESHOLDS = [0.5, 0.6, 0.7, 0.8] as const;
 /** ADR 031 D6: clear photos may ask at most this often. */
 export const MAX_CLEAR_ASK_RATE = 0.1;
 
-const DEFAULT_MODELS = [...TASK_MODELS.content_gate, 'openai/gpt-6-luna', 'anthropic/claude-sonnet-5.5@low'];
+// The gate shortlist, plus Luna and Qwen Flash (Yarden's picks: cheap, and they read images) and Sonnet as the bar.
+const DEFAULT_MODELS = [
+  ...TASK_MODELS.content_gate,
+  'openai/gpt-6-luna',
+  'qwen/qwen3.8-flash',
+  'anthropic/claude-sonnet-5.5@low',
+];
 
 function includesAny(text: string, words: readonly string[]): boolean {
   const haystack = text.toLocaleLowerCase();
