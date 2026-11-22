@@ -266,10 +266,11 @@ On the PIN-146 branch, 2026-11-22. Browser tests run against local Supabase only
 | The fixes above | `e2e/parity.spec.ts` (new), `snap.spec.ts` (partial import, failed save, Remove), unit tests | Pass. While testing, "Add to collection" turned out to save without a collection that was still being created when Save was pressed; Save now waits. |
 | First visit, production, signed out | Chrome, cold cache, median of 5; phone = 4× slower CPU on 4G | Desktop: first paint 0.5 s (Expo) vs 2.1 s (new); usable 1.8 s vs 2.5 s. Phone: first paint 0.7 s vs 3.4 s; usable 4.1 s vs 3.4 s. JavaScript: 928 KB in 10 requests vs 393 KB in 40. The new app paints late because `/app` arrives as an empty "Loading" page until the session check: PIN-174. |
 | Signed in, 300 recipes, local builds of both apps | Desktop, median of 5 | First load to the Library: 2.0 s vs 3.0 s. Hub 1.1 vs 1.5 s, List 2.6 vs 0.9 s, Settings 0.5 vs 0.1 s, opening a recipe 1.0 vs 1.0 s. Back to the Library: 0.2 vs 1.4 s, because the new app reloads the whole library each time (Expo keeps its tabs in memory): PIN-174. |
-| Firefox and WebKit (Safari's engine) | — | Not run here. Covered by Yarden's checks on a real iPhone and Android phone (below). |
+| Production run with a real library | next.pinch-app.io after the merge, the seed account (89 recipes, 4 collections), Chromium, Firefox and WebKit (Safari's engine), each at phone and desktop width. Read-only or reversible only: no imports, AI actions, purchases or deletions | All 49 steps pass in every browser at both widths. Sign in; Library loads 40 and scrolls to all 89; search, Favorites (18), Cook tonight (43), list and grid; `/favorites` and `/legal/*` redirect; a recipe's servings, spoons/grams and cook mode (arrow keys, Escape); Hub and a Hub recipe with Share; the list; every Settings page with the version; Your recipes downloads a backup of 89 recipes and 4 collections; the cookbook, the editor and the admin dashboard. Nothing scrolls sideways. |
+| Errors in the browser console | The same run | None in Chromium or Firefox. WebKit logs "access control checks" when a full page load cancels Next's background prefetches; a normal click from page to page logs nothing, so it doesn't affect use. |
 
 ### Left for Yarden
 
 - A run through this list with your own account and library, on the phone and the laptop.
-- Safari on an iPhone and Chrome on Android. WebKit on Windows is close to Safari, not the same.
+- Safari on an iPhone and Chrome on Android. WebKit on Windows is close to Safari, not the same: it passed every step above.
 - A week of real cooking on the new app without going back.
