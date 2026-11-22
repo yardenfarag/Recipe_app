@@ -21,6 +21,9 @@ import { lastHubHref } from "@/lib/hub/hubAddress";
 import { useHubRecipe } from "@/lib/hub/useHubRecipe";
 import { useSaveAfterSignIn } from "@/lib/useSaveAfterSignIn";
 
+/** On a phone the button takes the whole row and may wrap: "Добавить в библиотеку" is wider than a 360 px screen allows. */
+const PHONE_FULL_WIDTH = "max-sm:h-auto max-sm:min-h-14 max-sm:w-full max-sm:whitespace-normal max-sm:py-2.5";
+
 /**
  * A Hub recipe, read-only: the same recipe page as a saved one, without the heart, and with "Add to library" (free,
  * no credit) or "Open in library" when the cook already has it. The address is /hub/<id>, as in the mobile app, so
@@ -89,13 +92,14 @@ export default function HubRecipePage() {
           {t("hub.attribution")}
         </p>
         {state.libraryRecipeId ? (
-          <Link href={`/recipe/${state.libraryRecipeId}`} data-track="hub_recipe.open_in_library" className={buttonClasses({ size: "lg" })}>
+          <Link href={`/recipe/${state.libraryRecipeId}`} data-track="hub_recipe.open_in_library" className={buttonClasses({ size: "lg", className: PHONE_FULL_WIDTH })}>
             <BookOpenCheck aria-hidden className="h-5 w-5" />
             {t("hub.openInLibrary")}
           </Link>
         ) : (
           <Button
             size="lg"
+            className={PHONE_FULL_WIDTH}
             trackId="hub_recipe.add_to_library"
             busy={adding || savingAfterSignIn}
             onClick={() => (user ? void add() : router.push(signInHere("signin", "save=1")))}

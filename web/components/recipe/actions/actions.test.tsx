@@ -96,6 +96,13 @@ describe("SwapDialog", () => {
     expect(await screen.findByText("Creamy and mild.")).toBeDefined();
   });
 
+  it("says the day's swaps are used up, with no Try again", async () => {
+    swapLib.findAlternatives.mockResolvedValueOnce({ code: "daily_limit", message: "daily_limit" });
+    wrap(<SwapDialog target={target} display={display} system="original" onClose={vi.fn()} onApply={vi.fn()} />);
+    expect(await screen.findByText(i18n.t("serverErrors.swapDailyLimit"))).toBeDefined();
+    expect(screen.queryByRole("button", { name: "Try again" })).toBeNull();
+  });
+
   it("stays open and says why when saving fails, leaving the recipe alone", async () => {
     swapLib.findAlternatives.mockResolvedValue([oat]);
     swapLib.stepsAfterSwap.mockResolvedValue(recipe.instructions);

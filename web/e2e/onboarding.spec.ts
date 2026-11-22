@@ -165,6 +165,8 @@ test.describe("desktop", () => {
     await page.goto(`/app/hub/${card.id}`);
     await expect(page.locator("#main h1")).toHaveText(card.title);
     await expect(page).toHaveURL(new RegExp(`/app/hub/${card.id}$`));
+    // Left behind, the card would put the first-recipes picker (#104) in front of the next test's new account.
+    await resetHub([]);
   });
 });
 

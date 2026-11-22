@@ -1,5 +1,7 @@
 import { COOKIE_MARK } from "@shared/constants/cookieMark";
 
+import { cn } from "@/lib/cn";
+
 /** The Pinch cookie mark. Decorative unless given a label. */
 export function CookieMark({ size = 24, className = "", label }: { size?: number; className?: string; label?: string }) {
   return (
@@ -20,13 +22,18 @@ export function CookieMark({ size = 24, className = "", label }: { size?: number
 }
 
 /** Mark and name together, for the phone's top bar and the sign-in pages. The mark sits on a tile in the brand colour. */
-export function PinchLogo({ compact = false }: { compact?: boolean }) {
+export function PinchLogo({ compact = false, narrowCompact = false }: { compact?: boolean; narrowCompact?: boolean }) {
   return (
     <span className="inline-flex items-center gap-2.5">
-      <span className="grid h-10 w-10 place-items-center rounded-[13px] bg-primary text-on-primary">
+      <span className="grid h-10 w-10 shrink-0 place-items-center rounded-[13px] bg-primary text-on-primary">
         <CookieMark size={22} />
       </span>
-      {compact ? <span className="sr-only">Pinch</span> : <span className="font-display text-xl font-bold tracking-tight text-text">Pinch</span>}
+      {compact ? (
+        <span className="sr-only">Pinch</span>
+      ) : (
+        // `narrowCompact`: the mark alone on the narrowest phones, where the bar beside it needs the room.
+        <span className={cn("font-display text-xl font-bold tracking-tight text-text", narrowCompact && "max-[420px]:sr-only")}>Pinch</span>
+      )}
     </span>
   );
 }

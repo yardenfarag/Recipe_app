@@ -11,7 +11,13 @@ const nextConfig: NextConfig = {
   images: { unoptimized: true },
   // next.pinch-app.io/ has nothing on it; send visitors to the app. After the switch only /app reaches this Worker.
   async redirects() {
-    return [{ source: "/", destination: "/app", basePath: false, permanent: false }];
+    return [
+      { source: "/", destination: "/app", basePath: false, permanent: false },
+      // Addresses of the Expo web app that the new app has no page for, so old links and bookmarks still land
+      // somewhere (PIN-146). Favorites became a Library filter; the legal pages are the static files on the main site.
+      { source: "/favorites", destination: "/?favorites=1", permanent: true },
+      { source: "/legal/:doc(privacy|terms|delete-account|delete-data)", destination: "https://pinch-app.io/:doc.html", permanent: true },
+    ];
   },
   // Cache Components (the create-next-app default) are off: OpenNext does not fully support them on
   // Cloudflare yet, and signed-in screens render in the browser anyway (ADR 026).

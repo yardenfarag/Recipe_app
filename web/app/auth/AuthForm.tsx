@@ -274,10 +274,26 @@ export function AuthForm() {
         <PinchMark />
         <h1 className="mb-2 text-center text-[28px] leading-tight font-bold text-balance text-text">{t("auth.checkEmail")}</h1>
         <p className="text-center text-muted">{t("auth.confirmSent")}</p>
-        <p className="mb-6 text-center font-semibold text-text" dir="ltr">
+        <p className="text-center font-semibold text-text" dir="ltr">
           {normalizeEmail(email)}
         </p>
+        <p className="mt-3 mb-6 text-center text-sm text-muted">{t("web.confirmEmailInstructions")}</p>
         <Button fullWidth size="lg" trackId="auth.check_email.sign_in" onClick={() => switchMode("signin")}>{t("auth.confirmedSignIn")}</Button>
+        <div className="mt-4 flex justify-center">
+          {/* Back to the sign-up form with the address kept, to fix a typo or use another one. */}
+          <Button
+            variant="link"
+            trackId="auth.check_email.change_email"
+            className="text-muted"
+            onClick={() => {
+              setWaitingFor(null);
+              setNotice(null);
+              setError(null);
+            }}
+          >
+            {t("auth.differentEmail")}
+          </Button>
+        </div>
       </AuthCard>
     );
   }

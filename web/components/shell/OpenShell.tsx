@@ -49,13 +49,14 @@ export function OpenShell({ children }: { children: ReactNode }) {
       <header className="sticky top-0 z-30 bg-bg/90 backdrop-blur-xl">
         <div className="mx-auto flex h-16 w-full max-w-[84rem] items-center justify-between gap-3 px-4 sm:px-6 md:px-8">
           <a href="https://pinch-app.io/" data-track="open_shell.logo" className="rounded-xl focus-visible:outline-2 focus-visible:outline-primary">
-            <PinchLogo />
+            <PinchLogo narrowCompact />
           </a>
-          <nav aria-label={t("web.account")} className="flex items-center gap-2">
-            <Link href={signInHere("signin")} data-track="open_shell.sign_in" className={buttonClasses({ variant: "ghost", size: "sm" })}>
+          {/* Tighter on the narrowest phones, so long words ("Зарегистрироваться") still fit beside the logo. */}
+          <nav aria-label={t("web.account")} className="flex min-w-0 items-center gap-2 whitespace-nowrap max-[420px]:gap-1">
+            <Link href={signInHere("signin")} data-track="open_shell.sign_in" className={buttonClasses({ variant: "ghost", size: "sm", className: "max-[420px]:px-3" })}>
               {t("auth.signIn")}
             </Link>
-            <Link href={signInHere("signup")} data-track="open_shell.sign_up" className={buttonClasses({ variant: "primary", size: "sm" })}>
+            <Link href={signInHere("signup")} data-track="open_shell.sign_up" className={buttonClasses({ variant: "primary", size: "sm", className: "max-[420px]:px-3" })}>
               {t("auth.signUp")}
             </Link>
           </nav>

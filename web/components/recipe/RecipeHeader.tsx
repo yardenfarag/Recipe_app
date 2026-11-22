@@ -12,7 +12,9 @@ import { getCalorieDisplay } from "@shared/lib/recipeCalories";
 import { getNutritionDisplay, recipeNutritionOf } from "@shared/lib/recipeNutrition";
 import { recipeOriginChip } from "@shared/lib/recipeOrigin";
 import { recipeSource } from "@shared/lib/recipeSource";
+import { shareAppInBrowser } from "@shared/lib/shareApp";
 import { normalizeRecipeTags, translateRecipeTag } from "@shared/lib/recipeTags";
+import { showToast } from "@shared/lib/toast";
 import type { RecipeCollection } from "@shared/types/collection";
 
 import { CookAlongButton, StartCookingButton } from "@/components/cook/CookBar";
@@ -129,6 +131,16 @@ export function RecipeHeader({
   const { recipe, title } = display;
   const [pictureFailed, setPictureFailed] = useState(false);
   const isFavorite = recipe.is_favorite === true;
+  // A recipe that isn't the reader's own (a Hub recipe, a shared link, a preview) has no Pinch link to make, so Share
+  // passes on where it came from, as on mobile.
+  const sourceUrl = recipe.original_url?.trim() || null;
+
+  async function shareSource() {
+    if (!sourceUrl) return;
+    const outcome = await shareAppInBrowser({ title: title.trim() || "Recipe", message: "", url: sourceUrl }).catch(() => "failed" as const);
+    if (outcome === "copied") showToast(t("recipe.linkCopied"));
+    else if (outcome === "failed") showToast(`${t("recipe.shareFailedTitle")}. ${t("common.tryAgain")}`, "info");
+  }
 
   const calories = getCalorieDisplay(recipe.calories, recipe.servings, servings);
   // PIN-80: none next to calories set by hand, and none while the calories are being recalculated.
@@ -210,6 +222,11 @@ export function RecipeHeader({
             </Button>
             <RecipeMoreMenu actions={actions} onDelete={onDelete} />
           </>
+        ) : sourceUrl ? (
+          <Button variant="outline" size="sm" className="h-11 rounded-btn text-[15px]" trackId="recipe.share_source" onClick={() => void shareSource()}>
+            <Share aria-hidden className="h-[18px] w-[18px]" />
+            {t("recipe.share")}
+          </Button>
         ) : null}
       </div>
 
@@ -233,7 +250,17 @@ export function RecipeHeader({
                 )}
                 <span className="flex-1" />
                 {favoriteButton("photo")}
-                {actions ? <RecipeMoreMenu actions={actions} onDelete={onDelete} variant="photo" /> : null}
+                {actions ? (
+                  <RecipeMoreMenu actions={actions} onDelete={onDelete} variant="photo" />
+                ) : sourceUrl ? (
+                  <IconButton
+                    variant="photo"
+                    label={t("recipe.share")}
+                    trackId="recipe.share_source"
+                    icon={<Share aria-hidden className="h-5 w-5" />}
+                    onClick={() => void shareSource()}
+                  />
+                ) : null}
               </div>
             ) : null}
             {cook?.video ? (

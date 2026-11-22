@@ -1481,6 +1481,7 @@ export default {
     "basics": "בסיסי"
   },
   "web": {
+    "confirmEmailInstructions": "פתחו את הקישור שבמייל, חזרו לכאן והיכנסו.",
     "skipToContent": "דילוג לתוכן",
     "mainNavigation": "ניווט ראשי",
     "account": "חשבון",
@@ -1584,8 +1585,6 @@ export default {
       "dropOrPastePdf": "או גררו לכאן תמונה או PDF, או הדביקו תמונה.",
       "dropTitlePdf": "שחררו כאן תמונה, PDF או קישור",
       "notAPhotoOrPdf": "הקובץ הזה אינו תמונה או PDF. נסו JPG, PNG או PDF.",
-      "partialMissingSteps": "מצאנו את המצרכים, אבל לא את שלבי ההכנה. הייבוא הזה היה בחינם. נסו קישור אחר, או תמונה של המתכון המלא.",
-      "partialMissingIngredients": "מצאנו את שלבי ההכנה, אבל לא את המצרכים. הייבוא הזה היה בחינם. נסו קישור אחר, או תמונה של המתכון המלא.",
       "draftWaiting": "יש לכם מתכון שעדיין לא נשמר: {{title}}",
       "backToSnap": "חזרה ל-Snap",
       "discard": "לא לשמור",

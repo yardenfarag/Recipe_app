@@ -9,14 +9,17 @@ import { EmptyState, ErrorState, LoadingState } from "@/components/ui/States";
 import { useEditorRecipe } from "@/lib/editor/useEditorRecipe";
 
 /**
- * Write a recipe (`/recipe/edit`) and Edit recipe (`/recipe/edit?id=<id>`), the same paths as the mobile app so its
- * links work here (PIN-137, ADR 018). `/recipe/<id>/edit` sends here too.
+ * Write a recipe (`/recipe/edit`), Edit recipe (`/recipe/edit?id=<id>`) and Finish a partial import
+ * (`/recipe/edit?from=import`), the same paths as the mobile app so its links work here (PIN-137, ADR 018/019).
+ * `/recipe/<id>/edit` sends here too.
  */
 export default function RecipeEditPage() {
   const { t } = useTranslation();
-  const id = useSearchParams().get("id");
-  const load = useEditorRecipe(id);
-  const tab = <TabTitle title={id ? t("recipeEditor.titleEdit") : t("recipeEditor.titleWrite")} />;
+  const params = useSearchParams();
+  const id = params.get("id");
+  const fromImport = !id && params.get("from") === "import";
+  const load = useEditorRecipe(id, fromImport);
+  const tab = <TabTitle title={id ? t("recipeEditor.titleEdit") : fromImport ? t("recipeEditor.titleImport") : t("recipeEditor.titleWrite")} />;
 
   if (load.status === "loading") {
     return (
@@ -30,7 +33,8 @@ export default function RecipeEditPage() {
     return (
       <>
         {tab}
-        <EmptyState icon={null} title={t("library.recipeNotFound")} />
+        {/* A partial import whose draft is gone (finished, or another browser): nothing to finish. */}
+        <EmptyState icon={null} title={fromImport ? t("recipe.noPreview") : t("library.recipeNotFound")} />
       </>
     );
   }
@@ -43,7 +47,7 @@ export default function RecipeEditPage() {
     );
   }
   // A new editor for each recipe, so nothing typed for one carries over to another.
-  return <RecipeEditor key={id ?? "new"} initial={load.initial} />;
+  return <RecipeEditor key={id ?? (fromImport ? "import" : "new")} initial={load.initial} />;
 }
 
 /** The tab's title while the form isn't showing (its PageHeader sets it once it is). */

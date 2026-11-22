@@ -1,4 +1,4 @@
-import { describe, expect, it, vi } from 'vitest';
+import { describe, expect, it } from 'vitest';
 
 import {
   buildRecipeBackup,
@@ -8,9 +8,8 @@ import {
   RecipeBackupError,
   recipeBackupFileName,
 } from './recipeBackup';
-import type { Recipe } from '@shared/types/recipe';
+import type { Recipe } from '../types/recipe';
 
-vi.mock('@react-native-async-storage/async-storage', () => ({ default: {} }));
 
 function recipe(overrides: Partial<Recipe> = {}): Recipe {
   return {

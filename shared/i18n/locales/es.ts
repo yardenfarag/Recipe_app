@@ -1481,6 +1481,7 @@ export default {
     "basics": "Básicos"
   },
   "web": {
+    "confirmEmailInstructions": "Abre el enlace de ese correo, vuelve aquí y entra.",
     "skipToContent": "Ir al contenido",
     "mainNavigation": "Principal",
     "account": "Cuenta",
@@ -1584,8 +1585,6 @@ export default {
       "dropOrPastePdf": "O suelta una foto o un PDF aquí, o pega una foto.",
       "dropTitlePdf": "Suelta una foto, un PDF o un enlace",
       "notAPhotoOrPdf": "Ese archivo no es una foto ni un PDF. Prueba con JPG, PNG o PDF.",
-      "partialMissingSteps": "Encontramos los ingredientes, pero no los pasos. Esta importación fue gratis. Prueba con otro enlace o con una foto de la receta completa.",
-      "partialMissingIngredients": "Encontramos los pasos, pero no los ingredientes. Esta importación fue gratis. Prueba con otro enlace o con una foto de la receta completa.",
       "draftWaiting": "Tienes una receta sin guardar: {{title}}",
       "backToSnap": "Volver a Snap",
       "discard": "Descartar",

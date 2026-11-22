@@ -118,7 +118,8 @@ function Body({
               {t("common.cancel")}
             </Button>
           </DialogClose>
-          <Button trackId="add_to_collection.save" busy={saving} onClick={save}>
+          {/* Not while a new collection is still being made: it would be saved without it. */}
+          <Button trackId="add_to_collection.save" busy={saving} disabled={creating} onClick={save}>
             {t("common.save")}
           </Button>
         </>

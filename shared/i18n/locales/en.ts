@@ -1481,6 +1481,7 @@ export default {
     "basics": "Basics"
   },
   "web": {
+    "confirmEmailInstructions": "Open the link in that email, then come back here and sign in.",
     "skipToContent": "Skip to content",
     "mainNavigation": "Main",
     "account": "Account",
@@ -1584,8 +1585,6 @@ export default {
       "dropOrPastePdf": "Or drop a photo or PDF here, or paste a photo.",
       "dropTitlePdf": "Drop a photo, PDF, or link",
       "notAPhotoOrPdf": "That file isn’t a photo or a PDF. Try a JPG, PNG, or PDF.",
-      "partialMissingSteps": "We found the ingredients, but not the steps. This import was free. Try another link, or a photo of the full recipe.",
-      "partialMissingIngredients": "We found the steps, but not the ingredients. This import was free. Try another link, or a photo of the full recipe.",
       "draftWaiting": "You have a recipe that isn’t saved yet: {{title}}",
       "backToSnap": "Back to Snap",
       "discard": "Discard",

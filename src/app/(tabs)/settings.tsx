@@ -36,7 +36,7 @@ import {
   recipeBackupFileName,
   RecipeBackupError,
   type ParsedRecipeBackup,
-} from '@/lib/recipeBackup';
+} from '@shared/lib/recipeBackup';
 import { pickRecipeBackupFile, saveRecipeBackupFile } from '@/lib/recipeBackupFile';
 import { shareApp } from '@/lib/shareApp';
 import {
@@ -46,7 +46,7 @@ import {
   userHasAppleIdentity,
 } from '@/lib/supabase/auth';
 import { uploadAvatar } from '@shared/lib/supabase/profile';
-import { fetchRecipeBackup, restoreRecipeBackup } from '@/lib/supabase/recipeBackup';
+import { fetchRecipeBackup, restoreRecipeBackup } from '@shared/lib/supabase/recipeBackup';
 
 const RESTORE_ERROR_KEYS = {
   not_json: 'settings.restoreNotBackup',
