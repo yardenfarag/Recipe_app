@@ -2,6 +2,7 @@ import type { TFunction } from 'i18next';
 
 import { isRtlAppLanguage, type AppLanguageCode } from '../appLanguages';
 import type { MeasurementSystem } from '../convertMeasurement';
+import type { UnitSystem } from '../unitSystem';
 import { getCalorieDisplay } from '../recipeCalories';
 import { getNutritionDisplay, recipeNutritionOf } from '../recipeNutrition';
 import type { Platform, Recipe } from '../../types/recipe';
@@ -61,6 +62,8 @@ export type CookbookDocumentOptions = {
   images?: (string | null | undefined)[];
   language: AppLanguageCode;
   measurementSystem: MeasurementSystem;
+  /** Metric or US (PIN-53). Default: the language's. */
+  units?: UnitSystem;
   pageSize: CookbookPageSize;
   /** False leaves the photos out of the book. */
   includePhotos?: boolean;
@@ -80,6 +83,7 @@ export function buildCookbookBook(options: CookbookDocumentOptions): CookbookBoo
     toCookbookHtmlRecipe(recipe, {
       language,
       measurementSystem: options.measurementSystem,
+      units: options.units,
       imageDataUri: options.images?.[index] ?? null,
       servingsLabel: recipe.servings > 0 ? t('cookbook.servings', { count: recipe.servings }) : '',
       nutritionLabel: cookbookNutritionLabel(recipe, t),

@@ -15,6 +15,8 @@ export interface TranslatedRecipePayload {
 export interface TranslateRecipeResult {
   status: 'ok' | 'failed';
   target_language?: RecipeLanguageCode;
+  /** Sent since PIN-53; saved with the cached translation. */
+  translation_version?: number;
   recipe?: TranslatedRecipePayload;
   message?: string;
   code?: 'auth_required' | 'daily_limit' | 'metering_error' | string;

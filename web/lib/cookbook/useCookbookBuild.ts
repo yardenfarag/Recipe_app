@@ -17,6 +17,7 @@ import {
   type PdfFailure,
 } from "@/lib/cookbook/requestPdf";
 import { useMeasurementSystem } from "@/lib/recipe/useMeasurementSystem";
+import { useUnitSystem } from "@/lib/recipe/useUnitSystem";
 import { getSupabase } from "@/lib/supabase";
 
 export type CookbookBuildState =
@@ -85,6 +86,7 @@ export function useCookbookBuild(deps: Partial<Deps> = {}) {
   const { t } = useTranslation();
   const { language } = useLanguage();
   const { system } = useMeasurementSystem();
+  const { units } = useUnitSystem();
   const [state, setState] = useState<CookbookBuildState>({ step: "idle" });
   const controller = useRef<AbortController | null>(null);
   const frame = useRef<PrintFrame | null>(null);
@@ -118,11 +120,12 @@ export function useCookbookBuild(deps: Partial<Deps> = {}) {
         images,
         language,
         measurementSystem: system,
+        units,
         pageSize: input.pageSize,
         includePhotos: input.includePhotos,
         t,
       }),
-    [language, system, t],
+    [language, system, t, units],
   );
 
   const build = useCallback(
@@ -207,6 +210,7 @@ export function useCookbookBuild(deps: Partial<Deps> = {}) {
         images,
         language,
         measurementSystem: system,
+        units,
         pageSize: input.pageSize,
         includePhotos: input.includePhotos,
         t,
@@ -230,7 +234,7 @@ export function useCookbookBuild(deps: Partial<Deps> = {}) {
       frame.current = null;
       setState({ step: "failed", message: t("cookbook.generateFailed"), canPrint: false });
     }
-  }, [language, loadImages, preparePrintFrame, state, system, t]);
+  }, [language, loadImages, preparePrintFrame, state, system, t, units]);
 
   /** Retries whatever was last asked for. */
   const retry = useCallback(() => {

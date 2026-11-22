@@ -8,6 +8,7 @@ import { useTranslation } from 'react-i18next';
 import { AvoidListEditor } from '@/components/AvoidListEditor';
 import { LanguagePicker } from '@/components/LanguagePicker';
 import { MeasurementToggle } from '@/components/MeasurementToggle';
+import { UnitSystemToggle } from '@/components/UnitSystemToggle';
 import { OnboardingProgress } from '@/components/onboarding/OnboardingProgress';
 import { OnboardingVision } from '@/components/onboarding/OnboardingVision';
 import { ThemePackPicker } from '@/components/ThemePackPicker';
@@ -238,6 +239,13 @@ export function OnboardingPager({ onAccount }: OnboardingPagerProps) {
             </Text>
             <MeasurementToggle
               trackId="onboarding.measurement" hint />
+            <Text className="mb-2 mt-6 text-sm font-semibold" style={{ color: colors.text }}>
+              {t('measurement.unitsTitle')}
+            </Text>
+            <UnitSystemToggle trackId="onboarding.units" />
+            <Text className="mt-2 text-xs leading-5" style={{ color: colors.textSecondary }}>
+              {t('measurement.unitsHint')}
+            </Text>
           </>
         ) : null}
 

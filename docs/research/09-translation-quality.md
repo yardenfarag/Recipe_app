@@ -10,6 +10,8 @@
 
 ## Summary
 
+> **Update (22 Nov 2026):** the fixes below are built; see [After the fixes](#after-the-fixes-pin-53-22-nov-2026) for what changed and the before and after numbers. Item 3 changed with Yarden's decision: the prompt keeps numbers and units as written, and a per-person Metric or US setting converts them on screen.
+
 Most translation failures are **not the model's fault**. They come from our own code around the model, and from two rules in the prompt.
 
 1. **The biggest bug is in our unit code.** When the model correctly returns an empty unit for a countable item ("1 lemon"), `translateRecipe.ts` puts the source unit back. So English users see `1 קישוא Zucchini` and `2 יחידות eggs`, and Hebrew users see `1 adet ביצה` and `1 green cabbage כרוב ירוק`. **13 of the 37** cached translations into English or Spanish show a Hebrew unit word. In the eval, this causes **19 of the 31** major errors the judge found.
@@ -21,6 +23,71 @@ Most translation failures are **not the model's fault**. They come from our own 
 **Baseline (current prompt and model, 25 cases × 2 runs):** 89% of code checks pass, but only 16% of answers pass every check. The judge gives **3.48 / 5** for "reads like a native cook wrote it". Only **32%** of recipes have no major error. Russian is weakest (3.25), Spanish best (3.67).
 
 **Recommendation:** fix the unit fallback and the plural rules first. They are small code changes, need no new model, and remove most major errors. Then change the prompt (temperature conversion, one style per language, full translation), add a small ingredient glossary, and version the cache so old translations are redone. Keep GPT-6.1 Sol for now and rerun the eval after the fixes. The full list is under [Recommended fixes](#recommended-fixes-in-priority-order).
+
+---
+
+## After the fixes (PIN-53, 22 Nov 2026)
+
+> **Status:** built on the batch branch, not merged. Yarden decided: Hebrew steps in the present plural, Spanish from Spain, and conversion as a **per-person display setting** rather than inside the translation. Model unchanged (GPT-6.1 Sol).
+
+### What shipped
+
+| Fix | Where |
+|---|---|
+| The model's empty unit is kept; the source unit is never put back | `supabase/functions/_shared/recipes/translateRecipe.ts` (`resolveTranslatedUnit`) |
+| Plural rules per language (singular below 1; Russian one/few/many and genitive after fractions; Arabic singular after 1, 2 and 11+; Hebrew `שיני` for cloves), source-language count words (`יחידה`, `adet`, `Stück`, `шт.`…) and phrases (`to taste`, `for frying`, `bunch`, `handful`) | `shared/lib/culinaryUnits.ts` and the identical block in `supabase/functions/_shared/recipes/culinaryUnits.ts` |
+| Prompt: translate every word, keep every number and unit **as written** (the app converts), unit rules, one style per language, natural titles, one example per language | `translateRecipe.ts` (`SYSTEM_PROMPT`, `STYLE_NOTES`, `EXAMPLES`) |
+| Ingredient glossary, injected only for terms in the recipe | `supabase/functions/_shared/recipes/translationGlossary.ts` |
+| Same-language skip: a recipe already in the target language is handed back without a model call or quota | `translateRecipe.ts` (`recipeAlreadyInLanguage`), `translate-recipe/index.ts` |
+| Source-language detection: Turkish markers; a Hebrew, Arabic or Russian label on text without that script isn't trusted | `shared/lib/recipeSourceLanguage.ts` |
+| Cache version: `recipe_translations.translation_version` (add-only migration `20261122150000_recipe_translation_version.sql`); the function returns `translation_version: 2`; the app saves it and treats a lower or missing one as a miss, keeping the old text if re-translating fails | `shared/lib/translationVersion.ts`, `ensureRecipeTranslation.ts`, `supabase/recipeTranslations.ts` |
+| Redo of old caches: admin Edge Function `backfill-translations` with `dry_run` (stale rows by language and an estimated cost), batches of up to 10, a cursor, and a stop on the first 402 | `supabase/functions/backfill-translations/`, `_shared/recipes/enrich/translationBackfill.ts` |
+| **Metric or US setting** (below) | `shared/lib/unitSystem.ts`, `convertStepUnits.ts`, `displayStepText.ts`, both apps |
+
+### The Metric or US setting
+
+- One preference, **Metric (°C, g, cm)** or **US (°F, oz, in)**, stored with the PIN-154 preferences in `user_metadata.prefs.units` (no migration), with a device copy under `pinch:unitSystem` on both apps. The account's pick wins and is copied to the device; a pick is saved on both.
+- Until the cook picks, it follows the app language: **US for English, Metric for Hebrew, Arabic, Spanish and Russian**.
+- Offered in Settings → Recipe preferences on both apps, next to spoons or grams, and in onboarding: on mobile under the spoons-or-grams question; on the web (which had no measurement question) as a "How do you measure?" box under the first question, holding both choices.
+- Converted at **display time**, deterministically, in `shared/`:
+  - Spoons mode weights: Metric readers get grams (`150 g` stays, `4 oz` becomes `113 g`); US readers get ounces as before. Grams mode is unchanged.
+  - Steps (`convertStepUnits`): °F ↔ °C (oven heat to the nearest 10 °C or the usual 25 °F dial, lower heat to the degree), ranges, written pairs collapsed to the reader's side ("350°F (180°C)" → "180°C"), "F" without the degree sign from 100 up, bare "degrees" read as Celsius in Hebrew, Arabic, Russian and Spanish text and as Fahrenheit in English only from 260 up, and inches ↔ cm including pan dimensions. Hebrew, Arabic, Russian and Spanish spellings, Arabic-Indic digits and right-to-left marks are covered by `shared/lib/convertStepUnits.test.ts`.
+  - The translation prompt no longer converts anything, so a translation saved once per language serves every reader, and untranslated recipes convert too.
+
+### Before and after
+
+Same 25 cases, 2 runs each, production model. "Before" is the baseline above; "after" is `eval/results/translate-production-after.md`. Both render what the recipe screen shows in each language's default unit setting.
+
+| Measure | Before | After |
+|---|---|---|
+| Code checks passed | 89% | **100%** (2 of 1,108 failed) |
+| Answers with no failed check | 16% | **96%** |
+| Untranslated words | 34 of 584 | **0** |
+| Rendered amount wrong (plurals, units) | 46 of 106 | **2** |
+| °F kept in steps | 10 of 16 step checks failed | **0** |
+| Russian capitals | 12 of 46 | **0** |
+| Same Hebrew step style across runs | 8 of 10 | **10 of 10** (all present plural) |
+| Same ingredient names across runs | 96% | 97% |
+| Translation cost per recipe | $0.0044 | $0.0053 (longer prompt) |
+| Median time per recipe | 3.8 s | 4.1 s |
+
+The judge ran on 12 of the 25 cases after the fixes (2–4 per language, to stay within the $0.40 budget). On those same 12:
+
+| Judge, same 12 cases | Before | After |
+|---|---|---|
+| Native score (1–5) | 3.17 | **4.67** |
+| MQM penalty per recipe | 11.25 | **1.42** |
+| Recipes with no major error | 2 of 12 | **10 of 12** |
+| Major / minor errors | 19 / 40 | **2 / 7** |
+
+By language (score, MQM): Hebrew 3.25 → 4.75 (11.5 → 1.25), Arabic 3.00 → 4.00 (14.0 → 2.5), Russian 3.00 → 5.00 (12.0 → 0.5), Spanish 3.50 → 5.00 (7.0 → 0.0), English 3.00 → 4.50 (11.5 → 3.0).
+
+**Read with care.** The same person wrote the fixes and the hand labels, so the code checks were bound to improve; the judge is the more independent number, and it ran on 12 cases, so a single case moves a language's average. Two majors remain:
+
+- `he-cooking-verbs`: the glossary's Hebrew for "deglaze" read badly. The entry was removed after this run (not re-measured).
+- `en-from-fr`: `0.5 citron vert │ jus de citron vert` became "½ lime juice"; the judge wants "juice of ½ lime". A unit that names a fruit whose juice is the ingredient still trips the model.
+
+Smaller ones left: Arabic count nouns after a number (`1 بصل` for `1 بصلة`), a pan size inside an ingredient name isn't converted (`9 дюймов` in "9-inch pie crust": only steps convert), and a Turkish `paket` saved before the table change reads "package" (now `packet`).
 
 ---
 
@@ -246,6 +313,8 @@ Each step should be measured with `eval/translate.ts` before and after.
 
 ## Decisions for Yarden
 
+> **Decided 22 Nov 2026:** 1 present plural; 2 Spain; 3 and 4 yes, as a per-person Metric or US setting converted on screen (not in the prompt); 5 yes, through `backfill-translations` after the merge; 6 no switch.
+
 1. **Hebrew step voice.** Present plural (`מחממים`, `מערבבים`) or plural imperative (`חממו`, `ערבבו`)? I recommend present plural: the guides call it the norm, and the PIN-44 judge preferred it. Today's cache is mostly imperative.
 2. **Spanish variant.** Spain (`nata`, `levadura química`, `bol`) or neutral Latin American (`crema`, `polvo para hornear`, `tazón`)? There are only 3 Spanish translations so far, so either is cheap to pick now.
 3. **°F → °C in step text.** This changes today's rule "do not convert measurement systems" for the steps only. Ingredient amounts stay as written. I recommend allowing it for every target except English.
@@ -256,6 +325,10 @@ Each step should be measured with `eval/translate.ts` before and after.
 ---
 
 ## Cost of this research
+
+Step 4 (the fixes): $0.27 for 50 translations and $0.11 for 12 judge calls, about **$0.38**. No balance errors.
+
+Steps 1–3:
 
 About **$0.83** of OpenRouter calls, checked against the balance before and after ($49.54 → $48.71): one baseline of 50 translations ($0.22), two judge passes ($0.32 and $0.28, the first discarded because it rendered amounts in ounces), and two single-case checks. No call returned a balance error.
 

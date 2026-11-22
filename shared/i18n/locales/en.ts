@@ -252,7 +252,11 @@ export default {
   "measurement": {
     "spoons": "Spoons",
     "grams": "Grams",
-    "metricHint": "Liquids in ml · solids in g · cloves & pinches stay as written"
+    "metricHint": "Liquids in ml · solids in g · cloves & pinches stay as written",
+    "unitsTitle": "Temperatures and weights",
+    "unitsMetric": "Metric (°C, g, cm)",
+    "unitsUs": "US (°F, oz, in)",
+    "unitsHint": "Oven temperatures, pan sizes, and weights in Spoons mode. Recipes are converted as you read them."
   },
   "themes": {
     "mist": {
@@ -1198,6 +1202,8 @@ export default {
     "loadingVideo": "Loading video",
     "measureInGrams": "Show amounts in grams and milliliters",
     "measureInSpoons": "Show amounts in cups and spoons",
+    "unitsMetric": "Show °C, grams and centimeters",
+    "unitsUs": "Show °F, ounces and inches",
     "moreOptions": "More options",
     "moveRecipeDown": "Move {{name}} down",
     "moveRecipeUp": "Move {{name}} up",
@@ -1661,6 +1667,7 @@ export default {
     "onboarding": {
       "tabTitle": "Set up your kitchen",
       "railBody": "Three quick questions, so every recipe you save fits the way you cook. It takes about 30 seconds.",
+      "stepMeasure": "Measurements",
       "stepDiet": "How you cook",
       "stepAvoid": "Allergies and dislikes",
       "stepHeard": "How you found Pinch",

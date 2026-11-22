@@ -1,4 +1,5 @@
-import { type MeasurementSystem } from './convertMeasurement';
+import { convertToSpoons, isImperialWeight, type MeasurementSystem } from './convertMeasurement';
+import type { UnitSystem } from './unitSystem';
 import {
   canonicalUnitKey,
   culinaryUnitSurfaceForms,
@@ -95,11 +96,18 @@ function findIngredient(
   key: string,
   window: string,
   system: MeasurementSystem,
+  units: UnitSystem,
 ): Match | null {
   let best: { match: Match; hits: number; position: number } | null = null;
   for (const ingredient of ingredients) {
-    const to = system === 'metric' ? ingredient.metric : ingredient.spoons;
+    let to = system === 'metric' ? ingredient.metric : ingredient.spoons;
     if (!isValidIngredientAmount(to) || to.quantity <= 0) continue;
+    // Spoons mode for a Metric reader: a weight in ounces reads in grams, as in the ingredient list.
+    if (system === 'original' && units === 'metric' && isImperialWeight(to.unit)) {
+      to = isValidIngredientAmount(ingredient.metric) && ingredient.metric.quantity > 0
+        ? ingredient.metric
+        : convertToSpoons(to.quantity, to.unit, units);
+    }
     if (unitKey(to.unit) === key) continue;
     const sides = [ingredient.metric, ingredient.spoons, { quantity: ingredient.quantity, unit: ingredient.unit }];
     const from = sides.find(
@@ -147,6 +155,7 @@ export function convertStepAmounts(
   ingredients: Ingredient[],
   system: MeasurementSystem,
   language: CulinaryUnitLanguage | null = null,
+  units: UnitSystem = 'us',
 ): string {
   if (!text || ingredients.length === 0) return text;
   const pattern = getAmountPattern();
@@ -157,7 +166,7 @@ export function convertStepAmounts(
     const key = formKeys.get(unit.toLowerCase().replace(/[.\s]/g, ''));
     if (!key) return whole;
     const end = offset + whole.length;
-    const match = findIngredient(ingredients, key, lower.slice(end, end + NAME_WINDOW), system);
+    const match = findIngredient(ingredients, key, lower.slice(end, end + NAME_WINDOW), system, units);
     if (!match) return whole;
 
     const ratio = match.to.quantity / match.from.quantity;

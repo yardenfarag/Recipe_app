@@ -28,6 +28,7 @@ import { useKitchenProfile } from '@/hooks/useKitchenProfile';
 import { useOwnedAppliances } from '@/hooks/useOwnedAppliances';
 import { useLanguagePreference } from '@/hooks/useLanguagePreference';
 import { useMeasurementPreference } from '@/hooks/useMeasurementPreference';
+import { useUnitSystemPreference } from '@/hooks/useUnitSystemPreference';
 import { useRtl } from '@/hooks/useRtl';
 import { useShoppingList } from '@/hooks/useShoppingList';
 import { useThemePreference } from '@/hooks/useThemePreference';
@@ -35,7 +36,7 @@ import { useAuth } from '@/hooks/useAuth';
 import { announce, CHROME_MAX_FONT_SCALE } from '@/lib/a11y';
 import { allergyInstruction, findAvoidMatches, hasAllergies, makeWithoutInstruction } from '@shared/lib/avoidList';
 import { setGuestRecipeTags } from '@/lib/guestRecipes';
-import { convertStepAmounts } from '@shared/lib/convertStepAmounts';
+import { displayStepText } from '@shared/lib/displayStepText';
 import { pickIngredientAmount, scaleIngredient, scaleIngredients } from '@shared/lib/ingredientAmounts';
 import { isRtlAppLanguage } from '@shared/lib/appLanguages';
 import { confirmAction, showNotice } from '@/lib/confirmAction';
@@ -182,6 +183,7 @@ export function RecipeView({
   const { isWide, isMediumUp, height: viewportHeight } = useBreakpoint();
   const { language: appLanguage } = useLanguagePreference();
   const { system: measurementSystem } = useMeasurementPreference();
+  const { units } = useUnitSystemPreference();
   const { addFromRecipe } = useShoppingList();
   const {
     collections,
@@ -326,9 +328,9 @@ export function RecipeView({
     () =>
       baseInstructions.map((step) => ({
         ...step,
-        text: convertStepAmounts(step.text, baseIngredients, measurementSystem, unitLanguage),
+        text: displayStepText(step.text, baseIngredients, measurementSystem, unitLanguage, units),
       })),
-    [baseInstructions, baseIngredients, measurementSystem, unitLanguage],
+    [baseInstructions, baseIngredients, measurementSystem, unitLanguage, units],
   );
   const appRtl = isRtlAppLanguage(appLanguage);
   const contentRtl = textDirection === 'rtl';
@@ -1517,6 +1519,7 @@ export function RecipeView({
                   displayIngredientAmount(ing, {
                     system: measurementSystem,
                     language: unitLanguage,
+                    units,
                   }) || t('recipe.amountUnknown');
                 const avoidKind = avoidMatches.byIngredient[index] ?? null;
                 return (

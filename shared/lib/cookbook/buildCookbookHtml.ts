@@ -1,5 +1,6 @@
 import { displayIngredientAmount } from '../displayIngredientAmount';
-import { convertStepAmounts } from '../convertStepAmounts';
+import { displayStepText } from '../displayStepText';
+import { defaultUnitSystem, type UnitSystem } from '../unitSystem';
 import { withSourceAmounts } from '../ingredientAmounts';
 import { formatRecipeDuration } from '../formatRecipeDuration';
 import { resolveCulinaryLanguage } from '../culinaryUnits';
@@ -105,6 +106,8 @@ export function toCookbookHtmlRecipe(
   options: {
     language: string;
     measurementSystem: MeasurementSystem;
+    /** Metric or US temperatures, weights and sizes (PIN-53). Default: the language's. */
+    units?: UnitSystem;
     imageDataUri?: string | null;
     servingsLabel: string;
     nutritionLabel?: string;
@@ -122,6 +125,7 @@ export function toCookbookHtmlRecipe(
   const instructions =
     translation?.instructions?.length ? translation.instructions : recipe.instructions;
   const culinary = resolveCulinaryLanguage(options.language);
+  const units = options.units ?? defaultUnitSystem(options.language);
   // Untranslated text stays in the language it was saved in, and that decides which way the page reads.
   const translated = Boolean(translation?.ingredients?.length || translation?.instructions?.length);
   const contentLanguage = translated ? options.language : resolveRecipeSourceLanguage(recipe);
@@ -142,12 +146,13 @@ export function toCookbookHtmlRecipe(
       amount: displayIngredientAmount(ingredient, {
         system: options.measurementSystem,
         language: culinary,
+        units,
       }),
       name: ingredient.name,
     })),
     instructions: instructions.map((step, index) => ({
       step: step.step || index + 1,
-      text: convertStepAmounts(step.text, ingredients, options.measurementSystem, culinary),
+      text: displayStepText(step.text, ingredients, options.measurementSystem, culinary, units),
     })),
   };
 }

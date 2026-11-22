@@ -252,7 +252,11 @@ export default {
   "measurement": {
     "spoons": "Cucharadas",
     "grams": "Gramos",
-    "metricHint": "Líquidos en ml · sólidos en g · los dientes de ajo y las pizcas se quedan como están"
+    "metricHint": "Líquidos en ml · sólidos en g · los dientes de ajo y las pizcas se quedan como están",
+    "unitsTitle": "Temperaturas y pesos",
+    "unitsMetric": "Métrico (°C, g, cm)",
+    "unitsUs": "EE. UU. (°F, oz, in)",
+    "unitsHint": "Temperatura del horno, tamaño de los moldes y pesos en el modo cucharas. Las recetas se convierten mientras las lees."
   },
   "themes": {
     "mist": {
@@ -1198,6 +1202,8 @@ export default {
     "loadingVideo": "Cargando vídeo",
     "measureInGrams": "Mostrar cantidades en gramos y mililitros",
     "measureInSpoons": "Mostrar cantidades en tazas y cucharas",
+    "unitsMetric": "Mostrar °C, gramos y centímetros",
+    "unitsUs": "Mostrar °F, onzas y pulgadas",
     "moreOptions": "Más opciones",
     "moveRecipeDown": "Bajar {{name}}",
     "moveRecipeUp": "Subir {{name}}",
@@ -1661,6 +1667,7 @@ export default {
     "onboarding": {
       "tabTitle": "Prepara tu cocina",
       "railBody": "Tres preguntas rápidas para que cada receta que guardes se adapte a tu forma de cocinar. Tarda unos 30 segundos.",
+      "stepMeasure": "Medidas",
       "stepDiet": "Cómo cocinas",
       "stepAvoid": "Alergias y lo que no te gusta",
       "stepHeard": "Cómo conociste Pinch",

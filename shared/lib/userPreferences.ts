@@ -1,10 +1,10 @@
 /**
- * Theme, language and spoons-or-grams, kept on the account so they follow the cook between the phone and the web
+ * Theme, language, spoons-or-grams and Metric-or-US, kept on the account so they follow the cook between the phone and the web
  * (PIN-154).
  *
  * Where they live in `auth.users.user_metadata`:
  * - `locale`: the app language. It was already there for emails (welcome, codes, receipts), so it stays top level.
- * - `prefs`: `{ scheme, pack, measurement }`.
+ * - `prefs`: `{ scheme, pack, measurement, units }` (`units` since PIN-53).
  *
  * GoTrue merges `updateUser({ data })` one top-level key deep, so a write replaces the whole `prefs` object. Build it
  * with `preferencesUpdate`, which starts from the account's current `prefs` and keeps keys it doesn't know (a newer
@@ -13,6 +13,7 @@
 import { THEME_PACK_ORDER, type ThemePackId } from '../constants/themes';
 import { isAppLanguageCode, type AppLanguageCode } from './appLanguages';
 import type { MeasurementSystem } from './convertMeasurement';
+import { parseUnitSystem, type UnitSystem } from './unitSystem';
 
 /** Light, dark, or follow the device ("auto" in the UI). */
 export type SchemePreference = 'system' | 'light' | 'dark';
@@ -22,9 +23,11 @@ export interface UserPreferences {
   pack?: ThemePackId;
   language?: AppLanguageCode;
   measurement?: MeasurementSystem;
+  /** Metric (°C, g, cm) or US (°F, oz, in). Unset means the app language's default (`defaultUnitSystem`). */
+  units?: UnitSystem;
 }
 
-export const PREFERENCE_KEYS = ['scheme', 'pack', 'language', 'measurement'] as const;
+export const PREFERENCE_KEYS = ['scheme', 'pack', 'language', 'measurement', 'units'] as const;
 export type PreferenceKey = (typeof PREFERENCE_KEYS)[number];
 
 /** The metadata keys. `locale` predates this and is shared with the auth emails. */
@@ -56,6 +59,7 @@ const PARSERS: { [K in PreferenceKey]: (value: unknown) => UserPreferences[K] } 
   pack: parseThemePack,
   language: parseAppLanguage,
   measurement: parseMeasurementSystem,
+  units: parseUnitSystem,
 };
 
 function isRecord(value: unknown): value is Record<string, unknown> {
@@ -81,6 +85,7 @@ export function readAccountPreferences(metadata: unknown): UserPreferences {
     scheme: prefs.scheme,
     pack: prefs.pack,
     measurement: prefs.measurement,
+    units: prefs.units,
     language: metadata[LOCALE_METADATA_KEY],
   });
 }
@@ -100,7 +105,7 @@ export function preferencesUpdate(metadata: unknown, changes: UserPreferences): 
   }
 
   const prefChanges: Record<string, unknown> = {};
-  for (const key of ['scheme', 'pack', 'measurement'] as const) {
+  for (const key of ['scheme', 'pack', 'measurement', 'units'] as const) {
     if (clean[key] !== undefined && clean[key] !== current[key]) prefChanges[key] = clean[key];
   }
   if (Object.keys(prefChanges).length > 0) {

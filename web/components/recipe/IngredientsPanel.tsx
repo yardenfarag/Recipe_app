@@ -18,6 +18,7 @@ import { Button } from "@/components/ui/Button";
 import { cn } from "@/lib/cn";
 import { amountDirection, ingredientRows, type IngredientRow } from "@/lib/recipe/ingredientRows";
 import { clampServings } from "@/lib/recipe/useServings";
+import { useUnitSystem } from "@/lib/recipe/useUnitSystem";
 
 export type IngredientsPanelProps = { display: RecipeDisplay; choices: ReadingChoices; avoid: AvoidMatches | null };
 
@@ -31,6 +32,7 @@ export function IngredientsPanel({ display, choices, avoid }: IngredientsPanelPr
   const actions = useRecipeActions();
   const headingId = useId();
   const { recipe } = display;
+  const { units } = useUnitSystem();
   const { rows, hasUnknownAmounts } = useMemo(
     () =>
       ingredientRows({
@@ -40,8 +42,9 @@ export function IngredientsPanel({ display, choices, avoid }: IngredientsPanelPr
         system: choices.system,
         unitLanguage: display.unitLanguage,
         avoid,
+        units,
       }),
-    [display.ingredients, display.unitLanguage, recipe.servings, choices.servings, choices.system, avoid],
+    [display.ingredients, display.unitLanguage, recipe.servings, choices.servings, choices.system, avoid, units],
   );
   const count = rows.length;
   const amountsUpdating = isUpdating(actions, "ingredient_amounts");

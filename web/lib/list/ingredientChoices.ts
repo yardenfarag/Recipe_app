@@ -1,3 +1,4 @@
+import type { UnitSystem } from "@shared/lib/unitSystem";
 import type { MeasurementSystem } from "@shared/lib/convertMeasurement";
 import type { CulinaryUnitLanguage } from "@shared/lib/culinaryUnits";
 import { displayIngredientAmount } from "@shared/lib/displayIngredientAmount";
@@ -22,15 +23,22 @@ export type IngredientChoice = {
  */
 export function ingredientChoices(
   ingredients: Ingredient[],
-  options: { system: MeasurementSystem; unitLanguage: CulinaryUnitLanguage; recipeId?: string; keyPrefix?: string },
+  options: {
+    system: MeasurementSystem;
+    unitLanguage: CulinaryUnitLanguage;
+    recipeId?: string;
+    keyPrefix?: string;
+    /** Metric or US weights in Spoons mode (PIN-53). */
+    units?: UnitSystem;
+  },
 ): IngredientChoice[] {
   return ingredients
     .filter((ingredient) => ingredient.name?.trim())
     .map((ingredient, index) => ({
       key: `${options.keyPrefix ?? options.recipeId ?? "r"}:${index}`,
       name: ingredient.name,
-      amount: displayIngredientAmount(ingredient, { system: options.system, language: options.unitLanguage }),
-      item: ingredientToListItem(ingredient, options.system, options.recipeId),
+      amount: displayIngredientAmount(ingredient, { system: options.system, language: options.unitLanguage, units: options.units }),
+      item: ingredientToListItem(ingredient, options.system, options.recipeId, options.units),
     }));
 }
 

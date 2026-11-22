@@ -19,6 +19,7 @@ import { AccountLocaleSync } from '@/components/AccountLocaleSync';
 import { AuthProvider } from '@/hooks/useAuth';
 import { LanguageProvider } from '@/hooks/useLanguagePreference';
 import { MeasurementProvider } from '@/hooks/useMeasurementPreference';
+import { UnitSystemProvider } from '@/hooks/useUnitSystemPreference';
 import { OnboardingProvider, useOnboarding } from '@/hooks/useOnboarding';
 import { OnboardingGate } from '@/hooks/useOnboardingGate';
 import { ShareIntentRouter } from '@/hooks/useShareIntentRouter';
@@ -189,19 +190,21 @@ export default function RootLayout() {
         <LanguageProvider>
           <I18nProvider>
             <MeasurementProvider>
-              <OnboardingProvider>
-                <ErrorBoundary>
-                  <AuthProvider>
-                    <AccountLocaleSync />
-                    <OnboardingGate />
-                    <ShareIntentRouter />
-                    <ScreenViewLogger />
-                    <RootNavigator />
-                    <InAppMessageHost />
-                    <WebCheckoutReturnDialog />
-                  </AuthProvider>
-                </ErrorBoundary>
-              </OnboardingProvider>
+              <UnitSystemProvider>
+                <OnboardingProvider>
+                  <ErrorBoundary>
+                    <AuthProvider>
+                      <AccountLocaleSync />
+                      <OnboardingGate />
+                      <ShareIntentRouter />
+                      <ScreenViewLogger />
+                      <RootNavigator />
+                      <InAppMessageHost />
+                      <WebCheckoutReturnDialog />
+                    </AuthProvider>
+                  </ErrorBoundary>
+                </OnboardingProvider>
+              </UnitSystemProvider>
             </MeasurementProvider>
           </I18nProvider>
         </LanguageProvider>

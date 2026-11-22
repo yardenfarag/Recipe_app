@@ -10,6 +10,8 @@ import { createAuthedSupabase } from '../_shared/core/recipeLookup.ts';
 import { createServiceSupabase } from '../_shared/core/supabaseAdmin.ts';
 import {
   isTranslateLanguageCode,
+  recipeAlreadyInLanguage,
+  TRANSLATION_VERSION,
   translateRecipeWithGemini,
 } from '../_shared/recipes/translateRecipe.ts';
 import { logUsageEvent } from '../_shared/core/usageLog.ts';
@@ -174,6 +176,16 @@ serve('translate-recipe', async (req) => {
     return jsonResponse({ error: 'Recipe must include ingredients or instructions to translate' }, 400);
   }
 
+  // Already in the target language (a wrong source label): hand it back as is, with no model call and no quota.
+  if (recipeAlreadyInLanguage({ title: recipe.title.trim(), ingredients, instructions }, targetLanguage)) {
+    return jsonResponse({
+      status: 'ok',
+      target_language: targetLanguage,
+      translation_version: TRANSLATION_VERSION,
+      recipe: { title: recipe.title.trim(), ingredients, instructions },
+    });
+  }
+
   const usageDate = currentUtcDate();
   const usageGate = await reserveDailyAiUsage(
     admin,
@@ -236,6 +248,8 @@ serve('translate-recipe', async (req) => {
     return jsonResponse({
       status: 'ok',
       target_language: targetLanguage,
+      // Saved with the cache row; older app builds ignore it (PIN-53).
+      translation_version: TRANSLATION_VERSION,
       recipe: recipePayload,
     });
   } catch (err) {

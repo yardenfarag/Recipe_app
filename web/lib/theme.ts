@@ -14,6 +14,8 @@ export const THEME_STORAGE = { preference: "pinch.themePreference", pack: "pinch
 export const LANGUAGE_STORAGE_KEY = "pinch:appLanguage";
 /** Spoons or grams: the same key and values as the mobile app (src/hooks/useMeasurementPreference.tsx). */
 export const MEASUREMENT_STORAGE_KEY = "pinch:measurementSystem";
+/** Metric or US (PIN-53): the same key and values as the mobile app (src/hooks/useUnitSystemPreference.tsx). */
+export const UNIT_SYSTEM_STORAGE_KEY = "pinch:unitSystem";
 
 /** Theme pack colour → CSS variable. Tailwind reads these through @theme in globals.css. */
 const VARIABLES: Partial<Record<keyof ThemePackColors, string>> = {

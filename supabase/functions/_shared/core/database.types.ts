@@ -1087,6 +1087,7 @@ export type Database = {
           language_code: string
           recipe_id: string
           title: string
+          translation_version: number | null
         }
         Insert: {
           created_at?: string
@@ -1095,6 +1096,7 @@ export type Database = {
           language_code: string
           recipe_id: string
           title: string
+          translation_version?: number | null
         }
         Update: {
           created_at?: string
@@ -1103,6 +1105,7 @@ export type Database = {
           language_code?: string
           recipe_id?: string
           title?: string
+          translation_version?: number | null
         }
         Relationships: [
           {

@@ -1,6 +1,6 @@
 "use client";
 
-import { ArrowRight, Minus, Plus, Scale, UtensilsCrossed, X } from "lucide-react";
+import { ArrowRight, Flag, Minus, Plus, Scale, Thermometer, UtensilsCrossed, X } from "lucide-react";
 import { useId, useState } from "react";
 import { useTranslation } from "react-i18next";
 
@@ -14,6 +14,7 @@ import {
   type KitchenProfile,
 } from "@shared/lib/kitchenProfile";
 import { RECIPE_VARIANTS } from "@shared/lib/recipeVariants";
+import type { UnitSystem } from "@shared/lib/unitSystem";
 
 import { AppliancesSettings } from "@/components/settings/AppliancesSettings";
 import { AvoidListEditor } from "@/components/settings/AvoidListEditor";
@@ -21,6 +22,7 @@ import { AddItemField, ChoiceGroup, RemovableChip, SaveStatusLine, SettingsCard,
 import { SettingsPageHeader } from "@/components/settings/SettingsPageHeader";
 import { ErrorState, LoadingState } from "@/components/ui/States";
 import { useMeasurementSystem } from "@/lib/recipe/useMeasurementSystem";
+import { useUnitSystem } from "@/lib/recipe/useUnitSystem";
 import { useOwnedAppliances } from "@/lib/settings/ownedAppliances";
 import { useKitchenSettings, type SaveStatus } from "@/lib/settings/useKitchenSettings";
 
@@ -46,6 +48,7 @@ export function RecipeSettings() {
       <SettingsPageHeader id="recipe" actions={<SaveStatusLine status={combinedStatus(kitchen.status, appliancesStatus)} />} />
       <div className="flex flex-col gap-5">
         <MeasurementCard />
+        <UnitsCard />
         {kitchen.loadFailed ? (
           <ErrorState body={t("common.tryAgain")} trackId="settings.kitchen.load_error" onRetry={() => void kitchen.retry()} />
         ) : !kitchen.profile ? (
@@ -63,7 +66,8 @@ export function RecipeSettings() {
   );
 }
 
-function MeasurementCard() {
+/** Spoons or grams, as a two-way choice (Settings and the first onboarding question). */
+export function MeasurementChoice({ trackId }: { trackId: string }) {
   const { t } = useTranslation();
   const { system, setSystem } = useMeasurementSystem();
   const options: { value: MeasurementSystem; label: string; Icon: typeof Scale }[] = [
@@ -71,26 +75,71 @@ function MeasurementCard() {
     { value: "metric", label: t("measurement.grams"), Icon: Scale },
   ];
   return (
+    <ChoiceGroup
+      label={t("settings.measurements")}
+      value={system}
+      onChange={setSystem}
+      trackId={trackId}
+      className="grid max-w-md grid-cols-2 gap-2 rounded-2xl bg-primary-soft p-1"
+      optionClassName="flex h-11 items-center justify-center gap-2 rounded-xl px-3 text-sm font-semibold text-muted transition-colors hover:text-text data-[checked]:bg-surface data-[checked]:text-primary data-[checked]:shadow-soft"
+      options={options.map(({ value, label, Icon }) => ({
+        value,
+        label,
+        content: (
+          <>
+            <Icon aria-hidden className="h-4 w-4" />
+            {label}
+          </>
+        ),
+      }))}
+    />
+  );
+}
+
+function MeasurementCard() {
+  const { t } = useTranslation();
+  return (
     <SettingsCard title={t("settings.measurements")} hint={t("settings.measurementsHint")}>
-      <ChoiceGroup
-        label={t("settings.measurements")}
-        value={system}
-        onChange={setSystem}
-        trackId="settings.kitchen.measurement"
-        className="grid max-w-md grid-cols-2 gap-2 rounded-2xl bg-primary-soft p-1"
-        optionClassName="flex h-11 items-center justify-center gap-2 rounded-xl px-3 text-sm font-semibold text-muted transition-colors hover:text-text data-[checked]:bg-surface data-[checked]:text-primary data-[checked]:shadow-soft"
-        options={options.map(({ value, label, Icon }) => ({
-          value,
-          label,
-          content: (
-            <>
-              <Icon aria-hidden className="h-4 w-4" />
-              {label}
-            </>
-          ),
-        }))}
-      />
-      {/* The mobile app keeps this choice on the phone, not the account, so each keeps its own. */}
+      <MeasurementChoice trackId="settings.kitchen.measurement" />
+    </SettingsCard>
+  );
+}
+
+/** Metric (°C, g, cm) or US (°F, oz, in), saved on the account like spoons or grams (PIN-53). */
+export function UnitsChoice({ trackId }: { trackId: string }) {
+  const { t } = useTranslation();
+  const { units, setUnits } = useUnitSystem();
+  const options: { value: UnitSystem; label: string; Icon: typeof Scale }[] = [
+    { value: "metric", label: t("measurement.unitsMetric"), Icon: Thermometer },
+    { value: "us", label: t("measurement.unitsUs"), Icon: Flag },
+  ];
+  return (
+    <ChoiceGroup
+      label={t("measurement.unitsTitle")}
+      value={units}
+      onChange={setUnits}
+      trackId={trackId}
+      className="grid max-w-md grid-cols-2 gap-2 rounded-2xl bg-primary-soft p-1"
+      optionClassName="flex min-h-11 items-center justify-center gap-2 rounded-xl px-3 py-2 text-center text-sm font-semibold text-muted transition-colors hover:text-text data-[checked]:bg-surface data-[checked]:text-primary data-[checked]:shadow-soft"
+      options={options.map(({ value, label, Icon }) => ({
+        value,
+        label,
+        content: (
+          <>
+            <Icon aria-hidden className="h-4 w-4 shrink-0" />
+            <bdi>{label}</bdi>
+          </>
+        ),
+      }))}
+    />
+  );
+}
+
+function UnitsCard() {
+  const { t } = useTranslation();
+  return (
+    <SettingsCard title={t("measurement.unitsTitle")} hint={t("measurement.unitsHint")}>
+      <UnitsChoice trackId="settings.kitchen.units" />
     </SettingsCard>
   );
 }

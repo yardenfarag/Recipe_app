@@ -24,6 +24,7 @@ import { useCollections } from '@/hooks/useCollections';
 import { useKitchenProfile } from '@/hooks/useKitchenProfile';
 import { useLanguagePreference } from '@/hooks/useLanguagePreference';
 import { useMeasurementPreference } from '@/hooks/useMeasurementPreference';
+import { useUnitSystemPreference } from '@/hooks/useUnitSystemPreference';
 import { useRecipes } from '@/hooks/useRecipes';
 import { useRtl } from '@/hooks/useRtl';
 import { useShoppingList } from '@/hooks/useShoppingList';
@@ -59,6 +60,7 @@ export default function ShoppingListScreen() {
   const { recipes } = useRecipes();
   const { collections } = useCollections();
   const { system: measurementSystem } = useMeasurementPreference();
+  const { units } = useUnitSystemPreference();
   const { colors } = useThemePreference();
   const { language: appLanguage } = useLanguagePreference();
   const { rtl } = useRtl();
@@ -167,7 +169,7 @@ export default function ShoppingListScreen() {
       const payload = selected.map((recipe) => ({
         id: recipe.id,
         ingredients: filterPantryStaples(recipe.ingredients ?? [], pantryStaples).kept.map((ing) => {
-          const converted = pickIngredientAmount(ing, measurementSystem);
+          const converted = pickIngredientAmount(ing, measurementSystem, units);
           return {
             name: ing.name,
             quantity: converted.quantity,
@@ -195,7 +197,7 @@ export default function ShoppingListScreen() {
         })}${pantryNote}`,
       );
     },
-    [addFromRecipes, measurementSystem, pantryStaples, recipes, t],
+    [addFromRecipes, measurementSystem, pantryStaples, recipes, t, units],
   );
 
   const handleAdd = useCallback(async () => {

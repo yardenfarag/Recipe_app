@@ -14,6 +14,7 @@ import { Button } from "@/components/ui/Button";
 import { Dialog, DialogContent } from "@/components/ui/Dialog";
 import { Spinner } from "@/components/ui/Spinner";
 import { findAlternatives, stepsAfterSwap, type SwapTarget } from "@/lib/recipe/actions/swap";
+import { useUnitSystem } from "@/lib/recipe/useUnitSystem";
 
 type Props = {
   target: SwapTarget | null;
@@ -65,7 +66,8 @@ function Body({
   const [error, setError] = useState<string | null>(null);
   // Suggestions match the supermarket of the language on screen when a translation is showing (as on mobile).
   const language = display.translated ? display.contentLanguage : null;
-  const amount = (item: Parameters<typeof displayIngredientAmount>[0]) => displayIngredientAmount(item, { system, language: display.unitLanguage });
+  const { units } = useUnitSystem();
+  const amount = (item: Parameters<typeof displayIngredientAmount>[0]) => displayIngredientAmount(item, { system, language: display.unitLanguage, units });
 
   useEffect(() => {
     let cancelled = false;

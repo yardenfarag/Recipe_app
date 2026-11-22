@@ -4,8 +4,8 @@
 // native-speaker judge mark errors MQM-style (minor = 1 point, major = 5).
 // See docs/research/09-translation-quality.md.
 //
-//   npx -y deno@2 run -A --no-lock --unstable-sloppy-imports --env-file=.env eval/translate.ts \
-//     [--runs=2] [--only=he|<id part>] [--model=slug] [--no-judge] [--judge-model=slug] [--force] [--tag=name]
+//   npx -y deno@2 run -A --no-lock --unstable-sloppy-imports --env-file=.env eval/cli.ts translate \
+//     [--runs=2] [--only=he|<id part>] [--model=slug] [--no-judge] [--judge-model=slug] [--judge-ids=a,b] [--force] [--tag=name]
 //
 // --unstable-sloppy-imports is needed because shared/ uses extension-less imports (Metro/Next style).
 // Without --model the production TASK_MODELS.translate row runs, fallbacks included.
@@ -16,7 +16,9 @@
 import { AsyncLocalStorage } from 'node:async_hooks';
 
 import { localizeIngredientUnits } from '../shared/lib/culinaryUnits.ts';
+import { convertStepUnits } from '../shared/lib/convertStepUnits.ts';
 import { formatQuantity } from '../shared/lib/formatQuantity.ts';
+import { defaultUnitSystem } from '../shared/lib/unitSystem.ts';
 import { type GenerateLlmJsonResult, setEvalHook } from '../supabase/functions/_shared/llm/llmClient.ts';
 import {
   translateRecipeWithGemini,
@@ -70,8 +72,9 @@ const TASTE_UNIT = /^(to taste|al gusto|au goût|לפי הטעם|по вкусу
 /**
  * What the recipe screen shows for the recipe as written: units localized on read (as
  * ensureRecipeTranslation does), amounts formatted by formatQuantity, unknown amounts blank, taste
- * words shown alone (as displayIngredientAmount does). The Spoons/Grams toggle is left out on
- * purpose: its conversions are display features, not translation (see the doc for the ounces issue).
+ * words shown alone (as displayIngredientAmount does), and steps with temperatures and sizes in the language's
+ * default unit system (convertStepUnits, PIN-53). The Spoons/Grams toggle is left out on purpose: its conversions
+ * are display features, not translation.
  */
 export function render(output: TranslatedOutput, language: Lang): Rendered {
   const ingredients = localizeIngredientUnits(output.ingredients, language).map((ing) => {
@@ -84,7 +87,14 @@ export function render(output: TranslatedOutput, language: Lang): Rendered {
     const name = ing.name.trim();
     return { name, unit: ing.unit.trim(), amount, line: amount ? `${amount} ${name}` : name };
   });
-  return { title: output.title.trim(), ingredients, steps: output.instructions.map((s) => s.text.trim()) };
+  // Steps as a reader with the language's default unit setting sees them (PIN-53): °F → °C, inches → cm for
+  // Hebrew, Arabic, Russian and Spanish; English keeps US units.
+  const units = defaultUnitSystem(language);
+  return {
+    title: output.title.trim(),
+    ingredients,
+    steps: output.instructions.map((s) => convertStepUnits(s.text.trim(), units, language)),
+  };
 }
 
 // ---------------------------------------------------------------- matching
@@ -418,6 +428,8 @@ export async function translateCommand(args: string[]): Promise<void> {
   const judge = flags['no-judge'] !== 'true';
   const force = flags.force === 'true';
   const tag = (flags.tag as string | undefined) ?? '';
+  // Only these cases get a new judge call (to stay in budget); verdicts already on disk are read for every case.
+  const judgeIds = (flags['judge-ids'] as string | undefined)?.split(',').filter(Boolean) ?? null;
   const modelLabel = pinned ?? 'production';
   const variant = slug(`${modelLabel}${tag ? `-${tag}` : ''}`);
 
@@ -452,6 +464,7 @@ export async function translateCommand(args: string[]): Promise<void> {
         return;
       }
       if (stopAll) return;
+      if (judgeIds && !judgeIds.includes(s.testCase.id)) return;
       try {
         const { data, costUsd } = await chatJson<JudgeVerdict>({
           model: judgeModel,

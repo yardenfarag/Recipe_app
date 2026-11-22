@@ -7,7 +7,7 @@ Reruns the PIN-28 model shortlist on real Pinch inputs through the **production 
 Needs `OPENROUTER_API_KEY` and `SCRAPECREATORS_API_KEY` in the repo `.env` (native Gemini is gone since PIN-45). Deno runs through npx.
 
 ```bash
-deno() { npx -y deno run -A --no-lock --env-file=.env eval/cli.ts "$@"; }
+deno() { npx -y deno run -A --no-lock --unstable-sloppy-imports --env-file=.env eval/cli.ts "$@"; }
 deno fetch            # snapshot posts, videos and Commons images into eval/private/
 deno label            # reference answers + gate routes (Claude Opus 5.5)
 deno run              # every task × model; add --task=text --models=a,b --limit=3
@@ -34,6 +34,17 @@ npx -y deno run -A --no-lock --env-file=.env eval/nutrition.ts   # 6 recipes thr
 
 Calories, protein, carbs and fat per serving, scored in code against hand-worked references in `cases/nutrition.json` (no judge). Writes `results/nutrition.md`. One pass costs about $0.0004. Scorer tests: `npx -y deno test -A --no-lock eval/nutrition_test.ts`.
 
+## Translation quality (PIN-53)
+
+```bash
+deno translate --runs=2              # 25 hand-written recipes into he/ar/ru/es/en through the production translate task
+deno translate --only=he             # one language; --only=<id part> for single cases
+deno translate --model=<slug> --tag=x # another model, kept apart from the production files
+deno translate --no-judge            # code checks only, no judge call
+```
+
+Each answer is rendered the way the recipe screen shows it (unit words, fractions, and step temperatures and sizes in the language's default Metric or US setting). Code checks: untranslated words, the unit repeated in the name, Russian capitals, mixed Hebrew step style, and the hand labels in `cases/translate.json`. Gemini 3.1 Pro then marks errors MQM style (1 point a minor, 5 a major) on run 1. Writes `results/translate.md` (or `results/translate-<model>-<tag>.md`) and judge verdicts under `results/judge/translate-quality/`. A full run costs about $0.50. It stops at once on a 402 from OpenRouter, because production uses the same balance. Scorer tests: `npx -y deno test -A --no-lock --unstable-sloppy-imports eval/translate_test.ts`. Findings and numbers: `docs/research/09-translation-quality.md`.
+
 ## Layout
 
 | Path | In git | What |
@@ -43,6 +54,7 @@ Calories, protein, carbs and fat per serving, scored in code against hand-worked
 | `cases/gate.json` | yes | Extract-gate cases: full post, description-only variant, or a hand-written non-recipe caption |
 | `cases/invent.json` | yes | Invent prompts |
 | `cases/appliances.json` | yes | Appliances cases with hand labels (PIN-26) |
+| `cases/translate.json` | yes | Translation cases with hand labels (PIN-53) |
 | `cases/nutrition.json` | yes | Nutrition cases with hand-worked references (PIN-80) |
 | `models.ts` | yes | Shortlist per task. Production defaults are `TASK_MODELS` in `supabase/functions/_shared/llm/llmClient.ts`. `model@low` pins the reasoning effort |
 | `private/` | no | Post snapshots, videos, images, reference labels |

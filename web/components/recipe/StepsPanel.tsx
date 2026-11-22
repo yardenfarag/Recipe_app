@@ -5,11 +5,12 @@ import { useMemo } from "react";
 import { useTranslation } from "react-i18next";
 
 import type { MeasurementSystem } from "@shared/lib/convertMeasurement";
-import { convertStepAmounts } from "@shared/lib/convertStepAmounts";
+import { displayStepText } from "@shared/lib/displayStepText";
 import { formatVideoTimestamp } from "@shared/lib/formatVideoTimestamp";
 
 import type { RecipeDisplay } from "@/components/recipe/types";
 import { cn } from "@/lib/cn";
+import { useUnitSystem } from "@/lib/recipe/useUnitSystem";
 
 /** The cook-along video, when the recipe has one that plays here. */
 export type StepsVideo = {
@@ -40,9 +41,10 @@ export function StepsPanel({
 }) {
   const { t } = useTranslation();
   const { instructions, ingredients, unitLanguage } = display;
+  const { units } = useUnitSystem();
   const steps = useMemo(
-    () => instructions.map((step) => ({ ...step, text: convertStepAmounts(step.text, ingredients, system, unitLanguage) })),
-    [instructions, ingredients, system, unitLanguage],
+    () => instructions.map((step) => ({ ...step, text: displayStepText(step.text, ingredients, system, unitLanguage, units) })),
+    [instructions, ingredients, system, unitLanguage, units],
   );
 
   if (steps.length === 0) return null;

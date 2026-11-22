@@ -4,7 +4,7 @@ import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { useTranslation } from "react-i18next";
 
 import { findAvoidMatches } from "@shared/lib/avoidList";
-import { convertStepAmounts } from "@shared/lib/convertStepAmounts";
+import { displayStepText } from "@shared/lib/displayStepText";
 import { showToast } from "@shared/lib/toast";
 
 import { CookAlongPlayer } from "@/components/cook/CookAlongPlayer";
@@ -23,6 +23,7 @@ import { useCookAlong } from "@/lib/cook/useCookAlong";
 import { useCookTimers } from "@/lib/cook/useCookTimers";
 import { useKitchenProfile } from "@/lib/recipe/useKitchenProfile";
 import { useMeasurementSystem } from "@/lib/recipe/useMeasurementSystem";
+import { useUnitSystem } from "@/lib/recipe/useUnitSystem";
 import { useServings } from "@/lib/recipe/useServings";
 
 const PLAYER_ID = "cook-along-player";
@@ -61,6 +62,7 @@ export function RecipeView({
   // Remembered per recipe; an unsaved recipe has its own id or key, so this works for it too.
   const { servings, setServings } = useServings(display.recipe.id, display.recipe.servings);
   const { system, setSystem } = useMeasurementSystem();
+  const { units } = useUnitSystem();
   const { profile } = useKitchenProfile();
   const avoid = useMemo(
     () => (profile ? findAvoidMatches(display.ingredients.map((ingredient) => ingredient.name), profile) : null),
@@ -84,9 +86,9 @@ export function RecipeView({
     () =>
       display.instructions.map((step) => ({
         step: step.step,
-        text: convertStepAmounts(step.text, display.ingredients, system, display.unitLanguage),
+        text: displayStepText(step.text, display.ingredients, system, display.unitLanguage, units),
       })),
-    [display.instructions, display.ingredients, system, display.unitLanguage],
+    [display.instructions, display.ingredients, system, display.unitLanguage, units],
   );
   const [cookModeOpen, setCookModeOpen] = useState(false);
   const [cookIndex, setCookIndex] = useState(0);

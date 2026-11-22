@@ -89,7 +89,8 @@ describe("RecipeAppliancesSection", () => {
     fireEvent.click(screen.getByTestId("appliance-chip-oven"));
     const dialog = screen.getByRole("dialog", { name: "Oven" });
     expect(within(dialog).getByText("Used in steps 1, 3")).toBeDefined();
-    expect(within(dialog).getByTestId("appliance-step-1").textContent).toContain("Heat the oven to 180°C.");
+    // An English reader gets US units by default (PIN-53), as in the steps list.
+    expect(within(dialog).getByTestId("appliance-step-1").textContent).toContain("Heat the oven to 350°F.");
     expect(within(dialog).getByTestId("appliance-step-3").textContent).toContain("Bake for 25 minutes");
     expect(within(dialog).queryByTestId("appliance-step-2")).toBeNull();
   });

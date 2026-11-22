@@ -23,6 +23,7 @@ import { useBreakpoint } from '@/hooks/useBreakpoint';
 import { useCollections } from '@/hooks/useCollections';
 import { useLanguagePreference } from '@/hooks/useLanguagePreference';
 import { useMeasurementPreference } from '@/hooks/useMeasurementPreference';
+import { useUnitSystemPreference } from '@/hooks/useUnitSystemPreference';
 import { useRecipes } from '@/hooks/useRecipes';
 import { useRtl } from '@/hooks/useRtl';
 import { useThemePreference } from '@/hooks/useThemePreference';
@@ -48,6 +49,7 @@ export default function CookbookScreen() {
   const { recipes, loading } = useRecipes();
   const { collections } = useCollections();
   const { system: measurementSystem } = useMeasurementPreference();
+  const { units } = useUnitSystemPreference();
   const { language } = useLanguagePreference();
   const { rtl, textAlign } = useRtl();
 
@@ -130,6 +132,7 @@ export default function CookbookScreen() {
         toCookbookHtmlRecipe(recipe, {
           language,
           measurementSystem,
+          units,
           imageDataUri: images[index],
           servingsLabel:
             recipe.servings > 0 ? t('cookbook.servings', { count: recipe.servings }) : '',

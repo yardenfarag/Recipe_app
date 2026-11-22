@@ -1,5 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
+import { CURRENT_TRANSLATION_VERSION } from "@shared/lib/translationVersion";
 import type { Recipe } from "@shared/types/recipe";
 
 import type { RecipeDisplay } from "@/components/recipe/types";
@@ -99,11 +100,26 @@ describe("translateRecipeTo", () => {
   const hebrew = { title: "פנקייק", ingredients: [{ name: "קמח", quantity: 1, unit: "cup" }], instructions: [{ step: 1, text: "טורפים." }] };
 
   it("uses a stored translation without calling the model", async () => {
-    calls.fetchRecipeTranslation.mockResolvedValue(hebrew);
+    calls.fetchRecipeTranslation.mockResolvedValue({ ...hebrew, translation_version: CURRENT_TRANSLATION_VERSION });
     const outcome = await translateRecipeTo(recipe, "he");
     expect(outcome).toMatchObject({ status: "ok", content: { title: "פנקייק" } });
     expect(calls.translateRecipe).not.toHaveBeenCalled();
     expect(calls.upsertRecipeTranslation).not.toHaveBeenCalled();
+  });
+
+  it("shows an older stored translation as it is: only backfill-translations redoes it (PIN-53)", async () => {
+    calls.fetchRecipeTranslation.mockResolvedValue(hebrew); // saved before translation versions
+    const outcome = await translateRecipeTo(recipe, "he");
+    expect(outcome).toMatchObject({ status: "ok", content: { title: "פנקייק" } });
+    expect(calls.translateRecipe).not.toHaveBeenCalled();
+    expect(calls.upsertRecipeTranslation).not.toHaveBeenCalled();
+  });
+
+  it("saves the translator version with a new translation (PIN-53)", async () => {
+    calls.fetchRecipeTranslation.mockResolvedValue(null);
+    calls.translateRecipe.mockResolvedValue({ status: "ok", translation_version: CURRENT_TRANSLATION_VERSION, recipe: hebrew });
+    await translateRecipeTo(recipe, "he");
+    expect(calls.upsertRecipeTranslation).toHaveBeenCalledWith("r1", "he", expect.objectContaining({ translation_version: CURRENT_TRANSLATION_VERSION }));
   });
 
   it("translates from the recipe's own text and stores the result", async () => {

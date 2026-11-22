@@ -81,6 +81,8 @@ export interface RecipeTranslationContent {
   title: string;
   ingredients: Ingredient[];
   instructions: Instruction[];
+  /** The translator that made it (PIN-53); missing on translations saved before then. */
+  translation_version?: number | null;
 }
 
 /** Mirrors the `recipes` table (supabase/migrations/0001_init.sql + later). */

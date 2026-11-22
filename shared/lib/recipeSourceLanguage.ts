@@ -36,12 +36,26 @@ const LATIN_MARKERS: Record<string, readonly string[]> = {
     ' mischen ',
     ' vorheizen ',
   ],
+  // PIN-53: Turkish recipes were saved as English, so English readers never got a translation.
+  tr: [
+    ' ekleyin ',
+    ' karıştırın ',
+    ' dakika ',
+    ' fırında ',
+    ' yemek kaşığı ',
+    ' çay kaşığı ',
+    ' su bardağı ',
+    ' adet ',
+  ],
 };
+
+const SCRIPT_LANGUAGES = new Set(['he', 'ar', 'ru']);
 
 /**
  * Repairs historical recipes that were saved as English before extraction
  * reported a source language. Script detection is exact; Latin languages need
- * at least two culinary markers to avoid changing valid English recipes.
+ * at least two culinary markers to avoid changing valid English recipes. A
+ * Hebrew, Arabic or Russian label on text without that script isn't trusted.
  */
 export function resolveRecipeSourceLanguage(recipe: RecipeText): string {
   const declared =
@@ -58,7 +72,11 @@ export function resolveRecipeSourceLanguage(recipe: RecipeText): string {
   if (/[\u0600-\u06ff]/u.test(text)) return 'ar';
   if (/[\u0400-\u04ff]/u.test(text)) return 'ru';
 
-  if (declared === DEFAULT_SOURCE_LANGUAGE) {
+  // A Hebrew, Arabic or Russian label on text without that script is wrong (PIN-53: English recipes labelled
+  // Hebrew were "translated" into English); read it like an unlabelled recipe.
+  const trusted = SCRIPT_LANGUAGES.has(declared) ? DEFAULT_SOURCE_LANGUAGE : declared;
+
+  if (trusted === DEFAULT_SOURCE_LANGUAGE) {
     let best: { language: string; score: number } | null = null;
     for (const [language, markers] of Object.entries(LATIN_MARKERS)) {
       const score = markers.reduce(
@@ -72,5 +90,5 @@ export function resolveRecipeSourceLanguage(recipe: RecipeText): string {
     if (best) return best.language;
   }
 
-  return declared;
+  return trusted;
 }

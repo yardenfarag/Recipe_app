@@ -41,7 +41,7 @@ import Link from "next/link";
 import { useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 
-import { convertStepAmounts } from "@shared/lib/convertStepAmounts";
+import { displayStepText } from "@shared/lib/displayStepText";
 import type { MeasurementSystem } from "@shared/lib/convertMeasurement";
 
 import {
@@ -60,6 +60,7 @@ import { Button } from "@/components/ui/Button";
 import { Dialog, DialogContent } from "@/components/ui/Dialog";
 import { cn } from "@/lib/cn";
 import { useOwnedAppliances } from "@/lib/settings/ownedAppliances";
+import { useUnitSystem } from "@/lib/recipe/useUnitSystem";
 
 /** Where "My appliances" is edited (Settings → Recipe preferences). */
 export const MY_APPLIANCES_HREF = "/settings/recipe#appliances";
@@ -340,10 +341,11 @@ function ApplianceDialog({
   system: MeasurementSystem;
 }) {
   const { t } = useTranslation();
-  // Steps quote amounts ("3 tbsp butter"); show them in the chosen system, as the steps list does.
+  const { units } = useUnitSystem();
+  // Steps quote amounts ("3 tbsp butter") and heat; show them in the chosen systems, as the steps list does.
   const converted = display.instructions.map((step) => ({
     ...step,
-    text: convertStepAmounts(step.text, display.ingredients, system, display.unitLanguage),
+    text: displayStepText(step.text, display.ingredients, system, display.unitLanguage, units),
   }));
   const steps = applianceSteps(appliance, converted);
 

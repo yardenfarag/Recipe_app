@@ -6,6 +6,7 @@ import { Pressable } from '@/components/ui/Pressable';
 import { SheetModal } from '@/components/SheetModal';
 import { useLanguagePreference } from '@/hooks/useLanguagePreference';
 import { useMeasurementPreference } from '@/hooks/useMeasurementPreference';
+import { useUnitSystemPreference } from '@/hooks/useUnitSystemPreference';
 import { useThemePreference } from '@/hooks/useThemePreference';
 import { announce } from '@/lib/a11y';
 import { resolveCulinaryLanguage } from '@shared/lib/culinaryUnits';
@@ -53,6 +54,7 @@ export function SubstitutionModal({
   const { colors } = useThemePreference();
   const { language: appLanguage } = useLanguagePreference();
   const { system: measurementSystem } = useMeasurementPreference();
+  const { units } = useUnitSystemPreference();
   const unitLanguage = resolveCulinaryLanguage(language, appLanguage);
   const [loading, setLoading] = useState(false);
   const [applyingName, setApplyingName] = useState<string | null>(null);
@@ -142,6 +144,7 @@ export function SubstitutionModal({
               {displayIngredientAmount(ingredient, {
                 system: measurementSystem,
                 language: unitLanguage,
+                units,
               })}{' '}
               {ingredient.name}
             </Text>
@@ -186,6 +189,7 @@ export function SubstitutionModal({
                   {displayIngredientAmount(alt, {
                     system: measurementSystem,
                     language: unitLanguage,
+                    units,
                   })}{' '}
                   {alt.name}
                 </Text>

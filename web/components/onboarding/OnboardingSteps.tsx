@@ -11,7 +11,8 @@ import { RECIPE_VARIANTS } from "@shared/lib/recipeVariants";
 
 import { StepFooter } from "@/components/onboarding/OnboardingFrame";
 import { AvoidListEditor } from "@/components/settings/AvoidListEditor";
-import { SaveStatusLine, SwitchRow } from "@/components/settings/controls";
+import { SaveStatusLine, SubHeading, SwitchRow } from "@/components/settings/controls";
+import { MeasurementChoice, UnitsChoice } from "@/components/settings/RecipeSettings";
 import { Button } from "@/components/ui/Button";
 import { PageHeader } from "@/components/ui/PageHeader";
 import { cn } from "@/lib/cn";
@@ -164,6 +165,7 @@ export function DietStep({ kitchen, onNext }: { kitchen: KitchenState; onNext: (
           </>
         )}
       </KitchenBody>
+      <MeasureChoices />
       <StepFooter step="diet" status={<SaveStatusLine status={kitchen.status} />}>
         <NextButton
           label={diets.length === 0 ? t("onboarding.cookEverything") : t("onboarding.continue")}
@@ -172,6 +174,32 @@ export function DietStep({ kitchen, onNext }: { kitchen: KitchenState; onNext: (
         />
       </StepFooter>
     </>
+  );
+}
+
+/**
+ * How recipes measure, under the diets: spoons or grams, and Metric or US (PIN-53). Both save on the account at once
+ * and start from good defaults (the language's), so a cook can pass them by.
+ */
+function MeasureChoices() {
+  const { t } = useTranslation();
+  return (
+    <section aria-labelledby="onboarding-measure" className="mt-8 rounded-3xl border border-frosted-border bg-surface p-5 shadow-soft">
+      <h2 id="onboarding-measure" className="text-base font-bold text-text">
+        {t("onboarding.measureTitle")}
+      </h2>
+      <p className="mt-1 mb-4 text-sm leading-relaxed text-muted">{t("measurement.unitsHint")}</p>
+      <div className="grid gap-4 lg:grid-cols-2">
+        <div>
+          <SubHeading>{t("settings.measurements")}</SubHeading>
+          <MeasurementChoice trackId="onboarding.measurement" />
+        </div>
+        <div>
+          <SubHeading>{t("measurement.unitsTitle")}</SubHeading>
+          <UnitsChoice trackId="onboarding.units" />
+        </div>
+      </div>
+    </section>
   );
 }
 
