@@ -1,7 +1,9 @@
 import {
+  canonicalFacebookUrl,
   canonicalInstagramUrl,
   canonicalTikTokUrl,
   canonicalYouTubeWatchUrl,
+  extractFacebookId,
   extractInstagramId,
   extractTikTokId,
   extractYouTubeId,
@@ -14,6 +16,7 @@ import {
   moderateHubRecipe,
   stripRecipeLinks,
   type ModeratedRecipeInput,
+  type ModerationReason,
   type ModerationResult,
 } from './hubModeration.ts';
 import { recipeAppliancesOf } from './enrich/appliances.ts';
@@ -23,7 +26,8 @@ import { fitNutrition } from './recipeLimits.ts';
 import { nutritionFitsCalories } from './nutrition.ts';
 import { drawRecipeImage, type DrawRecipeImageResult, type RecipeImageInput } from './recipeImage.ts';
 
-export type HubPlatform = 'youtube' | 'instagram' | 'tiktok' | 'web';
+/** Pinterest is left out on purpose (ADR 029). */
+export type HubPlatform = 'youtube' | 'instagram' | 'tiktok' | 'facebook' | 'web';
 
 export interface HubRecipeSnapshot {
   title: string;
@@ -51,7 +55,8 @@ export interface HubRecipeSnapshot {
 }
 
 export function isHubPlatform(value: string | null | undefined): value is HubPlatform {
-  return value === 'youtube' || value === 'instagram' || value === 'tiktok' || value === 'web';
+  return value === 'youtube' || value === 'instagram' || value === 'tiktok' || value === 'facebook' ||
+    value === 'web';
 }
 
 export function recipeCardCanonicalKey(
@@ -71,6 +76,11 @@ export function recipeCardCanonicalKey(
     const id = contentId?.trim() || extractTikTokId(url);
     return id ? `tiktok:${id}` : null;
   }
+  if (platform === 'facebook') {
+    // The reel's video id or the post id; recipe_card_canonical_key in SQL reads the same one.
+    const id = contentId?.trim() || extractFacebookId(url);
+    return id ? `facebook:${id}` : null;
+  }
   // Null for a link that isn't a plain public page (hubSourceUrl.ts): no card is looked up or
   // published for it.
   const canonical = hubWebUrl(url);
@@ -85,11 +95,43 @@ export function recipeCardCanonicalUrl(
   if (platform === 'youtube' && contentId) return canonicalYouTubeWatchUrl(contentId);
   if (platform === 'instagram' && contentId) return canonicalInstagramUrl(contentId);
   if (platform === 'tiktok' && contentId) return canonicalTikTokUrl(contentId);
+  // A post's address can't be rebuilt from its id alone, so keep the canonical one it was saved with.
+  if (platform === 'facebook') return canonicalFacebookUrl(url);
   if (platform === 'web') return hubWebUrl(url) ?? url.trim();
   return url.trim();
 }
 
-export function canPublishHubRecipe(recipe: {
+/**
+ * Why an extracted recipe didn't become a public Hub card. Stored on its `hub_publish` usage row,
+ * so the admin can count how often each one happens.
+ */
+export type HubSkipReason =
+  /** The user turned off "Share to the Hub". */
+  | 'opted_out'
+  /** Partial or failed extraction. */
+  | 'not_full'
+  /** Pinterest (ADR 029), photo, PDF or unknown. */
+  | 'platform'
+  /** Invented by the model, or read from a photo. */
+  | 'source'
+  | 'no_title'
+  | 'no_url'
+  /** Fewer than 2. */
+  | 'few_ingredients'
+  | 'few_instructions'
+  /** No card key: a private or keyed web link (hubSourceUrl.ts), or a post without an id. */
+  | 'not_public_link'
+  /** With the links taken out of its text, it no longer passes the checks above. */
+  | 'only_links'
+  /** A card for this link exists and is hidden (moderation or an admin). */
+  | 'card_hidden'
+  | 'moderation_rejected'
+  /** The moderation check couldn't run, so the card stays private. */
+  | 'moderation_failed'
+  | 'db_error';
+
+/** The first rule the recipe breaks, or null when it may be published. */
+export function hubSkipReason(recipe: {
   title?: string | null;
   original_url?: string | null;
   platform?: string | null;
@@ -97,17 +139,15 @@ export function canPublishHubRecipe(recipe: {
   extraction_source?: string | null;
   ingredients?: unknown;
   instructions?: unknown;
-}): boolean {
-  if (!isHubPlatform(recipe.platform ?? null)) return false;
-  if (recipe.extraction_status !== 'full') return false;
-  if (recipe.extraction_source === 'invented' || recipe.extraction_source === 'photo') {
-    return false;
-  }
-  if (!recipe.title?.trim()) return false;
-  if (!recipe.original_url?.trim()) return false;
-  if (!Array.isArray(recipe.ingredients) || recipe.ingredients.length < 2) return false;
-  if (!Array.isArray(recipe.instructions) || recipe.instructions.length < 2) return false;
-  return true;
+}): HubSkipReason | null {
+  if (recipe.extraction_status !== 'full') return 'not_full';
+  if (!isHubPlatform(recipe.platform ?? null)) return 'platform';
+  if (recipe.extraction_source === 'invented' || recipe.extraction_source === 'photo') return 'source';
+  if (!recipe.title?.trim()) return 'no_title';
+  if (!recipe.original_url?.trim()) return 'no_url';
+  if (!Array.isArray(recipe.ingredients) || recipe.ingredients.length < 2) return 'few_ingredients';
+  if (!Array.isArray(recipe.instructions) || recipe.instructions.length < 2) return 'few_instructions';
+  return null;
 }
 
 export function hubCardToExtractRecipe(card: Record<string, unknown>): HubRecipeSnapshot {
@@ -166,18 +206,39 @@ export async function findRecipeCard(
 /**
  * The picture a public card may show. A web page's image is only used once it is our own copy in
  * Storage: a link to the source site would let its owner change the picture on our page at any
- * time. YouTube thumbnails stay YouTube's links, and social ones are already copies.
+ * time. Facebook's own image links are signed and expire (ADR 021), so only our copy there too.
+ * YouTube thumbnails stay YouTube's links, and Instagram and TikTok ones are already copies.
  */
 export function hubImageUrl(platform: HubPlatform, imageUrl: string | null | undefined): string | null {
   const url = imageUrl?.trim();
   if (!url) return null;
-  if (platform !== 'web') return url;
+  if (platform !== 'web' && platform !== 'facebook') return url;
   const base = (Deno.env.get('SUPABASE_URL') ?? '').replace(/\/$/, '');
   return base && url.startsWith(`${base}/storage/v1/object/public/recipe-thumbnails/`) ? url : null;
 }
 
-/** The card a publish wrote or found, when its diets still need checking (PIN-83). */
-export type PublishedCard = { id: string; needsDiets: boolean };
+/**
+ * What happened to one extracted recipe:
+ * - `published`: a new card, or one that replaced a partial card;
+ * - `existing`: the link already had a public card, which keeps its text (it may gain a picture,
+ *   appliances or nutrition it was missing);
+ * - `skipped`: no public card, for `reason`.
+ * `needsDiets` says the card's diets still need checking (PIN-83).
+ */
+export type HubPublishDecision =
+  | { status: 'published'; cardId: string; canonicalKey: string; needsDiets: true; replaced: boolean }
+  | { status: 'existing'; cardId: string; canonicalKey: string; needsDiets: boolean; filled: string[] }
+  | {
+    status: 'skipped';
+    reason: HubSkipReason;
+    canonicalKey?: string;
+    moderationReason?: ModerationReason;
+  };
+
+const skip = (
+  reason: HubSkipReason,
+  extra: { canonicalKey?: string; moderationReason?: ModerationReason } = {},
+): HubPublishDecision => ({ status: 'skipped', reason, ...extra });
 
 export interface PublishOptions {
   /** For the usage row of the moderation call. */
@@ -189,27 +250,28 @@ export interface PublishOptions {
 }
 
 /**
- * Publishes a full extraction as a public Hub card, or returns null when it stays private:
- * the link isn't a plain public page, the card is hidden, the moderation check rejected the
- * recipe, or the check couldn't run. Only a new card (or one replacing a partial card) is
- * checked; an existing full card's text never changes here.
+ * Publishes a full extraction as a public Hub card, or says why it stays private: the recipe
+ * breaks a rule in hubSkipReason, the link isn't a plain public page, the card is hidden, the
+ * moderation check rejected the recipe, or the check couldn't run. Only a new card (or one
+ * replacing a partial card) is checked; an existing full card's text never changes here.
  */
 export async function publishRecipeCard(
   admin: Db,
   snapshot: HubRecipeSnapshot,
   contentId?: string | null,
   options: PublishOptions = {},
-): Promise<PublishedCard | null> {
-  if (!canPublishHubRecipe(snapshot) || !isHubPlatform(snapshot.platform)) return null;
+): Promise<HubPublishDecision> {
+  const rawReason = hubSkipReason(snapshot);
+  if (rawReason) return skip(rawReason);
+  if (!isHubPlatform(snapshot.platform)) return skip('platform');
 
-  const url = snapshot.original_url?.trim();
-  if (!url) return null;
+  const url = snapshot.original_url!.trim();
   const key = recipeCardCanonicalKey(snapshot.platform, url, contentId);
-  if (!key) return null;
+  if (!key) return skip('not_public_link');
 
   // The public page carries no links from the recipe text. Without them it must still be a recipe.
   const recipe = stripRecipeLinks(snapshot);
-  if (!canPublishHubRecipe(recipe) || !isHubPlatform(recipe.platform)) return null;
+  if (hubSkipReason(recipe) || !isHubPlatform(recipe.platform)) return skip('only_links', { canonicalKey: key });
 
   const canonicalUrl = recipeCardCanonicalUrl(recipe.platform, url, contentId);
   const imageUrl = hubImageUrl(recipe.platform, recipe.image_url);
@@ -246,15 +308,15 @@ export async function publishRecipeCard(
 
   if (existingError) {
     console.error('[recipe-cards] existing lookup failed', existingError);
-    return null;
+    return skip('db_error', { canonicalKey: key });
   }
   // Hidden by moderation or an admin: it stays as it is until an admin restores it.
-  if (existing?.hidden_at) return null;
+  if (existing?.hidden_at) return skip('card_hidden', { canonicalKey: key });
 
   const shouldReplace = Boolean(existing) && existing?.extraction_status !== 'full';
   if (!existing || shouldReplace) {
     const review = await reviewForHub(admin, recipe, key, options);
-    if (review.verdict === 'error') return null;
+    if (review.verdict === 'error') return skip('moderation_failed', { canonicalKey: key });
     if (review.verdict === 'reject') {
       // Keep the rejected card, hidden, so an admin can look at it and the link stays blocked.
       const hidden = { hidden_at: row.updated_at, hidden_reason: `moderation:${review.reason}` };
@@ -262,7 +324,7 @@ export async function publishRecipeCard(
         ? await admin.from('recipe_cards').update(hidden).eq('id', existing.id)
         : await admin.from('recipe_cards').insert({ ...row, ...hidden });
       if (error) console.error('[recipe-cards] could not store the rejected card', error);
-      return null;
+      return skip('moderation_rejected', { canonicalKey: key, moderationReason: review.reason });
     }
   }
 
@@ -285,9 +347,9 @@ export async function publishRecipeCard(
     const { data: inserted, error } = await admin.from('recipe_cards').insert(row).select('id').single();
     if (error) {
       console.error('[recipe-cards] insert failed', error);
-      return null;
+      return skip('db_error', { canonicalKey: key });
     }
-    return { id: inserted.id as string, needsDiets: true };
+    return { status: 'published', cardId: inserted.id as string, canonicalKey: key, needsDiets: true, replaced: false };
   }
 
   // A real photo also replaces a drawn one.
@@ -301,9 +363,16 @@ export async function publishRecipeCard(
   const shouldFillNutrition = existing.nutrition == null && newNutrition != null &&
     typeof existing.calories === 'number' && nutritionFitsCalories(newNutrition, existing.calories);
   const needsDiets = shouldReplace || existing.diets == null;
-  if (!shouldReplace && !shouldFillImage && !shouldFillAppliances && !shouldFillNutrition) {
-    return { id: existing.id as string, needsDiets };
-  }
+  const cardId = existing.id as string;
+  const filled = [
+    ...(shouldFillImage ? ['image'] : []),
+    ...(shouldFillAppliances ? ['appliances'] : []),
+    ...(shouldFillNutrition ? ['nutrition'] : []),
+  ];
+  const decision: HubPublishDecision = shouldReplace
+    ? { status: 'published', cardId, canonicalKey: key, needsDiets: true, replaced: true }
+    : { status: 'existing', cardId, canonicalKey: key, needsDiets, filled };
+  if (!shouldReplace && filled.length === 0) return decision;
 
   const fill: TablesUpdate<'recipe_cards'> = { updated_at: row.updated_at };
   if (shouldFillImage) {
@@ -320,9 +389,43 @@ export async function publishRecipeCard(
     .eq('id', existing.id);
   if (error) {
     console.error('[recipe-cards] update failed', error);
-    return null;
+    if (shouldReplace) return skip('db_error', { canonicalKey: key });
+    // Only filling a missing field failed; the public card itself is still up.
+    return { status: 'existing', cardId, canonicalKey: key, needsDiets, filled: [] };
   }
-  return { id: existing.id as string, needsDiets };
+  return decision;
+}
+
+/**
+ * Records whether an extracted recipe went to the Hub, and why not: one `hub_publish` row in
+ * ai_usage_events (status published, existing or skipped; the reason in metadata) and one log line.
+ * No model call, so no cost; the moderation, picture and diet checks log their own rows.
+ */
+export async function logHubDecision(
+  admin: Db,
+  decision: HubPublishDecision,
+  context: { userId: string | null; guestInstallId: string | null; platform: string; durationMs: number },
+): Promise<void> {
+  const metadata = decision.status === 'skipped'
+    ? {
+      reason: decision.reason,
+      canonical_key: decision.canonicalKey ?? null,
+      moderation_reason: decision.moderationReason ?? null,
+    }
+    : decision.status === 'published'
+    ? { card_id: decision.cardId, canonical_key: decision.canonicalKey, replaced: decision.replaced }
+    : { card_id: decision.cardId, canonical_key: decision.canonicalKey, filled: decision.filled };
+  console.log('[recipe-cards] hub decision', { status: decision.status, platform: context.platform, ...metadata });
+  await logUsageEvent(admin, {
+    userId: context.userId,
+    guestInstallId: context.userId ? null : context.guestInstallId,
+    action: 'hub_publish',
+    platform: context.platform,
+    status: decision.status,
+    tokensCharged: 0,
+    durationMs: context.durationMs,
+    metadata,
+  });
 }
 
 /** Draws a card's picture and logs its own usage row. The stored picture's URL, or null. */

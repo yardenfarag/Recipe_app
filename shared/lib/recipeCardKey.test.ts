@@ -31,6 +31,16 @@ describe('recipeCardCanonicalKey', () => {
     ).toBe('tiktok:1234567890123456789');
   });
 
+  it('keys Facebook by reel or post id, and ignores share links without one', () => {
+    expect(recipeCardCanonicalKey('facebook', 'https://www.facebook.com/reel/1234567890')).toBe(
+      'facebook:1234567890',
+    );
+    expect(recipeCardCanonicalKey('facebook', 'https://www.facebook.com/100064/posts/987654321')).toBe(
+      'facebook:987654321',
+    );
+    expect(recipeCardCanonicalKey('facebook', 'https://www.facebook.com/share/r/abc/')).toBeNull();
+  });
+
   it('strips tracking params from web URLs', () => {
     expect(
       recipeCardCanonicalKey(

@@ -1205,6 +1205,7 @@ export default {
     "platformAll": "Все",
     "platformInstagram": "Instagram",
     "platformTiktok": "TikTok",
+    "platformFacebook": "Facebook",
     "platformYoutube": "YouTube",
     "platformWeb": "Сайт",
     "sortPopular": "Популярные",

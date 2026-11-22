@@ -308,6 +308,7 @@ const FEATURE_NAMES: Record<string, string> = {
   fridge_match: 'Fridge match',
   hub_diets: 'Hub diet tags',
   hub_moderation: 'Hub publishing check',
+  hub_publish: 'Hub publish decision',
   recipe_edit_check: 'Edit check',
   recipe_edit_recalc: 'Edit recalculation',
   appliances_backfill: 'Appliance backfill',

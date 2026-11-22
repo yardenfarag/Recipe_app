@@ -42,9 +42,9 @@ Deno.test('hub cache hits return the card nutrition only next to its calories (P
   assertEquals(hubCardToExtractRecipe({ ...card, calories: 900 }).nutrition, null);
 });
 
-Deno.test('Pinterest and Facebook recipes stay out of the Hub (ADR 021, ADR 029)', async () => {
+Deno.test('Pinterest recipes stay out of the Hub (ADR 029); Facebook ones may go in', async () => {
   assertEquals(isHubPlatform('pinterest'), false);
-  assertEquals(isHubPlatform('facebook'), false);
+  assertEquals(isHubPlatform('facebook'), true);
   // Neither call may touch the database for them: the admin client here would throw.
   const admin = new Proxy({}, { get: () => { throw new Error('database touched'); } }) as never;
   assertEquals(
@@ -65,7 +65,7 @@ Deno.test('Pinterest and Facebook recipes stay out of the Hub (ADR 021, ADR 029)
       } as never,
       '452611831329517145',
     ),
-    null,
+    { status: 'skipped', reason: 'platform' },
   );
 });
 

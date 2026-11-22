@@ -1,18 +1,23 @@
 import {
   canonicalizeUrlForCompare,
+  extractFacebookId,
   extractInstagramId,
   extractTikTokId,
 } from './platformUrls';
 import { extractYouTubeId } from './youtube';
 
-export const HUB_PLATFORMS = ['youtube', 'instagram', 'tiktok', 'web'] as const;
+/** Pinterest is left out on purpose (ADR 029). */
+export const HUB_PLATFORMS = ['youtube', 'instagram', 'tiktok', 'facebook', 'web'] as const;
 export type HubPlatform = (typeof HUB_PLATFORMS)[number];
 
 export function isHubPlatform(value: string | null | undefined): value is HubPlatform {
-  return value === 'youtube' || value === 'instagram' || value === 'tiktok' || value === 'web';
+  return (HUB_PLATFORMS as readonly (string | null | undefined)[]).includes(value);
 }
 
-/** One card per source: `youtube:id`, `instagram:shortcode`, `tiktok:id`, or `web:<canonical url>`. */
+/**
+ * One card per source: `youtube:id`, `instagram:shortcode`, `tiktok:id`, `facebook:id`, or
+ * `web:<canonical url>`.
+ */
 export function recipeCardCanonicalKey(
   platform: HubPlatform,
   url: string,
@@ -29,6 +34,10 @@ export function recipeCardCanonicalKey(
   if (platform === 'tiktok') {
     const id = contentId?.trim() || extractTikTokId(url);
     return id ? `tiktok:${id}` : null;
+  }
+  if (platform === 'facebook') {
+    const id = contentId?.trim() || extractFacebookId(url);
+    return id ? `facebook:${id}` : null;
   }
   const canonical = canonicalizeUrlForCompare(url);
   return canonical ? `web:${canonical}` : null;

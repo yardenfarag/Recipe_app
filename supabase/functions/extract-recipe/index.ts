@@ -96,6 +96,8 @@ import {
   fillRecipeCardDiets,
   findRecipeCard,
   hubCardToExtractRecipe,
+  type HubPublishDecision,
+  logHubDecision,
   publishRecipeCard,
   touchRecipeCardHit,
   userContributesToHub,
@@ -1024,14 +1026,25 @@ serve('extract-recipe', async (req) => {
       },
     });
 
-    if (status === 'full' && admin) {
+    if (admin) {
       // Publishing to the Hub includes a moderation check (PIN-153) and then the diet check
       // (PIN-83), each a model call. Both run after the response, so they never slow the
-      // extract down; the user's own recipe doesn't depend on either.
+      // extract down; the user's own recipe doesn't depend on either. Every full or partial
+      // extraction logs whether it went to the Hub and why not (a `hub_publish` row).
       const publishToHub = async () => {
-        if (userId && !(await userContributesToHub(admin, userId))) return;
-        const card = await publishRecipeCard(admin, recipe, meta?.contentId ?? contentId, { userId });
-        if (card?.needsDiets) await fillRecipeCardDiets(admin, card.id, recipe, userId ?? null);
+        const publishStarted = Date.now();
+        const decision: HubPublishDecision = userId && !(await userContributesToHub(admin, userId))
+          ? { status: 'skipped', reason: 'opted_out' }
+          : await publishRecipeCard(admin, recipe, meta?.contentId ?? contentId, { userId });
+        await logHubDecision(admin, decision, {
+          userId,
+          guestInstallId,
+          platform,
+          durationMs: Date.now() - publishStarted,
+        });
+        if (decision.status !== 'skipped' && decision.needsDiets) {
+          await fillRecipeCardDiets(admin, decision.cardId, recipe, userId ?? null);
+        }
       };
       const publishing = publishToHub().catch((error) =>
         console.error('[extract-recipe] hub publish failed', error)

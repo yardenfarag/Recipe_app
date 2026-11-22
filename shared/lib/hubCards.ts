@@ -3,7 +3,7 @@ import type { TFunction } from 'i18next';
 import type { HubPlatform, RecipeCard } from '../types/recipeCard';
 
 /** The Hub's source filter, in the order both apps show it. */
-export const HUB_PLATFORMS = ['all', 'youtube', 'instagram', 'tiktok', 'web'] as const;
+export const HUB_PLATFORMS = ['all', 'youtube', 'instagram', 'tiktok', 'facebook', 'web'] as const;
 
 export function platformLabelKey(platform: HubPlatform | 'all') {
   switch (platform) {
@@ -13,6 +13,8 @@ export function platformLabelKey(platform: HubPlatform | 'all') {
       return 'hub.platformInstagram';
     case 'tiktok':
       return 'hub.platformTiktok';
+    case 'facebook':
+      return 'hub.platformFacebook';
     case 'web':
       return 'hub.platformWeb';
     default:
