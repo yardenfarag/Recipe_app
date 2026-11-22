@@ -21,6 +21,7 @@ import {
   publishRecipeCard,
   recipeCardCanonicalKey,
 } from './recipeCards.ts';
+import type { DrawRecipeImageResult } from './recipeImage.ts';
 
 // Links that may be published ------------------------------------------------------------------
 
@@ -199,17 +200,106 @@ const never = (): Promise<ModerationResult> => {
   throw new Error('moderation should not run');
 };
 
+const DRAWN = 'https://project.supabase.co/storage/v1/object/public/recipe-thumbnails/ai/abc.jpg';
+const OUR_COPY = 'https://project.supabase.co/storage/v1/object/public/recipe-thumbnails/web/def.jpg';
+const drawn = (): Promise<DrawRecipeImageResult> =>
+  Promise.resolve({
+    ok: true,
+    url: DRAWN,
+    model: 'qwen/qwen-image-2.1-turbo',
+    bytes: 150_000,
+    ms: 10,
+    usage: {
+      model: 'qwen/qwen-image-2.1-turbo',
+      kind: 'recipe_image',
+      promptTokenCount: 0,
+      candidatesTokenCount: 0,
+      thoughtsTokenCount: 0,
+      totalTokenCount: 0,
+      costUsd: 0.0184,
+    },
+  });
+const cannotDraw = (): Promise<DrawRecipeImageResult> =>
+  Promise.resolve({ ok: false, error: 'every model failed', usage: null, ms: 5 });
+const mustNotDraw = (): Promise<DrawRecipeImageResult> => {
+  throw new Error('no picture should be drawn');
+};
+
+/** Runs `fn` with SUPABASE_URL set, so hubImageUrl accepts OUR_COPY. */
+async function withProjectUrl(fn: () => Promise<void>): Promise<void> {
+  const previous = Deno.env.get('SUPABASE_URL');
+  Deno.env.set('SUPABASE_URL', 'https://project.supabase.co');
+  try {
+    await fn();
+  } finally {
+    if (previous === undefined) Deno.env.delete('SUPABASE_URL');
+    else Deno.env.set('SUPABASE_URL', previous);
+  }
+}
+
 Deno.test('a recipe that passes the check is published without its links', async () => {
   const cards: Row[] = [];
   const usage: Row[] = [];
-  const published = await publishRecipeCard(fakeAdmin(cards, usage), SOUP, null, { moderate: ok, userId: 'user-1' });
+  const published = await publishRecipeCard(fakeAdmin(cards, usage), SOUP, null, {
+    moderate: ok,
+    drawImage: drawn,
+    userId: 'user-1',
+  });
   assertEquals(published, { id: 'card-1', needsDiets: true });
   assertEquals(cards.length, 1);
   assertEquals(cards[0].canonical_key, 'web:https://example.com/leek-soup');
   assertEquals(cards[0].hidden_at, undefined);
   assertEquals(cards[0].instructions, [{ step: 1, text: 'Chop the leeks.' }, { step: 2, text: 'Simmer, see' }]);
-  assertEquals(cards[0].image_url, null, "the source site's image link is not published");
-  assertEquals(usage.map((row) => [row.action, row.status, row.user_id]), [['hub_moderation', 'ok', 'user-1']]);
+  // The source site's image link is never published; a drawn picture takes its place.
+  assertEquals(cards[0].image_url, DRAWN);
+  assertEquals(cards[0].image_generated, true);
+  assertEquals(usage.map((row) => [row.action, row.status, row.user_id]), [
+    ['hub_moderation', 'ok', 'user-1'],
+    ['recipe_image', 'ok', 'user-1'],
+  ]);
+});
+
+Deno.test('when no picture can be drawn, the card goes up without one', async () => {
+  const cards: Row[] = [];
+  const usage: Row[] = [];
+  await publishRecipeCard(fakeAdmin(cards, usage), SOUP, null, { moderate: ok, drawImage: cannotDraw });
+  assertEquals(cards[0].image_url, null);
+  assertEquals(cards[0].image_generated, false);
+  assertEquals(usage.map((row) => [row.action, row.status, row.error_message]), [
+    ['hub_moderation', 'ok', null],
+    ['recipe_image', 'failed', 'every model failed'],
+  ]);
+});
+
+Deno.test('a card with our copy of the photo is never drawn, and a rejected one never either', async () => {
+  await withProjectUrl(async () => {
+    const cards: Row[] = [];
+    await publishRecipeCard(fakeAdmin(cards), { ...SOUP, image_url: OUR_COPY }, null, { moderate: ok, drawImage: mustNotDraw });
+    assertEquals([cards[0].image_url, cards[0].image_generated], [OUR_COPY, false]);
+  });
+  const rejected: Row[] = [];
+  const reject = (): Promise<ModerationResult> => Promise.resolve({ verdict: 'reject', reason: 'spam', usages: [] });
+  await publishRecipeCard(fakeAdmin(rejected), SOUP, null, { moderate: reject, drawImage: mustNotDraw });
+  assert(rejected[0].hidden_at);
+});
+
+Deno.test('a card left without a picture gets one on the next import, and a real photo replaces a drawn one', async () => {
+  await withProjectUrl(async () => {
+    const cards: Row[] = [];
+    const admin = fakeAdmin(cards);
+    await publishRecipeCard(admin, SOUP, null, { moderate: ok, drawImage: cannotDraw });
+    assertEquals(cards[0].image_url, null);
+
+    await publishRecipeCard(admin, SOUP, null, { moderate: never, drawImage: drawn });
+    assertEquals([cards[0].image_url, cards[0].image_generated], [DRAWN, true]);
+
+    // Drawn already: another import without a photo leaves it alone.
+    await publishRecipeCard(admin, SOUP, null, { moderate: never, drawImage: mustNotDraw });
+    assertEquals(cards[0].image_url, DRAWN);
+
+    await publishRecipeCard(admin, { ...SOUP, image_url: OUR_COPY }, null, { moderate: never, drawImage: mustNotDraw });
+    assertEquals([cards[0].image_url, cards[0].image_generated], [OUR_COPY, false]);
+  });
 });
 
 Deno.test('a rejected recipe is stored hidden, and never served or published again', async () => {
@@ -254,7 +344,7 @@ Deno.test('a recipe that is only links is not a recipe', async () => {
 Deno.test('an existing public card is found again without a second check', async () => {
   const cards: Row[] = [];
   const admin = fakeAdmin(cards);
-  await publishRecipeCard(admin, SOUP, null, { moderate: ok });
+  await publishRecipeCard(admin, SOUP, null, { moderate: ok, drawImage: drawn });
   cards[0].diets = ['vegetarian'];
   const again = await publishRecipeCard(admin, { ...SOUP, title: 'Changed' }, null, { moderate: never });
   assertEquals(again, { id: 'card-1', needsDiets: false });

@@ -25,9 +25,17 @@ export const LOCKABLE_FIELDS = [
 ] as const;
 export type LockedField = (typeof LOCKABLE_FIELDS)[number];
 
-/** Matches the recipes_recalc_pending_known CHECK. */
+/** The AI-derived content fields a save can recalculate (recipeEditPlan.ts). */
 export const RECALC_FIELDS = [...LOCKABLE_FIELDS, 'ingredient_amounts'] as const;
 export type RecalcField = (typeof RECALC_FIELDS)[number];
+
+/**
+ * Everything recalc_pending can hold: the recalculated fields, and 'image' while a picture is being
+ * drawn for a recipe saved without one (recipeImage.ts). Matches the recipes_recalc_pending_known CHECK.
+ * The apps' RECALC_FIELDS (shared/types/recipe.ts) is this list.
+ */
+export const PENDING_FIELDS = [...RECALC_FIELDS, 'image'] as const;
+export type PendingField = (typeof PENDING_FIELDS)[number];
 
 /** src/lib/appLanguages.ts APP_LANGUAGES codes. */
 export const APP_LANGUAGE_CODES = ['ar', 'en', 'es', 'he', 'ru'] as const;
@@ -148,7 +156,7 @@ export type SaveRecipeEditResult =
   | {
       status: 'saved';
       recipe: Record<string, unknown>;
-      recalculating: RecalcField[];
+      recalculating: PendingField[];
       recalculation: 'started' | 'none' | 'limited';
     }
   | { status: 'blocked'; reasons: RecipeEditBlockReason[] }

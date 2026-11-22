@@ -72,7 +72,7 @@ export function CookFirstCard({ recipe }: { recipe: Recipe }) {
       style={{ backgroundColor: colors.accentSoft }}
     >
       {recipe.image_url ? (
-        <RecipeImage uri={recipe.image_url} variant="compact" style={{ width: 56, height: 56 }} />
+        <RecipeImage uri={recipe.image_url} variant="compact" style={{ width: 56, height: 56 }} aiGenerated={recipe.image_generated} />
       ) : (
         <View
           className="h-14 w-14 items-center justify-center rounded-2xl"

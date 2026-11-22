@@ -21,6 +21,7 @@ import { deriveRecipeDiets, type DietsRecipeInput } from './enrich/recipeDiets.t
 import { logUsageEvent } from '../core/usageLog.ts';
 import { fitNutrition } from './recipeLimits.ts';
 import { nutritionFitsCalories } from './nutrition.ts';
+import { drawRecipeImage, type DrawRecipeImageResult, type RecipeImageInput } from './recipeImage.ts';
 
 export type HubPlatform = 'youtube' | 'instagram' | 'tiktok' | 'web';
 
@@ -29,6 +30,8 @@ export interface HubRecipeSnapshot {
   original_url?: string | null;
   platform: Platform;
   image_url?: string | null;
+  /** image_url is a picture Pinch drew (recipeImage.ts), not a photo of the dish. */
+  image_generated?: boolean;
   source_video_url?: string | null;
   ingredients: unknown;
   instructions: unknown;
@@ -113,6 +116,7 @@ export function hubCardToExtractRecipe(card: Record<string, unknown>): HubRecipe
     original_url: typeof card.original_url === 'string' ? card.original_url : null,
     platform: (typeof card.platform === 'string' ? card.platform : 'unknown') as Platform,
     image_url: typeof card.image_url === 'string' ? card.image_url : null,
+    image_generated: card.image_generated === true && typeof card.image_url === 'string',
     source_video_url: typeof card.source_video_url === 'string' ? card.source_video_url : null,
     ingredients: card.ingredients ?? [],
     instructions: card.instructions ?? [],
@@ -180,6 +184,8 @@ export interface PublishOptions {
   userId?: string | null;
   /** The check a new card must pass. Tests pass their own. */
   moderate?: (recipe: ModeratedRecipeInput) => Promise<ModerationResult>;
+  /** Draws a picture for a card with none. Tests pass their own. */
+  drawImage?: (admin: Db, recipe: RecipeImageInput) => Promise<DrawRecipeImageResult>;
 }
 
 /**
@@ -206,13 +212,15 @@ export async function publishRecipeCard(
   if (!canPublishHubRecipe(recipe) || !isHubPlatform(recipe.platform)) return null;
 
   const canonicalUrl = recipeCardCanonicalUrl(recipe.platform, url, contentId);
+  const imageUrl = hubImageUrl(recipe.platform, recipe.image_url);
   const row = {
     canonical_key: key,
     canonical_url: canonicalUrl,
     original_url: canonicalUrl,
     platform: recipe.platform,
     title: recipe.title.trim(),
-    image_url: hubImageUrl(recipe.platform, recipe.image_url),
+    image_url: imageUrl,
+    image_generated: imageUrl != null && recipe.image_generated === true,
     source_video_url: recipe.source_video_url ?? null,
     ingredients: toJson(recipe.ingredients ?? []),
     instructions: toJson(recipe.instructions ?? []),
@@ -232,7 +240,7 @@ export async function publishRecipeCard(
 
   const { data: existing, error: existingError } = await admin
     .from('recipe_cards')
-    .select('id, extraction_status, image_url, appliances, calories, nutrition, diets, hidden_at')
+    .select('id, extraction_status, image_url, image_generated, appliances, calories, nutrition, diets, hidden_at')
     .eq('canonical_key', key)
     .maybeSingle();
 
@@ -258,6 +266,21 @@ export async function publishRecipeCard(
     }
   }
 
+  if (!row.image_url && existing?.image_url) {
+    // A replacement without a picture keeps the card's.
+    row.image_url = existing.image_url;
+    row.image_generated = existing.image_generated === true;
+  } else if (!row.image_url) {
+    // No photo anywhere (the site blocked our download, PIN-153 refuses its link): draw one before
+    // the card is public, so the Hub never shows it empty. This runs after the import has
+    // answered, so nobody waits for it. If it fails the card goes up without a picture.
+    const drawn = await drawCardImage(admin, recipe, key, options);
+    if (drawn) {
+      row.image_url = drawn;
+      row.image_generated = true;
+    }
+  }
+
   if (!existing) {
     const { data: inserted, error } = await admin.from('recipe_cards').insert(row).select('id').single();
     if (error) {
@@ -267,7 +290,9 @@ export async function publishRecipeCard(
     return { id: inserted.id as string, needsDiets: true };
   }
 
-  const shouldFillImage = !existing.image_url && row.image_url;
+  // A real photo also replaces a drawn one.
+  const shouldFillImage = Boolean(row.image_url) && row.image_url !== existing.image_url &&
+    (!existing.image_url || (existing.image_generated === true && !row.image_generated));
   // Like the image: fill appliances on a card that has none, never overwrite (matches the recipe_appliances migration).
   const shouldFillAppliances = existing.appliances == null && row.appliances != null;
   // PIN-80: the same for macros, so a card published before them gets them from the next import,
@@ -281,7 +306,10 @@ export async function publishRecipeCard(
   }
 
   const fill: TablesUpdate<'recipe_cards'> = { updated_at: row.updated_at };
-  if (shouldFillImage) fill.image_url = row.image_url;
+  if (shouldFillImage) {
+    fill.image_url = row.image_url;
+    fill.image_generated = row.image_generated;
+  }
   if (shouldFillAppliances) fill.appliances = row.appliances;
   if (shouldFillNutrition) fill.nutrition = row.nutrition;
 
@@ -295,6 +323,31 @@ export async function publishRecipeCard(
     return null;
   }
   return { id: existing.id as string, needsDiets };
+}
+
+/** Draws a card's picture and logs its own usage row. The stored picture's URL, or null. */
+async function drawCardImage(
+  admin: Db,
+  recipe: HubRecipeSnapshot,
+  canonicalKey: string,
+  options: PublishOptions,
+): Promise<string | null> {
+  const result = await (options.drawImage ?? drawRecipeImage)(admin, {
+    title: recipe.title,
+    ingredients: recipe.ingredients,
+  });
+  await logUsageEvent(admin, {
+    userId: options.userId ?? null,
+    action: 'recipe_image',
+    platform: recipe.platform,
+    status: result.ok ? 'ok' : 'failed',
+    usages: result.usage ? [result.usage] : [],
+    tokensCharged: 0,
+    durationMs: result.ms,
+    errorMessage: result.ok ? null : result.error,
+    metadata: { canonical_key: canonicalKey, for: 'hub_card', ...(result.ok ? { model: result.model, bytes: result.bytes } : {}) },
+  });
+  return result.ok ? result.url : null;
 }
 
 /** Runs the moderation check and logs its own usage row, like the diet check below. */

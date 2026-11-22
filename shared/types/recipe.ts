@@ -38,10 +38,11 @@ export const LOCKABLE_FIELDS = [
 export type LockedField = (typeof LOCKABLE_FIELDS)[number];
 
 /**
- * What a save can recalculate in the background (ADR 018): every lockable field, plus the
- * metric/spoons amounts of changed ingredient rows. Matches the recipes_recalc_pending_known CHECK.
+ * What a save can fill in the background (ADR 018): every lockable field, the metric/spoons
+ * amounts of changed ingredient rows, and `image`, a drawn picture for a recipe saved without a
+ * photo. Matches the recipes_recalc_pending_known CHECK (the server's PENDING_FIELDS).
  */
-export const RECALC_FIELDS = [...LOCKABLE_FIELDS, 'ingredient_amounts'] as const;
+export const RECALC_FIELDS = [...LOCKABLE_FIELDS, 'ingredient_amounts', 'image'] as const;
 export type RecalcField = (typeof RECALC_FIELDS)[number];
 
 /**
@@ -94,6 +95,8 @@ export interface Recipe {
   original_url?: string;
   platform?: Platform;
   image_url?: string;
+  /** image_url is a picture Pinch drew, not a photo of the dish: the apps mark it "AI image". */
+  image_generated?: boolean;
   /**
    * Optional playable video for cook-along when `platform` is `web`
    * (e.g. a YouTube embed found on the recipe page).

@@ -724,3 +724,18 @@ export function storedEditContent(content: RecipeEditContent) {
     cook_note: content.cook_note?.trim() || null,
   };
 }
+
+/**
+ * Whether a save gets a drawn picture ('image' in recalc_pending, recipeImage.ts). A written recipe
+ * or a finished import saved without a photo does, unless the user took the photo out on purpose.
+ * `cancel`: a photo put in or taken out stops a drawing an earlier save started.
+ */
+export function imageRecalc(input: {
+  mode: 'edit' | 'write' | 'import';
+  photo: RecipeEditContent['photo']['action'];
+  /** image_url as this save stores it. */
+  savedImageUrl: unknown;
+}): { draw: boolean; cancel: boolean } {
+  const draw = input.mode !== 'edit' && input.photo !== 'remove' && !input.savedImageUrl;
+  return { draw, cancel: !draw && input.photo !== 'keep' };
+}

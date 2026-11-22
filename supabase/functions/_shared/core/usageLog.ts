@@ -35,7 +35,9 @@ export interface UsageEventInput {
     /** save-recipe-edit's background recalculation (PIN-79). */
     | 'recipe_edit_recalc'
     /** A blocked recipe page read through the page-reading service: ok, blocked or error (PIN-152). */
-    | 'page_read';
+    | 'page_read'
+    /** An AI picture for a Hub card published without a photo: ok or failed. */
+    | 'recipe_image';
   platform?: string | null;
   status: string;
   extractionSource?: string | null;

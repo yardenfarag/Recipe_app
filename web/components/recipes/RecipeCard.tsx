@@ -16,6 +16,7 @@ import type { Recipe } from "@shared/types/recipe";
 
 import { CookieMark } from "@/components/CookieMark";
 import { useLanguage } from "@/components/LanguageProvider";
+import { AiImageMark } from "@/components/recipes/AiImageMark";
 import { RecipeActionsMenu, type RecipeActions } from "@/components/recipes/RecipeActionsMenu";
 import { cn } from "@/lib/cn";
 
@@ -78,8 +79,10 @@ function RecipeCardBase({ recipe, variant = "grid", onToggleFavorite, actions, d
         : source.name
     : null;
 
+  const hasPicture = Boolean(recipe.image_url) && !pictureFailed;
+  const aiMark = hasPicture && recipe.image_generated ? <AiImageMark size={list ? "sm" : "md"} /> : null;
   const picture =
-    recipe.image_url && !pictureFailed ? (
+    hasPicture ? (
       // The pictures are already small thumbnails from other sites, so there is nothing for next/image to optimise.
       // eslint-disable-next-line @next/next/no-img-element
       <img
@@ -190,7 +193,10 @@ function RecipeCardBase({ recipe, variant = "grid", onToggleFavorite, actions, d
           "[content-visibility:auto] [contain-intrinsic-size:auto_92px]",
         )}
       >
-        <div className="h-18 w-18 shrink-0 overflow-hidden rounded-2xl bg-element">{picture}</div>
+        <div className="relative h-18 w-18 shrink-0 overflow-hidden rounded-2xl bg-element">
+          {picture}
+          {aiMark}
+        </div>
         <div className="min-w-0 flex-1 py-0.5">
           <h3 className="line-clamp-2 text-base leading-snug font-bold text-pretty text-text">{link}</h3>
           {facts}
@@ -204,6 +210,7 @@ function RecipeCardBase({ recipe, variant = "grid", onToggleFavorite, actions, d
     <article className="group relative isolate flex h-full flex-col gap-3 [content-visibility:auto] [contain-intrinsic-size:auto_300px]">
       <div className="relative aspect-square w-full shrink-0 overflow-hidden rounded-[18px] bg-element md:aspect-[4/3] md:rounded-[22px]">
         {picture}
+        {aiMark}
         {sourceLabel ? (
           <span className="absolute start-2 top-2 max-w-[55%] truncate rounded-full bg-scrim/70 px-2.5 py-1.5 text-xs leading-none font-semibold text-on-scrim backdrop-blur-sm md:start-3 md:top-3 md:max-w-[60%]">
             {sourceLabel}

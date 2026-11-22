@@ -1121,7 +1121,19 @@ export function RecipeView({
                 accessible={false}
                 importantForAccessibility="no-hide-descendants"
               >
-                <RecipeImage uri={recipe.image_url!} variant="compact" />
+                <RecipeImage uri={recipe.image_url!} variant="compact" aiGenerated={recipe.image_generated} />
+              </View>
+            ) : !recipe.image_url && isUpdating('image') ? (
+              // Pinch is drawing a picture for a recipe saved without a photo (save-recipe-edit).
+              <View
+                testID="drawing-picture"
+                className="h-16 w-16 items-center justify-center rounded-2xl"
+                style={{ backgroundColor: colors.primarySoft }}
+                accessible
+                accessibilityRole="progressbar"
+                accessibilityLabel={t('recipe.drawingImage')}
+              >
+                <ActivityIndicator color={colors.primary} />
               </View>
             ) : !recipe.image_url ? (
               <View

@@ -241,7 +241,7 @@ function PickTile({
     >
       <View>
         {card.image_url ? (
-          <RecipeImage uri={card.image_url} variant="compact" borderRadius={0} style={{ width: '100%', height: 120 }} />
+          <RecipeImage uri={card.image_url} variant="compact" borderRadius={0} style={{ width: '100%', height: 120 }} aiGenerated={card.image_generated === true} />
         ) : (
           <View
             className="items-center justify-center"

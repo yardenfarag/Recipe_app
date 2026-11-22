@@ -932,6 +932,7 @@ export type Database = {
           hidden_at: string | null
           hidden_reason: string | null
           id: string
+          image_generated: boolean
           image_url: string | null
           ingredients: Json
           instructions: Json
@@ -963,6 +964,7 @@ export type Database = {
           hidden_at?: string | null
           hidden_reason?: string | null
           id?: string
+          image_generated?: boolean
           image_url?: string | null
           ingredients?: Json
           instructions?: Json
@@ -994,6 +996,7 @@ export type Database = {
           hidden_at?: string | null
           hidden_reason?: string | null
           id?: string
+          image_generated?: boolean
           image_url?: string | null
           ingredients?: Json
           instructions?: Json
@@ -1186,6 +1189,7 @@ export type Database = {
           extraction_source: string | null
           extraction_status: string
           id: string
+          image_generated: boolean
           image_url: string | null
           ingredients: Json
           instructions: Json
@@ -1221,6 +1225,7 @@ export type Database = {
           extraction_source?: string | null
           extraction_status?: string
           id?: string
+          image_generated?: boolean
           image_url?: string | null
           ingredients?: Json
           instructions?: Json
@@ -1256,6 +1261,7 @@ export type Database = {
           extraction_source?: string | null
           extraction_status?: string
           id?: string
+          image_generated?: boolean
           image_url?: string | null
           ingredients?: Json
           instructions?: Json
@@ -1700,6 +1706,7 @@ export type Database = {
           hidden_at: string | null
           hidden_reason: string | null
           id: string
+          image_generated: boolean
           image_url: string | null
           ingredients: Json
           instructions: Json

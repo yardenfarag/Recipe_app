@@ -19,6 +19,8 @@ export interface RecipeCard {
   platform: HubPlatform;
   title: string;
   image_url?: string | null;
+  /** image_url is a picture Pinch drew, not a photo of the dish. */
+  image_generated?: boolean | null;
   source_video_url?: string | null;
   ingredients: Ingredient[];
   instructions: Instruction[];

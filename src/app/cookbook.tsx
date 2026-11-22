@@ -333,7 +333,7 @@ export default function CookbookScreen() {
                   >
                     <View accessible={false} importantForAccessibility="no-hide-descendants">
                       {recipe.image_url ? (
-                        <RecipeImage uri={recipe.image_url} variant="compact" borderRadius={12} />
+                        <RecipeImage uri={recipe.image_url} variant="compact" borderRadius={12} aiGenerated={recipe.image_generated} />
                       ) : (
                         <View
                           className="h-12 w-12 items-center justify-center rounded-[12px]"
