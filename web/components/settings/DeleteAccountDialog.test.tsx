@@ -6,14 +6,16 @@ import { DeleteAccountDialog } from "@/components/settings/AccountSettings";
 import { addSettingsStrings } from "@/components/settings/testStrings";
 import i18n from "@/lib/i18n";
 
-const mocks = vi.hoisted(() => ({ deleteAccount: vi.fn() }));
+const mocks = vi.hoisted(() => ({ deleteAccount: vi.fn(), downloadRecipeBackup: vi.fn() }));
 vi.mock("@shared/lib/supabase/auth", () => ({ deleteAccount: mocks.deleteAccount }));
+vi.mock("@/lib/settings/recipeBackupDownload", () => ({ downloadRecipeBackup: mocks.downloadRecipeBackup }));
 vi.mock("@/lib/auth", () => ({ signOut: vi.fn() }));
 vi.mock("next/navigation", () => ({ useRouter: () => ({ replace: vi.fn() }) }));
 
 beforeAll(addSettingsStrings);
 beforeEach(() => {
   mocks.deleteAccount.mockReset();
+  mocks.downloadRecipeBackup.mockReset();
 });
 
 function open(onDeleted = vi.fn()) {
@@ -30,7 +32,7 @@ describe("DeleteAccountDialog", () => {
     mocks.deleteAccount.mockResolvedValue(undefined);
     const onDeleted = open();
     expect(screen.getByRole("dialog", { name: "Delete account?" })).toBeDefined();
-    expect(screen.getByText(/permanently deletes your recipes/)).toBeDefined();
+    expect(screen.getByText(/deletes your account, your recipes/)).toBeDefined();
 
     const confirm = screen.getByRole("button", { name: "Delete account" }) as HTMLButtonElement;
     expect(confirm.disabled).toBe(true);
@@ -50,8 +52,26 @@ describe("DeleteAccountDialog", () => {
     const onDeleted = open();
     fireEvent.change(screen.getByLabelText(/type your email/), { target: { value: "cook@example.com" } });
     fireEvent.click(screen.getByRole("button", { name: "Delete account" }));
-    expect((await screen.findByRole("alert")).textContent).toContain("Server said no");
+    const alert = await screen.findByRole("alert");
+    // The server's own words never reach the cook.
+    expect(alert.textContent).toBe(`${i18n.t("settings.deleteFailedTitle")}. ${i18n.t("common.tryAgain")}`);
+    expect(alert.textContent).not.toContain("Server said no");
     expect(onDeleted).not.toHaveBeenCalled();
     expect(screen.getByRole("dialog")).toBeDefined();
+  });
+
+  it("offers to download the recipe backup first", async () => {
+    mocks.downloadRecipeBackup.mockResolvedValue("downloaded");
+    open();
+    fireEvent.click(screen.getByRole("button", { name: i18n.t("settings.backupDownload") }));
+    await waitFor(() => expect(mocks.downloadRecipeBackup).toHaveBeenCalledTimes(1));
+    expect(mocks.deleteAccount).not.toHaveBeenCalled();
+  });
+
+  it("says so when the backup can't be made", async () => {
+    mocks.downloadRecipeBackup.mockRejectedValue(new Error("offline"));
+    open();
+    fireEvent.click(screen.getByRole("button", { name: i18n.t("settings.backupDownload") }));
+    expect((await screen.findByRole("status")).textContent).toBe(`${i18n.t("settings.backupFailedTitle")}. ${i18n.t("common.tryAgain")}`);
   });
 });

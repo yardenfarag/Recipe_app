@@ -30,7 +30,7 @@ test("a guest reads a Hub recipe, saves it, signs in, and it lands in their libr
   await expect(page.getByRole("link", { name: "Sign in" })).toBeVisible();
   await expect(page.getByText("Sign in or create a free account to save it.")).toBeVisible();
 
-  await page.getByRole("button", { name: "Add to library" }).click();
+  await page.getByRole("button", { name: "Add to Library" }).click();
   await expect(page).toHaveURL(/\/app\/auth\?mode=signin&next=/);
   await signInWithPassword(page, TEST_USER.email, TEST_USER.password);
 
@@ -47,7 +47,7 @@ test("the guest bar's Sign in comes back to the same recipe, without saving", as
   await page.getByRole("link", { name: "Sign in" }).click();
   await signInWithPassword(page, TEST_USER.email, TEST_USER.password);
   await expect(page).toHaveURL(new RegExp(`/app/hub/${card.id}$`));
-  await expect(page.getByRole("button", { name: "Add to library" })).toBeVisible();
+  await expect(page.getByRole("button", { name: "Add to Library" })).toBeVisible();
   // Signed in now: the full app navigation is there.
   await expect(page.getByRole("navigation", { name: "Main" }).filter({ visible: true })).toHaveCount(1);
 });

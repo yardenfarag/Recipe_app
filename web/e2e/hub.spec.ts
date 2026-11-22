@@ -50,7 +50,7 @@ async function openHub(page: Page, cards: SeedCard[] = FIVE, query = `?q=${encod
 }
 
 const cardTitles = (page: Page) => page.locator("#main article h3");
-const searchBox = (page: Page) => page.getByRole("searchbox", { name: "Search the hub" });
+const searchBox = (page: Page) => page.getByRole("searchbox", { name: "Search the Hub" });
 
 test("search and filters give the same recipes, in the same order, as the mobile app's query", async ({ page }) => {
   await openHub(page);
@@ -122,7 +122,7 @@ test("adding a Hub recipe puts it in the library, free, and then it opens from t
   // Read-only: no heart.
   await expect(page.getByRole("button", { name: /favorites/ })).toHaveCount(0);
 
-  await page.getByRole("button", { name: "Add to library" }).click();
+  await page.getByRole("button", { name: "Add to Library" }).click();
   await expect(page).toHaveURL(/\/app\/recipe\/[0-9a-f-]{36}$/);
   const recipeUrl = page.url();
   await expect(page.locator("#main h1")).toHaveText(`${HUB_TITLE_PREFIX} Pancakes`);
@@ -134,8 +134,8 @@ test("adding a Hub recipe puts it in the library, free, and then it opens from t
 
   // And the Hub recipe now opens the saved copy.
   await page.goto(hubUrl);
-  await expect(page.getByRole("button", { name: "Add to library" })).toHaveCount(0);
-  await page.getByRole("link", { name: "Open in library" }).click();
+  await expect(page.getByRole("button", { name: "Add to Library" })).toHaveCount(0);
+  await page.getByRole("link", { name: "Open in Library" }).click();
   await expect(page).toHaveURL(recipeUrl);
 
   // Back to Hub keeps the search.
@@ -151,14 +151,14 @@ test("the public page's link, /hub/<id> or /hub/<slug>, opens the Hub recipe", a
   await expect(page.locator("#main h1")).toHaveText(ramen.title);
   await page.goto(`/app/hub/${ramen.public_slug}`);
   await expect(page.locator("#main h1")).toHaveText(ramen.title);
-  await expect(page.getByRole("button", { name: "Add to library" })).toBeVisible();
+  await expect(page.getByRole("button", { name: "Add to Library" })).toBeVisible();
 });
 
 test("a Hub recipe that is gone says so, with a way back", async ({ page }) => {
   await resetHub([]);
   await signIn(page);
   await page.goto("/app/hub/00000000-0000-0000-0000-000000000000");
-  await expect(page.getByRole("heading", { name: "This hub recipe is no longer available." })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "This Hub recipe is no longer available." })).toBeVisible();
   await page.getByRole("link", { name: "Back to Hub" }).click();
   await expect(page).toHaveURL(/\/app\/hub$/);
 });
@@ -179,7 +179,7 @@ test("when the Hub can't load, it says so and tries again", async ({ page }) => 
   await signIn(page);
   await page.route("**/rest/v1/rpc/hub_cards", (route) => route.abort());
   await page.goto(`/app/hub?q=${encodeURIComponent(HUB_TITLE_PREFIX)}`);
-  await expect(page.getByRole("heading", { name: "Couldn’t load the hub" })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Couldn’t load the Hub" })).toBeVisible();
 
   await page.unroute("**/rest/v1/rpc/hub_cards");
   await page.getByRole("button", { name: "Try again" }).click();
@@ -203,7 +203,7 @@ test.describe("phone", () => {
     expect(await overflow()).toBeLessThanOrEqual(0);
 
     await page.getByRole("link", { name: `${HUB_TITLE_PREFIX} Ramen` }).click();
-    await expect(page.getByRole("button", { name: "הוספה לספרייה" })).toBeVisible();
+    await expect(page.getByRole("button", { name: "הוספה למתכונים שלי"})).toBeVisible();
     expect(await overflow()).toBeLessThanOrEqual(0);
     await writeAccountPrefs({ locale: "en" });
   });

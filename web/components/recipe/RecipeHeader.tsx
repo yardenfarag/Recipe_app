@@ -15,6 +15,7 @@ import { recipeSource } from "@shared/lib/recipeSource";
 import { shareAppInBrowser } from "@shared/lib/shareApp";
 import { normalizeRecipeTags, translateRecipeTag } from "@shared/lib/recipeTags";
 import { showToast } from "@shared/lib/toast";
+import { joinErrorSentences } from "@shared/lib/translateAppError";
 import type { RecipeCollection } from "@shared/types/collection";
 
 import { CookAlongButton, StartCookingButton } from "@/components/cook/CookBar";
@@ -139,7 +140,7 @@ export function RecipeHeader({
     if (!sourceUrl) return;
     const outcome = await shareAppInBrowser({ title: title.trim() || "Recipe", message: "", url: sourceUrl }).catch(() => "failed" as const);
     if (outcome === "copied") showToast(t("recipe.linkCopied"));
-    else if (outcome === "failed") showToast(`${t("recipe.shareFailedTitle")}. ${t("common.tryAgain")}`, "info");
+    else if (outcome === "failed") showToast(joinErrorSentences(t("recipe.shareFailedTitle"), t("common.tryAgain")), "error");
   }
 
   const calories = getCalorieDisplay(recipe.calories, recipe.servings, servings);

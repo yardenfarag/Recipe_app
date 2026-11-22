@@ -94,7 +94,7 @@ function Body({ recipes }: { recipes: Recipe[] }) {
             {loading ? <p className="mt-3 text-center text-sm text-muted">{t("library.fridgeMatching")}</p> : null}
             {problem ? (
               <p className="mt-3 text-sm font-medium text-warning">
-                {problem === "limited" ? t("library.fridgeMatchLimited") : problem === "unreadable" ? t("snap.photoTooLarge") : t("library.fridgeMatchFailed")}
+                {problem === "limited" ? t("library.fridgeMatchLimited") : problem === "unreadable" ? t("library.fridgeMatchPhotoFailed") : t("library.fridgeMatchFailed")}
               </p>
             ) : null}
             {matches && matches.length === 0 ? <p className="mt-3 text-[15px] text-muted">{t("library.fridgeMatchEmptyResults")}</p> : null}

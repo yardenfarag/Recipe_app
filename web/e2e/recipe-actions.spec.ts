@@ -229,12 +229,12 @@ test("repair a partial import: says what it found, and applies it", async ({ pag
   });
   await openRecipe(page, [{ ...PANCAKES, extraction_status: "partial", instructions: [{ step: 1, text: "Whisk the flour and milk." }] }]);
   await page.getByRole("button", { name: "Repair recipe" }).first().click();
-  const dialog = page.getByRole("dialog", { name: "Apply repaired recipe?" });
+  const dialog = page.getByRole("dialog", { name: "Keep the repaired recipe?" });
   await expect(dialog).toContainText("Added a resting step.");
-  await dialog.getByRole("button", { name: "Apply" }).click();
+  await dialog.getByRole("button", { name: "Keep it" }).click();
   await expect(dialog).toBeHidden();
   await expect(steps(page)).toContainText("Rest the batter for 5 minutes.");
-  await expect(page.getByText("The source skipped some details")).toBeHidden();
+  await expect(page.getByText("The original left out some details")).toBeHidden();
 });
 
 test("share copies the recipe's Pinch link", async ({ page, context }) => {

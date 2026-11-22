@@ -56,7 +56,7 @@ test("Settings → Your recipes: a backup downloads, and restoring it brings the
   const dialog = page.getByRole("dialog", { name: "Restore recipes?" });
   await expect(dialog).toContainText("Recipes in this file: 2");
   await dialog.getByRole("button", { name: "Restore" }).click();
-  await expect(page.getByText("Added: 2. Already in your library: 0.")).toBeVisible();
+  await expect(page.getByText("Added: 2. Already in your Library: 0.")).toBeVisible();
   await page.goto("/app");
   await expect(page.getByRole("link", { name: "Backed-up Bread" }).first()).toBeVisible();
 

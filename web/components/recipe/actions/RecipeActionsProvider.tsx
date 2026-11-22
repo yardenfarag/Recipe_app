@@ -5,6 +5,7 @@ import { useTranslation } from "react-i18next";
 
 import {
   allergyInstruction,
+  avoidListIsEmpty,
   findAvoidMatches,
   hasAllergies,
   makeWithoutInstruction,
@@ -23,6 +24,7 @@ import { setRecipeCooked, setRecipeTags } from "@shared/lib/supabase/recipes";
 import type { SubstitutionAlternative } from "@shared/lib/supabase/suggestSubstitution";
 import type { TransformedRecipePayload } from "@shared/lib/supabase/transformRecipe";
 import { showToast } from "@shared/lib/toast";
+import { joinErrorSentences } from "@shared/lib/translateAppError";
 import type { Instruction, Recipe } from "@shared/types/recipe";
 
 import { OutOfCreditsDialog } from "@/components/credits/OutOfCreditsDialog";
@@ -93,6 +95,10 @@ export function RecipeActionsProvider({ state, children }: { state: ReadyRecipe;
   // "My appliances" (PIN-155): a required appliance the reader doesn't have is worth fixing too.
   const missingAppliances = useMemo(() => checkKitchen(recipeAppliancesOf(recipe), kitchen).missing, [recipe, kitchen]);
   const canFix = Boolean((avoid && (avoid.allergies.length > 0 || avoid.dislikes.length > 0)) || missingAppliances.length > 0);
+  const kitchenSetUp = useMemo(
+    () => ({ avoid: Boolean(profile && !avoidListIsEmpty(profile)), appliances: kitchen !== null }),
+    [profile, kitchen],
+  );
 
   const close = () => setDialog(null);
 
@@ -135,7 +141,7 @@ export function RecipeActionsProvider({ state, children }: { state: ReadyRecipe;
         setSession(null);
         showToast(t("web.recipeActions.reverted"));
       })
-      .catch(() => showToast(t("web.recipeActions.saveFailed"), "info"))
+      .catch(() => showToast(t("web.recipeActions.saveFailed"), "error"))
       .finally(() => setBusy((b) => ({ ...b, revert: false })));
   }
 
@@ -145,7 +151,7 @@ export function RecipeActionsProvider({ state, children }: { state: ReadyRecipe;
     shareRecipeLink(recipe, display.title)
       .then((outcome) => {
         if (outcome === "copied") showToast(t("recipe.linkCopied"));
-        else if (outcome === "failed") showToast(`${t("recipe.shareFailedTitle")}. ${t("common.tryAgain")}`, "info");
+        else if (outcome === "failed") showToast(joinErrorSentences(t("recipe.shareFailedTitle"), t("common.tryAgain")), "error");
       })
       .finally(() => setBusy((b) => ({ ...b, share: false })));
   }
@@ -161,7 +167,7 @@ export function RecipeActionsProvider({ state, children }: { state: ReadyRecipe;
     else showToast(t("web.recipeActions.markedCooked"));
     queue.run(() => setRecipeCooked(recipe.id, { last_cooked_at: at, cook_note: before.cook_note ?? null })).catch(() => {
       replaceRecipe((current) => ({ ...current, ...before }));
-      showToast(t("recipe.cookedSaveFailed"), "info");
+      showToast(t("recipe.cookedSaveFailed"), "error");
     });
   }
 
@@ -199,9 +205,9 @@ export function RecipeActionsProvider({ state, children }: { state: ReadyRecipe;
     setBusy((b) => ({ ...b, translate: true }));
     translate(translateOffer)
       .then((outcome) => {
-        if (outcome.status === "failed") showToast(translateFailure(outcome, t, appLanguage), "info");
+        if (outcome.status === "failed") showToast(translateFailure(outcome, t, appLanguage), "error");
       })
-      .catch(() => showToast(t("web.recipeActions.translateFailed"), "info"))
+      .catch(() => showToast(t("web.recipeActions.translateFailed"), "error"))
       .finally(() => setBusy((b) => ({ ...b, translate: false })));
   }
 
@@ -236,6 +242,7 @@ export function RecipeActionsProvider({ state, children }: { state: ReadyRecipe;
     canRevert: Boolean(session?.original ?? recipe.kitchen_original),
     canRepair: recipe.extraction_status === "partial" && recipeHasSource(recipe),
     canFix,
+    kitchenSetUp,
     translateOffer,
     busy: { ...busy, repair: dialog?.kind === "repair" },
     open: setDialog,

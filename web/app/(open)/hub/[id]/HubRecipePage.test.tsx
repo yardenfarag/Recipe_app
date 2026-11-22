@@ -70,7 +70,7 @@ describe("Hub recipe page for a guest", () => {
     renderPage();
     expect(screen.getByText("Sign in or create a free account to save it.", { exact: false })).toBeDefined();
     expect(screen.queryByRole("link", { name: "Back to Hub" })).toBeNull();
-    fireEvent.click(screen.getByRole("button", { name: "Add to library" }));
+    fireEvent.click(screen.getByRole("button", { name: "Add to Library" }));
     expect(push).toHaveBeenCalledWith(`/auth?mode=signin&next=${encodeURIComponent("/hub/card-1?save=1")}`);
   });
 
@@ -92,7 +92,7 @@ describe("Hub recipe page", () => {
   it("adds the recipe to the library and opens it", async () => {
     state = ready();
     renderPage();
-    fireEvent.click(screen.getByRole("button", { name: "Add to library" }));
+    fireEvent.click(screen.getByRole("button", { name: "Add to Library" }));
     await waitFor(() => expect(push).toHaveBeenCalledWith("/recipe/recipe-9"));
     expect(document.title).toBe("Hub Soup · Pinch");
   });
@@ -100,14 +100,14 @@ describe("Hub recipe page", () => {
   it("opens the saved copy when the cook already has it", () => {
     state = ready({ libraryRecipeId: "recipe-3" });
     renderPage();
-    expect(screen.queryByRole("button", { name: "Add to library" })).toBeNull();
-    expect(screen.getByRole("link", { name: "Open in library" }).getAttribute("href")).toBe("/recipe/recipe-3");
+    expect(screen.queryByRole("button", { name: "Add to Library" })).toBeNull();
+    expect(screen.getByRole("link", { name: "Open in Library" }).getAttribute("href")).toBe("/recipe/recipe-3");
   });
 
   it("says so when adding fails, and stays on the page", async () => {
     state = ready({ addToLibrary: vi.fn().mockRejectedValue(new Error("card_not_found")) });
     renderPage();
-    fireEvent.click(screen.getByRole("button", { name: "Add to library" }));
+    fireEvent.click(screen.getByRole("button", { name: "Add to Library" }));
     expect(await screen.findByRole("alert")).toHaveProperty("textContent", expect.stringContaining("Couldn’t add recipe"));
     expect(push).not.toHaveBeenCalled();
   });
@@ -122,7 +122,7 @@ describe("Hub recipe page", () => {
   it("a recipe that left the Hub says so, with a way back", () => {
     state = { status: "missing" };
     renderPage();
-    expect(screen.getByRole("heading", { name: "This hub recipe is no longer available." })).toBeDefined();
+    expect(screen.getByRole("heading", { name: "This Hub recipe is no longer available." })).toBeDefined();
     expect(screen.getByRole("link", { name: "Back to Hub" }).getAttribute("href")).toBe("/hub");
   });
 });

@@ -54,8 +54,8 @@ describe("ChoiceGroup", () => {
 describe("SwitchRow", () => {
   it("is a switch named by its label, and flips", () => {
     const onChange = vi.fn();
-    wrap(<SwitchRow label="Adapt new extracts automatically" hint="Uses your allergies" checked={false} onChange={onChange} />);
-    const toggle = screen.getByRole("switch", { name: "Adapt new extracts automatically" });
+    wrap(<SwitchRow label="Adapt recipes I snap automatically" hint="Uses your allergies" checked={false} onChange={onChange} />);
+    const toggle = screen.getByRole("switch", { name: "Adapt recipes I snap automatically" });
     expect(toggle.getAttribute("aria-checked")).toBe("false");
     fireEvent.click(toggle);
     expect(onChange).toHaveBeenCalledWith(true);

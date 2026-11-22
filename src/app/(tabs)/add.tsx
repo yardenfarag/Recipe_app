@@ -1159,7 +1159,7 @@ export default function AddRecipeScreen() {
               : t("snap.inventConfirmBodyGeneric")
           }
           confirmLabel={t("snap.inventConfirm")}
-          cancelLabel={t("common.notNow")}
+          cancelLabel={t("common.cancel")}
           secondaryLabel={
             inventOffer?.allowExtract ? t("snap.extractAnyway") : undefined
           }

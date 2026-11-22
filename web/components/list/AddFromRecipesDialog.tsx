@@ -165,7 +165,7 @@ function Body({ onAdd, onDone }: { onAdd: (items: ShoppingListIncomingItem[]) =>
                 // The same ingredient in another chosen recipe is kept at home too.
                 for (const other of allChoices) if (other.name.trim().toLowerCase() === choice.name.trim().toLowerCase()) next.delete(other.key);
                 setSelection(next);
-                keepStaple(choice.name).catch(() => showToast(t("settings.kitchenSaveFailed"), "info"));
+                keepStaple(choice.name).catch(() => showToast(t("settings.kitchenSaveFailed"), "error"));
               }}
             />
           </div>

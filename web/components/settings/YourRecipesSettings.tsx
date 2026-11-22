@@ -5,8 +5,8 @@ import Link from "next/link";
 import { useRef, useState, type ChangeEvent } from "react";
 import { useTranslation } from "react-i18next";
 
-import { parseRecipeBackup, recipeBackupFileName, RecipeBackupError, type ParsedRecipeBackup, type RecipeBackupErrorCode } from "@shared/lib/recipeBackup";
-import { fetchRecipeBackup, restoreRecipeBackup } from "@shared/lib/supabase/recipeBackup";
+import { parseRecipeBackup, RecipeBackupError, type ParsedRecipeBackup, type RecipeBackupErrorCode } from "@shared/lib/recipeBackup";
+import { restoreRecipeBackup } from "@shared/lib/supabase/recipeBackup";
 import { showToast } from "@shared/lib/toast";
 
 import { SettingsCard } from "@/components/settings/controls";
@@ -14,6 +14,7 @@ import { SettingsPageHeader } from "@/components/settings/SettingsPageHeader";
 import { ErrorAlert } from "@/components/ui/Alert";
 import { Button, buttonClasses } from "@/components/ui/Button";
 import { ConfirmDialog } from "@/components/ui/Dialog";
+import { downloadRecipeBackup } from "@/lib/settings/recipeBackupDownload";
 
 /** The mobile app's words for a file that can't be restored (src/app/(tabs)/settings.tsx). */
 const RESTORE_ERROR_KEYS: Record<RecipeBackupErrorCode, string> = {
@@ -39,19 +40,9 @@ export function YourRecipesSettings() {
     setBusy("export");
     setError(null);
     try {
-      const backup = await fetchRecipeBackup();
-      if (backup.recipes.length === 0) {
+      if ((await downloadRecipeBackup()) === "empty") {
         showToast(`${t("settings.backupEmptyTitle")}. ${t("settings.backupEmptyBody")}`, "info");
-        return;
       }
-      const url = URL.createObjectURL(new Blob([JSON.stringify(backup, null, 2)], { type: "application/json" }));
-      const link = document.createElement("a");
-      link.href = url;
-      link.download = recipeBackupFileName();
-      document.body.append(link);
-      link.click();
-      link.remove();
-      setTimeout(() => URL.revokeObjectURL(url), 10_000);
     } catch {
       setError(`${t("settings.backupFailedTitle")}. ${t("common.tryAgain")}`);
     } finally {

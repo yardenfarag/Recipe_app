@@ -183,8 +183,9 @@ export function RecipeView({
         onDelete={onDelete}
         immersive={immersive}
       />
-      {readOnly ? null : <RecipeActionsSlot display={display} servings={choices.servings} />}
+      {/* What the cook must know (allergies first) comes before the tools that change the recipe. */}
       <RecipeNotices display={display} avoid={avoid} />
+      {readOnly ? null : <RecipeActionsSlot display={display} servings={choices.servings} />}
       <RecipeAppliancesSection display={display} system={system} />
 
       {/* Phones: one of the two at a time, with the servings beside the tabs. */}

@@ -158,7 +158,7 @@ export function useRecipe(id: string): RecipeState {
     setFavorite(recipe.id, next);
     setRecipeFavorite(recipe.id, next).catch(() => {
       setFavorite(recipe.id, !next);
-      showToast(t("recipe.favoriteFailedTitle"), "info");
+      showToast(t("recipe.favoriteFailedTitle"), "error");
     });
   }, [recipe, setFavorite, t]);
 

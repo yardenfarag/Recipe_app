@@ -89,7 +89,7 @@ export default function FirstRecipesScreen() {
     const { saved } = await saveFirstRecipes(picked);
     if (saved === 0) {
       setSaving(false);
-      showToast(t('firstRecipes.saveFailed'), 'info');
+      showToast(t('firstRecipes.saveFailed'), 'error');
       return;
     }
     captureFirstRecipesPicked({ count: saved, diets: kitchen.diets.length });

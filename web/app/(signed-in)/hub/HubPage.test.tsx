@@ -75,7 +75,7 @@ beforeEach(() => {
 describe("Hub page", () => {
   it("an empty Hub invites a first Snap", () => {
     renderPage();
-    expect(screen.getByRole("heading", { name: "The hub is just getting started" })).toBeDefined();
+    expect(screen.getByRole("heading", { name: "The Hub is just getting started" })).toBeDefined();
     expect(screen.getByRole("link", { name: "Snap a recipe" }).getAttribute("href")).toBe("/add");
   });
 
@@ -98,7 +98,7 @@ describe("Hub page", () => {
   it("when the first load fails, says so and tries again", () => {
     hub = { ...base(), error: "offline" };
     renderPage();
-    expect(screen.getByRole("heading", { name: "Couldn’t load the hub" })).toBeDefined();
+    expect(screen.getByRole("heading", { name: "Couldn’t load the Hub" })).toBeDefined();
     fireEvent.click(screen.getByRole("button", { name: "Try again" }));
     expect(hub.retry).toHaveBeenCalled();
   });

@@ -38,6 +38,11 @@ export type RecipeActions = {
   canRepair: boolean;
   /** The recipe has something from the reader's allergies or dislikes, so "Make it without these" applies. */
   canFix: boolean;
+  /**
+   * What the cook has told Pinch about their kitchen: any allergies or dislikes, and whether "My appliances" is set
+   * up. When there is nothing to fix, the kitchen-fix tile says which of these it checked.
+   */
+  kitchenSetUp: { avoid: boolean; appliances: boolean };
   /** The app's language, when the recipe is in another one and no translation is showing. */
   translateOffer: RecipeLanguageCode | null;
   /** Actions that are running without a dialog. */
