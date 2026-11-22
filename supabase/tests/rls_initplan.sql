@@ -1,4 +1,4 @@
--- 20261122220000_faster_admin_dashboard_and_rls: policies evaluate auth.uid()
+-- 20261122233000_faster_admin_dashboard_and_rls: policies evaluate auth.uid()
 -- once per query, and the admin dashboards still check the timezone.
 begin;
 
