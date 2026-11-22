@@ -1,9 +1,9 @@
 "use client";
 
-import { Check, Clock, Link2, ShoppingBasket, Sparkles } from "lucide-react";
+import { Check, Clock, Link2, Play, ShoppingBasket, Sparkles } from "lucide-react";
 import { useTranslation } from "react-i18next";
 
-const INGREDIENT_BARS = ["w-3/4", "w-1/2", "w-2/3"];
+const INGREDIENTS = [1, 2, 3, 4] as const;
 
 /**
  * What Pinch does, drawn softly: a link pasted into Snap becomes a recipe card, and its ingredients land on the
@@ -29,7 +29,11 @@ export function WelcomeIllustration() {
         </div>
 
         <div className="mt-4 overflow-hidden rounded-3xl border border-border">
-          <div className="grid h-36 place-items-center bg-linear-to-br from-accent-soft to-primary-soft sm:h-40">
+          <div className="relative grid h-36 place-items-center bg-linear-to-br from-accent-soft to-primary-soft sm:h-40">
+            <span dir="ltr" className="absolute start-3 bottom-3 inline-flex items-center gap-1.5 rounded-full bg-scrim px-2.5 py-1 text-xs font-semibold text-on-scrim">
+              <Play className="h-3 w-3 fill-current" />
+              TikTok
+            </span>
             {/* A bowl seen from above: rim, food and a few bits of herb. */}
             <div className="grid h-28 w-28 place-items-center rounded-full bg-surface shadow-soft sm:h-32 sm:w-32">
               <div className="relative h-20 w-20 rounded-full bg-accent-soft sm:h-24 sm:w-24">
@@ -47,13 +51,14 @@ export function WelcomeIllustration() {
               <Clock className="h-3.5 w-3.5" />
               {t("web.welcome.sampleMeta")}
             </p>
-            <ul className="mt-4 space-y-2.5">
-              {INGREDIENT_BARS.map((width) => (
-                <li key={width} className="flex items-center gap-2.5">
+            <ul className="mt-3 divide-y divide-border text-sm">
+              {INGREDIENTS.map((n) => (
+                <li key={n} className="flex items-center gap-2.5 py-2">
                   <span className="grid h-4 w-4 shrink-0 place-items-center rounded-full bg-primary-soft text-primary-text">
                     <Check className="h-2.5 w-2.5" strokeWidth={3} />
                   </span>
-                  <span className={`h-2 rounded-full bg-element ${width}`} />
+                  <span className="min-w-0 flex-1 truncate text-text">{t(`web.welcome.sampleIngredient${n}`)}</span>
+                  <span className="shrink-0 text-muted">{t(`web.welcome.sampleAmount${n}`)}</span>
                 </li>
               ))}
             </ul>

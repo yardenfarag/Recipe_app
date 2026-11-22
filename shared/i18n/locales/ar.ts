@@ -1700,7 +1700,7 @@ export default {
     },
     "welcome": {
       "tabTitle": "أهلًا بك",
-      "eyebrow": "مجاني للبداية. بدون بطاقة.",
+      "eyebrow": "{{limit}} وصفات مجانية كل شهر. بدون اشتراك.",
       "title": "احفظ أي وصفة في ثوانٍ. واطبخها الليلة.",
       "body": "الصق رابطًا من TikTok أو Instagram أو YouTube أو أي موقع وصفات، أو صوّر صفحة من كتاب طبخ. Pinch يكتب لك المكونات والخطوات، فتتوقف عن إيقاف الفيديو وتبدأ بالطبخ.",
       "getStarted": "ابدأ مجانًا",
@@ -1715,7 +1715,15 @@ export default {
       "easeBody": "غيّر عدد الحصص، وحوّل الأكواب إلى غرامات، وكيّف أي وصفة مع نظامك الغذائي أو حساسيتك.",
       "sampleTitle": "باستا بصلصة الطماطم والكريمة",
       "sampleMeta": "25 دقيقة · 4 حصص",
-      "sampleListed": "أُضيفت المكونات إلى قائمتك"
+      "sampleListed": "أُضيفت المكونات إلى قائمتك",
+      "sampleIngredient1": "بيني",
+      "sampleAmount1": "400 غ",
+      "sampleIngredient2": "طماطم مهروسة",
+      "sampleAmount2": "علبة",
+      "sampleIngredient3": "كريمة",
+      "sampleAmount3": "200 مل",
+      "sampleIngredient4": "ثوم",
+      "sampleAmount4": "3 فصوص"
     },
     "onboarding": {
       "tabTitle": "جهّز مطبخك",

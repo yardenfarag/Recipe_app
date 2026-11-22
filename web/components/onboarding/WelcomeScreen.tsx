@@ -15,6 +15,7 @@ import { usePageTitle } from "@/components/ui/PageHeader";
 import { LoadingState } from "@/components/ui/States";
 import { Tile } from "@/components/ui/Tile";
 import { LEGAL_URLS } from "@/lib/legal";
+import { FREE_MONTHLY_EXTRACT_LIMIT } from "@shared/lib/quotas";
 import { setOnboardingPending } from "@/lib/onboarding/device";
 import { afterOnboardingPath, signInFromWelcome, signUpFromWelcome } from "@/lib/onboarding/paths";
 
@@ -78,7 +79,7 @@ export function WelcomeScreen() {
           <section className="min-w-0 animate-fade-in">
             <p className="inline-flex max-w-full items-center gap-2 rounded-full border border-border bg-surface px-3.5 py-1.5 text-sm text-muted">
               <Heart aria-hidden className="h-3.5 w-3.5 shrink-0 text-accent-text" />
-              {t("web.welcome.eyebrow")}
+              {t("web.welcome.eyebrow", { limit: FREE_MONTHLY_EXTRACT_LIMIT })}
             </p>
             <h1 className="mt-6 font-display text-4xl leading-[1.1] font-semibold tracking-tight text-balance wrap-break-word text-text rtl:leading-[1.25] rtl:tracking-normal sm:text-5xl lg:text-[3.375rem]">
               {t("web.welcome.title")}
