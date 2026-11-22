@@ -33,3 +33,11 @@ Deno.test('a hub card from before PIN-26 stays not analysed', () => {
 Deno.test('a hub card analysed as needing nothing keeps the empty list', () => {
   assertEquals(hubCardToExtractRecipe({ ...card, appliances: [] }).appliances, []);
 });
+
+Deno.test('hub cache hits return the card nutrition only next to its calories (PIN-80)', () => {
+  const nutrition = { protein_g: 40, carbs_g: 120, fat_g: 30 };
+  assertEquals(hubCardToExtractRecipe({ ...card, calories: 900, nutrition }).nutrition, nutrition);
+  assertEquals(hubCardToExtractRecipe({ ...card, calories: null, nutrition }).nutrition, null);
+  assertEquals(hubCardToExtractRecipe({ ...card, calories: 900, nutrition: { protein_g: 'x' } }).nutrition, null);
+  assertEquals(hubCardToExtractRecipe({ ...card, calories: 900 }).nutrition, null);
+});

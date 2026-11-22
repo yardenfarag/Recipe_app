@@ -17,6 +17,8 @@ export const RECIPE_LIMITS = {
   timeMinutesMin: 1,
   timeMinutesMax: 2_880,
   caloriesMax: 10_000,
+  /** Grams of protein, carbs or fat for all servings: 2,500 g of protein or carbs is the calorie cap. */
+  nutritionGramsMax: 2_500,
   cookNoteChars: 160,
 } as const;
 
@@ -36,7 +38,32 @@ type LimitedFields = {
   servings?: number;
   estimated_time_minutes?: number | null;
   calories?: number | null;
+  nutrition?: unknown;
 };
+
+/** Protein, carbs and fat in grams for all servings (PIN-80). Mirrors recipe_nutrition_valid. */
+export interface RecipeNutrition {
+  protein_g: number;
+  carbs_g: number;
+  fat_g: number;
+}
+
+const NUTRITION_KEYS = ['protein_g', 'carbs_g', 'fat_g'] as const;
+
+/** The stored shape in whole grams, or null when any amount is missing or out of range. */
+export function fitNutrition(value: unknown): RecipeNutrition | null {
+  if (typeof value !== 'object' || value === null || Array.isArray(value)) return null;
+  const record = value as Record<string, unknown>;
+  const out: Partial<RecipeNutrition> = {};
+  for (const key of NUTRITION_KEYS) {
+    const amount = record[key];
+    if (typeof amount !== 'number' || !Number.isFinite(amount)) return null;
+    const grams = Math.round(amount);
+    if (grams < 0 || grams > RECIPE_LIMITS.nutritionGramsMax) return null;
+    out[key] = grams;
+  }
+  return out as RecipeNutrition;
+}
 
 function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === 'object' && value !== null && !Array.isArray(value);
@@ -53,6 +80,7 @@ function estimateInRange(value: number, min: number, max: number): number | null
  * Returns a copy that fits the database limits. Only the fields present are touched.
  * Text and lists are cut, servings and quantities are clamped, and a cooking time or calorie
  * estimate outside its range becomes null (unknown): models return 0 minutes when unsure.
+ * Nutrition outside its shape, or without calories, becomes null too.
  */
 export function fitRecipeToLimits<T extends LimitedFields>(recipe: T): T {
   const L = RECIPE_LIMITS;
@@ -100,6 +128,10 @@ export function fitRecipeToLimits<T extends LimitedFields>(recipe: T): T {
   }
   if (typeof recipe.calories === 'number') {
     out.calories = estimateInRange(recipe.calories, 0, L.caloriesMax);
+  }
+  if (recipe.nutrition !== undefined) {
+    // No calories, no macros: they are a split of the calorie estimate (same rule as the database).
+    out.nutrition = out.calories == null ? null : fitNutrition(recipe.nutrition);
   }
 
   return out as T;

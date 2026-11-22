@@ -9,11 +9,13 @@ import { COST_I18N_KEYS, COST_TIER_COUNT, costFilledCount } from "@shared/lib/fo
 import { formatCookedDate } from "@shared/lib/formatCookedDate";
 import { formatRecipeDuration } from "@shared/lib/formatRecipeDuration";
 import { getCalorieDisplay } from "@shared/lib/recipeCalories";
+import { getNutritionDisplay, recipeNutritionOf } from "@shared/lib/recipeNutrition";
 import { normalizeRecipeTags, translateRecipeTag } from "@shared/lib/recipeTags";
 import type { RecipeCollection } from "@shared/types/collection";
 
 import { useLanguage } from "@/components/LanguageProvider";
 import { isUpdating, useRecipeActions, type RecipeActions } from "@/components/recipe/actions/RecipeActionsContext";
+import { DotSeparated } from "@/components/recipe/DotSeparated";
 import type { RecipeDisplay } from "@/components/recipe/types";
 import { IconButton } from "@/components/ui/IconButton";
 import { Tooltip } from "@/components/ui/Tooltip";
@@ -85,6 +87,9 @@ export function RecipeHeader({
   const isFavorite = recipe.is_favorite === true;
 
   const calories = getCalorieDisplay(recipe.calories, recipe.servings, servings);
+  // PIN-80: none next to calories set by hand, and none while the calories are being recalculated.
+  const caloriesUpdating = isUpdating(actions, "calories");
+  const nutrition = caloriesUpdating ? null : getNutritionDisplay(recipeNutritionOf(recipe), recipe.servings, servings);
   const cost = recipe.cost_estimate;
   const tags = normalizeRecipeTags(recipe.tags);
   const cookedDate = recipe.last_cooked_at ? formatCookedDate(recipe.last_cooked_at, language) : "";
@@ -138,7 +143,7 @@ export function RecipeHeader({
           </div>
 
           <ul className="mt-4 flex flex-wrap gap-2">
-            {isUpdating(actions, "calories") ? (
+            {caloriesUpdating ? (
               <UpdatingFact icon={<Flame />} field={t("recipeEditor.fields.calories")} />
             ) : calories ? (
               <Fact icon={<Flame />}>{t("recipe.calPerServing", { count: calories.perServing })}</Fact>
@@ -164,6 +169,18 @@ export function RecipeHeader({
               <Fact icon={<Gauge />}>{t(`recipe.effort.${recipe.effort_level.toLowerCase()}`)}</Fact>
             ) : null}
           </ul>
+
+          {calories && nutrition ? (
+            <p data-testid="recipe-nutrition" className="mt-2.5 text-sm font-medium text-muted tabular-nums">
+              <DotSeparated
+                text={t("recipe.nutritionPerServing", {
+                  protein: nutrition.perServing.protein_g,
+                  carbs: nutrition.perServing.carbs_g,
+                  fat: nutrition.perServing.fat_g,
+                })}
+              />
+            </p>
+          ) : null}
 
           {tags.length > 0 || actions ? (
             <ul aria-label={t("library.tags")} className="mt-4 flex flex-wrap items-center gap-1.5">

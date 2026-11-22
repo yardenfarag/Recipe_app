@@ -1,4 +1,5 @@
 import { MEASUREMENT_RULES } from './ingredientAmounts.ts';
+import { NUTRITION_RULES } from './nutrition.ts';
 import {
   RECIPE_SCHEMA,
   geminiFoundRecipe,
@@ -26,7 +27,8 @@ const MAX_COMMENT_CHARS = 500;
 
 const CALORIE_RULES = `- calories_reasoning: one short phrase naming the main caloric ingredients and confirming calories is TOTAL for all servings.
 - calories: combined kcal for ALL portions at the stated servings (not per-portion).
-- servings: equal portions the recipe yields (usually 1–12).`;
+- servings: equal portions the recipe yields (usually 1–12).
+${NUTRITION_RULES}`;
 
 const TIME_RULES = `- time_reasoning: one short phrase (prep + cook/bake + waits).
 - estimated_time_minutes: TOTAL wall-clock minutes until ready.`;

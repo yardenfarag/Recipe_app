@@ -54,6 +54,8 @@ function recipe(value: unknown): CookbookHtmlRecipe | null {
   const source = text(value.source, PDF_LIMITS.shortText);
   const servingsLabel = text(value.servingsLabel, PDF_LIMITS.shortText);
   const timeLabel = text(value.timeLabel, PDF_LIMITS.shortText);
+  // PIN-80. Optional: a page open from before it sends none.
+  const nutritionLabel = value.nutritionLabel === undefined ? undefined : text(value.nutritionLabel, PDF_LIMITS.shortText);
   const image = photoUrl(value.imageDataUri);
   const lang = value.lang === undefined ? undefined : text(value.lang, 35);
   const dir = value.dir === undefined ? undefined : value.dir === "ltr" || value.dir === "rtl" ? value.dir : null;
@@ -69,7 +71,7 @@ function recipe(value: unknown): CookbookHtmlRecipe | null {
     const body = text(row.text, PDF_LIMITS.longText);
     return step === null || body === null ? null : { step, text: body };
   });
-  if (title === null || source === null || servingsLabel === null || timeLabel === null || image === undefined) return null;
+  if (title === null || source === null || servingsLabel === null || timeLabel === null || nutritionLabel === null || image === undefined) return null;
   if (lang === null || (lang !== undefined && !LANGUAGE_TAG.test(lang)) || dir === null || !ingredients || !instructions) return null;
   return {
     title,
@@ -79,6 +81,7 @@ function recipe(value: unknown): CookbookHtmlRecipe | null {
     source,
     servingsLabel,
     timeLabel,
+    ...(nutritionLabel ? { nutritionLabel } : {}),
     ingredients,
     instructions,
   };

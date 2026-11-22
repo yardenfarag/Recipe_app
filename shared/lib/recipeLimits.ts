@@ -17,6 +17,8 @@ export const RECIPE_LIMITS = {
   timeMinutesMin: 1,
   timeMinutesMax: 2_880,
   caloriesMax: 10_000,
+  /** Grams of protein, carbs or fat for all servings (PIN-80, migration 20261122140000_recipe_nutrition). */
+  nutritionGramsMax: 2_500,
   cookNoteChars: 160,
 } as const;
 

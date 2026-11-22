@@ -46,6 +46,7 @@ export async function migrateGuestRecipesToSupabase(
       instructions: recipe.instructions,
       servings: recipe.servings,
       calories: recipe.calories,
+      nutrition: recipe.nutrition ?? null,
       estimated_time_minutes: recipe.estimated_time_minutes,
       cost_estimate: recipe.cost_estimate,
       effort_level: recipe.effort_level,

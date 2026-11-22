@@ -124,6 +124,7 @@ export default function RecipeDetailScreen() {
       ingredients: Recipe['ingredients'];
       instructions: Recipe['instructions'];
       calories?: number;
+      nutrition?: Recipe['nutrition'];
       kitchen_adapted_summary?: string | null;
       kitchen_original?: Recipe['kitchen_original'] | null;
       /** Only present when a remix or revert changes them (ADR 017). */
@@ -207,6 +208,7 @@ export default function RecipeDetailScreen() {
         ...current,
         ...repaired,
         calories: repaired.calories ?? undefined,
+        nutrition: repaired.nutrition ?? null,
         estimated_time_minutes: repaired.estimated_time_minutes ?? undefined,
         cost_estimate: repaired.cost_estimate ?? undefined,
         effort_level: repaired.effort_level ?? undefined,
@@ -222,6 +224,7 @@ export default function RecipeDetailScreen() {
             ingredients: repaired.ingredients,
             instructions: repaired.instructions,
             calories: repaired.calories,
+            nutrition: repaired.nutrition ?? null,
             extraction_status: repaired.extraction_status,
             missing_fields: repaired.missing_fields,
             estimated_time_minutes: repaired.estimated_time_minutes,

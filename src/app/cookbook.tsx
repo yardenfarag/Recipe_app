@@ -33,6 +33,7 @@ import {
   cookbookPageSizeForLocale,
   toCookbookHtmlRecipe,
 } from '@shared/lib/cookbook/buildCookbookHtml';
+import { cookbookNutritionLabel } from '@shared/lib/cookbook/cookbookDocument';
 import { embedRecipeImages } from '@/lib/cookbook/embedRecipeImages';
 import { exportCookbookPdf } from '@/lib/cookbook/exportCookbookPdf';
 import { translateAppError } from '@shared/lib/translateAppError';
@@ -132,6 +133,7 @@ export default function CookbookScreen() {
           imageDataUri: images[index],
           servingsLabel:
             recipe.servings > 0 ? t('cookbook.servings', { count: recipe.servings }) : '',
+          nutritionLabel: cookbookNutritionLabel(recipe, t),
           durationMin: t('recipe.durationMin'),
           durationHr: t('recipe.durationHr'),
           platformLabels,

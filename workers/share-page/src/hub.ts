@@ -29,12 +29,16 @@ const PAGE_COLUMNS = [
   'instructions',
   'servings',
   'estimated_time_minutes',
+  'calories',
   'tags',
   'source_language',
   'extraction_status',
   'created_at',
   'updated_at',
 ].join(',');
+
+/** PIN-80. Asked for separately so a page still renders if the column is not there yet (deploy order). */
+const NUTRITION_COLUMN = 'nutrition';
 
 const LIST_COLUMNS = 'public_slug,ingredients,instructions,extraction_status,updated_at';
 
@@ -94,13 +98,14 @@ function restHeaders(env: SupabaseEnv): HeadersInit {
 export async function fetchHubRecipe(env: SupabaseEnv, slug: string): Promise<HubLookup> {
   const range = idRangeForSlug(slug);
   if (!range) return { status: 'not_found' };
-  const url = restUrl(
-    env,
-    `select=${PAGE_COLUMNS}&id=gte.${range.from}&id=lte.${range.to}&order=id&limit=2`,
-  );
+  const query = (columns: string) =>
+    restUrl(env, `select=${columns}&id=gte.${range.from}&id=lte.${range.to}&order=id&limit=2`);
+  const url = query(`${PAGE_COLUMNS},${NUTRITION_COLUMN}`);
   if (!url) return { status: 'error' };
   try {
-    const response = await fetch(url, { headers: restHeaders(env) });
+    let response = await fetch(url, { headers: restHeaders(env) });
+    // The share page can deploy before the migration that adds the column: read the page without it.
+    if (response.status === 400) response = await fetch(query(PAGE_COLUMNS)!, { headers: restHeaders(env) });
     if (!response.ok) return { status: 'error' };
     const rows = (await response.json()) as HubRecipe[];
     if (!Array.isArray(rows)) return { status: 'error' };

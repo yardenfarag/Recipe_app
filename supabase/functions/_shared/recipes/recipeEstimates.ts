@@ -1,7 +1,8 @@
 /**
  * The `recipe_estimates` task (PIN-79, ADR 018): re-estimates the AI-derived fields a hand edit
  * made stale, over the recipe as the user saved it. One call returns only the fields asked for:
- * calories, cooking time, effort, cost tier, tags, and metric/spoons amounts for given rows.
+ * calories (with protein, carbs and fat, PIN-80), cooking time, effort, cost tier, tags, and
+ * metric/spoons amounts for given rows.
  * Appliances have their own task (recipeAppliances.ts).
  *
  * The rules are the extraction prompt's own (CALORIE_RULES, TIME_RULES, TAG_RULES,
@@ -10,6 +11,12 @@
  */
 
 import { normalizeStoredCalories } from './calories.ts';
+import {
+  normalizeStoredNutrition,
+  NUTRITION_SCHEMA_PROPERTIES,
+  nutritionFitsCalories,
+  type RecipeNutrition,
+} from './nutrition.ts';
 import { CALORIE_RULES, TAG_RULES, TIME_RULES } from '../extraction/gemini.ts';
 import {
   INGREDIENT_AMOUNT_SCHEMA,
@@ -20,7 +27,7 @@ import {
 import { generateLlmJson } from '../llm/llmClient.ts';
 import type { GeminiUsageSnapshot } from '../llm/pricing.ts';
 import type { CostEstimate, EffortLevel, Ingredient, Instruction, RecalcField } from './recipeEditTypes.ts';
-import { fitRecipeToLimits } from './recipeLimits.ts';
+import { fitNutrition, fitRecipeToLimits } from './recipeLimits.ts';
 import { normalizeRecipeTags } from './tags.ts';
 
 export type EstimateField = Exclude<RecalcField, 'appliances'>;
@@ -41,7 +48,8 @@ export interface EstimateInput {
  * the database range (an estimate outside its range is no estimate). Retrying would only repeat it.
  */
 export interface EstimateValues {
-  calories?: { calories: number | null; reasoning: string | null };
+  /** Macros ride with calories: null when the model left them out or they don't fit the calories. */
+  calories?: { calories: number | null; reasoning: string | null; nutrition: RecipeNutrition | null };
   estimated_time_minutes?: { minutes: number | null; reasoning: string | null };
   effort_level?: EffortLevel;
   cost_estimate?: CostEstimate;
@@ -72,6 +80,8 @@ function schemaFor(fields: Set<EstimateField>, hasRows: boolean): Record<string,
   if (fields.has('calories')) {
     add('calories_reasoning', { type: 'string' });
     add('calories', { type: 'integer' });
+    // After calories, and not required: a missing split never fails the calorie estimate.
+    Object.assign(properties, NUTRITION_SCHEMA_PROPERTIES);
   }
   if (fields.has('estimated_time_minutes')) {
     add('time_reasoning', { type: 'string' });
@@ -109,6 +119,9 @@ function userText(input: EstimateInput, rows: number[]): string {
 type Raw = {
   calories?: unknown;
   calories_reasoning?: unknown;
+  protein_g?: unknown;
+  carbs_g?: unknown;
+  fat_g?: unknown;
   estimated_time_minutes?: unknown;
   time_reasoning?: unknown;
   effort_level?: unknown;
@@ -144,7 +157,8 @@ export async function estimateRecipeFields(
   if (fields.has('calories')) {
     const total = typeof data.calories === 'number' ? normalizeStoredCalories(data.calories, input.servings) : null;
     const fitted = total === null ? null : fitRecipeToLimits({ calories: total }).calories ?? null;
-    values.calories = { calories: fitted, reasoning: reasoning(data.calories_reasoning) };
+    const nutrition = fitted === null ? null : normalizeStoredNutrition(data, input.servings);
+    values.calories = { calories: fitted, reasoning: reasoning(data.calories_reasoning), nutrition };
   }
   if (fields.has('estimated_time_minutes')) {
     const minutes = typeof data.estimated_time_minutes === 'number'
@@ -188,4 +202,57 @@ export async function estimateRecipeFields(
     if (rows.every((row) => byRow.has(row))) values.ingredient_amounts = byRow;
   }
   return { values, usage };
+}
+
+// --- Macros for a recipe that already has calories (the PIN-80 backfill) ----------------------
+
+const NUTRITION_PROMPT = `You are a nutritionist. Split this recipe's stated total calories into protein, carbs and fat.
+
+Rules:
+- protein_g, carbs_g, fat_g: grams for ALL portions at the stated servings (totals), from the ingredient amounts.
+- They must fit the stated total calories: protein×4 + carbs×4 + fat×9 ≈ calories. Do not re-estimate the calories.
+- Return ONLY data matching the schema.`;
+
+const NUTRITION_ONLY_SCHEMA = {
+  type: 'object',
+  properties: NUTRITION_SCHEMA_PROPERTIES,
+  required: ['protein_g', 'carbs_g', 'fat_g'],
+};
+
+export interface NutritionInput {
+  title: string;
+  servings: number;
+  ingredients: Ingredient[];
+  instructions: Instruction[];
+  /** The stored total for all servings. The split must fit it. */
+  calories: number;
+}
+
+/**
+ * Protein, carbs and fat for a recipe whose calories are already stored, so the calories people
+ * see don't change. Throws on a failed call; `nutrition` is null when the answer doesn't fit.
+ */
+export async function estimateRecipeNutrition(
+  input: NutritionInput,
+): Promise<{ nutrition: RecipeNutrition | null; usage: GeminiUsageSnapshot | null }> {
+  const lines = [
+    `Title: ${input.title}`,
+    `Servings: ${input.servings}`,
+    `Total calories (all servings): ${input.calories} kcal`,
+    'Ingredients:',
+    ...input.ingredients.map((item, i) => `${i + 1}. ${item.quantity || ''} ${item.unit} ${item.name}`.replace(/\s+/g, ' ').trim()),
+    'Steps:',
+    ...input.instructions.map((step, i) => `${i + 1}. ${step.text}`),
+  ];
+  const { data, usage } = await generateLlmJson<Raw>({
+    systemPrompt: NUTRITION_PROMPT,
+    parts: [{ text: lines.join('\n') }],
+    responseSchema: NUTRITION_ONLY_SCHEMA,
+    timeoutMs: 30_000,
+    maxOutputTokens: 256,
+    kind: 'recipe_estimates',
+    context: 'recipeEstimates.ts: estimateRecipeNutrition',
+  });
+  const nutrition = fitNutrition({ protein_g: data.protein_g, carbs_g: data.carbs_g, fat_g: data.fat_g });
+  return { nutrition: nutrition && nutritionFitsCalories(nutrition, input.calories) ? nutrition : null, usage };
 }

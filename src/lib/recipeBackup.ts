@@ -44,6 +44,7 @@ const BACKUP_RECIPE_FIELDS = [
   'instructions',
   'servings',
   'calories',
+  'nutrition',
   'estimated_time_minutes',
   'cost_estimate',
   'effort_level',

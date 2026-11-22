@@ -159,6 +159,29 @@ describe('handleHubRequest', () => {
     expect(fetchMock).not.toHaveBeenCalled();
   });
 
+  it('puts one serving of calories and macros in the Recipe schema (PIN-80)', async () => {
+    const fetchMock = mockSupabase(200, [{ ...card, calories: 900, nutrition: { protein_g: 60, carbs_g: 80, fat_g: 36 } }]);
+    const response = await handleHubRequest(new Request(`https://pinch-app.io/r/${SLUG}`), env);
+    const html = (await response?.text()) ?? '';
+    expect(fetchMock.mock.calls[0][0]).toContain(',calories,');
+    expect(fetchMock.mock.calls[0][0]).toContain(',nutrition&');
+    expect(html).toContain(
+      '"nutrition":{"@type":"NutritionInformation","servingSize":"1 serving","calories":"450 calories","proteinContent":"30 g","carbohydrateContent":"40 g","fatContent":"18 g"}',
+    );
+  });
+
+  it('still renders the page when the nutrition column is not there yet', async () => {
+    const fetchMock = vi.fn(async (url: string) =>
+      url.includes('nutrition')
+        ? new Response(JSON.stringify({ code: '42703', message: 'column recipe_cards.nutrition does not exist' }), { status: 400 })
+        : new Response(JSON.stringify([card]), { status: 200 }),
+    );
+    vi.stubGlobal('fetch', fetchMock);
+    const response = await handleHubRequest(new Request(`https://pinch-app.io/r/${SLUG}`), env);
+    expect(response?.status).toBe(200);
+    expect(fetchMock).toHaveBeenCalledTimes(2);
+  });
+
   it('returns a retryable 503 when Supabase fails', async () => {
     mockSupabase(500, { message: 'boom' });
     const response = await handleHubRequest(new Request(`https://pinch-app.io/r/${SLUG}`), env);

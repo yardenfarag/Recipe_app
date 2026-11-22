@@ -19,6 +19,8 @@ import {
 import { recipeAppliancesOf } from './enrich/appliances.ts';
 import { deriveRecipeDiets, type DietsRecipeInput } from './enrich/recipeDiets.ts';
 import { logUsageEvent } from '../core/usageLog.ts';
+import { fitNutrition } from './recipeLimits.ts';
+import { nutritionFitsCalories } from './nutrition.ts';
 
 export type HubPlatform = 'youtube' | 'instagram' | 'tiktok' | 'web';
 
@@ -32,6 +34,8 @@ export interface HubRecipeSnapshot {
   instructions: unknown;
   servings: number;
   calories?: number | null;
+  /** PIN-80: grams for all servings. null = not estimated. */
+  nutrition?: unknown;
   estimated_time_minutes?: number | null;
   cost_estimate?: string | null;
   effort_level?: string | null;
@@ -114,6 +118,7 @@ export function hubCardToExtractRecipe(card: Record<string, unknown>): HubRecipe
     instructions: card.instructions ?? [],
     servings: typeof card.servings === 'number' && card.servings >= 1 ? card.servings : 1,
     calories: typeof card.calories === 'number' ? card.calories : null,
+    nutrition: typeof card.calories === 'number' ? fitNutrition(card.nutrition) : null,
     estimated_time_minutes:
       typeof card.estimated_time_minutes === 'number' ? card.estimated_time_minutes : null,
     cost_estimate: typeof card.cost_estimate === 'string' ? card.cost_estimate : null,
@@ -213,6 +218,7 @@ export async function publishRecipeCard(
     instructions: toJson(recipe.instructions ?? []),
     servings: recipe.servings >= 1 ? recipe.servings : 1,
     calories: recipe.calories ?? null,
+    nutrition: recipe.calories == null ? null : toJson(fitNutrition(recipe.nutrition)),
     estimated_time_minutes: recipe.estimated_time_minutes ?? null,
     cost_estimate: recipe.cost_estimate ?? null,
     effort_level: recipe.effort_level ?? null,
@@ -226,7 +232,7 @@ export async function publishRecipeCard(
 
   const { data: existing, error: existingError } = await admin
     .from('recipe_cards')
-    .select('id, extraction_status, image_url, appliances, diets, hidden_at')
+    .select('id, extraction_status, image_url, appliances, calories, nutrition, diets, hidden_at')
     .eq('canonical_key', key)
     .maybeSingle();
 
@@ -264,14 +270,20 @@ export async function publishRecipeCard(
   const shouldFillImage = !existing.image_url && row.image_url;
   // Like the image: fill appliances on a card that has none, never overwrite (matches the recipe_appliances migration).
   const shouldFillAppliances = existing.appliances == null && row.appliances != null;
+  // PIN-80: the same for macros, so a card published before them gets them from the next import,
+  // but only when they fit the card's own calories (this extraction may have estimated others).
+  const newNutrition = fitNutrition(row.nutrition);
+  const shouldFillNutrition = existing.nutrition == null && newNutrition != null &&
+    typeof existing.calories === 'number' && nutritionFitsCalories(newNutrition, existing.calories);
   const needsDiets = shouldReplace || existing.diets == null;
-  if (!shouldReplace && !shouldFillImage && !shouldFillAppliances) {
+  if (!shouldReplace && !shouldFillImage && !shouldFillAppliances && !shouldFillNutrition) {
     return { id: existing.id as string, needsDiets };
   }
 
   const fill: TablesUpdate<'recipe_cards'> = { updated_at: row.updated_at };
   if (shouldFillImage) fill.image_url = row.image_url;
   if (shouldFillAppliances) fill.appliances = row.appliances;
+  if (shouldFillNutrition) fill.nutrition = row.nutrition;
 
   // New content means the old diet check no longer applies.
   const { error } = await admin

@@ -6,6 +6,7 @@ import type {
   ExtractionStatus,
   Ingredient,
   Instruction,
+  RecipeNutrition,
 } from './recipe';
 
 export type HubPlatform = 'youtube' | 'instagram' | 'tiktok' | 'web';
@@ -23,6 +24,8 @@ export interface RecipeCard {
   instructions: Instruction[];
   servings: number;
   calories?: number | null;
+  /** PIN-80. null or absent = not estimated. */
+  nutrition?: RecipeNutrition | null;
   estimated_time_minutes?: number | null;
   cost_estimate?: CostEstimate | null;
   effort_level?: EffortLevel | null;

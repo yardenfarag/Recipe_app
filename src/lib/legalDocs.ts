@@ -154,7 +154,7 @@ const DOCS: Record<LegalDocId, LegalDoc> = {
   terms: {
     id: 'terms',
     title: 'Terms of Use',
-    meta: 'Last updated: November 16, 2026',
+    meta: 'Last updated: November 22, 2026',
     blocks: [
       {
         kind: 'card',
@@ -210,7 +210,7 @@ const DOCS: Record<LegalDocId, LegalDoc> = {
         kind: 'p',
         parts: [
           text(
-            'Pinch is provided “as is” without warranties of any kind. We do not guarantee uninterrupted service, extraction quality, calorie accuracy, allergen safety, or fitness for a particular purpose. Cooking involves risk — verify ingredients and methods yourself. If you add allergies or foods you avoid, Pinch flags and adapts recipes as a convenience only. It can miss an ingredient, so always check the ingredients and product labels yourself. Pinch does not give medical advice.',
+            'Pinch is provided “as is” without warranties of any kind. We do not guarantee uninterrupted service, extraction quality, calorie and nutrition accuracy, allergen safety, or fitness for a particular purpose. Cooking involves risk — verify ingredients and methods yourself. If you add allergies or foods you avoid, Pinch flags and adapts recipes as a convenience only. It can miss an ingredient, so always check the ingredients and product labels yourself. Pinch does not give medical advice.',
           ),
         ],
       },

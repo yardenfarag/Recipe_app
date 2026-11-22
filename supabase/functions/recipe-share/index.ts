@@ -3,6 +3,7 @@ import { recipeAppliancesOf } from '../_shared/recipes/enrich/appliances.ts';
 import { corsHeaders, jsonResponse } from '../_shared/core/cors.ts';
 import { createAuthedSupabase } from '../_shared/core/recipeLookup.ts';
 import { createServiceSupabase, toJson } from '../_shared/core/supabaseAdmin.ts';
+import { fitNutrition } from '../_shared/recipes/recipeLimits.ts';
 
 const MAX_BODY_BYTES = 32_000;
 const TOKEN_BYTES = 18;
@@ -25,6 +26,8 @@ interface RecipeSnapshot {
   instructions: unknown;
   servings: number;
   calories?: number | null;
+  /** PIN-80. Absent in shares created before it, which show no macros. */
+  nutrition?: unknown;
   estimated_time_minutes?: number | null;
   cost_estimate?: string | null;
   effort_level?: string | null;
@@ -65,6 +68,7 @@ function snapshotFromRecipe(row: Record<string, unknown>): RecipeSnapshot {
     instructions: row.instructions ?? [],
     servings: typeof row.servings === 'number' && row.servings >= 1 ? row.servings : 1,
     calories: typeof row.calories === 'number' ? row.calories : null,
+    nutrition: typeof row.calories === 'number' ? fitNutrition(row.nutrition) : null,
     estimated_time_minutes:
       typeof row.estimated_time_minutes === 'number' ? row.estimated_time_minutes : null,
     cost_estimate: typeof row.cost_estimate === 'string' ? row.cost_estimate : null,
@@ -92,6 +96,7 @@ function publicSnapshot(snapshot: RecipeSnapshot) {
     instructions: snapshot.instructions,
     servings: snapshot.servings,
     calories: snapshot.calories ?? undefined,
+    nutrition: toJson(snapshotNutrition(snapshot)),
     estimated_time_minutes: snapshot.estimated_time_minutes ?? undefined,
     cost_estimate: snapshot.cost_estimate ?? undefined,
     effort_level: snapshot.effort_level ?? undefined,
@@ -102,6 +107,11 @@ function publicSnapshot(snapshot: RecipeSnapshot) {
     source_language: snapshot.source_language ?? undefined,
     appliances: toJson(snapshotAppliances(snapshot)),
   };
+}
+
+/** Stored JSON too: macros only next to calories, in the stored shape. */
+function snapshotNutrition(snapshot: RecipeSnapshot) {
+  return typeof snapshot.calories === 'number' ? fitNutrition(snapshot.nutrition) : null;
 }
 
 /** Snapshots are stored JSON, so clean the list again on the way out. */
@@ -121,6 +131,7 @@ function insertRowFromSnapshot(userId: string, snapshot: RecipeSnapshot) {
     instructions: toJson(snapshot.instructions ?? []),
     servings: snapshot.servings,
     calories: snapshot.calories ?? null,
+    nutrition: toJson(snapshotNutrition(snapshot)),
     estimated_time_minutes: snapshot.estimated_time_minutes ?? null,
     cost_estimate: snapshot.cost_estimate ?? null,
     effort_level: snapshot.effort_level ?? null,

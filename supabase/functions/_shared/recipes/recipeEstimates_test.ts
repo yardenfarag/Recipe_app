@@ -2,7 +2,7 @@
 
 import { assertEquals, assertRejects } from 'jsr:@std/assert@1';
 
-import { estimateRecipeFields } from './recipeEstimates.ts';
+import { estimateRecipeFields, estimateRecipeNutrition } from './recipeEstimates.ts';
 
 const brownies = {
   title: 'Brown Butter Brownie',
@@ -58,7 +58,7 @@ Deno.test('an estimate outside the database range settles as unknown, not as a f
     { calories_reasoning: 'r', calories: 42_000, time_reasoning: 't', estimated_time_minutes: 0, effort_level: 'Easy' },
     async () => {
       const { values } = await estimateRecipeFields(brownies);
-      assertEquals(values.calories, { calories: null, reasoning: 'r' });
+      assertEquals(values.calories, { calories: null, reasoning: 'r', nutrition: null });
       assertEquals(values.estimated_time_minutes, { minutes: null, reasoning: 't' });
     },
   );
@@ -75,5 +75,37 @@ Deno.test('a requested estimate the model left out settles as unknown', async ()
 Deno.test('a failed call settles nothing, so the fields stay pending for a retry', async () => {
   await withModel(new Response('upstream down', { status: 500 }), async () => {
     await assertRejects(() => estimateRecipeFields(brownies));
+  });
+});
+
+// PIN-80: macros ride on the calorie estimate.
+Deno.test('macros that fit the calories come back with them', async () => {
+  await withModel(
+    { calories_reasoning: 'r', calories: 2_000, protein_g: 30, carbs_g: 220, fat_g: 110, effort_level: 'Easy' },
+    async () => {
+      const { values } = await estimateRecipeFields(brownies);
+      assertEquals(values.calories, { calories: 2_000, reasoning: 'r', nutrition: { protein_g: 30, carbs_g: 220, fat_g: 110 } });
+    },
+  );
+});
+
+Deno.test('macros that do not fit, or are left out, never fail the calorie estimate', async () => {
+  await withModel({ calories_reasoning: 'r', calories: 2_000, protein_g: 5, carbs_g: 5, fat_g: 5 }, async () => {
+    const { values } = await estimateRecipeFields(brownies);
+    assertEquals(values.calories, { calories: 2_000, reasoning: 'r', nutrition: null });
+  });
+  await withModel({ calories_reasoning: 'r', calories: 2_000 }, async () => {
+    const { values } = await estimateRecipeFields(brownies);
+    assertEquals(values.calories?.nutrition, null);
+  });
+});
+
+Deno.test('the macros backfill keeps a split that fits the stored calories', async () => {
+  const input = { ...brownies, calories: 2_000 };
+  await withModel({ protein_g: 30, carbs_g: 220, fat_g: 110 }, async () => {
+    assertEquals((await estimateRecipeNutrition(input)).nutrition, { protein_g: 30, carbs_g: 220, fat_g: 110 });
+  });
+  await withModel({ protein_g: 300, carbs_g: 220, fat_g: 110 }, async () => {
+    assertEquals((await estimateRecipeNutrition(input)).nutrition, null);
   });
 });

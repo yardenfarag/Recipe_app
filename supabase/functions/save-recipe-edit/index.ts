@@ -267,6 +267,9 @@ function contentColumns(
     extraction_status: classified.status === 'failed' ? 'full' : classified.status,
     missing_fields: classified.missingFields,
     locked_fields: lockedFields,
+    // PIN-80: macros are a split of Pinch's calorie estimate. Once the user sets calories by hand
+    // they would not match, and would never be updated, so they go until "reset to Pinch's estimate".
+    ...(lockedFields.includes('calories') ? { nutrition: null } : {}),
     // A hand edit replaces kitchen auto-apply, as a remix does (RecipeView handleVariant).
     kitchen_original: null,
     kitchen_adapted_summary: null,

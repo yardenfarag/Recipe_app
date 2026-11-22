@@ -1,6 +1,7 @@
 // Full-recipe dietary / lifestyle transforms via Gemini structured output.
 
 import { normalizeStoredCalories } from './calories.ts';
+import { normalizeStoredNutrition, NUTRITION_RULES, NUTRITION_SCHEMA_PROPERTIES, type RecipeNutrition } from './nutrition.ts';
 import { generateLlmJson } from '../llm/llmClient.ts';
 import { sanitizeGeminiText } from '../llm/llmClient.ts';
 import {
@@ -61,6 +62,7 @@ Rules:
 ${MEASUREMENT_RULES}
 - Keep the same number of servings unless a change is required for the variant.
 - calories_reasoning: one short phrase estimating kcal from main ingredients; calories is TOTAL for all servings.
+${NUTRITION_RULES}
 - Write a concise summary (1–2 sentences) of what you changed.
 - If the cook's request is not about changing this recipe (ingredients, servings, diet, equipment, time, flavor, or method), return empty ingredients and empty instructions. Do not answer general questions, write code, stories, or anything else.
 - Return ONLY data matching the schema.`;
@@ -101,6 +103,7 @@ const TRANSFORM_SCHEMA = {
     servings: { type: 'integer' },
     calories_reasoning: { type: 'string' },
     calories: { type: 'integer' },
+    ...NUTRITION_SCHEMA_PROPERTIES,
     summary: { type: 'string' },
   },
   required: ['ingredients', 'instructions', 'servings', 'summary'],
@@ -122,6 +125,8 @@ export interface TransformedRecipe {
   servings: number;
   calories?: number;
   calories_reasoning?: string;
+  /** PIN-80. Grams for all servings; null when the model left them out or they don't fit the calories. */
+  nutrition?: RecipeNutrition | null;
   summary: string;
   usage?: GeminiUsageSnapshot | null;
 }
@@ -183,7 +188,9 @@ export async function transformRecipeWithGemini(
     : VARIANT_INSTRUCTIONS[input.variant ?? 'healthier'];
   const text = buildTextContext(input, goal);
 
-  const { data: parsed, usage } = await generateLlmJson<TransformedRecipe>({
+  const { data: parsed, usage } = await generateLlmJson<
+    TransformedRecipe & { protein_g?: unknown; carbs_g?: unknown; fat_g?: unknown }
+  >({
     systemPrompt: SYSTEM_PROMPT,
     parts: [{ text }],
     responseSchema: TRANSFORM_SCHEMA,
@@ -209,6 +216,7 @@ export async function transformRecipeWithGemini(
     })),
     servings,
     calories: normalizeStoredCalories(parsed.calories ?? null, servings) ?? undefined,
+    nutrition: normalizeStoredNutrition(parsed, servings),
     calories_reasoning: parsed.calories_reasoning
       ? sanitizeGeminiText(parsed.calories_reasoning)
       : undefined,

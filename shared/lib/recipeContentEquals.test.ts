@@ -32,4 +32,12 @@ describe('recipeContentEquals', () => {
       }),
     ).toBe(false);
   });
+
+  it('compares nutrition only when the echo carries it (PIN-80)', () => {
+    const nutrition = { protein_g: 30, carbs_g: 40, fat_g: 18 };
+    expect(recipeContentEquals({ ...base, nutrition }, { ...base })).toBe(true);
+    expect(recipeContentEquals({ ...base, nutrition }, { ...base, nutrition: { ...nutrition } })).toBe(true);
+    expect(recipeContentEquals({ ...base, nutrition: undefined }, { ...base, nutrition: null })).toBe(true);
+    expect(recipeContentEquals({ ...base, nutrition }, { ...base, nutrition: null })).toBe(false);
+  });
 });

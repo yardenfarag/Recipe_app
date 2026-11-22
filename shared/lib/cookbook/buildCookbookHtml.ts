@@ -27,6 +27,8 @@ export type CookbookHtmlRecipe = {
   source: string;
   servingsLabel: string;
   timeLabel: string;
+  /** "Per serving: ~450 cal · 30 g protein · …" (PIN-80). Absent or empty = no line. */
+  nutritionLabel?: string;
   ingredients: { amount: string; name: string }[];
   instructions: { step: number; text: string }[];
 };
@@ -105,6 +107,7 @@ export function toCookbookHtmlRecipe(
     measurementSystem: MeasurementSystem;
     imageDataUri?: string | null;
     servingsLabel: string;
+    nutritionLabel?: string;
     durationMin: string;
     durationHr: string;
     platformLabels: Partial<Record<Platform, string>>;
@@ -130,6 +133,7 @@ export function toCookbookHtmlRecipe(
     dir: isRtlLanguage(contentLanguage) ? 'rtl' : 'ltr',
     source: cookbookSourceLabel(recipe.original_url, recipe.platform, options.platformLabels),
     servingsLabel: options.servingsLabel,
+    ...(options.nutritionLabel ? { nutritionLabel: options.nutritionLabel } : {}),
     timeLabel: formatRecipeDuration(recipe.estimated_time_minutes ?? 0, {
       minutes: options.durationMin,
       hours: options.durationHr,
@@ -278,6 +282,7 @@ export function buildCookbookHtml(options: CookbookBook): string {
     margin: 0 0 6px;
   }
   .meta { margin-bottom: 18px; }
+  .meta:has(+ .nutrition) { margin-bottom: 4px; }
   .columns { display: flex; gap: 28px; align-items: flex-start; }
   .col-ingredients { width: 38%; }
   .col-steps { width: 62%; }
@@ -348,9 +353,11 @@ function renderRecipePage(
     ? `<p class="source">${escapeHtml(recipe.source)}</p>`
     : '';
   const metaBits = [recipe.servingsLabel, recipe.timeLabel].filter(Boolean);
-  const meta = metaBits.length
-    ? `<p class="meta">${escapeHtml(metaBits.join(' · '))}</p>`
+  const nutrition = recipe.nutritionLabel?.trim()
+    ? `<p class="meta nutrition">${escapeHtml(recipe.nutritionLabel.trim())}</p>`
     : '';
+  const meta =
+    (metaBits.length ? `<p class="meta">${escapeHtml(metaBits.join(' · '))}</p>` : '') + nutrition;
   const ingredients = recipe.ingredients
     .map((item) => {
       const amount = item.amount.trim()

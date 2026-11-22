@@ -149,6 +149,7 @@ const RECIPE: SeedRecipe = {
   image_url: picture(40),
   servings: 4,
   calories: 2400,
+  nutrition: { protein_g: 80, carbs_g: 280, fat_g: 107 },
   estimated_time_minutes: 25,
   effort_level: "Easy",
   cost_estimate: "$",

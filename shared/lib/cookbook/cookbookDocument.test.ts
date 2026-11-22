@@ -3,7 +3,7 @@ import { describe, expect, it } from 'vitest';
 
 import en from '../../i18n/locales/en';
 import type { Recipe } from '../../types/recipe';
-import { buildCookbookDocument, cookbookCopy } from './cookbookDocument';
+import { buildCookbookDocument, cookbookCopy, cookbookNutritionLabel } from './cookbookDocument';
 import { isRtlLanguage } from './buildCookbookHtml';
 
 const i18n = createInstance();
@@ -114,5 +114,31 @@ describe('buildCookbookDocument', () => {
     });
     expect(html).not.toContain('class="hero"');
     expect(html).not.toContain('data-cookbook-fallback');
+  });
+});
+
+describe('cookbookNutritionLabel (PIN-80)', () => {
+  it('prints one serving of calories and macros, calories alone, or nothing', () => {
+    const nutrition = { protein_g: 60, carbs_g: 80, fat_g: 36 };
+    expect(cookbookNutritionLabel(recipe({ calories: 900, nutrition }), t)).toBe(
+      'Per serving: ~450 cal · 30 g protein · 40 g carbs · 18 g fat',
+    );
+    expect(cookbookNutritionLabel(recipe({ calories: 900 }), t)).toBe('~450 cal per serving');
+    expect(cookbookNutritionLabel(recipe({ calories: 900, nutrition, locked_fields: ['calories'] }), t)).toBe(
+      '~450 cal per serving',
+    );
+    expect(cookbookNutritionLabel(recipe({ nutrition }), t)).toBe('');
+  });
+
+  it('shows the line under the servings in the book', () => {
+    const html = buildCookbookDocument({
+      title: 'Book',
+      recipes: [recipe({ calories: 900, nutrition: { protein_g: 60, carbs_g: 80, fat_g: 36 } })],
+      language: 'en',
+      measurementSystem: 'original',
+      pageSize: 'a4',
+      t,
+    });
+    expect(html).toContain('<p class="meta nutrition">Per serving: ~450 cal · 30 g protein · 40 g carbs · 18 g fat</p>');
   });
 });

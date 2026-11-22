@@ -6,6 +6,20 @@ const PER_SERVING_LIKELY_MIN = 40;
 const PER_SERVING_LIKELY_MAX = 900;
 
 /**
+ * True when a model's "total" calories are really one serving's (servings is a large yield).
+ * Macros from the same answer get the same fix (nutrition.ts).
+ */
+export function caloriesLookPerServing(calories: number, servings: number): boolean {
+  const safeServings = Math.max(1, Math.round(servings));
+  return (
+    calories / safeServings < MIN_PLAUSIBLE_PER_SERVING &&
+    calories >= PER_SERVING_LIKELY_MIN &&
+    calories <= PER_SERVING_LIKELY_MAX &&
+    safeServings >= 4
+  );
+}
+
+/**
  * `recipe.calories` is stored as TOTAL kcal for `recipe.servings` portions.
  * Gemini sometimes returns per-serving kcal in the calories field when
  * servings is a large yield count (e.g. 48 cookies).
@@ -17,13 +31,7 @@ export function resolveRecipeCalories(
   const safeServings = Math.max(1, Math.round(servings));
   const naivePerServing = calories / safeServings;
 
-  const looksMislabeled =
-    naivePerServing < MIN_PLAUSIBLE_PER_SERVING &&
-    calories >= PER_SERVING_LIKELY_MIN &&
-    calories <= PER_SERVING_LIKELY_MAX &&
-    safeServings >= 4;
-
-  if (looksMislabeled) {
+  if (caloriesLookPerServing(calories, servings)) {
     return {
       totalCalories: Math.round(calories * safeServings),
       perServing: Math.round(calories),

@@ -1,5 +1,6 @@
 import { serve } from '../_shared/core/observe.ts';
 import { normalizeStoredCalories } from '../_shared/recipes/calories.ts';
+import { normalizeStoredNutrition } from '../_shared/recipes/nutrition.ts';
 import {
   classifyGeminiRecipe,
   recipeRepairIsUpgrade,
@@ -276,6 +277,7 @@ serve('repair-recipe', async (req) => {
         after.calories ?? null,
         after.servings > 0 ? after.servings : current.servings || 1,
       ),
+      nutrition: normalizeStoredNutrition(after, after.servings > 0 ? after.servings : current.servings || 1),
       estimated_time_minutes: after.estimated_time_minutes ?? current.estimated_time_minutes ?? null,
       cost_estimate: after.cost_estimate ?? current.cost_estimate ?? null,
       effort_level: after.effort_level ?? current.effort_level ?? null,

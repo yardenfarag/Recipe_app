@@ -84,6 +84,19 @@ describe('render', () => {
     });
   });
 
+  it('adds per-serving nutrition only when there are calories (PIN-80)', () => {
+    expect(recipeJsonLd(recipe, 'https://pinch-app.io/s/x').nutrition).toBeUndefined();
+    expect(recipeJsonLd({ ...recipe, calories: 900 }, 'https://pinch-app.io/s/x').nutrition).toEqual({
+      '@type': 'NutritionInformation',
+      servingSize: '1 serving',
+      calories: '450 calories',
+    });
+    expect(
+      recipeJsonLd({ ...recipe, calories: 900, nutrition: { protein_g: 60, carbs_g: 80, fat_g: 36 } }, 'https://pinch-app.io/s/x')
+        .nutrition,
+    ).toMatchObject({ proteinContent: '30 g', carbohydrateContent: '40 g', fatContent: '18 g' });
+  });
+
   it('escapes recipe text in HTML and JSON-LD', () => {
     const html = renderSharePage(recipe, TOKEN);
     expect(html).toContain('<h1 dir="auto">Crispy &lt;Chili&gt; Oil Noodles</h1>');

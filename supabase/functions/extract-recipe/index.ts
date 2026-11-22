@@ -1,5 +1,6 @@
 import { serve } from '../_shared/core/observe.ts';
 import { normalizeStoredCalories } from '../_shared/recipes/calories.ts';
+import { normalizeStoredNutrition } from '../_shared/recipes/nutrition.ts';
 import { corsHeaders, jsonResponse } from '../_shared/core/cors.ts';
 import { FetchError } from '../_shared/core/errors.ts';
 import { fetchErrorInfo } from '../_shared/extraction/fetchErrorMessage.ts';
@@ -829,6 +830,7 @@ serve('extract-recipe', async (req) => {
         gemini.calories ?? null,
         gemini.servings > 0 ? gemini.servings : 1,
       ),
+      nutrition: normalizeStoredNutrition(gemini, gemini.servings > 0 ? gemini.servings : 1),
       estimated_time_minutes: gemini.estimated_time_minutes ?? null,
       cost_estimate: gemini.cost_estimate ?? null,
       effort_level: gemini.effort_level ?? null,

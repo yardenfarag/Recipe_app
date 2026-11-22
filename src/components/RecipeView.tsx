@@ -49,6 +49,7 @@ import { formatVideoTimestamp } from '@shared/lib/formatVideoTimestamp';
 import { getRecipeVideoInfo } from '@/lib/recipeVideo';
 import { recordCookForReviewPrompt } from '@/lib/reviewPrompt';
 import { getCalorieDisplay } from '@shared/lib/recipeCalories';
+import { getNutritionDisplay } from '@shared/lib/recipeNutrition';
 import { recipeHasSource, recipeIsInvented } from '@shared/lib/recipeOrigin';
 import {
   isRecipeLanguageCode,
@@ -81,6 +82,7 @@ import {
   Instruction,
   type RecalcField,
   Recipe,
+  type RecipeNutrition,
   RecipeTranslationContent,
 } from '@shared/types/recipe';
 
@@ -90,6 +92,8 @@ interface RecipeContentSnapshot {
   ingredients: Ingredient[];
   instructions: Instruction[];
   calories?: number;
+  /** PIN-80. Travels with calories: null = none. */
+  nutrition?: RecipeNutrition | null;
   kitchen_adapted_summary?: string | null;
   kitchen_original?: Recipe['kitchen_original'] | null;
   /** ADR 017. Only set when a remix or revert changes them; absent = leave as stored. */
@@ -192,6 +196,7 @@ export function RecipeView({
       ingredients: recipe.ingredients,
       instructions: recipe.instructions,
       calories: recipe.calories,
+      nutrition: recipe.nutrition ?? null,
       appliances: recipe.appliances,
     },
   );
@@ -207,6 +212,7 @@ export function RecipeView({
     ingredients: recipe.ingredients,
     instructions: recipe.instructions,
     calories: recipe.calories,
+    nutrition: recipe.nutrition ?? null,
   });
 
   const [title, setTitle] = useState(localizedContent?.title ?? recipe.title);
@@ -219,6 +225,7 @@ export function RecipeView({
     localizedContent?.instructions ?? recipe.instructions,
   );
   const [calories, setCalories] = useState(recipe.calories);
+  const [nutrition, setNutrition] = useState<RecipeNutrition | null>(recipe.nutrition ?? null);
   const [servings, setServings] = useState(recipe.servings);
   const [tags, setTags] = useState<string[]>(recipe.tags ?? []);
   const [swapIndex, setSwapIndex] = useState<number | null>(null);
@@ -301,6 +308,12 @@ export function RecipeView({
   const scaledIngredients = scaleIngredients(baseIngredients, baseServings, servings);
   const swapTarget = swapIndex != null ? scaledIngredients[swapIndex] : null;
   const calorieDisplay = getCalorieDisplay(calories, baseServings, servings);
+  // PIN-80: macros are a split of Pinch's calories, so none next to calories set by hand.
+  const caloriesHandSet = recipe.locked_fields?.includes('calories') === true;
+  const nutritionDisplay =
+    calorieDisplay != null && !caloriesHandSet
+      ? getNutritionDisplay(nutrition, baseServings, servings)
+      : null;
   const isUpdating = (field: RecalcField) => updatingFields.includes(field);
   const updatingLabel = t('recipeEditor.updating');
   const sourceLanguage = resolveRecipeSourceLanguage(recipe);
@@ -338,6 +351,7 @@ export function RecipeView({
       ingredients: recipe.ingredients,
       instructions: recipe.instructions,
       calories: recipe.calories,
+      nutrition: recipe.nutrition ?? null,
     };
     // Keep the pre-adaptation snapshot. Overwriting from live recipe fields
     // would make "Revert to original" restore the adapted (or remixed) content.
@@ -348,11 +362,13 @@ export function RecipeView({
         ingredients: recipe.kitchen_original.ingredients,
         instructions: recipe.kitchen_original.instructions,
         calories: recipe.kitchen_original.calories,
+        nutrition: recipe.kitchen_original.nutrition ?? null,
         appliances: recipe.kitchen_original.appliances,
       };
     }
     setBaseServings(recipe.servings);
     setCalories(recipe.calories);
+    setNutrition(recipe.nutrition ?? null);
     setServings(recipe.servings);
     setTags(recipe.tags ?? []);
     // An edit can complete a partial recipe: the banner follows the refreshed row.
@@ -385,6 +401,7 @@ export function RecipeView({
     recipe.title,
     recipe.servings,
     recipe.calories,
+    recipe.nutrition,
     recipe.ingredients,
     recipe.instructions,
     recipe.tags,
@@ -406,8 +423,9 @@ export function RecipeView({
       ingredients: baseIngredients,
       instructions: baseInstructions,
       calories,
+      nutrition,
     };
-  }, [title, baseServings, baseIngredients, baseInstructions, calories, activeLanguage]);
+  }, [title, baseServings, baseIngredients, baseInstructions, calories, nutrition, activeLanguage]);
 
   useEffect(() => {
     if (activeLanguage != null) {
@@ -418,6 +436,7 @@ export function RecipeView({
         ingredients: canonical?.ingredients ?? recipe.ingredients,
         instructions: canonical?.instructions ?? recipe.instructions,
         calories,
+        nutrition,
       });
       return;
     }
@@ -427,6 +446,7 @@ export function RecipeView({
       ingredients: baseIngredients,
       instructions: baseInstructions,
       calories,
+      nutrition,
     });
   }, [
     title,
@@ -434,6 +454,7 @@ export function RecipeView({
     baseIngredients,
     baseInstructions,
     calories,
+    nutrition,
     activeLanguage,
     onContentChange,
     recipe.title,
@@ -483,13 +504,17 @@ export function RecipeView({
       ingredients: baseIngredients,
       instructions: baseInstructions,
       calories,
+      nutrition,
     };
     const before: RecipeContentSnapshot = recipe.kitchen_original ?? { ...canonical, appliances: recipe.appliances };
     setTitle(canonicalTitle);
     setBaseServings(result.servings);
     setBaseIngredients(result.ingredients);
     setBaseInstructions(result.instructions);
+    // A server from before PIN-80 sends no macros: show none rather than the old recipe's.
+    const remixedNutrition = result.nutrition ?? null;
     setCalories(result.calories);
+    setNutrition(remixedNutrition);
     setServings(result.servings);
     setActiveVariant(variant);
     setVariantSummary(result.summary);
@@ -502,6 +527,7 @@ export function RecipeView({
       ingredients: result.ingredients,
       instructions: result.instructions,
       calories: result.calories,
+      nutrition: remixedNutrition,
     };
     onContentChange?.({
       title: canonicalTitle,
@@ -509,6 +535,7 @@ export function RecipeView({
       ingredients: result.ingredients,
       instructions: result.instructions,
       calories: result.calories,
+      nutrition: remixedNutrition,
       kitchen_adapted_summary: kitchenFix ? result.summary : null,
       kitchen_original: kitchenFix ? before : null,
       // The server only sends appliances when the remix changed the steps (ADR 017).
@@ -523,14 +550,16 @@ export function RecipeView({
     setBaseIngredients(original.ingredients);
     setBaseInstructions(original.instructions);
     setCalories(original.calories);
+    setNutrition(original.nutrition ?? null);
     setServings(original.servings);
     setActiveVariant(null);
     setVariantSummary(null);
     setActiveLanguage(null);
-    translationSourceRef.current = { ...original };
+    translationSourceRef.current = { ...original, nutrition: original.nutrition ?? null };
     setKitchenAdapted(false);
     onContentChange?.({
       ...original,
+      nutrition: original.nutrition ?? null,
       kitchen_adapted_summary: null,
       kitchen_original: null,
     });
@@ -551,6 +580,7 @@ export function RecipeView({
       ingredients: recipe.ingredients,
       instructions: recipe.instructions,
       calories,
+      nutrition,
     };
     const request = {
       title: canonical.title,
@@ -621,6 +651,7 @@ export function RecipeView({
       setBaseIngredients(next.ingredients);
       setBaseInstructions(next.instructions);
       setCalories(next.calories ?? undefined);
+      setNutrition(next.nutrition ?? null);
       setServings(next.servings);
       setExtractionStatus(next.extraction_status);
       setActiveLanguage(null);
@@ -630,6 +661,7 @@ export function RecipeView({
         ingredients: next.ingredients,
         instructions: next.instructions,
         calories: next.calories ?? undefined,
+        nutrition: next.nutrition ?? null,
       };
       originalRef.current = translationSourceRef.current;
       onRepairApplied?.(next);
@@ -651,6 +683,7 @@ export function RecipeView({
         ingredients: recipe.ingredients,
         instructions: recipe.instructions,
         calories,
+        nutrition,
       };
     }
     await onTranslationPersist?.(language, {
@@ -671,6 +704,7 @@ export function RecipeView({
     setBaseIngredients(prior.ingredients);
     setBaseInstructions(prior.instructions);
     setCalories(prior.calories);
+    setNutrition(prior.nutrition ?? null);
     setServings(prior.servings);
     setActiveLanguage(null);
   }
@@ -730,6 +764,7 @@ export function RecipeView({
     ingredients: recipe.ingredients,
     instructions: recipe.instructions,
     calories,
+    nutrition,
   };
 
   const sourceVideo = getRecipeVideoInfo(
@@ -937,6 +972,20 @@ export function RecipeView({
                   />
                 ) : null}
               </View>
+              {nutritionDisplay != null && !isUpdating('calories') ? (
+                <Text
+                  testID="recipe-nutrition"
+                  className="mt-2 text-xs font-medium"
+                  style={{ color: colors.textSecondary }}
+                  maxFontSizeMultiplier={CHROME_MAX_FONT_SCALE}
+                >
+                  {t('recipe.nutritionPerServing', {
+                    protein: nutritionDisplay.perServing.protein_g,
+                    carbs: nutritionDisplay.perServing.carbs_g,
+                    fat: nutritionDisplay.perServing.fat_g,
+                  })}
+                </Text>
+              ) : null}
               {(tags.length > 0 || recipeId || isUpdating('tags')) && (
                 <View className="mt-2.5 flex-row flex-wrap items-center gap-1.5">
                   {tags.map((tag) => (
@@ -1392,7 +1441,14 @@ export function RecipeView({
             </Text>
             {calorieDisplay != null && (
               <Text className="mt-0.5 text-xs" style={{ color: colors.textSecondary }}>
-                {t('recipe.calTotal', { count: calorieDisplay.total.toLocaleString() })}
+                {nutritionDisplay != null && !isUpdating('calories')
+                  ? t('recipe.nutritionTotal', {
+                      calories: calorieDisplay.total.toLocaleString(),
+                      protein: nutritionDisplay.total.protein_g.toLocaleString(),
+                      carbs: nutritionDisplay.total.carbs_g.toLocaleString(),
+                      fat: nutritionDisplay.total.fat_g.toLocaleString(),
+                    })
+                  : t('recipe.calTotal', { count: calorieDisplay.total.toLocaleString() })}
               </Text>
             )}
           </View>

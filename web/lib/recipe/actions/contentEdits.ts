@@ -28,6 +28,7 @@ export function shownContent(display: RecipeDisplay): OriginalContent {
     ingredients: display.ingredients,
     instructions: display.instructions,
     calories: display.recipe.calories,
+    nutrition: display.recipe.nutrition ?? null,
     appliances: display.recipe.appliances,
   };
 }
@@ -43,6 +44,8 @@ const textOf = (content: OriginalContent) => ({
   ingredients: content.ingredients,
   instructions: content.instructions,
   calories: content.calories,
+  // PIN-80: written with the calories, or the database clears it.
+  nutrition: content.nutrition ?? null,
 });
 
 /**
@@ -82,6 +85,8 @@ function adaptedText(display: RecipeDisplay, result: TransformedRecipePayload) {
     ingredients: result.ingredients,
     instructions: result.instructions,
     calories: result.calories,
+    // A server from before PIN-80 sends none: no macros rather than the old recipe's.
+    nutrition: result.nutrition ?? null,
     // The server only sends appliances when the adaptation changed the steps (ADR 017); absent keeps the stored ones.
     ...(result.appliances !== undefined ? { appliances: result.appliances } : {}),
   };
@@ -153,6 +158,7 @@ export function repairChange(repaired: RepairedRecipePayload): ContentChange {
       ingredients: repaired.ingredients,
       instructions: repaired.instructions,
       calories: repaired.calories,
+      nutrition: repaired.nutrition ?? null,
       extraction_status: repaired.extraction_status,
       missing_fields: repaired.missing_fields,
       estimated_time_minutes: repaired.estimated_time_minutes,

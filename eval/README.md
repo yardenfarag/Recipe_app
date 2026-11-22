@@ -26,6 +26,14 @@ deno appliances --only=he           # one language; --only=<id part> for single 
 
 Scored in code against hand labels in `cases/appliances.json` (no judge). Writes `results/appliances.md`. Targets are in ADR 017. A 3-run pass costs well under a cent. The scorer has its own tests: `npx -y deno test -A --no-lock eval/appliances_test.ts`.
 
+## Nutrition (PIN-80)
+
+```bash
+npx -y deno run -A --no-lock --env-file=.env eval/nutrition.ts   # 6 recipes through the production recipe_estimates task
+```
+
+Calories, protein, carbs and fat per serving, scored in code against hand-worked references in `cases/nutrition.json` (no judge). Writes `results/nutrition.md`. One pass costs about $0.0004. Scorer tests: `npx -y deno test -A --no-lock eval/nutrition_test.ts`.
+
 ## Layout
 
 | Path | In git | What |
@@ -35,6 +43,7 @@ Scored in code against hand labels in `cases/appliances.json` (no judge). Writes
 | `cases/gate.json` | yes | Extract-gate cases: full post, description-only variant, or a hand-written non-recipe caption |
 | `cases/invent.json` | yes | Invent prompts |
 | `cases/appliances.json` | yes | Appliances cases with hand labels (PIN-26) |
+| `cases/nutrition.json` | yes | Nutrition cases with hand-worked references (PIN-80) |
 | `models.ts` | yes | Shortlist per task. Production defaults are `TASK_MODELS` in `supabase/functions/_shared/llm/llmClient.ts`. `model@low` pins the reasoning effort |
 | `private/` | no | Post snapshots, videos, images, reference labels |
 | `results/raw/` | no | One JSON per call, holding the output, latency, tokens and cost |
