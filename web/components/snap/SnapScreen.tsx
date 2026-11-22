@@ -119,6 +119,25 @@ export function SnapScreen() {
     [busy, intent, invent, run, setBanner, t],
   );
 
+  /**
+   * A link that arrived without the form (pasted onto the page, or handed over by the Snap bar): show it in the
+   * field and start at once. Already saved? Open it instead of importing (and charging) again.
+   */
+  const startLink = useCallback(
+    (link: string, as: SnapIntent) => {
+      setUrl(link);
+      setUrlError(null);
+      setBanner(null);
+      void fetchRecipeByUrl(link, as === "invent" ? "invented" : "extracted")
+        .catch(() => null)
+        .then((recipe) => {
+          if (recipe) router.push(`/recipe/${recipe.id}`);
+          else void run({ intent: as, source: { type: "url", url: link } });
+        });
+    },
+    [router, run, setBanner],
+  );
+
   // Sent here by the Snap bar (⌘K, or the one on the Library): start on what it handed over, as if entered here.
   const handoffTaken = useRef(false);
   useEffect(() => {
@@ -130,18 +149,12 @@ export function SnapScreen() {
       void importFile(handoff.file);
       return;
     }
-    // The link is shown in the field while it imports; that isn't a cascading render, it happens once.
+    // Starting what the Snap bar handed over is the point of this effect; it runs once.
     // eslint-disable-next-line react-hooks/set-state-in-effect
-    setUrl(handoff.url);
-    // Already saved? Open it instead of importing (and charging) again.
-    void fetchRecipeByUrl(handoff.url, "extracted")
-      .catch(() => null)
-      .then((recipe) => {
-        if (recipe) router.replace(`/recipe/${recipe.id}`);
-        else void run({ intent: "extract", source: { type: "url", url: handoff.url } });
-      });
-  }, [importFile, router, run]);
+    startLink(handoff.url, "extract");
+  }, [importFile, startLink]);
 
+  /** A dropped link waits in the field, since a drag can land by mistake. */
   const takeLink = useCallback((link: string) => {
     setUrl(link);
     setUrlError(null);
@@ -165,7 +178,7 @@ export function SnapScreen() {
     void run({ intent, source: { type: "url", url: target } });
   }
 
-  // Paste anywhere: a photo imports it; a link outside a field lands in the link field, ready to go.
+  // Paste anywhere: a photo imports it, and so does a link pasted outside a field (the tip on this page says so).
   useEffect(() => {
     const onPaste = (event: ClipboardEvent) => {
       if (busy || document.querySelector("[role=dialog], [role=menu]")) return;
@@ -181,12 +194,12 @@ export function SnapScreen() {
       const link = normalizeSocialUrl(data.getData("text/plain"));
       if (link) {
         event.preventDefault();
-        takeLink(link);
+        startLink(link, intent);
       }
     };
     window.addEventListener("paste", onPaste);
     return () => window.removeEventListener("paste", onPaste);
-  }, [busy, importFile, takeLink]);
+  }, [busy, importFile, intent, startLink]);
 
   // Drop anywhere: a photo (or, in Snap, a PDF) imports it, a link fills the field.
   useEffect(() => {

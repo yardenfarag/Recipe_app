@@ -1,4 +1,5 @@
 import { resolveRecipeCalories } from './recipeCalories';
+import { matchesRecipeSearch, parseRecipeSearch } from './recipeSearch';
 import { CostEstimate, EffortLevel, Recipe } from '../types/recipe';
 
 export type RecipeSortKey = 'newest' | 'calories_asc' | 'cost_asc' | 'title_asc' | 'effort_asc';
@@ -25,10 +26,16 @@ interface RecipeSortValues {
 }
 
 function buildSortValues(recipe: Recipe): RecipeSortValues {
-  const ingredientNames = recipe.ingredients.slice(0, 12).map((i) => i.name);
+  const ingredientNames = recipe.ingredients.map((i) => i.name);
+  // A saved translation's words count too, so a recipe shown in the app's language is found in it.
+  const translated = Object.values(recipe.translations ?? {}).flatMap((content) => [
+    content.title,
+    ...(content.ingredients ?? []).map((i) => i.name),
+  ]);
   const tags = (recipe.tags ?? []).map((t) => t.trim().toLowerCase()).filter(Boolean);
   const displayTitle = recipe.display_title?.trim() || recipe.title;
-  const searchHaystack = [recipe.title, displayTitle, ...ingredientNames, ...tags]
+  const searchHaystack = [recipe.title, displayTitle, ...ingredientNames, ...translated, ...tags]
+    .filter(Boolean)
     .join(' ')
     .toLocaleLowerCase();
 
@@ -89,7 +96,7 @@ export function filterAndSortRecipes(
       ? { searchQuery: searchQueryOrOptions, sort: sortArg }
       : searchQueryOrOptions;
 
-  const normalizedQuery = (options.searchQuery ?? '').trim().toLocaleLowerCase();
+  const search = parseRecipeSearch(options.searchQuery ?? '');
   const sort = options.sort ?? 'newest';
   const selectedTags = (options.selectedTags ?? [])
     .map((t) => t.trim().toLowerCase())
@@ -103,9 +110,7 @@ export function filterAndSortRecipes(
 
   const filtered = withValues.filter(({ recipe, values }) => {
     if (allowlist && !allowlist.has(recipe.id)) return false;
-    if (normalizedQuery.length > 0 && !values.searchHaystack.includes(normalizedQuery)) {
-      return false;
-    }
+    if (!matchesRecipeSearch(values.searchHaystack, search)) return false;
     if (selectedTags.length > 0) {
       const hit = selectedTags.some((tag) => values.tagSet.has(tag));
       if (!hit) return false;

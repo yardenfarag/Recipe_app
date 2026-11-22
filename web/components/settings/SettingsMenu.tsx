@@ -14,7 +14,7 @@ import { useSettingsProfile } from "@/components/settings/SettingsProfile";
 import { useTheme } from "@/components/ThemeProvider";
 import { Tile, TileLabel, tileClasses } from "@/components/ui/Tile";
 import { cn } from "@/lib/cn";
-import { ADMIN_LINKS, SETTINGS_GROUPS, type SettingsSection, type SettingsSectionId } from "@/lib/settings/sections";
+import { ADMIN_LINK, SETTINGS_GROUPS, type SettingsSection, type SettingsSectionId } from "@/lib/settings/sections";
 import { shareApp } from "@/lib/settings/shareApp";
 
 const MODE_LABEL = { system: "theme.auto", light: "theme.light", dark: "theme.dark" } as const;
@@ -30,8 +30,6 @@ const SECTION_TRACK_ID: Record<SettingsSectionId, string> = {
   legal: "settings.legal_support",
 };
 
-/** "/admin/dashboard" → "settings.admin.dashboard". */
-const adminTrackId = (href: string) => `settings.admin.${href.slice(href.lastIndexOf("/") + 1)}`;
 
 /** What a row shows after its name in the phone menu: the current choice where there is one, else what it's for. */
 function useRowValues(): Partial<Record<SettingsSectionId, string>> {
@@ -54,14 +52,14 @@ export function SettingsRail({ current }: { current: SettingsSectionId }) {
   const { t } = useTranslation();
   const { isAdmin } = useSettingsProfile();
   return (
-    <nav aria-label={t("settings.title")} className="flex flex-col gap-6">
+    <nav aria-label={t("settings.title")} className="flex flex-col gap-5">
       <p aria-hidden className="px-1 font-display text-[26px] leading-tight font-bold text-text">
         {t("settings.title")}
       </p>
       {SETTINGS_GROUPS.map((group) => (
         <div key={group.titleKey}>
-          <TileLabel className="mb-2 px-1">{t(group.titleKey)}</TileLabel>
-          <ul className="flex flex-col gap-1">
+          <TileLabel className="mb-1.5 px-1">{t(group.titleKey)}</TileLabel>
+          <ul className="flex flex-col gap-0.5">
             {group.sections.map((section) => (
               <li key={section.id}>
                 <RailLink href={section.href} trackId={SECTION_TRACK_ID[section.id]} icon={<section.icon aria-hidden className="h-5 w-5" />} current={section.id === current}>
@@ -72,7 +70,7 @@ export function SettingsRail({ current }: { current: SettingsSectionId }) {
             {group.titleKey === "web.settings.helpGroup" ? (
               <li>
                 <button type="button" data-track="settings.share_app" onClick={() => void shareApp(t)} className={cn(railRowClass, "w-full text-start")}>
-                  <RowIcon>
+                  <RowIcon small>
                     <Share2 aria-hidden className="h-5 w-5" />
                   </RowIcon>
                   <span className="min-w-0 flex-1 leading-snug">{t("settings.shareApp")}</span>
@@ -83,31 +81,22 @@ export function SettingsRail({ current }: { current: SettingsSectionId }) {
         </div>
       ))}
       {isAdmin ? (
-        <div>
-          <TileLabel className="mb-2 px-1">{t("settings.adminTitle")}</TileLabel>
-          <ul className="flex flex-col gap-1">
-            {ADMIN_LINKS.map((link) => (
-              <li key={link.href}>
-                <RailLink href={link.href} trackId={adminTrackId(link.href)} icon={<ShieldCheck aria-hidden className="h-5 w-5" />} current={false}>
-                  {t(link.labelKey)}
-                </RailLink>
-              </li>
-            ))}
-          </ul>
-        </div>
+        <RailLink href={ADMIN_LINK.href} trackId="settings.admin.dashboard" icon={<ShieldCheck aria-hidden className="h-5 w-5" />} current={false}>
+          {t(ADMIN_LINK.labelKey)}
+        </RailLink>
       ) : null}
     </nav>
   );
 }
 
-/** A row of the menu beside the page: 48 px, straight on the page; the open page's row sits on the element colour. */
+/** A row of the menu beside the page: 44 px, straight on the page; the open page's row sits on the element colour. */
 const railRowClass =
-  "flex min-h-12 items-center gap-3 rounded-2xl p-1 pe-3 text-[15px] font-semibold text-text transition-colors hover:bg-element active:bg-selected";
+  "flex min-h-11 items-center gap-3 rounded-[14px] p-1 pe-3 text-[15px] font-semibold text-text transition-colors hover:bg-element active:bg-selected";
 
 function RailLink({ href, icon, current, children, trackId }: { href: string; icon: ReactNode; current: boolean; children: ReactNode; trackId: string }) {
   return (
     <Link href={href} data-track={trackId} aria-current={current ? "page" : undefined} className={cn(railRowClass, current && "bg-element")}>
-      <RowIcon>{icon}</RowIcon>
+      <RowIcon small>{icon}</RowIcon>
       <span className="min-w-0 flex-1 leading-snug">{children}</span>
       <RowChevron />
     </Link>
@@ -167,22 +156,15 @@ export function SettingsList() {
       ))}
 
       {isAdmin ? (
-        <div>
-          <TileLabel className="mb-2 px-1">{t("settings.adminTitle")}</TileLabel>
-          <Tile as="ul" className="p-2">
-            {ADMIN_LINKS.map((link) => (
-              <li key={link.href}>
-                <Link href={link.href} data-track={adminTrackId(link.href)} className={rowClass}>
-                  <RowIcon>
-                    <ShieldCheck aria-hidden className="h-5 w-5" />
-                  </RowIcon>
-                  <RowText label={t(link.labelKey)} />
-                  <RowChevron />
-                </Link>
-              </li>
-            ))}
-          </Tile>
-        </div>
+        <Tile className="p-2">
+          <Link href={ADMIN_LINK.href} data-track="settings.admin.dashboard" className={rowClass}>
+            <RowIcon>
+              <ShieldCheck aria-hidden className="h-5 w-5" />
+            </RowIcon>
+            <RowText label={t(ADMIN_LINK.labelKey)} value={t(ADMIN_LINK.hintKey)} />
+            <RowChevron />
+          </Link>
+        </Tile>
       ) : null}
     </nav>
   );
@@ -191,8 +173,12 @@ export function SettingsList() {
 /** A row inside a menu tile on a phone: 56 px or more, with its current value under the name. */
 const rowClass = "flex min-h-14 items-center gap-3 rounded-2xl p-2 pe-3 transition-colors hover:bg-element active:bg-selected";
 
-function RowIcon({ children }: { children: ReactNode }) {
-  return <span className="grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-accent-soft text-accent-text">{children}</span>;
+function RowIcon({ children, small = false }: { children: ReactNode; small?: boolean }) {
+  return (
+    <span className={cn("grid shrink-0 place-items-center bg-accent-soft text-accent-text", small ? "h-9 w-9 rounded-[10px]" : "h-10 w-10 rounded-xl")}>
+      {children}
+    </span>
+  );
 }
 
 function RowChevron() {

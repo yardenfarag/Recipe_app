@@ -25,7 +25,7 @@ export function CreditsCard({ quota }: { quota: ProfileQuota | null }) {
       </TileLabel>
       {quota ? (
         <p className="mt-3 font-display text-lg leading-snug font-bold text-text" aria-live="polite">
-          {t("snap.creditsRemaining", { total: quota.totalCredits, free: quota.freeExtractsRemaining, purchased: quota.purchasedCredits })}
+          {quota.totalCredits === 1 ? t("web.snap.creditsOne") : t("settings.creditsTotal", { count: quota.totalCredits })}
         </p>
       ) : (
         <p aria-hidden className="mt-3 h-6 w-48 max-w-full rounded-lg bg-element motion-safe:animate-pulse" />

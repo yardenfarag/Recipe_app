@@ -1555,7 +1555,8 @@ export default {
       "backToSnap": "Volver a Snap",
       "discard": "Descartar",
       "discardTitle": "¿Descartar esta receta?",
-      "discardBody": "No se guardará en tu biblioteca y el crédito usado no se devuelve."
+      "discardBody": "No se guardará en tu biblioteca y el crédito usado no se devuelve.",
+      "creditsOne": "1 crédito disponible"
     },
     "share": {
       "notFoundBody": "Puede que quien te lo mandó haya dejado de compartirlo. Pídele un enlace nuevo.",

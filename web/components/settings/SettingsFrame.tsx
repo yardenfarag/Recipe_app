@@ -34,8 +34,9 @@ function Frame({ children }: { children: ReactNode }) {
   if (wide) {
     return (
       <div className="grid grid-cols-[16rem_minmax(0,1fr)] gap-8 xl:grid-cols-[18rem_minmax(0,1fr)] xl:gap-12">
-        {/* The small padding keeps a row's focus outline from being cut off by the scrolling box. */}
-        <aside className="sticky top-7 -mx-1 max-h-[calc(100dvh-3.5rem)] self-start overflow-y-auto px-1 pb-4">
+        {/* Stays in view while the page scrolls. In a window too short for it, it scrolls on its own, without a
+            scrollbar of its own. The small padding keeps a row's focus outline from being cut off. */}
+        <aside className="sticky top-7 -mx-1 max-h-[calc(100dvh-3.5rem)] self-start overflow-y-auto overscroll-contain px-1 pb-4 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
           <SettingsRail current={section?.id ?? "account"} />
         </aside>
         {/* A container, so the page lays itself out by its own width, not the window's. */}

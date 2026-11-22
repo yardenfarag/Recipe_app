@@ -1555,7 +1555,8 @@ export default {
       "backToSnap": "Back to Snap",
       "discard": "Discard",
       "discardTitle": "Discard this recipe?",
-      "discardBody": "It won’t be saved to your library, and the credit it used isn’t given back."
+      "discardBody": "It won’t be saved to your library, and the credit it used isn’t given back.",
+      "creditsOne": "1 credit available"
     },
     "share": {
       "notFoundBody": "The person who sent it may have stopped sharing it. Ask them for a new link.",
