@@ -5,6 +5,8 @@ on:
     branches: [master, main]
     paths:
       - 'workers/share-page/**'
+      # The pages take their colours from the theme packs (ADR 031).
+      - 'shared/constants/themes.ts'
       - '.github/workflows/deploy-share-worker.yml'
   workflow_dispatch:
 

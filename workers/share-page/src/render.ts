@@ -1,7 +1,11 @@
 // Server-rendered HTML for https://pinch-app.io/s/<token> (PIN-9, redesigned in PIN-110) and the
 // public Hub recipe pages at https://pinch-app.io/r/<public_slug> (PIN-124).
 // Pure functions only — no Cloudflare APIs — so vitest can cover them.
-// Looks like the landing page (landing/site.css): night background, Pinch pink, glass cards.
+// Looks like the web app's recipe page (Night Market, PIN-160): the default theme pack's colours in light and dark,
+// tiles with a hairline border, Space Grotesk headings and Inter text. The pages stay here, not in the Next.js app
+// (ADR 031).
+
+import { DEFAULT_THEME_PACK, ThemePacks, type ThemePackColors } from '../../../shared/constants/themes';
 
 import { fill, isRtl, type PageLanguage, type PageStrings, stringsFor } from './strings';
 
@@ -115,10 +119,13 @@ function ingredientLines(recipe: SharedRecipe): string[] {
   return ingredientList(recipe).map((parts) => [parts.amount, parts.rest].filter(Boolean).join(' '));
 }
 
-/** The amount is isolated left to right, so "1½" stays "1½" inside a Hebrew or Arabic line. */
+/**
+ * One ingredient row, as on the web app: tick box, amount, the rest. The amount is isolated left to right, so "1½"
+ * stays "1½" inside a Hebrew or Arabic line.
+ */
 function ingredientHtml(parts: IngredientParts): string {
-  const amount = parts.amount ? `<bdi dir="ltr">${escapeHtml(parts.amount)}</bdi> ` : '';
-  return `${amount}${escapeHtml(parts.rest)}`;
+  const amount = parts.amount ? `<bdi dir="ltr">${escapeHtml(parts.amount)}</bdi>` : '';
+  return `<li><label><input type="checkbox" /><span class="amount">${amount}</span><span class="name" dir="auto">${escapeHtml(parts.rest)}</span></label></li>`;
 }
 
 function instructionSteps(recipe: SharedRecipe): string[] {
@@ -153,6 +160,18 @@ function platformName(recipe: SharedRecipe): string | undefined {
   return recipe.platform ? PLATFORM_NAMES[recipe.platform] : undefined;
 }
 
+/**
+ * Calories in one serving, or nothing without calories. The same per-serving fix as the app's recipeCalories (a
+ * "total" that is really one cookie of 48).
+ */
+function caloriesPerServing(recipe: SharedRecipe): number | undefined {
+  const total = recipe.calories;
+  if (typeof total !== 'number' || !Number.isFinite(total) || total <= 0) return undefined;
+  const serves = servings(recipe) ?? 1;
+  const looksPerServing = total / serves < 20 && total >= 40 && total <= 900 && serves >= 4;
+  return Math.max(1, Math.round(looksPerServing ? total : total / serves));
+}
+
 /** Facts in the page language: "40 min", "Serves 4", "7 ingredients". */
 function facts(recipe: SharedRecipe, s: PageStrings): string[] {
   const list: string[] = [];
@@ -163,6 +182,21 @@ function facts(recipe: SharedRecipe, s: PageStrings): string[] {
   const count = ingredientLines(recipe).length;
   if (count) list.push(fill(s.ingredientCount, { n: count }));
   return list;
+}
+
+/** The facts as small tiles, value over label, like the web app's recipe header: "40 min / Total time". */
+function factTiles(recipe: SharedRecipe, s: PageStrings): string {
+  const tiles: [string, string][] = [];
+  const time = minutes(recipe);
+  if (time) tiles.push([fill(s.minutes, { n: time }), s.factTime]);
+  const serves = servings(recipe);
+  if (serves) tiles.push([String(serves), s.factServings]);
+  const count = ingredientList(recipe).length;
+  if (count) tiles.push([String(count), s.ingredients]);
+  const calories = caloriesPerServing(recipe);
+  if (calories) tiles.push([`~${calories}`, s.factCalories]);
+  if (!tiles.length) return '';
+  return `<ul class="facts">${tiles.map(([value, label]) => `<li><b>${escapeHtml(value)}</b><span>${escapeHtml(label)}</span></li>`).join('')}</ul>`;
 }
 
 export function shareDescription(recipe: SharedRecipe, lang: PageLanguage = 'en'): string {
@@ -178,15 +212,12 @@ const gramsOf = (value: unknown): number | null =>
 
 /**
  * schema.org NutritionInformation for one serving (PIN-80), the numbers the app shows: calories alone when there are
- * no macros, nothing without calories. Same per-serving fix as the app's recipeCalories (a "total" that is really one
- * cookie of 48).
+ * no macros, nothing without calories.
  */
 export function nutritionJsonLd(recipe: SharedRecipe): Record<string, string> | undefined {
-  const total = recipe.calories;
-  if (typeof total !== 'number' || !Number.isFinite(total) || total <= 0) return undefined;
+  const perServing = caloriesPerServing(recipe);
+  if (!perServing) return undefined;
   const serves = servings(recipe) ?? 1;
-  const looksPerServing = total / serves < 20 && total >= 40 && total <= 900 && serves >= 4;
-  const perServing = Math.max(1, Math.round(looksPerServing ? total : total / serves));
   const data: Record<string, string> = {
     '@type': 'NutritionInformation',
     servingSize: '1 serving',
@@ -239,81 +270,185 @@ const APPLE_PATH =
 const PLAY_PATH =
   'M3 20.5v-17c0-.59.34-1.11.84-1.35L13.69 12l-9.85 9.85c-.5-.25-.84-.76-.84-1.35zm13.81-5.38L6.05 21.34l8.49-8.49 2.27 2.27zm3.35-4.31c.34.27.59.69.59 1.19s-.22.9-.57 1.18l-2.29 1.32-2.5-2.5 2.5-2.5 2.27 1.31zM6.05 2.66l10.76 6.22-2.27 2.27-8.49-8.49z';
 
+/** The default theme pack, which the web app also opens in. These pages have no theme picker. */
+const PACK = ThemePacks[DEFAULT_THEME_PACK];
+
+/** Theme pack colour → the CSS variable these pages use (named like the web app's Tailwind tokens). */
+const COLOR_VARIABLES: [keyof ThemePackColors, string][] = [
+  ['background', '--bg'],
+  ['surface', '--surface'],
+  ['backgroundElement', '--element'],
+  ['text', '--text'],
+  ['textSecondary', '--muted'],
+  ['border', '--border'],
+  ['primary', '--primary'],
+  ['primarySoft', '--primary-soft'],
+  ['onPrimary', '--on-primary'],
+  ['primaryText', '--primary-text'],
+];
+
+function colorVariables(colors: ThemePackColors): string {
+  return COLOR_VARIABLES.map(([key, variable]) => `${variable}:${colors[key] as string}`).join(';');
+}
+
+const LATIN = 'U+0000-00FF,U+0131,U+0152-0153,U+02BB-02BC,U+02C6,U+02DA,U+02DC,U+0304,U+0308,U+0329,U+2000-206F,U+20AC,U+2122,U+2191,U+2193,U+2212,U+2215,U+FEFF,U+FFFD';
+const LATIN_EXT = 'U+0100-02BA,U+02BD-02C5,U+02C7-02CC,U+02CE-02D7,U+02DD-02FF,U+0304,U+0308,U+0329,U+1D00-1DBF,U+1E00-1E9F,U+1EF2-1EFF,U+2020,U+20A0-20AB,U+20AD-20C0,U+2113,U+2C60-2C7F,U+A720-A7FF';
+const CYRILLIC = 'U+0301,U+0400-045F,U+0490-0491,U+04B0-04B1,U+2116';
+
+/**
+ * Inter and Space Grotesk, the web app's two faces, served by the site from /fonts (landing/fonts, SIL OFL). Neither
+ * has Hebrew or Arabic, so those fall through to the system's fonts; Space Grotesk has no Cyrillic, so Russian
+ * headings fall to Inter. Each file loads only when the page has a letter in its range.
+ */
+const FONT_FACES = (
+  [
+    ['Inter', 'inter-latin', LATIN],
+    ['Inter', 'inter-latin-ext', LATIN_EXT],
+    ['Inter', 'inter-cyrillic', CYRILLIC],
+    ['Space Grotesk', 'space-grotesk-latin', LATIN],
+    ['Space Grotesk', 'space-grotesk-latin-ext', LATIN_EXT],
+  ] as const
+)
+  .map(
+    ([family, file, range]) =>
+      `@font-face{font-family:"${family}";font-style:normal;font-weight:300 700;font-display:swap;src:url(/fonts/${file}-wght-normal.woff2) format("woff2");unicode-range:${range}}`,
+  )
+  .join('\n');
+
+// Sizes, corners and spacing follow web/components/ui (Tile, Button) and web/components/recipe (RecipeHeader,
+// IngredientsPanel, StepsPanel). Breakpoints are the web app's: 768 (md), 1024 (lg), 1280 (xl). Store and app buttons
+// switch at 860, as before, so tablets keep "Open in Pinch".
 const STYLES = `
-:root{--pink:#c45b7a;--pink-button:#b24f6d;--pink-bright:#f0a8c4;--night:#070508;--cream:#f7f2f4;--muted:#c3b0b8;--line:rgba(232,168,188,.22);--glass:rgba(255,255,255,.045);--well:rgba(196,91,122,.2);color-scheme:dark}
+${FONT_FACES}
+:root{${colorVariables(PACK.light)};color-scheme:light;--sans:Inter,ui-sans-serif,system-ui,-apple-system,"Segoe UI",Roboto,"Noto Sans","Noto Sans Hebrew","Noto Sans Arabic",Arial,sans-serif;--display:"Space Grotesk",var(--sans)}
+@media (prefers-color-scheme:dark){:root{${colorVariables(PACK.dark)};color-scheme:dark}}
 *{box-sizing:border-box}
-html{-webkit-text-size-adjust:100%}
-body{margin:0;min-height:100vh;color:var(--cream);line-height:1.55;font:16px/1.55 -apple-system,BlinkMacSystemFont,"Segoe UI",system-ui,Roboto,sans-serif;background:radial-gradient(560px 560px at 0% 0%,rgba(196,91,122,.28),transparent 70%),radial-gradient(440px 440px at 100% 8%,rgba(240,168,196,.12),transparent 70%),linear-gradient(#140910,var(--night) 42%,#09070a);background-color:var(--night);background-attachment:fixed}
-:lang(ar){letter-spacing:0!important}
+html{-webkit-text-size-adjust:100%;-webkit-tap-highlight-color:transparent}
+body{margin:0;min-height:100vh;background:var(--bg);color:var(--text);font:16px/1.55 var(--sans);-webkit-font-smoothing:antialiased}
+h1,h2{font-family:var(--display);font-weight:700;letter-spacing:-.015em}
+[dir=rtl] h1,[dir=rtl] h2{letter-spacing:normal}
 a{color:inherit}
-:focus-visible{outline:2px solid var(--pink-bright);outline-offset:3px}
-.wrap{max-width:1080px;margin:0 auto;padding:0 20px}
-header.top{display:flex;align-items:center;justify-content:space-between;gap:12px;padding-top:24px}
-.brand{display:inline-flex;align-items:center;gap:10px;font-size:22px;font-weight:700;letter-spacing:-.4px;text-decoration:none}
-.brand svg{width:28px;height:28px;fill:var(--pink)}
-.pill{display:inline-flex;align-items:center;min-height:40px;padding:0 16px;border:1px solid var(--line);border-radius:999px;background:var(--glass);color:var(--muted);font-size:14px;font-weight:600;text-decoration:none}
-.pill:hover{color:var(--cream)}
-.hero{display:grid;gap:24px;margin-top:28px}
-.photo{margin:0;aspect-ratio:4/3;border-radius:24px;overflow:hidden;border:1px solid var(--line);background:linear-gradient(135deg,#2a1420,#140910);display:grid;place-items:center;box-shadow:0 24px 60px -24px rgba(0,0,0,.8)}
-.photo img{width:100%;height:100%;object-fit:cover;display:block}
-.photo svg{width:72px;height:72px;fill:var(--pink);opacity:.8}
-.no-photo .photo{aspect-ratio:auto;height:112px}
-.no-photo .photo svg{width:48px;height:48px}
-.eyebrow{margin:0;color:var(--pink-bright);font-size:14px;font-weight:700;letter-spacing:.2px}
-h1{margin:8px 0 0;font-size:clamp(30px,5vw,46px);line-height:1.1;letter-spacing:-.8px;overflow-wrap:anywhere}
-.facts{display:flex;flex-wrap:wrap;gap:8px;list-style:none;margin:16px 0 0;padding:0}
-.facts li{padding:6px 12px;border:1px solid var(--line);border-radius:999px;background:var(--glass);color:var(--muted);font-size:14px;font-weight:600}
-.actions{display:flex;flex-wrap:wrap;gap:10px;margin-top:24px}
-.btn{display:inline-flex;align-items:center;justify-content:center;gap:10px;min-height:52px;padding:0 22px;border-radius:14px;font-weight:700;font-size:16px;text-decoration:none;border:1px solid transparent}
-.btn:hover{opacity:.9}
-.btn-primary{background:var(--pink-button);color:#fff}
-.btn-ghost{border-color:var(--line);background:var(--glass)}
-.btn-store{background:#fff;color:#000;min-width:200px}
+::selection{background:var(--primary-soft);color:var(--text)}
+:focus-visible{outline:2px solid var(--primary);outline-offset:2px}
+.wrap{max-width:1200px;margin:0 auto;padding:0 16px}
+header.top{display:flex;align-items:center;justify-content:space-between;gap:12px;padding-block:16px}
+.brand{display:inline-flex;align-items:center;gap:8px;font:700 22px/1 var(--display);letter-spacing:-.02em;text-decoration:none}
+.brand svg{width:28px;height:28px;fill:var(--primary)}
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:10px;height:56px;padding:0 24px;border:1px solid transparent;border-radius:16px;font-size:17px;font-weight:600;line-height:1.2;text-align:center;text-decoration:none;transition:filter .15s,background-color .15s}
+.btn-sm{height:40px;padding:0 16px;border-radius:12px;font-size:14px}
+.btn-primary{background:var(--primary);color:var(--on-primary);font-family:var(--display);font-weight:700}
+.btn-primary:hover{filter:brightness(1.05)}
+.btn-outline{border-color:var(--border);background:var(--surface);color:var(--text)}
+.btn-outline:hover{background:var(--element)}
+.btn-store{min-width:210px;background:var(--text);color:var(--bg)}
 .btn-store svg{width:22px;height:22px;fill:currentColor}
-.source{margin:18px 0 0;color:var(--muted);font-size:15px}
-.source a{color:var(--pink-bright)}
-.content{display:grid;gap:20px;margin-top:40px}
-.card{border:1px solid var(--line);border-radius:22px;background:var(--glass);padding:22px}
-h2{margin:0 0 14px;font-size:22px;letter-spacing:-.3px}
-.ingredients ul{list-style:none;margin:0;padding:0}
-.ingredients li{border-top:1px solid var(--line)}
-.ingredients li:first-child{border-top:0}
-.ingredients label{display:flex;gap:12px;align-items:flex-start;padding:10px 0;cursor:pointer}
-.ingredients input{appearance:none;-webkit-appearance:none;flex:none;width:20px;height:20px;margin:2px 0 0;border:2px solid var(--pink);border-radius:6px;display:grid;place-items:center;cursor:pointer}
-.ingredients input:checked{background:var(--pink)}
-.ingredients input:checked::after{content:"";width:5px;height:10px;border:solid #fff;border-width:0 2px 2px 0;transform:translateY(-1px) rotate(45deg)}
-.ingredients input:checked+span{color:var(--muted);text-decoration:line-through}
-.steps ol{list-style:none;margin:0;padding:0;counter-reset:step}
-.steps li{counter-increment:step;display:grid;grid-template-columns:36px 1fr;gap:14px;padding:12px 0;border-top:1px solid var(--line)}
-.steps li:first-child{border-top:0;padding-top:0}
-.steps .credit{margin:14px 0 0;padding-top:14px;border-top:1px solid var(--line);color:var(--muted);font-size:14px}
-.steps li::before{content:counter(step);display:grid;place-items:center;width:36px;height:36px;border-radius:999px;background:var(--well);color:var(--pink-bright);font-weight:800}
-.promo{margin-top:48px;text-align:center;padding:36px 22px;background:linear-gradient(160deg,rgba(196,91,122,.22),rgba(255,255,255,.03))}
-.promo svg.logo{width:44px;height:44px;fill:var(--pink)}
-.promo h2{margin:12px 0 8px;font-size:clamp(24px,4vw,32px)}
-.promo p{margin:0 auto;max-width:560px;color:var(--muted)}
-.promo .actions{justify-content:center}
-footer{margin-top:56px;padding:24px 20px 120px;border-top:1px solid var(--line);color:var(--muted);font-size:14px;display:flex;flex-wrap:wrap;gap:16px;justify-content:center}
-footer a{text-decoration:none}
-footer a:hover{color:var(--cream)}
-.sticky{position:fixed;inset-inline:0;bottom:0;z-index:5;display:flex;gap:10px;padding:12px 16px calc(12px + env(safe-area-inset-bottom));background:rgba(12,8,10,.92);border-top:1px solid var(--line);backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px)}
-.sticky .btn{flex:1;min-height:48px;padding:0 12px}
-.notice{max-width:560px;margin:72px auto 0;text-align:center}
+.tile{border:1px solid var(--border);border-radius:28px;background:var(--surface)}
+.hero{display:flex;flex-direction:column;gap:16px}
+.photo{position:relative;margin:0;min-height:260px;border-radius:28px;overflow:hidden;background:var(--element)}
+.photo img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;display:block}
+.details{display:flex;flex-direction:column;gap:14px;min-width:0;padding:20px}
+.eyebrow{display:inline-flex;width:fit-content;max-width:100%;margin:0;padding:6px 10px;border-radius:8px;background:var(--primary-soft);color:var(--primary-text);font:700 11px/1.1 var(--display);letter-spacing:.08em;text-transform:uppercase}
+[dir=rtl] .eyebrow{letter-spacing:normal}
+h1{margin:0;font-size:28px;line-height:.95;letter-spacing:-.035em;text-wrap:balance;overflow-wrap:anywhere}
+.t-s h1{font-size:40px}
+.t-m h1{font-size:32px}
+[dir=rtl] h1{line-height:1.15;letter-spacing:normal}
+.facts{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px;list-style:none;margin:0;padding:0}
+.facts li{display:flex;flex-direction:column;gap:2px;min-width:0;padding:10px;border-radius:14px;background:var(--element)}
+.facts b{font:700 17px/1.2 var(--display);text-wrap:balance;overflow-wrap:anywhere}
+.facts span{color:var(--muted);font-size:11px;font-weight:600;line-height:1.35}
+.actions{display:flex;flex-wrap:wrap;gap:10px}
+.details .actions{display:none;margin-top:auto;padding-top:4px}
+.details .actions .btn{flex:1 1 12rem}
+.source{margin:0;font-size:14px}
+.source a{color:var(--primary-text);font-weight:600;text-decoration:none;text-underline-offset:4px}
+.source a:hover{text-decoration:underline}
+.content{display:grid;align-items:start;gap:16px;margin-top:20px}
+h2{margin:0;font-size:22px;line-height:1.2}
+.ingredients{display:flex;flex-direction:column;gap:12px;min-width:0;padding:20px}
+.ingredients ul{display:grid;grid-template-columns:auto fit-content(9rem) minmax(0,1fr);column-gap:12px;list-style:none;margin:0;padding:0}
+.ingredients li{grid-column:1/-1;display:grid;grid-template-columns:subgrid;border-bottom:1px solid var(--border)}
+.ingredients li:last-child{border-bottom:0}
+.ingredients label{grid-column:1/-1;display:grid;grid-template-columns:subgrid;align-items:center;min-height:46px;padding:8px 0;cursor:pointer}
+.ingredients input{width:20px;height:20px;margin:0;accent-color:var(--primary);cursor:pointer}
+.ingredients .amount{color:var(--primary-text);font-size:15px;font-weight:700;font-variant-numeric:tabular-nums}
+.ingredients .name{font-size:15px;overflow-wrap:anywhere}
+.ingredients input:checked~.amount{opacity:.6}
+.ingredients input:checked~.name{color:var(--muted);text-decoration:line-through}
+.steps{min-width:0}
+.steps ol{display:flex;flex-direction:column;gap:12px;list-style:none;margin:12px 0 0;padding:0;counter-reset:step}
+.steps li{counter-increment:step;display:flex;align-items:flex-start;gap:14px;padding:16px;border:1px solid var(--border);border-radius:24px;background:var(--surface)}
+.steps li::before{content:counter(step);flex:none;display:grid;place-items:center;width:40px;height:40px;border-radius:12px;background:var(--element);font:700 18px/1 var(--display);font-variant-numeric:tabular-nums}
+.steps li span{flex:1;min-width:0;max-width:65ch;padding-top:7px;text-wrap:pretty}
+.steps .credit{margin:12px 0 0;color:var(--muted);font-size:14px}
+.promo{margin-top:40px;padding:32px 20px;border-radius:28px;background:var(--primary);color:var(--on-primary);text-align:center}
+.promo svg.logo{width:44px;height:44px;fill:currentColor}
+.promo h2{margin:12px 0 8px;font-size:28px;line-height:1.1}
+.promo p{max-width:560px;margin:0 auto;opacity:.85}
+.promo .actions{justify-content:center;margin-top:24px}
+.promo .btn-store{background:var(--on-primary);color:var(--primary)}
+.notice{max-width:560px;margin:32px auto 0;padding:32px 24px;text-align:center}
+.notice h1{font-size:32px;line-height:1.1}
 .notice p{color:var(--muted)}
-.notice .actions{justify-content:center}
+.notice .actions{justify-content:center;margin-top:20px}
+footer{display:flex;flex-wrap:wrap;justify-content:center;gap:16px;margin-top:48px;padding:24px 16px 120px;border-top:1px solid var(--border);color:var(--muted);font-size:14px}
+footer a{text-decoration:none}
+footer a:hover{color:var(--text)}
+.sticky{position:fixed;inset-inline:0;bottom:0;z-index:5;display:flex;gap:10px;padding:20px 16px max(env(safe-area-inset-bottom),16px);background:linear-gradient(color-mix(in srgb,var(--bg) 0%,transparent),var(--bg) 35%)}
+.sticky .btn{flex:1;min-width:0;height:54px;padding:0 12px}
 .desktop-only{display:none}
+@media (min-width:640px){.wrap{padding:0 24px}}
+@media (min-width:768px){
+  .hero{flex-direction:row;flex-wrap:wrap}
+  .photo{flex:7 1 520px;min-height:460px}
+  .details{flex:5 1 380px;gap:18px;padding:32px}
+  .eyebrow{font-size:12px}
+  h1{font-size:36px}
+  .t-s h1{font-size:60px}
+  .t-m h1{font-size:48px}
+  .facts{gap:10px}
+  .facts li{padding:12px 14px;border-radius:16px}
+  .facts b{font-size:22px}
+  .facts span{font-size:12px}
+  .content{margin-top:24px}
+  h2{font-size:26px}
+  .ingredients{padding:26px}
+  .ingredients .amount,.ingredients .name{font-size:16px}
+  .steps ol{margin-top:16px}
+  .steps li{gap:18px;padding:22px 24px}
+  .steps li::before{width:44px;height:44px;border-radius:14px;font-size:20px}
+  .steps li span{font-size:17px}
+  .promo{padding:48px 32px}
+  .promo h2{font-size:32px}
+}
 @media (min-width:860px){
-  .hero{grid-template-columns:minmax(0,1.05fr) minmax(0,1fr);align-items:center;gap:48px;margin-top:40px}
-  .no-photo .photo{aspect-ratio:4/3;height:auto}
-  .content{grid-template-columns:minmax(280px,.8fr) minmax(0,1.2fr);align-items:start;gap:28px;margin-top:56px}
-  .ingredients{position:sticky;top:24px}
+  /* Below this the bar at the bottom of the screen holds the two buttons. */
+  .details .actions{display:flex}
   .sticky{display:none}
   footer{padding-bottom:32px}
   .mobile-only{display:none}
   .desktop-only{display:inline-flex}
 }
-@media print{body{background:#fff;color:#000}.sticky,.actions,.promo,header,footer{display:none}.card{border-color:#ccc}}
+@media (min-width:1024px){
+  .content.both{grid-template-columns:minmax(0,4fr) minmax(0,7fr)}
+  .ingredients{position:sticky;top:24px;max-height:calc(100dvh - 48px);overflow-y:auto;overscroll-behavior:contain}
+}
+@media (min-width:1280px){
+  h1{font-size:44px}
+  .t-s h1{font-size:72px}
+  .t-m h1{font-size:56px}
+}
+@media print{
+  :root{${colorVariables(PACK.light)};color-scheme:light}
+  .sticky,.actions,.promo,header,footer{display:none}
+  .ingredients{position:static;max-height:none}
+}
 `;
+
+/** Headlines shrink as titles grow, like the web app's (RecipeHeader): short, medium, long. */
+function titleSizeClass(title: string): string {
+  return title.length <= 16 ? 't-s' : title.length <= 34 ? 't-m' : '';
+}
 
 function logo(className = ''): string {
   return `<svg${className ? ` class="${className}"` : ''} viewBox="0 0 24 24" aria-hidden="true"><path d="${LOGO_PATH}"/></svg>`;
@@ -389,7 +524,6 @@ function page(options: {
 }): string {
   const { lang, title, description, canonical, image, imageAlt, appArgument, jsonLd, indexable, body } = options;
   const s = stringsFor(lang);
-  const bigImage = image !== FALLBACK_IMAGE;
   return `<!DOCTYPE html>
 <html lang="${lang}" dir="${isRtl(lang) ? 'rtl' : 'ltr'}">
   <head>
@@ -398,7 +532,10 @@ function page(options: {
     <title>${escapeHtml(title)}</title>
     <meta name="description" content="${escapeHtml(description)}" />
     <meta name="robots" content="${indexable ? 'index, follow, max-image-preview:large' : 'noindex'}" />
-    <meta name="theme-color" content="#140910" />
+    <meta name="theme-color" media="(prefers-color-scheme: light)" content="${PACK.light.background}" />
+    <meta name="theme-color" media="(prefers-color-scheme: dark)" content="${PACK.dark.background}" />
+    <link rel="preload" href="/fonts/inter-latin-wght-normal.woff2" as="font" type="font/woff2" crossorigin />
+    <link rel="preload" href="/fonts/space-grotesk-latin-wght-normal.woff2" as="font" type="font/woff2" crossorigin />
     ${canonical ? `<link rel="canonical" href="${escapeHtml(canonical)}" />` : ''}
     <link rel="icon" type="image/png" href="/favicon.png" />
     <link rel="apple-touch-icon" href="/icon.png" />
@@ -418,10 +555,10 @@ function page(options: {
     ${jsonLd ? `<script type="application/ld+json">${jsonForScript(jsonLd)}</script>` : ''}
     <style>${STYLES}</style>
   </head>
-  <body${bigImage ? '' : ' class="no-photo"'}>
+  <body>
     <header class="top wrap">
       <a class="brand" href="/">${logo()}Pinch</a>
-      <a class="pill" href="#get">${escapeHtml(s.getApp)}</a>
+      <a class="btn btn-outline btn-sm" href="#get">${escapeHtml(s.getApp)}</a>
     </header>
 ${body}
     <footer>
@@ -436,7 +573,7 @@ ${body}
 }
 
 function promo(s: PageStrings): string {
-  return `      <section id="get" class="card promo">
+  return `      <section id="get" class="promo">
         ${logo('logo')}
         <h2>${escapeHtml(s.promoTitle)}</h2>
         <p>${escapeHtml(s.promoBody)}</p>
@@ -463,7 +600,7 @@ function recipeBody(
   const steps = instructionSteps(recipe);
   const source = httpsUrl(recipe.original_url);
   const platform = platformName(recipe);
-  const factList = facts(recipe, s);
+  const titleSize = titleSizeClass(recipe.title);
 
   const sourceLine = source
     ? `<p class="source"><a href="${escapeHtml(source)}" rel="nofollow noopener" target="_blank">${escapeHtml(
@@ -471,38 +608,40 @@ function recipeBody(
       )} ↗</a></p>`
     : '';
 
+  // No photo, no photo tile: the details take the whole row, as on the web app. A photo that fails to load removes
+  // its tile the same way.
   return `    <main class="wrap">
       <article>
         <div class="hero">
-          <figure class="photo">${
+          ${
             photo
-              ? `<img src="${escapeHtml(photo)}" alt="${escapeHtml(recipe.title)}" fetchpriority="high" />`
-              : logo()
-          }</figure>
-          <div>
+              ? `<figure class="photo"><img src="${escapeHtml(photo)}" alt="${escapeHtml(recipe.title)}" fetchpriority="high" onerror="this.parentNode.remove()" /></figure>`
+              : ''
+          }
+          <div class="tile details${titleSize ? ` ${titleSize}` : ''}">
             <p class="eyebrow">${escapeHtml(eyebrow)}</p>
             <h1 dir="auto">${escapeHtml(recipe.title)}</h1>
-            ${factList.length ? `<ul class="facts">${factList.map((fact) => `<li>${escapeHtml(fact)}</li>`).join('')}</ul>` : ''}
+            ${factTiles(recipe, s)}
+            ${sourceLine}
             <div class="actions">
               <a class="btn btn-primary mobile-only" data-open-app href="${appLink(route)}">${escapeHtml(s.openInApp)}</a>
               <a class="btn btn-primary desktop-only" href="${webAppLink(route)}">${escapeHtml(s.saveOnWeb)}</a>
-              <a class="btn btn-ghost" href="#get">${escapeHtml(s.getApp)}</a>
+              <a class="btn btn-outline" href="#get">${escapeHtml(s.getApp)}</a>
             </div>
-            ${sourceLine}
           </div>
         </div>
-        <div class="content">
+        <div class="content${ingredients.length && steps.length ? ' both' : ''}">
           ${
             ingredients.length
-              ? `<section class="card ingredients">
+              ? `<section class="tile ingredients">
             <h2>${escapeHtml(s.ingredients)}</h2>
-            <ul>${ingredients.map((parts) => `<li><label><input type="checkbox" /><span dir="auto">${ingredientHtml(parts)}</span></label></li>`).join('')}</ul>
+            <ul>${ingredients.map(ingredientHtml).join('')}</ul>
           </section>`
               : ''
           }
           ${
             steps.length
-              ? `<section class="card steps">
+              ? `<section class="steps">
             <h2>${escapeHtml(s.steps)}</h2>
             <ol>${steps.map((text) => `<li><span dir="auto">${escapeHtml(text)}</span></li>`).join('')}</ol>${
               creditNote ? `
@@ -517,7 +656,7 @@ ${promo(s)}
     </main>
     <div class="sticky">
       <a class="btn btn-primary" data-open-app href="${appLink(route)}">${escapeHtml(s.openInApp)}</a>
-      <a class="btn btn-ghost" href="#get">${escapeHtml(s.getApp)}</a>
+      <a class="btn btn-outline" href="#get">${escapeHtml(s.getApp)}</a>
     </div>
     ${openAppScript(route)}`;
 }
@@ -596,7 +735,7 @@ export function renderNotFoundPage(lang: PageLanguage = 'en', kind: 'share' | 'h
     description: message,
     image: FALLBACK_IMAGE,
     body: `    <main class="wrap">
-      <div class="notice">
+      <div class="tile notice">
         <h1>${escapeHtml(s.notFoundTitle)}</h1>
         <p>${escapeHtml(message)}</p>
         <div class="actions"><a class="btn btn-primary" href="/">${escapeHtml(s.goHome)}</a></div>
@@ -615,12 +754,12 @@ export function renderUnavailablePage(token: string, lang: PageLanguage = 'en'):
     image: FALLBACK_IMAGE,
     appArgument: `${SITE_URL}/s/${encodeURIComponent(token)}`,
     body: `    <main class="wrap">
-      <div class="notice">
+      <div class="tile notice">
         <h1>${escapeHtml(s.unavailableTitle)}</h1>
         <p>${escapeHtml(s.unavailableBody)}</p>
         <div class="actions">
           <a class="btn btn-primary mobile-only" data-open-app href="${appLink(shareRoute(token))}">${escapeHtml(s.openInApp)}</a>
-          <a class="btn btn-ghost" href="${webAppLink(shareRoute(token))}">${escapeHtml(s.saveOnWeb)}</a>
+          <a class="btn btn-outline" href="${webAppLink(shareRoute(token))}">${escapeHtml(s.saveOnWeb)}</a>
         </div>
       </div>
 ${promo(s)}
