@@ -39,7 +39,10 @@ interface RequestBody {
 }
 
 /**
- * POST { target_language, recipe } -> { status, recipe?, message? }
+ * POST { target_language, recipe } -> { status, recipe?, code?, message? }
+ *
+ * Failure codes (the app's words for them are in shared/lib/serverErrors.ts): auth_required, metering_error,
+ * daily_limit, translation_empty, translation_timeout, translation_failed. Bad requests answer { error }.
  *
  * Translates recipe title, ingredients, and instructions. Free for now
  * (logged for cost tracking); no product-token charge.
@@ -214,6 +217,7 @@ serve('translate-recipe', async (req) => {
       });
       return jsonResponse({
         status: 'failed',
+        code: 'translation_empty',
         message: "Couldn't translate this recipe. Try again.",
       });
     }
@@ -251,6 +255,7 @@ serve('translate-recipe', async (req) => {
     return jsonResponse(
       {
         status: 'failed',
+        code: timedOut ? 'translation_timeout' : 'translation_failed',
         message: timedOut
           ? 'Translation timed out. Please try again in a moment.'
           : 'Something went wrong translating the recipe. Please try again.',

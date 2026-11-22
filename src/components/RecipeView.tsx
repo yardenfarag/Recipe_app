@@ -68,6 +68,7 @@ import {
 } from '@shared/lib/ownedAppliances';
 import { ExtractedRecipe } from '@/lib/supabase/extractRecipe';
 import { createRecipeShare } from '@shared/lib/supabase/recipeShare';
+import { REPAIR_ERROR_KEYS, serverErrorText, SHARE_ERROR_KEYS } from '@shared/lib/serverErrors';
 import { showToast } from '@shared/lib/toast';
 import { setRecipeTags } from '@shared/lib/supabase/recipes';
 import { repairRecipe, repairRequestKey, settleRepairRecipe } from '@/lib/supabase/repairRecipe';
@@ -580,9 +581,7 @@ export function RecipeView({
       if (result.status === 'failed' || !result.sealed_recipe || !result.reservation_id) {
         Alert.alert(
           t('recipe.repairFailedTitle'),
-          result.code === 'no_improvement'
-            ? t('recipe.repairNoImprovement')
-            : (result.message ?? t('recipe.repairFailed')),
+          serverErrorText(result, t, appLanguage, 'recipe.repairFailed', REPAIR_ERROR_KEYS),
         );
         return;
       }
@@ -718,7 +717,10 @@ export function RecipeView({
     } else if (sourceShareUrl) {
       await sendShareLink(sourceShareUrl);
     } else {
-      void showNotice(t('recipe.shareFailedTitle'), result.message || t('common.tryAgain'));
+      void showNotice(
+        t('recipe.shareFailedTitle'),
+        serverErrorText(result, t, appLanguage, 'common.tryAgain', SHARE_ERROR_KEYS),
+      );
     }
   }
 

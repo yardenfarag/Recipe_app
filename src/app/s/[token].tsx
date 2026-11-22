@@ -7,8 +7,10 @@ import { useTranslation } from 'react-i18next';
 import { RecipeView } from '@/components/RecipeView';
 import { Screen } from '@/components/Screen';
 import { useAuth } from '@/hooks/useAuth';
+import { useLanguagePreference } from '@/hooks/useLanguagePreference';
 import { useThemePreference } from '@/hooks/useThemePreference';
 import { saveAfterSignInPath } from '@/lib/authReturnPath';
+import { serverErrorText, SHARE_ERROR_KEYS } from '@shared/lib/serverErrors';
 import {
   claimRecipeShare,
   getRecipeShare,
@@ -17,13 +19,15 @@ import {
 
 export default function SharedRecipeScreen() {
   const { t } = useTranslation();
+  const { language } = useLanguagePreference();
   const { token: tokenParam, save } = useLocalSearchParams<{ token: string; save?: string }>();
   const token = Array.isArray(tokenParam) ? tokenParam[0] : tokenParam;
   const { session, loading: authLoading } = useAuth();
   const { colors } = useThemePreference();
 
   const [recipe, setRecipe] = useState<RecipeSharePreview | null>(null);
-  const [loadError, setLoadError] = useState<string | null>(null);
+  // What the server said, turned into words at render so they follow the app language.
+  const [loadError, setLoadError] = useState<{ code?: string; message?: string } | null>(null);
   const [loading, setLoading] = useState(true);
   const [claiming, setClaiming] = useState(false);
   const [claimError, setClaimError] = useState<string | null>(null);
@@ -36,7 +40,7 @@ export default function SharedRecipeScreen() {
     let cancelled = false;
     async function load() {
       if (!token?.trim()) {
-        setLoadError(t('recipe.shareNotFound'));
+        setLoadError({ code: 'share_not_found' });
         setLoading(false);
         return;
       }
@@ -46,11 +50,7 @@ export default function SharedRecipeScreen() {
       if (cancelled) return;
       if (result.status !== 'ok') {
         setRecipe(null);
-        setLoadError(
-          result.code === 'share_not_found'
-            ? t('recipe.shareNotFound')
-            : result.message || t('recipe.shareNotFound'),
-        );
+        setLoadError({ code: result.code, message: result.message });
         setLoading(false);
         return;
       }
@@ -61,7 +61,7 @@ export default function SharedRecipeScreen() {
     return () => {
       cancelled = true;
     };
-  }, [token, t]);
+  }, [token]);
 
   const saveToLibrary = useCallback(async () => {
     if (!token?.trim() || claimInFlight.current) return false;
@@ -82,7 +82,7 @@ export default function SharedRecipeScreen() {
     try {
       const result = await claimRecipeShare(token.trim());
       if (result.status !== 'ok') {
-        const message = result.message || t('common.tryAgain');
+        const message = serverErrorText(result, t, language, 'common.tryAgain', SHARE_ERROR_KEYS);
         setClaimError(message);
         Alert.alert(t('recipe.shareClaimFailedTitle'), message);
         return false;
@@ -90,7 +90,8 @@ export default function SharedRecipeScreen() {
       router.replace(`/recipe/${result.recipeId}`);
       return true;
     } catch (err) {
-      const message = err instanceof Error ? err.message : t('common.tryAgain');
+      const thrown = { message: err instanceof Error ? err.message : null };
+      const message = serverErrorText(thrown, t, language, 'common.tryAgain', SHARE_ERROR_KEYS);
       setClaimError(message);
       Alert.alert(t('recipe.shareClaimFailedTitle'), message);
       return false;
@@ -98,7 +99,7 @@ export default function SharedRecipeScreen() {
       claimInFlight.current = false;
       setClaiming(false);
     }
-  }, [session?.user, token, t]);
+  }, [session?.user, token, t, language]);
 
   // Recipients see the recipe first and save it with one tap. Someone who tapped Save as a guest
   // and then signed up gets it saved on return, without a second tap.
@@ -124,7 +125,9 @@ export default function SharedRecipeScreen() {
       <Screen edges={['bottom']}>
         <View className="flex-1 items-center justify-center gap-4 px-6">
           <Text className="text-center text-base" style={{ color: colors.text }}>
-            {loadError ?? t('recipe.shareNotFound')}
+            {loadError
+              ? serverErrorText(loadError, t, language, 'serverErrors.shareUnavailable', SHARE_ERROR_KEYS)
+              : t('recipe.shareNotFound')}
           </Text>
           <Pressable
             trackId="shared_recipe.go_home"

@@ -15,6 +15,7 @@ import {
   patchInstructionsForSubstitution,
 } from '@shared/lib/patchInstructionsForSubstitution';
 import { RecipeLanguageCode } from '@shared/lib/recipeLanguages';
+import { serverErrorText, SWAP_ERROR_KEYS } from '@shared/lib/serverErrors';
 import {
   SubstitutionAlternative,
   rewriteInstructionsForSubstitution,
@@ -71,7 +72,7 @@ export function SubstitutionModal({
       .then((result) => {
         if (!isMounted) return;
         if (result.status === 'failed' || !result.alternatives) {
-          const message = result.message ?? t('recipe.swapFailed');
+          const message = serverErrorText(result, t, appLanguage, 'recipe.swapFailed', SWAP_ERROR_KEYS);
           setError(message);
           announce(message);
           return;

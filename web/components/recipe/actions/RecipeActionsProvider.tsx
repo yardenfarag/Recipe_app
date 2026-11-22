@@ -195,7 +195,7 @@ export function RecipeActionsProvider({ state, children }: { state: ReadyRecipe;
     setBusy((b) => ({ ...b, translate: true }));
     translate(translateOffer)
       .then((outcome) => {
-        if (outcome.status === "failed") showToast(translateFailure(outcome, t), "info");
+        if (outcome.status === "failed") showToast(translateFailure(outcome, t, appLanguage), "info");
       })
       .catch(() => showToast(t("web.recipeActions.translateFailed"), "info"))
       .finally(() => setBusy((b) => ({ ...b, translate: false })));

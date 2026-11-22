@@ -83,6 +83,10 @@ interface RequestBody {
  *   -> finalize or refund the reserved credit
  *
  * Signed-in only. Charges 1 credit when the user applies an upgrade.
+ *
+ * Failure codes (the app's words for them are in shared/lib/serverErrors.ts): auth_required, metering_error,
+ * reservation_required, not_partial, insufficient_credits, no_improvement, repair_failed, reservation_settled,
+ * compensation_pending, sealed_recipe_required. Bad requests answer { error }.
  */
 serve('repair-recipe', async (req) => {
   if (req.method === 'OPTIONS') {
@@ -341,6 +345,7 @@ serve('repair-recipe', async (req) => {
     return jsonResponse(
       {
         status: 'failed',
+        code: 'repair_failed',
         message: "Couldn't repair this recipe. Your credit was not used.",
       },
       500,

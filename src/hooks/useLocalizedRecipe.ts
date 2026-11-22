@@ -10,6 +10,7 @@ import {
 } from '@/lib/guestRecipes';
 import { isRecipeLanguageCode, type RecipeLanguageCode } from '@shared/lib/recipeLanguages';
 import { resolveRecipeSourceLanguage } from '@shared/lib/recipeSourceLanguage';
+import { serverErrorText, TRANSLATE_ERROR_KEYS } from '@shared/lib/serverErrors';
 import {
   fetchRecipeTranslation,
   upsertRecipeTranslation,
@@ -125,10 +126,7 @@ export function useLocalizedRecipe(recipe: ExtractedRecipe | null | undefined, r
             display: canonical,
             activeLanguage: null,
             translating: false,
-            error:
-              result.code === 'daily_limit'
-                ? t('recipe.translateDailyLimit')
-                : result.message,
+            error: serverErrorText(result, t, preferredLanguage, 'serverErrors.translateFailed', TRANSLATE_ERROR_KEYS),
           });
           return;
         }
@@ -137,9 +135,9 @@ export function useLocalizedRecipe(recipe: ExtractedRecipe | null | undefined, r
         if (result.status === 'ok' && !result.fromCache) {
           try {
             await persistTranslation(preferredLanguage, result.content);
-          } catch (error) {
-            persistenceError =
-              error instanceof Error ? error.message : t('recipe.translationSaveFailed');
+          } catch {
+            // The database's own message is English and says nothing a cook can act on.
+            persistenceError = t('recipe.translationSaveFailed');
           }
         }
 
@@ -154,13 +152,13 @@ export function useLocalizedRecipe(recipe: ExtractedRecipe | null | undefined, r
           translating: false,
           error: persistenceError,
         });
-      } catch (err) {
+      } catch {
         if (id !== runId.current) return;
         setState({
           display: canonical,
           activeLanguage: null,
           translating: false,
-          error: err instanceof Error ? err.message : t('recipe.translateFailedTitle'),
+          error: t('serverErrors.translateFailed'),
         });
       }
     })();

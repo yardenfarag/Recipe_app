@@ -3,7 +3,10 @@ import type { ReactNode } from "react";
 import { I18nextProvider } from "react-i18next";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
-import i18n from "@/lib/i18n";
+import en from "@shared/i18n/locales/en";
+import he from "@shared/i18n/locales/he";
+
+import i18n, { changeLanguage } from "@/lib/i18n";
 import { ShareSaveError, type SharedRecipeState } from "@/lib/share/useSharedRecipe";
 
 import SharedRecipePage from "./page";
@@ -107,13 +110,34 @@ describe("Shared recipe page", () => {
   });
 
   it("says so when saving fails, and stays on the page", async () => {
-    state = ready({ save: vi.fn().mockRejectedValue(new ShareSaveError("Could not save shared recipe")) });
+    state = ready({ save: vi.fn().mockRejectedValue(new ShareSaveError("Could not save shared recipe", "claim_failed")) });
     renderPage();
     fireEvent.click(screen.getByRole("button", { name: "Save to my kitchen" }));
     const alert = await screen.findByRole("alert");
     expect(alert.textContent).toContain("Couldn’t save shared recipe");
     expect(alert.textContent).toContain("Please try again.");
     expect(replace).not.toHaveBeenCalled();
+  });
+
+  it("puts the server's code in the app's words", async () => {
+    state = ready({ save: vi.fn().mockRejectedValue(new ShareSaveError("Could not load share", "share_unavailable")) });
+    renderPage();
+    fireEvent.click(screen.getByRole("button", { name: "Save to my kitchen" }));
+    expect(await screen.findByRole("alert")).toHaveProperty("textContent", expect.stringContaining(en.serverErrors.shareUnavailable));
+  });
+
+  it("never shows a Hebrew reader the server's English (PIN-158)", async () => {
+    await changeLanguage("he");
+    try {
+      state = ready({ save: vi.fn().mockRejectedValue(new ShareSaveError("Some new English failure", "brand_new_code")) });
+      renderPage();
+      fireEvent.click(screen.getByRole("button", { name: he.recipe.shareSave }));
+      const alert = await screen.findByRole("alert");
+      expect(alert.textContent).toContain(he.common.tryAgain);
+      expect(alert.textContent).not.toContain("English");
+    } finally {
+      await changeLanguage("en");
+    }
   });
 
   it("says the link stopped working when it is revoked while open", async () => {

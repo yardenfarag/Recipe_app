@@ -51,8 +51,89 @@ export function importErrorText(
   language: string,
   fallbackKey = 'snap.genericError',
 ): string {
-  const key = importErrorKey(result.code);
+  return serverErrorText(result, t, language, fallbackKey, IMPORT_ERROR_KEYS);
+}
+
+/** Codes from translate-recipe (PIN-158). `daily_limit` is the 10-a-day cap. */
+export const TRANSLATE_ERROR_KEYS: Record<string, string> = {
+  auth_required: 'serverErrors.signInAgain',
+  daily_limit: 'recipe.translateDailyLimit',
+  translation_empty: 'serverErrors.translateFailed',
+  translation_timeout: 'serverErrors.translateTimedOut',
+};
+
+/**
+ * Codes from transform-recipe. The remix sheets handle `recipe_limit` and `daily_limit` themselves (the message
+ * carries the limit), and `auth_required` sends the cook to sign in.
+ */
+export const REMIX_ERROR_KEYS: Record<string, string> = {
+  auth_required: 'serverErrors.signInAgain',
+  instruction_unrelated: 'recipe.remixUnrelated',
+  remix_empty: 'serverErrors.remixNoResult',
+};
+
+/** Codes from repair-recipe. The caller handles `insufficient_credits` and the guest codes before this. */
+export const REPAIR_ERROR_KEYS: Record<string, string> = {
+  auth_required: 'serverErrors.signInAgain',
+  no_improvement: 'recipe.repairNoImprovement',
+  not_partial: 'serverErrors.repairNotPartial',
+  repair_failed: 'serverErrors.repairFailed',
+};
+
+/** Codes from suggest-substitution. */
+export const SWAP_ERROR_KEYS: Record<string, string> = {
+  auth_required: 'serverErrors.signInAgain',
+  daily_limit: 'serverErrors.swapDailyLimit',
+  no_substitute: 'recipe.swapFailed',
+};
+
+/** Codes from recipe-share: sharing a recipe, opening a link and saving from one. */
+export const SHARE_ERROR_KEYS: Record<string, string> = {
+  auth_required: 'serverErrors.signInAgain',
+  share_not_found: 'recipe.shareNotFound',
+  share_unavailable: 'serverErrors.shareUnavailable',
+  recipe_not_found: 'recipe.notFound',
+  recipe_not_saved: 'recipe.shareNeedsSaveBody',
+};
+
+/**
+ * Codes whose server message is not for people (`metering_error`) or says no more than the screen's own fallback
+ * ("Something went wrong…"). Every reader gets `fallbackKey` for these, English readers included.
+ */
+const GENERAL_CODES = new Set([
+  'metering_error',
+  'compensation_pending',
+  'server_misconfigured',
+  'recipe_identity_required',
+  'reservation_required',
+  'reservation_settled',
+  'sealed_recipe_required',
+  'translation_failed',
+  'remix_failed',
+  'substitution_failed',
+  'rewrite_empty',
+  'rewrite_failed',
+  'share_failed',
+  'claim_failed',
+  'recipe_invalid',
+]);
+
+/**
+ * What to show when a server call fails, in the reader's language. `codes` maps that function's codes to
+ * translation keys (the `*_ERROR_KEYS` above). A code that isn't there gets `fallbackKey`, except that English
+ * readers see the server's own message, which may say more, as for imports.
+ */
+export function serverErrorText(
+  result: { code?: string | null; message?: string | null },
+  t: Translate,
+  language: string,
+  fallbackKey: string,
+  codes: Record<string, string>,
+): string {
+  const code = result.code ?? '';
+  const key = Object.prototype.hasOwnProperty.call(codes, code) ? codes[code] : undefined;
   if (key) return t(key);
+  if (GENERAL_CODES.has(code)) return t(fallbackKey);
   if (language === 'en' && result.message) return result.message;
   return t(fallbackKey);
 }

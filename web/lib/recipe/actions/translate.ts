@@ -1,5 +1,6 @@
 import { ensureRecipeTranslation } from "@shared/lib/ensureRecipeTranslation";
 import type { RecipeLanguageCode } from "@shared/lib/recipeLanguages";
+import { serverErrorText, TRANSLATE_ERROR_KEYS } from "@shared/lib/serverErrors";
 import { fetchRecipeTranslation, upsertRecipeTranslation } from "@shared/lib/supabase/recipeTranslations";
 import type { Recipe, RecipeTranslationContent } from "@shared/types/recipe";
 
@@ -38,9 +39,15 @@ export async function translateRecipeTo(recipe: Recipe, language: RecipeLanguage
   return { status: "ok", content: result.content };
 }
 
-/** The message for a failed translation: the daily limit, a save that failed, or the general one. */
-export function translateFailure(outcome: Extract<TranslateOutcome, { status: "failed" }>, t: (key: string) => string): string {
-  if (outcome.code === "daily_limit") return t("recipe.translateDailyLimit");
+/**
+ * The message for a failed translation, in `language` (the app's): a save that failed, the server's code in the
+ * app's words (the daily limit, a timeout…), or the general one (PIN-158).
+ */
+export function translateFailure(
+  outcome: Extract<TranslateOutcome, { status: "failed" }>,
+  t: (key: string) => string,
+  language: string,
+): string {
   if (outcome.code === "save_failed") return t("recipe.translationSaveFailed");
-  return t("web.recipeActions.translateFailed");
+  return serverErrorText(outcome, t, language, "web.recipeActions.translateFailed", TRANSLATE_ERROR_KEYS);
 }

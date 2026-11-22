@@ -6,6 +6,7 @@ import { useParams, useRouter } from "next/navigation";
 import { useCallback, useState } from "react";
 import { useTranslation } from "react-i18next";
 
+import { serverErrorText, SHARE_ERROR_KEYS } from "@shared/lib/serverErrors";
 import { showToast } from "@shared/lib/toast";
 
 import { useAuth } from "@/components/AuthProvider";
@@ -26,7 +27,7 @@ import { useSaveAfterSignIn } from "@/lib/useSaveAfterSignIn";
  * with `?save=1`, where it is saved on its own. A recipe already in the library opens the saved copy instead.
  */
 export default function SharedRecipePage() {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const router = useRouter();
   const { user } = useAuth();
   const signInHere = useSignInHere();
@@ -49,12 +50,15 @@ export default function SharedRecipePage() {
       // As on mobile, the saved copy replaces this page: Back doesn't return to the link.
       router.replace(`/recipe/${recipeId}`);
     } catch (caught) {
+      // The server's code in the app's words (PIN-158); anything that isn't the server's answer gets the general one.
       const reason =
-        caught instanceof ShareSaveError && caught.code === "share_not_found" ? t("recipe.shareNotFound") : t("common.tryAgain");
+        caught instanceof ShareSaveError
+          ? serverErrorText(caught, t, i18n.language, "common.tryAgain", SHARE_ERROR_KEYS)
+          : t("common.tryAgain");
       setSaveError(`${t("recipe.shareClaimFailedTitle")}: ${reason}`);
       setSaving(false);
     }
-  }, [saveShared, router, t]);
+  }, [saveShared, router, t, i18n.language]);
 
   // A guest who pressed Save signed up (or in) and came back: save it now.
   const { pending: savingAfterSignIn } = useSaveAfterSignIn({ ready, save: () => void save() });
