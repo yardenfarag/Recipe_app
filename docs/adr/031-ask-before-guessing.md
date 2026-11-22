@@ -35,6 +35,10 @@ The grilling session, with every reason in plain English, is `docs/grilling/PIN-
 - The app could send made-up question text. It only steers the user's own recipe, and the caps and quoting stop it from steering the model.
 - Both apps need a question sheet: the phone app (`src/`, also the old Expo web app) and the new web app (`web/`). Shared logic goes in `shared/`.
 
+## Follow-up (separate ticket)
+
+**Kosher and halal.** Pinch has no kosher or halal diet, and Guess doesn't read the kitchen profile. Without questions, the local test's schnitzel came back as pork every time, in Hebrew too. Questions help when the gate is unsure, but not when it is confidently wrong, and not with kosher's meat-and-dairy rule. A separate ticket adds kosher and halal to the kitchen profile, makes Guess and other recipe writing respect them, and leaves forbidden options out of the chips.
+
 ## Still to settle
 
 - Yarden to confirm both apps are in scope for v1.
