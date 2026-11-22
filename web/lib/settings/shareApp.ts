@@ -17,6 +17,6 @@ export async function shareApp(t: TFunction): Promise<void> {
     captureAppShared({ outcome });
     if (outcome === "copied") showToast(t("settings.shareAppCopied"));
   } catch {
-    showToast(t("settings.shareAppFailedTitle"), "info");
+    showToast(t("settings.shareAppFailedTitle"), "error");
   }
 }

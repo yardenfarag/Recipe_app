@@ -1,6 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
-import { fetchProfile, profileQuota, readCreditBalance, type Profile } from './profile';
+import { chooseFoodAvatar, fetchProfile, profileQuota, readCreditBalance, type Profile } from './profile';
 
 const mocks = vi.hoisted(() => {
   const maybeSingle = vi.fn();
@@ -139,5 +139,31 @@ describe('fetchProfile', () => {
     expect(mocks.rpc).toHaveBeenCalledWith('ensure_user_profile', {
       p_user_id: userId,
     });
+  });
+});
+
+describe('chooseFoodAvatar', () => {
+  const userId = '10000000-0000-4000-8000-000000000001';
+
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
+
+  it('stores the food avatar in avatar_url for this account only', async () => {
+    const eq = vi.fn().mockResolvedValue({ error: null });
+    const update = vi.fn(() => ({ eq }));
+    mocks.from.mockImplementation(() => ({ update }));
+
+    await expect(chooseFoodAvatar(userId, 'pizza')).resolves.toBe('food:pizza');
+    expect(mocks.from).toHaveBeenCalledWith('profiles');
+    expect(update).toHaveBeenCalledWith({ avatar_url: 'food:pizza' });
+    expect(eq).toHaveBeenCalledWith('id', userId);
+  });
+
+  it('throws when the database refuses', async () => {
+    const failure = new Error('denied');
+    mocks.from.mockImplementation(() => ({ update: () => ({ eq: vi.fn().mockResolvedValue({ error: failure }) }) }));
+
+    await expect(chooseFoodAvatar(userId, 'egg')).rejects.toBe(failure);
   });
 });

@@ -72,7 +72,7 @@ describe("SnapPreview", () => {
     wrap();
     fireEvent.click(await screen.findByRole("button", { name: "Save recipe" }));
     await waitFor(() => expect(mocks.replace).toHaveBeenCalledWith("/recipe/r2"));
-    expect(mocks.toast).toHaveBeenCalledWith("This link was already in your library.", "info");
+    expect(mocks.toast).toHaveBeenCalledWith("This link was already in your Library.", "info");
   });
 
   it("a failed save keeps the draft and says why", async () => {
@@ -81,6 +81,10 @@ describe("SnapPreview", () => {
     wrap();
     fireEvent.click(await screen.findByRole("button", { name: "Save recipe" }));
     await waitFor(() => expect(mocks.toast).toHaveBeenCalled());
+    const [text, kind] = mocks.toast.mock.calls[0];
+    expect(kind).toBe("error");
+    expect(text).not.toContain("offline");
+    expect(text).not.toContain(":");
     expect(mocks.replace).not.toHaveBeenCalled();
     expect(getSnapDraft()?.recipe.title).toBe("Lemon Pasta");
   });

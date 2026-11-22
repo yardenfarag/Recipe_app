@@ -26,6 +26,7 @@ import { applyKitchenOnExtract } from "@shared/lib/supabase/kitchenAutoApply";
 import { type RecipeEntrySource, recipePlatformProperty } from "@shared/lib/productEvents";
 import { recipeIsInvented } from "@shared/lib/recipeOrigin";
 import { showToast } from "@shared/lib/toast";
+import { joinErrorSentences } from "@shared/lib/translateAppError";
 
 import { useAuth } from "@/components/AuthProvider";
 import { useLanguage } from "@/components/LanguageProvider";
@@ -219,7 +220,7 @@ export function useSnap({ onSettled }: { onSettled?: () => void } = {}) {
             if (savedId) {
               clearSnapDraft();
               // As on mobile: the recipe is kept as written, and the cook is told their kitchen wasn't applied.
-              if (kitchen.failed) showToast(`${t("recipe.kitchenAutoApplyFailedTitle")}. ${t("recipe.kitchenAutoApplyFailed")}`, "info");
+              if (kitchen.failed) showToast(joinErrorSentences(t("recipe.kitchenAutoApplyFailedTitle"), t("recipe.kitchenAutoApplyFailed")), "error");
               router.push(`/recipe/${savedId}?justSaved=1`);
             } else {
               router.push("/recipe/preview");

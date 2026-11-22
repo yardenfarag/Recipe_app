@@ -52,7 +52,7 @@ import {
 import { collectLibraryTags } from '@shared/lib/recipeTags';
 import { upsertRecipeTranslation } from '@shared/lib/supabase/recipeTranslations';
 import { deleteRecipe, renameRecipe } from '@shared/lib/supabase/recipes';
-import { translateAppError } from '@shared/lib/translateAppError';
+import { translateAppError, UserFacingError } from '@shared/lib/translateAppError';
 import {
   isCollectionNameTaken,
   isRecipeNameTaken,
@@ -351,14 +351,14 @@ export default function HomeScreen() {
     async (name: string) => {
       if (!renameTarget) return;
       const trimmed = name.trim();
-      if (!trimmed) throw new Error(t('library.recipeNameRequired'));
+      if (!trimmed) throw new UserFacingError(t('library.recipeNameRequired'));
       if (isRecipeNameTaken(recipes, trimmed, renameTarget.id)) {
-        throw new Error(t('library.recipeNameTaken'));
+        throw new UserFacingError(t('library.recipeNameTaken'));
       }
 
       if (renameTarget.id.startsWith('guest-')) {
         const updated = await renameGuestRecipe(renameTarget.id, trimmed);
-        if (!updated) throw new Error(t('library.recipeNotFound'));
+        if (!updated) throw new UserFacingError(t('library.recipeNotFound'));
         patchRecipe(renameTarget.id, {
           title: trimmed,
           display_title: trimmed,
@@ -852,11 +852,11 @@ export default function HomeScreen() {
           if (!nameModal) return;
           const trimmed = name.trim();
           if (!trimmed) {
-            throw new Error(t('library.collectionNameRequired'));
+            throw new UserFacingError(t('library.collectionNameRequired'));
           }
           const excludeId = nameModal.mode === 'rename' ? nameModal.id : undefined;
           if (isCollectionNameTaken(collections, trimmed, excludeId)) {
-            throw new Error(t('library.collectionNameTaken'));
+            throw new UserFacingError(t('library.collectionNameTaken'));
           }
           if (nameModal.mode === 'create') {
             const created = await createCollection(trimmed);

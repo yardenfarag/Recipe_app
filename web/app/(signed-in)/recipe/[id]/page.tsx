@@ -7,7 +7,7 @@ import { useTranslation } from "react-i18next";
 
 import { deleteRecipe } from "@shared/lib/supabase/recipes";
 import { showToast } from "@shared/lib/toast";
-import { translateAppError } from "@shared/lib/translateAppError";
+import { joinErrorSentences, translateAppError } from "@shared/lib/translateAppError";
 
 import { useRecipeActions } from "@/components/recipe/actions/RecipeActionsContext";
 import { RecipeActionsProvider } from "@/components/recipe/actions/RecipeActionsProvider";
@@ -72,7 +72,7 @@ function SavedRecipeView({ display, onToggleFavorite }: { display: RecipeDisplay
       removeFromLibrary(display.recipe.id);
       router.replace("/");
     } catch (caught) {
-      showToast(`${t("library.couldNotDelete")}: ${translateAppError(caught, t)}`, "info");
+      showToast(joinErrorSentences(t("library.couldNotDelete"), translateAppError(caught, t)), "error");
     }
   }
 

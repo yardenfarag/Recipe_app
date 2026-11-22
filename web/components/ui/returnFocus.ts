@@ -24,3 +24,20 @@ export function useReturnFocus() {
     },
   };
 }
+
+/**
+ * For dialogs and sheets: on opening, focus goes to the panel itself (its title is read out), not to the first
+ * button, which is the close button and drew a focus ring on it. Radix only asks when nothing inside took focus, so a
+ * field with `autoFocus` still gets it. Tab moves on from there.
+ */
+export function useDialogFocus() {
+  const returnFocus = useReturnFocus();
+  return {
+    ...returnFocus,
+    onOpenAutoFocus: (event: Event) => {
+      returnFocus.onOpenAutoFocus();
+      event.preventDefault();
+      if (event.target instanceof HTMLElement) event.target.focus({ preventScroll: true });
+    },
+  };
+}

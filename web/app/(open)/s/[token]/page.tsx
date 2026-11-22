@@ -20,6 +20,9 @@ import { Tile } from "@/components/ui/Tile";
 import { ShareSaveError, useSharedRecipe } from "@/lib/share/useSharedRecipe";
 import { useSaveAfterSignIn } from "@/lib/useSaveAfterSignIn";
 
+/** Phones: the save button spans the width and wraps, so a long label (Russian, Arabic) never runs off the side. */
+const PHONE_FULL_WIDTH = "max-sm:h-auto max-sm:min-h-14 max-sm:w-full max-sm:whitespace-normal max-sm:py-2.5";
+
 /**
  * A recipe someone shared with a link, read-only, with "Save to my kitchen". The address is /s/<token>, as in the
  * mobile app, so the public page at pinch-app.io/s/<token> ("Save it on the web") and links already sent land here.
@@ -93,13 +96,14 @@ export default function SharedRecipePage() {
           {state.libraryRecipeId ? t("web.share.inLibrary") : t("recipe.shareSaveHint")}
         </p>
         {state.libraryRecipeId ? (
-          <Link href={`/recipe/${state.libraryRecipeId}`} data-track="shared_recipe.open_in_library" className={buttonClasses({ size: "lg" })}>
+          <Link href={`/recipe/${state.libraryRecipeId}`} data-track="shared_recipe.open_in_library" className={buttonClasses({ size: "lg", className: PHONE_FULL_WIDTH })}>
             <BookOpenCheck aria-hidden className="h-5 w-5" />
             {t("hub.openInLibrary")}
           </Link>
         ) : (
           <Button
             size="lg"
+            className={PHONE_FULL_WIDTH}
             trackId="shared_recipe.save"
             busy={saving || savingAfterSignIn}
             onClick={() => (user ? void save() : router.push(`${signInHere("signup", "save=1")}&reason=shared_recipe`))}

@@ -63,7 +63,7 @@ test.describe("desktop", () => {
     await expect(main(page).getByRole("status").getByText("Saved")).toBeVisible();
     await expect.poll(async () => (await readProfileSettings()).kitchen?.diets).toEqual(["vegan"]);
 
-    await main(page).getByRole("switch", { name: "Add public-link extracts to the Cooking Hub" }).click();
+    await main(page).getByRole("switch", { name: "Share recipes I snap from public links in the Cooking Hub" }).click();
     await expect.poll(async () => (await readProfileSettings()).contribute_to_hub).toBe(false);
 
     // The mobile app saves a dislike and a pantry staple; a refresh here shows them.
@@ -71,7 +71,7 @@ test.describe("desktop", () => {
     await page.reload();
     await expect(main(page).getByRole("button", { name: "Remove Celery" })).toBeVisible();
     await expect(main(page).getByRole("button", { name: "Remove olive oil" })).toBeVisible();
-    await expect(main(page).getByRole("switch", { name: "Add public-link extracts to the Cooking Hub" })).toHaveAttribute("aria-checked", "false");
+    await expect(main(page).getByRole("switch", { name: "Share recipes I snap from public links in the Cooking Hub" })).toHaveAttribute("aria-checked", "false");
   });
 
   test("the first allergy asks for the notice before it is saved", async ({ page }) => {
@@ -162,7 +162,7 @@ test.describe("desktop", () => {
     await confirm.click();
 
     await expect(page).toHaveURL(/\/app\/auth/);
-    await expect(page.getByText("Your Pinch account and data are gone.")).toBeVisible();
+    await expect(page.getByText("Your account and recipes are deleted. Thanks for cooking with Pinch.")).toBeVisible();
     expect(deleteCalls).toEqual(["POST"]);
   });
 
@@ -214,8 +214,8 @@ test.describe("tablet", () => {
     await page.goto("/app/settings/support");
     await expect(page.locator("#main h1")).toHaveText("Help & support");
     await expect(main(page).getByRole("link", { name: "Settings", exact: true })).toBeVisible();
-    await expect(main(page).getByRole("button", { name: "Submit ticket" })).toBeDisabled();
+    await expect(main(page).getByRole("button", { name: "Send message" })).toBeDisabled();
     await main(page).getByRole("textbox", { name: "What happened?" }).fill("The list forgets my last item.");
-    await expect(main(page).getByRole("button", { name: "Submit ticket" })).toBeEnabled();
+    await expect(main(page).getByRole("button", { name: "Send message" })).toBeEnabled();
   });
 });

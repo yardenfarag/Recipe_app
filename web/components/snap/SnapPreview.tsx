@@ -10,7 +10,7 @@ import { DEFAULT_SOURCE_LANGUAGE } from "@shared/lib/appLanguages";
 import { recipeIsInvented } from "@shared/lib/recipeOrigin";
 import { saveRecipeDraft } from "@shared/lib/supabase/saveRecipeDraft";
 import { showToast } from "@shared/lib/toast";
-import { translateAppError } from "@shared/lib/translateAppError";
+import { joinErrorSentences, translateAppError } from "@shared/lib/translateAppError";
 import type { ExtractedRecipe, Recipe } from "@shared/types/recipe";
 
 import { useLanguage } from "@/components/LanguageProvider";
@@ -92,7 +92,7 @@ export function SnapPreview() {
         router.replace("/?saved=1");
       }
     } catch (caught) {
-      showToast(`${t("recipe.saveFailedTitle")}: ${translateAppError(caught, t)}`, "info");
+      showToast(joinErrorSentences(t("recipe.saveFailedTitle"), translateAppError(caught, t)), "error");
       saveInFlight.current = false;
       setSaving(false);
     }

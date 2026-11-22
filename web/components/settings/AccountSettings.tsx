@@ -1,16 +1,18 @@
 "use client";
 
-import { Camera, LogOut, Trash2 } from "lucide-react";
+import { Download, LogOut, Pencil, Trash2 } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 
 import { normalizeEmail } from "@shared/lib/authValidation";
 import { deleteAccount } from "@shared/lib/supabase/auth";
-import { uploadAvatar } from "@shared/lib/supabase/profile";
+import type { FoodAvatarId } from "@shared/lib/foodAvatars";
+import { chooseFoodAvatar, uploadAvatar } from "@shared/lib/supabase/profile";
 import { showToast } from "@shared/lib/toast";
 
 import { useAuth } from "@/components/AuthProvider";
+import { AvatarPicker } from "@/components/settings/AvatarPicker";
 import { SettingsCard } from "@/components/settings/controls";
 import { ProfileAvatar } from "@/components/settings/ProfileAvatar";
 import { SettingsPageHeader } from "@/components/settings/SettingsPageHeader";
@@ -22,8 +24,10 @@ import { TextField } from "@/components/ui/TextField";
 import { Tile, TileLabel } from "@/components/ui/Tile";
 import { signOut } from "@/lib/auth";
 import { squareAvatarFromFile } from "@/lib/settings/avatarImage";
+import { downloadRecipeBackup } from "@/lib/settings/recipeBackupDownload";
+import { announceAvatar } from "@/lib/settings/useAvatar";
 
-/** Who is signed in: the email, the profile photo, signing out, and deleting the account. */
+/** Who is signed in: the email, the profile picture (a food avatar or a photo), signing out, and deleting the account. */
 export function AccountSettings() {
   const { t } = useTranslation();
   const router = useRouter();
@@ -33,6 +37,22 @@ export function AccountSettings() {
   const [uploading, setUploading] = useState(false);
   const [signingOut, setSigningOut] = useState(false);
   const [deleteOpen, setDeleteOpen] = useState(false);
+  const [pickerOpen, setPickerOpen] = useState(false);
+  const [savingFood, setSavingFood] = useState<FoodAvatarId | null>(null);
+
+  async function pickFood(id: FoodAvatarId) {
+    if (!user || savingFood) return;
+    setSavingFood(id);
+    try {
+      announceAvatar(user.id, await chooseFoodAvatar(user.id, id));
+      await refresh();
+      setPickerOpen(false);
+    } catch {
+      showToast(t("settings.avatarSaveFailed"), "error");
+    } finally {
+      setSavingFood(null);
+    }
+  }
 
   async function changePhoto(file: File) {
     if (!user) return;
@@ -40,13 +60,13 @@ export function AccountSettings() {
     try {
       const base64 = await squareAvatarFromFile(file);
       if (!base64) {
-        showToast(t("settings.imageReadFailedBody"), "info");
+        showToast(t("settings.imageReadFailedBody"), "error");
         return;
       }
-      await uploadAvatar(user.id, base64, "jpg");
+      announceAvatar(user.id, await uploadAvatar(user.id, base64, "jpg"));
       await refresh();
     } catch {
-      showToast(t("settings.uploadFailedTitle"), "info");
+      showToast(t("settings.uploadFailedTitle"), "error");
     } finally {
       setUploading(false);
     }
@@ -58,7 +78,7 @@ export function AccountSettings() {
       await signOut();
       router.replace("/auth?mode=signin");
     } catch {
-      showToast(t("settings.signOutFailedTitle"), "info");
+      showToast(t("settings.signOutFailedTitle"), "error");
       setSigningOut(false);
     }
   }
@@ -73,7 +93,7 @@ export function AccountSettings() {
             <button
               type="button"
               data-track="settings.avatar.change"
-              onClick={() => fileInput.current?.click()}
+              onClick={() => setPickerOpen(true)}
               disabled={uploading}
               aria-busy={uploading || undefined}
               aria-label={t("settings.changeAvatarTitle")}
@@ -83,9 +103,20 @@ export function AccountSettings() {
               {uploading ? (
                 <span aria-hidden className="h-4 w-4 animate-spin rounded-full border-2 border-current border-t-transparent" />
               ) : (
-                <Camera aria-hidden className="h-4 w-4" />
+                <Pencil aria-hidden className="h-4 w-4" />
               )}
             </button>
+            <AvatarPicker
+              open={pickerOpen}
+              onOpenChange={setPickerOpen}
+              current={avatarUrl}
+              savingId={savingFood}
+              onPick={(id) => void pickFood(id)}
+              onUpload={() => {
+                setPickerOpen(false);
+                fileInput.current?.click();
+              }}
+            />
             <input
               ref={fileInput}
               type="file"
@@ -152,7 +183,9 @@ export function DeleteAccountDialog({
   const { t } = useTranslation();
   const [typed, setTyped] = useState("");
   const [busy, setBusy] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  const [failed, setFailed] = useState(false);
+  const [backingUp, setBackingUp] = useState(false);
+  const [backupProblem, setBackupProblem] = useState<string | null>(null);
   const confirmed = !email || normalizeEmail(typed) === normalizeEmail(email);
 
   function close(next: boolean) {
@@ -160,20 +193,36 @@ export function DeleteAccountDialog({
     onOpenChange(next);
     if (!next) {
       setTyped("");
-      setError(null);
+      setFailed(false);
+      setBackupProblem(null);
+    }
+  }
+
+  /** The last chance to keep the recipes: the same backup file as Settings → Your recipes. */
+  async function backup() {
+    if (backingUp) return;
+    setBackingUp(true);
+    setBackupProblem(null);
+    try {
+      if ((await downloadRecipeBackup()) === "empty") setBackupProblem(`${t("settings.backupEmptyTitle")}. ${t("settings.backupEmptyBody")}`);
+    } catch {
+      setBackupProblem(`${t("settings.backupFailedTitle")}. ${t("common.tryAgain")}`);
+    } finally {
+      setBackingUp(false);
     }
   }
 
   async function confirm() {
     if (!confirmed || busy) return;
     setBusy(true);
-    setError(null);
+    setFailed(false);
     try {
       // The web has no Apple sign-in to ask again; the server still deletes the account without that code (TN3194).
       await deleteAccount();
       onDeleted();
-    } catch (err) {
-      setError(err instanceof Error && err.message ? err.message : t("common.tryAgain"));
+    } catch {
+      // The server's message is English and technical; the cook only needs to know it didn't happen.
+      setFailed(true);
       setBusy(false);
     }
   }
@@ -203,10 +252,30 @@ export function DeleteAccountDialog({
             void confirm();
           }}
         >
+          <div className="flex flex-wrap items-center gap-x-2 gap-y-1 text-sm text-muted">
+            <span>{t("web.settings.deleteBackupHint")}</span>
+            <Button
+              variant="link"
+              className="-ms-1"
+              trackId="settings.delete_account_dialog.backup"
+              busy={backingUp}
+              disabled={busy}
+              onClick={() => void backup()}
+            >
+              <Download aria-hidden className="h-4 w-4" />
+              {t("settings.backupDownload")}
+            </Button>
+            {backupProblem ? (
+              <p role="status" className="basis-full font-medium text-warning">
+                {backupProblem}
+              </p>
+            ) : null}
+          </div>
           {email ? (
             <TextField
               label={t("web.settings.deleteTypeEmail", { email })}
               type="email"
+              autoFocus
               autoComplete="off"
               spellCheck={false}
               dir="ltr"
@@ -215,9 +284,9 @@ export function DeleteAccountDialog({
               disabled={busy}
             />
           ) : null}
-          {error ? (
+          {failed ? (
             <ErrorAlert>
-              <strong className="font-semibold">{t("settings.deleteFailedTitle")}.</strong> {error}
+              <strong className="font-semibold">{t("settings.deleteFailedTitle")}.</strong> {t("common.tryAgain")}
             </ErrorAlert>
           ) : null}
         </form>

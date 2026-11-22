@@ -109,6 +109,13 @@ describe("ToastHost", () => {
     expect(screen.getAllByRole("status")).toHaveLength(1);
     expect(screen.getByRole("status").textContent).toContain("Saved");
   });
+
+  it("marks a failure as one", () => {
+    wrap(<ToastHost />);
+    act(() => showToast("Couldn't save. Try again.", "error"));
+    expect(screen.getByRole("status").getAttribute("data-kind")).toBe("error");
+    expect(screen.getByRole("status").closest("[aria-live]")?.getAttribute("aria-live")).toBe("polite");
+  });
 });
 
 describe("States", () => {

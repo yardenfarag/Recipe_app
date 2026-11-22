@@ -282,4 +282,16 @@ describe("MakeItYours", () => {
     wrap(<MakeItYours actions={fakeActions(display)} servings={2} />);
     expect(screen.getByRole("link", { name: /Fix for my kitchen/ }).getAttribute("href")).toBe("/settings/recipe");
   });
+
+  it.each([
+    [{ avoid: false, appliances: false }, "web.recipe.fixNothing"],
+    [{ avoid: true, appliances: true }, "web.recipe.fixClearKitchen"],
+    [{ avoid: true, appliances: false }, "web.recipe.fixClear"],
+    [{ avoid: false, appliances: true }, "web.recipe.fixClearTools"],
+  ])("with nothing to fix, the tile says what Pinch checked (%o)", (kitchenSetUp, key) => {
+    wrap(<MakeItYours actions={fakeActions(display, { kitchenSetUp })} servings={2} />);
+    const tile = screen.getByRole("link", { name: /Fix for my kitchen/ });
+    expect(tile.textContent).toContain(i18n.t(key));
+    expect(tile.getAttribute("href")).toBe("/settings/recipe");
+  });
 });

@@ -162,7 +162,7 @@ export function useRecipe(id: string): RecipeState {
     setRecipeFavorite(recipe.id, next).catch(() => {
       setFavorite(recipe.id, !next);
       patchLibrary(recipe.id, { is_favorite: !next });
-      showToast(t("recipe.favoriteFailedTitle"), "info");
+      showToast(t("recipe.favoriteFailedTitle"), "error");
     });
   }, [recipe, setFavorite, t]);
 

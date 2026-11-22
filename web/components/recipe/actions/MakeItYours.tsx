@@ -31,12 +31,21 @@ function ToolBody({ icon: Icon, title, short, body }: { icon: LucideIcon; title:
 }
 
 /**
+ * The kitchen-fix tile's line when the recipe is clean: what Pinch checked it against, or, with nothing set up yet,
+ * an invitation to set allergies, dislikes and tools.
+ */
+function nothingToFixKey({ avoid, appliances }: RecipeActions["kitchenSetUp"]): string {
+  if (avoid) return appliances ? "web.recipe.fixClearKitchen" : "web.recipe.fixClear";
+  return appliances ? "web.recipe.fixClearTools" : "web.recipe.fixNothing";
+}
+
+/**
  * "Make it yours" (PIN-162): the four tools that change a saved recipe, in plain view under the photo. Remix, the
  * kitchen fix and Translate open the same dialogs as before; Swap first asks which ingredient. Focus comes back to
  * the tile when its dialog closes.
  *
  * The kitchen fix only has something to do when the recipe has an ingredient from the cook's allergies or dislikes,
- * or needs a tool they don't have. Otherwise its tile says so and leads to where those are set.
+ * or needs a tool they don't have. Otherwise its tile says what Pinch checked and leads to where those are set.
  */
 export function MakeItYours({ actions, servings }: { actions: RecipeActions; servings: number }) {
   const { t } = useTranslation();
@@ -59,7 +68,7 @@ export function MakeItYours({ actions, servings }: { actions: RecipeActions; ser
   } else {
     fix = (
       <Link href="/settings/recipe" data-track="recipe.kitchen_settings" className={tool}>
-        <ToolBody icon={ShieldCheck} title={t("web.recipe.fixTitle")} short={t("web.recipe.fixTitle")} body={t("web.recipe.fixNothing")} />
+        <ToolBody icon={ShieldCheck} title={t("web.recipe.fixTitle")} short={t("web.recipe.fixTitle")} body={t(nothingToFixKey(actions.kitchenSetUp))} />
       </Link>
     );
   }

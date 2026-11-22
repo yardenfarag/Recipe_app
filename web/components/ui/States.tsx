@@ -39,7 +39,7 @@ export function ErrorState({
         <CloudOff aria-hidden className="h-7 w-7" />
       </span>
       <h2 className="text-lg font-bold text-text">{title ?? t("web.errorTitle")}</h2>
-      <p className="mt-1.5 text-[15px] leading-relaxed text-muted">{body ?? t("common.tryAgain")}</p>
+      <p className="mt-1.5 text-[15px] leading-relaxed text-muted">{body ?? t("web.errorBody")}</p>
       {onRetry ? (
         <Button variant="secondary" className="mt-5" trackId={trackId ? `${trackId}.retry` : undefined} onClick={onRetry}>
           {t("common.tryAgainAction")}
