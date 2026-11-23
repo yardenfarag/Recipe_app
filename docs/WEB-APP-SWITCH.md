@@ -23,7 +23,7 @@ People stay signed in across the switch, both ways. Both apps keep the Supabase 
 
 ## Switching over
 
-Run `bash scripts/web-app-switch-wizard.sh` from the repo root at a quiet hour, in Git Bash. From PowerShell, plain `bash` starts WSL instead; use `& "C:\Program Files\Gitinash.exe" scripts/web-app-switch-wizard.sh`. It merges the PR, checks the routing, two browsers, sign-in, an import and a test purchase, practises switching back once, and posts the "new look" message.
+Run `bash scripts/web-app-switch-wizard.sh` from the repo root at a quiet hour, in Git Bash. From PowerShell, plain `bash` starts WSL instead; use `& "C:\Program Files\Git\bin\bash.exe" scripts/web-app-switch-wizard.sh`. It merges the PR, checks the routing, two browsers, sign-in, an import and a test purchase, practises switching back once, and posts the "new look" message.
 
 ## Switching back
 
