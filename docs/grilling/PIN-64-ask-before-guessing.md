@@ -136,6 +136,21 @@ Local Supabase, real model calls, a schnitzel photo (chicken, pork or veal?) and
 
 ---
 
+## Eval, English (2026-11-23)
+
+Full table: `eval/results/clarify.md`. 41 Commons photos (20 unclear, 21 clear), recipe cost $2.14.
+
+- **Without questions** the recipe writer already gets 15/20 unclear and 19/21 clear right, so questions can help on about 5 photos.
+- **Sonnet 5.5@low, threshold 0.6:** 17/20 unclear right, 0/21 clear asked, $0.0064 and ~2.9 s per photo. Good questions ("Lamb · Beef", "Fried tofu · Chicken · Pork").
+- **GPT-6 Luna, threshold 0.8:** 16/20, 1/21 clear asked, $0.00027 and ~2.3 s. Good on cutlets ("pork · chicken · veal"), weaker on unusual dishes.
+- **Mistral Small (today), Qwen 3.8 Flash, Gemini Flash Lite** almost never ask. **GPT-5.4 nano** asks on half the clear photos.
+- Every recipe written with a matching answer came out as the right dish.
+- Caveat: 20 unclear photos is small; +2 vs +1 is one photo.
+
+**Next:** a Hebrew run on Sonnet and Luna only (about $1–2), then Yarden picks the model and threshold.
+
+---
+
 ## Still open
 
 - Yarden to confirm both apps (`src/` and `web/`) are in scope for v1 (D3).
