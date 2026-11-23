@@ -9,23 +9,23 @@
 import { getDocumentProxy } from 'npm:unpdf@2.1.0';
 
 import { generateLlmJson } from '../llm/llmClient.ts';
-import type { GeminiUsageSnapshot } from '../llm/pricing.ts';
+import type { LlmUsageSnapshot } from '../llm/pricing.ts';
 import { MEASUREMENT_RULES } from '../recipes/ingredientAmounts.ts';
 import {
   CALORIE_RULES,
-  type GeminiRecipe,
-  geminiFoundRecipe,
+  type LlmRecipe,
+  llmFoundRecipe,
   INSTRUCTION_RULES,
-  isFullGeminiRecipe,
-  isGeminiTimeout,
+  isFullLlmRecipe,
+  isLlmTimeout,
   LANGUAGE_RULE,
-  normalizeGeminiRecipe,
+  normalizeLlmRecipe,
   RECIPE_SCHEMA,
   recipeCompleteness,
   TAG_RULES,
   TEXT_MAX_OUTPUT_TOKENS,
   TIME_RULES,
-} from './gemini.ts';
+} from './recipeExtraction.ts';
 
 /** A phone scan of a few cookbook pages fits; a whole cookbook doesn't. */
 export const MAX_PDF_BYTES = 10 * 1024 * 1024;
@@ -105,14 +105,14 @@ export type PdfText = { pages: string[]; pageCount: number };
 export type PdfRoute = 'text' | 'file' | 'text+file';
 
 export type PdfExtraction = {
-  recipe: GeminiRecipe;
+  recipe: LlmRecipe;
   route: PdfRoute;
-  usages: GeminiUsageSnapshot[];
+  usages: LlmUsageSnapshot[];
   /** Set when the photo model didn't get to read the PDF because the deadline was too close. */
   fileSkipped?: 'out_of_time';
 };
 
-const EMPTY_RECIPE: GeminiRecipe = {
+const EMPTY_RECIPE: LlmRecipe = {
   found_recipe: false,
   source_language: 'en',
   title: '',
@@ -246,10 +246,10 @@ ${LANGUAGE_RULE}
 - Do NOT invent instructions if none are present — return what you found and leave instructions empty instead.
 - Return ONLY data matching the schema.`;
 
-type ModelRead = { recipe: GeminiRecipe; usage: GeminiUsageSnapshot | null };
+type ModelRead = { recipe: LlmRecipe; usage: LlmUsageSnapshot | null };
 
 async function readTextWithModel(text: PdfText, timeoutMs: number): Promise<ModelRead> {
-  const { data, usage, durationMs } = await generateLlmJson<GeminiRecipe>({
+  const { data, usage, durationMs } = await generateLlmJson<LlmRecipe>({
     systemPrompt: PDF_TEXT_SYSTEM_PROMPT,
     parts: [{ text: `Text of a ${text.pageCount}-page PDF:\n\n${pdfTextForModel(text)}` }],
     responseSchema: RECIPE_SCHEMA,
@@ -259,11 +259,11 @@ async function readTextWithModel(text: PdfText, timeoutMs: number): Promise<Mode
     context: 'pdfRecipe.ts: readTextWithModel',
   });
   console.log('[pdf] text read ok', { ms: durationMs, usage });
-  return { recipe: normalizeGeminiRecipe(data), usage };
+  return { recipe: normalizeLlmRecipe(data), usage };
 }
 
 async function readFileWithModel(pdfBase64: string, timeoutMs: number): Promise<ModelRead> {
-  const { data, usage, durationMs } = await generateLlmJson<GeminiRecipe>({
+  const { data, usage, durationMs } = await generateLlmJson<LlmRecipe>({
     systemPrompt: PDF_FILE_SYSTEM_PROMPT,
     parts: [{ pdfBase64 }, { text: 'Extract the recipe from this PDF.' }],
     responseSchema: RECIPE_SCHEMA,
@@ -273,7 +273,7 @@ async function readFileWithModel(pdfBase64: string, timeoutMs: number): Promise<
     context: 'pdfRecipe.ts: readFileWithModel',
   });
   console.log('[pdf] file read ok', { ms: durationMs, usage });
-  return { recipe: normalizeGeminiRecipe(data), usage };
+  return { recipe: normalizeLlmRecipe(data), usage };
 }
 
 /** The model calls, replaceable in tests. */
@@ -305,7 +305,7 @@ export async function extractRecipeFromPdf(
   readers: PdfReaders = MODEL_READERS,
 ): Promise<PdfExtraction> {
   const { pdf, text, deadlineAt } = input;
-  const usages: GeminiUsageSnapshot[] = [];
+  const usages: LlmUsageSnapshot[] = [];
   const scanned = scannedPageCount(text);
   console.log('[pdf] start', {
     pages: text.pageCount,
@@ -330,7 +330,7 @@ export async function extractRecipeFromPdf(
   }
 
   const textTimeout = stepTimeout(TEXT_TIMEOUT_MS, deadlineAt);
-  let fromText: GeminiRecipe = EMPTY_RECIPE;
+  let fromText: LlmRecipe = EMPTY_RECIPE;
   let textAnswered = false;
   if (textTimeout >= MIN_TEXT_MS) {
     try {
@@ -340,13 +340,13 @@ export async function extractRecipeFromPdf(
       textAnswered = true;
     } catch (err) {
       // A slow text model still leaves the photo model, which reads the same pages.
-      if (!isGeminiTimeout(err)) throw err;
+      if (!isLlmTimeout(err)) throw err;
       console.warn('[pdf] text read timed out');
     }
   }
 
-  if (isFullGeminiRecipe(fromText)) return { recipe: fromText, route: 'text', usages };
-  const textFound = geminiFoundRecipe(fromText);
+  if (isFullLlmRecipe(fromText)) return { recipe: fromText, route: 'text', usages };
+  const textFound = llmFoundRecipe(fromText);
   if (!textFound && scanned === 0 && textAnswered) {
     return { recipe: fromText, route: 'text', usages };
   }
@@ -368,7 +368,7 @@ export async function extractRecipeFromPdf(
     return { recipe: fromText, route: 'text', usages, ...(textFound ? {} : { fileSkipped: 'out_of_time' as const }) };
   }
   const fromFile = read.recipe;
-  const fileWins = geminiFoundRecipe(fromFile) &&
+  const fileWins = llmFoundRecipe(fromFile) &&
     (!textFound || recipeCompleteness(fromFile) >= recipeCompleteness(fromText));
   return { recipe: fileWins ? fromFile : fromText, route: 'text+file', usages };
 }

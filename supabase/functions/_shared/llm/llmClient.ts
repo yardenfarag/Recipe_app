@@ -10,7 +10,7 @@
 
 import { AppError, FetchError } from '../core/errors.ts';
 import { parseLlmJsonText } from './llmJson.ts';
-import type { GeminiUsageSnapshot } from './pricing.ts';
+import type { LlmUsageSnapshot } from './pricing.ts';
 
 const OPENROUTER_URL = 'https://openrouter.ai/api/v1/chat/completions';
 
@@ -25,9 +25,6 @@ export type LlmPart =
    * otherwise parses it first with its OCR engine (PIN-72).
    */
   | { pdfBase64: string; filename?: string };
-
-/** @deprecated Name kept for import stability; same shape as LlmPart. */
-export type GeminiPart = LlmPart;
 
 export type ReasoningEffort = 'none' | 'low' | 'medium';
 
@@ -117,24 +114,18 @@ export interface GenerateLlmJsonOptions {
   responseSchema: Record<string, unknown>;
   timeoutMs: number;
   maxOutputTokens: number;
-  /** Error context prefix, e.g. "translateRecipe.ts: translateRecipeWithGemini". */
+  /** Error context prefix, e.g. "translateRecipe.ts: translateRecipeWithLlm". */
   context: string;
 }
 
-/** @deprecated Name kept for import stability. */
-export type GenerateGeminiJsonOptions = GenerateLlmJsonOptions;
-
 export interface GenerateLlmJsonResult<T> {
   data: T;
-  usage: GeminiUsageSnapshot;
+  usage: LlmUsageSnapshot;
   model: string;
   durationMs: number;
   /** USD cost reported by OpenRouter (`usage.cost`). */
   costUsd?: number;
 }
-
-/** @deprecated Name kept for import stability. */
-export type GenerateGeminiJsonResult<T> = GenerateLlmJsonResult<T>;
 
 /**
  * Eval-only (eval/run.ts): pin each call to one model with no fallbacks, so a
@@ -556,7 +547,7 @@ async function requestOpenRouterJson<T>(
   const thoughtsTokenCount =
     Number(payload.usage?.completion_tokens_details?.reasoning_tokens ?? 0) || 0;
   const costUsd = Number(payload.usage?.cost);
-  const usage: GeminiUsageSnapshot = {
+  const usage: LlmUsageSnapshot = {
     model: usedModel,
     kind: options.kind,
     promptTokenCount,
@@ -591,6 +582,6 @@ export async function generateLlmJson<T>(
 }
 
 /** Models occasionally emit U+0000 inside accented words under structured output. */
-export function sanitizeGeminiText(value: string): string {
+export function sanitizeLlmText(value: string): string {
   return value.replace(/\u0000/g, '');
 }

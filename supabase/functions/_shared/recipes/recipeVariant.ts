@@ -1,9 +1,9 @@
-// Full-recipe dietary / lifestyle transforms via Gemini structured output.
+// Full-recipe dietary / lifestyle transforms via LLM structured output.
 
 import { normalizeStoredCalories } from './calories.ts';
 import { normalizeStoredNutrition, NUTRITION_RULES, NUTRITION_SCHEMA_PROPERTIES, type RecipeNutrition } from './nutrition.ts';
 import { generateLlmJson } from '../llm/llmClient.ts';
-import { sanitizeGeminiText } from '../llm/llmClient.ts';
+import { sanitizeLlmText } from '../llm/llmClient.ts';
 import {
   DUAL_INGREDIENT_SCHEMA,
   MEASUREMENT_RULES,
@@ -11,7 +11,7 @@ import {
   type DualIngredient,
 } from './ingredientAmounts.ts';
 import { jevDecide } from '../llm/jev.ts';
-import type { GeminiUsageSnapshot } from '../llm/pricing.ts';
+import type { LlmUsageSnapshot } from '../llm/pricing.ts';
 
 const REQUEST_TIMEOUT_MS = 35_000;
 const MAX_OUTPUT_TOKENS = 6_144;
@@ -128,7 +128,7 @@ export interface TransformedRecipe {
   /** PIN-80. Grams for all servings; null when the model left them out or they don't fit the calories. */
   nutrition?: RecipeNutrition | null;
   summary: string;
-  usage?: GeminiUsageSnapshot | null;
+  usage?: LlmUsageSnapshot | null;
 }
 
 const RELATED_JEV_CRITERIA = {
@@ -180,7 +180,7 @@ export async function remixInstructionIsRelated(
   return data.related === true;
 }
 
-export async function transformRecipeWithGemini(
+export async function transformRecipeWithLlm(
   input: TransformRecipeInput,
 ): Promise<TransformedRecipe> {
   const goal = input.instruction?.trim()
@@ -197,30 +197,30 @@ export async function transformRecipeWithGemini(
     timeoutMs: REQUEST_TIMEOUT_MS,
     maxOutputTokens: MAX_OUTPUT_TOKENS,
     kind: 'transform',
-    context: 'recipeVariant.ts: transformRecipeWithGemini',
+    context: 'recipeVariant.ts: transformRecipeWithLlm',
   });
 
   const servings = parsed.servings > 0 ? parsed.servings : input.servings;
 
   return {
     ingredients: mapDualIngredients(parsed.ingredients).map((ing) => ({
-      name: sanitizeGeminiText(ing.name ?? ''),
+      name: sanitizeLlmText(ing.name ?? ''),
       quantity: Number(ing.quantity),
-      unit: sanitizeGeminiText(ing.unit ?? ''),
+      unit: sanitizeLlmText(ing.unit ?? ''),
       ...(ing.metric ? { metric: ing.metric } : {}),
       ...(ing.spoons ? { spoons: ing.spoons } : {}),
     })),
     instructions: (parsed.instructions ?? []).map((step) => ({
       step: Number(step.step),
-      text: sanitizeGeminiText(step.text ?? ''),
+      text: sanitizeLlmText(step.text ?? ''),
     })),
     servings,
     calories: normalizeStoredCalories(parsed.calories ?? null, servings) ?? undefined,
     nutrition: normalizeStoredNutrition(parsed, servings),
     calories_reasoning: parsed.calories_reasoning
-      ? sanitizeGeminiText(parsed.calories_reasoning)
+      ? sanitizeLlmText(parsed.calories_reasoning)
       : undefined,
-    summary: sanitizeGeminiText(
+    summary: sanitizeLlmText(
       parsed.summary?.trim() || 'Recipe adapted to your chosen style.',
     ),
     usage,

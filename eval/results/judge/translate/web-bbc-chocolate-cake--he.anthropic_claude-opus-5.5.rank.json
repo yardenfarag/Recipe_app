@@ -1,0 +1,60 @@
+{
+  "caseId": "web-bbc-chocolate-cake--he",
+  "judge": "anthropic/claude-opus-5.5",
+  "letters": {
+    "A": "google/gemini-4-hydrogen@low",
+    "B": "openai/gpt-6.2-sol@low",
+    "C": "openai/gpt-6.1-sol@low",
+    "D": "anthropic/claude-haiku-5.5@low",
+    "E": "openai/gpt-6-luna",
+    "F": "openai/gpt-6.1-terra@low"
+  },
+  "verdict": {
+    "candidates": [
+      {
+        "letter": "A",
+        "accuracy": 4,
+        "quality": 4,
+        "issues": "Drops the gas mark 5 setting. 'מיקסר ידני' is a loose rendering of 'electric beaters'. Otherwise natural and accurate."
+      },
+      {
+        "letter": "B",
+        "accuracy": 5,
+        "quality": 5,
+        "issues": "Complete and idiomatic: correctly uses 'שיפוד' for skewer and 'מתקשה' for setting. 'לאפיית שכבות העוגה' is a slight expansion."
+      },
+      {
+        "letter": "C",
+        "accuracy": 5,
+        "quality": 5,
+        "issues": "Complete and natural. Opening sentence chains 'או... או' slightly awkwardly. Minor additions ('מחלצים', 'ברשותכם')."
+      },
+      {
+        "letter": "D",
+        "accuracy": 3,
+        "quality": 2,
+        "issues": "Uses 'מפשירים' (thaw) instead of 'ממיסים' for melting chocolate. 'לשים' infinitive breaks the instruction style and is ambiguous. Calque 'תבניות לסנדוויץ''. Awkward 'לגז 5' and 'מניחים למקום קריר'. Singular cake/tin where the source has two."
+      },
+      {
+        "letter": "E",
+        "accuracy": 5,
+        "quality": 4,
+        "issues": "Oven temperatures left in English slash format ('190C/170C בטורבו/גז 5') with no degree sign. 'קערה שמתאימה לחימום' is slightly clunky."
+      },
+      {
+        "letter": "F",
+        "accuracy": 5,
+        "quality": 5,
+        "issues": "Complete and natural. Step 4 omits an explicit subject ('מניחים להצטנן'). 'מתייצב' is a slightly less precise word for setting than 'מתקשה'."
+      }
+    ],
+    "ranking": [
+      "B",
+      "C",
+      "F",
+      "E",
+      "A",
+      "D"
+    ]
+  }
+}

@@ -8,7 +8,7 @@
  */
 
 import { AppError } from '../../core/errors.ts';
-import type { GeminiUsageSnapshot } from '../../llm/pricing.ts';
+import type { LlmUsageSnapshot } from '../../llm/pricing.ts';
 import type { TranslatedRecipe, TranslateLanguageCode, TranslateRecipeInput } from '../translateRecipe.ts';
 
 export const MAX_TRANSLATION_BACKFILL_BATCH = 10;
@@ -48,7 +48,7 @@ export type TranslationBackfillResult = {
   /** Rows that changed between our read and our write, or whose language we don't translate. */
   skipped: number;
   nextCursor: TranslationCursor | null;
-  usages: GeminiUsageSnapshot[];
+  usages: LlmUsageSnapshot[];
   errors: string[];
 };
 

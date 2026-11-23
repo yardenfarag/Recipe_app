@@ -1,0 +1,71 @@
+{
+  "ingredients": [
+    {
+      "ref_index": 0,
+      "status": "wrong_quantity"
+    },
+    {
+      "ref_index": 1,
+      "status": "wrong_quantity"
+    },
+    {
+      "ref_index": 2,
+      "status": "missing"
+    },
+    {
+      "ref_index": 3,
+      "status": "missing"
+    },
+    {
+      "ref_index": 4,
+      "status": "missing"
+    },
+    {
+      "ref_index": 5,
+      "status": "wrong_quantity"
+    },
+    {
+      "ref_index": 6,
+      "status": "wrong_quantity"
+    },
+    {
+      "ref_index": 7,
+      "status": "missing"
+    },
+    {
+      "ref_index": 8,
+      "status": "wrong_quantity"
+    },
+    {
+      "ref_index": 9,
+      "status": "missing"
+    },
+    {
+      "ref_index": 10,
+      "status": "wrong_quantity"
+    },
+    {
+      "ref_index": 11,
+      "status": "wrong_quantity"
+    },
+    {
+      "ref_index": 12,
+      "status": "wrong_quantity"
+    },
+    {
+      "ref_index": 13,
+      "status": "wrong_quantity"
+    },
+    {
+      "ref_index": 14,
+      "status": "missing"
+    }
+  ],
+  "extra_ingredients": [
+    "water",
+    "salt",
+    "milk"
+  ],
+  "steps_score": 3,
+  "note": "The candidate gives no amounts for any ingredient, misses several cheeses, the heavy cream and the bouillon, and leaves out the oven temperature and bake times."
+}

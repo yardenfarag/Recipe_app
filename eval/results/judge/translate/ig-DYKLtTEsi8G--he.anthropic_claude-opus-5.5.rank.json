@@ -1,0 +1,60 @@
+{
+  "caseId": "ig-DYKLtTEsi8G--he",
+  "judge": "anthropic/claude-opus-5.5",
+  "letters": {
+    "A": "openai/gpt-6.2-sol@low",
+    "B": "openai/gpt-6-luna",
+    "C": "anthropic/claude-haiku-5.5@low",
+    "D": "google/gemini-4-hydrogen@low",
+    "E": "openai/gpt-6.1-sol@low",
+    "F": "openai/gpt-6.1-terra@low"
+  },
+  "verdict": {
+    "candidates": [
+      {
+        "letter": "A",
+        "accuracy": 5,
+        "quality": 5,
+        "issues": "The last step slightly expands the source ('אם הפאי מוכן'), but this reads naturally and keeps the meaning. Otherwise idiomatic."
+      },
+      {
+        "letter": "B",
+        "accuracy": 5,
+        "quality": 4,
+        "issues": "'המילוי הוא כף אחת של נוטלה' is a literal calque. 'ממשיכים לבדוק אחרי 12 דקות' is a bit awkward."
+      },
+      {
+        "letter": "C",
+        "accuracy": 4,
+        "quality": 3,
+        "issues": "'1 טיפות' has a number agreement error. 'לגריפה בכף' is an unnatural title. 'בודקים אחרי 12 דקות' drops the 'keep checking' nuance. 'מקררים במקרר' is redundant."
+      },
+      {
+        "letter": "D",
+        "accuracy": 4,
+        "quality": 4,
+        "issues": "The title 'רך' loses the 'scoopable' meaning. 'מקררים במקרר' is slightly redundant."
+      },
+      {
+        "letter": "E",
+        "accuracy": 5,
+        "quality": 4,
+        "issues": "Fluent overall. 'ממשיכים לבדוק לאחר 12 דקות' is slightly literal."
+      },
+      {
+        "letter": "F",
+        "accuracy": 5,
+        "quality": 4,
+        "issues": "'ממלאים בכף 1 של נוטלה' is awkward. The final step is natural and accurate."
+      }
+    ],
+    "ranking": [
+      "A",
+      "E",
+      "F",
+      "B",
+      "D",
+      "C"
+    ]
+  }
+}

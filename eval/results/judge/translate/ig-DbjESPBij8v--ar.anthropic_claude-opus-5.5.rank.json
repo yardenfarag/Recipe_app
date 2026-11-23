@@ -1,0 +1,60 @@
+{
+  "caseId": "ig-DbjESPBij8v--ar",
+  "judge": "anthropic/claude-opus-5.5",
+  "letters": {
+    "A": "openai/gpt-6-luna",
+    "B": "google/gemini-4-hydrogen@low",
+    "C": "openai/gpt-6.2-sol@low",
+    "D": "openai/gpt-6.1-sol@low",
+    "E": "anthropic/claude-haiku-5.5@low",
+    "F": "openai/gpt-6.1-terra@low"
+  },
+  "verdict": {
+    "candidates": [
+      {
+        "letter": "A",
+        "accuracy": 5,
+        "quality": 5,
+        "issues": "Accurate and natural. Only minor issue: uses '2 ملعقة' instead of the dual 'ملعقتان'."
+      },
+      {
+        "letter": "B",
+        "accuracy": 5,
+        "quality": 4,
+        "issues": "Transliterates 'كورن فليكس' rather than using 'رقائق الذرة'. 'ثوم بودرة' and 'وثوم البودرة' are colloquial and awkward. 'مطحون' (ground) is used for 'crushed'."
+      },
+      {
+        "letter": "C",
+        "accuracy": 5,
+        "quality": 5,
+        "issues": "Accurate, and 'مجروشة' is the right word for 'crushed'. Phrasing is slightly repetitive ('قطع الدجاج' repeated), but it is natural and correct."
+      },
+      {
+        "letter": "D",
+        "accuracy": 5,
+        "quality": 5,
+        "issues": "Accurate and natural; the plural 'صدور' is acceptable. 'جبن بارميزان' lacks the definite article in the instructions, a minor point."
+      },
+      {
+        "letter": "E",
+        "accuracy": 4,
+        "quality": 3,
+        "issues": "'ثوم مجفف' (dried garlic) is not the same as garlic powder. 'البيض' should be the singular 'البيضة'. 'الجبن البارميزان' is grammatically off. 'المطحونة' is used for 'crushed'."
+      },
+      {
+        "letter": "F",
+        "accuracy": 5,
+        "quality": 3,
+        "issues": "'الثوم البودرة' is ungrammatical and colloquial. 'التغليفة' is unnatural. 'المطحونة' is used for 'crushed'."
+      }
+    ],
+    "ranking": [
+      "C",
+      "A",
+      "D",
+      "B",
+      "F",
+      "E"
+    ]
+  }
+}

@@ -11,7 +11,7 @@ describe('resolveRecipeCalories', () => {
   });
 
   it('fixes per-serving mislabeled as total with a large yield', () => {
-    // 55 mini cookies: Gemini returned 55 kcal (per cookie) and servings=55
+    // 55 mini cookies: the model returned 55 kcal (per cookie) and servings=55
     expect(resolveRecipeCalories(55, 55)).toEqual({
       totalCalories: 3025,
       perServing: 55,

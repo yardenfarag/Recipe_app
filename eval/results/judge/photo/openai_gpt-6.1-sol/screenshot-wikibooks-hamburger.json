@@ -22,22 +22,22 @@
     }
   ],
   "extra_ingredients": [
-    "Garlic (optional seasoning)",
-    "Onion flakes (optional seasoning)",
-    "Soy sauce (optional seasoning)",
-    "Worcestershire sauce (optional seasoning)",
-    "Olive oil (optional seasoning)",
-    "Hot sauce (optional seasoning)",
-    "Juice from pickled beet (optional seasoning)",
-    "Relish (optional topping)",
-    "Sliced pickles (optional topping)",
-    "Ketchup (optional topping)",
-    "Mayonnaise (optional topping)",
-    "Mustard (optional topping)",
-    "Ranch dressing (optional topping)",
-    "Tomato (optional topping)",
-    "Onion (optional topping)"
+    "Herbs and/or spices for seasoning (duplicate)",
+    "Beef stock",
+    "Garlic",
+    "Onion flakes",
+    "Soy sauce",
+    "Worcestershire sauce",
+    "Dry soup or sauce mix",
+    "Relish",
+    "Sliced pickles",
+    "Ketchup",
+    "Mayonnaise",
+    "Mustard",
+    "Ranch dressing",
+    "Egg",
+    "Ice cube"
   ],
-  "steps_score": 4,
-  "note": "The candidate invents pickled beet juice and drops the 2 tsp hot sauce amount; it also lists optional seasonings and toppings as separate ingredients."
+  "steps_score": 3,
+  "note": "Candidate adds many optional extra ingredients and four variation steps not in the reference, and omits the hot sauce tip."
 }

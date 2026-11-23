@@ -43,13 +43,11 @@
     {
       "ref_index": 10,
       "status": "wrong_quantity"
-    },
-    {
-      "ref_index": 11,
-      "status": "ok"
     }
   ],
-  "extra_ingredients": [],
+  "extra_ingredients": [
+    "flaky sea salt"
+  ],
   "steps_score": 2,
-  "note": "All quantities are missing; baking soda, baking powder and salt are omitted; the method invents melting the butter and drops the freezing steps and the 13-minute bake time."
+  "note": "Nearly all quantities are missing, there are 3 eggs instead of 2, baking soda, baking powder and salt are omitted, and the method changes freezing to melting butter."
 }

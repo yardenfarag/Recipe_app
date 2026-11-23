@@ -6,11 +6,11 @@
     },
     {
       "ref_index": 1,
-      "status": "wrong_quantity"
+      "status": "ok"
     },
     {
       "ref_index": 2,
-      "status": "missing"
+      "status": "ok"
     },
     {
       "ref_index": 3,
@@ -18,7 +18,7 @@
     },
     {
       "ref_index": 4,
-      "status": "wrong_quantity"
+      "status": "ok"
     },
     {
       "ref_index": 5,
@@ -26,15 +26,15 @@
     },
     {
       "ref_index": 6,
-      "status": "wrong_quantity"
+      "status": "ok"
     },
     {
       "ref_index": 7,
-      "status": "ok"
+      "status": "wrong_quantity"
     },
     {
       "ref_index": 8,
-      "status": "ok"
+      "status": "wrong_quantity"
     },
     {
       "ref_index": 9,
@@ -57,7 +57,9 @@
       "status": "wrong_quantity"
     }
   ],
-  "extra_ingredients": [],
-  "steps_score": 4,
-  "note": "Candidate dropped all quantities and omitted salt, garlic, oregano and the dip spices."
+  "extra_ingredients": [
+    "1 כף רוטב סריראצ'ה"
+  ],
+  "steps_score": 3,
+  "note": "The candidate uses 3 corn cobs instead of 4, omits several spices including the dip seasonings, invents sriracha, and changes the air-fryer temperature from 190° to 200°."
 }

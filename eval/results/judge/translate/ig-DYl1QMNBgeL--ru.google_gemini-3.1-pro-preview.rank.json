@@ -1,0 +1,60 @@
+{
+  "caseId": "ig-DYl1QMNBgeL--ru",
+  "judge": "google/gemini-3.1-pro-preview",
+  "letters": {
+    "A": "openai/gpt-6-luna",
+    "B": "openai/gpt-6.1-sol@low",
+    "C": "google/gemini-4-hydrogen@low",
+    "D": "openai/gpt-6.1-terra@low",
+    "E": "anthropic/claude-haiku-5.5@low",
+    "F": "openai/gpt-6.2-sol@low"
+  },
+  "verdict": {
+    "candidates": [
+      {
+        "letter": "A",
+        "accuracy": 5,
+        "quality": 3,
+        "issues": "Grammatical error in the ingredients list: '1 репчатого лука' is incorrect (should be '1 луковица' or '1 головка репчатого лука')."
+      },
+      {
+        "letter": "B",
+        "accuracy": 5,
+        "quality": 5,
+        "issues": "'Макаронные изделия' is technically correct but a bit bureaucratic for a recipe; 'паста' is more natural for this context. '1 мелко нарезанная луковица репчатого лука' is slightly repetitive."
+      },
+      {
+        "letter": "C",
+        "accuracy": 4,
+        "quality": 4,
+        "issues": "Added 'бумажным полотенцем' (paper towel) in the instructions which is not in the source text. '1 репчатый лук' is colloquial/slightly incorrect grammar (should be '1 луковица')."
+      },
+      {
+        "letter": "D",
+        "accuracy": 5,
+        "quality": 5,
+        "issues": "No major issues. Very natural phrasing and correct grammar throughout. ('0.333 стакана' is a literal translation of the source's odd formatting, which is acceptable)."
+      },
+      {
+        "letter": "E",
+        "accuracy": 5,
+        "quality": 3,
+        "issues": "Grammatical error: '1 репчатого лука'. 'Хорошего румянца' is a bit awkward in this culinary context."
+      },
+      {
+        "letter": "F",
+        "accuracy": 5,
+        "quality": 5,
+        "issues": "Very minor: '1 головка репчатого лука, мелко нарезанного' has a slight case mismatch or awkward agreement, but acceptable. Translates 'olive oil' as 'оливковое масло первого холодного отжима' in the text, which is slightly verbose but accurate to the ingredient list."
+      }
+    ],
+    "ranking": [
+      "D",
+      "F",
+      "B",
+      "C",
+      "A",
+      "E"
+    ]
+  }
+}

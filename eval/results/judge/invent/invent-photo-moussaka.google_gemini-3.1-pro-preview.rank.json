@@ -1,0 +1,60 @@
+{
+  "caseId": "invent-photo-moussaka",
+  "judge": "google/gemini-3.1-pro-preview",
+  "letters": {
+    "A": "anthropic/claude-sonnet-5.5@low",
+    "B": "openai/gpt-6.1-terra@low",
+    "C": "anthropic/claude-haiku-5.5@low",
+    "D": "openai/gpt-6.1-sol@low",
+    "E": "google/gemini-4-hydrogen@low",
+    "F": "openai/gpt-6.2-sol@low"
+  },
+  "verdict": {
+    "candidates": [
+      {
+        "letter": "A",
+        "accuracy": 5,
+        "quality": 5,
+        "issues": ""
+      },
+      {
+        "letter": "B",
+        "accuracy": 3,
+        "quality": 4,
+        "issues": "Lacks the meat filling clearly visible beneath the potatoes in the image. Skillet might be too crowded to cook the potatoes evenly."
+      },
+      {
+        "letter": "C",
+        "accuracy": 3,
+        "quality": 5,
+        "issues": "Standard gratin, missing the meat layer and distinct yellow custard seen in the photo."
+      },
+      {
+        "letter": "D",
+        "accuracy": 4,
+        "quality": 5,
+        "issues": "Structurally a great match, but uses paprika instead of a yellow spice like turmeric or curry powder, which would result in a redder hue rather than the bright yellow shown."
+      },
+      {
+        "letter": "E",
+        "accuracy": 3,
+        "quality": 5,
+        "issues": "Lacks the meat filling visible in the gaps between the potatoes in the image."
+      },
+      {
+        "letter": "F",
+        "accuracy": 2,
+        "quality": 5,
+        "issues": "No egg or meat included. The image clearly features an egg-based custard and a ground meat filling."
+      }
+    ],
+    "ranking": [
+      "A",
+      "D",
+      "E",
+      "C",
+      "B",
+      "F"
+    ]
+  }
+}

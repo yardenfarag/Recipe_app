@@ -1,0 +1,60 @@
+{
+  "caseId": "web-bbc-chocolate-cake--ar",
+  "judge": "google/gemini-3.1-pro-preview",
+  "letters": {
+    "A": "openai/gpt-6.2-sol@low",
+    "B": "openai/gpt-6.1-terra@low",
+    "C": "openai/gpt-6.1-sol@low",
+    "D": "google/gemini-4-hydrogen@low",
+    "E": "openai/gpt-6-luna",
+    "F": "anthropic/claude-haiku-5.5@low"
+  },
+  "verdict": {
+    "candidates": [
+      {
+        "letter": "A",
+        "accuracy": 5,
+        "quality": 5,
+        "issues": "Excellent translation. The phrasing is very natural and descriptive, successfully avoiding literal translations that might sound unappetizing in Arabic (such as 'shards', smoothly translated to thin irregular chocolate pieces)."
+      },
+      {
+        "letter": "B",
+        "accuracy": 5,
+        "quality": 4,
+        "issues": "Generally very good, but translates 'shards' literally as 'شظايا', which in Arabic is almost exclusively used for shrapnel or broken glass, making it sound unappetizing in a culinary context."
+      },
+      {
+        "letter": "C",
+        "accuracy": 5,
+        "quality": 4,
+        "issues": "Good translation overall. Step 8 is nicely expanded for clarity. However, it also uses 'شظايا' for chocolate shards, which sounds harsh and non-culinary."
+      },
+      {
+        "letter": "D",
+        "accuracy": 5,
+        "quality": 4,
+        "issues": "Good translation. 'رقائق' is a much better choice for shards. However, the phrase 'ألصق الكيكتين معاً' (glue the two cakes together) is a bit clumsy compared to standard culinary phrasing."
+      },
+      {
+        "letter": "E",
+        "accuracy": 5,
+        "quality": 4,
+        "issues": "Solid translation but shares the issue of using 'شظايا' for shards. Otherwise, the instructions are clear and accurate."
+      },
+      {
+        "letter": "F",
+        "accuracy": 3,
+        "quality": 2,
+        "issues": "Contains severe mistranslations. Translates 'pinch of salt' as 'حفنة ملح' (a handful of salt!), which would ruin the recipe. Also translates 'skewer' bizarrely as 'عود التنقيب' (drilling/excavating stick)."
+      }
+    ],
+    "ranking": [
+      "A",
+      "B",
+      "C",
+      "E",
+      "D",
+      "F"
+    ]
+  }
+}

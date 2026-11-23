@@ -2,11 +2,11 @@
   "ingredients": [
     {
       "ref_index": 0,
-      "status": "wrong_quantity"
+      "status": "ok"
     },
     {
       "ref_index": 1,
-      "status": "wrong_quantity"
+      "status": "ok"
     },
     {
       "ref_index": 2,
@@ -22,6 +22,6 @@
     }
   ],
   "extra_ingredients": [],
-  "steps_score": 5,
-  "note": "Invented quantity of 1 for the banana and the egg, whose amounts are unstated in the reference."
+  "steps_score": 4,
+  "note": "Omits the final step about making one large or several small pancakes (yield of 5)."
 }

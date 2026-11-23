@@ -30,9 +30,9 @@
     }
   ],
   "extra_ingredients": [
-    "Unbaked pie shell",
-    "Chopped walnuts"
+    "unbaked pie shell",
+    "chopped walnuts (optional addition to crust)"
   ],
   "steps_score": 5,
-  "note": "Candidate lists the pie shell and optional walnuts as separate ingredients, though the reference mentions them only in the steps."
+  "note": "Candidate added the pie shell and optional walnuts as ingredient lines, though the reference does not list them as ingredients."
 }

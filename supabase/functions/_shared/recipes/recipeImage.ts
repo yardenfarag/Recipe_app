@@ -12,7 +12,7 @@ import jpeg from 'npm:jpeg-js@0.4.4';
 
 import type { Db } from '../core/supabaseAdmin.ts';
 import { generateImage, type GenerateImageOptions } from '../llm/imageClient.ts';
-import type { GeminiUsageSnapshot } from '../llm/pricing.ts';
+import type { LlmUsageSnapshot } from '../llm/pricing.ts';
 
 const BUCKET = 'recipe-thumbnails';
 const MAX_INGREDIENTS = 8;
@@ -24,8 +24,8 @@ export interface RecipeImageInput {
 }
 
 export type DrawRecipeImageResult =
-  | { ok: true; url: string; usage: GeminiUsageSnapshot; model: string; bytes: number; ms: number }
-  | { ok: false; error: string; usage: GeminiUsageSnapshot | null; ms: number };
+  | { ok: true; url: string; usage: LlmUsageSnapshot; model: string; bytes: number; ms: number }
+  | { ok: false; error: string; usage: LlmUsageSnapshot | null; ms: number };
 
 export interface DrawRecipeImageOptions {
   /** Tests pass their own. */
@@ -130,7 +130,7 @@ export async function drawRecipeImage(
     return { ok: false, error: result.error, usage: null, ms: Date.now() - started };
   }
   const { image } = result;
-  const usage: GeminiUsageSnapshot = {
+  const usage: LlmUsageSnapshot = {
     model: image.model,
     kind: 'recipe_image',
     promptTokenCount: 0,

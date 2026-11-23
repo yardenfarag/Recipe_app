@@ -1,0 +1,60 @@
+{
+  "caseId": "ig-Dd0Xk6ZBq6p--he",
+  "judge": "anthropic/claude-opus-5.5",
+  "letters": {
+    "A": "openai/gpt-6.1-terra@low",
+    "B": "google/gemini-4-hydrogen@low",
+    "C": "openai/gpt-6.1-sol@low",
+    "D": "openai/gpt-6-luna",
+    "E": "anthropic/claude-haiku-5.5@low",
+    "F": "openai/gpt-6.2-sol@low"
+  },
+  "verdict": {
+    "candidates": [
+      {
+        "letter": "A",
+        "accuracy": 5,
+        "quality": 5,
+        "issues": "Very natural and complete. Adding 'white' to the chocolate is a reasonable clarification. Using 'מתייצבות' for 'firm' is slightly soft."
+      },
+      {
+        "letter": "B",
+        "accuracy": 4,
+        "quality": 3,
+        "issues": "Gender error in 'נוצרת קרום' (קרום is masculine). 'קרום בהיר' turns 'light' into a colour rather than 'thin'. Otherwise fine."
+      },
+      {
+        "letter": "C",
+        "accuracy": 5,
+        "quality": 5,
+        "issues": "Natural and precise ('מתקשות', 'קרום דק'). Using 'נוזלי' for 'gooey' is slightly off."
+      },
+      {
+        "letter": "D",
+        "accuracy": 4,
+        "quality": 4,
+        "issues": "'שכבה דקה' loses the sense of 'crust'. 'מניחים' weakens 'press'. Otherwise idiomatic."
+      },
+      {
+        "letter": "E",
+        "accuracy": 3,
+        "quality": 3,
+        "issues": "Drops 'for the centers' from the ingredients. Adds 'במערבל חשמלי'. Mixes address forms ('בעצמכם'). Grammar slips in 'וסוכר החום' and 'שוקולד קינדר הקצוץ'. Spelling 'מישטחים'."
+      },
+      {
+        "letter": "F",
+        "accuracy": 4,
+        "quality": 5,
+        "issues": "'Do not overmix' is folded into 'רק עד שהתערובת אחידה', a slight loss. Otherwise very fluent and native-sounding."
+      }
+    ],
+    "ranking": [
+      "C",
+      "A",
+      "F",
+      "D",
+      "B",
+      "E"
+    ]
+  }
+}

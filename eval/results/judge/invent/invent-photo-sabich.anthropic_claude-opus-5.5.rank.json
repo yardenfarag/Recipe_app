@@ -1,0 +1,60 @@
+{
+  "caseId": "invent-photo-sabich",
+  "judge": "anthropic/claude-opus-5.5",
+  "letters": {
+    "A": "anthropic/claude-haiku-5.5@low",
+    "B": "anthropic/claude-sonnet-5.5@low",
+    "C": "google/gemini-4-hydrogen@low",
+    "D": "openai/gpt-6.1-terra@low",
+    "E": "openai/gpt-6.2-sol@low",
+    "F": "openai/gpt-6.1-sol@low"
+  },
+  "verdict": {
+    "candidates": [
+      {
+        "letter": "A",
+        "accuracy": 1,
+        "quality": 3,
+        "issues": "Wrong dish: the photo shows sabich (fried eggplant, potato, egg, tahini), not schnitzel. The schnitzel method itself is workable. The amount of water for the tahini is not specified."
+      },
+      {
+        "letter": "B",
+        "accuracy": 4,
+        "quality": 4,
+        "issues": "Fried eggplant and amba suit the dish, but there is no potato, which is visible in the photo. The hard-boiled eggs have no cooking step. All of the listed salt goes on the eggplant, yet the salad also asks for salt."
+      },
+      {
+        "letter": "C",
+        "accuracy": 5,
+        "quality": 3,
+        "issues": "Whole medium potatoes boiled for 12 minutes alongside the eggs will likely be undercooked. The salt quantity line is malformed ('0 לפי הטעם'). Frying time for the eggplant is not given. Otherwise complete, with fried eggplant and amba."
+      },
+      {
+        "letter": "D",
+        "accuracy": 4,
+        "quality": 4,
+        "issues": "Roasting the eggplant departs from the deep-fried look in the photo, and there is no amba. The method is clear, with temperature and times, and the salt is accounted for."
+      },
+      {
+        "letter": "E",
+        "accuracy": 4,
+        "quality": 5,
+        "issues": "The eggplant is roasted rather than fried, but the recipe is otherwise complete. Precise times and temperature, salt split correctly, and amba included. No cucumber, which is minor."
+      },
+      {
+        "letter": "F",
+        "accuracy": 4,
+        "quality": 4,
+        "issues": "Roasted eggplant and no amba. Only 2 tbsp of tahini for 2 pitas is scant. The method is clear and complete."
+      }
+    ],
+    "ranking": [
+      "E",
+      "B",
+      "F",
+      "D",
+      "C",
+      "A"
+    ]
+  }
+}

@@ -161,7 +161,9 @@ export async function appliancesCommand(args: string[]): Promise<void> {
   const runs = Math.max(1, Number(flags.runs ?? 1));
   const only = flags.only as string | undefined;
   const model = flags.model as string | undefined;
-  if (model) setEvalHook({ model: () => model });
+  // `vendor/model@low` pins the reasoning effort, as in eval/models.ts.
+  const [modelId, reasoning] = model?.split('@') ?? [];
+  if (modelId) setEvalHook({ model: () => modelId, reasoning: () => reasoning ?? null });
 
   const file = JSON.parse(await Deno.readTextFile(new URL('./cases/appliances.json', import.meta.url)));
   const cases = (file.cases as ApplianceCase[]).filter((c) => !only || c.lang === only || c.id.includes(only));

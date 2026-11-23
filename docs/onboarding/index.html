@@ -758,7 +758,7 @@ curl -X POST 'https://ccobefeofhnncpgifxel.supabase.co/functions/v1/extract-reci
           <tr><td class="k">Photos</td><td>Skip the ladder. One vision call.</td></tr>
         </tbody>
       </table>
-      <div class="branch"><span>file: <code>_shared/extraction/gemini.ts</code> → <code>extractRecipeWithLadder</code></span><span>video over 180 s → <code>video_too_long</code></span></div></li>
+      <div class="branch"><span>file: <code>_shared/extraction/recipeExtraction.ts</code> → <code>extractRecipeWithLadder</code></span><span>video over 180 s → <code>video_too_long</code></span></div></li>
     <li><b>Classify</b><span><code>full</code>, <code>partial</code> (with <code>missing_fields</code>), or <code>failed</code>.</span><div class="branch"><span class="credit"><b>full or partial → finalize credit</b></span><span class="free"><b>failed → refund</b></span></div></li>
     <li><b>Return</b><span>Re-host the thumbnail in Storage, publish a full result to the Hub unless the user opted out, log usage to <code>ai_usage_events</code>, return JSON. The app opens Preview. Saving is the app's job.</span></li>
   </ol>
@@ -818,7 +818,7 @@ npx -y deno run -A --no-lock --env-file=.env eval/cli.ts report</code></pre>
 
   <h3>Where to look</h3>
   <ul>
-    <li>Code: <code>_shared/llm/llmClient.ts</code>, <code>_shared/extraction/videoInput.ts</code>, <code>_shared/extraction/gemini.ts</code>, <code>_shared/llm/jev.ts</code>, <code>_shared/extraction/contentGate.ts</code>, <code>_shared/extraction/classifyRecipe.ts</code>.</li>
+    <li>Code: <code>_shared/llm/llmClient.ts</code>, <code>_shared/extraction/videoInput.ts</code>, <code>_shared/extraction/recipeExtraction.ts</code>, <code>_shared/llm/jev.ts</code>, <code>_shared/extraction/contentGate.ts</code>, <code>_shared/extraction/classifyRecipe.ts</code>.</li>
     <li>Decisions: <code>docs/adr/015-per-task-models.md</code> (current routing), <code>docs/adr/013</code> (credits and caps), <code>docs/adr/014</code> (invent), <code>docs/research/05-llm-per-task.md</code> (the eval), Linear PIN-28, PIN-44, PIN-45, PIN-46.</li>
     <li>Live numbers: Settings → Admin → Usage in the app. The "AI cost" panel shows cost, calls and tokens per model, per task and per action for the last 24 hours, 7 or 30 days. Each <code>ai_usage_events</code> row stores its per-call breakdown in <code>metadata.llm_calls</code>, so you can also query it directly.</li>
   </ul>

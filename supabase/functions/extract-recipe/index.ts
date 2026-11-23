@@ -4,7 +4,7 @@ import { normalizeStoredNutrition } from '../_shared/recipes/nutrition.ts';
 import { corsHeaders, jsonResponse } from '../_shared/core/cors.ts';
 import { FetchError } from '../_shared/core/errors.ts';
 import { fetchErrorInfo } from '../_shared/extraction/fetchErrorMessage.ts';
-import { classifyGeminiRecipe } from '../_shared/extraction/classifyRecipe.ts';
+import { classifyLlmRecipe } from '../_shared/extraction/classifyRecipe.ts';
 import {
   buildContentGateInput,
   runContentGate,
@@ -16,8 +16,8 @@ import {
   extractRecipeFromImage,
   extractRecipeWithLadder,
   type ExtractInput,
-  GeminiRecipe,
-} from '../_shared/extraction/gemini.ts';
+  LlmRecipe,
+} from '../_shared/extraction/recipeExtraction.ts';
 import { fetchFacebookMeta, resolveFacebookShareLink } from '../_shared/extraction/sources/facebook.ts';
 import { fetchPinterestMeta, resolvePinterestShortLink } from '../_shared/extraction/sources/pinterest.ts';
 import { fetchInstagramMeta } from '../_shared/extraction/sources/instagram.ts';
@@ -374,9 +374,9 @@ serve('extract-recipe', async (req) => {
       userId: Boolean(userId),
     });
 
-    let gemini: GeminiRecipe;
+    let llmRecipe: LlmRecipe;
     let source: 'description' | 'comments' | 'captions' | 'video' | 'web' | 'photo';
-    let usages: import('../_shared/llm/pricing.ts').GeminiUsageSnapshot[] = [];
+    let usages: import('../_shared/llm/pricing.ts').LlmUsageSnapshot[] = [];
     let usedInstagramVideoDownload = false;
     let videoSkippedReason: 'too_long' | 'out_of_time' | undefined;
     let scrapeCredits = 0;
@@ -681,7 +681,7 @@ serve('extract-recipe', async (req) => {
 
     if (pdf && pdfText) {
       const fromPdf = await extractRecipeFromPdf({ pdf, text: pdfText, deadlineAt: ladderDeadlineAt });
-      gemini = fromPdf.recipe;
+      llmRecipe = fromPdf.recipe;
       usages = fromPdf.usages;
       source = 'photo';
       originalUrl = null;
@@ -690,16 +690,16 @@ serve('extract-recipe', async (req) => {
       if (fromPdf.fileSkipped) videoSkippedReason = 'out_of_time';
       console.log('[extract-recipe] pdf done', {
         route: fromPdf.route,
-        foundRecipe: gemini.found_recipe,
-        ingredients: gemini.ingredients?.length ?? 0,
-        instructions: gemini.instructions?.length ?? 0,
+        foundRecipe: llmRecipe.found_recipe,
+        ingredients: llmRecipe.ingredients?.length ?? 0,
+        instructions: llmRecipe.instructions?.length ?? 0,
       });
     } else if (platform === 'photo' && imageBase64) {
       const fromImage = await extractRecipeFromImage({
         imageBase64,
         mimeType: imageMime,
       });
-      gemini = fromImage.recipe;
+      llmRecipe = fromImage.recipe;
       dishPhoto = fromImage.dishPhoto;
       if (fromImage.usage) usages = [fromImage.usage];
       source = 'photo';
@@ -710,7 +710,7 @@ serve('extract-recipe', async (req) => {
         skipText,
         deadlineAt: ladderDeadlineAt,
       });
-      gemini = ladder.recipe;
+      llmRecipe = ladder.recipe;
       source = ladder.source;
       usages = ladder.usages;
       usedInstagramVideoDownload = ladder.usedInstagramVideoDownload === true;
@@ -726,14 +726,14 @@ serve('extract-recipe', async (req) => {
       durationSeconds = meta?.durationSeconds;
       console.log('[extract-recipe] ladder done', {
         source,
-        foundRecipe: gemini.found_recipe,
-        title: gemini.title?.slice(0, 80),
-        ingredients: gemini.ingredients?.length ?? 0,
-        instructions: gemini.instructions?.length ?? 0,
+        foundRecipe: llmRecipe.found_recipe,
+        title: llmRecipe.title?.slice(0, 80),
+        ingredients: llmRecipe.ingredients?.length ?? 0,
+        instructions: llmRecipe.instructions?.length ?? 0,
       });
     }
 
-    const { status, missingFields } = classify(gemini);
+    const { status, missingFields } = classify(llmRecipe);
 
     if (status === 'failed') {
       const rejectedAsTooLong = videoSkippedReason === 'too_long';
@@ -845,7 +845,7 @@ serve('extract-recipe', async (req) => {
         imageBase64,
         mimeType: imageMime,
         userId,
-        recipe: { title: gemini.title, ingredients: gemini.ingredients },
+        recipe: { title: llmRecipe.title, ingredients: llmRecipe.ingredients },
         partial: isPartial,
         msLeft: deadlineAt - Date.now() - 3_000,
       })
@@ -859,7 +859,7 @@ serve('extract-recipe', async (req) => {
       ? { appliances: null, metadata: {} }
       : appliancesMs < MIN_APPLIANCES_MS
       ? { appliances: null, metadata: { appliances_skipped: 'out_of_time' } }
-      : await appliancesForRecipe(gemini, usages, {
+      : await appliancesForRecipe(llmRecipe, usages, {
           timeoutMs: Math.min(15_000, Math.floor(appliancesMs / 2)),
         });
 
@@ -872,30 +872,30 @@ serve('extract-recipe', async (req) => {
     }
 
     const recipe = fitRecipeToLimits({
-      title: gemini.title,
-      source_language: normalizeLanguageCode(gemini.source_language),
+      title: llmRecipe.title,
+      source_language: normalizeLanguageCode(llmRecipe.source_language),
       original_url: originalUrl,
       platform,
       image_url: imageUrl,
       // The apps save the recipe as it comes back, so a drawn cover keeps its "AI image" mark.
       ...(imageGenerated ? { image_generated: true } : {}),
       source_video_url: sourceVideoUrl,
-      ingredients: gemini.ingredients,
-      instructions: gemini.instructions,
-      servings: gemini.servings > 0 ? gemini.servings : 1,
+      ingredients: llmRecipe.ingredients,
+      instructions: llmRecipe.instructions,
+      servings: llmRecipe.servings > 0 ? llmRecipe.servings : 1,
       calories: normalizeStoredCalories(
-        gemini.calories ?? null,
-        gemini.servings > 0 ? gemini.servings : 1,
+        llmRecipe.calories ?? null,
+        llmRecipe.servings > 0 ? llmRecipe.servings : 1,
       ),
-      nutrition: normalizeStoredNutrition(gemini, gemini.servings > 0 ? gemini.servings : 1),
-      estimated_time_minutes: gemini.estimated_time_minutes ?? null,
-      cost_estimate: gemini.cost_estimate ?? null,
-      effort_level: gemini.effort_level ?? null,
+      nutrition: normalizeStoredNutrition(llmRecipe, llmRecipe.servings > 0 ? llmRecipe.servings : 1),
+      estimated_time_minutes: llmRecipe.estimated_time_minutes ?? null,
+      cost_estimate: llmRecipe.cost_estimate ?? null,
+      effort_level: llmRecipe.effort_level ?? null,
       extraction_status: status,
       extraction_source: source,
-      calories_reasoning: gemini.calories_reasoning?.trim() || null,
-      time_reasoning: gemini.time_reasoning?.trim() || null,
-      tags: normalizeRecipeTags(gemini.tags),
+      calories_reasoning: llmRecipe.calories_reasoning?.trim() || null,
+      time_reasoning: llmRecipe.time_reasoning?.trim() || null,
+      tags: normalizeRecipeTags(llmRecipe.tags),
       missing_fields: missingFields,
       appliances,
     });
@@ -1357,12 +1357,12 @@ function compensationPendingResponse(
   );
 }
 
-/** Buckets a Gemini result into full/failed/partial per the ADR 004 rules. */
-function classify(r: GeminiRecipe): {
+/** Buckets a model result into full/failed/partial per the ADR 004 rules. */
+function classify(r: LlmRecipe): {
   status: Exclude<ExtractionStatus, 'coming_soon'>;
   missingFields: string[];
 } {
-  return classifyGeminiRecipe(r);
+  return classifyLlmRecipe(r);
 }
 
 function quotaBlockMessage(code: string): string {

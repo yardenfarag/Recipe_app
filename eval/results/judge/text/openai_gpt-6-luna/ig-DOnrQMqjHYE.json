@@ -2,11 +2,11 @@
   "ingredients": [
     {
       "ref_index": 0,
-      "status": "ok"
+      "status": "wrong_quantity"
     },
     {
       "ref_index": 1,
-      "status": "ok"
+      "status": "wrong_quantity"
     },
     {
       "ref_index": 2,
@@ -23,5 +23,5 @@
   ],
   "extra_ingredients": [],
   "steps_score": 5,
-  "note": ""
+  "note": "The banana and egg are listed with quantity 0 instead of 1."
 }

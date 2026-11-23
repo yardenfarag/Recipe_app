@@ -1,0 +1,89 @@
+{
+  "ingredients": [
+    {
+      "ref_index": 0,
+      "status": "ok"
+    },
+    {
+      "ref_index": 1,
+      "status": "ok"
+    },
+    {
+      "ref_index": 2,
+      "status": "ok"
+    },
+    {
+      "ref_index": 3,
+      "status": "ok"
+    },
+    {
+      "ref_index": 4,
+      "status": "ok"
+    },
+    {
+      "ref_index": 5,
+      "status": "ok"
+    },
+    {
+      "ref_index": 6,
+      "status": "ok"
+    },
+    {
+      "ref_index": 7,
+      "status": "ok"
+    },
+    {
+      "ref_index": 8,
+      "status": "ok"
+    },
+    {
+      "ref_index": 9,
+      "status": "ok"
+    },
+    {
+      "ref_index": 10,
+      "status": "ok"
+    },
+    {
+      "ref_index": 11,
+      "status": "ok"
+    },
+    {
+      "ref_index": 12,
+      "status": "ok"
+    },
+    {
+      "ref_index": 13,
+      "status": "ok"
+    },
+    {
+      "ref_index": 14,
+      "status": "ok"
+    },
+    {
+      "ref_index": 15,
+      "status": "ok"
+    },
+    {
+      "ref_index": 16,
+      "status": "ok"
+    },
+    {
+      "ref_index": 17,
+      "status": "ok"
+    },
+    {
+      "ref_index": 18,
+      "status": "missing"
+    },
+    {
+      "ref_index": 19,
+      "status": "ok"
+    }
+  ],
+  "extra_ingredients": [
+    "שמן זית ושמן להתזה/שימון"
+  ],
+  "steps_score": 4,
+  "note": "The 'all the spices used in the meatballs' sauce line is missing from the ingredients, an oil line was added, and the final step adds a sauce-mixing sentence not in the reference."
+}

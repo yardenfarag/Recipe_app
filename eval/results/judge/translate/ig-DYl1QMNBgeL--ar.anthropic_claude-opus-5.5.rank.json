@@ -1,0 +1,60 @@
+{
+  "caseId": "ig-DYl1QMNBgeL--ar",
+  "judge": "anthropic/claude-opus-5.5",
+  "letters": {
+    "A": "openai/gpt-6.1-sol@low",
+    "B": "google/gemini-4-hydrogen@low",
+    "C": "openai/gpt-6.1-terra@low",
+    "D": "openai/gpt-6-luna",
+    "E": "openai/gpt-6.2-sol@low",
+    "F": "anthropic/claude-haiku-5.5@low"
+  },
+  "verdict": {
+    "candidates": [
+      {
+        "letter": "A",
+        "accuracy": 5,
+        "quality": 4,
+        "issues": "'1 بصل' should be 'بصلة'; 'brown' onion dropped; 'اطه' lacks the vowel mark (اطهُ)."
+      },
+      {
+        "letter": "B",
+        "accuracy": 5,
+        "quality": 3,
+        "issues": "'400 غ علبة طماطم مقطعة' has awkward word order; '1 بصل' should be 'بصلة'; 'brown' dropped."
+      },
+      {
+        "letter": "C",
+        "accuracy": 5,
+        "quality": 4,
+        "issues": "'1 بصل' should be 'بصلة'; 'brown' dropped; otherwise natural."
+      },
+      {
+        "letter": "D",
+        "accuracy": 5,
+        "quality": 4,
+        "issues": "'1 بصل' should be 'بصلة'; 'brown' dropped; 'تبّله' is slightly odd; 'مكرونة' is a regional form."
+      },
+      {
+        "letter": "E",
+        "accuracy": 5,
+        "quality": 5,
+        "issues": "'brown' onion dropped; otherwise correct and natural, with 'بصلة'."
+      },
+      {
+        "letter": "F",
+        "accuracy": 3,
+        "quality": 3,
+        "issues": "Adds 'بمنديل ورقي'; 'نار هادئة/عالية' misdescribes the slow cooker settings; 'افرمه' (mince) instead of shred; 'برميزان' misspelling; 'brown' dropped."
+      }
+    ],
+    "ranking": [
+      "E",
+      "A",
+      "C",
+      "D",
+      "B",
+      "F"
+    ]
+  }
+}

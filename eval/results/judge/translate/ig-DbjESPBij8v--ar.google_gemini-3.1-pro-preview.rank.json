@@ -1,0 +1,60 @@
+{
+  "caseId": "ig-DbjESPBij8v--ar",
+  "judge": "google/gemini-3.1-pro-preview",
+  "letters": {
+    "A": "openai/gpt-6-luna",
+    "B": "google/gemini-4-hydrogen@low",
+    "C": "openai/gpt-6.2-sol@low",
+    "D": "openai/gpt-6.1-sol@low",
+    "E": "anthropic/claude-haiku-5.5@low",
+    "F": "openai/gpt-6.1-terra@low"
+  },
+  "verdict": {
+    "candidates": [
+      {
+        "letter": "A",
+        "accuracy": 5,
+        "quality": 4,
+        "issues": "Translates 'crushed' well as 'مفتتة', but 'مسحوق بابريكا' and 'مسحوق ثوم' sound slightly clunky compared to more common culinary terms like 'بابريكا مطحونة' or 'ثوم بودرة'."
+      },
+      {
+        "letter": "B",
+        "accuracy": 5,
+        "quality": 4,
+        "issues": "Uses the English loanword 'كورن فليكس', which is widely understood but less standard for formal recipe writing than 'رقائق الذرة'. Also, 'مطحون' leans closer to 'ground' rather than 'crushed'."
+      },
+      {
+        "letter": "C",
+        "accuracy": 5,
+        "quality": 5,
+        "issues": "Excellent translation. 'مجروشة' is the perfect and most accurate culinary term for 'crushed' (as opposed to finely ground)."
+      },
+      {
+        "letter": "D",
+        "accuracy": 5,
+        "quality": 5,
+        "issues": "Outstanding phrasing. Uses 'صدور دجاج' which sounds very natural in Arabic for a 500g amount, perfectly translates 'crushed' as 'مجروشة', and the final instruction is beautifully phrased ('حتى يصبح الدجاج ذهبي اللون ومقرمشًا')."
+      },
+      {
+        "letter": "E",
+        "accuracy": 4,
+        "quality": 4,
+        "issues": "'Garlic powder' is translated as 'ثوم مجفف' (dried garlic), which is slightly inaccurate. The verb 'اكسُ' (coat) is a bit too formal/literary for a recipe. 'مطحونة' implies ground rather than crushed."
+      },
+      {
+        "letter": "F",
+        "accuracy": 5,
+        "quality": 4,
+        "issues": "Good overall, but 'مطحونة' means 'ground' (turned to powder) rather than 'crushed' (broken into small pieces), which affects the texture implied by the recipe."
+      }
+    ],
+    "ranking": [
+      "D",
+      "C",
+      "A",
+      "F",
+      "B",
+      "E"
+    ]
+  }
+}

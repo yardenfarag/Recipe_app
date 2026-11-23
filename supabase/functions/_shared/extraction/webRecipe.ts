@@ -31,7 +31,7 @@ export interface WebFetchOptions {
   onPageRead?: (event: PageReadEvent) => Promise<void> | void;
 }
 
-/** Fetches a public recipe page and normalizes it for the Gemini text ladder. */
+/** Fetches a public recipe page and normalizes it for the text step of the extraction ladder. */
 export async function fetchWebRecipeMeta(url: string, options: WebFetchOptions = {}): Promise<WebRecipeMeta> {
   const docExport = googleDocExportUrl(url);
   // A private Google Doc is private to the service too, so only ordinary pages fall back.

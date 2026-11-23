@@ -55,5 +55,5 @@
   ],
   "extra_ingredients": [],
   "steps_score": 1,
-  "note": "The candidate has no ingredients and no instructions."
+  "note": "Candidate is empty; no ingredients or steps were extracted."
 }

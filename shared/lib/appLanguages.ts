@@ -36,7 +36,7 @@ export function resolveAppLanguageFromDevice(languageCode: string | null | undef
   return isAppLanguageCode(normalized) ? normalized : 'en';
 }
 
-/** Canonical recipe language when extract did not set one (Gemini extracts in English). */
+/** Canonical recipe language when extract did not set one (the model extracts in English). */
 export const DEFAULT_SOURCE_LANGUAGE = 'en' as const;
 
 export function effectiveSourceLanguage(

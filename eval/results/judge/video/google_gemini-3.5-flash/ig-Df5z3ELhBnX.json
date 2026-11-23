@@ -1,0 +1,66 @@
+{
+  "ingredients": [
+    {
+      "ref_index": 0,
+      "status": "wrong_quantity"
+    },
+    {
+      "ref_index": 1,
+      "status": "wrong_quantity"
+    },
+    {
+      "ref_index": 2,
+      "status": "missing"
+    },
+    {
+      "ref_index": 3,
+      "status": "missing"
+    },
+    {
+      "ref_index": 4,
+      "status": "wrong_quantity"
+    },
+    {
+      "ref_index": 5,
+      "status": "wrong_quantity"
+    },
+    {
+      "ref_index": 6,
+      "status": "wrong_quantity"
+    },
+    {
+      "ref_index": 7,
+      "status": "wrong_quantity"
+    },
+    {
+      "ref_index": 8,
+      "status": "wrong_quantity"
+    },
+    {
+      "ref_index": 9,
+      "status": "wrong_quantity"
+    },
+    {
+      "ref_index": 10,
+      "status": "ok"
+    },
+    {
+      "ref_index": 11,
+      "status": "wrong_quantity"
+    },
+    {
+      "ref_index": 12,
+      "status": "ok"
+    },
+    {
+      "ref_index": 13,
+      "status": "missing"
+    }
+  ],
+  "extra_ingredients": [
+    "garlic powder",
+    "dried oregano"
+  ],
+  "steps_score": 2,
+  "note": "Nearly all quantities are missing, onion powder and thyme are swapped for garlic powder and oregano, and the method omits the temperature, the times and the lime juice finish."
+}

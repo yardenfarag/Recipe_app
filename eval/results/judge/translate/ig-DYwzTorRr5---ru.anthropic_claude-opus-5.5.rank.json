@@ -1,0 +1,60 @@
+{
+  "caseId": "ig-DYwzTorRr5---ru",
+  "judge": "anthropic/claude-opus-5.5",
+  "letters": {
+    "A": "google/gemini-4-hydrogen@low",
+    "B": "openai/gpt-6-luna",
+    "C": "openai/gpt-6.1-sol@low",
+    "D": "openai/gpt-6.2-sol@low",
+    "E": "anthropic/claude-haiku-5.5@low",
+    "F": "openai/gpt-6.1-terra@low"
+  },
+  "verdict": {
+    "candidates": [
+      {
+        "letter": "A",
+        "accuracy": 5,
+        "quality": 4,
+        "issues": "'а середина не останется слегка мягкой' is an awkward double negation; decimal point instead of a comma in '0.25'."
+      },
+      {
+        "letter": "B",
+        "accuracy": 4,
+        "quality": 4,
+        "issues": "'Granulated' is dropped ('25 г сахара'); 'ваниль' is used instead of 'ванильный экстракт'; 'пышной' is added, which is not in the source."
+      },
+      {
+        "letter": "C",
+        "accuracy": 5,
+        "quality": 4,
+        "issues": "'а середина не останется слегка мягкой' is awkward; 'пшеничную муку' in the steps is slightly redundant."
+      },
+      {
+        "letter": "D",
+        "accuracy": 5,
+        "quality": 5,
+        "issues": "Natural and idiomatic. Spelling out 'коричневым сахаром и сахаром-песком' is slightly wordy; decimal point in '0.25'."
+      },
+      {
+        "letter": "E",
+        "accuracy": 4,
+        "quality": 3,
+        "issues": "Grammatical error '1 крупного яйца'; 'гранулированного сахара' is a calque (should be 'сахарного песка')."
+      },
+      {
+        "letter": "F",
+        "accuracy": 5,
+        "quality": 4,
+        "issues": "'а середина не останется слегка мягкой' is awkward; otherwise natural ('капель тёмного шоколада' is good)."
+      }
+    ],
+    "ranking": [
+      "D",
+      "F",
+      "A",
+      "C",
+      "B",
+      "E"
+    ]
+  }
+}

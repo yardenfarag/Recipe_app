@@ -5,7 +5,7 @@ import { localizeCulinaryUnit } from './culinaryUnits.ts';
 import {
   recipeAlreadyInLanguage,
   resolveTranslatedUnit,
-  translateRecipeWithGemini,
+  translateRecipeWithLlm,
 } from './translateRecipe.ts';
 import { glossaryFor } from './translationGlossary.ts';
 
@@ -65,7 +65,7 @@ Deno.test('glossaryFor gives only the terms in the recipe, in the target languag
   assertEquals(glossaryFor('heavy cream', 'en'), []);
 });
 
-Deno.test('translateRecipeWithGemini sends the style notes and glossary, and never puts the source unit back', async () => {
+Deno.test('translateRecipeWithLlm sends the style notes and glossary, and never puts the source unit back', async () => {
   await withModel(
     [
       completion({
@@ -78,7 +78,7 @@ Deno.test('translateRecipeWithGemini sends the style notes and glossary, and nev
       }),
     ],
     async ({ calls }) => {
-      const result = await translateRecipeWithGemini({
+      const result = await translateRecipeWithLlm({
         targetLanguage: 'he',
         title: 'Roasted Cabbage',
         ingredients: [

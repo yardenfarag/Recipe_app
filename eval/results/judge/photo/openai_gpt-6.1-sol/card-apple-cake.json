@@ -26,7 +26,7 @@
     },
     {
       "ref_index": 6,
-      "status": "ok"
+      "status": "wrong_quantity"
     },
     {
       "ref_index": 7,
@@ -47,5 +47,5 @@
   ],
   "extra_ingredients": [],
   "steps_score": 4,
-  "note": "The candidate's method omits the final glaze step (sugar, vanilla, water)."
+  "note": "Milk is listed as 0.75 c instead of 0.25 c, and the method repeats the wrong amount."
 }

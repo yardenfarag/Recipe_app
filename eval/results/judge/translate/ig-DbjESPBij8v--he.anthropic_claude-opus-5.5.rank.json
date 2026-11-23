@@ -1,0 +1,60 @@
+{
+  "caseId": "ig-DbjESPBij8v--he",
+  "judge": "anthropic/claude-opus-5.5",
+  "letters": {
+    "A": "anthropic/claude-haiku-5.5@low",
+    "B": "openai/gpt-6.2-sol@low",
+    "C": "openai/gpt-6.1-terra@low",
+    "D": "openai/gpt-6-luna",
+    "E": "openai/gpt-6.1-sol@low",
+    "F": "google/gemini-4-hydrogen@low"
+  },
+  "verdict": {
+    "candidates": [
+      {
+        "letter": "A",
+        "accuracy": 4,
+        "quality": 3,
+        "issues": "'מחלקים' is an odd verb for cutting (should be חותכים). 'פתיתי תירס טחונים' is an unnatural rendering of cornflakes. 'המצופה בנייר אפייה' should be 'מרופדת'. 'ידבק' is a spelling slip for 'יידבק'. The address is inconsistent (singular 'עליך')."
+      },
+      {
+        "letter": "B",
+        "accuracy": 4,
+        "quality": 5,
+        "issues": "The title adds emphasis ('בלי טיפת שמן') and specifies 'חזה עוף', so it departs slightly from the source. Otherwise natural and fluent."
+      },
+      {
+        "letter": "C",
+        "accuracy": 5,
+        "quality": 5,
+        "issues": "'בתבלינים האהובים' is slightly truncated (missing 'עליכם'). Otherwise very natural."
+      },
+      {
+        "letter": "D",
+        "accuracy": 5,
+        "quality": 5,
+        "issues": "'ובפרמזן' slightly changes the structure from 'cornflakes with parmesan'. 'פפריקה טחונה' is fine."
+      },
+      {
+        "letter": "E",
+        "accuracy": 5,
+        "quality": 4,
+        "issues": "'מצפים' has no object, which is slightly terse. Otherwise accurate and natural."
+      },
+      {
+        "letter": "F",
+        "accuracy": 5,
+        "quality": 4,
+        "issues": "'עד להזהבה ופריכות' is a bit awkward. 'אופציונלי' is less idiomatic than 'לא חובה'."
+      }
+    ],
+    "ranking": [
+      "C",
+      "D",
+      "B",
+      "E",
+      "F",
+      "A"
+    ]
+  }
+}

@@ -1,0 +1,60 @@
+{
+  "caseId": "ig-DbqcKjxoYnj--ru",
+  "judge": "google/gemini-3.1-pro-preview",
+  "letters": {
+    "A": "openai/gpt-6-luna",
+    "B": "openai/gpt-6.1-terra@low",
+    "C": "anthropic/claude-haiku-5.5@low",
+    "D": "openai/gpt-6.2-sol@low",
+    "E": "openai/gpt-6.1-sol@low",
+    "F": "google/gemini-4-hydrogen@low"
+  },
+  "verdict": {
+    "candidates": [
+      {
+        "letter": "A",
+        "accuracy": 4,
+        "quality": 3,
+        "issues": "Grammatical error in ingredients ('1 семян стручка ванили'). 'Spread' translated as 'глазурь' (glaze/icing) rather than 'паста' (spread). Zero-quantity ingredients use the genitive case awkwardly."
+      },
+      {
+        "letter": "B",
+        "accuracy": 5,
+        "quality": 3,
+        "issues": "Grammatical error in ingredients ('1 семян стручка ванили'). Uses genitive case for the zero-quantity ingredients which looks unnatural without a measure word."
+      },
+      {
+        "letter": "C",
+        "accuracy": 3,
+        "quality": 3,
+        "issues": "Critical mistranslation in step 2: 'Залейте белым шоколадом' means to pour white chocolate over the mixture, which is the opposite of the source text. Grammatical error '1 семян ванильного стручка'."
+      },
+      {
+        "letter": "D",
+        "accuracy": 5,
+        "quality": 5,
+        "issues": "Excellent translation. Correctly resolves the zero-quantity grammar issue. Cleverly clarifies the missing subject in the instructions by explicitly mentioning 'ганаш' and uses professional culinary terms like 'в контакт'."
+      },
+      {
+        "letter": "E",
+        "accuracy": 5,
+        "quality": 4,
+        "issues": "Minor grammatical error in ingredients ('1 стручка ванили' without a preceding measure word). Zero-quantity ingredients are in the genitive case."
+      },
+      {
+        "letter": "F",
+        "accuracy": 5,
+        "quality": 4,
+        "issues": "Good grammar in ingredients. Slightly awkward phrasing in the instructions ('утрамбуйте в дно' instead of 'на дно')."
+      }
+    ],
+    "ranking": [
+      "D",
+      "F",
+      "E",
+      "B",
+      "A",
+      "C"
+    ]
+  }
+}

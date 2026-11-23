@@ -145,7 +145,7 @@ Tabs: `src/components/app-tabs.tsx` (Library, Favorites, Snap, Settings).
 
 **Why:** Recipes on social live in captions, comments (“recipe?”), and spoken audio. A single source misses most of them. Partial results still give value (e.g. ingredients without perfect steps). Saving stays on the client so guests can use AsyncStorage and signed-in users can preview before commit.
 
-**Key files:** `supabase/functions/extract-recipe/index.ts`, `_shared/extraction/gemini.ts`, `_shared/extraction/platform.ts`, `_shared/extraction/sources/youtube.ts`, `_shared/extraction/sources/instagram.ts`, `_shared/extraction/sources/tiktok.ts`, `_shared/extraction/sources/scrapecreators.ts`, `_shared/core/recipeLookup.ts`
+**Key files:** `supabase/functions/extract-recipe/index.ts`, `_shared/extraction/recipeExtraction.ts`, `_shared/extraction/platform.ts`, `_shared/extraction/sources/youtube.ts`, `_shared/extraction/sources/instagram.ts`, `_shared/extraction/sources/tiktok.ts`, `_shared/extraction/sources/scrapecreators.ts`, `_shared/core/recipeLookup.ts`
 
 ---
 

@@ -1,0 +1,60 @@
+{
+  "caseId": "invent-post-Db6ZKHwvgq0",
+  "judge": "anthropic/claude-opus-5.5",
+  "letters": {
+    "A": "openai/gpt-6.1-terra@low",
+    "B": "openai/gpt-6.2-sol@low",
+    "C": "openai/gpt-6.1-sol@low",
+    "D": "anthropic/claude-sonnet-5.5@low",
+    "E": "anthropic/claude-haiku-5.5@low",
+    "F": "google/gemini-4-hydrogen@low"
+  },
+  "verdict": {
+    "candidates": [
+      {
+        "letter": "A",
+        "accuracy": 4,
+        "quality": 4,
+        "issues": "Boil-then-fry method works. Only 3 tbsp water and 3 tbsp soy for 1 kg of potatoes gives a thin glaze that may not coat them all."
+      },
+      {
+        "letter": "B",
+        "accuracy": 5,
+        "quality": 5,
+        "issues": "Coherent Korean-style braise with every ingredient used and clear doneness cues. 500 g is a modest batch."
+      },
+      {
+        "letter": "C",
+        "accuracy": 5,
+        "quality": 5,
+        "issues": "Thorough braise-and-glaze method with good troubleshooting tips. Rice vinegar and scallions are added extras. The ingredient line \"2 scallions Scallions\" is redundant."
+      },
+      {
+        "letter": "D",
+        "accuracy": 3,
+        "quality": 4,
+        "issues": "Smashing the potatoes departs from the round 'bolinhas' style the comment praises. Otherwise workable, though 1 liter of water may barely cover 800 g of potatoes."
+      },
+      {
+        "letter": "E",
+        "accuracy": 3,
+        "quality": 3,
+        "issues": "Oven-roasted honey glaze departs from the skillet caramelization. Raw garlic and honey roasted for 25 minutes at 220°C risk burning. Adds ginger."
+      },
+      {
+        "letter": "F",
+        "accuracy": 5,
+        "quality": 4,
+        "issues": "Solid braise. Using both sugar and honey is slightly redundant, and medium-high reduction risks scorching without a warning."
+      }
+    ],
+    "ranking": [
+      "C",
+      "B",
+      "F",
+      "A",
+      "D",
+      "E"
+    ]
+  }
+}

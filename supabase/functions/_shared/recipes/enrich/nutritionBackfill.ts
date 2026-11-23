@@ -9,7 +9,7 @@
  */
 
 import { AppError } from '../../core/errors.ts';
-import type { GeminiUsageSnapshot } from '../../llm/pricing.ts';
+import type { LlmUsageSnapshot } from '../../llm/pricing.ts';
 import type { RecipeNutrition } from '../nutrition.ts';
 import type { Ingredient, Instruction } from '../recipeEditTypes.ts';
 
@@ -43,7 +43,7 @@ export interface NutritionBackfillDb {
 
 export type EstimateNutritionFn = (
   row: PendingNutritionRow,
-) => Promise<{ nutrition: RecipeNutrition | null; usage: GeminiUsageSnapshot | null }>;
+) => Promise<{ nutrition: RecipeNutrition | null; usage: LlmUsageSnapshot | null }>;
 
 export type NutritionBackfillResult = {
   scanned: number;
@@ -54,7 +54,7 @@ export type NutritionBackfillResult = {
   skipped: number;
   /** Pass this as `after` for the next batch; null when done. */
   nextCursor: string | null;
-  usages: GeminiUsageSnapshot[];
+  usages: LlmUsageSnapshot[];
   errors: string[];
 };
 

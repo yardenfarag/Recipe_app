@@ -41,7 +41,9 @@
       "status": "ok"
     }
   ],
-  "extra_ingredients": [],
+  "extra_ingredients": [
+    "1 orange, ground (the same orange)"
+  ],
   "steps_score": 4,
-  "note": "Candidate adds a combining step that is not in the reference method."
+  "note": "Candidate split the orange into a duplicate line and invented mixing steps not in the reference."
 }

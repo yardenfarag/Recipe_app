@@ -1,0 +1,60 @@
+{
+  "caseId": "invent-photo-bibimbap",
+  "judge": "google/gemini-3.1-pro-preview",
+  "letters": {
+    "A": "anthropic/claude-sonnet-5.5@low",
+    "B": "openai/gpt-6.1-sol@low",
+    "C": "openai/gpt-6.1-terra@low",
+    "D": "google/gemini-4-hydrogen@low",
+    "E": "anthropic/claude-haiku-5.5@low",
+    "F": "openai/gpt-6.2-sol@low"
+  },
+  "verdict": {
+    "candidates": [
+      {
+        "letter": "A",
+        "accuracy": 5,
+        "quality": 5,
+        "issues": "None. Successfully identifies and includes recipes for both the rice bowl and the bao bun plate shown in the photo."
+      },
+      {
+        "letter": "B",
+        "accuracy": 3,
+        "quality": 5,
+        "issues": "Only provides a recipe for the rice bowl, completely ignoring the bao bun and side slaw clearly pictured on the right."
+      },
+      {
+        "letter": "C",
+        "accuracy": 2,
+        "quality": 4,
+        "issues": "Misses the bao bun plate entirely. The instructions are very basic and lack depth of flavor for the tofu."
+      },
+      {
+        "letter": "D",
+        "accuracy": 2,
+        "quality": 4,
+        "issues": "Completely misses the bao bun plate. Also suggests frying tofu in sesame oil, which is not ideal due to its low smoke point."
+      },
+      {
+        "letter": "E",
+        "accuracy": 1,
+        "quality": 4,
+        "issues": "Completely incorrect dish. Describes a traditional beef bibimbap with a fried egg, spinach, and bean sprouts, none of which are in the photo, and misses the bao bun."
+      },
+      {
+        "letter": "F",
+        "accuracy": 3,
+        "quality": 5,
+        "issues": "Only provides a recipe for the bao bun and slaw, completely missing the large rice bowl on the left side of the image."
+      }
+    ],
+    "ranking": [
+      "A",
+      "B",
+      "F",
+      "D",
+      "C",
+      "E"
+    ]
+  }
+}

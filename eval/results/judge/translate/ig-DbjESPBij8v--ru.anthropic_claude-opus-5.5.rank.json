@@ -1,0 +1,60 @@
+{
+  "caseId": "ig-DbjESPBij8v--ru",
+  "judge": "anthropic/claude-opus-5.5",
+  "letters": {
+    "A": "openai/gpt-6-luna",
+    "B": "google/gemini-4-hydrogen@low",
+    "C": "anthropic/claude-haiku-5.5@low",
+    "D": "openai/gpt-6.1-sol@low",
+    "E": "openai/gpt-6.1-terra@low",
+    "F": "openai/gpt-6.2-sol@low"
+  },
+  "verdict": {
+    "candidates": [
+      {
+        "letter": "A",
+        "accuracy": 5,
+        "quality": 4,
+        "issues": "Complete and accurate. «до золотистой корочки и хрустящей текстуры» is slightly clunky. «Выпекайте» is less idiomatic for chicken than «Запекайте»."
+      },
+      {
+        "letter": "B",
+        "accuracy": 5,
+        "quality": 3,
+        "issues": "Case agreement after 0 is wrong: «0 специи», «0 измельчённые кукурузные хлопья». The rest is fine."
+      },
+      {
+        "letter": "C",
+        "accuracy": 3,
+        "quality": 3,
+        "issues": "«посолите её любимыми специями» mistranslates 'season' as 'salt'. «0 специи» has an agreement error. In the last step the subject is unclear: singular verbs used for the pieces."
+      },
+      {
+        "letter": "D",
+        "accuracy": 5,
+        "quality": 5,
+        "issues": "Natural and accurate. The capitalized «БЕЗ» keeps the source emphasis. The wording is slightly wordy in places."
+      },
+      {
+        "letter": "E",
+        "accuracy": 5,
+        "quality": 5,
+        "issues": "Natural and accurate. Very minor: the comma before «до золотистой» is optional."
+      },
+      {
+        "letter": "F",
+        "accuracy": 5,
+        "quality": 5,
+        "issues": "Natural, idiomatic and accurate throughout. «чесночный порошок» is acceptable."
+      }
+    ],
+    "ranking": [
+      "F",
+      "D",
+      "E",
+      "A",
+      "B",
+      "C"
+    ]
+  }
+}

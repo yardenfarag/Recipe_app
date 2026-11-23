@@ -6,7 +6,7 @@ import type { PlatformMeta } from '../supabase/functions/_shared/extraction/plat
 import {
   fetchInstagramMeta,
   isInstagramCdnUrl,
-  resolveInstagramVideoForGemini,
+  resolveInstagramVideoForModel,
 } from '../supabase/functions/_shared/extraction/sources/instagram.ts';
 import { fetchFacebookMeta } from '../supabase/functions/_shared/extraction/sources/facebook.ts';
 import { fetchPinterestMeta } from '../supabase/functions/_shared/extraction/sources/pinterest.ts';
@@ -94,7 +94,7 @@ async function fetchPosts(force: boolean) {
           bytes = await download(url, videoPath(post.id));
         } catch (err) {
           if (snap.platform !== 'instagram' || !isInstagramCdnUrl(url)) throw err;
-          url = (await resolveInstagramVideoForGemini(post.url)) ?? '';
+          url = (await resolveInstagramVideoForModel(post.url)) ?? '';
           if (!url) throw err;
           bytes = await download(url, videoPath(post.id));
         }

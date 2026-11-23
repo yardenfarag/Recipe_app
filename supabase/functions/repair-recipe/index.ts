@@ -2,11 +2,11 @@ import { serve } from '../_shared/core/observe.ts';
 import { normalizeStoredCalories } from '../_shared/recipes/calories.ts';
 import { normalizeStoredNutrition } from '../_shared/recipes/nutrition.ts';
 import {
-  classifyGeminiRecipe,
+  classifyLlmRecipe,
   recipeRepairIsUpgrade,
 } from '../_shared/extraction/classifyRecipe.ts';
 import { corsHeaders, jsonResponse } from '../_shared/core/cors.ts';
-import { repairPartialRecipe, type GeminiRecipe } from '../_shared/extraction/gemini.ts';
+import { repairPartialRecipe, type LlmRecipe } from '../_shared/extraction/recipeExtraction.ts';
 import { parseIngredientAmount } from '../_shared/recipes/ingredientAmounts.ts';
 import { fetchFacebookMeta } from '../_shared/extraction/sources/facebook.ts';
 import { fetchPinterestMeta } from '../_shared/extraction/sources/pinterest.ts';
@@ -168,12 +168,12 @@ serve('repair-recipe', async (req) => {
     });
   }
 
-  const current = toGeminiRecipe(body.recipe);
+  const current = toLlmRecipe(body.recipe);
   if (!current) {
     return jsonResponse({ error: 'Missing or invalid "recipe" in request body' }, 400);
   }
 
-  const beforeClass = classifyGeminiRecipe(current);
+  const beforeClass = classifyLlmRecipe(current);
   if (beforeClass.status !== 'partial') {
     return jsonResponse(
       {
@@ -233,7 +233,7 @@ serve('repair-recipe', async (req) => {
     const repaired = await repairPartialRecipe({ current, extraText });
     const after = { ...repaired.recipe, found_recipe: true };
     const upgraded = recipeRepairIsUpgrade(current, after);
-    const classified = classifyGeminiRecipe(after);
+    const classified = classifyLlmRecipe(after);
 
     if (!upgraded || classified.status === 'failed') {
       await refundReservation(
@@ -527,7 +527,7 @@ function requestIsTooLarge(req: Request, maxBytes: number): boolean {
   return Number.isFinite(contentLength) && contentLength > maxBytes;
 }
 
-function toGeminiRecipe(raw: RequestBody['recipe']): GeminiRecipe | null {
+function toLlmRecipe(raw: RequestBody['recipe']): LlmRecipe | null {
   if (!raw?.title?.trim()) return null;
   if (raw.title.trim().length > MAX_TITLE_CHARS) return null;
   if (!Array.isArray(raw.ingredients) || raw.ingredients.length > MAX_INGREDIENTS) return null;

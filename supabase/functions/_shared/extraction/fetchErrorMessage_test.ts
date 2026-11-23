@@ -58,7 +58,7 @@ Deno.test('a page that is not a recipe', () => {
 });
 
 Deno.test('an AI provider status is not read as a website status', () => {
-  const llm = new FetchError('gemini.ts: extract', 'OpenRouter API returned an error', { status: 403 });
+  const llm = new FetchError('recipeExtraction.ts: extract', 'OpenRouter API returned an error', { status: 403 });
   assertEquals(fetchErrorMessage(llm, 'web'), 'Recipe extraction failed — try again in a moment.');
 });
 
@@ -78,7 +78,7 @@ Deno.test('ScrapeCreators timeouts and rate limits', () => {
 });
 
 Deno.test('an LLM timeout says extraction timed out', () => {
-  const err = new FetchError('gemini.ts: extract', 'OpenRouter request failed', { timedOut: true });
+  const err = new FetchError('recipeExtraction.ts: extract', 'OpenRouter request failed', { timedOut: true });
   assertEquals(fetchErrorMessage(err, 'youtube'), 'Recipe extraction timed out — try again in a moment.');
 });
 

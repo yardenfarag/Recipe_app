@@ -18,7 +18,7 @@ import {
   isTranslateLanguageCode,
   recipeAlreadyInLanguage,
   TRANSLATION_VERSION,
-  translateRecipeWithGemini,
+  translateRecipeWithLlm,
 } from '../_shared/recipes/translateRecipe.ts';
 
 interface RequestBody {
@@ -183,7 +183,7 @@ serve('backfill-translations', async (req) => {
         // Same shortcut as translate-recipe: text already in the target language is saved as is.
         recipeAlreadyInLanguage(input, input.targetLanguage)
           ? { title: input.title, ingredients: input.ingredients, instructions: input.instructions, usage: null }
-          : await translateRecipeWithGemini(input),
+          : await translateRecipeWithLlm(input),
       {
         after,
         limit: clampTranslationBatchSize(body.limit),

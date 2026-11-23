@@ -4,8 +4,8 @@
 import { imagePath, postPath, type PostSnapshot } from './fetch.ts';
 import { labelPath, type PostLabel, postText } from './label.ts';
 import { chatJson, dataUrl, exists, pool, readJson, readJsonOr, RESULTS, ROOT, slug, writeJson } from './lib.ts';
-import { MATCH_JUDGE, RANK_JUDGE, type Task, TASK_MODELS } from './models.ts';
-import { rawPath, type RunRecord } from './run.ts';
+import { MATCH_JUDGE, RANK_JUDGES, type Task, TASK_MODELS } from './models.ts';
+import { rawPath, REPEAT_MARK, type RunRecord } from './run.ts';
 
 export type MatchVerdict = {
   ingredients: { ref_index: number; status: 'ok' | 'wrong_quantity' | 'missing' }[];
@@ -23,7 +23,8 @@ export type RankFile = { caseId: string; judge: string; letters: Record<string, 
 
 export const matchPath = (task: string, model: string, caseId: string) =>
   `${RESULTS}judge/${task}/${slug(model)}/${caseId}.json`;
-export const rankPath = (task: string, caseId: string) => `${RESULTS}judge/${task}/${caseId}.rank.json`;
+export const rankPath = (task: string, caseId: string, judge: string) =>
+  `${RESULTS}judge/${task}/${caseId}.${slug(judge)}.rank.json`;
 
 const MATCH_SCHEMA = {
   type: 'object',
@@ -123,7 +124,9 @@ async function caseIds(task: Task, model: string): Promise<string[]> {
   const dir = `${RESULTS}raw/${task}/${slug(model)}`;
   const ids: string[] = [];
   try {
-    for await (const e of Deno.readDir(dir)) if (e.name.endsWith('.json')) ids.push(e.name.slice(0, -5));
+    for await (const e of Deno.readDir(dir)) {
+      if (e.name.endsWith('.json') && !e.name.includes(REPEAT_MARK)) ids.push(e.name.slice(0, -5));
+    }
   } catch {
     // no results yet
   }
@@ -199,8 +202,8 @@ async function rankPrompt(task: 'translate' | 'invent', caseId: string): Promise
   return parts;
 }
 
-async function judgeRank(task: 'translate' | 'invent', caseId: string, force: boolean) {
-  const out = rankPath(task, caseId);
+async function judgeRank(task: 'translate' | 'invent', caseId: string, judge: string, force: boolean) {
+  const out = rankPath(task, caseId, judge);
   if (!force && (await exists(out))) return;
   const entries: { model: string; output: unknown }[] = [];
   for (const model of TASK_MODELS[task]) {
@@ -218,14 +221,14 @@ async function judgeRank(task: 'translate' | 'invent', caseId: string, force: bo
   });
   const content = [...(await rankPrompt(task, caseId)), { type: 'text', text: blocks.join('\n\n') }];
   const { data } = await chatJson<RankVerdict>({
-    model: RANK_JUDGE,
+    model: judge,
     system: task === 'translate' ? TRANSLATE_SYSTEM : INVENT_SYSTEM,
     content,
     schema: RANK_SCHEMA,
     name: 'rank',
     reasoning: 'medium',
   });
-  await writeJson(out, { caseId, judge: RANK_JUDGE, letters, verdict: data } satisfies RankFile);
+  await writeJson(out, { caseId, judge, letters, verdict: data } satisfies RankFile);
 }
 
 export async function judgeCommand(args: string[]) {
@@ -239,8 +242,9 @@ export async function judgeCommand(args: string[]) {
     if (task === 'translate' || task === 'invent') {
       const ids = new Set<string>();
       for (const m of TASK_MODELS[task]) for (const id of await caseIds(task, m)) ids.add(id);
-      await pool([...ids], 6, (id) => safe(`${task} ${id}`, () => judgeRank(task, id, force)));
-      console.log(`[${task}] ranked ${ids.size} cases`);
+      const jobs = [...ids].flatMap((id) => RANK_JUDGES.map((judge) => ({ id, judge })));
+      await pool(jobs, 6, ({ id, judge }) => safe(`${task} ${id} ${judge}`, () => judgeRank(task, id, judge, force)));
+      console.log(`[${task}] ranked ${ids.size} cases × ${RANK_JUDGES.length} judges`);
     } else if (task === 'text' || task === 'photo' || task === 'video') {
       const jobs: { model: string; id: string }[] = [];
       for (const model of TASK_MODELS[task]) for (const id of await caseIds(task, model)) jobs.push({ model, id });

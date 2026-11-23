@@ -50,8 +50,8 @@
     }
   ],
   "extra_ingredients": [
-    "doughnut yeast dough"
+    "Yeast donut dough portions"
   ],
   "steps_score": 2,
-  "note": "Candidate omits all dough ingredients and dough-making steps, covering only frying, sugaring, and filling."
+  "note": "Candidate omits all dough ingredients and the dough-making, rising, and shaping steps, covering only frying, sugaring, and filling."
 }

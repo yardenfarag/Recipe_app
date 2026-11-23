@@ -1,0 +1,60 @@
+{
+  "caseId": "invent-photo-pad-thai",
+  "judge": "anthropic/claude-opus-5.5",
+  "letters": {
+    "A": "openai/gpt-6.1-sol@low",
+    "B": "anthropic/claude-haiku-5.5@low",
+    "C": "openai/gpt-6.1-terra@low",
+    "D": "anthropic/claude-sonnet-5.5@low",
+    "E": "google/gemini-4-hydrogen@low",
+    "F": "openai/gpt-6.2-sol@low"
+  },
+  "verdict": {
+    "candidates": [
+      {
+        "letter": "A",
+        "accuracy": 4,
+        "quality": 5,
+        "issues": "Omits the tofu visible in the photo. Otherwise clear and well-balanced, with sensible sauce dilution and a water fallback for the noodles. Every ingredient is used."
+      },
+      {
+        "letter": "B",
+        "accuracy": 4,
+        "quality": 3,
+        "issues": "The sauce has no water, and the 2–3 minute toss may leave the noodles underdone with no fallback. Heavy 3-3-3 sauce ratio. No tofu. Awkward 'clove garlic cloves' phrasing, and step 2 restates amounts redundantly."
+      },
+      {
+        "letter": "C",
+        "accuracy": 4,
+        "quality": 4,
+        "issues": "2 tbsp tamarind concentrate may be too sour or strong depending on the brand. No tofu or shallot. Otherwise coherent, and fresh sprouts are served on the side like the photo."
+      },
+      {
+        "letter": "D",
+        "accuracy": 5,
+        "quality": 4,
+        "issues": "Includes tofu, matching the photo. All 3 tbsp oil goes in at once. Shrimp are not deveined. The sauce has no water, though a splash is suggested. Peanut amount is small."
+      },
+      {
+        "letter": "E",
+        "accuracy": 5,
+        "quality": 4,
+        "issues": "Includes tofu, shallot and chives, closely matching the photo. A 15-minute soak is on the short side. Only 1 cup of sprouts is modest. Otherwise thorough and uses everything."
+      },
+      {
+        "letter": "F",
+        "accuracy": 4,
+        "quality": 4,
+        "issues": "Awkward '0.5 400 g package' noodle line. All sprouts are cooked, whereas the photo shows raw sprouts on the side. No tofu. Method is otherwise clear and detailed."
+      }
+    ],
+    "ranking": [
+      "E",
+      "A",
+      "D",
+      "C",
+      "F",
+      "B"
+    ]
+  }
+}

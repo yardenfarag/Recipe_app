@@ -1,0 +1,60 @@
+{
+  "caseId": "ig-Da4URnslOZM--ru",
+  "judge": "google/gemini-3.1-pro-preview",
+  "letters": {
+    "A": "openai/gpt-6.1-sol@low",
+    "B": "openai/gpt-6-luna",
+    "C": "openai/gpt-6.1-terra@low",
+    "D": "openai/gpt-6.2-sol@low",
+    "E": "anthropic/claude-haiku-5.5@low",
+    "F": "google/gemini-4-hydrogen@low"
+  },
+  "verdict": {
+    "candidates": [
+      {
+        "letter": "A",
+        "accuracy": 5,
+        "quality": 5,
+        "issues": "Excellent translation overall. 'Зачищенной от лишнего жира' is a great culinary adaptation for 'trimmed'. 'Для использования по частям' is accurate but slightly wordy."
+      },
+      {
+        "letter": "B",
+        "accuracy": 5,
+        "quality": 4,
+        "issues": "Grammar issue in the ingredients list: '1 крупной луковицы' is in the genitive case, whereas the nominative '1 крупная луковица' should be used. Otherwise, very good."
+      },
+      {
+        "letter": "C",
+        "accuracy": 5,
+        "quality": 5,
+        "issues": "Very natural and accurate translation. Culinary terms (чугунная кастрюля, зачищенной) and phrasing are spot-on."
+      },
+      {
+        "letter": "D",
+        "accuracy": 4,
+        "quality": 4,
+        "issues": "Mistranslation in step 7: 'Полейте мясо ложкой сока' implies pouring exactly one spoon of juice, rather than using a spoon to pour the pan juices over the meat."
+      },
+      {
+        "letter": "E",
+        "accuracy": 4,
+        "quality": 3,
+        "issues": "Literal translation of 'Dutch oven' as 'голландской печи' (should be жаровня or утятница). Grammatical case mismatches in the ingredients ('1 крупной луковицы', 'чеснока, измельченного'). Unnecessary addition of 'бумажным полотенцем'."
+      },
+      {
+        "letter": "F",
+        "accuracy": 5,
+        "quality": 5,
+        "issues": "A solid translation. Translating 'divided' simply as 'разделенного' is slightly literal but acceptable and commonly understood."
+      }
+    ],
+    "ranking": [
+      "C",
+      "A",
+      "F",
+      "B",
+      "D",
+      "E"
+    ]
+  }
+}

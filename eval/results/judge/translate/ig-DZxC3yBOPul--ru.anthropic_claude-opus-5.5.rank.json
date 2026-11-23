@@ -1,0 +1,60 @@
+{
+  "caseId": "ig-DZxC3yBOPul--ru",
+  "judge": "anthropic/claude-opus-5.5",
+  "letters": {
+    "A": "openai/gpt-6.2-sol@low",
+    "B": "openai/gpt-6.1-terra@low",
+    "C": "openai/gpt-6.1-sol@low",
+    "D": "google/gemini-4-hydrogen@low",
+    "E": "openai/gpt-6-luna",
+    "F": "anthropic/claude-haiku-5.5@low"
+  },
+  "verdict": {
+    "candidates": [
+      {
+        "letter": "A",
+        "accuracy": 5,
+        "quality": 4,
+        "issues": "Accurate and natural overall. \"Брауни\" is repeated, and \"шоколадные капли не растопятся\" is a bit heavy. Decimal points are used instead of commas."
+      },
+      {
+        "letter": "B",
+        "accuracy": 5,
+        "quality": 4,
+        "issues": "Slightly awkward word order in \"форму размером 8 дюймов пергаментом\". Otherwise natural. Decimal points are used instead of commas."
+      },
+      {
+        "letter": "C",
+        "accuracy": 5,
+        "quality": 5,
+        "issues": "Smooth, idiomatic phrasing (\"перелейте\", \"выньте\", \"перед нарезкой\"). The only minor issue is decimal points instead of commas."
+      },
+      {
+        "letter": "D",
+        "accuracy": 5,
+        "quality": 4,
+        "issues": "The title \"Влажный брауни\" is flat. \"Хлопьевидной\" is slightly clunky. \"Пока они не растопятся\" has an ambiguous referent. Awkward word order in the line about the pan."
+      },
+      {
+        "letter": "E",
+        "accuracy": 4,
+        "quality": 4,
+        "issues": "Flaky sea salt is rendered as \"крупного помола\" (coarse ground), which is a different product. Vanilla extract is reduced to \"ваниль\"."
+      },
+      {
+        "letter": "F",
+        "accuracy": 4,
+        "quality": 3,
+        "issues": "\"Фаджи-брауни\" is an unidiomatic transliteration. Grammar error in \"после того, как выньте\" (should be \"вынете\"). \"Сразу\" is added."
+      }
+    ],
+    "ranking": [
+      "C",
+      "A",
+      "B",
+      "D",
+      "E",
+      "F"
+    ]
+  }
+}

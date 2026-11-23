@@ -5,7 +5,7 @@
 
 import { assert, assertEquals } from 'jsr:@std/assert@1';
 
-import { extractRecipeWithLadder, type ExtractInput } from '../gemini.ts';
+import { extractRecipeWithLadder, type ExtractInput } from '../recipeExtraction.ts';
 import { skipsTextStep } from '../../llm/jev.ts';
 import { extractYouTubeId } from '../platform.ts';
 import { isVideoTooLong, parseDurationSeconds, parseYouTubeIsoDuration } from '../videoLimits.ts';

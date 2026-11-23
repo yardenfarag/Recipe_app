@@ -1,0 +1,60 @@
+{
+  "caseId": "ig-Dd1mhKpKbY3--he",
+  "judge": "google/gemini-3.1-pro-preview",
+  "letters": {
+    "A": "openai/gpt-6-luna",
+    "B": "google/gemini-4-hydrogen@low",
+    "C": "openai/gpt-6.1-terra@low",
+    "D": "openai/gpt-6.1-sol@low",
+    "E": "anthropic/claude-haiku-5.5@low",
+    "F": "openai/gpt-6.2-sol@low"
+  },
+  "verdict": {
+    "candidates": [
+      {
+        "letter": "A",
+        "accuracy": 5,
+        "quality": 5,
+        "issues": "Excellent translation. Translates 'biscuits' to 'עוגיות' which is correct, though 'ביסקוויטים' is slightly more common for this type of crushed base."
+      },
+      {
+        "letter": "B",
+        "accuracy": 5,
+        "quality": 4,
+        "issues": "Good natural phrasing, but leaves 'McVitie's' in English rather than transliterating it. Translates 'Spoon' as 'כפית' (teaspoon), which is slightly more specific than the source."
+      },
+      {
+        "letter": "C",
+        "accuracy": 5,
+        "quality": 4,
+        "issues": "Leaves the brand name in English. The use of definite articles on the measurements and ingredients (e.g., 'את 300 מ״ל החלב המרוכז הממותק ואת 100 גרם החמאה המומסת') sounds slightly unnatural."
+      },
+      {
+        "letter": "D",
+        "accuracy": 5,
+        "quality": 3,
+        "issues": "Uses 'כוסיות' which can have slang connotations in modern Hebrew; 'כוסות' is preferable. Extremely awkward use of definite articles on the units ('את 300 המ״ל של החלב...', 'את 100 הגרם של...'). Leaves the brand name in English."
+      },
+      {
+        "letter": "E",
+        "accuracy": 5,
+        "quality": 3,
+        "issues": "Leaves both 'Kinder Bueno' and 'McVitie's' in English. Phrasing is awkward in places (e.g., 'תבניות נייר למאפינס' instead of 'עטרות נייר' or 'מנג'טים')."
+      },
+      {
+        "letter": "F",
+        "accuracy": 5,
+        "quality": 5,
+        "issues": "Flawless translation. Transliterates brand names naturally, uses standard culinary terminology ('עטרות נייר', 'בעזרת כף'), and flows perfectly like a native recipe."
+      }
+    ],
+    "ranking": [
+      "F",
+      "A",
+      "B",
+      "C",
+      "D",
+      "E"
+    ]
+  }
+}

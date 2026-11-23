@@ -21,7 +21,7 @@ export function caloriesLookPerServing(calories: number, servings: number): bool
 
 /**
  * `recipe.calories` is stored as TOTAL kcal for `recipe.servings` portions.
- * Gemini sometimes returns per-serving kcal in the calories field when
+ * The model sometimes returns per-serving kcal in the calories field when
  * servings is a large yield count (e.g. 48 cookies).
  */
 export function resolveRecipeCalories(

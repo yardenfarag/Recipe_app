@@ -1,0 +1,60 @@
+{
+  "caseId": "ig-DbqcKjxoYnj--ru",
+  "judge": "anthropic/claude-opus-5.5",
+  "letters": {
+    "A": "openai/gpt-6-luna",
+    "B": "openai/gpt-6.1-terra@low",
+    "C": "anthropic/claude-haiku-5.5@low",
+    "D": "openai/gpt-6.2-sol@low",
+    "E": "openai/gpt-6.1-sol@low",
+    "F": "google/gemini-4-hydrogen@low"
+  },
+  "verdict": {
+    "candidates": [
+      {
+        "letter": "A",
+        "accuracy": 4,
+        "quality": 4,
+        "issues": "'1 семян стручка ванили' is ungrammatical, and the '1 tsp' amount for the extract alternative is dropped. Otherwise natural and accurate."
+      },
+      {
+        "letter": "B",
+        "accuracy": 5,
+        "quality": 4,
+        "issues": "'1 семян стручка ванили' is ungrammatical. Otherwise accurate and natural."
+      },
+      {
+        "letter": "C",
+        "accuracy": 3,
+        "quality": 3,
+        "issues": "'Залейте белым шоколадом' reverses the step (it should be cream poured over the chocolate). It drops 'типа' (-style) and 'extra'. '1 семян' is ungrammatical, 'мягких средних пиков' is odd, and 'до гладкости' is a calque."
+      },
+      {
+        "letter": "D",
+        "accuracy": 5,
+        "quality": 5,
+        "issues": "'Оставшимся печеньем' is a slight shift from 'extra'. 'В контакт' is professional jargon. Grammar is excellent and the phrasing is natural throughout."
+      },
+      {
+        "letter": "E",
+        "accuracy": 5,
+        "quality": 4,
+        "issues": "'1 стручка ванили' has the wrong case. Otherwise natural and accurate, with a nice clarification about the film touching the surface."
+      },
+      {
+        "letter": "F",
+        "accuracy": 4,
+        "quality": 4,
+        "issues": "'Залейте белый шоколад' omits what to pour, making it ambiguous. 'До объединения' is a calque, and 'крошку Oreo' is slightly terse."
+      }
+    ],
+    "ranking": [
+      "D",
+      "E",
+      "B",
+      "F",
+      "A",
+      "C"
+    ]
+  }
+}

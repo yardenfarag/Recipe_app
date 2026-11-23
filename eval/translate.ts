@@ -1,4 +1,4 @@
-// PIN-53 translation-quality eval. Runs the production translate task (translateRecipeWithGemini)
+// PIN-53 translation-quality eval. Runs the production translate task (translateRecipeWithLlm)
 // on the hand-written cases in cases/translate.json, renders each answer the way the recipe screen
 // shows it (shared/lib unit localization + formatQuantity), checks it in code, and has a
 // native-speaker judge mark errors MQM-style (minor = 1 point, major = 5).
@@ -21,7 +21,7 @@ import { formatQuantity } from '../shared/lib/formatQuantity.ts';
 import { defaultUnitSystem } from '../shared/lib/unitSystem.ts';
 import { type GenerateLlmJsonResult, setEvalHook } from '../supabase/functions/_shared/llm/llmClient.ts';
 import {
-  translateRecipeWithGemini,
+  translateRecipeWithLlm,
   type TranslateLanguageCode,
 } from '../supabase/functions/_shared/recipes/translateRecipe.ts';
 import { chatJson, exists, pool, readJson, RESULTS, ROOT, slug, writeJson } from './lib.ts';
@@ -371,7 +371,7 @@ async function translateOnce(c: TranslateCase, run: number, modelLabel: string, 
   let record: RawRecord;
   try {
     const translated = await calls.run(results, () =>
-      translateRecipeWithGemini({
+      translateRecipeWithLlm({
         targetLanguage: c.target as TranslateLanguageCode,
         title: c.recipe.title,
         ingredients: c.recipe.ingredients.map(([quantity, unit, name]) => ({ name, quantity, unit })),

@@ -1,7 +1,7 @@
 import { serve } from '../_shared/core/observe.ts';
 import { normalizeStoredCalories } from '../_shared/recipes/calories.ts';
 import { normalizeStoredNutrition } from '../_shared/recipes/nutrition.ts';
-import { classifyGeminiRecipe } from '../_shared/extraction/classifyRecipe.ts';
+import { classifyLlmRecipe } from '../_shared/extraction/classifyRecipe.ts';
 import {
   buildContentGateInput,
   runContentGate,
@@ -459,8 +459,8 @@ serve('invent-recipe', async (req) => {
       guestRemaining = guestReservation.remaining;
     }
 
-    let gemini;
-    let usages: import('../_shared/llm/pricing.ts').GeminiUsageSnapshot[] = [];
+    let llmRecipe;
+    let usages: import('../_shared/llm/pricing.ts').LlmUsageSnapshot[] = [];
 
     if (imageBase64 && (platform === 'photo' || tooLongNoText)) {
       const fromImage = await inventRecipeFromImage({
@@ -468,7 +468,7 @@ serve('invent-recipe', async (req) => {
         mimeType: imageMime,
         language,
       });
-      gemini = fromImage.recipe;
+      llmRecipe = fromImage.recipe;
       if (fromImage.usage) usages = [fromImage.usage];
       if (platform === 'photo') {
         originalUrl = null;
@@ -490,7 +490,7 @@ serve('invent-recipe', async (req) => {
         },
         language,
       );
-      gemini = ladder.recipe;
+      llmRecipe = ladder.recipe;
       usages = ladder.usages;
       usedInstagramVideoDownload = ladder.usedInstagramVideoDownload === true;
       videoSkippedReason = ladder.videoSkippedReason;
@@ -502,7 +502,7 @@ serve('invent-recipe', async (req) => {
       durationSeconds = meta?.durationSeconds;
     }
 
-    const { status, missingFields } = classifyGeminiRecipe(gemini);
+    const { status, missingFields } = classifyLlmRecipe(llmRecipe);
     if (status === 'failed') {
       if (userId && creditReservation) {
         const refunded = await compensateSignedIn(
@@ -561,31 +561,31 @@ serve('invent-recipe', async (req) => {
     }
 
     // ADR 017: never throws; a failure saves as "not analysed" (null).
-    const { appliances, metadata: applianceMetadata } = await appliancesForRecipe(gemini, usages);
+    const { appliances, metadata: applianceMetadata } = await appliancesForRecipe(llmRecipe, usages);
 
     const recipe = fitRecipeToLimits({
-      title: gemini.title,
-      source_language: normalizeLanguageCode(gemini.source_language) || language,
+      title: llmRecipe.title,
+      source_language: normalizeLanguageCode(llmRecipe.source_language) || language,
       original_url: originalUrl,
       platform,
       image_url: imageUrl,
       source_video_url: sourceVideoUrl,
-      ingredients: gemini.ingredients,
-      instructions: gemini.instructions,
-      servings: gemini.servings > 0 ? gemini.servings : 1,
+      ingredients: llmRecipe.ingredients,
+      instructions: llmRecipe.instructions,
+      servings: llmRecipe.servings > 0 ? llmRecipe.servings : 1,
       calories: normalizeStoredCalories(
-        gemini.calories ?? null,
-        gemini.servings > 0 ? gemini.servings : 1,
+        llmRecipe.calories ?? null,
+        llmRecipe.servings > 0 ? llmRecipe.servings : 1,
       ),
-      nutrition: normalizeStoredNutrition(gemini, gemini.servings > 0 ? gemini.servings : 1),
-      estimated_time_minutes: gemini.estimated_time_minutes ?? null,
-      cost_estimate: gemini.cost_estimate ?? null,
-      effort_level: gemini.effort_level ?? null,
+      nutrition: normalizeStoredNutrition(llmRecipe, llmRecipe.servings > 0 ? llmRecipe.servings : 1),
+      estimated_time_minutes: llmRecipe.estimated_time_minutes ?? null,
+      cost_estimate: llmRecipe.cost_estimate ?? null,
+      effort_level: llmRecipe.effort_level ?? null,
       extraction_status: status,
       extraction_source: 'invented' as const,
-      calories_reasoning: gemini.calories_reasoning?.trim() || null,
-      time_reasoning: gemini.time_reasoning?.trim() || null,
-      tags: normalizeRecipeTags(gemini.tags),
+      calories_reasoning: llmRecipe.calories_reasoning?.trim() || null,
+      time_reasoning: llmRecipe.time_reasoning?.trim() || null,
+      tags: normalizeRecipeTags(llmRecipe.tags),
       missing_fields: missingFields,
       appliances,
     });

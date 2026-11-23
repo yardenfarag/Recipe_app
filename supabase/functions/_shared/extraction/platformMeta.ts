@@ -1,4 +1,4 @@
-/** Normalized post metadata consumed by the Gemini content ladder. */
+/** Normalized post metadata consumed by the extraction ladder. */
 export interface PostComment {
   text: string;
   isCreator: boolean;
@@ -17,7 +17,7 @@ export interface PlatformMeta {
   /** Transcript / captions text when the scraper provides it. */
   captions?: string;
   topComments: PostComment[];
-  /** Direct MP4/CDN URL for multimodal Gemini fallback. */
+  /** Direct MP4/CDN URL for the video step of the ladder. */
   videoUrl?: string;
   /** ScrapeCreators credits this fetch spent on top of the platform's usual estimate (YouTube transcript). */
   scrapeCredits?: number;

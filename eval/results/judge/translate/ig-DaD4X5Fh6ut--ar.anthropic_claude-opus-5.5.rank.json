@@ -1,0 +1,60 @@
+{
+  "caseId": "ig-DaD4X5Fh6ut--ar",
+  "judge": "anthropic/claude-opus-5.5",
+  "letters": {
+    "A": "anthropic/claude-haiku-5.5@low",
+    "B": "openai/gpt-6.2-sol@low",
+    "C": "openai/gpt-6-luna",
+    "D": "openai/gpt-6.1-terra@low",
+    "E": "google/gemini-4-hydrogen@low",
+    "F": "openai/gpt-6.1-sol@low"
+  },
+  "verdict": {
+    "candidates": [
+      {
+        "letter": "A",
+        "accuracy": 4,
+        "quality": 3,
+        "issues": "Grammar slip: 'وسكر بني' lacks the article in a definite list. 'ملعقة الآيس كريم' mistranslates cookie scoop as an ice-cream scoop. 'قالب كعك' is a loose rendering of cookie cutter. 'خلاصة' (extract) is added to the vanilla."
+      },
+      {
+        "letter": "B",
+        "accuracy": 5,
+        "quality": 5,
+        "issues": "Natural and accurate. Correct terms (مغرفة كوكيز, قطّاعة, ورق الخَبز). Only the source's exclamations and parentheses are dropped, which is negligible."
+      },
+      {
+        "letter": "C",
+        "accuracy": 5,
+        "quality": 4,
+        "issues": "'حسب النوع' is a slightly loose rendering of 'brand'. The 'قلّب برفق رقائق...' phrasing is a bit terse but fine overall."
+      },
+      {
+        "letter": "D",
+        "accuracy": 5,
+        "quality": 5,
+        "issues": "Accurate and fluent. 'الأوساط' (plural) is slightly unusual but acceptable."
+      },
+      {
+        "letter": "E",
+        "accuracy": 5,
+        "quality": 4,
+        "issues": "Uses 'النوع' for 'brand'. Otherwise natural; the fold-in phrasing is slightly terse."
+      },
+      {
+        "letter": "F",
+        "accuracy": 4,
+        "quality": 4,
+        "issues": "'غير ناضج تمامًا في مظهره' shifts the meaning of 'slightly underbaked' and is awkward. The passive 'استُخدمت' loses the personal voice of the source."
+      }
+    ],
+    "ranking": [
+      "B",
+      "D",
+      "C",
+      "E",
+      "F",
+      "A"
+    ]
+  }
+}

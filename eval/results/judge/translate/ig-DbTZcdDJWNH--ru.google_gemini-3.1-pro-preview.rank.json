@@ -1,0 +1,60 @@
+{
+  "caseId": "ig-DbTZcdDJWNH--ru",
+  "judge": "google/gemini-3.1-pro-preview",
+  "letters": {
+    "A": "openai/gpt-6-luna",
+    "B": "anthropic/claude-haiku-5.5@low",
+    "C": "google/gemini-4-hydrogen@low",
+    "D": "openai/gpt-6.1-terra@low",
+    "E": "openai/gpt-6.2-sol@low",
+    "F": "openai/gpt-6.1-sol@low"
+  },
+  "verdict": {
+    "candidates": [
+      {
+        "letter": "A",
+        "accuracy": 4,
+        "quality": 3,
+        "issues": "Grammar error: '2 крупных яиц' instead of '2 крупных яйца' (wrong case for the noun). The phrase '1 лимон цедры лимона' is awkward and literal."
+      },
+      {
+        "letter": "B",
+        "accuracy": 4,
+        "quality": 3,
+        "issues": "Grammar error: '2 крупных яиц' instead of '2 крупных яйца'. Unnecessarily adds 'экстракта' to vanilla. The phrase '1 лимон цедры' is awkward."
+      },
+      {
+        "letter": "C",
+        "accuracy": 4,
+        "quality": 3,
+        "issues": "Grammar error: '2 крупного яйца' (wrong case for the adjective). '1 цедры лимона' is grammatically incorrect in this context."
+      },
+      {
+        "letter": "D",
+        "accuracy": 4,
+        "quality": 4,
+        "issues": "Correct grammar for the eggs ('2 крупных яйца'), but '1 лимон лимонной цедры' is repetitive and clunky."
+      },
+      {
+        "letter": "E",
+        "accuracy": 4,
+        "quality": 5,
+        "issues": "Very natural and idiomatic, but adds words not present in the source text for clarity (e.g., 'Пончики', 'заготовки', 'пасты')."
+      },
+      {
+        "letter": "F",
+        "accuracy": 5,
+        "quality": 5,
+        "issues": "Excellent translation. Perfectly handles the source typo '1 lemon lemon zest' by translating it as '1 лимон (только цедра)'. Natural phrasing and correct grammar throughout."
+      }
+    ],
+    "ranking": [
+      "F",
+      "E",
+      "D",
+      "A",
+      "B",
+      "C"
+    ]
+  }
+}

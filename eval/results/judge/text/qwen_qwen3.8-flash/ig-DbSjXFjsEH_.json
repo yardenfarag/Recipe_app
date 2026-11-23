@@ -74,10 +74,14 @@
     },
     {
       "ref_index": 18,
+      "status": "missing"
+    },
+    {
+      "ref_index": 19,
       "status": "ok"
     }
   ],
   "extra_ingredients": [],
   "steps_score": 3,
-  "note": "Chili flakes, sweet paprika and ground coriander are missing, and the final sauce and cooking steps are invented."
+  "note": "Chili flakes, sweet paprika, ground coriander and the sauce-spices line are missing, and the sauce/cooking steps were invented."
 }

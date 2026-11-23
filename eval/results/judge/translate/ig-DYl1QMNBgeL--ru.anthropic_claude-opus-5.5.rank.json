@@ -1,0 +1,60 @@
+{
+  "caseId": "ig-DYl1QMNBgeL--ru",
+  "judge": "anthropic/claude-opus-5.5",
+  "letters": {
+    "A": "openai/gpt-6-luna",
+    "B": "openai/gpt-6.1-sol@low",
+    "C": "google/gemini-4-hydrogen@low",
+    "D": "openai/gpt-6.1-terra@low",
+    "E": "anthropic/claude-haiku-5.5@low",
+    "F": "openai/gpt-6.2-sol@low"
+  },
+  "verdict": {
+    "candidates": [
+      {
+        "letter": "A",
+        "accuracy": 5,
+        "quality": 3,
+        "issues": "The onion line '1 репчатого лука, мелко нарезанного' has wrong case agreement with the numeral. 'Средне-сильном огне' is a calque. 'Слабом режиме' is slightly less standard than 'низком'."
+      },
+      {
+        "letter": "B",
+        "accuracy": 5,
+        "quality": 4,
+        "issues": "'Луковица репчатого лука' is redundant. Otherwise natural, with good terminology ('огне выше среднего')."
+      },
+      {
+        "letter": "C",
+        "accuracy": 4,
+        "quality": 4,
+        "issues": "'Холодного' is dropped from 'extra virgin'. 'Бумажным полотенцем' is added. 'Средне-сильном огне' is a calque."
+      },
+      {
+        "letter": "D",
+        "accuracy": 5,
+        "quality": 4,
+        "issues": "'Репчатая луковица' is slightly odd. Otherwise accurate and natural."
+      },
+      {
+        "letter": "E",
+        "accuracy": 4,
+        "quality": 2,
+        "issues": "Several grammar errors: '1 репчатого лука', 'консервированных кубиками томатов', 'среднем-сильном огне'. 'Посолите и поперчите ее' is clumsy. The title is reordered."
+      },
+      {
+        "letter": "F",
+        "accuracy": 5,
+        "quality": 5,
+        "issues": "'Чуть выше среднего' adds a slight nuance. Otherwise idiomatic and natural ('головка репчатого лука', 'промокните насухо')."
+      }
+    ],
+    "ranking": [
+      "F",
+      "B",
+      "D",
+      "C",
+      "A",
+      "E"
+    ]
+  }
+}

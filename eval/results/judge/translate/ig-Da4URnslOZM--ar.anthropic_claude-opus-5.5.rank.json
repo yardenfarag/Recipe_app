@@ -1,0 +1,60 @@
+{
+  "caseId": "ig-Da4URnslOZM--ar",
+  "judge": "anthropic/claude-opus-5.5",
+  "letters": {
+    "A": "openai/gpt-6-luna",
+    "B": "openai/gpt-6.1-terra@low",
+    "C": "anthropic/claude-haiku-5.5@low",
+    "D": "openai/gpt-6.1-sol@low",
+    "E": "google/gemini-4-hydrogen@low",
+    "F": "openai/gpt-6.2-sol@low"
+  },
+  "verdict": {
+    "candidates": [
+      {
+        "letter": "A",
+        "accuracy": 5,
+        "quality": 4,
+        "issues": "'قدر هولندي' is a literal calque of 'Dutch oven'; otherwise accurate and natural."
+      },
+      {
+        "letter": "B",
+        "accuracy": 5,
+        "quality": 4,
+        "issues": "'بودرة' is slightly colloquial; 'قدر فرن بغطاء' is acceptable. Solid overall."
+      },
+      {
+        "letter": "C",
+        "accuracy": 4,
+        "quality": 2,
+        "issues": "English left in 'الورشستershire'; inconsistent Worcestershire spelling; typo 'واده' (should be 'وادهنه'); 'مُنظَّف' is vague for 'trimmed'."
+      },
+      {
+        "letter": "D",
+        "accuracy": 5,
+        "quality": 5,
+        "issues": "Natural and precise; keeps 'spoon over' with 'بالملعقة'; good term for Dutch oven."
+      },
+      {
+        "letter": "E",
+        "accuracy": 4,
+        "quality": 4,
+        "issues": "'Pat' is dropped; the glossy/dark glaze description is compressed; 'قدر طهي ثقيل' loses the oven-safe/lidded sense."
+      },
+      {
+        "letter": "F",
+        "accuracy": 5,
+        "quality": 5,
+        "issues": "Very natural with some helpful clarifying additions (e.g. 'على دفعتين'); minor expansions only."
+      }
+    ],
+    "ranking": [
+      "D",
+      "F",
+      "A",
+      "B",
+      "E",
+      "C"
+    ]
+  }
+}

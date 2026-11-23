@@ -1,0 +1,60 @@
+{
+  "caseId": "invent-text-ricotta-pancakes",
+  "judge": "anthropic/claude-opus-5.5",
+  "letters": {
+    "A": "openai/gpt-6.2-sol@low",
+    "B": "openai/gpt-6.1-terra@low",
+    "C": "anthropic/claude-sonnet-5.5@low",
+    "D": "openai/gpt-6.1-sol@low",
+    "E": "google/gemini-4-hydrogen@low",
+    "F": "anthropic/claude-haiku-5.5@low"
+  },
+  "verdict": {
+    "candidates": [
+      {
+        "letter": "A",
+        "accuracy": 5,
+        "quality": 5,
+        "issues": "Very clean recipe, and every divided ingredient is accounted for. The only minor gap is that it gives no tip for keeping pancakes warm between batches."
+      },
+      {
+        "letter": "B",
+        "accuracy": 4,
+        "quality": 3,
+        "issues": "The ingredient list has a typo ('1 egg egg'). The low ricotta and single egg make the pancakes less rich and less ricotta-forward. There is no lemon juice in the batter, and the recipe is small with no stated yield."
+      },
+      {
+        "letter": "C",
+        "accuracy": 5,
+        "quality": 4,
+        "issues": "The compote calls for 'a squeeze of the lemon juice', so the lemon juice split is vague. The separated-egg method works, but there is no yield or warming tip."
+      },
+      {
+        "letter": "D",
+        "accuracy": 5,
+        "quality": 5,
+        "issues": "Thorough: it accounts for all divided amounts, rests the batter, gives a warm-oven temperature, and states the yield and servings. Essentially no flaws."
+      },
+      {
+        "letter": "E",
+        "accuracy": 5,
+        "quality": 5,
+        "issues": "Solid and well balanced, with baking soda paired with lemon juice. It uses every ingredient. It is slightly verbose and gives no warming tip."
+      },
+      {
+        "letter": "F",
+        "accuracy": 5,
+        "quality": 4,
+        "issues": "The cornstarch slurry uses an unlisted extra 1 tsp of water. 'Plus more' butter and the optional extra lemon zest are unquantified. The compote has no lemon, and there is no yield."
+      }
+    ],
+    "ranking": [
+      "D",
+      "A",
+      "E",
+      "C",
+      "F",
+      "B"
+    ]
+  }
+}

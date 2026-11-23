@@ -2,11 +2,11 @@
   "ingredients": [
     {
       "ref_index": 0,
-      "status": "ok"
+      "status": "wrong_quantity"
     },
     {
       "ref_index": 1,
-      "status": "ok"
+      "status": "wrong_quantity"
     },
     {
       "ref_index": 2,
@@ -18,7 +18,7 @@
     },
     {
       "ref_index": 4,
-      "status": "ok"
+      "status": "wrong_quantity"
     },
     {
       "ref_index": 5,
@@ -38,18 +38,14 @@
     },
     {
       "ref_index": 9,
-      "status": "missing"
+      "status": "wrong_quantity"
     },
     {
       "ref_index": 10,
       "status": "wrong_quantity"
-    },
-    {
-      "ref_index": 11,
-      "status": "ok"
     }
   ],
   "extra_ingredients": [],
   "steps_score": 2,
-  "note": "The candidate appears to describe a different recipe: amounts differ, leaveners and salt are missing, it melts the butter, omits the freezing steps, and bakes with no temperature or time."
+  "note": "Nearly all quantities are missing, butter is given as 1 stick instead of 200 g, and baking soda and baking powder are omitted; the method melts the butter and drops the freezing step, the bake temperature and the bake time."
 }

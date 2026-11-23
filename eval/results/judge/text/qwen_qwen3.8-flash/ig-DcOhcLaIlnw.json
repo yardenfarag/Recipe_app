@@ -18,7 +18,7 @@
     },
     {
       "ref_index": 4,
-      "status": "ok"
+      "status": "missing"
     },
     {
       "ref_index": 5,
@@ -70,7 +70,7 @@
     },
     {
       "ref_index": 17,
-      "status": "wrong_quantity"
+      "status": "ok"
     },
     {
       "ref_index": 18,
@@ -95,5 +95,5 @@
   ],
   "extra_ingredients": [],
   "steps_score": 4,
-  "note": "The sauce soy amount is listed as 1 1/3 cup instead of 1/3 cup, and the method heats 4 tbsp olive oil where the reference uses the 1 tbsp sautéing oil."
+  "note": "The 1 tbsp of שמ״ז is missing, and the method uses olive oil for the tofu and noodles instead."
 }

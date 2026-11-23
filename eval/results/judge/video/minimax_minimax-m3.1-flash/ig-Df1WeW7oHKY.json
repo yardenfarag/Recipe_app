@@ -1,0 +1,47 @@
+{
+  "ingredients": [
+    {
+      "ref_index": 0,
+      "status": "wrong_quantity"
+    },
+    {
+      "ref_index": 1,
+      "status": "wrong_quantity"
+    },
+    {
+      "ref_index": 2,
+      "status": "wrong_quantity"
+    },
+    {
+      "ref_index": 3,
+      "status": "wrong_quantity"
+    },
+    {
+      "ref_index": 4,
+      "status": "missing"
+    },
+    {
+      "ref_index": 5,
+      "status": "wrong_quantity"
+    },
+    {
+      "ref_index": 6,
+      "status": "missing"
+    },
+    {
+      "ref_index": 7,
+      "status": "wrong_quantity"
+    }
+  ],
+  "extra_ingredients": [
+    "מלח",
+    "אבקה",
+    "שמן צמחי לתוך התבנית",
+    "ציפוף שמנה חמוץ",
+    "פירק",
+    "מצופה שוקולד",
+    "פירק חלבי וצבעוני"
+  ],
+  "steps_score": 1,
+  "note": "The candidate gives no quantities, omits vanilla and pudding, adds several invented ingredients, and its steps are garbled and out of order."
+}

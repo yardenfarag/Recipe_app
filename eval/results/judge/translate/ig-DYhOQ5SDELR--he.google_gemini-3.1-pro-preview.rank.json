@@ -1,0 +1,60 @@
+{
+  "caseId": "ig-DYhOQ5SDELR--he",
+  "judge": "google/gemini-3.1-pro-preview",
+  "letters": {
+    "A": "google/gemini-4-hydrogen@low",
+    "B": "anthropic/claude-haiku-5.5@low",
+    "C": "openai/gpt-6.2-sol@low",
+    "D": "openai/gpt-6-luna",
+    "E": "openai/gpt-6.1-terra@low",
+    "F": "openai/gpt-6.1-sol@low"
+  },
+  "verdict": {
+    "candidates": [
+      {
+        "letter": "A",
+        "accuracy": 5,
+        "quality": 4,
+        "issues": "Overall very good, but 'שמנת מתוקה' (sweet cream) is commonly used for heavy cream, though in a savory context just 'שמנת לבישול' or 'שמנת להקצפה' without the word 'מתוקה' might feel slightly more natural to some cooks."
+      },
+      {
+        "letter": "B",
+        "accuracy": 3,
+        "quality": 3,
+        "issues": "Major typo/mistranslation: 'מציפים' (flood) instead of 'מצפים' (coat). Incorrect plural form 'חזי עוף' instead of 'חזות עוף'. Uses 'ארומטיים' which sounds a bit literal for 'fragrant'."
+      },
+      {
+        "letter": "C",
+        "accuracy": 5,
+        "quality": 5,
+        "issues": "Excellent translation. Phrasing is natural, accurate, and uses appropriate culinary terminology ('בעבוע עדין' for simmer)."
+      },
+      {
+        "letter": "D",
+        "accuracy": 5,
+        "quality": 4,
+        "issues": "Minor grammatical issue: '2 חזה עוף' instead of the correct plural '2 חזות עוף'. Otherwise, very good and clear."
+      },
+      {
+        "letter": "E",
+        "accuracy": 5,
+        "quality": 4,
+        "issues": "Added 'מים רותחים' (boiling water) in step 1, which is implied but technically an addition. Overall flows well and is accurate."
+      },
+      {
+        "letter": "F",
+        "accuracy": 4,
+        "quality": 3,
+        "issues": "Unnatural word order in the ingredients list (e.g., 'לפי הטעם מלח'). Added extra phrases in the instructions like 'גם מבפנים' (also inside) and 'תוך ערבוב' (while stirring)."
+      }
+    ],
+    "ranking": [
+      "C",
+      "E",
+      "A",
+      "D",
+      "F",
+      "B"
+    ]
+  }
+}

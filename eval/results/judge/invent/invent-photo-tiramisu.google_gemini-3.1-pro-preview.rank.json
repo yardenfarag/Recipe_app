@@ -1,0 +1,60 @@
+{
+  "caseId": "invent-photo-tiramisu",
+  "judge": "google/gemini-3.1-pro-preview",
+  "letters": {
+    "A": "anthropic/claude-sonnet-5.5@low",
+    "B": "openai/gpt-6.1-terra@low",
+    "C": "google/gemini-4-hydrogen@low",
+    "D": "openai/gpt-6.2-sol@low",
+    "E": "openai/gpt-6.1-sol@low",
+    "F": "anthropic/claude-haiku-5.5@low"
+  },
+  "verdict": {
+    "candidates": [
+      {
+        "letter": "A",
+        "accuracy": 3,
+        "quality": 5,
+        "issues": "Served in squares from a large dish, whereas the photo shows a free-form, individually plated dessert with a runnier cream."
+      },
+      {
+        "letter": "B",
+        "accuracy": 2,
+        "quality": 4,
+        "issues": "Lacks eggs, meaning the cream would be white rather than the very yellow custard shown. Also calls for a large square dish instead of individual plating."
+      },
+      {
+        "letter": "C",
+        "accuracy": 4,
+        "quality": 4,
+        "issues": "Uses raw egg yolks which carries a slight food safety risk. The heavy cream would make the mixture stiffer than the fluid cream pictured."
+      },
+      {
+        "letter": "D",
+        "accuracy": 2,
+        "quality": 5,
+        "issues": "Omits eggs, so the cream won't match the yellow color in the photo. Instructions dictate an 8-inch dish, contrasting with the free-form individual plating shown."
+      },
+      {
+        "letter": "E",
+        "accuracy": 5,
+        "quality": 5,
+        "issues": "No major issues. Perfectly explains the visual cues in the image: the yellow, slightly runny egg custard (no whipped cream), individual plating, and exact arrangement of ladyfingers."
+      },
+      {
+        "letter": "F",
+        "accuracy": 1,
+        "quality": 5,
+        "issues": "Instructs to dust generously with cocoa powder, which is completely missing from the dessert in the photo."
+      }
+    ],
+    "ranking": [
+      "E",
+      "C",
+      "A",
+      "D",
+      "B",
+      "F"
+    ]
+  }
+}

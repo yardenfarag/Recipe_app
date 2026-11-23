@@ -1,0 +1,60 @@
+{
+  "caseId": "ig-DZxC3yBOPul--ar",
+  "judge": "anthropic/claude-opus-5.5",
+  "letters": {
+    "A": "openai/gpt-6.1-sol@low",
+    "B": "openai/gpt-6-luna",
+    "C": "openai/gpt-6.2-sol@low",
+    "D": "google/gemini-4-hydrogen@low",
+    "E": "anthropic/claude-haiku-5.5@low",
+    "F": "openai/gpt-6.1-terra@low"
+  },
+  "verdict": {
+    "candidates": [
+      {
+        "letter": "A",
+        "accuracy": 5,
+        "quality": 4,
+        "issues": "'ملح بحري رقائقي' is a slightly unusual phrasing. 'Preheat' is rendered without 'مسبقًا'. Otherwise accurate and natural."
+      },
+      {
+        "letter": "B",
+        "accuracy": 4,
+        "quality": 4,
+        "issues": "'ملح بحري خشن' means coarse sea salt, not flaky sea salt. Otherwise fluent."
+      },
+      {
+        "letter": "C",
+        "accuracy": 5,
+        "quality": 5,
+        "issues": "Natural and complete. It includes 'مسبقًا', and agreement is consistent throughout."
+      },
+      {
+        "letter": "D",
+        "accuracy": 5,
+        "quality": 4,
+        "issues": "Fluent; 'صينية' is fine for the pan. Minor: 'قلّب' is used for stirring."
+      },
+      {
+        "letter": "E",
+        "accuracy": 4,
+        "quality": 3,
+        "issues": "The title 'براونيز فادج الطري' is awkward. 'ملح بحر مجروش على شكل رقائق' is verbose. Gender is inconsistent ('يبرد… تقطيعها'). 'العجينة' is used for the batter."
+      },
+      {
+        "letter": "F",
+        "accuracy": 5,
+        "quality": 3,
+        "issues": "The title 'فدجي' is a transliteration. The final sentence uses mixed gender reference ('اتركه' after 'البراونيز')."
+      }
+    ],
+    "ranking": [
+      "C",
+      "A",
+      "D",
+      "F",
+      "B",
+      "E"
+    ]
+  }
+}

@@ -29,7 +29,7 @@ Two production facts shaped the design. OpenRouter rejects the whole request whe
 - A top-level JSON array is unwrapped to its first object when the schema asks for an object (Qwen wraps most video answers).
 - **Video goes through OpenRouter.** `videoInput.ts` resolves the clip: YouTube URLs pass through as `video_url`; every other clip is downloaded in the function (20 MB cap, 25 s) and sent inline as a base64 `video_url`. Instagram's CDN serves the clip to a browser-style fetch, so the paid ScrapeCreators `download_media` copy is only fetched when the CDN refuses (it used to be fetched every time, about 10 extra credits per video rung). Clips that cannot be downloaded or are too large skip the video rung, as before.
 - **Native Gemini is removed.** `geminiClient.ts` is deleted and `GEMINI_API_KEY` is no longer read.
-- **Cost** is recorded from OpenRouter's `usage.cost` on every call (`GeminiUsageSnapshot.costUsd`). The rate table in `pricing.ts` is only a fallback and now has a row for every default slug.
+- **Cost** is recorded from OpenRouter's `usage.cost` on every call (`LlmUsageSnapshot.costUsd`). The rate table in `pricing.ts` is only a fallback and now has a row for every default slug.
 - `llmClient_test.ts` has a live test that checks every default slug against `GET /api/v1/models`. Run it before deploying a model change.
 
 ## Consequences

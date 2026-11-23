@@ -1,0 +1,60 @@
+{
+  "caseId": "ig-DYl1QMNBgeL--ar",
+  "judge": "google/gemini-3.1-pro-preview",
+  "letters": {
+    "A": "openai/gpt-6.1-sol@low",
+    "B": "google/gemini-4-hydrogen@low",
+    "C": "openai/gpt-6.1-terra@low",
+    "D": "openai/gpt-6-luna",
+    "E": "openai/gpt-6.2-sol@low",
+    "F": "anthropic/claude-haiku-5.5@low"
+  },
+  "verdict": {
+    "candidates": [
+      {
+        "letter": "A",
+        "accuracy": 5,
+        "quality": 4,
+        "issues": "Used the collective noun 'بصل' instead of the singular 'بصلة' for '1 onion', which affects grammatical agreement."
+      },
+      {
+        "letter": "B",
+        "accuracy": 5,
+        "quality": 4,
+        "issues": "Same grammatical issue as A regarding '1 بصل'."
+      },
+      {
+        "letter": "C",
+        "accuracy": 5,
+        "quality": 4,
+        "issues": "Uses 'باستا' which is perfectly fine and often preferred, but still makes the grammatical error of '1 بصل' instead of '1 بصلة'."
+      },
+      {
+        "letter": "D",
+        "accuracy": 5,
+        "quality": 4,
+        "issues": "Grammatical issue with '1 بصل'. Phrasing in instructions is slightly less natural than the top candidates."
+      },
+      {
+        "letter": "E",
+        "accuracy": 5,
+        "quality": 5,
+        "issues": "Excellent translation. Correctly uses the singular 'بصلة' and maintains perfect grammatical agreement. Very natural culinary phrasing."
+      },
+      {
+        "letter": "F",
+        "accuracy": 4,
+        "quality": 4,
+        "issues": "Added 'بمنديل ورقي' (with a paper towel) which is not in the source text. Grammatical error with '1 بصل'."
+      }
+    ],
+    "ranking": [
+      "E",
+      "C",
+      "A",
+      "B",
+      "D",
+      "F"
+    ]
+  }
+}

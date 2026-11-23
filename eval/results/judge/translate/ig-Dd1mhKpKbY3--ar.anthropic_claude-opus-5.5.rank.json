@@ -1,0 +1,60 @@
+{
+  "caseId": "ig-Dd1mhKpKbY3--ar",
+  "judge": "anthropic/claude-opus-5.5",
+  "letters": {
+    "A": "openai/gpt-6.2-sol@low",
+    "B": "openai/gpt-6.1-terra@low",
+    "C": "anthropic/claude-haiku-5.5@low",
+    "D": "openai/gpt-6.1-sol@low",
+    "E": "openai/gpt-6-luna",
+    "F": "google/gemini-4-hydrogen@low"
+  },
+  "verdict": {
+    "candidates": [
+      {
+        "letter": "A",
+        "accuracy": 4,
+        "quality": 3,
+        "issues": "The decoration ingredient line has garbled word order: \"0 للتزيين قطع كيندر بوينو\". Otherwise natural and accurate."
+      },
+      {
+        "letter": "B",
+        "accuracy": 5,
+        "quality": 4,
+        "issues": "Leaves McVitie’s in Latin script while other brands are transliterated, which is inconsistent. \"ألواح كيندر بوينو الـ4\" is slightly awkward."
+      },
+      {
+        "letter": "C",
+        "accuracy": 3,
+        "quality": 3,
+        "issues": "The title misspells the brand as \"بيونو\". Kinder Bueno is inconsistently kept in Latin script. \"ملعقة صغيرة\" turns \"a little\" into a teaspoon. \"كاسات\" is colloquial."
+      },
+      {
+        "letter": "D",
+        "accuracy": 5,
+        "quality": 5,
+        "issues": "Essentially no problems: clean, consistent and idiomatic."
+      },
+      {
+        "letter": "E",
+        "accuracy": 5,
+        "quality": 4,
+        "issues": "\"أوراق المافن\" is a less precise term for paper cases. \"كؤوس\" is acceptable but less common. Otherwise fluent."
+      },
+      {
+        "letter": "F",
+        "accuracy": 4,
+        "quality": 4,
+        "issues": "\"ملعقة صغيرة\" adds a teaspoon measure not in the source. Units are inconsistent (غ in the ingredients, جم in the steps)."
+      }
+    ],
+    "ranking": [
+      "D",
+      "E",
+      "B",
+      "A",
+      "F",
+      "C"
+    ]
+  }
+}

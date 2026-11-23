@@ -33,9 +33,7 @@
       "status": "ok"
     }
   ],
-  "extra_ingredients": [
-    "water for baking bath"
-  ],
+  "extra_ingredients": [],
   "steps_score": 5,
-  "note": "The candidate added water for the baking bath as a separate ingredient, which the reference does not list."
+  "note": ""
 }

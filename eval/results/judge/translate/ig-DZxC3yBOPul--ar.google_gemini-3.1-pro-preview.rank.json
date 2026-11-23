@@ -1,0 +1,60 @@
+{
+  "caseId": "ig-DZxC3yBOPul--ar",
+  "judge": "google/gemini-3.1-pro-preview",
+  "letters": {
+    "A": "openai/gpt-6.1-sol@low",
+    "B": "openai/gpt-6-luna",
+    "C": "openai/gpt-6.2-sol@low",
+    "D": "google/gemini-4-hydrogen@low",
+    "E": "anthropic/claude-haiku-5.5@low",
+    "F": "openai/gpt-6.1-terra@low"
+  },
+  "verdict": {
+    "candidates": [
+      {
+        "letter": "A",
+        "accuracy": 5,
+        "quality": 4,
+        "issues": "The translation of 'flaky sea salt' as 'ملح بحري رقائقي' is slightly less common than 'رقائق ملح البحر'."
+      },
+      {
+        "letter": "B",
+        "accuracy": 4,
+        "quality": 4,
+        "issues": "Translates 'flaky' as 'خشن' (coarse), which alters the intended texture of the salt."
+      },
+      {
+        "letter": "C",
+        "accuracy": 5,
+        "quality": 4,
+        "issues": "The phrase 'طول ضلعه 8 بوصات' (its side length is 8 inches) is a bit overly mathematical for a recipe. Otherwise, very good."
+      },
+      {
+        "letter": "D",
+        "accuracy": 5,
+        "quality": 5,
+        "issues": "Excellent, natural translation. The title descriptively adapts 'fudgy' very well, and culinary terminology is idiomatic."
+      },
+      {
+        "letter": "E",
+        "accuracy": 4,
+        "quality": 3,
+        "issues": "Clunky phrasing such as 'كاكاو مسحوق' (instead of مسحوق الكاكاو) and overly wordy translation for flaky sea salt 'ملح بحر مجروش على شكل رقائق'."
+      },
+      {
+        "letter": "F",
+        "accuracy": 5,
+        "quality": 5,
+        "issues": "Very good translation. Transliterating 'fudgy' to 'فدجي' is quite common in modern Arabic culinary blogs, though a descriptive translation (like in D) can be more universally understood."
+      }
+    ],
+    "ranking": [
+      "D",
+      "F",
+      "C",
+      "A",
+      "B",
+      "E"
+    ]
+  }
+}

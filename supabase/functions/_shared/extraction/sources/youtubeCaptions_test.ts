@@ -5,7 +5,7 @@
 
 import { assert, assertEquals } from 'jsr:@std/assert@1';
 
-import { buildTextContext, type ExtractInput } from '../gemini.ts';
+import { buildTextContext, type ExtractInput } from '../recipeExtraction.ts';
 import { fetchYouTubeMeta, scrapeCreatorsTranscriptText } from './youtube.ts';
 
 const ID = 'h12wEYx45ws';

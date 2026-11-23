@@ -1,0 +1,60 @@
+{
+  "caseId": "ig-DYhOQ5SDELR--ru",
+  "judge": "anthropic/claude-opus-5.5",
+  "letters": {
+    "A": "openai/gpt-6.1-terra@low",
+    "B": "openai/gpt-6.2-sol@low",
+    "C": "openai/gpt-6-luna",
+    "D": "google/gemini-4-hydrogen@low",
+    "E": "anthropic/claude-haiku-5.5@low",
+    "F": "openai/gpt-6.1-sol@low"
+  },
+  "verdict": {
+    "candidates": [
+      {
+        "letter": "A",
+        "accuracy": 5,
+        "quality": 4,
+        "issues": "'зубчика чеснока, измельчённого' has slightly odd agreement (should agree with зубчика: измельчённых); otherwise natural and complete."
+      },
+      {
+        "letter": "B",
+        "accuracy": 5,
+        "quality": 4,
+        "issues": "Awkward word order in '0 по вкусу соли' and '0 для украшения свежей петрушки'; instructions are very natural and precise."
+      },
+      {
+        "letter": "F",
+        "accuracy": 5,
+        "quality": 4,
+        "issues": "Same awkward word order as B ('по вкусу соли', 'для украшения свежей петрушки'); otherwise fluent."
+      },
+      {
+        "letter": "D",
+        "accuracy": 4,
+        "quality": 4,
+        "issues": "Drops 'creamy' in the final step. Nominative case after 0 ('0 соль по вкусу') is slightly inconsistent. 'Выложите курицу' is a bit vague."
+      },
+      {
+        "letter": "C",
+        "accuracy": 4,
+        "quality": 3,
+        "issues": "Grammar error '2 куриных грудок, нарезанных' (should be 'куриные грудки, нарезанные'); drops 'bite-sized'; 'тушите' is imprecise for simmer; 'пока блюдо нежное' is clumsy."
+      },
+      {
+        "letter": "E",
+        "accuracy": 4,
+        "quality": 2,
+        "issues": "Agreement error '2 куриной грудки, нарезанной'; 'на среднем-сильном огне' is wrong; the 'рамэн' spelling is nonstandard; calques like 'Подавайте горячим и сливочным' and 'до аромата и мягкости'."
+      }
+    ],
+    "ranking": [
+      "A",
+      "B",
+      "F",
+      "D",
+      "C",
+      "E"
+    ]
+  }
+}

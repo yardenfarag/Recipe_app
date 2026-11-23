@@ -18,7 +18,7 @@
     },
     {
       "ref_index": 4,
-      "status": "ok"
+      "status": "wrong_quantity"
     },
     {
       "ref_index": 5,
@@ -51,5 +51,5 @@
   ],
   "extra_ingredients": [],
   "steps_score": 2,
-  "note": "Most quantities are missing; vanilla, baking powder, chips and ice cream are omitted, and the freezing step, oven temperature and bake time are missing."
+  "note": "All quantities are missing, vanilla and baking powder are omitted, and the method skips the freezing step, oven temperature and bake time while inventing a salt topping."
 }

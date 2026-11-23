@@ -1,0 +1,62 @@
+{
+  "ingredients": [
+    {
+      "ref_index": 0,
+      "status": "missing"
+    },
+    {
+      "ref_index": 1,
+      "status": "wrong_quantity"
+    },
+    {
+      "ref_index": 2,
+      "status": "missing"
+    },
+    {
+      "ref_index": 3,
+      "status": "missing"
+    },
+    {
+      "ref_index": 4,
+      "status": "ok"
+    },
+    {
+      "ref_index": 5,
+      "status": "missing"
+    },
+    {
+      "ref_index": 6,
+      "status": "wrong_quantity"
+    },
+    {
+      "ref_index": 7,
+      "status": "wrong_quantity"
+    },
+    {
+      "ref_index": 8,
+      "status": "wrong_quantity"
+    },
+    {
+      "ref_index": 9,
+      "status": "wrong_quantity"
+    },
+    {
+      "ref_index": 10,
+      "status": "ok"
+    },
+    {
+      "ref_index": 11,
+      "status": "ok"
+    },
+    {
+      "ref_index": 12,
+      "status": "ok"
+    }
+  ],
+  "extra_ingredients": [
+    "shredded cabbage",
+    "flour"
+  ],
+  "steps_score": 2,
+  "note": "The candidate is a generic fritter recipe: it invents cabbage and flour, omits the zucchini, potato, sweet potato and breadcrumbs, and drops the step of squeezing out the liquid."
+}

@@ -37,7 +37,7 @@ export const GUEST_FRIDGE_MATCH_DAILY_LIMIT = 3;
 export const CONTENT_GATE_DAILY_LIMIT = 40;
 /** Cheap food-gate classifies per UTC day (guest install). */
 export const GUEST_CONTENT_GATE_DAILY_LIMIT = 12;
-export interface GeminiUsageSnapshot {
+export interface LlmUsageSnapshot {
   model: string;
   kind: string;
   promptTokenCount: number;
@@ -68,7 +68,7 @@ const OPENROUTER_RATES: Array<{ match: string; input: number; output: number }> 
   { match: 'gemini-2.5-flash', input: 0.3, output: 2.5 },
 ];
 
-export function geminiRatesForModel(model: string): { input: number; output: number } {
+export function llmRatesForModel(model: string): { input: number; output: number } {
   const id = model.toLowerCase();
   for (const rate of OPENROUTER_RATES) {
     if (id.includes(rate.match)) return { input: rate.input, output: rate.output };
@@ -76,11 +76,11 @@ export function geminiRatesForModel(model: string): { input: number; output: num
   return { input: GEMINI_INPUT_USD_PER_M, output: GEMINI_OUTPUT_USD_PER_M };
 }
 
-export function estimateGeminiCostUsd(usage: GeminiUsageSnapshot): number {
+export function estimateLlmCostUsd(usage: LlmUsageSnapshot): number {
   if (typeof usage.costUsd === 'number' && Number.isFinite(usage.costUsd)) {
     return Math.max(0, usage.costUsd);
   }
-  const rates = geminiRatesForModel(usage.model);
+  const rates = llmRatesForModel(usage.model);
   const input = usage.promptTokenCount;
   // Google bills thinking tokens at the output rate.
   const output = usage.candidatesTokenCount + usage.thoughtsTokenCount;
@@ -91,19 +91,19 @@ export function estimateScrapeCreatorsCostUsd(credits: number): number {
   return Math.max(0, credits) * SCRAPECREATORS_USD_PER_CREDIT;
 }
 
-export function sumGeminiUsages(usages: GeminiUsageSnapshot[]): {
+export function sumLlmUsages(usages: LlmUsageSnapshot[]): {
   promptTokens: number;
   outputTokens: number;
   thinkingTokens: number;
   totalTokens: number;
-  geminiCostUsd: number;
+  llmCostUsd: number;
   model: string | null;
 } {
   let promptTokens = 0;
   let outputTokens = 0;
   let thinkingTokens = 0;
   let totalTokens = 0;
-  let geminiCostUsd = 0;
+  let llmCostUsd = 0;
   let model: string | null = null;
 
   for (const usage of usages) {
@@ -111,11 +111,11 @@ export function sumGeminiUsages(usages: GeminiUsageSnapshot[]): {
     outputTokens += usage.candidatesTokenCount;
     thinkingTokens += usage.thoughtsTokenCount;
     totalTokens += usage.totalTokenCount;
-    geminiCostUsd += estimateGeminiCostUsd(usage);
+    llmCostUsd += estimateLlmCostUsd(usage);
     model = usage.model;
   }
 
-  return { promptTokens, outputTokens, thinkingTokens, totalTokens, geminiCostUsd, model };
+  return { promptTokens, outputTokens, thinkingTokens, totalTokens, llmCostUsd, model };
 }
 
 /** Rough credit estimates when the provider does not return exact debit counts. */

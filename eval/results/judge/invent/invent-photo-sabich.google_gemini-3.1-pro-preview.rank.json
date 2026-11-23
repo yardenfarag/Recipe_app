@@ -1,0 +1,60 @@
+{
+  "caseId": "invent-photo-sabich",
+  "judge": "google/gemini-3.1-pro-preview",
+  "letters": {
+    "A": "anthropic/claude-haiku-5.5@low",
+    "B": "anthropic/claude-sonnet-5.5@low",
+    "C": "google/gemini-4-hydrogen@low",
+    "D": "openai/gpt-6.1-terra@low",
+    "E": "openai/gpt-6.2-sol@low",
+    "F": "openai/gpt-6.1-sol@low"
+  },
+  "verdict": {
+    "candidates": [
+      {
+        "letter": "A",
+        "accuracy": 1,
+        "quality": 4,
+        "issues": "Completely incorrect dish. The photo shows Sabich (eggplant, hard-boiled egg, potato, tahini), while the recipe is for a chicken schnitzel pita."
+      },
+      {
+        "letter": "B",
+        "accuracy": 4,
+        "quality": 4,
+        "issues": "Missing potatoes in the ingredients and instructions, which are a traditional part of Sabich and clearly visible in the photo as white slices."
+      },
+      {
+        "letter": "C",
+        "accuracy": 5,
+        "quality": 3,
+        "issues": "Instructs to boil whole potatoes for only 12 minutes alongside the eggs, which is not enough time to cook whole potatoes until soft."
+      },
+      {
+        "letter": "D",
+        "accuracy": 5,
+        "quality": 4,
+        "issues": "Ingredient proportions are off: 1 medium eggplant and 1 potato are not enough to generously fill 4 pitas along with the 4 eggs."
+      },
+      {
+        "letter": "E",
+        "accuracy": 5,
+        "quality": 5,
+        "issues": "Very good overall. Slicing the potatoes before boiling ensures they cook in the stated time, and the proportions for 2 pitas are sensible. Missing cucumber for the salad, but perfectly acceptable."
+      },
+      {
+        "letter": "F",
+        "accuracy": 5,
+        "quality": 5,
+        "issues": "Excellent recipe. Clear, sequential instructions, accurate cooking times (slicing potatoes before boiling is smart), and great proportions for 2 pitas."
+      }
+    ],
+    "ranking": [
+      "F",
+      "E",
+      "D",
+      "C",
+      "B",
+      "A"
+    ]
+  }
+}

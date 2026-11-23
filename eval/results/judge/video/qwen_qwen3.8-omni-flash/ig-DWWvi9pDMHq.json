@@ -22,7 +22,7 @@
     },
     {
       "ref_index": 5,
-      "status": "missing"
+      "status": "wrong_quantity"
     },
     {
       "ref_index": 6,
@@ -34,12 +34,12 @@
     },
     {
       "ref_index": 8,
-      "status": "missing"
+      "status": "wrong_quantity"
     }
   ],
   "extra_ingredients": [
-    "All-Purpose Flour"
+    "all-purpose flour"
   ],
-  "steps_score": 2,
-  "note": "Quantities are missing, salt, cornstarch and cocoa are absent, flour is invented, and the steps omit the oven temperature, bake time and chilling."
+  "steps_score": 3,
+  "note": "Most quantities are missing, and cornstarch was replaced with flour; the method also lacks the oven temperature, bake time and chilling step."
 }

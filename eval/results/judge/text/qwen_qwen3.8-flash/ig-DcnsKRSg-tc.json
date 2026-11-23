@@ -42,6 +42,6 @@
     }
   ],
   "extra_ingredients": [],
-  "steps_score": 4,
-  "note": "The method adds a tip not in the reference about not spreading the batter in the pan."
+  "steps_score": 5,
+  "note": "The candidate adds a small tip about not spreading the batter, which is not in the reference steps."
 }

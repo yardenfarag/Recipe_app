@@ -7,7 +7,7 @@
 
 ## Context
 
-An import is **partial** when it finds a title and either ingredients or steps, but not both (`classifyGeminiRecipe`). Under ADR 004 a partial opens in preview with the "The source skipped some details" banner. The user can save it, and it costs one credit, the same as a full recipe. Applying an AI repair costs another credit.
+An import is **partial** when it finds a title and either ingredients or steps, but not both (`classifyLlmRecipe`). Under ADR 004 a partial opens in preview with the "The source skipped some details" banner. The user can save it, and it costs one credit, the same as a full recipe. Applying an AI repair costs another credit.
 
 Competitor reviews complain about half-finished recipes (PIN-56). ADR 004 accepted partials partly because users couldn't edit recipes. PIN-79 (ADR 018) has since added hand editing, so users can now fill in the gaps themselves.
 

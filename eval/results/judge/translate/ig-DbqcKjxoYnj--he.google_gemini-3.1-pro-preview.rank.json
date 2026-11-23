@@ -1,0 +1,60 @@
+{
+  "caseId": "ig-DbqcKjxoYnj--he",
+  "judge": "google/gemini-3.1-pro-preview",
+  "letters": {
+    "A": "openai/gpt-6.1-sol@low",
+    "B": "openai/gpt-6-luna",
+    "C": "anthropic/claude-haiku-5.5@low",
+    "D": "openai/gpt-6.1-terra@low",
+    "E": "openai/gpt-6.2-sol@low",
+    "F": "google/gemini-4-hydrogen@low"
+  },
+  "verdict": {
+    "candidates": [
+      {
+        "letter": "A",
+        "accuracy": 5,
+        "quality": 4,
+        "issues": "Literal translation of '1 Seeds' ('1 זרעים') leads to slightly awkward grammar. Otherwise, accurate and clear."
+      },
+      {
+        "letter": "B",
+        "accuracy": 5,
+        "quality": 4,
+        "issues": "Similar issue with '1 זרעי תרמיל וניל' which is grammatically awkward. Uses 'טורפים' (whisking/beating eggs) for cream cheese, which is acceptable but 'מקציפים' or 'מערבלים' is more common."
+      },
+      {
+        "letter": "C",
+        "accuracy": 4,
+        "quality": 2,
+        "issues": "Contains multiple typos and non-standard words: 'מטוחנים' instead of 'טחונים', 'סירית' instead of 'סיר', 'התקבלות' (unnatural), and 'תבנית קפיץ' instead of 'תבנית קפיצית'."
+      },
+      {
+        "letter": "D",
+        "accuracy": 5,
+        "quality": 4,
+        "issues": "Grammar issue with '1 זרעים'. Repetitive phrasing like 'מקררים במקרר' (chill in the fridge) is slightly redundant."
+      },
+      {
+        "letter": "E",
+        "accuracy": 4,
+        "quality": 5,
+        "issues": "Very natural phrasing ('1 תרמיל וניל (הגרגירים בלבד)' solves the grammar issue perfectly). However, it adds words not in the source text, such as 'סיר קטן' (small saucepan) and explicitly calls the mixture 'גנאש' (ganache) in step 2."
+      },
+      {
+        "letter": "F",
+        "accuracy": 5,
+        "quality": 4,
+        "issues": "Literal translation of the quantity '1' before seeds ('1 גרגירים') is slightly unnatural, but overall the translation is highly accurate, uses correct terminology, and flows well."
+      }
+    ],
+    "ranking": [
+      "E",
+      "F",
+      "B",
+      "A",
+      "D",
+      "C"
+    ]
+  }
+}

@@ -1,0 +1,60 @@
+{
+  "caseId": "invent-text-gochujang-cauliflower",
+  "judge": "anthropic/claude-opus-5.5",
+  "letters": {
+    "A": "openai/gpt-6.2-sol@low",
+    "B": "google/gemini-4-hydrogen@low",
+    "C": "openai/gpt-6.1-sol@low",
+    "D": "anthropic/claude-sonnet-5.5@low",
+    "E": "openai/gpt-6.1-terra@low",
+    "F": "anthropic/claude-haiku-5.5@low"
+  },
+  "verdict": {
+    "candidates": [
+      {
+        "letter": "A",
+        "accuracy": 5,
+        "quality": 5,
+        "issues": "Solid baked batter-and-oiled-panko method that should come out properly crisp. The glaze is well balanced and every ingredient is used. Minor gaps: no scallion garnish, and the glaze relies on stovetop thickening only."
+      },
+      {
+        "letter": "C",
+        "accuracy": 5,
+        "quality": 4,
+        "issues": "A good crisp panko method with a rebake to set the glaze. Drizzling oil over the panko browns less evenly than rubbing it in. The rebake risks softening the crumbs. The ingredient line '2 scallions Scallions' is awkward."
+      },
+      {
+        "letter": "B",
+        "accuracy": 5,
+        "quality": 4,
+        "issues": "Batter-only coating baked on parchment may stick and will be less crispy than panko. Otherwise a coherent method that uses all ingredients, with a sensible glaze-setting rebake."
+      },
+      {
+        "letter": "F",
+        "accuracy": 5,
+        "quality": 4,
+        "issues": "Deep-frying fits 'better than takeout', but the batter is thin and scant (½ cup flour + 2 tbsp cornstarch) for a large head. Cauliflower amount is vague. Minor grammar slips ('2 clove')."
+      },
+      {
+        "letter": "D",
+        "accuracy": 4,
+        "quality": 3,
+        "issues": "Too little batter for 800 g of cauliflower. An 8-minute rebake of the honey glaze at 230°C risks scorching. A milk batter without panko is less crisp."
+      },
+      {
+        "letter": "E",
+        "accuracy": 4,
+        "quality": 3,
+        "issues": "A bare-bones recipe that works but has no garnish, no sesame and only 1 tbsp oil for a whole head, so it will be less crisp. Cauliflower size is unspecified and it lacks a 'sticky' finish."
+      }
+    ],
+    "ranking": [
+      "A",
+      "C",
+      "B",
+      "F",
+      "D",
+      "E"
+    ]
+  }
+}

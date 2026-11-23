@@ -1,0 +1,65 @@
+{
+  "ingredients": [
+    {
+      "ref_index": 0,
+      "status": "wrong_quantity"
+    },
+    {
+      "ref_index": 1,
+      "status": "wrong_quantity"
+    },
+    {
+      "ref_index": 2,
+      "status": "wrong_quantity"
+    },
+    {
+      "ref_index": 3,
+      "status": "missing"
+    },
+    {
+      "ref_index": 4,
+      "status": "missing"
+    },
+    {
+      "ref_index": 5,
+      "status": "missing"
+    },
+    {
+      "ref_index": 6,
+      "status": "wrong_quantity"
+    },
+    {
+      "ref_index": 7,
+      "status": "wrong_quantity"
+    },
+    {
+      "ref_index": 8,
+      "status": "ok"
+    },
+    {
+      "ref_index": 9,
+      "status": "wrong_quantity"
+    },
+    {
+      "ref_index": 10,
+      "status": "missing"
+    },
+    {
+      "ref_index": 11,
+      "status": "missing"
+    },
+    {
+      "ref_index": 12,
+      "status": "missing"
+    },
+    {
+      "ref_index": 13,
+      "status": "missing"
+    }
+  ],
+  "extra_ingredients": [
+    "0 pepper"
+  ],
+  "steps_score": 2,
+  "note": "The candidate drops all quantities, substitutes kashkaval for parmesan, and uses an oven instead of an air fryer at 190°C."
+}

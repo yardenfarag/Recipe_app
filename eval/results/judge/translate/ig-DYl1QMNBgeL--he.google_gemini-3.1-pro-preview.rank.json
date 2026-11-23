@@ -1,0 +1,60 @@
+{
+  "caseId": "ig-DYl1QMNBgeL--he",
+  "judge": "google/gemini-3.1-pro-preview",
+  "letters": {
+    "A": "google/gemini-4-hydrogen@low",
+    "B": "anthropic/claude-haiku-5.5@low",
+    "C": "openai/gpt-6.1-sol@low",
+    "D": "openai/gpt-6.1-terra@low",
+    "E": "openai/gpt-6.2-sol@low",
+    "F": "openai/gpt-6-luna"
+  },
+  "verdict": {
+    "candidates": [
+      {
+        "letter": "A",
+        "accuracy": 5,
+        "quality": 5,
+        "issues": "Very natural translation. Added 'paper towel' (נייר סופג) for 'pat dry', which is idiomatic in Hebrew culinary context. Dropped 'brown' for the onion, but in Israel standard onions are implied to be dry/brown anyway."
+      },
+      {
+        "letter": "B",
+        "accuracy": 4,
+        "quality": 4,
+        "issues": "Translated 'diced tomatoes' as 'crushed tomatoes' (מרוסקות). 'Brown onion' translated literally as 'בצל חום', which sounds slightly unnatural in Hebrew (usually just 'בצל' or 'בצל יבש' is used). 'Beef stock' translated as 'מרק בקר' instead of 'ציר בקר'."
+      },
+      {
+        "letter": "C",
+        "accuracy": 5,
+        "quality": 4,
+        "issues": "'עגבניות חתוכות לקוביות משומרות' is slightly clunky phrasing. 'מייבשים בטפיחות' is accurate but a bit literal compared to using 'נייר סופג'."
+      },
+      {
+        "letter": "D",
+        "accuracy": 5,
+        "quality": 5,
+        "issues": "Excellent overall. Good terminology ('ציר בקר', 'משימורים'). Minor note: 'בבישול איטי' in the title instead of 'סיר בישול איטי'."
+      },
+      {
+        "letter": "E",
+        "accuracy": 4,
+        "quality": 4,
+        "issues": "Added 'extra virgin' (כתית מעולה) to the instructions where the source only said 'olive oil'. Title misses the word 'סיר' (pot) for slow cooker, though it works fine."
+      },
+      {
+        "letter": "F",
+        "accuracy": 5,
+        "quality": 5,
+        "issues": "Very accurate and natural. Translated 'pat dry' as 'מייבשים היטב' (dry well), losing the 'pat' nuance, but perfectly acceptable in context."
+      }
+    ],
+    "ranking": [
+      "A",
+      "D",
+      "F",
+      "C",
+      "E",
+      "B"
+    ]
+  }
+}

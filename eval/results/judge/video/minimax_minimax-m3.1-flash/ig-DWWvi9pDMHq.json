@@ -1,0 +1,46 @@
+{
+  "ingredients": [
+    {
+      "ref_index": 0,
+      "status": "wrong_quantity"
+    },
+    {
+      "ref_index": 1,
+      "status": "wrong_quantity"
+    },
+    {
+      "ref_index": 2,
+      "status": "wrong_quantity"
+    },
+    {
+      "ref_index": 3,
+      "status": "missing"
+    },
+    {
+      "ref_index": 4,
+      "status": "wrong_quantity"
+    },
+    {
+      "ref_index": 5,
+      "status": "missing"
+    },
+    {
+      "ref_index": 6,
+      "status": "wrong_quantity"
+    },
+    {
+      "ref_index": 7,
+      "status": "missing"
+    },
+    {
+      "ref_index": 8,
+      "status": "missing"
+    }
+  ],
+  "extra_ingredients": [
+    "peanut butter, melted",
+    "all-purpose flour"
+  ],
+  "steps_score": 2,
+  "note": "The candidate describes a different recipe: it omits all quantities, adds peanut butter, flour and a glaze, and leaves out the cornstarch, cocoa, white sugar and salt."
+}

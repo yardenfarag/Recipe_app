@@ -4,22 +4,35 @@ import type { ImageCase } from './fetch.ts';
 import { hasRecipeShape, matchPath, type MatchVerdict, type RankFile, rankPath } from './judge.ts';
 import { type GateCase, gateCaseLabel, labelPath, type PostLabel } from './label.ts';
 import { percentile, readJson, readJsonOr, RESULTS, ROOT, slug, writeJson } from './lib.ts';
-import { MATCH_JUDGE, RANK_JUDGE, type Task, TASK_MODELS } from './models.ts';
-import type { RunRecord } from './run.ts';
+import { MATCH_JUDGE, RANK_JUDGES, type Task, TASK_MODELS } from './models.ts';
+import { REPEAT_MARK, type RunRecord } from './run.ts';
 
 type Row = Record<string, string | number | null>;
 
+/** First runs only; `--repeat` runs are in `repeatRecords`. */
 async function records(task: Task, model: string): Promise<RunRecord[]> {
+  return (await allRecords(task, model)).filter((r) => !r.repeat);
+}
+
+async function allRecords(task: Task, model: string): Promise<(RunRecord & { repeat?: boolean })[]> {
   const dir = `${RESULTS}raw/${task}/${slug(model)}`;
-  const out: RunRecord[] = [];
+  const out: (RunRecord & { repeat?: boolean })[] = [];
   try {
     for await (const e of Deno.readDir(dir)) {
-      if (e.name.endsWith('.json')) out.push(await readJson<RunRecord>(`${dir}/${e.name}`));
+      if (!e.name.endsWith('.json')) continue;
+      const r = await readJson<RunRecord>(`${dir}/${e.name}`);
+      out.push(e.name.includes(REPEAT_MARK) ? { ...r, repeat: true } : r);
     }
   } catch {
     // task not run
   }
   return out.sort((a, b) => a.caseId.localeCompare(b.caseId));
+}
+
+/** Model time of every successful run, repeats included, for the cases in `rs`. */
+async function latencies(task: Task, model: string, rs: RunRecord[]): Promise<number[]> {
+  const ids = new Set(rs.map((r) => r.caseId));
+  return (await allRecords(task, model)).filter((r) => r.ok && ids.has(r.caseId)).map((r) => r.ms);
 }
 
 const pct = (n: number, d: number) => (d === 0 ? null : `${Math.round((100 * n) / d)}%`);
@@ -28,10 +41,10 @@ const usd = (v: number) => (v < 0.001 ? `$${v.toFixed(5)}` : `$${v.toFixed(4)}`)
 const avg = (xs: number[]) => (xs.length ? xs.reduce((a, b) => a + b, 0) / xs.length : null);
 const fmt = (v: number | null, digits = 2) => (v == null ? null : v.toFixed(digits));
 
-function base(model: string, rs: RunRecord[], schemaOk: (r: RunRecord) => boolean): Row {
+async function base(task: Task, model: string, rs: RunRecord[], schemaOk: (r: RunRecord) => boolean): Promise<Row> {
   const ok = rs.filter((r) => r.ok);
   const valid = ok.filter(schemaOk);
-  const ms = ok.map((r) => r.ms);
+  const ms = await latencies(task, model, rs);
   return {
     model,
     n: rs.length,
@@ -69,7 +82,7 @@ async function matchRows(task: 'text' | 'photo' | 'video', langFilter?: string):
       steps.push(v.steps_score);
     }
     rows.push({
-      ...base(model, rs, (r) => hasRecipeShape(r.output)),
+      ...(await base(task, model, rs, (r) => hasRecipeShape(r.output))),
       'ingredient recall': pct(listed, refTotal),
       'amount accuracy': pct(exact, refTotal),
       'extra items/recipe': fmt(judged ? extras / judged : null, 1),
@@ -82,34 +95,42 @@ async function matchRows(task: 'text' | 'photo' | 'video', langFilter?: string):
 async function rankRows(task: 'translate' | 'invent', filter?: (caseId: string) => boolean): Promise<Row[]> {
   const ids = new Set<string>();
   for (const m of TASK_MODELS[task]) for (const r of await records(task, m)) ids.add(r.caseId);
-  const stats = new Map<string, { acc: number[]; qual: number[]; rank: number[]; wins: number }>();
-  for (const m of TASK_MODELS[task]) stats.set(m, { acc: [], qual: [], rank: [], wins: 0 });
+  type Stats = { acc: number[]; qual: number[]; rank: number[]; wins: number; byJudge: Map<string, number[]> };
+  const stats = new Map<string, Stats>();
+  for (const m of TASK_MODELS[task]) stats.set(m, { acc: [], qual: [], rank: [], wins: 0, byJudge: new Map() });
   let ranked = 0;
   for (const id of ids) {
     if (filter && !filter(id)) continue;
-    const file = await readJsonOr<RankFile | null>(rankPath(task, id), null);
-    if (!file) continue;
-    ranked++;
-    for (const c of file.verdict.candidates) {
-      const s = stats.get(file.letters[c.letter]);
-      s?.acc.push(c.accuracy);
-      s?.qual.push(c.quality);
+    for (const judge of RANK_JUDGES) {
+      const file = await readJsonOr<RankFile | null>(rankPath(task, id, judge), null);
+      if (!file) continue;
+      ranked++;
+      for (const c of file.verdict.candidates) {
+        const s = stats.get(file.letters[c.letter]);
+        s?.acc.push(c.accuracy);
+        s?.qual.push(c.quality);
+      }
+      file.verdict.ranking.forEach((letter, i) => {
+        const s = stats.get(file.letters[letter]);
+        if (!s) return;
+        s.rank.push(i + 1);
+        if (!s.byJudge.has(judge)) s.byJudge.set(judge, []);
+        s.byJudge.get(judge)!.push(i + 1);
+        if (i === 0) s.wins++;
+      });
     }
-    file.verdict.ranking.forEach((letter, i) => {
-      const s = stats.get(file.letters[letter]);
-      s?.rank.push(i + 1);
-      if (i === 0 && s) s.wins++;
-    });
   }
+  const judgeLabel = (j: string) => j.split('/')[1].split('-').slice(0, 2).join(' ');
   const rows: Row[] = [];
   for (const model of TASK_MODELS[task]) {
     const rs = (await records(task, model)).filter((r) => !filter || filter(r.caseId));
     const s = stats.get(model)!;
     rows.push({
-      ...base(model, rs, (r) => hasRecipeShape(r.output)),
+      ...(await base(task, model, rs, (r) => hasRecipeShape(r.output))),
       'accuracy (1–5)': fmt(avg(s.acc), 2),
       'quality (1–5)': fmt(avg(s.qual), 2),
       'avg rank': fmt(avg(s.rank), 2),
+      ...Object.fromEntries(RANK_JUDGES.map((j) => [`rank by ${judgeLabel(j)}`, fmt(avg(s.byJudge.get(j) ?? []), 2)])),
       'ranked #1': pct(s.wins, ranked),
     });
   }
@@ -133,7 +154,7 @@ async function contentGateRows(): Promise<Row[]> {
       else falseAccept++;
     }
     rows.push({
-      ...base(model, rs, (r) => Boolean((r.output as { kind?: string })?.kind)),
+      ...(await base('content_gate', model, rs, (r) => Boolean((r.output as { kind?: string })?.kind))),
       accuracy: pct(correct, rs.length),
       'food rejected': falseReject,
       'non-food let through': falseAccept,
@@ -163,7 +184,7 @@ async function extractGateRows(): Promise<Row[]> {
       if (label.route === 'full_recipe_in_text' && route === 'needs_video') skipTextOnFull++;
     }
     rows.push({
-      ...base(model, rs, (r) => Boolean((r.output as { route?: string })?.route)),
+      ...(await base('extract_gate', model, rs, (r) => Boolean((r.output as { route?: string })?.route))),
       'route accuracy': pct(correct, rs.length),
       'Hebrew accuracy': pct(heCorrect, heTotal),
       'recipe → no_recipe': noRecipeOnRecipe,
@@ -189,7 +210,8 @@ export async function reportCommand() {
     ['Text extract (20 posts)', await matchRows('text')],
     ['Text extract, Hebrew posts only', await matchRows('text', 'he')],
     ['Photo extract (10 cards, 3 handwritten)', await matchRows('photo')],
-    ['Video extract, video only, no caption (15 Reels)', await matchRows('video')],
+    ['Video extract, video only, no caption (27 posts, 16 Hebrew)', await matchRows('video')],
+    ['Video extract, Hebrew posts only', await matchRows('video', 'he')],
     ['Translate (15 recipes × he/ar/ru)', await rankRows('translate')],
     ['Translate, Hebrew only', await rankRows('translate', (id) => id.endsWith('--he'))],
     ['Invent (5 photos, 5 text)', await rankRows('invent')],
@@ -198,14 +220,15 @@ export async function reportCommand() {
   ];
   let total = 0;
   for (const task of Object.keys(TASK_MODELS) as Task[]) {
-    for (const m of TASK_MODELS[task]) for (const r of await records(task, m)) total += r.costUsd;
+    for (const m of TASK_MODELS[task]) for (const r of await allRecords(task, m)) total += r.costUsd;
   }
   const md = [
-    `# PIN-44 eval results`,
+    `# LLM eval results`,
     '',
     `Generated ${new Date().toISOString().slice(0, 10)} by \`eval/cli.ts report\`. ` +
-      `Ingredient matching by \`${MATCH_JUDGE}\`, blind ranking by \`${RANK_JUDGE}\`. ` +
-      `Latency is model time per call; $/call is OpenRouter's reported cost (native Gemini estimated from tokens). ` +
+      `Ingredient matching by \`${MATCH_JUDGE}\`, blind ranking by ${RANK_JUDGES.map((j) => `\`${j}\``).join(' and ')} ` +
+      `(each case ranked by both; "avg rank" pools them). ` +
+      `Latency is model time per call over every run, \`--repeat\` runs included; $/call is OpenRouter's reported cost from the first run. ` +
       `Candidate spend for this run: ${usd(total)}.`,
     '',
     ...sections.flatMap(([title, rows]) => [`## ${title}`, '', table(rows)]),

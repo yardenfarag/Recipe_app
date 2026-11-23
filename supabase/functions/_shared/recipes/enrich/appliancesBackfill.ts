@@ -6,7 +6,7 @@
  */
 
 import type { RecipeAppliance } from './appliances.ts';
-import type { GeminiUsageSnapshot } from '../../llm/pricing.ts';
+import type { LlmUsageSnapshot } from '../../llm/pricing.ts';
 import type { AppliancesRecipeInput, DeriveAppliancesResult } from './recipeAppliances.ts';
 
 export type BackfillTable = 'recipes' | 'recipe_cards';
@@ -38,7 +38,7 @@ export type BackfillBatchResult = {
   skipped: number;
   /** Pass this as `after` for the next batch; null when the table is done. */
   nextCursor: string | null;
-  usages: GeminiUsageSnapshot[];
+  usages: LlmUsageSnapshot[];
   errors: string[];
 };
 

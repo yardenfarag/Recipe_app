@@ -8,7 +8,7 @@
 
 import { numberedSteps } from './appliances.ts';
 import { generateLlmJson } from '../../llm/llmClient.ts';
-import type { GeminiUsageSnapshot } from '../../llm/pricing.ts';
+import type { LlmUsageSnapshot } from '../../llm/pricing.ts';
 
 /**
  * Kitchen-profile diet keys a recipe can fit as written. Matches the app's variant keys
@@ -47,7 +47,7 @@ export type DietsRecipeInput = {
 
 export type DeriveDietsResult = {
   diets: HubDietKey[] | null;
-  usages: GeminiUsageSnapshot[];
+  usages: LlmUsageSnapshot[];
   error?: string;
 };
 

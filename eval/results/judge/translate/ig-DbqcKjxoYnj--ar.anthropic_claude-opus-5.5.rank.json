@@ -1,0 +1,60 @@
+{
+  "caseId": "ig-DbqcKjxoYnj--ar",
+  "judge": "anthropic/claude-opus-5.5",
+  "letters": {
+    "A": "anthropic/claude-haiku-5.5@low",
+    "B": "openai/gpt-6-luna",
+    "C": "openai/gpt-6.1-sol@low",
+    "D": "openai/gpt-6.2-sol@low",
+    "E": "openai/gpt-6.1-terra@low",
+    "F": "google/gemini-4-hydrogen@low"
+  },
+  "verdict": {
+    "candidates": [
+      {
+        "letter": "A",
+        "accuracy": 4,
+        "quality": 3,
+        "issues": "'دهن شوكولاتة' is a literal, awkward rendering of 'spread'. Uses the loanword 'كوكيز'. 'قالب انفصالي' is unnatural. 'قلّب فتات الأوريو' lacks 'into the mixture'. 'واترك' has no object. 'قمم ناعمة' is a literal calque. Milk powder is named inconsistently (حليب بودرة vs بودرة الحليب)."
+      },
+      {
+        "letter": "B",
+        "accuracy": 5,
+        "quality": 4,
+        "issues": "'دهن شوكولاتة بيضاء' is an awkward rendering of 'spread'. Otherwise accurate and natural, with a good springform term."
+      },
+      {
+        "letter": "C",
+        "accuracy": 5,
+        "quality": 5,
+        "issues": "'لمدة 1 دقيقة' is slightly stiff. Otherwise natural, with good terms for both the spread and the springform pan."
+      },
+      {
+        "letter": "D",
+        "accuracy": 5,
+        "quality": 5,
+        "issues": "Adds 'مباشرةً' (directly) to the plastic-wrap step, a minor addition. 'بدون فرن' is idiomatic. Clear and natural throughout."
+      },
+      {
+        "letter": "E",
+        "accuracy": 5,
+        "quality": 4,
+        "issues": "'ضعه في الثلاجة' is ambiguous about what goes in the fridge. 'لمدة 1 دقيقة' is stiff. Otherwise good."
+      },
+      {
+        "letter": "F",
+        "accuracy": 4,
+        "quality": 4,
+        "issues": "Drops 'bean' from vanilla bean paste. 'Spread' becomes just 'كريمة', so the meaning is weakened. 'حتى تسخن' says 'until hot' rather than 'until warm'. 'قمم ناعمة' is a literal calque."
+      }
+    ],
+    "ranking": [
+      "D",
+      "C",
+      "E",
+      "B",
+      "F",
+      "A"
+    ]
+  }
+}

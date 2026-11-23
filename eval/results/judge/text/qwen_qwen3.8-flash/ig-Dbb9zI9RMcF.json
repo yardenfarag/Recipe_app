@@ -62,11 +62,11 @@
     },
     {
       "ref_index": 15,
-      "status": "ok"
+      "status": "wrong_quantity"
     },
     {
       "ref_index": 16,
-      "status": "wrong_quantity"
+      "status": "ok"
     },
     {
       "ref_index": 17,
@@ -79,13 +79,11 @@
     {
       "ref_index": 19,
       "status": "ok"
-    },
-    {
-      "ref_index": 20,
-      "status": "ok"
     }
   ],
-  "extra_ingredients": [],
+  "extra_ingredients": [
+    "Oil for frying"
+  ],
   "steps_score": 5,
-  "note": "Chicken (1.25 lb) and garlic (4.5 cloves) amounts were averaged from ranges instead of matching 1 lb and 4 cloves."
+  "note": "Chicken (1.25 lb) and garlic (4.5 cloves) amounts were averaged from ranges instead of matching the reference."
 }

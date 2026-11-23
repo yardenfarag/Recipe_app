@@ -30,7 +30,7 @@ export class AppError extends Error {
   }
 }
 
-/** Raised when an outbound `fetch` (Gemini, YouTube, ...) fails or times out. */
+/** Raised when an outbound `fetch` (OpenRouter, YouTube, ...) fails or times out. */
 export class FetchError extends AppError {
   constructor(context: string, message: string, details?: Record<string, unknown>) {
     super(context, message, details);

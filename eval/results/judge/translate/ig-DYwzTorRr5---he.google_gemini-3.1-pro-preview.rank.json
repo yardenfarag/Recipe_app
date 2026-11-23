@@ -1,0 +1,60 @@
+{
+  "caseId": "ig-DYwzTorRr5---he",
+  "judge": "google/gemini-3.1-pro-preview",
+  "letters": {
+    "A": "anthropic/claude-haiku-5.5@low",
+    "B": "openai/gpt-6.2-sol@low",
+    "C": "openai/gpt-6.1-sol@low",
+    "D": "google/gemini-4-hydrogen@low",
+    "E": "openai/gpt-6-luna",
+    "F": "openai/gpt-6.1-terra@low"
+  },
+  "verdict": {
+    "candidates": [
+      {
+        "letter": "A",
+        "accuracy": 4,
+        "quality": 3,
+        "issues": "Unnatural culinary phrasing ('צ׳יפס שוקולד מריר' instead of 'שוקולד צ׳יפס מריר', 'מורחים שמן' instead of 'משמנים')."
+      },
+      {
+        "letter": "B",
+        "accuracy": 4,
+        "quality": 4,
+        "issues": "Unnecessarily repeats ingredient adjectives in the instructions (e.g., 'החמאה המלוחה', 'הקמח הלבן'), making the text feel slightly clunky."
+      },
+      {
+        "letter": "C",
+        "accuracy": 5,
+        "quality": 5,
+        "issues": "'במקטעים' is acceptable, though 'בפולסים' or 'בפעימות' is slightly more idiomatic for microwave intervals."
+      },
+      {
+        "letter": "D",
+        "accuracy": 5,
+        "quality": 4,
+        "issues": "'כוסות בראוניז' is a bit of a literal translation for 'Brownie Cups'; 'בראוניז אישיים' or 'בראוניז ברמקינים' sounds more natural in Hebrew."
+      },
+      {
+        "letter": "E",
+        "accuracy": 4,
+        "quality": 4,
+        "issues": "Dropped 'granulated' in the ingredients list (translated simply as 'סוכר' instead of 'סוכר לבן')."
+      },
+      {
+        "letter": "F",
+        "accuracy": 5,
+        "quality": 5,
+        "issues": "None major. Uses very natural culinary terminology."
+      }
+    ],
+    "ranking": [
+      "F",
+      "C",
+      "D",
+      "B",
+      "E",
+      "A"
+    ]
+  }
+}

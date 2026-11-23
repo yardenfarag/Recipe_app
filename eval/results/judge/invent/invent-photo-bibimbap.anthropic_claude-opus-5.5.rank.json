@@ -1,0 +1,60 @@
+{
+  "caseId": "invent-photo-bibimbap",
+  "judge": "anthropic/claude-opus-5.5",
+  "letters": {
+    "A": "anthropic/claude-sonnet-5.5@low",
+    "B": "openai/gpt-6.1-sol@low",
+    "C": "openai/gpt-6.1-terra@low",
+    "D": "google/gemini-4-hydrogen@low",
+    "E": "anthropic/claude-haiku-5.5@low",
+    "F": "openai/gpt-6.2-sol@low"
+  },
+  "verdict": {
+    "candidates": [
+      {
+        "letter": "A",
+        "accuracy": 5,
+        "quality": 4,
+        "issues": "The only candidate that covers both the bowl and the bao shown. It relies on pre-cooked pulled pork and gives no braising method. It omits the eggplant visible in the bowl. The '2 buns steamed bao buns' line is awkwardly worded. The slaw is very minimal."
+      },
+      {
+        "letter": "B",
+        "accuracy": 4,
+        "quality": 5,
+        "issues": "A faithful bowl that even includes the eggplant visible in the photo. It ignores the bao. The method is clear and complete."
+      },
+      {
+        "letter": "F",
+        "accuracy": 3,
+        "quality": 5,
+        "issues": "A well-executed braised pork bao with edamame slaw that matches the photo's bun. It ignores the rice bowl entirely."
+      },
+      {
+        "letter": "C",
+        "accuracy": 4,
+        "quality": 4,
+        "issues": "A correct but basic bowl. It leaves the rice water to the package directions and lacks the eggplant and the bao."
+      },
+      {
+        "letter": "D",
+        "accuracy": 4,
+        "quality": 4,
+        "issues": "A correct bowl, but the tofu portion is small. It frys in toasted sesame oil, which is not ideal, and lacks the bao and eggplant."
+      },
+      {
+        "letter": "E",
+        "accuracy": 2,
+        "quality": 4,
+        "issues": "A generic beef bibimbap with spinach, sprouts and egg that doesn't match the pictured bowl (tofu, edamame, seaweed, radish). It switches between 2 cups and 400 g of rice. It ignores the bao."
+      }
+    ],
+    "ranking": [
+      "A",
+      "B",
+      "F",
+      "C",
+      "D",
+      "E"
+    ]
+  }
+}

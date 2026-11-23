@@ -1,0 +1,60 @@
+{
+  "caseId": "ig-Dbb9zI9RMcF--ru",
+  "judge": "anthropic/claude-opus-5.5",
+  "letters": {
+    "A": "openai/gpt-6.1-terra@low",
+    "B": "openai/gpt-6.2-sol@low",
+    "C": "google/gemini-4-hydrogen@low",
+    "D": "openai/gpt-6.1-sol@low",
+    "E": "anthropic/claude-haiku-5.5@low",
+    "F": "openai/gpt-6-luna"
+  },
+  "verdict": {
+    "candidates": [
+      {
+        "letter": "A",
+        "accuracy": 5,
+        "quality": 4,
+        "issues": "'сушёного чеснока' for garlic powder is acceptable but less exact than 'чесночного порошка'; 'мелко измельчённого' is redundant; the brush is not mentioned explicitly."
+      },
+      {
+        "letter": "B",
+        "accuracy": 5,
+        "quality": 5,
+        "issues": "'кусочками на один укус' is slightly calqued; otherwise natural and complete, and the brush is included."
+      },
+      {
+        "letter": "C",
+        "accuracy": 5,
+        "quality": 4,
+        "issues": "'неровности и текстура' and 'максимальной хрустящей корочки' read awkwardly and calqued; no ё (acceptable)."
+      },
+      {
+        "letter": "D",
+        "accuracy": 5,
+        "quality": 5,
+        "issues": "'на один укус' is slightly calqued; 'с помощью кисточки' placed at the end is a bit clunky; otherwise fluent."
+      },
+      {
+        "letter": "E",
+        "accuracy": 4,
+        "quality": 3,
+        "issues": "'0 петрушка' and '0 итальянская смесь трав' are in the wrong case; 'обваляйте' is used for coating in marinade; 'ультрахрустящей' and 'глубокого золотистого' are calques; 'горячим' disagrees with курицу; ingredient list says 'итальянская смесь трав' but steps say 'итальянскую приправу'."
+      },
+      {
+        "letter": "F",
+        "accuracy": 4,
+        "quality": 3,
+        "issues": "'1 яйца' is a grammatical error; 'зубчика зубчика' is a duplicated word; the rest reads naturally."
+      }
+    ],
+    "ranking": [
+      "B",
+      "D",
+      "A",
+      "C",
+      "F",
+      "E"
+    ]
+  }
+}

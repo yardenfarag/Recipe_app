@@ -2,7 +2,7 @@
 
 > **Sources:** production data (read-only SQL on `recipe_translations`, `recipes` and `ai_usage_events`, 22 Nov 2026), the PIN-44 judge verdicts in `eval/results/judge/translate/`, a new eval run on 22 Nov 2026 (`eval/results/translate.md`), the code in `supabase/functions/_shared/recipes/` and `shared/lib/`, and the papers and guides listed under [Sources](#sources). Every web page was read on 22 Nov 2026.
 >
-> **Project context:** recipes are translated by the `translate-recipe` Edge Function (`translateRecipeWithGemini` in `supabase/functions/_shared/recipes/translateRecipe.ts`). The model is `openai/gpt-6.1-sol` at low reasoning, with `openai/gpt-6-luna` as fallback (`TASK_MODELS.translate` in `llmClient.ts`, picked in [05-llm-per-task.md](05-llm-per-task.md)). Translations are cached per recipe and language in `recipe_translations` ([ADR 012](../adr/012-app-language-and-recipe-translations.md)). The app localizes units again when it reads a translation (`shared/lib/ensureRecipeTranslation.ts`) and formats amounts with `shared/lib/formatQuantity.ts`.
+> **Project context:** recipes are translated by the `translate-recipe` Edge Function (`translateRecipeWithLlm` in `supabase/functions/_shared/recipes/translateRecipe.ts`). The model is `openai/gpt-6.1-sol` at low reasoning, with `openai/gpt-6-luna` as fallback (`TASK_MODELS.translate` in `llmClient.ts`, picked in [05-llm-per-task.md](05-llm-per-task.md)). Translations are cached per recipe and language in `recipe_translations` ([ADR 012](../adr/012-app-language-and-recipe-translations.md)). The app localizes units again when it reads a translation (`shared/lib/ensureRecipeTranslation.ts`) and formats amounts with `shared/lib/formatQuantity.ts`.
 >
 > **Privacy:** user recipes are private. This note quotes only the short phrases that show a failure. It has no user ids, names or whole recipes. The eval cases are recipes written for the eval.
 
@@ -175,7 +175,7 @@ The prompt says: for countable items, "set unit to an empty string". The model d
 Then `translateRecipe.ts` undoes it in two places:
 
 ```ts
-const rawUnit = sanitizeGeminiText(translated?.unit ?? sourceUnit);   // line 160
+const rawUnit = sanitizeLlmText(translated?.unit ?? sourceUnit);   // line 160
 ...
 return gemini || source;   // resolveTranslatedUnit, line 215
 ```

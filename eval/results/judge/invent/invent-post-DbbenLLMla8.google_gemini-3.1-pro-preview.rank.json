@@ -1,0 +1,60 @@
+{
+  "caseId": "invent-post-DbbenLLMla8",
+  "judge": "google/gemini-3.1-pro-preview",
+  "letters": {
+    "A": "openai/gpt-6.1-terra@low",
+    "B": "openai/gpt-6.1-sol@low",
+    "C": "google/gemini-4-hydrogen@low",
+    "D": "anthropic/claude-sonnet-5.5@low",
+    "E": "anthropic/claude-haiku-5.5@low",
+    "F": "openai/gpt-6.2-sol@low"
+  },
+  "verdict": {
+    "candidates": [
+      {
+        "letter": "A",
+        "accuracy": 5,
+        "quality": 3,
+        "issues": "Typo in the ingredients list ('1 egg egg')."
+      },
+      {
+        "letter": "B",
+        "accuracy": 5,
+        "quality": 5,
+        "issues": "None. Clear instructions and accurate weight measurements."
+      },
+      {
+        "letter": "C",
+        "accuracy": 5,
+        "quality": 5,
+        "issues": "None. Very well formatted and proportional ingredients."
+      },
+      {
+        "letter": "D",
+        "accuracy": 5,
+        "quality": 4,
+        "issues": "8 oz of cream cheese is a bit large for 12 cookies, making them tricky to seal."
+      },
+      {
+        "letter": "E",
+        "accuracy": 4,
+        "quality": 2,
+        "issues": "Ingredient list is badly formatted. Omits the standard step of freezing the cream cheese filling, making it extremely messy to stuff and roll."
+      },
+      {
+        "letter": "F",
+        "accuracy": 5,
+        "quality": 5,
+        "issues": "None. Clear, concise, and logical ingredient splitting."
+      }
+    ],
+    "ranking": [
+      "B",
+      "F",
+      "C",
+      "D",
+      "A",
+      "E"
+    ]
+  }
+}

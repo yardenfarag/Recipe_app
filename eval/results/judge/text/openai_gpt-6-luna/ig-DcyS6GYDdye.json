@@ -42,6 +42,6 @@
     }
   ],
   "extra_ingredients": [],
-  "steps_score": 4,
-  "note": "Candidate adds an unstated detail about baking in ramekins."
+  "steps_score": 3,
+  "note": "The candidate adds mixing and ramekin-dividing steps that are not in the reference, which only has baking and serving steps."
 }

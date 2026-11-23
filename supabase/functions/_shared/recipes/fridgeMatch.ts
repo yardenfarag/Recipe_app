@@ -1,5 +1,5 @@
 import { generateLlmJson } from '../llm/llmClient.ts';
-import type { GeminiUsageSnapshot } from '../llm/pricing.ts';
+import type { LlmUsageSnapshot } from '../llm/pricing.ts';
 
 const TIMEOUT_MS = 35_000;
 
@@ -55,7 +55,7 @@ export async function matchFridgeToCatalog(input: {
   imageBase64: string;
   mimeType?: string;
   catalog: FridgeCatalogItem[];
-}): Promise<{ matches: FridgeMatchRow[]; usage: GeminiUsageSnapshot | null }> {
+}): Promise<{ matches: FridgeMatchRow[]; usage: LlmUsageSnapshot | null }> {
   const allowed = new Set(input.catalog.map((row) => row.id));
   const catalogText = JSON.stringify(input.catalog);
 

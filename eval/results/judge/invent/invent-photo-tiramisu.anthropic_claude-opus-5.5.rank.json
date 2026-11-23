@@ -1,0 +1,60 @@
+{
+  "caseId": "invent-photo-tiramisu",
+  "judge": "anthropic/claude-opus-5.5",
+  "letters": {
+    "A": "anthropic/claude-sonnet-5.5@low",
+    "B": "openai/gpt-6.1-terra@low",
+    "C": "google/gemini-4-hydrogen@low",
+    "D": "openai/gpt-6.2-sol@low",
+    "E": "openai/gpt-6.1-sol@low",
+    "F": "anthropic/claude-haiku-5.5@low"
+  },
+  "verdict": {
+    "candidates": [
+      {
+        "letter": "E",
+        "accuracy": 5,
+        "quality": 4,
+        "issues": "Best match for the photo: an individual plated portion with yellow custard cream and milk chocolate. The milk custard may make the cream slightly loose. Otherwise the method is safe and clear."
+      },
+      {
+        "letter": "A",
+        "accuracy": 5,
+        "quality": 4,
+        "issues": "Zabaglione cream and milk chocolate suit the image well, and the yolks are cooked. No dish size is given."
+      },
+      {
+        "letter": "D",
+        "accuracy": 4,
+        "quality": 4,
+        "issues": "The eggless cream will be whiter than the yellowish cream shown. Otherwise solid, with a pan size and clear ladyfinger counts."
+      },
+      {
+        "letter": "F",
+        "accuracy": 3,
+        "quality": 4,
+        "issues": "Adds a cocoa dusting that is not in the photo. Uses dark chocolate rather than the lighter chocolate shown. The method is otherwise sound."
+      },
+      {
+        "letter": "B",
+        "accuracy": 4,
+        "quality": 3,
+        "issues": "The eggless cream doesn't match the yellow cream shown. The recipe is very bare: no vanilla and minimal detail."
+      },
+      {
+        "letter": "C",
+        "accuracy": 4,
+        "quality": 3,
+        "issues": "The egg yolks are left raw, which is a food-safety concern. No dish size is given. The 2-hour chill is short."
+      }
+    ],
+    "ranking": [
+      "E",
+      "A",
+      "D",
+      "F",
+      "B",
+      "C"
+    ]
+  }
+}

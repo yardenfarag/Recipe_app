@@ -1,0 +1,60 @@
+{
+  "caseId": "ig-DYhOQ5SDELR--ru",
+  "judge": "google/gemini-3.1-pro-preview",
+  "letters": {
+    "A": "openai/gpt-6.1-terra@low",
+    "B": "openai/gpt-6.2-sol@low",
+    "C": "openai/gpt-6-luna",
+    "D": "google/gemini-4-hydrogen@low",
+    "E": "anthropic/claude-haiku-5.5@low",
+    "F": "openai/gpt-6.1-sol@low"
+  },
+  "verdict": {
+    "candidates": [
+      {
+        "letter": "A",
+        "accuracy": 5,
+        "quality": 4,
+        "issues": "The ingredients with '0' quantity use the genitive case ('0 соли'), which looks a bit awkward in a list format, though acceptable. 'Creamy' at the end is translated a bit verbosely but accurately captures the meaning."
+      },
+      {
+        "letter": "B",
+        "accuracy": 5,
+        "quality": 3,
+        "issues": "Awkward word order in the ingredient list ('0 по вкусу соли', '0 для украшения свежей петрушки')."
+      },
+      {
+        "letter": "C",
+        "accuracy": 5,
+        "quality": 2,
+        "issues": "Grammar error in the first ingredient: '2 куриных грудок' instead of '2 куриные грудки'. Awkward phrasing in the final step ('пока блюдо нежное и сливочное')."
+      },
+      {
+        "letter": "D",
+        "accuracy": 4,
+        "quality": 5,
+        "issues": "Dropped 'creamy' in the final sentence ('Serve hot and creamy'), but arguably this is a good localization choice as translating it literally sounds unnatural in Russian. Best handling of the '0' quantity ingredients (uses nominative case)."
+      },
+      {
+        "letter": "E",
+        "accuracy": 5,
+        "quality": 2,
+        "issues": "Grammar error in the first ingredient: '2 куриной грудки' instead of '2 куриные грудки'. Unnatural literal translation at the end ('Подавайте горячим и сливочным')."
+      },
+      {
+        "letter": "F",
+        "accuracy": 5,
+        "quality": 3,
+        "issues": "Awkward phrasing and word order in the '0' quantity ingredients ('0 по вкусу соли'). Verbose translation of the final sentence."
+      }
+    ],
+    "ranking": [
+      "D",
+      "A",
+      "F",
+      "B",
+      "C",
+      "E"
+    ]
+  }
+}
