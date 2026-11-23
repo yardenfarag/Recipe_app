@@ -19,10 +19,15 @@ export default function OnboardingScreen() {
     router.push('/auth?mode=signup&reason=onboarding');
   }
 
+  // Someone with an account (new phone, reinstall) skips the questions; their settings come from the account.
+  function signIn() {
+    router.push('/auth?mode=signin&reason=onboarding');
+  }
+
   return (
     <Screen edges={['top', 'left', 'right', 'bottom']} dense>
       <View className="flex-1 px-5 pb-2 pt-3">
-        <OnboardingPager onAccount={continueToAccount} />
+        <OnboardingPager onAccount={continueToAccount} onSignIn={signIn} />
       </View>
     </Screen>
   );
