@@ -1934,7 +1934,7 @@ export function RecipeView({
           .filter((_, i) => i !== swapIndex)
           .map((ing) => ing.name)}
         instructions={baseInstructions}
-        language={activeLanguage}
+        language={contentLanguage}
         onClose={() => setSwapIndex(null)}
         onApply={handleApplySubstitution}
       />

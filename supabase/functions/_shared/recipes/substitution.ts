@@ -274,10 +274,12 @@ function resolveLocaleGuidance(
   if (/[\u0600-\u06FF]/.test(ingredientName)) return MARKET_CONTEXT.ar;
   if (/[\u0400-\u04FF]/.test(ingredientName)) return MARKET_CONTEXT.ru;
 
+  // Latin script, no language sent: older apps. A vague "same language" let the model answer an English recipe
+  // in Spanish, so name the rule exactly and make English the default.
   return {
-    languageName: 'the same language as the ingredient name',
-    market:
-      'a typical supermarket for speakers of that language (default to a common Western supermarket if unclear)',
-    examples: 'flour, yogurt, vegetable oil, chicken stock, sugar, baking powder',
+    languageName:
+      'the language the recipe title and the ingredient name are written in (English if they are in English or it is unclear); never switch to another language',
+    market: MARKET_CONTEXT.en.market,
+    examples: MARKET_CONTEXT.en.examples,
   };
 }
