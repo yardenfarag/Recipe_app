@@ -50,15 +50,19 @@ export interface LlmUsageSnapshot {
 
 /**
  * USD per 1M tokens, used only when OpenRouter did not return `usage.cost`.
- * Rates from OpenRouter's model API, 6 Oct 2026 (docs/research/05-llm-per-task.md).
+ * Rates from OpenRouter's model API, 6 Oct 2026 (docs/research/05-llm-per-task.md); the 23 Nov 2026
+ * bake-off models added from the same API that day. First match wins, so specific names come first.
  */
 const OPENROUTER_RATES: Array<{ match: string; input: number; output: number }> = [
+  { match: 'gpt-6.2-sol', input: 2.0, output: 10.0 },
   { match: 'gpt-6.1-sol', input: 2.0, output: 10.0 },
   { match: 'gpt-6-luna', input: 0.1, output: 0.5 },
   { match: 'gpt-5.4-nano', input: 0.2, output: 1.25 },
   { match: 'gpt-4.1-mini', input: 0.4, output: 1.6 },
   { match: 'claude-sonnet-5.5', input: 2.0, output: 10.0 },
+  { match: 'claude-haiku-5.5', input: 0.1, output: 0.5 },
   { match: 'claude', input: 3.0, output: 15.0 },
+  { match: 'inkling-2-mini', input: 0.07, output: 0.3 },
   { match: 'mistral-small', input: 0.15, output: 0.6 },
   { match: 'qwen3.8-omni-flash', input: 0.15, output: 0.47 },
   { match: 'qwen3.8-flash', input: 0.15, output: 0.47 },

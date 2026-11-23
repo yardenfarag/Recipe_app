@@ -74,7 +74,9 @@ Deno.test('every kind has a primary model and live-looking fallbacks', () => {
 
 Deno.test('photo tasks use Sonnet with low reasoning; text tasks use Luna with none', () => {
   assertEquals(resolveTaskModel('photo'), { model: 'anthropic/claude-sonnet-5.5', fallbacks: ['openai/gpt-6.1-sol'], reasoning: 'low' });
-  assertEquals(resolveTaskModel('text'), { model: 'openai/gpt-6-luna', fallbacks: ['qwen/qwen3.8-flash'], reasoning: 'none' });
+  assertEquals(resolveTaskModel('text'), { model: 'openai/gpt-6-luna', fallbacks: ['anthropic/claude-haiku-5.5'], reasoning: 'none' });
+  assertEquals(resolveTaskModel('translate'), { model: 'openai/gpt-6.2-sol', fallbacks: ['openai/gpt-6-luna'], reasoning: 'low' });
+  assertEquals(resolveTaskModel('content_gate'), { model: 'thinkingmachines/inkling-2-mini', fallbacks: ['mistralai/mistral-small-2603'], reasoning: 'none' });
   assertEquals(resolveTaskModel('video').model, 'google/gemini-3.5-flash');
 });
 
@@ -154,7 +156,7 @@ Deno.test('request body carries the task model, fallbacks, reasoning and provide
     }
   }));
 
-Deno.test('text tasks send no provider ignore list', () =>
+Deno.test('translate (no anthropic model) sends no provider ignore list', () =>
   withEnv({ OPENROUTER_API_KEY: 'test' }, async () => {
     const stub = stubFetch(() => completion('{"title":"Soup"}'));
     try {
@@ -169,7 +171,28 @@ Deno.test('text tasks send no provider ignore list', () =>
       });
       const provider = stub.calls[0].provider as Record<string, unknown>;
       assertEquals(provider.ignore, undefined);
-      assertEquals(stub.calls[0].model, 'openai/gpt-6.1-sol');
+      assertEquals(stub.calls[0].model, 'openai/gpt-6.2-sol');
+    } finally {
+      stub.restore();
+    }
+  }));
+
+Deno.test('text tasks keep the Haiku fallback off Azure', () =>
+  withEnv({ OPENROUTER_API_KEY: 'test' }, async () => {
+    const stub = stubFetch(() => completion('{"title":"Soup"}'));
+    try {
+      await generateLlmJson({
+        kind: 'text',
+        systemPrompt: 'sys',
+        parts: [{ text: 'go' }],
+        responseSchema: OBJECT_SCHEMA,
+        timeoutMs: 5_000,
+        maxOutputTokens: 100,
+        context: 'test',
+      });
+      assertEquals(stub.calls[0].model, 'openai/gpt-6-luna');
+      assertEquals(stub.calls[0].models, ['anthropic/claude-haiku-5.5']);
+      assertEquals((stub.calls[0].provider as Record<string, unknown>).ignore, ['azure']);
     } finally {
       stub.restore();
     }
@@ -240,16 +263,16 @@ Deno.test('invalid JSON from the primary is retried once on the fallback', () =>
     const stub = stubFetch((body) =>
       body.model === 'openai/gpt-6-luna'
         ? completion(BROKEN)
-        : completion('{"title":"Falafel"}', { model: 'qwen/qwen3.8-flash' }),
+        : completion('{"title":"Falafel"}', { model: 'anthropic/claude-haiku-5.5' }),
     );
     try {
       const result = await generateLlmJson<{ title: string }>(TEXT_CALL);
       assertEquals(stub.calls.length, 2);
-      assertEquals(stub.calls[0].models, ['qwen/qwen3.8-flash']);
-      assertEquals(stub.calls[1].model, 'qwen/qwen3.8-flash');
+      assertEquals(stub.calls[0].models, ['anthropic/claude-haiku-5.5']);
+      assertEquals(stub.calls[1].model, 'anthropic/claude-haiku-5.5');
       assertEquals(stub.calls[1].models, undefined);
       assertEquals(result.data, { title: 'Falafel' });
-      assertEquals(result.model, 'qwen/qwen3.8-flash');
+      assertEquals(result.model, 'anthropic/claude-haiku-5.5');
     } finally {
       stub.restore();
     }
@@ -268,7 +291,7 @@ Deno.test('invalid JSON from both models fails with the same error as before', (
 
 Deno.test('no retry when OpenRouter already answered from the last fallback', () =>
   withEnv({ OPENROUTER_API_KEY: 'test' }, async () => {
-    const stub = stubFetch(() => completion(BROKEN, { model: 'qwen/qwen3.8-flash' }));
+    const stub = stubFetch(() => completion(BROKEN, { model: 'anthropic/claude-haiku-5.5' }));
     try {
       await assertRejects(() => generateLlmJson(TEXT_CALL), Error, 'OpenRouter returned invalid JSON');
       assertEquals(stub.calls.length, 1);

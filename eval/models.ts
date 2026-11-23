@@ -1,4 +1,4 @@
-// Shortlist per task. The first entries in each list are what production runs today
+// Shortlist per task. The first entries in each list are what production ran on 23 Nov 2026
 // (TASK_MODELS in supabase/functions/_shared/llm/llmClient.ts: primary, then fallback);
 // the rest are the 2026-11-23 bake-off candidates. A bare slug runs at the production
 // task's reasoning effort; `model@low` pins it (Muse Ember refuses `none`, so it runs @low on
