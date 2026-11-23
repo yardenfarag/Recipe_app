@@ -116,7 +116,7 @@ export async function fetchInstagramMeta(url: string): Promise<PlatformMeta> {
   };
 }
 
-async function fetchInstagramMediaWithFallback(
+export async function fetchInstagramMediaWithFallback(
   url: string,
 ): Promise<{ media: Record<string, unknown>; fetchUrl: string; response: Record<string, unknown> }> {
   const candidates = instagramFetchUrlCandidates(url);

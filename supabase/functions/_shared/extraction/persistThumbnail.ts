@@ -26,11 +26,13 @@ const MAX_CANDIDATES = 3;
  * swap the picture after the recipe is published (PIN-153).
  *
  * `alternates` are the source's other pictures, best first (imageSize.ts). The first picture that is
- * sharp enough is kept; when none is, the largest one (PIN-176).
+ * sharp enough is kept; when none is, the largest one (PIN-176). With `minShortSide`, nothing is
+ * stored unless the picture's short side is larger than that (the cover backfill).
  */
 export async function persistSocialThumbnail(opts: {
   sourceUrl: string;
   alternates?: string[];
+  minShortSide?: number;
   platform: Extract<Platform, 'instagram' | 'tiktok' | 'facebook' | 'pinterest' | 'web'>;
   contentId?: string | null;
 }): Promise<string | undefined> {
@@ -67,6 +69,10 @@ export async function persistSocialThumbnail(opts: {
   if (!best) return undefined;
   const { bytes, contentType } = best;
   const size = best.size ? `${best.size.width}x${best.size.height}` : null;
+  if (opts.minShortSide !== undefined && best.short <= opts.minShortSide) {
+    console.log('[persistThumbnail] not larger, kept the old one', { platform, size, minShortSide: opts.minShortSide });
+    return undefined;
+  }
 
   const ext = extensionForContentType(contentType);
   // A web image is named by a hash of its bytes. Uploads overwrite, so a name taken from the

@@ -157,3 +157,17 @@ export function resolveTikTokVideoUrl(
 }
 
 export { EMPTY_PLATFORM_META };
+
+/**
+ * A video's cover pictures, best first, for the cover backfill: one ScrapeCreators call, no comments.
+ * Stored links have no @handle (`tiktok.com/video/<id>`), which ScrapeCreators refused on 2026-11-23;
+ * any handle works, TikTok resolves the video by its id.
+ */
+export async function fetchTikTokThumbnails(videoId: string): Promise<string[]> {
+  const response = await scrapeCreatorsGet<TikTokVideoResponse>('/v2/tiktok/video', {
+    url: `https://www.tiktok.com/@tiktok/video/${videoId}`,
+  });
+  const detail = response.aweme_detail;
+  if (!detail) throw new FetchError('tiktok.ts: fetchTikTokThumbnails', 'TikTok video not found', { videoId });
+  return extractTikTokThumbnails(detail.video, response as Record<string, unknown>);
+}
