@@ -41,7 +41,7 @@ export function CoverPreview({
         {title.trim() || t("cookbook.defaultTitle")}
       </span>
       <span className="mt-1 text-[7px] text-muted">
-        {count === 1 ? t("cookbook.recipeCountOne", { count }) : t("cookbook.recipeCountOther", { count })}
+        {t("cookbook.recipeCount", { count })}
       </span>
     </div>
   );

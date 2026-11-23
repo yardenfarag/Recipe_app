@@ -186,12 +186,12 @@ export default function ShoppingListScreen() {
         skipped.length === 0
           ? ''
           : skipped.length === 1
-            ? `\n\n${t('list.pantrySkippedOne', { name: skipped[0].name })}`
-            : `\n\n${t('list.pantrySkippedOther', { count: skipped.length })}`;
+            ? `\n\n${t('list.pantrySkippedNamed', { name: skipped[0].name })}`
+            : `\n\n${t('list.pantrySkipped', { count: skipped.length })}`;
       Alert.alert(
         t('list.fromRecipesSuccessTitle'),
         `${t('list.fromRecipesSuccessBody', {
-          recipes: selected.length,
+          count: selected.length,
           added: result.addedCount,
           merged: result.mergedCount,
         })}${pantryNote}`,
@@ -354,10 +354,7 @@ export default function ShoppingListScreen() {
     if (checkedCount === 0) return;
     setConfirmAction({
       title: t('list.clearCheckedTitle'),
-      message: t(
-        checkedCount === 1 ? 'list.clearCheckedBodyOne' : 'list.clearCheckedBodyOther',
-        { count: checkedCount },
-      ),
+      message: t('list.clearCheckedBody', { count: checkedCount }),
       label: t('list.clearChecked'),
       run: async () => {
         try {
@@ -376,7 +373,7 @@ export default function ShoppingListScreen() {
     if (items.length === 0) return;
     setConfirmAction({
       title: t('list.deleteAllTitle'),
-      message: t(items.length === 1 ? 'list.deleteAllBodyOne' : 'list.deleteAllBodyOther', {
+      message: t('list.deleteAllBody', {
         count: items.length,
       }),
       label: t('list.deleteAll'),
@@ -402,10 +399,7 @@ export default function ShoppingListScreen() {
             style={{ backgroundColor: colors.background }}
             accessible
             accessibilityRole="header"
-            accessibilityLabel={`${row.title}, ${t(
-              row.count === 1 ? 'a11y.itemCountOne' : 'a11y.itemCountOther',
-              { count: row.count },
-            )}`}
+            accessibilityLabel={`${row.title}, ${t('a11y.itemCount', { count: row.count })}`}
           >
             <Text className="flex-shrink text-base font-bold" style={{ color: colors.text }}>
               {row.title}
@@ -710,12 +704,7 @@ export default function ShoppingListScreen() {
                 style={{ color: colors.warning }}
                 accessibilityLiveRegion="polite"
               >
-                {t(
-                  typingDuplicateCount === 1
-                    ? 'list.typingDuplicateOne'
-                    : 'list.typingDuplicateOther',
-                  { count: typingDuplicateCount },
-                )}
+                {t('list.typingDuplicate', { count: typingDuplicateCount })}
               </Text>
             ) : null}
             <View className="flex-row gap-2">

@@ -287,7 +287,7 @@ function LibraryScreen() {
 
   const collectionToDelete = collections.find((c) => c.id === deleteCollectionId);
   const count = filtered ? displayed.length : total || displayed.length;
-  const countText = count === 1 ? t("library.recipeCountOne", { count }) : t("library.recipeCountOther", { count });
+  const countText = t("library.recipeCount", { count });
   const libraryEmpty = !loading && !error && recipes.length === 0 && total === 0;
 
   const searching = search.trim().length > 0;
@@ -308,7 +308,7 @@ function LibraryScreen() {
             {/* Just the number on a phone, where the bar needs the width. */}
             <span className="md:hidden">{formatCount(credits, i18n.language)}</span>
             <span className="max-md:hidden">
-              {credits === 1 ? t("web.library.creditsOne") : t("web.library.credits", { count: formatCount(credits, i18n.language) })}
+              {t("web.library.credits", { count: credits })}
             </span>
           </Link>
         ) : null}

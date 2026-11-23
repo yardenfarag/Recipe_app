@@ -103,7 +103,7 @@ function Body({ onAdd, onDone }: { onAdd: (items: ShoppingListIncomingItem[]) =>
     try {
       const result = await onAdd(picked);
       showToast(
-        t("list.fromRecipesSuccessBody", { recipes: sections.length, added: result.addedCount, merged: result.mergedCount }),
+        t("list.fromRecipesSuccessBody", { count: sections.length, added: result.addedCount, merged: result.mergedCount }),
       );
       onDone();
     } catch (caught) {
@@ -132,7 +132,7 @@ function Body({ onAdd, onDone }: { onAdd: (items: ShoppingListIncomingItem[]) =>
           {t("common.back")}
         </Button>
         <Button trackId="shopping_list_from_recipes.confirm" busy={busy} disabled={pickedCount === 0} onClick={() => void add()}>
-          {t(pickedCount === 1 ? "addToList.addOne" : "addToList.addOther", { count: pickedCount })}
+          {t("addToList.add", { count: pickedCount })}
         </Button>
       </>
     );
@@ -297,7 +297,7 @@ function RecipeChooser({
           shown.map((recipe) => {
             const on = selectedIds.includes(recipe.id);
             const count = recipe.ingredients?.length ?? 0;
-            const countText = t(count === 1 ? "list.ingredientCountOne" : "list.ingredientCountOther", { count });
+            const countText = t("list.ingredientCount", { count });
             return (
               <li key={recipe.id}>
                 <button

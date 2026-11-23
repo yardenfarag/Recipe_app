@@ -776,7 +776,7 @@ export default function AddRecipeScreen() {
   const signedInQuotaLabel = (() => {
     if (!user || totalCredits == null) return null;
     return t("snap.creditsRemaining", {
-      total: totalCredits,
+      count: totalCredits,
       free: freeExtractsRemaining ?? 0,
       purchased: purchasedCredits ?? 0,
     });

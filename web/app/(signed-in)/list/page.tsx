@@ -322,7 +322,7 @@ export default function ListPage() {
         open={confirm?.kind === "checked"}
         onOpenChange={(open) => !open && setConfirm(null)}
         title={t("list.clearCheckedTitle")}
-        description={t(checkedCount === 1 ? "list.clearCheckedBodyOne" : "list.clearCheckedBodyOther", { count: checkedCount })}
+        description={t("list.clearCheckedBody", { count: checkedCount })}
         confirmLabel={t("list.clearChecked")}
         trackId="shopping_list.clear_checked_dialog"
         onConfirm={() => clearChecked().catch(failed("list.clearFailed"))}
@@ -331,7 +331,7 @@ export default function ListPage() {
         open={confirm?.kind === "all"}
         onOpenChange={(open) => !open && setConfirm(null)}
         title={t("list.deleteAllTitle")}
-        description={t(items.length === 1 ? "list.deleteAllBodyOne" : "list.deleteAllBodyOther", { count: items.length })}
+        description={t("list.deleteAllBody", { count: items.length })}
         confirmLabel={t("list.deleteAll")}
         trackId="shopping_list.clear_all_dialog"
         onConfirm={() => clearAll().catch(failed("list.deleteFailed"))}
@@ -377,7 +377,7 @@ function Group({
           <TileBadge aria-hidden className="tabular-nums">
             {count}
           </TileBadge>
-          <span className="sr-only">, {t(count === 1 ? "a11y.itemCountOne" : "a11y.itemCountOther", { count })}</span>
+          <span className="sr-only">, {t("a11y.itemCount", { count })}</span>
         </TileLabel>
         {action}
       </div>

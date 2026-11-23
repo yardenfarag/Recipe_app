@@ -75,7 +75,7 @@ export function StepsPanel({
         <h2 id="recipe-steps-heading" className="text-[22px] font-bold text-text md:text-[26px]">
           {t("recipe.instructions")}
         </h2>
-        <span className="text-sm text-muted">{t(count === 1 ? "recipe.stepCountOne" : "recipe.stepCountOther", { count })}</span>
+        <span className="text-sm text-muted">{t("recipe.stepCount", { count })}</span>
         {onCookMode ? (
           <button
             type="button"

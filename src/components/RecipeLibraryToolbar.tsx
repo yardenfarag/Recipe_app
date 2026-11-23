@@ -245,7 +245,7 @@ export function RecipeLibraryToolbar({
         style={{ color: colors.textSecondary }}
         accessibilityLiveRegion="polite"
       >
-        {t(resultCount === 1 ? 'library.recipeCountOne' : 'library.recipeCountOther', {
+        {t('library.recipeCount', {
           count: resultCount,
         })}
       </Text>

@@ -169,7 +169,7 @@ function PickerRow({ recipe, position, onToggle }: { recipe: Recipe; position: n
     recipe.estimated_time_minutes != null && recipe.estimated_time_minutes > 0
       ? formatRecipeDuration(recipe.estimated_time_minutes, { minutes: t("recipe.durationMin"), hours: t("recipe.durationHr") })
       : null;
-  const ingredients = t(count === 1 ? "list.ingredientCountOne" : "list.ingredientCountOther", { count });
+  const ingredients = t("list.ingredientCount", { count });
   const meta = [time, ingredients].filter(Boolean).join(" · ");
   return (
     // Off-screen rows are not painted, so a library of hundreds scrolls smoothly.

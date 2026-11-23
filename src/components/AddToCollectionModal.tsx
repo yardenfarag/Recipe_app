@@ -149,11 +149,7 @@ export function AddToCollectionModal({
                   onPress={() => toggle(collection.id)}
                   accessibilityRole="checkbox"
                   accessibilityState={{ checked: isOn }}
-                  accessibilityLabel={`${collection.name}, ${
-                    count === 1
-                      ? t('library.recipeCountOne', { count })
-                      : t('library.recipeCountOther', { count })
-                  }`}
+                  accessibilityLabel={`${collection.name}, ${t('library.recipeCount', { count })}`}
                 >
                   <View
                     className="h-6 w-6 items-center justify-center rounded-md border-2"
@@ -169,9 +165,7 @@ export function AddToCollectionModal({
                       {collection.name}
                     </Text>
                     <Text className="text-xs" style={{ color: colors.textSecondary }}>
-                      {count === 1
-                        ? t('library.recipeCountOne', { count })
-                        : t('library.recipeCountOther', { count })}
+                      {t('library.recipeCount', { count })}
                     </Text>
                   </View>
                 </Pressable>

@@ -129,7 +129,7 @@ export function AddToShoppingListModal({
             disabled={saving || selectedCount === 0}
             onPress={() => void handleConfirm()}
             accessibilityRole="button"
-            accessibilityLabel={t(selectedCount === 1 ? 'addToList.addOne' : 'addToList.addOther', {
+            accessibilityLabel={t('addToList.add', {
               count: selectedCount,
             })}
             accessibilityState={{ disabled: saving || selectedCount === 0, busy: saving }}
@@ -138,7 +138,7 @@ export function AddToShoppingListModal({
               <ActivityIndicator color={colors.onPrimary} />
             ) : (
               <Text className="text-sm font-bold" style={{ color: colors.onPrimary }}>
-                {t(selectedCount === 1 ? 'addToList.addOne' : 'addToList.addOther', {
+                {t('addToList.add', {
                   count: selectedCount,
                 })}
               </Text>

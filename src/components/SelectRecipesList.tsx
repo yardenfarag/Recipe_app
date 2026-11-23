@@ -248,11 +248,7 @@ export function SelectRecipesList({
               onPress={() => onChangeSelectedIds(toggleOrderedId(selectedIds, item.id))}
               accessibilityRole="checkbox"
               accessibilityState={{ checked: isOn }}
-              accessibilityLabel={`${title}, ${
-                ingredientCount === 1
-                  ? t('list.ingredientCountOne', { count: ingredientCount })
-                  : t('list.ingredientCountOther', { count: ingredientCount })
-              }`}
+              accessibilityLabel={`${title}, ${t('list.ingredientCount', { count: ingredientCount })}`}
             >
               <View
                 className="h-6 w-6 items-center justify-center rounded-md border-2"
@@ -272,9 +268,7 @@ export function SelectRecipesList({
                   {title}
                 </Text>
                 <Text className="text-xs" style={{ color: colors.textSecondary }}>
-                  {ingredientCount === 1
-                    ? t('list.ingredientCountOne', { count: ingredientCount })
-                    : t('list.ingredientCountOther', { count: ingredientCount })}
+                  {t('list.ingredientCount', { count: ingredientCount })}
                 </Text>
               </View>
             </Pressable>

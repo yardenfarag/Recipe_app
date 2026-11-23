@@ -1885,14 +1885,11 @@ export function RecipeView({
             result.alreadyOnList.length === 0
               ? ''
               : result.alreadyOnList.length === 1
-                ? `\n\n${t('recipe.alreadyOnListOne', { name: result.alreadyOnList[0] })}`
-                : `\n\n${t('recipe.alreadyOnListOther', { count: result.alreadyOnList.length })}`;
+                ? `\n\n${t('recipe.alreadyOnListNamed', { name: result.alreadyOnList[0] })}`
+                : `\n\n${t('recipe.alreadyOnList', { count: result.alreadyOnList.length })}`;
           Alert.alert(
             t('recipe.addedToList'),
-            `${t(
-              selected.length === 1 ? 'recipe.addedToListBodyOne' : 'recipe.addedToListBodyOther',
-              { count: selected.length },
-            )}${dupNote}`,
+            `${t('recipe.addedToListBody', { count: selected.length })}${dupNote}`,
           );
         }}
       />
@@ -2148,8 +2145,8 @@ function Section({
           {count != null && (
             <Text className="text-sm font-medium" style={{ color: colors.textSecondary }}>
               {countKind === 'steps'
-                ? t(count === 1 ? 'recipe.stepCountOne' : 'recipe.stepCountOther', { count })
-                : t(count === 1 ? 'recipe.itemCountOne' : 'recipe.itemCountOther', { count })}
+                ? t('recipe.stepCount', { count })
+                : t('recipe.itemCount', { count })}
             </Text>
           )}
         </View>

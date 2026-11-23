@@ -102,10 +102,7 @@ function Body({
     }
   }
 
-  const count = (collection: RecipeCollection) =>
-    collection.recipeIds.length === 1
-      ? t("library.recipeCountOne", { count: 1 })
-      : t("library.recipeCountOther", { count: collection.recipeIds.length });
+  const count = (collection: RecipeCollection) => t("library.recipeCount", { count: collection.recipeIds.length });
 
   return (
     <DialogContent

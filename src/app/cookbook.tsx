@@ -153,10 +153,7 @@ export default function CookbookScreen() {
           pageSize,
           copy: {
             brand: t('cookbook.madeWith'),
-            recipeCount:
-              selectedRecipes.length === 1
-                ? t('cookbook.recipeCountOne', { count: selectedRecipes.length })
-                : t('cookbook.recipeCountOther', { count: selectedRecipes.length }),
+            recipeCount: t('cookbook.recipeCount', { count: selectedRecipes.length }),
             ingredientsHeading: t('cookbook.ingredients'),
             stepsHeading: t('cookbook.steps'),
           },

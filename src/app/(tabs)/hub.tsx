@@ -180,9 +180,7 @@ export default function CookingHubScreen() {
         >
           {showSearching
             ? t('hub.searching')
-            : t((total || cards.length) === 1 ? 'library.recipeCountOne' : 'library.recipeCountOther', {
-                count: total || cards.length,
-              })}
+            : t('library.recipeCount', { count: total || cards.length })}
         </Text>
 
         {showInlineError ? (

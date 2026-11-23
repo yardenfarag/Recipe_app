@@ -48,10 +48,7 @@ export function cookbookNutritionLabel(recipe: Recipe, t: TFunction): string {
 export function cookbookCopy(t: TFunction, recipeCount: number): CookbookHtmlCopy {
   return {
     brand: t('cookbook.madeWith'),
-    recipeCount:
-      recipeCount === 1
-        ? t('cookbook.recipeCountOne', { count: recipeCount })
-        : t('cookbook.recipeCountOther', { count: recipeCount }),
+    recipeCount: t('cookbook.recipeCount', { count: recipeCount }),
     ingredientsHeading: t('cookbook.ingredients'),
     stepsHeading: t('cookbook.steps'),
   };

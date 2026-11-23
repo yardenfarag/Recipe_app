@@ -109,7 +109,7 @@ export default function AdminUsageScreen() {
       const balance = await adminAdjustRecipeCredits(id, amount);
       Alert.alert(
         t('admin.creditUpdated'),
-        t('admin.creditBalance', { user: shortId(id), balance }),
+        t('admin.creditBalance', { user: shortId(id), count: balance }),
       );
       setGrantUserId('');
     } catch (err) {

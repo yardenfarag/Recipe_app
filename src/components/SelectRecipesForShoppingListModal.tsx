@@ -91,20 +91,14 @@ export function SelectRecipesForShoppingListModal({
             disabled={saving || selectedCount === 0}
             onPress={() => void handleConfirm()}
             accessibilityRole="button"
-            accessibilityLabel={
-              selectedCount === 1
-                ? t('list.addRecipesOne', { count: selectedCount })
-                : t('list.addRecipesOther', { count: selectedCount })
-            }
+            accessibilityLabel={t('list.addRecipes', { count: selectedCount })}
             accessibilityState={{ disabled: saving || selectedCount === 0, busy: saving }}
           >
             {saving ? (
               <ActivityIndicator color={colors.onPrimary} />
             ) : (
               <Text className="text-base font-bold" style={{ color: colors.onPrimary }}>
-                {selectedCount === 1
-                  ? t('list.addRecipesOne', { count: selectedCount })
-                  : t('list.addRecipesOther', { count: selectedCount })}
+                {t('list.addRecipes', { count: selectedCount })}
               </Text>
             )}
           </Pressable>
