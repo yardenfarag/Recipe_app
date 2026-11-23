@@ -353,7 +353,7 @@ export default function AuthScreen() {
             ? t('auth.reasonShared')
             : reason === 'hub_recipe'
               ? t('auth.reasonHub')
-            : reason === 'onboarding'
+            : reason === 'onboarding' && mode === 'signup'
               ? t('auth.reasonOnboarding')
             : reason === 'edit'
               ? t('auth.reasonEdit')

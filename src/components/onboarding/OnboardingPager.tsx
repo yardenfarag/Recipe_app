@@ -34,10 +34,12 @@ const MAX_DIETS = 4;
 
 type OnboardingPagerProps = {
   onAccount: () => void;
+  /** "Already have an account?" on the first screen: sign in without answering the questions. */
+  onSignIn: () => void;
 };
 
 /** First-run preferences. Each answer is saved as they tap, and they can change it in Settings. */
-export function OnboardingPager({ onAccount }: OnboardingPagerProps) {
+export function OnboardingPager({ onAccount, onSignIn }: OnboardingPagerProps) {
   const { t } = useTranslation();
   const { colors } = useThemePreference();
   const { profile, persist } = useKitchenProfile();
@@ -431,6 +433,18 @@ export function OnboardingPager({ onAccount }: OnboardingPagerProps) {
             </Text>
           </Pressable>
         )}
+        {isVision ? (
+          <Pressable
+            trackId="onboarding.vision.sign_in"
+            onPress={onSignIn}
+            accessibilityRole="button"
+            className="min-h-[44px] items-center justify-center py-2 active:opacity-70"
+          >
+            <Text className="text-sm font-semibold" style={{ color: colors.textSecondary }}>
+              {t('auth.haveAccount')}
+            </Text>
+          </Pressable>
+        ) : null}
         {isCook && diets.length > 0 ? (
           <Pressable
             trackId="onboarding.cook.everything_instead"
