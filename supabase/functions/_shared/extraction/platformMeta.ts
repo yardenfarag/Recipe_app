@@ -9,6 +9,11 @@ export interface PlatformMeta {
   /** Page or video title when the platform provides one. */
   title?: string;
   thumbnailUrl?: string;
+  /**
+   * The source's other pictures of the post, best first (imageSize.ts). persistThumbnail tries them
+   * when `thumbnailUrl` turns out to be small.
+   */
+  thumbnailCandidates?: string[];
   /** Transcript / captions text when the scraper provides it. */
   captions?: string;
   topComments: PostComment[];

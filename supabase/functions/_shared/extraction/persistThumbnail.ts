@@ -3,6 +3,7 @@ import type { Database } from '../core/database.types.ts';
 
 import type { Platform } from './platform.ts';
 import { readBodyCapped, safeFetch } from '../core/safeFetch.ts';
+import { type ImageSize, readImageSize, SHARP_SHORT_SIDE, shortSide } from './imageSize.ts';
 
 const FETCH_TIMEOUT_MS = 12_000;
 /** Matches the recipe-thumbnails bucket's file_size_limit. */
@@ -15,14 +16,21 @@ const MAX_THUMBNAIL_BYTES = 10 * 1024 * 1024;
  */
 const WEB_IMAGE_TYPES = new Set(['image/jpeg', 'image/png', 'image/webp', 'image/gif', 'image/avif']);
 
+/** At most this many of a source's pictures are downloaded while looking for a sharp one. */
+const MAX_CANDIDATES = 3;
+
 /**
  * Downloads a thumbnail and uploads it to Supabase Storage, so the app and the public Hub page
  * show a stable copy of ours. For social CDNs that is the only way to show it at all (their
- * links expire and need a Referer). For a web page's og:image it means the site's owner can't
+ * links expire and need a Referer). For a web page's image it means the site's owner can't
  * swap the picture after the recipe is published (PIN-153).
+ *
+ * `alternates` are the source's other pictures, best first (imageSize.ts). The first picture that is
+ * sharp enough is kept; when none is, the largest one (PIN-176).
  */
 export async function persistSocialThumbnail(opts: {
   sourceUrl: string;
+  alternates?: string[];
   platform: Extract<Platform, 'instagram' | 'tiktok' | 'facebook' | 'pinterest' | 'web'>;
   contentId?: string | null;
 }): Promise<string | undefined> {
@@ -36,69 +44,29 @@ export async function persistSocialThumbnail(opts: {
     return undefined;
   }
 
-  const referer =
-    platform === 'instagram'
-      ? 'https://www.instagram.com/'
-      : platform === 'facebook'
-        ? 'https://www.facebook.com/'
-        : platform === 'tiktok'
-          ? 'https://www.tiktok.com/'
-          : null;
-
+  const urls = [...new Set([sourceUrl, ...(opts.alternates ?? [])].map((url) => url.trim()).filter(Boolean))]
+    .slice(0, MAX_CANDIDATES);
+  // One timer for every download, so looking for a sharper picture can't hold the import up.
   const controller = new AbortController();
   const timeout = setTimeout(() => controller.abort(), FETCH_TIMEOUT_MS);
-
-  // One timer for the headers and the body, so a slow image can't hold the import up.
-  let contentType: string;
-  let bytes: Uint8Array | null;
+  let best: (DownloadedImage & { short: number }) | null = null;
+  const tried: { host: string | null; size: string | null }[] = [];
   try {
-    const res = await safeFetch(sourceUrl, {
-      headers: {
-        ...(referer ? { Referer: referer } : {}),
-        Accept: 'image/avif,image/webp,image/apng,image/*,*/*;q=0.8',
-        'User-Agent':
-          'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
-      },
-      signal: controller.signal,
-    });
-
-    if (!res.ok) {
-      await res.body?.cancel();
-      console.warn('[persistThumbnail] fetch HTTP error', {
-        platform,
-        status: res.status,
-        host: safeHost(sourceUrl),
-      });
-      return undefined;
+    for (const url of urls) {
+      const image = await downloadImage(url, platform, controller.signal);
+      if (!image) continue;
+      const short = shortSide(image.size);
+      tried.push({ host: safeHost(url), size: image.size ? `${image.size.width}x${image.size.height}` : null });
+      // A picture we can't measure still beats none; a measured one beats it.
+      if (!best || short > best.short) best = { ...image, short };
+      if (short >= SHARP_SHORT_SIDE) break;
     }
-
-    contentType = (res.headers.get('content-type') ?? 'image/jpeg').split(';')[0].trim().toLowerCase();
-    if (!WEB_IMAGE_TYPES.has(contentType)) {
-      await res.body?.cancel();
-      console.warn('[persistThumbnail] not an image', { contentType, host: safeHost(sourceUrl) });
-      return undefined;
-    }
-
-    bytes = await readBodyCapped(res, MAX_THUMBNAIL_BYTES);
-  } catch (err) {
-    console.warn('[persistThumbnail] fetch failed', {
-      platform,
-      host: safeHost(sourceUrl),
-      error: err instanceof Error ? err.message : String(err),
-    });
-    return undefined;
   } finally {
     clearTimeout(timeout);
   }
-
-  if (!bytes) {
-    console.warn('[persistThumbnail] image too large', { host: safeHost(sourceUrl) });
-    return undefined;
-  }
-  if (bytes.byteLength < 100) {
-    console.warn('[persistThumbnail] image too small', { bytes: bytes.byteLength });
-    return undefined;
-  }
+  if (!best) return undefined;
+  const { bytes, contentType } = best;
+  const size = best.size ? `${best.size.width}x${best.size.height}` : null;
 
   const ext = extensionForContentType(contentType);
   // A web image is named by a hash of its bytes. Uploads overwrite, so a name taken from the
@@ -128,9 +96,75 @@ export async function persistSocialThumbnail(opts: {
     platform,
     path,
     bytes: bytes.byteLength,
+    size,
+    tried,
     publicHost: safeHost(data.publicUrl),
   });
   return data.publicUrl;
+}
+
+interface DownloadedImage {
+  bytes: Uint8Array;
+  contentType: string;
+  size: ImageSize | null;
+}
+
+/** One picture, if it is a web image of a sensible size. Never throws. */
+async function downloadImage(
+  url: string,
+  platform: Platform,
+  signal: AbortSignal,
+): Promise<DownloadedImage | null> {
+  const referer =
+    platform === 'instagram'
+      ? 'https://www.instagram.com/'
+      : platform === 'facebook'
+        ? 'https://www.facebook.com/'
+        : platform === 'tiktok'
+          ? 'https://www.tiktok.com/'
+          : null;
+  try {
+    const res = await safeFetch(url, {
+      headers: {
+        ...(referer ? { Referer: referer } : {}),
+        Accept: 'image/avif,image/webp,image/apng,image/*,*/*;q=0.8',
+        'User-Agent':
+          'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+      },
+      signal,
+    });
+
+    if (!res.ok) {
+      await res.body?.cancel();
+      console.warn('[persistThumbnail] fetch HTTP error', { platform, status: res.status, host: safeHost(url) });
+      return null;
+    }
+
+    const contentType = (res.headers.get('content-type') ?? 'image/jpeg').split(';')[0].trim().toLowerCase();
+    if (!WEB_IMAGE_TYPES.has(contentType)) {
+      await res.body?.cancel();
+      console.warn('[persistThumbnail] not an image', { contentType, host: safeHost(url) });
+      return null;
+    }
+
+    const bytes = await readBodyCapped(res, MAX_THUMBNAIL_BYTES);
+    if (!bytes) {
+      console.warn('[persistThumbnail] image too large', { host: safeHost(url) });
+      return null;
+    }
+    if (bytes.byteLength < 100) {
+      console.warn('[persistThumbnail] image too small', { bytes: bytes.byteLength });
+      return null;
+    }
+    return { bytes, contentType, size: readImageSize(bytes) };
+  } catch (err) {
+    console.warn('[persistThumbnail] fetch failed', {
+      platform,
+      host: safeHost(url),
+      error: err instanceof Error ? err.message : String(err),
+    });
+    return null;
+  }
 }
 
 /**

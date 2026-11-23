@@ -400,6 +400,15 @@ const DISLIKE_WORDS: Record<DislikeSuggestionKey, RawDictionary> = {
     terms: `
       tomato, tomatoes, passata, עגבני*, tomate, jitomate, помидор*, томат*, طماطم, بندورة, طماطة
     `,
+    // A spoon of paste cooks into the sauce: no pieces, no fresh tomato taste. Most people who skip
+    // tomatoes eat it, and an alert for it made the warning easy to ignore. Sauce and passata still match.
+    unless: `
+      tomato paste, tomato concentrate, tomato powder, tomato puree,
+      רסק עגבניות, רכז עגבניות,
+      pasta de tomate, concentrado de tomate,
+      томатн* паст*, томат паст*, томатн* концентрат*,
+      معجون طماطم, معجون بندورة, رب بندورة, رب طماطم
+    `,
   },
   chili: {
     terms: `

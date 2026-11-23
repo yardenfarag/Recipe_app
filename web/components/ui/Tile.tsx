@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, type ElementType, type HTMLAttributes, type ReactNode } from "react";
+import { useCallback, useState, type ElementType, type HTMLAttributes, type ReactNode } from "react";
 
 import { cn } from "@/lib/cn";
 
@@ -58,6 +58,25 @@ export function TileBadge({ tone = "soft", className, ...props }: HTMLAttributes
 }
 
 /**
+ * Whether a photo has arrived, so it can fade in over a placeholder instead of popping in (PIN-176). A photo the
+ * browser already has (the card's photo, opened as the recipe's) counts as arrived at once, with no fade.
+ */
+export function usePhotoLoaded(src: string | null | undefined) {
+  const [loadedSrc, setLoadedSrc] = useState<string | null>(null);
+  const ref = useCallback(
+    (img: HTMLImageElement | null) => {
+      if (img && src && img.complete && img.naturalWidth > 0) setLoadedSrc(src);
+    },
+    [src],
+  );
+  return { loaded: Boolean(src) && loadedSrc === src, ref, onLoad: () => setLoadedSrc(src ?? null) };
+}
+
+/** The classes of a photo that fades in once it has loaded. */
+const photoFadeClasses = (loaded: boolean) =>
+  cn("motion-safe:transition-opacity motion-safe:duration-300", loaded ? "opacity-100" : "opacity-0");
+
+/**
  * A photo filling a tile, fading to dark at the bottom, with words and buttons on top. The text colours over the
  * photo are the pack's dark ones in light mode too (text-on-scrim, text-on-scrim-muted), since a photo doesn't
  * change with the theme. Without a photo (or when it fails to load) `fallback` fills the tile instead.
@@ -68,6 +87,7 @@ export function PhotoTile({
   fallback,
   fade = "bottom",
   onPhotoError,
+  priority = false,
   children,
   className,
   contentClassName,
@@ -76,6 +96,8 @@ export function PhotoTile({
 }: Omit<HTMLAttributes<HTMLElement>, "children"> & {
   /** Called when the photo fails to load, for an owner that lays itself out differently without one. */
   onPhotoError?: () => void;
+  /** The page's main photo: fetched before the others. */
+  priority?: boolean;
   src?: string | null;
   alt?: string;
   /** Shown behind the content when there is no photo. */
@@ -92,17 +114,28 @@ export function PhotoTile({
 }) {
   const [failed, setFailed] = useState(false);
   const showPhoto = Boolean(src) && !failed;
+  const { loaded: photoLoaded, ref: photoRef, onLoad: onPhotoLoad } = usePhotoLoaded(src);
   return (
     <Component {...props} className={cn("relative isolate overflow-hidden rounded-tile bg-scrim text-on-scrim", className)}>
       {showPhoto ? (
-        // Recipe photos come from other sites, already sized, so there is nothing for next/image to optimise.
-        // eslint-disable-next-line @next/next/no-img-element
-        <img src={src ?? undefined} alt={alt} decoding="async" onError={() => {
-            setFailed(true);
-            onPhotoError?.();
-          }}
-          className="absolute inset-0 -z-20 h-full w-full object-cover"
-        />
+        <>
+          {photoLoaded ? null : <div aria-hidden className="absolute inset-0 -z-20 bg-element motion-safe:animate-pulse" />}
+          {/* Our own copies, sized at import (PIN-176); resizing per screen would need a paid image service (ADR 027). */}
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img
+            ref={photoRef}
+            src={src ?? undefined}
+            alt={alt}
+            decoding="async"
+            fetchPriority={priority ? "high" : undefined}
+            onLoad={onPhotoLoad}
+            onError={() => {
+              setFailed(true);
+              onPhotoError?.();
+            }}
+            className={cn("absolute inset-0 -z-20 h-full w-full object-cover", photoFadeClasses(photoLoaded))}
+          />
+        </>
       ) : (
         <div aria-hidden className="absolute inset-0 -z-20 grid place-items-center bg-scrim text-on-scrim-muted">
           {fallback}

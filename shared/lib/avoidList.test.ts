@@ -182,6 +182,25 @@ describe('findAvoidMatches: typed items', () => {
     expect(dislikesIn('פטריות שמפיניון', ['mushrooms'])).toEqual(['mushrooms']);
   });
 
+  it.each([
+    ['tomato paste', 'tomato'],
+    ['2 tbsp tomato paste', 'עגבניות'],
+    ['רסק עגבניות', 'עגבניות'],
+    ['pasta de tomate', 'tomate'],
+    ['томатная паста', 'помидоры'],
+    ['томат-паста', 'помидоры'],
+    ['معجون الطماطم', 'طماطم'],
+  ])('%s is not a tomato dislike (%s)', (name, dislike) => {
+    expect(dislikesIn(name, [dislike])).toEqual([]);
+  });
+
+  it('still flags tomatoes you can taste', () => {
+    expect(dislikesIn('cherry tomatoes', ['עגבניות'])).toEqual(['עגבניות']);
+    expect(dislikesIn('tomato sauce', ['tomato'])).toEqual(['tomato']);
+    expect(dislikesIn('passata', ['tomato'])).toEqual(['tomato']);
+    expect(dislikesIn('sun-dried tomatoes', ['tomato'])).toEqual(['tomato']);
+  });
+
   it('is cautious with a typed allergy', () => {
     const matches = findAvoidMatches(['cornstarch', 'celery stalks'], {
       ...NOTHING,
