@@ -261,7 +261,7 @@ export default function CookingHubScreen() {
       <Text variant="caption" weight="semibold" tone="muted" accessibilityLiveRegion="polite">
         {showSearching
           ? t('hub.searching')
-          : t(count === 1 ? 'library.recipeCountOne' : 'library.recipeCountOther', { count })}
+          : t('library.recipeCount', { count })}
       </Text>
 
       {showInlineError ? (
@@ -402,7 +402,7 @@ const HubCard = memo(function HubCard({ card, recipe }: { card: RecipeCard; reci
   const { rtl } = useRtl();
   const title = recipe.display_title ?? recipe.title;
   const source = t(platformLabelKey(card.platform));
-  const saves = t(card.save_count === 1 ? 'hub.saveCountOne' : 'hub.saveCountOther', { count: card.save_count });
+  const saves = t('hub.saveCount', { count: card.save_count });
   const time =
     recipe.estimated_time_minutes != null
       ? formatRecipeDuration(recipe.estimated_time_minutes, {

@@ -1109,7 +1109,7 @@ export function RecipeView({
       {!useTabs ? (
         <SectionHeading
           title={t('recipe.ingredients')}
-          count={t(scaledIngredients.length === 1 ? 'recipe.itemCountOne' : 'recipe.itemCountOther', {
+          count={t('recipe.itemCount', {
             count: scaledIngredients.length,
           })}
         />
@@ -1193,7 +1193,7 @@ export function RecipeView({
     </View>
   ) : null;
 
-  const stepCount = t(baseInstructions.length === 1 ? 'recipe.stepCountOne' : 'recipe.stepCountOther', {
+  const stepCount = t('recipe.stepCount', {
     count: baseInstructions.length,
   });
   const stepsSection = showSteps ? (
@@ -1840,14 +1840,11 @@ export function RecipeView({
             result.alreadyOnList.length === 0
               ? ''
               : result.alreadyOnList.length === 1
-                ? `\n\n${t('recipe.alreadyOnListOne', { name: result.alreadyOnList[0] })}`
-                : `\n\n${t('recipe.alreadyOnListOther', { count: result.alreadyOnList.length })}`;
+                ? `\n\n${t('recipe.alreadyOnListNamed', { name: result.alreadyOnList[0] })}`
+                : `\n\n${t('recipe.alreadyOnList', { count: result.alreadyOnList.length })}`;
           Alert.alert(
             t('recipe.addedToList'),
-            `${t(
-              selected.length === 1 ? 'recipe.addedToListBodyOne' : 'recipe.addedToListBodyOther',
-              { count: selected.length },
-            )}${dupNote}`,
+            `${t('recipe.addedToListBody', { count: selected.length })}${dupNote}`,
           );
         }}
       />

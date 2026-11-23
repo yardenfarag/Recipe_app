@@ -22,11 +22,6 @@ describe('platformLabelKey', () => {
 describe('hubCardDetail', () => {
   it('names the source and how many people saved it', () => {
     const card = { platform: 'youtube', save_count: 3 } as RecipeCard;
-    expect(hubCardDetail(card, t)).toBe('hub.platformYoutube · hub.saveCountOther:3');
-  });
-
-  it('uses the singular for one save', () => {
-    const card = { platform: 'web', save_count: 1 } as RecipeCard;
-    expect(hubCardDetail(card, t)).toBe('hub.platformWeb · hub.saveCountOne:1');
+    expect(hubCardDetail(card, t)).toBe('hub.platformYoutube · hub.saveCount:3');
   });
 });

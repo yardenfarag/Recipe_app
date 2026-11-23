@@ -22,8 +22,9 @@ function flatten(
   return result;
 }
 
+/** The variables a string uses. `{{count, number}}` counts as `count`: the part after the comma is a format. */
 function interpolationKeys(value: string): string[] {
-  return [...value.matchAll(/\{\{([^}]+)\}\}/g)].map((match) => match[1]).sort();
+  return [...value.matchAll(/\{\{([^}]+)\}\}/g)].map((match) => match[1].split(',')[0].trim()).sort();
 }
 
 /**
@@ -56,9 +57,12 @@ describe('locale contracts', () => {
     const mismatches: string[] = [];
     for (const [key, englishValue] of Object.entries(english)) {
       const ours = interpolationKeys(locale[key]);
-      const theirs = interpolationKeys(englishValue);
+      const plural = /^(.*)_(zero|one|two|few|many|other)$/.exec(key);
+      // A plural form is checked against the English _other: English "appears once" has no {{count}}, but Russian
+      // _one also covers 21 and needs it.
+      const theirs = interpolationKeys(plural && `${plural[1]}_other` in english ? english[`${plural[1]}_other`] : englishValue);
       // A plural form may leave out {{count}} ("وصفة واحدة" already says one), but uses no other variable.
-      const aligned = /_(zero|one|two|few|many|other)$/.test(key)
+      const aligned = plural
         ? ours.every((variable) => theirs.includes(variable)) &&
           theirs.every((variable) => variable === 'count' || ours.includes(variable))
         : JSON.stringify(ours) === JSON.stringify(theirs);
@@ -74,15 +78,11 @@ describe('locale contracts', () => {
     expect(mismatches).toEqual([]);
   });
 
-  it.each([
-    ['ru', ru],
-    ['ar', ar],
-    ['he', he],
-  ] as const)('%s has every plural form its language needs for the WhatsApp import', (name, locale) => {
-    const strings = flatten(locale);
+  // Without a form, i18next shows the English text: "You have 2 credits" on a Hebrew page.
+  it.each(Object.entries({ en: english, ...locales }))('%s has every plural form its language needs', (name, strings) => {
     const categories = new Intl.PluralRules(name).resolvedOptions().pluralCategories as string[];
     const bases = Object.keys(english)
-      .filter((key) => key.startsWith('whatsappImport.') && key.endsWith('_other'))
+      .filter((key) => key.endsWith('_other'))
       .map((key) => key.slice(0, -'_other'.length));
     const missing = bases.flatMap((base) =>
       categories.filter((category) => !(`${base}_${category}` in strings)).map((category) => `${base}_${category}`),

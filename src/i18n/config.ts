@@ -1,3 +1,6 @@
+// Hermes has no Intl.PluralRules, and without it i18next knows only "one" and "other": Russian, Arabic and Hebrew
+// counts would take the wrong form. Load it before i18next.
+import 'intl-pluralrules';
 import i18n from 'i18next';
 import { initReactI18next } from 'react-i18next';
 

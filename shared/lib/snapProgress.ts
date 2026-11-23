@@ -105,7 +105,7 @@ type Translate = (key: string, options?: Record<string, unknown>) => string;
 export function snapEtaText(eta: SnapEta, t: Translate): string {
   switch (eta.kind) {
     case 'secondsLeft':
-      return t('snap.etaSecondsLeft', { seconds: eta.seconds });
+      return t('snap.etaSecondsLeft', { count: eta.seconds });
     case 'fewSecondsLeft':
       return t('snap.etaFewSecondsLeft');
     case 'fewMoreSeconds':

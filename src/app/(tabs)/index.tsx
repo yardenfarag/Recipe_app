@@ -494,7 +494,7 @@ export default function HomeScreen() {
 
   const searching = search.trim().length > 0;
   const resultCount = hasActiveFilters ? displayedRecipes.length : total || displayedRecipes.length;
-  const countWords = t(resultCount === 1 ? 'library.recipeCountOne' : 'library.recipeCountOther', {
+  const countWords = t('library.recipeCount', {
     count: resultCount,
   });
 

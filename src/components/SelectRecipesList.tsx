@@ -202,10 +202,7 @@ export function SelectRecipesList({
             const isOn = selectedIds.includes(item.id);
             const title = item.display_title?.trim() || item.title;
             const ingredientCount = item.ingredients?.length ?? 0;
-            const countLabel =
-              ingredientCount === 1
-                ? t('list.ingredientCountOne', { count: ingredientCount })
-                : t('list.ingredientCountOther', { count: ingredientCount });
+            const countLabel = t('list.ingredientCount', { count: ingredientCount });
             return (
               <Pressable
                 trackId="select_recipes.recipe.toggle"

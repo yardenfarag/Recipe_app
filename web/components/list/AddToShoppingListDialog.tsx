@@ -144,7 +144,7 @@ function Picker({
           </Button>
         </DialogClose>
         <Button trackId="add_to_list.add" busy={busy} disabled={count === 0} onClick={() => void add()}>
-          {t(count === 1 ? "addToList.addOne" : "addToList.addOther", { count })}
+          {t("addToList.add", { count })}
         </Button>
       </div>
     </>
@@ -153,11 +153,11 @@ function Picker({
 
 /** "3 items added." and, if some were already listed, which. Mobile says the same after adding from a recipe. */
 export function addedMessage(t: TFunction, count: number, alreadyOnList: string[]): string {
-  const added = t(count === 1 ? "recipe.addedToListBodyOne" : "recipe.addedToListBodyOther", { count });
+  const added = t("recipe.addedToListBody", { count });
   if (alreadyOnList.length === 0) return added;
   const note =
     alreadyOnList.length === 1
-      ? t("recipe.alreadyOnListOne", { name: alreadyOnList[0] })
-      : t("recipe.alreadyOnListOther", { count: alreadyOnList.length });
+      ? t("recipe.alreadyOnListNamed", { name: alreadyOnList[0] })
+      : t("recipe.alreadyOnList", { count: alreadyOnList.length });
   return `${added} ${note}`;
 }

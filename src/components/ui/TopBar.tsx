@@ -12,15 +12,6 @@ import { PinchLogo } from './PinchLogo';
 import { Text } from './Text';
 import { HAIRLINE } from './tokens';
 
-/** A count in the app language's digits and grouping ("1,200"). */
-function formatCount(count: number, language: string): string {
-  try {
-    return new Intl.NumberFormat(language).format(count);
-  } catch {
-    return String(count);
-  }
-}
-
 /**
  * The credits balance as a pill: a small accent dot and "12 credits". Opens the credits screen unless given its own
  * `onPress`.
@@ -39,10 +30,8 @@ export function CreditsPill({
   const { t } = useTranslation();
   const { colors } = useThemePreference();
   const type = useTypography();
-  const label =
-    credits === 1
-      ? t('web.library.creditsOne')
-      : t('web.library.credits', { count: formatCount(credits, type.language) as unknown as number });
+  // "{{count, number}}" in the string writes the number in the app language's digits and grouping ("1,200").
+  const label = t('web.library.credits', { count: credits });
 
   return (
     <Pressable

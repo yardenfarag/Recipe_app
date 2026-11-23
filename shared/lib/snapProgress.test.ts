@@ -103,7 +103,7 @@ describe('snapEtaText', () => {
   const t = (key: string, options?: Record<string, unknown>) => (options ? `${key}:${JSON.stringify(options)}` : key);
 
   it('passes the seconds to the translation', () => {
-    expect(snapEtaText({ kind: 'secondsLeft', seconds: 15 }, t)).toBe('snap.etaSecondsLeft:{"seconds":15}');
+    expect(snapEtaText({ kind: 'secondsLeft', seconds: 15 }, t)).toBe('snap.etaSecondsLeft:{"count":15}');
   });
 
   it('has a line for each other state', () => {

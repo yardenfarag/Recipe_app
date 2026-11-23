@@ -97,9 +97,7 @@ export function SelectRecipesForShoppingListModal({
             disabled={selectedCount === 0}
             onPress={() => void handleConfirm()}
           >
-            {selectedCount === 1
-              ? t('list.addRecipesOne', { count: selectedCount })
-              : t('list.addRecipesOther', { count: selectedCount })}
+            {t('list.addRecipes', { count: selectedCount })}
           </Button>
         </View>
       }

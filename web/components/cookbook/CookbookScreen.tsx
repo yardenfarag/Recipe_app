@@ -146,7 +146,7 @@ export function CookbookScreen() {
     );
   }
 
-  const countText = book.length === 1 ? t("cookbook.recipeCountOne", { count: 1 }) : t("cookbook.recipeCountOther", { count: book.length });
+  const countText = t("cookbook.recipeCount", { count: book.length });
 
   return (
     <>

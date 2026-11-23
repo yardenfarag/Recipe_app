@@ -102,7 +102,7 @@ function HubScreen() {
   }, [hub.diets, language, t]);
 
   const count = hub.total || cards.length;
-  const countText = querying ? t("hub.searching") : count === 1 ? t("library.recipeCountOne", { count }) : t("library.recipeCountOther", { count });
+  const countText = querying ? t("hub.searching") : t("library.recipeCount", { count });
 
   // Cards are showing but the last load failed: say so where it happened, with a way to try again.
   const retryAlert = (

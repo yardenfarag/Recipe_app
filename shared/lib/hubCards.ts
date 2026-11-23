@@ -25,8 +25,6 @@ export function platformLabelKey(platform: HubPlatform | 'all') {
 /** The line under a Hub card's title: "YouTube · 3 saves". */
 export function hubCardDetail(card: RecipeCard, t: TFunction) {
   const source = t(platformLabelKey(card.platform));
-  const saves = t(card.save_count === 1 ? 'hub.saveCountOne' : 'hub.saveCountOther', {
-    count: card.save_count,
-  });
+  const saves = t('hub.saveCount', { count: card.save_count });
   return `${source} · ${saves}`;
 }

@@ -131,7 +131,7 @@ export const AddItemForm = forwardRef<
         </p>
       ) : typingDuplicates > 0 ? (
         <p id="add-item-duplicate" aria-live="polite" className="mt-2 px-4 text-sm font-medium text-warning">
-          {t(typingDuplicates === 1 ? "list.typingDuplicateOne" : "list.typingDuplicateOther", { count: typingDuplicates })}
+          {t("list.typingDuplicate", { count: typingDuplicates })}
         </p>
       ) : null}
     </form>

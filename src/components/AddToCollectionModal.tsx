@@ -131,10 +131,7 @@ export function AddToCollectionModal({
             localCollections.map((collection, index) => {
               const isOn = checked.has(collection.id);
               const count = collection.recipeIds.length;
-              const countText =
-                count === 1
-                  ? t('library.recipeCountOne', { count })
-                  : t('library.recipeCountOther', { count });
+              const countText = t('library.recipeCount', { count });
               return (
                 <Pressable
                   trackId="add_to_collection.collection.toggle"

@@ -106,7 +106,7 @@ export function IngredientsPanel({ display, choices, avoid, have, onHaveChange, 
             {t("recipe.ingredients")}
           </h2>
           {count > 0 ? (
-            <span className="text-sm font-medium text-muted">{t(count === 1 ? "recipe.itemCountOne" : "recipe.itemCountOther", { count })}</span>
+            <span className="text-sm font-medium text-muted">{t("recipe.itemCount", { count })}</span>
           ) : null}
         </div>
         <Stepper
