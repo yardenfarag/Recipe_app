@@ -59,10 +59,7 @@ export default {
     "webPurchaseDone": "رائع",
     "unavailable": "شراء الرصيد غير متاح بعد في هذا الإصدار.",
     "webOnlyBody": "شراء الرصيد متاح في تطبيق Pinch. الموقع ما يقبل الدفع حالياً.",
-    "webOnlyAction": "حمّل التطبيق",
-    "syncPurchases": "مزامنة المشتريات",
-    "syncComplete": "تمّت مزامنة المشتريات.",
-    "syncFailed": "ما قدرنا نزامن المشتريات. جرّب مرة ثانية."
+    "webOnlyAction": "حمّل التطبيق"
   },
   "admin": {
     "creditAdjustment": "تعديل الرصيد",
@@ -749,6 +746,7 @@ export default {
     "removeFavorite": "إزالة من المفضلة",
     "recipeNotFound": "ما لقينا الوصفة.",
     "saved": "في وصفاتك",
+    "backToRecipe": "رجوع للوصفة",
     "refreshFailed": "ما قدرنا نحدّث — نعرض ما هو محفوظ.",
     "loadFailedTitle": "ما قدرنا نحمّل الوصفات",
     "emptyTitle": "لا توجد وصفات بعد",

@@ -51,10 +51,7 @@ export default {
     "webPurchaseDone": "Great",
     "unavailable": "Credit purchases aren’t available in this build yet.",
     "webOnlyBody": "Buying credits is available in the Pinch app. This website can’t take payments yet.",
-    "webOnlyAction": "Get the app",
-    "syncPurchases": "Sync purchases",
-    "syncComplete": "Purchases synced.",
-    "syncFailed": "Couldn’t sync purchases. Try again."
+    "webOnlyAction": "Get the app"
   },
   "admin": {
     "creditAdjustment": "Adjust recipe credits",
@@ -693,6 +690,7 @@ export default {
     "removeFavorite": "Remove from favorites",
     "recipeNotFound": "Recipe not found.",
     "saved": "In your Library",
+    "backToRecipe": "Back to recipe",
     "refreshFailed": "Couldn’t refresh — showing saved recipes.",
     "loadFailedTitle": "Couldn’t load recipes",
     "emptyTitle": "No recipes yet",

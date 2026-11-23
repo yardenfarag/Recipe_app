@@ -154,9 +154,3 @@ export async function purchaseCreditPack(
     throw error;
   }
 }
-
-export async function syncPurchases(): Promise<void> {
-  if (!purchasesEnabled() || Platform.OS === 'web') return;
-  const { default: Purchases } = await loadSdk();
-  await Purchases.syncPurchases();
-}

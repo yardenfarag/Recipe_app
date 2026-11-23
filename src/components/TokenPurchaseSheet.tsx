@@ -20,7 +20,6 @@ import {
   packIsPurchasable,
   purchaseCreditPack,
   purchasesEnabled,
-  syncPurchases,
   type CreditPack,
 } from '@/lib/purchases';
 
@@ -107,22 +106,6 @@ export function TokenPurchaseSheet({
       }
     } catch {
       setError(t('credits.purchaseFailed'));
-    } finally {
-      setBusyId(null);
-    }
-  }
-
-  async function handleSync() {
-    if (busyId) return;
-    setBusyId('sync');
-    setError(null);
-    try {
-      await syncPurchases();
-      await refresh();
-      onPurchased?.();
-      setMessage(t('credits.syncComplete'));
-    } catch {
-      setError(t('credits.syncFailed'));
     } finally {
       setBusyId(null);
     }
@@ -239,20 +222,6 @@ export function TokenPurchaseSheet({
             </Text>
           ) : null}
         </View>
-
-        {livePurchases ? (
-          <Button
-            trackId="credits.sync_purchases"
-            variant="ghost"
-            fullWidth
-            busy={busyId === 'sync'}
-            disabled={Boolean(busyId) && busyId !== 'sync'}
-            accessibilityLabel={t('credits.syncPurchases')}
-            onPress={() => void handleSync()}
-          >
-            {t('credits.syncPurchases')}
-          </Button>
-        ) : null}
       </ScrollView>
     </SheetModal>
   );

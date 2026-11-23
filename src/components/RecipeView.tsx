@@ -1312,7 +1312,13 @@ export function RecipeView({
                         key={tag}
                         size="sm"
                         trackId="recipe.tag.open"
-                        onPress={() => router.dismissTo({ pathname: '/', params: { tag } })}
+                        onPress={() =>
+                          // The Library shows "Back to <recipe>" when it knows where the tag came from.
+                          router.dismissTo({
+                            pathname: '/',
+                            params: recipeId ? { tag, from: recipeId, fromTitle: recipe.title } : { tag },
+                          })
+                        }
                         accessibilityLabel={t('a11y.showRecipesTagged', { tag: translateRecipeTag(tag, t) })}
                       >
                         {translateRecipeTag(tag, t)}

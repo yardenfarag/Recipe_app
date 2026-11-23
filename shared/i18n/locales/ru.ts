@@ -55,10 +55,7 @@ export default {
     "webPurchaseDone": "Отлично",
     "unavailable": "В этой версии купить кредиты пока нельзя.",
     "webOnlyBody": "Кредиты можно купить в приложении Pinch. На сайте оплата пока недоступна.",
-    "webOnlyAction": "Открыть приложение",
-    "syncPurchases": "Синхронизировать покупки",
-    "syncComplete": "Покупки синхронизированы.",
-    "syncFailed": "Не получилось синхронизировать покупки. Попробуйте ещё раз."
+    "webOnlyAction": "Открыть приложение"
   },
   "admin": {
     "creditAdjustment": "Поправить кредиты",
@@ -721,6 +718,7 @@ export default {
     "removeFavorite": "Убрать из избранного",
     "recipeNotFound": "Рецепт не найден.",
     "saved": "В ваших рецептах",
+    "backToRecipe": "Назад к рецепту",
     "refreshFailed": "Не получилось обновить — показываем то, что уже сохранено.",
     "loadFailedTitle": "Не получилось загрузить рецепты",
     "emptyTitle": "Рецептов пока нет",

@@ -53,10 +53,7 @@ export default {
     "webPurchaseDone": "מעולה",
     "unavailable": "עדיין אי אפשר לקנות קרדיטים בגרסה הזו.",
     "webOnlyBody": "קניית קרדיטים זמינה באפליקציית Pinch. באתר עדיין אי אפשר לשלם.",
-    "webOnlyAction": "לאפליקציה",
-    "syncPurchases": "סנכרון רכישות",
-    "syncComplete": "הרכישות סונכרנו.",
-    "syncFailed": "לא הצלחנו לסנכרן רכישות. נסו שוב."
+    "webOnlyAction": "לאפליקציה"
   },
   "admin": {
     "creditAdjustment": "עדכון קרדיטים",
@@ -707,6 +704,7 @@ export default {
     "removeFavorite": "הסרה מהמועדפים",
     "recipeNotFound": "המתכון לא נמצא.",
     "saved": "במתכונים שלכם",
+    "backToRecipe": "חזרה למתכון",
     "refreshFailed": "לא הצלחנו לרענן — מציגים את מה ששמור.",
     "loadFailedTitle": "לא הצלחנו לטעון מתכונים",
     "emptyTitle": "עדיין אין מתכונים",

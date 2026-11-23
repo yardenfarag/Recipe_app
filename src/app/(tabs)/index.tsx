@@ -117,6 +117,9 @@ export default function HomeScreen() {
   const flipRotation = useSharedValue(0);
   const params = useLocalSearchParams<{
     tag?: string;
+    /** The recipe whose tag was tapped, for "Back to recipe". */
+    from?: string;
+    fromTitle?: string;
     collection?: string;
     favorites?: string;
     saved?: string;
@@ -149,6 +152,17 @@ export default function HomeScreen() {
       setSelectedTags((prev) => (prev.includes(tagParam) ? prev : [...prev, tagParam]));
     }
   }, [params.tag]);
+
+  // A tag tapped on a recipe opens the Library filtered by it, which closes the recipe. Offer the way back while
+  // that tag is still selected.
+  const fromTag = typeof params.tag === 'string' ? params.tag.trim().toLowerCase() : '';
+  const backToRecipeId =
+    typeof params.from === 'string' && params.from && fromTag && selectedTags.includes(fromTag) ? params.from : null;
+  const goBackToRecipe = useCallback(() => {
+    if (!backToRecipeId) return;
+    router.setParams({ from: undefined, fromTitle: undefined });
+    router.push({ pathname: '/recipe/[id]', params: { id: backToRecipeId } });
+  }, [backToRecipeId]);
 
   useEffect(() => {
     const collectionParam =
@@ -501,6 +515,23 @@ export default function HomeScreen() {
   const listHeader = (
     <View style={{ gap: 16, paddingBottom: 16 }}>
       <TopBar />
+      {backToRecipeId ? (
+        <Button
+          variant="secondary"
+          size="sm"
+          icon="chevron-back"
+          trackId="library.back_to_recipe"
+          accessibilityLabel={
+            typeof params.fromTitle === 'string' && params.fromTitle
+              ? `${t('library.backToRecipe')}: ${params.fromTitle}`
+              : undefined
+          }
+          onPress={goBackToRecipe}
+          style={{ alignSelf: 'flex-start' }}
+        >
+          {t('library.backToRecipe')}
+        </Button>
+      ) : null}
       <LibrarySearchBar value={search} onChange={setSearch} />
 
       {savedBanner ? (

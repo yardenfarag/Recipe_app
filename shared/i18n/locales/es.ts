@@ -53,10 +53,7 @@ export default {
     "webPurchaseDone": "Genial",
     "unavailable": "Todavía no se pueden comprar créditos en esta versión.",
     "webOnlyBody": "Comprar créditos está disponible en la app de Pinch. Esta web todavía no puede cobrar.",
-    "webOnlyAction": "Consigue la app",
-    "syncPurchases": "Sincronizar compras",
-    "syncComplete": "Compras sincronizadas.",
-    "syncFailed": "No se pudieron sincronizar las compras. Inténtalo de nuevo."
+    "webOnlyAction": "Consigue la app"
   },
   "admin": {
     "creditAdjustment": "Ajustar créditos",
@@ -707,6 +704,7 @@ export default {
     "removeFavorite": "Quitar de favoritos",
     "recipeNotFound": "No encontramos esa receta.",
     "saved": "En tus recetas",
+    "backToRecipe": "Volver a la receta",
     "refreshFailed": "No se pudo actualizar — te mostramos lo que ya estaba guardado.",
     "loadFailedTitle": "No se pudieron cargar las recetas",
     "emptyTitle": "Aún no hay recetas",
