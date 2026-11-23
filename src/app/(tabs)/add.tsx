@@ -70,6 +70,7 @@ import {
 import { autoSaveRecipe } from "@/lib/autoSaveRecipe";
 import { clearRecipeDraft, setRecipeDraft } from "@/lib/recipeDraft";
 import { resolveShareIntentAction } from "@/lib/shareIntentGate";
+import { whatsAppExportInShare } from "@/lib/whatsappImport/shareRouting";
 import { recipeIsInvented } from "@shared/lib/recipeOrigin";
 import { importErrorText } from "@shared/lib/serverErrors";
 import type {
@@ -209,6 +210,8 @@ export default function AddRecipeScreen() {
       releaseShareClaim();
       return;
     }
+    // A WhatsApp chat export opens the WhatsApp import screen (ShareIntentRouter), not Snap.
+    if (whatsAppExportInShare(shareIntent.files)) return;
 
     const sharedFile = sharedRecipeFile(shareIntent.files);
     // Wait until the payload is present — on Android hasShareIntent can flip
@@ -1031,6 +1034,28 @@ export default function AddRecipeScreen() {
             </View>
             <KitIcon icon="chevron-forward" size={18} color={colors.textSecondary} />
           </Tile>
+
+          {/* ADR 032: many recipes at once from a WhatsApp chat export. The old Expo web app can't read the file;
+              the web/ app has its own page for it. */}
+          {Platform.OS !== "web" ? (
+            <Tile
+              size="md"
+              trackId="snap.whatsapp_import"
+              onPress={() => router.push("/whatsapp-import")}
+              accessibilityLabel={t("whatsappImport.entryTitle")}
+              accessibilityHint={t("whatsappImport.entryBody")}
+              style={{ flexDirection: "row", alignItems: "center", gap: 14, padding: 14, minHeight: 72 }}
+            >
+              <IconSquare icon="logo-whatsapp" />
+              <View style={{ flex: 1, minWidth: 0, gap: 2 }}>
+                <Text variant="h3">{t("whatsappImport.entryTitle")}</Text>
+                <Text variant="caption" tone="muted">
+                  {t("whatsappImport.entryBody")}
+                </Text>
+              </View>
+              <KitIcon icon="chevron-forward" size={18} color={colors.textSecondary} />
+            </Tile>
+          ) : null}
 
           {/* Share from another app: Pinch opens here and Snap runs by itself. */}
           <Tile

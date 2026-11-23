@@ -115,6 +115,16 @@ function RootNavigator() {
               ),
             }}
           />
+          {/* Import recipes from a WhatsApp chat (ADR 032), from the Add tab or a shared export. */}
+          <Stack.Screen
+            name="whatsapp-import"
+            options={{
+              title: t('whatsappImport.entryTitle'),
+              headerLeft: (props) => (
+                <StackHeaderBackButton tintColor={props.tintColor} fallback="/add" />
+              ),
+            }}
+          />
           <Stack.Screen
             name="settings/credits"
             options={{

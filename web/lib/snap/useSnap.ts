@@ -4,12 +4,9 @@ import { useRouter } from "next/navigation";
 import { useCallback, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 
-import { DEFAULT_SOURCE_LANGUAGE } from "@shared/lib/appLanguages";
 import { FREE_MONTHLY_EXTRACT_LIMIT } from "@shared/lib/quotas";
 import { importErrorText } from "@shared/lib/serverErrors";
 import { requestSettledWithoutRecipe, snapOutcome, type SnapMessageKey } from "@shared/lib/snapOutcome";
-import { saveRecipeDraft } from "@shared/lib/supabase/saveRecipeDraft";
-import type { ExtractedRecipe } from "@shared/types/recipe";
 import {
   extractionOutcomeIsUncertain,
   extractRecipe,
@@ -30,27 +27,13 @@ import { joinErrorSentences } from "@shared/lib/translateAppError";
 
 import { useAuth } from "@/components/AuthProvider";
 import { useLanguage } from "@/components/LanguageProvider";
-import { captureRecipeExtracted, captureRecipeSaved } from "@/lib/analytics";
+import { captureRecipeExtracted } from "@/lib/analytics";
 import { webSalesOn } from "@/lib/credits/salesSwitch";
 import { signInPathFor } from "@/lib/nextPath";
+import { autoSaveRecipe } from "@/lib/snap/autoSave";
 import { clearSnapDraft, setSnapDraft } from "@/lib/snap/draft";
 import { setImportDraft } from "@/lib/editor/importDraft";
 import { acknowledgeRequest, webExtractionContext } from "@/lib/snap/requestIds";
-
-/** Saves a Snap's recipe for the cook. Returns its id, or null when the save failed (the preview takes over). */
-async function autoSaveSnap(recipe: ExtractedRecipe): Promise<string | null> {
-  try {
-    const { recipe: saved, recoveredDuplicate } = await saveRecipeDraft({
-      ...recipe,
-      source_language: recipe.source_language ?? DEFAULT_SOURCE_LANGUAGE,
-    });
-    if (!recoveredDuplicate) captureRecipeSaved({ from: recipeIsInvented(recipe) ? "invent" : "extract", save: "auto" });
-    return saved.id;
-  } catch (error) {
-    console.warn("[snap] auto-save failed, opening the preview", error);
-    return null;
-  }
-}
 
 /** Snap a recipe that is written down, or Guess the recipe for a dish. */
 export type SnapIntent = "extract" | "invent";
@@ -216,7 +199,7 @@ export function useSnap({ onSettled }: { onSettled?: () => void } = {}) {
             leaving = true;
             // Saved straight away: many people left the preview without saving and lost the recipe. If the save
             // fails, the draft is still stored and the preview keeps its Save button.
-            const savedId = await autoSaveSnap(kitchen.recipe);
+            const savedId = await autoSaveRecipe(kitchen.recipe);
             if (savedId) {
               clearSnapDraft();
               // As on mobile: the recipe is kept as written, and the cook is told their kitchen wasn't applied.

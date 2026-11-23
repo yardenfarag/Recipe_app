@@ -117,12 +117,32 @@ export interface RecipeImportSource {
   source_language: string | null;
 }
 
-/** The recipes_platform_check values an import can have. */
-export const IMPORT_PLATFORMS = ['youtube', 'instagram', 'tiktok', 'facebook', 'pinterest', 'web', 'photo'] as const;
+/**
+ * The recipes_platform_check values an import can have. `unknown` only with `manual`: a written text (ADR 032), which
+ * extract-recipe saves as a written recipe with no link.
+ */
+export const IMPORT_PLATFORMS = [
+  'youtube',
+  'instagram',
+  'tiktok',
+  'facebook',
+  'pinterest',
+  'web',
+  'photo',
+  'unknown',
+] as const;
 export type ImportPlatform = (typeof IMPORT_PLATFORMS)[number];
 
 /** The recipes_extraction_source_check values extract-recipe produces. */
-export const IMPORT_EXTRACTION_SOURCES = ['description', 'comments', 'captions', 'video', 'web', 'photo'] as const;
+export const IMPORT_EXTRACTION_SOURCES = [
+  'description',
+  'comments',
+  'captions',
+  'video',
+  'web',
+  'photo',
+  'manual',
+] as const;
 export type ImportExtractionSource = (typeof IMPORT_EXTRACTION_SOURCES)[number];
 
 export type RecipeEditField =
@@ -287,8 +307,11 @@ function parseImportSource(value: unknown): RecipeImportSource | null {
   const extraction_source = IMPORT_EXTRACTION_SOURCES.find((s) => s === value.extraction_source);
   if (!platform || !extraction_source) return null;
   const original_url = httpUrl(value.original_url);
-  // Only a photo import has no link.
-  if (!original_url && platform !== 'photo') return null;
+  // A written text (ADR 032) is the one import with no platform, and it has no link either.
+  const written = platform === 'unknown' || extraction_source === 'manual';
+  if (written && (platform !== 'unknown' || extraction_source !== 'manual' || original_url)) return null;
+  // Only a photo import and a written one have no link.
+  if (!original_url && platform !== 'photo' && !written) return null;
   const language = str(value.source_language).trim().toLowerCase();
   return {
     original_url,

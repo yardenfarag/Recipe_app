@@ -23,6 +23,7 @@
       "@shared/*": ["../shared/*"],
       "@supabase/supabase-js": ["./node_modules/@supabase/supabase-js"],
       "base64-arraybuffer": ["./node_modules/base64-arraybuffer"],
+      "fflate": ["./node_modules/fflate"],
       "i18next": ["./node_modules/i18next"]
     }
   },

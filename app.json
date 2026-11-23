@@ -112,7 +112,8 @@
           "androidIntentFilters": [
             "text/*",
             "image/*",
-            "application/pdf"
+            "application/pdf",
+            "application/zip"
           ],
           "iosActivationRules": {
             "NSExtensionActivationSupportsText": true,
