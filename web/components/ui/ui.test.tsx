@@ -8,6 +8,7 @@ import { hideToast, showToast } from "@shared/lib/toast";
 import { ConfirmDialog, Dialog, DialogContent, DialogTrigger } from "@/components/ui/Dialog";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/Sheet";
 import { EmptyState, ErrorState } from "@/components/ui/States";
+import { PhotoTile } from "@/components/ui/Tile";
 import { ToastHost } from "@/components/ui/Toast";
 import { TooltipProvider } from "@/components/ui/Tooltip";
 import i18n from "@/lib/i18n";
@@ -131,5 +132,19 @@ describe("States", () => {
     wrap(<EmptyState icon={<svg />} title="No recipes yet" body="Snap one to start." action={<button>Snap</button>} />);
     expect(screen.getByRole("heading", { name: "No recipes yet" })).toBeDefined();
     expect(screen.getByRole("button", { name: "Snap" })).toBeDefined();
+  });
+});
+
+describe("PhotoTile", () => {
+  it("shows a placeholder until the photo loads, then fades the photo in", () => {
+    const { container } = render(<PhotoTile src="https://example.com/soup.jpg" alt="Soup" priority />);
+    const img = screen.getByRole("img", { name: "Soup" });
+    expect(img.className).toContain("opacity-0");
+    expect(img.getAttribute("fetchpriority")).toBe("high");
+    expect(container.querySelector("[class*='animate-pulse']")).not.toBeNull();
+
+    fireEvent.load(img);
+    expect(img.className).toContain("opacity-100");
+    expect(container.querySelector("[class*='animate-pulse']")).toBeNull();
   });
 });

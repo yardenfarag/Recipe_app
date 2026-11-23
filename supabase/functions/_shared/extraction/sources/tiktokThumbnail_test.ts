@@ -2,7 +2,7 @@
 
 import { assertEquals } from 'jsr:@std/assert@1';
 
-import { extractTikTokThumbnail } from './tiktokThumbnail.ts';
+import { extractTikTokThumbnail, extractTikTokThumbnails } from './tiktokThumbnail.ts';
 
 const CDN = 'https://p16-common-sign.tiktokcdn-us.com/tos-no1a-i-0068-no/ogf5RERkvCFF';
 
@@ -32,4 +32,15 @@ Deno.test('falls back to top-level fields, skipping HEIC', () => {
 Deno.test('nothing usable gives undefined', () => {
   assertEquals(extractTikTokThumbnail({ cover: list('heic') }, { cover_url: `${CDN}.heic` }), undefined);
   assertEquals(extractTikTokThumbnail(undefined, {}), undefined);
+});
+
+Deno.test('the video frame (origin_cover) comes before the 300×400 preview (cover)', () => {
+  const origin = { url_list: [`${CDN}-origin.jpeg`] };
+  const cover = { url_list: [`${CDN}-cover.jpeg`] };
+  assertEquals(extractTikTokThumbnails({ cover, origin_cover: origin, dynamic_cover: list('webp') }, {}), [
+    `${CDN}-origin.jpeg`,
+    `${CDN}-cover.jpeg`,
+    `${CDN}.webp?x-expires=1&x-signature=abc`,
+  ]);
+  assertEquals(extractTikTokThumbnail({ cover, origin_cover: origin }, {}), `${CDN}-origin.jpeg`);
 });

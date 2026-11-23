@@ -8,7 +8,7 @@ import { assert, assertEquals, assertRejects } from 'jsr:@std/assert@1';
 import { FetchError } from '../core/errors.ts';
 import { fetchErrorInfo } from './fetchErrorMessage.ts';
 import type { PageRead, PageReader, PageReadEvent } from './pageReader.ts';
-import { fetchHtml, fetchHtmlOrRead, googleDocExportUrl } from './webRecipe.ts';
+import { fetchHtml, fetchHtmlOrRead, googleDocExportUrl, pageImageCandidates } from './webRecipe.ts';
 
 // An address literal, so safeFetch needs no DNS lookup.
 const PAGE = 'http://93.184.216.34/recipe';
@@ -255,4 +255,39 @@ Deno.test('with no service configured, a 403 fails as before', async () => {
   } finally {
     restore();
   }
+});
+
+// PIN-176: a recipe plugin lists the photo smallest first; the page's og:image is the big one.
+Deno.test('takes the largest recipe photo, not the first one listed', () => {
+  const html = `<meta property="og:image" content="https://site.com/stew.jpg">
+    <meta property="og:image:width" content="1200"><meta property="og:image:height" content="1200">`;
+  const recipe = {
+    image: [
+      'https://site.com/stew-225x225.jpg',
+      'https://site.com/stew-260x195.jpg',
+      'https://site.com/stew-320x180.jpg',
+      'https://site.com/stew.jpg',
+    ],
+  };
+  // The small copies follow by their short side, the one a cover is cropped to.
+  assertEquals(pageImageCandidates(html, recipe), [
+    'https://site.com/stew.jpg',
+    'https://site.com/stew-225x225.jpg',
+    'https://site.com/stew-260x195.jpg',
+    'https://site.com/stew-320x180.jpg',
+  ]);
+});
+
+Deno.test('reads ImageObjects with their stated size, and pages with only og:image', () => {
+  const recipe = {
+    image: [
+      { '@type': 'ImageObject', url: 'https://site.com/small.jpg', width: 300, height: 200 },
+      { '@type': 'ImageObject', contentUrl: 'https://site.com/big.jpg', width: '1600', height: '900' },
+    ],
+  };
+  assertEquals(pageImageCandidates('', recipe), ['https://site.com/big.jpg', 'https://site.com/small.jpg']);
+  assertEquals(pageImageCandidates('<meta name="twitter:image" content="https://site.com/t.jpg">', null), [
+    'https://site.com/t.jpg',
+  ]);
+  assertEquals(pageImageCandidates('<meta property="og:image" content="/relative.jpg">', null), []);
 });

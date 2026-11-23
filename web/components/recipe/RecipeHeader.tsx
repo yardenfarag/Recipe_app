@@ -235,6 +235,7 @@ export function RecipeHeader({
         {hasPicture ? (
           <PhotoTile
             src={recipe.image_url}
+            priority
             fade="none"
             onPhotoError={() => setPictureFailed(true)}
             className={cn(

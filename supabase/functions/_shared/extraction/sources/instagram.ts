@@ -5,6 +5,7 @@ import {
   sanitizeInstagramUrl,
 } from '../platform.ts';
 import { EMPTY_PLATFORM_META, type PlatformMeta, type PostComment } from '../platformMeta.ts';
+import { type ImageCandidate, rankImageCandidates, readDimension } from '../imageSize.ts';
 import { isScrapeCreatorsTimeout, scrapeCreatorsGet } from './scrapecreators.ts';
 import { parseDurationMilliseconds, parseDurationSeconds, wantsSmallestVideo } from '../videoLimits.ts';
 
@@ -82,7 +83,8 @@ export async function fetchInstagramMeta(url: string): Promise<PlatformMeta> {
   const ownerId = readString(media.owner, 'id');
   const topComments = extractInstagramComments(media, ownerUsername, ownerId);
 
-  let thumbnailUrl = extractInstagramThumbnail(media);
+  const thumbnailCandidates = extractInstagramThumbnails(media);
+  let thumbnailUrl: string | undefined = thumbnailCandidates[0];
   if (!thumbnailUrl) {
     thumbnailUrl = await fetchInstagramOembedThumbnail(fetchUrl);
   }
@@ -105,6 +107,7 @@ export async function fetchInstagramMeta(url: string): Promise<PlatformMeta> {
   return {
     description,
     thumbnailUrl,
+    thumbnailCandidates,
     captions: undefined,
     topComments,
     videoUrl,
@@ -252,22 +255,28 @@ function extractInstagramCaption(media: Record<string, unknown>): string | undef
   return fromEdge || undefined;
 }
 
-function extractInstagramThumbnail(media: Record<string, unknown>): string | undefined {
-  const direct =
-    readString(media, 'thumbnail_src') ??
-    readString(media, 'display_url') ??
-    readString(media, 'thumbnail_url') ??
-    readString(media, 'image_url') ??
-    readString(media, 'thumbnail');
-
-  if (direct) return direct;
-
-  const resources = media.display_resources;
-  if (Array.isArray(resources) && resources.length > 0) {
-    const first = resources[0];
-    if (first && typeof first === 'object' && typeof (first as { src?: string }).src === 'string') {
-      return (first as { src: string }).src;
+/**
+ * The post's pictures, best first. `thumbnail_src` is a 640 square crop of the cover and
+ * `display_resources` starts with its smallest copy; we used to take those first (PIN-176).
+ */
+export function extractInstagramThumbnails(media: Record<string, unknown>): string[] {
+  const candidates: ImageCandidate[] = [];
+  const sized = (list: unknown, urlKey: string, widthKey: string, heightKey: string) => {
+    if (!Array.isArray(list)) return;
+    for (const item of list) {
+      if (!item || typeof item !== 'object') continue;
+      const record = item as Record<string, unknown>;
+      const url = record[urlKey];
+      if (typeof url !== 'string' || !url.trim()) continue;
+      candidates.push({ url, width: readDimension(record[widthKey]), height: readDimension(record[heightKey]) });
     }
+  };
+
+  sized(media.display_resources, 'src', 'config_width', 'config_height');
+  sized(readPath<unknown>(media, 'image_versions2', 'candidates'), 'url', 'width', 'height');
+  for (const key of ['display_url', 'thumbnail_url', 'image_url', 'thumbnail', 'thumbnail_src']) {
+    const url = readString(media, key);
+    if (url) candidates.push({ url });
   }
 
   const sidecar = readPath<Array<{ node?: { display_url?: string; thumbnail_src?: string } }>>(
@@ -275,11 +284,11 @@ function extractInstagramThumbnail(media: Record<string, unknown>): string | und
     'edge_sidecar_to_children',
     'edges',
   );
-  if (sidecar?.[0]?.node) {
-    return sidecar[0].node.display_url ?? sidecar[0].node.thumbnail_src;
-  }
+  const first = sidecar?.[0]?.node;
+  if (first?.display_url) candidates.push({ url: first.display_url });
+  if (first?.thumbnail_src) candidates.push({ url: first.thumbnail_src });
 
-  return undefined;
+  return rankImageCandidates(candidates);
 }
 
 /** Public oEmbed fallback when ScrapeCreators omits image fields. */

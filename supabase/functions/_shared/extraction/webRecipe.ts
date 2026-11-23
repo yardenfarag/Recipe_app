@@ -5,6 +5,7 @@
 
 import { FetchError } from '../core/errors.ts';
 import { EMPTY_PLATFORM_META, type PlatformMeta } from './platformMeta.ts';
+import { type ImageCandidate, rankImageCandidates, readDimension } from './imageSize.ts';
 import { extractYouTubeId } from './platform.ts';
 import { safeFetch } from '../core/safeFetch.ts';
 import { configuredPageReader, type PageRead, type PageReader, type PageReadEvent } from './pageReader.ts';
@@ -37,11 +38,8 @@ export async function fetchWebRecipeMeta(url: string, options: WebFetchOptions =
   const html = docExport ? await fetchHtml(docExport) : await fetchHtmlOrRead(url, options);
   const jsonLd = extractJsonLdBlocks(html);
   const recipeLd = findRecipeJsonLd(jsonLd);
-  const thumbnailUrl =
-    pickImageFromRecipe(recipeLd) ??
-    metaContent(html, 'og:image') ??
-    metaContent(html, 'twitter:image') ??
-    undefined;
+  const thumbnailCandidates = pageImageCandidates(html, recipeLd);
+  const thumbnailUrl = thumbnailCandidates[0];
   const videoUrl = findEmbeddedVideoUrl(html, recipeLd) ?? undefined;
   const title =
     pickString(recipeLd, 'name') ??
@@ -76,6 +74,7 @@ export async function fetchWebRecipeMeta(url: string, options: WebFetchOptions =
     title,
     description,
     thumbnailUrl,
+    thumbnailCandidates,
     videoUrl,
     pageHost,
   };
@@ -323,24 +322,40 @@ function isRecipeType(value: unknown): boolean {
   return false;
 }
 
-function pickImageFromRecipe(recipe: Record<string, unknown> | null): string | undefined {
-  if (!recipe) return undefined;
-  const image = recipe.image;
-  if (typeof image === 'string' && isHttpUrl(image)) return image;
-  if (Array.isArray(image)) {
-    for (const item of image) {
-      if (typeof item === 'string' && isHttpUrl(item)) return item;
-      if (item && typeof item === 'object') {
-        const url = (item as Record<string, unknown>).url;
-        if (typeof url === 'string' && isHttpUrl(url)) return url;
-      }
-    }
+/**
+ * The page's pictures of the dish, best first: the recipe's own (JSON-LD), then og:image and
+ * twitter:image. A recipe plugin lists one photo at several sizes, often smallest first
+ * (`photo-225x225.jpg`), and the page's og:image is usually 1200 wide; until PIN-176 we took the first.
+ */
+export function pageImageCandidates(html: string, recipe: Record<string, unknown> | null): string[] {
+  const candidates: ImageCandidate[] = [...recipeImageCandidates(recipe?.image)];
+  const og = httpUrlOrNull(metaContent(html, 'og:image:secure_url')) ?? httpUrlOrNull(metaContent(html, 'og:image'));
+  if (og) {
+    candidates.push({
+      url: og,
+      width: readDimension(metaContent(html, 'og:image:width')),
+      height: readDimension(metaContent(html, 'og:image:height')),
+    });
   }
+  const twitter = httpUrlOrNull(metaContent(html, 'twitter:image'));
+  if (twitter) candidates.push({ url: twitter });
+  return rankImageCandidates(candidates);
+}
+
+function recipeImageCandidates(image: unknown): ImageCandidate[] {
+  if (typeof image === 'string') return isHttpUrl(image) ? [{ url: image }] : [];
+  if (Array.isArray(image)) return image.flatMap((item) => recipeImageCandidates(item));
   if (image && typeof image === 'object') {
-    const url = (image as Record<string, unknown>).url;
-    if (typeof url === 'string' && isHttpUrl(url)) return url;
+    const record = image as Record<string, unknown>;
+    const url = typeof record.url === 'string' ? record.url : typeof record.contentUrl === 'string' ? record.contentUrl : null;
+    if (!url || !isHttpUrl(url)) return [];
+    return [{ url, width: readDimension(record.width), height: readDimension(record.height) }];
   }
-  return undefined;
+  return [];
+}
+
+function httpUrlOrNull(value: string | null): string | null {
+  return value && isHttpUrl(value) ? value : null;
 }
 
 function findEmbeddedVideoUrl(

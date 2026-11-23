@@ -1,7 +1,7 @@
 import { FetchError } from '../../core/errors.ts';
 import { extractTikTokId } from '../platform.ts';
 import { EMPTY_PLATFORM_META, type PlatformMeta, type PostComment } from '../platformMeta.ts';
-import { extractTikTokThumbnail } from './tiktokThumbnail.ts';
+import { extractTikTokThumbnails } from './tiktokThumbnail.ts';
 import {
   firstUrlList,
   scrapeCreatorsGet,
@@ -85,13 +85,14 @@ export async function fetchTikTokMeta(url: string): Promise<PlatformMeta> {
   const videoId = detail.aweme_id ?? extractTikTokId(url) ?? undefined;
 
   // TikTok's oEmbed used to be a fallback here; it stopped returning thumbnail_url (checked 2026-11-22).
-  const thumbnailUrl = extractTikTokThumbnail(detail.video, videoResponse as Record<string, unknown>);
+  const thumbnailCandidates = extractTikTokThumbnails(detail.video, videoResponse as Record<string, unknown>);
 
   const durationSeconds = parseDurationMilliseconds(detail.video?.duration);
 
   return {
     description: detail.desc?.trim() || undefined,
-    thumbnailUrl,
+    thumbnailUrl: thumbnailCandidates[0],
+    thumbnailCandidates,
     captions: transcript || undefined,
     topComments,
     videoUrl: resolveTikTokVideoUrl(videoResponse, detail, durationSeconds),

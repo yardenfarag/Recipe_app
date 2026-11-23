@@ -1633,6 +1633,7 @@ async function resolveThumbnail(
     // A web page's image is copied too, so its site can't swap the picture later (PIN-153).
     const hosted = await persistSocialThumbnail({
       sourceUrl: meta.thumbnailUrl,
+      alternates: meta.thumbnailCandidates,
       platform,
       contentId,
     });

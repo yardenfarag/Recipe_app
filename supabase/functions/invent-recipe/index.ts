@@ -850,6 +850,7 @@ async function resolveThumbnail(
   ) {
     const hosted = await persistSocialThumbnail({
       sourceUrl: meta.thumbnailUrl,
+      alternates: meta.thumbnailCandidates,
       platform,
       contentId,
     });

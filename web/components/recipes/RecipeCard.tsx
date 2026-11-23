@@ -18,6 +18,7 @@ import { CookieMark } from "@/components/CookieMark";
 import { useLanguage } from "@/components/LanguageProvider";
 import { AiImageMark } from "@/components/recipes/AiImageMark";
 import { RecipeActionsMenu, type RecipeActions } from "@/components/recipes/RecipeActionsMenu";
+import { usePhotoLoaded } from "@/components/ui/Tile";
 import { cn } from "@/lib/cn";
 
 export type RecipeCardProps = {
@@ -80,19 +81,28 @@ function RecipeCardBase({ recipe, variant = "grid", onToggleFavorite, actions, d
     : null;
 
   const hasPicture = Boolean(recipe.image_url) && !pictureFailed;
+  const { loaded: photoLoaded, ref: photoRef, onLoad: onPhotoLoad } = usePhotoLoaded(hasPicture ? recipe.image_url : null);
   const aiMark = hasPicture && recipe.image_generated ? <AiImageMark size={list ? "sm" : "md"} /> : null;
   const picture =
     hasPicture ? (
-      // The pictures are already small thumbnails from other sites, so there is nothing for next/image to optimise.
-      // eslint-disable-next-line @next/next/no-img-element
-      <img
-        src={recipe.image_url}
-        alt=""
-        loading="lazy"
-        decoding="async"
-        onError={() => setPictureFailed(true)}
-        className="h-full w-full object-cover transition-transform duration-300 motion-safe:group-hover:scale-[1.03]"
-      />
+      <>
+        {photoLoaded ? null : <span aria-hidden className="absolute inset-0 bg-element motion-safe:animate-pulse" />}
+        {/* Our own copies, sized at import (PIN-176); resizing per screen would need a paid image service (ADR 027). */}
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img
+          ref={photoRef}
+          src={recipe.image_url}
+          alt=""
+          loading="lazy"
+          decoding="async"
+          onLoad={onPhotoLoad}
+          onError={() => setPictureFailed(true)}
+          className={cn(
+            "relative h-full w-full object-cover transition-[transform,opacity] duration-300 motion-safe:group-hover:scale-[1.03]",
+            photoLoaded ? "opacity-100" : "opacity-0",
+          )}
+        />
+      </>
     ) : (
       <span className="grid h-full w-full place-items-center bg-element text-primary-text">
         <CookieMark size={list ? 28 : 44} />
