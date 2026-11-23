@@ -69,8 +69,9 @@ function Body({
   const [attempt, setAttempt] = useState(0);
   const [applying, setApplying] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
-  // Suggestions match the supermarket of the language on screen when a translation is showing (as on mobile).
-  const language = display.translated ? display.contentLanguage : null;
+  // Suggestions come in the language on screen and match its supermarket. Sent for untranslated recipes too:
+  // without it the model guessed the language and once answered an English recipe in Spanish.
+  const language = display.contentLanguage;
   const { units } = useUnitSystem();
   const amount = (item: Parameters<typeof displayIngredientAmount>[0]) => displayIngredientAmount(item, { system, language: display.unitLanguage, units });
 
