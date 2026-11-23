@@ -61,7 +61,7 @@ Desktop web (wide viewport). On smaller screens the same flows use bottom tabs i
 
 ## New web app (Next.js, `web/`)
 
-The signed-in web app is being rebuilt as a Next.js app in [`web/`](web/), screen by screen ([ADR 026](docs/adr/026-web-app-foundations.md)). Until it replaces the Expo web app, it is live at **https://next.pinch-app.io/app** on Cloudflare Workers ([ADR 027](docs/adr/027-web-app-hosting.md)). `web/` has its own `package.json` and lockfile; the mobile app's Metro, type-check, lint and Vitest ignore it.
+The signed-in web app is a Next.js app in [`web/`](web/) ([ADR 026](docs/adr/026-web-app-foundations.md)), live at **https://pinch-app.io/app** on Cloudflare Workers ([ADR 027](docs/adr/027-web-app-hosting.md)). It replaced the Expo web app in PIN-147; until PIN-148 removes that, the Expo web app can be switched back in minutes ([`docs/WEB-APP-SWITCH.md`](docs/WEB-APP-SWITCH.md)), and the new app also answers at `next.pinch-app.io/app`. `web/` has its own `package.json` and lockfile; the mobile app's Metro, type-check, lint and Vitest ignore it.
 
 ```bash
 cd web
@@ -76,8 +76,8 @@ npm run preview      # build the Worker with OpenNext and serve it locally in wo
 ```
 
 - CI runs test, type-check, lint and the Worker build in the `web` job of [`quality.yml`](.github/workflows/quality.yml), and the browser tests in `web-e2e`, against a local Supabase started in that job. The browser tests run on PRs only, split across four machines; deploys and releases skip them, so merge a PR rather than pushing to `master` directly.
-- Sign-in returns to `<origin>/app/auth-callback` (Google) and `<origin>/app/reset-password` (reset emails). Every address the app runs on must be in Supabase → Authentication → URL Configuration → Redirect URLs, e.g. `https://next.pinch-app.io/app/**`.
-- Every merge to `master` that touches `web/` deploys through [`deploy-web-app.yml`](.github/workflows/deploy-web-app.yml). It reuses the `EXPO_PUBLIC_SUPABASE_*` secrets as `NEXT_PUBLIC_*` and the `CLOUDFLARE_*` secrets of the share Worker.
+- Sign-in returns to `<origin>/app/auth-callback` (Google) and `<origin>/app/reset-password` (reset emails). Every address the app runs on must be in Supabase → Authentication → URL Configuration → Redirect URLs, e.g. `https://pinch-app.io/app/**`.
+- Every merge to `master` that touches `web/` deploys through [`deploy-web-app.yml`](.github/workflows/deploy-web-app.yml). It reuses the `EXPO_PUBLIC_SUPABASE_*` secrets as `NEXT_PUBLIC_*` and the `CLOUDFLARE_*` secrets of the share Worker, then checks every kind of address on pinch-app.io (`scripts/check-web-routing.mjs`).
 - The app is built with `basePath: '/app'`. Links through `next/link` get the prefix automatically. Plain `/...` paths to files in `public/` need it written out.
 - Its lockfile is `npm-shrinkwrap.json`, not `package-lock.json`. npm treats them the same; the Cloudflare build needs this name ([`shared/README.md`](shared/README.md) says why).
 - OpenNext warns that Windows is not fully supported. `npm run dev` is fine; if `npm run preview` misbehaves, trust the CI build (Linux).

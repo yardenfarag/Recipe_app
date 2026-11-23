@@ -23,7 +23,13 @@
   // A preview link per PR on workers.dev (.github/workflows/web-preview.yml). It runs that PR's code
   // against the same production bindings. The app itself stays off workers.dev (workers_dev above).
   "preview_urls": true,
-  // While we build. After the switch (PIN-147) this becomes the zone routes
-  // pinch-app.io/app and pinch-app.io/app/* (never /app*, which also matches /apple-app-site-association).
-  "routes": [{ "pattern": "next.pinch-app.io", "custom_domain": true }]
+  // pinch-app.io/app is this app since the switch (PIN-147). Everything else on pinch-app.io stays with GitHub Pages
+  // and the share Worker (ADR 027). Exactly these two patterns: /app* would also catch /apple-app-site-association,
+  // which the share Worker serves for universal links. To switch back to the Expo web app, see docs/WEB-APP-SWITCH.md.
+  // next.pinch-app.io stays as a second address of the same app until the Expo web app is removed (PIN-148).
+  "routes": [
+    { "pattern": "pinch-app.io/app", "zone_name": "pinch-app.io" },
+    { "pattern": "pinch-app.io/app/*", "zone_name": "pinch-app.io" },
+    { "pattern": "next.pinch-app.io", "custom_domain": true }
+  ]
 }

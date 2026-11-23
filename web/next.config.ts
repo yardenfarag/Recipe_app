@@ -5,11 +5,11 @@ import { initOpenNextCloudflareForDev } from "@opennextjs/cloudflare";
 import sharedPackages from "../shared/packages.json";
 
 const nextConfig: NextConfig = {
-  // The app lives at pinch-app.io/app (and next.pinch-app.io/app while we build it). ADR 027.
+  // The app lives at pinch-app.io/app (and next.pinch-app.io/app until PIN-148). ADR 027.
   basePath: "/app",
   // Cloudflare Images would bill for resizing; recipe photos already come sized. ADR 027.
   images: { unoptimized: true },
-  // next.pinch-app.io/ has nothing on it; send visitors to the app. After the switch only /app reaches this Worker.
+  // next.pinch-app.io/ has nothing on it; send visitors to the app. On pinch-app.io only /app reaches this Worker.
   async redirects() {
     return [
       { source: "/", destination: "/app", basePath: false, permanent: false },
