@@ -3,6 +3,8 @@
 # Actions → Publish update → Run workflow. "Use workflow from" is the branch to publish (master,
 # or hotfix/<version> when master has native changes that aren't in a store build yet).
 # Or ask the agent: gh workflow run publish-update.yml --ref master -f message="..."
+# Platform "ios" or "android" publishes to one app only, for when the other has no store build of
+# this version yet (for example, a new version on TestFlight before Android is built).
 #
 # Phones download it in the background and switch to it the next time the app opens.
 # Undo with the "Roll back update" workflow.
@@ -20,6 +22,12 @@ on:
         description: 'Percentage of users (1-100). Leave empty for everyone.'
         required: false
         type: string
+      platform:
+        description: 'Which apps get it. One app only when the other has no store build of this version yet.'
+        required: false
+        type: choice
+        options: [all, ios, android]
+        default: all
 
 concurrency:
   group: publish-update
@@ -62,8 +70,11 @@ jobs:
       # An update only reaches store builds with the same fingerprint (native code and app version).
       # With no matching build it would reach nobody, so stop instead.
       - name: Check that store builds on phones match this code
+        env:
+          PLATFORM: ${{ inputs.platform || 'all' }}
         run: |
-          for platform in ios android; do
+          if [ "$PLATFORM" = all ]; then platforms="ios android"; else platforms="$PLATFORM"; fi
+          for platform in $platforms; do
             runtime=$(npx expo-updates runtimeversion:resolve --platform "$platform" \
               | node -e 'let s="";process.stdin.on("data",d=>s+=d).on("end",()=>console.log(JSON.parse(s).runtimeVersion))')
             builds=$(eas build:list --platform "$platform" --build-profile production --distribution store \
@@ -80,6 +91,7 @@ jobs:
         env:
           MESSAGE: ${{ inputs.message }}
           PERCENTAGE: ${{ inputs.percentage }}
+          PLATFORM: ${{ inputs.platform || 'all' }}
         run: |
-          eas update --channel production --environment production --platform all --non-interactive \
+          eas update --channel production --environment production --platform "$PLATFORM" --non-interactive \
             --message "$MESSAGE" ${PERCENTAGE:+--rollout-percentage "$PERCENTAGE"}

@@ -36,6 +36,7 @@ For typos, translations, crash fixes and small UI changes: JavaScript only. Anyt
    - **Use workflow from:** `master` (or a `hotfix/…` branch, see below).
    - **What changed:** a few words, for example "Fix Hebrew typo on the shopping list".
    - **Percentage of users:** empty for everyone. A number like `20` for a riskier change.
+   - **Which apps get it:** `all`. Choose `ios` or `android` only when the other app has no store build of this version yet, for example while a new version is on TestFlight and Android isn't built.
 
    Or ask the agent: `gh workflow run publish-update.yml --ref master -f message="Fix Hebrew typo on the shopping list"`.
 4. Phones download it in the background and switch to it the next time the app opens. The update shows on [expo.dev → Updates](https://expo.dev/accounts/yardenfa/projects/pinch/updates).
