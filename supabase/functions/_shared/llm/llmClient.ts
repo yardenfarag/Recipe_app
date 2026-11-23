@@ -54,6 +54,11 @@ export interface TaskModelConfig {
   fallbacks: string[];
   /** Sonnet 5.5 and GPT-6.1 Sol reject `none` ("Reasoning is mandatory"). */
   reasoning: ReasoningEffort;
+  /**
+   * Model for a video sent as a URL (YouTube) instead of inline bytes. Only Gemini on AI Studio can
+   * open the link, so a task whose `model` can't must name one here. Such a call has no fallbacks.
+   */
+  urlVideoModel?: string;
 }
 
 const LUNA = 'openai/gpt-6-luna';
@@ -65,6 +70,7 @@ const QWEN_OMNI = 'qwen/qwen3.8-omni-flash';
 const MISTRAL_SMALL = 'mistralai/mistral-small-2603';
 const INKLING_MINI = 'thinkingmachines/inkling-2-mini';
 const GEMINI_FLASH = 'google/gemini-3.5-flash';
+const MUSE_EMBER = 'meta/muse-ember';
 
 /**
  * Picks from the PIN-44 eval (docs/research/05-llm-per-task.md, "Final model per task"), updated
@@ -103,9 +109,11 @@ export const TASK_MODELS: Record<LlmTaskKind, TaskModelConfig> = {
   // Bake-off: 30/30 vs Mistral's 29/30, same speed, a third of the price. Its providers are small,
   // so Mistral stays as the fallback.
   content_gate: { model: INKLING_MINI, fallbacks: [MISTRAL_SMALL], reasoning: 'none' },
-  // Kept after the bake-off: no model beat Gemini 3.5 Flash, and YouTube (most video imports) goes
-  // as a URL that only Gemini can open.
-  video: { model: GEMINI_FLASH, fallbacks: [QWEN_OMNI], reasoning: 'low' },
+  // Bake-off: on uploaded clips (Instagram, TikTok, Facebook) Muse Ember matched Gemini 3.5 Flash's
+  // ingredient recall (69%; 78% on Hebrew) at about 1/18 the cost. Gemini is the first fallback, and
+  // the only model for YouTube, which goes as a URL (urlVideoModel).
+  video: { model: MUSE_EMBER, fallbacks: [GEMINI_FLASH, QWEN_OMNI], reasoning: 'low', urlVideoModel: GEMINI_FLASH },
+  // Not in the bake-off, and inventing needs the stronger model; stays on Gemini.
   invent_video: { model: GEMINI_FLASH, fallbacks: [QWEN_OMNI], reasoning: 'low' },
 };
 
@@ -211,7 +219,7 @@ export function resolveTaskModel(kind: string, tier?: 'fast' | 'standard'): Task
     rawReasoning === 'none' || rawReasoning === 'low' || rawReasoning === 'medium'
       ? rawReasoning
       : base.reasoning;
-  return { model, fallbacks, reasoning };
+  return { model, fallbacks, reasoning, ...(base.urlVideoModel ? { urlVideoModel: base.urlVideoModel } : {}) };
 }
 
 /** Every slug the defaults can send to OpenRouter. The live-slug test checks these. */
@@ -220,6 +228,7 @@ export function defaultModelSlugs(): string[] {
   for (const config of Object.values(TASK_MODELS)) {
     slugs.add(config.model);
     config.fallbacks.forEach((m) => slugs.add(m));
+    if (config.urlVideoModel) slugs.add(config.urlVideoModel);
   }
   return [...slugs].sort();
 }
@@ -348,10 +357,10 @@ export async function generateOpenRouterJson<T>(
 ): Promise<GenerateLlmJsonResult<T>> {
   const task = resolveTaskModel(options.kind, options.tier);
   const pinned = evalModel();
-  const model = pinned ?? options.model ?? task.model;
   // Only Gemini on AI Studio fetches a YouTube URL. A fallback would get a link it can't
   // open and could answer from the text alone, so a URL video fails cleanly instead.
   const hasUrlVideo = options.parts.some((p) => 'fileData' in p);
+  const model = pinned ?? options.model ?? (hasUrlVideo && task.urlVideoModel ? task.urlVideoModel : task.model);
   const fallbacks = pinned || hasUrlVideo ? [] : task.fallbacks.filter((m) => m !== model);
   const reasoning = evalHook?.reasoning?.() ?? task.reasoning;
   const started = Date.now();

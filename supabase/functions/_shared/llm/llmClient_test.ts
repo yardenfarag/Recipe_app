@@ -77,8 +77,50 @@ Deno.test('photo tasks use Sonnet with low reasoning; text tasks use Luna with n
   assertEquals(resolveTaskModel('text'), { model: 'openai/gpt-6-luna', fallbacks: ['anthropic/claude-haiku-5.5'], reasoning: 'none' });
   assertEquals(resolveTaskModel('translate'), { model: 'openai/gpt-6.2-sol', fallbacks: ['openai/gpt-6-luna'], reasoning: 'low' });
   assertEquals(resolveTaskModel('content_gate'), { model: 'thinkingmachines/inkling-2-mini', fallbacks: ['mistralai/mistral-small-2603'], reasoning: 'none' });
-  assertEquals(resolveTaskModel('video').model, 'google/gemini-3.5-flash');
+  assertEquals(resolveTaskModel('video'), {
+    model: 'meta/muse-ember',
+    fallbacks: ['google/gemini-3.5-flash', 'qwen/qwen3.8-omni-flash'],
+    reasoning: 'low',
+    urlVideoModel: 'google/gemini-3.5-flash',
+  });
+  assertEquals(resolveTaskModel('invent_video').model, 'google/gemini-3.5-flash');
 });
+
+const VIDEO_CALL = {
+  kind: 'video',
+  systemPrompt: 'sys',
+  responseSchema: OBJECT_SCHEMA,
+  timeoutMs: 5_000,
+  maxOutputTokens: 100,
+  context: 'test',
+};
+
+Deno.test('an inline video clip goes to Muse Ember with Gemini as the first fallback', () =>
+  withEnv({ OPENROUTER_API_KEY: 'test' }, async () => {
+    const stub = stubFetch(() => completion('{"title":"Pasta"}'));
+    try {
+      await generateLlmJson({ ...VIDEO_CALL, parts: [{ imageBase64: 'AAAA', mimeType: 'video/mp4' }, { text: 'go' }] });
+      assertEquals(stub.calls[0].model, 'meta/muse-ember');
+      assertEquals(stub.calls[0].models, ['google/gemini-3.5-flash', 'qwen/qwen3.8-omni-flash']);
+    } finally {
+      stub.restore();
+    }
+  }));
+
+Deno.test('a YouTube URL video goes to Gemini alone, the only model that can open it', () =>
+  withEnv({ OPENROUTER_API_KEY: 'test' }, async () => {
+    const stub = stubFetch(() => completion('{"title":"Pasta"}'));
+    try {
+      await generateLlmJson({
+        ...VIDEO_CALL,
+        parts: [{ fileData: { fileUri: 'https://www.youtube.com/watch?v=abc' } }, { text: 'go' }],
+      });
+      assertEquals(stub.calls[0].model, 'google/gemini-3.5-flash');
+      assertEquals(stub.calls[0].models, undefined);
+    } finally {
+      stub.restore();
+    }
+  }));
 
 Deno.test('env overrides per kind: model, fallbacks, reasoning', () =>
   withEnv(

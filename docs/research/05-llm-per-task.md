@@ -170,7 +170,7 @@ Compare 2 to 3 models per task and log JSON validity, p50/p95 latency and cost a
 
 ### Final model per task (for PIN-45)
 
-> **Updated 23 Nov 2026** after a bake-off against newer models ([results](../../eval/results/bakeoff-2026-11-23.md)): the Luna tasks fall back to Claude Haiku 5.5, translate runs on GPT-6.2 Sol, and the content gate on Inkling 2 Mini. Video stays on Gemini 3.5 Flash.
+> **Updated 23 Nov 2026** after a bake-off against newer models ([results](../../eval/results/bakeoff-2026-11-23.md)): the Luna tasks fall back to Claude Haiku 5.5, translate runs on GPT-6.2 Sol, the content gate on Inkling 2 Mini, and uploaded video clips on Meta Muse Ember. YouTube video stays on Gemini 3.5 Flash, the only model that opens a YouTube URL.
 
 | `kind` | Primary | Fallback | Reasoning |
 |---|---|---|---|
@@ -180,7 +180,8 @@ Compare 2 to 3 models per task and log JSON validity, p50/p95 latency and cost a
 | `invent_photo` | `anthropic/claude-sonnet-5.5`, with `provider.ignore: ['azure']` | `openai/gpt-6.1-sol` | **low** (both reject `none`) |
 | `invent_text` | `openai/gpt-6.1-sol` | `openai/gpt-6-luna` | **low** (Sol rejects `none`) |
 | `content_gate` | `thinkingmachines/inkling-2-mini` (was Mistral Small) | `mistralai/mistral-small-2603` | none |
-| `video`, `invent_video` | `google/gemini-3.5-flash` via OpenRouter `video_url` | `qwen/qwen3.8-omni-flash` (unwrap a top-level array; allow about 2 min) | low |
+| `video` | `meta/muse-ember` for inline clips (since 23 Nov 2026); `google/gemini-3.5-flash` for YouTube URLs (`urlVideoModel`, no fallbacks) | `google/gemini-3.5-flash`, then `qwen/qwen3.8-omni-flash` | low |
+| `invent_video` | `google/gemini-3.5-flash` via OpenRouter `video_url` | `qwen/qwen3.8-omni-flash` (unwrap a top-level array; allow about 2 min) | low |
 | `extract_gate` (new) | `openai/gpt-6-luna-decisions` (was `typesafe/jev-1.13` until 2026-11-08) | none (fail open) | — |
 
 Remix, substitution, fridge match and repair weren't in the eval. They follow their closest tested task.

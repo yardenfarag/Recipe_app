@@ -63,6 +63,7 @@ const OPENROUTER_RATES: Array<{ match: string; input: number; output: number }> 
   { match: 'claude-haiku-5.5', input: 0.1, output: 0.5 },
   { match: 'claude', input: 3.0, output: 15.0 },
   { match: 'inkling-2-mini', input: 0.07, output: 0.3 },
+  { match: 'muse-ember', input: 0.1, output: 0.5 },
   { match: 'mistral-small', input: 0.15, output: 0.6 },
   { match: 'qwen3.8-omni-flash', input: 0.15, output: 0.47 },
   { match: 'qwen3.8-flash', input: 0.15, output: 0.47 },
