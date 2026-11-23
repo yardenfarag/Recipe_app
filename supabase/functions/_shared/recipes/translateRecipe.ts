@@ -5,8 +5,8 @@ import {
   localizeCulinaryUnit,
 } from './culinaryUnits.ts';
 import { generateLlmJson } from '../llm/llmClient.ts';
-import { sanitizeGeminiText } from '../llm/llmClient.ts';
-import type { GeminiUsageSnapshot } from '../llm/pricing.ts';
+import { sanitizeLlmText } from '../llm/llmClient.ts';
+import type { LlmUsageSnapshot } from '../llm/pricing.ts';
 import { assertTranslationIdentity } from './translationIntegrity.ts';
 import { glossaryFor } from './translationGlossary.ts';
 
@@ -148,10 +148,10 @@ export interface TranslatedRecipe {
     spoons?: { quantity: number; unit: string };
   }[];
   instructions: { step: number; text: string }[];
-  usage?: GeminiUsageSnapshot | null;
+  usage?: LlmUsageSnapshot | null;
 }
 
-interface GeminiTranslatedRecipe {
+interface TranslatedRecipeJson {
   title: string;
   ingredients: {
     source_index: number;
@@ -170,23 +170,23 @@ export function isTranslateLanguageCode(value: string): value is TranslateLangua
   return (TRANSLATE_LANGUAGE_CODES as readonly string[]).includes(value);
 }
 
-export async function translateRecipeWithGemini(
+export async function translateRecipeWithLlm(
   input: TranslateRecipeInput,
 ): Promise<TranslatedRecipe> {
   const targetName = LANGUAGE_NAMES[input.targetLanguage];
   const text = buildTextContext(input, targetName);
 
-  const { data: parsed, usage } = await generateLlmJson<GeminiTranslatedRecipe>({
+  const { data: parsed, usage } = await generateLlmJson<TranslatedRecipeJson>({
     systemPrompt: SYSTEM_PROMPT,
     parts: [{ text }],
     responseSchema: TRANSLATE_SCHEMA,
     timeoutMs: REQUEST_TIMEOUT_MS,
     maxOutputTokens: MAX_OUTPUT_TOKENS,
     kind: 'translate',
-    context: 'translateRecipe.ts: translateRecipeWithGemini',
+    context: 'translateRecipe.ts: translateRecipeWithLlm',
   });
 
-  const title = sanitizeGeminiText(parsed.title?.trim() ?? '');
+  const title = sanitizeLlmText(parsed.title?.trim() ?? '');
   const ingredients = parsed.ingredients ?? [];
   const instructions = parsed.instructions ?? [];
 
@@ -204,13 +204,13 @@ export async function translateRecipeWithGemini(
 
   const translatedIngredients = input.ingredients.map((source, index) => {
     const translated = ingredients[index];
-    const name = sanitizeGeminiText(translated?.name ?? '').trim();
+    const name = sanitizeLlmText(translated?.name ?? '').trim();
     if (!name) {
       throw new Error(`Translation response omitted ingredient ${index + 1}`);
     }
     const sourceUnit = source.unit ?? '';
     // The model's unit as given: "" is its answer for a count ("1 lemon"), not a gap to fill with the source unit.
-    const rawUnit = sanitizeGeminiText(typeof translated?.unit === 'string' ? translated.unit : '');
+    const rawUnit = sanitizeLlmText(typeof translated?.unit === 'string' ? translated.unit : '');
     return {
       name,
       quantity: source.quantity,
@@ -226,7 +226,7 @@ export async function translateRecipeWithGemini(
   });
 
   const translatedInstructions = input.instructions.map((source, index) => {
-    const text = sanitizeGeminiText(instructions[index]?.text ?? '').trim();
+    const text = sanitizeLlmText(instructions[index]?.text ?? '').trim();
     if (!text) {
       throw new Error(`Translation response omitted instruction ${index + 1}`);
     }

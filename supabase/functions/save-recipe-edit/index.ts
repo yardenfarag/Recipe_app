@@ -17,7 +17,7 @@ import { serve } from '../_shared/core/observe.ts';
 import type { Db } from '../_shared/core/supabaseAdmin.ts';
 
 import { sanitizeRecipeAppliances } from '../_shared/recipes/enrich/appliances.ts';
-import { classifyGeminiRecipe } from '../_shared/extraction/classifyRecipe.ts';
+import { classifyLlmRecipe } from '../_shared/extraction/classifyRecipe.ts';
 import { corsHeaders, jsonResponse } from '../_shared/core/cors.ts';
 import { currentUtcDate, refundDailyAiUsage, reserveDailyAiUsage } from '../_shared/core/dailyAiUsage.ts';
 import { persistUploadedPhoto } from '../_shared/extraction/persistThumbnail.ts';
@@ -269,7 +269,7 @@ function contentColumns(
     ? [...new Set([...amountRows, ...rowsMissingAmounts(stored.ingredients)])]
     : [];
   const ingredients = withoutAmounts(stored.ingredients, staleRows);
-  const classified = classifyGeminiRecipe({ found_recipe: true, ...stored, ingredients });
+  const classified = classifyLlmRecipe({ found_recipe: true, ...stored, ingredients });
   return {
     ...stored,
     ingredients,

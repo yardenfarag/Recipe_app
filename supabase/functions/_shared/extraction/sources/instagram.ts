@@ -11,16 +11,16 @@ import { parseDurationMilliseconds, parseDurationSeconds, wantsSmallestVideo } f
 
 const MAX_COMMENTS = 10;
 
-/** True when Gemini cannot fetch the URL directly (Instagram CDN blocks hotlinking). */
+/** True when the model provider cannot fetch the URL directly (Instagram CDN blocks hotlinking). */
 export function isInstagramCdnUrl(url: string): boolean {
   return /cdninstagram|fbcdn\.net|scontent/i.test(url);
 }
 
 /**
  * Re-fetches the post with download_media so ScrapeCreators returns a hosted MP4
- * URL Gemini can read. Only called when the text ladder fails and video is needed.
+ * URL the video model can read. Only called when the text ladder fails and video is needed.
  */
-export async function resolveInstagramVideoForGemini(postUrl: string): Promise<string | undefined> {
+export async function resolveInstagramVideoForModel(postUrl: string): Promise<string | undefined> {
   const fetchUrl = sanitizeInstagramUrl(postUrl);
   console.log('[instagram] download_media start', { fetchUrl });
   const started = Date.now();

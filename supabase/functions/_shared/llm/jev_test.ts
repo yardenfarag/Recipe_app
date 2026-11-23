@@ -2,7 +2,7 @@
 
 import { assertEquals } from 'jsr:@std/assert@1';
 
-import type { ExtractInput } from '../extraction/gemini.ts';
+import type { ExtractInput } from '../extraction/recipeExtraction.ts';
 import { appliedExtractRoute, decideExtractRoute, shouldRunExtractGate, skipsTextStep } from './jev.ts';
 
 const post: ExtractInput = {

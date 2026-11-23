@@ -8,7 +8,7 @@ import { createAuthedSupabase } from '../_shared/core/recipeLookup.ts';
 import {
   isRecipeVariantKey,
   remixInstructionIsRelated,
-  transformRecipeWithGemini,
+  transformRecipeWithLlm,
 } from '../_shared/recipes/recipeVariant.ts';
 import {
   parseRecipeId,
@@ -307,7 +307,7 @@ serve('transform-recipe', async (req) => {
   }
 
   try {
-    const transformed = await transformRecipeWithGemini({
+    const transformed = await transformRecipeWithLlm({
       variant,
       instruction,
       title: recipe.title.trim(),

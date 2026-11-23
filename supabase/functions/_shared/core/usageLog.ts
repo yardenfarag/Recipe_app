@@ -1,10 +1,10 @@
 import { type Db, toJson } from './supabaseAdmin.ts';
 
 import {
-  estimateGeminiCostUsd,
+  estimateLlmCostUsd,
   estimateScrapeCreatorsCostUsd,
-  sumGeminiUsages,
-  type GeminiUsageSnapshot,
+  sumLlmUsages,
+  type LlmUsageSnapshot,
 } from '../llm/pricing.ts';
 
 export interface UsageEventInput {
@@ -43,7 +43,7 @@ export interface UsageEventInput {
   platform?: string | null;
   status: string;
   extractionSource?: string | null;
-  usages?: GeminiUsageSnapshot[];
+  usages?: LlmUsageSnapshot[];
   /** A call that reports its own cost (Jev) instead of token counts. */
   pricedCall?: { model: string; costUsd: number; promptTokens: number };
   scrapecreatorsCredits?: number;
@@ -61,11 +61,11 @@ export async function logUsageEvent(
 ): Promise<string | null> {
   if (!admin) return null;
 
-  const summed = sumGeminiUsages(input.usages ?? []);
+  const summed = sumLlmUsages(input.usages ?? []);
   const scrapecreatorsCredits = input.scrapecreatorsCredits ?? 0;
   const scrapecreatorsCostUsd = estimateScrapeCreatorsCostUsd(scrapecreatorsCredits);
   const priced = input.pricedCall;
-  const llmCostUsd = summed.geminiCostUsd + (priced?.costUsd ?? 0);
+  const llmCostUsd = summed.llmCostUsd + (priced?.costUsd ?? 0);
   const totalCostUsd = llmCostUsd + scrapecreatorsCostUsd + Math.max(0, input.pageReaderCostUsd ?? 0);
 
   // One entry per model call, so the admin dashboard can attribute cost and
@@ -77,7 +77,7 @@ export async function logUsageEvent(
       prompt_tokens: u.promptTokenCount,
       output_tokens: u.candidatesTokenCount,
       thinking_tokens: u.thoughtsTokenCount,
-      cost_usd: roundUsd(estimateGeminiCostUsd(u)),
+      cost_usd: roundUsd(estimateLlmCostUsd(u)),
       cost_source: typeof u.costUsd === 'number' ? 'openrouter' : 'rate_table',
     })),
     ...(priced

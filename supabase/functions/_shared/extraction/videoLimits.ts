@@ -1,4 +1,4 @@
-/** Max source video length sent to Gemini multimodal (extract + timestamp map). */
+/** Max source video length sent to the video model (extract + timestamp map). */
 export const MAX_VIDEO_DURATION_SECONDS = 720;
 
 /**

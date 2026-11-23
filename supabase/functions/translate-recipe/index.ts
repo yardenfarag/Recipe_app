@@ -12,7 +12,7 @@ import {
   isTranslateLanguageCode,
   recipeAlreadyInLanguage,
   TRANSLATION_VERSION,
-  translateRecipeWithGemini,
+  translateRecipeWithLlm,
 } from '../_shared/recipes/translateRecipe.ts';
 import { logUsageEvent } from '../_shared/core/usageLog.ts';
 
@@ -208,7 +208,7 @@ serve('translate-recipe', async (req) => {
   }
 
   try {
-    const translated = await translateRecipeWithGemini({
+    const translated = await translateRecipeWithLlm({
       targetLanguage,
       title: recipe.title.trim(),
       ingredients,

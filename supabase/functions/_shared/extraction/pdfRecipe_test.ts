@@ -8,7 +8,7 @@ import { encodeBase64 } from 'jsr:@std/encoding@1/base64';
 import { PDFDocument, StandardFonts } from 'npm:pdf-lib@1.17.1';
 
 import { FetchError } from '../core/errors.ts';
-import type { GeminiRecipe } from './gemini.ts';
+import type { LlmRecipe } from './recipeExtraction.ts';
 import { partsToOpenRouterContent } from '../llm/llmClient.ts';
 import {
   decodePdfBase64,
@@ -59,7 +59,7 @@ const RECIPE_LINES = [
   '3. Fold in the flour and lemon zest, then bake for 45 minutes.',
 ];
 
-function recipe(overrides: Partial<GeminiRecipe> = {}): GeminiRecipe {
+function recipe(overrides: Partial<LlmRecipe> = {}): LlmRecipe {
   return {
     found_recipe: true,
     source_language: 'en',
@@ -75,7 +75,7 @@ const NONE = recipe({ found_recipe: false, title: '', ingredients: [], instructi
 const PARTIAL = recipe({ instructions: [] });
 
 /** Readers that answer as told and record what was called. */
-function readers(answers: { text?: GeminiRecipe | Error; file?: GeminiRecipe | Error }) {
+function readers(answers: { text?: LlmRecipe | Error; file?: LlmRecipe | Error }) {
   const calls: string[] = [];
   const answer = async (kind: 'text' | 'file') => {
     calls.push(kind);

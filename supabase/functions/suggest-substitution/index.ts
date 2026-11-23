@@ -10,8 +10,8 @@ import { fitRecipeToLimits } from '../_shared/recipes/recipeLimits.ts';
 import { createServiceSupabase } from '../_shared/core/supabaseAdmin.ts';
 import {
   isSubstitutionLanguageCode,
-  rewriteInstructionsForSubstitutionWithGemini,
-  suggestSubstitutionsWithGemini,
+  rewriteInstructionsForSubstitutionWithLlm,
+  suggestSubstitutionsWithLlm,
 } from '../_shared/recipes/substitution.ts';
 import { logUsageEvent } from '../_shared/core/usageLog.ts';
 
@@ -50,7 +50,7 @@ interface RequestBody {
  * POST rewrite: { mode: 'rewrite_instructions', ingredient, alternative, instructions, ... }
  *   -> { status, instructions?, code?, message? }
  *
- * Asks Gemini for supermarket-realistic substitutes, or patches steps after a swap (ADR 005).
+ * Asks the model for supermarket-realistic substitutes, or patches steps after a swap (ADR 005).
  *
  * Failure codes (the app's words for them are in shared/lib/serverErrors.ts): auth_required, metering_error,
  * daily_limit, no_substitute, substitution_failed, rewrite_empty, rewrite_failed. Bad requests answer { error }.
@@ -147,7 +147,7 @@ async function handleSuggest(body: RequestBody, billing: BillingContext): Promis
   if (gate) return gate;
 
   try {
-    const { alternatives, usage } = await suggestSubstitutionsWithGemini({
+    const { alternatives, usage } = await suggestSubstitutionsWithLlm({
       ingredient: parsedIngredient.value,
       recipeTitle,
       otherIngredients: (body.other_ingredients ?? []).map((item) => item.trim()),
@@ -237,7 +237,7 @@ async function handleRewrite(body: RequestBody, billing: BillingContext): Promis
   if (gate) return gate;
 
   try {
-    const { instructions: rewritten, usage } = await rewriteInstructionsForSubstitutionWithGemini({
+    const { instructions: rewritten, usage } = await rewriteInstructionsForSubstitutionWithLlm({
       ingredient: parsedIngredient.value,
       alternative: parsedAlternative.value,
       instructions: instructions.value,

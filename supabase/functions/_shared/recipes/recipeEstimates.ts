@@ -17,7 +17,7 @@ import {
   nutritionFitsCalories,
   type RecipeNutrition,
 } from './nutrition.ts';
-import { CALORIE_RULES, TAG_RULES, TIME_RULES } from '../extraction/gemini.ts';
+import { CALORIE_RULES, TAG_RULES, TIME_RULES } from '../extraction/recipeExtraction.ts';
 import {
   INGREDIENT_AMOUNT_SCHEMA,
   MEASUREMENT_RULES,
@@ -25,7 +25,7 @@ import {
   type IngredientAmount,
 } from './ingredientAmounts.ts';
 import { generateLlmJson } from '../llm/llmClient.ts';
-import type { GeminiUsageSnapshot } from '../llm/pricing.ts';
+import type { LlmUsageSnapshot } from '../llm/pricing.ts';
 import type { CostEstimate, EffortLevel, Ingredient, Instruction, RecalcField } from './recipeEditTypes.ts';
 import { fitNutrition, fitRecipeToLimits } from './recipeLimits.ts';
 import { normalizeRecipeTags } from './tags.ts';
@@ -135,7 +135,7 @@ const reasoning = (value: unknown) => (typeof value === 'string' && value.trim()
 /** Throws on a failed call; a field that comes back unusable is left out of the values. */
 export async function estimateRecipeFields(
   input: EstimateInput,
-): Promise<{ values: EstimateValues; usage: GeminiUsageSnapshot | null }> {
+): Promise<{ values: EstimateValues; usage: LlmUsageSnapshot | null }> {
   const fields = new Set(input.fields);
   const rows = fields.has('ingredient_amounts')
     ? input.amountRows.filter((row) => row >= 0 && row < input.ingredients.length)
@@ -234,7 +234,7 @@ export interface NutritionInput {
  */
 export async function estimateRecipeNutrition(
   input: NutritionInput,
-): Promise<{ nutrition: RecipeNutrition | null; usage: GeminiUsageSnapshot | null }> {
+): Promise<{ nutrition: RecipeNutrition | null; usage: LlmUsageSnapshot | null }> {
   const lines = [
     `Title: ${input.title}`,
     `Servings: ${input.servings}`,

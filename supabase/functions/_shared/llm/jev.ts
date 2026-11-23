@@ -9,7 +9,7 @@
  * low-confidence answer it runs the path it ran before the gate.
  */
 
-import { buildTextContext, type ExtractInput } from '../extraction/gemini.ts';
+import { buildTextContext, type ExtractInput } from '../extraction/recipeExtraction.ts';
 import { resolveOpenRouterApiKey } from './llmClient.ts';
 import { isVideoTooLong } from '../extraction/videoLimits.ts';
 

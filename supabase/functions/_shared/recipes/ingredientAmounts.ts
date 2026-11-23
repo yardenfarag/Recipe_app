@@ -2,7 +2,7 @@
 // does not have to guess densities (cups of flour → grams, not milliliters).
 
 import { canonicalUnitKey, isCountUnit, isKnownCulinaryUnit } from './culinaryUnits.ts';
-import { sanitizeGeminiText } from '../llm/llmClient.ts';
+import { sanitizeLlmText } from '../llm/llmClient.ts';
 
 export const INGREDIENT_AMOUNT_SCHEMA = {
   type: 'object',
@@ -81,7 +81,7 @@ function parseAmount(value: unknown): IngredientAmount | undefined {
   const record = value as Record<string, unknown>;
   const quantity = Number(record.quantity);
   if (!Number.isFinite(quantity) || quantity < 0) return undefined;
-  const unit = typeof record.unit === 'string' ? canonicalizeUnit(sanitizeGeminiText(record.unit)) : '';
+  const unit = typeof record.unit === 'string' ? canonicalizeUnit(sanitizeLlmText(record.unit)) : '';
   return { quantity, unit };
 }
 
@@ -99,13 +99,13 @@ function isTasteUnit(unit: string): boolean {
 }
 
 /**
- * Canonicalize dual amounts from Gemini. Count-like items that omitted
+ * Canonicalize dual amounts from the model. Count-like items that omitted
  * metric/spoons get the source copied into both so the toggle stays stable.
  */
 export function normalizeDualIngredient(ingredient: DualIngredient): DualIngredient {
-  const name = sanitizeGeminiText(ingredient.name ?? '');
+  const name = sanitizeLlmText(ingredient.name ?? '');
   const quantity = Number(ingredient.quantity);
-  const unit = typeof ingredient.unit === 'string' ? sanitizeGeminiText(ingredient.unit) : '';
+  const unit = typeof ingredient.unit === 'string' ? sanitizeLlmText(ingredient.unit) : '';
   const source: DualIngredient = {
     name,
     quantity: Number.isFinite(quantity) ? quantity : 0,

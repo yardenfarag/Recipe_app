@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
-import { classifyGeminiRecipe, recipeRepairIsUpgrade } from './recipeCompleteness';
+import { classifyLlmRecipe, recipeRepairIsUpgrade } from './recipeCompleteness';
 
 const titleOnly = {
   found_recipe: true,
@@ -23,18 +23,18 @@ const full = {
   instructions: [{ step: 1, text: 'Boil' }],
 };
 
-describe('classifyGeminiRecipe', () => {
+describe('classifyLlmRecipe', () => {
   it('marks title + ingredients without steps as partial', () => {
-    expect(classifyGeminiRecipe(ingredientsOnly).status).toBe('partial');
-    expect(classifyGeminiRecipe(ingredientsOnly).missingFields).toContain('instructions');
+    expect(classifyLlmRecipe(ingredientsOnly).status).toBe('partial');
+    expect(classifyLlmRecipe(ingredientsOnly).missingFields).toContain('instructions');
   });
 
   it('marks title + both lists as full', () => {
-    expect(classifyGeminiRecipe(full).status).toBe('full');
+    expect(classifyLlmRecipe(full).status).toBe('full');
   });
 
   it('fails when nothing cookable was found', () => {
-    expect(classifyGeminiRecipe(titleOnly).status).toBe('failed');
+    expect(classifyLlmRecipe(titleOnly).status).toBe('failed');
   });
 });
 

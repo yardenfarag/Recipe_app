@@ -4,7 +4,7 @@
 //
 // Shorts in particular often carry the *entire* recipe in the creator's own
 // pinned/first comment rather than the description — so we detect comments
-// authored by the video's own channel and surface them first (see gemini.ts,
+// authored by the video's own channel and surface them first (see recipeExtraction.ts,
 // which now treats these as a primary source, not just a gap-filler).
 
 import { canonicalYouTubeWatchUrl, youTubeThumbnail } from '../platform.ts';
@@ -196,7 +196,7 @@ async function fetchTopComments(videoId: string, apiKey: string): Promise<RawCom
   }
 }
 
-/** About 30 minutes of speech. Matches MAX_CAPTIONS_CHARS in gemini.ts, which trims again. */
+/** About 30 minutes of speech. Matches MAX_CAPTIONS_CHARS in recipeExtraction.ts, which trims again. */
 const MAX_CAPTION_CHARS = 30_000;
 
 /**

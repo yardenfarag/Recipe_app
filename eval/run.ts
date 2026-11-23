@@ -7,17 +7,17 @@ import { classifyContent } from '../supabase/functions/_shared/extraction/conten
 import {
   beginTextExtraction,
   extractRecipeFromImage,
-  normalizeGeminiRecipe,
+  normalizeLlmRecipe,
   RECIPE_SCHEMA,
   VIDEO_SYSTEM_PROMPT,
-  type GeminiRecipe,
-} from '../supabase/functions/_shared/extraction/gemini.ts';
+  type LlmRecipe,
+} from '../supabase/functions/_shared/extraction/recipeExtraction.ts';
 import { EXTRACT_ROUTE_INSTRUCTIONS } from '../supabase/functions/_shared/llm/jev.ts';
 import { inventRecipeFromImage, inventRecipeWithLadder } from '../supabase/functions/_shared/recipes/inventRecipe.ts';
 import { generateLlmJson, type GenerateLlmJsonResult, setEvalHook } from '../supabase/functions/_shared/llm/llmClient.ts';
-import { estimateGeminiCostUsd } from '../supabase/functions/_shared/llm/pricing.ts';
+import { estimateLlmCostUsd } from '../supabase/functions/_shared/llm/pricing.ts';
 import {
-  translateRecipeWithGemini,
+  translateRecipeWithLlm,
   type TranslateLanguageCode,
 } from '../supabase/functions/_shared/recipes/translateRecipe.ts';
 import { type ImageCase, imagePath, type PostCase, postPath, type PostSnapshot, videoPath } from './fetch.ts';
@@ -121,7 +121,7 @@ async function buildCases(task: Task, model: string): Promise<Case[]> {
             id: `${p.id}--${lang}`,
             run: async () => {
               const { reference } = await readJson<PostLabel>(labelPath(p.id));
-              const { usage: _usage, ...translated } = await translateRecipeWithGemini({
+              const { usage: _usage, ...translated } = await translateRecipeWithLlm({
                 targetLanguage: lang,
                 title: reference.title,
                 ingredients: reference.ingredients,
@@ -175,7 +175,7 @@ async function buildCases(task: Task, model: string): Promise<Case[]> {
         id: p.id,
         run: async () => {
           // Video only, no caption or comments: this measures what the model gets from the clip.
-          const { data } = await generateLlmJson<GeminiRecipe>({
+          const { data } = await generateLlmJson<LlmRecipe>({
             systemPrompt: VIDEO_SYSTEM_PROMPT,
             parts: [
               { imageBase64: await fileBase64(videoPath(p.id)), mimeType: 'video/mp4' },
@@ -187,7 +187,7 @@ async function buildCases(task: Task, model: string): Promise<Case[]> {
             kind: 'video',
             context: 'eval: video',
           });
-          return normalizeGeminiRecipe(data);
+          return normalizeLlmRecipe(data);
         },
       }));
     case 'extract_gate': {
@@ -291,7 +291,7 @@ async function runOne(task: Task, model: string, c: Case): Promise<RunRecord> {
   for (const r of store.results) {
     record.promptTokens += r.usage.promptTokenCount;
     record.outputTokens += r.usage.candidatesTokenCount + r.usage.thoughtsTokenCount;
-    record.costUsd += r.costUsd ?? estimateGeminiCostUsd(r.usage);
+    record.costUsd += r.costUsd ?? estimateLlmCostUsd(r.usage);
   }
   return record;
 }

@@ -12,11 +12,11 @@ import { filledFieldsSummary } from './classifyRecipe.ts';
 import { NUTRITION_RULES, NUTRITION_SCHEMA_PROPERTIES } from '../recipes/nutrition.ts';
 import { generateLlmJson, resolveTaskModel, type LlmPart } from '../llm/llmClient.ts';
 import type { Platform } from './platform.ts';
-import type { GeminiUsageSnapshot } from '../llm/pricing.ts';
+import type { LlmUsageSnapshot } from '../llm/pricing.ts';
 import { resolveVideoPart } from './videoInput.ts';
 import { formatMaxVideoDurationLabel, isVideoTooLong } from './videoLimits.ts';
 
-export type { GeminiUsageSnapshot } from '../llm/pricing.ts';
+export type { LlmUsageSnapshot } from '../llm/pricing.ts';
 
 const TEXT_TIMEOUT_MS = 35_000;
 const VIDEO_TIMEOUT_MS = 120_000;
@@ -111,7 +111,7 @@ ${LANGUAGE_RULE}
 - Do NOT invent instructions if none are present — return what you found and leave instructions empty instead.
 - Return ONLY data matching the schema.`;
 
-// A JSON-Schema subset supported by Gemini structured output.
+// A JSON-Schema subset every structured-output model on OpenRouter accepts.
 export const RECIPE_SCHEMA = {
   type: 'object',
   properties: {
@@ -184,7 +184,7 @@ export type ExtractionSource =
   | 'web'
   | 'photo';
 
-export interface GeminiRecipe {
+export interface LlmRecipe {
   found_recipe: boolean;
   source_language: string;
   title: string;
@@ -205,9 +205,9 @@ export interface GeminiRecipe {
 }
 
 export interface LadderResult {
-  recipe: GeminiRecipe;
+  recipe: LlmRecipe;
   source: ExtractionSource;
-  usages: GeminiUsageSnapshot[];
+  usages: LlmUsageSnapshot[];
   /** True when Instagram download_media was needed for the video rung. */
   usedInstagramVideoDownload?: boolean;
   /**
@@ -217,7 +217,7 @@ export interface LadderResult {
   videoSkippedReason?: 'too_long' | 'out_of_time';
 }
 
-const EMPTY_RECIPE: GeminiRecipe = {
+const EMPTY_RECIPE: LlmRecipe = {
   found_recipe: false,
   source_language: 'en',
   title: '',
@@ -245,8 +245,8 @@ type TextSections = {
   captions?: boolean;
 };
 
-/** True when Gemini found anything worth keeping (full or partial). */
-export function geminiFoundRecipe(r: GeminiRecipe): boolean {
+/** True when the model found anything worth keeping (full or partial). */
+export function llmFoundRecipe(r: LlmRecipe): boolean {
   const hasTitle = Boolean(r.found_recipe && r.title?.trim());
   const hasIngredients = r.ingredients?.length > 0;
   const hasInstructions = r.instructions?.length > 0;
@@ -254,7 +254,7 @@ export function geminiFoundRecipe(r: GeminiRecipe): boolean {
 }
 
 /** Title + ingredients + steps — skip the video rung. */
-export function isFullGeminiRecipe(r: GeminiRecipe): boolean {
+export function isFullLlmRecipe(r: LlmRecipe): boolean {
   return Boolean(
     r.found_recipe &&
       r.title?.trim() &&
@@ -263,7 +263,7 @@ export function isFullGeminiRecipe(r: GeminiRecipe): boolean {
   );
 }
 
-export function recipeCompleteness(r: GeminiRecipe): number {
+export function recipeCompleteness(r: LlmRecipe): number {
   let score = 0;
   if (r.found_recipe && r.title?.trim()) score += 1;
   if (r.ingredients?.length) score += 2;
@@ -283,7 +283,7 @@ function textExtractionSource(
 }
 
 export type EarlyTextExtract =
-  | { ok: true; result: { recipe: GeminiRecipe; usage: GeminiUsageSnapshot | null } }
+  | { ok: true; result: { recipe: LlmRecipe; usage: LlmUsageSnapshot | null } }
   | { ok: false; timedOut: boolean; error: unknown };
 
 /** Starts the text rung so it can overlap the content gate. Null when there is no text. */
@@ -298,10 +298,10 @@ export function beginTextExtraction(
 
   const timeoutMs = stepTimeout(TEXT_TIMEOUT_MS, deadlineAt);
   if (timeoutMs < MIN_TEXT_MS) {
-    console.log('[gemini] text step skipped — out of time', { timeoutMs, early: true });
+    console.log('[extract] text step skipped — out of time', { timeoutMs, early: true });
     return Promise.resolve({ ok: false as const, timedOut: true, error: new Error('out_of_time') });
   }
-  console.log('[gemini] text step start', { timeoutMs, early: true });
+  console.log('[extract] text step start', { timeoutMs, early: true });
   const textStarted = Date.now();
   return extractRecipeFromText(
     input,
@@ -309,20 +309,20 @@ export function beginTextExtraction(
     timeoutMs,
   ).then(
     (result) => {
-      console.log('[gemini] text step done', {
+      console.log('[extract] text step done', {
         ms: Date.now() - textStarted,
         early: true,
-        found: geminiFoundRecipe(result.recipe),
-        full: isFullGeminiRecipe(result.recipe),
+        found: llmFoundRecipe(result.recipe),
+        full: isFullLlmRecipe(result.recipe),
       });
       return { ok: true as const, result };
     },
     (error) => {
-      console.error('[gemini] text step failed', {
+      console.error('[extract] text step failed', {
         ms: Date.now() - textStarted,
         error: error instanceof Error ? error.message : String(error),
       });
-      return { ok: false as const, timedOut: isGeminiTimeout(error), error };
+      return { ok: false as const, timedOut: isLlmTimeout(error), error };
     },
   );
 }
@@ -351,11 +351,11 @@ export async function extractRecipeWithLadder(
   const hasComments = input.topComments.length > 0;
   const hasCaptions = Boolean(input.captions?.trim());
   const hasAnyText = hasDescription || hasComments || hasCaptions;
-  const usages: GeminiUsageSnapshot[] = [];
+  const usages: LlmUsageSnapshot[] = [];
   let usedInstagramVideoDownload = false;
-  let textCandidate: { recipe: GeminiRecipe; source: ExtractionSource } | null = null;
+  let textCandidate: { recipe: LlmRecipe; source: ExtractionSource } | null = null;
 
-  console.log('[gemini] ladder start', {
+  console.log('[extract] ladder start', {
     platform: input.platform,
     textModel: resolveTaskModel('text').model,
     videoModel: resolveTaskModel('video').model,
@@ -372,7 +372,7 @@ export async function extractRecipeWithLadder(
 
   if (hasAnyText && !options?.skipText) {
     const textStarted = Date.now();
-    let fromText: { recipe: GeminiRecipe; usage: GeminiUsageSnapshot | null } | null = null;
+    let fromText: { recipe: LlmRecipe; usage: LlmUsageSnapshot | null } | null = null;
     const settled = options?.pendingText ? await options.pendingText : null;
     if (settled) {
       if (!settled.ok) {
@@ -381,10 +381,10 @@ export async function extractRecipeWithLadder(
         fromText = settled.result;
       }
     } else if (stepTimeout(TEXT_TIMEOUT_MS, deadlineAt) < MIN_TEXT_MS) {
-      console.log('[gemini] text step skipped — out of time');
+      console.log('[extract] text step skipped — out of time');
     } else {
       const timeoutMs = stepTimeout(TEXT_TIMEOUT_MS, deadlineAt);
-      console.log('[gemini] text step start', { timeoutMs });
+      console.log('[extract] text step start', { timeoutMs });
       try {
         fromText = await extractRecipeFromText(
           input,
@@ -396,57 +396,57 @@ export async function extractRecipeWithLadder(
           timeoutMs,
         );
       } catch (err) {
-        console.error('[gemini] text step failed', {
+        console.error('[extract] text step failed', {
           ms: Date.now() - textStarted,
           error: err instanceof Error ? err.message : String(err),
         });
-        if (!isGeminiTimeout(err)) throw err;
+        if (!isLlmTimeout(err)) throw err;
       }
     }
     if (fromText) {
       if (fromText.usage) usages.push(fromText.usage);
-      console.log('[gemini] text step done', {
+      console.log('[extract] text step done', {
         ms: Date.now() - textStarted,
-        found: geminiFoundRecipe(fromText.recipe),
-        full: isFullGeminiRecipe(fromText.recipe),
+        found: llmFoundRecipe(fromText.recipe),
+        full: isFullLlmRecipe(fromText.recipe),
         foundRecipe: fromText.recipe.found_recipe,
         ingredients: fromText.recipe.ingredients?.length ?? 0,
         instructions: fromText.recipe.instructions?.length ?? 0,
         usage: fromText.usage,
       });
-      if (geminiFoundRecipe(fromText.recipe)) {
+      if (llmFoundRecipe(fromText.recipe)) {
         const source = textExtractionSource(input, hasCaptions, hasComments);
-        const recipe = normalizeGeminiRecipe(fromText.recipe);
-        if (isFullGeminiRecipe(recipe)) {
+        const recipe = normalizeLlmRecipe(fromText.recipe);
+        if (isFullLlmRecipe(recipe)) {
           // A second video pass only to attach step timestamps blocks the response
           // for up to 90s after the recipe is already complete.
           return { recipe, source, usages };
         }
         textCandidate = { recipe, source };
-        console.log('[gemini] text step partial — trying video before returning');
+        console.log('[extract] text step partial — trying video before returning');
       }
     }
   } else if (hasAnyText) {
-    console.log('[gemini] skipping text step — extract gate routed to video');
+    console.log('[extract] skipping text step — extract gate routed to video');
   } else {
-    console.log('[gemini] skipping text step — no description/comments/captions');
+    console.log('[extract] skipping text step — no description/comments/captions');
   }
 
   if (input.platform === 'web') {
-    console.log('[gemini] web platform — skipping multimodal video step');
+    console.log('[extract] web platform — skipping multimodal video step');
     return textCandidate
       ? { recipe: textCandidate.recipe, source: textCandidate.source, usages }
       : { recipe: EMPTY_RECIPE, source: 'web', usages };
   }
 
   if (!input.videoUrl?.trim() && textCandidate) {
-    console.log('[gemini] skipping video step — no videoUrl, keeping partial text');
+    console.log('[extract] skipping video step — no videoUrl, keeping partial text');
     return { recipe: textCandidate.recipe, source: textCandidate.source, usages };
   }
 
-  console.log('[gemini] video step start');
+  console.log('[extract] video step start');
   if (isVideoTooLong(input.durationSeconds)) {
-    console.log('[gemini] video step skipped — duration over limit', {
+    console.log('[extract] video step skipped — duration over limit', {
       durationSeconds: input.durationSeconds,
       limitLabel: formatMaxVideoDurationLabel(),
     });
@@ -463,7 +463,7 @@ export async function extractRecipeWithLadder(
   }
 
   if (stepTimeout(Number.POSITIVE_INFINITY, deadlineAt) < MIN_VIDEO_RUNG_MS) {
-    console.log('[gemini] video step skipped — out of time', {
+    console.log('[extract] video step skipped — out of time', {
       msLeft: stepTimeout(Number.POSITIVE_INFINITY, deadlineAt),
     });
     if (textCandidate) {
@@ -485,15 +485,15 @@ export async function extractRecipeWithLadder(
     }
     if (fromVideo.usage) usages.push(fromVideo.usage);
     usedInstagramVideoDownload = fromVideo.usedInstagramVideoDownload === true;
-    const videoRecipe = normalizeGeminiRecipe(fromVideo.recipe);
-    console.log('[gemini] video step done', {
-      found: geminiFoundRecipe(videoRecipe),
-      full: isFullGeminiRecipe(videoRecipe),
+    const videoRecipe = normalizeLlmRecipe(fromVideo.recipe);
+    console.log('[extract] video step done', {
+      found: llmFoundRecipe(videoRecipe),
+      full: isFullLlmRecipe(videoRecipe),
       foundRecipe: videoRecipe.found_recipe,
       usage: fromVideo.usage,
     });
     if (
-      geminiFoundRecipe(videoRecipe) &&
+      llmFoundRecipe(videoRecipe) &&
       (!textCandidate || recipeCompleteness(videoRecipe) >= recipeCompleteness(textCandidate.recipe))
     ) {
       return {
@@ -513,13 +513,13 @@ export async function extractRecipeWithLadder(
       usedInstagramVideoDownload,
     };
   } catch (err) {
-    console.error('[gemini] video step failed', {
+    console.error('[extract] video step failed', {
       error: err instanceof Error ? err.message : String(err),
     });
     if (textCandidate) {
       return { recipe: textCandidate.recipe, source: textCandidate.source, usages };
     }
-    if (isGeminiTimeout(err)) {
+    if (isLlmTimeout(err)) {
       return {
         recipe: EMPTY_RECIPE,
         source: 'video',
@@ -539,9 +539,9 @@ async function extractRecipeFromText(
   input: ExtractInput,
   sections: TextSections,
   timeoutMs: number,
-): Promise<{ recipe: GeminiRecipe; usage: GeminiUsageSnapshot | null }> {
+): Promise<{ recipe: LlmRecipe; usage: LlmUsageSnapshot | null }> {
   const textContext = buildTextContext(input, sections);
-  return callGemini(TEXT_SYSTEM_PROMPT, [{ text: textContext }], timeoutMs, 'text');
+  return callExtractionModel(TEXT_SYSTEM_PROMPT, [{ text: textContext }], timeoutMs, 'text');
 }
 
 const IMAGE_SYSTEM_PROMPT = `You are a master chef. Analyze the provided photo of a recipe (cookbook page, handwritten card, screenshot, or menu) and extract a precise recipe.
@@ -589,8 +589,8 @@ export interface DishPhotoAnswer {
 export async function extractRecipeFromImage(input: {
   imageBase64: string;
   mimeType?: string;
-}): Promise<{ recipe: GeminiRecipe; usage: GeminiUsageSnapshot | null; dishPhoto: DishPhotoAnswer }> {
-  const { data, usage, durationMs } = await generateLlmJson<GeminiRecipe & DishPhotoAnswer>({
+}): Promise<{ recipe: LlmRecipe; usage: LlmUsageSnapshot | null; dishPhoto: DishPhotoAnswer }> {
+  const { data, usage, durationMs } = await generateLlmJson<LlmRecipe & DishPhotoAnswer>({
     systemPrompt: IMAGE_SYSTEM_PROMPT,
     parts: [
       {
@@ -603,11 +603,11 @@ export async function extractRecipeFromImage(input: {
     timeoutMs: IMAGE_TIMEOUT_MS,
     maxOutputTokens: TEXT_MAX_OUTPUT_TOKENS,
     kind: 'photo',
-    context: 'gemini.ts: extractRecipeFromImage',
+    context: 'recipeExtraction.ts: extractRecipeFromImage',
   });
-  console.log('[gemini] photo extract ok', { ms: durationMs, usage, dish_photo: data.dish_photo });
+  console.log('[extract] photo extract ok', { ms: durationMs, usage, dish_photo: data.dish_photo });
   const { dish_photo, dish_photo_box, ...recipe } = data;
-  return { recipe: normalizeGeminiRecipe(recipe), usage, dishPhoto: { dish_photo, dish_photo_box } };
+  return { recipe: normalizeLlmRecipe(recipe), usage, dishPhoto: { dish_photo, dish_photo_box } };
 }
 
 const REPAIR_TIMEOUT_MS = 60_000;
@@ -640,11 +640,11 @@ const REPAIR_SCHEMA = {
 };
 
 export async function repairPartialRecipe(input: {
-  current: GeminiRecipe;
+  current: LlmRecipe;
   extraText?: string;
 }): Promise<{
-  recipe: GeminiRecipe;
-  usage: GeminiUsageSnapshot | null;
+  recipe: LlmRecipe;
+  usage: LlmUsageSnapshot | null;
   filledSummary: string;
 }> {
   const draft = JSON.stringify(
@@ -672,7 +672,7 @@ export async function repairPartialRecipe(input: {
     : '\n\nNo extra source text was available. Use only the current draft; do not invent missing parts.';
 
   const { data, usage, durationMs } = await generateLlmJson<
-    GeminiRecipe & { filled_summary?: string }
+    LlmRecipe & { filled_summary?: string }
   >({
     systemPrompt: REPAIR_SYSTEM_PROMPT,
     parts: [
@@ -684,17 +684,17 @@ export async function repairPartialRecipe(input: {
     timeoutMs: REPAIR_TIMEOUT_MS,
     maxOutputTokens: TEXT_MAX_OUTPUT_TOKENS,
     kind: 'repair',
-    context: 'gemini.ts: repairPartialRecipe',
+    context: 'recipeExtraction.ts: repairPartialRecipe',
   });
 
-  const recipe = normalizeGeminiRecipe(data);
+  const recipe = normalizeLlmRecipe(data);
   const modelSummary = typeof data.filled_summary === 'string' ? data.filled_summary.trim() : '';
   const filled = filledFieldsSummary(input.current, recipe);
   const filledSummary =
     modelSummary ||
     (filled.length > 0 ? `Filled: ${filled.join(', ')}.` : '');
 
-  console.log('[gemini] repair ok', { ms: durationMs, usage, filled });
+  console.log('[extract] repair ok', { ms: durationMs, usage, filled });
   return { recipe, usage, filledSummary };
 }
 
@@ -702,8 +702,8 @@ async function extractRecipeWithVideo(
   input: ExtractInput,
   deadlineAt?: number,
 ): Promise<{
-  recipe: GeminiRecipe;
-  usage: GeminiUsageSnapshot | null;
+  recipe: LlmRecipe;
+  usage: LlmUsageSnapshot | null;
   usedInstagramVideoDownload?: boolean;
   /** The download used up the time the model call needed, so it wasn't made. */
   outOfTime?: boolean;
@@ -715,8 +715,8 @@ async function extractRecipeWithVideo(
   });
 
   if (!input.videoUrl?.trim()) {
-    console.log('[gemini] video step — no videoUrl, falling back to text-only');
-    return callGemini(
+    console.log('[extract] video step — no videoUrl, falling back to text-only');
+    return callExtractionModel(
       TEXT_SYSTEM_PROMPT,
       [{ text: textContext }],
       stepTimeout(TEXT_TIMEOUT_MS, deadlineAt),
@@ -732,14 +732,14 @@ async function extractRecipeWithVideo(
     deadlineAt === undefined ? undefined : deadlineAt - MIN_VIDEO_MS,
   );
   if (video === null) {
-    console.log('[gemini] video download abandoned — out of time', {
+    console.log('[extract] video download abandoned — out of time', {
       ms: Date.now() - resolveStarted,
     });
     return { recipe: EMPTY_RECIPE, usage: null, outOfTime: true };
   }
   if (!video.part) {
     // `too_large` with a long durationSeconds is the inline cap at work (PIN-100).
-    console.log('[gemini] skipping multimodal — no usable video', {
+    console.log('[extract] skipping multimodal — no usable video', {
       reason: video.reason,
       platform: input.platform,
       durationSeconds: input.durationSeconds ?? null,
@@ -754,7 +754,7 @@ async function extractRecipeWithVideo(
 
   const timeoutMs = stepTimeout(VIDEO_TIMEOUT_MS, deadlineAt);
   if (timeoutMs < MIN_VIDEO_MS) {
-    console.log('[gemini] multimodal call skipped — out of time', {
+    console.log('[extract] multimodal call skipped — out of time', {
       timeoutMs,
       resolveMs: Date.now() - resolveStarted,
     });
@@ -766,7 +766,7 @@ async function extractRecipeWithVideo(
     };
   }
 
-  console.log('[gemini] multimodal call', {
+  console.log('[extract] multimodal call', {
     timeoutMs,
     inline: 'imageBase64' in video.part,
     bytes: video.bytes,
@@ -774,7 +774,7 @@ async function extractRecipeWithVideo(
     resolveMs: Date.now() - resolveStarted,
   });
 
-  const result = await callGemini(
+  const result = await callExtractionModel(
     VIDEO_SYSTEM_PROMPT,
     [video.part, { text: textContext }],
     timeoutMs,
@@ -783,7 +783,7 @@ async function extractRecipeWithVideo(
   return { ...result, usedInstagramVideoDownload: video.usedInstagramVideoDownload };
 }
 
-export function normalizeGeminiRecipe(recipe: GeminiRecipe): GeminiRecipe {
+export function normalizeLlmRecipe(recipe: LlmRecipe): LlmRecipe {
   return {
     ...recipe,
     ingredients: mapDualIngredients(recipe.ingredients),
@@ -793,9 +793,9 @@ export function normalizeGeminiRecipe(recipe: GeminiRecipe): GeminiRecipe {
 
 function normalizeInstructions(
   instructions: { step: number; text: string; timestamp_seconds?: number }[],
-): GeminiRecipe['instructions'] {
+): LlmRecipe['instructions'] {
   return instructions.map((step, index) => {
-    const normalized: GeminiRecipe['instructions'][number] = {
+    const normalized: LlmRecipe['instructions'][number] = {
       step: Number.isFinite(step.step) ? step.step : index + 1,
       text: step.text ?? '',
     };
@@ -810,29 +810,29 @@ function normalizeInstructions(
   });
 }
 
-async function callGemini(
+async function callExtractionModel(
   systemPrompt: string,
   parts: LlmPart[],
   timeoutMs: number,
   kind: 'text' | 'video',
-): Promise<{ recipe: GeminiRecipe; usage: GeminiUsageSnapshot | null }> {
-  const { data: recipe, usage, durationMs, model } = await generateLlmJson<GeminiRecipe>({
+): Promise<{ recipe: LlmRecipe; usage: LlmUsageSnapshot | null }> {
+  const { data: recipe, usage, durationMs, model } = await generateLlmJson<LlmRecipe>({
     systemPrompt,
     parts,
     responseSchema: RECIPE_SCHEMA,
     timeoutMs,
     maxOutputTokens: kind === 'video' ? VIDEO_MAX_OUTPUT_TOKENS : TEXT_MAX_OUTPUT_TOKENS,
     kind,
-    context: 'gemini.ts: callGemini',
+    context: 'recipeExtraction.ts: callExtractionModel',
   });
 
-  console.log('[gemini] callGemini ok', {
+  console.log('[extract] callExtractionModel ok', {
     kind,
     model,
     ms: durationMs,
     usage,
   });
-  return { recipe: normalizeGeminiRecipe(recipe), usage };
+  return { recipe: normalizeLlmRecipe(recipe), usage };
 }
 
 function safeUrlHost(url: string): string | null {
@@ -843,7 +843,7 @@ function safeUrlHost(url: string): string | null {
   }
 }
 
-export function isGeminiTimeout(err: unknown): boolean {
+export function isLlmTimeout(err: unknown): boolean {
   return err instanceof FetchError && err.message.toLowerCase().includes('timedout=true');
 }
 
@@ -896,6 +896,6 @@ export function buildTextContext(input: ExtractInput, sections: TextSections): s
 }
 
 /** @deprecated Use extractRecipeWithLadder — kept for import stability. */
-export async function extractRecipeWithGemini(input: ExtractInput): Promise<GeminiRecipe> {
+export async function extractRecipeWithLlm(input: ExtractInput): Promise<LlmRecipe> {
   return (await extractRecipeWithLadder(input)).recipe;
 }

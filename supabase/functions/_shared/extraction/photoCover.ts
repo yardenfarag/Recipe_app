@@ -4,7 +4,7 @@
  * Until 2026-11-22 the uploaded photo was always the cover, whatever it was. A screenshot of an
  * image search or a post then carried that app's own title, buttons and icons into the Library,
  * right under the recipe's name. Now the photo model says where the dish is in the image
- * (gemini.ts, dish_photo), and:
+ * (recipeExtraction.ts, dish_photo), and:
  *
  * - "whole": the photo is the dish. It stays the cover, as before.
  * - "part": a photo of the dish is part of the image. The cover is that part, cut out.
@@ -19,9 +19,9 @@ import { decode as decodePng } from 'npm:fast-png@6.3.0';
 import jpeg from 'npm:jpeg-js@0.4.4';
 
 import type { Db } from '../core/supabaseAdmin.ts';
-import type { GeminiUsageSnapshot } from '../llm/pricing.ts';
+import type { LlmUsageSnapshot } from '../llm/pricing.ts';
 import { drawRecipeImage, type DrawRecipeImageResult, type RecipeImageInput, toRgba } from '../recipes/recipeImage.ts';
-import type { DishPhotoAnswer } from './gemini.ts';
+import type { DishPhotoAnswer } from './recipeExtraction.ts';
 import { decodeBase64, persistUserPhotoBytes } from './persistThumbnail.ts';
 
 /** Fractions of the image's width and height. */
@@ -123,7 +123,7 @@ export interface PhotoCoverResult {
   /** The cover to save: a URL, or null for none (the editor's Save draws one). Undefined keeps the uploaded photo. */
   imageUrl?: string | null;
   generated: boolean;
-  usage: GeminiUsageSnapshot | null;
+  usage: LlmUsageSnapshot | null;
   /** For ai_usage_events: what was decided and why. */
   metadata: Record<string, unknown>;
 }

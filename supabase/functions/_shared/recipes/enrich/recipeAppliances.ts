@@ -19,7 +19,7 @@ import {
   sanitizeRecipeAppliances,
 } from './appliances.ts';
 import { generateLlmJson } from '../../llm/llmClient.ts';
-import type { GeminiUsageSnapshot } from '../../llm/pricing.ts';
+import type { LlmUsageSnapshot } from '../../llm/pricing.ts';
 
 /** The parts of a recipe this task reads. Amounts are left out on purpose: they don't change the answer. */
 export type AppliancesRecipeInput = {
@@ -33,7 +33,7 @@ export type DeriveAppliancesResult = {
   /** Equipment the model named that has no catalog key, for growing the catalog (logged in metadata). */
   unmatched: string[];
   /** One entry per model call made (the list call, plus the tip check when there were tips). */
-  usages: GeminiUsageSnapshot[];
+  usages: LlmUsageSnapshot[];
   tipsProposed: number;
   tipsKept: number;
   error?: string;
@@ -220,7 +220,7 @@ export function unmatchedApplianceNames(value: unknown): string[] {
  */
 export async function appliancesForRecipe(
   recipe: AppliancesRecipeInput,
-  usages: GeminiUsageSnapshot[],
+  usages: LlmUsageSnapshot[],
   options: { timeoutMs?: number } = {},
 ): Promise<{ appliances: RecipeAppliance[] | null; metadata: Record<string, unknown> }> {
   const result = await deriveRecipeAppliances(recipe, { timeoutMs: options.timeoutMs });
@@ -256,7 +256,7 @@ export async function deriveRecipeAppliances(
 
   const tipsEnabled = options.tipsEnabled ?? applianceTipsEnabled();
   const timeoutMs = options.timeoutMs ?? 15_000;
-  const usages: GeminiUsageSnapshot[] = [];
+  const usages: LlmUsageSnapshot[] = [];
 
   let listed: RecipeAppliance[] | null;
   let unmatched: string[];

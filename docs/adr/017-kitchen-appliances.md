@@ -11,7 +11,7 @@ People save recipes without knowing whether their kitchen can make them, and fin
 
 The ticket was written on 2026-10-04, before per-task models (ADR 015). Facts that shape the design:
 
-- `RECIPE_SCHEMA` in `supabase/functions/_shared/extraction/gemini.ts` is shared by every extraction model (text, photo, video, repair, invent). A field added there reaches every flow and every model.
+- `RECIPE_SCHEMA` in `supabase/functions/_shared/extraction/recipeExtraction.ts` is shared by every extraction model (text, photo, video, repair, invent). A field added there reaches every flow and every model.
 - The extraction prompt currently says "never invent … equipment" (`gemini.ts` lines 45 and 513). The ticket wants appliances that a step clearly implies ("bake at 180°C" → oven), so these rules have to be reconciled.
 - Recipes are copied in several places: `recipes`, `recipe_cards` (Hub, published by a trigger on save), share snapshots, and the kitchen auto-apply copy (`kitchen_original`).
 - Merging to master deploys the web app automatically, but migrations are applied by hand.

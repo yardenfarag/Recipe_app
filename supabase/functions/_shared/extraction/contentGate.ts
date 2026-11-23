@@ -12,7 +12,7 @@ import { fetchImageAsBase64 } from './persistThumbnail.ts';
 import {
   CONTENT_GATE_DAILY_LIMIT,
   GUEST_CONTENT_GATE_DAILY_LIMIT,
-  type GeminiUsageSnapshot,
+  type LlmUsageSnapshot,
 } from '../llm/pricing.ts';
 
 export { CONTENT_GATE_DAILY_LIMIT, GUEST_CONTENT_GATE_DAILY_LIMIT };
@@ -32,7 +32,7 @@ export type ContentGateOk = {
   status: 'ok';
   kind: ContentKind;
   dishGuess: string;
-  usage: GeminiUsageSnapshot | null;
+  usage: LlmUsageSnapshot | null;
 };
 
 export type ContentGateResult =
@@ -71,7 +71,7 @@ const SCHEMA = {
 
 export async function classifyContent(
   input: ClassifyContentInput,
-): Promise<{ kind: ContentKind; dishGuess: string; usage: GeminiUsageSnapshot | null }> {
+): Promise<{ kind: ContentKind; dishGuess: string; usage: LlmUsageSnapshot | null }> {
   let imageBase64 = input.imageBase64?.trim() || null;
   let mimeType = input.mimeType ?? 'image/jpeg';
 

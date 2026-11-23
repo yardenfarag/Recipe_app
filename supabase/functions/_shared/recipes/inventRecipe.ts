@@ -2,16 +2,16 @@ import { MEASUREMENT_RULES } from './ingredientAmounts.ts';
 import { NUTRITION_RULES } from './nutrition.ts';
 import {
   RECIPE_SCHEMA,
-  geminiFoundRecipe,
-  isFullGeminiRecipe,
-  normalizeGeminiRecipe,
+  llmFoundRecipe,
+  isFullLlmRecipe,
+  normalizeLlmRecipe,
   type ExtractInput,
-  type GeminiRecipe,
+  type LlmRecipe,
   type LadderResult,
-} from '../extraction/gemini.ts';
+} from '../extraction/recipeExtraction.ts';
 import { FetchError } from '../core/errors.ts';
 import { generateLlmJson, type LlmPart } from '../llm/llmClient.ts';
-import type { GeminiUsageSnapshot } from '../llm/pricing.ts';
+import type { LlmUsageSnapshot } from '../llm/pricing.ts';
 import { resolveVideoPart } from '../extraction/videoInput.ts';
 import { formatMaxVideoDurationLabel, isVideoTooLong } from '../extraction/videoLimits.ts';
 
@@ -50,7 +50,7 @@ ${TAG_RULES}
 - source_language: lowercase ISO 639-1 of the recipe text you write (match the requested language).
 - Return ONLY data matching the schema.`;
 
-const EMPTY_RECIPE: GeminiRecipe = {
+const EMPTY_RECIPE: LlmRecipe = {
   found_recipe: false,
   source_language: 'en',
   title: '',
@@ -68,8 +68,8 @@ export async function inventRecipeFromImage(input: {
   imageBase64: string;
   mimeType?: string;
   language?: string;
-}): Promise<{ recipe: GeminiRecipe; usage: GeminiUsageSnapshot | null }> {
-  const { data, usage, durationMs } = await generateLlmJson<GeminiRecipe>({
+}): Promise<{ recipe: LlmRecipe; usage: LlmUsageSnapshot | null }> {
+  const { data, usage, durationMs } = await generateLlmJson<LlmRecipe>({
     systemPrompt: INVENT_RULES,
     parts: [
       {
@@ -87,7 +87,7 @@ export async function inventRecipeFromImage(input: {
     context: 'inventRecipe.ts: inventRecipeFromImage',
   });
   console.log('[invent] photo ok', { ms: durationMs, usage });
-  return { recipe: normalizeGeminiRecipe(data), usage };
+  return { recipe: normalizeLlmRecipe(data), usage };
 }
 
 export async function inventRecipeWithLadder(
@@ -98,16 +98,16 @@ export async function inventRecipeWithLadder(
   const hasComments = input.topComments.length > 0;
   const hasCaptions = Boolean(input.captions?.trim());
   const hasAnyText = hasDescription || hasComments || hasCaptions;
-  const usages: GeminiUsageSnapshot[] = [];
+  const usages: LlmUsageSnapshot[] = [];
   let usedInstagramVideoDownload = false;
-  let textCandidate: GeminiRecipe | null = null;
+  let textCandidate: LlmRecipe | null = null;
 
   if (hasAnyText) {
     try {
       const fromText = await inventFromParts(input, language, TEXT_TIMEOUT_MS, 'text');
       if (fromText.usage) usages.push(fromText.usage);
-      if (geminiFoundRecipe(fromText.recipe)) {
-        if (isFullGeminiRecipe(fromText.recipe)) {
+      if (llmFoundRecipe(fromText.recipe)) {
+        if (isFullLlmRecipe(fromText.recipe)) {
           return { recipe: fromText.recipe, source: 'description', usages };
         }
         textCandidate = fromText.recipe;
@@ -146,7 +146,7 @@ export async function inventRecipeWithLadder(
     const fromVideo = await inventWithVideo(input, language);
     if (fromVideo.usage) usages.push(fromVideo.usage);
     usedInstagramVideoDownload = fromVideo.usedInstagramVideoDownload === true;
-    if (geminiFoundRecipe(fromVideo.recipe)) {
+    if (llmFoundRecipe(fromVideo.recipe)) {
       return {
         recipe: fromVideo.recipe,
         source: 'video',
@@ -179,9 +179,9 @@ async function inventFromParts(
   timeoutMs: number,
   kind: 'text' | 'video',
   extraParts: LlmPart[] = [],
-): Promise<{ recipe: GeminiRecipe; usage: GeminiUsageSnapshot | null }> {
+): Promise<{ recipe: LlmRecipe; usage: LlmUsageSnapshot | null }> {
   const textContext = buildInventContext(input);
-  const { data, usage } = await generateLlmJson<GeminiRecipe>({
+  const { data, usage } = await generateLlmJson<LlmRecipe>({
     systemPrompt: INVENT_RULES,
     parts: [
       ...extraParts,
@@ -195,15 +195,15 @@ async function inventFromParts(
     kind: kind === 'video' ? 'invent_video' : 'invent_text',
     context: `inventRecipe.ts: ${kind}`,
   });
-  return { recipe: normalizeGeminiRecipe(data), usage };
+  return { recipe: normalizeLlmRecipe(data), usage };
 }
 
 async function inventWithVideo(
   input: ExtractInput,
   language: string,
 ): Promise<{
-  recipe: GeminiRecipe;
-  usage: GeminiUsageSnapshot | null;
+  recipe: LlmRecipe;
+  usage: LlmUsageSnapshot | null;
   usedInstagramVideoDownload?: boolean;
 }> {
   if (!input.videoUrl?.trim()) {

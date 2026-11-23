@@ -13,15 +13,15 @@
  */
 
 import { generateLlmJson } from '../llm/llmClient.ts';
-import type { GeminiUsageSnapshot } from '../llm/pricing.ts';
+import type { LlmUsageSnapshot } from '../llm/pricing.ts';
 
 export const MODERATION_REASONS = ['not_a_recipe', 'spam', 'hateful', 'dangerous', 'personal'] as const;
 export type ModerationReason = (typeof MODERATION_REASONS)[number];
 
 export type ModerationResult =
-  | { verdict: 'ok'; usages: GeminiUsageSnapshot[] }
-  | { verdict: 'reject'; reason: ModerationReason; usages: GeminiUsageSnapshot[] }
-  | { verdict: 'error'; error: string; usages: GeminiUsageSnapshot[] };
+  | { verdict: 'ok'; usages: LlmUsageSnapshot[] }
+  | { verdict: 'reject'; reason: ModerationReason; usages: LlmUsageSnapshot[] }
+  | { verdict: 'error'; error: string; usages: LlmUsageSnapshot[] };
 
 export type ModeratedRecipeInput = {
   title?: unknown;

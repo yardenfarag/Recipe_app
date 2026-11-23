@@ -8,7 +8,7 @@
  * is only a fallback.
  */
 
-import { isInstagramCdnUrl, resolveInstagramVideoForGemini } from './sources/instagram.ts';
+import { isInstagramCdnUrl, resolveInstagramVideoForModel } from './sources/instagram.ts';
 import type { LlmPart } from '../llm/llmClient.ts';
 import type { Platform } from './platform.ts';
 import { readBodyCapped, safeFetch } from '../core/safeFetch.ts';
@@ -149,7 +149,7 @@ export async function resolveVideoPart(input: {
   const resolveStarted = Date.now();
   let hosted: string | undefined;
   try {
-    hosted = await resolveInstagramVideoForGemini(input.sourceUrl);
+    hosted = await resolveInstagramVideoForModel(input.sourceUrl);
   } catch (err) {
     console.error('[video] hosted Instagram resolve failed', {
       ms: Date.now() - resolveStarted,

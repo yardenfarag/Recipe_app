@@ -34,7 +34,7 @@ export type EnsureTranslationResult =
     };
 
 /**
- * Returns content in `targetLanguage`, translating via Gemini when needed.
+ * Returns content in `targetLanguage`, translating through the translate-recipe function when needed.
  * Caller is responsible for reading/writing the cache around this helper.
  */
 export async function ensureRecipeTranslation(options: {

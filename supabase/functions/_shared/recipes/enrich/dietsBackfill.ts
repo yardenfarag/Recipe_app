@@ -5,7 +5,7 @@
  * or a database (dietsBackfill_test.ts). backfill-diets/index.ts wires in Supabase.
  */
 
-import type { GeminiUsageSnapshot } from '../../llm/pricing.ts';
+import type { LlmUsageSnapshot } from '../../llm/pricing.ts';
 import type { DeriveDietsResult, DietsRecipeInput, HubDietKey } from './recipeDiets.ts';
 
 export const MAX_DIETS_BACKFILL_BATCH = 20;
@@ -33,7 +33,7 @@ export type DietsBackfillResult = {
   skipped: number;
   /** Pass this as `after` for the next batch; null when done. */
   nextCursor: string | null;
-  usages: GeminiUsageSnapshot[];
+  usages: LlmUsageSnapshot[];
   errors: string[];
 };
 

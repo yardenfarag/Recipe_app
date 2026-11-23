@@ -1,7 +1,7 @@
 import { RECIPE_LIMITS, truncateChars } from './recipeLimits.ts';
 
 /**
- * Normalize Gemini (or user) tags for storage and trend aggregation:
+ * Normalize model (or user) tags for storage and trend aggregation:
  * lowercase, trim, collapse whitespace, drop empties/hashtags, dedupe, cap at 8.
  * Each tag fits the database limit of RECIPE_LIMITS.tagChars characters (PIN-79).
  */

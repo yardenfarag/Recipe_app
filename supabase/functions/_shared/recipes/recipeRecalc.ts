@@ -16,8 +16,8 @@
 
 import { type Db, untypedUpdate } from '../core/supabaseAdmin.ts';
 
-import { classifyGeminiRecipe } from '../extraction/classifyRecipe.ts';
-import type { GeminiUsageSnapshot } from '../llm/pricing.ts';
+import { classifyLlmRecipe } from '../extraction/classifyRecipe.ts';
+import type { LlmUsageSnapshot } from '../llm/pricing.ts';
 import { appliancesForRecipe } from './enrich/recipeAppliances.ts';
 import type { Ingredient, Instruction, PendingField } from './recipeEditTypes.ts';
 import { type EstimateField, estimateRecipeFields } from './recipeEstimates.ts';
@@ -61,7 +61,7 @@ export async function runRecipeRecalculation(opts: {
   const { admin, userId, recipe, fields, startedAt } = opts;
   const recipeId = String(recipe.id);
   const started = Date.now();
-  const usages: GeminiUsageSnapshot[] = [];
+  const usages: LlmUsageSnapshot[] = [];
   const written: PendingField[] = [];
   const failed: PendingField[] = [];
   const metadata: Record<string, unknown> = {};
@@ -87,7 +87,7 @@ export async function runRecipeRecalculation(opts: {
       // A field that became locked is dropped from pending too: the user's value stands.
       update.recalc_pending = asArray<PendingField>(row.recalc_pending).filter((field) => !done.includes(field));
       const merged = { ...row, ...update };
-      update.missing_fields = classifyGeminiRecipe({
+      update.missing_fields = classifyLlmRecipe({
         found_recipe: true,
         title: merged.title as string,
         ingredients: asArray(merged.ingredients),

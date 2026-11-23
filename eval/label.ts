@@ -1,8 +1,8 @@
 // Reference labels written by a strong model that is not on the shortlist.
 // They stand in for hand labels (PIN-44 chose an LLM judge over manual review).
 
-import { buildTextContext } from '../supabase/functions/_shared/extraction/gemini.ts';
-import type { ExtractInput } from '../supabase/functions/_shared/extraction/gemini.ts';
+import { buildTextContext } from '../supabase/functions/_shared/extraction/recipeExtraction.ts';
+import type { ExtractInput } from '../supabase/functions/_shared/extraction/recipeExtraction.ts';
 import { EXTRACT_ROUTES } from '../supabase/functions/_shared/llm/jev.ts';
 import { type ImageCase, imagePath, type PostCase, postPath, type PostSnapshot } from './fetch.ts';
 import { chatJson, dataUrl, exists, pool, PRIVATE, readJson, readJsonOr, ROOT, writeJson } from './lib.ts';

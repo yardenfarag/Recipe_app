@@ -1,14 +1,14 @@
-// Ingredient substitution via Gemini's generateContent REST endpoint.
+// Ingredient substitution through the LLM client (OpenRouter).
 
 import { generateLlmJson } from '../llm/llmClient.ts';
-import { sanitizeGeminiText } from '../llm/llmClient.ts';
+import { sanitizeLlmText } from '../llm/llmClient.ts';
 import {
   DUAL_INGREDIENT_SCHEMA,
   MEASUREMENT_RULES,
   normalizeDualIngredient,
   type DualIngredient,
 } from './ingredientAmounts.ts';
-import type { GeminiUsageSnapshot } from '../llm/pricing.ts';
+import type { LlmUsageSnapshot } from '../llm/pricing.ts';
 
 const REQUEST_TIMEOUT_MS = 20_000;
 const REWRITE_TIMEOUT_MS = 25_000;
@@ -110,7 +110,7 @@ export interface SuggestSubstitutionInput {
   ingredient: { name: string; quantity: number; unit: string };
   recipeTitle: string;
   otherIngredients: string[];
-  /** Active recipe language when known; otherwise Gemini infers from ingredient text. */
+  /** Active recipe language when known; otherwise the model infers it from the ingredient text. */
   language?: SubstitutionLanguageCode | null;
 }
 
@@ -153,9 +153,9 @@ export function isSubstitutionLanguageCode(value: string): value is Substitution
   return (SUBSTITUTION_LANGUAGE_CODES as readonly string[]).includes(value);
 }
 
-export async function suggestSubstitutionsWithGemini(
+export async function suggestSubstitutionsWithLlm(
   input: SuggestSubstitutionInput,
-): Promise<{ alternatives: SubstitutionAlternative[]; usage: GeminiUsageSnapshot | null }> {
+): Promise<{ alternatives: SubstitutionAlternative[]; usage: LlmUsageSnapshot | null }> {
   const { data, usage } = await generateLlmJson<{ alternatives: SubstitutionAlternative[] }>({
     systemPrompt: SYSTEM_PROMPT,
     parts: [{ text: buildTextContext(input) }],
@@ -163,7 +163,7 @@ export async function suggestSubstitutionsWithGemini(
     timeoutMs: REQUEST_TIMEOUT_MS,
     maxOutputTokens: MAX_OUTPUT_TOKENS,
     kind: 'substitution',
-    context: 'substitution.ts: suggestSubstitutionsWithGemini',
+    context: 'substitution.ts: suggestSubstitutionsWithLlm',
   });
 
   return {
@@ -181,7 +181,7 @@ export async function suggestSubstitutionsWithGemini(
       unit: dual.unit,
       ...(dual.metric ? { metric: dual.metric } : {}),
       ...(dual.spoons ? { spoons: dual.spoons } : {}),
-      reason: sanitizeGeminiText(alt.reason ?? ''),
+      reason: sanitizeLlmText(alt.reason ?? ''),
     };
   }),
     usage,
@@ -189,9 +189,9 @@ export async function suggestSubstitutionsWithGemini(
 }
 
 /** Patches step text after the user applies a substitute (keeps step count/order). */
-export async function rewriteInstructionsForSubstitutionWithGemini(
+export async function rewriteInstructionsForSubstitutionWithLlm(
   input: RewriteInstructionsForSubstitutionInput,
-): Promise<{ instructions: { step: number; text: string }[]; usage: GeminiUsageSnapshot | null }> {
+): Promise<{ instructions: { step: number; text: string }[]; usage: LlmUsageSnapshot | null }> {
   if (input.instructions.length === 0) return { instructions: [], usage: null };
 
   const { data, usage } = await generateLlmJson<{
@@ -203,13 +203,13 @@ export async function rewriteInstructionsForSubstitutionWithGemini(
     timeoutMs: REWRITE_TIMEOUT_MS,
     maxOutputTokens: REWRITE_MAX_OUTPUT_TOKENS,
     kind: 'substitution',
-    context: 'substitution.ts: rewriteInstructionsForSubstitutionWithGemini',
+    context: 'substitution.ts: rewriteInstructionsForSubstitutionWithLlm',
   });
 
   return {
     instructions: (data.instructions ?? []).map((step, index) => ({
     step: Number.isFinite(Number(step.step)) ? Number(step.step) : index + 1,
-    text: sanitizeGeminiText(step.text ?? ''),
+    text: sanitizeLlmText(step.text ?? ''),
   })),
     usage,
   };

@@ -13,7 +13,7 @@ export type ClassifiableRecipe = {
 
 export type RecipeClassifyStatus = 'full' | 'partial' | 'failed';
 
-export function classifyGeminiRecipe(r: ClassifiableRecipe): {
+export function classifyLlmRecipe(r: ClassifiableRecipe): {
   status: RecipeClassifyStatus;
   missingFields: string[];
 } {
@@ -41,8 +41,8 @@ export function recipeRepairIsUpgrade(
   before: ClassifiableRecipe,
   after: ClassifiableRecipe,
 ): boolean {
-  const beforeClass = classifyGeminiRecipe(before);
-  const afterClass = classifyGeminiRecipe(after);
+  const beforeClass = classifyLlmRecipe(before);
+  const afterClass = classifyLlmRecipe(after);
   if (afterClass.status === 'failed') return false;
   if (beforeClass.status !== 'full' && afterClass.status === 'full') return true;
 
