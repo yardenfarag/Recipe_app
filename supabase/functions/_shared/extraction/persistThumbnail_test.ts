@@ -262,3 +262,23 @@ Deno.test({
       }
     }),
 });
+
+Deno.test({
+  name: 'with minShortSide, a picture no larger than the old cover is not stored',
+  sanitizeOps: false,
+  sanitizeResources: false,
+  fn: () =>
+    withStorageEnv(async () => {
+      const stub = stubCandidates({ [SMALL]: [300, 400], [MEDIUM]: [600, 800] });
+      try {
+        const kept = await persistSocialThumbnail({ sourceUrl: SMALL, platform: 'web', minShortSide: 300 });
+        assertEquals(kept, undefined);
+        assertEquals(stub.uploadedWidths, []);
+        const larger = await persistSocialThumbnail({ sourceUrl: MEDIUM, platform: 'web', minShortSide: 300 });
+        assert(larger);
+        assertEquals(stub.uploadedWidths, [600]);
+      } finally {
+        stub.restore();
+      }
+    }),
+});

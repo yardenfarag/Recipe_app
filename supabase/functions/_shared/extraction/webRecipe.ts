@@ -323,6 +323,15 @@ function isRecipeType(value: unknown): boolean {
 }
 
 /**
+ * A page's pictures, read with a plain fetch only (no paid page reader), for the cover backfill.
+ * Empty when the page can't be read.
+ */
+export async function fetchPageImageCandidates(url: string): Promise<string[]> {
+  const html = await fetchHtml(url);
+  return pageImageCandidates(html, findRecipeJsonLd(extractJsonLdBlocks(html)));
+}
+
+/**
  * The page's pictures of the dish, best first: the recipe's own (JSON-LD), then og:image and
  * twitter:image. A recipe plugin lists one photo at several sizes, often smallest first
  * (`photo-225x225.jpg`), and the page's og:image is usually 1200 wide; until PIN-176 we took the first.
