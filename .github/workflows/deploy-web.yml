@@ -15,6 +15,7 @@ on:
       - '!eval/**'
       - '!.github/**'
       - '!scripts/backend-changes*'
+      - '!scripts/pr-checks*'
       - '.github/workflows/deploy-web.yml'
       - '.github/workflows/quality.yml'
   workflow_dispatch:
