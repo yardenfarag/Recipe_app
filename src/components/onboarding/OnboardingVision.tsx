@@ -87,7 +87,7 @@ export function OnboardingVision() {
             backgroundColor: colors.primary,
           }}
         >
-          <CookieMark size={50} color={colors.onPrimary} />
+          <CookieMark size={50} color={colors.onPrimary} holeColor={colors.primary} />
         </View>
       </Animated.View>
 

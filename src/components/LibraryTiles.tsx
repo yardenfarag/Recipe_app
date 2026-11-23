@@ -1,5 +1,4 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { Image } from 'expo-image';
 import { router } from 'expo-router';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
@@ -8,32 +7,19 @@ import { StyleSheet, View, type StyleProp, type ViewStyle } from 'react-native';
 import { CookieMark } from '@/components/CookieMark';
 import { Pressable } from '@/components/ui/Pressable';
 import { Text } from '@/components/ui/Text';
-import { PhotoTile, Tile, TileBadge, TileLabel } from '@/components/ui/Tile';
+import { PhotoTile, Tile, TileBadge } from '@/components/ui/Tile';
 import { KitIcon, Radii, usePhotoColors, withAlpha, type IconSource } from '@/components/ui/tokens';
-import { useAuth } from '@/hooks/useAuth';
-import { useShoppingList } from '@/hooks/useShoppingList';
-import { useThemePreference } from '@/hooks/useThemePreference';
 import { useTypography } from '@/hooks/useTypography';
-import { recipeImageSource } from '@/lib/recipeImageSource';
 import { formatRecipeDuration } from '@shared/lib/formatRecipeDuration';
 import { recipeSource } from '@shared/lib/recipeSource';
 import { getRecipeVideoInfo } from '@shared/lib/recipeVideo';
-import { fetchRecipesCookedSince, type CookedRecipe } from '@shared/lib/supabase/recipes';
-import {
-  nextTonightsPick,
-  pickDay,
-  recipesCookedWithin,
-  tonightsPick,
-  type TonightsPickMemory,
-} from '@shared/lib/tonightsPick';
+import { nextTonightsPick, pickDay, tonightsPick, type TonightsPickMemory } from '@shared/lib/tonightsPick';
 import type { Recipe } from '@shared/types/recipe';
 
 const PICK_KEY = 'pinch:tonightsPick';
-const WEEK_MS = 7 * 24 * 60 * 60 * 1000;
 
-/** The tall tile at the top of the Library, and the two small ones under it. */
+/** The tall tile at the top of the Library. */
 export const TONIGHT_TILE_HEIGHT = 300;
-export const SMALL_TILE_HEIGHT = 104;
 
 function parseMemory(raw: string | null): TonightsPickMemory | null {
   if (!raw) return null;
@@ -103,83 +89,22 @@ export function useTonightsPick(recipes: Recipe[]): { pick: Recipe | null; anoth
 }
 
 /**
- * What was cooked in the last seven days, most recent first (web/lib/library/useCookedThisWeek.ts). Asked for on its
- * own when signed in, since the Library loads a page at a time; the loaded recipes win where they differ. `version`
- * changes when the library does (its total), so a deleted recipe drops out.
+ * The top of the Library (PIN-177): tonight's pick across the width. Unlike the web, the phone has no "Cooked this
+ * week" or List tiles under it: List has its own tab, and the recipes come up sooner without them.
  */
-export function useCookedThisWeek(recipes: Recipe[], version: number): CookedRecipe[] {
-  const { user } = useAuth();
-  const userId = user?.id;
-  const [now] = useState(() => new Date());
-  const [fetched, setFetched] = useState<CookedRecipe[]>([]);
-
-  useEffect(() => {
-    if (!userId) return;
-    let cancelled = false;
-    fetchRecipesCookedSince(new Date(now.getTime() - WEEK_MS).toISOString())
-      .then((rows) => {
-        if (!cancelled) setFetched(rows);
-      })
-      .catch(() => {
-        // The tile falls back to the recipes already loaded.
-      });
-    return () => {
-      cancelled = true;
-    };
-  }, [userId, now, version]);
-
-  return useMemo(() => {
-    const loadedIds = new Set(recipes.map((recipe) => recipe.id));
-    const loaded: CookedRecipe[] = recipesCookedWithin(recipes, now).map((recipe) => ({
-      id: recipe.id,
-      title: recipe.display_title ?? recipe.title,
-      image_url: recipe.image_url,
-      last_cooked_at: recipe.last_cooked_at,
-    }));
-    const others = userId ? fetched.filter((recipe) => !loadedIds.has(recipe.id)) : [];
-    return [...loaded, ...others].sort(
-      (a, b) => Date.parse(b.last_cooked_at ?? '') - Date.parse(a.last_cooked_at ?? ''),
-    );
-  }, [recipes, fetched, now, userId]);
-}
-
-/**
- * The top of the Library (PIN-177, after the web's KitchenTiles): tonight's pick across the width, then what was
- * cooked this week and the shopping list side by side.
- */
-export function KitchenTiles({
-  pick,
-  onAnother,
-  cooked,
-}: {
-  pick: Recipe | null;
-  onAnother: (() => void) | null;
-  cooked: CookedRecipe[];
-}) {
-  return (
-    <View style={{ gap: 12 }}>
-      {pick ? (
-        <TonightTile recipe={pick} onAnother={onAnother} />
-      ) : (
-        <Tile tone="element" style={{ height: TONIGHT_TILE_HEIGHT }} />
-      )}
-      <View style={{ flexDirection: 'row', gap: 12 }}>
-        <CookedTile cooked={cooked} style={{ flex: 1 }} />
-        <ListTile style={{ flex: 1 }} />
-      </View>
-    </View>
+export function TonightsPick({ pick, onAnother }: { pick: Recipe | null; onAnother: (() => void) | null }) {
+  return pick ? (
+    <TonightTile recipe={pick} onAnother={onAnother} />
+  ) : (
+    <Tile tone="element" style={{ height: TONIGHT_TILE_HEIGHT }} />
   );
 }
 
-/** Grey outlines of the tiles while the Library loads. */
-export function KitchenTilesSkeleton() {
+/** A grey outline of tonight's pick while the Library loads. */
+export function TonightsPickSkeleton() {
   return (
-    <View style={{ gap: 12 }} accessible={false} importantForAccessibility="no-hide-descendants">
+    <View accessible={false} importantForAccessibility="no-hide-descendants">
       <Tile tone="element" style={{ height: TONIGHT_TILE_HEIGHT }} />
-      <View style={{ flexDirection: 'row', gap: 12 }}>
-        <Tile tone="element" style={{ flex: 1, height: SMALL_TILE_HEIGHT }} />
-        <Tile tone="element" style={{ flex: 1, height: SMALL_TILE_HEIGHT }} />
-      </View>
     </View>
   );
 }
@@ -343,110 +268,4 @@ function TonightTile({ recipe, onAnother }: { recipe: Recipe; onAnother: (() => 
       </View>
     </PhotoTile>
   );
-}
-
-/** How many recipes were cooked in the last seven days, with the photos of the latest three. */
-function CookedTile({ cooked, style }: { cooked: CookedRecipe[]; style?: StyleProp<ViewStyle> }) {
-  const { t } = useTranslation();
-  const { colors } = useThemePreference();
-  const type = useTypography();
-  const faces = cooked.slice(0, 3);
-  return (
-    <Tile
-      accessible
-      accessibilityLabel={t('web.library.cookedThisWeekCount', { count: cooked.length })}
-      style={[{ height: SMALL_TILE_HEIGHT, padding: 14, justifyContent: 'space-between' }, style]}
-    >
-      <TileLabel numberOfLines={1}>{t('web.library.cookedThisWeek')}</TileLabel>
-      <View style={{ flexDirection: 'row', alignItems: 'flex-end', justifyContent: 'space-between', gap: 8 }}>
-        <Text
-          variant="number"
-          style={{ fontSize: 40, lineHeight: 42, letterSpacing: type.tracking(-0.03, 40) }}
-        >
-          {cooked.length}
-        </Text>
-        {faces.length > 0 ? (
-          <View style={{ flexDirection: 'row', paddingBottom: 2 }}>
-            {faces.map((recipe, index) => (
-              <View
-                key={recipe.id}
-                style={{
-                  width: 32,
-                  height: 32,
-                  borderRadius: 16,
-                  overflow: 'hidden',
-                  borderWidth: 2,
-                  borderColor: colors.surface,
-                  backgroundColor: colors.backgroundElement,
-                  marginStart: index > 0 ? -10 : 0,
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                }}
-              >
-                {recipe.image_url ? (
-                  <Image
-                    source={recipeImageSource(recipe.image_url)}
-                    style={StyleSheet.absoluteFill}
-                    contentFit="cover"
-                    recyclingKey={recipe.image_url}
-                  />
-                ) : (
-                  <CookieMark size={16} color={colors.primaryText} />
-                )}
-              </View>
-            ))}
-          </View>
-        ) : null}
-      </View>
-    </Tile>
-  );
-}
-
-/** The shopping list in a tile: how many items are left and the first two. Opens the List tab. */
-function ListTile({ style }: { style?: StyleProp<ViewStyle> }) {
-  const { t } = useTranslation();
-  const { items, loading } = useShoppingList();
-  const left = items.filter((item) => !item.checked);
-  const label = left.length > 0 ? t('web.library.listLeft', { count: left.length }) : t('tabs.list');
-  const summary =
-    left.length > 0
-      ? [
-          ...left.slice(0, 2).map((item) => item.name),
-          left.length > 2 ? t('web.library.listMore', { count: left.length - 2 }) : null,
-        ]
-          .filter(Boolean)
-          .join(', ')
-      : items.length > 0
-        ? t('web.library.listDone')
-        : t('web.library.listEmpty');
-
-  return (
-    <Tile
-      onPress={() => router.push('/list')}
-      trackId="library.list_tile.open"
-      accessibilityLabel={loading ? t('web.library.listOpen') : `${label}. ${summary}`}
-      accessibilityHint={t('web.library.listOpen')}
-      style={[{ height: SMALL_TILE_HEIGHT, padding: 14, gap: 6 }, style]}
-    >
-      <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 6 }}>
-        <TileLabel numberOfLines={1} style={{ flexShrink: 1 }}>
-          {label}
-        </TileLabel>
-        <ListChevron />
-      </View>
-      <Text
-        numberOfLines={2}
-        weight="semibold"
-        tone={left.length > 0 ? 'default' : 'muted'}
-        style={{ fontSize: 14, lineHeight: 19 }}
-      >
-        {loading ? ' ' : summary}
-      </Text>
-    </Tile>
-  );
-}
-
-function ListChevron() {
-  const { colors } = useThemePreference();
-  return <KitIcon icon="chevron-forward" color={colors.textSecondary} size={14} />;
 }

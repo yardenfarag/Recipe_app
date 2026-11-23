@@ -27,12 +27,7 @@ import { ConfirmDialog } from '@/components/ConfirmDialog';
 import { CookieMark } from '@/components/CookieMark';
 import { FridgeMatchModal } from '@/components/FridgeMatchModal';
 import { LibraryLayoutToggle } from '@/components/LibraryLayoutToggle';
-import {
-  KitchenTiles,
-  KitchenTilesSkeleton,
-  useCookedThisWeek,
-  useTonightsPick,
-} from '@/components/LibraryTiles';
+import { TonightsPick, TonightsPickSkeleton, useTonightsPick } from '@/components/LibraryTiles';
 import { NameEditModal } from '@/components/NameEditModal';
 import { RecipeActionsMenu } from '@/components/RecipeActionsMenu';
 import { LibrarySearchBar, RecipeLibraryToolbar } from '@/components/RecipeLibraryToolbar';
@@ -213,9 +208,8 @@ export default function HomeScreen() {
     cookTonight ||
     quick.length > 0;
 
-  // Tonight's pick, and what was cooked this week (both as on the web).
+  // Tonight's pick, as on the web.
   const { pick, another } = useTonightsPick(recipes);
-  const cooked = useCookedThisWeek(recipes, total);
 
   useEffect(() => {
     if (hasActiveFilters) void ensureAllLoaded();
@@ -545,8 +539,8 @@ export default function HomeScreen() {
         />
       ) : null}
 
-      {/* The tiles step aside while searching, so what was typed and what it found sit together. */}
-      {searching || error ? null : <KitchenTiles pick={pick} onAnother={another} cooked={cooked} />}
+      {/* Tonight's pick steps aside while searching, so what was typed and what it found sit together. */}
+      {searching || error ? null : <TonightsPick pick={pick} onAnother={another} />}
 
       <View style={{ gap: 14, marginTop: 4 }}>
         <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 12 }}>
@@ -614,7 +608,7 @@ export default function HomeScreen() {
           <View
             style={{ height: 52, borderRadius: Radii.inner, backgroundColor: colors.backgroundElement }}
           />
-          <KitchenTilesSkeleton />
+          <TonightsPickSkeleton />
           <View style={{ width: 180, height: 28, marginTop: 4, borderRadius: 8, backgroundColor: colors.backgroundElement }} />
           <View style={{ flexDirection: 'row', gap: 12 }}>
             <View style={{ flex: 1, aspectRatio: 1, borderRadius: 18, backgroundColor: colors.backgroundElement }} />

@@ -44,7 +44,7 @@ export function PinchLogo({
           backgroundColor: colors.primary,
         }}
       >
-        <CookieMark size={s.mark} color={colors.onPrimary} />
+        <CookieMark size={s.mark} color={colors.onPrimary} holeColor={colors.primary} />
       </View>
       {wordmark ? (
         <Text

@@ -69,7 +69,7 @@ export function BrandHeader({
             backgroundColor: colors.primary,
           }}
         >
-          <CookieMark size={42} color={colors.onPrimary} />
+          <CookieMark size={42} color={colors.onPrimary} holeColor={colors.primary} />
         </View>
         {copy}
       </View>

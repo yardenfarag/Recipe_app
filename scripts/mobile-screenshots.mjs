@@ -37,6 +37,8 @@ const ADD_APPLIANCE_LABEL = { en: 'Add appliance', he: 'הוספת כלי', ar: 
 
 const SCREENS = {
   library: { path: '/' },
+  // A new account: no recipes or collections yet.
+  'library-empty': { path: '/', emptyLibrary: true, viewportOnly: true },
   recipe: { path: `/recipe/${F.MAIN_RECIPE_ID}` },
   cook: {
     // ?cook=1 opens cook mode once the recipe has loaded, as the Library's "Start cooking" does (PIN-177).
@@ -358,13 +360,13 @@ function queryRows(rows, url, headers) {
 }
 
 function createFakeSupabase(state) {
-  const { lang, scheme, pack, unmocked } = state;
+  const { lang, scheme, pack, unmocked, emptyLibrary } = state;
   const user = F.fakeUser({ lang, scheme, pack });
   const session = F.fakeSession(user);
   const tables = {
-    recipes: F.RECIPES,
-    collections: F.COLLECTIONS,
-    collection_recipes: F.COLLECTION_RECIPES,
+    recipes: emptyLibrary ? [] : F.RECIPES,
+    collections: emptyLibrary ? [] : F.COLLECTIONS,
+    collection_recipes: emptyLibrary ? [] : F.COLLECTION_RECIPES,
     shopping_list_items: F.shoppingList(lang),
     profiles: [F.profileRow({ admin: true })],
     extract_usage_monthly: [{ ...F.EXTRACT_USAGE, year_month: new Date().toISOString().slice(0, 7) }],
@@ -575,7 +577,7 @@ async function shoot(browser, baseUrl, job, opts, report) {
     locale: LOCALES[lang] ?? lang,
     serviceWorkers: 'block',
   });
-  const state = { lang, scheme, pack: opts.pack, unmocked: report.unmocked };
+  const state = { lang, scheme, pack: opts.pack, unmocked: report.unmocked, emptyLibrary: Boolean(def.emptyLibrary) };
   const handle = createFakeSupabase(state);
   const inflight = new Set();
   const problems = [];
