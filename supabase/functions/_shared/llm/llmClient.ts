@@ -54,45 +54,66 @@ export interface TaskModelConfig {
   fallbacks: string[];
   /** Sonnet 5.5 and GPT-6.1 Sol reject `none` ("Reasoning is mandatory"). */
   reasoning: ReasoningEffort;
+  /**
+   * Model for a video sent as a URL (YouTube) instead of inline bytes. Only Gemini on AI Studio can
+   * open the link, so a task whose `model` can't must name one here. Such a call has no fallbacks.
+   */
+  urlVideoModel?: string;
 }
 
 const LUNA = 'openai/gpt-6-luna';
 const SOL = 'openai/gpt-6.1-sol';
+const SOL_62 = 'openai/gpt-6.2-sol';
 const SONNET = 'anthropic/claude-sonnet-5.5';
-const QWEN_FLASH = 'qwen/qwen3.8-flash';
+const HAIKU = 'anthropic/claude-haiku-5.5';
 const QWEN_OMNI = 'qwen/qwen3.8-omni-flash';
 const MISTRAL_SMALL = 'mistralai/mistral-small-2603';
-const NANO = 'openai/gpt-5.4-nano';
+const INKLING_MINI = 'thinkingmachines/inkling-2-mini';
 const GEMINI_FLASH = 'google/gemini-3.5-flash';
+const MUSE_EMBER = 'meta/muse-ember';
 
 /**
- * Picks from the PIN-44 eval (docs/research/05-llm-per-task.md, "Final model
- * per task"). Remix, substitution, fridge match and repair were not in the
- * eval; they follow the closest tested task.
+ * Picks from the PIN-44 eval (docs/research/05-llm-per-task.md, "Final model per task"), updated
+ * by the 23 Nov 2026 bake-off (eval/results/bakeoff-2026-11-23.md). Remix, substitution, fridge
+ * match and repair were not in either eval; they follow the closest tested task.
+ *
+ * The Luna family falls back to Haiku 5.5 (bake-off: 5 s typical, 95% ingredient recall, no failed
+ * calls) instead of Qwen 3.8 Flash (16 s typical, 34 s slow). Haiku brings the anthropic/* Azure
+ * ignore rule into these requests, which also keeps Luna off Azure; Luna still has OpenAI and
+ * Bedrock endpoints.
  */
 export const TASK_MODELS: Record<LlmTaskKind, TaskModelConfig> = {
-  text: { model: LUNA, fallbacks: [QWEN_FLASH], reasoning: 'none' },
-  transform: { model: LUNA, fallbacks: [QWEN_FLASH], reasoning: 'none' },
-  substitution: { model: LUNA, fallbacks: [QWEN_FLASH], reasoning: 'none' },
-  fridge_match: { model: LUNA, fallbacks: [QWEN_FLASH], reasoning: 'none' },
-  remix_related: { model: LUNA, fallbacks: [QWEN_FLASH], reasoning: 'none' },
+  text: { model: LUNA, fallbacks: [HAIKU], reasoning: 'none' },
+  transform: { model: LUNA, fallbacks: [HAIKU], reasoning: 'none' },
+  substitution: { model: LUNA, fallbacks: [HAIKU], reasoning: 'none' },
+  fridge_match: { model: LUNA, fallbacks: [HAIKU], reasoning: 'none' },
+  remix_related: { model: LUNA, fallbacks: [HAIKU], reasoning: 'none' },
   // Classification over the final recipe text (ADR 017). Not in the PIN-44 eval; follows text.
-  appliances: { model: LUNA, fallbacks: [QWEN_FLASH], reasoning: 'none' },
+  appliances: { model: LUNA, fallbacks: [HAIKU], reasoning: 'none' },
   // Which diets a Hub card fits as written (PIN-83). Classification like appliances; follows it.
-  diets: { model: LUNA, fallbacks: [QWEN_FLASH], reasoning: 'none' },
+  diets: { model: LUNA, fallbacks: [HAIKU], reasoning: 'none' },
   // May this card be a public Hub page (PIN-153)? Classification over the recipe text, like diets.
-  hub_moderation: { model: LUNA, fallbacks: [QWEN_FLASH], reasoning: 'none' },
+  hub_moderation: { model: LUNA, fallbacks: [HAIKU], reasoning: 'none' },
   // Calories (with protein, carbs and fat, PIN-80), time, effort, cost, tags and metric/spoons after
   // a hand edit (PIN-79), and the PIN-80 macros backfill. Not in the PIN-44 eval; these fields came
   // from the text extract on Luna, so it follows text.
-  recipe_estimates: { model: LUNA, fallbacks: [QWEN_FLASH], reasoning: 'none' },
+  recipe_estimates: { model: LUNA, fallbacks: [HAIKU], reasoning: 'none' },
   photo: { model: SONNET, fallbacks: [SOL], reasoning: 'low' },
   repair: { model: SONNET, fallbacks: [SOL], reasoning: 'low' },
   invent_photo: { model: SONNET, fallbacks: [SOL], reasoning: 'low' },
-  translate: { model: SOL, fallbacks: [LUNA], reasoning: 'low' },
+  // Bake-off: GPT-6.2 Sol ranked best with both judges (first 43% of the time vs 20% for 6.1 Sol),
+  // about 30% faster, same price.
+  translate: { model: SOL_62, fallbacks: [LUNA], reasoning: 'low' },
+  // Bake-off: 6.1 Sol still ranked first for text prompts, ahead of 6.2 Sol.
   invent_text: { model: SOL, fallbacks: [LUNA], reasoning: 'low' },
-  content_gate: { model: MISTRAL_SMALL, fallbacks: [NANO], reasoning: 'none' },
-  video: { model: GEMINI_FLASH, fallbacks: [QWEN_OMNI], reasoning: 'low' },
+  // Bake-off: 30/30 vs Mistral's 29/30, same speed, a third of the price. Its providers are small,
+  // so Mistral stays as the fallback.
+  content_gate: { model: INKLING_MINI, fallbacks: [MISTRAL_SMALL], reasoning: 'none' },
+  // Bake-off: on uploaded clips (Instagram, TikTok, Facebook) Muse Ember matched Gemini 3.5 Flash's
+  // ingredient recall (69%; 78% on Hebrew) at about 1/18 the cost. Gemini is the first fallback, and
+  // the only model for YouTube, which goes as a URL (urlVideoModel).
+  video: { model: MUSE_EMBER, fallbacks: [GEMINI_FLASH, QWEN_OMNI], reasoning: 'low', urlVideoModel: GEMINI_FLASH },
+  // Not in the bake-off, and inventing needs the stronger model; stays on Gemini.
   invent_video: { model: GEMINI_FLASH, fallbacks: [QWEN_OMNI], reasoning: 'low' },
 };
 
@@ -198,7 +219,7 @@ export function resolveTaskModel(kind: string, tier?: 'fast' | 'standard'): Task
     rawReasoning === 'none' || rawReasoning === 'low' || rawReasoning === 'medium'
       ? rawReasoning
       : base.reasoning;
-  return { model, fallbacks, reasoning };
+  return { model, fallbacks, reasoning, ...(base.urlVideoModel ? { urlVideoModel: base.urlVideoModel } : {}) };
 }
 
 /** Every slug the defaults can send to OpenRouter. The live-slug test checks these. */
@@ -207,6 +228,7 @@ export function defaultModelSlugs(): string[] {
   for (const config of Object.values(TASK_MODELS)) {
     slugs.add(config.model);
     config.fallbacks.forEach((m) => slugs.add(m));
+    if (config.urlVideoModel) slugs.add(config.urlVideoModel);
   }
   return [...slugs].sort();
 }
@@ -335,10 +357,10 @@ export async function generateOpenRouterJson<T>(
 ): Promise<GenerateLlmJsonResult<T>> {
   const task = resolveTaskModel(options.kind, options.tier);
   const pinned = evalModel();
-  const model = pinned ?? options.model ?? task.model;
   // Only Gemini on AI Studio fetches a YouTube URL. A fallback would get a link it can't
   // open and could answer from the text alone, so a URL video fails cleanly instead.
   const hasUrlVideo = options.parts.some((p) => 'fileData' in p);
+  const model = pinned ?? options.model ?? (hasUrlVideo && task.urlVideoModel ? task.urlVideoModel : task.model);
   const fallbacks = pinned || hasUrlVideo ? [] : task.fallbacks.filter((m) => m !== model);
   const reasoning = evalHook?.reasoning?.() ?? task.reasoning;
   const started = Date.now();
