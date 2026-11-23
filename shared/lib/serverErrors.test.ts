@@ -55,6 +55,8 @@ const SERVER_IMPORT_CODES = [
   'pdf_too_many_pages',
   'pdf_unreadable',
   'pdf_timed_out',
+  'text_too_short',
+  'text_too_long',
   'no_response',
   'metering_error',
   'compensation_pending',

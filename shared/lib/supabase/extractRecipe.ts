@@ -9,7 +9,11 @@ export type ExtractStatus = 'full' | 'partial' | 'failed' | 'coming_soon';
 
 export interface ExtractResult {
   status: ExtractStatus;
-  platform: 'youtube' | 'instagram' | 'tiktok' | 'facebook' | 'pinterest' | 'web' | 'photo' | 'unknown';
+  /**
+   * What was imported. `text` is a written recipe (ADR 032); its recipe itself is saved as a written one, with
+   * platform `unknown` and extraction_source `manual`.
+   */
+  platform: 'youtube' | 'instagram' | 'tiktok' | 'facebook' | 'pinterest' | 'web' | 'photo' | 'text' | 'unknown';
   /** Unsaved extraction, or a full saved recipe when `cached` is true. */
   recipe?: ExtractedRecipe | Recipe;
   message?: string;
@@ -44,6 +48,9 @@ export interface ExtractResult {
     | 'pdf_unreadable'
     /** Refunded, like extraction_timeout. */
     | 'pdf_timed_out'
+    /** Written-recipe imports (ADR 032), turned away before anything is charged. */
+    | 'text_too_short'
+    | 'text_too_long'
     | string;
   tokens_charged?: number;
   guest_extracts_remaining?: number | null;
@@ -84,6 +91,27 @@ export function pdfRequestKey(pdfBase64: string): string {
 
 /** The largest PDF the server takes (supabase/functions/_shared/extraction/pdfRecipe.ts), checked before sending. */
 export const MAX_PDF_BYTES = 10 * 1024 * 1024;
+
+/**
+ * The bounds of a written recipe the server reads (supabase/functions/_shared/extraction/textRecipe.ts), counted after
+ * trimming, in JavaScript `length`. Outside them `extractRecipeFromText` answers without calling the server.
+ */
+export const MIN_RECIPE_TEXT_CHARS = 40;
+export const MAX_RECIPE_TEXT_CHARS = 20_000;
+
+/**
+ * The request-id key for a written recipe. Two messages can share a length and an opening line ("Ingredients:"), so
+ * a hash of the whole text (FNV-1a, 32-bit) keys them apart. Trimmed first, as the server reads it.
+ */
+export function textRequestKey(text: string): string {
+  const trimmed = text.trim();
+  let hash = 0x811c9dc5;
+  for (let i = 0; i < trimmed.length; i++) {
+    hash ^= trimmed.charCodeAt(i);
+    hash = Math.imul(hash, 0x01000193) >>> 0;
+  }
+  return `text:${trimmed.length}:${hash.toString(16).padStart(8, '0')}`;
+}
 
 /** The request-id key for Guess the recipe from a photo. */
 export function inventPhotoRequestKey(imageBase64: string): string {
@@ -213,6 +241,29 @@ export async function extractRecipeFromPdf(
 ): Promise<ExtractResult> {
   const { requestId, ids } = await importRequestIds(context, pdfRequestKey(pdfBase64));
   return invokeImport('extract-recipe', requestId, { pdf_base64: pdfBase64, ...ids });
+}
+
+/**
+ * Sends a recipe someone wrote out as text (ADR 032: a WhatsApp message) to `extract-recipe`. One credit, like a photo,
+ * and nothing when it isn't a recipe (`not_food`, `no_recipe`). The recipe comes back with no link, marked as written.
+ * There is no Guess the recipe for a text. A text outside MIN/MAX_RECIPE_TEXT_CHARS is answered here, unsent.
+ */
+export async function extractRecipeFromText(context: ExtractionRequestContext, text: string): Promise<ExtractResult> {
+  const trimmed = text.trim();
+  if (trimmed.length < MIN_RECIPE_TEXT_CHARS || trimmed.length > MAX_RECIPE_TEXT_CHARS) {
+    const tooShort = trimmed.length < MIN_RECIPE_TEXT_CHARS;
+    return {
+      status: 'failed',
+      platform: 'text',
+      code: tooShort ? 'text_too_short' : 'text_too_long',
+      message: tooShort
+        ? "That's too short to be a recipe. Try a message with the ingredients and steps."
+        : 'That text is too long. Try just the recipe, under 20,000 characters.',
+      tokens_charged: 0,
+    };
+  }
+  const { requestId, ids } = await importRequestIds(context, textRequestKey(text));
+  return invokeImport('extract-recipe', requestId, { text: trimmed, ...ids });
 }
 
 const NO_REACH: Record<string, string> = {

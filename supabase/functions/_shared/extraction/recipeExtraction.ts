@@ -52,6 +52,8 @@ const MAX_DESCRIPTION_CHARS = 10_000;
 const MAX_CAPTIONS_CHARS = 30_000;
 const MAX_COMMENTS = 12;
 const MAX_COMMENT_CHARS = 500;
+/** extract-recipe refuses a longer `text` (textRecipe.ts); this only guards a direct caller. */
+const MAX_MESSAGE_CHARS = 20_000;
 
 export const CALORIE_RULES = `- calories_reasoning: one short phrase naming the main caloric ingredients and confirming calories is TOTAL for all servings.
 - calories: combined kcal for ALL portions at the stated servings (not per-portion). Example: 12 cookies ≈150 kcal each → servings=12, calories=1800.
@@ -542,6 +544,27 @@ async function extractRecipeFromText(
 ): Promise<{ recipe: LlmRecipe; usage: LlmUsageSnapshot | null }> {
   const textContext = buildTextContext(input, sections);
   return callExtractionModel(TEXT_SYSTEM_PROMPT, [{ text: textContext }], timeoutMs, 'text');
+}
+
+/**
+ * A recipe someone wrote out in a message (ADR 032: a WhatsApp chat import). The same text prompt and model as a
+ * post's caption, with the message as the only source.
+ */
+export function extractRecipeFromMessage(
+  message: string,
+  timeoutMs: number,
+): Promise<{ recipe: LlmRecipe; usage: LlmUsageSnapshot | null }> {
+  return callExtractionModel(TEXT_SYSTEM_PROMPT, [{ text: buildMessageContext(message) }], timeoutMs, 'text');
+}
+
+/** The model's input for a written message: the ladder's opening line, and the message under its own heading. */
+export function buildMessageContext(message: string): string {
+  return [
+    'Extract the recipe from the sources below.',
+    `\n--- MESSAGE FROM A GROUP CHAT ---\nSomeone wrote this recipe out for friends or family. It may be informal, with chat around it.\n${
+      truncate(message, MAX_MESSAGE_CHARS)
+    }`,
+  ].join('\n');
 }
 
 const IMAGE_SYSTEM_PROMPT = `You are a master chef. Analyze the provided photo of a recipe (cookbook page, handwritten card, screenshot, or menu) and extract a precise recipe.

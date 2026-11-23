@@ -54,6 +54,16 @@ import {
   readPdfText,
   scannedPageCount,
 } from '../_shared/extraction/pdfRecipe.ts';
+import {
+  extractRecipeFromText,
+  readRecipeText,
+  TEXT_RECIPE_ORIGIN,
+  textGateInput,
+  textGateOutcome,
+  textMetadata,
+  textRejectMessage,
+  type TextRejectCode,
+} from '../_shared/extraction/textRecipe.ts';
 import { reserveDailyAiUsage } from '../_shared/core/dailyAiUsage.ts';
 import {
   CONTENT_GATE_DAILY_LIMIT,
@@ -110,6 +120,9 @@ declare const EdgeRuntime: { waitUntil(promise: Promise<unknown>): void } | unde
 // Response contract consumed by the app (mirrors ExtractionResult in ADR 004).
 type ExtractionStatus = 'full' | 'partial' | 'failed' | 'coming_soon';
 
+/** What the request sent: a link's platform, `photo` (a photo or a PDF), or `text` (a written recipe, ADR 032). */
+type InputPlatform = Platform | 'text';
+
 /**
  * Supabase answers 504 when a request sends nothing for 150 s, and the app then can't tell
  * whether the credit was spent. Every extraction answers by this point instead.
@@ -123,9 +136,11 @@ const MIN_APPLIANCES_MS = 8_000;
 const MIN_THUMBNAIL_COPY_MS = 15_000;
 
 /**
- * POST { url | image_base64 | pdf_base64, guest_install_id? } -> { status, platform, recipe?, message?, cached?, ... }
+ * POST { url | image_base64 | pdf_base64 | text, guest_install_id? } -> { status, platform, recipe?, message?, cached?, ... }
  *
  * A PDF (PIN-72) imports like a photo: platform `photo`, one credit, never published to the Hub.
+ * A written recipe (`text`, ADR 032: a WhatsApp message) answers with platform `text`, costs one credit, and is saved
+ * as a written recipe with no link (textRecipe.ts). It is read only when no url, photo or PDF was sent.
  *
  * Detects the platform, rejects anything not yet live (ADR 003), then for
  * YouTube: returns an existing saved recipe when the URL is already in the
@@ -151,6 +166,7 @@ serve('extract-recipe', async (req) => {
   let imageBase64: string | null = null;
   let imageMime = 'image/jpeg';
   let pdf: DecodedPdf | null = null;
+  let recipeText: string | null = null;
   let guestInstallId: string | null = null;
   let requestId: string = crypto.randomUUID();
   let forceExtract = false;
@@ -180,6 +196,12 @@ serve('extract-recipe', async (req) => {
       if (!decoded.ok) return pdfRejectResponse(decoded.code);
       pdf = decoded.pdf;
     }
+    if (!imageBase64 && !pdf && !url) {
+      // Too short or too long is turned away here, before sign-in, credits or any model call.
+      const read = readRecipeText(body.text);
+      if (read && !read.ok) return textRejectResponse(read.code);
+      if (read) recipeText = read.text;
+    }
     const rawInstall = body.guest_install_id ?? body.guestInstallId;
     if (typeof rawInstall === 'string' && rawInstall.trim().length >= 8) {
       guestInstallId = rawInstall.trim().slice(0, 128);
@@ -193,14 +215,18 @@ serve('extract-recipe', async (req) => {
     return jsonResponse({ error: 'Invalid JSON body' }, 400);
   }
 
-  if (!url && !imageBase64 && !pdf) {
-    return jsonResponse({ error: 'Missing "url", "image_base64" or "pdf_base64" in request body' }, 400);
+  if (!url && !imageBase64 && !pdf && recipeText === null) {
+    return jsonResponse({ error: 'Missing "url", "image_base64", "pdf_base64" or "text" in request body' }, 400);
   }
 
-  const platform: Platform = imageBase64 || pdf ? 'photo' : detectPlatform(url);
+  const platform: InputPlatform = recipeText !== null
+    ? 'text'
+    : imageBase64 || pdf
+    ? 'photo'
+    : detectPlatform(url);
 
   // ADR 003 — staged rollout: reject non-live platforms with a clear message.
-  if (platform !== 'photo' && !LIVE_PLATFORMS.includes(platform)) {
+  if (platform !== 'photo' && platform !== 'text' && !LIVE_PLATFORMS.includes(platform)) {
     return jsonResponse({
       status: 'coming_soon' as ExtractionStatus,
       platform,
@@ -223,7 +249,7 @@ serve('extract-recipe', async (req) => {
     url = await resolvePinterestShortLink(url);
   }
 
-  const contentId = platform === 'photo' ? null : extractVideoIdForPlatform(url, platform);
+  const contentId = platform === 'photo' || platform === 'text' ? null : extractVideoIdForPlatform(url, platform);
 
   if (platform === 'youtube' && !contentId) {
     return jsonResponse({
@@ -264,14 +290,14 @@ serve('extract-recipe', async (req) => {
     } = await authedClient.auth.getUser();
     userId = user?.id ?? null;
 
-    if (userId && admin && platform !== 'photo') {
+    if (userId && admin && platform !== 'photo' && platform !== 'text') {
       const existing = await findExistingRecipeForUser(authedClient, url, platform, contentId);
       if (existing) {
         return await savedRecipeResponse({ admin, existing, platform, userId, started });
       }
     }
 
-    if (admin && !forceExtract && platform !== 'photo') {
+    if (admin && !forceExtract && platform !== 'photo' && platform !== 'text') {
       const hubCard = await findRecipeCard(admin, platform, url, contentId);
       if (hubCard) {
         return await recipeCardHitResponse({
@@ -362,7 +388,9 @@ serve('extract-recipe', async (req) => {
   }
 
   // Every uploaded photo is kept, whatever the outcome, until the account is deleted.
-  const uploadedPhoto = keepUploadedPhoto(platform, imageBase64, imageMime, userId);
+  const uploadedPhoto = platform === 'text'
+    ? Promise.resolve(undefined)
+    : keepUploadedPhoto(platform, imageBase64, imageMime, userId);
 
   try {
     console.log('[extract-recipe] start', {
@@ -370,12 +398,14 @@ serve('extract-recipe', async (req) => {
       url: url || null,
       hasImage: Boolean(imageBase64),
       pdfPages: pdfText?.pageCount ?? null,
+      textChars: recipeText?.length ?? null,
       contentId,
       userId: Boolean(userId),
     });
 
     let llmRecipe: LlmRecipe;
-    let source: 'description' | 'comments' | 'captions' | 'video' | 'web' | 'photo';
+    /** `text`: a written recipe, logged as read from text and saved as written (TEXT_RECIPE_ORIGIN). */
+    let source: 'description' | 'comments' | 'captions' | 'video' | 'web' | 'photo' | 'text';
     let usages: import('../_shared/llm/pricing.ts').LlmUsageSnapshot[] = [];
     let usedInstagramVideoDownload = false;
     let videoSkippedReason: 'too_long' | 'out_of_time' | undefined;
@@ -390,7 +420,7 @@ serve('extract-recipe', async (req) => {
     let durationSeconds: number | undefined;
     let meta: PlatformMeta | null = null;
 
-    if (platform !== 'photo') {
+    if (platform !== 'photo' && platform !== 'text') {
       meta = await fetchPlatformMeta(
         platform,
         url,
@@ -452,16 +482,21 @@ serve('extract-recipe', async (req) => {
 
     // PIN-70: a pin that links to a recipe site came back as that page, so the ladder reads it as one.
     // Everything saved, logged and returned keeps the link's own platform.
-    const ladderPlatform: Platform = meta?.readAs === 'web' ? 'web' : platform;
+    // A photo, a PDF or a written text has no link, so no ladder.
+    const ladderPlatform: Platform | null = platform === 'photo' || platform === 'text'
+      ? null
+      : meta?.readAs === 'web'
+      ? 'web'
+      : platform;
 
     const tooLongNoText =
-      ladderPlatform !== 'photo' &&
+      ladderPlatform !== null &&
       ladderPlatform !== 'web' &&
       isVideoTooLong(meta?.durationSeconds) &&
       !hasTextSources(meta ?? { topComments: [] });
 
     const ladderInput: ExtractInput | null =
-      platform === 'photo'
+      ladderPlatform === null
         ? null
         : {
             platform: ladderPlatform,
@@ -533,7 +568,7 @@ serve('extract-recipe', async (req) => {
         admin,
         userId,
         guestInstallId,
-        input: buildContentGateInput({
+        input: recipeText !== null ? textGateInput(recipeText) : buildContentGateInput({
           imageBase64,
           mimeType: imageMime,
           platform,
@@ -552,6 +587,7 @@ serve('extract-recipe', async (req) => {
           status: 'daily_limit',
           tokensCharged: 0,
           durationMs: Date.now() - started,
+          metadata: textMetadata(recipeText),
         });
         return jsonResponse(
           {
@@ -573,6 +609,7 @@ serve('extract-recipe', async (req) => {
           tokensCharged: 0,
           durationMs: Date.now() - started,
           errorMessage: gate.error.slice(0, 500),
+          metadata: textMetadata(recipeText),
         });
         return jsonResponse(
           {
@@ -597,7 +634,7 @@ serve('extract-recipe', async (req) => {
         usages: gate.usage ? [gate.usage] : [],
         tokensCharged: 0,
         durationMs: Date.now() - started,
-        metadata: { kind: gate.kind, dish_guess: gate.dishGuess, job: 'extract' },
+        metadata: { kind: gate.kind, dish_guess: gate.dishGuess, job: 'extract', ...textMetadata(recipeText) },
       });
     }
 
@@ -608,6 +645,35 @@ serve('extract-recipe', async (req) => {
       extractRoute = appliedExtractRoute(decision);
       skipText = skipsTextStep(extractRoute, ladderInput);
       await logExtractGate(admin, { decision, userId, platform, requestId, skipText, forceExtract });
+    }
+
+    // A written text the food check turned away costs nothing. `no_recipe` (food talk, no recipe in it) leaves the
+    // credit untouched like a failed find; `force_extract` reads it anyway.
+    const textGate = recipeText !== null ? textGateOutcome(gateKind, forceExtract) : 'extract';
+    if (textGate !== 'extract') {
+      if (textGate === 'no_recipe') {
+        await logUsageEvent(admin, {
+          userId,
+          action: 'extract',
+          platform,
+          status: 'failed',
+          tokensCharged: 0,
+          durationMs: Date.now() - started,
+          errorMessage: 'content_gate: no_recipe',
+          metadata: { request_id: requestId, ...textMetadata(recipeText) },
+        });
+      }
+      return jsonResponse({
+        status: 'failed' as ExtractionStatus,
+        platform,
+        code: textGate,
+        ...(textGate === 'no_recipe' && dishGuess ? { dish_guess: dishGuess } : {}),
+        message: textGate === 'not_food'
+          ? "That doesn't look like a recipe. Try a message with the ingredients and steps."
+          : "Couldn't find a recipe in this message. Try one with the ingredients and steps.",
+        tokens_charged: 0,
+        ...quotaFields((await canStartExtract(admin, userId)).snapshot),
+      });
     }
 
     if (gateKind === 'unrelated') {
@@ -670,6 +736,8 @@ serve('extract-recipe', async (req) => {
         ? `photo|${imageBase64}`
         : pdf
         ? `pdf|${pdf.base64}`
+        : recipeText !== null
+        ? `text|${recipeText}`
         : `${platform}|${meta?.contentId ?? contentId ?? url}`,
       platform,
       started,
@@ -690,6 +758,19 @@ serve('extract-recipe', async (req) => {
       if (fromPdf.fileSkipped) videoSkippedReason = 'out_of_time';
       console.log('[extract-recipe] pdf done', {
         route: fromPdf.route,
+        foundRecipe: llmRecipe.found_recipe,
+        ingredients: llmRecipe.ingredients?.length ?? 0,
+        instructions: llmRecipe.instructions?.length ?? 0,
+      });
+    } else if (platform === 'text') {
+      const fromText = await extractRecipeFromText({ text: recipeText!, deadlineAt: ladderDeadlineAt });
+      llmRecipe = fromText.recipe;
+      usages = fromText.usages;
+      source = 'text';
+      originalUrl = null;
+      // Same answer as a video cut short: refunded, and the app says to try again.
+      if (fromText.timedOut) videoSkippedReason = 'out_of_time';
+      console.log('[extract-recipe] text done', {
         foundRecipe: llmRecipe.found_recipe,
         ingredients: llmRecipe.ingredients?.length ?? 0,
         instructions: llmRecipe.instructions?.length ?? 0,
@@ -785,6 +866,7 @@ serve('extract-recipe', async (req) => {
           ...extractRouteMetadata(extractGate, extractRoute, requestId),
           ...videoMetadata(durationSeconds, usedInstagramVideoDownload),
           ...pdfMetadata(pdf, pdfText, pdfRoute),
+          ...textMetadata(recipeText),
         },
       });
 
@@ -806,10 +888,14 @@ serve('extract-recipe', async (req) => {
           ? `This video is longer than ${formatMaxVideoDurationLabel()}. Try a shorter clip, or a post with the recipe written in the caption.`
           : ranOutOfTime && pdf
           ? 'This PDF took too long to read. Your credit was not used. Try again in a moment.'
+          : ranOutOfTime && platform === 'text'
+          ? 'This message took too long to read. Your credit was not used. Try again in a moment.'
           : ranOutOfTime
           ? 'This video took too long to read. Your credit was not used. Try again in a moment, or use a post with the recipe in the caption.'
           : pdf
           ? "Couldn't find a recipe in this PDF. Try one with the recipe's ingredients and steps."
+          : platform === 'text'
+          ? "Couldn't find a recipe in this message. Try one with the ingredients and steps."
           : platform === 'photo'
             ? "Couldn't find a recipe in this photo. Try a clearer picture of the ingredients and steps."
             : platform === 'web'
@@ -875,7 +961,8 @@ serve('extract-recipe', async (req) => {
       title: llmRecipe.title,
       source_language: normalizeLanguageCode(llmRecipe.source_language),
       original_url: originalUrl,
-      platform,
+      // A written text has no link or platform: it's saved as a written recipe (ADR 018/032).
+      platform: platform === 'text' ? TEXT_RECIPE_ORIGIN.platform : platform,
       image_url: imageUrl,
       // The apps save the recipe as it comes back, so a drawn cover keeps its "AI image" mark.
       ...(imageGenerated ? { image_generated: true } : {}),
@@ -892,7 +979,7 @@ serve('extract-recipe', async (req) => {
       cost_estimate: llmRecipe.cost_estimate ?? null,
       effort_level: llmRecipe.effort_level ?? null,
       extraction_status: status,
-      extraction_source: source,
+      extraction_source: source === 'text' ? TEXT_RECIPE_ORIGIN.extraction_source : source,
       calories_reasoning: llmRecipe.calories_reasoning?.trim() || null,
       time_reasoning: llmRecipe.time_reasoning?.trim() || null,
       tags: normalizeRecipeTags(llmRecipe.tags),
@@ -1054,6 +1141,7 @@ serve('extract-recipe', async (req) => {
         ...extractRouteMetadata(extractGate, extractRoute, requestId),
         ...videoMetadata(durationSeconds, usedInstagramVideoDownload),
         ...pdfMetadata(pdf, pdfText, pdfRoute),
+        ...textMetadata(recipeText),
         ...applianceMetadata,
         ...coverMetadata,
       },
@@ -1136,6 +1224,7 @@ serve('extract-recipe', async (req) => {
       metadata: {
         ...compensationMetadata(creditReservation, guestReservation, compensationPending),
         ...pdfMetadata(pdf, pdfText, pdfRoute),
+        ...textMetadata(recipeText),
       },
     });
 
@@ -1167,6 +1256,8 @@ serve('extract-recipe', async (req) => {
             ? 'Something went wrong while reading this page. Please try again.'
             : platform === 'pinterest'
             ? 'Something went wrong while reading this pin. Please try again.'
+            : platform === 'text'
+            ? 'Something went wrong while reading this message. Please try again.'
             : 'Something went wrong while reading the video. Please try again.',
         guest_extracts_remaining: guestRemaining,
       },
@@ -1250,7 +1341,7 @@ async function logExtractGate(
   opts: {
     decision: ExtractGateDecision;
     userId: string;
-    platform: Platform;
+    platform: InputPlatform;
     requestId: string;
     skipText: boolean;
     forceExtract: boolean;
@@ -1325,6 +1416,17 @@ function pdfRejectResponse(code: PdfRejectCode): Response {
   });
 }
 
+/** A text turned away before sign-in or any model call (too short, too long). Nothing was charged. */
+function textRejectResponse(code: TextRejectCode): Response {
+  return jsonResponse({
+    status: 'failed' as ExtractionStatus,
+    platform: 'text',
+    code,
+    message: textRejectMessage(code),
+    tokens_charged: 0,
+  });
+}
+
 function compensationMetadata(
   signedIn: CreditReservation | null,
   guest: GuestExtractionReservation | null,
@@ -1339,7 +1441,7 @@ function compensationMetadata(
 }
 
 function compensationPendingResponse(
-  platform: Platform,
+  platform: InputPlatform,
   guestRemaining: number | null,
   signedInReservation: CreditReservation | null,
 ): Response {
@@ -1451,7 +1553,7 @@ async function reserveExtractCredits(opts: {
   guestInstallId: string | null;
   requestId: string;
   scope: string;
-  platform: Platform;
+  platform: InputPlatform;
   started: number;
 }): Promise<{
   creditReservation: CreditReservation | null;

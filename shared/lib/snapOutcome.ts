@@ -61,7 +61,8 @@ export function snapOutcome(result: ExtractResult, canOfferInvent: boolean): Sna
   if (isFoodGateReject(code)) {
     return { kind: 'message', tone: 'error', messageKey: result.platform === 'photo' ? 'snap.notFood' : 'snap.notFoodLink' };
   }
-  if (shouldOfferInvent(code) && canOfferInvent) {
+  // Guess the recipe needs a link or a photo, so a written text (ADR 032) with no recipe just says so.
+  if (shouldOfferInvent(code) && canOfferInvent && result.platform !== 'text') {
     return { kind: 'offer_invent', dishGuess: result.dish_guess, allowExtract: code === 'looks_like_dish' };
   }
   if (result.cached && result.recipe && 'id' in result.recipe) {

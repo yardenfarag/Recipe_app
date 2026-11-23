@@ -7,9 +7,13 @@ import {
   extractRecipe,
   extractRecipeFromImage,
   extractRecipeFromPdf,
+  extractRecipeFromText,
+  MAX_RECIPE_TEXT_CHARS,
+  MIN_RECIPE_TEXT_CHARS,
   NO_RESPONSE_CODE,
   pdfRequestKey,
   photoRequestKey,
+  textRequestKey,
 } from './extractRecipe';
 import { inventRecipe } from './inventRecipe';
 
@@ -61,6 +65,39 @@ describe('import calls without a guest install id', () => {
     const header = 'JVBERi0xLjcK'.padEnd(400, 'A');
     expect(pdfRequestKey(`${header}${'B'.repeat(200)}`)).not.toBe(pdfRequestKey(`${header}${'C'.repeat(200)}`));
     expect(pdfRequestKey(`${header}${'B'.repeat(200)}`)).toBe(pdfRequestKey(`${header}${'B'.repeat(200)}`));
+  });
+
+  const MESSAGE = 'Shakshuka: 4 eggs, 4 tomatoes, 1 onion. Fry the onion, add tomatoes, crack in the eggs.';
+
+  it('sends a written recipe as text, trimmed, keyed apart from a photo or a PDF', async () => {
+    await extractRecipeFromText(webContext, `\n  ${MESSAGE}  \n`);
+    expect(keys).toEqual([textRequestKey(MESSAGE)]);
+    expect(keys[0]).toMatch(/^text:/);
+    expect(mocks.invoke).toHaveBeenCalledWith('extract-recipe', { body: { text: MESSAGE, request_id: 'request-1' } });
+  });
+
+  it('keys two texts of the same length and opening apart, and the same text (trimmed or not) alike', () => {
+    const a = `Ingredients:\n${'a'.repeat(60)}`;
+    const b = `Ingredients:\n${'a'.repeat(59)}b`;
+    expect(textRequestKey(a)).not.toBe(textRequestKey(b));
+    expect(textRequestKey(a)).toBe(textRequestKey(` ${a}\n`));
+    expect(textRequestKey(MESSAGE)).toBe(textRequestKey(MESSAGE));
+  });
+
+  it('answers a text too short or too long itself, without calling the server or taking a request id', async () => {
+    await expect(extractRecipeFromText(webContext, `   ${'x'.repeat(MIN_RECIPE_TEXT_CHARS - 1)}   `)).resolves.toMatchObject({
+      status: 'failed',
+      platform: 'text',
+      code: 'text_too_short',
+      tokens_charged: 0,
+    });
+    await expect(extractRecipeFromText(webContext, 'x'.repeat(MAX_RECIPE_TEXT_CHARS + 1))).resolves.toMatchObject({
+      code: 'text_too_long',
+    });
+    expect(mocks.invoke).not.toHaveBeenCalled();
+    expect(keys).toEqual([]);
+    await extractRecipeFromText(webContext, 'x'.repeat(MAX_RECIPE_TEXT_CHARS));
+    expect(mocks.invoke).toHaveBeenCalledTimes(1);
   });
 
   it('without a JSON answer: no_response, an uncertain charge, friendly words and the same request id', async () => {
