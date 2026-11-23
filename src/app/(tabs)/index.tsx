@@ -700,6 +700,25 @@ export default function HomeScreen() {
             >
               {t('recipeEditor.entry.libraryEmptyLink')}
             </Button>
+            {/* The fastest way in: share from the app the video is in. Phones only; a browser can't receive shares. */}
+            {Platform.OS === 'web' ? null : (
+              <View
+                style={{
+                  flexDirection: 'row',
+                  alignItems: 'flex-start',
+                  gap: 12,
+                  marginTop: 4,
+                  paddingTop: 16,
+                  borderTopWidth: 1,
+                  borderTopColor: colors.border,
+                }}
+              >
+                <KitIcon icon="share-outline" color={colors.primaryText} size={20} />
+                <Text variant="bodySmall" tone="muted" style={{ flex: 1 }}>
+                  {t('snapNm.shareTip')}
+                </Text>
+              </View>
+            )}
           </Tile>
         </View>
       </Screen>
