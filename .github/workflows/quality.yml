@@ -10,9 +10,19 @@ on:
       skip-browser-tests:
         type: boolean
         default: false
+      # A deploy checks only the app it ships: the Expo app and Workers (checks) or the Next.js app (web).
+      # Every PR still runs both.
+      skip-app-checks:
+        type: boolean
+        default: false
+      skip-web-checks:
+        type: boolean
+        default: false
 
 jobs:
   checks:
+    # Empty on pull_request and workflow_dispatch, so it always runs there.
+    if: ${{ !inputs.skip-app-checks }}
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
@@ -47,6 +57,7 @@ jobs:
 
   # The new Next.js web app (ADR 026, ADR 027). Own package.json and lockfile in web/.
   web:
+    if: ${{ !inputs.skip-web-checks }}
     runs-on: ubuntu-latest
     defaults:
       run:

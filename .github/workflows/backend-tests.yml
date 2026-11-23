@@ -8,8 +8,15 @@ on:
       - 'supabase/**'
       - '.github/workflows/backend-tests.yml'
   workflow_dispatch:
-  # Deploy backend runs these before every production deploy.
+  # Deploy backend runs these before every production deploy, only the half its changes need.
   workflow_call:
+    inputs:
+      skip-db:
+        type: boolean
+        default: false
+      skip-functions:
+        type: boolean
+        default: false
 
 concurrency:
   group: backend-tests-${{ github.ref }}
@@ -17,6 +24,8 @@ concurrency:
 
 jobs:
   db:
+    # Empty on pull_request and workflow_dispatch, so it always runs there.
+    if: ${{ !inputs.skip-db }}
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
@@ -44,6 +53,7 @@ jobs:
         run: supabase test db
 
   functions:
+    if: ${{ !inputs.skip-functions }}
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
