@@ -66,6 +66,7 @@ import {
 import { autoSaveRecipe } from "@/lib/autoSaveRecipe";
 import { clearRecipeDraft, setRecipeDraft } from "@/lib/recipeDraft";
 import { resolveShareIntentAction } from "@/lib/shareIntentGate";
+import { whatsAppExportInShare } from "@/lib/whatsappImport/shareRouting";
 import { recipeIsInvented } from "@shared/lib/recipeOrigin";
 import { importErrorText } from "@shared/lib/serverErrors";
 import type {
@@ -195,6 +196,8 @@ export default function AddRecipeScreen() {
       releaseShareClaim();
       return;
     }
+    // A WhatsApp chat export opens the WhatsApp import screen (ShareIntentRouter), not Snap.
+    if (whatsAppExportInShare(shareIntent.files)) return;
 
     const sharedFile = sharedRecipeFile(shareIntent.files);
     // Wait until the payload is present — on Android hasShareIntent can flip
@@ -1090,6 +1093,49 @@ export default function AddRecipeScreen() {
               importantForAccessibility="no"
             />
           </Pressable>
+
+          {/* ADR 032: many recipes at once from a WhatsApp chat export. The old Expo web app can't read the file;
+              the web/ app has its own page for it. */}
+          {Platform.OS !== "web" ? (
+            <Pressable
+              className="mt-3 min-h-[48px] flex-row items-center gap-3 rounded-[22px] px-4 py-3 active:opacity-80"
+              style={{ backgroundColor: colors.surface, overflow: "hidden" }}
+              trackId="snap.whatsapp_import"
+              onPress={() => router.push("/whatsapp-import")}
+              accessibilityRole="button"
+              accessibilityLabel={t("whatsappImport.entryTitle")}
+              accessibilityHint={t("whatsappImport.entryBody")}
+            >
+              <Ionicons
+                name="logo-whatsapp"
+                size={18}
+                color={colors.primary}
+                accessible={false}
+                importantForAccessibility="no"
+              />
+              <View className="min-w-0 flex-1">
+                <Text
+                  className="text-base font-bold"
+                  style={{ color: colors.text, ...rtlText }}
+                >
+                  {t("whatsappImport.entryTitle")}
+                </Text>
+                <Text
+                  className="mt-0.5 text-xs leading-4"
+                  style={{ color: colors.textSecondary, ...rtlText }}
+                >
+                  {t("whatsappImport.entryBody")}
+                </Text>
+              </View>
+              <Ionicons
+                name={chevronForward}
+                size={16}
+                color={colors.textSecondary}
+                accessible={false}
+                importantForAccessibility="no"
+              />
+            </Pressable>
+          ) : null}
         </Animated.View>
 
         <View

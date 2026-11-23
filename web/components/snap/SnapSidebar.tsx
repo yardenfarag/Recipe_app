@@ -1,8 +1,8 @@
 "use client";
 
-import { ChevronRight, Coins, PenLine } from "lucide-react";
+import { ChevronRight, Coins, MessageCircle, PenLine } from "lucide-react";
 import Link from "next/link";
-import { useState } from "react";
+import { useState, type ReactNode } from "react";
 import { useTranslation } from "react-i18next";
 
 import { FREE_MONTHLY_EXTRACT_LIMIT } from "@shared/lib/quotas";
@@ -50,23 +50,50 @@ export function CreditsCard({ quota }: { quota: ProfileQuota | null }) {
   );
 }
 
+/** A tile that leads to another way of adding recipes. */
+function WayInCard({ href, trackId, icon, title, hint }: { href: string; trackId: string; icon: ReactNode; title: string; hint: string }) {
+  return (
+    <Link
+      href={href}
+      data-track={trackId}
+      className={tileClasses({ className: "group flex items-center gap-3 p-5 transition-colors hover:bg-element active:bg-selected" })}
+    >
+      <span aria-hidden className="grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-accent-soft text-accent-text [&_svg]:h-5 [&_svg]:w-5">
+        {icon}
+      </span>
+      <span className="min-w-0 flex-1">
+        <span className="block font-display text-lg leading-snug font-bold text-text">{title}</span>
+        <span className="mt-0.5 block text-[13px] leading-relaxed text-muted">{hint}</span>
+      </span>
+      <ChevronRight aria-hidden className="h-4 w-4 shrink-0 text-muted transition-transform group-hover:translate-x-0.5 rtl:rotate-180 rtl:group-hover:-translate-x-0.5" />
+    </Link>
+  );
+}
+
 /** Write a recipe by hand (ADR 018). */
 export function WriteRecipeCard() {
   const { t } = useTranslation();
   return (
-    <Link
+    <WayInCard
       href="/recipe/edit"
-      data-track="snap.write_recipe"
-      className={tileClasses({ className: "group flex items-center gap-3 p-5 transition-colors hover:bg-element active:bg-selected" })}
-    >
-      <span aria-hidden className="grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-accent-soft text-accent-text">
-        <PenLine className="h-5 w-5" />
-      </span>
-      <span className="min-w-0 flex-1">
-        <span className="block font-display text-lg leading-snug font-bold text-text">{t("recipeEditor.entry.write")}</span>
-        <span className="mt-0.5 block text-[13px] leading-relaxed text-muted">{t("recipeEditor.entry.writeHint")}</span>
-      </span>
-      <ChevronRight aria-hidden className="h-4 w-4 shrink-0 text-muted transition-transform group-hover:translate-x-0.5 rtl:rotate-180 rtl:group-hover:-translate-x-0.5" />
-    </Link>
+      trackId="snap.write_recipe"
+      icon={<PenLine />}
+      title={t("recipeEditor.entry.write")}
+      hint={t("recipeEditor.entry.writeHint")}
+    />
+  );
+}
+
+/** Bring in the recipes shared in a WhatsApp chat (ADR 032). */
+export function WhatsAppImportCard() {
+  const { t } = useTranslation();
+  return (
+    <WayInCard
+      href="/add/whatsapp"
+      trackId="snap.whatsapp_import"
+      icon={<MessageCircle />}
+      title={t("whatsappImport.entryTitle")}
+      hint={t("whatsappImport.entryBody")}
+    />
   );
 }

@@ -47,6 +47,20 @@ describe('snapOutcome', () => {
     expect(snapOutcome(result({ code: 'no_recipe' }), false)).toMatchObject({ kind: 'message', messageKey: 'snap.notFound' });
   });
 
+  it('a written text with no recipe says so, with no Guess the recipe (it needs a link or a photo)', () => {
+    const noRecipe = result({ code: 'no_recipe', platform: 'text', dish_guess: 'Shakshuka', message: 'No recipe in this message.' });
+    expect(snapOutcome(noRecipe, true)).toEqual({
+      kind: 'message',
+      tone: 'error',
+      messageKey: 'snap.notFound',
+      serverMessage: 'No recipe in this message.',
+    });
+    expect(snapOutcome(result({ code: 'text_too_short', platform: 'text' }), true)).toMatchObject({
+      kind: 'message',
+      messageKey: 'snap.notFound',
+    });
+  });
+
   it('opens a recipe already in the library', () => {
     const saved = { ...recipe, id: 'r1' };
     expect(snapOutcome(result({ status: 'full', cached: true, recipe: saved }), true)).toEqual({ kind: 'saved', recipe: saved });

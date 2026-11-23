@@ -31,6 +31,9 @@ const IMPORT_ERROR_KEYS: Record<string, string> = {
   pdf_too_many_pages: 'snap.pdfTooManyPages',
   pdf_unreadable: 'snap.pdfUnreadable',
   pdf_timed_out: 'snap.pdfTimedOut',
+  // Written-recipe imports (ADR 032). The apps check the bounds before sending, so these are only a backstop.
+  text_too_short: 'snap.notFound',
+  text_too_long: 'snap.genericError',
   no_response: 'snap.genericError',
   metering_error: 'snap.genericError',
   compensation_pending: 'snap.genericError',
