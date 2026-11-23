@@ -2,25 +2,43 @@ import Ionicons from '@expo/vector-icons/Ionicons';
 import * as Linking from 'expo-linking';
 import { router, useLocalSearchParams } from 'expo-router';
 import { useEffect, useState } from 'react';
-import {
-  ActivityIndicator,
-  KeyboardAvoidingView,
-  Platform,
-  ScrollView,
-  Text,
-  View,
-} from 'react-native';
-import { Pressable } from '@/components/ui/Pressable';
+import { ActivityIndicator, KeyboardAvoidingView, Platform, ScrollView, View } from 'react-native';
 import { useTranslation } from 'react-i18next';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
-import { TextInput } from '@/components/text-input';
+import { TextField } from '@/components/text-input';
+import { Button } from '@/components/ui/Button';
+import { IconButton } from '@/components/ui/IconButton';
+import { Text } from '@/components/ui/Text';
+import { Radii } from '@/components/ui/tokens';
 import { useThemePreference } from '@/hooks/useThemePreference';
 import { announce } from '@/lib/a11y';
 import { getPasswordStrength, validatePassword } from '@shared/lib/authValidation';
 import { logTap } from '@/lib/interactionLog';
 import { authErrorText } from '@shared/lib/serverErrors';
 import { consumePasswordRecoveryUrl, hasSession, updatePassword } from '@/lib/supabase/auth';
+
+/** The round-cornered mark over the screen's heading. */
+function HeadingMark({ icon }: { icon: 'checkmark-circle-outline' | 'lock-open-outline' }) {
+  const { colors } = useThemePreference();
+  return (
+    <View
+      accessible={false}
+      importantForAccessibility="no-hide-descendants"
+      style={{
+        width: 64,
+        height: 64,
+        borderRadius: 22,
+        alignItems: 'center',
+        justifyContent: 'center',
+        backgroundColor: colors.primarySoft,
+        marginBottom: 20,
+      }}
+    >
+      <Ionicons name={icon} size={30} color={colors.primaryText} />
+    </View>
+  );
+}
 
 export default function ResetPasswordScreen() {
   const { t } = useTranslation();
@@ -143,223 +161,166 @@ export default function ResetPasswordScreen() {
   const strength = getPasswordStrength(password);
   const canSubmit = ready && Boolean(password && confirmation) && !loading;
 
+
   if (done) {
     return (
-      <SafeAreaView className="flex-1 px-6" style={{ backgroundColor: colors.background }}>
-        <View className="flex-1 items-center justify-center pb-10">
-          <View
-            className="mb-5 h-16 w-16 items-center justify-center rounded-full"
-            style={{ backgroundColor: colors.primarySoft }}
-            accessible={false}
-            importantForAccessibility="no-hide-descendants"
-          >
-            <Ionicons name="checkmark-circle-outline" size={34} color={colors.primary} />
-          </View>
-          <Text
-            className="mb-2 text-center text-2xl font-bold"
-            style={{ color: colors.text }}
-            accessibilityRole="header"
-          >
+      <SafeAreaView style={{ flex: 1, paddingHorizontal: 20, backgroundColor: colors.background }}>
+        <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center', paddingBottom: 40 }}>
+          <HeadingMark icon="checkmark-circle-outline" />
+          <Text variant="h1" align="center">
             {t('resetPassword.updatedTitle')}
           </Text>
-          <Text className="mb-8 text-center text-base leading-6" style={{ color: colors.textSecondary }}>
+          <Text tone="muted" align="center" style={{ marginTop: 8, marginBottom: 32 }}>
             {t('resetPassword.updatedBody')}
           </Text>
-          <Pressable trackId="reset_password.done.continue"
-            className="w-full items-center rounded-full py-4"
-            style={{ backgroundColor: colors.primary }}
-            onPress={() => router.dismissTo('/')}
-            accessibilityRole="button"
-          >
-            <Text className="text-lg font-bold" style={{ color: colors.onPrimary }}>
-              {t('recipe.goToLibrary')}
-            </Text>
-          </Pressable>
+          <Button size="lg" fullWidth trackId="reset_password.done.continue" onPress={() => router.dismissTo('/')}>
+            {t('recipe.goToLibrary')}
+          </Button>
         </View>
       </SafeAreaView>
     );
   }
 
   return (
-    <SafeAreaView className="flex-1" style={{ backgroundColor: colors.background }}>
-      <KeyboardAvoidingView
-        className="flex-1"
-        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
-      >
+    <SafeAreaView style={{ flex: 1, backgroundColor: colors.background }}>
+      <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
         <ScrollView
-          className="flex-1 px-6"
-          contentContainerStyle={{ flexGrow: 1, paddingTop: 32, paddingBottom: 32 }}
+          style={{ flex: 1 }}
+          contentContainerStyle={{ flexGrow: 1, paddingHorizontal: 20, paddingTop: 24, paddingBottom: 32 }}
           keyboardShouldPersistTaps="handled"
           keyboardDismissMode={Platform.OS === 'ios' ? 'interactive' : 'on-drag'}
         >
-      <View
-        className="mb-6 h-12 w-12 items-center justify-center rounded-2xl"
-        style={{ backgroundColor: colors.primarySoft }}
-        accessible={false}
-        importantForAccessibility="no-hide-descendants"
-      >
-        <Ionicons name="lock-open-outline" size={24} color={colors.primary} />
-      </View>
-      <Text
-        className="mb-2 text-2xl font-bold"
-        style={{ color: colors.text }}
-        accessibilityRole="header"
-      >
-        {t('resetPassword.chooseTitle')}
-      </Text>
-      <Text className="mb-6 text-sm leading-5" style={{ color: colors.textSecondary }}>
-        {t('resetPassword.chooseHint')}
-      </Text>
+          <HeadingMark icon="lock-open-outline" />
+          <Text variant="h1">{t('resetPassword.chooseTitle')}</Text>
+          <Text tone="muted" style={{ marginTop: 8, marginBottom: 24 }}>
+            {t('resetPassword.chooseHint')}
+          </Text>
 
-      {!ready && !error && (
-        <ActivityIndicator color={colors.primary} accessibilityLabel={t('a11y.loading')} />
-      )}
+          {!ready && !error ? (
+            <ActivityIndicator color={colors.primary} accessibilityLabel={t('a11y.loading')} />
+          ) : null}
 
-      {ready && (
-        <>
-          <View
-            className="mb-3 flex-row items-center rounded-2xl border px-4"
-            style={{ borderColor: colors.border, backgroundColor: colors.surface }}
-          >
-            <TextInput
-              accessibilityLabel={t('resetPassword.newPassword')}
-              accessibilityHint={t('resetPassword.chooseHint')}
-              className="flex-1 py-4 text-base"
-              style={{ color: colors.text }}
-              placeholder={t('resetPassword.newPassword')}
-              placeholderTextColor={colors.textSecondary}
-              value={password}
-              onChangeText={(value) => {
-                setPassword(value);
-                if (error) setError(null);
-              }}
-              secureTextEntry={!showPassword}
-              autoComplete="new-password"
-              textContentType="newPassword"
-              editable={!loading}
-            />
-            <Pressable trackId="reset_password.password.toggle_visibility"
-              onPress={() => setShowPassword((value) => !value)}
-              hitSlop={12}
-              accessibilityRole="button"
-              accessibilityLabel={t(showPassword ? 'auth.hidePassword' : 'auth.showPassword')}
-            >
-              <Ionicons
-                name={showPassword ? 'eye-off-outline' : 'eye-outline'}
-                size={20}
-                color={colors.textSecondary}
-              />
-            </Pressable>
-          </View>
-
-          <View className="mb-4">
-            <View
-              className="mb-1.5 flex-row gap-1.5"
-              accessible={false}
-              importantForAccessibility="no-hide-descendants"
-            >
-              {[0, 1, 2].map((index) => {
-                const activeCount = strength === 'strong' ? 3 : strength === 'good' ? 2 : 1;
-                const barColor =
-                  index < activeCount
-                    ? strength === 'strong'
-                      ? colors.success
-                      : strength === 'good'
-                        ? colors.warning
-                        : colors.danger
-                    : colors.border;
-                return (
-                  <View
-                    key={index}
-                    className="h-1.5 flex-1 rounded-full"
-                    style={{ backgroundColor: barColor }}
+          <View style={{ gap: 16 }}>
+            {ready ? (
+              <>
+                <View style={{ gap: 8 }}>
+                  <TextField
+                    label={t('resetPassword.newPassword')}
+                    accessibilityHint={t('resetPassword.chooseHint')}
+                    trailing={
+                      <IconButton
+                        icon={showPassword ? 'eye-off-outline' : 'eye-outline'}
+                        iconSize={20}
+                        label={t(showPassword ? 'auth.hidePassword' : 'auth.showPassword')}
+                        trackId="reset_password.password.toggle_visibility"
+                        onPress={() => setShowPassword((value) => !value)}
+                      />
+                    }
+                    value={password}
+                    onChangeText={(value) => {
+                      setPassword(value);
+                      if (error) setError(null);
+                    }}
+                    secureTextEntry={!showPassword}
+                    autoComplete="new-password"
+                    textContentType="newPassword"
+                    editable={!loading}
                   />
-                );
-              })}
-            </View>
-            <Text
-              className="text-xs"
-              style={{ color: colors.textSecondary }}
-              accessibilityLiveRegion="polite"
-            >
-              {t(`auth.strength.${strength}`)}
-            </Text>
+                  <View style={{ gap: 6 }}>
+                    <View
+                      style={{ flexDirection: 'row', gap: 6 }}
+                      accessible={false}
+                      importantForAccessibility="no-hide-descendants"
+                    >
+                      {[0, 1, 2].map((index) => {
+                        const activeCount = strength === 'strong' ? 3 : strength === 'good' ? 2 : 1;
+                        const barColor =
+                          password && index < activeCount
+                            ? strength === 'strong'
+                              ? colors.success
+                              : strength === 'good'
+                                ? colors.warning
+                                : colors.danger
+                            : colors.backgroundSelected;
+                        return (
+                          <View key={index} style={{ flex: 1, height: 6, borderRadius: 3, backgroundColor: barColor }} />
+                        );
+                      })}
+                    </View>
+                    <Text variant="caption" tone="muted" accessibilityLiveRegion="polite">
+                      {t(`auth.strength.${strength}`)}
+                    </Text>
+                  </View>
+                </View>
+
+                <TextField
+                  label={t('resetPassword.confirmPassword')}
+                  value={confirmation}
+                  onChangeText={(value) => {
+                    setConfirmation(value);
+                    if (error) setError(null);
+                  }}
+                  secureTextEntry={!showPassword}
+                  autoComplete="new-password"
+                  textContentType="newPassword"
+                  editable={!loading}
+                  onSubmitEditing={() => {
+                    logTap('reset_password.confirm_field.submit_key');
+                    if (canSubmit) void handleUpdatePassword();
+                  }}
+                />
+              </>
+            ) : null}
+
+            {error ? (
+              <View
+                accessibilityRole="alert"
+                style={{
+                  flexDirection: 'row',
+                  alignItems: 'flex-start',
+                  gap: 10,
+                  borderRadius: Radii.inner,
+                  paddingHorizontal: 14,
+                  paddingVertical: 12,
+                  backgroundColor: colors.dangerSoft,
+                }}
+              >
+                <View accessible={false} importantForAccessibility="no-hide-descendants" style={{ paddingTop: 1 }}>
+                  <Ionicons name="alert-circle" size={18} color={colors.danger} />
+                </View>
+                <Text variant="bodySmall" tone="danger" weight="medium" style={{ flex: 1 }}>
+                  {error}
+                </Text>
+              </View>
+            ) : null}
+
+            {ready ? (
+              <Button
+                size="lg"
+                fullWidth
+                trackId="reset_password.submit"
+                onPress={handleUpdatePassword}
+                disabled={!canSubmit && !loading}
+                busy={loading}
+                accessibilityLabel={t('resetPassword.update')}
+                style={{ marginTop: 4 }}
+              >
+                {t('resetPassword.update')}
+              </Button>
+            ) : null}
+
+            {error && !ready ? (
+              <Button
+                variant="outline"
+                size="lg"
+                fullWidth
+                trackId="reset_password.request_new_link"
+                onPress={() => router.replace('/auth?mode=forgot')}
+              >
+                {t('resetPassword.requestNewLink')}
+              </Button>
+            ) : null}
           </View>
-
-          <TextInput
-            accessibilityLabel={t('resetPassword.confirmPassword')}
-            className="mb-5 rounded-2xl border px-4 py-4 text-base"
-            style={{
-              color: colors.text,
-              borderColor: colors.border,
-              backgroundColor: colors.surface,
-            }}
-            placeholder={t('resetPassword.confirmPassword')}
-            placeholderTextColor={colors.textSecondary}
-            value={confirmation}
-            onChangeText={(value) => {
-              setConfirmation(value);
-              if (error) setError(null);
-            }}
-            secureTextEntry={!showPassword}
-            autoComplete="new-password"
-            textContentType="newPassword"
-            editable={!loading}
-            onSubmitEditing={() => {
-              logTap('reset_password.confirm_field.submit_key');
-              if (canSubmit) void handleUpdatePassword();
-            }}
-          />
-        </>
-      )}
-
-      {error && (
-        <View
-          className="mb-5 rounded-2xl border px-4 py-3"
-          style={{ borderColor: colors.dangerSoft, backgroundColor: colors.dangerSoft }}
-          accessibilityRole="alert"
-        >
-          <Text className="text-sm" style={{ color: colors.danger }}>
-            {error}
-          </Text>
-        </View>
-      )}
-
-      {ready && (
-        <Pressable trackId="reset_password.submit"
-          className="items-center rounded-full py-4"
-          style={{ backgroundColor: canSubmit ? colors.primary : colors.border }}
-          onPress={handleUpdatePassword}
-          disabled={!canSubmit}
-          accessibilityRole="button"
-          accessibilityLabel={t('resetPassword.update')}
-          accessibilityState={{ disabled: !canSubmit, busy: loading }}
-        >
-          {loading ? (
-            <ActivityIndicator color={canSubmit ? colors.onPrimary : colors.textSecondary} />
-          ) : (
-            <Text
-              className="text-lg font-bold"
-              style={{ color: canSubmit ? colors.onPrimary : colors.textSecondary }}
-            >
-              {t('resetPassword.update')}
-            </Text>
-          )}
-        </Pressable>
-      )}
-
-      {error && !ready && (
-        <Pressable trackId="reset_password.request_new_link"
-          className="mt-4 items-center rounded-full border py-3.5"
-          style={{ borderColor: colors.border }}
-          onPress={() => router.replace('/auth?mode=forgot')}
-          accessibilityRole="button"
-        >
-          <Text className="text-base font-semibold" style={{ color: colors.text }}>
-            {t('resetPassword.requestNewLink')}
-          </Text>
-        </Pressable>
-      )}
         </ScrollView>
       </KeyboardAvoidingView>
     </SafeAreaView>

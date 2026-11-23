@@ -31,19 +31,17 @@ const PLAYWRIGHT_VERSION = '1.65.1';
 // ---------------------------------------------------------------------------------------------------------------
 // Screens
 
-/** Cook mode has no route: it opens from the recipe's Instructions header. */
-const COOK_MODE_LABEL = { en: 'Cook', he: 'מצב בישול', ar: 'طبخ', es: 'Cocinar', ru: 'Готовить' };
+
+/** The recipe editor's "Add appliance" button (web.editor.addAppliance), which opens a sheet. */
+const ADD_APPLIANCE_LABEL = { en: 'Add appliance', he: 'הוספת כלי', ar: 'إضافة أداة', es: 'Añadir utensilio', ru: 'Добавить технику' };
 
 const SCREENS = {
   library: { path: '/' },
   recipe: { path: `/recipe/${F.MAIN_RECIPE_ID}` },
   cook: {
-    path: `/recipe/${F.MAIN_RECIPE_ID}`,
-    async after(page, { lang }) {
-      const label = COOK_MODE_LABEL[lang] ?? COOK_MODE_LABEL.en;
-      const button = page.locator(`[role="button"][aria-label="${label}"]`).first();
-      await button.scrollIntoViewIfNeeded({ timeout: 15000 });
-      await button.click();
+    // ?cook=1 opens cook mode once the recipe has loaded, as the Library's "Start cooking" does (PIN-177).
+    path: `/recipe/${F.MAIN_RECIPE_ID}?cook=1`,
+    async after(page) {
       await page.waitForTimeout(1200);
     },
     // A modal over the recipe: grow the page and it only stretches the backdrop.
@@ -57,6 +55,24 @@ const SCREENS = {
   appearance: { path: '/settings/appearance' },
   cookbook: { path: '/cookbook' },
   onboarding: { path: '/onboarding', viewportOnly: true },
+  // A question step of onboarding (4: the diets), resumed from storage.
+  'onboarding-diet': { path: '/onboarding', viewportOnly: true, storage: { 'pinch:onboardingStep': '4' } },
+  // Sign-in and sign-up, signed out (no session in storage).
+  auth: { path: '/auth?mode=signin', signedOut: true },
+  signup: { path: '/auth?mode=signup', signedOut: true },
+  editor: { path: `/recipe/edit?id=${F.MAIN_RECIPE_ID}` },
+  // The editor's appliance picker: the shared SheetModal.
+  sheet: {
+    path: `/recipe/edit?id=${F.MAIN_RECIPE_ID}`,
+    async after(page, { lang }) {
+      const label = ADD_APPLIANCE_LABEL[lang] ?? ADD_APPLIANCE_LABEL.en;
+      const button = page.getByRole('button', { name: label }).first();
+      await button.scrollIntoViewIfNeeded({ timeout: 15000 });
+      await button.click();
+      await page.waitForTimeout(1200);
+    },
+    viewportOnly: true,
+  },
   kit: { path: '/admin/kit' },
 };
 
@@ -497,6 +513,13 @@ function deviceStorage({ lang, scheme, pack }) {
   };
 }
 
+/** A screen's own storage on top of the device's: `signedOut` drops the session, `storage` adds or replaces keys. */
+function screenStorage(def, entries) {
+  const out = { ...entries, ...(def.storage ?? {}) };
+  if (def.signedOut) delete out[F.AUTH_STORAGE_KEY];
+  return out;
+}
+
 /** Waits until the fake backend has gone quiet, fonts are in and images have loaded. */
 async function settle(page, inflight, maxMs = 20000) {
   const start = Date.now();
@@ -563,7 +586,7 @@ async function shoot(browser, baseUrl, job, opts, report) {
       for (const [k, v] of Object.entries(entries)) localStorage.setItem(k, v);
       sessionStorage.setItem('__pinchSeeded', '1');
     } catch { /* storage blocked */ }
-  }, deviceStorage(state));
+  }, screenStorage(def, deviceStorage(state)));
 
   const local = new URL(baseUrl).host;
   await context.route('**/*', async (route) => {
@@ -601,8 +624,9 @@ async function shoot(browser, baseUrl, job, opts, report) {
     }
     const finalPath = new URL(page.url()).pathname.replace(/^\/app/, '') || '/';
     const text = await page.evaluate(() => document.body.innerText.slice(0, 4000));
-    if (finalPath !== def.path && !(def.path === '/' && finalPath === '')) {
-      problems.unshift(`ended on ${finalPath} instead of ${def.path}`);
+    const expectedPath = def.path.split('?')[0];
+    if (finalPath !== expectedPath && !(expectedPath === '/' && finalPath === '')) {
+      problems.unshift(`ended on ${finalPath} instead of ${expectedPath}`);
     }
     if (/unmatched route|this screen doesn.t exist|page could not be found/i.test(text)) problems.unshift('route not found');
     if (/something went wrong/i.test(text)) problems.unshift('error screen');

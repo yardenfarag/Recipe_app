@@ -1,11 +1,13 @@
 import * as Linking from 'expo-linking';
 import { router } from 'expo-router';
 import { useEffect, useRef, useState } from 'react';
-import { ActivityIndicator, Platform, Text, View } from 'react-native';
-import { Pressable } from '@/components/ui/Pressable';
+import { ActivityIndicator, Platform, View } from 'react-native';
 import { useTranslation } from 'react-i18next';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
+import { Button } from '@/components/ui/Button';
+import { PinchLogo } from '@/components/ui/PinchLogo';
+import { Text } from '@/components/ui/Text';
 import { useLanguagePreference } from '@/hooks/useLanguagePreference';
 import { useOnboarding } from '@/hooks/useOnboarding';
 import { useThemePreference } from '@/hooks/useThemePreference';
@@ -96,41 +98,26 @@ export default function AuthCallbackScreen() {
   }, [callbackUrl, t]);
 
   return (
-    <SafeAreaView className="flex-1 px-6" style={{ backgroundColor: colors.background }}>
-      <View className="flex-1 items-center justify-center">
+    <SafeAreaView style={{ flex: 1, paddingHorizontal: 20, backgroundColor: colors.background }}>
+      <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center', gap: 20 }}>
+        <PinchLogo />
         {!error ? (
           <>
             <View accessible={false} importantForAccessibility="no-hide-descendants">
               <ActivityIndicator color={colors.primary} size="large" />
             </View>
-            <Text
-              className="mt-4 text-base"
-              style={{ color: colors.textSecondary }}
-              accessibilityLiveRegion="polite"
-            >
+            <Text tone="muted" align="center" accessibilityLiveRegion="polite">
               {t('auth.callbackFinishing')}
             </Text>
           </>
         ) : (
           <>
-            <Text
-              className="mb-6 text-center text-base"
-              style={{ color: colors.danger }}
-              accessibilityRole="alert"
-            >
+            <Text tone="danger" align="center" accessibilityRole="alert">
               {error}
             </Text>
-            <Pressable
-              trackId="auth_callback.back_to_sign_in"
-              className="rounded-full px-6 py-3"
-              style={{ backgroundColor: colors.primary }}
-              onPress={() => router.replace('/auth')}
-              accessibilityRole="button"
-            >
-              <Text className="text-base font-bold" style={{ color: colors.onPrimary }}>
-                {t('auth.backToSignIn')}
-              </Text>
-            </Pressable>
+            <Button size="lg" style={{ alignSelf: 'center' }} trackId="auth_callback.back_to_sign_in" onPress={() => router.replace('/auth')}>
+              {t('auth.backToSignIn')}
+            </Button>
           </>
         )}
       </View>

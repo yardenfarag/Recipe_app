@@ -12,10 +12,10 @@ function isLibraryLayout(value: string | null): value is LibraryLayout {
 }
 
 /**
- * Library list vs grid. Unset follows the breakpoint (list on phones, grid
- * on tablet/desktop); a tap persists the choice.
+ * Library list vs grid. Unset follows the breakpoint (`phoneDefault` on phones,
+ * list unless given; grid on tablet/desktop); a tap persists the choice.
  */
-export function useLibraryLayout() {
+export function useLibraryLayout(phoneDefault: LibraryLayout = 'list') {
   const { isMediumUp, isWide } = useBreakpoint();
   const [saved, setSaved] = useState<LibraryLayout | null>(null);
   const userSet = useRef(false);
@@ -37,7 +37,7 @@ export function useLibraryLayout() {
     };
   }, []);
 
-  const layout: LibraryLayout = saved ?? (isMediumUp ? 'grid' : 'list');
+  const layout: LibraryLayout = saved ?? (isMediumUp ? 'grid' : phoneDefault);
   const numColumns = layout === 'grid' ? (isWide ? 3 : 2) : 1;
 
   const setLayout = useCallback((next: LibraryLayout) => {

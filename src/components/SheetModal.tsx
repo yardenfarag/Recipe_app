@@ -1,16 +1,12 @@
-import Ionicons from '@expo/vector-icons/Ionicons';
 import { type ReactNode } from 'react';
-import {
-  Modal,
-  Platform,
-  Text,
-  View,
-  useWindowDimensions,
-} from 'react-native';
-import { Pressable } from '@/components/ui/Pressable';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { Modal, Platform, View, useWindowDimensions } from 'react-native';
+import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useTranslation } from 'react-i18next';
 
+import { IconButton } from '@/components/ui/IconButton';
+import { Pressable } from '@/components/ui/Pressable';
+import { Text } from '@/components/ui/Text';
+import { MIN_TOUCH, Radii } from '@/components/ui/tokens';
 import { useRtl } from '@/hooks/useRtl';
 import { useThemePreference } from '@/hooks/useThemePreference';
 
@@ -35,8 +31,26 @@ type SheetModalProps = {
   onShow?: () => void;
 };
 
+/** Below this window width the web sheet rises from the bottom, as on a phone; wider, it is a centred card. */
+const WEB_SHEET_BELOW = 640;
+
+/** The small bar at the top of a sheet that says it is a sheet. */
+function Grabber() {
+  const { colors } = useThemePreference();
+  return (
+    <View
+      accessible={false}
+      importantForAccessibility="no-hide-descendants"
+      style={{ alignSelf: 'center', width: 40, height: 5, borderRadius: 3, marginTop: 10, backgroundColor: colors.border }}
+    />
+  );
+}
+
 /**
- * Native: page-sheet modal. Web: centered frosted card over a dimmed backdrop.
+ * A sheet for longer content (a picker, a form), Night Market style (PIN-177): the page colour, 28 corners at the
+ * top, a grabber, the title in Space Grotesk, flat. Native: the system page sheet (iOS draws its own corners; Android
+ * fills the window). Web: rises from the bottom on a phone-sized window, a centred card on a wider one, over the dim
+ * overlay.
  */
 export function SheetModal({
   visible,
@@ -54,52 +68,63 @@ export function SheetModal({
   const { t } = useTranslation();
   const { colors } = useThemePreference();
   const { rtl } = useRtl();
-  const { height: windowHeight } = useWindowDimensions();
+  const insets = useSafeAreaInsets();
+  const { height: windowHeight, width: windowWidth } = useWindowDimensions();
   const isWeb = Platform.OS === 'web';
   const dirStyle = { direction: rtl ? ('rtl' as const) : ('ltr' as const) };
 
   const header = (
     <View
-      className="flex-row items-center justify-between pb-2 pt-4"
-      style={{ paddingHorizontal: 20 }}
+      style={{
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'space-between',
+        gap: 8,
+        paddingHorizontal: 16,
+        paddingTop: 10,
+        paddingBottom: 8,
+        minHeight: MIN_TOUCH + 18,
+      }}
     >
       {headerLeft != null ? (
         headerLeft
       ) : showCloseButton ? (
-        <Pressable
+        <IconButton
+          variant="tile"
+          icon="close"
+          label={t('common.close')}
           trackId={`${trackId}.close`}
           onPress={onClose}
-          accessibilityRole="button"
-          accessibilityLabel={t('common.close')}
-          className="h-10 w-10 items-center justify-center rounded-full active:opacity-70"
-          style={{ backgroundColor: colors.primarySoft }}
-        >
-          <Ionicons name="close" size={20} color={colors.text} />
-        </Pressable>
+          iconSize={20}
+        />
       ) : (
-        <View style={{ width: 40 }} />
+        <View style={{ width: MIN_TOUCH }} />
       )}
-      <Text
-        className="flex-1 px-3 text-center text-base font-bold"
-        style={{ color: colors.text }}
-        numberOfLines={2}
-        accessibilityRole="header"
-      >
+      <Text variant="h3" align="center" numberOfLines={2} style={{ flex: 1, paddingHorizontal: 4 }}>
         {title}
       </Text>
-      {headerRight != null ? headerRight : <View style={{ width: 40 }} />}
+      {headerRight != null ? headerRight : <View style={{ width: MIN_TOUCH }} />}
     </View>
   );
 
   if (isWeb) {
+    const asSheet = windowWidth < WEB_SHEET_BELOW;
     return (
-      <Modal visible={visible} transparent animationType="fade" onRequestClose={onClose} onShow={onShow}>
+      <Modal
+        visible={visible}
+        transparent
+        animationType={asSheet ? 'slide' : 'fade'}
+        onRequestClose={onClose}
+        onShow={onShow}
+      >
         <View
-          className="flex-1 justify-center"
           style={{
-            backgroundColor: 'rgba(20, 16, 28, 0.48)',
-            paddingHorizontal: 20,
-            paddingVertical: 32,
+            flex: 1,
+            justifyContent: asSheet ? 'flex-end' : 'center',
+            backgroundColor: colors.overlay,
+            paddingHorizontal: asSheet ? 0 : 20,
+            paddingTop: asSheet ? 48 : 32,
+            paddingBottom: asSheet ? 0 : 32,
             ...dirStyle,
           }}
         >
@@ -108,13 +133,7 @@ export function SheetModal({
             accessibilityRole="button"
             accessibilityLabel={t('common.dismiss')}
             onPress={onClose}
-            style={{
-              position: 'absolute',
-              left: 0,
-              right: 0,
-              top: 0,
-              bottom: 0,
-            }}
+            style={{ position: 'absolute', left: 0, right: 0, top: 0, bottom: 0 }}
           />
           <View
             pointerEvents="auto"
@@ -123,22 +142,23 @@ export function SheetModal({
             accessibilityLabel={title}
             style={{
               width: '100%',
-              maxWidth,
+              maxWidth: asSheet ? undefined : maxWidth,
               alignSelf: 'center',
-              maxHeight: Math.min(windowHeight * 0.88, 760),
-              borderRadius: 24,
+              maxHeight: asSheet ? windowHeight * 0.9 : Math.min(windowHeight * 0.88, 760),
+              borderTopLeftRadius: Radii.tile,
+              borderTopRightRadius: Radii.tile,
+              borderBottomLeftRadius: asSheet ? 0 : Radii.tile,
+              borderBottomRightRadius: asSheet ? 0 : Radii.tile,
               overflow: 'hidden',
-              backgroundColor: colors.surface,
-              borderWidth: 1,
-              borderColor: colors.frostedBorder,
-              shadowColor: '#000',
-              shadowOffset: { width: 0, height: 12 },
-              shadowOpacity: 0.18,
-              shadowRadius: 28,
+              backgroundColor: colors.background,
+              borderWidth: asSheet ? 0 : 1,
+              borderColor: colors.border,
+              paddingBottom: asSheet ? insets.bottom : 0,
               // RN-web: keep percentage widths inside the card, not the viewport.
               boxSizing: 'border-box',
             }}
           >
+            {asSheet ? <Grabber /> : null}
             {header}
             <View
               style={{
@@ -167,13 +187,13 @@ export function SheetModal({
       onShow={onShow}
     >
       <SafeAreaView
-        className="flex-1"
-        style={{ backgroundColor: colors.background, ...dirStyle }}
+        style={{ flex: 1, backgroundColor: colors.background, ...dirStyle }}
         accessibilityViewIsModal
         onAccessibilityEscape={onClose}
       >
+        <Grabber />
         {header}
-        <View className="flex-1">{children}</View>
+        <View style={{ flex: 1 }}>{children}</View>
         {footer}
       </SafeAreaView>
     </Modal>

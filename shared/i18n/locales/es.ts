@@ -887,6 +887,14 @@ export default {
     "pdfTimedOut": "Leer este PDF tardó demasiado, así que no se usó tu crédito. Vuelve a intentarlo en un momento.",
     "invalidSharePdf": "No pudimos leer ese PDF. Prueba con «Sacar de un PDF»."
   },
+  "snapNm": {
+    "snapIt": "Sacarla",
+    "guessIt": "Adivinarla",
+    "takePhoto": "Tomar una foto",
+    "choosePhoto": "Elegir una foto",
+    "choosePhotoOrPdf": "Elegir una foto o un PDF",
+    "shareTip": "Comparte desde cualquier app. En TikTok, Instagram o YouTube, toca Compartir y luego Pinch."
+  },
   "list": {
     "title": "Lista",
     "subtitle": "Lo que falta para cocinar",

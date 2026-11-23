@@ -1,5 +1,6 @@
+import Ionicons from '@expo/vector-icons/Ionicons';
 import { useEffect, useMemo, useState } from 'react';
-import { AccessibilityInfo, Text, View } from 'react-native';
+import { AccessibilityInfo, View } from 'react-native';
 import Animated, {
   Easing,
   FadeIn,
@@ -24,6 +25,9 @@ import {
 } from '@shared/lib/snapProgress';
 
 import { CookieMark } from '@/components/CookieMark';
+import { Text } from '@/components/ui/Text';
+import { Tile } from '@/components/ui/Tile';
+import { Radii } from '@/components/ui/tokens';
 import { useThemePreference } from '@/hooks/useThemePreference';
 import { announce } from '@/lib/a11y';
 
@@ -44,9 +48,10 @@ type SnapExtractingViewProps = {
 };
 
 /**
- * Full-screen Snap wait: a ring filling around the cookie, a line saying what Pinch is doing, and the time left.
- * Nothing reports real progress, so the ring and the countdown follow how long this kind of source usually takes
- * (shared/lib/snapProgress.ts).
+ * The Snap wait, on one flat tile (Night Market, PIN-177; the web's SnapProgress): a ring in the brand colour
+ * filling around the cookie, a line in Space Grotesk saying what Pinch is doing, the time left, and what it is
+ * reading. Nothing reports real progress, so the ring and the countdown follow how long this kind of source usually
+ * takes (shared/lib/snapProgress.ts).
  */
 export function SnapExtractingView({ intent, url, pdf = false }: SnapExtractingViewProps) {
   const { t } = useTranslation();
@@ -103,56 +108,103 @@ export function SnapExtractingView({ intent, url, pdf = false }: SnapExtractingV
   }));
 
   return (
-    <View
-      className="flex-1 items-center justify-center px-8"
-      accessible
-      accessibilityRole="progressbar"
-      accessibilityLabel={currentLine}
-      accessibilityValue={{ min: 0, max: 100, now: Math.round(progress * 100), text: eta }}
-      accessibilityState={{ busy: true }}
-    >
-      <View
-        className="mb-8 items-center justify-center"
-        style={{ width: RING_SIZE, height: RING_SIZE }}
-        accessible={false}
-        importantForAccessibility="no-hide-descendants"
+    <View style={{ flex: 1, paddingHorizontal: 20, paddingTop: 8, paddingBottom: 20 }}>
+      <Tile
+        style={{
+          flex: 1,
+          alignItems: 'center',
+          justifyContent: 'center',
+          gap: 28,
+          paddingHorizontal: 24,
+          paddingVertical: 40,
+        }}
+        accessible
+        accessibilityRole="progressbar"
+        accessibilityLabel={currentLine}
+        accessibilityValue={{ min: 0, max: 100, now: Math.round(progress * 100), text: eta }}
+        accessibilityState={{ busy: true }}
       >
-        <Svg
-          width={RING_SIZE}
-          height={RING_SIZE}
-          viewBox="0 0 100 100"
-          style={{ position: 'absolute', transform: [{ rotate: '-90deg' }] }}
+        <View
+          style={{ width: RING_SIZE, height: RING_SIZE, alignItems: 'center', justifyContent: 'center' }}
+          accessible={false}
+          importantForAccessibility="no-hide-descendants"
         >
-          <Circle cx={50} cy={50} r={RADIUS} fill="none" stroke={colors.primarySoft} strokeWidth={6} />
-          <AnimatedCircle
-            cx={50}
-            cy={50}
-            r={RADIUS}
-            fill="none"
-            stroke={colors.primary}
-            strokeWidth={6}
-            strokeLinecap="round"
-            strokeDasharray={`${CIRCUMFERENCE} ${CIRCUMFERENCE}`}
-            animatedProps={arcProps}
-          />
-        </Svg>
-        <Animated.View style={cookieStyle}>
-          <CookieMark size={72} color={colors.primary} />
-        </Animated.View>
-      </View>
+          <Svg
+            width={RING_SIZE}
+            height={RING_SIZE}
+            viewBox="0 0 100 100"
+            style={{ position: 'absolute', transform: [{ rotate: '-90deg' }] }}
+          >
+            <Circle cx={50} cy={50} r={RADIUS} fill="none" stroke={colors.backgroundElement} strokeWidth={6} />
+            <AnimatedCircle
+              cx={50}
+              cy={50}
+              r={RADIUS}
+              fill="none"
+              stroke={colors.primary}
+              strokeWidth={6}
+              strokeLinecap="round"
+              strokeDasharray={`${CIRCUMFERENCE} ${CIRCUMFERENCE}`}
+              animatedProps={arcProps}
+            />
+          </Svg>
+          <Animated.View style={cookieStyle}>
+            <CookieMark size={64} color={colors.primaryText} />
+          </Animated.View>
+        </View>
 
-      <Animated.Text
-        key={lineKey}
-        entering={reduceMotion ? FadeIn.duration(160) : FadeInDown.springify().damping(18)}
-        exiting={FadeOut.duration(160)}
-        className="text-center text-xl font-semibold"
-        style={{ color: colors.text }}
-      >
-        {currentLine}
-      </Animated.Text>
-      <Text className="mt-2 text-center text-sm" style={{ color: colors.textSecondary, fontVariant: ['tabular-nums'] }}>
-        {eta}
-      </Text>
+        <View style={{ alignSelf: 'stretch', gap: 6 }}>
+          <Animated.View
+            key={lineKey}
+            entering={reduceMotion ? FadeIn.duration(160) : FadeInDown.springify().damping(18)}
+            exiting={FadeOut.duration(160)}
+          >
+            <Text variant="h2" align="center">
+              {currentLine}
+            </Text>
+          </Animated.View>
+          <Text
+            variant="bodySmall"
+            tone="muted"
+            align="center"
+            style={{ minHeight: 22, fontVariant: ['tabular-nums'] }}
+          >
+            {eta}
+          </Text>
+        </View>
+
+        {url ? (
+          <View
+            style={{
+              flexDirection: 'row',
+              alignItems: 'center',
+              gap: 8,
+              maxWidth: '100%',
+              borderRadius: Radii.inner,
+              backgroundColor: colors.backgroundElement,
+              paddingHorizontal: 16,
+              paddingVertical: 10,
+            }}
+          >
+            <Ionicons
+              name="link-outline"
+              size={16}
+              color={colors.textSecondary}
+              accessible={false}
+              importantForAccessibility="no"
+            />
+            {/* A link reads left to right in every language. */}
+            <Text
+              variant="caption"
+              tone="muted"
+              numberOfLines={1}
+              style={{ flexShrink: 1, writingDirection: 'ltr' }}
+            >
+              {url}
+            </Text>
+          </View>
+        ) : null}
+      </Tile>
     </View>
   );
 }

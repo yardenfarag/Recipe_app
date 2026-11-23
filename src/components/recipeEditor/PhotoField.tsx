@@ -1,9 +1,11 @@
 import Ionicons from '@expo/vector-icons/Ionicons';
 import { Image } from 'expo-image';
-import { ActivityIndicator, Alert, Platform, Text, View } from 'react-native';
-import { Pressable } from '@/components/ui/Pressable';
+import { ActivityIndicator, Alert, Platform, View } from 'react-native';
 import { useTranslation } from 'react-i18next';
 
+import { Button } from '@/components/ui/Button';
+import { Text } from '@/components/ui/Text';
+import { Radii, usePhotoColors, withAlpha } from '@/components/ui/tokens';
 import { useThemePreference } from '@/hooks/useThemePreference';
 import { pickCompressedRecipeImage } from '@/lib/pickCompressedImage';
 import type { EditorPhoto } from '@shared/lib/recipeEditor';
@@ -27,6 +29,7 @@ type PhotoFieldProps = {
 export function PhotoField({ photo, imageUrl, generated, drawing, onChange }: PhotoFieldProps) {
   const { t } = useTranslation();
   const { colors } = useThemePreference();
+  const onPhoto = usePhotoColors();
 
   const source =
     photo.kind === 'replace'
@@ -60,96 +63,101 @@ export function PhotoField({ photo, imageUrl, generated, drawing, onChange }: Ph
   }
 
   const addButton = (
-    <Pressable trackId={source ? 'recipe_editor.photo.replace' : 'recipe_editor.photo.add'}
+    <Button
+      variant="secondary"
+      size="sm"
+      icon={source ? 'image-outline' : 'camera-outline'}
+      trackId={source ? 'recipe_editor.photo.replace' : 'recipe_editor.photo.add'}
       onPress={choose}
-      accessibilityRole="button"
-      className="min-h-[44px] flex-row items-center justify-center rounded-2xl px-4 active:opacity-80"
-      style={{ backgroundColor: colors.primarySoft }}
     >
-      <Text className="text-sm font-semibold" style={{ color: colors.text }}>
-        {source ? t('recipeEditor.photo.replace') : t('recipeEditor.photo.add')}
-      </Text>
-    </Pressable>
+      {source ? t('recipeEditor.photo.replace') : t('recipeEditor.photo.add')}
+    </Button>
   );
 
   const drawButton = (label: string, trackId: string) => (
-    <Pressable trackId={trackId}
-      onPress={() => onChange({ kind: 'generate' })}
-      accessibilityRole="button"
-      className="min-h-[44px] flex-row items-center justify-center gap-1.5 rounded-2xl border px-4 active:opacity-80"
-      style={{ borderColor: colors.border }}
-    >
-      <Ionicons name="sparkles" size={14} color={colors.primary} />
-      <Text className="text-sm font-semibold" style={{ color: colors.text }}>
-        {label}
-      </Text>
-    </Pressable>
+    <Button variant="outline" size="sm" icon="sparkles" trackId={trackId} onPress={() => onChange({ kind: 'generate' })}>
+      {label}
+    </Button>
   );
 
   if (photo.kind === 'generate') {
     return (
-      <View className="gap-2">
+      <View style={{ gap: 10 }}>
         <View
-          className="items-center justify-center gap-2 px-5"
-          style={{ width: '100%', aspectRatio: 16 / 9, borderRadius: 18, backgroundColor: colors.primarySoft }}
+          style={{
+            width: '100%',
+            aspectRatio: 16 / 9,
+            borderRadius: Radii.inner,
+            alignItems: 'center',
+            justifyContent: 'center',
+            gap: 8,
+            paddingHorizontal: 20,
+            backgroundColor: colors.primarySoft,
+          }}
         >
-          <Ionicons name="sparkles" size={24} color={colors.primary} />
-          <Text accessibilityLiveRegion="polite" className="text-center text-base font-semibold" style={{ color: colors.text }}>
+          <Ionicons name="sparkles" size={24} color={colors.primaryText} />
+          <Text weight="semibold" align="center" accessibilityLiveRegion="polite">
             {t('recipeEditor.photo.willDraw')}
           </Text>
         </View>
-        <View className="flex-row flex-wrap gap-2">
+        <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8 }}>
           {addButton}
-          <Pressable trackId="recipe_editor.photo.dont_draw"
-            onPress={() => onChange({ kind: 'keep' })}
-            accessibilityRole="button"
-            className="min-h-[44px] flex-row items-center justify-center rounded-2xl border px-4 active:opacity-80"
-            style={{ borderColor: colors.border }}
-          >
-            <Text className="text-sm font-semibold" style={{ color: colors.text }}>
-              {t('recipeEditor.photo.dontDraw')}
-            </Text>
-          </Pressable>
+          <Button variant="outline" size="sm" trackId="recipe_editor.photo.dont_draw" onPress={() => onChange({ kind: 'keep' })}>
+            {t('recipeEditor.photo.dontDraw')}
+          </Button>
         </View>
       </View>
     );
   }
 
   return (
-    <View className="gap-2">
+    <View style={{ gap: 10 }}>
       {source ? (
         <View>
           <Image
             source={source}
             contentFit="cover"
             accessibilityIgnoresInvertColors
-            style={{ width: '100%', aspectRatio: 16 / 9, borderRadius: 18, backgroundColor: colors.primarySoft }}
+            style={{ width: '100%', aspectRatio: 16 / 9, borderRadius: Radii.inner, backgroundColor: colors.primarySoft }}
           />
           {showsDrawing ? (
             // Over a picture, so the same in light and dark (RecipeImage's mark).
             <View
               testID="ai-image-mark"
-              className="absolute start-2.5 top-2.5 flex-row items-center gap-1 rounded-full px-2.5 py-1"
-              style={{ backgroundColor: 'rgba(0,0,0,0.55)' }}
+              style={{
+                position: 'absolute',
+                top: 10,
+                start: 10,
+                flexDirection: 'row',
+                alignItems: 'center',
+                gap: 4,
+                borderRadius: 8,
+                paddingHorizontal: 10,
+                paddingVertical: 5,
+                backgroundColor: withAlpha(onPhoto.scrim, 0.7),
+              }}
             >
-              <Ionicons name="sparkles" size={12} color="#fff" />
-              <Text className="text-xs font-semibold" style={{ color: '#fff' }}>
+              <Ionicons name="sparkles" size={12} color={onPhoto.onScrim} />
+              <Text variant="caption" weight="semibold" tone="onScrim">
                 {t('recipe.aiImage')}
               </Text>
             </View>
           ) : null}
         </View>
       ) : (
-        <Text className="text-sm" style={{ color: colors.textSecondary }}>
+        <Text variant="bodySmall" tone="muted">
           {t('recipeEditor.photo.ownBest')}
         </Text>
       )}
-      <View className="flex-row flex-wrap gap-2">
+      <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8 }}>
         {addButton}
         {source ? null : drawing ? (
-          <View accessibilityLiveRegion="polite" className="min-h-[44px] flex-row items-center gap-2 px-2">
+          <View
+            accessibilityLiveRegion="polite"
+            style={{ minHeight: 44, flexDirection: 'row', alignItems: 'center', gap: 8, paddingHorizontal: 8 }}
+          >
             <ActivityIndicator size="small" color={colors.primary} />
-            <Text className="text-sm" style={{ color: colors.textSecondary }}>
+            <Text variant="bodySmall" tone="muted">
               {t('recipe.drawingImage')}
             </Text>
           </View>
@@ -158,16 +166,15 @@ export function PhotoField({ photo, imageUrl, generated, drawing, onChange }: Ph
         )}
         {showsDrawing ? drawButton(t('recipeEditor.photo.drawAgain'), 'recipe_editor.photo.draw_again') : null}
         {source ? (
-          <Pressable trackId="recipe_editor.photo.remove"
+          <Button
+            variant="ghost"
+            size="sm"
+            icon="trash-outline"
+            trackId="recipe_editor.photo.remove"
             onPress={() => onChange(imageUrl ? { kind: 'remove' } : { kind: 'keep' })}
-            accessibilityRole="button"
-            className="min-h-[44px] flex-row items-center justify-center rounded-2xl border px-4 active:opacity-80"
-            style={{ borderColor: colors.border }}
           >
-            <Text className="text-sm font-semibold" style={{ color: colors.danger }}>
-              {t('recipeEditor.photo.remove')}
-            </Text>
-          </Pressable>
+            {t('recipeEditor.photo.remove')}
+          </Button>
         ) : null}
       </View>
     </View>

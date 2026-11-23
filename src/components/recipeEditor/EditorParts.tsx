@@ -1,11 +1,14 @@
 import Ionicons from '@expo/vector-icons/Ionicons';
 import { type ComponentProps, type ReactNode } from 'react';
-import { type LayoutChangeEvent, Text, View, type TextStyle } from 'react-native';
-import { Pressable } from '@/components/ui/Pressable';
+import { type LayoutChangeEvent, type StyleProp, View, type ViewStyle } from 'react-native';
 import { useTranslation } from 'react-i18next';
 
-import { TextInput, type TextInputProps } from '@/components/text-input';
-import { useRtl } from '@/hooks/useRtl';
+import { FieldInput, type FieldInputProps } from '@/components/text-input';
+import { Button } from '@/components/ui/Button';
+import { Chip } from '@/components/ui/Chip';
+import { IconButton as KitIconButton } from '@/components/ui/IconButton';
+import { Text } from '@/components/ui/Text';
+import { Tile, TileBadge } from '@/components/ui/Tile';
 import { useThemePreference } from '@/hooks/useThemePreference';
 import type { EditorMessage } from '@shared/lib/recipeEditor';
 
@@ -16,27 +19,31 @@ export function useEditorMessage() {
     message ? t(message.key, message.params as Record<string, unknown> | undefined) : null;
 }
 
+/** One part of the form, as a tile (Night Market, PIN-177): its heading (h2) and its fields. */
 export function EditorSection({
   title,
+  hint,
   children,
   onLayout,
 }: {
   title: string;
+  /** A muted line under the heading. */
+  hint?: string;
   children: ReactNode;
   onLayout?: (event: LayoutChangeEvent) => void;
 }) {
-  const { colors } = useThemePreference();
   return (
-    <View
-      onLayout={onLayout}
-      className="mb-4 rounded-[24px] border p-4"
-      style={{ borderColor: colors.frostedBorder, backgroundColor: colors.frosted }}
-    >
-      <Text className="mb-3 text-lg font-bold" style={{ color: colors.text }} accessibilityRole="header">
-        {title}
-      </Text>
-      <View className="gap-4">{children}</View>
-    </View>
+    <Tile onLayout={onLayout} padding={20} style={{ gap: 18 }}>
+      <View style={{ gap: 4 }}>
+        <Text variant="h2">{title}</Text>
+        {hint ? (
+          <Text variant="caption" tone="muted">
+            {hint}
+          </Text>
+        ) : null}
+      </View>
+      {children}
+    </Tile>
   );
 }
 
@@ -52,12 +59,20 @@ type FieldProps = {
 };
 
 export function EditorField({ label, children, error, locked, onReset, resetTrackId }: FieldProps) {
-  const { colors } = useThemePreference();
-  const { textAlign } = useRtl();
   return (
     <View>
-      <View className="mb-1.5 flex-row flex-wrap items-center justify-between gap-2">
-        <Text className="text-sm font-semibold" style={{ color: colors.textSecondary, textAlign }}>
+      <View
+        style={{
+          marginBottom: 8,
+          minHeight: 22,
+          flexDirection: 'row',
+          flexWrap: 'wrap',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          columnGap: 8,
+        }}
+      >
+        <Text variant="bodySmall" weight="semibold">
           {label}
         </Text>
         {locked && onReset ? <LockedBadge onReset={onReset} trackId={resetTrackId} /> : null}
@@ -68,6 +83,10 @@ export function EditorField({ label, children, error, locked, onReset, resetTrac
   );
 }
 
+/**
+ * "Set by you", with the way back to Pinch's own estimate (ADR 018): a value the cook typed is never overwritten by a
+ * recalculation until they reset it.
+ */
 export function LockedBadge({
   onReset,
   trackId = 'recipe_editor.field.reset',
@@ -78,58 +97,38 @@ export function LockedBadge({
   const { t } = useTranslation();
   const { colors } = useThemePreference();
   return (
-    <View className="flex-row flex-wrap items-center gap-2">
-      <View className="flex-row items-center gap-1 rounded-full px-2 py-0.5" style={{ backgroundColor: colors.accentSoft }}>
-        <Ionicons name="person" size={11} color={colors.text} />
-        <Text className="text-xs font-semibold" style={{ color: colors.text }}>
-          {t('recipeEditor.locked.setByYou')}
-        </Text>
-      </View>
-      <Pressable trackId={trackId} onPress={onReset} hitSlop={8} accessibilityRole="button" className="active:opacity-70">
-        <Text className="text-xs font-semibold" style={{ color: colors.primary }}>
-          {t('recipeEditor.locked.reset')}
-        </Text>
-      </Pressable>
+    <View style={{ flexDirection: 'row', flexWrap: 'wrap', alignItems: 'center', gap: 4 }}>
+      <TileBadge icon={<Ionicons name="person" size={11} color={colors.primaryText} />}>
+        {t('recipeEditor.locked.setByYou')}
+      </TileBadge>
+      <Button variant="link" icon="refresh" trackId={trackId} onPress={onReset}>
+        {t('recipeEditor.locked.reset')}
+      </Button>
     </View>
   );
 }
 
 export function FieldError({ message }: { message?: string | null }) {
-  const { colors } = useThemePreference();
-  const { textAlign } = useRtl();
   if (!message) return null;
   return (
-    <Text
-      className="mt-1 text-xs"
-      style={{ color: colors.danger, textAlign }}
-      accessibilityLiveRegion="polite"
-    >
+    <Text variant="caption" tone="danger" weight="medium" style={{ marginTop: 6 }} accessibilityLiveRegion="polite">
       {message}
     </Text>
   );
 }
 
-/** Themed single- or multi-line input matching the app's rounded fields. */
-export function EditorInput({ style, invalid, ...props }: TextInputProps & { invalid?: boolean }) {
-  const { colors } = useThemePreference();
-  const { textAlign, writingDirection } = useRtl();
-  const base: TextStyle = {
-    color: colors.text,
-    borderColor: invalid ? colors.danger : colors.frostedBorder,
-    backgroundColor: colors.surface,
-    textAlign,
-    writingDirection,
-  };
-  return (
-    <TextInput
-      className={`rounded-2xl border px-3 text-base ${props.multiline ? 'min-h-[72px] py-2.5' : 'min-h-[44px] py-2.5'}`}
-      placeholderTextColor={colors.textSecondary}
-      {...props}
-      style={[base, style]}
-    />
-  );
+/**
+ * A text box in the editor: the Night Market field (FieldInput), 52 tall (`size="sm"`, 44, in an ingredient row).
+ * `style` lays out the box (a width, flex).
+ */
+export function EditorInput({
+  style,
+  ...props
+}: Omit<FieldInputProps, 'containerStyle' | 'style'> & { style?: StyleProp<ViewStyle> }) {
+  return <FieldInput {...props} containerStyle={style} />;
 }
 
+/** The kit's 44 × 44 icon button, for a row's delete. */
 export function IconButton({
   icon,
   label,
@@ -143,21 +142,10 @@ export function IconButton({
   color?: string;
   trackId?: string;
 }) {
-  const { colors } = useThemePreference();
-  return (
-    <Pressable
-      trackId={trackId}
-      onPress={onPress}
-      hitSlop={6}
-      accessibilityRole="button"
-      accessibilityLabel={label}
-      className="h-11 w-9 items-center justify-center rounded-xl active:opacity-70"
-    >
-      <Ionicons name={icon} size={20} color={color ?? colors.textSecondary} />
-    </Pressable>
-  );
+  return <KitIconButton icon={icon} label={label} onPress={onPress} color={color} trackId={trackId} iconSize={20} />;
 }
 
+/** Adds a row (an ingredient, a step, an appliance): a secondary button with a plus. */
 export function AddRowButton({
   label,
   onPress,
@@ -169,21 +157,10 @@ export function AddRowButton({
   disabled?: boolean;
   trackId?: string;
 }) {
-  const { colors } = useThemePreference();
   return (
-    <Pressable
-      trackId={trackId}
-      onPress={onPress}
-      disabled={disabled}
-      accessibilityRole="button"
-      accessibilityState={{ disabled: Boolean(disabled) }}
-      className="min-h-[44px] items-center justify-center rounded-2xl border border-dashed px-4 active:opacity-70"
-      style={{ borderColor: colors.border, opacity: disabled ? 0.5 : 1 }}
-    >
-      <Text className="text-sm font-semibold" style={{ color: colors.primary }}>
-        {label}
-      </Text>
-    </Pressable>
+    <Button variant="secondary" icon="add" trackId={trackId} onPress={onPress} disabled={disabled}>
+      {label}
+    </Button>
   );
 }
 
@@ -205,28 +182,25 @@ export function ChoiceChips<T extends string>({
    */
   trackId?: string;
 }) {
-  const { colors } = useThemePreference();
   return (
-    <View className="flex-row flex-wrap gap-2" accessibilityRole="radiogroup" accessibilityLabel={label}>
+    <View
+      style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8 }}
+      accessibilityRole="radiogroup"
+      accessibilityLabel={label}
+    >
       {options.map((option, index) => {
         const selected = option.value === value;
         return (
-          <Pressable
+          <Chip
             key={option.value}
+            kind="radio"
+            size="sm"
+            selected={selected}
             trackId={`${trackId}.${/^[A-Za-z0-9_-]+$/.test(option.value) ? option.value : index + 1}`}
             onPress={() => onChange(selected ? null : option.value)}
-            accessibilityRole="radio"
-            accessibilityState={{ selected }}
-            className="min-h-[40px] justify-center rounded-full border px-4 active:opacity-80"
-            style={{
-              borderColor: selected ? colors.primary : colors.frostedBorder,
-              backgroundColor: selected ? colors.primarySoft : colors.surface,
-            }}
           >
-            <Text className="text-sm font-semibold" style={{ color: selected ? colors.primary : colors.text }}>
-              {option.label}
-            </Text>
-          </Pressable>
+            {option.label}
+          </Chip>
         );
       })}
     </View>

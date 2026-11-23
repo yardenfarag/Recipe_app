@@ -1,15 +1,14 @@
 import { type ReactNode, useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import {
-  ActivityIndicator,
-  Text,
-  View,
-} from 'react-native';
-import { Pressable } from '@/components/ui/Pressable';
+import { View } from 'react-native';
 
 import { SheetModal } from '@/components/SheetModal';
 import { TextInput } from '@/components/text-input';
+import { Button } from '@/components/ui/Button';
+import { Text } from '@/components/ui/Text';
+import { HAIRLINE, Radii } from '@/components/ui/tokens';
 import { useThemePreference } from '@/hooks/useThemePreference';
+import { useTypography } from '@/hooks/useTypography';
 import { announce } from '@/lib/a11y';
 import { logTap } from '@/lib/interactionLog';
 import { translateAppError } from '@shared/lib/translateAppError';
@@ -40,9 +39,11 @@ export function NameEditModal({
 }: NameEditModalProps) {
   const { t } = useTranslation();
   const { colors } = useThemePreference();
+  const type = useTypography();
   const [draft, setDraft] = useState(initialValue);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [focused, setFocused] = useState(false);
 
   useEffect(() => {
     if (!visible) return;
@@ -81,45 +82,39 @@ export function NameEditModal({
       maxWidth={480}
       showCloseButton={false}
       headerLeft={
-        <Pressable
-          trackId={`${trackId}.cancel`}
-          onPress={onClose}
-          disabled={saving}
-          hitSlop={12}
-          accessibilityRole="button"
-          accessibilityState={{ disabled: saving }}
-        >
-          <Text style={{ color: colors.textSecondary }}>{t('common.cancel')}</Text>
-        </Pressable>
+        <Button variant="ghost" size="sm" trackId={`${trackId}.cancel`} disabled={saving} onPress={onClose}>
+          {t('common.cancel')}
+        </Button>
       }
       headerRight={
-        <Pressable
+        <Button
+          variant="secondary"
+          size="sm"
           trackId={`${trackId}.save`}
-          onPress={() => void handleSave()}
-          disabled={saving}
-          hitSlop={12}
-          accessibilityRole="button"
+          busy={saving}
           accessibilityLabel={t('common.save')}
-          accessibilityState={{ disabled: saving, busy: saving }}
+          onPress={() => void handleSave()}
         >
-          {saving ? (
-            <ActivityIndicator color={colors.primary} />
-          ) : (
-            <Text className="font-bold" style={{ color: colors.primary }}>
-              {t('common.save')}
-            </Text>
-          )}
-        </Pressable>
+          {t('common.save')}
+        </Button>
       }
     >
-      <View className="px-5 pt-5">
+      <View style={{ paddingHorizontal: 20, paddingTop: 20 }}>
         <TextInput
-          className="rounded-2xl border px-4 py-3 text-base"
-          style={{
-            color: colors.text,
-            borderColor: colors.frostedBorder,
-            backgroundColor: colors.surface,
-          }}
+          style={[
+            type.font('body', 'regular'),
+            {
+              minHeight: 52,
+              fontSize: 16,
+              paddingHorizontal: 16,
+              borderRadius: Radii.inner,
+              borderWidth: HAIRLINE,
+              color: colors.text,
+              borderColor: error ? colors.danger : focused ? colors.primary : colors.border,
+              backgroundColor: colors.surface,
+              textAlign: type.rtl ? 'right' : 'left',
+            },
+          ]}
           placeholder={placeholder ?? t('library.namePlaceholder')}
           placeholderTextColor={colors.textSecondary}
           accessibilityLabel={title}
@@ -128,6 +123,8 @@ export function NameEditModal({
             setDraft(text);
             if (error) setError(null);
           }}
+          onFocus={() => setFocused(true)}
+          onBlur={() => setFocused(false)}
           autoFocus
           returnKeyType="done"
           onSubmitEditing={() => {
@@ -136,10 +133,7 @@ export function NameEditModal({
           }}
         />
         {error ? (
-          <Text
-            className="mt-3 text-sm"
-            style={{ color: colors.danger }}
-          >
+          <Text variant="bodySmall" tone="danger" style={{ marginTop: 10 }}>
             {error}
           </Text>
         ) : null}

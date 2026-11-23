@@ -1,20 +1,19 @@
-import Ionicons from '@expo/vector-icons/Ionicons';
 import { useKeepAwake } from 'expo-keep-awake';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import {
-  Modal,
-  PanResponder,
-  Platform,
-  Text,
-  View,
-} from 'react-native';
-import { Pressable } from '@/components/ui/Pressable';
+import { Modal, PanResponder, Platform, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
+import { Button } from '@/components/ui/Button';
+import { IconButton } from '@/components/ui/IconButton';
+import { Pressable } from '@/components/ui/Pressable';
+import { Text } from '@/components/ui/Text';
+import { Tile, TileLabel } from '@/components/ui/Tile';
+import { HAIRLINE, KitIcon, MIN_TOUCH, Radii } from '@/components/ui/tokens';
 import { useReadAloud, useReadAloudPreference } from '@/hooks/useReadAloud';
 import { useRtl } from '@/hooks/useRtl';
 import { useThemePreference } from '@/hooks/useThemePreference';
+import { useTypography } from '@/hooks/useTypography';
 import { announce } from '@/lib/a11y';
 import { logTap } from '@/lib/interactionLog';
 import { stepSpeech, voiceAvailability } from '@shared/lib/readAloud';
@@ -33,7 +32,8 @@ type CookModeProps = {
 };
 
 /**
- * Full-screen, greasy-hands cook view: huge type, tap to advance, screen stays on.
+ * Full-screen, greasy-hands cook view: huge type, tap to advance, screen stays on. Night Market (PIN-177): flat on
+ * the page colour, a progress bar of one segment per step, the step number in Space Grotesk, the main Next button.
  *
  * The speaker button reads each step aloud as it appears, in the recipe's language (expo-speech, see
  * useReadAloud). It is greyed out when the phone has no voice for that language; tapping it then says why.
@@ -49,6 +49,7 @@ export function CookMode({
 }: CookModeProps) {
   const { t, i18n } = useTranslation();
   const { colors } = useThemePreference();
+  const type = useTypography();
   const { rtl } = useRtl();
   const [index, setIndex] = useState(0);
   const [timerLeft, setTimerLeft] = useState<number | null>(null);
@@ -236,47 +237,45 @@ export function CookMode({
 
   if (!visible) return null;
 
+  const finished = done || steps.length === 0;
+  const isLast = index >= lastIndex;
+  const startAlign = textDirection === 'rtl' ? ('right' as const) : ('left' as const);
+
   return (
     <Modal visible={visible} animationType="fade" presentationStyle="fullScreen" onRequestClose={onClose}>
       <SafeAreaView
-        className="flex-1"
-        style={{ backgroundColor: colors.background }}
+        style={{ flex: 1, backgroundColor: colors.background }}
         accessibilityViewIsModal
         onAccessibilityEscape={onClose}
       >
-        <View className="flex-1 px-5 pt-2 pb-4">
-          <View className="flex-row items-center justify-between gap-3">
-            <Pressable trackId="cook_mode.close"
+        <View style={{ flex: 1, paddingHorizontal: 20, paddingTop: 8, paddingBottom: 16 }}>
+          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12 }}>
+            <IconButton
+              variant="tile"
+              icon="close"
+              label={t('recipe.cookModeClose')}
+              trackId="cook_mode.close"
               onPress={onClose}
-              hitSlop={12}
-              className="h-12 w-12 items-center justify-center rounded-full active:opacity-80"
-              style={{ backgroundColor: colors.frosted }}
-              accessibilityRole="button"
-              accessibilityLabel={t('recipe.cookModeClose')}
-            >
-              <Ionicons name="close" size={22} color={colors.text} />
-            </Pressable>
+            />
             <Text
-              className="min-w-0 flex-1 text-center text-sm font-semibold"
-              style={{ color: colors.textSecondary }}
+              variant="bodySmall"
+              weight="semibold"
+              tone="muted"
+              align="center"
               numberOfLines={1}
               accessibilityRole="header"
+              style={{ flex: 1, minWidth: 0 }}
             >
               {title}
             </Text>
-            <Pressable trackId="cook_mode.read_aloud.toggle"
+            <Pressable
+              trackId="cook_mode.read_aloud.toggle"
               onPress={() => {
                 if (voiceMissing) {
                   setNoVoiceHint(true);
                   return;
                 }
                 setReadAloudOn(!readAloudOn);
-              }}
-              hitSlop={12}
-              className="h-12 w-12 items-center justify-center rounded-full active:opacity-80"
-              style={{
-                backgroundColor: reading ? colors.primarySoft : colors.frosted,
-                opacity: voiceMissing ? 0.45 : 1,
               }}
               accessibilityRole="switch"
               accessibilityLabel={
@@ -285,78 +284,116 @@ export function CookMode({
                   : t('recipe.cookModeReadAloud')
               }
               accessibilityState={{ checked: reading, disabled: voiceMissing }}
+              style={({ pressed }) => ({
+                width: MIN_TOUCH,
+                height: MIN_TOUCH,
+                alignItems: 'center',
+                justifyContent: 'center',
+                borderRadius: Radii.control,
+                borderWidth: reading ? 0 : HAIRLINE,
+                borderColor: colors.border,
+                backgroundColor: reading ? colors.primarySoft : pressed ? colors.backgroundElement : colors.surface,
+                opacity: voiceMissing ? 0.45 : 1,
+              })}
             >
-              <Ionicons
-                name={reading ? 'volume-high-outline' : 'volume-mute-outline'}
+              <KitIcon
+                icon={reading ? 'volume-high-outline' : 'volume-mute-outline'}
                 size={22}
-                color={reading ? colors.primary : colors.text}
+                color={reading ? colors.primaryText : colors.text}
               />
             </Pressable>
           </View>
 
-          {done || steps.length === 0 ? (
-            <View className="flex-1 items-center justify-center px-4">
+          {finished ? (
+            <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center', gap: 12, paddingHorizontal: 16 }}>
+              <View
+                style={{
+                  width: 72,
+                  height: 72,
+                  borderRadius: Radii.card,
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  backgroundColor: colors.primarySoft,
+                }}
+              >
+                <KitIcon icon="checkmark" size={36} color={colors.primaryText} />
+              </View>
               <Text
-                className="text-center text-4xl font-bold leading-tight"
-                style={{ color: colors.text }}
-                accessibilityRole="header"
+                variant="h1"
+                align="center"
+                style={{ fontSize: 40, lineHeight: type.rtl ? 50 : 44, letterSpacing: type.tracking(-0.03, 40) }}
               >
                 {t('recipe.cookModeDone')}
               </Text>
-              {onCooked ? (
-                <Pressable trackId="cook_mode.mark_cooked"
-                  onPress={onCooked}
-                  className="mt-8 min-h-[56px] items-center justify-center rounded-3xl px-8 active:opacity-80"
-                  style={{ backgroundColor: colors.primary }}
-                  accessibilityRole="button"
-                  accessibilityLabel={t('recipe.cookedAction')}
-                >
-                  <Text className="text-lg font-bold" style={{ color: colors.onPrimary }}>
+              <View style={{ alignSelf: 'stretch', gap: 8, marginTop: 20 }}>
+                {onCooked ? (
+                  <Button
+                    size="lg"
+                    fullWidth
+                    icon="checkmark-circle-outline"
+                    trackId="cook_mode.mark_cooked"
+                    accessibilityLabel={t('recipe.cookedAction')}
+                    onPress={onCooked}
+                  >
                     {t('recipe.cookedAction')}
-                  </Text>
-                </Pressable>
-              ) : null}
-              <Pressable trackId="cook_mode.finished.close"
-                onPress={onClose}
-                className="mt-4 min-h-[44px] items-center justify-center px-4"
-                accessibilityRole="button"
-                accessibilityLabel={t('recipe.cookModeClose')}
-              >
-                <Text className="text-base font-semibold" style={{ color: colors.primary }}>
+                  </Button>
+                ) : null}
+                <Button
+                  variant={onCooked ? 'ghost' : 'primary'}
+                  size="lg"
+                  fullWidth
+                  trackId="cook_mode.finished.close"
+                  accessibilityLabel={t('recipe.cookModeClose')}
+                  onPress={onClose}
+                >
                   {t('common.close')}
-                </Text>
-              </Pressable>
+                </Button>
+              </View>
             </View>
           ) : (
             <>
-              <View className="mt-6 min-h-[36px] flex-row items-center justify-between gap-3">
-                <Text
-                  className="text-sm font-semibold uppercase tracking-wide"
-                  style={{ color: colors.textSecondary }}
-                >
-                  {stepLabel}
-                </Text>
+              {/* Progress: a segment per step, the ones done and the current one filled. */}
+              <View
+                accessible={false}
+                importantForAccessibility="no-hide-descendants"
+                style={{ flexDirection: 'row', gap: 4, marginTop: 20 }}
+              >
+                {steps.map((item, stepIndex) => (
+                  <View
+                    key={`${item.step}-${stepIndex}`}
+                    style={{
+                      flex: 1,
+                      height: 4,
+                      borderRadius: 2,
+                      backgroundColor: stepIndex <= index ? colors.primary : colors.backgroundElement,
+                    }}
+                  />
+                ))}
+              </View>
+
+              <View
+                style={{ marginTop: 16, minHeight: MIN_TOUCH, flexDirection: 'row', alignItems: 'center', gap: 12 }}
+              >
+                <TileLabel style={{ flex: 1, minWidth: 0 }}>{stepLabel}</TileLabel>
                 {reading ? (
-                  <Pressable trackId="cook_mode.read_aloud.replay"
-                    onPress={readAgain}
-                    hitSlop={8}
-                    className="min-h-[36px] flex-row items-center gap-1.5 rounded-full px-3 active:opacity-80"
-                    style={{ backgroundColor: colors.primarySoft }}
-                    accessibilityRole="button"
+                  <Button
+                    variant="secondary"
+                    size="sm"
+                    icon="volume-high-outline"
+                    trackId="cook_mode.read_aloud.replay"
                     accessibilityLabel={t('recipe.cookModeReadAgain')}
+                    onPress={readAgain}
                   >
-                    <Ionicons name="volume-high-outline" size={16} color={colors.primary} />
-                    <Text className="text-sm font-semibold" style={{ color: colors.primary }}>
-                      {t('recipe.cookModeReadAgain')}
-                    </Text>
-                  </Pressable>
+                    {t('recipe.cookModeReadAgain')}
+                  </Button>
                 ) : null}
               </View>
 
-              <View className="mt-4 min-h-0 flex-1" {...pan.panHandlers}>
-                <Pressable trackId="cook_mode.step_card.next"
+              <View style={{ marginTop: 8, minHeight: 0, flex: 1 }} {...pan.panHandlers}>
+                <Pressable
+                  trackId="cook_mode.step_card.next"
                   onPress={goNext}
-                  className="flex-1 justify-center"
+                  style={{ flex: 1, justifyContent: 'center', gap: 12 }}
                   accessibilityRole="button"
                   accessibilityLabel={`${t('recipe.cookModeStep', {
                     current: index + 1,
@@ -365,11 +402,20 @@ export function CookMode({
                   accessibilityHint={t('a11y.cookModeNextStepHint')}
                 >
                   <Text
-                    className="text-[32px] font-semibold leading-10"
+                    variant="number"
+                    style={{ fontSize: 64, lineHeight: 64, textAlign: startAlign }}
+                    accessible={false}
+                    importantForAccessibility="no"
+                  >
+                    {index + 1}
+                  </Text>
+                  <Text
+                    weight="medium"
                     style={{
-                      color: colors.text,
+                      fontSize: 28,
+                      lineHeight: type.rtl ? 40 : 37,
                       writingDirection: textDirection,
-                      textAlign: textDirection === 'rtl' ? 'right' : 'left',
+                      textAlign: startAlign,
                     }}
                   >
                     {step?.text}
@@ -378,90 +424,79 @@ export function CookMode({
               </View>
 
               {timers.length > 0 ? (
-                <View className="mb-4 flex-row flex-wrap gap-2">
+                <View style={{ marginBottom: 12, flexDirection: 'row', flexWrap: 'wrap', gap: 8 }}>
                   {timers.map((timer) => (
-                    <Pressable trackId="cook_mode.timer.start"
+                    <Button
                       key={`${timer.seconds}-${timer.label}`}
+                      variant="secondary"
+                      icon="timer-outline"
+                      trackId="cook_mode.timer.start"
+                      accessibilityLabel={t('recipe.cookModeTimer', { label: timer.label })}
                       onPress={() => {
                         setTimerDone(false);
                         setTimerLeft(timer.seconds);
                       }}
-                      className="min-h-[48px] items-center justify-center rounded-full px-4 active:opacity-80"
-                      style={{ backgroundColor: colors.accentSoft }}
-                      accessibilityRole="button"
-                      accessibilityLabel={t('recipe.cookModeTimer', { label: timer.label })}
                     >
-                      <Text className="text-base font-bold" style={{ color: colors.accent }}>
-                        {timer.label}
-                      </Text>
-                    </Pressable>
+                      {timer.label}
+                    </Button>
                   ))}
                 </View>
               ) : null}
 
               {timerLeft != null ? (
-                <View
-                  className="mb-4 items-center rounded-3xl px-4 py-3"
-                  style={{ backgroundColor: timerDone ? colors.accentSoft : colors.primarySoft }}
+                <Tile
+                  tone={timerDone ? 'primary' : 'element'}
+                  size="md"
+                  style={{ marginBottom: 12, alignItems: 'center', paddingVertical: 12, paddingHorizontal: 16 }}
                 >
                   <Text
-                    className="text-3xl font-bold tabular-nums"
-                    style={{ color: timerDone ? colors.accent : colors.primary }}
+                    variant="number"
+                    tone={timerDone ? 'onPrimary' : 'default'}
                     accessibilityRole="timer"
+                    style={{ fontSize: 36, lineHeight: 42 }}
                   >
                     {timerDone ? t('recipe.cookModeTimerDone') : formatCountdown(timerLeft)}
                   </Text>
-                </View>
+                </Tile>
               ) : null}
 
               {noVoiceHint && voiceMissing ? (
-                <Text
-                  className="mb-2 text-center text-xs font-semibold"
-                  style={{ color: colors.text }}
-                  accessibilityLiveRegion="polite"
-                >
+                <Text variant="caption" weight="semibold" align="center" accessibilityLiveRegion="polite" style={{ marginBottom: 8 }}>
                   {t('recipe.cookModeNoVoice', { language: languageName })}
                 </Text>
               ) : null}
               {reading && Platform.OS === 'ios' ? (
-                <Text className="mb-2 text-center text-xs" style={{ color: colors.textSecondary }}>
+                <Text variant="caption" tone="muted" align="center" style={{ marginBottom: 8 }}>
                   {t('recipe.cookModeSilentHint')}
                 </Text>
               ) : null}
-              <Text className="mb-3 text-center text-xs" style={{ color: colors.textSecondary }}>
+              <Text variant="caption" tone="muted" align="center" style={{ marginBottom: 12 }}>
                 {t('recipe.cookModeTapHint')}
               </Text>
 
-              <View className="flex-row gap-3">
-                <Pressable trackId="cook_mode.prev_step"
-                  onPress={goBack}
-                  disabled={index === 0}
-                  className="min-h-[64px] flex-1 items-center justify-center rounded-3xl px-3 py-2 active:opacity-80"
-                  style={{
-                    backgroundColor: colors.frosted,
-                    opacity: index === 0 ? 0.45 : 1,
-                  }}
-                  accessibilityRole="button"
+              <View style={{ flexDirection: 'row', gap: 10 }}>
+                <Button
+                  variant="outline"
+                  size="lg"
+                  icon="arrow-back"
+                  trackId="cook_mode.prev_step"
                   accessibilityLabel={t('recipe.cookModeBack')}
-                  accessibilityState={{ disabled: index === 0 }}
+                  disabled={index === 0}
+                  onPress={goBack}
+                  style={{ flex: 1, minHeight: 64, borderRadius: 20 }}
                 >
-                  <Text className="text-lg font-bold" style={{ color: colors.text }}>
-                    {t('recipe.cookModeBack')}
-                  </Text>
-                </Pressable>
-                <Pressable trackId="cook_mode.next_step"
+                  {t('recipe.cookModeBack')}
+                </Button>
+                <Button
+                  size="lg"
+                  iconEnd={isLast ? 'checkmark' : 'arrow-forward'}
+                  trackId="cook_mode.next_step"
+                  accessibilityLabel={isLast ? t('recipe.cookModeDone') : t('recipe.cookModeNext')}
                   onPress={goNext}
-                  className="min-h-[64px] flex-[1.4] items-center justify-center rounded-3xl px-3 py-2 active:opacity-80"
-                  style={{ backgroundColor: colors.primary }}
-                  accessibilityRole="button"
-                  accessibilityLabel={
-                    index >= lastIndex ? t('recipe.cookModeDone') : t('recipe.cookModeNext')
-                  }
+                  style={{ flex: 1.4, minHeight: 64, borderRadius: 20 }}
                 >
-                  <Text className="text-lg font-bold" style={{ color: colors.onPrimary }}>
-                    {index >= lastIndex ? t('recipe.cookModeDone') : t('recipe.cookModeNext')}
-                  </Text>
-                </Pressable>
+                  {isLast ? t('recipe.cookModeDone') : t('recipe.cookModeNext')}
+                </Button>
               </View>
             </>
           )}

@@ -75,7 +75,12 @@ export default function AppTabs() {
         tabBarLabelStyle: {
           ...type.font('body', 'semibold'),
           fontSize: 11,
+          lineHeight: 15,
+          // The icon's 28-tall box and React Navigation's padding leave the label less than its height, and on
+          // Expo web it shrank and was cut off ("Librarv"). It keeps its height; the tab pads a little less.
+          flexShrink: 0,
         },
+        tabBarItemStyle: isWide ? undefined : { paddingTop: 2, paddingBottom: 2 },
         // The bar has a fixed height; like native UITabBar, keep labels at their
         // base size (icons + labels are still announced by screen readers).
         tabBarAllowFontScaling: false,

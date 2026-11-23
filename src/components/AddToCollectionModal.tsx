@@ -1,17 +1,17 @@
-import Ionicons from '@expo/vector-icons/Ionicons';
 import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import {
-  ActivityIndicator,
-  ScrollView,
-  Text,
-  View,
-} from 'react-native';
-import { Pressable } from '@/components/ui/Pressable';
+import { ActivityIndicator, ScrollView, View } from 'react-native';
 
 import { SheetModal } from '@/components/SheetModal';
 import { TextInput } from '@/components/text-input';
+import { Button } from '@/components/ui/Button';
+import { IconButton } from '@/components/ui/IconButton';
+import { Pressable } from '@/components/ui/Pressable';
+import { Text } from '@/components/ui/Text';
+import { Tile, TileLabel } from '@/components/ui/Tile';
+import { HAIRLINE, KitIcon, Radii } from '@/components/ui/tokens';
 import { useThemePreference } from '@/hooks/useThemePreference';
+import { useTypography } from '@/hooks/useTypography';
 import { announce } from '@/lib/a11y';
 import { logTap } from '@/lib/interactionLog';
 import { translateAppError } from '@shared/lib/translateAppError';
@@ -36,6 +36,7 @@ export function AddToCollectionModal({
 }: AddToCollectionModalProps) {
   const { t } = useTranslation();
   const { colors } = useThemePreference();
+  const type = useTypography();
   const [checked, setChecked] = useState<Set<string>>(() => new Set());
   const [newName, setNewName] = useState('');
   const [saving, setSaving] = useState(false);
@@ -104,131 +105,135 @@ export function AddToCollectionModal({
       title={t('library.addToCollection')}
       maxWidth={520}
       headerRight={
-        <Pressable trackId="add_to_collection.save"
-          onPress={() => void handleSave()}
-          disabled={saving}
-          hitSlop={12}
-          accessibilityRole="button"
+        <Button
+          variant="secondary"
+          size="sm"
+          trackId="add_to_collection.save"
+          busy={saving}
           accessibilityLabel={t('common.save')}
-          accessibilityState={{ disabled: saving, busy: saving }}
+          onPress={() => void handleSave()}
         >
-          {saving ? (
-            <ActivityIndicator color={colors.primary} />
-          ) : (
-            <Text className="font-bold" style={{ color: colors.primary }}>
-              {t('common.save')}
-            </Text>
-          )}
-        </Pressable>
+          {t('common.save')}
+        </Button>
       }
     >
-      <ScrollView className="flex-1 px-5" keyboardShouldPersistTaps="handled">
-        <View
-          className="mb-4 rounded-3xl border px-4"
-          style={{ borderColor: colors.border, backgroundColor: colors.surface }}
-        >
+      <ScrollView
+        style={{ flex: 1 }}
+        contentContainerStyle={{ paddingHorizontal: 20, paddingBottom: 24, gap: 16 }}
+        keyboardShouldPersistTaps="handled"
+      >
+        <Tile style={{ paddingHorizontal: 16 }}>
           {localCollections.length === 0 ? (
-            <Text className="py-4 text-sm" style={{ color: colors.textSecondary }}>
+            <Text variant="bodySmall" tone="muted" style={{ paddingVertical: 16 }}>
               {t('library.noCollectionsYet')}
             </Text>
           ) : (
             localCollections.map((collection, index) => {
               const isOn = checked.has(collection.id);
               const count = collection.recipeIds.length;
+              const countText =
+                count === 1
+                  ? t('library.recipeCountOne', { count })
+                  : t('library.recipeCountOther', { count });
               return (
-                <Pressable trackId="add_to_collection.collection.toggle"
+                <Pressable
+                  trackId="add_to_collection.collection.toggle"
                   key={collection.id}
-                  className={`flex-row items-center gap-3 py-3.5 active:opacity-80 ${
-                    index < localCollections.length - 1 ? 'border-b' : ''
-                  }`}
-                  style={
-                    index < localCollections.length - 1
-                      ? { borderColor: colors.primarySoft }
-                      : undefined
-                  }
                   onPress={() => toggle(collection.id)}
                   accessibilityRole="checkbox"
                   accessibilityState={{ checked: isOn }}
-                  accessibilityLabel={`${collection.name}, ${
-                    count === 1
-                      ? t('library.recipeCountOne', { count })
-                      : t('library.recipeCountOther', { count })
-                  }`}
+                  accessibilityLabel={`${collection.name}, ${countText}`}
+                  style={({ pressed }) => [
+                    {
+                      flexDirection: 'row',
+                      alignItems: 'center',
+                      gap: 12,
+                      minHeight: 60,
+                      paddingVertical: 10,
+                      borderBottomWidth: index < localCollections.length - 1 ? HAIRLINE : 0,
+                      borderBottomColor: colors.border,
+                    },
+                    pressed ? { opacity: 0.8 } : null,
+                  ]}
                 >
                   <View
-                    className="h-6 w-6 items-center justify-center rounded-md border-2"
                     style={{
-                      borderColor: isOn ? colors.primary : colors.textSecondary,
+                      width: 24,
+                      height: 24,
+                      borderRadius: 7,
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      borderWidth: isOn ? 0 : 2,
+                      borderColor: colors.textSecondary,
                       backgroundColor: isOn ? colors.primary : 'transparent',
                     }}
                   >
-                    {isOn ? <Ionicons name="checkmark" size={14} color={colors.onPrimary} /> : null}
+                    {isOn ? <KitIcon icon="checkmark" color={colors.onPrimary} size={16} /> : null}
                   </View>
-                  <View className="min-w-0 flex-1">
-                    <Text className="text-base font-medium" style={{ color: colors.text }}>
+                  <View style={{ flex: 1, minWidth: 0 }}>
+                    <Text weight="semibold" numberOfLines={1}>
                       {collection.name}
                     </Text>
-                    <Text className="text-xs" style={{ color: colors.textSecondary }}>
-                      {count === 1
-                        ? t('library.recipeCountOne', { count })
-                        : t('library.recipeCountOther', { count })}
+                    <Text variant="caption" tone="muted">
+                      {countText}
                     </Text>
                   </View>
                 </Pressable>
               );
             })
           )}
-        </View>
+        </Tile>
 
-        <Text
-          className="mb-2 text-xs font-semibold uppercase tracking-wide"
-          style={{ color: colors.textSecondary }}
-          accessibilityRole="header"
-        >
-          {t('library.newCollection')}
-        </Text>
-        <View className="mb-4 flex-row gap-2">
-          <TextInput
-            className="flex-1 rounded-2xl border px-4 py-3 text-base"
-            style={{
-              color: colors.text,
-              borderColor: colors.frostedBorder,
-              backgroundColor: colors.surface,
-            }}
-            placeholder={t('library.namePlaceholder')}
-            placeholderTextColor={colors.textSecondary}
-            accessibilityLabel={t('a11y.newCollectionName')}
-            value={newName}
-            onChangeText={setNewName}
-            returnKeyType="done"
-            onSubmitEditing={() => {
-              logTap('add_to_collection.create.submit_key');
-              void handleCreate();
-            }}
-          />
-          <Pressable trackId="add_to_collection.create"
-            className="min-h-[44px] min-w-[44px] items-center justify-center rounded-2xl px-4 active:opacity-80"
-            style={{ backgroundColor: colors.accent, opacity: creating ? 0.7 : 1 }}
-            disabled={creating}
-            onPress={() => void handleCreate()}
-            accessibilityRole="button"
-            accessibilityLabel={t('a11y.createCollection')}
-            accessibilityState={{ disabled: creating, busy: creating }}
-          >
+        <View style={{ gap: 8 }}>
+          <TileLabel accessibilityRole="header">{t('library.newCollection')}</TileLabel>
+          <View style={{ flexDirection: 'row', gap: 8 }}>
+            <TextInput
+              style={[
+                type.font('body', 'regular'),
+                {
+                  flex: 1,
+                  minHeight: 48,
+                  fontSize: 16,
+                  paddingHorizontal: 16,
+                  borderRadius: Radii.control,
+                  borderWidth: HAIRLINE,
+                  color: colors.text,
+                  borderColor: colors.border,
+                  backgroundColor: colors.surface,
+                  textAlign: type.rtl ? 'right' : 'left',
+                },
+              ]}
+              placeholder={t('library.namePlaceholder')}
+              placeholderTextColor={colors.textSecondary}
+              accessibilityLabel={t('a11y.newCollectionName')}
+              value={newName}
+              onChangeText={setNewName}
+              returnKeyType="done"
+              onSubmitEditing={() => {
+                logTap('add_to_collection.create.submit_key');
+                void handleCreate();
+              }}
+            />
             {creating ? (
-              <ActivityIndicator color={colors.onPrimary} />
+              <View style={{ width: 48, height: 48, alignItems: 'center', justifyContent: 'center' }}>
+                <ActivityIndicator color={colors.primaryText} accessibilityLabel={t('a11y.createCollection')} />
+              </View>
             ) : (
-              <Ionicons name="add" size={22} color={colors.onPrimary} />
+              <IconButton
+                variant="tile"
+                icon="add"
+                label={t('a11y.createCollection')}
+                trackId="add_to_collection.create"
+                onPress={() => void handleCreate()}
+                style={{ width: 48, height: 48 }}
+              />
             )}
-          </Pressable>
+          </View>
         </View>
 
         {error ? (
-          <View
-            className="mb-4 rounded-2xl border px-4 py-3"
-            style={{ borderColor: colors.dangerSoft, backgroundColor: colors.dangerSoft }}
-          >
-            <Text className="text-sm" style={{ color: colors.danger }}>
+          <View style={{ borderRadius: Radii.inner, paddingHorizontal: 16, paddingVertical: 12, backgroundColor: colors.dangerSoft }}>
+            <Text variant="bodySmall" tone="danger">
               {error}
             </Text>
           </View>

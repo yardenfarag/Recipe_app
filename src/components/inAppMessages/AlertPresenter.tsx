@@ -107,8 +107,8 @@ function AlertCard({ view, onAction, onClose, onShown }: PresenterProps) {
           flex: 1,
           alignItems: 'center',
           justifyContent: 'center',
-          paddingHorizontal: 24,
-          backgroundColor: 'rgba(0,0,0,0.45)',
+          paddingHorizontal: 20,
+          backgroundColor: colors.overlay,
           direction: view.rtl ? 'rtl' : 'ltr',
         }}
       >
@@ -132,12 +132,12 @@ function AlertCard({ view, onAction, onClose, onShown }: PresenterProps) {
             overflow: 'hidden',
             backgroundColor: colors.surface,
             borderWidth: 1,
-            borderColor: colors.frostedBorder,
+            borderColor: colors.border,
             // RN-web: keep percentage widths inside the card, not the viewport.
             boxSizing: 'border-box',
           }}
         >
-          <ScrollView bounces={false} contentContainerStyle={{ padding: 20 }} style={{ flexGrow: 0 }}>
+          <ScrollView bounces={false} contentContainerStyle={{ padding: 24 }} style={{ flexGrow: 0 }}>
             <MessageContent
               view={view}
               trackPrefix={TRACK}
@@ -147,7 +147,7 @@ function AlertCard({ view, onAction, onClose, onShown }: PresenterProps) {
           </ScrollView>
           {/* The close control's side is explicit: react-native-web turns `end` into `right` whatever the direction. */}
           {dismissible ? (
-            <View style={{ position: 'absolute', top: 12, ...(view.rtl ? { left: 12 } : { right: 12 }) }}>
+            <View style={{ position: 'absolute', top: 16, ...(view.rtl ? { left: 16 } : { right: 16 }) }}>
               <CloseButton trackId={`${TRACK}.close`} onPress={onClose} size={36} />
             </View>
           ) : null}

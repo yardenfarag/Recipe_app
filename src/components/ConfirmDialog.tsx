@@ -1,7 +1,9 @@
 import { useTranslation } from 'react-i18next';
-import { ActivityIndicator, Modal, ScrollView, Text, useWindowDimensions, View } from 'react-native';
-import { Pressable } from '@/components/ui/Pressable';
+import { Modal, ScrollView, useWindowDimensions, View } from 'react-native';
 
+import { Button } from '@/components/ui/Button';
+import { Text } from '@/components/ui/Text';
+import { HAIRLINE, Radii } from '@/components/ui/tokens';
 import { useRtl } from '@/hooks/useRtl';
 import { useThemePreference } from '@/hooks/useThemePreference';
 
@@ -22,7 +24,10 @@ interface ConfirmDialogProps {
   trackId?: string;
 }
 
-/** Cross-platform confirm dialog — replaces Alert.alert / window.confirm. */
+/**
+ * Cross-platform confirm dialog — replaces Alert.alert / window.confirm. Night Market (PIN-177): a surface tile with
+ * 28 corners over the dim overlay, the title in Space Grotesk, and the kit's buttons (danger when it deletes).
+ */
 export function ConfirmDialog({
   visible,
   title,
@@ -39,114 +44,92 @@ export function ConfirmDialog({
 }: ConfirmDialogProps) {
   const { t } = useTranslation();
   const { colors } = useThemePreference();
-  const { rtl, textAlign, writingDirection } = useRtl();
+  const { rtl } = useRtl();
   const { height: windowHeight } = useWindowDimensions();
   const resolvedConfirm = confirmLabel ?? t('common.continue');
   const resolvedCancel = cancelLabel ?? t('common.cancel');
-  const stacked = Boolean(secondaryLabel && onSecondary);
+  const hasSecondary = Boolean(secondaryLabel && onSecondary);
+  // A button's label stays on one line: long labels (or a third button) stack the buttons instead.
+  const stacked = hasSecondary || resolvedConfirm.length + resolvedCancel.length > 26;
+  // Side by side, each takes half; stacked, each takes the width.
+  const buttonStyle = stacked ? undefined : { flex: 1, minWidth: 0 };
 
   return (
-    <Modal
-      visible={visible}
-      transparent
-      animationType="fade"
-      onRequestClose={onCancel}
-    >
+    <Modal visible={visible} transparent animationType="fade" onRequestClose={onCancel}>
       <View
-        className="flex-1 items-center justify-center px-6"
         style={{
-          backgroundColor: 'rgba(0,0,0,0.45)',
+          flex: 1,
+          alignItems: 'center',
+          justifyContent: 'center',
+          paddingHorizontal: 20,
+          backgroundColor: colors.overlay,
           direction: rtl ? 'rtl' : 'ltr',
         }}
       >
         <View
-          className="w-full max-w-sm overflow-hidden rounded-[28px]"
           accessibilityViewIsModal
           onAccessibilityEscape={loading ? undefined : onCancel}
           style={{
+            width: '100%',
+            maxWidth: 400,
+            overflow: 'hidden',
+            borderRadius: Radii.tile,
             backgroundColor: colors.surface,
-            borderWidth: 1,
-            borderColor: colors.frostedBorder,
+            borderWidth: HAIRLINE,
+            borderColor: colors.border,
             maxHeight: windowHeight - 48,
             flexShrink: 0,
           }}
         >
           <ScrollView
             bounces={false}
-            contentContainerClassName="p-5"
+            contentContainerStyle={{ padding: 24 }}
             keyboardShouldPersistTaps="handled"
             style={{ flexGrow: 0 }}
           >
-            {/* A title or message can start with a Latin word such as "Pinch": keep the app's direction. */}
-            <Text
-              className="text-lg font-bold"
-              style={{ color: colors.text, textAlign, writingDirection }}
-              accessibilityRole="header"
-            >
+            {/* A title or message can start with a Latin word such as "Pinch": Text keeps the app's direction. */}
+            <Text variant="h3" style={{ fontSize: 20, lineHeight: 26 }}>
               {title}
             </Text>
-            <Text
-              className="mt-2 text-sm leading-5"
-              style={{ color: colors.textSecondary, textAlign, writingDirection }}
-            >
+            <Text variant="bodySmall" tone="muted" style={{ marginTop: 8 }}>
               {message}
             </Text>
 
-            <View className={stacked ? 'mt-5 gap-2' : 'mt-5 flex-row gap-2'}>
-              <Pressable
+            <View style={[{ marginTop: 24, gap: 8 }, stacked ? null : { flexDirection: 'row' }]}>
+              <Button
+                variant="outline"
                 trackId={`${trackId}.cancel`}
                 onPress={onCancel}
                 disabled={loading}
-                accessibilityState={{ disabled: loading }}
-                className={`min-h-[48px] items-center justify-center rounded-[22px] px-4 py-3 active:opacity-80 ${stacked ? 'w-full' : 'min-w-0 flex-1'}`}
-                style={{ backgroundColor: colors.primarySoft }}
-                accessibilityRole="button"
+                fullWidth={stacked}
                 accessibilityLabel={resolvedCancel}
+                style={buttonStyle}
               >
-                <Text className="text-center text-sm font-semibold" style={{ color: colors.text }}>
-                  {resolvedCancel}
-                </Text>
-              </Pressable>
-              {stacked ? (
-                <Pressable
+                {resolvedCancel}
+              </Button>
+              {hasSecondary ? (
+                <Button
+                  variant="secondary"
                   trackId={`${trackId}.secondary`}
                   onPress={onSecondary}
                   disabled={loading}
-                  accessibilityState={{ disabled: loading }}
-                  className="min-h-[48px] w-full items-center justify-center rounded-[22px] border px-4 py-3 active:opacity-80"
-                  style={{ borderColor: colors.border, backgroundColor: colors.surface }}
-                  accessibilityRole="button"
+                  fullWidth
                   accessibilityLabel={secondaryLabel}
                 >
-                  <Text className="text-center text-sm font-semibold" style={{ color: colors.text }}>
-                    {secondaryLabel}
-                  </Text>
-                </Pressable>
+                  {secondaryLabel}
+                </Button>
               ) : null}
-              <Pressable
+              <Button
+                variant={destructive ? 'danger' : 'primary'}
                 trackId={`${trackId}.confirm`}
                 onPress={onConfirm}
-                disabled={loading}
-                className={`min-h-[48px] items-center justify-center rounded-[22px] px-4 py-3 active:opacity-80 ${stacked ? 'w-full' : 'min-w-0 flex-1'}`}
-                style={{
-                  backgroundColor: destructive ? colors.danger : colors.primary,
-                  opacity: loading ? 0.7 : 1,
-                }}
-                accessibilityRole="button"
+                busy={loading}
+                fullWidth={stacked}
                 accessibilityLabel={resolvedConfirm}
-                accessibilityState={{ disabled: loading, busy: loading }}
+                style={buttonStyle}
               >
-                {loading ? (
-                  <ActivityIndicator color={destructive ? colors.background : colors.onPrimary} />
-                ) : (
-                  <Text
-                    className="text-center text-sm font-bold"
-                    style={{ color: destructive ? colors.background : colors.onPrimary }}
-                  >
-                    {resolvedConfirm}
-                  </Text>
-                )}
-              </Pressable>
+                {resolvedConfirm}
+              </Button>
             </View>
           </ScrollView>
         </View>

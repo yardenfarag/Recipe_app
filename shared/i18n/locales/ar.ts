@@ -887,6 +887,14 @@ export default {
     "pdfTimedOut": "استغرقت قراءة ملف PDF وقتًا طويلًا، لذلك لم يُستخدم رصيدك. جرّب مرة ثانية بعد قليل.",
     "invalidSharePdf": "ما قدرنا نقرأ ملف PDF. جرّب «خذ من ملف PDF» بدلًا من ذلك."
   },
+  "snapNm": {
+    "snapIt": "التقطها",
+    "guessIt": "خمّنها",
+    "takePhoto": "التقاط صورة",
+    "choosePhoto": "اختيار صورة",
+    "choosePhotoOrPdf": "اختيار صورة أو PDF",
+    "shareTip": "شارك من أي تطبيق. في TikTok أو Instagram أو YouTube، اضغط مشاركة ثم Pinch."
+  },
   "list": {
     "title": "القائمة",
     "subtitle": "ما تحتاجه للطبخ",

@@ -25,8 +25,8 @@ export default function OnboardingScreen() {
   }
 
   return (
-    <Screen edges={['top', 'left', 'right', 'bottom']} dense>
-      <View className="flex-1 px-5 pb-2 pt-3">
+    <Screen edges={['top', 'left', 'right', 'bottom']}>
+      <View style={{ flex: 1, paddingHorizontal: 20, paddingTop: 8, paddingBottom: 8 }}>
         <OnboardingPager onAccount={continueToAccount} onSignIn={signIn} />
       </View>
     </Screen>

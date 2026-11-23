@@ -887,6 +887,14 @@ export default {
     "pdfTimedOut": "PDF читался слишком долго, поэтому кредит не списан. Попробуйте ещё раз через минуту.",
     "invalidSharePdf": "Не получилось прочитать PDF. Попробуйте «Снять с PDF»."
   },
+  "snapNm": {
+    "snapIt": "Снять",
+    "guessIt": "Угадать",
+    "takePhoto": "Сделать фото",
+    "choosePhoto": "Выбрать фото",
+    "choosePhotoOrPdf": "Выбрать фото или PDF",
+    "shareTip": "Делитесь из любого приложения. В TikTok, Instagram или YouTube нажмите «Поделиться», затем Pinch."
+  },
   "list": {
     "title": "Список",
     "subtitle": "Что купить, чтобы приготовить",

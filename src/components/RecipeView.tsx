@@ -1,9 +1,9 @@
-import Ionicons from '@expo/vector-icons/Ionicons';
 import { router, useFocusEffect } from 'expo-router';
+import { StatusBar } from 'expo-status-bar';
 import { type ReactNode, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { ActivityIndicator, Alert, ScrollView, Text, View } from 'react-native';
-import { Pressable } from '@/components/ui/Pressable';
+import { Alert, ScrollView, View, type TextStyle } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { MeasurementToggle } from '@/components/MeasurementToggle';
 import { AddToCollectionModal } from '@/components/AddToCollectionModal';
@@ -11,16 +11,28 @@ import { AddToShoppingListModal } from '@/components/AddToShoppingListModal';
 import { CookAlongVideoModal } from '@/components/CookAlongVideoModal';
 import { CookMode } from '@/components/CookMode';
 import { CookedNoteModal } from '@/components/CookedNoteModal';
-import { CostMeter } from '@/components/CostEstimateDisplay';
 import { RecipeAppliances } from '@/components/RecipeAppliances';
 import { EditTagsModal } from '@/components/EditTagsModal';
-import { IngredientAmountText } from '@/components/IngredientAmountText';
-import { RecipeImage } from '@/components/RecipeImage';
 import { RecipeVideoPanel, type RecipeVideoPanelHandle } from '@/components/RecipeVideoPanel';
 import { RecipeTranslateModal } from '@/components/RecipeTranslateModal';
 import { RecipeVariantModal } from '@/components/RecipeVariantModal';
 import { SubstitutionModal } from '@/components/SubstitutionModal';
 import { TokenPurchaseSheet } from '@/components/TokenPurchaseSheet';
+import { RecipeCookBar } from '@/components/recipe/RecipeCookBar';
+import { CostDots, RecipeFact, RecipeUpdatingFact } from '@/components/recipe/RecipeFact';
+import { HERO_OVERLAP, RecipeHero, type HeroCookAlong } from '@/components/recipe/RecipeHero';
+import { RecipeIngredientList } from '@/components/recipe/RecipeIngredientList';
+import { RecipeMoreMenu, type RecipeMenuItem } from '@/components/recipe/RecipeMoreMenu';
+import { RecipeNotice } from '@/components/recipe/RecipeNotice';
+import { RecipeStepList } from '@/components/recipe/RecipeStepList';
+import { Button } from '@/components/ui/Button';
+import { Chip } from '@/components/ui/Chip';
+import { IconButton } from '@/components/ui/IconButton';
+import { SegmentedControl } from '@/components/ui/SegmentedControl';
+import { Stepper } from '@/components/ui/Stepper';
+import { Text } from '@/components/ui/Text';
+import { Tile, TileBadge } from '@/components/ui/Tile';
+import { KitIcon, Radii, usePhotoColors } from '@/components/ui/tokens';
 import { RecipeReadingWidth } from '@/constants/theme';
 import { useBreakpoint } from '@/hooks/useBreakpoint';
 import { useCollections } from '@/hooks/useCollections';
@@ -29,11 +41,12 @@ import { useOwnedAppliances } from '@/hooks/useOwnedAppliances';
 import { useLanguagePreference } from '@/hooks/useLanguagePreference';
 import { useMeasurementPreference } from '@/hooks/useMeasurementPreference';
 import { useUnitSystemPreference } from '@/hooks/useUnitSystemPreference';
-import { useRtl } from '@/hooks/useRtl';
 import { useShoppingList } from '@/hooks/useShoppingList';
 import { useThemePreference } from '@/hooks/useThemePreference';
+import { useTypography } from '@/hooks/useTypography';
 import { useAuth } from '@/hooks/useAuth';
-import { announce, CHROME_MAX_FONT_SCALE } from '@/lib/a11y';
+import { announce } from '@/lib/a11y';
+import { goBackOrHome } from '@/lib/goBackOrHome';
 import { captureRecipeCooked, type RecipeCookedFrom } from '@/lib/analytics';
 import { allergyInstruction, findAvoidMatches, hasAllergies, makeWithoutInstruction } from '@shared/lib/avoidList';
 import { setGuestRecipeTags } from '@/lib/guestRecipes';
@@ -47,12 +60,12 @@ import { displayIngredientAmount, displayedAmountIsPinch, ingredientAmountIsUnkn
 import { formatCookedDate } from '@shared/lib/formatCookedDate';
 import { COST_I18N_KEYS, costFilledCount } from '@shared/lib/formatCostEstimate';
 import { formatRecipeDuration } from '@shared/lib/formatRecipeDuration';
-import { formatVideoTimestamp } from '@shared/lib/formatVideoTimestamp';
-import { getRecipeVideoInfo } from '@/lib/recipeVideo';
+import { getRecipePlatformLabel, getRecipeVideoInfo } from '@/lib/recipeVideo';
 import { recordCookForReviewPrompt } from '@/lib/reviewPrompt';
 import { getCalorieDisplay } from '@shared/lib/recipeCalories';
 import { getNutritionDisplay } from '@shared/lib/recipeNutrition';
-import { recipeHasSource, recipeIsInvented } from '@shared/lib/recipeOrigin';
+import { recipeHasSource, recipeIsInvented, recipeOriginChip } from '@shared/lib/recipeOrigin';
+import { recipeSource } from '@shared/lib/recipeSource';
 import {
   isRecipeLanguageCode,
   isRtlRecipeLanguage,
@@ -150,6 +163,30 @@ interface RecipeViewProps {
   onEdit?: () => void;
   /** Fields a hand edit is recalculating in the background: shown as "Updating…" (ADR 018). */
   updatingFields?: readonly RecalcField[];
+  /**
+   * The recipe's own page (PIN-177): the photo runs to the top of the screen under the back, heart, share and more
+   * buttons, the details slide up over it, and "Start cooking" stays fixed at the bottom. The screen hides its
+   * header for it. Off (Hub and shared recipes, under their own header): the photo is a tile and "Start cooking"
+   * sits in the details.
+   */
+  immersive?: boolean;
+  /** Back, at the start of the top row (immersive). Defaults to going back, or to the Library. */
+  onBack?: () => void;
+  /** A note at the top of the details, such as "Saved to your Library · Remove". */
+  topNotice?: ReactNode;
+  /**
+   * The screen's main action in the bottom bar (a preview's Save). "Start cooking" then becomes an icon beside it.
+   */
+  primaryAction?: { label: string; onPress: () => void; busy?: boolean; trackId: string };
+  /** "Discard" in the more menu (a preview that isn't saved). */
+  onDiscard?: () => void;
+  /**
+   * Open cook mode ('cook', if the recipe has steps) or the cook-along video ('video', if it has one) as soon as it
+   * shows, once: the Library's "Tonight's pick" links here with ?cook=1 or ?video=1.
+   */
+  autoStart?: 'cook' | 'video' | null;
+  /** Called once the auto start has been handled, so the screen can forget it. */
+  onAutoStarted?: () => void;
 }
 
 /** Stack header on web — used so the side cook-along can fill the remaining viewport. */
@@ -157,8 +194,12 @@ const WEB_RECIPE_HEADER = 64;
 const NO_FIELDS: readonly RecalcField[] = [];
 
 /**
- * Full recipe display: compact header, servings scaler, ingredients (with Swap),
- * instructions, remix, and on-demand translation. Shared by preview and detail.
+ * Full recipe display in the Night Market look (PIN-177): the photo with the page's buttons on it, a details tile
+ * (where it was saved from, the title, four facts, tags, when it was last cooked), notes, the tools that change it
+ * (remix, translate, collections), what you'll need, then Ingredients | Steps as tabs on a phone with the servings
+ * stepper and spoons/grams, and "Start cooking" fixed at the bottom. Shared by the recipe page, the Snap preview,
+ * and Hub and shared recipes. Rendering only: the logic (scaling, swaps, remix, translation, repair) lives here
+ * unchanged; presentational pieces are in src/components/recipe/.
  */
 export function RecipeView({
   recipe,
@@ -177,10 +218,28 @@ export function RecipeView({
   allowAdaptations = true,
   onEdit,
   updatingFields = NO_FIELDS,
+  immersive = false,
+  onBack,
+  topNotice,
+  primaryAction,
+  onDiscard,
+  autoStart = null,
+  onAutoStarted,
 }: RecipeViewProps) {
   const { t } = useTranslation();
   const { user } = useAuth();
-  const { colors } = useThemePreference();
+  const { colors, scheme } = useThemePreference();
+  const photo = usePhotoColors();
+  const type = useTypography();
+  const insets = useSafeAreaInsets();
+  const [photoFailed, setPhotoFailed] = useState(false);
+  const [pastPhoto, setPastPhoto] = useState(false);
+  const [moreOpen, setMoreOpen] = useState(false);
+  const [tab, setTab] = useState<RecipeTab>('ingredients');
+  const [barHeight, setBarHeight] = useState(0);
+  useEffect(() => {
+    setPhotoFailed(false);
+  }, [recipe.image_url]);
   const { isWide, isMediumUp, height: viewportHeight } = useBreakpoint();
   const { language: appLanguage } = useLanguagePreference();
   const { system: measurementSystem } = useMeasurementPreference();
@@ -777,7 +836,6 @@ export function RecipeView({
     recipe.platform,
     recipe.source_video_url,
   );
-  const showSideThumbnail = Boolean(recipe.image_url) && sourceVideo.mode === 'none';
   const hasStepTimestamps = useMemo(
     () => baseInstructions.some((step) => step.timestamp_seconds != null),
     [baseInstructions],
@@ -800,6 +858,23 @@ export function RecipeView({
     if (translating) announce(t('recipe.translating'));
   }, [translating, t]);
 
+  // Sent here to start at once (the Library's "Start cooking" and play buttons): open it once, never again on a
+  // re-render after the cook closes it. The screen forgets the request through onAutoStarted.
+  const autoStarted = useRef(false);
+  const canAutoCook = baseInstructions.length > 0;
+  const canAutoPlay = sourceVideo.mode !== 'none' && Boolean(recipe.original_url);
+  useEffect(() => {
+    if (!autoStart || autoStarted.current) return;
+    autoStarted.current = true;
+    if (autoStart === 'cook' && canAutoCook) {
+      setCookModeOpen(true);
+    } else if (autoStart === 'video' && canAutoPlay) {
+      setCookAlongStartSeconds(0);
+      setCookAlongOpen(true);
+    }
+    onAutoStarted?.();
+  }, [autoStart, canAutoCook, canAutoPlay, onAutoStarted]);
+
   function changeServings(next: number) {
     const clamped = Math.max(1, next);
     setServings(clamped);
@@ -809,1045 +884,923 @@ export function RecipeView({
   const sideCookAlong = isWide && sourceVideo.mode !== 'none';
   const splitRecipeBody = isWide && !sideCookAlong;
 
-  return (
-    <View className="flex-1">
-    <View
-      style={
-        sideCookAlong
-          ? { flex: 1, flexDirection: 'row', width: '100%', maxWidth: 1200, alignSelf: 'center' }
-          : { flex: 1 }
-      }
-    >
-    <ScrollView
-      className="flex-1"
-      showsVerticalScrollIndicator={false}
-      contentContainerStyle={{
-        paddingBottom: 24 + (sideCookAlong ? 0 : cookAlongSheetHeight),
-      }}
-    >
-      <View
-        className={isMediumUp ? 'px-5 pt-3 pb-2' : 'px-5 pt-4'}
-        style={
-          isMediumUp && !sideCookAlong
-            ? {
-                width: '100%',
-                maxWidth: splitRecipeBody ? 1040 : RecipeReadingWidth,
-                alignSelf: 'center',
-              }
-            : undefined
+  // ---- Night Market layout (PIN-177) ----
+
+  const hasPicture = Boolean(recipe.image_url) && !photoFailed;
+  const overPhoto = immersive && hasPicture;
+  const heroHeight = 380 + insets.top;
+  const goBack = onBack ?? (() => goBackOrHome('/'));
+  const hasIngredients = scaledIngredients.length > 0;
+  const hasSteps = baseInstructions.length > 0;
+  const useTabs = hasIngredients && hasSteps && !splitRecipeBody;
+  const showIngredients = hasIngredients && (!useTabs || tab === 'ingredients');
+  const showSteps = hasSteps && (!useTabs || tab === 'steps');
+  const hasVideo = sourceVideo.mode !== 'none' && Boolean(recipe.original_url);
+  const videoLabel = !hasVideo
+    ? ''
+    : sourceVideo.platform === 'web'
+      ? t('cookAlong.website')
+      : sourceVideo.platform === 'unknown'
+        ? t('cookAlong.video')
+        : getRecipePlatformLabel(sourceVideo.platform);
+  const heroCookAlong: HeroCookAlong | null =
+    hasVideo && !sideCookAlong
+      ? {
+          hint: hasStepTimestamps ? t('web.recipe.cookAlongHint', { platform: videoLabel }) : videoLabel,
+          accessibilityLabel: `${t('cookAlong.title')}: ${t('cookAlong.playInPinch')}, ${videoLabel}`,
+          onPress: () => openCookAlong(0),
         }
-      >
-        {!sideCookAlong && sourceVideo.mode !== 'none' ? (
-          <RecipeVideoPanel
-            ref={videoPanelRef}
-            originalUrl={recipe.original_url}
-            platform={recipe.platform}
-            sourceVideoUrl={recipe.source_video_url}
-            posterUri={recipe.image_url}
-            onRequestPlay={openCookAlong}
-          />
-        ) : null}
+      : null;
 
-        <View
-          className="mb-4 rounded-3xl border p-4"
-          style={{ borderColor: colors.border, backgroundColor: colors.surface }}
-        >
-          <View className="flex-row items-start gap-3.5">
-            <View className="flex-1">
-              <View className="flex-row items-start gap-2">
-                <Text
-                  className={`flex-1 font-bold ${isMediumUp ? 'text-xl leading-7' : 'text-2xl leading-8'}`}
-                  style={{ color: colors.text, writingDirection: textDirection }}
-                  accessibilityRole="header"
-                >
-                  {title}
-                </Text>
-                {onEdit != null ? (
-                  <Pressable
-                    trackId="recipe.title_edit"
-                    onPress={onEdit}
-                    hitSlop={12}
-                    style={({ pressed }) => ({ opacity: pressed ? 0.6 : 1 })}
-                    className="mt-0.5 px-1"
-                    accessibilityRole="button"
-                    accessibilityLabel={t('recipeEditor.titleEdit')}
-                  >
-                    <Ionicons name="create-outline" size={24} color={colors.textSecondary} />
-                  </Pressable>
-                ) : null}
-                {canShare ? (
-                  <Pressable
-                    trackId={pinchShareRecipeId ? 'recipe.share' : 'recipe.share_source'}
-                    onPress={() => {
-                      void handleShare();
-                    }}
-                    disabled={shareBusy}
-                    accessibilityState={{ busy: shareBusy }}
-                    hitSlop={12}
-                    style={({ pressed }) => ({ opacity: pressed ? 0.6 : 1 })}
-                    className="mt-0.5 px-1"
-                    accessibilityRole="button"
-                    accessibilityLabel={t('recipe.share')}
-                  >
-                    <Ionicons
-                      name="share-outline"
-                      size={24}
-                      color={colors.textSecondary}
-                    />
-                  </Pressable>
-                ) : null}
-                {onToggleFavorite != null && (
-                  <Pressable
-                    trackId="recipe.favorite"
-                    onPress={onToggleFavorite}
-                    hitSlop={12}
-                    style={({ pressed }) => ({ opacity: pressed ? 0.6 : 1 })}
-                    className="mt-0.5 px-1"
-                    accessibilityRole="button"
-                    accessibilityState={{ selected: isFavorite === true }}
-                    accessibilityLabel={
-                      isFavorite ? t('library.removeFavorite') : t('library.addFavorite')
-                    }
-                  >
-                    <Ionicons
-                      name={isFavorite ? 'heart' : 'heart-outline'}
-                      size={26}
-                      color={isFavorite ? colors.primary : colors.textSecondary}
-                    />
-                  </Pressable>
-                )}
-              </View>
-              <View className="mt-3 flex-row flex-wrap gap-2">
-                {isUpdating('calories') ? (
-                  <UpdatingBadge
-                    icon="flame-outline"
-                    label={updatingLabel}
-                    field={t('recipeEditor.fields.calories')}
-                  />
-                ) : calorieDisplay != null ? (
-                  <Badge
-                    label={t('recipe.calPerServing', { count: calorieDisplay.perServing })}
-                    icon="flame-outline"
-                  />
-                ) : null}
-                {isUpdating('estimated_time_minutes') ? (
-                  <UpdatingBadge
-                    icon="time-outline"
-                    label={updatingLabel}
-                    field={t('recipeEditor.fields.time')}
-                  />
-                ) : recipe.estimated_time_minutes != null ? (
-                  <Badge
-                    label={formatRecipeDuration(recipe.estimated_time_minutes, durationLabels)}
-                    icon="time-outline"
-                  />
-                ) : null}
-                {isUpdating('cost_estimate') ? (
-                  <UpdatingBadge
-                    icon="wallet-outline"
-                    label={updatingLabel}
-                    field={t('recipeEditor.fields.cost')}
-                  />
-                ) : recipe.cost_estimate && (
-                  <Badge
-                    label={costLabels[recipe.cost_estimate]}
-                    leading={
-                      <CostMeter
-                        tier={recipe.cost_estimate}
-                        color={colors.primary}
-                        size={7}
-                      />
-                    }
-                    accessibilityLabel={t('recipe.cost.a11y', {
-                      label: costLabels[recipe.cost_estimate],
-                      count: costFilledCount(recipe.cost_estimate),
-                    })}
-                  />
-                )}
-                {isUpdating('effort_level') ? (
-                  <UpdatingBadge
-                    icon="fitness-outline"
-                    label={updatingLabel}
-                    field={t('recipeEditor.fields.effort')}
-                  />
-                ) : recipe.effort_level ? (
-                  <Badge
-                    label={t(`recipe.effort.${recipe.effort_level.toLowerCase()}`)}
-                    icon="fitness-outline"
-                  />
-                ) : null}
-              </View>
-              {nutritionDisplay != null && !isUpdating('calories') ? (
-                <Text
-                  testID="recipe-nutrition"
-                  className="mt-2 text-xs font-medium"
-                  style={{ color: colors.textSecondary }}
-                  maxFontSizeMultiplier={CHROME_MAX_FONT_SCALE}
-                >
-                  {t('recipe.nutritionPerServing', {
-                    protein: nutritionDisplay.perServing.protein_g,
-                    carbs: nutritionDisplay.perServing.carbs_g,
-                    fat: nutritionDisplay.perServing.fat_g,
-                  })}
-                </Text>
-              ) : null}
-              {(tags.length > 0 || recipeId || isUpdating('tags')) && (
-                <View className="mt-2.5 flex-row flex-wrap items-center gap-1.5">
-                  {tags.map((tag) => (
-                    <Pressable
-                      trackId="recipe.tag.open"
-                      key={tag}
-                      className="rounded-full border px-2.5 py-1 active:opacity-70"
-                      style={{ borderColor: colors.border }}
-                      onPress={() =>
-                        router.dismissTo({ pathname: '/', params: { tag } })
-                      }
-                      accessibilityRole="button"
-                      accessibilityLabel={t('a11y.showRecipesTagged', {
-                        tag: translateRecipeTag(tag, t),
-                      })}
-                    >
-                      <Text
-                        className="text-[11px] font-medium"
-                        style={{ color: colors.textSecondary }}
-                        maxFontSizeMultiplier={CHROME_MAX_FONT_SCALE}
-                      >
-                        {translateRecipeTag(tag, t)}
-                      </Text>
-                    </Pressable>
-                  ))}
-                  {isUpdating('tags') ? (
-                    <UpdatingText
-                      label={updatingLabel}
-                      field={t('recipeEditor.fields.tags')}
-                      className="px-1 text-[11px] font-medium"
-                    />
-                  ) : null}
-                  {recipeId ? (
-                    <Pressable
-                      trackId="recipe.tags.edit"
-                      className="rounded-full px-2.5 py-1 active:opacity-70"
-                      style={{ backgroundColor: colors.primarySoft }}
-                      onPress={() => setEditTagsOpen(true)}
-                      accessibilityRole="button"
-                    >
-                      <Text
-                        className="text-[11px] font-semibold"
-                        style={{ color: colors.primary }}
-                        maxFontSizeMultiplier={CHROME_MAX_FONT_SCALE}
-                      >
-                        {tags.length > 0 ? t('tags.editTitle') : t('tags.addTags')}
-                      </Text>
-                    </Pressable>
-                  ) : null}
-                </View>
-              )}
-              {recipeId && recipeCollections.length > 0 ? (
-                <View className="mt-2 flex-row flex-wrap gap-1.5">
-                  {recipeCollections.map((collection) => (
-                    <Pressable
-                      trackId="recipe.collection.open"
-                      key={collection.id}
-                      className="flex-row items-center gap-1 rounded-full px-2.5 py-1 active:opacity-70"
-                      style={{ backgroundColor: colors.accentSoft }}
-                      onPress={() =>
-                        router.dismissTo({
-                          pathname: '/',
-                          params: { collection: collection.id },
-                        })
-                      }
-                      accessibilityRole="button"
-                      accessibilityLabel={t('a11y.openCollection', { name: collection.name })}
-                    >
-                      <Ionicons name="folder-outline" size={11} color={colors.accent} />
-                      <Text
-                        className="text-[11px] font-medium"
-                        style={{ color: colors.accent }}
-                        maxFontSizeMultiplier={CHROME_MAX_FONT_SCALE}
-                      >
-                        {collection.name}
-                      </Text>
-                    </Pressable>
-                  ))}
-                </View>
-              ) : null}
-              {onCookedChange ? (
-                <View className="mt-3">
-                  {lastCookedAt && cookedDateLabel ? (
-                    <Text className="text-sm leading-5" style={{ color: colors.textSecondary }}>
-                      {cookNote.trim()
-                        ? t('recipe.cookedOnWithNote', { date: cookedDateLabel, note: cookNote.trim() })
-                        : t('recipe.cookedOn', { date: cookedDateLabel })}
-                    </Text>
-                  ) : null}
-                  <View className="mt-2 flex-row flex-wrap gap-2">
-                    <Pressable
-                      trackId="recipe.cooked.toggle"
-                      onPress={() => stampCooked(!lastCookedAt, 'recipe')}
-                      className="min-h-[40px] items-center justify-center rounded-full px-3.5 active:opacity-80"
-                      style={{ backgroundColor: colors.primarySoft }}
-                      accessibilityRole="button"
-                      accessibilityLabel={
-                        lastCookedAt ? t('recipe.cookedAgain') : t('recipe.cookedAction')
-                      }
-                    >
-                      <Text className="text-xs font-semibold" style={{ color: colors.primary }}>
-                        {lastCookedAt ? t('recipe.cookedAgain') : t('recipe.cookedAction')}
-                      </Text>
-                    </Pressable>
-                    {lastCookedAt ? (
-                      <Pressable
-                        trackId="recipe.cooked.note"
-                        onPress={() => setCookedNoteOpen(true)}
-                        className="min-h-[40px] items-center justify-center rounded-full px-3.5 active:opacity-80"
-                        style={{ backgroundColor: colors.frosted }}
-                        accessibilityRole="button"
-                        accessibilityLabel={t('recipe.cookedNoteTitle')}
-                      >
-                        <Text className="text-xs font-semibold" style={{ color: colors.text }}>
-                          {t('recipe.cookedNoteTitle')}
-                        </Text>
-                      </Pressable>
-                    ) : null}
-                  </View>
-                </View>
-              ) : null}
-            </View>
+  const source = recipeSource(recipe);
+  const origin = recipeOriginChip(recipe);
+  const badge = source
+    ? source.platform === 'photo'
+      ? t('web.recipe.savedFromPhoto')
+      : t('web.recipe.savedFrom', {
+          source: [source.name ?? t('web.library.sourceWebsite'), source.handle].filter(Boolean).join(' · '),
+        })
+    : origin === 'invented'
+      ? t('recipe.inventedChip')
+      : origin === 'written'
+        ? t('recipeEditor.originChip')
+        : null;
 
-            {showSideThumbnail ? (
-              <View
-                className="rounded-2xl border"
-                style={{ borderColor: colors.primarySoft }}
-                accessible={false}
-                importantForAccessibility="no-hide-descendants"
-              >
-                <RecipeImage uri={recipe.image_url!} variant="compact" aiGenerated={recipe.image_generated} />
-              </View>
-            ) : !recipe.image_url && isUpdating('image') ? (
-              // Pinch is drawing the picture the owner asked for in the editor (save-recipe-edit, PIN-169).
-              <View
-                testID="drawing-picture"
-                className="h-16 w-16 items-center justify-center rounded-2xl"
-                style={{ backgroundColor: colors.primarySoft }}
-                accessible
-                accessibilityRole="progressbar"
-                accessibilityLabel={t('recipe.drawingImage')}
-              >
-                <ActivityIndicator color={colors.primary} />
-              </View>
-            ) : !recipe.image_url ? (
-              <View
-                className="h-16 w-16 items-center justify-center rounded-2xl"
-                style={{ backgroundColor: colors.primarySoft }}
-                accessible={false}
-                importantForAccessibility="no-hide-descendants"
-              >
-                <Ionicons name="restaurant" size={26} color={colors.primary} />
-              </View>
-            ) : null}
-          </View>
-        </View>
+  // The longer the name, the smaller it is set, so it stays a headline and not a paragraph (as on the web).
+  const titleFontSize = title.length <= 16 ? 34 : title.length <= 34 ? 30 : 26;
+  const titleStyle: TextStyle = {
+    fontSize: titleFontSize,
+    lineHeight: Math.round(titleFontSize * (type.rtl ? 1.25 : 1.08)),
+    letterSpacing: type.tracking(-0.03, titleFontSize),
+    writingDirection: textDirection,
+    textAlign: textDirection === 'rtl' ? ('right' as const) : ('left' as const),
+  };
 
-        {translating ? (
-          <View
-            className="mb-4 rounded-2xl border px-4 py-3"
-            style={{ borderColor: colors.border, backgroundColor: colors.surface }}
-          >
-            <Text className="text-sm" style={{ color: colors.textSecondary }}>
-              {t('recipe.translating')}
-            </Text>
-          </View>
-        ) : null}
+  const menuItems: RecipeMenuItem[] = [];
+  if (onEdit) {
+    menuItems.push({ key: 'edit', icon: 'create-outline', label: t('recipeEditor.titleEdit'), onPress: onEdit, trackId: 'recipe.title_edit' });
+  }
+  const fixesStart = menuItems.length > 0;
+  const canRepair = allowAdaptations && extractionStatus === 'partial' && recipeHasSource(recipe);
+  if (canRepair) {
+    menuItems.push({
+      key: 'repair',
+      icon: 'construct-outline',
+      label: t('recipe.repairAction'),
+      hint: t('recipe.repairHint'),
+      onPress: () => void handleRepair(),
+      disabled: repairing,
+      trackId: 'recipe.repair',
+      groupStart: fixesStart,
+    });
+  }
+  if (activeVariant != null) {
+    menuItems.push({
+      key: 'revert',
+      icon: 'arrow-undo-outline',
+      label: t('recipe.revertOriginal'),
+      onPress: handleRevertVariant,
+      trackId: 'recipe.remix.revert',
+      groupStart: fixesStart && !canRepair,
+    });
+  }
+  if (activeLanguage != null) {
+    menuItems.push({
+      key: 'original_language',
+      icon: 'language-outline',
+      label: t('recipe.showOriginal'),
+      onPress: handleShowOriginalLanguage,
+      trackId: 'recipe.show_original_language',
+      groupStart: fixesStart && !canRepair && activeVariant == null,
+    });
+  }
+  if (onDiscard) {
+    menuItems.push({
+      key: 'discard',
+      icon: 'trash-outline',
+      label: t('web.snap.discard'),
+      onPress: onDiscard,
+      trackId: 'recipe_preview.discard',
+      danger: true,
+      groupStart: menuItems.length > 0,
+    });
+  }
 
-        {activeLanguage != null && (
-          <View
-            className="mb-4 rounded-2xl border px-4 py-3"
-            style={{ borderColor: colors.primarySoft, backgroundColor: colors.primarySoft }}
-          >
-            <Text className="text-sm font-semibold" style={{ color: colors.primary }}>
-              {t('recipe.showingLanguage', {
-                language: t(`languages.${activeLanguage}`),
-              })}
-            </Text>
-            <Pressable
-              trackId="recipe.show_original_language"
-              onPress={handleShowOriginalLanguage}
-              className="mt-2 active:opacity-70"
-              accessibilityRole="button"
-            >
-              <Text className="text-sm font-semibold" style={{ color: colors.accent }}>
-                {t('recipe.showOriginal')}
-              </Text>
-            </Pressable>
-          </View>
-        )}
-
-        {activeVariant != null && (
-          <View
-            className="mb-4 rounded-2xl border px-4 py-3"
-            style={{ borderColor: colors.primarySoft, backgroundColor: colors.primarySoft }}
-          >
-            <Text className="text-sm font-semibold" style={{ color: colors.primary }}>
-              {kitchenAdapted
-                ? t('recipe.kitchenAdapted')
-                : t('recipe.variantVersion', {
-                    variant: t(`recipe.variants.${activeVariant}.label`),
-                  })}
-            </Text>
-            {variantSummary != null && (
-              <Text className="mt-1 text-sm leading-5" style={{ color: colors.text }}>
-                {variantSummary}
-              </Text>
-            )}
-            {cookHasAllergies ? (
-              <Text className="mt-2 text-xs leading-4" style={{ color: colors.textSecondary }}>
-                {t('avoid.checkLabels')}
-              </Text>
-            ) : null}
-            <Pressable
-              trackId="recipe.remix.revert"
-              onPress={handleRevertVariant}
-              className="mt-2 active:opacity-70"
-              accessibilityRole="button"
-            >
-              <Text className="text-sm font-semibold" style={{ color: colors.accent }}>
-                {t('recipe.revertOriginal')}
-              </Text>
-            </Pressable>
-          </View>
-        )}
-
-        {hasAvoidMatches ? (
-          <View
-            className="mb-4 rounded-3xl border p-4"
-            style={{
-              borderColor: hasAllergyMatches ? colors.warningSoft : colors.border,
-              backgroundColor: hasAllergyMatches ? colors.warningSoft : colors.surface,
-            }}
-          >
-            {hasAllergyMatches ? (
-              <>
-                <View className="flex-row items-center gap-2">
-                  <Ionicons name="alert-circle" size={18} color={colors.warning} />
-                  <Text
-                    className="min-w-0 flex-1 text-sm font-semibold"
-                    style={{ color: colors.warning }}
-                    accessibilityRole="header"
-                  >
-                    {t('avoid.bannerAllergyTitle')}
-                  </Text>
-                </View>
-                {avoidMatches.allergies.map((hit) => (
-                  <Text key={hit.item} className="mt-1.5 text-sm leading-5" style={{ color: colors.text }}>
-                    <Text className="font-semibold">
-                      {hit.allergen ? t(`avoid.allergens.${hit.allergen}`) : hit.item}:{' '}
-                    </Text>
-                    {hit.ingredients.join(', ')}
-                  </Text>
-                ))}
-              </>
-            ) : null}
-            {avoidMatches.dislikes.length > 0 ? (
-              <>
-                <Text
-                  className={`text-sm font-semibold ${hasAllergyMatches ? 'mt-3' : ''}`}
-                  style={{ color: colors.text }}
-                  accessibilityRole="header"
-                >
-                  {t('avoid.bannerDislikeTitle')}
-                </Text>
-                {avoidMatches.dislikes.map((hit) => (
-                  <Text key={hit.item} className="mt-1.5 text-sm leading-5" style={{ color: colors.textSecondary }}>
-                    <Text className="font-semibold">{hit.item}: </Text>
-                    {hit.ingredients.join(', ')}
-                  </Text>
-                ))}
-              </>
-            ) : null}
-            {allowAdaptations ? (
-              <Pressable
-                trackId="recipe.avoid.make_without"
-                onPress={openMakeWithout}
-                className="mt-3 min-h-[44px] items-center justify-center rounded-3xl px-4 active:opacity-80"
-                style={{ backgroundColor: hasAllergyMatches ? colors.warning : colors.primarySoft }}
-                accessibilityRole="button"
-              >
-                <Text
-                  className="text-sm font-semibold"
-                  style={{ color: hasAllergyMatches ? colors.background : colors.primary }}
-                >
-                  {t('avoid.makeWithout')}
-                </Text>
-              </Pressable>
-            ) : null}
-            {hasAllergyMatches ? (
-              <Text className="mt-3 text-xs leading-4" style={{ color: colors.textSecondary }}>
-                {t('avoid.checkLabels')}
-              </Text>
-            ) : null}
-          </View>
-        ) : null}
-
-        {recipeIsInvented(recipe) ? (
-          <View
-            className="mb-4 rounded-3xl border p-4"
-            style={{ borderColor: colors.accentSoft, backgroundColor: colors.accentSoft }}
-            accessible
-            accessibilityLabel={`${t('recipe.inventedChip')}. ${t('recipe.inventedBanner')}`}
-          >
-            <Text className="text-sm font-semibold" style={{ color: colors.accent }}>
-              {t('recipe.inventedChip')}
-            </Text>
-            <Text className="mt-1 text-xs leading-4" style={{ color: colors.textSecondary }}>
-              {t('recipe.inventedBanner')}
-            </Text>
-          </View>
-        ) : null}
-
-        {extractionStatus === 'partial' && recipeIsInvented(recipe) ? (
-          <View
-            className="mb-4 rounded-3xl border p-4"
-            style={{ borderColor: colors.warningSoft, backgroundColor: colors.warningSoft }}
-          >
-            <Text className="text-sm font-semibold" style={{ color: colors.warning }}>
-              {t('recipe.inventedPartial')}
-            </Text>
-          </View>
-        ) : null}
-
-        {extractionStatus === 'partial' && recipeHasSource(recipe) && (
-          <View
-            className="mb-4 rounded-3xl border p-4"
-            style={{ borderColor: colors.warningSoft, backgroundColor: colors.warningSoft }}
-          >
-            <Text className="text-sm font-semibold" style={{ color: colors.warning }}>
-              {t('recipe.partialExtraction')}
-            </Text>
-            <Text className="mt-1 text-xs leading-4" style={{ color: colors.textSecondary }}>
-              {t('recipe.repairHint')}
-            </Text>
-            {allowAdaptations ? (
-              <Pressable
-                trackId="recipe.repair"
-                onPress={() => void handleRepair()}
-                disabled={repairing}
-                className="mt-3 min-h-[44px] items-center justify-center rounded-3xl px-4 active:opacity-80"
-                style={{ backgroundColor: colors.warning }}
-                accessibilityRole="button"
-                accessibilityLabel={t('recipe.repairAction')}
-                accessibilityState={{ disabled: repairing, busy: repairing }}
-              >
-                {repairing ? (
-                  <ActivityIndicator color={colors.background} size="small" />
-                ) : (
-                  <Text className="text-sm font-semibold" style={{ color: colors.background }}>
-                    {t('recipe.repairAction')}
-                  </Text>
-                )}
-              </Pressable>
-            ) : null}
-          </View>
-        )}
-
-        <RecipeAppliances
-          appliances={appliances}
-          instructions={displayInstructions}
-          stepDirection={textDirection}
-          updating={isUpdating('appliances')}
-          kitchen={ownedKitchen}
+  const topActions = (variant: 'photo' | 'tile') => {
+    const heart = onToggleFavorite ? (
+      <IconButton
+        variant={variant}
+        icon={isFavorite ? 'heart' : 'heart-outline'}
+        color={isFavorite ? (variant === 'photo' ? photo.scrimPrimary : colors.primary) : undefined}
+        label={isFavorite ? t('library.removeFavorite') : t('library.addFavorite')}
+        selected={isFavorite === true}
+        trackId="recipe.favorite"
+        onPress={onToggleFavorite}
+      />
+    ) : null;
+    const share = canShare ? (
+      <IconButton
+        variant={variant}
+        icon="share-outline"
+        label={t('recipe.share')}
+        trackId={pinchShareRecipeId ? 'recipe.share' : 'recipe.share_source'}
+        disabled={shareBusy}
+        onPress={() => void handleShare()}
+      />
+    ) : null;
+    const more =
+      menuItems.length > 0 ? (
+        <IconButton
+          variant={variant}
+          icon="ellipsis-horizontal"
+          label={t('a11y.moreOptions')}
+          trackId="recipe.more"
+          onPress={() => setMoreOpen(true)}
         />
+      ) : null;
+    if (!heart && !share && !more) return null;
+    return (
+      <>
+        {heart}
+        {share}
+        {more}
+      </>
+    );
+  };
 
-        {kitchenCheck.missing.length > 0 ? (
-          <View
-            testID="appliances-missing"
-            className="-mt-2 mb-5 rounded-3xl border p-4"
-            style={{ borderColor: colors.warningSoft, backgroundColor: colors.warningSoft }}
-          >
-            <View className="flex-row items-center gap-2">
-              <Ionicons name="alert-circle" size={18} color={colors.warning} />
-              <Text
-                className="min-w-0 flex-1 text-sm font-semibold"
-                style={{ color: colors.warning }}
-                accessibilityRole="header"
-              >
-                {t('myAppliances.missingTitle')}
-              </Text>
-            </View>
-            <Text className="mt-1.5 text-sm font-semibold leading-5" style={{ color: colors.text }}>
-              {kitchenCheck.missing.map((key) => t(applianceNameKey(key))).join(', ')}
-            </Text>
-            <Text className="mt-1 text-xs leading-4" style={{ color: colors.textSecondary }}>
-              {allowAdaptations
-                ? t('myAppliances.missingFix', { count: kitchenCheck.missing.length })
-                : t('myAppliances.missingNoFix', { count: kitchenCheck.missing.length })}
-            </Text>
-            {allowAdaptations ? (
-              <Pressable
-                trackId="recipe.appliances.make_without"
-                onPress={openMakeWithout}
-                className="mt-3 min-h-[44px] items-center justify-center rounded-3xl px-4 active:opacity-80"
-                style={{ backgroundColor: colors.primarySoft }}
-                accessibilityRole="button"
-              >
-                <Text className="text-sm font-semibold" style={{ color: colors.primary }}>
-                  {t('avoid.makeWithout')}
-                </Text>
-              </Pressable>
-            ) : null}
-            <Pressable
-              trackId="recipe.appliances.edit"
-              onPress={() => router.push('/settings/recipe')}
-              className="mt-1 min-h-[44px] items-center justify-center"
-              accessibilityRole="link"
-            >
-              <Text className="text-xs font-semibold" style={{ color: colors.primary }}>
-                {t('myAppliances.editLink')}
-              </Text>
-            </Pressable>
-          </View>
-        ) : null}
+  const hero = (
+    <RecipeHero
+      imageUrl={hasPicture ? recipe.image_url ?? null : null}
+      aiGenerated={recipe.image_generated === true}
+      onPhotoError={() => setPhotoFailed(true)}
+      drawingPicture={!hasPicture && isUpdating('image')}
+      immersive={immersive}
+      topInset={insets.top}
+      onBack={immersive ? goBack : undefined}
+      actions={topActions}
+      cookAlong={heroCookAlong}
+    />
+  );
 
-        {kitchenCheck.covered.length > 0 || kitchenCheck.ready || askAboutAppliances ? (
-          <View className="-mt-2 mb-5 gap-1.5">
-            {kitchenCheck.covered.map(({ key, alternative }) => (
-              <View key={key} testID={`appliance-covered-${key}`} className="flex-row items-center gap-1.5">
-                <Ionicons name="checkmark" size={14} color={colors.success} />
-                <Text className="min-w-0 flex-1 text-xs leading-4" style={{ color: colors.textSecondary }}>
-                  <Text className="font-semibold" style={{ color: colors.text }}>
-                    {t(applianceNameKey(key))}:{' '}
-                  </Text>
-                  {isApplianceKey(alternative)
-                    ? t('myAppliances.standInWorks', { alternative: t(applianceNameKey(alternative)) })
-                    : t('appliances.alternative', { alternative: t(`appliances.alternatives.${alternative}`) })}
-                </Text>
-              </View>
-            ))}
-            {kitchenCheck.ready ? (
-              <View testID="appliances-ready" className="flex-row items-center gap-1.5">
-                <Ionicons name="checkmark-circle" size={14} color={colors.success} />
-                <Text className="text-xs font-semibold" style={{ color: colors.success }}>
-                  {t('myAppliances.haveEverything')}
-                </Text>
-              </View>
-            ) : null}
-            {askAboutAppliances ? (
-              <Pressable
-                trackId="recipe.appliances.ask"
-                testID="appliances-ask"
-                onPress={() => router.push('/settings/recipe')}
-                className="min-h-[44px] justify-center active:opacity-70"
-                accessibilityRole="link"
-              >
-                <Text className="text-xs font-semibold leading-4" style={{ color: colors.primary }}>
-                  {t('myAppliances.askLink')}
-                </Text>
-              </Pressable>
-            ) : null}
-          </View>
-        ) : null}
+  const facts: ReactNode[] = [];
+  if (isUpdating('estimated_time_minutes')) {
+    facts.push(
+      <RecipeUpdatingFact key="time" field={t('recipeEditor.fields.time')} label={t('web.recipe.factTime')} updating={updatingLabel} />,
+    );
+  } else if (recipe.estimated_time_minutes != null) {
+    facts.push(
+      <RecipeFact
+        key="time"
+        value={formatRecipeDuration(recipe.estimated_time_minutes, durationLabels)}
+        label={t('web.recipe.factTime')}
+      />,
+    );
+  }
+  facts.push(
+    <RecipeFact
+      key="servings"
+      value={servings}
+      label={t('recipe.servings')}
+      spoken={t('cookbook.servings', { count: servings })}
+    />,
+  );
+  if (isUpdating('calories')) {
+    facts.push(
+      <RecipeUpdatingFact key="calories" field={t('recipeEditor.fields.calories')} label={t('web.recipe.factCalories')} updating={updatingLabel} />,
+    );
+  } else if (calorieDisplay != null) {
+    facts.push(
+      <RecipeFact
+        key="calories"
+        value={calorieDisplay.perServing.toLocaleString()}
+        label={t('web.recipe.factCalories')}
+        spoken={t('recipe.calPerServing', { count: calorieDisplay.perServing })}
+      />,
+    );
+  }
+  if (isUpdating('cost_estimate')) {
+    facts.push(
+      <RecipeUpdatingFact key="cost" field={t('recipeEditor.fields.cost')} label={t('web.recipe.factCost')} updating={updatingLabel} />,
+    );
+  } else if (recipe.cost_estimate) {
+    facts.push(
+      <RecipeFact
+        key="cost"
+        value={<CostDots tier={recipe.cost_estimate} />}
+        label={costLabels[recipe.cost_estimate]}
+        spoken={t('recipe.cost.a11y', {
+          label: costLabels[recipe.cost_estimate],
+          count: costFilledCount(recipe.cost_estimate),
+        })}
+      />,
+    );
+  }
 
-        <View className={splitRecipeBody ? 'flex-row items-start gap-6' : undefined}>
-          <View className={splitRecipeBody ? 'min-w-0 flex-1' : undefined}>
-        <View
-          className="mb-5 flex-row items-center justify-between rounded-3xl border px-4 py-3.5"
-          style={{ borderColor: colors.border, backgroundColor: colors.surface }}
+  const startCooking = () => setCookModeOpen(true);
+  const showBar = immersive && (hasSteps || hasIngredients || primaryAction != null);
+  const barIconStyle = { width: 56, height: 56, borderRadius: 16 };
+  const contentWidth =
+    isMediumUp && !sideCookAlong
+      ? { width: '100%' as const, maxWidth: splitRecipeBody ? 1040 : RecipeReadingWidth, alignSelf: 'center' as const }
+      : null;
+
+  const ingredientsSection = showIngredients ? (
+    <View style={{ gap: 12, minWidth: 0, flex: splitRecipeBody ? 1 : undefined }}>
+      {!useTabs ? (
+        <SectionHeading
+          title={t('recipe.ingredients')}
+          count={t(scaledIngredients.length === 1 ? 'recipe.itemCountOne' : 'recipe.itemCountOther', {
+            count: scaledIngredients.length,
+          })}
+        />
+      ) : null}
+      <View style={{ flexDirection: 'row', flexWrap: 'wrap', alignItems: 'center', justifyContent: 'space-between', gap: 8 }}>
+        <Stepper
+          value={servings}
+          onChange={changeServings}
+          min={1}
+          label={t('recipe.servings')}
+          decreaseLabel={t('recipe.decreaseServings')}
+          increaseLabel={t('recipe.increaseServings')}
+          spokenValue={t('cookbook.servings', { count: servings })}
+          trackId="recipe.servings"
         >
-          <View className="min-w-0 flex-1" style={{ paddingEnd: 12 }}>
-            <Text className="text-sm font-semibold" style={{ color: colors.text }}>
-              {t('recipe.servings')}
-            </Text>
-            {calorieDisplay != null && (
-              <Text className="mt-0.5 text-xs" style={{ color: colors.textSecondary }}>
-                {nutritionDisplay != null && !isUpdating('calories')
-                  ? t('recipe.nutritionTotal', {
-                      calories: calorieDisplay.total.toLocaleString(),
-                      protein: nutritionDisplay.total.protein_g.toLocaleString(),
-                      carbs: nutritionDisplay.total.carbs_g.toLocaleString(),
-                      fat: nutritionDisplay.total.fat_g.toLocaleString(),
-                    })
-                  : t('recipe.calTotal', { count: calorieDisplay.total.toLocaleString() })}
-              </Text>
-            )}
-          </View>
-          <View className="flex-row items-center gap-3">
-            <StepperButton
-              icon="remove"
-              disabled={servings <= 1}
-              onPress={() => changeServings(servings - 1)}
-            />
+          {/* A person icon and the count, so the stepper and spoons/grams share a row on a phone. */}
+          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+            <KitIcon icon="people-outline" size={16} color={colors.textSecondary} />
             <Text
-              className="min-w-[28px] text-center text-xl font-bold"
-              style={{ color: colors.text }}
-              accessible
-              accessibilityRole="adjustable"
-              accessibilityLabel={t('recipe.servings')}
-              accessibilityValue={{ text: t('cookbook.servings', { count: servings }) }}
-              accessibilityActions={[{ name: 'increment' }, { name: 'decrement' }]}
-              onAccessibilityAction={(event) => {
-                if (event.nativeEvent.actionName === 'increment') changeServings(servings + 1);
-                else if (event.nativeEvent.actionName === 'decrement') changeServings(servings - 1);
-              }}
+              numberOfLines={1}
+              style={{ ...type.font('body', 'bold'), fontSize: 15, lineHeight: 20, fontVariant: ['tabular-nums'] }}
             >
               {servings}
             </Text>
-            <StepperButton icon="add" onPress={() => changeServings(servings + 1)} />
           </View>
-        </View>
-
-        {scaledIngredients.length > 0 && (
-          <>
-            <View className="mb-4">
-              <MeasurementToggle
-                trackId="recipe.measurement" hint />
-              {isUpdating('ingredient_amounts') ? (
-                <UpdatingText
-                  label={updatingLabel}
-                  field={t('recipeEditor.fields.quantity')}
-                  className="mt-1.5 px-1 text-xs font-medium"
-                />
-              ) : null}
-            </View>
-            <Section
-              title={t('recipe.ingredients')}
-              count={scaledIngredients.length}
-              headerRight={
-                <Pressable
-                  trackId="recipe.add_to_shopping_list"
-                  className="flex-row items-center gap-1 rounded-full px-3 py-1.5 active:opacity-80"
-                  style={{ backgroundColor: colors.primarySoft }}
-                  onPress={() => setShoppingListModalOpen(true)}
-                  accessibilityRole="button"
-                >
-                  <Ionicons name="cart-outline" size={14} color={colors.primary} />
-                  <Text
-                    className="text-xs font-semibold"
-                    style={{ color: colors.primary }}
-                    maxFontSizeMultiplier={CHROME_MAX_FONT_SCALE}
-                  >
-                    {t('addToList.title')}
-                  </Text>
-                </Pressable>
-              }
-            >
-              {scaledIngredients.map((ing, index) => {
-                const amountLabel =
-                  displayIngredientAmount(ing, {
-                    system: measurementSystem,
-                    language: unitLanguage,
-                    units,
-                  }) || t('recipe.amountUnknown');
-                const avoidKind = avoidMatches.byIngredient[index] ?? null;
-                return (
-                <View
-                  key={`${ing.name}-${index}`}
-                  className={`flex-row items-center justify-between py-3.5 ${
-                    index < scaledIngredients.length - 1 ? 'border-b' : ''
-                  }`}
-                  style={
-                    index < scaledIngredients.length - 1
-                      ? { borderColor: colors.primarySoft }
-                      : undefined
-                  }
-                >
-                  {avoidKind ? (
-                    <View
-                      style={{ marginEnd: 6 }}
-                      accessible={false}
-                      importantForAccessibility="no-hide-descendants"
-                    >
-                      <Ionicons
-                        name={avoidKind === 'allergy' ? 'alert-circle' : 'remove-circle-outline'}
-                        size={16}
-                        color={avoidKind === 'allergy' ? colors.warning : colors.textSecondary}
-                      />
-                    </View>
-                  ) : null}
-                  <Text
-                    className="min-w-0 flex-1 text-base font-medium"
-                    style={{
-                      color: colors.text,
-                      writingDirection: textDirection,
-                      textAlign: textDirection === 'rtl' ? 'right' : 'left',
-                      paddingEnd: 8,
-                    }}
-                    accessibilityLabel={
-                      avoidKind
-                        ? `${ing.name}, ${amountLabel}, ${t(
-                            avoidKind === 'allergy' ? 'avoid.ingredientAllergy' : 'avoid.ingredientDislike',
-                          )}`
-                        : `${ing.name}, ${amountLabel}`
-                    }
-                  >
-                    {ing.name}
-                  </Text>
-                  <View className="shrink flex-row items-center gap-3">
-                    {isUpdating('ingredient_amounts') && !ing.metric && !ing.spoons ? (
-                      // The server cleared this row's grams/spoons; the written amount shows meanwhile.
-                      <UpdatingText
-                        label={updatingLabel}
-                        field={ing.name}
-                        className="text-[11px] font-medium"
-                      />
-                    ) : null}
-                    <IngredientAmountText
-                      hideFromAccessibility
-                      amount={amountLabel}
-                      isPinch={displayedAmountIsPinch(ing, {
-                        system: measurementSystem,
-                      })}
-                      color={colors.textSecondary}
-                      pinchColor={colors.primary}
-                      writingDirection={textDirection}
-                    />
-                    {allowAdaptations ? (
-                      <Pressable
-                        trackId="recipe.ingredient.swap"
-                        className="rounded-full px-3 py-1.5"
-                        style={{ backgroundColor: colors.accentSoft }}
-                        onPress={() => setSwapIndex(index)}
-                        hitSlop={6}
-                        accessibilityRole="button"
-                        accessibilityLabel={t('a11y.swapIngredient', { name: ing.name })}
-                      >
-                        <Text
-                          className="text-xs font-semibold"
-                          style={{ color: colors.accent }}
-                          maxFontSizeMultiplier={CHROME_MAX_FONT_SCALE}
-                        >
-                          {t('recipe.swapAction')}
-                        </Text>
-                      </Pressable>
-                    ) : null}
-                  </View>
-                </View>
-                );
-              })}
-            </Section>
-            {hasUnknownAmounts && recipeHasSource(recipe) ? (
-              <Text className="-mt-2 mb-4 px-1 text-xs leading-5" style={{ color: colors.textSecondary }}>
-                {t('recipe.amountsUnknownHint')}
-              </Text>
-            ) : null}
-          </>
-        )}
-
-        {allowAdaptations ? (
-        <View className="mb-5 mt-1 flex-row gap-2">
-          <Pressable
-            trackId="recipe.translate"
-            onPress={() => setTranslateModalOpen(true)}
-            className="min-h-[44px] min-w-0 flex-1 flex-row items-center justify-center gap-1.5 rounded-2xl border px-2 active:opacity-90"
-            style={{ borderColor: colors.border, backgroundColor: colors.surface }}
-            accessibilityRole="button"
-            accessibilityLabel={t('recipe.translate')}
-          >
-            <Ionicons name="language-outline" size={18} color={colors.primary} />
-            <Text
-              className="text-xs font-bold"
-              style={{ color: colors.text }}
-              numberOfLines={1}
-              maxFontSizeMultiplier={CHROME_MAX_FONT_SCALE}
-            >
-              {t('recipe.translate')}
-            </Text>
-          </Pressable>
-          <Pressable
-            trackId="recipe.remix.open"
-            onPress={() => setVariantModalOpen(true)}
-            className="min-h-[44px] min-w-0 flex-1 flex-row items-center justify-center gap-1.5 rounded-2xl px-2 active:opacity-90"
-            style={{ backgroundColor: colors.accentSoft }}
-            accessibilityRole="button"
-            accessibilityLabel={t('recipe.remix')}
-          >
-            <Ionicons name="color-wand-outline" size={18} color={colors.accent} />
-            <Text
-              className="text-xs font-bold"
-              style={{ color: colors.text }}
-              numberOfLines={1}
-              maxFontSizeMultiplier={CHROME_MAX_FONT_SCALE}
-            >
-              {t('recipe.remix')}
-            </Text>
-          </Pressable>
-          {recipeId ? (
-            <Pressable
-              trackId="recipe.add_to_collection"
-              onPress={() => setCollectionModalOpen(true)}
-              className="min-h-[44px] w-11 items-center justify-center rounded-2xl border active:opacity-90"
-              style={{ borderColor: colors.border, backgroundColor: colors.surface }}
-              accessibilityRole="button"
-              accessibilityLabel={t('library.addToCollection')}
-            >
-              <Ionicons name="folder-outline" size={18} color={colors.accent} />
-            </Pressable>
-          ) : null}
-        </View>
-        ) : null}
-          </View>
-
-          <View className={splitRecipeBody ? 'min-w-0 flex-[1.2]' : undefined}>
-        {baseInstructions.length > 0 && (
-          <Section
-            title={t('recipe.instructions')}
-            count={baseInstructions.length}
-            countKind="steps"
-            headerRight={
-              <View className="flex-row items-center gap-2">
-                {baseInstructions.length > 0 ? (
-                  <Pressable
-                    trackId="recipe.cook_mode.open"
-                    className="flex-row items-center gap-1 rounded-full px-3 py-1.5 active:opacity-80"
-                    style={{ backgroundColor: colors.primarySoft }}
-                    onPress={() => setCookModeOpen(true)}
-                    accessibilityRole="button"
-                    accessibilityLabel={t('recipe.cookMode')}
-                  >
-                    <Ionicons name="restaurant-outline" size={14} color={colors.primary} />
-                    <Text
-                      className="text-xs font-semibold"
-                      style={{ color: colors.primary }}
-                      maxFontSizeMultiplier={CHROME_MAX_FONT_SCALE}
-                    >
-                      {t('recipe.cookMode')}
-                    </Text>
-                  </Pressable>
-                ) : null}
-                {hasStepTimestamps ? (
-                  <Text
-                    className="text-[11px] font-medium"
-                    style={{ color: colors.textSecondary }}
-                    maxFontSizeMultiplier={CHROME_MAX_FONT_SCALE}
-                  >
-                    {t('recipe.tapTimeToJump')}
-                  </Text>
-                ) : null}
-              </View>
-            }
-          >
-            {displayInstructions.map((step, index) => (
-              <View
-                key={`${step.step}-${index}`}
-                className={`flex-row gap-3 py-3.5 ${
-                  index < baseInstructions.length - 1 ? 'border-b' : ''
-                }`}
-                style={{
-                  flexDirection: recipeRowDirection,
-                  ...(index < baseInstructions.length - 1
-                    ? { borderColor: colors.primarySoft }
-                    : null),
-                }}
-              >
-                <View
-                  className="mt-0.5 h-7 w-7 shrink-0 items-center justify-center rounded-full"
-                  style={{ backgroundColor: colors.primary }}
-                  accessible={false}
-                  importantForAccessibility="no-hide-descendants"
-                >
-                  <Text
-                    className="text-xs font-bold"
-                    style={{ color: colors.onPrimary }}
-                    maxFontSizeMultiplier={CHROME_MAX_FONT_SCALE}
-                  >
-                    {step.step}
-                  </Text>
-                </View>
-                <View className="min-w-0 flex-1">
-                  {step.timestamp_seconds != null ? (
-                    <Pressable
-                      trackId="recipe.step.jump_to_video"
-                      onPress={() => void handleStepTimestamp(step.timestamp_seconds!)}
-                      className="mb-1.5 flex-row items-center gap-1 self-start rounded-full px-2.5 py-1 active:opacity-80"
-                      style={{ backgroundColor: colors.accentSoft }}
-                      accessibilityRole="button"
-                      accessibilityLabel={t('recipe.jumpToStep', {
-                        step: step.step,
-                        time: formatVideoTimestamp(step.timestamp_seconds),
-                      })}
-                    >
-                      <Ionicons name="play-circle" size={14} color={colors.accent} />
-                      <Text
-                        className="text-xs font-bold tabular-nums"
-                        style={{ color: colors.accent }}
-                        maxFontSizeMultiplier={CHROME_MAX_FONT_SCALE}
-                      >
-                        {formatVideoTimestamp(step.timestamp_seconds)}
-                      </Text>
-                    </Pressable>
-                  ) : null}
-                  <Text
-                    className="text-base leading-6"
-                    style={{
-                      color: colors.text,
-                      writingDirection: textDirection,
-                      textAlign: textDirection === 'rtl' ? 'right' : 'left',
-                    }}
-                    accessibilityLabel={`${t('recipe.cookModeStep', {
-                      current: index + 1,
-                      total: baseInstructions.length,
-                    })}. ${step.text}`}
-                  >
-                    {step.text}
-                  </Text>
-                </View>
-              </View>
-            ))}
-          </Section>
-        )}
-          </View>
-        </View>
-
-        {footer}
+        </Stepper>
+        <MeasurementToggle compact trackId="recipe.measurement" />
       </View>
-    </ScrollView>
-
-      {sideCookAlong ? (
-        <View
-          style={{
-            width: cookAlongOpen ? 440 : 360,
-            paddingTop: 16,
-            paddingRight: 20,
-            paddingBottom: 16,
-            paddingLeft: 8,
-            alignSelf: cookAlongOpen ? 'stretch' : 'flex-start',
-            // Keep cook-along visible while the recipe scrolls (web).
-            position: 'sticky' as 'relative',
-            top: cookAlongOpen ? 0 : 16,
-            // Full remaining viewport so Reels / TikTok can play portrait-tall.
-            ...(cookAlongOpen
-              ? {
-                  height: viewportHeight - WEB_RECIPE_HEADER,
-                  maxHeight: viewportHeight - WEB_RECIPE_HEADER,
-                  minHeight: 0,
-                }
-              : null),
-          }}
+      {calorieDisplay != null ? (
+        <Text variant="caption" tone="muted" style={{ fontVariant: ['tabular-nums'] }}>
+          {nutritionDisplay != null && !isUpdating('calories')
+            ? t('recipe.nutritionTotal', {
+                calories: calorieDisplay.total.toLocaleString(),
+                protein: nutritionDisplay.total.protein_g.toLocaleString(),
+                carbs: nutritionDisplay.total.carbs_g.toLocaleString(),
+                fat: nutritionDisplay.total.fat_g.toLocaleString(),
+              })
+            : t('recipe.calTotal', { count: calorieDisplay.total.toLocaleString() })}
+        </Text>
+      ) : null}
+      {measurementSystem === 'metric' ? (
+        <Text variant="caption" tone="muted">
+          {t('measurement.metricHint')}
+        </Text>
+      ) : null}
+      {isUpdating('ingredient_amounts') ? (
+        <UpdatingText label={updatingLabel} field={t('recipeEditor.fields.quantity')} />
+      ) : null}
+      <RecipeIngredientList
+        rows={scaledIngredients.map((ing, index) => ({
+          key: `${ing.name}-${index}`,
+          name: ing.name,
+          amount:
+            displayIngredientAmount(ing, { system: measurementSystem, language: unitLanguage, units }) ||
+            t('recipe.amountUnknown'),
+          isPinch: displayedAmountIsPinch(ing, { system: measurementSystem }),
+          avoid: avoidMatches.byIngredient[index] ?? null,
+          updating: isUpdating('ingredient_amounts') && !ing.metric && !ing.spoons,
+        }))}
+        direction={textDirection}
+        rowDirection={recipeRowDirection}
+        onSwap={allowAdaptations ? (index) => setSwapIndex(index) : undefined}
+        updatingLabel={updatingLabel}
+      />
+      {hasUnknownAmounts && recipeHasSource(recipe) ? (
+        <Text variant="caption" tone="muted">
+          {t('recipe.amountsUnknownHint')}
+        </Text>
+      ) : null}
+      {!immersive ? (
+        <Button
+          variant="outline"
+          fullWidth
+          icon="cart-outline"
+          trackId="recipe.add_to_shopping_list"
+          onPress={() => setShoppingListModalOpen(true)}
         >
-          {cookAlongOpen && recipe.original_url ? (
-            <CookAlongVideoModal
-              visible
-              placement="sidebar"
-              onClose={() => {
-                setCookAlongOpen(false);
-                setCookAlongSheetHeight(0);
-              }}
-              originalUrl={recipe.original_url}
-              platform={recipe.platform}
-              sourceVideoUrl={recipe.source_video_url}
-              startSeconds={cookAlongStartSeconds}
-            />
-          ) : (
-            <RecipeVideoPanel
-              ref={videoPanelRef}
-              originalUrl={recipe.original_url}
-              platform={recipe.platform}
-              sourceVideoUrl={recipe.source_video_url}
-              posterUri={recipe.image_url}
-              onRequestPlay={openCookAlong}
-            />
-          )}
-        </View>
+          {t('addToList.title')}
+        </Button>
       ) : null}
     </View>
+  ) : null;
+
+  const stepCount = t(baseInstructions.length === 1 ? 'recipe.stepCountOne' : 'recipe.stepCountOther', {
+    count: baseInstructions.length,
+  });
+  const stepsSection = showSteps ? (
+    <View style={{ gap: 12, minWidth: 0, flex: splitRecipeBody ? 1.2 : undefined }}>
+      {!useTabs ? (
+        <SectionHeading title={t('recipe.instructions')} count={stepCount} />
+      ) : (
+        <Text variant="caption" tone="muted">
+          {hasStepTimestamps && hasVideo ? `${stepCount} · ${t('recipe.tapTimeToJump')}` : stepCount}
+        </Text>
+      )}
+      {!useTabs && hasStepTimestamps && hasVideo ? (
+        <Text variant="caption" tone="muted" style={{ marginTop: -6 }}>
+          {t('recipe.tapTimeToJump')}
+        </Text>
+      ) : null}
+      <RecipeStepList
+        steps={displayInstructions}
+        direction={textDirection}
+        rowDirection={recipeRowDirection}
+        onJump={hasVideo ? (seconds) => void handleStepTimestamp(seconds) : undefined}
+      />
+    </View>
+  ) : null;
+
+  return (
+    <View style={{ flex: 1 }}>
+      {immersive ? (
+        <StatusBar style={overPhoto && !pastPhoto ? 'light' : scheme === 'dark' ? 'light' : 'dark'} />
+      ) : null}
+      <View
+        style={
+          sideCookAlong
+            ? { flex: 1, flexDirection: 'row', width: '100%', maxWidth: 1200, alignSelf: 'center' }
+            : { flex: 1 }
+        }
+      >
+        <ScrollView
+          style={{ flex: 1 }}
+          showsVerticalScrollIndicator={false}
+          scrollEventThrottle={32}
+          onScroll={
+            overPhoto
+              ? (event) => {
+                  const past = event.nativeEvent.contentOffset.y > heroHeight - insets.top - HERO_OVERLAP;
+                  if (past !== pastPhoto) setPastPhoto(past);
+                }
+              : undefined
+          }
+          contentContainerStyle={{
+            paddingBottom: 24 + (sideCookAlong ? 0 : cookAlongSheetHeight) + (showBar ? barHeight : 0),
+          }}
+        >
+          {immersive ? hero : null}
+          <View
+            style={[
+              { paddingHorizontal: 16, paddingTop: overPhoto ? 20 : 16 },
+              overPhoto
+                ? {
+                    marginTop: -HERO_OVERLAP,
+                    borderTopStartRadius: Radii.tile,
+                    borderTopEndRadius: Radii.tile,
+                    backgroundColor: colors.background,
+                  }
+                : null,
+            ]}
+          >
+            <View style={[{ gap: 16 }, contentWidth]}>
+              {!immersive ? hero : null}
+              {topNotice}
+
+              <Tile padding={20} style={{ gap: 14 }}>
+                {badge ? <TileBadge>{badge}</TileBadge> : null}
+                <Text variant="h1" style={titleStyle}>
+                  {title}
+                </Text>
+                <View style={{ flexDirection: 'row', gap: 6 }}>{facts}</View>
+                {nutritionDisplay != null && !isUpdating('calories') ? (
+                  <Text testID="recipe-nutrition" variant="caption" tone="muted" style={{ fontVariant: ['tabular-nums'] }}>
+                    {t('recipe.nutritionPerServing', {
+                      protein: nutritionDisplay.perServing.protein_g,
+                      carbs: nutritionDisplay.perServing.carbs_g,
+                      fat: nutritionDisplay.perServing.fat_g,
+                    })}
+                  </Text>
+                ) : null}
+
+                {tags.length > 0 ||
+                recipeId ||
+                isUpdating('tags') ||
+                recipe.effort_level ||
+                isUpdating('effort_level') ? (
+                  <View style={{ flexDirection: 'row', flexWrap: 'wrap', alignItems: 'center', gap: 8 }}>
+                    {isUpdating('effort_level') ? (
+                      <UpdatingText label={updatingLabel} field={t('recipeEditor.fields.effort')} />
+                    ) : recipe.effort_level ? (
+                      <View
+                        style={{
+                          flexDirection: 'row',
+                          alignItems: 'center',
+                          gap: 6,
+                          height: 32,
+                          paddingHorizontal: 12,
+                          borderRadius: Radii.pill,
+                          backgroundColor: colors.accentSoft,
+                        }}
+                      >
+                        <KitIcon icon="speedometer-outline" size={14} color={colors.accentText} />
+                        <Text tone="accent" style={{ ...type.font('body', 'semibold'), fontSize: 13, lineHeight: 16 }}>
+                          {t(`recipe.effort.${recipe.effort_level.toLowerCase()}`)}
+                        </Text>
+                      </View>
+                    ) : null}
+                    {tags.map((tag) => (
+                      <Chip
+                        key={tag}
+                        size="sm"
+                        trackId="recipe.tag.open"
+                        onPress={() => router.dismissTo({ pathname: '/', params: { tag } })}
+                        accessibilityLabel={t('a11y.showRecipesTagged', { tag: translateRecipeTag(tag, t) })}
+                      >
+                        {translateRecipeTag(tag, t)}
+                      </Chip>
+                    ))}
+                    {isUpdating('tags') ? (
+                      <UpdatingText label={updatingLabel} field={t('recipeEditor.fields.tags')} />
+                    ) : null}
+                    {recipeId ? (
+                      <Chip
+                        size="sm"
+                        icon={tags.length > 0 ? 'pricetag-outline' : 'add'}
+                        trackId="recipe.tags.edit"
+                        onPress={() => setEditTagsOpen(true)}
+                      >
+                        {tags.length > 0 ? t('tags.editTitle') : t('tags.addTags')}
+                      </Chip>
+                    ) : null}
+                  </View>
+                ) : null}
+
+                {recipeId && recipeCollections.length > 0 ? (
+                  <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8 }}>
+                    {recipeCollections.map((collection) => (
+                      <Chip
+                        key={collection.id}
+                        size="sm"
+                        icon="folder-outline"
+                        trackId="recipe.collection.open"
+                        onPress={() => router.dismissTo({ pathname: '/', params: { collection: collection.id } })}
+                        accessibilityLabel={t('a11y.openCollection', { name: collection.name })}
+                      >
+                        {collection.name}
+                      </Chip>
+                    ))}
+                  </View>
+                ) : null}
+
+                {onCookedChange ? (
+                  <View style={{ gap: 10 }}>
+                    {lastCookedAt && cookedDateLabel ? (
+                      <View style={{ flexDirection: 'row', alignItems: 'flex-start', gap: 8 }}>
+                        <View style={{ paddingTop: 3 }}>
+                          <KitIcon icon="calendar-outline" size={16} color={colors.textSecondary} />
+                        </View>
+                        <Text variant="bodySmall" tone="muted" style={{ flex: 1, minWidth: 0 }}>
+                          {cookNote.trim()
+                            ? t('recipe.cookedOnWithNote', { date: cookedDateLabel, note: cookNote.trim() })
+                            : t('recipe.cookedOn', { date: cookedDateLabel })}
+                        </Text>
+                      </View>
+                    ) : null}
+                    <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8 }}>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        icon="checkmark-circle-outline"
+                        trackId="recipe.cooked.toggle"
+                        onPress={() => stampCooked(!lastCookedAt, 'recipe')}
+                      >
+                        {lastCookedAt ? t('recipe.cookedAgain') : t('recipe.cookedAction')}
+                      </Button>
+                      {lastCookedAt ? (
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          icon="create-outline"
+                          trackId="recipe.cooked.note"
+                          onPress={() => setCookedNoteOpen(true)}
+                        >
+                          {t('recipe.cookedNoteTitle')}
+                        </Button>
+                      ) : null}
+                    </View>
+                  </View>
+                ) : null}
+
+                {(hasVideo && !hasPicture && !sideCookAlong) || (!immersive && hasSteps) ? (
+                  <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8 }}>
+                    {!immersive && hasSteps ? (
+                      <Button
+                        variant="secondary"
+                        icon="restaurant-outline"
+                        trackId="recipe.cook_mode.open"
+                        accessibilityLabel={t('web.library.startCooking')}
+                        onPress={startCooking}
+                        style={{ flexGrow: 1 }}
+                      >
+                        {t('web.library.startCooking')}
+                      </Button>
+                    ) : null}
+                    {hasVideo && !hasPicture && !sideCookAlong ? (
+                      <Button
+                        variant="secondary"
+                        icon="play"
+                        trackId="recipe.video.play"
+                        accessibilityLabel={heroCookAlong?.accessibilityLabel}
+                        onPress={() => openCookAlong(0)}
+                        style={{ flexGrow: 1 }}
+                      >
+                        {t('web.library.cookAlongVideo')}
+                      </Button>
+                    ) : null}
+                  </View>
+                ) : null}
+              </Tile>
+
+              {translating ? (
+                <RecipeNotice icon="language-outline" title={t('recipe.translating')} accessibilityLiveRegion="polite" />
+              ) : null}
+
+              {activeLanguage != null ? (
+                <RecipeNotice
+                  tone="primary"
+                  icon="language-outline"
+                  title={t('recipe.showingLanguage', { language: t(`languages.${activeLanguage}`) })}
+                  actions={
+                    <Button variant="link" trackId="recipe.show_original_language" onPress={handleShowOriginalLanguage}>
+                      {t('recipe.showOriginal')}
+                    </Button>
+                  }
+                />
+              ) : null}
+
+              {activeVariant != null ? (
+                <RecipeNotice
+                  tone="primary"
+                  icon="color-wand-outline"
+                  title={
+                    kitchenAdapted
+                      ? t('recipe.kitchenAdapted')
+                      : t('recipe.variantVersion', { variant: t(`recipe.variants.${activeVariant}.label`) })
+                  }
+                  actions={
+                    <Button variant="link" trackId="recipe.remix.revert" onPress={handleRevertVariant}>
+                      {t('recipe.revertOriginal')}
+                    </Button>
+                  }
+                >
+                  {variantSummary != null ? <Text variant="bodySmall">{variantSummary}</Text> : null}
+                  {cookHasAllergies ? (
+                    <Text variant="caption" tone="muted">
+                      {t('avoid.checkLabels')}
+                    </Text>
+                  ) : null}
+                </RecipeNotice>
+              ) : null}
+
+              {hasAvoidMatches ? (
+                <RecipeNotice
+                  tone={hasAllergyMatches ? 'warning' : 'surface'}
+                  icon={hasAllergyMatches ? 'alert-circle' : 'remove-circle-outline'}
+                  title={hasAllergyMatches ? t('avoid.bannerAllergyTitle') : t('avoid.bannerDislikeTitle')}
+                  actions={
+                    allowAdaptations ? (
+                      <Button
+                        variant={hasAllergyMatches ? 'primary' : 'secondary'}
+                        size="sm"
+                        trackId="recipe.avoid.make_without"
+                        onPress={openMakeWithout}
+                      >
+                        {t('avoid.makeWithout')}
+                      </Button>
+                    ) : undefined
+                  }
+                >
+                  {avoidMatches.allergies.map((hit) => (
+                    <Text key={hit.item} variant="bodySmall">
+                      <Text variant="bodySmall" weight="semibold">
+                        {hit.allergen ? t(`avoid.allergens.${hit.allergen}`) : hit.item}:{' '}
+                      </Text>
+                      {hit.ingredients.join(', ')}
+                    </Text>
+                  ))}
+                  {hasAllergyMatches && avoidMatches.dislikes.length > 0 ? (
+                    <Text variant="bodySmall" weight="semibold" accessibilityRole="header" style={{ marginTop: 4 }}>
+                      {t('avoid.bannerDislikeTitle')}
+                    </Text>
+                  ) : null}
+                  {avoidMatches.dislikes.map((hit) => (
+                    <Text key={hit.item} variant="bodySmall" tone="muted">
+                      <Text variant="bodySmall" weight="semibold" tone="muted">
+                        {hit.item}:{' '}
+                      </Text>
+                      {hit.ingredients.join(', ')}
+                    </Text>
+                  ))}
+                  {hasAllergyMatches ? (
+                    <Text variant="caption" tone="muted">
+                      {t('avoid.checkLabels')}
+                    </Text>
+                  ) : null}
+                </RecipeNotice>
+              ) : null}
+
+              {recipeIsInvented(recipe) ? (
+                <RecipeNotice
+                  tone="accent"
+                  icon="bulb-outline"
+                  title={t('recipe.inventedChip')}
+                  accessible
+                  accessibilityLabel={`${t('recipe.inventedChip')}. ${t('recipe.inventedBanner')}`}
+                >
+                  <Text variant="caption" tone="muted">
+                    {t('recipe.inventedBanner')}
+                  </Text>
+                </RecipeNotice>
+              ) : null}
+
+              {extractionStatus === 'partial' && recipeIsInvented(recipe) ? (
+                <RecipeNotice tone="warning" icon="alert-circle" title={t('recipe.inventedPartial')} />
+              ) : null}
+
+              {extractionStatus === 'partial' && recipeHasSource(recipe) ? (
+                <RecipeNotice
+                  tone="warning"
+                  icon="alert-circle"
+                  title={t('recipe.partialExtraction')}
+                  actions={
+                    allowAdaptations ? (
+                      <Button
+                        size="sm"
+                        icon="construct-outline"
+                        trackId="recipe.repair"
+                        busy={repairing}
+                        onPress={() => void handleRepair()}
+                      >
+                        {t('recipe.repairAction')}
+                      </Button>
+                    ) : undefined
+                  }
+                >
+                  <Text variant="caption" tone="muted">
+                    {t('recipe.repairHint')}
+                  </Text>
+                </RecipeNotice>
+              ) : null}
+
+              {allowAdaptations ? (
+                <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+                  <Button
+                    variant="outline"
+                    icon="color-wand-outline"
+                    trackId="recipe.remix.open"
+                    onPress={() => setVariantModalOpen(true)}
+                    style={{ flex: 1, paddingHorizontal: 12 }}
+                  >
+                    {t('recipe.remix')}
+                  </Button>
+                  <Button
+                    variant="outline"
+                    icon="language-outline"
+                    trackId="recipe.translate"
+                    onPress={() => setTranslateModalOpen(true)}
+                    style={{ flex: 1, paddingHorizontal: 12 }}
+                  >
+                    {t('recipe.translate')}
+                  </Button>
+                  {recipeId ? (
+                    <IconButton
+                      variant="tile"
+                      icon="folder-outline"
+                      label={t('library.addToCollection')}
+                      trackId="recipe.add_to_collection"
+                      onPress={() => setCollectionModalOpen(true)}
+                      style={{ width: 48, height: 48 }}
+                    />
+                  ) : null}
+                </View>
+              ) : null}
+
+              <RecipeAppliances
+                appliances={appliances}
+                instructions={displayInstructions}
+                stepDirection={textDirection}
+                updating={isUpdating('appliances')}
+                kitchen={ownedKitchen}
+                footer={
+                  kitchenCheck.covered.length > 0 || kitchenCheck.ready || askAboutAppliances ? (
+                    <View style={{ gap: 6 }}>
+                      {kitchenCheck.covered.map(({ key, alternative }) => (
+                        <View
+                          key={key}
+                          testID={`appliance-covered-${key}`}
+                          style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}
+                        >
+                          <KitIcon icon="checkmark" size={14} color={colors.success} />
+                          <Text variant="caption" tone="muted" style={{ flex: 1, minWidth: 0 }}>
+                            <Text variant="caption" weight="semibold">
+                              {t(applianceNameKey(key))}:{' '}
+                            </Text>
+                            {isApplianceKey(alternative)
+                              ? t('myAppliances.standInWorks', { alternative: t(applianceNameKey(alternative)) })
+                              : t('appliances.alternative', {
+                                  alternative: t(`appliances.alternatives.${alternative}`),
+                                })}
+                          </Text>
+                        </View>
+                      ))}
+                      {kitchenCheck.ready ? (
+                        <View testID="appliances-ready" style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+                          <KitIcon icon="checkmark-circle" size={14} color={colors.success} />
+                          <Text variant="caption" weight="semibold" tone="success">
+                            {t('myAppliances.haveEverything')}
+                          </Text>
+                        </View>
+                      ) : null}
+                      {askAboutAppliances ? (
+                        <Button
+                          variant="link"
+                          trackId="recipe.appliances.ask"
+                          testID="appliances-ask"
+                          onPress={() => router.push('/settings/recipe')}
+                        >
+                          {t('myAppliances.askLink')}
+                        </Button>
+                      ) : null}
+                    </View>
+                  ) : null
+                }
+              />
+
+              {kitchenCheck.missing.length > 0 ? (
+                <RecipeNotice
+                  testID="appliances-missing"
+                  tone="warning"
+                  icon="alert-circle"
+                  title={t('myAppliances.missingTitle')}
+                  actions={
+                    <>
+                      {allowAdaptations ? (
+                        <Button variant="secondary" size="sm" trackId="recipe.appliances.make_without" onPress={openMakeWithout}>
+                          {t('avoid.makeWithout')}
+                        </Button>
+                      ) : null}
+                      <Button variant="link" trackId="recipe.appliances.edit" onPress={() => router.push('/settings/recipe')}>
+                        {t('myAppliances.editLink')}
+                      </Button>
+                    </>
+                  }
+                >
+                  <Text variant="bodySmall" weight="semibold">
+                    {kitchenCheck.missing.map((key) => t(applianceNameKey(key))).join(', ')}
+                  </Text>
+                  <Text variant="caption" tone="muted">
+                    {allowAdaptations
+                      ? t('myAppliances.missingFix', { count: kitchenCheck.missing.length })
+                      : t('myAppliances.missingNoFix', { count: kitchenCheck.missing.length })}
+                  </Text>
+                </RecipeNotice>
+              ) : null}
+
+              {useTabs ? (
+                <SegmentedControl<RecipeTab>
+                  kind="tabs"
+                  fullWidth
+                  label={t('web.recipe.tabs')}
+                  value={tab}
+                  onChange={setTab}
+                  options={[
+                    { value: 'ingredients', label: t('recipe.ingredients'), trackId: 'recipe.tab.ingredients' },
+                    { value: 'steps', label: t('web.recipe.steps'), trackId: 'recipe.tab.steps' },
+                  ]}
+                />
+              ) : null}
+
+              {splitRecipeBody ? (
+                <View style={{ flexDirection: 'row', alignItems: 'flex-start', gap: 24 }}>
+                  {ingredientsSection}
+                  {stepsSection}
+                </View>
+              ) : (
+                <>
+                  {ingredientsSection}
+                  {stepsSection}
+                </>
+              )}
+
+              {footer}
+            </View>
+          </View>
+        </ScrollView>
+
+        {sideCookAlong ? (
+          <View
+            style={{
+              width: cookAlongOpen ? 440 : 360,
+              paddingTop: 16,
+              paddingEnd: 20,
+              paddingBottom: 16,
+              paddingStart: 8,
+              alignSelf: cookAlongOpen ? 'stretch' : 'flex-start',
+              // Keep cook-along visible while the recipe scrolls (web).
+              position: 'sticky' as 'relative',
+              top: cookAlongOpen ? 0 : 16,
+              // Full remaining viewport so Reels / TikTok can play portrait-tall.
+              ...(cookAlongOpen
+                ? {
+                    height: viewportHeight - (immersive ? 0 : WEB_RECIPE_HEADER),
+                    maxHeight: viewportHeight - (immersive ? 0 : WEB_RECIPE_HEADER),
+                    minHeight: 0,
+                  }
+                : null),
+            }}
+          >
+            {cookAlongOpen && recipe.original_url ? (
+              <CookAlongVideoModal
+                visible
+                placement="sidebar"
+                onClose={() => {
+                  setCookAlongOpen(false);
+                  setCookAlongSheetHeight(0);
+                }}
+                originalUrl={recipe.original_url}
+                platform={recipe.platform}
+                sourceVideoUrl={recipe.source_video_url}
+                startSeconds={cookAlongStartSeconds}
+              />
+            ) : (
+              <RecipeVideoPanel
+                ref={videoPanelRef}
+                originalUrl={recipe.original_url}
+                platform={recipe.platform}
+                sourceVideoUrl={recipe.source_video_url}
+                posterUri={recipe.image_url}
+                onRequestPlay={openCookAlong}
+              />
+            )}
+          </View>
+        ) : null}
+      </View>
+
+      {/* Under the status bar once the photo has scrolled away, so the page doesn't run under the clock. */}
+      {immersive && insets.top > 0 && (!overPhoto || pastPhoto) ? (
+        <View
+          pointerEvents="none"
+          style={{ position: 'absolute', top: 0, start: 0, end: 0, height: insets.top, backgroundColor: colors.background }}
+        />
+      ) : null}
+
+      {showBar ? (
+        <RecipeCookBar onHeight={setBarHeight}>
+          {primaryAction ? (
+            <>
+              <Button
+                size="lg"
+                busy={primaryAction.busy}
+                trackId={primaryAction.trackId}
+                onPress={primaryAction.onPress}
+                style={{ flex: 1 }}
+              >
+                {primaryAction.label}
+              </Button>
+              {hasSteps ? (
+                <IconButton
+                  variant="tile"
+                  icon="restaurant-outline"
+                  label={t('web.library.startCooking')}
+                  trackId="recipe.cook_mode.open"
+                  onPress={startCooking}
+                  style={barIconStyle}
+                />
+              ) : null}
+            </>
+          ) : hasSteps ? (
+            <Button
+              size="lg"
+              icon="restaurant-outline"
+              trackId="recipe.cook_mode.open"
+              accessibilityLabel={t('web.library.startCooking')}
+              onPress={startCooking}
+              style={{ flex: 1 }}
+            >
+              {t('web.library.startCooking')}
+            </Button>
+          ) : null}
+          {hasIngredients ? (
+            <IconButton
+              variant="tile"
+              icon="cart-outline"
+              label={t('addToList.title')}
+              trackId="recipe.add_to_shopping_list"
+              onPress={() => setShoppingListModalOpen(true)}
+              style={barIconStyle}
+            />
+          ) : null}
+        </RecipeCookBar>
+      ) : null}
 
       {!sideCookAlong && cookAlongOpen && recipe.original_url ? (
         <CookAlongVideoModal
@@ -1865,6 +1818,8 @@ export function RecipeView({
       ) : null}
 
       {/* Modals must sit outside ScrollView — nested Modals often fail to present on iOS. */}
+      <RecipeMoreMenu visible={moreOpen} title={title} items={menuItems} onClose={() => setMoreOpen(false)} />
+
       <AddToShoppingListModal
         visible={shoppingListModalOpen}
         ingredients={scaledIngredients}
@@ -2011,156 +1966,33 @@ export function RecipeView({
   );
 }
 
-function Badge({
-  label,
-  icon,
-  leading,
-  accessibilityLabel,
-}: {
-  label: string;
-  icon?: keyof typeof Ionicons.glyphMap;
-  leading?: ReactNode;
-  accessibilityLabel?: string;
-}) {
-  const { colors } = useThemePreference();
+type RecipeTab = 'ingredients' | 'steps';
+
+/** A section's title (h2) with its count beside it: "Ingredients  8 items". */
+function SectionHeading({ title, count }: { title: string; count?: string }) {
   return (
-    <View
-      accessible={accessibilityLabel != null}
-      accessibilityLabel={accessibilityLabel}
-      accessibilityRole={accessibilityLabel ? 'text' : undefined}
-      className="flex-row items-center gap-1.5 rounded-full px-3 py-1.5"
-      style={{ backgroundColor: colors.primarySoft }}
-    >
-      {leading ??
-        (icon ? <Ionicons name={icon} size={12} color={colors.primary} /> : null)}
-      <Text
-        className="text-xs font-semibold"
-        style={{ color: colors.primary }}
-        maxFontSizeMultiplier={CHROME_MAX_FONT_SCALE}
-      >
-        {label}
-      </Text>
+    <View style={{ flexDirection: 'row', alignItems: 'baseline', flexWrap: 'wrap', columnGap: 10 }}>
+      <Text variant="h2">{title}</Text>
+      {count ? (
+        <Text variant="bodySmall" tone="muted">
+          {count}
+        </Text>
+      ) : null}
     </View>
   );
 }
 
-/** A meta badge whose value is being recalculated (ADR 018): same pill, "Updating…" in place of the value. */
-function UpdatingBadge({
-  icon,
-  label,
-  field,
-}: {
-  icon: keyof typeof Ionicons.glyphMap;
-  label: string;
-  /** What is updating, for screen readers ("Calories, Updating…"). */
-  field: string;
-}) {
-  const { colors } = useThemePreference();
-  return (
-    <View
-      accessible
-      accessibilityRole="text"
-      accessibilityLabel={`${field}, ${label}`}
-      accessibilityState={{ busy: true }}
-      className="flex-row items-center gap-1.5 rounded-full px-3 py-1.5"
-      style={{ backgroundColor: colors.primarySoft, opacity: 0.75 }}
-    >
-      <Ionicons name={icon} size={12} color={colors.primary} />
-      <Text
-        className="text-xs font-semibold"
-        style={{ color: colors.primary }}
-        maxFontSizeMultiplier={CHROME_MAX_FONT_SCALE}
-      >
-        {label}
-      </Text>
-    </View>
-  );
-}
-
-/** "Updating…" next to a value that keeps showing until the recalculated one arrives. */
-function UpdatingText({ label, field, className }: { label: string; field: string; className: string }) {
-  const { colors } = useThemePreference();
-  const { textAlign, writingDirection } = useRtl();
+/** "Updating…" next to a value that keeps showing until the recalculated one arrives (ADR 018). */
+function UpdatingText({ label, field }: { label: string; field: string }) {
   return (
     <Text
-      className={className}
-      style={{ color: colors.textSecondary, textAlign, writingDirection }}
+      variant="caption"
+      weight="medium"
+      tone="muted"
       accessibilityLabel={`${field}, ${label}`}
       accessibilityState={{ busy: true }}
-      maxFontSizeMultiplier={CHROME_MAX_FONT_SCALE}
     >
       {label}
     </Text>
-  );
-}
-
-function StepperButton({
-  icon,
-  onPress,
-  disabled = false,
-}: {
-  icon: 'add' | 'remove';
-  onPress: () => void;
-  disabled?: boolean;
-}) {
-  const { t } = useTranslation();
-  const { colors } = useThemePreference();
-  return (
-    <Pressable
-      accessibilityRole="button"
-      accessibilityLabel={
-        icon === 'add' ? t('recipe.increaseServings') : t('recipe.decreaseServings')
-      }
-      accessibilityState={{ disabled }}
-      disabled={disabled}
-      className="h-11 w-11 items-center justify-center rounded-full active:opacity-80"
-      style={{ backgroundColor: colors.primary, opacity: disabled ? 0.45 : 1 }}
-      trackId={icon === 'add' ? 'recipe.servings.increase' : 'recipe.servings.decrease'}
-      onPress={onPress}
-    >
-      <Ionicons name={icon} size={18} color={colors.onPrimary} />
-    </Pressable>
-  );
-}
-
-function Section({
-  title,
-  count,
-  countKind = 'ingredients',
-  children,
-  headerRight,
-}: {
-  title: string;
-  count?: number;
-  countKind?: 'ingredients' | 'steps';
-  children: ReactNode;
-  headerRight?: ReactNode;
-}) {
-  const { t } = useTranslation();
-  const { colors } = useThemePreference();
-  return (
-    <View className="mb-5">
-      <View className="mb-3 flex-row items-center gap-2">
-        <View className="min-w-0 flex-1 flex-row items-baseline gap-2">
-          <Text className="text-lg font-bold" style={{ color: colors.text }} accessibilityRole="header">
-            {title}
-          </Text>
-          {count != null && (
-            <Text className="text-sm font-medium" style={{ color: colors.textSecondary }}>
-              {countKind === 'steps'
-                ? t(count === 1 ? 'recipe.stepCountOne' : 'recipe.stepCountOther', { count })
-                : t(count === 1 ? 'recipe.itemCountOne' : 'recipe.itemCountOther', { count })}
-            </Text>
-          )}
-        </View>
-        {headerRight}
-      </View>
-      <View
-        className="rounded-3xl border px-4"
-        style={{ borderColor: colors.border, backgroundColor: colors.surface }}
-      >
-        {children}
-      </View>
-    </View>
   );
 }

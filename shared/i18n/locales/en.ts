@@ -887,6 +887,14 @@ export default {
     "pdfTimedOut": "This PDF took too long to read, so your credit wasn’t used. Try again in a moment.",
     "invalidSharePdf": "Couldn’t read that PDF. Try Snap from a PDF instead."
   },
+  "snapNm": {
+    "snapIt": "Snap it",
+    "guessIt": "Guess it",
+    "takePhoto": "Take a photo",
+    "choosePhoto": "Choose a photo",
+    "choosePhotoOrPdf": "Choose a photo or PDF",
+    "shareTip": "Share from any app. In TikTok, Instagram or YouTube, tap Share, then Pinch."
+  },
   "list": {
     "title": "List",
     "subtitle": "Groceries for your recipes",

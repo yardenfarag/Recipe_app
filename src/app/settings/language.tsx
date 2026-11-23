@@ -1,21 +1,18 @@
 import { useTranslation } from 'react-i18next';
-import { Text } from 'react-native';
 
 import { LanguagePicker } from '@/components/LanguagePicker';
 import { SettingsDetailScreen } from '@/components/SettingsDetailScreen';
-import { useThemePreference } from '@/hooks/useThemePreference';
+import { Text } from '@/components/ui/Text';
 
 export default function LanguageSettingsScreen() {
   const { t } = useTranslation();
-  const { colors } = useThemePreference();
 
   return (
     <SettingsDetailScreen>
-      <LanguagePicker
-        trackId="settings.language" />
-      <Text className="mt-3 text-xs leading-5" style={{ color: colors.textSecondary }}>
+      <Text variant="bodySmall" tone="muted" style={{ paddingHorizontal: 4 }}>
         {t('settings.languageHint')}
       </Text>
+      <LanguagePicker trackId="settings.language" />
     </SettingsDetailScreen>
   );
 }

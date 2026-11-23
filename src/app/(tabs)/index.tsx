@@ -1,17 +1,14 @@
-import Ionicons from '@expo/vector-icons/Ionicons';
 import { router, useLocalSearchParams } from 'expo-router';
-import { useCallback, useDeferredValue, useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useDeferredValue, useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
 import {
   ActivityIndicator,
   Alert,
   FlatList,
   Platform,
-  Text,
   View,
   type NativeScrollEvent,
   type NativeSyntheticEvent,
 } from 'react-native';
-import { Pressable } from '@/components/ui/Pressable';
 import Animated, {
   Easing,
   interpolate,
@@ -26,32 +23,48 @@ import { scheduleOnRN } from 'react-native-worklets';
 import { useTranslation } from 'react-i18next';
 
 import { AddToCollectionModal } from '@/components/AddToCollectionModal';
-import { BrandHeader } from '@/components/BrandHeader';
 import { ConfirmDialog } from '@/components/ConfirmDialog';
+import { CookieMark } from '@/components/CookieMark';
 import { FridgeMatchModal } from '@/components/FridgeMatchModal';
+import { LibraryLayoutToggle } from '@/components/LibraryLayoutToggle';
+import {
+  KitchenTiles,
+  KitchenTilesSkeleton,
+  useCookedThisWeek,
+  useTonightsPick,
+} from '@/components/LibraryTiles';
 import { NameEditModal } from '@/components/NameEditModal';
 import { RecipeActionsMenu } from '@/components/RecipeActionsMenu';
-import { RecipeLibraryToolbar } from '@/components/RecipeLibraryToolbar';
+import { LibrarySearchBar, RecipeLibraryToolbar } from '@/components/RecipeLibraryToolbar';
 import { RecipeListRow } from '@/components/RecipeListRow';
 import { Screen } from '@/components/Screen';
+import { Button } from '@/components/ui/Button';
+import { IconButton } from '@/components/ui/IconButton';
+import { Text } from '@/components/ui/Text';
+import { Tile } from '@/components/ui/Tile';
+import { TopBar } from '@/components/ui/TopBar';
+import { KitIcon, Radii, type IconName } from '@/components/ui/tokens';
 import { useAuth } from '@/hooks/useAuth';
 import { useCollections } from '@/hooks/useCollections';
 import { useLibraryLayout } from '@/hooks/useLibraryLayout';
 import { useRecipes } from '@/hooks/useRecipes';
 import { useThemePreference } from '@/hooks/useThemePreference';
+import { useTypography } from '@/hooks/useTypography';
 import { announce } from '@/lib/a11y';
 import { removeGuestRecipe, renameGuestRecipe } from '@/lib/guestRecipes';
 import { openRecipeEditor } from '@/lib/openRecipeEditor';
-import { firstCookSuggestion, rankCookTonight } from '@shared/lib/cookTonight';
-import { CookFirstCard } from '@/components/CookFirstCard';
+import { rankCookTonight } from '@shared/lib/cookTonight';
 import {
+  applyQuickFilters,
   filterAndSortRecipes,
   isRecipeLibraryFiltered,
   RecipeSortKey,
+  type RecipeQuickFilter,
 } from '@shared/lib/recipeListQuery';
 import { collectLibraryTags } from '@shared/lib/recipeTags';
 import { upsertRecipeTranslation } from '@shared/lib/supabase/recipeTranslations';
 import { deleteRecipe, renameRecipe } from '@shared/lib/supabase/recipes';
+import { COOK_TONIGHT_LIMITS } from '@shared/lib/tonightsPick';
 import { translateAppError, UserFacingError } from '@shared/lib/translateAppError';
 import {
   isCollectionNameTaken,
@@ -65,13 +78,23 @@ type CollectionNameModalState =
   | { mode: 'rename'; id: string; name: string }
   | null;
 
+/** One line of the list: a recipe row, or a row of photo cards in the grid. */
+type LibraryLine = { key: string; recipes: Recipe[] };
+
+/** The page's side gutter. */
+const GUTTER = 16;
+
+/**
+ * The Library (Night Market, PIN-177; the web's Library, phone size). Top to bottom: the bar with the logo and the
+ * credits, the search bar, tonight's pick with what was cooked this week and the shopping list, then "Your recipes"
+ * with its filters and the recipes as photo cards or rows.
+ */
 export default function HomeScreen() {
   const { t } = useTranslation();
   const {
     recipes,
     loading,
     loadingMore,
-    hasMore,
     total,
     error,
     refresh,
@@ -89,8 +112,9 @@ export default function HomeScreen() {
     collectionsForRecipe,
   } = useCollections();
   const { colors } = useThemePreference();
+  const type = useTypography();
   const { user } = useAuth();
-  const { layout, numColumns, toggleLayout } = useLibraryLayout();
+  const { layout, numColumns, toggleLayout } = useLibraryLayout('grid');
   const reduceMotion = useReducedMotion();
   const skipItemEnter = useRef(false);
   const flipping = useRef(false);
@@ -105,6 +129,7 @@ export default function HomeScreen() {
 
   const [search, setSearch] = useState('');
   const [sort, setSort] = useState<RecipeSortKey>('newest');
+  const [quick, setQuick] = useState<RecipeQuickFilter[]>([]);
   const [selectedTags, setSelectedTags] = useState<string[]>([]);
   const [selectedCollectionId, setSelectedCollectionId] = useState<string | null>(null);
   const [favoritesOnly, setFavoritesOnly] = useState(false);
@@ -166,34 +191,31 @@ export default function HomeScreen() {
   }, [collections, selectedCollectionId]);
 
   const displayedRecipes = useMemo(() => {
-    const filtered = filterAndSortRecipes(recipes, {
-      searchQuery: deferredSearch,
-      sort,
-      selectedTags,
-      recipeIdAllowlist: collectionAllowlist,
-    });
+    const filtered = applyQuickFilters(
+      filterAndSortRecipes(recipes, {
+        searchQuery: deferredSearch,
+        sort,
+        selectedTags,
+        recipeIdAllowlist: collectionAllowlist,
+      }),
+      quick,
+    );
     if (cookTonight) {
-      return rankCookTonight(filtered, {
-        maxMinutes: 45,
-        maxEffort: 'Medium',
-        favoritesOnly,
-      });
+      return rankCookTonight(filtered, { ...COOK_TONIGHT_LIMITS, favoritesOnly });
     }
     if (!favoritesOnly) return filtered;
     return filtered.filter((r) => r.is_favorite === true);
-  }, [recipes, deferredSearch, sort, selectedTags, collectionAllowlist, favoritesOnly, cookTonight]);
+  }, [recipes, deferredSearch, sort, selectedTags, collectionAllowlist, favoritesOnly, cookTonight, quick]);
 
   const hasActiveFilters =
     isRecipeLibraryFiltered(deferredSearch, sort, selectedTags, selectedCollectionId) ||
     favoritesOnly ||
-    cookTonight;
+    cookTonight ||
+    quick.length > 0;
 
-  // Saved some, cooked none: put one to make tonight first. Only with the whole Library loaded, so an older cooked
-  // recipe can't be missed. Signed in only (guests' recipes stay on the device).
-  const cookFirst = useMemo(
-    () => (!user || hasMore || hasActiveFilters ? null : firstCookSuggestion(recipes)),
-    [user, hasMore, hasActiveFilters, recipes],
-  );
+  // Tonight's pick, and what was cooked this week (both as on the web).
+  const { pick, another } = useTonightsPick(recipes);
+  const cooked = useCookedThisWeek(recipes, total);
 
   useEffect(() => {
     if (hasActiveFilters) void ensureAllLoaded();
@@ -215,12 +237,23 @@ export default function HomeScreen() {
     setSelectedCollectionId(null);
     setFavoritesOnly(false);
     setCookTonight(false);
+    setQuick([]);
   }, []);
 
   const handleToggleTag = useCallback((tag: string) => {
     setSelectedTags((prev) =>
       prev.includes(tag) ? prev.filter((t) => t !== tag) : [...prev, tag],
     );
+  }, []);
+
+  const handleToggleQuick = useCallback((filter: RecipeQuickFilter) => {
+    setQuick((prev) => (prev.includes(filter) ? prev.filter((f) => f !== filter) : [...prev, filter]));
+  }, []);
+
+  const handleShowAll = useCallback(() => {
+    setQuick([]);
+    setFavoritesOnly(false);
+    setCookTonight(false);
   }, []);
 
   const endFlip = useCallback(() => {
@@ -417,109 +450,132 @@ export default function HomeScreen() {
     router.push(`/recipe/${recipe.id}`);
   }, []);
 
-  const renderItem = useCallback(
-    ({ item, index }: { item: Recipe; index: number }) => (
-      <View style={numColumns > 1 ? { flex: 1, paddingHorizontal: 6 } : undefined}>
-        <RecipeListRow
-          trackId="library.recipe"
-          recipe={item}
-          index={index}
-          variant={numColumns > 1 ? 'card' : 'row'}
-          animateEnter={!skipItemEnter.current}
-          onPress={() => openRecipe(item)}
-          onLongPress={numColumns > 1 ? undefined : () => openRecipeMenu(item)}
-          onMore={() => openRecipeMenu(item)}
-          onToggleFavorite={() => handleToggleFavorite(item)}
-        />
-      </View>
+  // Rows of photo cards in the grid, one recipe a line in the list. One list either way, so switching keeps the
+  // place on the page.
+  const lines = useMemo<LibraryLine[]>(() => {
+    if (numColumns <= 1) return displayedRecipes.map((recipe) => ({ key: `row:${recipe.id}`, recipes: [recipe] }));
+    const out: LibraryLine[] = [];
+    for (let i = 0; i < displayedRecipes.length; i += numColumns) {
+      const chunk = displayedRecipes.slice(i, i + numColumns);
+      out.push({ key: `grid:${chunk.map((recipe) => recipe.id).join(',')}`, recipes: chunk });
+    }
+    return out;
+  }, [displayedRecipes, numColumns]);
+
+  const renderRecipe = useCallback(
+    (recipe: Recipe, index: number, card: boolean) => (
+      <RecipeListRow
+        key={recipe.id}
+        trackId="library.recipe"
+        recipe={recipe}
+        index={index}
+        variant={card ? 'card' : 'row'}
+        animateEnter={!skipItemEnter.current}
+        onPress={() => openRecipe(recipe)}
+        onLongPress={() => openRecipeMenu(recipe)}
+        onMore={() => openRecipeMenu(recipe)}
+        onToggleFavorite={() => handleToggleFavorite(recipe)}
+      />
     ),
-    [handleToggleFavorite, numColumns, openRecipe, openRecipeMenu],
+    [handleToggleFavorite, openRecipe, openRecipeMenu],
   );
 
-  const listHeader = useMemo(
-    () => (
-      <View className="gap-4 pb-3 pt-1">
-        {savedBanner && (
-          <View
-            className="flex-row items-center gap-2 rounded-[20px] px-3.5 py-2.5"
-            style={{ backgroundColor: colors.successSoft }}
-          >
-            <Ionicons
-              name="checkmark-circle"
-              size={16}
+  const renderItem = useCallback(
+    ({ item, index }: { item: LibraryLine; index: number }) => (
+      <Animated.View collapsable={false} style={flipStyle}>
+        {numColumns > 1 ? (
+          <View style={{ flexDirection: 'row', gap: 12 }}>
+            {item.recipes.map((recipe, i) => renderRecipe(recipe, index * numColumns + i, true))}
+            {Array.from({ length: numColumns - item.recipes.length }, (_, i) => (
+              <View key={`gap-${i}`} style={{ flex: 1 }} />
+            ))}
+          </View>
+        ) : (
+          renderRecipe(item.recipes[0], index, false)
+        )}
+      </Animated.View>
+    ),
+    [flipStyle, numColumns, renderRecipe],
+  );
+
+  const searching = search.trim().length > 0;
+  const resultCount = hasActiveFilters ? displayedRecipes.length : total || displayedRecipes.length;
+  const countWords = t(resultCount === 1 ? 'library.recipeCountOne' : 'library.recipeCountOther', {
+    count: resultCount,
+  });
+
+  const listHeader = (
+    <View style={{ gap: 16, paddingBottom: 16 }}>
+      <TopBar />
+      <LibrarySearchBar value={search} onChange={setSearch} />
+
+      {savedBanner ? (
+        <Notice
+          tone="success"
+          icon="checkmark-circle"
+          message={t('library.saved')}
+          action={
+            <IconButton
+              icon="close"
+              iconSize={18}
               color={colors.success}
-              accessible={false}
-              importantForAccessibility="no"
-            />
-            <Text className="flex-1 text-xs font-medium" style={{ color: colors.success }}>
-              {t('library.saved')}
-            </Text>
-            <Pressable
+              label={t('common.dismiss')}
               trackId="library.saved_banner.dismiss"
               onPress={() => setSavedBanner(false)}
-              hitSlop={14}
-              accessibilityRole="button"
-              accessibilityLabel={t('common.dismiss')}
-            >
-              <Ionicons name="close" size={16} color={colors.success} />
-            </Pressable>
-          </View>
-        )}
-
-        {cookFirst ? <CookFirstCard recipe={cookFirst} /> : null}
-
-        {showRefreshFailed && (
-          <View
-            className="flex-row items-center gap-2 rounded-[20px] px-3.5 py-2.5"
-            style={{ backgroundColor: colors.warningSoft }}
-          >
-            <Ionicons
-              name="warning-outline"
-              size={16}
-              color={colors.warning}
-              accessible={false}
-              importantForAccessibility="no"
             />
-            <Text className="flex-1 text-xs" style={{ color: colors.warning }}>
-              {t('library.refreshFailed')}
-            </Text>
-            <Pressable
-              trackId="library.load_error.retry"
-              onPress={() => refresh()}
-              hitSlop={12}
-              accessibilityRole="button"
-              accessibilityLabel={t('a11y.retryLoadingRecipes')}
-            >
-              <Text className="text-xs font-semibold" style={{ color: colors.primary }}>
-                {t('common.retry')}
-              </Text>
-            </Pressable>
-          </View>
-        )}
+          }
+        />
+      ) : null}
 
-        <View className="flex-row items-start gap-3">
-          <View className="min-w-0 flex-1">
-            <BrandHeader title={t('library.title')} />
+      {showRefreshFailed ? (
+        <Notice
+          tone="warning"
+          icon="warning-outline"
+          message={t('library.refreshFailed')}
+          action={
+            <Button
+              variant="link"
+              trackId="library.load_error.retry"
+              accessibilityLabel={t('a11y.retryLoadingRecipes')}
+              onPress={() => refresh()}
+            >
+              {t('common.retry')}
+            </Button>
+          }
+        />
+      ) : null}
+
+      {/* The tiles step aside while searching, so what was typed and what it found sit together. */}
+      {searching || error ? null : <KitchenTiles pick={pick} onAnother={another} cooked={cooked} />}
+
+      <View style={{ gap: 14, marginTop: 4 }}>
+        <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 12 }}>
+          <View style={{ flexDirection: 'row', alignItems: 'baseline', gap: 10, flexShrink: 1 }}>
+            <Text variant="h2" numberOfLines={1} style={{ fontSize: 24, flexShrink: 1 }}>
+              {t('library.title')}
+            </Text>
+            <Text
+              accessibilityLabel={countWords}
+              accessibilityLiveRegion="polite"
+              tone="muted"
+              style={[
+                type.variant('h2'),
+                { fontSize: 24, fontVariant: ['tabular-nums'] },
+                isSearchPending ? { opacity: 0.6 } : null,
+              ]}
+            >
+              {resultCount}
+            </Text>
           </View>
-          <Pressable
-            trackId="library.cookbook.open"
-            onPress={() => router.push('/cookbook')}
-            accessibilityRole="button"
-            accessibilityLabel={t('library.makeCookbook')}
-            className="mt-1 h-11 w-11 items-center justify-center rounded-2xl active:opacity-70"
-            style={{ backgroundColor: colors.primarySoft }}
-          >
-            <Ionicons name="book-outline" size={20} color={colors.primary} />
-          </Pressable>
+          <LibraryLayoutToggle layout={layout} onChange={handleToggleLayout} />
         </View>
 
         <RecipeLibraryToolbar
-          search={search}
-          onSearchChange={setSearch}
           sort={sort}
           onSortChange={setSort}
-          resultCount={hasActiveFilters ? displayedRecipes.length : total || displayedRecipes.length}
-          isSearchPending={isSearchPending}
+          quick={quick}
+          onToggleQuick={handleToggleQuick}
+          onShowAll={handleShowAll}
           favoritesOnly={favoritesOnly}
           onToggleFavorites={() => setFavoritesOnly((v) => !v)}
           cookTonight={cookTonight}
@@ -534,45 +590,11 @@ export default function HomeScreen() {
           collections={collections.map((c) => ({ id: c.id, name: c.name }))}
           selectedCollectionId={selectedCollectionId}
           onSelectCollection={setSelectedCollectionId}
-          onLongPressCollection={handleManageCollection}
           onManageCollection={handleManageCollection}
           onCreateCollection={openCreateCollection}
-          layout={layout}
-          onToggleLayout={handleToggleLayout}
         />
       </View>
-    ),
-    [
-      availableTags,
-      collections,
-      colors.primary,
-      colors.primarySoft,
-      colors.success,
-      colors.successSoft,
-      colors.warning,
-      colors.warningSoft,
-      displayedRecipes.length,
-      ensureAllLoaded,
-      favoritesOnly,
-      hasActiveFilters,
-      handleManageCollection,
-      handleToggleLayout,
-      handleToggleTag,
-      isSearchPending,
-      layout,
-      openCreateCollection,
-      refresh,
-      savedBanner,
-      cookFirst,
-      showRefreshFailed,
-      search,
-      selectedCollectionId,
-      selectedTags,
-      sort,
-      t,
-      cookTonight,
-      total,
-    ],
+    </View>
   );
 
   const collectionPendingDelete = deleteCollectionId
@@ -581,48 +603,61 @@ export default function HomeScreen() {
 
   if (loading) {
     return (
-      <Screen tabScreen className="items-center justify-center">
-        <ActivityIndicator
-          color={colors.primary}
-          size="large"
+      <Screen tabScreen>
+        <View
+          accessible
+          accessibilityRole="progressbar"
           accessibilityLabel={t('a11y.loadingRecipes')}
-        />
+          style={{ flex: 1, paddingHorizontal: GUTTER, gap: 16, overflow: 'hidden' }}
+        >
+          <TopBar />
+          <View
+            style={{ height: 52, borderRadius: Radii.inner, backgroundColor: colors.backgroundElement }}
+          />
+          <KitchenTilesSkeleton />
+          <View style={{ width: 180, height: 28, marginTop: 4, borderRadius: 8, backgroundColor: colors.backgroundElement }} />
+          <View style={{ flexDirection: 'row', gap: 12 }}>
+            <View style={{ flex: 1, aspectRatio: 1, borderRadius: 18, backgroundColor: colors.backgroundElement }} />
+            <View style={{ flex: 1, aspectRatio: 1, borderRadius: 18, backgroundColor: colors.backgroundElement }} />
+          </View>
+        </View>
       </Screen>
     );
   }
 
   if (error && recipes.length === 0) {
     return (
-      <Screen tabScreen className="items-center justify-center px-8">
-        <View
-          className="mb-5 h-16 w-16 items-center justify-center rounded-[22px]"
-          style={{ backgroundColor: colors.dangerSoft }}
-          accessible={false}
-          importantForAccessibility="no-hide-descendants"
-        >
-          <Ionicons name="cloud-offline-outline" size={32} color={colors.danger} />
+      <Screen tabScreen>
+        <View style={{ paddingHorizontal: GUTTER }}>
+          <TopBar />
         </View>
-        <Text
-          accessibilityRole="header"
-          className="mb-2 text-center text-xl font-bold"
-          style={{ color: colors.text }}
-        >
-          {t('library.loadFailedTitle')}
-        </Text>
-        <Text className="mb-6 text-center text-sm leading-5" style={{ color: colors.textSecondary }}>
-          {error}
-        </Text>
-        <Pressable
-          trackId="library.error.try_again"
-          onPress={() => refresh()}
-          accessibilityRole="button"
-          className="rounded-3xl px-6 py-3.5 active:opacity-80"
-          style={{ backgroundColor: colors.primary }}
-        >
-          <Text className="text-base font-bold" style={{ color: colors.onPrimary }}>
-            {t('common.tryAgainAction')}
-          </Text>
-        </Pressable>
+        <View style={{ flex: 1, justifyContent: 'center', paddingHorizontal: GUTTER, paddingBottom: 40 }}>
+          <Tile padding={24} style={{ alignItems: 'center', gap: 12 }}>
+            <View
+              accessible={false}
+              importantForAccessibility="no-hide-descendants"
+              style={{
+                width: 64,
+                height: 64,
+                borderRadius: 32,
+                alignItems: 'center',
+                justifyContent: 'center',
+                backgroundColor: colors.dangerSoft,
+              }}
+            >
+              <KitIcon icon="cloud-offline-outline" color={colors.danger} size={30} />
+            </View>
+            <Text variant="h2" align="center">
+              {t('library.loadFailedTitle')}
+            </Text>
+            <Text variant="bodySmall" tone="muted" align="center">
+              {error}
+            </Text>
+            <Button trackId="library.error.try_again" onPress={() => refresh()} style={{ alignSelf: 'center', marginTop: 4 }}>
+              {t('common.tryAgainAction')}
+            </Button>
+          </Tile>
+        </View>
       </Screen>
     );
   }
@@ -630,123 +665,131 @@ export default function HomeScreen() {
   if (recipes.length === 0) {
     return (
       <Screen tabScreen>
-        <View className="flex-1 items-center justify-center px-8 pb-10">
-          <BrandHeader
-            size="hero"
-            align="center"
-            title={t('library.emptyTitle')}
-            subtitle={t('library.emptyBody')}
-          />
-
-          <Pressable
-            trackId="library.empty.add_recipe"
-            className="mt-8 w-full items-center rounded-3xl py-4 active:opacity-80"
-            style={{ backgroundColor: colors.primary }}
-            onPress={() => router.push('/add')}
-            accessibilityRole="button"
-          >
-            <Text className="text-base font-bold" style={{ color: colors.onPrimary }}>
+        <View style={{ paddingHorizontal: GUTTER }}>
+          <TopBar />
+        </View>
+        <View style={{ flex: 1, justifyContent: 'center', paddingHorizontal: GUTTER, paddingBottom: 40 }}>
+          <Tile padding={24} style={{ gap: 14 }}>
+            <View
+              accessible={false}
+              importantForAccessibility="no-hide-descendants"
+              style={{
+                width: 64,
+                height: 64,
+                borderRadius: 20,
+                alignItems: 'center',
+                justifyContent: 'center',
+                backgroundColor: colors.primarySoft,
+              }}
+            >
+              <CookieMark size={36} color={colors.primaryText} />
+            </View>
+            <Text variant="h1">{t('library.emptyTitle')}</Text>
+            <Text variant="body" tone="muted">
+              {t('library.emptyBody')}
+            </Text>
+            <Button
+              trackId="library.empty.add_recipe"
+              size="lg"
+              fullWidth
+              icon="add"
+              onPress={() => router.push('/add')}
+              style={{ marginTop: 6 }}
+            >
               {t('library.snapFirst')}
-            </Text>
-          </Pressable>
-          <Pressable
-            trackId="library.empty.write_recipe"
-            className="mt-3 min-h-[44px] items-center justify-center px-4 active:opacity-70"
-            onPress={() => openRecipeEditor({ signedIn: Boolean(user) })}
-            accessibilityRole="button"
-          >
-            <Text className="text-center text-sm font-semibold" style={{ color: colors.primary }}>
+            </Button>
+            <Button
+              variant="link"
+              trackId="library.empty.write_recipe"
+              onPress={() => openRecipeEditor({ signedIn: Boolean(user) })}
+              style={{ alignSelf: 'center' }}
+            >
               {t('recipeEditor.entry.libraryEmptyLink')}
-            </Text>
-          </Pressable>
+            </Button>
+          </Tile>
         </View>
       </Screen>
     );
   }
 
+  const noResults: { icon: IconName; title: string; body: string } = cookTonight
+    ? { icon: 'flame-outline', title: t('library.noCookTonight'), body: t('library.noCookTonightHint') }
+    : favoritesOnly &&
+        !deferredSearch &&
+        selectedTags.length === 0 &&
+        selectedCollectionId == null &&
+        quick.length === 0
+      ? { icon: 'heart-outline', title: t('library.noFavorites'), body: t('library.noFavoritesHint') }
+      : { icon: 'search-outline', title: t('library.noMatches'), body: t('library.noMatchesHint') };
+
   return (
     <Screen tabScreen>
-      <View className="px-5">{listHeader}</View>
-      <View style={{ flex: 1, minHeight: 0, overflow: 'hidden' }}>
-        <Animated.View collapsable={false} style={[{ flex: 1 }, flipStyle]}>
-          <FlatList
-            key={`library-${numColumns}`}
-            data={displayedRecipes}
-            extraData={recipes}
-            keyExtractor={(item) => item.id}
-            numColumns={numColumns}
-            columnWrapperStyle={numColumns > 1 ? { gap: 0, marginBottom: 12 } : undefined}
-            renderItem={renderItem}
-            style={{ flex: 1 }}
-            onScroll={handleListScroll}
-            scrollEventThrottle={160}
-            onEndReached={loadMore}
-            onEndReachedThreshold={0.5}
-            ListFooterComponent={
-              loadingMore ? (
-                <ActivityIndicator
-                  className="py-4"
-                  color={colors.primary}
-                  accessibilityLabel={t('a11y.loadingMoreRecipes')}
-                />
-              ) : null
-            }
-            ListEmptyComponent={
-              hasActiveFilters ? (
-                <View className="items-center px-4 py-10" accessibilityLiveRegion="polite">
-                  <Text
-                    accessibilityRole="header"
-                    className="mb-1 text-center text-base font-semibold"
-                    style={{ color: colors.text }}
-                  >
-                    {cookTonight
-                      ? t('library.noCookTonight')
-                      : favoritesOnly &&
-                          !deferredSearch &&
-                          selectedTags.length === 0 &&
-                          selectedCollectionId == null
-                        ? t('library.noFavorites')
-                        : t('library.noMatches')}
-                  </Text>
-                  <Text className="mb-5 text-center text-sm" style={{ color: colors.textSecondary }}>
-                    {cookTonight
-                      ? t('library.noCookTonightHint')
-                      : favoritesOnly &&
-                          !deferredSearch &&
-                          selectedTags.length === 0 &&
-                          selectedCollectionId == null
-                        ? t('library.noFavoritesHint')
-                        : t('library.noMatchesHint')}
-                  </Text>
-                  <Pressable
-                    trackId="library.filters.clear"
-                    onPress={clearFilters}
-                    accessibilityRole="button"
-                    className="min-h-[44px] items-center justify-center rounded-3xl px-5 active:opacity-80"
-                    style={{ backgroundColor: colors.primary }}
-                  >
-                    <Text className="text-sm font-semibold" style={{ color: colors.onPrimary }}>
-                      {t('library.clearFilters')}
-                    </Text>
-                  </Pressable>
-                </View>
-              ) : null
-            }
-            contentContainerStyle={{
-              paddingHorizontal: 20,
-              paddingTop: 4,
-              paddingBottom: 28,
-              gap: numColumns > 1 ? 0 : 12,
-            }}
-            showsVerticalScrollIndicator={false}
-            keyboardShouldPersistTaps="handled"
-            keyboardDismissMode="on-drag"
-            initialNumToRender={8}
-            maxToRenderPerBatch={10}
-            windowSize={7}
-          />
-        </Animated.View>
-      </View>
+      <FlatList
+        data={lines}
+        extraData={recipes}
+        keyExtractor={(item) => item.key}
+        renderItem={renderItem}
+        ListHeaderComponent={listHeader}
+        ItemSeparatorComponent={numColumns > 1 ? GridGap : RowGap}
+        style={{ flex: 1 }}
+        onScroll={handleListScroll}
+        scrollEventThrottle={160}
+        onEndReached={loadMore}
+        onEndReachedThreshold={0.5}
+        ListFooterComponent={
+          loadingMore ? (
+            <ActivityIndicator
+              style={{ paddingVertical: 16 }}
+              color={colors.primaryText}
+              accessibilityLabel={t('a11y.loadingMoreRecipes')}
+            />
+          ) : null
+        }
+        ListEmptyComponent={
+          hasActiveFilters ? (
+            <Tile padding={24} style={{ alignItems: 'center', gap: 10 }} accessibilityLiveRegion="polite">
+              <View
+                accessible={false}
+                importantForAccessibility="no-hide-descendants"
+                style={{
+                  width: 56,
+                  height: 56,
+                  borderRadius: 28,
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  backgroundColor: colors.backgroundElement,
+                }}
+              >
+                <KitIcon icon={noResults.icon} color={colors.textSecondary} size={26} />
+              </View>
+              <Text variant="h3" align="center">
+                {noResults.title}
+              </Text>
+              <Text variant="bodySmall" tone="muted" align="center">
+                {noResults.body}
+              </Text>
+              <Button
+                variant="secondary"
+                trackId="library.filters.clear"
+                onPress={clearFilters}
+                style={{ alignSelf: 'center', marginTop: 6 }}
+              >
+                {t('library.clearFilters')}
+              </Button>
+            </Tile>
+          ) : null
+        }
+        contentContainerStyle={{
+          paddingHorizontal: GUTTER,
+          paddingBottom: 28,
+        }}
+        showsVerticalScrollIndicator={false}
+        keyboardShouldPersistTaps="handled"
+        keyboardDismissMode="on-drag"
+        initialNumToRender={8}
+        maxToRenderPerBatch={10}
+        windowSize={7}
+      />
 
       <RecipeActionsMenu
         visible={menuRecipe != null}
@@ -867,20 +910,19 @@ export default function HomeScreen() {
         }}
         footer={
           nameModal?.mode === 'rename' ? (
-            <Pressable
+            <Button
+              variant="danger"
+              fullWidth
+              icon="trash-outline"
               trackId="library.collection.delete"
-              className="mt-6 items-center rounded-2xl py-3.5 active:opacity-80"
-              style={{ backgroundColor: colors.dangerSoft }}
-              accessibilityRole="button"
               onPress={() => {
                 setDeleteCollectionId(nameModal.id);
                 setNameModal(null);
               }}
+              style={{ marginTop: 24 }}
             >
-              <Text className="text-sm font-bold" style={{ color: colors.danger }}>
-                {t('library.deleteCollection')}
-              </Text>
-            </Pressable>
+              {t('library.deleteCollection')}
+            </Button>
           ) : null
         }
       />
@@ -890,5 +932,51 @@ export default function HomeScreen() {
         onClose={() => setFridgeOpen(false)}
       />
     </Screen>
+  );
+}
+
+function GridGap() {
+  return <View style={{ height: 20 }} />;
+}
+
+function RowGap() {
+  return <View style={{ height: 12 }} />;
+}
+
+/** A one-line message above the tiles: saved, or couldn't refresh. */
+function Notice({
+  tone,
+  icon,
+  message,
+  action,
+}: {
+  tone: 'success' | 'warning';
+  icon: IconName;
+  message: string;
+  action: ReactNode;
+}) {
+  const { colors } = useThemePreference();
+  const fg = tone === 'success' ? colors.success : colors.warning;
+  const bg = tone === 'success' ? colors.successSoft : colors.warningSoft;
+  return (
+    <View
+      accessibilityLiveRegion="polite"
+      style={{
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: 10,
+        minHeight: 52,
+        borderRadius: Radii.inner,
+        paddingStart: 14,
+        paddingEnd: 4,
+        backgroundColor: bg,
+      }}
+    >
+      <KitIcon icon={icon} color={fg} size={18} />
+      <Text variant="bodySmall" weight="semibold" color={fg} style={{ flex: 1 }}>
+        {message}
+      </Text>
+      {action}
+    </View>
   );
 }

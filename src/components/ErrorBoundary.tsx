@@ -1,9 +1,11 @@
 import Ionicons from '@expo/vector-icons/Ionicons';
 import { Component, useEffect, type ErrorInfo, type ReactNode } from 'react';
-import { Text, View } from 'react-native';
-import { Pressable } from '@/components/ui/Pressable';
+import { View } from 'react-native';
 import { useTranslation } from 'react-i18next';
 
+import { Button } from '@/components/ui/Button';
+import { Text } from '@/components/ui/Text';
+import { Tile } from '@/components/ui/Tile';
 import { useThemePreference } from '@/hooks/useThemePreference';
 import { announce } from '@/lib/a11y';
 
@@ -24,39 +26,33 @@ function ErrorFallback({ onRetry }: { onRetry: () => void }) {
   }, [t]);
 
   return (
-    <View
-      className="flex-1 items-center justify-center px-8"
-      style={{ backgroundColor: colors.background }}
-    >
-      <View
-        className="mb-5 h-16 w-16 items-center justify-center rounded-full"
-        style={{ backgroundColor: colors.primarySoft }}
-        accessible={false}
-        importantForAccessibility="no-hide-descendants"
-      >
-        <Ionicons name="alert-circle-outline" size={32} color={colors.danger} />
-      </View>
-      <Text
-        className="mb-2 text-center text-xl font-bold"
-        style={{ color: colors.text }}
-        accessibilityRole="header"
-      >
-        {t('errorBoundary.title')}
-      </Text>
-      <Text className="mb-6 text-center text-sm leading-5" style={{ color: colors.textSecondary }}>
-        {t('errorBoundary.body')}
-      </Text>
-      <Pressable
-        trackId="error_boundary.retry"
-        onPress={onRetry}
-        accessibilityRole="button"
-        className="rounded-full px-6 py-3 active:opacity-80"
-        style={{ backgroundColor: colors.primary }}
-      >
-        <Text className="text-base font-bold" style={{ color: colors.onPrimary }}>
-          {t('common.tryAgainAction')}
+    <View style={{ flex: 1, justifyContent: 'center', paddingHorizontal: 20, backgroundColor: colors.background }}>
+      <Tile padding={28} style={{ alignItems: 'center', gap: 12, width: '100%', maxWidth: 420, alignSelf: 'center' }}>
+        <View
+          style={{
+            width: 64,
+            height: 64,
+            borderRadius: 20,
+            alignItems: 'center',
+            justifyContent: 'center',
+            backgroundColor: colors.dangerSoft,
+            marginBottom: 4,
+          }}
+          accessible={false}
+          importantForAccessibility="no-hide-descendants"
+        >
+          <Ionicons name="alert-circle-outline" size={32} color={colors.danger} />
+        </View>
+        <Text variant="h2" align="center">
+          {t('errorBoundary.title')}
         </Text>
-      </Pressable>
+        <Text variant="bodySmall" tone="muted" align="center">
+          {t('errorBoundary.body')}
+        </Text>
+        <Button trackId="error_boundary.retry" size="lg" fullWidth onPress={onRetry} style={{ marginTop: 8 }}>
+          {t('common.tryAgainAction')}
+        </Button>
+      </Tile>
     </View>
   );
 }

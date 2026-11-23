@@ -2,6 +2,7 @@ import { Modal, ScrollView, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { Pressable } from '@/components/ui/Pressable';
+import { fontFor } from '@/constants/typography';
 import { useThemePreference } from '@/hooks/useThemePreference';
 
 import { CloseButton } from './CloseButton';
@@ -65,9 +66,9 @@ export function FullscreenPresenter({
               accessibilityRole="button"
               accessibilityLabel="Admin only: hide this message until the app restarts"
               style={({ pressed }) => ({
-                minHeight: 40,
+                minHeight: 44,
                 justifyContent: 'center',
-                borderRadius: 20,
+                borderRadius: 12,
                 paddingHorizontal: 14,
                 borderWidth: 1,
                 borderColor: colors.border,
@@ -75,7 +76,7 @@ export function FullscreenPresenter({
                 opacity: pressed ? 0.7 : 1,
               })}
             >
-              <Text style={{ fontSize: 13, fontWeight: '600', color: colors.textSecondary }}>
+              <Text style={{ ...fontFor('body', 'semibold', 'en'), fontSize: 13, color: colors.textSecondary }}>
                 Admin only: hide until the app restarts
               </Text>
             </Pressable>

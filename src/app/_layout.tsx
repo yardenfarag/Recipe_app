@@ -76,23 +76,11 @@ function RootNavigator() {
             name="first-recipes"
             options={{ headerShown: false, animation: 'fade', gestureEnabled: false }}
           />
-          <Stack.Screen
-            name="recipe/[id]"
-            options={{
-              title: t('nav.recipe'),
-              headerLeft: (props) => <StackHeaderBackButton tintColor={props.tintColor} />,
-            }}
-          />
+          {/* The photo runs to the top of the screen with back on it (PIN-177): no header. */}
+          <Stack.Screen name="recipe/[id]" options={{ title: t('nav.recipe'), headerShown: false }} />
           {/* Edit recipe / Write a recipe (PIN-79). The screen sets its own Cancel and Save. */}
           <Stack.Screen name="recipe/edit" options={{ headerBackVisible: false }} />
-          <Stack.Screen
-            name="recipe/preview"
-            options={{
-              title: t('nav.preview'),
-              headerShown: Platform.OS !== 'web',
-              headerLeft: (props) => <StackHeaderBackButton tintColor={props.tintColor} />,
-            }}
-          />
+          <Stack.Screen name="recipe/preview" options={{ title: t('nav.preview'), headerShown: false }} />
           <Stack.Screen
             name="s/[token]"
             options={{

@@ -1,12 +1,14 @@
-import Ionicons from '@expo/vector-icons/Ionicons';
-import { ActivityIndicator, Platform, ScrollView, Text, View } from 'react-native';
+import { ActivityIndicator, Platform, ScrollView, View } from 'react-native';
 import { useTranslation } from 'react-i18next';
 
 import { FOOD_AVATAR_IDS, foodAvatarIdFrom, type FoodAvatarId } from '@shared/lib/foodAvatars';
 
 import { FoodAvatarArt } from '@/components/ProfileAvatar';
 import { SheetModal } from '@/components/SheetModal';
+import { Button } from '@/components/ui/Button';
 import { Pressable } from '@/components/ui/Pressable';
+import { Text } from '@/components/ui/Text';
+import { usePhotoColors, withAlpha, type IconName } from '@/components/ui/tokens';
 import { useThemePreference } from '@/hooks/useThemePreference';
 
 const TILE = 68;
@@ -26,28 +28,22 @@ type Props = {
 export function AvatarPickerModal({ visible, onClose, current, busy, onPick, onPhoto }: Props) {
   const { t } = useTranslation();
   const { colors } = useThemePreference();
+  const photo = usePhotoColors();
   const selected = foodAvatarIdFrom(current);
   const isWeb = Platform.OS === 'web';
 
-  const photoButton = (source: 'camera' | 'library', icon: keyof typeof Ionicons.glyphMap, label: string) => (
-    <Pressable
+  const photoButton = (source: 'camera' | 'library', icon: IconName, label: string) => (
+    <Button
       trackId={`settings.avatar.${source}`}
+      variant="secondary"
+      icon={icon}
+      busy={busy === source}
+      disabled={busy != null && busy !== source}
       onPress={() => onPhoto(source)}
-      disabled={busy != null}
-      accessibilityRole="button"
-      accessibilityState={{ disabled: busy != null, busy: busy === source }}
-      className="min-h-11 flex-1 flex-row items-center justify-center gap-2 rounded-[18px] px-4 active:opacity-70"
-      style={{ backgroundColor: colors.primarySoft, opacity: busy != null && busy !== source ? 0.5 : 1 }}
+      style={{ flex: 1 }}
     >
-      {busy === source ? (
-        <ActivityIndicator size="small" color={colors.primary} />
-      ) : (
-        <Ionicons name={icon} size={18} color={colors.primary} />
-      )}
-      <Text className="text-sm font-semibold" style={{ color: colors.text }}>
-        {label}
-      </Text>
-    </Pressable>
+      {label}
+    </Button>
   );
 
   return (
@@ -58,13 +54,12 @@ export function AvatarPickerModal({ visible, onClose, current, busy, onPick, onP
       trackId="settings.avatar_picker"
       maxWidth={440}
     >
-      <ScrollView contentContainerStyle={{ paddingHorizontal: 20, paddingBottom: 24 }}>
-        <Text className="mb-4 text-center text-sm leading-5" style={{ color: colors.textSecondary }}>
+      <ScrollView contentContainerStyle={{ paddingHorizontal: 20, paddingBottom: 24, gap: 20 }}>
+        <Text variant="bodySmall" tone="muted" align="center">
           {t('settings.foodAvatarsHint')}
         </Text>
         <View
-          className="flex-row flex-wrap justify-center"
-          style={{ gap: 14 }}
+          style={{ flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'center', gap: 12 }}
           accessibilityLabel={t('settings.foodAvatarPick')}
         >
           {FOOD_AVATAR_IDS.map((id) => {
@@ -79,24 +74,34 @@ export function AvatarPickerModal({ visible, onClose, current, busy, onPick, onP
                 accessibilityRole="button"
                 accessibilityLabel={t(`settings.foodAvatarNames.${id}`)}
                 accessibilityState={{ selected: isSelected, disabled: busy != null, busy: isSaving }}
-                className="items-center justify-center rounded-full active:opacity-70"
-                style={{
-                  width: TILE + 8,
-                  height: TILE + 8,
+                style={({ pressed }) => ({
+                  width: TILE + 10,
+                  height: TILE + 10,
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  borderRadius: (TILE + 10) / 2,
                   borderWidth: 3,
                   borderColor: isSelected ? colors.primary : 'transparent',
-                  opacity: busy != null && !isSaving ? 0.5 : 1,
-                }}
+                  opacity: busy != null && !isSaving ? 0.5 : pressed ? 0.8 : 1,
+                })}
               >
-                <View className="overflow-hidden rounded-full" style={{ width: TILE, height: TILE }}>
+                <View style={{ width: TILE, height: TILE, borderRadius: TILE / 2, overflow: 'hidden' }}>
                   <FoodAvatarArt id={id} size={TILE} />
-                  {/* Over the drawing's own colours, so the same dim and white spinner in every theme. */}
+                  {/* Over the drawing's own colours, so the same dim and spinner in every theme. */}
                   {isSaving ? (
                     <View
-                      className="absolute inset-0 items-center justify-center"
-                      style={{ backgroundColor: 'rgba(0, 0, 0, 0.35)' }}
+                      style={{
+                        position: 'absolute',
+                        top: 0,
+                        bottom: 0,
+                        start: 0,
+                        end: 0,
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        backgroundColor: withAlpha(photo.scrim, 0.45),
+                      }}
                     >
-                      <ActivityIndicator size="small" color="#FFFFFF" />
+                      <ActivityIndicator size="small" color={photo.onScrim} />
                     </View>
                   ) : null}
                 </View>
@@ -104,7 +109,7 @@ export function AvatarPickerModal({ visible, onClose, current, busy, onPick, onP
             );
           })}
         </View>
-        <View className="mt-6 flex-row gap-3">
+        <View style={{ flexDirection: 'row', gap: 12 }}>
           {isWeb ? null : photoButton('camera', 'camera-outline', t('settings.takePhoto'))}
           {photoButton('library', 'image-outline', isWeb ? t('settings.uploadPhoto') : t('settings.chooseLibrary'))}
         </View>

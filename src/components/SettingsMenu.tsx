@@ -1,119 +1,168 @@
-import Ionicons from '@expo/vector-icons/Ionicons';
-import { type ReactNode } from 'react';
-import { Text, View } from 'react-native';
-import { Pressable } from '@/components/ui/Pressable';
+import { Children, Fragment, isValidElement, type ReactNode } from 'react';
+import { ActivityIndicator, View, type StyleProp, type ViewStyle } from 'react-native';
 
-import { useRtl } from '@/hooks/useRtl';
+import { Pressable } from '@/components/ui/Pressable';
+import { Text } from '@/components/ui/Text';
+import { Tile, TileLabel } from '@/components/ui/Tile';
+import { HAIRLINE, KitIcon, type IconSource } from '@/components/ui/tokens';
 import { useThemePreference } from '@/hooks/useThemePreference';
 
 type SettingsGroupProps = {
+  /** The small caps above the tile: "PREFERENCES". */
   title?: string;
+  /** A muted line under the title. */
+  description?: string;
+  /** Rows (SettingsRow or anything else). Hairlines are drawn between them; `null` children are skipped. */
   children: ReactNode;
+  /** The title in the danger colour (account deletion). */
   danger?: boolean;
+  style?: StyleProp<ViewStyle>;
 };
 
-/** Frosted grouped list — iOS Settings-style section. */
-export function SettingsGroup({ title, children, danger = false }: SettingsGroupProps) {
+/**
+ * A group of settings rows on one tile (Night Market, PIN-177), with its small-caps title above and hairlines
+ * between the rows.
+ *
+ *   <SettingsGroup title={t('settings.yourSettings')}>
+ *     <SettingsRow icon="color-palette-outline" label={t('settings.appearance')} value="Auto" onPress={…} trackId="settings.appearance" />
+ *   </SettingsGroup>
+ */
+export function SettingsGroup({ title, description, children, danger = false, style }: SettingsGroupProps) {
   const { colors } = useThemePreference();
+  const rows = Children.toArray(children).filter((child) => isValidElement(child));
 
   return (
-    <View className="mb-5">
+    <View style={[{ gap: 10 }, style]}>
       {title ? (
-        <Text
-          className="mb-2 px-1 text-xs font-bold uppercase tracking-wide"
-          style={{ color: danger ? colors.warning : colors.textSecondary }}
-          accessibilityRole="header"
-        >
-          {title}
-        </Text>
+        <View style={{ gap: 4, paddingHorizontal: 4 }}>
+          <TileLabel accessibilityRole="header" tone={danger ? 'danger' : undefined}>
+            {title}
+          </TileLabel>
+          {description ? (
+            <Text variant="caption" tone="muted">
+              {description}
+            </Text>
+          ) : null}
+        </View>
       ) : null}
-      <View
-        className="overflow-hidden rounded-[22px] border px-4"
-        style={{
-          backgroundColor: colors.frosted,
-          borderColor: danger ? colors.warning : colors.frostedBorder,
-        }}
-      >
-        {children}
-      </View>
+      <Tile style={{ paddingHorizontal: 8, paddingVertical: 4, overflow: 'hidden' }}>
+        {rows.map((row, index) => (
+          <Fragment key={(isValidElement(row) && row.key) || index}>
+            {index > 0 ? (
+              <View
+                style={{ height: HAIRLINE, backgroundColor: colors.border, marginStart: 56, marginEnd: 8 }}
+                accessible={false}
+                importantForAccessibility="no"
+              />
+            ) : null}
+            {row}
+          </Fragment>
+        ))}
+      </Tile>
+    </View>
+  );
+}
+
+/** The 36 × 36 rounded square an icon sits in at the start of a row. */
+export function RowIcon({ icon, danger = false }: { icon: IconSource; danger?: boolean }) {
+  const { colors } = useThemePreference();
+  return (
+    <View
+      style={{
+        width: 36,
+        height: 36,
+        borderRadius: 10,
+        alignItems: 'center',
+        justifyContent: 'center',
+        backgroundColor: danger ? colors.dangerSoft : colors.backgroundElement,
+      }}
+      accessible={false}
+      importantForAccessibility="no-hide-descendants"
+    >
+      <KitIcon icon={icon} size={18} color={danger ? colors.danger : colors.text} />
     </View>
   );
 }
 
 type SettingsRowProps = {
   label: string;
-  icon: keyof typeof Ionicons.glyphMap;
+  icon: IconSource;
   onPress: () => void;
+  /** The current choice, muted at the end of the row ("Auto · Mist"). */
   value?: string;
+  /** A muted line under the label, for rows with no current value. */
+  description?: string;
+  /** Deleting things: label and icon in the danger colour. */
   destructive?: boolean;
-  last?: boolean;
   disabled?: boolean;
+  /** Shows a spinner in place of the chevron. */
+  busy?: boolean;
+  /** The chevron at the end (mirrored in Hebrew and Arabic). Default true. */
   chevron?: boolean;
-  /** Fixed tap-log id, like 'settings.theme'. */
-  trackId?: string;
+  /** "link" for rows that leave the app (mailto, a website). */
+  role?: 'button' | 'link';
+  /** Fixed tap-log id, like 'settings.appearance'. */
+  trackId: string;
 };
 
-/** One tappable settings choice: icon, label, current value, chevron. */
+/** One tappable settings choice: icon, label (with a hint under it), current value and chevron at the end. */
 export function SettingsRow({
   label,
   icon,
   onPress,
   value,
+  description,
   destructive = false,
-  last = false,
   disabled = false,
+  busy = false,
   chevron = true,
-  trackId = 'settings.row',
+  role = 'button',
+  trackId,
 }: SettingsRowProps) {
   const { colors } = useThemePreference();
-  const { chevronForward } = useRtl();
-  const color = destructive ? colors.warning : colors.text;
+  const spoken = [label, value, description].filter(Boolean).join(', ');
 
   return (
     <Pressable
       trackId={trackId}
       onPress={onPress}
       disabled={disabled}
-      accessibilityRole="button"
-      accessibilityState={{ disabled }}
-      accessibilityLabel={value ? `${label}, ${value}` : label}
-      className="min-h-[52px] flex-row items-center gap-3 py-3 active:opacity-65 disabled:opacity-50"
-      style={{
-        borderColor: colors.frostedBorder,
-        borderBottomWidth: last ? 0 : 1,
-      }}
+      accessibilityRole={role}
+      accessibilityState={{ disabled, busy }}
+      accessibilityLabel={spoken}
+      style={({ pressed }) => ({
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: 12,
+        minHeight: 56,
+        paddingVertical: 10,
+        paddingHorizontal: 8,
+        borderRadius: 18,
+        backgroundColor: pressed ? colors.backgroundElement : 'transparent',
+        opacity: disabled && !busy ? 0.5 : 1,
+      })}
     >
-      <View
-        className="h-9 w-9 items-center justify-center rounded-[14px]"
-        style={{ backgroundColor: destructive ? colors.warningSoft : colors.primarySoft }}
-        accessible={false}
-        importantForAccessibility="no-hide-descendants"
-      >
-        <Ionicons name={icon} size={18} color={destructive ? colors.warning : colors.primary} />
-      </View>
-      <Text className="min-w-0 shrink text-sm font-semibold" style={{ color }}>
-        {label}
-      </Text>
-      <View className="min-w-0 flex-1 flex-row items-center justify-end gap-1.5">
-        {value ? (
-          <Text
-            className="min-w-0 text-sm"
-            style={{ color: destructive ? colors.warning : colors.textSecondary }}
-            numberOfLines={1}
-          >
-            {value}
+      <RowIcon icon={icon} danger={destructive} />
+      <View style={{ flex: 1, minWidth: 0, gap: 2 }}>
+        <Text variant="bodySmall" weight="semibold" tone={destructive ? 'danger' : 'default'}>
+          {label}
+        </Text>
+        {description ? (
+          <Text variant="caption" tone="muted" numberOfLines={2}>
+            {description}
           </Text>
         ) : null}
-        {chevron ? (
-          <Ionicons
-            name={chevronForward}
-            size={17}
-            color={destructive ? colors.warning : colors.textSecondary}
-            accessible={false}
-            importantForAccessibility="no"
-          />
-        ) : null}
       </View>
+      {value ? (
+        <Text variant="bodySmall" tone="muted" numberOfLines={1} style={{ flexShrink: 1, maxWidth: '45%' }}>
+          {value}
+        </Text>
+      ) : null}
+      {busy ? (
+        <ActivityIndicator size="small" color={colors.textSecondary} />
+      ) : chevron ? (
+        <KitIcon icon="chevron-forward" size={18} color={destructive ? colors.danger : colors.textSecondary} />
+      ) : null}
     </Pressable>
   );
 }

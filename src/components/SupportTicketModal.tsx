@@ -1,22 +1,22 @@
 import { useState } from 'react';
 import {
-  ActivityIndicator,
   Alert,
   KeyboardAvoidingView,
   Platform,
   ScrollView,
-  Text,
   View,
 } from 'react-native';
-import { Pressable } from '@/components/ui/Pressable';
 import { useTranslation } from 'react-i18next';
 
+import { FieldInput } from '@/components/text-input';
 import { SheetModal } from '@/components/SheetModal';
-import { TextInput } from '@/components/text-input';
+import { Button } from '@/components/ui/Button';
+import { Chip } from '@/components/ui/Chip';
+import { Text } from '@/components/ui/Text';
+import { TileLabel } from '@/components/ui/Tile';
 import { useAuth } from '@/hooks/useAuth';
 import { supportErrorKey } from '@shared/lib/serverErrors';
 import { useLanguagePreference } from '@/hooks/useLanguagePreference';
-import { useThemePreference } from '@/hooks/useThemePreference';
 import { getFeedbackContext } from '@/lib/supabase/feedback';
 import {
   submitSupportTicket,
@@ -33,7 +33,6 @@ interface SupportTicketModalProps {
 export function SupportTicketModal({ visible, onClose }: SupportTicketModalProps) {
   const { t } = useTranslation();
   const { user } = useAuth();
-  const { colors } = useThemePreference();
   const { language } = useLanguagePreference();
   const [category, setCategory] = useState<SupportTicketCategory>('bug');
   const [message, setMessage] = useState('');
@@ -74,116 +73,69 @@ export function SupportTicketModal({ visible, onClose }: SupportTicketModalProps
       showCloseButton
     >
       <KeyboardAvoidingView
-        className="flex-1"
+        style={{ flex: 1 }}
         behavior={Platform.OS === 'ios' ? 'padding' : undefined}
       >
       <ScrollView
-        className="flex-1 px-5"
-        contentContainerStyle={{ paddingBottom: 40 }}
+        style={{ flex: 1 }}
+        contentContainerStyle={{ paddingHorizontal: 20, paddingBottom: 40, gap: 12 }}
         keyboardShouldPersistTaps="handled"
         keyboardDismissMode={Platform.OS === 'ios' ? 'interactive' : 'on-drag'}
       >
-        <Text className="mb-5 text-sm leading-5" style={{ color: colors.textSecondary }}>
+        <Text variant="bodySmall" tone="muted" style={{ marginBottom: 8 }}>
           {t('support.hint')}
         </Text>
 
-        <Text
-          className="mb-2 text-sm font-semibold"
-          style={{ color: colors.text }}
-          accessibilityRole="header"
-        >
-          {t('support.category')}
-        </Text>
+        <TileLabel accessibilityRole="header">{t('support.category')}</TileLabel>
         <View
-          className="mb-4 flex-row flex-wrap gap-2"
+          style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginBottom: 8 }}
           accessibilityRole="radiogroup"
           accessibilityLabel={t('support.category')}
         >
-          {CATEGORIES.map((item) => {
-            const selected = category === item;
-            return (
-              <Pressable trackId={`support_ticket.category.${item}`}
-                key={item}
-                onPress={() => setCategory(item)}
-                accessibilityRole="radio"
-                accessibilityState={{ checked: selected }}
-                hitSlop={4}
-                className="rounded-full px-3 py-2"
-                style={{
-                  backgroundColor: selected ? colors.primarySoft : colors.frosted,
-                  borderWidth: 1,
-                  borderColor: selected ? colors.primary : colors.frostedBorder,
-                }}
-              >
-                <Text
-                  className="text-sm font-semibold"
-                  style={{ color: selected ? colors.primary : colors.text }}
-                >
-                  {t(`support.categories.${item}`)}
-                </Text>
-              </Pressable>
-            );
-          })}
+          {CATEGORIES.map((item) => (
+            <Chip
+              key={item}
+              trackId={`support_ticket.category.${item}`}
+              kind="radio"
+              selected={category === item}
+              onPress={() => setCategory(item)}
+            >
+              {t(`support.categories.${item}`)}
+            </Chip>
+          ))}
         </View>
 
-        <Text
-          className="mb-2 text-sm font-semibold"
-          style={{ color: colors.text }}
-          accessibilityRole="header"
-        >
-          {t('support.whatHappened')}
-        </Text>
-        <TextInput
-          className="mb-4 min-h-[140px] rounded-[18px] px-4 py-3 text-base"
-          style={{
-            color: colors.text,
-            backgroundColor: colors.frosted,
-            borderWidth: 1,
-            borderColor: colors.frostedBorder,
-            textAlignVertical: 'top',
-          }}
+        <TileLabel accessibilityRole="header">{t('support.whatHappened')}</TileLabel>
+        <FieldInput
           multiline
           value={message}
           onChangeText={setMessage}
           placeholder={t('support.placeholder')}
           accessibilityLabel={t('support.whatHappened')}
-          placeholderTextColor={colors.textSecondary}
           editable={!submitting}
+          containerStyle={{ minHeight: 140 }}
         />
 
         {user?.email ? (
-          <Text className="mb-4 text-xs leading-5" style={{ color: colors.textSecondary }}>
+          <Text variant="caption" tone="muted">
             {t('support.replyTo', { email: user.email })}
           </Text>
         ) : null}
 
-        <Pressable trackId="support_ticket.submit"
-          className="mb-3 items-center rounded-[22px] py-4"
-          style={{ backgroundColor: colors.primary, opacity: submitting ? 0.6 : 1 }}
-          onPress={() => void handleSubmit()}
-          disabled={submitting}
-          accessibilityRole="button"
+        <Button
+          trackId="support_ticket.submit"
+          size="lg"
+          fullWidth
+          busy={submitting}
           accessibilityLabel={t('support.submit')}
-          accessibilityState={{ disabled: submitting, busy: submitting }}
+          onPress={() => void handleSubmit()}
+          style={{ marginTop: 8 }}
         >
-          {submitting ? (
-            <ActivityIndicator color={colors.onPrimary} />
-          ) : (
-            <Text className="text-base font-bold" style={{ color: colors.onPrimary }}>
-              {t('support.submit')}
-            </Text>
-          )}
-        </Pressable>
-
-        <Pressable trackId="support_ticket.cancel"
-          onPress={onClose}
-          accessibilityRole="button"
-          className="items-center py-3 active:opacity-70"
-        >
-          <Text className="text-sm font-semibold" style={{ color: colors.textSecondary }}>
-            {t('common.cancel')}
-          </Text>
-        </Pressable>
+          {t('support.submit')}
+        </Button>
+        <Button trackId="support_ticket.cancel" variant="ghost" fullWidth onPress={onClose}>
+          {t('common.cancel')}
+        </Button>
       </ScrollView>
       </KeyboardAvoidingView>
     </SheetModal>

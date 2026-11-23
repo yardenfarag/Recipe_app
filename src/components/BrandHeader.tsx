@@ -1,10 +1,10 @@
-import { Text, View } from 'react-native';
+import { View } from 'react-native';
 import Animated, { FadeIn, FadeOut, LinearTransition, useReducedMotion } from 'react-native-reanimated';
 
 import { CookieMark } from '@/components/CookieMark';
-import { useLanguagePreference } from '@/hooks/useLanguagePreference';
+import { PinchLogo } from '@/components/ui/PinchLogo';
+import { Text } from '@/components/ui/Text';
 import { useThemePreference } from '@/hooks/useThemePreference';
-import { isRtlAppLanguage } from '@shared/lib/appLanguages';
 
 type BrandHeaderProps = {
   title: string;
@@ -16,7 +16,11 @@ type BrandHeaderProps = {
   copyKey?: string;
 };
 
-/** Cookie brand mark + Pinch wordmark + screen title. */
+/**
+ * The Pinch logo over a screen's title (Night Market, PIN-177). Default: the kit's PinchLogo, then the title (h1) and
+ * a muted line. Hero (empty states): the cookie mark on a big brand-coloured tile, then the title (h2) and the line,
+ * centred. `align="left"` means the reading start, which is the right in Hebrew and Arabic.
+ */
 export function BrandHeader({
   title,
   subtitle,
@@ -25,134 +29,57 @@ export function BrandHeader({
   copyKey,
 }: BrandHeaderProps) {
   const { colors } = useThemePreference();
-  const { language } = useLanguagePreference();
   const reduceMotion = useReducedMotion();
-  const rtl = isRtlAppLanguage(language);
   const fadeCopy = Boolean(copyKey) && !reduceMotion;
   const isHero = size === 'hero';
   const centered = align === 'center';
-  const textAlign = centered ? ('center' as const) : rtl ? ('right' as const) : ('left' as const);
-  const writingDirection = rtl ? ('rtl' as const) : ('ltr' as const);
-  const blockAlign = centered ? 'center' : 'flex-start';
+  const textAlign = centered ? 'center' : 'start';
 
-  return (
-    <View
-      className={`gap-3 ${centered ? 'items-center' : ''}`}
-      style={centered ? undefined : { alignItems: 'stretch' }}
-    >
-      <View
-        style={
-          centered
-            ? { alignItems: 'center' }
-            : { flexDirection: 'row', alignItems: 'center', gap: 12 }
-        }
+  const copy = (
+    <Animated.View layout={fadeCopy ? LinearTransition.duration(280) : undefined} style={{ alignSelf: 'stretch' }}>
+      <Animated.View
+        key={copyKey ?? 'copy'}
+        entering={fadeCopy ? FadeIn.duration(220) : undefined}
+        exiting={fadeCopy ? FadeOut.duration(140) : undefined}
       >
+        <Text variant={isHero ? 'h2' : 'h1'} align={textAlign}>
+          {title}
+        </Text>
+        {subtitle ? (
+          <Text variant="bodySmall" tone="muted" align={textAlign} style={{ marginTop: isHero ? 8 : 6 }}>
+            {subtitle}
+          </Text>
+        ) : null}
+      </Animated.View>
+    </Animated.View>
+  );
+
+  if (isHero) {
+    return (
+      <View style={{ alignItems: centered ? 'center' : 'flex-start', gap: 16, alignSelf: 'stretch' }}>
         <View
-          className={`items-center justify-center ${
-            isHero ? 'mb-1 h-20 w-20 rounded-[28px]' : 'h-11 w-11 rounded-2xl'
-          }`}
-          style={{ backgroundColor: colors.primarySoft }}
           accessible={false}
           importantForAccessibility="no-hide-descendants"
+          style={{
+            width: 80,
+            height: 80,
+            borderRadius: 24,
+            alignItems: 'center',
+            justifyContent: 'center',
+            backgroundColor: colors.primary,
+          }}
         >
-          <CookieMark size={isHero ? 42 : 26} color={colors.primary} />
+          <CookieMark size={42} color={colors.onPrimary} />
         </View>
-        {!isHero && (
-          // Stretch (not flex-start) so the title block is bounded by the row and
-          // wraps — a shrink-wrapped block lets long RTL subtitles run off-screen.
-          <View className="min-w-0 flex-1" style={{ alignItems: 'stretch' }}>
-            {/* Brand stays Latin / LTR, but sits on the reading-start side. */}
-            <Text
-              className="text-[11px] font-semibold"
-              style={{
-                color: colors.textSecondary,
-                letterSpacing: 0.6,
-                writingDirection: 'ltr',
-                textAlign,
-                alignSelf: centered ? 'center' : 'flex-start',
-              }}
-            >
-              Pinch
-            </Text>
-            <Animated.View layout={fadeCopy ? LinearTransition.duration(280) : undefined}>
-              <Animated.View
-                key={copyKey ?? 'copy'}
-                entering={fadeCopy ? FadeIn.duration(220) : undefined}
-                exiting={fadeCopy ? FadeOut.duration(140) : undefined}
-              >
-                <Text
-                  accessibilityRole="header"
-                  className="text-[22px] font-bold tracking-tight"
-                  style={{
-                    color: colors.text,
-                    letterSpacing: rtl ? 0 : -0.4,
-                    writingDirection,
-                    textAlign,
-                    width: '100%',
-                  }}
-                >
-                  {title}
-                </Text>
-                {subtitle ? (
-                  <Text
-                    className="mt-0.5 text-[13px]"
-                    style={{
-                      color: colors.textSecondary,
-                      writingDirection,
-                      textAlign,
-                      width: '100%',
-                    }}
-                  >
-                    {subtitle}
-                  </Text>
-                ) : null}
-              </Animated.View>
-            </Animated.View>
-          </View>
-        )}
+        {copy}
       </View>
-      {isHero && (
-        <View style={{ alignItems: blockAlign, width: '100%' }}>
-          <Text
-            className="mb-1 text-xs font-semibold"
-            style={{
-              color: colors.textSecondary,
-              letterSpacing: 0.6,
-              writingDirection: 'ltr',
-              textAlign,
-              alignSelf: centered ? 'center' : 'flex-start',
-            }}
-          >
-            Pinch
-          </Text>
-          <Text
-            accessibilityRole="header"
-            className="text-[28px] font-bold tracking-tight"
-            style={{
-              color: colors.text,
-              letterSpacing: rtl ? 0 : -0.5,
-              writingDirection,
-              textAlign,
-              width: '100%',
-            }}
-          >
-            {title}
-          </Text>
-          {subtitle ? (
-            <Text
-              className="mt-2.5 text-[15px] leading-[22px]"
-              style={{
-                color: colors.textSecondary,
-                writingDirection,
-                textAlign,
-                width: '100%',
-              }}
-            >
-              {subtitle}
-            </Text>
-          ) : null}
-        </View>
-      )}
+    );
+  }
+
+  return (
+    <View style={{ gap: 14, alignItems: centered ? 'center' : 'flex-start', alignSelf: 'stretch' }}>
+      <PinchLogo size="sm" />
+      {copy}
     </View>
   );
 }

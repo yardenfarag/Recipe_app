@@ -1,9 +1,8 @@
-import { useEffect, useState } from 'react';
-import { View, type LayoutChangeEvent } from 'react-native';
-import { Pressable } from '@/components/ui/Pressable';
+import Ionicons from '@expo/vector-icons/Ionicons';
+import { useEffect } from 'react';
+import { StyleSheet, View } from 'react-native';
 import Animated, {
   Easing,
-  interpolate,
   interpolateColor,
   useAnimatedStyle,
   useReducedMotion,
@@ -12,15 +11,17 @@ import Animated, {
   type SharedValue,
 } from 'react-native-reanimated';
 
+import { Pressable } from '@/components/ui/Pressable';
+import { MIN_TOUCH, Radii } from '@/components/ui/tokens';
 import { useRtl } from '@/hooks/useRtl';
 import { useThemePreference } from '@/hooks/useThemePreference';
+import { useTypography } from '@/hooks/useTypography';
 import { CHROME_MAX_FONT_SCALE } from '@/lib/a11y';
 
 export type SnapIntent = 'extract' | 'invent';
 
 const TRACK_PAD = 4;
-const TRACK_RADIUS = 16;
-const PILL_RADIUS = 12;
+const THUMB_RADIUS = 10;
 
 export const SNAP_INTENT_TIMING = {
   duration: 320,
@@ -50,7 +51,13 @@ type SnapIntentToggleProps = {
   trackId?: string;
 };
 
-/** Sliding-pill intent switch. Radius stays on the thumb so the track never looks square. */
+/**
+ * Snap a recipe or Guess the recipe, in the look of the kit's SegmentedControl (Night Market, PIN-177): an
+ * element-coloured track with the chosen side on a surface-coloured thumb. The thumb fades from one side to the
+ * other rather than sliding, so it needs no left or right and sits under the right side in Hebrew and Arabic before
+ * the RTL reload too. The chosen side's icon takes the brand colour (primary for Snap, accent for Guess), as on the
+ * web (SnapIntentSwitch).
+ */
 export function SnapIntentToggle({
   mode,
   progress,
@@ -60,37 +67,13 @@ export function SnapIntentToggle({
   trackId = 'snap_intent',
 }: SnapIntentToggleProps) {
   const { colors } = useThemePreference();
+  const type = useTypography();
   const { rtl } = useRtl();
-  const [trackWidth, setTrackWidth] = useState(0);
-  const extractColor = colors.primary;
-  const inventColor = colors.accent;
-  const idleText = colors.text;
-  // Primary and accent share the same light/dark polarity, so onPrimary reads on both fills.
-  const activeText = colors.onPrimary;
+  const idleText = colors.textSecondary;
+  const activeText = colors.text;
 
-  const pillWidth = Math.max(0, (trackWidth - TRACK_PAD * 2) / 2);
-
-  const onTrackLayout = (event: LayoutChangeEvent) => {
-    const next = event.nativeEvent.layout.width;
-    if (next !== trackWidth) setTrackWidth(next);
-  };
-
-  const thumbStyle = useAnimatedStyle(() => {
-    if (pillWidth <= 0) return { opacity: 0 };
-    // Thumb is pinned to the logical start (under Extract), so it only ever
-    // slides toward Invent: right in LTR, left in RTL.
-    const translateX = interpolate(
-      progress.value,
-      [0, 1],
-      [0, rtl ? -pillWidth : pillWidth],
-    );
-    return {
-      opacity: 1,
-      width: pillWidth,
-      transform: [{ translateX }],
-      backgroundColor: interpolateColor(progress.value, [0, 1], [extractColor, inventColor]),
-    };
-  });
+  const extractThumbStyle = useAnimatedStyle(() => ({ opacity: 1 - progress.value }));
+  const inventThumbStyle = useAnimatedStyle(() => ({ opacity: progress.value }));
 
   const extractTextStyle = useAnimatedStyle(() => ({
     color: interpolateColor(progress.value, [0, 1], [activeText, idleText]),
@@ -100,75 +83,89 @@ export function SnapIntentToggle({
     color: interpolateColor(progress.value, [0, 1], [idleText, activeText]),
   }));
 
+  const sides = [
+    {
+      value: 'extract' as const,
+      label: extractLabel,
+      icon: 'scan-outline' as const,
+      iconColor: mode === 'extract' ? colors.primaryText : idleText,
+      textStyle: extractTextStyle,
+      thumbStyle: extractThumbStyle,
+    },
+    {
+      value: 'invent' as const,
+      label: inventLabel,
+      icon: 'sparkles-outline' as const,
+      iconColor: mode === 'invent' ? colors.accentText : idleText,
+      textStyle: inventTextStyle,
+      thumbStyle: inventThumbStyle,
+    },
+  ];
+
   return (
     <View
-      onLayout={onTrackLayout}
       accessibilityRole="tablist"
       style={{
         flexDirection: 'row',
-        // Pin the track to the app language, not I18nManager: after a language
-        // switch the native flag lags until a cold start, and `left` may get
-        // swapped to `right` depending on it.
+        // Pin the track to the app language, not I18nManager: after a language switch the native flag lags until
+        // a cold start, and `left` may get swapped to `right` depending on it.
         direction: rtl ? 'rtl' : 'ltr',
-        borderRadius: TRACK_RADIUS,
-        overflow: 'hidden',
-        backgroundColor: colors.background,
+        gap: TRACK_PAD,
+        borderRadius: Radii.control,
+        backgroundColor: colors.backgroundElement,
         padding: TRACK_PAD,
       }}
     >
-      {pillWidth > 0 ? (
-        <Animated.View
-          pointerEvents="none"
-          style={[
-            {
-              position: 'absolute',
-              top: TRACK_PAD,
-              bottom: TRACK_PAD,
-              start: TRACK_PAD,
-              borderRadius: PILL_RADIUS,
-            },
-            thumbStyle,
-          ]}
-        />
-      ) : null}
-      <Pressable
-        trackId={`${trackId}.extract`}
-        className="min-h-[44px] flex-1 items-center justify-center px-2"
-        onPress={() => onChange('extract')}
-        accessibilityRole="tab"
-        accessibilityState={{ selected: mode === 'extract' }}
-        accessibilityLabel={extractLabel}
-      >
-        <Animated.Text
-          className="text-center text-sm font-bold"
-          numberOfLines={2}
-          adjustsFontSizeToFit
-          minimumFontScale={0.75}
-          maxFontSizeMultiplier={CHROME_MAX_FONT_SCALE}
-          style={[extractTextStyle, { writingDirection: rtl ? 'rtl' : 'ltr' }]}
+      {sides.map((side) => (
+        <Pressable
+          key={side.value}
+          trackId={`${trackId}.${side.value}`}
+          onPress={() => onChange(side.value)}
+          accessibilityRole="tab"
+          accessibilityState={{ selected: mode === side.value }}
+          accessibilityLabel={side.label}
+          style={{
+            flex: 1,
+            minHeight: MIN_TOUCH,
+            flexDirection: 'row',
+            alignItems: 'center',
+            justifyContent: 'center',
+            gap: 8,
+            paddingHorizontal: 8,
+            borderRadius: THUMB_RADIUS,
+          }}
         >
-          {extractLabel}
-        </Animated.Text>
-      </Pressable>
-      <Pressable
-        trackId={`${trackId}.invent`}
-        className="min-h-[44px] flex-1 items-center justify-center px-2"
-        onPress={() => onChange('invent')}
-        accessibilityRole="tab"
-        accessibilityState={{ selected: mode === 'invent' }}
-        accessibilityLabel={inventLabel}
-      >
-        <Animated.Text
-          className="text-center text-sm font-bold"
-          numberOfLines={2}
-          adjustsFontSizeToFit
-          minimumFontScale={0.75}
-          maxFontSizeMultiplier={CHROME_MAX_FONT_SCALE}
-          style={[inventTextStyle, { writingDirection: rtl ? 'rtl' : 'ltr' }]}
-        >
-          {inventLabel}
-        </Animated.Text>
-      </Pressable>
+          <Animated.View
+            pointerEvents="none"
+            style={[StyleSheet.absoluteFill, { borderRadius: THUMB_RADIUS, backgroundColor: colors.surface }, side.thumbStyle]}
+          />
+          <Ionicons
+            name={side.icon}
+            size={16}
+            color={side.iconColor}
+            accessible={false}
+            importantForAccessibility="no"
+          />
+          <Animated.Text
+            numberOfLines={1}
+            adjustsFontSizeToFit
+            minimumFontScale={0.75}
+            maxFontSizeMultiplier={CHROME_MAX_FONT_SCALE}
+            style={[
+              {
+                ...type.font('body', 'semibold'),
+                fontSize: 14,
+                lineHeight: 18,
+                flexShrink: 1,
+                writingDirection: rtl ? 'rtl' : 'ltr',
+              },
+              side.textStyle,
+            ]}
+          >
+            {side.label}
+          </Animated.Text>
+        </Pressable>
+      ))}
     </View>
   );
 }
