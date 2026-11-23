@@ -159,8 +159,12 @@ function pct(n: number, d: number): string {
   return d === 0 ? '–' : `${Math.round((n / d) * 100)}%`;
 }
 
-async function cached<T>(path: string, force: boolean, make: () => Promise<T>): Promise<T> {
-  if (!force && (await exists(path))) return await readJson<T>(path);
+/** A cached failed call (network, rate limit) is made again, so it never counts as the model's answer. */
+async function cached<T extends { error?: string }>(path: string, force: boolean, make: () => Promise<T>): Promise<T> {
+  if (!force && (await exists(path))) {
+    const saved = await readJson<T>(path);
+    if (!saved.error) return saved;
+  }
   const value = await make();
   await writeJson(path, value);
   return value;
