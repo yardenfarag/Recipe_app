@@ -6,7 +6,7 @@
 //   node scripts/release.mjs check v1.0.11
 //                                   What the release workflow runs before it builds: the tag matches
 //                                   the version files, and the release notes are filled in.
-import { existsSync, readFileSync, writeFileSync } from 'node:fs';
+import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 
@@ -136,7 +136,10 @@ export function bump(root, version) {
 
   const notes = notesPath(root, version);
   const created = !existsSync(notes);
-  if (created) writeFileSync(notes, notesTemplate(version));
+  if (created) {
+    mkdirSync(dirname(notes), { recursive: true });
+    writeFileSync(notes, notesTemplate(version));
+  }
   return { from: current, notes, created };
 }
 
