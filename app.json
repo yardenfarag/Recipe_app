@@ -143,7 +143,8 @@
             "extraProguardRules": "-keepattributes SourceFile,LineNumberTable\n-keepattributes *Annotation*\n-keep class com.swmansion.reanimated.** { *; }\n-keep class com.facebook.react.turbomodule.** { *; }"
           }
         }
-      ]
+      ],
+      "./plugins/with-optional-portrait"
     ],
     "experiments": {
       "baseUrl": "/app",
