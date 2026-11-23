@@ -237,6 +237,39 @@ describe("RecipeEditor: editing a recipe", () => {
     expect(mocks.replace).toHaveBeenCalledWith("/recipe/r1");
   });
 
+  it("suggests a photo first, and asks Pinch to draw one only when chosen (PIN-169)", async () => {
+    mocks.saveRecipeEdit.mockResolvedValue(saved("r1", { recalculating: ["image"] }));
+    renderEditor(SOUP);
+    expect(screen.getByText("A photo of your own dish works best.")).toBeDefined();
+    fireEvent.click(screen.getByRole("button", { name: "Let Pinch draw one" }));
+    expect(screen.getByText("Pinch will draw a picture when you save.")).toBeDefined();
+    // Changing their mind puts it back as it was.
+    fireEvent.click(screen.getByRole("button", { name: "Don't draw" }));
+    expect(screen.getByRole("button", { name: /Add photo/ })).toBeDefined();
+    fireEvent.click(screen.getByRole("button", { name: "Let Pinch draw one" }));
+    await act(async () => {
+      fireEvent.click(saveButton());
+    });
+    expect((lastRequest() as Extract<SaveRecipeEditRequest, { mode: "edit" }>).content.photo).toEqual({ action: "generate" });
+  });
+
+  it("marks a drawn picture and offers to draw it again", async () => {
+    mocks.saveRecipeEdit.mockResolvedValue(saved("r1"));
+    renderEditor({ ...SOUP, image_url: "https://example.com/ai/soup.jpg", image_generated: true } as Recipe);
+    expect(screen.getByTestId("ai-image-mark")).toBeDefined();
+    fireEvent.click(screen.getByRole("button", { name: "Draw again" }));
+    await act(async () => {
+      fireEvent.click(saveButton());
+    });
+    expect((lastRequest() as Extract<SaveRecipeEditRequest, { mode: "edit" }>).content.photo).toEqual({ action: "generate" });
+  });
+
+  it("says Pinch is still drawing instead of offering another drawing", () => {
+    renderEditor({ ...SOUP, recalc_pending: ["image"], recalc_started_at: new Date().toISOString() } as Recipe);
+    expect(screen.getByText("Drawing a picture…")).toBeDefined();
+    expect(screen.queryByRole("button", { name: "Let Pinch draw one" })).toBeNull();
+  });
+
   it("goes straight back to the recipe when nothing changed", async () => {
     renderEditor(SOUP);
     await act(async () => {

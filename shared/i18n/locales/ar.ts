@@ -1400,7 +1400,12 @@ export default {
       "replace": "تغيير الصورة",
       "remove": "إزالة الصورة",
       "camera": "التقط صورة",
-      "library": "اختر من المعرض"
+      "library": "اختر من المعرض",
+      "draw": "دع Pinch يرسم صورة",
+      "drawAgain": "ارسم من جديد",
+      "ownBest": "صورة طبقك أنت هي الأفضل.",
+      "willDraw": "سيرسم Pinch صورة عند الحفظ.",
+      "dontDraw": "بلا رسم"
     },
     "add": {
       "ingredient": "+ إضافة مكوّن",

@@ -1400,7 +1400,12 @@ export default {
       "replace": "Replace photo",
       "remove": "Remove photo",
       "camera": "Take a photo",
-      "library": "Choose from library"
+      "library": "Choose from library",
+      "draw": "Let Pinch draw one",
+      "drawAgain": "Draw again",
+      "ownBest": "A photo of your own dish works best.",
+      "willDraw": "Pinch will draw a picture when you save.",
+      "dontDraw": "Don't draw"
     },
     "add": {
       "ingredient": "+ Add ingredient",

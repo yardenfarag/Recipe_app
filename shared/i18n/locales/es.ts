@@ -1400,7 +1400,12 @@ export default {
       "replace": "Cambiar foto",
       "remove": "Quitar foto",
       "camera": "Hacer una foto",
-      "library": "Elegir de la galería"
+      "library": "Elegir de la galería",
+      "draw": "Que Pinch dibuje una",
+      "drawAgain": "Dibujar otra",
+      "ownBest": "Una foto de tu propio plato queda mejor.",
+      "willDraw": "Pinch dibujará una imagen al guardar.",
+      "dontDraw": "No dibujar"
     },
     "add": {
       "ingredient": "+ Añadir ingrediente",

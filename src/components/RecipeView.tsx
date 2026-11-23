@@ -1124,7 +1124,7 @@ export function RecipeView({
                 <RecipeImage uri={recipe.image_url!} variant="compact" aiGenerated={recipe.image_generated} />
               </View>
             ) : !recipe.image_url && isUpdating('image') ? (
-              // Pinch is drawing a picture for a recipe saved without a photo (save-recipe-edit).
+              // Pinch is drawing the picture the owner asked for in the editor (save-recipe-edit, PIN-169).
               <View
                 testID="drawing-picture"
                 className="h-16 w-16 items-center justify-center rounded-2xl"

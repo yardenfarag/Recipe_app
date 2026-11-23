@@ -190,7 +190,7 @@ export async function runRecipeRecalculation(opts: {
   }
 
   if (fields.includes('image')) {
-    // A recipe saved without a photo: draw one (~10 s). The page shows a loader in its place meanwhile.
+    // The owner asked Pinch to draw a picture (~10 s). The page shows a loader in its place meanwhile.
     tasks.push(
       drawRecipeImage(admin, { title: String(recipe.title ?? ''), ingredients }).then((result) => {
         if (result.usage) usages.push(result.usage);

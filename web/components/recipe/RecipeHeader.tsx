@@ -155,7 +155,7 @@ export function RecipeHeader({
 
   // Without a photo the details take the full width: a large empty frame would only push the recipe down.
   const hasPicture = Boolean(recipe.image_url) && !pictureFailed;
-  // Except while Pinch draws one for a recipe saved without a photo: a loader holds its place.
+  // Except while Pinch draws the one the owner asked for: a loader holds its place.
   const drawingPicture = !hasPicture && isUpdating(actions, "image");
   // The phone layout with the photo at the very top and the buttons on it.
   const overPhoto = immersive && hasPicture;

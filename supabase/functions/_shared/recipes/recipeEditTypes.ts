@@ -31,7 +31,7 @@ export type RecalcField = (typeof RECALC_FIELDS)[number];
 
 /**
  * Everything recalc_pending can hold: the recalculated fields, and 'image' while a picture is being
- * drawn for a recipe saved without one (recipeImage.ts). Matches the recipes_recalc_pending_known CHECK.
+ * drawn because the owner asked for one (photo `generate`, recipeImage.ts). Matches the recipes_recalc_pending_known CHECK.
  * The apps' RECALC_FIELDS (shared/types/recipe.ts) is this list.
  */
 export const PENDING_FIELDS = [...RECALC_FIELDS, 'image'] as const;
@@ -60,9 +60,11 @@ export interface Instruction {
   timestamp_seconds?: number;
 }
 
+/** `generate`: the owner asked Pinch to draw a picture (PIN-169). It replaces the saved one, if any, once drawn. */
 export type RecipeEditPhoto =
   | { action: 'keep' }
   | { action: 'remove' }
+  | { action: 'generate' }
   | { action: 'replace'; base64: string; mime_type: string };
 
 export interface RecipeEditContent {
@@ -220,6 +222,7 @@ function parsePhoto(value: unknown): RecipeEditPhoto | null {
   if (!isRecord(value)) return { action: 'keep' };
   if (value.action === 'keep' || value.action === undefined) return { action: 'keep' };
   if (value.action === 'remove') return { action: 'remove' };
+  if (value.action === 'generate') return { action: 'generate' };
   if (value.action === 'replace' && typeof value.base64 === 'string') {
     return { action: 'replace', base64: value.base64, mime_type: str(value.mime_type) || 'image/jpeg' };
   }

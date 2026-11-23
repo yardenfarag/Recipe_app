@@ -1400,7 +1400,12 @@ export default {
       "replace": "החלפת תמונה",
       "remove": "הסרת תמונה",
       "camera": "צילום תמונה",
-      "library": "בחירה מהגלריה"
+      "library": "בחירה מהגלריה",
+      "draw": "Pinch יצייר תמונה",
+      "drawAgain": "ציור מחדש",
+      "ownBest": "תמונה של המנה שלכם היא הכי טובה.",
+      "willDraw": "Pinch יצייר תמונה אחרי השמירה.",
+      "dontDraw": "בלי ציור"
     },
     "add": {
       "ingredient": "+ הוספת מצרך",

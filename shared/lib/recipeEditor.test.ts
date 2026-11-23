@@ -664,6 +664,34 @@ describe('buildSaveRequest', () => {
     const state = setPhoto(createEditorState(recipe()), { kind: 'remove' });
     expect(content(state).photo).toEqual({ action: 'remove' });
   });
+
+  it('asks Pinch to draw a picture only when the owner chose it (PIN-169)', () => {
+    expect(content(createEditorState(recipe({ image_url: undefined }))).photo).toEqual({ action: 'keep' });
+    const state = setPhoto(createEditorState(recipe({ image_url: undefined })), { kind: 'generate' });
+    expect(content(state).photo).toEqual({ action: 'generate' });
+    expect(hasChanges(state)).toBe(true);
+  });
+});
+
+describe('drawn pictures (PIN-169)', () => {
+  it('knows a saved picture is a drawing', () => {
+    expect(createEditorState(recipe({ image_generated: true })).imageGenerated).toBe(true);
+    expect(createEditorState(recipe()).imageGenerated).toBe(false);
+    // The flag means nothing without a picture.
+    expect(createEditorState(recipe({ image_url: undefined, image_generated: true })).imageGenerated).toBe(false);
+  });
+
+  it('knows a drawing is still on its way, until its run times out', () => {
+    const started = '2026-11-23T12:00:00Z';
+    const at = (seconds: number) => Date.parse(started) + seconds * 1000;
+    const drawing = recipe({ image_url: undefined, recalc_pending: ['image'], recalc_started_at: started });
+    expect(createEditorState(drawing, at(10)).imageDrawing).toBe(true);
+    // A drawing that failed or never finished can be asked for again.
+    expect(createEditorState(drawing, at(180)).imageDrawing).toBe(false);
+    expect(createEditorState({ ...drawing, recalc_started_at: null }, at(10)).imageDrawing).toBe(false);
+    expect(createEditorState({ ...drawing, recalc_pending: ['calories'] }, at(10)).imageDrawing).toBe(false);
+    expect(createEditorState().imageDrawing).toBe(false);
+  });
 });
 
 describe('server results', () => {
