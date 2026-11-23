@@ -12,6 +12,7 @@ Nobody builds, submits or publishes from their own computer. Everything below is
 | New web app, for trying a PR | A preview link appears on the PR by itself |
 | Phone app, small JavaScript fix | [Publish an update](#publish-an-update-to-phones) |
 | Phone app, new version | [Make a store release](#make-a-store-release) |
+| Web app, back to the Expo web app (until PIN-148) | [`WEB-APP-SWITCH.md`](WEB-APP-SWITCH.md) |
 
 ---
 
@@ -156,7 +157,7 @@ There's one environment: production.
 | iOS certificates, profiles, App Store Connect API key | expo.dev → Credentials → iOS | Store builds, TestFlight submission |
 | Google Play service account key | expo.dev → Credentials → Android → `com.pinch.myapp` → Service credentials | Play submission. Set up by `scripts/release-setup-wizard.sh` |
 | `EXPO_PUBLIC_SUPABASE_URL`, `EXPO_PUBLIC_SUPABASE_KEY` | GitHub secrets | Website and both web apps, including previews (as `NEXT_PUBLIC_*`) |
-| `WEB_APP_CREDIT_PURCHASES_ENABLED`, `EXPO_PUBLIC_*` variables | GitHub → Settings → Variables | Web builds |
+| `EXPO_PUBLIC_*` variables | GitHub → Settings → Variables | Web builds. `EXPO_PUBLIC_CREDIT_PURCHASES_ENABLED` turns web sales on or off in both web apps |
 | `CLOUDFLARE_API_TOKEN`, `CLOUDFLARE_ACCOUNT_ID` | GitHub secrets | New web app, previews, share worker |
 | `SUPABASE_ACCESS_TOKEN` | GitHub secrets | `deploy-backend.yml` |
 | AI keys, Polar, Resend and other server secrets | Supabase → Edge Functions → Secrets | Edge Functions only |

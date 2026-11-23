@@ -7,11 +7,12 @@
 //   /sitemap.xml     public/sitemap.xml plus a URL per page per language
 //   /llms.txt        landing/llms.txt with the guides filled in, for AI assistants
 //   /<key>.txt       the IndexNow key (scripts/indexnow.mjs)
-//   /app/            the Expo web app (experiments.baseUrl = "/app")
+//   /app/            the Expo web app (experiments.baseUrl = "/app"). Nobody reaches it since PIN-147: the pinch-web
+//                    Worker's routes take /app. It stays as the way back until PIN-148 (docs/WEB-APP-SWITCH.md).
 //   /*.html          legal pages
 //   /support.js      the Contact support form every page opens
-//   /404.html        the app shell, so /app/<route> deep links load the app.
-//                    Its inline script sends old root links (/s/…, /auth-callback…) to /app/….
+//   /404.html        the Expo app shell, so /app/<route> deep links load it when switched back.
+//                    Its inline script sends old root links (/auth-callback…) to /app/…, on to whichever app has /app.
 import { execSync } from 'node:child_process';
 import { copyFileSync, cpSync, mkdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';

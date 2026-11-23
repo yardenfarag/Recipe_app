@@ -1,6 +1,7 @@
 name: Deploy new web app
 
-# The Next.js app in web/ on Cloudflare Workers (ADR 027). Live at next.pinch-app.io/app while we build it.
+# The Next.js app in web/ on Cloudflare Workers (ADR 027). Serves pinch-app.io/app since the switch (PIN-147),
+# and next.pinch-app.io/app until the Expo web app is removed (PIN-148). Switching back: docs/WEB-APP-SWITCH.md.
 on:
   push:
     branches: [master, main]
@@ -8,6 +9,7 @@ on:
       - 'web/**'
       - 'shared/**'
       - '.github/workflows/deploy-web-app.yml'
+      - 'scripts/check-web-routing.mjs'
   workflow_dispatch:
 
 concurrency:
@@ -43,24 +45,31 @@ jobs:
         env:
           NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.EXPO_PUBLIC_SUPABASE_URL }}
           NEXT_PUBLIC_SUPABASE_KEY: ${{ secrets.EXPO_PUBLIC_SUPABASE_KEY }}
-          # Its own switch, unset (off) while the app is still being built at next.pinch-app.io: that
-          # address is public, and it shouldn't take real payments before launch (PIN-153). Set the
-          # repository variable WEB_APP_CREDIT_PURCHASES_ENABLED to "true" at the switch (PIN-147).
-          NEXT_PUBLIC_CREDIT_PURCHASES_ENABLED: ${{ vars.WEB_APP_CREDIT_PURCHASES_ENABLED }}
+          # The same switch as the Expo web app (deploy-web.yml), so web sales have one on/off since the switch
+          # (PIN-147). Anything but "true" hides Buy. PR previews keep it off (web-preview.yml).
+          NEXT_PUBLIC_CREDIT_PURCHASES_ENABLED: ${{ vars.EXPO_PUBLIC_CREDIT_PURCHASES_ENABLED }}
         run: npm run build:worker
 
-      - name: Deploy to Cloudflare (next.pinch-app.io)
+      - name: Deploy to Cloudflare (pinch-app.io/app and next.pinch-app.io)
         env:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
         run: npm run deploy
 
-      # A first deploy creates the DNS record and certificate, which can take a few minutes.
-      - name: Check the app is live
+      # Every kind of address on pinch-app.io goes to the right place: /app to this app, the rest to GitHub Pages
+      # and the share Worker (ADR 027). Retries while a route change spreads across Cloudflare. Without the /app
+      # routes in wrangler.jsonc (switched back, docs/WEB-APP-SWITCH.md), /app must be the Expo web app instead.
+      - name: Check pinch-app.io routing
         working-directory: .
         run: |
-          for i in $(seq 1 18); do
-            if curl -fsS -o /dev/null https://next.pinch-app.io/app; then echo "Live."; exit 0; fi
+          expect=expo
+          if grep -q '"pinch-app.io/app/\*"' web/wrangler.jsonc; then expect=next; fi
+          for i in $(seq 1 12); do
+            if node scripts/check-web-routing.mjs --expect "$expect"; then exit 0; fi
             sleep 10
           done
-          echo "next.pinch-app.io/app did not serve the page"; exit 1
+          exit 1
+
+      - name: Check next.pinch-app.io
+        working-directory: .
+        run: node scripts/check-web-routing.mjs --origin https://next.pinch-app.io --only-app
