@@ -200,8 +200,10 @@ finish() {
 
 
 # Switches pinch-app.io/app from the Expo web app to the new web app (PIN-147), checks it, practises switching
-# back once, and announces the new look. Run it from the repo root at a quiet hour:
+# back once, and announces the new look. Run it from the repo root at a quiet hour, in Git Bash:
 #   bash scripts/web-app-switch-wizard.sh
+# From PowerShell, plain `bash` is WSL's; use Git Bash's instead:
+#   & "C:\Program Files\Gitinash.exe" scripts/web-app-switch-wizard.sh
 # The steps and the reasons behind them: docs/WEB-APP-SWITCH.md.
 
 BRANCH="yardenfarag/pin-147-switch-pinch-appioapp-to-the-new-web-app"
