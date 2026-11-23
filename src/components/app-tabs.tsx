@@ -25,6 +25,32 @@ function tabIcon(outline: IconName, filled: IconName) {
   return TabIcon;
 }
 
+const SNAP_BUTTON_SIZE = 44;
+
+/**
+ * Snap, the main action: a plus on a brand-coloured rounded square in the middle of the bar, level with the other
+ * tabs (not raised, no shadow). While Snap is open it gets a ring in the soft brand colour.
+ */
+function SnapTabIcon({ focused }: { focused: boolean }) {
+  const { colors } = useThemePreference();
+  return (
+    <View
+      style={{
+        width: SNAP_BUTTON_SIZE,
+        height: SNAP_BUTTON_SIZE,
+        borderRadius: 15,
+        alignItems: 'center',
+        justifyContent: 'center',
+        backgroundColor: colors.primary,
+        borderWidth: 3,
+        borderColor: focused ? colors.primarySoft : colors.primary,
+      }}
+    >
+      <KitIcon icon="add" color={colors.onPrimary} size={28} />
+    </View>
+  );
+}
+
 /**
  * Standard (non-experimental) expo-router Tabs.
  *
@@ -33,8 +59,8 @@ function tabIcon(outline: IconName, filled: IconName) {
  * property 'displayName' of undefined). Stick to the stable `Tabs` API
  * until that's resolved upstream.
  *
- * Night Market (PIN-177): five regular tabs, Library · Hub · Snap · List · Settings (Snap is a plus in a circle,
- * not a raised button). The active tab is in the text colour with a filled icon, the others muted; a hairline on
+ * Night Market (PIN-177): five tabs, Library · Hub · Snap · List · Settings. Snap is a plus on a brand-coloured
+ * square, level with the others (not the web's raised button). The active tab is in the text colour with a filled icon, the others muted; a hairline on
  * top in the border colour.
  * Favorites lives as a Library filter — tab hidden via href: null.
  * On wide viewports, bottom tabs hide and WebSidebar takes over.
@@ -104,7 +130,11 @@ export default function AppTabs() {
         name="add"
         options={{
           title: t('tabs.snap'),
-          tabBarIcon: tabIcon('add-circle-outline', 'add-circle'),
+          tabBarAccessibilityLabel: t('snap.title'),
+          // No label under the plus. (`tabBarShowLabel` is read from the open tab and would hide every label.)
+          tabBarLabel: () => null,
+          tabBarIconStyle: { width: SNAP_BUTTON_SIZE, height: SNAP_BUTTON_SIZE },
+          tabBarIcon: SnapTabIcon,
         }}
       />
       <Tabs.Screen
