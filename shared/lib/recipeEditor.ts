@@ -14,6 +14,7 @@ import {
   recipeAppliancesOf,
 } from './appliances';
 import { charCount, RECIPE_LIMITS } from './recipeLimits';
+import { recalcUpdatingFields, recipeRecalcState } from './recipeRecalc';
 import type {
   RecipeEditBlockReason,
   RecipeEditContent,
@@ -66,9 +67,11 @@ export interface ApplianceRow {
   stepIds: string[];
 }
 
+/** `generate`: the owner asked Pinch to draw a picture, which happens after the save (PIN-169). */
 export type EditorPhoto =
   | { kind: 'keep' }
   | { kind: 'remove' }
+  | { kind: 'generate' }
   | { kind: 'replace'; base64: string; mimeType: string };
 
 /** The AI-derived values as they were when the editor opened, for change tracking and reset. */
@@ -86,6 +89,10 @@ export interface RecipeEditorState {
   photo: EditorPhoto;
   /** The saved photo (Edit), shown while `photo` is keep. */
   imageUrl: string | null;
+  /** The saved picture is one Pinch drew (marked "AI image", and can be drawn again). */
+  imageGenerated: boolean;
+  /** Pinch is still drawing the picture an earlier save asked for (its run hasn't timed out). */
+  imageDrawing: boolean;
   servings: string;
   ingredients: IngredientRow[];
   steps: StepRow[];
@@ -239,7 +246,7 @@ export function normalizeTag(raw: string): string {
 }
 
 /** Editor state for a saved recipe (Edit), or an empty one (Write) when no recipe is given. */
-export function createEditorState(recipe?: Recipe | null): RecipeEditorState {
+export function createEditorState(recipe?: Recipe | null, now: number = Date.now()): RecipeEditorState {
   let nextId = 1;
   const id = (prefix: string) => `${prefix}${nextId++}`;
 
@@ -250,6 +257,8 @@ export function createEditorState(recipe?: Recipe | null): RecipeEditorState {
       title: '',
       photo: { kind: 'keep' },
       imageUrl: null,
+      imageGenerated: false,
+      imageDrawing: false,
       servings: '2',
       ingredients: [{ id: id('i'), name: '', quantity: '', unit: '', source: null }],
       steps: [{ id: id('s'), text: '', source: null }],
@@ -313,6 +322,9 @@ export function createEditorState(recipe?: Recipe | null): RecipeEditorState {
     title: recipe.title ?? '',
     photo: { kind: 'keep' },
     imageUrl: recipe.image_url ?? null,
+    imageGenerated: Boolean(recipe.image_url && recipe.image_generated),
+    // Only while the run is fresh: a drawing that failed can be asked for again.
+    imageDrawing: !recipe.image_url && recalcUpdatingFields(recipeRecalcState(recipe, now)).includes('image'),
     servings: numberText(recipe.servings),
     ingredients,
     steps,

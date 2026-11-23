@@ -445,6 +445,8 @@ function RecipeEditor({ initial, title }: { initial: RecipeEditorState; title: s
               <PhotoField
                 photo={state.photo}
                 imageUrl={state.imageUrl}
+                generated={state.imageGenerated}
+                drawing={state.imageDrawing}
                 onChange={(photo) => change((s) => editor.setPhoto(s, photo), { field: 'photo' })}
               />
             </EditorField>

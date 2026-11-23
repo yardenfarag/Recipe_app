@@ -518,14 +518,12 @@ Deno.test('a cook-note-only edit is checked but recalculates nothing', async () 
   });
 });
 
-Deno.test('a recipe saved without a photo gets a drawn picture, unless the user took it out', () => {
-  assertEquals(imageRecalc({ mode: 'write', photo: 'keep', savedImageUrl: null }), { draw: true, cancel: false });
-  assertEquals(imageRecalc({ mode: 'import', photo: 'keep', savedImageUrl: null }), { draw: true, cancel: false });
-  // The import's own picture, or a photo the user added: nothing to draw.
-  assertEquals(imageRecalc({ mode: 'import', photo: 'keep', savedImageUrl: 'https://x/a.jpg' }), { draw: false, cancel: false });
-  assertEquals(imageRecalc({ mode: 'write', photo: 'replace', savedImageUrl: 'https://x/a.jpg' }), { draw: false, cancel: true });
-  assertEquals(imageRecalc({ mode: 'import', photo: 'remove', savedImageUrl: null }), { draw: false, cancel: true });
-  // An edit never starts one, and leaves one an earlier save started alone unless the photo changed.
-  assertEquals(imageRecalc({ mode: 'edit', photo: 'keep', savedImageUrl: null }), { draw: false, cancel: false });
-  assertEquals(imageRecalc({ mode: 'edit', photo: 'remove', savedImageUrl: null }), { draw: false, cancel: true });
+Deno.test('Pinch draws a picture only when the owner asks for one (PIN-169)', () => {
+  assertEquals(imageRecalc('generate'), { draw: true, cancel: false });
+  // Saved without a photo (older app builds always send keep): nothing is drawn, and a drawing an
+  // earlier save started is left alone.
+  assertEquals(imageRecalc('keep'), { draw: false, cancel: false });
+  // A photo put in or taken out stops a drawing an earlier save started.
+  assertEquals(imageRecalc('replace'), { draw: false, cancel: true });
+  assertEquals(imageRecalc('remove'), { draw: false, cancel: true });
 });

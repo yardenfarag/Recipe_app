@@ -111,14 +111,8 @@ serve('save-recipe-edit', async (req) => {
     const locked = new Set<string>(request.locked_fields);
     const unlocked = asArray<RecalcField>(existing?.locked_fields).filter((field) => !locked.has(field));
     const amountsMissing = rowsMissingAmounts(storedEditContent(request.content).ingredients).length > 0;
-    // - a picture for a recipe saved without a photo (imageRecalc).
-    const image = imageRecalc({
-      mode: request.mode,
-      photo: request.content.photo.action,
-      savedImageUrl: 'image_url' in imageUrl
-        ? imageUrl.image_url
-        : request.mode === 'import' ? request.source.image_url : existing?.image_url,
-    });
+    // - a picture the owner asked Pinch to draw (imageRecalc).
+    const image = imageRecalc(request.content.photo.action);
     const pending = orderedFields([
       ...plan.recalculate,
       ...asArray<PendingField>(existing?.recalc_pending),
@@ -286,11 +280,14 @@ function contentColumns(
   };
 }
 
-/** `{}` keeps the photo, `{ image_url }` sets or clears it, false = the upload failed. */
+/**
+ * `{}` keeps the photo, `{ image_url }` sets or clears it, false = the upload failed. `generate` clears it too:
+ * the page shows the loader in its place until the drawing is written (recipeRecalc.ts only fills an empty one).
+ */
 async function photoColumn(content: RecipeEditContent, userId: string): Promise<Row | false> {
   const photo = content.photo;
   if (photo.action === 'keep') return {};
-  if (photo.action === 'remove') return { image_url: null, image_generated: false };
+  if (photo.action === 'remove' || photo.action === 'generate') return { image_url: null, image_generated: false };
   const url = await persistUploadedPhoto({ imageBase64: photo.base64, mimeType: photo.mime_type, userId });
   return url ? { image_url: url, image_generated: false } : false;
 }

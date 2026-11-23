@@ -18,10 +18,14 @@ import type {
   Recipe,
 } from '../../types/recipe';
 
-/** The photo after editing. The server stores a new one in recipe-thumbnails; the app never does. */
+/**
+ * The photo after editing. The server stores a new one in recipe-thumbnails; the app never does.
+ * `generate`: Pinch draws one after the save (PIN-169), in place of the saved one if there was one.
+ */
 export type RecipeEditPhoto =
   | { action: 'keep' }
   | { action: 'remove' }
+  | { action: 'generate' }
   | { action: 'replace'; base64: string; mime_type: string };
 
 /** Everything the editor can change. Source (URL, platform) is never sent: it can't change. */

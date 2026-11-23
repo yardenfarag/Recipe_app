@@ -587,6 +587,8 @@ export function RecipeEditor({ initial }: { initial: RecipeEditorState }) {
           <EditorCard title={t("recipeEditor.fields.photo")}>
             <PhotoField
               src={photoPreviewSrc(state.photo, state.imageUrl)}
+              generated={state.photo.kind === "keep" && state.imageGenerated}
+              draw={state.photo.kind === "generate" ? "asked" : state.photo.kind === "keep" && state.imageDrawing ? "drawing" : "none"}
               busy={photoBusy}
               error={photoError ?? format(errors.fields.photo)}
               onFile={(file) => void takePhoto(file)}
@@ -594,6 +596,16 @@ export function RecipeEditor({ initial }: { initial: RecipeEditorState }) {
                 setPhotoError(null);
                 // As on mobile: a recipe that had a photo ends up with none; a new one just chosen is simply dropped.
                 change((s) => editor.setPhoto(s, s.imageUrl ? { kind: "remove" } : { kind: "keep" }), { field: "photo" });
+                pendingFocus.current = FIELD_IDS.photo;
+              }}
+              onDraw={() => {
+                setPhotoError(null);
+                change((s) => editor.setPhoto(s, { kind: "generate" }), { field: "photo" });
+                pendingFocus.current = FIELD_IDS.photo;
+              }}
+              // Back to how it was: the saved picture, or none.
+              onCancelDraw={() => {
+                change((s) => editor.setPhoto(s, { kind: "keep" }), { field: "photo" });
                 pendingFocus.current = FIELD_IDS.photo;
               }}
             />

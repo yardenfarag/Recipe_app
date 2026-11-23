@@ -726,16 +726,10 @@ export function storedEditContent(content: RecipeEditContent) {
 }
 
 /**
- * Whether a save gets a drawn picture ('image' in recalc_pending, recipeImage.ts). A written recipe
- * or a finished import saved without a photo does, unless the user took the photo out on purpose.
- * `cancel`: a photo put in or taken out stops a drawing an earlier save started.
+ * Whether a save gets a drawn picture ('image' in recalc_pending, recipeImage.ts). Only when the owner
+ * asked for one (photo `generate`, PIN-169), in any mode: a recipe saved without a photo no longer gets
+ * one on its own. `cancel`: a photo put in or taken out stops a drawing an earlier save started.
  */
-export function imageRecalc(input: {
-  mode: 'edit' | 'write' | 'import';
-  photo: RecipeEditContent['photo']['action'];
-  /** image_url as this save stores it. */
-  savedImageUrl: unknown;
-}): { draw: boolean; cancel: boolean } {
-  const draw = input.mode !== 'edit' && input.photo !== 'remove' && !input.savedImageUrl;
-  return { draw, cancel: !draw && input.photo !== 'keep' };
+export function imageRecalc(photo: RecipeEditContent['photo']['action']): { draw: boolean; cancel: boolean } {
+  return { draw: photo === 'generate', cancel: photo === 'replace' || photo === 'remove' };
 }
