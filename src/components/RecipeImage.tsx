@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Platform, StyleSheet, View, type StyleProp, type ViewStyle } from 'react-native';
 
+import { usePhotoColors, withAlpha } from '@/components/ui/tokens';
 import { useThemePreference } from '@/hooks/useThemePreference';
 import { recipeImageSource } from '@/lib/recipeImageSource';
 
@@ -39,6 +40,7 @@ export function RecipeImage({
   aiGenerated = false,
 }: RecipeImageProps) {
   const { colors } = useThemePreference();
+  const photo = usePhotoColors();
   const { t } = useTranslation();
   const [failed, setFailed] = useState(false);
   // Native: zoom past baked-in pillarbox bars. Web: CORS often blanks the
@@ -65,7 +67,7 @@ export function RecipeImage({
         {...a11yProps}
         style={[
           styles.frame,
-          { borderRadius, backgroundColor: colors.primarySoft },
+          { borderRadius, backgroundColor: colors.backgroundElement },
           variant === 'hero'
             ? styles.hero
             : variant === 'compact'
@@ -75,7 +77,7 @@ export function RecipeImage({
         ]}
       >
         <View style={styles.placeholder}>
-          <Ionicons name="restaurant" size={variant === 'hero' ? 40 : 28} color={colors.primary} />
+          <Ionicons name="restaurant" size={variant === 'hero' ? 40 : 28} color={colors.primaryText} />
         </View>
       </View>
     );
@@ -86,7 +88,7 @@ export function RecipeImage({
       {...a11yProps}
       style={[
         styles.frame,
-        { borderRadius, backgroundColor: colors.primarySoft },
+        { borderRadius, backgroundColor: colors.backgroundElement },
         variant === 'hero'
           ? styles.hero
           : variant === 'compact'
@@ -108,9 +110,9 @@ export function RecipeImage({
         <View
           testID="ai-image-mark"
           className={small ? 'absolute bottom-1 end-1 h-5 w-5' : 'absolute bottom-2.5 end-2.5 h-7 w-7'}
-          style={styles.aiMark}
+          style={[styles.aiMark, { backgroundColor: withAlpha(photo.scrim, 0.7) }]}
         >
-          <Ionicons name="sparkles" size={small ? 11 : 14} color="#fff" />
+          <Ionicons name="sparkles" size={small ? 11 : 14} color={photo.onScrim} />
         </View>
       ) : null}
     </View>
@@ -142,11 +144,10 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
-  // Over a picture, so the same in light and dark (the web's bg-scrim/70).
+  // Over a picture, so in the scrim colour, the same in light and dark (the web's bg-scrim/70).
   aiMark: {
     alignItems: 'center',
     justifyContent: 'center',
     borderRadius: 999,
-    backgroundColor: 'rgba(0,0,0,0.55)',
   },
 });

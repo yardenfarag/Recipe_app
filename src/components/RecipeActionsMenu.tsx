@@ -1,9 +1,12 @@
-import Ionicons from '@expo/vector-icons/Ionicons';
 import { useTranslation } from 'react-i18next';
-import { Modal, Platform, Text, View } from 'react-native';
-import { Pressable } from '@/components/ui/Pressable';
+import { Modal, Platform } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
+import { Button } from '@/components/ui/Button';
+import { Pressable } from '@/components/ui/Pressable';
+import { Text } from '@/components/ui/Text';
+import { TileLabel } from '@/components/ui/Tile';
+import { HAIRLINE, KitIcon, Radii, type IconName } from '@/components/ui/tokens';
 import { useRtl } from '@/hooks/useRtl';
 import { useThemePreference } from '@/hooks/useThemePreference';
 
@@ -39,7 +42,7 @@ export function RecipeActionsMenu({
       <Pressable trackId="recipe_actions.backdrop"
         className={isWeb ? 'flex-1 items-center justify-center px-4' : 'flex-1 justify-end'}
         style={{
-          backgroundColor: 'rgba(20, 16, 28, 0.48)',
+          backgroundColor: colors.overlay,
           direction: rtl ? 'rtl' : 'ltr',
         }}
         onPress={onClose}
@@ -50,28 +53,25 @@ export function RecipeActionsMenu({
           accessible={false}
           accessibilityViewIsModal
           onAccessibilityEscape={onClose}
-          className="rounded-3xl border px-2 py-2"
           style={{
+            padding: 8,
+            borderRadius: Radii.tile,
+            borderWidth: HAIRLINE,
             backgroundColor: colors.surface,
-            borderColor: colors.frostedBorder,
+            borderColor: colors.border,
             width: isWeb ? '100%' : undefined,
             maxWidth: isWeb ? 400 : undefined,
             marginHorizontal: isWeb ? 0 : 12,
             marginBottom: isWeb ? 0 : Math.max(insets.bottom, 16),
-            shadowColor: '#000',
-            shadowOffset: { width: 0, height: 12 },
-            shadowOpacity: isWeb ? 0.18 : 0,
-            shadowRadius: 28,
           }}
         >
-          <Text
-            className="px-3 pb-2 pt-3 text-xs font-semibold uppercase tracking-wide"
-            style={{ color: colors.textSecondary }}
+          <TileLabel
             numberOfLines={1}
             accessibilityRole="header"
+            style={{ paddingHorizontal: 12, paddingTop: 10, paddingBottom: 6 }}
           >
             {recipeTitle}
-          </Text>
+          </TileLabel>
 
           <MenuRow
             icon="folder-outline"
@@ -108,17 +108,16 @@ export function RecipeActionsMenu({
             trackId="recipe_actions.delete"
           />
 
-          <Pressable trackId="recipe_actions.cancel"
-            onPress={onClose}
-            className="mt-1 min-h-[48px] items-center justify-center rounded-3xl active:opacity-80"
-            style={{ backgroundColor: colors.primarySoft }}
-            accessibilityRole="button"
+          <Button
+            variant="outline"
+            fullWidth
+            trackId="recipe_actions.cancel"
             accessibilityLabel={t('common.cancel')}
+            onPress={onClose}
+            style={{ marginTop: 8 }}
           >
-            <Text className="text-sm font-semibold" style={{ color: colors.text }}>
-              {t('common.cancel')}
-            </Text>
-          </Pressable>
+            {t('common.cancel')}
+          </Button>
         </Pressable>
       </Pressable>
     </Modal>
@@ -133,22 +132,32 @@ function MenuRow({
   onPress,
   trackId,
 }: {
-  icon: keyof typeof Ionicons.glyphMap;
+  icon: IconName;
   label: string;
   color: string;
   iconColor: string;
   onPress: () => void;
   trackId: string;
 }) {
+  const { colors } = useThemePreference();
+  const pressedColor = colors.backgroundElement;
   return (
     <Pressable trackId={trackId}
       onPress={onPress}
-      className="min-h-[52px] flex-row items-center gap-3 rounded-3xl px-3 active:opacity-80"
       accessibilityRole="button"
       accessibilityLabel={label}
+      style={({ pressed }) => ({
+        minHeight: 52,
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: 14,
+        paddingHorizontal: 12,
+        borderRadius: Radii.inner,
+        backgroundColor: pressed ? pressedColor : 'transparent',
+      })}
     >
-      <Ionicons name={icon} size={20} color={iconColor} />
-      <Text className="min-w-0 flex-1 text-[15px] font-semibold" style={{ color }}>
+      <KitIcon icon={icon} size={20} color={iconColor} />
+      <Text variant="body" weight="medium" color={color} style={{ flex: 1, minWidth: 0 }}>
         {label}
       </Text>
     </Pressable>

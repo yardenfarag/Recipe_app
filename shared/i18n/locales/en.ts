@@ -264,6 +264,7 @@ export default {
     "adminUsage": "Cost & support",
     "adminActivity": "Activity log",
     "adminMessages": "Messages",
+    "adminKit": "Design kit",
     "rtlReloadTitle": "Reload for layout?",
     "rtlReloadBody": "Hebrew and Arabic need a right-to-left layout. Reload now so navigation and headers flip correctly.",
     "rtlReloadConfirm": "Reload",
@@ -894,6 +895,14 @@ export default {
     "pdfUnreadable": "Couldn’t open that PDF. It may be damaged or locked with a password.",
     "pdfTimedOut": "This PDF took too long to read, so your credit wasn’t used. Try again in a moment.",
     "invalidSharePdf": "Couldn’t read that PDF. Try Snap from a PDF instead."
+  },
+  "snapNm": {
+    "snapIt": "Snap it",
+    "guessIt": "Guess it",
+    "takePhoto": "Take a photo",
+    "choosePhoto": "Choose a photo",
+    "choosePhotoOrPdf": "Choose a photo or PDF",
+    "shareTip": "Share from any app. In TikTok, Instagram or YouTube, tap Share, then Pinch."
   },
   "list": {
     "title": "List",

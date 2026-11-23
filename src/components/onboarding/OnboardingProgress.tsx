@@ -11,12 +11,11 @@ type OnboardingProgressProps = {
 
 function Dot({ active, color, soft }: { active: boolean; color: string; soft: string }) {
   const style = useAnimatedStyle(() => ({
-    width: withSpring(active ? 22 : 7, { damping: 16, stiffness: 180 }),
+    width: withSpring(active ? 24 : 8, { damping: 16, stiffness: 180 }),
     backgroundColor: active ? color : soft,
-    opacity: withSpring(active ? 1 : 0.55, { damping: 16, stiffness: 180 }),
   }));
 
-  return <Animated.View className="mx-0.5 h-[7px] rounded-full" style={style} />;
+  return <Animated.View style={[{ marginHorizontal: 3, height: 8, borderRadius: 4 }, style]} />;
 }
 
 /** Morphing progress dots for the onboarding pager. */
@@ -27,14 +26,14 @@ export function OnboardingProgress({ count, index }: OnboardingProgressProps) {
 
   return (
     <View
-      className="flex-row items-center justify-center py-3"
+      style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'center', paddingVertical: 12 }}
       accessible
       accessibilityRole="progressbar"
       accessibilityLabel={t('a11y.stepOf', { current, total: count })}
       accessibilityValue={{ min: 1, max: count, now: current }}
     >
       {Array.from({ length: count }, (_, i) => (
-        <Dot key={i} active={i === index} color={colors.primary} soft={colors.primarySoft} />
+        <Dot key={i} active={i === index} color={colors.primary} soft={colors.backgroundSelected} />
       ))}
     </View>
   );

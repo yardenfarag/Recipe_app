@@ -20,8 +20,15 @@ export function ProfileAvatar({ url, size }: { url: string | null; size: number 
   const photo = url && !isFoodAvatarValue(url) ? url : null;
   return (
     <View
-      className="items-center justify-center overflow-hidden rounded-full"
-      style={{ width: size, height: size, backgroundColor: colors.primarySoft }}
+      style={{
+        width: size,
+        height: size,
+        borderRadius: size / 2,
+        overflow: 'hidden',
+        alignItems: 'center',
+        justifyContent: 'center',
+        backgroundColor: colors.backgroundElement,
+      }}
       accessible={false}
       importantForAccessibility="no-hide-descendants"
     >
@@ -30,13 +37,13 @@ export function ProfileAvatar({ url, size }: { url: string | null; size: number 
       ) : photo ? (
         <Image
           source={{ uri: photo }}
-          style={{ width: size, height: size, backgroundColor: colors.primarySoft }}
+          style={{ width: size, height: size, backgroundColor: colors.backgroundElement }}
           contentFit="cover"
           contentPosition="center"
           transition={200}
         />
       ) : (
-        <Ionicons name="person" size={Math.round(size * 0.43)} color={colors.primary} />
+        <Ionicons name="person" size={Math.round(size * 0.43)} color={colors.textSecondary} />
       )}
     </View>
   );

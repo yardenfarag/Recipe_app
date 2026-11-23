@@ -5,6 +5,7 @@ import { Text, View } from 'react-native';
 import { Pressable } from '@/components/ui/Pressable';
 
 import { RecipeImage } from '@/components/RecipeImage';
+import { Radii } from '@/components/ui/tokens';
 import { useBreakpoint } from '@/hooks/useBreakpoint';
 import { useRtl } from '@/hooks/useRtl';
 import { useThemePreference } from '@/hooks/useThemePreference';
@@ -47,14 +48,10 @@ function PlayBadge({ size }: { size: 'sm' | 'lg' }) {
         width: dim,
         height: dim,
         backgroundColor: colors.primary,
-        shadowColor: '#000',
-        shadowOpacity: 0.25,
-        shadowRadius: 8,
-        shadowOffset: { width: 0, height: 2 },
-        elevation: 4,
       }}
     >
-      <Ionicons name="play" size={icon} color={colors.onPrimary} style={{ marginLeft: 2 }} />
+      {/* The triangle looks centred a touch to the right, in every language (a play sign doesn't flip). */}
+      <Ionicons name="play" size={icon} color={colors.onPrimary} style={{ transform: [{ translateX: 2 }] }} />
     </View>
   );
 }
@@ -126,8 +123,8 @@ export const RecipeVideoPanel = forwardRef<RecipeVideoPanelHandle, RecipeVideoPa
         <Pressable
           trackId="recipe.video.play_card"
           onPress={() => onRequestPlay(0)}
-          className="mb-4 flex-row items-center gap-3.5 overflow-hidden rounded-[22px] border p-3 active:opacity-90"
-          style={{ borderColor: colors.frostedBorder, backgroundColor: colors.surface }}
+          className="mb-4 flex-row items-center gap-3.5 overflow-hidden border p-3 active:opacity-90"
+          style={{ borderRadius: Radii.card, borderColor: colors.border, backgroundColor: colors.surface }}
           accessibilityRole="button"
           accessibilityLabel={`${t('cookAlong.title')}: ${t('cookAlong.playInPinch')}, ${platformLabel}`}
           accessibilityHint={t('cookAlong.jumpHint')}
@@ -157,8 +154,8 @@ export const RecipeVideoPanel = forwardRef<RecipeVideoPanelHandle, RecipeVideoPa
 
     return (
       <View
-        className="mb-4 overflow-hidden rounded-[28px] border"
-        style={{ borderColor: colors.frostedBorder, backgroundColor: colors.surface }}
+        className="mb-4 overflow-hidden border"
+        style={{ borderRadius: Radii.tile, borderColor: colors.border, backgroundColor: colors.surface }}
       >
         <Pressable
           trackId="recipe.video.toggle"

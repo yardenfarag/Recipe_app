@@ -2,7 +2,6 @@ import { type ReactNode } from 'react';
 import { Platform, View, type ViewProps } from 'react-native';
 import { SafeAreaView, useSafeAreaInsets, type Edge } from 'react-native-safe-area-context';
 
-import { MistAtmosphere } from '@/components/MistAtmosphere';
 import { MaxContentWidth } from '@/constants/theme';
 import { useBreakpoint } from '@/hooks/useBreakpoint';
 import { useThemePreference } from '@/hooks/useThemePreference';
@@ -23,25 +22,28 @@ type ScreenProps = ViewProps & {
   tabScreen?: boolean;
   /** Skip SafeAreaView — useful when a parent already handles insets. */
   bare?: boolean;
-  /** Skip mist gradient/orbs (rare — e.g. full-bleed media). */
+  /** @deprecated Night Market screens are always flat (PIN-177); this does nothing. */
   plain?: boolean;
-  /** Fewer atmosphere orbs. */
+  /** @deprecated Night Market screens are always flat (PIN-177); this does nothing. */
   dense?: boolean;
   /**
    * Constrain children to MaxContentWidth on medium+ (default true).
-   * Atmosphere stays full-bleed either way.
+   * The background stays full-bleed either way.
    */
   constrainWidth?: boolean;
 };
 
-/** App canvas with theme-pack Drift atmosphere. */
+/**
+ * A screen's canvas: the pack's flat background colour (Night Market, PIN-177), inside the safe area. Build the
+ * screen from kit tiles (src/components/ui/) on top of it.
+ */
 export function Screen({
   children,
   edges,
   tabScreen,
   bare,
-  plain,
-  dense,
+  plain: _plain,
+  dense: _dense,
   constrainWidth = true,
   className,
   style,
@@ -52,14 +54,14 @@ export function Screen({
   const insets = useSafeAreaInsets();
   const resolvedEdges = edges ?? (tabScreen ? TAB_SCREEN_EDGES : DEFAULT_EDGES);
   const needsTop = resolvedEdges.includes('top');
-  // Pad content only — never the outer canvas — so MistAtmosphere stays edge-to-edge.
+  // Pad content only — never the outer canvas — so the background stays edge-to-edge.
   const webTopPad =
     Platform.OS === 'web' && needsTop ? Math.max(0, WEB_TOP_INSET - insets.top) : 0;
   const canvasStyle = { flex: 1, backgroundColor: colors.background };
 
   // Keep layout classes (items-center, px-*, etc.) on an inner flex child so
-  // SafeAreaView / MistAtmosphere stay full-bleed. Centering on the outer
-  // canvas shrinks the atmosphere to content width — a thin "narrow screen".
+  // the SafeAreaView canvas stays full-bleed. Centering on the outer canvas
+  // shrinks it to content width — a thin "narrow screen".
   const inner = (
     <View
       className={`flex-1 ${className ?? ''}`}
@@ -79,15 +81,13 @@ export function Screen({
       inner
     );
 
-  const content = plain ? body : <MistAtmosphere dense={dense}>{body}</MistAtmosphere>;
-
   if (bare) {
-    return <View style={canvasStyle}>{content}</View>;
+    return <View style={canvasStyle}>{body}</View>;
   }
 
   return (
     <SafeAreaView className="flex-1" edges={resolvedEdges} style={canvasStyle}>
-      {content}
+      {body}
     </SafeAreaView>
   );
 }

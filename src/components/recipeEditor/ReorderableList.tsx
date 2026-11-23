@@ -119,8 +119,8 @@ export function ReorderableList<T extends { id: string }>({
           style={{
             transform: [{ translateY: offsetOf(item.id) }],
             zIndex: activeId === item.id ? 10 : 0,
-            elevation: activeId === item.id ? 6 : 0,
-            opacity: activeId && activeId !== item.id ? 0.85 : 1,
+            // Flat (Night Market): the row being dragged stays on top and the others dim, no shadow.
+            opacity: activeId && activeId !== item.id ? 0.6 : 1,
           }}
         >
           {renderItem(
@@ -210,10 +210,16 @@ function DragHandle({ active, canMoveUp, canMoveDown, onStart, onDrag, onEnd, on
         if (event.nativeEvent.actionName === 'moveUp' && canMoveUp) onStep(-1);
         if (event.nativeEvent.actionName === 'moveDown' && canMoveDown) onStep(1);
       }}
-      className="h-11 w-8 items-center justify-center rounded-xl"
-      style={{ backgroundColor: active ? colors.primarySoft : 'transparent' }}
+      style={{
+        width: 32,
+        height: 44,
+        alignItems: 'center',
+        justifyContent: 'center',
+        borderRadius: 12,
+        backgroundColor: active ? colors.primarySoft : colors.backgroundElement,
+      }}
     >
-      <Ionicons name="reorder-three" size={22} color={active ? colors.primary : colors.textSecondary} />
+      <Ionicons name="reorder-three" size={22} color={active ? colors.primaryText : colors.textSecondary} />
     </View>
   );
 }

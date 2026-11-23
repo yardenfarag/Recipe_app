@@ -1,14 +1,15 @@
-import Ionicons from '@expo/vector-icons/Ionicons';
-import { useState } from 'react';
+import { useState, type ReactNode } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Text, View } from 'react-native';
-import { Pressable } from '@/components/ui/Pressable';
+import { View } from 'react-native';
 
 import { ApplianceIcon } from '@/components/ApplianceIcon';
 import { SheetModal } from '@/components/SheetModal';
-import { useRtl } from '@/hooks/useRtl';
+import { Pressable } from '@/components/ui/Pressable';
+import { Text } from '@/components/ui/Text';
+import { Tile, TileLabel } from '@/components/ui/Tile';
+import { HAIRLINE, KitIcon, Radii } from '@/components/ui/tokens';
 import { useThemePreference } from '@/hooks/useThemePreference';
-import { CHROME_MAX_FONT_SCALE } from '@/lib/a11y';
+import { useTypography } from '@/hooks/useTypography';
 import {
   applianceAlternativeKey,
   applianceNameKey,
@@ -39,40 +40,42 @@ type RecipeAppliancesProps = {
    * an appliance they have gets a tick and a required one they don't gets the warning colour.
    */
   kitchen?: KitchenAppliances | null;
+  /** More at the bottom of the tile: what the reader's kitchen covers (the recipe page's kitchen check). */
+  footer?: ReactNode;
 };
 
-/** "What you'll need" (ADR 017 decision 4): Required, then "Makes it better" with benefits and tips. */
+/** "What you'll need" (ADR 017 decision 4) as a tile (PIN-177): Required, then "Makes it better" with benefits and tips. */
 export function RecipeAppliances({
   appliances,
   instructions,
   stepDirection,
   updating = false,
   kitchen = null,
+  footer,
 }: RecipeAppliancesProps) {
   const { t } = useTranslation();
   const { colors } = useThemePreference();
-  const { textAlign, writingDirection } = useRtl();
+  const type = useTypography();
   const [open, setOpen] = useState<RecipeAppliance | null>(null);
 
   if (appliances === null && !updating) return null;
 
   const { required, better } = groupAppliances(appliances ?? []);
-  const textStyle = { textAlign, writingDirection };
   const updatingNote = updating ? (
     <Text
       testID="appliances-updating"
-      className="text-xs font-medium"
-      style={[{ color: colors.textSecondary }, textStyle]}
+      variant="caption"
+      weight="medium"
+      tone="muted"
       accessibilityLabel={`${t('appliances.title')}, ${t('recipeEditor.updating')}`}
       accessibilityState={{ busy: true }}
-      maxFontSizeMultiplier={CHROME_MAX_FONT_SCALE}
     >
       {t('recipeEditor.updating')}
     </Text>
   ) : null;
   const stepStyle = stepDirection
     ? { writingDirection: stepDirection, textAlign: stepDirection === 'rtl' ? ('right' as const) : ('left' as const) }
-    : textStyle;
+    : undefined;
 
   const describe = (item: RecipeAppliance) => {
     const parts: string[] = [];
@@ -96,7 +99,8 @@ export function RecipeAppliances({
     // A required appliance the reader doesn't have (and has no stand-in for) is the one thing worth a warning.
     const warn = fit === 'missing' && item.required;
     const filled = item.required && !basic && !warn;
-    const color = warn ? colors.warning : filled ? colors.primary : colors.textSecondary;
+    const color = warn ? colors.text : filled ? colors.primaryText : colors.textSecondary;
+    const iconColor = warn ? colors.warning : filled ? colors.primaryText : colors.textSecondary;
     const fitLabel =
       fit === 'owned' ? t('myAppliances.inKitchen') : fit ? t('myAppliances.notInKitchen') : null;
     const detail = [fitLabel, describe(item)].filter(Boolean).join(', ');
@@ -106,87 +110,89 @@ export function RecipeAppliances({
         trackId="recipe.appliance.open"
         testID={`appliance-chip-${item.key}`}
         onPress={() => setOpen(item)}
-        hitSlop={4}
-        className="min-h-[36px] flex-row items-center gap-1.5 rounded-full border px-3 active:opacity-70"
-        style={{
-          backgroundColor: warn ? colors.warningSoft : filled ? colors.primarySoft : 'transparent',
-          borderColor: warn ? colors.warningSoft : filled ? colors.primarySoft : colors.border,
-        }}
+        hitSlop={2}
         accessibilityRole="button"
         accessibilityLabel={[name, kindLabel(item), detail].filter(Boolean).join(', ')}
         accessibilityHint={t('appliances.chipHint')}
+        style={({ pressed }) => ({
+          minHeight: 40,
+          flexDirection: 'row',
+          alignItems: 'center',
+          gap: 6,
+          paddingHorizontal: 12,
+          borderRadius: Radii.pill,
+          borderWidth: warn || filled ? 0 : HAIRLINE,
+          borderColor: colors.border,
+          backgroundColor: warn
+            ? colors.warningSoft
+            : filled
+              ? colors.primarySoft
+              : pressed
+                ? colors.backgroundElement
+                : 'transparent',
+          opacity: pressed && (warn || filled) ? 0.85 : 1,
+        })}
       >
-        <ApplianceIcon appliance={item.key} size={basic ? 15 : 17} color={color} />
-        <Text
-          className={basic ? 'text-xs font-medium' : 'text-[13px] font-semibold'}
-          style={{ color }}
-          maxFontSizeMultiplier={CHROME_MAX_FONT_SCALE}
-        >
+        <ApplianceIcon appliance={item.key} size={basic ? 15 : 17} color={iconColor} />
+        <Text color={color} style={{ ...type.font('body', basic ? 'medium' : 'semibold'), fontSize: 13, lineHeight: 17 }}>
           {name}
         </Text>
-        {fit === 'owned' ? <Ionicons name="checkmark" size={14} color={colors.success} /> : null}
-        {warn ? <Ionicons name="alert-circle" size={14} color={colors.warning} /> : null}
+        {fit === 'owned' ? <KitIcon icon="checkmark" size={14} color={colors.success} /> : null}
+        {warn ? <KitIcon icon="alert-circle" size={14} color={colors.warning} /> : null}
       </Pressable>
     );
   };
 
-  const groupTitle = (label: string) => (
-    <Text
-      className="mb-2 text-xs font-semibold uppercase"
-      style={[{ color: colors.textSecondary, letterSpacing: 0.4 }, textStyle]}
-      maxFontSizeMultiplier={CHROME_MAX_FONT_SCALE}
-    >
-      {label}
-    </Text>
-  );
-
   const steps = open ? applianceSteps(open, instructions) : [];
 
   return (
-    <View className="mb-5" testID="recipe-appliances">
-      <Text
-        className={updating ? 'mb-0.5 text-lg font-bold' : 'mb-3 text-lg font-bold'}
-        style={[{ color: colors.text }, textStyle]}
-        accessibilityRole="header"
-      >
-        {t('appliances.title')}
-      </Text>
-      {updatingNote ? <View className="mb-3">{updatingNote}</View> : null}
+    <Tile padding={20} style={{ gap: 14 }} testID="recipe-appliances">
+      <View style={{ gap: 2 }}>
+        <Text variant="h3">{t('appliances.title')}</Text>
+        {updatingNote}
+      </View>
 
       {appliances?.length === 0 ? (
-        <Text testID="appliances-none" className="text-sm" style={[{ color: colors.textSecondary }, textStyle]}>
+        <Text testID="appliances-none" variant="bodySmall" tone="muted">
           {t('appliances.none')}
         </Text>
       ) : null}
 
       {required.length > 0 ? (
-        <View className="mb-3" testID="appliances-required">
-          {groupTitle(t('appliances.required'))}
-          <View className="flex-row flex-wrap gap-2">{required.map(chip)}</View>
+        <View testID="appliances-required" style={{ gap: 8 }}>
+          <TileLabel>{t('appliances.required')}</TileLabel>
+          <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8 }}>{required.map(chip)}</View>
         </View>
       ) : null}
 
       {better.length > 0 ? (
-        <View testID="appliances-better">
-          {groupTitle(t('appliances.better'))}
-          <View className="gap-2">
+        <View testID="appliances-better" style={{ gap: 8 }}>
+          <TileLabel>{t('appliances.better')}</TileLabel>
+          <View style={{ gap: 8 }}>
             {better.map((item) => (
-              <View key={item.key} className="flex-row flex-wrap items-center gap-2">
+              <View key={item.key} style={{ flexDirection: 'row', flexWrap: 'wrap', alignItems: 'center', gap: 8 }}>
                 {chip(item)}
                 {item.origin === 'tip' ? (
                   <View
                     testID={`appliance-tip-${item.key}`}
-                    className="flex-row items-center gap-1 rounded-full px-2 py-0.5"
-                    style={{ backgroundColor: colors.accentSoft }}
+                    style={{
+                      flexDirection: 'row',
+                      alignItems: 'center',
+                      gap: 4,
+                      paddingHorizontal: 8,
+                      paddingVertical: 3,
+                      borderRadius: Radii.pill,
+                      backgroundColor: colors.accentSoft,
+                    }}
                   >
-                    <Ionicons name="bulb-outline" size={12} color={colors.accent} />
-                    <Text className="text-[11px] font-semibold" style={{ color: colors.accent }} maxFontSizeMultiplier={CHROME_MAX_FONT_SCALE}>
+                    <KitIcon icon="bulb-outline" size={12} color={colors.accentText} />
+                    <Text tone="accent" style={{ ...type.font('body', 'semibold'), fontSize: 11, lineHeight: 14 }}>
                       {t('appliances.pinchTip')}
                     </Text>
                   </View>
                 ) : null}
                 {describe(item) ? (
-                  <Text className="shrink text-xs" style={[{ color: colors.textSecondary }, textStyle]}>
+                  <Text variant="caption" tone="muted" style={{ flexShrink: 1 }}>
                     {describe(item)}
                   </Text>
                 ) : null}
@@ -196,6 +202,8 @@ export function RecipeAppliances({
         </View>
       ) : null}
 
+      {footer}
+
       <SheetModal
         trackId="recipe.appliances.sheet"
         visible={open !== null}
@@ -203,37 +211,32 @@ export function RecipeAppliances({
         title={open ? t(applianceNameKey(open.key)) : ''}
       >
         {open ? (
-          <View className="gap-3 px-5 pb-6" testID="appliance-sheet">
-            <View className="flex-row items-center gap-2">
-              <ApplianceIcon appliance={open.key} size={22} color={colors.primary} />
-              <Text className="text-sm font-semibold" style={{ color: colors.text }}>
+          <View style={{ gap: 12, paddingHorizontal: 20, paddingBottom: 24 }} testID="appliance-sheet">
+            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+              <ApplianceIcon appliance={open.key} size={22} color={colors.primaryText} />
+              <Text variant="bodySmall" weight="semibold">
                 {kindLabel(open)}
               </Text>
             </View>
             {describe(open) ? (
-              <Text className="text-sm" style={[{ color: colors.textSecondary }, textStyle]}>
+              <Text variant="bodySmall" tone="muted">
                 {describe(open)}
               </Text>
             ) : null}
             {open.origin === 'tip' ? (
-              <Text className="text-sm" style={[{ color: colors.textSecondary }, textStyle]}>
+              <Text variant="bodySmall" tone="muted">
                 {t('appliances.pinchTipExplainer')}
               </Text>
             ) : null}
             {steps.length > 0 ? (
-              <View className="gap-2">
-                <Text className="text-sm font-semibold" style={[{ color: colors.text }, textStyle]}>
+              <View style={{ gap: 8 }}>
+                <Text variant="bodySmall" weight="semibold">
                   {t(steps.length === 1 ? 'appliances.usedInStepOne' : 'appliances.usedInStepOther', {
                     steps: steps.map((s) => s.step).join(', '),
                   })}
                 </Text>
                 {steps.map((s) => (
-                  <Text
-                    key={s.step}
-                    testID={`appliance-step-${s.step}`}
-                    className="text-sm leading-5"
-                    style={[{ color: colors.text }, stepStyle]}
-                  >
+                  <Text key={s.step} testID={`appliance-step-${s.step}`} variant="bodySmall" style={stepStyle}>
                     {`${s.step}. ${s.text}`}
                   </Text>
                 ))}
@@ -242,6 +245,6 @@ export function RecipeAppliances({
           </View>
         ) : null}
       </SheetModal>
-    </View>
+    </Tile>
   );
 }

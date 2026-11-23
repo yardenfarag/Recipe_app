@@ -288,6 +288,7 @@ export default {
     "adminUsage": "التكلفة والدعم",
     "adminActivity": "سجل النشاط",
     "adminMessages": "الرسائل",
+    "adminKit": "عناصر التصميم",
     "rtlReloadTitle": "إعادة التحميل لتعديل الاتجاه؟",
     "rtlReloadBody": "العربية والعبرية تُقرآن من اليمين إلى اليسار. أعد التحميل الآن حتى تظهر القوائم والعناوين في مكانها الصحيح.",
     "rtlReloadConfirm": "إعادة التحميل",
@@ -958,6 +959,14 @@ export default {
     "pdfUnreadable": "ما قدرنا نفتح ملف PDF. ربما هو تالف أو محمي بكلمة مرور.",
     "pdfTimedOut": "استغرقت قراءة ملف PDF وقتًا طويلًا، لذلك لم يُستخدم رصيدك. جرّب مرة ثانية بعد قليل.",
     "invalidSharePdf": "ما قدرنا نقرأ ملف PDF. جرّب «خذ من ملف PDF» بدلًا من ذلك."
+  },
+  "snapNm": {
+    "snapIt": "التقطها",
+    "guessIt": "خمّنها",
+    "takePhoto": "التقاط صورة",
+    "choosePhoto": "اختيار صورة",
+    "choosePhotoOrPdf": "اختيار صورة أو PDF",
+    "shareTip": "شارك من أي تطبيق. في TikTok أو Instagram أو YouTube، اضغط مشاركة ثم Pinch."
   },
   "list": {
     "title": "القائمة",

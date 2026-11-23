@@ -1,19 +1,23 @@
-import Ionicons from '@expo/vector-icons/Ionicons';
 import { useFocusEffect, useNavigation } from '@react-navigation/native';
 import { router, useLocalSearchParams } from 'expo-router';
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { ActivityIndicator, Alert, Text, View } from 'react-native';
-import { Pressable } from '@/components/ui/Pressable';
+import { ActivityIndicator, Alert, View } from 'react-native';
 import { useTranslation } from 'react-i18next';
 
 import { RecipeView } from '@/components/RecipeView';
 import { Screen } from '@/components/Screen';
+import { Button } from '@/components/ui/Button';
+import { IconButton } from '@/components/ui/IconButton';
+import { Text } from '@/components/ui/Text';
+import { Tile } from '@/components/ui/Tile';
+import { KitIcon, Radii } from '@/components/ui/tokens';
 import { useAuth } from '@/hooks/useAuth';
 import { useLocalizedRecipe } from '@/hooks/useLocalizedRecipe';
 import { useRecipeRecalc } from '@/hooks/useRecipeRecalc';
 import { useThemePreference } from '@/hooks/useThemePreference';
 import { announce } from '@/lib/a11y';
 import { backfillRecipeThumbnails } from '@/lib/backfillRecipeThumbnails';
+import { goBackOrHome } from '@/lib/goBackOrHome';
 import { openRecipeEditor } from '@/lib/openRecipeEditor';
 import { offerRemindersOnce } from '@/lib/pushPrompt';
 import { getGuestRecipeById, setGuestRecipeCooked, updateGuestRecipeContent } from '@/lib/guestRecipes';
@@ -27,10 +31,23 @@ import { Recipe } from '@shared/types/recipe';
 
 export default function RecipeDetailScreen() {
   const { t } = useTranslation();
-  const { id, justSaved } = useLocalSearchParams<{ id: string; justSaved?: string }>();
+  const { id, justSaved, cook, video } = useLocalSearchParams<{
+    id: string;
+    justSaved?: string;
+    cook?: string;
+    video?: string;
+  }>();
   const navigation = useNavigation();
   /** Snap saved it for them (no Save tap): say so once, with a way to take it back. */
   const [autoSavedNotice, setAutoSavedNotice] = useState(justSaved === '1');
+  /**
+   * The Library's "Tonight's pick" sends ?cook=1 (Start cooking) or ?video=1 (play): open it once the recipe shows,
+   * then forget it, so coming back to the page or closing cook mode doesn't open it again.
+   */
+  const [autoStart, setAutoStart] = useState<'cook' | 'video' | null>(
+    cook === '1' ? 'cook' : video === '1' ? 'video' : null,
+  );
+  const forgetAutoStart = useCallback(() => setAutoStart(null), []);
   const [removing, setRemoving] = useState(false);
   const [recipe, setRecipe] = useState<Recipe | null | undefined>(undefined);
   const [loadError, setLoadError] = useState<string | null>(null);
@@ -281,102 +298,113 @@ export default function RecipeDetailScreen() {
     }
   }
 
+  // The page has no header (the photo runs to the top), so the states before the recipe bring their own way back.
+  const backRow = (
+    <View style={{ flexDirection: 'row', paddingHorizontal: 16, paddingTop: 8 }}>
+      <IconButton
+        variant="tile"
+        icon="arrow-back"
+        label={t('common.back')}
+        trackId="recipe.back"
+        onPress={() => goBackOrHome('/')}
+      />
+    </View>
+  );
+
   if (recipe === undefined) {
     return (
-      <Screen className="items-center justify-center" edges={['bottom']}>
-        <ActivityIndicator
-          color={colors.primary}
-          size="large"
-          accessibilityLabel={t('a11y.loadingRecipe')}
-        />
+      <Screen edges={['top', 'bottom']}>
+        {backRow}
+        <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center' }}>
+          <ActivityIndicator color={colors.primary} size="large" accessibilityLabel={t('a11y.loadingRecipe')} />
+        </View>
       </Screen>
     );
   }
 
   if (loadError) {
     return (
-      <Screen className="items-center justify-center px-6" edges={['bottom']}>
-        <Text
-          className="mb-2 text-center text-base font-semibold"
-          style={{ color: colors.text }}
-          accessibilityRole="header"
-        >
-          {t('recipe.loadFailedTitle')}
-        </Text>
-        <Text
-          className="mb-5 text-center text-sm"
-          style={{ color: colors.textSecondary }}
-        >
-          {loadError}
-        </Text>
-        <Pressable
-          trackId="recipe.load_retry"
-          onPress={() => void loadRecipe()}
-          className="rounded-full px-5 py-3 active:opacity-80"
-          style={{ backgroundColor: colors.primary }}
-          accessibilityRole="button"
-          accessibilityLabel={t('common.tryAgainAction')}
-        >
-          <Text className="text-sm font-bold" style={{ color: colors.onPrimary }}>
-            {t('common.tryAgain')}
-          </Text>
-        </Pressable>
+      <Screen edges={['top', 'bottom']}>
+        {backRow}
+        <View style={{ flex: 1, justifyContent: 'center', padding: 16 }}>
+          <Tile padding={24} style={{ alignItems: 'center', gap: 8 }}>
+            <Text variant="h3" align="center">
+              {t('recipe.loadFailedTitle')}
+            </Text>
+            <Text variant="bodySmall" tone="muted" align="center">
+              {loadError}
+            </Text>
+            <Button
+              trackId="recipe.load_retry"
+              onPress={() => void loadRecipe()}
+              accessibilityLabel={t('common.tryAgainAction')}
+              style={{ alignSelf: 'center', marginTop: 8 }}
+            >
+              {t('common.tryAgain')}
+            </Button>
+          </Tile>
+        </View>
       </Screen>
     );
   }
 
   if (!recipe) {
     return (
-      <Screen className="items-center justify-center px-6" edges={['bottom']}>
-        <Text className="text-center text-base" style={{ color: colors.textSecondary }}>
-          {t('recipe.notFound')}
-        </Text>
+      <Screen edges={['top', 'bottom']}>
+        {backRow}
+        <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center', padding: 24 }}>
+          <Text variant="body" tone="muted" align="center">
+            {t('recipe.notFound')}
+          </Text>
+        </View>
       </Screen>
     );
   }
 
   return (
-    <Screen edges={['bottom']}>
-      {autoSavedNotice ? (
-        <View
-          className="flex-row items-center gap-3 px-5 py-2.5"
-          style={{ backgroundColor: colors.primarySoft }}
-          accessibilityLiveRegion="polite"
-        >
-          <Ionicons name="checkmark-circle" size={18} color={colors.primary} accessible={false} />
-          <Text className="min-w-0 flex-1 text-sm font-semibold" style={{ color: colors.primary }}>
-            {t('recipe.autoSaved')}
-          </Text>
-          <Pressable
-            trackId="recipe.auto_saved.remove"
-            onPress={() => void removeAutoSaved()}
-            disabled={removing}
-            hitSlop={8}
-            className="min-h-[36px] justify-center px-2 active:opacity-70"
-            accessibilityRole="button"
-            accessibilityState={{ disabled: removing, busy: removing }}
-          >
-            {removing ? (
-              <ActivityIndicator color={colors.primary} />
-            ) : (
-              <Text className="text-sm font-bold" style={{ color: colors.primary }}>
-                {t('recipe.autoSavedRemove')}
-              </Text>
-            )}
-          </Pressable>
-          <Pressable
-            trackId="recipe.auto_saved.dismiss"
-            onPress={() => setAutoSavedNotice(false)}
-            hitSlop={8}
-            className="min-h-[36px] justify-center active:opacity-70"
-            accessibilityRole="button"
-            accessibilityLabel={t('common.close')}
-          >
-            <Ionicons name="close" size={18} color={colors.primary} />
-          </Pressable>
-        </View>
-      ) : null}
+    <Screen edges={[]}>
       <RecipeView
+        immersive
+        autoStart={autoStart}
+        onAutoStarted={forgetAutoStart}
+        topNotice={
+          autoSavedNotice ? (
+            <View
+              accessibilityLiveRegion="polite"
+              style={{
+                flexDirection: 'row',
+                alignItems: 'center',
+                gap: 8,
+                paddingStart: 16,
+                paddingEnd: 4,
+                paddingVertical: 4,
+                borderRadius: Radii.card,
+                backgroundColor: colors.primarySoft,
+              }}
+            >
+              <KitIcon icon="checkmark-circle" size={18} color={colors.primaryText} />
+              <Text variant="bodySmall" weight="semibold" tone="primary" style={{ flex: 1, minWidth: 0 }}>
+                {t('recipe.autoSaved')}
+              </Text>
+              <Button
+                variant="link"
+                trackId="recipe.auto_saved.remove"
+                busy={removing}
+                onPress={() => void removeAutoSaved()}
+              >
+                {t('recipe.autoSavedRemove')}
+              </Button>
+              <IconButton
+                icon="close"
+                iconSize={18}
+                color={colors.primaryText}
+                label={t('common.close')}
+                trackId="recipe.auto_saved.dismiss"
+                onPress={() => setAutoSavedNotice(false)}
+              />
+            </View>
+          ) : null
+        }
         recipe={recipe}
         recipeId={recipe.id}
         isFavorite={recipe.is_favorite === true}

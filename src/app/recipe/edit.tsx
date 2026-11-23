@@ -8,18 +8,21 @@ import { type NavigationAction, usePreventRemove } from '@react-navigation/nativ
 import { router, Stack, useLocalSearchParams, useNavigation } from 'expo-router';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
+import Ionicons from '@expo/vector-icons/Ionicons';
 import {
   ActivityIndicator,
   KeyboardAvoidingView,
   type LayoutChangeEvent,
   Platform,
   ScrollView,
-  Text,
   View,
 } from 'react-native';
-import { Pressable } from '@/components/ui/Pressable';
 
 import { ConfirmDialog } from '@/components/ConfirmDialog';
+import { Button } from '@/components/ui/Button';
+import { Text } from '@/components/ui/Text';
+import { Tile } from '@/components/ui/Tile';
+import { Radii } from '@/components/ui/tokens';
 import { AppliancesField } from '@/components/recipeEditor/AppliancesField';
 import {
   AddRowButton,
@@ -37,7 +40,6 @@ import { TagsField } from '@/components/recipeEditor/TagsField';
 import { Screen } from '@/components/Screen';
 import { useAuth } from '@/hooks/useAuth';
 import { useLanguagePreference } from '@/hooks/useLanguagePreference';
-import { useRtl } from '@/hooks/useRtl';
 import { useThemePreference } from '@/hooks/useThemePreference';
 import { announce } from '@/lib/a11y';
 import { COST_I18N_KEYS } from '@shared/lib/formatCostEstimate';
@@ -53,12 +55,7 @@ import type { CostEstimate, EffortLevel, LockedField } from '@shared/types/recip
 const SIGN_UP = '/auth?mode=signup&reason=edit' as const;
 
 /** Keeps Cancel and Save off the window edges on web, and gives them a comfortable tap target. */
-const HEADER_ACTION_STYLE = {
-  paddingHorizontal: 16,
-  paddingVertical: 8,
-  minHeight: 44,
-  justifyContent: 'center',
-} as const;
+const HEADER_ACTION_STYLE = { marginHorizontal: Platform.OS === 'web' ? 12 : 0 } as const;
 const LIMITED_NOTICE_MS = 2000;
 
 type Exit =
@@ -72,6 +69,52 @@ function sourceHost(url: string): string {
   } catch {
     return url;
   }
+}
+
+/** A message at the top of the form: a save that failed or was blocked, a limited recalculation, a partial import. */
+function Notice({
+  tone,
+  title,
+  lines = [],
+}: {
+  tone: 'danger' | 'success' | 'warning';
+  title: string;
+  lines?: { key: string; text: string | null }[];
+}) {
+  const { colors } = useThemePreference();
+  const look = {
+    danger: { bg: colors.dangerSoft, fg: colors.danger, icon: 'alert-circle' as const },
+    success: { bg: colors.successSoft, fg: colors.success, icon: 'checkmark-circle' as const },
+    warning: { bg: colors.warningSoft, fg: colors.warning, icon: 'alert-circle' as const },
+  }[tone];
+  return (
+    <View
+      accessibilityLiveRegion="polite"
+      style={{
+        flexDirection: 'row',
+        alignItems: 'flex-start',
+        gap: 12,
+        borderRadius: Radii.inner,
+        paddingHorizontal: 16,
+        paddingVertical: 14,
+        backgroundColor: look.bg,
+      }}
+    >
+      <View accessible={false} importantForAccessibility="no-hide-descendants" style={{ paddingTop: 1 }}>
+        <Ionicons name={look.icon} size={20} color={look.fg} />
+      </View>
+      <View style={{ flex: 1, minWidth: 0, gap: 4 }}>
+        <Text variant="bodySmall" weight="semibold">
+          {title}
+        </Text>
+        {lines.map((line) => (
+          <Text key={line.key} variant="bodySmall">
+            {line.text}
+          </Text>
+        ))}
+      </View>
+    </View>
+  );
 }
 
 /** Errors to show: hard-limit checks live, "required" ones only after a save attempt. */
@@ -153,7 +196,7 @@ export default function RecipeEditScreen() {
 
   if (authLoading || ((isEdit || isImport) && initial === undefined && !isGuest)) {
     return (
-      <Screen edges={['left', 'right', 'bottom']} className="items-center justify-center">
+      <Screen edges={['left', 'right', 'bottom']} style={{ alignItems: 'center', justifyContent: 'center' }}>
         <Stack.Screen options={{ title }} />
         <ActivityIndicator color={colors.primary} accessibilityLabel={t('a11y.loadingRecipe')} />
       </Screen>
@@ -162,44 +205,28 @@ export default function RecipeEditScreen() {
 
   if (isGuest) {
     return (
-      <Screen edges={['left', 'right', 'bottom']} className="items-center justify-center gap-4 px-6">
+      <Screen edges={['left', 'right', 'bottom']} style={{ justifyContent: 'center', paddingHorizontal: 20 }}>
         <Stack.Screen options={{ title }} />
-        <Text className="text-center text-base" style={{ color: colors.text }}>
-          {t('auth.signupSubtitle')}
-        </Text>
-        <Pressable
-          trackId="recipe_editor.sign_up"
-          onPress={() => router.push(SIGN_UP)}
-          accessibilityRole="button"
-          className="min-h-[48px] items-center justify-center rounded-[22px] px-6 active:opacity-80"
-          style={{ backgroundColor: colors.primary }}
-        >
-          <Text className="font-bold" style={{ color: colors.onPrimary }}>
+        <Tile padding={24} style={{ alignItems: 'center', gap: 16 }}>
+          <Text align="center">{t('auth.signupSubtitle')}</Text>
+          <Button size="lg" fullWidth trackId="recipe_editor.sign_up" onPress={() => router.push(SIGN_UP)}>
             {t('auth.signUp')}
-          </Text>
-        </Pressable>
+          </Button>
+        </Tile>
       </Screen>
     );
   }
 
   if (!initial) {
     return (
-      <Screen edges={['left', 'right', 'bottom']} className="items-center justify-center gap-4 px-6">
+      <Screen edges={['left', 'right', 'bottom']} style={{ justifyContent: 'center', paddingHorizontal: 20 }}>
         <Stack.Screen options={{ title }} />
-        <Text className="text-center text-base" style={{ color: colors.text }}>
-          {loadError ?? t('recipe.loadFailed')}
-        </Text>
-        <Pressable
-          trackId="recipe_editor.load_retry"
-          onPress={() => void load()}
-          accessibilityRole="button"
-          className="min-h-[48px] items-center justify-center rounded-[22px] px-6 active:opacity-80"
-          style={{ backgroundColor: colors.primarySoft }}
-        >
-          <Text className="font-semibold" style={{ color: colors.text }}>
+        <Tile padding={24} style={{ alignItems: 'center', gap: 16 }}>
+          <Text align="center">{loadError ?? t('recipe.loadFailed')}</Text>
+          <Button variant="secondary" icon="refresh" trackId="recipe_editor.load_retry" onPress={() => void load()} style={{ alignSelf: 'center' }}>
             {t('common.retry')}
-          </Text>
-        </Pressable>
+          </Button>
+        </Tile>
       </Screen>
     );
   }
@@ -209,8 +236,6 @@ export default function RecipeEditScreen() {
 
 function RecipeEditor({ initial, title }: { initial: RecipeEditorState; title: string }) {
   const { t } = useTranslation();
-  const { colors } = useThemePreference();
-  const { textAlign } = useRtl();
   const { language } = useLanguagePreference();
   const navigation = useNavigation();
   const format = useEditorMessage();
@@ -348,7 +373,7 @@ function RecipeEditor({ initial, title }: { initial: RecipeEditorState; title: s
       : null;
 
   return (
-    <Screen edges={['left', 'right']} dense>
+    <Screen edges={['left', 'right']}>
       <Stack.Screen
         options={{
           title,
@@ -356,79 +381,59 @@ function RecipeEditor({ initial, title }: { initial: RecipeEditorState; title: s
           // Centred, so the title never butts against Cancel (start-aligned by default on web/Android).
           headerTitleAlign: 'center',
           headerLeft: () => (
-            <Pressable
+            <Button
+              variant="ghost"
+              size="sm"
               trackId="recipe_editor.cancel"
               onPress={cancel}
-              hitSlop={12}
-              accessibilityRole="button"
               disabled={saving}
-              className="active:opacity-70"
               style={HEADER_ACTION_STYLE}
             >
-              <Text className="text-base" style={{ color: colors.textSecondary }}>
-                {t('recipeEditor.cancel')}
-              </Text>
-            </Pressable>
+              {t('recipeEditor.cancel')}
+            </Button>
           ),
+          // Save is the screen's main action: the primary button.
           headerRight: () => (
-            <Pressable
+            <Button
+              size="sm"
               trackId="recipe_editor.save"
               onPress={() => void save()}
-              disabled={!canSave}
-              hitSlop={12}
-              accessibilityRole="button"
+              disabled={!canSave && !saving}
+              busy={saving}
               accessibilityLabel={saving ? t('recipeEditor.saving') : t('recipeEditor.save')}
-              accessibilityState={{ disabled: !canSave, busy: saving }}
-              className="active:opacity-70"
               style={HEADER_ACTION_STYLE}
             >
-              {saving ? (
-                <ActivityIndicator color={colors.primary} />
-              ) : (
-                <Text className="text-base font-bold" style={{ color: colors.primary, opacity: canSave ? 1 : 0.4 }}>
-                  {t('recipeEditor.save')}
-                </Text>
-              )}
-            </Pressable>
+              {t('recipeEditor.save')}
+            </Button>
           ),
         }}
       />
-      <KeyboardAvoidingView className="flex-1" behavior={Platform.OS === 'ios' ? 'padding' : undefined} keyboardVerticalOffset={100}>
+      <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === 'ios' ? 'padding' : undefined} keyboardVerticalOffset={100}>
         <ScrollView
           ref={scrollRef}
-          className="flex-1"
-          contentContainerClassName="px-4 pb-16 pt-3"
+          style={{ flex: 1 }}
+          contentContainerStyle={{ paddingHorizontal: 16, paddingTop: 8, paddingBottom: 64, gap: 12 }}
           keyboardShouldPersistTaps="handled"
           keyboardDismissMode={Platform.OS === 'ios' ? 'interactive' : 'on-drag'}
           scrollEnabled={!dragging}
         >
           {banner ? (
-            <View
-              className="mb-4 rounded-2xl p-3"
-              style={{ backgroundColor: banner.kind === 'error' ? colors.dangerSoft : colors.successSoft }}
-              accessibilityLiveRegion="polite"
-            >
-              <Text className="text-sm font-semibold" style={{ color: colors.text, textAlign }}>
-                {banner.text}
-              </Text>
-              {errors.recipe.map((message) => (
-                <Text key={message.key} className="mt-1 text-sm" style={{ color: colors.text, textAlign }}>
-                  {format(message)}
-                </Text>
-              ))}
-            </View>
+            <Notice
+              tone={banner.kind === 'error' ? 'danger' : 'success'}
+              title={banner.text}
+              lines={errors.recipe.map((message) => ({ key: message.key, text: format(message) }))}
+            />
           ) : null}
 
           {state.mode === 'import' && initial.missing.length > 0 ? (
-            <View className="mb-4 rounded-2xl p-3" style={{ backgroundColor: colors.warningSoft }}>
-              <Text className="text-sm font-semibold" style={{ color: colors.text, textAlign }}>
-                {t(
-                  initial.missing.includes('ingredients')
-                    ? 'recipeEditor.importMissingIngredients'
-                    : 'recipeEditor.importMissingSteps',
-                )}
-              </Text>
-            </View>
+            <Notice
+              tone="warning"
+              title={t(
+                initial.missing.includes('ingredients')
+                  ? 'recipeEditor.importMissingIngredients'
+                  : 'recipeEditor.importMissingSteps',
+              )}
+            />
           ) : null}
 
           <EditorSection title={t('recipeEditor.sections.basics')}>
@@ -457,22 +462,23 @@ function RecipeEditor({ initial, title }: { initial: RecipeEditorState; title: s
                 keyboardType="number-pad"
                 accessibilityLabel={t('recipeEditor.fields.servings')}
                 invalid={Boolean(errors.fields.servings)}
-                style={{ width: 96 }}
+                style={{ width: 104 }}
               />
             </EditorField>
             {sourceText ? (
               <EditorField label={t('recipeEditor.fields.source')}>
-                <Text className="text-base" style={{ color: colors.textSecondary, textAlign }} numberOfLines={1} selectable>
+                <Text tone="muted" numberOfLines={1} selectable>
                   {sourceText}
                 </Text>
               </EditorField>
             ) : null}
           </EditorSection>
 
-          <EditorSection title={t('recipeEditor.sections.ingredients')} onLayout={onSectionLayout('ingredients')}>
-            <Text className="text-xs" style={{ color: colors.textSecondary, textAlign }}>
-              {t('recipeEditor.reorderHint')}
-            </Text>
+          <EditorSection
+            title={t('recipeEditor.sections.ingredients')}
+            hint={t('recipeEditor.reorderHint')}
+            onLayout={onSectionLayout('ingredients')}
+          >
             <ReorderableList
               items={state.ingredients}
               onDragStateChange={setDragging}
@@ -496,7 +502,7 @@ function RecipeEditor({ initial, title }: { initial: RecipeEditorState; title: s
             <FieldError message={format(errors.fields.ingredients)} />
             <AddRowButton
               trackId="recipe_editor.ingredient.add"
-              label={t('recipeEditor.add.ingredient')}
+              label={t('web.editor.addIngredient')}
               onPress={() => change((s) => editor.addIngredient(s), { field: 'ingredients' })}
             />
           </EditorSection>
@@ -523,7 +529,7 @@ function RecipeEditor({ initial, title }: { initial: RecipeEditorState; title: s
             <FieldError message={format(errors.fields.steps)} />
             <AddRowButton
               trackId="recipe_editor.step.add"
-              label={t('recipeEditor.add.step')}
+              label={t('web.editor.addStep')}
               onPress={() => change((s) => editor.addStep(s), { field: 'steps' })}
             />
           </EditorSection>

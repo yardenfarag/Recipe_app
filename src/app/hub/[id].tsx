@@ -1,12 +1,13 @@
 import { router, useLocalSearchParams, useNavigation } from 'expo-router';
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { ActivityIndicator, Alert, Text, View } from 'react-native';
-import { Pressable } from '@/components/ui/Pressable';
+import { ActivityIndicator, Alert, View } from 'react-native';
 import { useTranslation } from 'react-i18next';
 import type { Edge } from 'react-native-safe-area-context';
 
 import { RecipeView } from '@/components/RecipeView';
 import { Screen } from '@/components/Screen';
+import { Button } from '@/components/ui/Button';
+import { Text } from '@/components/ui/Text';
 import { useAuth } from '@/hooks/useAuth';
 import { useThemePreference } from '@/hooks/useThemePreference';
 import { saveAfterSignInPath } from '@/lib/authReturnPath';
@@ -122,7 +123,7 @@ export default function HubRecipeScreen() {
   if (loading || authLoading) {
     return (
       <Screen edges={screenEdges}>
-        <View className="flex-1 items-center justify-center">
+        <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center' }}>
           <ActivityIndicator color={colors.primary} accessibilityLabel={t('a11y.loading')} />
         </View>
       </Screen>
@@ -133,22 +134,15 @@ export default function HubRecipeScreen() {
     return (
       <Screen edges={screenEdges}>
         <View
-          className="flex-1 items-center justify-center gap-4 px-6"
+          style={{ flex: 1, alignItems: 'center', justifyContent: 'center', gap: 20, paddingHorizontal: 24 }}
           accessibilityLiveRegion="polite"
         >
-          <Text className="text-center text-base" style={{ color: colors.textSecondary }}>
+          <Text variant="body" tone="muted" align="center">
             {loadError ?? t('hub.notFound')}
           </Text>
-          <Pressable trackId="hub_recipe.back_to_hub"
-            onPress={() => router.replace('/hub')}
-            accessibilityRole="button"
-            className="rounded-full px-5 py-3 active:opacity-80"
-            style={{ backgroundColor: colors.primary }}
-          >
-            <Text className="text-sm font-bold" style={{ color: colors.onPrimary }}>
-              {t('hub.backToHub')}
-            </Text>
-          </Pressable>
+          <Button trackId="hub_recipe.back_to_hub" icon="chevron-back" onPress={() => router.replace('/hub')}>
+            {t('hub.backToHub')}
+          </Button>
         </View>
       </Screen>
     );
@@ -158,29 +152,23 @@ export default function HubRecipeScreen() {
 
   return (
     <Screen edges={screenEdges}>
-      <View className="px-5 pb-3 pt-2">
-        <Pressable trackId={existingRecipeId ? 'hub_recipe.open_in_library' : 'hub_recipe.add_to_library'}
+      <View style={{ paddingHorizontal: 20, paddingTop: 8, paddingBottom: 12, gap: 8 }}>
+        <Button
+          trackId={existingRecipeId ? 'hub_recipe.open_in_library' : 'hub_recipe.add_to_library'}
           onPress={() =>
             existingRecipeId
               ? router.replace(`/recipe/${existingRecipeId}`)
               : void addToLibrary()
           }
-          disabled={claiming}
-          accessibilityRole="button"
+          busy={claiming}
+          size="lg"
+          fullWidth
+          icon={existingRecipeId ? 'book-outline' : 'add'}
           accessibilityLabel={existingRecipeId ? t('hub.openInLibrary') : t('hub.addToLibrary')}
-          accessibilityState={{ disabled: claiming, busy: claiming }}
-          className="min-h-12 items-center justify-center rounded-3xl px-5 active:opacity-80 disabled:opacity-60"
-          style={{ backgroundColor: colors.primary }}
         >
-          {claiming ? (
-            <ActivityIndicator color={colors.onPrimary} />
-          ) : (
-            <Text className="text-sm font-bold" style={{ color: colors.onPrimary }}>
-              {existingRecipeId ? t('hub.openInLibrary') : t('hub.addToLibrary')}
-            </Text>
-          )}
-        </Pressable>
-        <Text className="mt-2 text-center text-xs leading-4" style={{ color: colors.textSecondary }}>
+          {existingRecipeId ? t('hub.openInLibrary') : t('hub.addToLibrary')}
+        </Button>
+        <Text variant="caption" tone="muted" align="center">
           {t('hub.attribution')}
         </Text>
       </View>

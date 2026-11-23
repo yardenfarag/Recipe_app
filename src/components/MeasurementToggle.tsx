@@ -1,75 +1,50 @@
-import Ionicons from '@expo/vector-icons/Ionicons';
 import { useTranslation } from 'react-i18next';
-import { Text, View } from 'react-native';
-import { Pressable } from '@/components/ui/Pressable';
+import { View, type StyleProp, type ViewStyle } from 'react-native';
 
+import { SegmentedControl } from '@/components/ui/SegmentedControl';
+import { Text } from '@/components/ui/Text';
 import { useMeasurementPreference } from '@/hooks/useMeasurementPreference';
-import { useThemePreference } from '@/hooks/useThemePreference';
-import { CHROME_MAX_FONT_SCALE } from '@/lib/a11y';
 import type { MeasurementSystem } from '@shared/lib/convertMeasurement';
-
-const MODES: { id: MeasurementSystem; icon: keyof typeof Ionicons.glyphMap }[] = [
-  { id: 'original', icon: 'restaurant-outline' },
-  { id: 'metric', icon: 'scale-outline' },
-];
 
 type MeasurementToggleProps = {
   /** One-line hint under the control (recipe screen). */
   hint?: boolean;
   /** Tap-log id prefix; each mode logs as `<trackId>.<mode>`. */
   trackId?: string;
+  /** Words only and as wide as they are, to sit beside the servings on the recipe page. */
+  compact?: boolean;
+  style?: StyleProp<ViewStyle>;
 };
 
-/** Cute pill toggle — cups & spoons vs grams & milliliters. */
-export function MeasurementToggle({ hint = false, trackId = 'measurement' }: MeasurementToggleProps) {
+/** Cups & spoons or grams & milliliters, on the kit's segmented control (PIN-177). */
+export function MeasurementToggle({ hint = false, trackId = 'measurement', compact = false, style }: MeasurementToggleProps) {
   const { t } = useTranslation();
   const { system, setSystem } = useMeasurementPreference();
-  const { colors } = useThemePreference();
-
-  const labels: Record<MeasurementSystem, string> = {
-    original: t('measurement.spoons'),
-    metric: t('measurement.grams'),
-  };
 
   return (
-    <View>
-      <View
-        className="flex-row rounded-[18px] p-1"
-        style={{ backgroundColor: colors.primarySoft }}
-      >
-        {MODES.map((mode) => {
-          const active = system === mode.id;
-          return (
-            <Pressable
-              trackId={`${trackId}.${mode.id}`}
-              key={mode.id}
-              onPress={() => setSystem(mode.id)}
-              accessibilityRole="button"
-              accessibilityState={{ selected: active }}
-              accessibilityLabel={
-                mode.id === 'metric' ? t('a11y.measureInGrams') : t('a11y.measureInSpoons')
-              }
-              className="flex-1 flex-row items-center justify-center gap-1.5 rounded-[14px] px-3 py-2.5"
-              style={active ? { backgroundColor: colors.surface } : undefined}
-            >
-              <Ionicons
-                name={mode.icon}
-                size={16}
-                color={active ? colors.primary : colors.textSecondary}
-              />
-              <Text
-                className="text-xs font-semibold"
-                style={{ color: active ? colors.primary : colors.textSecondary }}
-                maxFontSizeMultiplier={CHROME_MAX_FONT_SCALE}
-              >
-                {labels[mode.id]}
-              </Text>
-            </Pressable>
-          );
-        })}
-      </View>
+    <View style={style}>
+      <SegmentedControl<MeasurementSystem>
+        label={`${t('measurement.spoons')} / ${t('measurement.grams')}`}
+        value={system}
+        onChange={setSystem}
+        fullWidth={!compact}
+        options={[
+          {
+            value: 'original',
+            label: t('measurement.spoons'),
+            icon: compact ? undefined : 'restaurant-outline',
+            trackId: `${trackId}.original`,
+          },
+          {
+            value: 'metric',
+            label: t('measurement.grams'),
+            icon: compact ? undefined : 'scale-outline',
+            trackId: `${trackId}.metric`,
+          },
+        ]}
+      />
       {hint && system === 'metric' ? (
-        <Text className="mt-2 text-center text-[11px] leading-4" style={{ color: colors.textSecondary }}>
+        <Text variant="caption" tone="muted" style={{ marginTop: 8 }}>
           {t('measurement.metricHint')}
         </Text>
       ) : null}

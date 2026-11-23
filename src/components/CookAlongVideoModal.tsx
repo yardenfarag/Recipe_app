@@ -1,21 +1,19 @@
-import Ionicons from '@expo/vector-icons/Ionicons';
 import * as WebBrowser from 'expo-web-browser';
 import { createElement, useEffect, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import {
-  ActivityIndicator,
-  Platform,
-  Text,
-  useWindowDimensions,
-  View,
-} from 'react-native';
-import { Pressable } from '@/components/ui/Pressable';
+import { ActivityIndicator, Platform, useWindowDimensions, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { WebView } from 'react-native-webview';
 
+import { Button } from '@/components/ui/Button';
+import { Chip } from '@/components/ui/Chip';
+import { IconButton } from '@/components/ui/IconButton';
+import { Pressable } from '@/components/ui/Pressable';
+import { Text } from '@/components/ui/Text';
+import { HAIRLINE, KitIcon, Radii, usePhotoColors } from '@/components/ui/tokens';
 import { useBreakpoint } from '@/hooks/useBreakpoint';
 import { useThemePreference } from '@/hooks/useThemePreference';
-import { announce, CHROME_MAX_FONT_SCALE } from '@/lib/a11y';
+import { announce } from '@/lib/a11y';
 import {
   buildRecipeVideoWebViewSource,
   getRecipePlatformLabel,
@@ -39,7 +37,7 @@ function isPortraitSocialVideo(platform: RecipePlatform): boolean {
 }
 
 /** Chrome around the iframe (title row + open-in-browser link). */
-const WEB_DIALOG_CHROME = 112;
+const WEB_DIALOG_CHROME = 128;
 const WEB_DIALOG_INSET = 12;
 
 type CookAlongVideoModalProps = {
@@ -75,6 +73,8 @@ export function CookAlongVideoModal({
 }: CookAlongVideoModalProps) {
   const { t } = useTranslation();
   const { colors } = useThemePreference();
+  // The player sits on the photo scrim: the same dark backing in light and dark mode.
+  const photo = usePhotoColors();
   const insets = useSafeAreaInsets();
   const { height: windowHeight, width: windowWidth } = useWindowDimensions();
   const { isWide } = useBreakpoint();
@@ -158,27 +158,39 @@ export function CookAlongVideoModal({
       : `html-${video.platform}-${startSeconds}-${originalUrl}`;
 
   const videoPlayer = loadError ? (
-    <View className="flex-1 items-center justify-center px-6">
-      <Ionicons name="alert-circle-outline" size={36} color="#fff" />
-      <Text className="mt-3 text-center text-sm leading-5 text-white/90">
+    <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center', gap: 12, paddingHorizontal: 24 }}>
+      <KitIcon icon="alert-circle-outline" size={36} color={photo.onScrim} />
+      <Text variant="bodySmall" tone="onScrim" align="center">
         {t('cookAlong.loadFailed')}
       </Text>
-      <Pressable trackId="cook_along.load_error.open_in_browser"
+      <Button
+        variant="primary"
+        size="sm"
+        icon="open-outline"
+        trackId="cook_along.load_error.open_in_browser"
         onPress={() => void openInBrowser()}
-        className="mt-4 rounded-full px-5 py-2.5 active:opacity-80"
-        style={{ backgroundColor: colors.primary }}
-        accessibilityRole="link"
+        style={{ alignSelf: 'center' }}
       >
-        <Text className="text-sm font-bold" style={{ color: colors.onPrimary }}>
-          {t('cookAlong.openInBrowser')}
-        </Text>
-      </Pressable>
+        {t('cookAlong.openInBrowser')}
+      </Button>
     </View>
   ) : (
     <>
       {loading ? (
-        <View className="absolute inset-0 z-10 items-center justify-center bg-black">
-          <ActivityIndicator color="#fff" size="large" accessibilityLabel={t('a11y.loadingVideo')} />
+        <View
+          style={{
+            position: 'absolute',
+            top: 0,
+            bottom: 0,
+            start: 0,
+            end: 0,
+            zIndex: 10,
+            alignItems: 'center',
+            justifyContent: 'center',
+            backgroundColor: photo.scrim,
+          }}
+        >
+          <ActivityIndicator color={photo.onScrim} size="large" accessibilityLabel={t('a11y.loadingVideo')} />
         </View>
       ) : null}
       {isWeb ? (
@@ -194,7 +206,7 @@ export function CookAlongVideoModal({
               width: '100%',
               height: '100%',
               border: 'none',
-              backgroundColor: '#000',
+              backgroundColor: photo.scrim,
             },
             onLoad: () => setLoading(false),
             onError: () => {
@@ -214,7 +226,7 @@ export function CookAlongVideoModal({
               width: '100%',
               height: '100%',
               border: 'none',
-              backgroundColor: '#000',
+              backgroundColor: photo.scrim,
             },
             onLoad: () => setLoading(false),
           })
@@ -244,7 +256,7 @@ export function CookAlongVideoModal({
             setLoading(false);
             setLoadError(true);
           }}
-          style={{ flex: 1, backgroundColor: '#000' }}
+          style={{ flex: 1, backgroundColor: photo.scrim }}
         />
       )}
     </>
@@ -252,31 +264,20 @@ export function CookAlongVideoModal({
 
   const chrome = (
     <>
-      <View className="flex-row items-center justify-between px-4 pb-2 pt-3">
-        <View className="flex-1" style={{ paddingEnd: 12 }}>
-          <Text className="text-base font-bold" style={{ color: colors.text }} accessibilityRole="header">
-            {t('cookAlong.title')}
-          </Text>
-          <Text className="text-xs" style={{ color: colors.textSecondary }}>
+      <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12, paddingHorizontal: 16, paddingTop: 12, paddingBottom: 8 }}>
+        <View style={{ flex: 1, minWidth: 0 }}>
+          <Text variant="h3">{t('cookAlong.title')}</Text>
+          <Text variant="caption" tone="muted" numberOfLines={1}>
             {platformLabel}
             {startSeconds > 0 ? ` · ${t('cookAlong.fromTime', { time: formatClock(startSeconds) })}` : ''}
             {isWeb ? '' : ` · ${t('cookAlong.scrollRecipe')}`}
           </Text>
         </View>
-        <Pressable trackId="cook_along.close"
-          onPress={onClose}
-          hitSlop={12}
-          className="h-9 w-9 items-center justify-center rounded-full active:opacity-70"
-          style={{ backgroundColor: colors.frosted }}
-          accessibilityRole="button"
-          accessibilityLabel={t('cookAlong.close')}
-        >
-          <Ionicons name="close" size={20} color={colors.text} />
-        </Pressable>
+        <IconButton variant="tile" icon="close" label={t('cookAlong.close')} trackId="cook_along.close" onPress={onClose} />
       </View>
 
       {!isWeb && (
-        <View className="mb-2 flex-row gap-2 px-4">
+        <View style={{ flexDirection: 'row', gap: 8, paddingHorizontal: 16, marginBottom: 8 }}>
           {(['compact', 'medium', 'tall'] as HeightPreset[]).map((preset) => {
             const active = heightPreset === preset;
             const presetLabel = t(
@@ -287,51 +288,47 @@ export function CookAlongVideoModal({
                   : 'cookAlong.heightTall',
             );
             return (
-              <Pressable trackId={`cook_along.height.${preset}`}
+              <Chip
                 key={preset}
+                size="sm"
+                kind="radio"
+                selected={active}
+                trackId={`cook_along.height.${preset}`}
                 onPress={() => setHeightPreset(preset)}
-                className="flex-1 items-center rounded-full py-1.5 active:opacity-80"
-                style={{
-                  backgroundColor: active ? colors.primary : colors.frosted,
-                }}
-                hitSlop={{ top: 8, bottom: 8 }}
-                accessibilityRole="button"
-                accessibilityState={{ selected: active }}
                 accessibilityLabel={t('a11y.videoHeight', { size: presetLabel })}
+                style={{ flex: 1, justifyContent: 'center' }}
               >
-                <Text
-                  className="text-[11px] font-semibold"
-                  style={{ color: active ? colors.onPrimary : colors.textSecondary }}
-                  maxFontSizeMultiplier={CHROME_MAX_FONT_SCALE}
-                >
-                  {presetLabel}
-                </Text>
-              </Pressable>
+                {presetLabel}
+              </Chip>
             );
           })}
         </View>
       )}
 
       <View
-        className="mx-4 overflow-hidden rounded-2xl bg-black"
         style={{
           flex: 1,
+          marginHorizontal: 16,
+          overflow: 'hidden',
+          borderRadius: Radii.inner,
+          backgroundColor: photo.scrim,
           minHeight: isSidebar || isWeb ? 0 : undefined,
         }}
       >
         {videoPlayer}
       </View>
 
-      <Pressable trackId="cook_along.open_in_browser"
-        onPress={() => void openInBrowser()}
-        className="mx-4 mt-2 mb-3 flex-row items-center justify-center gap-1.5 py-2 active:opacity-70"
-        accessibilityRole="link"
-      >
-        <Ionicons name="open-outline" size={16} color={colors.textSecondary} />
-        <Text className="shrink text-xs font-medium" style={{ color: colors.textSecondary }}>
+      <View style={{ alignItems: 'center', marginTop: 4, marginBottom: 8 }}>
+        <Button
+          variant="ghost"
+          size="sm"
+          icon="open-outline"
+          trackId="cook_along.open_in_browser"
+          onPress={() => void openInBrowser()}
+        >
           {t('cookAlong.openInBrowserHint')}
-        </Text>
-      </Pressable>
+        </Button>
+      </View>
     </>
   );
 
@@ -341,9 +338,9 @@ export function CookAlongVideoModal({
         style={{
           flex: 1,
           backgroundColor: colors.surface,
-          borderRadius: 28,
-          borderWidth: 1,
-          borderColor: colors.frostedBorder,
+          borderRadius: Radii.tile,
+          borderWidth: HAIRLINE,
+          borderColor: colors.border,
           overflow: 'hidden',
         }}
       >
@@ -358,25 +355,20 @@ export function CookAlongVideoModal({
         pointerEvents="box-none"
         style={{
           position: 'absolute',
-          left: 0,
-          right: 0,
+          start: 0,
+          end: 0,
           top: 0,
           bottom: 0,
           zIndex: 50,
           alignItems: 'center',
           justifyContent: 'center',
-          backgroundColor: 'rgba(0,0,0,0.45)',
+          backgroundColor: colors.overlay,
           padding: WEB_DIALOG_INSET,
         }}
       >
-        <Pressable trackId="cook_along.backdrop"
-          style={{
-            position: 'absolute',
-            left: 0,
-            right: 0,
-            top: 0,
-            bottom: 0,
-          }}
+        <Pressable
+          trackId="cook_along.backdrop"
+          style={{ position: 'absolute', start: 0, end: 0, top: 0, bottom: 0 }}
           onPress={onClose}
           accessibilityRole="button"
           accessibilityLabel={t('cookAlong.dismiss')}
@@ -390,12 +382,10 @@ export function CookAlongVideoModal({
             height: webDialogHeight,
             maxHeight: webDialogHeight,
             backgroundColor: colors.background,
-            borderRadius: 24,
+            borderRadius: Radii.tile,
+            borderWidth: HAIRLINE,
+            borderColor: colors.border,
             paddingBottom: 12,
-            shadowColor: '#000',
-            shadowOffset: { width: 0, height: 8 },
-            shadowOpacity: 0.2,
-            shadowRadius: 24,
           }}
         >
           {chrome}
@@ -409,8 +399,8 @@ export function CookAlongVideoModal({
       pointerEvents="box-none"
       style={{
         position: 'absolute',
-        left: 0,
-        right: 0,
+        start: 0,
+        end: 0,
         top: 0,
         bottom: 0,
         justifyContent: 'flex-end',
@@ -426,13 +416,10 @@ export function CookAlongVideoModal({
           height: totalHeight,
           paddingBottom: insets.bottom,
           backgroundColor: colors.background,
-          borderTopLeftRadius: 24,
-          borderTopRightRadius: 24,
-          shadowColor: '#000',
-          shadowOffset: { width: 0, height: -4 },
-          shadowOpacity: 0.15,
-          shadowRadius: 12,
-          elevation: 16,
+          borderTopStartRadius: Radii.tile,
+          borderTopEndRadius: Radii.tile,
+          borderTopWidth: HAIRLINE,
+          borderColor: colors.border,
         }}
       >
         {chrome}

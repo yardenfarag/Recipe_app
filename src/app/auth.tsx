@@ -2,27 +2,26 @@ import Ionicons from '@expo/vector-icons/Ionicons';
 import * as AppleAuthentication from 'expo-apple-authentication';
 import { router, useLocalSearchParams } from 'expo-router';
 import { useEffect, useMemo, useState, type ReactNode } from 'react';
-import {
-  ActivityIndicator,
-  KeyboardAvoidingView,
-  Platform,
-  ScrollView,
-  Text,
-  View,
-} from 'react-native';
-import { Pressable } from '@/components/ui/Pressable';
+import { KeyboardAvoidingView, Platform, ScrollView, View } from 'react-native';
 import { useTranslation } from 'react-i18next';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
-import { CookieMark } from '@/components/CookieMark';
 import { openLegalDoc } from '@/components/LegalDocument';
-import { TextInput } from '@/components/text-input';
+import { FieldInput, TextField } from '@/components/text-input';
+import { Button } from '@/components/ui/Button';
+import { IconButton } from '@/components/ui/IconButton';
+import { PinchLogo } from '@/components/ui/PinchLogo';
+import { Pressable } from '@/components/ui/Pressable';
+import { Text } from '@/components/ui/Text';
+import { useTileStyle } from '@/components/ui/Tile';
+import { Radii } from '@/components/ui/tokens';
 import { AuthCardWidth } from '@/constants/theme';
 import { useBreakpoint } from '@/hooks/useBreakpoint';
 import { useLanguagePreference } from '@/hooks/useLanguagePreference';
 import { useOnboarding } from '@/hooks/useOnboarding';
 import { captureOnboardingCompleted } from '@/lib/analytics';
 import { useThemePreference } from '@/hooks/useThemePreference';
+import { useTypography } from '@/hooks/useTypography';
 import { announce } from '@/lib/a11y';
 import {
   getPasswordStrength,
@@ -82,17 +81,19 @@ function parseReason(value: string | string[] | undefined): AuthReason {
   return undefined;
 }
 
+/**
+ * The page around sign-in (Night Market, PIN-177): flat on a phone, the form straight on the page; on a tablet or a
+ * wide window, one tile in the middle, as on the web (web/components/AuthCard.tsx).
+ */
 function AuthShell({ children }: { children: ReactNode }) {
   const { colors } = useThemePreference();
   const { isMediumUp } = useBreakpoint();
+  const tile = useTileStyle('surface', 'lg');
 
   const keyboardSafeContent = (
-    <KeyboardAvoidingView
-      className="flex-1"
-      behavior={Platform.OS === 'ios' ? 'padding' : undefined}
-    >
+    <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
       <ScrollView
-        className="flex-1"
+        style={{ flex: 1 }}
         contentContainerStyle={{ flexGrow: 1 }}
         keyboardShouldPersistTaps="handled"
         keyboardDismissMode={Platform.OS === 'ios' ? 'interactive' : 'on-drag'}
@@ -105,7 +106,7 @@ function AuthShell({ children }: { children: ReactNode }) {
 
   if (!isMediumUp) {
     return (
-      <SafeAreaView className="flex-1" style={{ backgroundColor: colors.background }} edges={['bottom']}>
+      <SafeAreaView style={{ flex: 1, backgroundColor: colors.background }} edges={['bottom']}>
         {keyboardSafeContent}
       </SafeAreaView>
     );
@@ -113,27 +114,88 @@ function AuthShell({ children }: { children: ReactNode }) {
 
   return (
     <SafeAreaView
-      className="flex-1 items-center justify-center px-6"
-      style={{ backgroundColor: colors.background }}
+      style={{
+        flex: 1,
+        alignItems: 'center',
+        justifyContent: 'center',
+        paddingHorizontal: 24,
+        backgroundColor: colors.background,
+      }}
       edges={['bottom', 'top']}
     >
       <View
-        style={{
-          width: '100%',
-          maxWidth: AuthCardWidth,
-          borderRadius: 28,
-          borderWidth: 1,
-          borderColor: colors.frostedBorder,
-          backgroundColor: colors.surface,
-          paddingHorizontal: 24,
-          paddingTop: 28,
-          paddingBottom: 24,
-          maxHeight: '100%',
-        }}
+        style={[
+          tile,
+          {
+            width: '100%',
+            maxWidth: AuthCardWidth,
+            paddingHorizontal: 12,
+            paddingTop: 16,
+            paddingBottom: 12,
+            maxHeight: '100%',
+          },
+        ]}
       >
         {keyboardSafeContent}
       </View>
     </SafeAreaView>
+  );
+}
+
+/** A failure under the form, read out as soon as it shows. */
+function FormAlert({ message }: { message: string }) {
+  const { colors } = useThemePreference();
+  return (
+    <View
+      accessibilityRole="alert"
+      style={{
+        flexDirection: 'row',
+        alignItems: 'flex-start',
+        gap: 10,
+        borderRadius: Radii.inner,
+        paddingHorizontal: 14,
+        paddingVertical: 12,
+        backgroundColor: colors.dangerSoft,
+      }}
+    >
+      <View accessible={false} importantForAccessibility="no-hide-descendants" style={{ paddingTop: 1 }}>
+        <Ionicons name="alert-circle" size={18} color={colors.danger} />
+      </View>
+      <Text variant="bodySmall" tone="danger" weight="medium" style={{ flex: 1 }}>
+        {message}
+      </Text>
+    </View>
+  );
+}
+
+/** The mail mark over "Check your email". */
+function MailMark() {
+  const { colors } = useThemePreference();
+  return (
+    <View
+      accessible={false}
+      importantForAccessibility="no-hide-descendants"
+      style={{
+        width: 72,
+        height: 72,
+        borderRadius: 24,
+        alignItems: 'center',
+        justifyContent: 'center',
+        backgroundColor: colors.primarySoft,
+        marginBottom: 20,
+      }}
+    >
+      <Ionicons name="mail-open-outline" size={32} color={colors.primaryText} />
+    </View>
+  );
+}
+
+/** The address the email went to: always left-to-right, as an address reads. */
+function EmailEcho({ email }: { email: string }) {
+  return (
+    <Text weight="semibold" align="center" style={{ marginTop: 6, marginBottom: 24, writingDirection: 'ltr' }}>
+      {email}
+    </Text>
   );
 }
 
@@ -155,6 +217,7 @@ export default function AuthScreen() {
   const [isAppleAvailable, setIsAppleAvailable] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const { colors, scheme } = useThemePreference();
+  const type = useTypography();
   const { completed: onboardingCompleted, completeOnboarding } = useOnboarding();
   const { language } = useLanguagePreference();
 
@@ -341,6 +404,8 @@ export default function AuthScreen() {
   const passwordStrength = getPasswordStrength(password);
   const canSubmit = Boolean(email.trim()) && (!usesPassword || Boolean(password)) && !loading;
   const { isMediumUp } = useBreakpoint();
+  /** The page's side padding: the tile pads itself on wider screens. */
+  const pagePadding = isMediumUp ? 12 : 20;
 
   const subtitle =
     reason === 'extract_limit'
@@ -370,131 +435,100 @@ export default function AuthScreen() {
     const codeComplete = code.length === CODE_LENGTH;
     return (
       <AuthShell>
-        <View className="flex-1 items-center justify-center px-6 pb-10">
-          <View
-            className="mb-5 h-16 w-16 items-center justify-center rounded-full"
-            style={{ backgroundColor: colors.primarySoft }}
-            accessible={false}
-            importantForAccessibility="no-hide-descendants"
-          >
-            <Ionicons name="mail-open-outline" size={30} color={colors.primary} />
-          </View>
-          <Text
-            className="mb-2 text-center text-2xl font-bold"
-            style={{ color: colors.text }}
-            accessibilityRole="header"
-          >
+        <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center', paddingHorizontal: pagePadding, paddingVertical: 32 }}>
+          <MailMark />
+          <Text variant="h1" align="center">
             {t('auth.checkEmail')}
           </Text>
-          <Text className="mb-2 text-center text-base leading-6" style={{ color: colors.textSecondary }}>
+          <Text tone="muted" align="center" style={{ marginTop: 8 }}>
             {t(isReset ? 'auth.resetSent' : 'auth.codeSent')}
           </Text>
-          <Text className="mb-6 text-center text-base font-semibold" style={{ color: colors.text }}>
-            {normalizeEmail(email)}
-          </Text>
+          <EmailEcho email={normalizeEmail(email)} />
 
-          <TextInput
-            accessibilityLabel={t('auth.codeLabel')}
-            accessibilityHint={t(isReset ? 'auth.resetInstructions' : 'auth.codeInstructions')}
-            className="mb-3 w-full rounded-2xl border px-4 py-4 text-center text-3xl font-bold"
-            style={{
-              color: colors.text,
-              borderColor: error ? colors.danger : colors.border,
-              backgroundColor: colors.surface,
-              letterSpacing: 10,
-              writingDirection: 'ltr',
-            }}
-            placeholder="••••••"
-            placeholderTextColor={colors.textSecondary}
-            value={code}
-            onChangeText={(value) => {
-              const digits = value.replace(/\D/g, '').slice(0, CODE_LENGTH);
-              setCode(digits);
-              if (error) setError(null);
-              // Pasted or autofilled codes sign in right away.
-              if (digits.length === CODE_LENGTH) void handleVerifyCode(digits);
-            }}
-            keyboardType="number-pad"
-            inputMode="numeric"
-            autoComplete="one-time-code"
-            textContentType="oneTimeCode"
-            maxLength={CODE_LENGTH}
-            autoFocus
-            editable={!loading}
-            onSubmitEditing={() => {
-              logTap('auth.code_field.submit_key', { mode: waitingFor });
-              void handleVerifyCode();
-            }}
-          />
-          <Text className="mb-5 text-center text-sm leading-5" style={{ color: colors.textSecondary }}>
-            {t(isReset ? 'auth.resetInstructions' : 'auth.codeInstructions')}
-          </Text>
-
-          {error && (
-            <View
-              className="mb-4 w-full rounded-2xl border px-4 py-3"
-              style={{ borderColor: colors.dangerSoft, backgroundColor: colors.dangerSoft }}
-              accessibilityRole="alert"
-            >
-              <Text className="text-sm" style={{ color: colors.danger }}>
-                {error}
-              </Text>
-            </View>
-          )}
-          {notice && !error && (
-            <Text
-              className="mb-4 text-center text-sm font-semibold"
-              style={{ color: colors.success }}
-              accessibilityLiveRegion="polite"
-            >
-              {notice}
+          <View style={{ alignSelf: 'stretch', gap: 12 }}>
+            <FieldInput
+              accessibilityLabel={t('auth.codeLabel')}
+              accessibilityHint={t(isReset ? 'auth.resetInstructions' : 'auth.codeInstructions')}
+              invalid={Boolean(error)}
+              containerStyle={{ minHeight: 68 }}
+              style={{
+                ...type.font('display', 'bold'),
+                fontSize: 30,
+                lineHeight: 36,
+                textAlign: 'center',
+                letterSpacing: 10,
+                writingDirection: 'ltr',
+              }}
+              placeholder="••••••"
+              value={code}
+              onChangeText={(value) => {
+                const digits = value.replace(/\D/g, '').slice(0, CODE_LENGTH);
+                setCode(digits);
+                if (error) setError(null);
+                // Pasted or autofilled codes sign in right away.
+                if (digits.length === CODE_LENGTH) void handleVerifyCode(digits);
+              }}
+              keyboardType="number-pad"
+              inputMode="numeric"
+              autoComplete="one-time-code"
+              textContentType="oneTimeCode"
+              maxLength={CODE_LENGTH}
+              autoFocus
+              editable={!loading}
+              onSubmitEditing={() => {
+                logTap('auth.code_field.submit_key', { mode: waitingFor });
+                void handleVerifyCode();
+              }}
+            />
+            <Text variant="bodySmall" tone="muted" align="center">
+              {t(isReset ? 'auth.resetInstructions' : 'auth.codeInstructions')}
             </Text>
-          )}
 
-          <Pressable trackId={isReset ? 'auth.reset_code.verify' : 'auth.code.verify'}
-            className="mb-3 w-full items-center rounded-full py-4"
-            style={{ backgroundColor: codeComplete && !loading ? colors.primary : colors.border }}
-            onPress={() => void handleVerifyCode()}
-            disabled={!codeComplete || loading}
-            accessibilityRole="button"
-            accessibilityState={{ disabled: !codeComplete || loading, busy: loading }}
-          >
-            {loading ? (
-              <ActivityIndicator color={codeComplete ? colors.onPrimary : colors.textSecondary} />
-            ) : (
-              <Text
-                className="text-lg font-bold"
-                style={{ color: codeComplete ? colors.onPrimary : colors.textSecondary }}
-              >
-                {t('auth.verifyCode')}
+            {error ? <FormAlert message={error} /> : null}
+            {notice && !error ? (
+              <Text variant="bodySmall" tone="success" weight="semibold" align="center" accessibilityLiveRegion="polite">
+                {notice}
               </Text>
-            )}
-          </Pressable>
-          <Pressable trackId={isReset ? 'auth.reset_code.resend' : 'auth.code.resend'}
-            className="items-center py-3"
-            accessibilityRole="button"
-            disabled={loading}
-            onPress={() => void handleResendCode()}
-          >
-            <Text className="text-sm font-semibold" style={{ color: colors.primary }}>
+            ) : null}
+
+            <Button
+              size="lg"
+              fullWidth
+              trackId={isReset ? 'auth.reset_code.verify' : 'auth.code.verify'}
+              onPress={() => void handleVerifyCode()}
+              disabled={!codeComplete}
+              busy={loading}
+              style={{ marginTop: 8 }}
+            >
+              {t('auth.verifyCode')}
+            </Button>
+          </View>
+          <View style={{ marginTop: 12, alignItems: 'center' }}>
+            <Button
+              variant="link"
+              trackId={isReset ? 'auth.reset_code.resend' : 'auth.code.resend'}
+              disabled={loading}
+              onPress={() => void handleResendCode()}
+            >
               {t('auth.resendCode')}
-            </Text>
-          </Pressable>
-          <Pressable trackId={isReset ? 'auth.reset_code.change_email' : 'auth.code.change_email'}
-            className="items-center py-2"
-            accessibilityRole="button"
-            disabled={loading}
-            onPress={() => {
-              setWaitingFor(null);
-              setCode('');
-              setNotice(null);
-              setError(null);
-            }}
-          >
-            <Text className="text-sm" style={{ color: colors.textSecondary }}>
-              {t('auth.differentEmail')}
-            </Text>
-          </Pressable>
+            </Button>
+            <Pressable
+              trackId={isReset ? 'auth.reset_code.change_email' : 'auth.code.change_email'}
+              accessibilityRole="button"
+              disabled={loading}
+              onPress={() => {
+                setWaitingFor(null);
+                setCode('');
+                setNotice(null);
+                setError(null);
+              }}
+              style={{ minHeight: 44, justifyContent: 'center', paddingHorizontal: 8 }}
+            >
+              <Text variant="bodySmall" tone="muted" weight="medium">
+                {t('auth.differentEmail')}
+              </Text>
+            </Pressable>
+          </View>
         </View>
       </AuthShell>
     );
@@ -504,76 +538,53 @@ export default function AuthScreen() {
     const isConfirm = waitingFor === 'confirm';
     return (
       <AuthShell>
-        <View className="flex-1 items-center justify-center px-6 pb-10">
-          <View
-            className="mb-5 h-16 w-16 items-center justify-center rounded-full"
-            style={{ backgroundColor: colors.primarySoft }}
-            accessible={false}
-            importantForAccessibility="no-hide-descendants"
-          >
-            <Ionicons name="mail-open-outline" size={30} color={colors.primary} />
-          </View>
-          <Text
-            className="mb-2 text-center text-2xl font-bold"
-            style={{ color: colors.text }}
-            accessibilityRole="header"
-          >
+        <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center', paddingHorizontal: pagePadding, paddingVertical: 32 }}>
+          <MailMark />
+          <Text variant="h1" align="center">
             {t('auth.checkEmail')}
           </Text>
-          <Text className="mb-2 text-center text-base leading-6" style={{ color: colors.textSecondary }}>
+          <Text tone="muted" align="center" style={{ marginTop: 8 }}>
             {t(isConfirm ? 'auth.confirmSent' : 'auth.resetSent')}
           </Text>
-          <Text className="mb-6 text-center text-base font-semibold" style={{ color: colors.text }}>
-            {normalizeEmail(email)}
-          </Text>
-          <Text className="mb-8 text-center text-sm leading-5" style={{ color: colors.textSecondary }}>
+          <EmailEcho email={normalizeEmail(email)} />
+          <Text variant="bodySmall" tone="muted" align="center" style={{ marginBottom: 28 }}>
             {t(isConfirm ? 'auth.confirmInstructions' : 'auth.resetInstructions')}
           </Text>
-          <Pressable trackId="auth.check_email.sign_in"
-            className="mb-3 w-full items-center rounded-full py-4"
-            style={{ backgroundColor: colors.primary }}
-            onPress={() => switchMode('signin')}
-            accessibilityRole="button"
-          >
-            <Text className="text-lg font-bold" style={{ color: colors.onPrimary }}>
-              {t(isConfirm ? 'auth.confirmedSignIn' : 'auth.backToSignIn')}
-            </Text>
-          </Pressable>
-          <Pressable trackId="auth.check_email.change_email"
-            className="items-center py-3"
-            accessibilityRole="button"
+          <Button size="lg" fullWidth trackId="auth.check_email.sign_in" onPress={() => switchMode('signin')}>
+            {t(isConfirm ? 'auth.confirmedSignIn' : 'auth.backToSignIn')}
+          </Button>
+          <Button
+            variant="link"
+            trackId="auth.check_email.change_email"
+            style={{ marginTop: 12, alignSelf: 'center' }}
             onPress={() => {
               setWaitingFor(null);
               if (isConfirm) setMode('signup');
               else setMode('forgot');
             }}
           >
-            <Text className="text-sm font-semibold" style={{ color: colors.primary }}>
-              {t(isConfirm ? 'auth.differentEmail' : 'auth.resendOrEdit')}
-            </Text>
-          </Pressable>
+            {t(isConfirm ? 'auth.differentEmail' : 'auth.resendOrEdit')}
+          </Button>
         </View>
       </AuthShell>
     );
   }
 
+  const submitLabel =
+    mode === 'signup'
+      ? t('auth.signUp')
+      : mode === 'forgot'
+        ? t('auth.sendResetLink')
+        : mode === 'code'
+          ? t('auth.sendCode')
+          : t('auth.signIn');
+
   return (
     <AuthShell>
-      <View className="flex-1 px-6 pt-4" style={isMediumUp ? { paddingHorizontal: 0, paddingTop: 0 } : undefined}>
-        <View className="mb-6">
-          <View
-            className="mb-3 h-12 w-12 items-center justify-center rounded-2xl"
-            style={{ backgroundColor: colors.primarySoft }}
-            accessible={false}
-            importantForAccessibility="no-hide-descendants"
-          >
-            <CookieMark size={26} color={colors.primary} />
-          </View>
-          <Text
-            className="mb-1 text-2xl font-bold"
-            style={{ color: colors.text }}
-            accessibilityRole="header"
-          >
+      <View style={{ flex: 1, paddingHorizontal: pagePadding, paddingTop: 28, paddingBottom: 24 }}>
+        <View style={{ alignItems: 'center', marginBottom: 28 }}>
+          <PinchLogo style={{ marginBottom: 24 }} />
+          <Text variant="h1" align="center">
             {mode === 'signup'
               ? t('auth.createAccount')
               : mode === 'forgot'
@@ -582,27 +593,16 @@ export default function AuthScreen() {
                   ? t('auth.codeTitle')
                   : t('auth.welcomeBack')}
           </Text>
-          <Text className="text-sm leading-5" style={{ color: colors.textSecondary }}>
+          <Text tone="muted" align="center" style={{ marginTop: 8 }}>
             {subtitle}
           </Text>
         </View>
 
-        <Text className="mb-2 text-sm font-semibold" style={{ color: colors.text }}>
-          {t('auth.email')}
-        </Text>
-        <View
-          className="mb-4 min-h-14 flex-row items-center rounded-2xl border px-3.5"
-          style={{ borderColor: colors.border, backgroundColor: colors.surface }}
-        >
-          <View accessible={false} importantForAccessibility="no-hide-descendants">
-            <Ionicons name="mail-outline" size={18} color={colors.textSecondary} />
-          </View>
-          <TextInput
-            accessibilityLabel={t('auth.email')}
-            className="flex-1 px-3 text-base"
-            style={{ color: colors.text, paddingVertical: 0 }}
+        <View style={{ gap: 16 }}>
+          <TextField
+            label={t('auth.email')}
+            leading={<Ionicons name="mail-outline" size={18} color={colors.textSecondary} />}
             placeholder={t('auth.emailPlaceholder')}
-            placeholderTextColor={colors.textSecondary}
             value={email}
             onChangeText={(value) => {
               setEmail(value);
@@ -622,34 +622,30 @@ export default function AuthScreen() {
             keyboardType="email-address"
             autoComplete="email"
             textContentType="emailAddress"
-            textAlignVertical="center"
             editable={!loading}
             onSubmitEditing={() => {
               logTap('auth.email_field.submit_key', { mode });
               if (!usesPassword && canSubmit) void handleEmail();
             }}
           />
-        </View>
 
-        {usesPassword && (
-          <>
-            <Text className="mb-2 text-sm font-semibold" style={{ color: colors.text }}>
-              {t('auth.password')}
-            </Text>
-            <View
-              className="min-h-14 flex-row items-center rounded-2xl border px-3.5"
-              style={{ borderColor: colors.border, backgroundColor: colors.surface }}
-            >
-              <View accessible={false} importantForAccessibility="no-hide-descendants">
-                <Ionicons name="lock-closed-outline" size={18} color={colors.textSecondary} />
-              </View>
-              <TextInput
-                accessibilityLabel={t('auth.password')}
+          {usesPassword ? (
+            <View style={{ gap: 8 }}>
+              <TextField
+                label={t('auth.password')}
                 accessibilityHint={mode === 'signup' ? t('auth.passwordHint') : undefined}
-                className="flex-1 px-3 text-base"
-                style={{ color: colors.text, paddingVertical: 0 }}
+                leading={<Ionicons name="lock-closed-outline" size={18} color={colors.textSecondary} />}
+                trailing={
+                  <IconButton
+                    icon={showPassword ? 'eye-off-outline' : 'eye-outline'}
+                    iconSize={20}
+                    label={t(showPassword ? 'auth.hidePassword' : 'auth.showPassword')}
+                    trackId="auth.password.toggle_visibility"
+                    onPress={() => setShowPassword((value) => !value)}
+                    disabled={loading}
+                  />
+                }
                 placeholder="••••••••"
-                placeholderTextColor={colors.textSecondary}
                 value={password}
                 onChangeText={(value) => {
                   setPassword(value);
@@ -659,182 +655,118 @@ export default function AuthScreen() {
                 autoCapitalize="none"
                 autoComplete={mode === 'signup' ? 'new-password' : 'current-password'}
                 textContentType={mode === 'signup' ? 'newPassword' : 'password'}
-                textAlignVertical="center"
                 editable={!loading}
                 onSubmitEditing={() => {
                   logTap('auth.password_field.submit_key', { mode });
                   if (canSubmit) void handleEmail();
                 }}
               />
-              <Pressable trackId="auth.password.toggle_visibility"
-                onPress={() => setShowPassword((value) => !value)}
-                hitSlop={12}
-                accessibilityRole="button"
-                accessibilityLabel={t(showPassword ? 'auth.hidePassword' : 'auth.showPassword')}
-                accessibilityState={{ disabled: loading }}
-                disabled={loading}
-              >
-                <Ionicons
-                  name={showPassword ? 'eye-off-outline' : 'eye-outline'}
-                  size={20}
-                  color={colors.textSecondary}
-                />
-              </Pressable>
-            </View>
 
-            {mode === 'signup' && (
-              <View className="mb-5 mt-2">
-                <View
-                  className="mb-1.5 flex-row gap-1.5"
-                  accessible={false}
-                  importantForAccessibility="no-hide-descendants"
-                >
-                  {(['weak', 'good', 'strong'] as const).map((level, index) => {
-                    const activeCount =
-                      passwordStrength === 'strong' ? 3 : passwordStrength === 'good' ? 2 : 1;
-                    const barColor =
-                      index < activeCount
-                        ? passwordStrength === 'strong'
-                          ? colors.success
-                          : passwordStrength === 'good'
-                            ? colors.warning
-                            : colors.danger
-                        : colors.border;
-                    return (
-                      <View
-                        key={level}
-                        className="h-1.5 flex-1 rounded-full"
-                        style={{ backgroundColor: barColor }}
-                      />
-                    );
-                  })}
+              {mode === 'signup' ? (
+                <View style={{ gap: 6 }}>
+                  <View
+                    style={{ flexDirection: 'row', gap: 6 }}
+                    accessible={false}
+                    importantForAccessibility="no-hide-descendants"
+                  >
+                    {(['weak', 'good', 'strong'] as const).map((level, index) => {
+                      const activeCount =
+                        passwordStrength === 'strong' ? 3 : passwordStrength === 'good' ? 2 : 1;
+                      const barColor =
+                        password && index < activeCount
+                          ? passwordStrength === 'strong'
+                            ? colors.success
+                            : passwordStrength === 'good'
+                              ? colors.warning
+                              : colors.danger
+                          : colors.backgroundSelected;
+                      return (
+                        <View
+                          key={level}
+                          style={{ flex: 1, height: 6, borderRadius: 3, backgroundColor: barColor }}
+                        />
+                      );
+                    })}
+                  </View>
+                  <Text variant="caption" tone="muted" accessibilityLiveRegion="polite">
+                    {password ? t(`auth.strength.${passwordStrength}`) : t('auth.passwordHint')}
+                  </Text>
                 </View>
-                <Text
-                  className="text-xs"
-                  style={{ color: colors.textSecondary }}
-                  accessibilityLiveRegion="polite"
+              ) : null}
+
+              {mode === 'signin' ? (
+                <Button
+                  variant="link"
+                  trackId="auth.forgot_password"
+                  onPress={() => switchMode('forgot')}
+                  disabled={loading}
+                  style={{ alignSelf: 'flex-end', marginTop: -6 }}
                 >
-                  {password
-                    ? t(`auth.strength.${passwordStrength}`)
-                    : t('auth.passwordHint')}
-                </Text>
-              </View>
-            )}
-
-            {mode === 'signin' && (
-              <Pressable trackId="auth.forgot_password"
-                className="mb-5 mt-2 self-end py-1"
-                onPress={() => switchMode('forgot')}
-                disabled={loading}
-                hitSlop={8}
-                accessibilityRole="button"
-                accessibilityState={{ disabled: loading }}
-              >
-                <Text className="text-sm font-semibold" style={{ color: colors.primary }}>
                   {t('auth.forgotPassword')}
-                </Text>
-              </Pressable>
-            )}
-          </>
-        )}
-
-        {!usesPassword && <View className="mb-5" />}
-
-        {error && (
-          <View
-            className="mb-5 rounded-2xl border px-4 py-3"
-            style={{ borderColor: colors.dangerSoft, backgroundColor: colors.dangerSoft }}
-            accessibilityRole="alert"
-          >
-            <Text className="text-sm" style={{ color: colors.danger }}>
-              {error}
-            </Text>
-          </View>
-        )}
-
-        <Pressable trackId="auth.email.submit"
-          className="items-center rounded-full py-4"
-          style={{ backgroundColor: canSubmit ? colors.primary : colors.border }}
-          onPress={handleEmail}
-          disabled={!canSubmit}
-          accessibilityRole="button"
-          accessibilityLabel={
-            mode === 'signup'
-              ? t('auth.signUp')
-              : mode === 'forgot'
-                ? t('auth.sendResetLink')
-                : mode === 'code'
-                  ? t('auth.sendCode')
-                  : t('auth.signIn')
-          }
-          accessibilityState={{ disabled: !canSubmit, busy: loading }}
-        >
-          {loading ? (
-            <ActivityIndicator color={canSubmit ? colors.onPrimary : colors.textSecondary} />
-          ) : (
-            <Text
-              className="text-lg font-bold"
-              style={{ color: canSubmit ? colors.onPrimary : colors.textSecondary }}
-            >
-              {mode === 'signup'
-                ? t('auth.signUp')
-                : mode === 'forgot'
-                  ? t('auth.sendResetLink')
-                  : mode === 'code'
-                    ? t('auth.sendCode')
-                    : t('auth.signIn')}
-            </Text>
-          )}
-        </Pressable>
-
-        {mode === 'signin' && (
-          <Pressable trackId="auth.switch_to_code"
-            className="mt-3 flex-row items-center justify-center rounded-full border py-3.5"
-            style={{ borderColor: colors.border }}
-            onPress={() => switchMode('code')}
-            disabled={loading}
-            accessibilityRole="button"
-            accessibilityState={{ disabled: loading }}
-          >
-            <View accessible={false} importantForAccessibility="no-hide-descendants">
-              <Ionicons name="keypad-outline" size={18} color={colors.primary} />
+                </Button>
+              ) : null}
             </View>
-            <Text className="text-sm font-semibold" style={{ color: colors.primary, marginStart: 8 }}>
-              {t('auth.emailMeCode')}
-            </Text>
-          </Pressable>
-        )}
+          ) : null}
 
-        <Pressable trackId={mode === 'signin' ? 'auth.switch_to_signup' : 'auth.switch_to_signin'}
-          className="items-center py-4"
+          {error ? <FormAlert message={error} /> : null}
+
+          <Button
+            size="lg"
+            fullWidth
+            trackId="auth.email.submit"
+            onPress={handleEmail}
+            disabled={!canSubmit && !loading}
+            busy={loading}
+            accessibilityLabel={submitLabel}
+            style={{ marginTop: 4 }}
+          >
+            {submitLabel}
+          </Button>
+
+          {mode === 'signin' ? (
+            <Button
+              variant="secondary"
+              size="lg"
+              fullWidth
+              icon="keypad-outline"
+              trackId="auth.switch_to_code"
+              onPress={() => switchMode('code')}
+              disabled={loading}
+            >
+              {t('auth.emailMeCode')}
+            </Button>
+          ) : null}
+        </View>
+
+        <Button
+          variant="link"
+          trackId={mode === 'signin' ? 'auth.switch_to_signup' : 'auth.switch_to_signin'}
           onPress={() => switchMode(mode === 'signin' ? 'signup' : 'signin')}
           disabled={loading}
-          accessibilityRole="button"
-          accessibilityState={{ disabled: loading }}
+          style={{ alignSelf: 'center', marginTop: 12 }}
         >
-          <Text className="text-sm font-semibold" style={{ color: colors.primary }}>
-            {mode === 'signup'
-              ? t('auth.haveAccount')
-              : mode === 'forgot'
-                ? t('auth.backToSignIn')
-                : mode === 'code'
-                  ? t('auth.usePassword')
-                  : t('auth.needAccount')}
-          </Text>
-        </Pressable>
+          {mode === 'signup'
+            ? t('auth.haveAccount')
+            : mode === 'forgot'
+              ? t('auth.backToSignIn')
+              : mode === 'code'
+                ? t('auth.usePassword')
+                : t('auth.needAccount')}
+        </Button>
 
-        {usesPassword && (
-          <View className="my-2 flex-row items-center">
-            <View className="h-px flex-1" style={{ backgroundColor: colors.border }} />
-            <Text className="mx-3 text-xs" style={{ color: colors.textSecondary }}>
+        {usesPassword ? (
+          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12, marginTop: 12, marginBottom: 16 }}>
+            <View style={{ flex: 1, height: 1, backgroundColor: colors.border }} />
+            <Text variant="caption" tone="muted">
               {t('auth.orContinueWith')}
             </Text>
-            <View className="h-px flex-1" style={{ backgroundColor: colors.border }} />
+            <View style={{ flex: 1, height: 1, backgroundColor: colors.border }} />
           </View>
-        )}
+        ) : null}
 
-        {usesPassword && isAppleAvailable && (
-          <View pointerEvents={loading ? 'none' : 'auto'} style={{ opacity: loading ? 0.5 : 1 }}>
+        {usesPassword && isAppleAvailable ? (
+          <View pointerEvents={loading ? 'none' : 'auto'} style={{ opacity: loading ? 0.5 : 1, marginBottom: 12 }}>
+            {/* Apple's own button, as its rules require: white with an outline on a light page, white on a dark one. */}
             <AppleAuthentication.AppleAuthenticationButton
               buttonType={
                 mode === 'signup'
@@ -844,60 +776,53 @@ export default function AuthScreen() {
               buttonStyle={
                 scheme === 'dark'
                   ? AppleAuthentication.AppleAuthenticationButtonStyle.WHITE
-                  : AppleAuthentication.AppleAuthenticationButtonStyle.BLACK
+                  : AppleAuthentication.AppleAuthenticationButtonStyle.WHITE_OUTLINE
               }
-              cornerRadius={999}
-              style={{ width: '100%', height: 52, marginBottom: 12, marginTop: 8 }}
+              cornerRadius={16}
+              style={{ width: '100%', height: 56 }}
               onPress={handleApple}
             />
           </View>
-        )}
+        ) : null}
 
-        {usesPassword && (
-          <Pressable trackId="auth.google"
-            className="mt-1 flex-row items-center justify-center rounded-full border py-4"
-            onPress={handleGoogle}
-            disabled={loading}
-            accessibilityRole="button"
-            accessibilityState={{ disabled: loading }}
-            style={{
-              borderColor: colors.border,
-              backgroundColor: colors.surface,
-              opacity: loading ? 0.5 : 1,
-            }}
-          >
-            <Text className="text-base font-semibold" style={{ color: colors.text }}>
-              {t('auth.continueGoogle')}
-            </Text>
-          </Pressable>
-        )}
+        {usesPassword ? (
+          <Button variant="outline" size="lg" fullWidth trackId="auth.google" onPress={handleGoogle} disabled={loading}>
+            {t('auth.continueGoogle')}
+          </Button>
+        ) : null}
 
-        <View className="mt-6 flex-row flex-wrap items-center justify-center gap-x-3 gap-y-2">
-          <Pressable trackId="auth.legal.privacy"
+        <View
+          style={{
+            marginTop: 28,
+            flexDirection: 'row',
+            flexWrap: 'wrap',
+            alignItems: 'center',
+            justifyContent: 'center',
+            columnGap: 4,
+          }}
+        >
+          <Pressable
+            trackId="auth.legal.privacy"
             onPress={() => openLegalDoc('privacy')}
             disabled={loading}
-            hitSlop={12}
             accessibilityRole="link"
+            style={{ minHeight: 44, justifyContent: 'center', paddingHorizontal: 8 }}
           >
-            <Text className="text-xs font-medium" style={{ color: colors.textSecondary }}>
+            <Text variant="caption" tone="muted" weight="medium">
               {t('auth.privacy')}
             </Text>
           </Pressable>
-          <Text
-            className="text-xs"
-            style={{ color: colors.textSecondary }}
-            accessible={false}
-            importantForAccessibility="no"
-          >
+          <Text variant="caption" tone="muted" accessible={false} importantForAccessibility="no">
             ·
           </Text>
-          <Pressable trackId="auth.legal.terms"
+          <Pressable
+            trackId="auth.legal.terms"
             onPress={() => openLegalDoc('terms')}
             disabled={loading}
-            hitSlop={12}
             accessibilityRole="link"
+            style={{ minHeight: 44, justifyContent: 'center', paddingHorizontal: 8 }}
           >
-            <Text className="text-xs font-medium" style={{ color: colors.textSecondary }}>
+            <Text variant="caption" tone="muted" weight="medium">
               {t('auth.terms')}
             </Text>
           </Pressable>

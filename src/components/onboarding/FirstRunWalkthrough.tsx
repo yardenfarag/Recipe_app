@@ -6,16 +6,18 @@ import {
   Platform,
   ScrollView,
   StyleSheet,
-  Text,
   View,
   useWindowDimensions,
 } from 'react-native';
-import { Pressable } from '@/components/ui/Pressable';
 import Animated, { FadeIn, FadeOut, useReducedMotion } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useTranslation } from 'react-i18next';
 
 import { ShareIllustration } from '@/components/onboarding/illustrations/ShareIllustration';
+import { Button } from '@/components/ui/Button';
+import { Text } from '@/components/ui/Text';
+import { TileLabel, useTileStyle } from '@/components/ui/Tile';
+import { HAIRLINE } from '@/components/ui/tokens';
 import { useThemePreference } from '@/hooks/useThemePreference';
 import { announce } from '@/lib/a11y';
 import {
@@ -59,6 +61,7 @@ export function FirstRunWalkthrough({
   const insets = useSafeAreaInsets();
   const reduceMotion = useReducedMotion();
   const [step, setStep] = useState<WalkthroughStep>('snap');
+  const tileStyle = useTileStyle('surface', 'lg');
 
   // Android back skips the tour, as the Modal's onRequestClose used to.
   useEffect(() => {
@@ -96,67 +99,45 @@ export function FirstRunWalkthrough({
     <View
       accessibilityViewIsModal
       onAccessibilityEscape={onFinish}
-      className="rounded-3xl px-5 pb-4 pt-5"
-      style={{
-        maxHeight: cardMaxHeight,
-        backgroundColor: colors.surface,
-        borderWidth: 1,
-        borderColor: colors.frostedBorder,
-      }}
+      style={[tileStyle, { maxHeight: cardMaxHeight, paddingHorizontal: 20, paddingTop: 20, paddingBottom: 16 }]}
     >
       <ScrollView style={{ flexGrow: 0 }} bounces={false}>
-        <Text
-          className="mb-1 text-xs font-semibold"
-          style={{ color: colors.primary }}
+        <TileLabel
+          tone="primary"
           accessibilityLabel={t('a11y.stepOf', {
             current: stepIndex + 1,
             total: WALKTHROUGH_STEPS.length,
           })}
         >
           {t('walkthrough.progress', { current: stepIndex + 1, total: WALKTHROUGH_STEPS.length })}
-        </Text>
-        <Text
-          accessibilityRole="header"
-          className="mb-1 text-lg font-bold"
-          style={{ color: colors.text }}
-        >
+        </TileLabel>
+        <Text variant="h2" style={{ marginTop: 6, marginBottom: 6 }}>
           {t(`walkthrough.${step}Title`)}
         </Text>
-        <Text className="text-sm leading-5" style={{ color: colors.textSecondary }}>
+        <Text variant="bodySmall" tone="muted">
           {t(`walkthrough.${step}Body`)}
         </Text>
 
         {step === 'share' ? <ShareSteps /> : null}
       </ScrollView>
 
-      <View className="mt-4 flex-row items-center justify-between">
+      <View style={{ marginTop: 16, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 8 }}>
         {isLast ? (
           <View />
         ) : (
-          <Pressable
+          <Button
+            variant="ghost"
             trackId="walkthrough.skip"
             onPress={onFinish}
-            accessibilityRole="button"
             accessibilityLabel={t('walkthrough.skip')}
-            className="min-h-[44px] justify-center py-2 active:opacity-70"
-            hitSlop={8}
+            style={{ marginStart: -8 }}
           >
-            <Text className="text-sm font-semibold" style={{ color: colors.textSecondary }}>
-              {t('walkthrough.skip')}
-            </Text>
-          </Pressable>
+            {t('walkthrough.skip')}
+          </Button>
         )}
-        <Pressable
-          trackId="walkthrough.next"
-          onPress={goNext}
-          accessibilityRole="button"
-          className="min-h-[44px] items-center justify-center rounded-2xl px-5 active:opacity-80"
-          style={{ backgroundColor: colors.primary }}
-        >
-          <Text className="text-sm font-semibold" style={{ color: colors.onPrimary }}>
-            {isLast ? t('walkthrough.done') : t('walkthrough.next')}
-          </Text>
-        </Pressable>
+        <Button trackId="walkthrough.next" onPress={goNext}>
+          {isLast ? t('walkthrough.done') : t('walkthrough.next')}
+        </Button>
       </View>
     </View>
   );
@@ -222,30 +203,28 @@ export function FirstRunWalkthrough({
               style={{
                 position: 'absolute',
                 bottom: -ARROW_SIZE / 2,
+                // Kept clear of the tile's 28 corners.
                 left: clamp(
                   centerX - 16 - ARROW_SIZE / 2,
-                  20,
-                  width - 32 - 20 - ARROW_SIZE,
+                  22,
+                  width - 32 - 22 - ARROW_SIZE,
                 ),
                 width: ARROW_SIZE,
                 height: ARROW_SIZE,
                 backgroundColor: colors.surface,
-                borderRightWidth: 1,
-                borderBottomWidth: 1,
-                borderColor: colors.frostedBorder,
+                borderRightWidth: HAIRLINE,
+                borderBottomWidth: HAIRLINE,
+                borderColor: colors.border,
                 transform: [{ rotate: '45deg' }],
               }}
             />
           </View>
         </View>
       ) : (
-        <View
-          className="flex-1 justify-center px-5"
-          style={{ backgroundColor: colors.overlay }}
-        >
+        <View style={{ flex: 1, justifyContent: 'center', paddingHorizontal: 20, backgroundColor: colors.overlay }}>
           {showShareIllustration ? (
             <View
-              className="mb-4 items-center"
+              style={{ marginBottom: 16, alignItems: 'center' }}
               accessible={false}
               importantForAccessibility="no-hide-descendants"
             >
@@ -286,26 +265,42 @@ function ShareSteps() {
   ];
 
   return (
-    <View className="mt-3 gap-3">
+    <View style={{ marginTop: 14, gap: 8 }}>
       {options.map((option) => (
-        <View key={option.title} className="flex-row items-start gap-3">
+        <View
+          key={option.title}
+          style={{
+            flexDirection: 'row',
+            alignItems: 'flex-start',
+            gap: 12,
+            padding: 14,
+            borderRadius: 16,
+            backgroundColor: colors.backgroundElement,
+          }}
+        >
           <View
-            className="h-8 w-8 items-center justify-center rounded-full"
-            style={{ backgroundColor: colors.primarySoft }}
+            style={{
+              width: 36,
+              height: 36,
+              borderRadius: 12,
+              alignItems: 'center',
+              justifyContent: 'center',
+              backgroundColor: colors.primarySoft,
+            }}
             accessible={false}
             importantForAccessibility="no-hide-descendants"
           >
-            <Ionicons name={option.icon} size={16} color={colors.primary} />
+            <Ionicons name={option.icon} size={18} color={colors.primaryText} />
           </View>
-          <View className="flex-1">
-            <Text className="text-sm font-semibold" style={{ color: colors.text }}>
+          <View style={{ flex: 1, minWidth: 0 }}>
+            <Text variant="bodySmall" weight="semibold">
               {option.title}
             </Text>
-            <Text className="text-sm leading-5" style={{ color: colors.textSecondary }}>
+            <Text variant="bodySmall" tone="muted">
               {option.body}
             </Text>
             {option.hint ? (
-              <Text className="mt-0.5 text-xs leading-4" style={{ color: colors.textSecondary }}>
+              <Text variant="caption" tone="muted" style={{ marginTop: 2 }}>
                 {option.hint}
               </Text>
             ) : null}

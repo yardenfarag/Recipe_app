@@ -4,6 +4,7 @@ import { Platform, Text, View } from 'react-native';
 
 import { LegalDocumentView } from '@/components/LegalDocument';
 import { Screen } from '@/components/Screen';
+import { variantStyle } from '@/constants/typography';
 import { useThemePreference } from '@/hooks/useThemePreference';
 import { legalDoc } from '@/lib/legalDocs';
 
@@ -23,10 +24,12 @@ export default function LegalDocScreen() {
 
   if (!doc) {
     return (
-      <Screen dense>
+      <Screen edges={['left', 'right', 'bottom']}>
         <Stack.Screen options={{ title: 'Legal' }} />
-        <View className="flex-1 items-center justify-center px-6">
-          <Text style={{ color: colors.textSecondary }}>That page is not available.</Text>
+        <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center', paddingHorizontal: 24 }}>
+          <Text style={[variantStyle('bodySmall', 'en'), { color: colors.textSecondary, textAlign: 'center' }]}>
+            That page is not available.
+          </Text>
         </View>
       </Screen>
     );

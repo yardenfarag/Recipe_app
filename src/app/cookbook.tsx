@@ -8,16 +8,19 @@ import {
   KeyboardAvoidingView,
   Platform,
   ScrollView,
-  Text,
   View,
 } from 'react-native';
-import { Pressable } from '@/components/ui/Pressable';
 
 import { ConfirmDialog } from '@/components/ConfirmDialog';
+import { FieldInput } from '@/components/text-input';
 import { RecipeImage } from '@/components/RecipeImage';
 import { Screen } from '@/components/Screen';
 import { SelectRecipesList } from '@/components/SelectRecipesList';
-import { TextInput } from '@/components/text-input';
+import { Button } from '@/components/ui/Button';
+import { IconButton } from '@/components/ui/IconButton';
+import { Text } from '@/components/ui/Text';
+import { Tile, TileLabel } from '@/components/ui/Tile';
+import { HAIRLINE } from '@/components/ui/tokens';
 import { FormContentWidth } from '@/constants/theme';
 import { useBreakpoint } from '@/hooks/useBreakpoint';
 import { useCollections } from '@/hooks/useCollections';
@@ -25,7 +28,6 @@ import { useLanguagePreference } from '@/hooks/useLanguagePreference';
 import { useMeasurementPreference } from '@/hooks/useMeasurementPreference';
 import { useUnitSystemPreference } from '@/hooks/useUnitSystemPreference';
 import { useRecipes } from '@/hooks/useRecipes';
-import { useRtl } from '@/hooks/useRtl';
 import { useThemePreference } from '@/hooks/useThemePreference';
 import { announce } from '@/lib/a11y';
 import { isRtlAppLanguage } from '@shared/lib/appLanguages';
@@ -51,7 +53,6 @@ export default function CookbookScreen() {
   const { system: measurementSystem } = useMeasurementPreference();
   const { units } = useUnitSystemPreference();
   const { language } = useLanguagePreference();
-  const { rtl, textAlign } = useRtl();
 
   const [step, setStep] = useState(0);
   const [title, setTitle] = useState(t('cookbook.defaultTitle'));
@@ -203,98 +204,99 @@ export default function CookbookScreen() {
 
   if (loading) {
     return (
-      <Screen edges={['left', 'right', 'bottom']} dense className="items-center justify-center">
-        <ActivityIndicator color={colors.primary} size="large" />
+      <Screen edges={['left', 'right', 'bottom']} style={{ alignItems: 'center', justifyContent: 'center' }}>
+        <ActivityIndicator color={colors.primary} size="large" accessibilityLabel={t('a11y.loading')} />
       </Screen>
     );
   }
 
   if (recipes.length === 0) {
     return (
-      <Screen edges={['left', 'right', 'bottom']} dense className="items-center justify-center px-8">
-        <View
-          className="mb-5 h-16 w-16 items-center justify-center rounded-[22px]"
-          style={{ backgroundColor: colors.primarySoft }}
-          accessible={false}
-          importantForAccessibility="no-hide-descendants"
-        >
-          <Ionicons name="book-outline" size={30} color={colors.primary} />
-        </View>
-        <Text
-          className="mb-2 text-center text-xl font-bold"
-          style={{ color: colors.text }}
-          accessibilityRole="header"
-        >
-          {t('cookbook.title')}
-        </Text>
-        <Text className="mb-6 text-center text-sm leading-5" style={{ color: colors.textSecondary }}>
-          {t('cookbook.emptyLibrary')}
-        </Text>
-        <Pressable
-          trackId="cookbook.empty.add_recipe"
-          onPress={() => router.push('/add')}
-          accessibilityRole="button"
-          className="rounded-3xl px-6 py-3.5 active:opacity-80"
-          style={{ backgroundColor: colors.primary }}
-        >
-          <Text className="text-base font-bold" style={{ color: colors.onPrimary }}>
-            {t('library.snapFirst')}
+      <Screen edges={['left', 'right', 'bottom']} style={{ justifyContent: 'center', paddingHorizontal: 20 }}>
+        <Tile padding={24} style={{ alignItems: 'center', gap: 12 }}>
+          <View
+            style={{
+              width: 56,
+              height: 56,
+              borderRadius: 16,
+              alignItems: 'center',
+              justifyContent: 'center',
+              backgroundColor: colors.backgroundElement,
+            }}
+            accessible={false}
+            importantForAccessibility="no-hide-descendants"
+          >
+            <Ionicons name="book-outline" size={26} color={colors.textSecondary} />
+          </View>
+          <Text variant="h2" align="center">
+            {t('cookbook.title')}
           </Text>
-        </Pressable>
+          <Text variant="bodySmall" tone="muted" align="center">
+            {t('cookbook.emptyLibrary')}
+          </Text>
+          <Button trackId="cookbook.empty.add_recipe" icon="add" onPress={() => router.push('/add')} style={{ marginTop: 4 }}>
+            {t('library.snapFirst')}
+          </Button>
+        </Tile>
       </Screen>
     );
   }
 
   return (
-    <Screen edges={['left', 'right', 'bottom']} dense>
+    <Screen edges={['left', 'right', 'bottom']}>
       <KeyboardAvoidingView
-        className="flex-1"
+        style={{ flex: 1 }}
         behavior={Platform.OS === 'ios' ? 'padding' : undefined}
       >
         <View
-          className="flex-1 px-5 pt-4"
-          style={
-            isMediumUp
-              ? { maxWidth: FormContentWidth, width: '100%', alignSelf: 'center' }
-              : undefined
-          }
+          style={[
+            { flex: 1, paddingHorizontal: 20, paddingTop: 12 },
+            isMediumUp ? { maxWidth: FormContentWidth, width: '100%', alignSelf: 'center' } : null,
+          ]}
         >
-          <Text className="text-xs font-semibold" style={{ color: colors.textSecondary }}>
-            {t('cookbook.stepOf', { current: step + 1, total: STEPS })}
-          </Text>
-          <Text
-            className="mt-1 text-[22px] font-bold tracking-tight"
-            style={{ color: colors.text, textAlign }}
-            accessibilityRole="header"
-          >
-            {stepTitle}
-          </Text>
-          <Text className="mb-4 mt-1 text-sm leading-5" style={{ color: colors.textSecondary, textAlign }}>
-            {stepHint}
-          </Text>
+          {/* Where we are: three bars that fill as the steps go by, then the step's name and what it's for. */}
+          <View style={{ gap: 10, marginBottom: 16 }}>
+            <View
+              accessible={false}
+              importantForAccessibility="no-hide-descendants"
+              style={{ flexDirection: 'row', gap: 6 }}
+            >
+              {Array.from({ length: STEPS }, (_, index) => (
+                <View
+                  key={index}
+                  style={{
+                    flex: 1,
+                    height: 4,
+                    borderRadius: 2,
+                    backgroundColor: index <= step ? colors.primary : colors.backgroundElement,
+                  }}
+                />
+              ))}
+            </View>
+            <TileLabel>{t('cookbook.stepOf', { current: step + 1, total: STEPS })}</TileLabel>
+            <Text variant="h2">{stepTitle}</Text>
+            <Text variant="bodySmall" tone="muted">
+              {stepHint}
+            </Text>
+          </View>
 
           {step === 0 ? (
-            <View className="flex-1">
-              <TextInput
-                className="rounded-[20px] border px-4 py-3.5 text-base"
-                style={{
-                  color: colors.text,
-                  backgroundColor: colors.frosted,
-                  borderColor: colors.frostedBorder,
-                  textAlign,
-                  writingDirection: rtl ? 'rtl' : 'ltr',
-                }}
-                value={title}
-                onChangeText={(value) => {
-                  setTitle(value);
-                  if (error) setError(null);
-                }}
-                placeholder={t('cookbook.titlePlaceholder')}
-                accessibilityLabel={t('cookbook.titlePlaceholder')}
-                placeholderTextColor={colors.textSecondary}
-                autoCapitalize="sentences"
-                maxLength={80}
-              />
+            <View style={{ flex: 1 }}>
+              <Tile padding={16} style={{ gap: 10 }}>
+                <FieldInput
+                  value={title}
+                  onChangeText={(value) => {
+                    setTitle(value);
+                    if (error) setError(null);
+                  }}
+                  placeholder={t('cookbook.titlePlaceholder')}
+                  accessibilityLabel={t('cookbook.titlePlaceholder')}
+                  autoCapitalize="sentences"
+                  maxLength={80}
+                  invalid={Boolean(error)}
+                  leading={<Ionicons name="book-outline" size={18} color={colors.textSecondary} />}
+                />
+              </Tile>
             </View>
           ) : null}
 
@@ -311,95 +313,105 @@ export default function CookbookScreen() {
           ) : null}
 
           {step === 2 ? (
-            <ScrollView className="flex-1" keyboardShouldPersistTaps="handled">
+            <ScrollView style={{ flex: 1 }} keyboardShouldPersistTaps="handled" contentContainerStyle={{ gap: 12 }}>
               {Platform.OS === 'web' ? (
-                <Text className="mb-3 text-xs leading-4" style={{ color: colors.textSecondary }}>
+                <Text variant="caption" tone="muted">
                   {t('cookbook.webPrintHint')}
                 </Text>
               ) : null}
-              {selectedRecipes.map((recipe, index) => {
-                const name = recipe.display_title?.trim() || recipe.title;
-                return (
-                  <View
-                    key={recipe.id}
-                    className="mb-2 flex-row items-center gap-3 rounded-[20px] border px-3 py-2.5"
-                    style={{
-                      backgroundColor: colors.frosted,
-                      borderColor: colors.frostedBorder,
-                    }}
-                  >
-                    <View accessible={false} importantForAccessibility="no-hide-descendants">
-                      {recipe.image_url ? (
-                        <RecipeImage uri={recipe.image_url} variant="compact" borderRadius={12} aiGenerated={recipe.image_generated} />
-                      ) : (
+              <Tile style={{ paddingHorizontal: 8, paddingVertical: 4 }}>
+                {selectedRecipes.map((recipe, index) => {
+                  const name = recipe.display_title?.trim() || recipe.title;
+                  return (
+                    <View key={recipe.id}>
+                      {index > 0 ? (
                         <View
-                          className="h-12 w-12 items-center justify-center rounded-[12px]"
-                          style={{ backgroundColor: colors.primarySoft }}
-                        >
-                          <Ionicons name="restaurant" size={20} color={colors.primary} />
+                          accessible={false}
+                          importantForAccessibility="no"
+                          style={{ height: HAIRLINE, backgroundColor: colors.border, marginHorizontal: 8 }}
+                        />
+                      ) : null}
+                      <View
+                        style={{
+                          flexDirection: 'row',
+                          alignItems: 'center',
+                          gap: 12,
+                          paddingVertical: 8,
+                          paddingStart: 8,
+                        }}
+                      >
+                        <View accessible={false} importantForAccessibility="no-hide-descendants">
+                          {recipe.image_url ? (
+                            <RecipeImage
+                              uri={recipe.image_url}
+                              variant="compact"
+                              borderRadius={12}
+                              aiGenerated={recipe.image_generated}
+                            />
+                          ) : (
+                            <View
+                              style={{
+                                width: 48,
+                                height: 48,
+                                borderRadius: 12,
+                                alignItems: 'center',
+                                justifyContent: 'center',
+                                backgroundColor: colors.backgroundElement,
+                              }}
+                            >
+                              <Ionicons name="restaurant-outline" size={20} color={colors.textSecondary} />
+                            </View>
+                          )}
                         </View>
-                      )}
+                        <View
+                          style={{ flex: 1, minWidth: 0, gap: 2 }}
+                          accessible
+                          accessibilityLabel={`${index + 1}. ${name}`}
+                        >
+                          <Text variant="label">{String(index + 1)}</Text>
+                          <Text variant="bodySmall" weight="semibold" numberOfLines={2}>
+                            {name}
+                          </Text>
+                        </View>
+                        <IconButton
+                          trackId="cookbook.recipe.move_up"
+                          icon="chevron-up"
+                          iconSize={20}
+                          label={t('a11y.moveRecipeUp', { name })}
+                          disabled={index === 0}
+                          onPress={() => moveSelected(index, -1)}
+                        />
+                        <IconButton
+                          trackId="cookbook.recipe.move_down"
+                          icon="chevron-down"
+                          iconSize={20}
+                          label={t('a11y.moveRecipeDown', { name })}
+                          disabled={index === selectedRecipes.length - 1}
+                          onPress={() => moveSelected(index, 1)}
+                        />
+                      </View>
                     </View>
-                    <View
-                      className="min-w-0 flex-1"
-                      accessible
-                      accessibilityLabel={`${index + 1}. ${name}`}
-                    >
-                      <Text className="text-xs" style={{ color: colors.textSecondary }}>
-                        {index + 1}
-                      </Text>
-                      <Text
-                        className="text-sm font-semibold"
-                        style={{ color: colors.text }}
-                        numberOfLines={2}
-                      >
-                        {name}
-                      </Text>
-                    </View>
-                    <View className="flex-row">
-                      <Pressable
-                        trackId="cookbook.recipe.move_up"
-                        onPress={() => moveSelected(index, -1)}
-                        disabled={index === 0}
-                        hitSlop={8}
-                        accessibilityRole="button"
-                        accessibilityLabel={t('a11y.moveRecipeUp', { name })}
-                        accessibilityState={{ disabled: index === 0 }}
-                        className="h-9 w-9 items-center justify-center active:opacity-70 disabled:opacity-30"
-                      >
-                        <Ionicons name="chevron-up" size={18} color={colors.primary} />
-                      </Pressable>
-                      <Pressable
-                        trackId="cookbook.recipe.move_down"
-                        onPress={() => moveSelected(index, 1)}
-                        disabled={index === selectedRecipes.length - 1}
-                        hitSlop={8}
-                        accessibilityRole="button"
-                        accessibilityLabel={t('a11y.moveRecipeDown', { name })}
-                        accessibilityState={{ disabled: index === selectedRecipes.length - 1 }}
-                        className="h-9 w-9 items-center justify-center active:opacity-70 disabled:opacity-30"
-                      >
-                        <Ionicons name="chevron-down" size={18} color={colors.primary} />
-                      </Pressable>
-                    </View>
-                  </View>
-                );
-              })}
+                  );
+                })}
+              </Tile>
             </ScrollView>
           ) : null}
 
           <View accessibilityLiveRegion="polite">
             {error ? (
-              <Text className="mt-2 text-sm" style={{ color: colors.danger }}>
+              <Text variant="bodySmall" tone="danger" style={{ marginTop: 10 }}>
                 {error}
               </Text>
             ) : null}
           </View>
 
           {generating ? (
-            <View className="mt-3 flex-row items-center gap-2" accessibilityLiveRegion="polite">
+            <View
+              style={{ marginTop: 12, flexDirection: 'row', alignItems: 'center', gap: 10 }}
+              accessibilityLiveRegion="polite"
+            >
               <ActivityIndicator color={colors.primary} />
-              <Text className="flex-1 text-sm" style={{ color: colors.textSecondary }}>
+              <Text variant="bodySmall" tone="muted" style={{ flex: 1 }}>
                 {progress
                   ? t('cookbook.generatingProgress', {
                       done: progress.done,
@@ -410,43 +422,35 @@ export default function CookbookScreen() {
             </View>
           ) : null}
 
-          <View className="flex-row gap-3 py-4">
+          <View style={{ flexDirection: 'row', gap: 12, paddingVertical: 16 }}>
             {step > 0 ? (
-              <Pressable
+              <Button
                 trackId="cookbook.back"
+                variant="outline"
+                size="lg"
+                icon="chevron-back"
+                disabled={generating}
                 onPress={() => {
                   setError(null);
                   setStep((prev) => prev - 1);
                 }}
-                disabled={generating}
-                accessibilityRole="button"
-                accessibilityState={{ disabled: generating }}
-                className="min-h-12 flex-1 items-center justify-center rounded-[18px] active:opacity-70 disabled:opacity-50"
-                style={{ backgroundColor: colors.primarySoft }}
+                style={{ flex: 1 }}
               >
-                <Text className="text-sm font-semibold" style={{ color: colors.primary }}>
-                  {t('common.back')}
-                </Text>
-              </Pressable>
+                {t('common.back')}
+              </Button>
             ) : null}
-            <Pressable
+            <Button
               trackId={step === STEPS - 1 ? 'cookbook.generate' : 'cookbook.next'}
-              onPress={() => (step === STEPS - 1 ? void handleGenerate() : goNext())}
-              disabled={generating}
-              accessibilityRole="button"
+              size="lg"
+              busy={generating}
+              icon={step === STEPS - 1 ? 'document-text-outline' : undefined}
+              iconEnd={step === STEPS - 1 ? undefined : 'chevron-forward'}
               accessibilityLabel={step === STEPS - 1 ? t('cookbook.generate') : t('common.continue')}
-              accessibilityState={{ disabled: generating, busy: generating }}
-              className="min-h-12 flex-1 items-center justify-center rounded-[18px] active:opacity-80 disabled:opacity-50"
-              style={{ backgroundColor: colors.primary }}
+              onPress={() => (step === STEPS - 1 ? void handleGenerate() : goNext())}
+              style={{ flex: step > 0 ? 1.4 : 1 }}
             >
-              {generating ? (
-                <ActivityIndicator color={colors.onPrimary} />
-              ) : (
-                <Text className="text-base font-bold" style={{ color: colors.onPrimary }}>
-                  {step === STEPS - 1 ? t('cookbook.generate') : t('common.continue')}
-                </Text>
-              )}
-            </Pressable>
+              {step === STEPS - 1 ? t('cookbook.generate') : t('common.continue')}
+            </Button>
           </View>
         </View>
       </KeyboardAvoidingView>

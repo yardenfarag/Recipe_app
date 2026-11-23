@@ -1,11 +1,13 @@
 import Ionicons from '@expo/vector-icons/Ionicons';
 import { useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { ActivityIndicator, Modal, Platform, Text, View } from 'react-native';
+import { ActivityIndicator, Modal, Platform, View } from 'react-native';
 
-import { Pressable } from '@/components/ui/Pressable';
+import { Button } from '@/components/ui/Button';
+import { Text } from '@/components/ui/Text';
+import { Tile } from '@/components/ui/Tile';
+import { Radii } from '@/components/ui/tokens';
 import { useAuth } from '@/hooks/useAuth';
-import { useRtl } from '@/hooks/useRtl';
 import { useThemePreference } from '@/hooks/useThemePreference';
 import {
   announceCreditsChanged,
@@ -23,12 +25,12 @@ type State = { kind: 'waiting' } | { kind: 'added'; credits: number } | { kind: 
 
 /**
  * Website only: after paying on Polar's checkout the buyer lands back here with ?checkout_id=….
- * Shows "Payment received" while polar-webhook adds the credits, then how many were added.
+ * Shows "Payment received" while polar-webhook adds the credits, then how many were added. One flat tile over the
+ * pack's overlay (Night Market, PIN-177).
  */
 export function WebCheckoutReturnDialog() {
   const { t } = useTranslation();
   const { colors } = useThemePreference();
-  const { writingDirection } = useRtl();
   const { user } = useAuth();
   const [state, setState] = useState<State | null>(null);
   // Closed while waiting: keep checking so the balance updates, but don't pop up again.
@@ -88,16 +90,30 @@ export function WebCheckoutReturnDialog() {
 
   return (
     <Modal visible transparent animationType="fade" onRequestClose={close}>
-      <View className="flex-1 items-center justify-center px-6" style={{ backgroundColor: 'rgba(0,0,0,0.45)' }}>
-        <View
-          className="w-full max-w-sm items-center rounded-[28px] p-6"
+      <View
+        style={{
+          flex: 1,
+          alignItems: 'center',
+          justifyContent: 'center',
+          paddingHorizontal: 24,
+          backgroundColor: colors.overlay,
+        }}
+      >
+        <Tile
           accessibilityViewIsModal
           onAccessibilityEscape={close}
-          style={{ backgroundColor: colors.surface, borderWidth: 1, borderColor: colors.frostedBorder }}
+          style={{ width: '100%', maxWidth: 384, alignItems: 'center', padding: 24 }}
         >
           <View
-            className="mb-3 h-14 w-14 items-center justify-center rounded-full"
-            style={{ backgroundColor: colors.successSoft }}
+            style={{
+              width: 56,
+              height: 56,
+              marginBottom: 14,
+              alignItems: 'center',
+              justifyContent: 'center',
+              borderRadius: Radii.inner,
+              backgroundColor: colors.successSoft,
+            }}
           >
             {waiting ? (
               <ActivityIndicator color={colors.success} />
@@ -105,32 +121,22 @@ export function WebCheckoutReturnDialog() {
               <Ionicons name="checkmark" size={30} color={colors.success} accessible={false} />
             )}
           </View>
-          <Text
-            className="text-center text-lg font-bold"
-            style={{ color: colors.text, writingDirection }}
-            accessibilityRole="header"
-          >
+          <Text variant="h2" align="center">
             {t('credits.webPurchaseTitle')}
           </Text>
           <Text
-            className="mt-2 text-center text-sm leading-5"
-            style={{ color: colors.textSecondary, writingDirection }}
+            variant="bodySmall"
+            tone="muted"
+            align="center"
+            style={{ marginTop: 8 }}
             accessibilityLiveRegion="polite"
           >
             {message}
           </Text>
-          <Pressable
-            trackId="credits.web_purchase_done"
-            onPress={close}
-            className="mt-5 min-h-[48px] w-full items-center justify-center rounded-[22px] px-4 py-3 active:opacity-80"
-            style={{ backgroundColor: colors.primary }}
-            accessibilityRole="button"
-          >
-            <Text className="text-center text-sm font-bold" style={{ color: colors.onPrimary }}>
-              {waiting ? t('common.close') : t('credits.webPurchaseDone')}
-            </Text>
-          </Pressable>
-        </View>
+          <Button trackId="credits.web_purchase_done" onPress={close} size="lg" fullWidth style={{ marginTop: 20 }}>
+            {waiting ? t('common.close') : t('credits.webPurchaseDone')}
+          </Button>
+        </Tile>
       </View>
     </Modal>
   );

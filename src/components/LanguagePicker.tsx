@@ -1,7 +1,12 @@
-import { Text, View } from 'react-native';
-import { Pressable } from '@/components/ui/Pressable';
+import Ionicons from '@expo/vector-icons/Ionicons';
+import { Fragment } from 'react';
 import { useTranslation } from 'react-i18next';
+import { View } from 'react-native';
 
+import { Pressable } from '@/components/ui/Pressable';
+import { Text } from '@/components/ui/Text';
+import { Tile } from '@/components/ui/Tile';
+import { HAIRLINE } from '@/components/ui/tokens';
 import { useLanguagePreference } from '@/hooks/useLanguagePreference';
 import { useThemePreference } from '@/hooks/useThemePreference';
 import { APP_LANGUAGES, type AppLanguageCode } from '@shared/lib/appLanguages';
@@ -17,7 +22,10 @@ type LanguagePickerProps = {
   trackId?: string;
 };
 
-/** Vertical list of app languages for Settings / onboarding. */
+/**
+ * The app languages as rows on one tile (Night Market, PIN-177): each in its own script, with its name in the app
+ * language under it, and a filled check on the chosen one.
+ */
 export function LanguagePicker({
   skipRtlPrompt = false,
   trackId = 'language.select',
@@ -36,50 +44,71 @@ export function LanguagePicker({
   }
 
   return (
-    <View className="gap-2" accessibilityRole="radiogroup">
-      {APP_LANGUAGES.map((lang) => {
+    <Tile
+      accessibilityRole="radiogroup"
+      accessibilityLabel={t('settings.language')}
+      style={{ paddingHorizontal: 8, paddingVertical: 4 }}
+    >
+      {APP_LANGUAGES.map((lang, index) => {
         const active = language === lang.code;
         const translated = t(`languages.${lang.code}`);
         const showTranslated = translated !== lang.nativeLabel;
         return (
-          <Pressable
-            key={lang.code}
-            trackId={`${trackId}.${lang.code}`}
-            onPress={() => handleSelect(lang.code)}
-            accessibilityRole="radio"
-            accessibilityState={{ checked: active }}
-            accessibilityLabel={
-              showTranslated ? `${lang.nativeLabel}, ${translated}` : lang.nativeLabel
-            }
-            className="flex-row items-center justify-between rounded-[18px] border px-4 py-3 active:opacity-80"
-            style={{
-              backgroundColor: active ? colors.primarySoft : colors.surface,
-              borderColor: active ? colors.primary : colors.border,
-            }}
-          >
-            <View className="min-w-0 flex-1">
-              <Text className="text-sm font-semibold" style={{ color: colors.text }}>
-                {lang.nativeLabel}
-              </Text>
-              {showTranslated ? (
-                <Text className="mt-0.5 text-xs" style={{ color: colors.textSecondary }}>
-                  {translated}
-                </Text>
-              ) : null}
-            </View>
-            {active ? (
-              <Text
-                className="text-xs font-bold"
-                style={{ color: colors.primary }}
+          <Fragment key={lang.code}>
+            {index > 0 ? (
+              <View
                 accessible={false}
                 importantForAccessibility="no"
-              >
-                ✓
-              </Text>
+                style={{ height: HAIRLINE, backgroundColor: colors.border, marginHorizontal: 8 }}
+              />
             ) : null}
-          </Pressable>
+            <Pressable
+              trackId={`${trackId}.${lang.code}`}
+              onPress={() => handleSelect(lang.code)}
+              accessibilityRole="radio"
+              accessibilityState={{ checked: active }}
+              accessibilityLabel={showTranslated ? `${lang.nativeLabel}, ${translated}` : lang.nativeLabel}
+              style={({ pressed }) => ({
+                flexDirection: 'row',
+                alignItems: 'center',
+                gap: 12,
+                minHeight: 56,
+                paddingHorizontal: 8,
+                paddingVertical: 8,
+                borderRadius: 18,
+                backgroundColor: pressed ? colors.backgroundElement : 'transparent',
+              })}
+            >
+              <View style={{ flex: 1, minWidth: 0 }}>
+                <Text variant="bodySmall" weight="semibold">
+                  {lang.nativeLabel}
+                </Text>
+                {showTranslated ? (
+                  <Text variant="caption" tone="muted">
+                    {translated}
+                  </Text>
+                ) : null}
+              </View>
+              <View
+                accessible={false}
+                importantForAccessibility="no-hide-descendants"
+                style={{
+                  width: 24,
+                  height: 24,
+                  borderRadius: 12,
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  borderWidth: active ? 0 : 2,
+                  borderColor: colors.border,
+                  backgroundColor: active ? colors.primary : 'transparent',
+                }}
+              >
+                {active ? <Ionicons name="checkmark" size={15} color={colors.onPrimary} /> : null}
+              </View>
+            </Pressable>
+          </Fragment>
         );
       })}
-    </View>
+    </Tile>
   );
 }

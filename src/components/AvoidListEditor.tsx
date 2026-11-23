@@ -1,13 +1,15 @@
 import Ionicons from '@expo/vector-icons/Ionicons';
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Text, View } from 'react-native';
+import { View } from 'react-native';
 
 import { ConfirmDialog } from '@/components/ConfirmDialog';
-import { TextInput } from '@/components/text-input';
-import { Pressable } from '@/components/ui/Pressable';
-import { useRtl } from '@/hooks/useRtl';
+import { FieldInput } from '@/components/text-input';
+import { Button } from '@/components/ui/Button';
+import { Chip } from '@/components/ui/Chip';
+import { Text } from '@/components/ui/Text';
 import { useThemePreference } from '@/hooks/useThemePreference';
+import { useTypography } from '@/hooks/useTypography';
 import { announce } from '@/lib/a11y';
 import {
   ALLERGEN_KEYS,
@@ -47,13 +49,12 @@ function sameItem(a: string, b: string): boolean {
 export function AvoidListEditor({ profile, onChange, trackPrefix }: AvoidListEditorProps) {
   const { t } = useTranslation();
   const { colors } = useThemePreference();
-  const { textAlign, writingDirection } = useRtl();
   const [allergyDraft, setAllergyDraft] = useState('');
   const [dislikeDraft, setDislikeDraft] = useState('');
   /** The allergy waiting for the cook to confirm the notice. */
   const [pending, setPending] = useState<{ next: KitchenProfile; clearDraft: boolean } | null>(null);
-  // Hints start with "Pinch", so the text needs the app's direction spelled out.
-  const hintStyle = { color: colors.textSecondary, textAlign, writingDirection } as const;
+  // Hints start with "Pinch"; the kit's Text spells out the app's direction, so they still start at the right side.
+  const hintStyle = { color: colors.textSecondary } as const;
 
   const customDislikes = profile.dislikes.filter((item) => dislikeSuggestionFor(item) == null);
   const otherFull = profile.otherAllergies.length >= MAX_OTHER_ALLERGIES;
@@ -119,32 +120,25 @@ export function AvoidListEditor({ profile, onChange, trackPrefix }: AvoidListEdi
   }
 
   return (
-    <View>
-      <Text className="mb-1 text-sm font-semibold" style={{ color: colors.text }} accessibilityRole="header">
-        {t('avoid.allergiesTitle')}
-      </Text>
-      <Text className="mb-3 text-xs leading-5" style={hintStyle}>
-        {t('avoid.allergiesHint')}
-      </Text>
-      <View className="mb-3 flex-row flex-wrap gap-2">
-        {ALLERGEN_KEYS.map((key) => {
-          const active = profile.allergies.includes(key);
-          return (
-            <Pressable
-              key={key}
-              trackId={`${trackPrefix}.allergy.toggle`}
-              onPress={() => toggleAllergen(key)}
-              accessibilityRole="checkbox"
-              accessibilityState={{ checked: active }}
-              className="min-h-[44px] items-center justify-center rounded-2xl px-4 active:opacity-80"
-              style={{ backgroundColor: active ? colors.primary : colors.frosted }}
-            >
-              <Text className="text-sm font-semibold" style={{ color: active ? colors.onPrimary : colors.text }}>
-                {t(`avoid.allergens.${key}`)}
-              </Text>
-            </Pressable>
-          );
-        })}
+    <View style={{ gap: 12 }}>
+      <View style={{ gap: 4 }}>
+        <Text variant="h3">{t('avoid.allergiesTitle')}</Text>
+        <Text variant="caption" style={hintStyle}>
+          {t('avoid.allergiesHint')}
+        </Text>
+      </View>
+      <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8 }}>
+        {ALLERGEN_KEYS.map((key) => (
+          <Chip
+            key={key}
+            size="sm"
+            trackId={`${trackPrefix}.allergy.toggle`}
+            selected={profile.allergies.includes(key)}
+            onPress={() => toggleAllergen(key)}
+          >
+            {t(`avoid.allergens.${key}`)}
+          </Chip>
+        ))}
         {profile.otherAllergies.map((item) => (
           <RemovableChip
             key={item}
@@ -160,7 +154,7 @@ export function AvoidListEditor({ profile, onChange, trackPrefix }: AvoidListEdi
         ))}
       </View>
       {otherFull ? (
-        <Text className="mb-2 text-xs leading-5" style={{ color: colors.textSecondary }}>
+        <Text variant="caption" tone="muted">
           {t('avoid.limit', { count: MAX_OTHER_ALLERGIES })}
         </Text>
       ) : (
@@ -168,48 +162,40 @@ export function AvoidListEditor({ profile, onChange, trackPrefix }: AvoidListEdi
           value={allergyDraft}
           onChangeText={setAllergyDraft}
           placeholder={t('avoid.otherAllergyPlaceholder')}
-          textAlign={textAlign}
           trackId={`${trackPrefix}.allergy.add`}
           onAdd={addOtherAllergy}
         />
       )}
       {hasAllergies(profile) ? (
-        <View className="mt-1 flex-row items-start gap-2">
-          <Ionicons name="alert-circle-outline" size={16} color={colors.warning} style={{ marginTop: 2 }} />
-          <Text className="min-w-0 flex-1 text-xs leading-5" style={hintStyle}>
+        <View style={{ flexDirection: 'row', alignItems: 'flex-start', gap: 8 }}>
+          <Ionicons name="alert-circle-outline" size={16} color={colors.warning} style={{ marginTop: 1 }} />
+          <Text variant="caption" style={[hintStyle, { flex: 1, minWidth: 0 }]}>
             {t('avoid.checkLabels')}
           </Text>
         </View>
       ) : null}
 
-      <Text className="mb-1 mt-7 text-sm font-semibold" style={{ color: colors.text }} accessibilityRole="header">
-        {t('avoid.dislikesTitle')}
-      </Text>
-      <Text className="mb-3 text-xs leading-5" style={hintStyle}>
-        {t('avoid.dislikesHint')}
-      </Text>
-      <View className="mb-3 flex-row flex-wrap gap-2">
+      <View style={{ gap: 4, marginTop: 16 }}>
+        <Text variant="h3">{t('avoid.dislikesTitle')}</Text>
+        <Text variant="caption" style={hintStyle}>
+          {t('avoid.dislikesHint')}
+        </Text>
+      </View>
+      <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8 }}>
         {DISLIKE_SUGGESTION_KEYS.map((key) => {
           const active = profile.dislikes.some((item) => dislikeSuggestionFor(item) === key);
           const blocked = dislikesFull && !active;
           return (
-            <Pressable
+            <Chip
               key={key}
+              size="sm"
               trackId={`${trackPrefix}.dislike.toggle`}
-              onPress={() => toggleSuggestion(key)}
+              selected={active}
               disabled={blocked}
-              accessibilityRole="checkbox"
-              accessibilityState={{ checked: active, disabled: blocked }}
-              className="min-h-[44px] items-center justify-center rounded-2xl px-4 active:opacity-80"
-              style={{
-                backgroundColor: active ? colors.primary : colors.frosted,
-                opacity: blocked ? 0.45 : 1,
-              }}
+              onPress={() => toggleSuggestion(key)}
             >
-              <Text className="text-sm font-semibold" style={{ color: active ? colors.onPrimary : colors.text }}>
-                {t(`avoid.suggestions.${key}`)}
-              </Text>
-            </Pressable>
+              {t(`avoid.suggestions.${key}`)}
+            </Chip>
           );
         })}
         {customDislikes.map((item) => (
@@ -224,7 +210,7 @@ export function AvoidListEditor({ profile, onChange, trackPrefix }: AvoidListEdi
         ))}
       </View>
       {dislikesFull ? (
-        <Text className="text-xs leading-5" style={{ color: colors.textSecondary }}>
+        <Text variant="caption" tone="muted">
           {t('avoid.limit', { count: MAX_DISLIKES })}
         </Text>
       ) : (
@@ -232,7 +218,6 @@ export function AvoidListEditor({ profile, onChange, trackPrefix }: AvoidListEdi
           value={dislikeDraft}
           onChangeText={setDislikeDraft}
           placeholder={t('avoid.dislikePlaceholder')}
-          textAlign={textAlign}
           trackId={`${trackPrefix}.dislike.add`}
           onAdd={addDislike}
         />
@@ -252,7 +237,7 @@ export function AvoidListEditor({ profile, onChange, trackPrefix }: AvoidListEdi
   );
 }
 
-/** A typed item, shown as a selected chip with a remove button. */
+/** A typed item, shown as a chosen chip with a cross: tapping it removes it. */
 function RemovableChip({
   label,
   trackId,
@@ -264,20 +249,24 @@ function RemovableChip({
 }) {
   const { t } = useTranslation();
   const { colors } = useThemePreference();
+  const type = useTypography();
   return (
-    <Pressable
+    <Chip
+      size="sm"
       trackId={trackId}
-      onPress={onRemove}
-      accessibilityRole="button"
+      selected
       accessibilityLabel={t('a11y.removeItem', { item: label })}
-      className="min-h-[44px] flex-row items-center gap-1.5 rounded-2xl px-4 active:opacity-80"
-      style={{ backgroundColor: colors.primary }}
+      onPress={onRemove}
     >
-      <Text className="text-sm font-semibold" style={{ color: colors.onPrimary }}>
+      <Text
+        numberOfLines={1}
+        color={colors.background}
+        style={{ ...type.font('body', 'semibold'), fontSize: 13, lineHeight: 17 }}
+      >
         {label}
       </Text>
-      <Ionicons name="close" size={15} color={colors.onPrimary} />
-    </Pressable>
+      <Ionicons name="close" size={15} color={colors.background} />
+    </Chip>
   );
 }
 
@@ -285,28 +274,23 @@ function AddRow({
   value,
   onChangeText,
   placeholder,
-  textAlign,
   trackId,
   onAdd,
 }: {
   value: string;
   onChangeText: (value: string) => void;
   placeholder: string;
-  textAlign: 'left' | 'right';
   trackId: string;
   onAdd: () => void;
 }) {
   const { t } = useTranslation();
-  const { colors } = useThemePreference();
   const empty = !value.trim();
   return (
-    <View className="mb-2 flex-row items-center gap-2">
-      <TextInput
-        className="min-h-[44px] min-w-0 flex-1 rounded-2xl border px-3 py-2.5 text-sm"
-        style={{ borderColor: colors.border, color: colors.text, textAlign }}
+    <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+      <FieldInput
+        containerStyle={{ flex: 1 }}
         placeholder={placeholder}
         accessibilityLabel={placeholder}
-        placeholderTextColor={colors.textSecondary}
         value={value}
         onChangeText={onChangeText}
         maxLength={MAX_AVOID_ITEM_CHARS}
@@ -316,20 +300,15 @@ function AddRow({
           onAdd();
         }}
       />
-      <Pressable
+      <Button
         trackId={trackId}
-        onPress={onAdd}
+        variant="secondary"
         disabled={empty}
-        accessibilityRole="button"
         accessibilityLabel={t('avoid.add')}
-        accessibilityState={{ disabled: empty }}
-        className="min-h-[44px] items-center justify-center rounded-2xl px-4 active:opacity-80"
-        style={{ backgroundColor: colors.primarySoft, opacity: empty ? 0.45 : 1 }}
+        onPress={onAdd}
       >
-        <Text className="text-sm font-semibold" style={{ color: colors.primary }}>
-          {t('avoid.add')}
-        </Text>
-      </Pressable>
+        {t('avoid.add')}
+      </Button>
     </View>
   );
 }

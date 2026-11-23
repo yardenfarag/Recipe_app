@@ -1,19 +1,25 @@
 import Ionicons from '@expo/vector-icons/Ionicons';
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { type ReactNode, useCallback, useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { ActivityIndicator, Text, View } from 'react-native';
-import { Pressable } from '@/components/ui/Pressable';
+import { ActivityIndicator, View } from 'react-native';
 import { logTap } from '@/lib/interactionLog';
 
 import { ApplianceIcon } from '@/components/ApplianceIcon';
 import { AvoidListEditor } from '@/components/AvoidListEditor';
+import { FieldInput } from '@/components/text-input';
 import { MeasurementToggle } from '@/components/MeasurementToggle';
 import { UnitSystemToggle } from '@/components/UnitSystemToggle';
 import { SettingsDetailScreen } from '@/components/SettingsDetailScreen';
-import { TextInput } from '@/components/text-input';
+import { Button } from '@/components/ui/Button';
+import { Chip } from '@/components/ui/Chip';
+import { IconButton } from '@/components/ui/IconButton';
+import { Pressable } from '@/components/ui/Pressable';
+import { Stepper } from '@/components/ui/Stepper';
+import { Text } from '@/components/ui/Text';
+import { Tile, TileLabel } from '@/components/ui/Tile';
+import { HAIRLINE } from '@/components/ui/tokens';
 import { useAuth } from '@/hooks/useAuth';
 import { ownedAppliances, useOwnedAppliances } from '@/hooks/useOwnedAppliances';
-import { useRtl } from '@/hooks/useRtl';
 import { useThemePreference } from '@/hooks/useThemePreference';
 import {
   EMPTY_KITCHEN_PROFILE,
@@ -43,7 +49,6 @@ import {
 export default function RecipeSettingsScreen() {
   const { t } = useTranslation();
   const { colors } = useThemePreference();
-  const { textAlign } = useRtl();
   const { user } = useAuth();
   const [profile, setProfile] = useState<KitchenProfile>(EMPTY_KITCHEN_PROFILE);
   const [contributeToHub, setContributeToHubState] = useState(true);
@@ -149,243 +154,180 @@ export default function RecipeSettingsScreen() {
   if (loading) {
     return (
       <SettingsDetailScreen>
-        <ActivityIndicator color={colors.primary} />
+        <ActivityIndicator color={colors.primary} accessibilityLabel={t('a11y.loading')} style={{ paddingVertical: 40 }} />
       </SettingsDetailScreen>
     );
   }
 
   return (
     <SettingsDetailScreen>
-      <Text className="mb-3 text-sm font-semibold" style={{ color: colors.text }} accessibilityRole="header">
-        {t('settings.measurements')}
-      </Text>
-      <MeasurementToggle trackId="settings.kitchen.measurement" />
-      <Text className="mt-3 text-xs leading-5" style={{ color: colors.textSecondary }}>
-        {t('settings.measurementsHint')}
-      </Text>
+      <Section title={t('settings.measurements')} hint={t('settings.measurementsHint')}>
+        <MeasurementToggle trackId="settings.kitchen.measurement" />
+        <View style={{ gap: 4, marginTop: 10 }}>
+          <Text variant="h3">{t('measurement.unitsTitle')}</Text>
+          <Text variant="caption" tone="muted">
+            {t('measurement.unitsHint')}
+          </Text>
+        </View>
+        <UnitSystemToggle trackId="settings.kitchen.units" />
+      </Section>
 
-      <Text className="mb-3 mt-6 text-sm font-semibold" style={{ color: colors.text }} accessibilityRole="header">
-        {t('measurement.unitsTitle')}
-      </Text>
-      <UnitSystemToggle trackId="settings.kitchen.units" />
-      <Text className="mt-3 text-xs leading-5" style={{ color: colors.textSecondary }}>
-        {t('measurement.unitsHint')}
-      </Text>
-
-      <Text className="mb-2 mt-8 text-sm font-semibold" style={{ color: colors.text }} accessibilityRole="header">
-        {t('settings.kitchenHowICook')}
-      </Text>
-      <Text className="mb-3 text-xs leading-5" style={{ color: colors.textSecondary }}>
-        {t('settings.kitchenHint')}
-      </Text>
-
-      <Text className="mb-2 text-xs font-semibold uppercase tracking-wide" style={{ color: colors.textSecondary }} accessibilityRole="header">
-        {t('settings.kitchenDiets')}
-      </Text>
-      <View className="mb-4 flex-row flex-wrap gap-2">
-        {RECIPE_VARIANTS.map((variant) => {
-          const active = profile.diets.includes(variant.key as KitchenDietKey);
-          return (
-            <Pressable
-              trackId={`settings.kitchen.diet.${variant.key}`}
+      <Section title={t('settings.kitchenHowICook')} hint={t('settings.kitchenHint')}>
+        <TileLabel accessibilityRole="header" style={{ marginTop: 4 }}>
+          {t('settings.kitchenDiets')}
+        </TileLabel>
+        <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8 }}>
+          {RECIPE_VARIANTS.map((variant) => (
+            <Chip
               key={variant.key}
+              size="sm"
+              trackId={`settings.kitchen.diet.${variant.key}`}
+              selected={profile.diets.includes(variant.key as KitchenDietKey)}
               onPress={() => toggleDiet(variant.key as KitchenDietKey)}
-              className="min-h-[44px] items-center justify-center rounded-2xl px-4 active:opacity-80"
-              style={{ backgroundColor: active ? colors.primary : colors.frosted }}
-              accessibilityRole="button"
-              accessibilityState={{ selected: active }}
             >
-              <Text className="text-sm font-semibold" style={{ color: active ? colors.onPrimary : colors.text }}>
-                {t(`recipe.variants.${variant.key}.label`)}
-              </Text>
-            </Pressable>
-          );
-        })}
-      </View>
+              {t(`recipe.variants.${variant.key}.label`)}
+            </Chip>
+          ))}
+        </View>
+      </Section>
 
-      <View className="mb-6 mt-2">
+      <Tile padding={20}>
         <AvoidListEditor profile={profile} onChange={(next) => void persist(next)} trackPrefix="settings.kitchen" />
-      </View>
+      </Tile>
 
       {user ? (
-        <>
-          <View className="mb-6 h-px" style={{ backgroundColor: colors.border }} />
+        <Tile padding={20}>
           <MyAppliancesEditor />
-          <View className="my-6 h-px" style={{ backgroundColor: colors.border }} />
-        </>
+        </Tile>
       ) : null}
 
-      <Text className="mb-2 text-xs font-semibold uppercase tracking-wide" style={{ color: colors.textSecondary }} accessibilityRole="header">
-        {t('settings.kitchenServings')}
-      </Text>
-      <View className="mb-2 flex-row items-center gap-3">
-        <Pressable
-          trackId="settings.kitchen.servings.decrease"
-          onPress={() => bumpServings(-1)}
-          disabled={profile.defaultServings == null}
-          className="h-11 w-11 items-center justify-center rounded-full active:opacity-80"
-          style={{ backgroundColor: colors.frosted }}
-          accessibilityRole="button"
-          accessibilityLabel={t('recipe.decreaseServings')}
-          accessibilityState={{ disabled: profile.defaultServings == null }}
-        >
-          <Text className="text-lg font-bold" style={{ color: colors.text }}>−</Text>
-        </Pressable>
-        <Text
-          className="min-w-[28px] text-center text-base font-semibold"
-          style={{ color: colors.text }}
-          accessibilityRole="adjustable"
-          accessibilityLabel={t('settings.kitchenServings')}
-          accessibilityValue={{
-            text:
+      <Section title={t('settings.kitchenServings')} hint={t('settings.kitchenServingsHint')}>
+        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12 }}>
+          <Stepper
+            label={t('settings.kitchenServings')}
+            value={profile.defaultServings ?? 0}
+            min={0}
+            max={24}
+            onChange={(next) => bumpServings(next - (profile.defaultServings ?? 0))}
+            decreaseLabel={t('recipe.decreaseServings')}
+            increaseLabel={t('recipe.increaseServings')}
+            spokenValue={
               profile.defaultServings == null
                 ? t('settings.kitchenServingsOff')
-                : t('settings.kitchenPreviewServings', { count: profile.defaultServings }),
-          }}
-          accessibilityActions={[{ name: 'increment' }, { name: 'decrement' }]}
-          onAccessibilityAction={(event) => {
-            if (event.nativeEvent.actionName === 'increment') bumpServings(1);
-            else if (event.nativeEvent.actionName === 'decrement') bumpServings(-1);
-          }}
-        >
-          {profile.defaultServings ?? t('settings.kitchenServingsOff')}
-        </Text>
-        <Pressable
-          trackId="settings.kitchen.servings.increase"
-          onPress={() => bumpServings(1)}
-          disabled={profile.defaultServings === 24}
-          className="h-11 w-11 items-center justify-center rounded-full active:opacity-80"
-          style={{ backgroundColor: colors.frosted }}
-          accessibilityRole="button"
-          accessibilityLabel={t('recipe.increaseServings')}
-          accessibilityState={{ disabled: profile.defaultServings === 24 }}
-        >
-          <Text className="text-lg font-bold" style={{ color: colors.text }}>+</Text>
-        </Pressable>
-        {profile.defaultServings != null ? (
-          <Pressable
-            trackId="settings.kitchen.servings.clear"
-            onPress={() => void persist({ ...profile, defaultServings: undefined })}
-            className="min-h-[44px] justify-center"
-            hitSlop={8}
-            accessibilityRole="button"
-            accessibilityLabel={t('a11y.clearDefaultServings')}
-          >
-            <Text className="text-xs font-semibold" style={{ color: colors.primary }}>
-              {t('common.clear')}
-            </Text>
-          </Pressable>
-        ) : null}
-      </View>
-      <Text className="mb-2 text-xs leading-5" style={{ color: colors.textSecondary }}>
-        {t('settings.kitchenServingsHint')}
-      </Text>
-
-      <View className="my-6 h-px" style={{ backgroundColor: colors.border }} />
-
-      <Text className="mb-2 text-sm font-semibold" style={{ color: colors.text }} accessibilityRole="header">
-        {t('settings.kitchenAlwaysSwap')}
-      </Text>
-      {profile.alwaysSwap.map((swap, index) => (
-        <View key={`${swap.from}-${swap.to}-${index}`} className="mb-2 flex-row items-center gap-2">
-          <Text
-            className="flex-1 text-sm"
-            style={{ color: colors.text }}
-            accessibilityLabel={t('a11y.swapFromTo', { from: swap.from, to: swap.to })}
-          >
-            {swap.from} → {swap.to}
-          </Text>
-          <Pressable
-            trackId="settings.kitchen.swap.remove"
-            onPress={() =>
-              void persist({
-                ...profile,
-                alwaysSwap: profile.alwaysSwap.filter((_, i) => i !== index),
-              })
+                : t('settings.kitchenPreviewServings', { count: profile.defaultServings })
             }
-            className="min-h-[44px] justify-center"
-            hitSlop={8}
-            accessibilityRole="button"
-            accessibilityLabel={t('a11y.removeSwap', { from: swap.from, to: swap.to })}
+            trackId="settings.kitchen.servings"
           >
-            <Text className="text-xs font-semibold" style={{ color: colors.danger }}>
-              {t('common.remove')}
-            </Text>
-          </Pressable>
-        </View>
-      ))}
-      <View className="mb-3 flex-row gap-2">
-        <TextInput
-          className="min-w-0 flex-1 rounded-2xl border px-3 py-2.5 text-sm"
-          style={{ borderColor: colors.border, color: colors.text, textAlign }}
-          placeholder={t('settings.kitchenSwapFrom')}
-          accessibilityLabel={t('settings.kitchenSwapFrom')}
-          placeholderTextColor={colors.textSecondary}
-          value={swapFrom}
-          onChangeText={setSwapFrom}
-        />
-        <TextInput
-          className="min-w-0 flex-1 rounded-2xl border px-3 py-2.5 text-sm"
-          style={{ borderColor: colors.border, color: colors.text, textAlign }}
-          placeholder={t('settings.kitchenSwapTo')}
-          accessibilityLabel={t('settings.kitchenSwapTo')}
-          placeholderTextColor={colors.textSecondary}
-          value={swapTo}
-          onChangeText={setSwapTo}
-        />
-      </View>
-      <Pressable
-        trackId="settings.kitchen.swap.add"
-        onPress={addSwap}
-        accessibilityRole="button"
-        className="mb-6 min-h-[44px] items-center justify-center self-start rounded-3xl px-4 active:opacity-80"
-        style={{ backgroundColor: colors.primarySoft }}
-      >
-        <Text className="text-sm font-semibold" style={{ color: colors.primary }}>
-          {t('settings.kitchenAddSwap')}
-        </Text>
-      </Pressable>
-
-      <View className="mb-6 h-px" style={{ backgroundColor: colors.border }} />
-
-      <Text className="mb-2 text-sm font-semibold" style={{ color: colors.text }} accessibilityRole="header">
-        {t('settings.kitchenPantry')}
-      </Text>
-      <Text className="mb-3 text-xs leading-5" style={{ color: colors.textSecondary }}>
-        {t('settings.kitchenPantryHint')}
-      </Text>
-      {profile.pantryStaples.length === 0 ? (
-        <Text className="mb-3 text-sm" style={{ color: colors.textSecondary }}>
-          {t('settings.kitchenPantryEmpty')}
-        </Text>
-      ) : (
-        profile.pantryStaples.map((staple) => (
-          <View key={staple} className="mb-2 flex-row items-center gap-2">
-            <Text className="flex-1 text-sm" style={{ color: colors.text }}>
-              {staple}
-            </Text>
-            <Pressable
-              trackId="settings.kitchen.pantry.remove"
-              onPress={() => void persist(removePantryStaple(profile, staple))}
-              className="min-h-[44px] justify-center"
-              hitSlop={8}
-              accessibilityRole="button"
-              accessibilityLabel={t('a11y.removeItem', { item: staple })}
+            <Text
+              align="center"
+              weight="bold"
+              variant="bodySmall"
+              tone={profile.defaultServings == null ? 'muted' : 'default'}
+              style={{ fontVariant: ['tabular-nums'] }}
             >
-              <Text className="text-xs font-semibold" style={{ color: colors.danger }}>
-                {t('common.remove')}
-              </Text>
-            </Pressable>
+              {profile.defaultServings ?? t('settings.kitchenServingsOff')}
+            </Text>
+          </Stepper>
+          {profile.defaultServings != null ? (
+            <Button
+              trackId="settings.kitchen.servings.clear"
+              variant="link"
+              accessibilityLabel={t('a11y.clearDefaultServings')}
+              onPress={() => void persist({ ...profile, defaultServings: undefined })}
+            >
+              {t('common.clear')}
+            </Button>
+          ) : null}
+        </View>
+      </Section>
+
+      <Section title={t('settings.kitchenAlwaysSwap')}>
+        {profile.alwaysSwap.length > 0 ? (
+          <View>
+            {profile.alwaysSwap.map((swap, index) => (
+              <View
+                key={`${swap.from}-${swap.to}-${index}`}
+                style={[
+                  { flexDirection: 'row', alignItems: 'center', gap: 8 },
+                  index > 0 ? { borderTopWidth: HAIRLINE, borderColor: colors.border } : null,
+                ]}
+              >
+                <Text
+                  variant="bodySmall"
+                  style={{ flex: 1 }}
+                  accessibilityLabel={t('a11y.swapFromTo', { from: swap.from, to: swap.to })}
+                >
+                  {swap.from} → {swap.to}
+                </Text>
+                <IconButton
+                  trackId="settings.kitchen.swap.remove"
+                  icon="close"
+                  iconSize={18}
+                  label={t('a11y.removeSwap', { from: swap.from, to: swap.to })}
+                  onPress={() =>
+                    void persist({
+                      ...profile,
+                      alwaysSwap: profile.alwaysSwap.filter((_, i) => i !== index),
+                    })
+                  }
+                />
+              </View>
+            ))}
           </View>
-        ))
-      )}
-      <View className="mb-3 flex-row gap-2">
-        <TextInput
-          className="min-w-0 flex-1 rounded-2xl border px-3 py-2.5 text-sm"
-          style={{ borderColor: colors.border, color: colors.text, textAlign }}
+        ) : null}
+        <View style={{ flexDirection: 'row', gap: 8 }}>
+          <FieldInput
+            containerStyle={{ flex: 1 }}
+            placeholder={t('settings.kitchenSwapFrom')}
+            accessibilityLabel={t('settings.kitchenSwapFrom')}
+            value={swapFrom}
+            onChangeText={setSwapFrom}
+          />
+          <FieldInput
+            containerStyle={{ flex: 1 }}
+            placeholder={t('settings.kitchenSwapTo')}
+            accessibilityLabel={t('settings.kitchenSwapTo')}
+            value={swapTo}
+            onChangeText={setSwapTo}
+          />
+        </View>
+        <Button trackId="settings.kitchen.swap.add" variant="secondary" icon="add" onPress={addSwap}>
+          {t('settings.kitchenAddSwap')}
+        </Button>
+      </Section>
+
+      <Section title={t('settings.kitchenPantry')} hint={t('settings.kitchenPantryHint')}>
+        {profile.pantryStaples.length === 0 ? (
+          <Text variant="bodySmall" tone="muted">
+            {t('settings.kitchenPantryEmpty')}
+          </Text>
+        ) : (
+          <View>
+            {profile.pantryStaples.map((staple, index) => (
+              <View
+                key={staple}
+                style={[
+                  { flexDirection: 'row', alignItems: 'center', gap: 8 },
+                  index > 0 ? { borderTopWidth: HAIRLINE, borderColor: colors.border } : null,
+                ]}
+              >
+                <Text variant="bodySmall" style={{ flex: 1 }}>
+                  {staple}
+                </Text>
+                <IconButton
+                  trackId="settings.kitchen.pantry.remove"
+                  icon="close"
+                  iconSize={18}
+                  label={t('a11y.removeItem', { item: staple })}
+                  onPress={() => void persist(removePantryStaple(profile, staple))}
+                />
+              </View>
+            ))}
+          </View>
+        )}
+        <FieldInput
           placeholder={t('settings.kitchenPantryPlaceholder')}
           accessibilityLabel={t('settings.kitchenPantryPlaceholder')}
-          placeholderTextColor={colors.textSecondary}
           value={pantryDraft}
           onChangeText={setPantryDraft}
           onSubmitEditing={() => {
@@ -393,29 +335,19 @@ export default function RecipeSettingsScreen() {
             addPantry();
           }}
         />
-      </View>
-      <Pressable
-        trackId="settings.kitchen.pantry.add"
-        onPress={addPantry}
-        accessibilityRole="button"
-        className="mb-6 min-h-[44px] items-center justify-center self-start rounded-3xl px-4 active:opacity-80"
-        style={{ backgroundColor: colors.primarySoft }}
-      >
-        <Text className="text-sm font-semibold" style={{ color: colors.primary }}>
+        <Button trackId="settings.kitchen.pantry.add" variant="secondary" icon="add" onPress={addPantry}>
           {t('settings.kitchenPantryAdd')}
-        </Text>
-      </Pressable>
-
-      <View className="mb-6 h-px" style={{ backgroundColor: colors.border }} />
+        </Button>
+      </Section>
 
       {user ? (
-        <>
-          <Text className="mb-2 text-sm font-semibold" style={{ color: colors.text }} accessibilityRole="header">
-            {t('hub.title')}
-          </Text>
-          <Pressable
+        <Section title={t('hub.title')}>
+          <SwitchRow
             trackId="settings.kitchen.contribute_to_hub.toggle"
-            onPress={() => {
+            label={t('settings.contributeToHub')}
+            hint={t('settings.contributeToHubHint')}
+            value={contributeToHub}
+            onToggle={() => {
               const next = !contributeToHub;
               setContributeToHubState(next);
               void setContributeToHub(user.id, next).catch(() => {
@@ -424,102 +356,132 @@ export default function RecipeSettingsScreen() {
                 announce(t('settings.kitchenSaveFailed'), { liveRegion: true });
               });
             }}
-            className="mb-6 flex-row items-center justify-between rounded-3xl border px-4 py-3.5 active:opacity-80"
-            style={{ borderColor: colors.border, backgroundColor: colors.surface }}
-            accessibilityRole="switch"
-            accessibilityState={{ checked: contributeToHub }}
-            accessibilityLabel={t('settings.contributeToHub')}
-            accessibilityHint={t('settings.contributeToHubHint')}
-          >
-            <View className="mr-3 min-w-0 flex-1">
-              <Text className="text-sm font-semibold" style={{ color: colors.text }}>
-                {t('settings.contributeToHub')}
-              </Text>
-              <Text className="mt-1 text-xs leading-5" style={{ color: colors.textSecondary }}>
-                {t('settings.contributeToHubHint')}
-              </Text>
-            </View>
-            <View
-              className="h-6 w-11 rounded-full p-0.5"
-              style={{ backgroundColor: contributeToHub ? colors.primary : colors.border }}
-              accessible={false}
-              importantForAccessibility="no-hide-descendants"
-            >
-              <View
-                className="h-5 w-5 rounded-full bg-white"
-                style={{ alignSelf: contributeToHub ? 'flex-end' : 'flex-start' }}
-              />
-            </View>
-          </Pressable>
-        </>
+          />
+        </Section>
       ) : null}
 
-      <Text className="mb-2 text-sm font-semibold" style={{ color: colors.text }} accessibilityRole="header">
-        {t('settings.kitchenAfterSnap')}
-      </Text>
-      <Pressable
-        trackId="settings.kitchen.auto_apply.toggle"
-        onPress={() => void persist({ ...profile, autoApplyOnExtract: !profile.autoApplyOnExtract })}
-        className="flex-row items-center justify-between rounded-3xl border px-4 py-3.5 active:opacity-80"
-        style={{ borderColor: colors.border, backgroundColor: colors.surface }}
-        accessibilityRole="switch"
-        accessibilityState={{ checked: profile.autoApplyOnExtract }}
-        accessibilityLabel={t('settings.kitchenAutoApply')}
-        accessibilityHint={t('settings.kitchenAutoApplyHint')}
-      >
-        <View className="mr-3 min-w-0 flex-1">
-          <Text className="text-sm font-semibold" style={{ color: colors.text }}>
-            {t('settings.kitchenAutoApply')}
-          </Text>
-          <Text className="mt-1 text-xs leading-5" style={{ color: colors.textSecondary }}>
-            {t('settings.kitchenAutoApplyHint')}
+      <Section title={t('settings.kitchenAfterSnap')}>
+        <SwitchRow
+          trackId="settings.kitchen.auto_apply.toggle"
+          label={t('settings.kitchenAutoApply')}
+          hint={t('settings.kitchenAutoApplyHint')}
+          value={profile.autoApplyOnExtract}
+          onToggle={() => void persist({ ...profile, autoApplyOnExtract: !profile.autoApplyOnExtract })}
+        />
+        <View style={{ borderRadius: 16, padding: 14, backgroundColor: colors.backgroundElement }}>
+          <Text variant="caption" tone="muted">
+            {profile.diets.length === 0 &&
+            profile.alwaysSwap.length === 0 &&
+            profile.defaultServings == null &&
+            avoidListIsEmpty(profile)
+              ? t('settings.kitchenPreviewEmpty')
+              : [
+                  ...profile.allergies.map((allergen) => t(`avoid.allergens.${allergen}`)),
+                  ...profile.otherAllergies,
+                  ...profile.diets.map((diet) => t(`recipe.variants.${diet}.label`)),
+                  ...profile.alwaysSwap.map((swap) => `${swap.from} → ${swap.to}`),
+                  profile.defaultServings
+                    ? t('settings.kitchenPreviewServings', { count: profile.defaultServings })
+                    : null,
+                  ...profile.dislikes,
+                ]
+                  .filter(Boolean)
+                  .join(' · ')}
           </Text>
         </View>
-        <View
-          className="h-6 w-11 rounded-full p-0.5"
-          style={{ backgroundColor: profile.autoApplyOnExtract ? colors.primary : colors.border }}
-          accessible={false}
-          importantForAccessibility="no-hide-descendants"
-        >
-          <View
-            className="h-5 w-5 rounded-full bg-white"
-            style={{ alignSelf: profile.autoApplyOnExtract ? 'flex-end' : 'flex-start' }}
-          />
-        </View>
-      </Pressable>
-      <Text className="mt-3 text-xs leading-5" style={{ color: colors.textSecondary }}>
-        {profile.diets.length === 0 &&
-        profile.alwaysSwap.length === 0 &&
-        profile.defaultServings == null &&
-        avoidListIsEmpty(profile)
-          ? t('settings.kitchenPreviewEmpty')
-          : [
-              ...profile.allergies.map((allergen) => t(`avoid.allergens.${allergen}`)),
-              ...profile.otherAllergies,
-              ...profile.diets.map((diet) => t(`recipe.variants.${diet}.label`)),
-              ...profile.alwaysSwap.map((swap) => `${swap.from} → ${swap.to}`),
-              profile.defaultServings
-                ? t('settings.kitchenPreviewServings', { count: profile.defaultServings })
-                : null,
-              ...profile.dislikes,
-            ]
-              .filter(Boolean)
-              .join(' · ')}
-      </Text>
+      </Section>
 
       <View accessibilityLiveRegion="polite">
         {saving ? (
-          <Text className="mt-3 text-xs" style={{ color: colors.textSecondary }}>
-            {t('common.save')}…
+          <Text variant="caption" tone="muted">
+            {t('web.settings.saving')}
           </Text>
         ) : null}
         {error ? (
-          <Text className="mt-3 text-xs" style={{ color: colors.danger }}>
+          <Text variant="caption" tone="danger">
             {error}
           </Text>
         ) : null}
       </View>
     </SettingsDetailScreen>
+  );
+}
+
+/** One part of the page: a tile with its heading (h3) and an optional muted line under it. */
+function Section({ title, hint, children }: { title: string; hint?: string; children: ReactNode }) {
+  return (
+    <Tile padding={20} style={{ gap: 12 }}>
+      <View style={{ gap: 4 }}>
+        <Text variant="h3">{title}</Text>
+        {hint ? (
+          <Text variant="caption" tone="muted">
+            {hint}
+          </Text>
+        ) : null}
+      </View>
+      {children}
+    </Tile>
+  );
+}
+
+/** An on/off setting: its name and what it does, with a switch at the end. The whole row toggles it. */
+function SwitchRow({
+  label,
+  hint,
+  value,
+  onToggle,
+  trackId,
+}: {
+  label: string;
+  hint: string;
+  value: boolean;
+  onToggle: () => void;
+  trackId: string;
+}) {
+  const { colors } = useThemePreference();
+  return (
+    <Pressable
+      trackId={trackId}
+      onPress={onToggle}
+      accessibilityRole="switch"
+      accessibilityState={{ checked: value }}
+      accessibilityLabel={label}
+      accessibilityHint={hint}
+      style={({ pressed }) => ({
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: 12,
+        minHeight: 56,
+        marginHorizontal: -8,
+        paddingHorizontal: 8,
+        paddingVertical: 8,
+        borderRadius: 16,
+        backgroundColor: pressed ? colors.backgroundElement : 'transparent',
+      })}
+    >
+      <View style={{ flex: 1, minWidth: 0, gap: 4 }}>
+        <Text variant="bodySmall" weight="semibold">
+          {label}
+        </Text>
+        <Text variant="caption" tone="muted">
+          {hint}
+        </Text>
+      </View>
+      <View
+        accessible={false}
+        importantForAccessibility="no-hide-descendants"
+        style={{
+          width: 48,
+          height: 28,
+          borderRadius: 14,
+          padding: 3,
+          alignItems: value ? 'flex-end' : 'flex-start',
+          backgroundColor: value ? colors.primary : colors.backgroundSelected,
+        }}
+      >
+        <View style={{ width: 22, height: 22, borderRadius: 11, backgroundColor: colors.surface }} />
+      </View>
+    </Pressable>
   );
 }
 
@@ -531,11 +493,9 @@ export default function RecipeSettingsScreen() {
 function MyAppliancesEditor() {
   const { t } = useTranslation();
   const { colors } = useThemePreference();
-  const { textAlign, writingDirection } = useRtl();
   const { kitchen, status, userId } = useOwnedAppliances();
   const ticked = tickedAppliances(kitchen);
   const count = specialOwnedCount(kitchen);
-  const textStyle = { textAlign, writingDirection };
 
   // Opening Settings is when a list ticked on the web matters most: read the account again.
   useEffect(() => {
@@ -557,72 +517,63 @@ function MyAppliancesEditor() {
   }
 
   return (
-    <View testID="my-appliances">
-      <Text className="mb-2 text-sm font-semibold" style={[{ color: colors.text }, textStyle]} accessibilityRole="header">
-        {t('myAppliances.title')}
-      </Text>
-      <Text className="mb-3 text-xs leading-5" style={[{ color: colors.textSecondary }, textStyle]}>
-        {t('myAppliances.hint')}
-      </Text>
+    <View testID="my-appliances" style={{ gap: 12 }}>
+      <View style={{ gap: 4 }}>
+        <Text variant="h3">{t('myAppliances.title')}</Text>
+        <Text variant="caption" tone="muted">
+          {t('myAppliances.hint')}
+        </Text>
+      </View>
 
       {kitchen ? (
-        <View className="mb-4 flex-row flex-wrap items-center gap-x-3 gap-y-1" testID="my-appliances-status">
-          <View className="min-w-0 flex-1 flex-row items-center gap-2">
+        <View
+          style={{ flexDirection: 'row', flexWrap: 'wrap', alignItems: 'center', columnGap: 12 }}
+          testID="my-appliances-status"
+        >
+          <View style={{ flex: 1, minWidth: 0, flexDirection: 'row', alignItems: 'center', gap: 8 }}>
             <Ionicons name="checkmark-circle" size={18} color={colors.success} />
-            <Text className="min-w-0 flex-1 text-sm font-semibold" style={[{ color: colors.text }, textStyle]}>
+            <Text variant="bodySmall" weight="semibold" style={{ flex: 1, minWidth: 0 }}>
               {t('myAppliances.checking', { count })}
             </Text>
           </View>
-          <Pressable
-            trackId="settings.appliances.clear"
-            onPress={() => void stopChecking()}
-            className="min-h-[44px] justify-center"
-            hitSlop={8}
-            accessibilityRole="button"
-          >
-            <Text className="text-xs font-semibold" style={{ color: colors.primary }}>
-              {t('myAppliances.stopChecking')}
-            </Text>
-          </Pressable>
+          <Button trackId="settings.appliances.clear" variant="link" onPress={() => void stopChecking()}>
+            {t('myAppliances.stopChecking')}
+          </Button>
         </View>
       ) : (
-        <View className="mb-4 rounded-2xl px-4 py-3" style={{ backgroundColor: colors.frosted }} testID="my-appliances-status">
-          <View className="flex-row items-start gap-2">
-            <Ionicons name="information-circle-outline" size={18} color={colors.primary} />
-            <Text className="min-w-0 flex-1 text-xs leading-5" style={[{ color: colors.textSecondary }, textStyle]}>
+        <View
+          style={{ gap: 12, borderRadius: 16, padding: 14, backgroundColor: colors.backgroundElement }}
+          testID="my-appliances-status"
+        >
+          <View style={{ flexDirection: 'row', alignItems: 'flex-start', gap: 8 }}>
+            <Ionicons name="information-circle-outline" size={18} color={colors.textSecondary} />
+            <Text variant="caption" tone="muted" style={{ flex: 1, minWidth: 0 }}>
               {t('myAppliances.notSet')}
             </Text>
           </View>
-          <Pressable
+          <Button
             trackId="settings.appliances.none"
+            variant="secondary"
+            size="sm"
             onPress={() => ownedAppliances.save([...ticked])}
-            className="mt-3 min-h-[44px] items-center justify-center self-start rounded-3xl px-4 active:opacity-80"
-            style={{ backgroundColor: colors.primarySoft }}
-            accessibilityRole="button"
           >
-            <Text className="text-sm font-semibold" style={{ color: colors.primary }}>
-              {t('myAppliances.noneOfThese')}
-            </Text>
-          </Pressable>
+            {t('myAppliances.noneOfThese')}
+          </Button>
         </View>
       )}
 
       {APPLIANCE_CHECKLIST.map((group) => (
-        <View key={group.id} className="mb-4">
-          <Text
-            className="mb-2 text-xs font-semibold uppercase tracking-wide"
-            style={[{ color: colors.textSecondary }, textStyle]}
-            accessibilityRole="header"
-          >
+        <View key={group.id} style={{ gap: 8, marginTop: 4 }}>
+          <TileLabel accessibilityRole="header">
             {/* "myAppliances.groups" is one dotted key in the catalog; ">" splits the path at the right place. */}
             {t(`myAppliances.groups>${group.id}`, { keySeparator: '>' })}
-          </Text>
+          </TileLabel>
           {group.id === 'basics' ? (
-            <Text className="mb-2 text-xs leading-5" style={[{ color: colors.textSecondary }, textStyle]}>
+            <Text variant="caption" tone="muted">
               {t('myAppliances.basicsHint')}
             </Text>
           ) : null}
-          <View className="flex-row flex-wrap gap-2">
+          <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8 }}>
             {group.keys.map((key) => (
               <ApplianceToggle
                 key={key}
@@ -636,7 +587,7 @@ function MyAppliancesEditor() {
       ))}
 
       {status === 'failed' ? (
-        <Text className="text-xs" style={{ color: colors.danger }} accessibilityLiveRegion="polite">
+        <Text variant="caption" tone="danger" accessibilityLiveRegion="polite">
           {t('settings.kitchenSaveFailed')}
         </Text>
       ) : null}
@@ -644,7 +595,7 @@ function MyAppliancesEditor() {
   );
 }
 
-/** One appliance, on or off. The icon stays so the list is quick to scan; a tick shows it's in the kitchen. */
+/** One appliance, on or off: a chip with its icon, filled once it's in the kitchen. */
 function ApplianceToggle({
   appliance,
   checked,
@@ -655,31 +606,18 @@ function ApplianceToggle({
   onToggle: () => void;
 }) {
   const { t } = useTranslation();
-  const { colors } = useThemePreference();
   const name = t(applianceNameKey(appliance));
   return (
-    <Pressable
+    <Chip
       trackId={`settings.appliances.toggle.${appliance}`}
       testID={`my-appliance-${appliance}`}
-      onPress={onToggle}
-      className="min-h-[44px] flex-row items-center gap-1.5 rounded-2xl border px-3 active:opacity-80"
-      style={{
-        backgroundColor: checked ? colors.primarySoft : colors.surface,
-        borderColor: checked ? colors.primary : colors.border,
-      }}
-      accessibilityRole="checkbox"
-      accessibilityState={{ checked }}
+      size="sm"
+      selected={checked}
       accessibilityLabel={name}
+      icon={({ color, size }) => <ApplianceIcon appliance={appliance} size={size} color={color} />}
+      onPress={onToggle}
     >
-      <ApplianceIcon appliance={appliance} size={17} color={checked ? colors.primary : colors.textSecondary} />
-      <Text className="text-sm font-semibold" style={{ color: checked ? colors.primary : colors.text }}>
-        {name}
-      </Text>
-      <Ionicons
-        name={checked ? 'checkmark-circle' : 'ellipse-outline'}
-        size={16}
-        color={checked ? colors.primary : colors.border}
-      />
-    </Pressable>
+      {name}
+    </Chip>
   );
 }
