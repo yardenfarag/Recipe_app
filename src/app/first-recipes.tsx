@@ -1,16 +1,22 @@
-import Ionicons from '@expo/vector-icons/Ionicons';
 import { router } from 'expo-router';
 import { useCallback, useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { ActivityIndicator, FlatList, Text, View, useWindowDimensions } from 'react-native';
+import { ActivityIndicator, FlatList, View, useWindowDimensions } from 'react-native';
 
+import { CookieMark } from '@/components/CookieMark';
 import { RecipeImage } from '@/components/RecipeImage';
 import { Screen } from '@/components/Screen';
+import { Button } from '@/components/ui/Button';
+import { PageHeader } from '@/components/ui/PageHeader';
+import { PinchLogo } from '@/components/ui/PinchLogo';
 import { Pressable } from '@/components/ui/Pressable';
+import { Text } from '@/components/ui/Text';
+import { Tile } from '@/components/ui/Tile';
+import { HAIRLINE, KitIcon, Radii } from '@/components/ui/tokens';
 import { useAuth } from '@/hooks/useAuth';
 import { useKitchenProfile } from '@/hooks/useKitchenProfile';
-import { useRtl } from '@/hooks/useRtl';
 import { useThemePreference } from '@/hooks/useThemePreference';
+import { useTypography } from '@/hooks/useTypography';
 import { announce } from '@/lib/a11y';
 import { captureFirstRecipesPicked } from '@/lib/analytics';
 import {
@@ -37,8 +43,6 @@ type LoadState =
 export default function FirstRecipesScreen() {
   const { t } = useTranslation();
   const { colors } = useThemePreference();
-  const { textAlign, writingDirection } = useRtl();
-  const rtlText = { textAlign, writingDirection };
   const { width } = useWindowDimensions();
   const { user, loading: authLoading } = useAuth();
   const { profile: kitchen, loading: kitchenLoading } = useKitchenProfile();
@@ -103,55 +107,43 @@ export default function FirstRecipesScreen() {
   const canSave = picked.length >= FIRST_RECIPES_MIN && !saving;
 
   const header = (
-    <View className="pb-4 pt-2">
-      <Text
-        accessibilityRole="header"
-        className="text-2xl font-bold"
-        style={{ color: colors.text, ...rtlText }}
-      >
-        {t('firstRecipes.title')}
-      </Text>
-      <Text className="mt-1.5 text-sm leading-5" style={{ color: colors.textSecondary, ...rtlText }}>
-        {hasDiets ? t('firstRecipes.subtitleDiets') : t('firstRecipes.subtitle')}
-      </Text>
+    <View style={{ gap: 8 }}>
+      <View style={{ minHeight: 56, justifyContent: 'center' }}>
+        <PinchLogo />
+      </View>
+      <PageHeader
+        title={t('firstRecipes.title')}
+        subtitle={hasDiets ? t('firstRecipes.subtitleDiets') : t('firstRecipes.subtitle')}
+      />
     </View>
   );
 
   return (
     <Screen edges={['top', 'left', 'right', 'bottom']}>
       {state.kind === 'loading' ? (
-        <View className="flex-1 items-center justify-center">
-          <ActivityIndicator color={colors.primary} accessibilityLabel={t('a11y.loading')} />
+        <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center' }}>
+          <ActivityIndicator color={colors.primaryText} accessibilityLabel={t('a11y.loading')} />
         </View>
       ) : state.kind === 'error' ? (
-        <View className="flex-1 justify-center px-6">
+        <View style={{ flex: 1, justifyContent: 'center', paddingHorizontal: 16 }}>
           {header}
-          <Text className="mb-5 text-base" style={{ color: colors.textSecondary, ...rtlText }}>
-            {t('firstRecipes.loadFailed')}
-          </Text>
-          <Pressable
-            trackId="first_recipes.retry"
-            onPress={() => void load()}
-            accessibilityRole="button"
-            className="mb-3 min-h-12 items-center justify-center rounded-3xl px-5 active:opacity-80"
-            style={{ backgroundColor: colors.primary }}
-          >
-            <Text className="text-base font-bold" style={{ color: colors.onPrimary }}>
+          <Tile padding={24} style={{ gap: 14 }}>
+            <Text variant="body" tone="muted">
+              {t('firstRecipes.loadFailed')}
+            </Text>
+            <Button trackId="first_recipes.retry" fullWidth onPress={() => void load()}>
               {t('common.tryAgain')}
-            </Text>
-          </Pressable>
-          {/* Never a dead end: without the Hub, Snap is the way to a first recipe. */}
-          <Pressable
-            trackId="first_recipes.continue_without"
-            onPress={() => router.replace('/add')}
-            accessibilityRole="button"
-            className="min-h-12 items-center justify-center rounded-3xl px-5 active:opacity-80"
-            style={{ backgroundColor: colors.surface }}
-          >
-            <Text className="text-base font-bold" style={{ color: colors.primary }}>
+            </Button>
+            {/* Never a dead end: without the Hub, Snap is the way to a first recipe. */}
+            <Button
+              variant="outline"
+              trackId="first_recipes.continue_without"
+              fullWidth
+              onPress={() => router.replace('/add')}
+            >
               {t('firstRecipes.continueToSnap')}
-            </Text>
-          </Pressable>
+            </Button>
+          </Tile>
         </View>
       ) : (
         <>
@@ -174,31 +166,33 @@ export default function FirstRecipesScreen() {
             )}
           />
           <View
-            className="border-t px-5 pb-2 pt-3"
-            style={{ backgroundColor: colors.background, borderTopColor: colors.frostedBorder }}
+            style={{
+              flexDirection: 'row',
+              alignItems: 'center',
+              gap: 12,
+              paddingHorizontal: 16,
+              paddingTop: 12,
+              paddingBottom: 8,
+              borderTopWidth: HAIRLINE,
+              borderTopColor: colors.border,
+              backgroundColor: colors.background,
+            }}
           >
-            <Pressable
+            <Text variant="caption" tone="muted" accessibilityLiveRegion="polite" style={{ flex: 1 }}>
+              {/* Before a pick, the button itself says "Pick at least one". */}
+              {picked.length > 0 ? t('firstRecipes.pickedCount', { count: picked.length }) : ''}
+            </Text>
+            <Button
               trackId="first_recipes.save"
+              size="lg"
+              disabled={!canSave && !saving}
+              busy={saving}
               onPress={() => void save()}
-              disabled={!canSave}
-              accessibilityRole="button"
-              accessibilityState={{ disabled: !canSave, busy: saving }}
-              className="min-h-12 items-center justify-center rounded-3xl px-5 active:opacity-80"
-              style={{ backgroundColor: canSave ? colors.primary : colors.backgroundElement }}
             >
-              {saving ? (
-                <ActivityIndicator color={colors.onPrimary} />
-              ) : (
-                <Text
-                  className="text-base font-bold"
-                  style={{ color: canSave ? colors.onPrimary : colors.textSecondary }}
-                >
-                  {picked.length > 0
-                    ? t('firstRecipes.save', { count: picked.length })
-                    : t('firstRecipes.pickOne')}
-                </Text>
-              )}
-            </Pressable>
+              {picked.length > 0
+                ? t('firstRecipes.save', { count: picked.length })
+                : t('firstRecipes.pickOne')}
+            </Button>
           </View>
         </>
       )}
@@ -219,6 +213,7 @@ function PickTile({
 }) {
   const { t } = useTranslation();
   const { colors } = useThemePreference();
+  const type = useTypography();
   const duration = card.estimated_time_minutes
     ? formatRecipeDuration(card.estimated_time_minutes, {
         minutes: t('recipe.durationMin'),
@@ -232,52 +227,71 @@ function PickTile({
       accessibilityRole="checkbox"
       accessibilityState={{ checked: selected }}
       accessibilityLabel={card.title}
-      className="flex-1 overflow-hidden rounded-3xl active:opacity-90"
-      style={{
-        backgroundColor: colors.surface,
-        borderWidth: 2,
-        borderColor: selected ? colors.primary : 'transparent',
-      }}
+      style={({ pressed }) => [
+        {
+          flex: 1,
+          overflow: 'hidden',
+          borderRadius: Radii.card,
+          backgroundColor: colors.surface,
+          borderWidth: 2,
+          borderColor: selected ? colors.primary : colors.border,
+        },
+        pressed ? { opacity: 0.9 } : null,
+      ]}
     >
       <View>
         {card.image_url ? (
-          <RecipeImage uri={card.image_url} variant="compact" borderRadius={0} style={{ width: '100%', height: 120 }} aiGenerated={card.image_generated === true} />
+          <RecipeImage
+            uri={card.image_url}
+            variant="compact"
+            borderRadius={0}
+            style={{ width: '100%', height: 120 }}
+            aiGenerated={card.image_generated === true}
+          />
         ) : (
           <View
-            className="items-center justify-center"
-            style={{ height: 120, backgroundColor: colors.primarySoft }}
+            style={{ height: 120, alignItems: 'center', justifyContent: 'center', backgroundColor: colors.backgroundElement }}
           >
-            <Ionicons name="restaurant" size={28} color={colors.primary} />
+            <CookieMark size={36} color={colors.primaryText} />
           </View>
         )}
         <View
-          className="absolute end-2 top-2 h-7 w-7 items-center justify-center rounded-full"
-          style={{
-            backgroundColor: selected ? colors.primary : colors.surface,
-            borderWidth: selected ? 0 : 1.5,
-            borderColor: colors.frostedBorder,
-          }}
           accessible={false}
           importantForAccessibility="no-hide-descendants"
+          style={{
+            position: 'absolute',
+            top: 8,
+            end: 8,
+            width: 28,
+            height: 28,
+            borderRadius: 14,
+            alignItems: 'center',
+            justifyContent: 'center',
+            backgroundColor: selected ? colors.primary : colors.surface,
+            borderWidth: selected ? 0 : 2,
+            borderColor: colors.border,
+          }}
         >
-          {selected ? <Ionicons name="checkmark" size={18} color={colors.onPrimary} /> : null}
+          {selected ? <KitIcon icon="checkmark" color={colors.onPrimary} size={18} /> : null}
         </View>
       </View>
-      <View className="gap-1 p-3">
-        <Text className="text-sm font-bold leading-5" numberOfLines={2} style={{ color: colors.text }}>
+      <View style={{ gap: 6, padding: 12 }}>
+        <Text
+          numberOfLines={2}
+          style={{ ...type.font('display', 'bold'), fontSize: 15, lineHeight: type.rtl ? 21 : 19 }}
+        >
           {card.title}
         </Text>
-        <View className="flex-row flex-wrap items-center gap-1.5">
+        <View style={{ flexDirection: 'row', flexWrap: 'wrap', alignItems: 'center', gap: 6 }}>
           {fitsDiet ? (
-            <Text
-              className="rounded-full px-2 py-0.5 text-[11px] font-semibold"
-              style={{ backgroundColor: colors.primarySoft, color: colors.primary, overflow: 'hidden' }}
-            >
-              {t('firstRecipes.fitsDiet')}
-            </Text>
+            <View style={{ borderRadius: 6, paddingHorizontal: 8, paddingVertical: 2, backgroundColor: colors.primarySoft }}>
+              <Text color={colors.primaryText} style={{ ...type.font('body', 'semibold'), fontSize: 11, lineHeight: 15 }}>
+                {t('firstRecipes.fitsDiet')}
+              </Text>
+            </View>
           ) : null}
           {duration ? (
-            <Text className="text-xs" style={{ color: colors.textSecondary }}>
+            <Text variant="caption" tone="muted">
               {duration}
             </Text>
           ) : null}

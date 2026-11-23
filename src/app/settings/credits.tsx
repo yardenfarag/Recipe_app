@@ -1,19 +1,33 @@
+import Ionicons from '@expo/vector-icons/Ionicons';
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Platform, Text } from 'react-native';
-import { Pressable } from '@/components/ui/Pressable';
+import { ActivityIndicator, Platform, View } from 'react-native';
 
 import { SettingsDetailScreen } from '@/components/SettingsDetailScreen';
 import { TokenPurchaseSheet } from '@/components/TokenPurchaseSheet';
+import { Button } from '@/components/ui/Button';
+import { Text } from '@/components/ui/Text';
+import { Tile, TileLabel } from '@/components/ui/Tile';
 import { useProfile } from '@/hooks/useProfile';
 import { useThemePreference } from '@/hooks/useThemePreference';
+import { useTypography } from '@/hooks/useTypography';
 import { FREE_MONTHLY_EXTRACT_LIMIT } from '@shared/lib/quotas';
 import { creditPurchasesOfferedOn } from '@/lib/purchases';
 import { openAppStore } from '@/lib/appStore';
 
+/** A count in the app language's digits and grouping ("1,200"). */
+function formatCount(count: number, language: string): string {
+  try {
+    return new Intl.NumberFormat(language).format(count);
+  } catch {
+    return String(count);
+  }
+}
+
 export default function CreditSettingsScreen() {
   const { t } = useTranslation();
   const { colors } = useThemePreference();
+  const type = useTypography();
   const { totalCredits, refresh } = useProfile();
   const [creditsOpen, setCreditsOpen] = useState(false);
   const purchasesHere = creditPurchasesOfferedOn(Platform.OS);
@@ -21,50 +35,77 @@ export default function CreditSettingsScreen() {
   return (
     <>
       <SettingsDetailScreen>
-        <Text
-          accessibilityRole="header"
-          className="mb-1 text-3xl font-bold"
-          style={{ color: colors.text }}
-        >
-          {t('settings.recipeCredits')}
-        </Text>
-        {totalCredits == null ? null : (
-          <Text className="text-sm" style={{ color: colors.accent }}>
-            {t('settings.creditsTotal', { count: totalCredits })}
-          </Text>
-        )}
-        <Text className="mt-1 text-xs leading-5" style={{ color: colors.textSecondary }}>
-          {t('settings.creditsMonthlyNote', { limit: FREE_MONTHLY_EXTRACT_LIMIT })}
-        </Text>
-        {purchasesHere ? (
-          <Pressable
-            trackId="credits.buy"
-            className="mt-4 self-start rounded-[18px] px-4 py-2.5 active:opacity-80"
-            style={{ backgroundColor: colors.primary }}
-            onPress={() => setCreditsOpen(true)}
-            accessibilityRole="button"
-          >
-            <Text className="text-sm font-bold" style={{ color: colors.onPrimary }}>
-              {t('credits.buyAction')}
+        {/* The balance at a glance: the total as a big number, and where free credits come from. */}
+        <Tile padding={20} style={{ gap: 14 }}>
+          <View style={{ flexDirection: 'row', alignItems: 'flex-start', justifyContent: 'space-between', gap: 12 }}>
+            <View style={{ flex: 1, minWidth: 0, gap: 12 }}>
+              <TileLabel accessibilityRole="header">{t('web.credits.available')}</TileLabel>
+              {totalCredits == null ? (
+                <ActivityIndicator color={colors.accentText} style={{ alignSelf: 'flex-start', height: 54 }} />
+              ) : (
+                <Text
+                  variant="number"
+                  accessibilityLabel={t('settings.creditsTotal', { count: totalCredits })}
+                  accessibilityLiveRegion="polite"
+                >
+                  {formatCount(totalCredits, type.language)}
+                </Text>
+              )}
+            </View>
+            <View
+              accessible={false}
+              importantForAccessibility="no-hide-descendants"
+              style={{
+                width: 40,
+                height: 40,
+                borderRadius: 12,
+                alignItems: 'center',
+                justifyContent: 'center',
+                backgroundColor: colors.accentSoft,
+              }}
+            >
+              <Ionicons name="sparkles-outline" size={20} color={colors.accentText} />
+            </View>
+          </View>
+          <View style={{ borderRadius: 16, padding: 14, gap: 4, backgroundColor: colors.backgroundElement }}>
+            <Text variant="bodySmall" weight="semibold">
+              {t('web.credits.freeThisMonth')}
             </Text>
-          </Pressable>
+            <Text variant="caption" tone="muted">
+              {t('settings.creditsMonthlyNote', { limit: FREE_MONTHLY_EXTRACT_LIMIT })}
+            </Text>
+          </View>
+          <Text variant="caption" tone="muted">
+            {t('web.credits.spendOrder')}
+          </Text>
+        </Tile>
+
+        {purchasesHere ? (
+          <Tile padding={20} style={{ gap: 14 }}>
+            <Text variant="h3">{t('credits.buyTitle')}</Text>
+            <Text variant="bodySmall" tone="muted">
+              {t('credits.buyHint')}
+            </Text>
+            <Button trackId="credits.buy" size="lg" fullWidth icon="add" onPress={() => setCreditsOpen(true)}>
+              {t('credits.buyAction')}
+            </Button>
+          </Tile>
         ) : (
-          <>
-            <Text className="mt-4 text-sm leading-5" style={{ color: colors.textSecondary }}>
+          <Tile padding={20} style={{ gap: 14 }}>
+            <Text variant="h3">{t('web.credits.salesOffTitle')}</Text>
+            <Text variant="bodySmall" tone="muted">
               {t('credits.webOnlyBody')}
             </Text>
-            <Pressable
+            <Button
               trackId="credits.open_app_store"
-              className="mt-4 self-start rounded-[18px] px-4 py-2.5 active:opacity-80"
-              style={{ backgroundColor: colors.primary }}
+              size="lg"
+              fullWidth
+              iconEnd="open-outline"
               onPress={() => void openAppStore()}
-              accessibilityRole="link"
             >
-              <Text className="text-sm font-bold" style={{ color: colors.onPrimary }}>
-                {t('credits.webOnlyAction')}
-              </Text>
-            </Pressable>
-          </>
+              {t('credits.webOnlyAction')}
+            </Button>
+          </Tile>
         )}
       </SettingsDetailScreen>
       <TokenPurchaseSheet

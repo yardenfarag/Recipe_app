@@ -3,7 +3,10 @@ import { Image } from 'expo-image';
 import { Text, View } from 'react-native';
 
 import { Pressable } from '@/components/ui/Pressable';
+import { HAIRLINE, Radii } from '@/components/ui/tokens';
+import { fontFor, tracking, variantStyle } from '@/constants/typography';
 import { useThemePreference } from '@/hooks/useThemePreference';
+import type { AppLanguageCode } from '@shared/lib/appLanguages';
 import type { ButtonAction, ClickedButton } from '@shared/lib/inAppMessages';
 
 import { resolveIconName, toneColors } from './tone';
@@ -23,6 +26,23 @@ type MessageContentProps = {
   closeButton?: { label: string; onPress: () => void };
 };
 
+/**
+ * Night Market type in the message's own language (which can differ from the app's): the fonts, tracking and line
+ * height of a kit variant.
+ */
+export function messageType(view: MessageView) {
+  const language = view.contentLanguage as AppLanguageCode;
+  return {
+    variant: (name: Parameters<typeof variantStyle>[0]) => variantStyle(name, language),
+    button: (fontSize: number) => ({
+      ...fontFor('display', 'bold', language),
+      fontSize,
+      letterSpacing: tracking(-0.01, fontSize, language),
+    }),
+    body: (weight: Parameters<typeof fontFor>[1]) => fontFor('body', weight, language),
+  };
+}
+
 /** Icon, image, title, body, buttons and link: the inside of a card, a sheet or the full-screen page. */
 export function MessageContent({
   view,
@@ -35,6 +55,7 @@ export function MessageContent({
   const { colors } = useThemePreference();
   const { message } = view;
   const tone = toneColors(message.tone, colors);
+  const type = messageType(view);
   const iconName = resolveIconName(message.icon, message.tone, Ionicons.glyphMap);
   const centered = align === 'center';
   const textAlign = centered ? 'center' : view.rtl ? 'right' : 'left';
@@ -48,7 +69,7 @@ export function MessageContent({
           style={{
             width: '100%',
             aspectRatio: 16 / 9,
-            borderRadius: 16,
+            borderRadius: Radii.inner,
             backgroundColor: tone.soft,
             marginBottom: 16,
           }}
@@ -60,9 +81,9 @@ export function MessageContent({
       <View style={{ alignItems: centered ? 'center' : 'flex-start' }}>
         <View
           style={{
-            height: 44,
-            width: 44,
-            borderRadius: 22,
+            height: 48,
+            width: 48,
+            borderRadius: Radii.inner,
             alignItems: 'center',
             justifyContent: 'center',
             backgroundColor: tone.soft,
@@ -77,9 +98,8 @@ export function MessageContent({
         <Text
           accessibilityRole="header"
           style={{
-            marginTop: 12,
-            fontSize: 20,
-            fontWeight: '700',
+            ...type.variant('h2'),
+            marginTop: 14,
             color: colors.text,
             textAlign,
             writingDirection,
@@ -91,9 +111,8 @@ export function MessageContent({
       {view.body ? (
         <Text
           style={{
+            ...type.variant('bodySmall'),
             marginTop: showTitle ? 8 : 12,
-            fontSize: 15,
-            lineHeight: 22,
             color: colors.textSecondary,
             textAlign,
             writingDirection,
@@ -103,39 +122,41 @@ export function MessageContent({
         </Text>
       ) : null}
       {view.buttons.length > 0 ? (
-        <View style={{ marginTop: 20, gap: 8 }}>
-          {view.buttons.map((button) => (
-            <Pressable
-              key={`${button.kind}:${button.label}`}
-              trackId={`${trackPrefix}.${button.kind}`}
-              onPress={() => onAction(button.kind, button.action)}
-              accessibilityRole="button"
-              accessibilityLabel={button.label}
-              style={({ pressed }) => ({
-                minHeight: 48,
-                alignItems: 'center',
-                justifyContent: 'center',
-                borderRadius: 22,
-                paddingHorizontal: 16,
-                paddingVertical: 12,
-                opacity: pressed ? 0.8 : 1,
-                backgroundColor: button.style === 'primary' ? tone.accent : colors.surface,
-                borderWidth: button.style === 'primary' ? 0 : 1,
-                borderColor: colors.border,
-              })}
-            >
-              <Text
-                style={{
-                  fontSize: 15,
-                  fontWeight: '700',
-                  textAlign: 'center',
-                  color: button.style === 'primary' ? tone.onAccent : colors.text,
-                }}
+        <View style={{ marginTop: 24, gap: 8 }}>
+          {view.buttons.map((button) => {
+            const primary = button.style === 'primary';
+            return (
+              <Pressable
+                key={`${button.kind}:${button.label}`}
+                trackId={`${trackPrefix}.${button.kind}`}
+                onPress={() => onAction(button.kind, button.action)}
+                accessibilityRole="button"
+                accessibilityLabel={button.label}
+                style={({ pressed }) => ({
+                  minHeight: 52,
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  borderRadius: Radii.inner,
+                  paddingHorizontal: 20,
+                  paddingVertical: 12,
+                  backgroundColor: primary ? tone.accent : pressed ? colors.backgroundElement : colors.surface,
+                  borderWidth: primary ? 0 : HAIRLINE,
+                  borderColor: colors.border,
+                  opacity: pressed && primary ? 0.88 : 1,
+                })}
               >
-                {button.label}
-              </Text>
-            </Pressable>
-          ))}
+                <Text
+                  style={{
+                    ...(primary ? type.button(16) : { ...type.body('semibold'), fontSize: 16 }),
+                    textAlign: 'center',
+                    color: primary ? tone.onAccent : colors.text,
+                  }}
+                >
+                  {button.label}
+                </Text>
+              </Pressable>
+            );
+          })}
         </View>
       ) : null}
       {view.link ? (
@@ -144,14 +165,14 @@ export function MessageContent({
           onPress={() => onAction('link', { type: 'link', url: view.link?.url ?? '' })}
           accessibilityRole="link"
           accessibilityLabel={view.link.label}
-          style={{ marginTop: 14, minHeight: 44, justifyContent: 'center' }}
+          style={{ marginTop: 12, minHeight: 44, justifyContent: 'center' }}
         >
           <Text
             style={{
+              ...type.body('semibold'),
               fontSize: 15,
-              fontWeight: '600',
               textDecorationLine: 'underline',
-              color: tone.accent === colors.primary ? colors.primary : colors.text,
+              color: tone.accent === colors.primary ? colors.primaryText : colors.text,
               textAlign,
               writingDirection,
             }}
@@ -171,13 +192,13 @@ export function MessageContent({
             minHeight: 48,
             alignItems: 'center',
             justifyContent: 'center',
-            borderRadius: 22,
+            borderRadius: Radii.inner,
             paddingHorizontal: 16,
             paddingVertical: 12,
-            opacity: pressed ? 0.8 : 1,
+            backgroundColor: pressed ? colors.backgroundElement : 'transparent',
           })}
         >
-          <Text style={{ fontSize: 15, fontWeight: '600', textAlign: 'center', color: colors.textSecondary }}>
+          <Text style={{ ...type.body('semibold'), fontSize: 15, textAlign: 'center', color: colors.textSecondary }}>
             {closeButton.label}
           </Text>
         </Pressable>

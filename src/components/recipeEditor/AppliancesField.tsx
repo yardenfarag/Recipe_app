@@ -1,11 +1,15 @@
 import { useState } from 'react';
-import { ScrollView, Text, View } from 'react-native';
-import { Pressable } from '@/components/ui/Pressable';
+import { ScrollView, View } from 'react-native';
 import { useTranslation } from 'react-i18next';
 
 import { ApplianceIcon } from '@/components/ApplianceIcon';
 import { SheetModal } from '@/components/SheetModal';
+import { Pressable } from '@/components/ui/Pressable';
+import { Text } from '@/components/ui/Text';
+import { Tile, TileLabel } from '@/components/ui/Tile';
+import { HAIRLINE, Radii } from '@/components/ui/tokens';
 import { useThemePreference } from '@/hooks/useThemePreference';
+import { useTypography } from '@/hooks/useTypography';
 import { applianceNameKey } from '@shared/lib/applianceDisplay';
 import { APPLIANCE_KEYS, type ApplianceKey, MAX_RECIPE_APPLIANCES } from '@shared/lib/appliances';
 import type { ApplianceRow, StepRow } from '@shared/lib/recipeEditor';
@@ -32,6 +36,7 @@ export function AppliancesField({
 }: AppliancesFieldProps) {
   const { t } = useTranslation();
   const { colors } = useThemePreference();
+  const type = useTypography();
   const [picking, setPicking] = useState(false);
   const rows = appliances ?? [];
   const listed = new Set(rows.map((row) => row.key));
@@ -39,18 +44,14 @@ export function AppliancesField({
   const canAdd = steps.length > 0 && rows.length < MAX_RECIPE_APPLIANCES && available.length > 0;
 
   return (
-    <View className="gap-3">
+    <View style={{ gap: 10 }}>
       {rows.map((row) => {
         const name = t(applianceNameKey(row.key));
         return (
-          <View
-            key={row.key}
-            className="gap-2 rounded-2xl border p-3"
-            style={{ borderColor: colors.frostedBorder, backgroundColor: colors.surface }}
-          >
-            <View className="flex-row items-center gap-2">
-              <ApplianceIcon appliance={row.key} size={20} color={colors.primary} />
-              <Text className="min-w-0 flex-1 text-base font-semibold" style={{ color: colors.text }} numberOfLines={1}>
+          <Tile key={row.key} tone="element" size="sm" style={{ gap: 12, padding: 14 }}>
+            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
+              <ApplianceIcon appliance={row.key} size={20} color={colors.primaryText} />
+              <Text weight="semibold" numberOfLines={1} style={{ flex: 1, minWidth: 0 }}>
                 {name}
               </Text>
               <IconButton
@@ -73,10 +74,8 @@ export function AppliancesField({
                 { value: 'optional', label: t('recipeEditor.appliance.optional') },
               ]}
             />
-            <View className="flex-row flex-wrap items-center gap-1.5">
-              <Text className="text-xs font-semibold" style={{ color: colors.textSecondary }}>
-                {t('recipeEditor.sections.steps')}
-              </Text>
+            <View style={{ flexDirection: 'row', flexWrap: 'wrap', alignItems: 'center', gap: 6 }}>
+              <TileLabel style={{ marginEnd: 4 }}>{t('recipeEditor.sections.steps')}</TileLabel>
               {steps.map((step, index) => {
                 const linked = row.stepIds.includes(step.id);
                 return (
@@ -88,28 +87,37 @@ export function AppliancesField({
                     accessibilityState={{ checked: linked }}
                     accessibilityLabel={t('recipeEditor.fields.step', { n: index + 1 })}
                     hitSlop={4}
-                    className="h-8 min-w-[32px] items-center justify-center rounded-full border px-2 active:opacity-80"
-                    style={{
-                      borderColor: linked ? colors.primary : colors.frostedBorder,
-                      backgroundColor: linked ? colors.primarySoft : 'transparent',
-                    }}
+                    style={({ pressed }) => ({
+                      height: 36,
+                      minWidth: 36,
+                      paddingHorizontal: 8,
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      borderRadius: 11,
+                      borderWidth: HAIRLINE,
+                      borderColor: linked ? colors.primary : colors.border,
+                      backgroundColor: linked ? colors.primary : pressed ? colors.backgroundSelected : colors.surface,
+                    })}
                   >
-                    <Text className="text-xs font-bold" style={{ color: linked ? colors.primary : colors.textSecondary }}>
+                    <Text
+                      color={linked ? colors.onPrimary : colors.textSecondary}
+                      style={{ ...type.font('display', 'bold'), fontSize: 14, lineHeight: 18 }}
+                    >
                       {index + 1}
                     </Text>
                   </Pressable>
                 );
               })}
             </View>
-          </View>
+          </Tile>
         );
       })}
 
-      <AddRowButton trackId="recipe_editor.appliance.add" label={t('recipeEditor.add.appliance')} onPress={() => setPicking(true)} disabled={!canAdd} />
+      <AddRowButton trackId="recipe_editor.appliance.add" label={t('web.editor.addAppliance')} onPress={() => setPicking(true)} disabled={!canAdd} />
 
       <SheetModal
         trackId="recipe_editor.appliance.sheet" visible={picking} onClose={() => setPicking(false)} title={t('recipeEditor.appliance.pickTitle')}>
-        <ScrollView className="flex-1 px-5" contentContainerClassName="pb-8 gap-1">
+        <ScrollView style={{ flex: 1 }} contentContainerStyle={{ paddingHorizontal: 16, paddingBottom: 32, gap: 4 }}>
           {available.map((key) => (
             <Pressable
               key={key}
@@ -119,12 +127,18 @@ export function AppliancesField({
                 setPicking(false);
               }}
               accessibilityRole="button"
-              className="min-h-[48px] flex-row items-center gap-3 rounded-2xl px-3 active:opacity-70"
+              style={({ pressed }) => ({
+                minHeight: 52,
+                flexDirection: 'row',
+                alignItems: 'center',
+                gap: 12,
+                paddingHorizontal: 12,
+                borderRadius: Radii.inner,
+                backgroundColor: pressed ? colors.backgroundElement : 'transparent',
+              })}
             >
-              <ApplianceIcon appliance={key} size={22} color={colors.primary} />
-              <Text className="text-base" style={{ color: colors.text }}>
-                {t(applianceNameKey(key))}
-              </Text>
+              <ApplianceIcon appliance={key} size={22} color={colors.primaryText} />
+              <Text>{t(applianceNameKey(key))}</Text>
             </Pressable>
           ))}
         </ScrollView>

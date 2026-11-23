@@ -10,8 +10,11 @@ import { getThemePackColors } from '@shared/constants/themes';
 import { initI18n } from '@/i18n/config';
 
 vi.mock('@/hooks/useThemePreference', () => ({
-  useThemePreference: () => ({ colors: getThemePackColors('mist', 'light') }),
+  useThemePreference: () => ({ colors: getThemePackColors('mist', 'light'), packId: 'mist' }),
 }));
+
+// The kit's tokens read the reading direction, which would pull in the Supabase client.
+vi.mock('@/hooks/useRtl', () => ({ useRtl: () => ({ rtl: false }) }));
 
 // @expo/vector-icons ships untranspiled JSX in .js, which Vitest can't parse; icons aren't under test.
 vi.mock('@expo/vector-icons/Ionicons', async () => {

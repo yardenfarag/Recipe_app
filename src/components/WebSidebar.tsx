@@ -1,27 +1,30 @@
-import Ionicons from '@expo/vector-icons/Ionicons';
 import { type Href, router, usePathname } from 'expo-router';
 import { useTranslation } from 'react-i18next';
-import { Text, View } from 'react-native';
-import { Pressable } from '@/components/ui/Pressable';
+import { View } from 'react-native';
 
-import { CookieMark } from '@/components/CookieMark';
+import { Pressable } from '@/components/ui/Pressable';
+import { PinchLogo } from '@/components/ui/PinchLogo';
+import { Text } from '@/components/ui/Text';
+import { HAIRLINE, KitIcon, Radii, type IconName } from '@/components/ui/tokens';
 import { WebSidebarWidth } from '@/constants/theme';
 import { useThemePreference } from '@/hooks/useThemePreference';
+import { useTypography } from '@/hooks/useTypography';
 
 type NavItem = {
   href: Href;
   labelKey: 'tabs.library' | 'tabs.hub' | 'tabs.snap' | 'tabs.list' | 'tabs.settings';
-  icon: keyof typeof Ionicons.glyphMap;
-  iconFocused: keyof typeof Ionicons.glyphMap;
+  icon: IconName;
+  iconFocused: IconName;
   match: (path: string) => boolean;
 };
 
+// The same icons as the bottom tabs (app-tabs.tsx).
 const NAV_ITEMS: NavItem[] = [
   {
     href: '/',
     labelKey: 'tabs.library',
-    icon: 'book-outline',
-    iconFocused: 'book',
+    icon: 'grid-outline',
+    iconFocused: 'grid',
     match: (path) => path === '/' || path.startsWith('/favorites') || path === '',
   },
   {
@@ -34,8 +37,8 @@ const NAV_ITEMS: NavItem[] = [
   {
     href: '/add',
     labelKey: 'tabs.snap',
-    icon: 'sparkles-outline',
-    iconFocused: 'sparkles',
+    icon: 'add-circle-outline',
+    iconFocused: 'add-circle',
     match: (path) => path.startsWith('/add'),
   },
   {
@@ -54,42 +57,31 @@ const NAV_ITEMS: NavItem[] = [
   },
 ];
 
-/** Left rail navigation for wide (desktop) layouts. */
+/** The navigation rail at the start of a wide (desktop) layout, in place of the bottom tabs. */
 export function WebSidebar() {
   const { t } = useTranslation();
   const { colors } = useThemePreference();
+  const type = useTypography();
   const pathname = usePathname();
 
   return (
     <View
       style={{
         width: WebSidebarWidth,
-        borderRightWidth: 1,
-        borderRightColor: colors.frostedBorder,
+        borderEndWidth: HAIRLINE,
+        borderEndColor: colors.border,
         backgroundColor: colors.tabBar,
         paddingTop: 28,
         paddingBottom: 24,
         paddingHorizontal: 14,
       }}
     >
-      <View className="mb-8 flex-row items-center gap-3 px-2">
-        <View
-          className="h-10 w-10 items-center justify-center rounded-2xl"
-          style={{ backgroundColor: colors.primarySoft }}
-          accessible={false}
-          importantForAccessibility="no-hide-descendants"
-        >
-          <CookieMark size={22} color={colors.primary} />
-        </View>
-        <Text className="text-lg font-bold" style={{ color: colors.text }}>
-          Pinch
-        </Text>
-      </View>
+      <PinchLogo style={{ marginBottom: 32, paddingHorizontal: 8 }} />
 
-      <View className="gap-1" role="navigation">
+      <View style={{ gap: 4 }} role="navigation">
         {NAV_ITEMS.map((item) => {
           const focused = item.match(pathname);
-          const color = focused ? colors.primary : colors.textSecondary;
+          const color = focused ? colors.text : colors.textSecondary;
           return (
             <Pressable
               key={item.labelKey}
@@ -99,21 +91,22 @@ export function WebSidebar() {
               onPress={() => {
                 if (!focused) router.push(item.href);
               }}
-              className="flex-row items-center gap-3 rounded-2xl px-3 py-3"
               style={({ pressed }) => ({
-                backgroundColor: focused
-                  ? colors.primarySoft
-                  : pressed
-                    ? colors.frosted
-                    : 'transparent',
+                flexDirection: 'row',
+                alignItems: 'center',
+                gap: 12,
+                minHeight: 48,
+                paddingHorizontal: 12,
+                borderRadius: Radii.control,
+                backgroundColor: focused || pressed ? colors.backgroundElement : 'transparent',
               })}
             >
-              <Ionicons
-                name={focused ? item.iconFocused : item.icon}
-                size={22}
+              <KitIcon icon={focused ? item.iconFocused : item.icon} color={color} size={22} />
+              <Text
+                numberOfLines={1}
                 color={color}
-              />
-              <Text className="flex-1 text-[15px] font-semibold" style={{ color }}>
+                style={{ ...type.font('body', 'semibold'), fontSize: 15, lineHeight: 20, flex: 1 }}
+              >
                 {t(item.labelKey)}
               </Text>
             </Pressable>

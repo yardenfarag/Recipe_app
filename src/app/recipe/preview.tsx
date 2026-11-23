@@ -1,20 +1,21 @@
 import { router, useNavigation } from 'expo-router';
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { ActivityIndicator, Alert, Platform, Text, View } from 'react-native';
-import { Pressable } from '@/components/ui/Pressable';
+import { ActivityIndicator, Alert, View } from 'react-native';
 import { useTranslation } from 'react-i18next';
-import type { Edge } from 'react-native-safe-area-context';
 
 import { RecipeView } from '@/components/RecipeView';
 import { Screen } from '@/components/Screen';
-import { StackHeaderBackButton } from '@/components/StackHeaderBackButton';
+import { Button } from '@/components/ui/Button';
+import { IconButton } from '@/components/ui/IconButton';
+import { Text } from '@/components/ui/Text';
 import { useLanguagePreference } from '@/hooks/useLanguagePreference';
 import { useLocalizedRecipe } from '@/hooks/useLocalizedRecipe';
 import { useThemePreference } from '@/hooks/useThemePreference';
 import { captureRecipeSaved } from '@/lib/analytics';
 import { DEFAULT_SOURCE_LANGUAGE } from '@shared/lib/appLanguages';
-import { showNotice } from '@/lib/confirmAction';
+import { confirmAction, showNotice } from '@/lib/confirmAction';
 import { ensureRecipeTranslation } from '@/lib/ensureRecipeTranslation';
+import { goBackOrHome } from '@/lib/goBackOrHome';
 import { recipeContentEquals } from '@shared/lib/recipeContentEquals';
 import { recipeIsInvented } from '@shared/lib/recipeOrigin';
 import {
@@ -35,7 +36,8 @@ import type { RecipeTranslationContent } from '@shared/types/recipe';
 /**
  * Shows a freshly extracted recipe that has NOT been saved yet.
  * Recipe payload lives in the in-memory draft store (see recipeDraft.ts).
- * Save stays fixed at the top so it is not missed while scrolling.
+ * The recipe page's layout (PIN-177): Save stays fixed at the bottom so it is not missed while scrolling, and
+ * "Discard" is in the more menu.
  */
 export default function RecipePreviewScreen() {
   const { t } = useTranslation();
@@ -43,7 +45,6 @@ export default function RecipePreviewScreen() {
   const { colors } = useThemePreference();
   const { language: preferredLanguage } = useLanguagePreference();
   const navigation = useNavigation();
-  const isWeb = Platform.OS === 'web';
   const [saving, setSaving] = useState(false);
   const saveInFlight = useRef(false);
   const [recipeToSave, setRecipeToSave] = useState<ExtractedRecipe | null>(() =>
@@ -168,13 +169,24 @@ export default function RecipePreviewScreen() {
     });
   }, []);
 
-  const screenEdges: Edge[] = isWeb ? ['top', 'bottom'] : ['bottom'];
+  // The page has no header (the photo runs to the top), so the states before the recipe bring their own way back.
+  const backRow = (
+    <View style={{ flexDirection: 'row', paddingHorizontal: 16, paddingTop: 8 }}>
+      <IconButton
+        variant="tile"
+        icon="arrow-back"
+        label={t('common.back')}
+        trackId="recipe_preview.back"
+        onPress={() => goBackOrHome('/')}
+      />
+    </View>
+  );
 
   if (draftLoading) {
     return (
-      <Screen edges={screenEdges}>
-        {isWeb ? <WebPreviewToolbar title={t('recipe.preview')} /> : null}
-        <View className="flex-1 items-center justify-center">
+      <Screen edges={['top', 'bottom']}>
+        {backRow}
+        <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center' }}>
           <ActivityIndicator color={colors.primary} accessibilityLabel={t('a11y.loading')} />
         </View>
       </Screen>
@@ -183,26 +195,34 @@ export default function RecipePreviewScreen() {
 
   if (!recipeToSave) {
     return (
-      <Screen edges={screenEdges}>
-        {isWeb ? <WebPreviewToolbar title={t('recipe.preview')} /> : null}
-        <View className="flex-1 items-center justify-center px-6">
-          <Text className="mb-4 text-center text-base" style={{ color: colors.textSecondary }}>
+      <Screen edges={['top', 'bottom']}>
+        {backRow}
+        <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center', gap: 16, padding: 24 }}>
+          <Text variant="body" tone="muted" align="center">
             {t('recipe.noPreview')}
           </Text>
-          <Pressable
-            trackId="recipe_preview.go_home"
-            onPress={() => router.dismissTo('/')}
-            className="rounded-full px-5 py-3 active:opacity-80"
-            style={{ backgroundColor: colors.primary }}
-            accessibilityRole="button"
-          >
-            <Text className="text-sm font-bold" style={{ color: colors.onPrimary }}>
-              {t('recipe.goToLibrary')}
-            </Text>
-          </Pressable>
+          <Button trackId="recipe_preview.go_home" onPress={() => router.dismissTo('/')} style={{ alignSelf: 'center' }}>
+            {t('recipe.goToLibrary')}
+          </Button>
         </View>
       </Screen>
     );
+  }
+
+  async function handleDiscard() {
+    const discard = await confirmAction(
+      t('web.snap.discardTitle'),
+      t('web.snap.discardBody'),
+      t('web.snap.discard'),
+      t('common.cancel'),
+    );
+    if (!discard) return;
+    try {
+      await clearRecipeDraft();
+    } catch (error) {
+      console.warn('[recipe-draft] discard failed', error);
+    }
+    goBackOrHome('/add');
   }
 
   async function handleSave() {
@@ -271,49 +291,18 @@ export default function RecipePreviewScreen() {
     }
   }
 
-  const previewTitle =
-    displayContent?.title?.trim() || recipeToSave.title.trim() || t('recipe.preview');
-
   return (
-    <Screen edges={screenEdges}>
-      {isWeb ? (
-        <WebPreviewToolbar
-          title={previewTitle}
-          saveLabel={t('recipe.save')}
-          saving={saving}
-          onSave={() => void handleSave()}
-        />
-      ) : (
-        <View
-          className="border-b px-5 py-3"
-          style={{
-            backgroundColor: colors.background,
-            borderBottomColor: colors.frostedBorder,
-            alignItems: 'center',
-          }}
-        >
-          <Pressable
-            className="w-full items-center rounded-full py-3.5 active:opacity-80"
-            style={{ backgroundColor: colors.primary, maxWidth: 420 }}
-            trackId="recipe_preview.save"
-            onPress={() => void handleSave()}
-            disabled={saving}
-            accessibilityRole="button"
-            accessibilityLabel={t('recipe.save')}
-            accessibilityState={{ disabled: saving, busy: saving }}
-          >
-            {saving ? (
-              <ActivityIndicator color={colors.onPrimary} />
-            ) : (
-              <Text className="text-base font-bold" style={{ color: colors.onPrimary }}>
-                {t('recipe.save')}
-              </Text>
-            )}
-          </Pressable>
-        </View>
-      )}
-
+    <Screen edges={[]}>
       <RecipeView
+        immersive
+        onBack={() => goBackOrHome('/')}
+        primaryAction={{
+          label: t('recipe.save'),
+          onPress: () => void handleSave(),
+          busy: saving,
+          trackId: 'recipe_preview.save',
+        }}
+        onDiscard={() => void handleDiscard()}
         recipe={recipeToSave}
         onContentChange={handleContentChange}
         onRepairApplied={handleRepairApplied}
@@ -329,56 +318,3 @@ export default function RecipePreviewScreen() {
   );
 }
 
-function WebPreviewToolbar({
-  title,
-  saveLabel,
-  saving,
-  onSave,
-}: {
-  title: string;
-  saveLabel?: string;
-  saving?: boolean;
-  onSave?: () => void;
-}) {
-  const { colors } = useThemePreference();
-
-  return (
-    <View
-      className="flex-row items-center gap-3 border-b px-4 py-2.5"
-      style={{
-        backgroundColor: colors.background,
-        borderBottomColor: colors.frostedBorder,
-      }}
-    >
-      <StackHeaderBackButton tintColor={colors.primary} trackId="recipe_preview.back" />
-      <Text
-        accessibilityRole="header"
-        className="min-w-0 flex-1 text-base font-bold"
-        numberOfLines={1}
-        style={{ color: colors.text }}
-      >
-        {title}
-      </Text>
-      {onSave && saveLabel ? (
-        <Pressable
-          className="rounded-full px-5 py-2.5 active:opacity-80"
-          style={{ backgroundColor: colors.primary }}
-          trackId="recipe_preview.header_save"
-          onPress={onSave}
-          disabled={saving}
-          accessibilityRole="button"
-          accessibilityLabel={saveLabel}
-          accessibilityState={{ disabled: !!saving, busy: !!saving }}
-        >
-          {saving ? (
-            <ActivityIndicator color={colors.onPrimary} />
-          ) : (
-            <Text className="text-sm font-bold" style={{ color: colors.onPrimary }}>
-              {saveLabel}
-            </Text>
-          )}
-        </Pressable>
-      ) : null}
-    </View>
-  );
-}

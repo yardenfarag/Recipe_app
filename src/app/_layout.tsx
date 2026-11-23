@@ -3,10 +3,13 @@ import '../global.css';
 import '@/lib/supabase/client';
 
 import Constants, { ExecutionEnvironment } from 'expo-constants';
+import { useFonts } from 'expo-font';
 import { Stack } from 'expo-router';
+import * as SplashScreen from 'expo-splash-screen';
 import { StatusBar } from 'expo-status-bar';
 import { ShareIntentProvider } from 'expo-share-intent';
 import { useTranslation } from 'react-i18next';
+import { useEffect } from 'react';
 import { Platform } from 'react-native';
 
 import { ErrorBoundary } from '@/components/ErrorBoundary';
@@ -17,6 +20,7 @@ import { WebCheckoutReturnDialog } from '@/components/WebCheckoutReturnDialog';
 import { StackHeaderBackButton } from '@/components/StackHeaderBackButton';
 import { ToastHost } from '@/components/ToastHost';
 import { AccountLocaleSync } from '@/components/AccountLocaleSync';
+import { FONT_ASSETS } from '@/constants/fonts';
 import { AuthProvider } from '@/hooks/useAuth';
 import { LanguageProvider } from '@/hooks/useLanguagePreference';
 import { MeasurementProvider } from '@/hooks/useMeasurementPreference';
@@ -25,12 +29,16 @@ import { OnboardingProvider, useOnboarding } from '@/hooks/useOnboarding';
 import { OnboardingGate } from '@/hooks/useOnboardingGate';
 import { ShareIntentRouter } from '@/hooks/useShareIntentRouter';
 import { ThemeProvider, useThemePreference } from '@/hooks/useThemePreference';
+import { useTypography } from '@/hooks/useTypography';
 import { I18nProvider } from '@/i18n';
 
 // expo-share-intent needs native code, so it can't do anything in Expo Go —
 // disabling it there avoids a console warning and pointless listener setup.
 // It re-enables itself automatically once running in a dev build (ADR 010).
 const isExpoGo = Constants.executionEnvironment === ExecutionEnvironment.StoreClient;
+
+// The splash screen stays up until the Night Market fonts (Inter, Space Grotesk) have loaded (PIN-177).
+void SplashScreen.preventAutoHideAsync().catch(() => {});
 
 /** Keep Library under recipe/deep links so the header back control has a target. */
 export const unstable_settings = {
@@ -40,6 +48,7 @@ export const unstable_settings = {
 function RootNavigator() {
   const { colors, scheme } = useThemePreference();
   const { t } = useTranslation();
+  const type = useTypography();
   const { ready: onboardingReady } = useOnboarding();
 
   return (
@@ -51,7 +60,7 @@ function RootNavigator() {
             headerShadowVisible: false,
             headerTintColor: colors.primary,
             headerStyle: { backgroundColor: colors.background },
-            headerTitleStyle: { fontWeight: '700', color: colors.text },
+            headerTitleStyle: { ...type.font('display', 'bold'), fontSize: 17, color: colors.text },
             contentStyle: { backgroundColor: colors.background },
             // Avoid "(tabs)" (route group name) as the iOS back label.
             headerBackButtonDisplayMode: 'minimal',
@@ -67,23 +76,11 @@ function RootNavigator() {
             name="first-recipes"
             options={{ headerShown: false, animation: 'fade', gestureEnabled: false }}
           />
-          <Stack.Screen
-            name="recipe/[id]"
-            options={{
-              title: t('nav.recipe'),
-              headerLeft: (props) => <StackHeaderBackButton tintColor={props.tintColor} />,
-            }}
-          />
+          {/* The photo runs to the top of the screen with back on it (PIN-177): no header. */}
+          <Stack.Screen name="recipe/[id]" options={{ title: t('nav.recipe'), headerShown: false }} />
           {/* Edit recipe / Write a recipe (PIN-79). The screen sets its own Cancel and Save. */}
           <Stack.Screen name="recipe/edit" options={{ headerBackVisible: false }} />
-          <Stack.Screen
-            name="recipe/preview"
-            options={{
-              title: t('nav.preview'),
-              headerShown: Platform.OS !== 'web',
-              headerLeft: (props) => <StackHeaderBackButton tintColor={props.tintColor} />,
-            }}
-          />
+          <Stack.Screen name="recipe/preview" options={{ title: t('nav.preview'), headerShown: false }} />
           <Stack.Screen
             name="s/[token]"
             options={{
@@ -190,6 +187,8 @@ function RootNavigator() {
           <Stack.Screen name="admin/usage" options={{ title: t('nav.usage') }} />
           <Stack.Screen name="admin/activity" options={{ title: t('nav.activity') }} />
           <Stack.Screen name="admin/messages" options={{ title: t('nav.messages') }} />
+          {/* The Night Market kit on one screen, for us (PIN-177). Admin pages are in English. */}
+          <Stack.Screen name="admin/kit" options={{ title: 'Kit' }} />
         </Stack>
       ) : null}
       <ToastHost />
@@ -198,6 +197,17 @@ function RootNavigator() {
 }
 
 export default function RootLayout() {
+  // Loaded at runtime (not by a config plugin), so the fonts ship over the air. A font that fails to load falls back
+  // to the system font rather than keeping the app behind the splash screen.
+  const [fontsLoaded, fontError] = useFonts(FONT_ASSETS);
+  const fontsSettled = fontsLoaded || fontError != null;
+
+  useEffect(() => {
+    if (fontsSettled) void SplashScreen.hideAsync().catch(() => {});
+  }, [fontsSettled]);
+
+  if (!fontsSettled) return null;
+
   return (
     <ShareIntentProvider
       options={{ debug: __DEV__, resetOnBackground: false, disabled: isExpoGo }}

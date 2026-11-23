@@ -4,38 +4,34 @@ import { ScrollView, View } from 'react-native';
 import { Screen } from '@/components/Screen';
 import { FormContentWidth } from '@/constants/theme';
 import { useBreakpoint } from '@/hooks/useBreakpoint';
-import { useThemePreference } from '@/hooks/useThemePreference';
 
 type SettingsDetailScreenProps = {
+  /** The page's tiles (SettingsGroup, SettingsSection, Tile), stacked 20 apart. */
   children: ReactNode;
 };
 
-/** Shared, responsive shell for focused settings category screens. */
+/**
+ * The page under a settings row (Night Market, PIN-177): a flat scrolling page of tiles below the stack header,
+ * which already carries the page's title.
+ */
 export function SettingsDetailScreen({ children }: SettingsDetailScreenProps) {
   const { isMediumUp } = useBreakpoint();
-  const { colors } = useThemePreference();
 
   return (
-    <Screen dense>
+    <Screen edges={['left', 'right', 'bottom']}>
       <ScrollView
-        className="flex-1"
+        style={{ flex: 1 }}
         contentContainerStyle={{ paddingBottom: 40 }}
+        keyboardShouldPersistTaps="handled"
         showsVerticalScrollIndicator={false}
       >
         <View
-          className="px-5 pt-5"
-          style={
-            isMediumUp
-              ? { maxWidth: FormContentWidth, width: '100%', alignSelf: 'center' }
-              : undefined
-          }
+          style={[
+            { paddingHorizontal: 20, paddingTop: 12, gap: 20 },
+            isMediumUp ? { maxWidth: FormContentWidth, width: '100%', alignSelf: 'center' } : null,
+          ]}
         >
-          <View
-            className="overflow-hidden rounded-3xl border p-5"
-            style={{ backgroundColor: colors.frosted, borderColor: colors.frostedBorder }}
-          >
-            {children}
-          </View>
+          {children}
         </View>
       </ScrollView>
     </Screen>

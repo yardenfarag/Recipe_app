@@ -76,8 +76,8 @@ function applyAppearance(preference: ThemePreference, packId: ThemePackId) {
   const resolved = resolveScheme(preference);
   // Always pass resolved light/dark — never "system". On web, NativeWind's
   // class darkMode removes the `dark` class whenever value !== "dark", so
-  // set("system") while the OS is dark leaves MistAtmosphere dark (JS packs)
-  // but body text stuck on light tokens (text-pinch-dark on dark mist).
+  // set("system") while the OS is dark leaves the JS-pack background dark
+  // but body text stuck on light tokens (text-pinch-dark on a dark canvas).
   nwColorScheme.set(resolved);
   const colors = getThemePackColors(packId, resolved);
   applyWebDocumentTheme(colors, resolved);

@@ -1,37 +1,62 @@
 import Ionicons from '@expo/vector-icons/Ionicons';
 import { router } from 'expo-router';
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { memo, useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
 import {
   ActivityIndicator,
   FlatList,
   RefreshControl,
   ScrollView,
-  Text,
+  StyleSheet,
   View,
   type NativeScrollEvent,
   type NativeSyntheticEvent,
 } from 'react-native';
-import { Pressable } from '@/components/ui/Pressable';
 import { useTranslation } from 'react-i18next';
 
-import { BrandHeader } from '@/components/BrandHeader';
-import { LibraryLayoutToggle } from '@/components/LibraryLayoutToggle';
+import { CookieMark } from '@/components/CookieMark';
+import { RecipeImage } from '@/components/RecipeImage';
 import { RecipeListRow } from '@/components/RecipeListRow';
 import { Screen } from '@/components/Screen';
 import { TextInput } from '@/components/text-input';
+import { Button } from '@/components/ui/Button';
+import { Chip } from '@/components/ui/Chip';
+import { IconButton } from '@/components/ui/IconButton';
+import { PageHeader } from '@/components/ui/PageHeader';
+import { Pressable } from '@/components/ui/Pressable';
+import { SegmentedControl } from '@/components/ui/SegmentedControl';
+import { Text } from '@/components/ui/Text';
+import { Tile, TileLabel } from '@/components/ui/Tile';
+import { HAIRLINE, Radii, usePhotoColors, withAlpha, type IconName } from '@/components/ui/tokens';
 import { useCookingHub } from '@/hooks/useCookingHub';
 import { useLibraryLayout } from '@/hooks/useLibraryLayout';
+import { useRtl } from '@/hooks/useRtl';
 import { useThemePreference } from '@/hooks/useThemePreference';
-import { announce, CHROME_MAX_FONT_SCALE } from '@/lib/a11y';
+import { useTypography } from '@/hooks/useTypography';
+import { announce } from '@/lib/a11y';
 import { logTap } from '@/lib/interactionLog';
+import { formatRecipeDuration } from '@shared/lib/formatRecipeDuration';
 import { hubCardDetail, HUB_PLATFORMS, platformLabelKey } from '@shared/lib/hubCards';
 import { recipeCardToListRecipe } from '@shared/lib/recipeCardMap';
 import { translateRecipeTag } from '@shared/lib/recipeTags';
+import type { RecipeCard } from '@shared/types/recipeCard';
+import type { Recipe } from '@shared/types/recipe';
 
+const SEARCH_HEIGHT = 52;
+/** Space between the columns of the grid, and half of it around each card. */
+const GRID_GAP = 12;
+
+/**
+ * Cooking Hub (Night Market, PIN-177; the web's Hub page): recipes other people already snapped from public links.
+ * Search, the popular tags as chips, the source and sort behind Filter, and the recipes as photo cards in a grid
+ * (or rows, the Library's choice).
+ */
 export default function CookingHubScreen() {
   const { t } = useTranslation();
-  const { colors, scheme } = useThemePreference();
-  const { layout, numColumns, toggleLayout } = useLibraryLayout();
+  const { colors } = useThemePreference();
+  const type = useTypography();
+  const { textAlign, writingDirection } = useRtl();
+  // The Hub is for browsing photos: a grid on phones too, unless the Library's grid/list choice says otherwise.
+  const { layout, numColumns, setLayout } = useLibraryLayout('grid');
   const {
     cards,
     loading,
@@ -55,18 +80,19 @@ export default function CookingHubScreen() {
     pullRefresh,
     loadMore,
   } = useCookingHub();
-  const isDark = scheme === 'dark';
-  const inactiveChipBg = isDark ? 'rgba(40,36,48,0.6)' : 'rgba(255,255,255,0.55)';
 
   const rows = useMemo(
     () => cards.map((card) => ({ card, recipe: recipeCardToListRecipe(card) })),
     [cards],
   );
   const listRef = useRef<FlatList<(typeof rows)[number]>>(null);
-  const filtersActive = selectedTags.length > 0 || sort !== 'popular' || platform !== 'all';
-  const [filtersOpen, setFiltersOpen] = useState(filtersActive);
+  // The tags are always on show; Filter holds the source and the sort.
+  const sourceOrSortSet = sort !== 'popular' || platform !== 'all';
+  const filtersActive = selectedTags.length > 0 || sourceOrSortSet;
+  const [filtersOpen, setFiltersOpen] = useState(sourceOrSortSet);
   const hasQuery = Boolean(search.trim());
   const showSearching = loading || querying;
+  const grid = layout === 'grid';
 
   const showInlineError = Boolean(error) && cards.length > 0;
   useEffect(() => {
@@ -87,20 +113,27 @@ export default function CookingHubScreen() {
     [loadMore],
   );
 
-  return (
-    <Screen tabScreen className="overflow-hidden">
-      <View
-        className="w-full min-w-0 gap-3 px-5 pb-3"
-        style={{ flexShrink: 0, maxWidth: '100%', alignSelf: 'stretch' }}
-      >
-        <BrandHeader title={t('hub.title')} subtitle={filtersOpen ? undefined : t('hub.subtitle')} />
+  const count = total || cards.length;
 
+  const header = (
+    <View style={{ gap: 14, paddingBottom: 16 }}>
+      <PageHeader title={t('hub.title')} subtitle={t('hub.subtitle')} style={{ paddingBottom: 6 }} />
+
+      <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
         <View
-          className="flex-row items-center rounded-3xl px-3.5"
           style={{
-            backgroundColor: colors.frosted,
-            borderWidth: 1,
-            borderColor: colors.frostedBorder,
+            flex: 1,
+            minWidth: 0,
+            height: SEARCH_HEIGHT,
+            flexDirection: 'row',
+            alignItems: 'center',
+            gap: 10,
+            paddingStart: 14,
+            paddingEnd: 4,
+            borderRadius: Radii.inner,
+            borderWidth: HAIRLINE,
+            borderColor: colors.border,
+            backgroundColor: colors.surface,
           }}
         >
           <Ionicons
@@ -112,373 +145,415 @@ export default function CookingHubScreen() {
           />
           <TextInput
             accessibilityLabel={t('hub.searchPlaceholder')}
-            className="pinch-plain-focus flex-1 px-3 py-3.5 text-base"
-            style={{ color: colors.text }}
+            style={[
+              type.font('body', 'regular'),
+              { flex: 1, minWidth: 0, height: SEARCH_HEIGHT, fontSize: 16, color: colors.text, textAlign, writingDirection },
+            ]}
             value={search}
             onChangeText={setSearch}
             placeholder={t('hub.searchPlaceholder')}
             placeholderTextColor={colors.textSecondary}
             autoCorrect={false}
             autoCapitalize="none"
-            clearButtonMode="while-editing"
             returnKeyType="search"
           />
           {search.length > 0 ? (
-            <Pressable
+            <IconButton
+              icon="close-circle"
+              iconSize={18}
+              label={t('library.clearSearch')}
               trackId="hub.search.clear"
               onPress={() => setSearch('')}
-              hitSlop={13}
-              className="active:opacity-70"
-              accessibilityRole="button"
-              accessibilityLabel={t('library.clearSearch')}
-            >
-              <Ionicons name="close-circle" size={18} color={colors.textSecondary} />
-            </Pressable>
+            />
           ) : null}
         </View>
-
-        <View className="flex-row flex-wrap items-center gap-2">
-          <Pressable
-            trackId="hub.filter.toggle"
-            onPress={() => setFiltersOpen((open) => !open)}
-            className="min-h-[44px] flex-row items-center gap-1.5 rounded-2xl px-4 active:opacity-80"
-            style={{
-              backgroundColor: filtersOpen || filtersActive ? colors.primarySoft : inactiveChipBg,
-            }}
-            accessibilityRole="button"
-            accessibilityState={{ expanded: filtersOpen }}
-            accessibilityLabel={t('library.toggleFilters')}
-            accessibilityValue={filtersActive ? { text: t('a11y.filtersApplied') } : undefined}
-          >
-            <Ionicons name="options-outline" size={16} color={colors.primary} />
-            <Text
-              className="text-sm font-semibold"
-              style={{ color: colors.primary }}
-              maxFontSizeMultiplier={CHROME_MAX_FONT_SCALE}
-            >
-              {t('library.filter')}
-            </Text>
-            {filtersActive ? (
-              <View className="h-2 w-2 rounded-full" style={{ backgroundColor: colors.primary }} />
-            ) : null}
-          </Pressable>
-          <View style={{ marginStart: 'auto', flexShrink: 0 }}>
-            <LibraryLayoutToggle
-              trackId="hub.layout"
-              layout={layout}
-              onToggle={toggleLayout}
-              color={colors.primary}
-              backgroundColor={layout === 'grid' ? colors.primarySoft : inactiveChipBg}
-            />
-          </View>
-        </View>
-
-        <Text
-          className="text-xs"
-          style={{ color: colors.textSecondary }}
-          accessibilityLiveRegion="polite"
-        >
-          {showSearching
-            ? t('hub.searching')
-            : t((total || cards.length) === 1 ? 'library.recipeCountOne' : 'library.recipeCountOther', {
-                count: total || cards.length,
-              })}
-        </Text>
-
-        {showInlineError ? (
-          <Pressable
-            trackId="hub.error_retry_inline"
-            onPress={() => void refresh()}
-            className="active:opacity-80"
-            accessibilityRole="button"
-            accessibilityHint={t('a11y.tapToRetryHint')}
-          >
-            <Text className="text-xs font-semibold" style={{ color: colors.danger }}>
-              {error}
-            </Text>
-          </Pressable>
-        ) : null}
-
-        {filtersOpen ? (
-          <View className="w-full min-w-0 gap-3">
-            <ScrollView
-              horizontal
-              showsHorizontalScrollIndicator={false}
-              style={{ width: '100%' }}
-              contentContainerStyle={{ gap: 8, paddingEnd: 4 }}
-              keyboardShouldPersistTaps="handled"
-            >
-              {HUB_PLATFORMS.map((item) => {
-                const active = platform === item;
-                return (
-                  <Pressable
-                    key={item}
-                    trackId={`hub.filter.source.${item}`}
-                    onPress={() => setPlatform(item)}
-                    className="min-h-[44px] items-center justify-center rounded-2xl px-4 active:opacity-80"
-                    style={{ backgroundColor: active ? colors.primary : inactiveChipBg }}
-                    accessibilityRole="button"
-                    accessibilityState={{ selected: active }}
-                    accessibilityLabel={t('a11y.sourceFilter', {
-                      source: t(platformLabelKey(item)),
-                    })}
-                  >
-                    <Text
-                      className="text-sm font-semibold"
-                      style={{ color: active ? colors.onPrimary : colors.text }}
-                      maxFontSizeMultiplier={CHROME_MAX_FONT_SCALE}
-                    >
-                      {t(platformLabelKey(item))}
-                    </Text>
-                  </Pressable>
-                );
-              })}
-            </ScrollView>
-
-            <ScrollView
-              horizontal
-              showsHorizontalScrollIndicator={false}
-              style={{ width: '100%' }}
-              contentContainerStyle={{ gap: 8, paddingEnd: 4 }}
-              keyboardShouldPersistTaps="handled"
-            >
-              <Pressable
-                trackId="hub.sort.popular"
-                onPress={() => setSort('popular')}
-                className="min-h-[44px] items-center justify-center rounded-2xl px-4 active:opacity-80"
-                style={{ backgroundColor: sort === 'popular' ? colors.primary : inactiveChipBg }}
-                accessibilityRole="button"
-                accessibilityState={{ selected: sort === 'popular' }}
-                accessibilityLabel={t('a11y.sortBy', { option: t('hub.sortPopular') })}
-              >
-                <Text
-                  className="text-sm font-semibold"
-                  style={{ color: sort === 'popular' ? colors.onPrimary : colors.text }}
-                  maxFontSizeMultiplier={CHROME_MAX_FONT_SCALE}
-                >
-                  {t('hub.sortPopular')}
-                </Text>
-              </Pressable>
-              <Pressable
-                trackId="hub.sort.newest"
-                onPress={() => setSort('newest')}
-                className="min-h-[44px] items-center justify-center rounded-2xl px-4 active:opacity-80"
-                style={{ backgroundColor: sort === 'newest' ? colors.primary : inactiveChipBg }}
-                accessibilityRole="button"
-                accessibilityState={{ selected: sort === 'newest' }}
-                accessibilityLabel={t('a11y.sortBy', { option: t('hub.sortNewest') })}
-              >
-                <Text
-                  className="text-sm font-semibold"
-                  style={{ color: sort === 'newest' ? colors.onPrimary : colors.text }}
-                  maxFontSizeMultiplier={CHROME_MAX_FONT_SCALE}
-                >
-                  {t('hub.sortNewest')}
-                </Text>
-              </Pressable>
-            </ScrollView>
-
-            {availableTags.length > 0 ? (
-              <View className="gap-1.5">
-                <View className="flex-row items-center justify-between">
-                  <Text
-                    accessibilityRole="header"
-                    className="text-xs font-semibold uppercase tracking-wide"
-                    style={{ color: colors.textSecondary }}
-                  >
-                    {t('library.tags')}
-                  </Text>
-                  {selectedTags.length > 0 ? (
-                    <Pressable
-                      trackId="hub.filter.tags.clear"
-                      onPress={clearTags}
-                      hitSlop={12}
-                      className="active:opacity-70"
-                      accessibilityRole="button"
-                      accessibilityLabel={t('a11y.clearTags')}
-                    >
-                      <Text className="text-xs font-semibold" style={{ color: colors.primary }}>
-                        {t('common.clear')}
-                      </Text>
-                    </Pressable>
-                  ) : null}
-                </View>
-                <ScrollView
-                  horizontal
-                  showsHorizontalScrollIndicator={false}
-                  style={{ width: '100%' }}
-                  contentContainerStyle={{ gap: 8, paddingEnd: 4 }}
-                  keyboardShouldPersistTaps="handled"
-                >
-                  {availableTags.map((tag) => {
-                    const active = selectedTags.includes(tag);
-                    return (
-                      <Pressable
-                        key={tag}
-                        trackId="hub.filter.tag.toggle"
-                        onPress={() => toggleTag(tag)}
-                        accessibilityRole="button"
-                        accessibilityState={{ selected: active }}
-                        className="min-h-[44px] rounded-2xl px-4 py-2.5 active:opacity-80"
-                        style={{ backgroundColor: active ? colors.primary : inactiveChipBg }}
-                      >
-                        <Text
-                          className="text-sm font-semibold"
-                          style={{ color: active ? colors.onPrimary : colors.text }}
-                          maxFontSizeMultiplier={CHROME_MAX_FONT_SCALE}
-                        >
-                          {translateRecipeTag(tag, t)}
-                        </Text>
-                      </Pressable>
-                    );
-                  })}
-                </ScrollView>
-              </View>
-            ) : null}
-          </View>
-        ) : null}
-      </View>
-
-      <View style={{ flex: 1, minHeight: 0, overflow: 'hidden' }}>
-        <FlatList
-          ref={listRef}
-          key={`hub-${numColumns}`}
-          data={rows}
-          keyExtractor={(item) => item.recipe.id}
-          numColumns={numColumns}
-          columnWrapperStyle={numColumns > 1 ? { gap: 0, marginBottom: 12 } : undefined}
-          renderItem={({ item, index }) => (
-            <View style={numColumns > 1 ? { flex: 1, paddingHorizontal: 6 } : undefined}>
-              <RecipeListRow
-                trackId="hub.recipe"
-                recipe={item.recipe}
-                index={index}
-                variant={layout === 'grid' ? 'card' : 'row'}
-                detail={hubCardDetail(item.card, t)}
-                onPress={() => router.push(`/hub/${item.recipe.id}`)}
-              />
-            </View>
-          )}
-          style={{ flex: 1 }}
-          onScroll={handleListScroll}
-          scrollEventThrottle={160}
-          onEndReached={loadMore}
-          onEndReachedThreshold={0.5}
-          refreshControl={
-            <RefreshControl
-              refreshing={refreshing}
-              onRefresh={() => {
-                logTap('hub.pull_refresh');
-                void pullRefresh();
-              }}
-              tintColor={colors.primary}
-              colors={[colors.primary]}
-            />
-          }
-          ListFooterComponent={
-            loadingMore ? (
-              <ActivityIndicator
-                className="py-4"
-                color={colors.primary}
-                accessibilityLabel={t('a11y.loadingMoreRecipes')}
-              />
-            ) : null
-          }
-          ListEmptyComponent={
-            showSearching ? (
-              <View className="items-center py-16">
-                <ActivityIndicator
-                  color={colors.primary}
-                  size="large"
-                  accessibilityLabel={t('hub.searching')}
-                />
-              </View>
-            ) : error ? (
-              <View className="items-center px-6 py-12">
-                <View
-                  className="mb-5 h-16 w-16 items-center justify-center rounded-[22px]"
-                  style={{ backgroundColor: colors.dangerSoft }}
-                  accessible={false}
-                  importantForAccessibility="no-hide-descendants"
-                >
-                  <Ionicons name="cloud-offline-outline" size={32} color={colors.danger} />
-                </View>
-                <Text
-                  accessibilityRole="header"
-                  className="mb-2 text-center text-xl font-bold"
-                  style={{ color: colors.text }}
-                >
-                  {t('hub.loadFailedTitle')}
-                </Text>
-                <Text
-                  className="mb-6 text-center text-sm leading-5"
-                  style={{ color: colors.textSecondary }}
-                >
-                  {error}
-                </Text>
-                <Pressable
-                  trackId="hub.error_retry"
-                  onPress={() => void refresh()}
-                  accessibilityRole="button"
-                  className="rounded-3xl px-6 py-3.5 active:opacity-80"
-                  style={{ backgroundColor: colors.primary }}
-                >
-                  <Text className="text-base font-bold" style={{ color: colors.onPrimary }}>
-                    {t('common.tryAgainAction')}
-                  </Text>
-                </Pressable>
-              </View>
-            ) : (
-              <View className="items-center px-6 py-12" accessibilityLiveRegion="polite">
-                {filtersActive || hasQuery ? (
-                  <>
-                    <Text
-                      accessibilityRole="header"
-                      className="mb-1 text-center text-base font-semibold"
-                      style={{ color: colors.text }}
-                    >
-                      {t('hub.noMatches')}
-                    </Text>
-                    <Text className="text-center text-sm" style={{ color: colors.textSecondary }}>
-                      {t('hub.noMatchesHint')}
-                    </Text>
-                  </>
-                ) : (
-                  <>
-                    <BrandHeader
-                      size="hero"
-                      align="center"
-                      title={t('hub.emptyTitle')}
-                      subtitle={t('hub.emptyBody')}
-                    />
-                    <Pressable
-                      className="mt-8 w-full items-center rounded-3xl py-4 active:opacity-80"
-                      style={{ backgroundColor: colors.primary }}
-                      trackId="hub.empty.snap_first"
-                      onPress={() => router.push('/add')}
-                      accessibilityRole="button"
-                    >
-                      <Text className="text-base font-bold" style={{ color: colors.onPrimary }}>
-                        {t('hub.snapFirst')}
-                      </Text>
-                    </Pressable>
-                  </>
-                )}
-              </View>
-            )
-          }
-          contentContainerStyle={{
-            paddingHorizontal: 20,
-            paddingTop: 4,
-            paddingBottom: 28,
-            gap: numColumns > 1 ? 0 : 12,
-            flexGrow: 1,
-          }}
-          showsVerticalScrollIndicator={false}
-          keyboardShouldPersistTaps="handled"
-          keyboardDismissMode="on-drag"
+        <SegmentedControl
+          label={`${t('library.showGrid')} / ${t('library.showList')}`}
+          value={layout}
+          onChange={setLayout}
+          options={[
+            { value: 'grid', label: t('library.showGrid'), icon: 'grid-outline', iconOnly: true, trackId: 'hub.layout.grid' },
+            { value: 'list', label: t('library.showList'), icon: 'list-outline', iconOnly: true, trackId: 'hub.layout.list' },
+          ]}
         />
       </View>
+
+      {/* Filter, then the popular tags, in one row that scrolls sideways. */}
+      <ScrollView
+        horizontal
+        showsHorizontalScrollIndicator={false}
+        keyboardShouldPersistTaps="handled"
+        style={{ marginHorizontal: -20 }}
+        contentContainerStyle={{ gap: 8, paddingHorizontal: 20 }}
+      >
+        <Chip
+          trackId="hub.filter.toggle"
+          icon="options-outline"
+          selected={filtersOpen || sourceOrSortSet}
+          onPress={() => setFiltersOpen((open) => !open)}
+          accessibilityLabel={
+            sourceOrSortSet ? `${t('library.toggleFilters')}, ${t('a11y.filtersApplied')}` : t('library.toggleFilters')
+          }
+        >
+          {t('library.filter')}
+        </Chip>
+        {selectedTags.length > 0 ? (
+          <Chip trackId="hub.filter.tags.clear" icon="close" onPress={clearTags} accessibilityLabel={t('a11y.clearTags')}>
+            {t('common.clear')}
+          </Chip>
+        ) : null}
+        {availableTags.map((tag) => (
+          <Chip
+            key={tag}
+            trackId="hub.filter.tag.toggle"
+            selected={selectedTags.includes(tag)}
+            onPress={() => toggleTag(tag)}
+          >
+            {translateRecipeTag(tag, t)}
+          </Chip>
+        ))}
+      </ScrollView>
+
+      {filtersOpen ? (
+        <Tile size="md" style={{ padding: 16, gap: 16 }}>
+          <View accessibilityRole="radiogroup" accessibilityLabel={t('web.hub.source')} style={{ gap: 10 }}>
+            <TileLabel>{t('web.hub.source')}</TileLabel>
+            <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8 }}>
+              {HUB_PLATFORMS.map((item) => (
+                <Chip
+                  key={item}
+                  kind="radio"
+                  size="sm"
+                  trackId={`hub.filter.source.${item}`}
+                  selected={platform === item}
+                  onPress={() => setPlatform(item)}
+                  accessibilityLabel={t('a11y.sourceFilter', { source: t(platformLabelKey(item)) })}
+                >
+                  {t(platformLabelKey(item))}
+                </Chip>
+              ))}
+            </View>
+          </View>
+          <View accessibilityRole="radiogroup" accessibilityLabel={t('web.library.sortBy')} style={{ gap: 10 }}>
+            <TileLabel>{t('web.library.sortBy')}</TileLabel>
+            <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8 }}>
+              {(['popular', 'newest'] as const).map((option) => {
+                const label = option === 'popular' ? t('hub.sortPopular') : t('hub.sortNewest');
+                return (
+                  <Chip
+                    key={option}
+                    kind="radio"
+                    size="sm"
+                    trackId={`hub.sort.${option}`}
+                    selected={sort === option}
+                    onPress={() => setSort(option)}
+                    accessibilityLabel={t('a11y.sortBy', { option: label })}
+                  >
+                    {label}
+                  </Chip>
+                );
+              })}
+            </View>
+          </View>
+        </Tile>
+      ) : null}
+
+      <Text variant="caption" weight="semibold" tone="muted" accessibilityLiveRegion="polite">
+        {showSearching
+          ? t('hub.searching')
+          : t(count === 1 ? 'library.recipeCountOne' : 'library.recipeCountOther', { count })}
+      </Text>
+
+      {showInlineError ? (
+        <Pressable
+          trackId="hub.error_retry_inline"
+          onPress={() => void refresh()}
+          accessibilityRole="button"
+          accessibilityHint={t('a11y.tapToRetryHint')}
+          style={({ pressed }) => ({
+            flexDirection: 'row',
+            alignItems: 'center',
+            gap: 10,
+            minHeight: 44,
+            borderRadius: Radii.inner,
+            paddingHorizontal: 14,
+            paddingVertical: 10,
+            backgroundColor: colors.dangerSoft,
+            opacity: pressed ? 0.8 : 1,
+          })}
+        >
+          <Ionicons name="refresh" size={16} color={colors.danger} accessible={false} importantForAccessibility="no" />
+          <Text variant="caption" weight="semibold" tone="danger" style={{ flex: 1 }}>
+            {error}
+          </Text>
+        </Pressable>
+      ) : null}
+    </View>
+  );
+
+  return (
+    <Screen tabScreen>
+      <FlatList
+        ref={listRef}
+        key={`hub-${numColumns}`}
+        data={rows}
+        keyExtractor={(item) => item.recipe.id}
+        numColumns={numColumns}
+        columnWrapperStyle={numColumns > 1 ? { marginBottom: 20 } : undefined}
+        ListHeaderComponent={header}
+        ListHeaderComponentStyle={numColumns > 1 ? { marginHorizontal: GRID_GAP / 2 } : undefined}
+        renderItem={({ item, index }) =>
+          grid ? (
+            <View style={{ flex: 1, maxWidth: `${100 / numColumns}%`, paddingHorizontal: GRID_GAP / 2 }}>
+              <HubCard card={item.card} recipe={item.recipe} />
+            </View>
+          ) : (
+            <RecipeListRow
+              trackId="hub.recipe"
+              recipe={item.recipe}
+              index={index}
+              variant="row"
+              detail={hubCardDetail(item.card, t)}
+              onPress={() => router.push(`/hub/${item.recipe.id}`)}
+            />
+          )
+        }
+        style={{ flex: 1 }}
+        onScroll={handleListScroll}
+        scrollEventThrottle={160}
+        onEndReached={loadMore}
+        onEndReachedThreshold={0.5}
+        refreshControl={
+          <RefreshControl
+            refreshing={refreshing}
+            onRefresh={() => {
+              logTap('hub.pull_refresh');
+              void pullRefresh();
+            }}
+            tintColor={colors.primary}
+            colors={[colors.primary]}
+          />
+        }
+        ListFooterComponent={
+          loadingMore ? (
+            <ActivityIndicator
+              style={{ paddingVertical: 16 }}
+              color={colors.primary}
+              accessibilityLabel={t('a11y.loadingMoreRecipes')}
+            />
+          ) : null
+        }
+        ListEmptyComponent={
+          <View style={numColumns > 1 ? { marginHorizontal: GRID_GAP / 2 } : undefined}>
+            {showSearching ? (
+              <LoadingCards grid={grid} label={t('hub.searching')} />
+            ) : error ? (
+              <StateTile
+                icon="cloud-offline-outline"
+                danger
+                title={t('hub.loadFailedTitle')}
+                body={error}
+                action={
+                  <Button trackId="hub.error_retry" icon="refresh" onPress={() => void refresh()}>
+                    {t('common.tryAgainAction')}
+                  </Button>
+                }
+              />
+            ) : filtersActive || hasQuery ? (
+              <StateTile icon="search-outline" title={t('hub.noMatches')} body={t('hub.noMatchesHint')} />
+            ) : (
+              <StateTile
+                icon="compass-outline"
+                title={t('hub.emptyTitle')}
+                body={t('hub.emptyBody')}
+                action={
+                  <Button trackId="hub.empty.snap_first" icon="add-circle-outline" onPress={() => router.push('/add')}>
+                    {t('hub.snapFirst')}
+                  </Button>
+                }
+              />
+            )}
+          </View>
+        }
+        contentContainerStyle={{
+          paddingHorizontal: numColumns > 1 ? 20 - GRID_GAP / 2 : 20,
+          paddingTop: 8,
+          paddingBottom: 28,
+          gap: numColumns > 1 ? 0 : 12,
+          flexGrow: 1,
+        }}
+        showsVerticalScrollIndicator={false}
+        keyboardShouldPersistTaps="handled"
+        keyboardDismissMode="on-drag"
+      />
     </Screen>
+  );
+}
+
+/**
+ * A Hub recipe in the grid, as a Library card (the web's RecipeCard): a square photo with 18 corners and the source
+ * on it, the title in Space Grotesk, and how long it takes and how many people saved it, muted.
+ */
+const HubCard = memo(function HubCard({ card, recipe }: { card: RecipeCard; recipe: Recipe }) {
+  const { t } = useTranslation();
+  const { colors } = useThemePreference();
+  const photo = usePhotoColors();
+  const type = useTypography();
+  const { rtl } = useRtl();
+  const title = recipe.display_title ?? recipe.title;
+  const source = t(platformLabelKey(card.platform));
+  const saves = t(card.save_count === 1 ? 'hub.saveCountOne' : 'hub.saveCountOther', { count: card.save_count });
+  const time =
+    recipe.estimated_time_minutes != null
+      ? formatRecipeDuration(recipe.estimated_time_minutes, {
+          minutes: t('recipe.durationMin'),
+          hours: t('recipe.durationHr'),
+        })
+      : null;
+  const meta = [time, saves].filter(Boolean).join(' · ');
+
+  return (
+    <Pressable
+      trackId="hub.recipe.open"
+      onPress={() => router.push(`/hub/${recipe.id}`)}
+      accessibilityRole="button"
+      accessibilityLabel={[title, hubCardDetail(card, t), time].filter(Boolean).join(', ')}
+      style={({ pressed }) => ({ gap: 10, opacity: pressed ? 0.88 : 1 })}
+    >
+      <View
+        style={{
+          width: '100%',
+          aspectRatio: 1,
+          overflow: 'hidden',
+          borderRadius: 18,
+          backgroundColor: colors.backgroundElement,
+        }}
+      >
+        {recipe.image_url ? (
+          <RecipeImage
+            uri={recipe.image_url}
+            variant="hero"
+            aiGenerated={recipe.image_generated}
+            borderRadius={18}
+            style={{ width: '100%', height: '100%' }}
+          />
+        ) : (
+          <View
+            accessible={false}
+            importantForAccessibility="no-hide-descendants"
+            style={{ flex: 1, alignItems: 'center', justifyContent: 'center' }}
+          >
+            <CookieMark size={40} color={colors.primaryText} />
+          </View>
+        )}
+        {/* A row over the photo pinned to the app language, so the source sits at the start corner before the RTL
+            reload too (no left or right). */}
+        <View
+          accessible={false}
+          importantForAccessibility="no-hide-descendants"
+          pointerEvents="none"
+          style={[StyleSheet.absoluteFill, { flexDirection: 'row', alignItems: 'flex-start', padding: 8, direction: rtl ? 'rtl' : 'ltr' }]}
+        >
+          <View
+            style={{
+              maxWidth: '75%',
+              borderRadius: Radii.pill,
+              paddingHorizontal: 10,
+              paddingVertical: 6,
+              backgroundColor: withAlpha(photo.scrim, 0.7),
+            }}
+          >
+            <Text
+              numberOfLines={1}
+              color={photo.onScrim}
+              style={{ ...type.font('body', 'semibold'), fontSize: 12, lineHeight: 14 }}
+            >
+              {source}
+            </Text>
+          </View>
+        </View>
+      </View>
+      <View style={{ gap: 4, paddingHorizontal: 2 }}>
+        <Text variant="h3" numberOfLines={2} style={{ fontSize: 15, lineHeight: 19 }}>
+          {title}
+        </Text>
+        {meta ? (
+          <Text variant="caption" tone="muted" numberOfLines={1}>
+            {meta}
+          </Text>
+        ) : null}
+      </View>
+    </Pressable>
+  );
+});
+
+/** Grey outlines of the cards while the first page loads, so the page doesn't jump when they arrive. */
+function LoadingCards({ grid, label }: { grid: boolean; label: string }) {
+  const { colors } = useThemePreference();
+  return (
+    <View accessible accessibilityRole="progressbar" accessibilityLabel={label} accessibilityState={{ busy: true }}>
+      {grid ? (
+        <View style={{ flexDirection: 'row', flexWrap: 'wrap', rowGap: 20 }}>
+          {Array.from({ length: 4 }, (_, index) => (
+            <View key={index} style={{ width: '50%', paddingHorizontal: GRID_GAP / 2, gap: 10 }}>
+              <View style={{ aspectRatio: 1, borderRadius: 18, backgroundColor: colors.backgroundElement }} />
+              <View style={{ height: 14, width: '80%', borderRadius: 7, backgroundColor: colors.backgroundElement }} />
+            </View>
+          ))}
+        </View>
+      ) : (
+        <View style={{ gap: 12 }}>
+          {Array.from({ length: 4 }, (_, index) => (
+            <Tile key={index} size="md" style={{ height: 100 }} />
+          ))}
+        </View>
+      )}
+    </View>
+  );
+}
+
+/** An empty, no-match or failed Hub: an icon on a soft square, a title, a line and maybe a button, on a tile. */
+function StateTile({
+  icon,
+  title,
+  body,
+  action,
+  danger = false,
+}: {
+  icon: IconName;
+  title: string;
+  body: string;
+  action?: ReactNode;
+  danger?: boolean;
+}) {
+  const { colors } = useThemePreference();
+  return (
+    <Tile
+      accessibilityLiveRegion="polite"
+      style={{ alignItems: 'center', gap: 10, paddingHorizontal: 24, paddingVertical: 36 }}
+    >
+      <View
+        accessible={false}
+        importantForAccessibility="no-hide-descendants"
+        style={{
+          width: 56,
+          height: 56,
+          marginBottom: 4,
+          alignItems: 'center',
+          justifyContent: 'center',
+          borderRadius: Radii.inner,
+          backgroundColor: danger ? colors.dangerSoft : colors.primarySoft,
+        }}
+      >
+        <Ionicons name={icon} size={28} color={danger ? colors.danger : colors.primaryText} />
+      </View>
+      <Text variant="h3" align="center" style={{ fontSize: 20, lineHeight: 25 }}>
+        {title}
+      </Text>
+      <Text variant="bodySmall" tone="muted" align="center">
+        {body}
+      </Text>
+      {action ? <View style={{ marginTop: 10, alignItems: 'center' }}>{action}</View> : null}
+    </Tile>
   );
 }

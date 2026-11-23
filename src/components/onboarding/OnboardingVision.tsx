@@ -1,5 +1,5 @@
 import { useEffect } from 'react';
-import { Text, View } from 'react-native';
+import { View } from 'react-native';
 import { useTranslation } from 'react-i18next';
 import Animated, {
   Easing,
@@ -13,18 +13,18 @@ import Animated, {
 } from 'react-native-reanimated';
 
 import { CookieMark } from '@/components/CookieMark';
-import { useLanguagePreference } from '@/hooks/useLanguagePreference';
+import { Text } from '@/components/ui/Text';
+import { HAIRLINE } from '@/components/ui/tokens';
+import { FontFamily } from '@/constants/typography';
 import { useThemePreference } from '@/hooks/useThemePreference';
-import { isRtlAppLanguage } from '@shared/lib/appLanguages';
+import { useTypography } from '@/hooks/useTypography';
 
 /** Opening moment: the mark, the line, and why Pinch exists. */
 export function OnboardingVision() {
   const { t } = useTranslation();
   const { colors } = useThemePreference();
-  const { language } = useLanguagePreference();
+  const type = useTypography();
   const reduceMotion = useReducedMotion();
-  const rtl = isRtlAppLanguage(language);
-  const writingDirection = rtl ? ('rtl' as const) : ('ltr' as const);
   const pulse = useSharedValue(0);
 
   useEffect(() => {
@@ -38,29 +38,28 @@ export function OnboardingVision() {
 
   const halo = useAnimatedStyle(() => ({
     transform: [{ scale: reduceMotion ? 1 : 1 + pulse.value * 0.06 }],
-    opacity: reduceMotion ? 0.55 : 0.35 + pulse.value * 0.25,
+    opacity: reduceMotion ? 0.7 : 0.5 + pulse.value * 0.3,
   }));
 
   const enter = (delay: number) =>
     reduceMotion ? undefined : FadeInDown.duration(520).delay(delay).springify().damping(18);
 
   return (
-    <View className="flex-1 items-center justify-center px-2">
+    <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center', paddingHorizontal: 8 }}>
       <Animated.View
         entering={reduceMotion ? undefined : FadeIn.duration(480)}
         accessible={false}
         importantForAccessibility="no-hide-descendants"
-        className="mb-8 items-center justify-center"
-        style={{ width: 168, height: 168 }}
+        style={{ width: 176, height: 176, marginBottom: 36, alignItems: 'center', justifyContent: 'center' }}
       >
         <Animated.View
           pointerEvents="none"
           style={[
             {
               position: 'absolute',
-              width: 168,
-              height: 168,
-              borderRadius: 84,
+              width: 176,
+              height: 176,
+              borderRadius: 88,
               backgroundColor: colors.primarySoft,
             },
             halo,
@@ -70,50 +69,52 @@ export function OnboardingVision() {
           pointerEvents="none"
           style={{
             position: 'absolute',
-            width: 124,
-            height: 124,
-            borderRadius: 62,
-            borderWidth: 1,
-            borderColor: colors.frostedBorder,
-            backgroundColor: colors.frosted,
+            width: 132,
+            height: 132,
+            borderRadius: 66,
+            borderWidth: HAIRLINE,
+            borderColor: colors.border,
+            backgroundColor: colors.surface,
           }}
         />
         <View
-          className="items-center justify-center rounded-[32px]"
-          style={{ width: 88, height: 88, backgroundColor: colors.primarySoft }}
+          style={{
+            width: 88,
+            height: 88,
+            borderRadius: 28,
+            alignItems: 'center',
+            justifyContent: 'center',
+            backgroundColor: colors.primary,
+          }}
         >
-          <CookieMark size={48} color={colors.primary} />
+          <CookieMark size={50} color={colors.onPrimary} holeColor={colors.primary} />
         </View>
       </Animated.View>
 
-      <Animated.View entering={enter(80)} className="items-center" style={{ maxWidth: 320 }}>
+      <Animated.View entering={enter(80)} style={{ alignItems: 'center', maxWidth: 340, alignSelf: 'stretch' }}>
+        {/* The name is Latin in every language. */}
         <Text
           accessibilityLabel="Pinch"
-          className="text-xs font-semibold"
+          align="center"
+          color={colors.primaryText}
           style={{
-            color: colors.textSecondary,
-            letterSpacing: 2.4,
+            fontFamily: FontFamily.spaceGroteskBold,
+            fontSize: 15,
+            lineHeight: 20,
+            letterSpacing: 3,
             writingDirection: 'ltr',
-            textAlign: 'center',
           }}
         >
           PINCH
         </Text>
         <Text
-          accessibilityRole="header"
-          className="mt-3 text-center text-[32px] font-bold tracking-tight"
-          style={{
-            color: colors.text,
-            letterSpacing: rtl ? 0 : -0.6,
-            writingDirection,
-          }}
+          variant="h1"
+          align="center"
+          style={{ marginTop: 12, fontSize: 38, lineHeight: type.rtl ? 48 : 42, letterSpacing: type.tracking(-0.025, 38) }}
         >
           {t('onboarding.welcomeTitle')}
         </Text>
-        <Text
-          className="mt-4 text-center text-[16px] leading-6"
-          style={{ color: colors.textSecondary, writingDirection }}
-        >
+        <Text tone="muted" align="center" style={{ marginTop: 16, fontSize: 17, lineHeight: 26 }}>
           {t('onboarding.visionBody')}
         </Text>
       </Animated.View>

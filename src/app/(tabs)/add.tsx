@@ -1,11 +1,10 @@
 import Ionicons from "@expo/vector-icons/Ionicons";
 import Constants, { ExecutionEnvironment } from "expo-constants";
-import { router, useFocusEffect } from "expo-router";
+import { router, useFocusEffect, useLocalSearchParams } from "expo-router";
 import { useShareIntentContext } from "expo-share-intent";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { Alert, Platform, Text, View } from "react-native";
-import { Pressable } from "@/components/ui/Pressable";
+import { Alert, Platform, ScrollView, View } from "react-native";
 import Animated, {
   FadeIn,
   FadeOut,
@@ -13,7 +12,6 @@ import Animated, {
   useReducedMotion,
 } from "react-native-reanimated";
 
-import { BrandHeader } from "@/components/BrandHeader";
 import { ConfirmDialog } from "@/components/ConfirmDialog";
 import { Screen } from "@/components/Screen";
 import { SnapExtractingView } from "@/components/SnapExtractingView";
@@ -24,6 +22,11 @@ import {
 } from "@/components/SnapIntentToggle";
 import { TextInput } from "@/components/text-input";
 import { TokenPurchaseSheet } from "@/components/TokenPurchaseSheet";
+import { Button } from "@/components/ui/Button";
+import { Text } from "@/components/ui/Text";
+import { Tile } from "@/components/ui/Tile";
+import { HAIRLINE, KitIcon, MIN_TOUCH, Radii, type IconName } from "@/components/ui/tokens";
+import { CreditsPill } from "@/components/ui/TopBar";
 import { FormContentWidth } from "@/constants/theme";
 import { useAuth } from "@/hooks/useAuth";
 import { useBreakpoint } from "@/hooks/useBreakpoint";
@@ -31,6 +34,7 @@ import { useLanguagePreference } from "@/hooks/useLanguagePreference";
 import { useProfile } from "@/hooks/useProfile";
 import { useRtl } from "@/hooks/useRtl";
 import { useThemePreference } from "@/hooks/useThemePreference";
+import { useTypography } from "@/hooks/useTypography";
 import { announce } from "@/lib/a11y";
 import { logTap } from "@/lib/interactionLog";
 import { showNotice } from "@/lib/confirmAction";
@@ -143,10 +147,20 @@ export default function AddRecipeScreen() {
   } = useProfile();
   const { colors } = useThemePreference();
   const { isMediumUp } = useBreakpoint();
-  const { chevronForward, textAlign, writingDirection } = useRtl();
-  const rtlText = { textAlign, writingDirection };
+  const { textAlign, writingDirection } = useRtl();
+  const type = useTypography();
   const intentProgress = useSnapIntentProgress(mode);
   const reduceMotion = useReducedMotion();
+
+  // A link pasted into the Library's search bar arrives as ?url= and starts right away.
+  const { url: urlParam } = useLocalSearchParams<{ url?: string }>();
+  useEffect(() => {
+    if (!urlParam || authLoading) return;
+    router.setParams({ url: undefined });
+    setUrl(urlParam);
+    void handleGetRecipe(urlParam, "extract", "url");
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [urlParam, authLoading]);
 
   useEffect(() => {
     let active = true;
@@ -654,6 +668,29 @@ export default function AddRecipeScreen() {
     );
   }
 
+  /** "Choose a photo or PDF": a photo from the library, or in Snap on a phone a PDF too (PIN-72). */
+  function handleChooseEntry() {
+    if (mode === "invent" || Platform.OS === "web") {
+      void handlePickPhoto("library");
+      return;
+    }
+    Alert.alert(t("snapNm.choosePhotoOrPdf"), t("web.snap.photoOrPdfHint"), [
+      {
+        text: t("settings.chooseLibrary"),
+        onPress: () => void handlePickPhoto("library"),
+      },
+      {
+        text: t("snap.pdfAction"),
+        onPress: () => {
+          // The PDF had a tile of its own before PIN-177: keep its id in the Activity log.
+          logTap("snap.pdf");
+          void handlePickPdf();
+        },
+      },
+      { text: t("common.cancel"), style: "cancel" },
+    ]);
+  }
+
   async function handleGetRecipe(
     overrideUrl?: string,
     intent: SnapIntent = mode,
@@ -784,7 +821,7 @@ export default function AddRecipeScreen() {
 
   if (loading) {
     return (
-      <Screen dense tabScreen>
+      <Screen tabScreen>
         <SnapExtractingView
           intent={jobKind}
           url={extractingPhoto || extractingPdf ? null : url}
@@ -794,29 +831,48 @@ export default function AddRecipeScreen() {
     );
   }
 
-  return (
-    <Screen dense tabScreen>
-      <View
-        className="flex-1 px-5 pt-1"
-        style={
-          isMediumUp
-            ? { maxWidth: FormContentWidth, width: "100%", alignSelf: "center" }
-            : undefined
-        }
-      >
-        <BrandHeader
-          copyKey={mode}
-          title={mode === "invent" ? t("snap.inventTitle") : t("snap.title")}
-          subtitle={
-            mode === "invent" ? t("snap.inventSubtitle") : t("snap.subtitle")
-          }
-        />
+  const invent = mode === "invent";
+  // PIN-72: a PDF is read as a written recipe, so it has no Guess the recipe side. The old Expo web app (being
+  // replaced by web/) can't read a picked file this way, so it isn't offered there.
+  const pdfOffered = !invent && Platform.OS !== "web";
+  const chooseLabel = pdfOffered ? t("snapNm.choosePhotoOrPdf") : t("snapNm.choosePhoto");
+  const photoHint = invent
+    ? t("snap.inventPhotoHint")
+    : pdfOffered
+      ? t("web.snap.photoOrPdfHint")
+      : t("snap.photoHint");
 
+  return (
+    <Screen tabScreen>
+      <ScrollView
+        style={{ flex: 1 }}
+        contentContainerStyle={{ paddingHorizontal: 20, paddingTop: 8, paddingBottom: 32 }}
+        keyboardShouldPersistTaps="handled"
+        keyboardDismissMode="on-drag"
+        showsVerticalScrollIndicator={false}
+      >
         <Animated.View
-          className="mb-6 mt-6"
           layout={reduceMotion ? undefined : LinearTransition.duration(280)}
+          style={[
+            { gap: 16 },
+            isMediumUp ? { maxWidth: FormContentWidth, width: "100%", alignSelf: "center" } : null,
+          ]}
         >
-          <View className="mb-4">
+          {/* The kit's PageHeader lines its actions up with the subtitle's last line; here the credits sit beside
+              the title, as in the mockup, and the subtitle runs the full width under both. */}
+          <View style={{ gap: 6, paddingBottom: 4 }}>
+            <View style={{ flexDirection: "row", alignItems: "center", gap: 12, minHeight: 44 }}>
+              <Text variant="h1" style={{ flex: 1, minWidth: 0 }}>
+                {invent ? t("snap.inventTitle") : t("snap.title")}
+              </Text>
+              {user && totalCredits != null ? <CreditsPill credits={totalCredits} /> : null}
+            </View>
+            <Text variant="bodySmall" tone="muted">
+              {invent ? t("snap.inventSubtitle") : t("snap.subtitle")}
+            </Text>
+          </View>
+
+          <View style={{ gap: 10 }}>
             <SnapIntentToggle
               trackId="snap.intent"
               mode={mode}
@@ -828,397 +884,381 @@ export default function AddRecipeScreen() {
                 if (banner) setBanner(null);
               }}
             />
+            {invent ? (
+              <Animated.View
+                entering={reduceMotion ? undefined : FadeIn.duration(220)}
+                exiting={reduceMotion ? undefined : FadeOut.duration(140)}
+              >
+                <Text variant="caption" tone="muted" style={{ paddingHorizontal: 4 }}>
+                  {t("snap.inventDisclaimer")}
+                </Text>
+              </Animated.View>
+            ) : null}
           </View>
 
-          {mode === "invent" ? (
-            <Animated.Text
-              entering={reduceMotion ? undefined : FadeIn.duration(220)}
-              exiting={reduceMotion ? undefined : FadeOut.duration(140)}
-              className="mb-3 text-xs leading-5"
-              style={{ color: colors.textSecondary, ...rtlText }}
-            >
-              {t("snap.inventDisclaimer")}
-            </Animated.Text>
-          ) : null}
-
-          <Animated.Text
-            key={`url-label-${mode}`}
-            entering={reduceMotion ? undefined : FadeIn.duration(200)}
-            className="mb-2 text-sm font-semibold"
-            style={{ color: colors.text, ...rtlText }}
-          >
-            {mode === "invent" ? t("snap.inventUrlLabel") : t("snap.urlLabel")}
-          </Animated.Text>
-          {signedInQuotaLabel ? (
-            <Text
-              className="mb-2 text-xs font-medium"
-              style={{ color: colors.accent, ...rtlText }}
-            >
-              {signedInQuotaLabel}
-            </Text>
-          ) : null}
-          <View
-            className="mb-3 flex-row items-center rounded-[22px] px-3.5"
-            style={{ backgroundColor: colors.surface, overflow: "hidden" }}
-          >
-            <Ionicons
-              name="link-outline"
-              size={18}
-              color={colors.textSecondary}
-              accessible={false}
-              importantForAccessibility="no"
-            />
-            <TextInput
-              className="flex-1 px-3 py-4 text-base"
-              style={{ color: colors.text, textAlign }}
-              placeholder={
-                mode === "invent"
-                  ? t("snap.inventUrlPlaceholder")
-                  : t("snap.urlPlaceholder")
-              }
-              placeholderTextColor={colors.textSecondary}
-              accessibilityLabel={
-                mode === "invent" ? t("snap.inventUrlLabel") : t("snap.urlLabel")
-              }
-              value={url}
-              onChangeText={(text) => {
-                setUrl(text);
-                if (banner) setBanner(null);
-              }}
-              onSubmitEditing={() => {
-                logTap("snap.submit_keyboard", { mode });
-                if (canSubmit) void handleGetRecipe();
-              }}
-              returnKeyType="go"
-              autoCapitalize="none"
-              autoCorrect={false}
-              keyboardType="url"
-            />
-            <Pressable
-              trackId={`snap.submit.${mode}`}
-              onPress={() => void handleGetRecipe()}
-              disabled={!canSubmit}
-              hitSlop={6}
-              accessibilityRole="button"
-              accessibilityLabel={
-                mode === "invent" ? t("snap.modeInvent") : t("tabs.snap")
-              }
-              accessibilityState={{ disabled: !canSubmit }}
-              className="h-10 w-10 items-center justify-center rounded-full"
-              style={{
-                backgroundColor: canSubmit
-                  ? mode === "invent"
-                    ? colors.accent
-                    : colors.primary
-                  : colors.backgroundElement,
-                opacity: canSubmit ? 1 : 0.55,
-              }}
-            >
-              <Ionicons
-                name={mode === "invent" ? "restaurant-outline" : chevronForward}
-                size={18}
-                color={canSubmit ? colors.onPrimary : colors.textSecondary}
-              />
-            </Pressable>
-          </View>
-
-          {banner && (
-            <View
-              className="mb-3 rounded-[22px] px-4 py-3"
-              style={{
-                backgroundColor:
-                  banner.kind === "error"
-                    ? colors.dangerSoft
-                    : colors.primarySoft,
-                overflow: "hidden",
-              }}
-            >
-              <Text
-                className="text-sm leading-5"
+          {/* The link and its button. */}
+          <View style={{ gap: 8 }}>
+            <View style={{ flexDirection: "row", alignItems: "center", gap: 10 }}>
+              <View
                 style={{
-                  color:
-                    banner.kind === "error" ? colors.danger : colors.primary,
-                  ...rtlText,
+                  flex: 1,
+                  minWidth: 0,
+                  height: FIELD_HEIGHT,
+                  flexDirection: "row",
+                  alignItems: "center",
+                  gap: 10,
+                  paddingStart: 14,
+                  paddingEnd: 6,
+                  borderRadius: Radii.inner,
+                  borderWidth: HAIRLINE,
+                  borderColor: colors.border,
+                  backgroundColor: colors.surface,
                 }}
               >
-                {banner.message}
-              </Text>
-              {banner.kind === "error" && banner.failedUrl ? (
-                <FailedLinkActions
-                  onRetry={() => void handleGetRecipe(banner.failedUrl, "extract")}
-                  onScreenshot={handlePhotoEntry}
-                  onGuess={() => {
-                    // As on the web: the switch moves to Guess the recipe, so the screen says what's running.
-                    setMode("invent");
-                    void handleGetRecipe(banner.failedUrl, "invent");
-                  }}
-                />
-              ) : null}
-              {banner.kind === "credits" && (
-                <Pressable
-                  className="mt-3 self-start rounded-2xl px-4 py-2"
-                  style={{ backgroundColor: colors.primary }}
-                  accessibilityRole={purchasesHere ? "button" : "link"}
-                  trackId={purchasesHere ? "snap.credits.buy" : "snap.credits.open_app_store"}
-                  onPress={() => {
-                    if (!purchasesHere) {
-                      void openAppStore();
-                      return;
-                    }
-                    setCreditsOpen(true);
-                  }}
-                >
-                  <Text
-                    className="text-sm font-bold"
-                    style={{ color: colors.onPrimary }}
-                  >
-                    {purchasesHere ? t("credits.buyAction") : t("credits.webOnlyAction")}
-                  </Text>
-                </Pressable>
-              )}
-            </View>
-          )}
-
-          <Pressable
-            className="min-h-[48px] items-center justify-center rounded-[22px] py-3.5"
-            style={{ backgroundColor: colors.surface, overflow: "hidden" }}
-            trackId="snap.photo"
-            onPress={handlePhotoEntry}
-            accessibilityRole="button"
-          >
-            <View className="flex-row items-center gap-2">
-              <Ionicons
-                name="camera-outline"
-                size={18}
-                color={colors.primary}
-              />
-              <Animated.Text
-                key={`photo-${mode}`}
-                entering={reduceMotion ? undefined : FadeIn.duration(200)}
-                className="shrink text-base font-bold"
-                style={{ color: colors.text }}
-              >
-                {mode === "invent"
-                  ? t("snap.inventPhotoAction")
-                  : t("snap.photoAction")}
-              </Animated.Text>
-            </View>
-          </Pressable>
-
-          {/* PIN-72: a PDF is read as a written recipe, so it has no Guess the recipe side. The old Expo
-              web app (being replaced by web/) can't read a picked file this way, so it isn't offered there. */}
-          {mode === "extract" && Platform.OS !== "web" ? (
-            <Animated.View
-              entering={reduceMotion ? undefined : FadeIn.duration(200)}
-              exiting={reduceMotion ? undefined : FadeOut.duration(150)}
-            >
-              <Pressable
-                className="mt-3 min-h-[48px] flex-row items-center gap-3 rounded-[22px] px-4 py-3 active:opacity-80"
-                style={{ backgroundColor: colors.surface, overflow: "hidden" }}
-                trackId="snap.pdf"
-                onPress={() => void handlePickPdf()}
-                accessibilityRole="button"
-                accessibilityLabel={t("snap.pdfAction")}
-                accessibilityHint={t("snap.pdfHint")}
-              >
                 <Ionicons
-                  name="document-text-outline"
+                  name="link-outline"
                   size={18}
-                  color={colors.primary}
-                  accessible={false}
-                  importantForAccessibility="no"
-                />
-                <View className="min-w-0 flex-1">
-                  <Text
-                    className="text-base font-bold"
-                    style={{ color: colors.text, ...rtlText }}
-                  >
-                    {t("snap.pdfAction")}
-                  </Text>
-                  <Text
-                    className="mt-0.5 text-xs leading-4"
-                    style={{ color: colors.textSecondary, ...rtlText }}
-                  >
-                    {t("snap.pdfHint")}
-                  </Text>
-                </View>
-                <Ionicons
-                  name={chevronForward}
-                  size={16}
                   color={colors.textSecondary}
                   accessible={false}
                   importantForAccessibility="no"
                 />
-              </Pressable>
-            </Animated.View>
+                <TextInput
+                  style={[
+                    type.font("body", "regular"),
+                    {
+                      flex: 1,
+                      minWidth: 0,
+                      height: FIELD_HEIGHT,
+                      fontSize: 16,
+                      color: colors.text,
+                      textAlign,
+                      // The placeholder reads in the app language; a link always reads left to right.
+                      writingDirection: url ? "ltr" : writingDirection,
+                    },
+                  ]}
+                  placeholder={invent ? t("snap.inventUrlPlaceholder") : t("snap.urlPlaceholder")}
+                  placeholderTextColor={colors.textSecondary}
+                  accessibilityLabel={invent ? t("snap.inventUrlLabel") : t("snap.urlLabel")}
+                  value={url}
+                  onChangeText={(text) => {
+                    setUrl(text);
+                    if (banner) setBanner(null);
+                  }}
+                  onSubmitEditing={() => {
+                    logTap("snap.submit_keyboard", { mode });
+                    if (canSubmit) void handleGetRecipe();
+                  }}
+                  returnKeyType="go"
+                  autoCapitalize="none"
+                  autoCorrect={false}
+                  keyboardType="url"
+                />
+              </View>
+              <Button
+                trackId={`snap.submit.${mode}`}
+                onPress={() => void handleGetRecipe()}
+                disabled={!canSubmit}
+                accessibilityLabel={invent ? t("snap.modeInvent") : t("tabs.snap")}
+                style={{ minHeight: FIELD_HEIGHT, borderRadius: Radii.inner, paddingHorizontal: 18 }}
+              >
+                {invent ? t("snapNm.guessIt") : t("snapNm.snapIt")}
+              </Button>
+            </View>
+            {signedInQuotaLabel ? (
+              <Text variant="caption" tone="muted" style={{ paddingHorizontal: 4 }}>
+                {signedInQuotaLabel}
+              </Text>
+            ) : null}
+          </View>
+
+          {banner ? (
+            <SnapBanner
+              banner={banner}
+              purchasesHere={purchasesHere}
+              onBuy={() => {
+                if (!purchasesHere) {
+                  void openAppStore();
+                  return;
+                }
+                setCreditsOpen(true);
+              }}
+              onRetry={() => void handleGetRecipe(banner.failedUrl, "extract")}
+              onScreenshot={handlePhotoEntry}
+              onGuess={() => {
+                // As on the web: the switch moves to Guess the recipe, so the screen says what's running.
+                setMode("invent");
+                void handleGetRecipe(banner.failedUrl, "invent");
+              }}
+            />
           ) : null}
 
-          {/* Write a recipe (ADR 018) opens its own screen, so it sits beside Snap and Guess
-              rather than inside the intent toggle, and reads the same in either mode. */}
-          <Pressable
-            className="mt-3 min-h-[48px] flex-row items-center gap-3 rounded-[22px] px-4 py-3 active:opacity-80"
-            style={{ backgroundColor: colors.surface, overflow: "hidden" }}
+          {/* A photo (or, in Snap, a PDF): take one now, or choose one already on the phone. */}
+          <View style={{ gap: 10 }}>
+            <View style={{ flexDirection: "row", gap: 12 }}>
+              <ActionTile
+                trackId="snap.photo.camera"
+                icon="camera-outline"
+                label={t("snapNm.takePhoto")}
+                onPress={() => void handlePickPhoto("camera")}
+              />
+              <ActionTile
+                trackId="snap.photo.choose"
+                icon={pdfOffered ? "documents-outline" : "images-outline"}
+                label={chooseLabel}
+                onPress={handleChooseEntry}
+              />
+            </View>
+            <Animated.View key={`photo-hint-${mode}`} entering={reduceMotion ? undefined : FadeIn.duration(200)}>
+              <Text variant="caption" tone="muted" style={{ paddingHorizontal: 4 }}>
+                {photoHint}
+              </Text>
+            </Animated.View>
+          </View>
+
+          {/* Write a recipe (ADR 018) opens its own screen, so it sits beside Snap and Guess rather than inside the
+              intent toggle, and reads the same in either mode. */}
+          <Tile
+            size="md"
             trackId="snap.write_recipe"
             onPress={() => openRecipeEditor({ signedIn: Boolean(user) })}
-            accessibilityRole="button"
             accessibilityLabel={t("recipeEditor.entry.write")}
             accessibilityHint={t("recipeEditor.entry.writeHint")}
+            style={{ flexDirection: "row", alignItems: "center", gap: 14, padding: 14, minHeight: 72 }}
           >
-            <Ionicons
-              name="create-outline"
-              size={18}
-              color={colors.primary}
-              accessible={false}
-              importantForAccessibility="no"
-            />
-            <View className="min-w-0 flex-1">
-              <Text
-                className="text-base font-bold"
-                style={{ color: colors.text, ...rtlText }}
-              >
-                {t("recipeEditor.entry.write")}
-              </Text>
-              <Text
-                className="mt-0.5 text-xs leading-4"
-                style={{ color: colors.textSecondary, ...rtlText }}
-              >
+            <IconSquare icon="create-outline" />
+            <View style={{ flex: 1, minWidth: 0, gap: 2 }}>
+              <Text variant="h3">{t("recipeEditor.entry.write")}</Text>
+              <Text variant="caption" tone="muted">
                 {t("recipeEditor.entry.writeHint")}
               </Text>
             </View>
-            <Ionicons
-              name={chevronForward}
-              size={16}
-              color={colors.textSecondary}
-              accessible={false}
-              importantForAccessibility="no"
-            />
-          </Pressable>
+            <KitIcon icon="chevron-forward" size={18} color={colors.textSecondary} />
+          </Tile>
 
           {/* ADR 032: many recipes at once from a WhatsApp chat export. The old Expo web app can't read the file;
               the web/ app has its own page for it. */}
           {Platform.OS !== "web" ? (
-            <Pressable
-              className="mt-3 min-h-[48px] flex-row items-center gap-3 rounded-[22px] px-4 py-3 active:opacity-80"
-              style={{ backgroundColor: colors.surface, overflow: "hidden" }}
+            <Tile
+              size="md"
               trackId="snap.whatsapp_import"
               onPress={() => router.push("/whatsapp-import")}
-              accessibilityRole="button"
               accessibilityLabel={t("whatsappImport.entryTitle")}
               accessibilityHint={t("whatsappImport.entryBody")}
+              style={{ flexDirection: "row", alignItems: "center", gap: 14, padding: 14, minHeight: 72 }}
             >
-              <Ionicons
-                name="logo-whatsapp"
-                size={18}
-                color={colors.primary}
-                accessible={false}
-                importantForAccessibility="no"
-              />
-              <View className="min-w-0 flex-1">
-                <Text
-                  className="text-base font-bold"
-                  style={{ color: colors.text, ...rtlText }}
-                >
-                  {t("whatsappImport.entryTitle")}
-                </Text>
-                <Text
-                  className="mt-0.5 text-xs leading-4"
-                  style={{ color: colors.textSecondary, ...rtlText }}
-                >
+              <IconSquare icon="logo-whatsapp" />
+              <View style={{ flex: 1, minWidth: 0, gap: 2 }}>
+                <Text variant="h3">{t("whatsappImport.entryTitle")}</Text>
+                <Text variant="caption" tone="muted">
                   {t("whatsappImport.entryBody")}
                 </Text>
               </View>
-              <Ionicons
-                name={chevronForward}
-                size={16}
-                color={colors.textSecondary}
-                accessible={false}
-                importantForAccessibility="no"
-              />
-            </Pressable>
+              <KitIcon icon="chevron-forward" size={18} color={colors.textSecondary} />
+            </Tile>
           ) : null}
-        </Animated.View>
 
-        <View
-          className="rounded-[22px] p-4 mt-4"
-          style={{ backgroundColor: colors.accentSoft, overflow: "hidden" }}
-        >
-          <View className="mb-1.5 flex-row items-center gap-2">
+          {/* Share from another app: Pinch opens here and Snap runs by itself. */}
+          <Tile
+            tone="element"
+            size="md"
+            style={{ flexDirection: "row", alignItems: "flex-start", gap: 12, padding: 16 }}
+          >
             <Ionicons
               name="share-outline"
-              size={16}
-              color={colors.accent}
+              size={18}
+              color={colors.textSecondary}
               accessible={false}
               importantForAccessibility="no"
+              style={{ marginTop: 1 }}
             />
-            <Text
-              accessibilityRole="header"
-              className="flex-1 text-sm font-semibold"
-              style={{ color: colors.text, ...rtlText }}
-            >
-              {t("snap.shareTitle")}
+            <Text variant="bodySmall" tone="muted" style={{ flex: 1, minWidth: 0 }}>
+              {isExpoGo ? t("snap.shareBodyExpoGo") : t("snapNm.shareTip")}
             </Text>
-          </View>
-          <Text
-            className="text-xs leading-5"
-            style={{ color: colors.textSecondary, ...rtlText }}
-          >
-            {isExpoGo ? t("snap.shareBodyExpoGo") : t("snap.shareBody")}
-          </Text>
-        </View>
-        <TokenPurchaseSheet
-          visible={creditsOpen}
-          onClose={() => setCreditsOpen(false)}
-          onPurchased={() => refreshProfile()}
-        />
-        <ConfirmDialog
-          trackId="snap.partial_import_dialog"
-          visible={partialImport != null}
-          title={t("snap.partialTitle")}
-          message={
-            partialImport?.missingIngredients
-              ? t("snap.partialMissingIngredients")
-              : t("snap.partialMissingSteps")
-          }
-          confirmLabel={t("snap.partialFillIn")}
-          cancelLabel={t("common.cancel")}
-          onConfirm={() => {
-            setPartialImport(null);
-            setUrl("");
-            router.push({ pathname: "/recipe/edit", params: { from: "import" } });
-          }}
-          onCancel={() => {
-            setPartialImport(null);
-            void clearRecipeDraft().catch((error) =>
-              console.warn("[recipe-draft] clear failed", error),
-            );
-          }}
-        />
-        <ConfirmDialog
-          trackId="snap.invent_offer_dialog"
-          visible={inventOffer != null}
-          title={t("snap.inventConfirmTitle")}
-          message={
-            inventOffer?.dishGuess?.trim()
-              ? t("snap.inventConfirmBody", {
-                  dish: inventOffer.dishGuess.trim(),
-                })
-              : t("snap.inventConfirmBodyGeneric")
-          }
-          confirmLabel={t("snap.inventConfirm")}
-          cancelLabel={t("common.cancel")}
-          secondaryLabel={
-            inventOffer?.allowExtract ? t("snap.extractAnyway") : undefined
-          }
-          onConfirm={() => void acceptInventOffer()}
-          onCancel={() => setInventOffer(null)}
-          onSecondary={
-            inventOffer?.allowExtract
-              ? () => void extractAnywayFromOffer()
-              : undefined
-          }
-        />
-      </View>
+          </Tile>
+        </Animated.View>
+      </ScrollView>
+      <TokenPurchaseSheet
+        visible={creditsOpen}
+        onClose={() => setCreditsOpen(false)}
+        onPurchased={() => refreshProfile()}
+      />
+      <ConfirmDialog
+        trackId="snap.partial_import_dialog"
+        visible={partialImport != null}
+        title={t("snap.partialTitle")}
+        message={
+          partialImport?.missingIngredients
+            ? t("snap.partialMissingIngredients")
+            : t("snap.partialMissingSteps")
+        }
+        confirmLabel={t("snap.partialFillIn")}
+        cancelLabel={t("common.cancel")}
+        onConfirm={() => {
+          setPartialImport(null);
+          setUrl("");
+          router.push({ pathname: "/recipe/edit", params: { from: "import" } });
+        }}
+        onCancel={() => {
+          setPartialImport(null);
+          void clearRecipeDraft().catch((error) =>
+            console.warn("[recipe-draft] clear failed", error),
+          );
+        }}
+      />
+      <ConfirmDialog
+        trackId="snap.invent_offer_dialog"
+        visible={inventOffer != null}
+        title={t("snap.inventConfirmTitle")}
+        message={
+          inventOffer?.dishGuess?.trim()
+            ? t("snap.inventConfirmBody", {
+                dish: inventOffer.dishGuess.trim(),
+              })
+            : t("snap.inventConfirmBodyGeneric")
+        }
+        confirmLabel={t("snap.inventConfirm")}
+        cancelLabel={t("common.cancel")}
+        secondaryLabel={
+          inventOffer?.allowExtract ? t("snap.extractAnyway") : undefined
+        }
+        onConfirm={() => void acceptInventOffer()}
+        onCancel={() => setInventOffer(null)}
+        onSecondary={
+          inventOffer?.allowExtract
+            ? () => void extractAnywayFromOffer()
+            : undefined
+        }
+      />
     </Screen>
+  );
+}
+
+/** The link field and its button are this tall (the mockup's 52). */
+const FIELD_HEIGHT = 52;
+
+/** An icon on a 44 primarySoft rounded square, at the start of an action tile. */
+function IconSquare({ icon }: { icon: IconName }) {
+  const { colors } = useThemePreference();
+  return (
+    <View
+      accessible={false}
+      importantForAccessibility="no-hide-descendants"
+      style={{
+        width: MIN_TOUCH,
+        height: MIN_TOUCH,
+        alignItems: "center",
+        justifyContent: "center",
+        borderRadius: Radii.control,
+        backgroundColor: colors.primarySoft,
+      }}
+    >
+      <Ionicons name={icon} size={22} color={colors.primaryText} />
+    </View>
+  );
+}
+
+/** One of the two photo tiles: an icon square at the top, the action in Space Grotesk at the bottom. */
+function ActionTile({
+  trackId,
+  icon,
+  label,
+  onPress,
+}: {
+  trackId: string;
+  icon: IconName;
+  label: string;
+  onPress: () => void;
+}) {
+  return (
+    <Tile
+      size="lg"
+      trackId={trackId}
+      onPress={onPress}
+      accessibilityLabel={label}
+      style={{ flex: 1, minWidth: 0, minHeight: 140, padding: 16, justifyContent: "space-between", gap: 16 }}
+    >
+      <IconSquare icon={icon} />
+      <Text variant="h3" numberOfLines={3}>
+        {label}
+      </Text>
+    </Tile>
+  );
+}
+
+const BANNER_ICONS: Record<NonNullable<Banner>["kind"], IconName> = {
+  error: "alert-circle-outline",
+  info: "information-circle-outline",
+  limit: "information-circle-outline",
+  credits: "wallet-outline",
+};
+
+/**
+ * Why the last Snap didn't give a recipe, on a soft-coloured block: red for an error, the brand colour for a
+ * notice, the accent for being out of credits (as on the web's SnapBannerView). A link that couldn't be read gets
+ * ways on; out of credits gets a way to buy more.
+ */
+function SnapBanner({
+  banner,
+  purchasesHere,
+  onBuy,
+  onRetry,
+  onScreenshot,
+  onGuess,
+}: {
+  banner: NonNullable<Banner>;
+  purchasesHere: boolean;
+  onBuy: () => void;
+  onRetry: () => void;
+  onScreenshot: () => void;
+  onGuess: () => void;
+}) {
+  const { t } = useTranslation();
+  const { colors } = useThemePreference();
+  const look =
+    banner.kind === "error"
+      ? { bg: colors.dangerSoft, fg: colors.danger }
+      : banner.kind === "credits"
+        ? { bg: colors.accentSoft, fg: colors.accentText }
+        : { bg: colors.primarySoft, fg: colors.primaryText };
+  return (
+    <View
+      style={{
+        flexDirection: "row",
+        alignItems: "flex-start",
+        gap: 12,
+        borderRadius: Radii.inner,
+        backgroundColor: look.bg,
+        paddingHorizontal: 16,
+        paddingVertical: 14,
+      }}
+    >
+      <Ionicons
+        name={BANNER_ICONS[banner.kind]}
+        size={20}
+        color={look.fg}
+        accessible={false}
+        importantForAccessibility="no"
+        style={{ marginTop: 1 }}
+      />
+      <View style={{ flex: 1, minWidth: 0 }}>
+        <Text variant="bodySmall" weight="medium" color={look.fg}>
+          {banner.message}
+        </Text>
+        {banner.kind === "error" && banner.failedUrl ? (
+          <FailedLinkActions onRetry={onRetry} onScreenshot={onScreenshot} onGuess={onGuess} />
+        ) : null}
+        {banner.kind === "credits" ? (
+          <Button
+            size="sm"
+            trackId={purchasesHere ? "snap.credits.buy" : "snap.credits.open_app_store"}
+            onPress={onBuy}
+            style={{ marginTop: 12 }}
+          >
+            {purchasesHere ? t("credits.buyAction") : t("credits.webOnlyAction")}
+          </Button>
+        ) : null}
+      </View>
+    </View>
   );
 }
 
@@ -1236,32 +1276,28 @@ function FailedLinkActions({
   onGuess: () => void;
 }) {
   const { t } = useTranslation();
-  const { colors } = useThemePreference();
   const actions = [
     { key: "retry", label: t("snap.failedRetry"), icon: "refresh" as const, onPress: onRetry },
     { key: "screenshot", label: t("snap.failedScreenshot"), icon: "camera-outline" as const, onPress: onScreenshot },
     { key: "guess", label: t("snap.failedGuess"), icon: "restaurant-outline" as const, onPress: onGuess },
   ];
   return (
-    <View className="mt-3 gap-2">
-      <Text className="text-xs font-semibold" style={{ color: colors.textSecondary }}>
+    <View style={{ marginTop: 12, gap: 8 }}>
+      <Text variant="caption" weight="semibold" tone="muted">
         {t("snap.failedWaysOn")}
       </Text>
-      <View className="flex-row flex-wrap gap-2">
+      <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 8 }}>
         {actions.map((action) => (
-          <Pressable
+          <Button
             key={action.key}
+            size="sm"
+            variant="outline"
+            icon={action.icon}
             trackId={`snap.failed.${action.key}`}
             onPress={action.onPress}
-            accessibilityRole="button"
-            className="min-h-[40px] flex-row items-center gap-1.5 rounded-full px-3.5 active:opacity-80"
-            style={{ backgroundColor: colors.surface }}
           >
-            <Ionicons name={action.icon} size={15} color={colors.primary} accessible={false} />
-            <Text className="text-xs font-bold" style={{ color: colors.text }}>
-              {action.label}
-            </Text>
-          </Pressable>
+            {action.label}
+          </Button>
         ))}
       </View>
     </View>

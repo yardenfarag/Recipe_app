@@ -1,12 +1,17 @@
 import Ionicons from '@expo/vector-icons/Ionicons';
 import { useDeferredValue, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { FlatList, ScrollView, Text, View } from 'react-native';
-import { Pressable } from '@/components/ui/Pressable';
+import { FlatList, ScrollView, View } from 'react-native';
 
-import { TextInput } from '@/components/text-input';
+import { FieldInput } from '@/components/text-input';
+import { Button } from '@/components/ui/Button';
+import { Chip } from '@/components/ui/Chip';
+import { IconButton } from '@/components/ui/IconButton';
+import { Pressable } from '@/components/ui/Pressable';
+import { Text } from '@/components/ui/Text';
+import { Tile } from '@/components/ui/Tile';
+import { HAIRLINE } from '@/components/ui/tokens';
 import { useThemePreference } from '@/hooks/useThemePreference';
-import { CHROME_MAX_FONT_SCALE } from '@/lib/a11y';
 import { filterAndSortRecipes } from '@shared/lib/recipeListQuery';
 import type { RecipeCollection } from '@shared/types/collection';
 import type { Recipe } from '@shared/types/recipe';
@@ -14,6 +19,18 @@ import type { Recipe } from '@shared/types/recipe';
 function toggleOrderedId(ids: string[], id: string): string[] {
   if (ids.includes(id)) return ids.filter((item) => item !== id);
   return [...ids, id];
+}
+
+/** The hairline between two recipes, from the end of the checkbox. */
+function RowDivider() {
+  const { colors } = useThemePreference();
+  return (
+    <View
+      accessible={false}
+      importantForAccessibility="no"
+      style={{ height: HAIRLINE, backgroundColor: colors.border, marginStart: 44, marginEnd: 8 }}
+    />
+  );
 }
 
 type SelectRecipesListProps = {
@@ -24,7 +41,7 @@ type SelectRecipesListProps = {
   hint?: string;
 };
 
-/** Search + collection chips + checkbox rows. Selection order is tap order. */
+/** Search + collection chips + checkbox rows on a tile. Selection order is tap order. */
 export function SelectRecipesList({
   recipes,
   collections,
@@ -33,9 +50,7 @@ export function SelectRecipesList({
   hint,
 }: SelectRecipesListProps) {
   const { t } = useTranslation();
-  const { colors, scheme } = useThemePreference();
-  const isDark = scheme === 'dark';
-  const inactiveChipBg = isDark ? 'rgba(40,36,48,0.6)' : 'rgba(255,255,255,0.55)';
+  const { colors } = useThemePreference();
 
   const [search, setSearch] = useState('');
   const deferredSearch = useDeferredValue(search);
@@ -78,209 +93,164 @@ export function SelectRecipesList({
   }
 
   return (
-    <View className="flex-1">
+    <View style={{ flex: 1, gap: 12 }}>
       {hint ? (
-        <Text className="mb-3 text-sm leading-5" style={{ color: colors.textSecondary }}>
+        <Text variant="bodySmall" tone="muted">
           {hint}
         </Text>
       ) : null}
 
-      <View
-        className="mb-3 flex-row items-center rounded-[20px] px-3.5"
-        style={{
-          backgroundColor: colors.frosted,
-          borderWidth: 1,
-          borderColor: colors.frostedBorder,
-        }}
-      >
-        <View accessible={false} importantForAccessibility="no-hide-descendants">
-          <Ionicons name="search-outline" size={18} color={colors.textSecondary} />
-        </View>
-        <TextInput
-          className="flex-1 px-3 py-3.5 text-base"
-          style={{ color: colors.text }}
-          placeholder={t('list.searchRecipes')}
-          placeholderTextColor={colors.textSecondary}
-          accessibilityLabel={t('a11y.searchRecipes')}
-          value={search}
-          onChangeText={setSearch}
-          autoCapitalize="none"
-          autoCorrect={false}
-          clearButtonMode="while-editing"
-          returnKeyType="search"
-        />
-        {search.length > 0 ? (
-          <Pressable
-            trackId="select_recipes.search.clear"
-            onPress={() => setSearch('')}
-            hitSlop={13}
-            className="active:opacity-70"
-            accessibilityRole="button"
-            accessibilityLabel={t('a11y.clearSearch')}
-          >
-            <Ionicons name="close-circle" size={18} color={colors.textSecondary} />
-          </Pressable>
-        ) : null}
-      </View>
+      <FieldInput
+        placeholder={t('list.searchRecipes')}
+        accessibilityLabel={t('a11y.searchRecipes')}
+        value={search}
+        onChangeText={setSearch}
+        autoCapitalize="none"
+        autoCorrect={false}
+        clearButtonMode="while-editing"
+        returnKeyType="search"
+        leading={<Ionicons name="search-outline" size={18} color={colors.textSecondary} />}
+        trailing={
+          search.length > 0 ? (
+            <IconButton
+              trackId="select_recipes.search.clear"
+              icon="close-circle"
+              iconSize={18}
+              label={t('a11y.clearSearch')}
+              onPress={() => setSearch('')}
+            />
+          ) : null
+        }
+      />
 
       {collections.length > 0 ? (
         <ScrollView
           horizontal
           showsHorizontalScrollIndicator={false}
-          className="mb-3 flex-grow-0"
-          contentContainerStyle={{ gap: 8, paddingVertical: 2 }}
+          style={{ flexGrow: 0 }}
+          contentContainerStyle={{ gap: 8 }}
         >
-          <Pressable
+          <Chip
             trackId="select_recipes.collection.all"
+            size="sm"
+            selected={selectedCollectionId == null}
             onPress={() => setSelectedCollectionId(null)}
-            className="rounded-[14px] px-3.5 py-2 active:opacity-80"
-            style={{
-              backgroundColor: selectedCollectionId == null ? colors.primary : inactiveChipBg,
-            }}
-            accessibilityRole="button"
-            accessibilityState={{ selected: selectedCollectionId == null }}
           >
-            <Text
-              className="text-sm font-semibold"
-              style={{ color: selectedCollectionId == null ? colors.onPrimary : colors.text }}
-              maxFontSizeMultiplier={CHROME_MAX_FONT_SCALE}
+            {t('list.allCollections')}
+          </Chip>
+          {collections.map((collection) => (
+            <Chip
+              key={collection.id}
+              trackId="select_recipes.collection.select"
+              size="sm"
+              selected={selectedCollectionId === collection.id}
+              onPress={() =>
+                setSelectedCollectionId((prev) => (prev === collection.id ? null : collection.id))
+              }
             >
-              {t('list.allCollections')}
-            </Text>
-          </Pressable>
-          {collections.map((collection) => {
-            const selected = selectedCollectionId === collection.id;
-            return (
-              <Pressable
-                trackId="select_recipes.collection.select"
-                key={collection.id}
-                onPress={() =>
-                  setSelectedCollectionId((prev) =>
-                    prev === collection.id ? null : collection.id,
-                  )
-                }
-                className="rounded-[14px] px-3.5 py-2 active:opacity-80"
-                style={{ backgroundColor: selected ? colors.primary : inactiveChipBg }}
-                accessibilityRole="button"
-                accessibilityState={{ selected }}
-              >
-                <Text
-                  className="text-sm font-semibold"
-                  style={{ color: selected ? colors.onPrimary : colors.text }}
-                  maxFontSizeMultiplier={CHROME_MAX_FONT_SCALE}
-                >
-                  {collection.name}
-                </Text>
-              </Pressable>
-            );
-          })}
+              {collection.name}
+            </Chip>
+          ))}
         </ScrollView>
       ) : null}
 
-      <View className="mb-2 flex-row items-center justify-between gap-2">
-        <Text className="flex-shrink text-xs font-semibold" style={{ color: colors.textSecondary }}>
+      <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 8 }}>
+        <Text variant="label" style={{ flexShrink: 1 }}>
           {t('list.recipesVisible', { count: displayedRecipes.length })}
         </Text>
-        <View className="flex-row items-center gap-3">
+        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
           {selectedCount > 0 ? (
-            <Pressable
+            <Button
               trackId="select_recipes.selection.clear"
-              onPress={() => onChangeSelectedIds([])}
-              hitSlop={12}
-              className="active:opacity-70"
-              accessibilityRole="button"
+              variant="ghost"
+              size="sm"
               accessibilityLabel={t('a11y.clearSelectedRecipes')}
+              onPress={() => onChangeSelectedIds([])}
             >
-              <Text className="text-xs font-bold" style={{ color: colors.textSecondary }}>
-                {t('list.clearSelection')}
-              </Text>
-            </Pressable>
+              {t('list.clearSelection')}
+            </Button>
           ) : null}
-          <Pressable
+          <Button
             trackId={allVisibleSelected ? 'select_recipes.deselect_visible' : 'select_recipes.select_all_visible'}
-            onPress={allVisibleSelected ? deselectVisible : selectAllVisible}
-            hitSlop={12}
-            className="active:opacity-70"
+            variant="secondary"
+            size="sm"
             disabled={visibleIds.length === 0}
-            accessibilityRole="button"
-            accessibilityState={{ disabled: visibleIds.length === 0 }}
+            onPress={allVisibleSelected ? deselectVisible : selectAllVisible}
           >
-            <Text
-              className="text-xs font-bold"
-              style={{
-                color: visibleIds.length === 0 ? colors.textSecondary : colors.primary,
-              }}
-            >
-              {allVisibleSelected ? t('list.clearSelection') : t('list.selectAll')}
-            </Text>
-          </Pressable>
+            {allVisibleSelected ? t('list.clearSelection') : t('list.selectAll')}
+          </Button>
         </View>
       </View>
 
-      <FlatList
-        data={displayedRecipes}
-        keyExtractor={(item) => item.id}
-        keyboardShouldPersistTaps="handled"
-        className="flex-1"
-        contentContainerStyle={
-          displayedRecipes.length === 0 ? { flexGrow: 1, justifyContent: 'center' } : undefined
-        }
-        ListEmptyComponent={
-          <Text className="py-8 text-center text-sm" style={{ color: colors.textSecondary }}>
-            {recipes.length === 0 ? t('list.noRecipesYet') : t('list.noRecipesMatch')}
-          </Text>
-        }
-        renderItem={({ item, index }) => {
-          const isOn = selectedIds.includes(item.id);
-          const title = item.display_title?.trim() || item.title;
-          const ingredientCount = item.ingredients?.length ?? 0;
-          return (
-            <Pressable
-              trackId="select_recipes.recipe.toggle"
-              className={`flex-row items-center gap-3 py-3.5 active:opacity-80 ${
-                index < displayedRecipes.length - 1 ? 'border-b' : ''
-              }`}
-              style={
-                index < displayedRecipes.length - 1
-                  ? { borderColor: colors.primarySoft }
-                  : undefined
-              }
-              onPress={() => onChangeSelectedIds(toggleOrderedId(selectedIds, item.id))}
-              accessibilityRole="checkbox"
-              accessibilityState={{ checked: isOn }}
-              accessibilityLabel={`${title}, ${
-                ingredientCount === 1
-                  ? t('list.ingredientCountOne', { count: ingredientCount })
-                  : t('list.ingredientCountOther', { count: ingredientCount })
-              }`}
-            >
-              <View
-                className="h-6 w-6 items-center justify-center rounded-md border-2"
-                style={{
-                  borderColor: isOn ? colors.primary : colors.textSecondary,
-                  backgroundColor: isOn ? colors.primary : 'transparent',
-                }}
+      <Tile style={{ flex: 1, overflow: 'hidden' }}>
+        <FlatList
+          data={displayedRecipes}
+          keyExtractor={(item) => item.id}
+          keyboardShouldPersistTaps="handled"
+          style={{ flex: 1 }}
+          contentContainerStyle={[
+            { paddingHorizontal: 8, paddingVertical: 4 },
+            displayedRecipes.length === 0 ? { flexGrow: 1, justifyContent: 'center' } : null,
+          ]}
+          ItemSeparatorComponent={RowDivider}
+          ListEmptyComponent={
+            <Text variant="bodySmall" tone="muted" align="center" style={{ paddingVertical: 32 }}>
+              {recipes.length === 0 ? t('list.noRecipesYet') : t('list.noRecipesMatch')}
+            </Text>
+          }
+          renderItem={({ item }) => {
+            const isOn = selectedIds.includes(item.id);
+            const title = item.display_title?.trim() || item.title;
+            const ingredientCount = item.ingredients?.length ?? 0;
+            const countLabel =
+              ingredientCount === 1
+                ? t('list.ingredientCountOne', { count: ingredientCount })
+                : t('list.ingredientCountOther', { count: ingredientCount });
+            return (
+              <Pressable
+                trackId="select_recipes.recipe.toggle"
+                onPress={() => onChangeSelectedIds(toggleOrderedId(selectedIds, item.id))}
+                accessibilityRole="checkbox"
+                accessibilityState={{ checked: isOn }}
+                accessibilityLabel={`${title}, ${countLabel}`}
+                style={({ pressed }) => ({
+                  flexDirection: 'row',
+                  alignItems: 'center',
+                  gap: 12,
+                  minHeight: 56,
+                  paddingVertical: 10,
+                  paddingHorizontal: 8,
+                  borderRadius: 16,
+                  backgroundColor: pressed ? colors.backgroundElement : 'transparent',
+                })}
               >
-                {isOn ? <Ionicons name="checkmark" size={14} color={colors.onPrimary} /> : null}
-              </View>
-              <View className="min-w-0 flex-1">
-                <Text
-                  className="text-base font-medium"
-                  style={{ color: colors.text }}
-                  numberOfLines={2}
+                <View
+                  style={{
+                    width: 24,
+                    height: 24,
+                    borderRadius: 7,
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    borderWidth: isOn ? 0 : 2,
+                    borderColor: colors.textSecondary,
+                    backgroundColor: isOn ? colors.primary : 'transparent',
+                  }}
                 >
-                  {title}
-                </Text>
-                <Text className="text-xs" style={{ color: colors.textSecondary }}>
-                  {ingredientCount === 1
-                    ? t('list.ingredientCountOne', { count: ingredientCount })
-                    : t('list.ingredientCountOther', { count: ingredientCount })}
-                </Text>
-              </View>
-            </Pressable>
-          );
-        }}
-      />
+                  {isOn ? <Ionicons name="checkmark" size={15} color={colors.onPrimary} /> : null}
+                </View>
+                <View style={{ flex: 1, minWidth: 0, gap: 2 }}>
+                  <Text variant="bodySmall" weight="semibold" numberOfLines={2}>
+                    {title}
+                  </Text>
+                  <Text variant="caption" tone="muted">
+                    {countLabel}
+                  </Text>
+                </View>
+              </Pressable>
+            );
+          }}
+        />
+      </Tile>
     </View>
   );
 }

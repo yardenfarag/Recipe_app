@@ -258,6 +258,7 @@ export default {
     "adminUsage": "Costos y soporte",
     "adminActivity": "Registro de actividad",
     "adminMessages": "Mensajes",
+    "adminKit": "Kit de diseño",
     "rtlReloadTitle": "¿Recargar para acomodar la pantalla?",
     "rtlReloadBody": "El hebreo y el árabe se leen de derecha a izquierda. Recarga ahora para que menús y títulos queden del lado correcto.",
     "rtlReloadConfirm": "Recargar",
@@ -885,6 +886,14 @@ export default {
     "pdfUnreadable": "No pudimos abrir ese PDF. Puede que esté dañado o protegido con contraseña.",
     "pdfTimedOut": "Leer este PDF tardó demasiado, así que no se usó tu crédito. Vuelve a intentarlo en un momento.",
     "invalidSharePdf": "No pudimos leer ese PDF. Prueba con «Sacar de un PDF»."
+  },
+  "snapNm": {
+    "snapIt": "Sacarla",
+    "guessIt": "Adivinarla",
+    "takePhoto": "Tomar una foto",
+    "choosePhoto": "Elegir una foto",
+    "choosePhotoOrPdf": "Elegir una foto o un PDF",
+    "shareTip": "Comparte desde cualquier app. En TikTok, Instagram o YouTube, toca Compartir y luego Pinch."
   },
   "list": {
     "title": "Lista",

@@ -14,8 +14,19 @@ import type { RecipeAppliance } from '@shared/lib/appliances';
 const rtlState = vi.hoisted(() => ({ rtl: false }));
 
 vi.mock('@/hooks/useThemePreference', () => ({
-  useThemePreference: () => ({ colors: getThemePackColors('mist', 'light') }),
+  useThemePreference: () => ({ colors: getThemePackColors('mist', 'light'), packId: 'mist' }),
 }));
+// The kit's Text (in SheetModal) reads the app language for its fonts.
+vi.mock('@/hooks/useLanguagePreference', () => ({ useLanguagePreference: () => ({ language: 'en' }) }));
+// The kit's tiles import expo-image and expo-linear-gradient, which need native modules.
+vi.mock('expo-image', async () => {
+  const { View } = await import('react-native');
+  return { Image: (props: object) => <View {...props} /> };
+});
+vi.mock('expo-linear-gradient', async () => {
+  const { View } = await import('react-native');
+  return { LinearGradient: (props: object) => <View {...props} /> };
+});
 
 vi.mock('@/hooks/useRtl', () => ({
   useRtl: () => ({
@@ -237,15 +248,16 @@ describe('RecipeAppliances: My appliances (PIN-155)', () => {
 
   it('marks nothing before the reader saves a list', async () => {
     await render(<RecipeAppliances appliances={ALL} instructions={STEPS_EN} />);
-    expect(screen.queryByTestId('icon-checkmark')).toBeNull();
-    expect(screen.queryByTestId('icon-alert-circle')).toBeNull();
+    // The kit draws icons hidden from screen readers (the chip's label says it), so look among hidden elements too.
+    expect(screen.queryByTestId('icon-checkmark', { includeHiddenElements: true })).toBeNull();
+    expect(screen.queryByTestId('icon-alert-circle', { includeHiddenElements: true })).toBeNull();
   });
 
   it('ticks what the kitchen has and flags a required appliance it lacks', async () => {
     await render(<RecipeAppliances appliances={ALL} instructions={STEPS_EN} kitchen={kitchen} />);
-    expect(screen.getAllByTestId('icon-checkmark')).toHaveLength(1);
+    expect(screen.getAllByTestId('icon-checkmark', { includeHiddenElements: true })).toHaveLength(1);
     // The air fryer is required and missing; the mortar is optional, so it is not flagged.
-    expect(screen.getAllByTestId('icon-alert-circle')).toHaveLength(1);
+    expect(screen.getAllByTestId('icon-alert-circle', { includeHiddenElements: true })).toHaveLength(1);
     expect(screen.getByTestId('appliance-chip-air_fryer').props.accessibilityLabel).toMatch(/Not in your kitchen|myAppliances.notInKitchen/);
   });
 });

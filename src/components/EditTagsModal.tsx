@@ -124,7 +124,7 @@ export function EditTagsModal({ visible, tags, onClose, onSave }: EditTagsModalP
               accessibilityLabel={t('tags.remove', { tag: translateRecipeTag(tag, t) })}
               hitSlop={6}
               className="flex-row items-center gap-1 rounded-full border px-3 py-1.5 active:opacity-80"
-              style={{ borderColor: colors.frostedBorder, backgroundColor: colors.surface }}
+              style={{ borderColor: colors.border, backgroundColor: colors.surface }}
             >
               <Text className="text-sm" style={{ color: colors.text }}>
                 {translateRecipeTag(tag, t)}
@@ -144,7 +144,7 @@ export function EditTagsModal({ visible, tags, onClose, onSave }: EditTagsModalP
             className="flex-1 rounded-2xl border px-4 py-3 text-base"
             style={{
               color: colors.text,
-              borderColor: colors.frostedBorder,
+              borderColor: colors.border,
               backgroundColor: colors.surface,
             }}
             placeholder={t('tags.addPlaceholder')}

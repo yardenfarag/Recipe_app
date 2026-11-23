@@ -1,34 +1,26 @@
 import { useTranslation } from 'react-i18next';
-import { Text } from 'react-native';
+import { View } from 'react-native';
 
 import { SettingsDetailScreen } from '@/components/SettingsDetailScreen';
 import { ThemePackPicker } from '@/components/ThemePackPicker';
 import { ThemeToggle } from '@/components/ThemeToggle';
-import { useThemePreference } from '@/hooks/useThemePreference';
+import { Text } from '@/components/ui/Text';
+import { Tile, TileLabel } from '@/components/ui/Tile';
 
 export default function AppearanceSettingsScreen() {
   const { t } = useTranslation();
-  const { colors } = useThemePreference();
 
   return (
     <SettingsDetailScreen>
-      <Text
-        className="mb-3 text-sm font-semibold"
-        style={{ color: colors.text }}
-        accessibilityRole="header"
-      >
-        {t('settings.lightDark')}
-      </Text>
-      <ThemeToggle
-        trackId="settings.theme" />
-      <Text
-        className="mb-4 mt-6 text-sm font-semibold"
-        style={{ color: colors.text }}
-        accessibilityRole="header"
-      >
-        {t('settings.driftTheme')}
-      </Text>
-      <ThemePackPicker />
+      <Tile padding={20} style={{ gap: 14 }}>
+        <TileLabel accessibilityRole="header">{t('settings.lightDark')}</TileLabel>
+        <ThemeToggle trackId="settings.theme" />
+      </Tile>
+      {/* Each pack is a tile of its own, straight on the page, painted in that pack's colours. */}
+      <View style={{ gap: 14 }}>
+        <Text variant="h2">{t('settings.driftTheme')}</Text>
+        <ThemePackPicker />
+      </View>
     </SettingsDetailScreen>
   );
 }

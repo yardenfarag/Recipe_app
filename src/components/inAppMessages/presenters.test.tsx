@@ -18,8 +18,10 @@ import { MODAL_RETRY_MS, useModalShow } from './useModalShow';
 import { buildMessageView } from './viewModel';
 
 vi.mock('@/hooks/useThemePreference', () => ({
-  useThemePreference: () => ({ colors: getThemePackColors('mist', 'light') }),
+  useThemePreference: () => ({ colors: getThemePackColors('mist', 'light'), packId: 'mist' }),
 }));
+// The kit's Text (in SheetModal) reads the app language for its fonts.
+vi.mock('@/hooks/useLanguagePreference', () => ({ useLanguagePreference: () => ({ language: 'en' }) }));
 vi.mock('@/hooks/useRtl', () => ({
   useRtl: () => ({ rtl: false, writingDirection: 'ltr', textAlign: 'left' }),
 }));

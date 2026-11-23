@@ -1,15 +1,25 @@
-import Ionicons from '@expo/vector-icons/Ionicons';
-import { useState } from 'react';
-import { ScrollView, Text, View } from 'react-native';
-import { Pressable } from '@/components/ui/Pressable';
+import { router } from 'expo-router';
+import { useState, type ReactNode } from 'react';
 import { useTranslation } from 'react-i18next';
+import { ScrollView, View, type StyleProp, type ViewStyle } from 'react-native';
 
-import { LibraryLayoutToggle } from '@/components/LibraryLayoutToggle';
 import { TextInput } from '@/components/text-input';
-import type { LibraryLayout } from '@/hooks/useLibraryLayout';
+import { Button } from '@/components/ui/Button';
+import { Chip } from '@/components/ui/Chip';
+import { IconButton } from '@/components/ui/IconButton';
+import { Pressable } from '@/components/ui/Pressable';
+import { Text } from '@/components/ui/Text';
+import { Tile, TileLabel } from '@/components/ui/Tile';
+import { HAIRLINE, KitIcon, MIN_TOUCH, Radii } from '@/components/ui/tokens';
 import { useThemePreference } from '@/hooks/useThemePreference';
-import { CHROME_MAX_FONT_SCALE } from '@/lib/a11y';
-import { RECIPE_SORT_OPTIONS, RecipeSortKey } from '@shared/lib/recipeListQuery';
+import { useTypography } from '@/hooks/useTypography';
+import {
+  RECIPE_QUICK_FILTERS,
+  RECIPE_SORT_OPTIONS,
+  type RecipeQuickFilter,
+  type RecipeSortKey,
+} from '@shared/lib/recipeListQuery';
+import { normalizeSocialUrl } from '@shared/lib/platformUrls';
 import { translateRecipeTag } from '@shared/lib/recipeTags';
 
 export type LibraryCollectionChip = {
@@ -17,13 +27,174 @@ export type LibraryCollectionChip = {
   name: string;
 };
 
+/** The page's side gutter: chip rows scroll out to the screen's edges past it. */
+const GUTTER = 16;
+
+/**
+ * The bar at the top of the Library (the web's Snap bar, phone size): typing searches the Library, and the photo
+ * button opens Snap.
+ */
+export function LibrarySearchBar({
+  value,
+  onChange,
+}: {
+  value: string;
+  onChange: (value: string) => void;
+}) {
+  const { t } = useTranslation();
+  const { colors } = useThemePreference();
+  const type = useTypography();
+  const [focused, setFocused] = useState(false);
+  const typing = value.trim().length > 0;
+  // A pasted recipe link is a Snap, not a search (the web's Snap bar does the same).
+  const link = typing ? normalizeSocialUrl(value) : null;
+  const snapLink = () => {
+    if (!link) return;
+    onChange('');
+    router.push({ pathname: '/add', params: { url: link } });
+  };
+
+  return (
+    <View
+      style={{
+        flexDirection: 'row',
+        alignItems: 'center',
+        height: 52,
+        borderRadius: Radii.inner,
+        borderWidth: HAIRLINE,
+        borderColor: focused ? colors.primary : colors.border,
+        backgroundColor: colors.surface,
+        paddingStart: 14,
+        paddingEnd: 4,
+        gap: 8,
+      }}
+    >
+      <KitIcon icon={typing ? 'search-outline' : 'link-outline'} color={colors.textSecondary} size={20} />
+      <TextInput
+        accessibilityLabel={t('a11y.searchRecipes')}
+        className="pinch-plain-focus"
+        style={[
+          type.font('body', 'regular'),
+          { flex: 1, minWidth: 0, fontSize: 16, color: colors.text, textAlign: type.rtl ? 'right' : 'left' },
+        ]}
+        placeholder={t('web.snapBar.placeholderShort')}
+        placeholderTextColor={colors.textSecondary}
+        value={value}
+        onChangeText={onChange}
+        onFocus={() => setFocused(true)}
+        onBlur={() => setFocused(false)}
+        autoCapitalize="none"
+        autoCorrect={false}
+        returnKeyType={link ? 'go' : 'search'}
+        onSubmitEditing={snapLink}
+      />
+      {link ? (
+        <Button size="sm" trackId="library.snap_bar.snap" onPress={snapLink} style={{ marginEnd: 2 }}>
+          {t('web.snapBar.action')}
+        </Button>
+      ) : null}
+      {value.length > 0 && !link ? (
+        <IconButton
+          icon="close-circle"
+          label={t('library.clearSearch')}
+          trackId="library.search.clear"
+          iconSize={20}
+          onPress={() => onChange('')}
+        />
+      ) : null}
+      <IconButton
+        icon="image-outline"
+        label={t('web.snapBar.addPhoto')}
+        trackId="library.snap_bar.photo"
+        onPress={() => router.push('/add')}
+      />
+    </View>
+  );
+}
+
+/** A horizontal row of chips reaching the screen's edges. */
+function ChipRow({ children, label }: { children: ReactNode; label?: string }) {
+  return (
+    <ScrollView
+      horizontal
+      showsHorizontalScrollIndicator={false}
+      keyboardShouldPersistTaps="handled"
+      accessibilityLabel={label}
+      style={{ marginHorizontal: -GUTTER, flexGrow: 0 }}
+      contentContainerStyle={{ gap: 8, paddingHorizontal: GUTTER, alignItems: 'center' }}
+    >
+      {children}
+    </ScrollView>
+  );
+}
+
+/**
+ * A collection as a small chip that also takes a long press (manage it), which the kit's Chip doesn't: the same
+ * look as `<Chip size="sm">`.
+ */
+function CollectionChip({
+  name,
+  selected,
+  onPress,
+  onManage,
+  manageLabel,
+}: {
+  name: string;
+  selected: boolean;
+  onPress: () => void;
+  onManage?: () => void;
+  manageLabel: string;
+}) {
+  const { colors } = useThemePreference();
+  const type = useTypography();
+  const fg = selected ? colors.background : colors.text;
+  return (
+    <Pressable
+      trackId="library.collection.select"
+      onPress={onPress}
+      onLongPress={onManage}
+      accessibilityRole="button"
+      accessibilityState={{ selected }}
+      accessibilityLabel={name}
+      // The manage button isn't reachable inside an accessible chip on iOS, so it is an action too.
+      accessibilityActions={onManage ? [{ name: 'manage', label: manageLabel }] : undefined}
+      onAccessibilityAction={(event) => {
+        if (event.nativeEvent.actionName === 'manage') onManage?.();
+      }}
+      style={({ pressed }) => [
+        {
+          flexDirection: 'row',
+          alignItems: 'center',
+          gap: 6,
+          height: MIN_TOUCH,
+          maxWidth: 220,
+          paddingHorizontal: 14,
+          borderRadius: Radii.pill,
+          borderWidth: HAIRLINE,
+          borderColor: selected ? colors.text : colors.border,
+          backgroundColor: selected ? colors.text : pressed ? colors.backgroundElement : 'transparent',
+        },
+      ]}
+    >
+      <KitIcon icon="folder-outline" color={fg} size={14} />
+      <Text
+        numberOfLines={1}
+        color={fg}
+        style={{ ...type.font('body', 'semibold'), fontSize: 13, lineHeight: 17, flexShrink: 1 }}
+      >
+        {name}
+      </Text>
+    </Pressable>
+  );
+}
+
 interface RecipeLibraryToolbarProps {
-  search: string;
-  onSearchChange: (value: string) => void;
   sort: RecipeSortKey;
   onSortChange: (value: RecipeSortKey) => void;
-  resultCount: number;
-  isSearchPending?: boolean;
+  quick: RecipeQuickFilter[];
+  onToggleQuick: (filter: RecipeQuickFilter) => void;
+  /** "All": turns the one-tap filters, favorites and cook tonight off. */
+  onShowAll: () => void;
   favoritesOnly?: boolean;
   onToggleFavorites?: () => void;
   cookTonight?: boolean;
@@ -36,20 +207,22 @@ interface RecipeLibraryToolbarProps {
   collections?: LibraryCollectionChip[];
   selectedCollectionId?: string | null;
   onSelectCollection?: (id: string | null) => void;
-  onLongPressCollection?: (id: string) => void;
   onManageCollection?: (id: string) => void;
   onCreateCollection?: () => void;
-  layout?: LibraryLayout;
-  onToggleLayout?: () => void;
+  style?: StyleProp<ViewStyle>;
 }
 
+/**
+ * Everything that narrows the list, under the "Your recipes" heading (as on the web's LibraryToolbar): the one-tap
+ * chips (All, Under 30 min, Veggie, From TikTok, Never cooked, Favorites, Cook tonight), the fridge match, the
+ * cookbook and Filters, which opens a tile with sorting and tags; then the collections.
+ */
 export function RecipeLibraryToolbar({
-  search,
-  onSearchChange,
   sort,
   onSortChange,
-  resultCount,
-  isSearchPending,
+  quick,
+  onToggleQuick,
+  onShowAll,
   favoritesOnly = false,
   onToggleFavorites,
   cookTonight = false,
@@ -62,419 +235,226 @@ export function RecipeLibraryToolbar({
   collections = [],
   selectedCollectionId = null,
   onSelectCollection,
-  onLongPressCollection,
   onManageCollection,
   onCreateCollection,
-  layout,
-  onToggleLayout,
+  style,
 }: RecipeLibraryToolbarProps) {
   const { t } = useTranslation();
-  const { colors, scheme } = useThemePreference();
-  const isDark = scheme === 'dark';
-  const inactiveChipBg = isDark ? 'rgba(40,36,48,0.6)' : 'rgba(255,255,255,0.55)';
+  const { colors } = useThemePreference();
+  const type = useTypography();
 
-  const filtersActive =
-    sort !== 'newest' ||
-    selectedTags.length > 0 ||
-    selectedCollectionId != null;
-
+  const filtersActive = sort !== 'newest' || selectedTags.length > 0;
+  const activeCount = (sort !== 'newest' ? 1 : 0) + selectedTags.length;
   const [filtersOpen, setFiltersOpen] = useState(filtersActive);
+  const showingAll = quick.length === 0 && !favoritesOnly && !cookTonight;
+  const selectedCollection = collections.find((c) => c.id === selectedCollectionId);
 
   return (
-    <View className="gap-3">
-      <View
-        className="flex-row items-center rounded-3xl px-3.5"
-        style={{
-          backgroundColor: colors.frosted,
-          borderWidth: 1,
-          borderColor: colors.frostedBorder,
-        }}
-      >
-        <Ionicons
-          name="search-outline"
-          size={18}
-          color={colors.textSecondary}
-          accessible={false}
-          importantForAccessibility="no"
-        />
-        <TextInput
-          accessibilityLabel={t('a11y.searchRecipes')}
-          className="pinch-plain-focus flex-1 px-3 py-3.5 text-base"
-          style={{ color: colors.text }}
-          placeholder={t('library.searchPlaceholder')}
-          placeholderTextColor={colors.textSecondary}
-          value={search}
-          onChangeText={onSearchChange}
-          autoCapitalize="none"
-          autoCorrect={false}
-          clearButtonMode="while-editing"
-          returnKeyType="search"
-        />
-        {search.length > 0 && (
-          <Pressable
-            trackId="library.search.clear"
-            onPress={() => onSearchChange('')}
-            hitSlop={13}
-            className="active:opacity-70"
-            accessibilityRole="button"
-            accessibilityLabel={t('library.clearSearch')}
+    <View style={[{ gap: 12 }, style]}>
+      <ChipRow label={t('web.library.quickFilters')}>
+        <Chip selected={showingAll} trackId="library.filter.all" onPress={onShowAll}>
+          {t('web.library.filterAll')}
+        </Chip>
+        {RECIPE_QUICK_FILTERS.map((filter) => (
+          <Chip
+            key={filter}
+            selected={quick.includes(filter)}
+            trackId={`library.quick.${filter}`}
+            onPress={() => onToggleQuick(filter)}
           >
-            <Ionicons name="close-circle" size={18} color={colors.textSecondary} />
-          </Pressable>
-        )}
-      </View>
-
-      <View className="flex-row flex-wrap items-center gap-2">
+            {t(`web.library.quick.${filter}`)}
+          </Chip>
+        ))}
         {onToggleFavorites ? (
-          <Pressable
+          <Chip
+            selected={favoritesOnly}
+            icon={favoritesOnly ? 'heart' : 'heart-outline'}
             trackId="library.favorites.toggle"
-            onPress={onToggleFavorites}
-            className="min-h-[44px] flex-row items-center gap-1.5 rounded-2xl px-4 active:opacity-80"
-            style={{
-              backgroundColor: favoritesOnly ? colors.primary : inactiveChipBg,
-            }}
-            accessibilityRole="button"
-            accessibilityState={{ selected: favoritesOnly }}
             accessibilityLabel={t('library.favoritesFilter')}
+            onPress={onToggleFavorites}
           >
-            <Ionicons
-              name={favoritesOnly ? 'heart' : 'heart-outline'}
-              size={16}
-              color={favoritesOnly ? colors.onPrimary : colors.primary}
-            />
-            <Text
-              className="text-sm font-semibold"
-              style={{ color: favoritesOnly ? colors.onPrimary : colors.text }}
-              maxFontSizeMultiplier={CHROME_MAX_FONT_SCALE}
-            >
-              {t('library.favorites')}
-            </Text>
-          </Pressable>
+            {t('library.favorites')}
+          </Chip>
         ) : null}
-
         {onToggleCookTonight ? (
-          <Pressable
+          <Chip
+            selected={cookTonight}
+            icon="flame-outline"
             trackId="library.cook_tonight.toggle"
             onPress={onToggleCookTonight}
-            className="min-h-[44px] flex-row items-center gap-1.5 rounded-2xl px-4 active:opacity-80"
-            style={{
-              backgroundColor: cookTonight ? colors.primary : inactiveChipBg,
-            }}
-            accessibilityRole="button"
-            accessibilityState={{ selected: cookTonight }}
-            accessibilityLabel={t('library.cookTonight')}
           >
-            <Ionicons
-              name={cookTonight ? 'moon' : 'moon-outline'}
-              size={16}
-              color={cookTonight ? colors.onPrimary : colors.primary}
-            />
-            <Text
-              className="text-sm font-semibold"
-              style={{ color: cookTonight ? colors.onPrimary : colors.text }}
-              maxFontSizeMultiplier={CHROME_MAX_FONT_SCALE}
-            >
-              {t('library.cookTonight')}
-            </Text>
-          </Pressable>
+            {t('library.cookTonight')}
+          </Chip>
         ) : null}
-
+        <View style={{ width: HAIRLINE, height: 24, backgroundColor: colors.border, marginHorizontal: 4 }} />
+        {onFridgeMatch ? (
+          <Chip icon="nutrition-outline" trackId="library.fridge_match" onPress={onFridgeMatch}>
+            {t('library.fridgeMatch')}
+          </Chip>
+        ) : null}
+        <Chip
+          icon="print-outline"
+          trackId="library.cookbook.open"
+          accessibilityLabel={t('library.makeCookbook')}
+          onPress={() => router.push('/cookbook')}
+        >
+          {t('cookbook.title')}
+        </Chip>
         <Pressable
           trackId="library.filter.open"
           onPress={() => setFiltersOpen((open) => !open)}
-          className="min-h-[44px] flex-row items-center gap-1.5 rounded-2xl px-4 active:opacity-80"
-          style={{
-            backgroundColor: filtersOpen || filtersActive ? colors.primarySoft : inactiveChipBg,
-          }}
           accessibilityRole="button"
           accessibilityState={{ expanded: filtersOpen }}
           accessibilityLabel={t('library.toggleFilters')}
           accessibilityValue={filtersActive ? { text: t('a11y.filtersApplied') } : undefined}
+          style={({ pressed }) => ({
+            flexDirection: 'row',
+            alignItems: 'center',
+            gap: 8,
+            height: MIN_TOUCH,
+            paddingHorizontal: 16,
+            borderRadius: Radii.pill,
+            borderWidth: HAIRLINE,
+            borderColor: filtersActive ? colors.text : colors.border,
+            backgroundColor: filtersActive ? colors.text : pressed || filtersOpen ? colors.backgroundElement : 'transparent',
+          })}
         >
-          <Ionicons name="options-outline" size={16} color={colors.primary} />
+          <KitIcon icon="options-outline" color={filtersActive ? colors.background : colors.text} size={16} />
           <Text
-            className="text-sm font-semibold"
-            style={{ color: colors.primary }}
-            maxFontSizeMultiplier={CHROME_MAX_FONT_SCALE}
+            numberOfLines={1}
+            color={filtersActive ? colors.background : colors.text}
+            style={{ ...type.font('body', 'semibold'), fontSize: 14, lineHeight: 18 }}
           >
             {t('library.filter')}
           </Text>
-          {filtersActive ? (
+          {activeCount > 0 ? (
             <View
-              className="h-2 w-2 rounded-full"
-              style={{ backgroundColor: colors.primary }}
-            />
+              style={{
+                minWidth: 20,
+                height: 20,
+                borderRadius: 10,
+                paddingHorizontal: 5,
+                alignItems: 'center',
+                justifyContent: 'center',
+                backgroundColor: colors.background,
+              }}
+            >
+              <Text color={colors.text} style={{ ...type.font('body', 'bold'), fontSize: 12, lineHeight: 14 }}>
+                {activeCount}
+              </Text>
+            </View>
           ) : null}
         </Pressable>
-
-        <View
-          className="flex-row items-center gap-2"
-          style={{ marginStart: 'auto', flexShrink: 0 }}
-        >
-          {onFridgeMatch ? (
-            <Pressable
-              trackId="library.fridge_match"
-              onPress={onFridgeMatch}
-              className="h-11 w-11 items-center justify-center rounded-2xl active:opacity-80"
-              style={{ backgroundColor: inactiveChipBg }}
-              accessibilityRole="button"
-              accessibilityLabel={t('library.fridgeMatch')}
-            >
-              <Ionicons name="nutrition-outline" size={20} color={colors.primary} />
-            </Pressable>
-          ) : null}
-          {layout && onToggleLayout ? (
-            <LibraryLayoutToggle
-              layout={layout}
-              onToggle={onToggleLayout}
-              color={colors.primary}
-              backgroundColor={layout === 'grid' ? colors.primarySoft : inactiveChipBg}
-            />
-          ) : null}
-        </View>
-      </View>
+      </ChipRow>
 
       {cookTonight ? (
-        <Text className="text-xs leading-4" style={{ color: colors.textSecondary }}>
+        <Text variant="caption" tone="muted">
           {t('library.cookTonightRule')}
         </Text>
       ) : null}
 
-      <Text
-        className={`text-xs ${isSearchPending ? 'opacity-60' : ''}`}
-        style={{ color: colors.textSecondary }}
-        accessibilityLiveRegion="polite"
-      >
-        {t(resultCount === 1 ? 'library.recipeCountOne' : 'library.recipeCountOther', {
-          count: resultCount,
-        })}
-      </Text>
-
       {filtersOpen ? (
-        <View className="gap-3">
-          <ScrollView
-            horizontal
-            showsHorizontalScrollIndicator={false}
-            contentContainerStyle={{ gap: 8, paddingEnd: 4 }}
-            keyboardShouldPersistTaps="handled"
-          >
-            {RECIPE_SORT_OPTIONS.map((option) => {
-              const active = sort === option.key;
-              return (
-                <Pressable
-                  trackId={`library.sort.${option.key}`}
+        <Tile padding={18} style={{ gap: 18 }}>
+          <View style={{ gap: 10 }}>
+            <Text variant="h3">{t('web.library.sortBy')}</Text>
+            <View accessibilityRole="radiogroup" style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8 }}>
+              {RECIPE_SORT_OPTIONS.map((option) => (
+                <Chip
                   key={option.key}
+                  kind="radio"
+                  size="sm"
+                  selected={sort === option.key}
+                  trackId={`library.sort.${option.key}`}
+                  accessibilityLabel={t('a11y.sortBy', { option: t(`library.sort.${option.key}`) })}
                   onPress={() => onSortChange(option.key)}
-                  accessibilityRole="button"
-                  accessibilityState={{ selected: active }}
-                  accessibilityLabel={t('a11y.sortBy', {
-                    option: t(`library.sort.${option.key}`),
-                  })}
-                  className="min-h-[44px] flex-row items-center gap-1.5 rounded-2xl px-4 active:opacity-80"
-                  style={{
-                    backgroundColor: active ? colors.primary : inactiveChipBg,
-                  }}
                 >
-                  <Ionicons
-                    name={option.icon as keyof typeof Ionicons.glyphMap}
-                    size={14}
-                    color={active ? colors.onPrimary : colors.primary}
-                  />
-                  <Text
-                    className="text-sm font-semibold"
-                    style={{ color: active ? colors.onPrimary : colors.text }}
-                    maxFontSizeMultiplier={CHROME_MAX_FONT_SCALE}
-                  >
-                    {t(`library.sort.${option.key}`)}
-                  </Text>
-                </Pressable>
-              );
-            })}
-          </ScrollView>
-
-          {availableTags.length > 0 && (
-            <View className="gap-1.5">
-              <View className="flex-row items-center justify-between">
-                <Text
-                  accessibilityRole="header"
-                  className="text-xs font-semibold uppercase tracking-wide"
-                  style={{ color: colors.textSecondary }}
-                >
-                  {t('library.tags')}
-                </Text>
+                  {t(`library.sort.${option.key}`)}
+                </Chip>
+              ))}
+            </View>
+          </View>
+          {availableTags.length > 0 ? (
+            <View style={{ gap: 10 }}>
+              <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
+                <Text variant="h3">{t('library.tags')}</Text>
                 {selectedTags.length > 0 && onClearTags ? (
-                  <Pressable
+                  <Button
+                    variant="link"
                     trackId="library.tags.clear"
-                    onPress={onClearTags}
-                    hitSlop={12}
-                    className="active:opacity-70"
-                    accessibilityRole="button"
                     accessibilityLabel={t('a11y.clearTags')}
+                    onPress={onClearTags}
                   >
-                    <Text className="text-xs font-semibold" style={{ color: colors.primary }}>
-                      {t('common.clear')}
-                    </Text>
-                  </Pressable>
+                    {t('common.clear')}
+                  </Button>
                 ) : null}
               </View>
-              <ScrollView
-                horizontal
-                showsHorizontalScrollIndicator={false}
-                contentContainerStyle={{ gap: 8, paddingEnd: 4 }}
-                keyboardShouldPersistTaps="handled"
-              >
-                {availableTags.map((tag) => {
-                  const active = selectedTags.includes(tag);
-                  return (
-                    <Pressable
-                      trackId="library.tag.toggle"
-                      key={tag}
-                      onPress={() => onToggleTag?.(tag)}
-                      accessibilityRole="button"
-                      accessibilityState={{ selected: active }}
-                      className="min-h-[44px] rounded-2xl px-4 py-2.5 active:opacity-80"
-                      style={{
-                        backgroundColor: active ? colors.primary : inactiveChipBg,
-                      }}
-                    >
-                      <Text
-                        className="text-sm font-semibold"
-                        style={{ color: active ? colors.onPrimary : colors.text }}
-                        maxFontSizeMultiplier={CHROME_MAX_FONT_SCALE}
-                      >
-                        {translateRecipeTag(tag, t)}
-                      </Text>
-                    </Pressable>
-                  );
-                })}
-              </ScrollView>
+              <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8 }}>
+                {availableTags.map((tag) => (
+                  <Chip
+                    key={tag}
+                    size="sm"
+                    selected={selectedTags.includes(tag)}
+                    trackId="library.tag.toggle"
+                    onPress={() => onToggleTag?.(tag)}
+                  >
+                    {translateRecipeTag(tag, t)}
+                  </Chip>
+                ))}
+              </View>
             </View>
-          )}
-
-          <View className="gap-1.5">
-            <Text
-              accessibilityRole="header"
-              className="text-xs font-semibold uppercase tracking-wide"
-              style={{ color: colors.textSecondary }}
-            >
-              {t('library.collections')}
-            </Text>
-            <ScrollView
-              horizontal
-              showsHorizontalScrollIndicator={false}
-              contentContainerStyle={{ gap: 8, paddingEnd: 4 }}
-              keyboardShouldPersistTaps="handled"
-            >
-              <Pressable
-                trackId="library.collection.all"
-                onPress={() => onSelectCollection?.(null)}
-                accessibilityRole="button"
-                accessibilityState={{ selected: selectedCollectionId == null }}
-                accessibilityLabel={t('a11y.allCollections')}
-                className="min-h-[44px] items-center justify-center rounded-2xl px-4 active:opacity-80"
-                style={{
-                  backgroundColor: selectedCollectionId == null ? colors.primary : inactiveChipBg,
-                }}
-              >
-                <Text
-                  className="text-sm font-semibold"
-                  style={{ color: selectedCollectionId == null ? colors.onPrimary : colors.text }}
-                  maxFontSizeMultiplier={CHROME_MAX_FONT_SCALE}
-                >
-                  {t('library.allCollections')}
-                </Text>
-              </Pressable>
-              {collections.map((collection) => {
-                const active = selectedCollectionId === collection.id;
-                return (
-                  <Pressable
-                    trackId="library.collection.select"
-                    key={collection.id}
-                    onPress={() => onSelectCollection?.(active ? null : collection.id)}
-                    onLongPress={() => onLongPressCollection?.(collection.id)}
-                    accessibilityRole="button"
-                    accessibilityState={{ selected: active }}
-                    accessibilityLabel={collection.name}
-                    // The nested manage button isn't reachable inside an accessible chip on
-                    // iOS, so expose it as a custom action too.
-                    accessibilityActions={
-                      onManageCollection || onLongPressCollection
-                        ? [
-                            {
-                              name: 'manage',
-                              label: t('library.manageCollection', { name: collection.name }),
-                            },
-                          ]
-                        : undefined
-                    }
-                    onAccessibilityAction={(event) => {
-                      if (event.nativeEvent.actionName !== 'manage') return;
-                      if (onManageCollection) onManageCollection(collection.id);
-                      else onLongPressCollection?.(collection.id);
-                    }}
-                    className="min-h-[44px] flex-row items-center gap-1.5 rounded-2xl px-4 active:opacity-80"
-                    style={{
-                      backgroundColor: active ? colors.primary : inactiveChipBg,
-                    }}
-                  >
-                    <Ionicons
-                      name="folder-outline"
-                      size={14}
-                      color={active ? colors.onPrimary : colors.primary}
-                    />
-                    <Text
-                      className="text-sm font-semibold"
-                      style={{ color: active ? colors.onPrimary : colors.text }}
-                      maxFontSizeMultiplier={CHROME_MAX_FONT_SCALE}
-                    >
-                      {collection.name}
-                    </Text>
-                    {onManageCollection ? (
-                      <Pressable
-                        trackId="library.collection.manage"
-                        onPress={(e) => {
-                          e.stopPropagation?.();
-                          onManageCollection(collection.id);
-                        }}
-                        hitSlop={12}
-                        accessibilityRole="button"
-                        accessibilityLabel={t('library.manageCollection', {
-                          name: collection.name,
-                        })}
-                      >
-                        <Ionicons
-                          name="ellipsis-horizontal"
-                          size={14}
-                          color={active ? colors.onPrimary : colors.textSecondary}
-                        />
-                      </Pressable>
-                    ) : null}
-                  </Pressable>
-                );
-              })}
-              {onCreateCollection ? (
-                <Pressable
-                  trackId="library.collection.create"
-                  onPress={onCreateCollection}
-                  accessibilityRole="button"
-                  accessibilityLabel={t('library.newCollection')}
-                  className="min-h-[44px] flex-row items-center gap-1 rounded-2xl border px-4 active:opacity-80"
-                  style={{ borderColor: colors.frostedBorder, backgroundColor: inactiveChipBg }}
-                >
-                  <Ionicons name="add" size={14} color={colors.primary} />
-                  <Text
-                    className="text-sm font-semibold"
-                    style={{ color: colors.primary }}
-                    maxFontSizeMultiplier={CHROME_MAX_FONT_SCALE}
-                  >
-                    {t('library.new')}
-                  </Text>
-                </Pressable>
-              ) : null}
-            </ScrollView>
-          </View>
-        </View>
+          ) : null}
+        </Tile>
       ) : null}
+
+      <View style={{ gap: 8 }}>
+        <TileLabel accessibilityRole="header">{t('library.collections')}</TileLabel>
+        <ChipRow label={t('library.collections')}>
+          <Chip
+            size="sm"
+            selected={selectedCollectionId == null}
+            trackId="library.collection.all"
+            accessibilityLabel={t('a11y.allCollections')}
+            onPress={() => onSelectCollection?.(null)}
+          >
+            {t('library.allCollections')}
+          </Chip>
+          {collections.map((collection) => {
+            const active = selectedCollectionId === collection.id;
+            return (
+              <CollectionChip
+                key={collection.id}
+                name={collection.name}
+                selected={active}
+                onPress={() => onSelectCollection?.(active ? null : collection.id)}
+                onManage={onManageCollection ? () => onManageCollection(collection.id) : undefined}
+                manageLabel={t('library.manageCollection', { name: collection.name })}
+              />
+            );
+          })}
+          {selectedCollection && onManageCollection ? (
+            <IconButton
+              icon="ellipsis-horizontal"
+              label={t('library.manageCollection', { name: selectedCollection.name })}
+              trackId="library.collection.manage"
+              iconSize={18}
+              onPress={() => onManageCollection(selectedCollection.id)}
+              style={{ borderRadius: Radii.pill, borderWidth: HAIRLINE, borderColor: colors.border }}
+            />
+          ) : null}
+          {onCreateCollection ? (
+            <Chip
+              size="sm"
+              icon="add"
+              trackId="library.collection.create"
+              accessibilityLabel={t('library.newCollection')}
+              onPress={onCreateCollection}
+              style={{ borderStyle: 'dashed' }}
+            >
+              {t('library.new')}
+            </Chip>
+          ) : null}
+        </ChipRow>
+      </View>
     </View>
   );
 }

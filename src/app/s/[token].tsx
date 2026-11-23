@@ -1,11 +1,12 @@
 import { router, useLocalSearchParams } from 'expo-router';
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { ActivityIndicator, Alert, Text, View } from 'react-native';
-import { Pressable } from '@/components/ui/Pressable';
+import { ActivityIndicator, Alert, View } from 'react-native';
 import { useTranslation } from 'react-i18next';
 
 import { RecipeView } from '@/components/RecipeView';
 import { Screen } from '@/components/Screen';
+import { Button } from '@/components/ui/Button';
+import { Text } from '@/components/ui/Text';
 import { useAuth } from '@/hooks/useAuth';
 import { useLanguagePreference } from '@/hooks/useLanguagePreference';
 import { useThemePreference } from '@/hooks/useThemePreference';
@@ -112,9 +113,11 @@ export default function SharedRecipeScreen() {
   if (loading || authLoading) {
     return (
       <Screen edges={['bottom']}>
-        <View className="flex-1 items-center justify-center gap-3 px-6">
+        <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center', gap: 12, paddingHorizontal: 24 }}>
           <ActivityIndicator color={colors.primary} />
-          <Text style={{ color: colors.textSecondary }}>{t('recipe.shareLoading')}</Text>
+          <Text variant="bodySmall" tone="muted" align="center">
+            {t('recipe.shareLoading')}
+          </Text>
         </View>
       </Screen>
     );
@@ -123,23 +126,15 @@ export default function SharedRecipeScreen() {
   if (loadError || !recipe) {
     return (
       <Screen edges={['bottom']}>
-        <View className="flex-1 items-center justify-center gap-4 px-6">
-          <Text className="text-center text-base" style={{ color: colors.text }}>
+        <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center', gap: 20, paddingHorizontal: 24 }}>
+          <Text variant="body" align="center">
             {loadError
               ? serverErrorText(loadError, t, language, 'serverErrors.shareUnavailable', SHARE_ERROR_KEYS)
               : t('recipe.shareNotFound')}
           </Text>
-          <Pressable
-            trackId="shared_recipe.go_home"
-            onPress={() => router.dismissTo('/')}
-            accessibilityRole="button"
-            className="rounded-full px-5 py-3 active:opacity-80"
-            style={{ backgroundColor: colors.primary }}
-          >
-            <Text className="font-semibold" style={{ color: colors.onPrimary }}>
-              {t('recipe.goToLibrary')}
-            </Text>
-          </Pressable>
+          <Button trackId="shared_recipe.go_home" onPress={() => router.dismissTo('/')}>
+            {t('recipe.goToLibrary')}
+          </Button>
         </View>
       </Screen>
     );
@@ -149,11 +144,13 @@ export default function SharedRecipeScreen() {
     return (
       <Screen edges={['bottom']}>
         <View
-          className="flex-1 items-center justify-center gap-3 px-6"
+          style={{ flex: 1, alignItems: 'center', justifyContent: 'center', gap: 12, paddingHorizontal: 24 }}
           accessibilityLiveRegion="polite"
         >
           <ActivityIndicator color={colors.primary} />
-          <Text style={{ color: colors.textSecondary }}>{t('recipe.shareClaiming')}</Text>
+          <Text variant="bodySmall" tone="muted" align="center">
+            {t('recipe.shareClaiming')}
+          </Text>
         </View>
       </Screen>
     );
@@ -164,38 +161,28 @@ export default function SharedRecipeScreen() {
       <RecipeView
         recipe={recipe}
         footer={
-          <View className="mt-2 gap-2 pb-4">
+          <View style={{ marginTop: 8, gap: 10, paddingBottom: 16 }}>
             <View accessibilityLiveRegion="polite">
               {claimError ? (
-                <Text className="text-center text-sm" style={{ color: colors.textSecondary }}>
+                <Text variant="bodySmall" tone="danger" align="center">
                   {claimError}
                 </Text>
               ) : null}
             </View>
-            <Pressable
+            <Button
               trackId="shared_recipe.save"
               onPress={() => {
                 void saveToLibrary();
               }}
-              disabled={claiming}
-              accessibilityRole="button"
+              busy={claiming}
+              size="lg"
+              fullWidth
+              icon="add"
               accessibilityLabel={session?.user ? t('recipe.shareSave') : t('recipe.shareSignInToSave')}
-              accessibilityState={{ disabled: claiming, busy: claiming }}
-              className="items-center rounded-full px-5 py-3.5 active:opacity-80"
-              style={{
-                backgroundColor: colors.primary,
-                opacity: claiming ? 0.7 : 1,
-              }}
             >
-              {claiming ? (
-                <ActivityIndicator color={colors.onPrimary} />
-              ) : (
-                <Text className="text-base font-semibold" style={{ color: colors.onPrimary }}>
-                  {session?.user ? t('recipe.shareSave') : t('recipe.shareSignInToSave')}
-                </Text>
-              )}
-            </Pressable>
-            <Text className="text-center text-sm" style={{ color: colors.textSecondary }}>
+              {session?.user ? t('recipe.shareSave') : t('recipe.shareSignInToSave')}
+            </Button>
+            <Text variant="bodySmall" tone="muted" align="center">
               {t('recipe.shareSaveHint')}
             </Text>
           </View>

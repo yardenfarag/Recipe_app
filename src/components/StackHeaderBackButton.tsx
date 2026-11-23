@@ -32,12 +32,15 @@ export function StackHeaderBackButton({
       accessibilityRole="button"
       accessibilityLabel={t('common.back')}
       hitSlop={16}
-      className="items-center justify-center active:opacity-70"
-      style={{
+      style={({ pressed }) => ({
+        minWidth: 44,
+        minHeight: 44,
+        alignItems: 'center',
+        justifyContent: 'center',
         marginStart: Platform.OS === 'ios' ? 0 : 4,
         paddingHorizontal: 6,
-        paddingVertical: 6,
-      }}
+        opacity: pressed ? 0.6 : 1,
+      })}
     >
       <Ionicons
         name={rtl ? 'chevron-forward' : 'chevron-back'}

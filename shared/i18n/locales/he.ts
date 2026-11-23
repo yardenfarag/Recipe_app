@@ -258,6 +258,7 @@ export default {
     "adminUsage": "עלויות ותמיכה",
     "adminActivity": "יומן פעילות",
     "adminMessages": "הודעות",
+    "adminKit": "ערכת עיצוב",
     "rtlReloadTitle": "לרענן כדי לסדר את המסך?",
     "rtlReloadBody": "עברית וערבית נקראות מימין לשמאל. כדאי לרענן עכשיו כדי שהתפריטים והכותרות יישבו במקום הנכון.",
     "rtlReloadConfirm": "רענון",
@@ -885,6 +886,14 @@ export default {
     "pdfUnreadable": "לא הצלחנו לפתוח את קובץ ה־PDF. ייתכן שהוא פגום או נעול בסיסמה.",
     "pdfTimedOut": "קריאת קובץ ה־PDF לקחה יותר מדי זמן, ולכן הקרדיט לא נוצל. נסו שוב בעוד רגע.",
     "invalidSharePdf": "לא הצלחנו לקרוא את קובץ ה־PDF. נסו דרך „שליפה מקובץ PDF”."
+  },
+  "snapNm": {
+    "snapIt": "לשלוף",
+    "guessIt": "לנחש",
+    "takePhoto": "צילום תמונה",
+    "choosePhoto": "בחירת תמונה",
+    "choosePhotoOrPdf": "בחירת תמונה או PDF",
+    "shareTip": "אפשר לשתף מכל אפליקציה. בטיקטוק, באינסטגרם או ביוטיוב לוחצים על שיתוף ובוחרים ב־Pinch."
   },
   "list": {
     "title": "רשימה",

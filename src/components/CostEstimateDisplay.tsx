@@ -10,11 +10,10 @@ type CostMeterProps = {
   size?: number;
 };
 
-/** 3-dot cost meter. Always LTR so ●○○ means budget in every language. */
+/** 3-dot cost meter, never an amount. Always LTR so ●○○ means budget in every language. */
 export function CostMeter({ tier, color, size = 6 }: CostMeterProps) {
   const filled = costFilledCount(tier);
   const gap = Math.max(2, Math.round(size * 0.4));
-  const borderWidth = size >= 7 ? 1.5 : 1;
 
   return (
     <View
@@ -37,10 +36,9 @@ export function CostMeter({ tier, color, size = 6 }: CostMeterProps) {
               width: size,
               height: size,
               borderRadius: size / 2,
-              backgroundColor: isFilled ? color : 'transparent',
-              borderWidth,
-              borderColor: color,
-              opacity: isFilled ? 1 : 0.35,
+              // Flat dots (Night Market): the empty ones are the same colour, faint.
+              backgroundColor: color,
+              opacity: isFilled ? 1 : 0.25,
             }}
           />
         );

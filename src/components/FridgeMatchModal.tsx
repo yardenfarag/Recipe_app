@@ -1,11 +1,12 @@
-import Ionicons from '@expo/vector-icons/Ionicons';
 import { router } from 'expo-router';
 import { useRef, useState } from 'react';
-import { ActivityIndicator, Alert, Platform, ScrollView, Text, View } from 'react-native';
-import { Pressable } from '@/components/ui/Pressable';
+import { Alert, Platform, ScrollView, View } from 'react-native';
 import { useTranslation } from 'react-i18next';
 
 import { SheetModal } from '@/components/SheetModal';
+import { Button } from '@/components/ui/Button';
+import { Text } from '@/components/ui/Text';
+import { Tile } from '@/components/ui/Tile';
 import { useThemePreference } from '@/hooks/useThemePreference';
 import { announce } from '@/lib/a11y';
 import { pickCompressedRecipeImage } from '@/lib/pickCompressedImage';
@@ -120,141 +121,98 @@ export function FridgeMatchModal({ visible, recipes, onClose }: FridgeMatchModal
 
   const recipeById = new Map(recipes.map((recipe) => [recipe.id, recipe]));
 
-  const bodyPad = { paddingHorizontal: 20, paddingTop: 8, paddingBottom: 24 } as const;
-
   return (
     <SheetModal
       trackId="fridge_match.sheet" visible={visible} onClose={handleClose} title={t('library.fridgeMatchTitle')}>
       <ScrollView
         keyboardShouldPersistTaps="handled"
         style={{ width: '100%', alignSelf: 'stretch' }}
-        contentContainerStyle={bodyPad}
+        contentContainerStyle={{ paddingHorizontal: 20, paddingTop: 8, paddingBottom: 24, gap: 14 }}
       >
-        <Text className="text-sm leading-5" style={{ color: colors.textSecondary }}>
+        <Text variant="bodySmall" tone="muted">
           {t('library.fridgeMatchHint')}
         </Text>
 
         {libraryEmpty || error === 'empty' ? (
-          <View style={{ marginTop: 12, gap: 12 }}>
-            <Text
-              className="text-sm leading-5"
-              style={{ color: colors.warning }}
-              accessibilityLiveRegion="polite"
-            >
+          <View style={{ gap: 12 }}>
+            <Text variant="bodySmall" color={colors.warning} accessibilityLiveRegion="polite">
               {t('library.fridgeMatchEmptyLibrary')}
             </Text>
-            <Pressable
+            <Button
               trackId="fridge_match.add_recipes"
+              fullWidth
               onPress={() => {
                 handleClose();
                 router.push('/add');
               }}
-              className="min-h-[44px] items-center justify-center rounded-3xl active:opacity-90"
-              style={{ backgroundColor: colors.primary, alignSelf: 'stretch' }}
-              accessibilityRole="button"
             >
-              <Text className="text-sm font-bold" style={{ color: colors.onPrimary }}>
-                {t('library.snapFirst')}
-              </Text>
-            </Pressable>
+              {t('library.snapFirst')}
+            </Button>
           </View>
         ) : null}
         {error === 'limited' ? (
-          <Text
-            className="mt-3 text-sm leading-5"
-            style={{ color: colors.warning }}
-          >
+          <Text variant="bodySmall" color={colors.warning}>
             {t('library.fridgeMatchLimited')}
           </Text>
         ) : null}
         {error === 'failed' ? (
-          <Text
-            className="mt-3 text-sm leading-5"
-            style={{ color: colors.warning }}
-          >
+          <Text variant="bodySmall" color={colors.warning}>
             {t('library.fridgeMatchFailed')}
           </Text>
         ) : null}
 
         {!libraryEmpty ? (
-          <Pressable
+          <Button
             trackId="fridge_match.snap"
-            onPress={handlePick}
-            disabled={loading}
-            className="mt-3 min-h-[44px] flex-row items-center justify-center rounded-3xl py-3.5 active:opacity-90"
-            style={{ backgroundColor: colors.primary, alignSelf: 'stretch', gap: 8 }}
-            accessibilityRole="button"
+            fullWidth
+            size="lg"
+            busy={loading}
+            icon={Platform.OS === 'web' ? 'images-outline' : 'camera-outline'}
             accessibilityLabel={t('library.fridgeMatchSnap')}
-            accessibilityState={{ disabled: loading, busy: loading }}
+            onPress={handlePick}
           >
-            {loading ? (
-              <ActivityIndicator color={colors.onPrimary} />
-            ) : (
-              <>
-                <Ionicons
-                  name={Platform.OS === 'web' ? 'images-outline' : 'camera-outline'}
-                  size={18}
-                  color={colors.onPrimary}
-                />
-                <Text className="flex-shrink text-sm font-bold" style={{ color: colors.onPrimary }}>
-                  {t('library.fridgeMatchSnap')}
-                </Text>
-              </>
-            )}
-          </Pressable>
+            {t('library.fridgeMatchSnap')}
+          </Button>
         ) : null}
 
         {loading ? (
-          <Text
-            className="mt-3 text-center text-xs"
-            style={{ color: colors.textSecondary }}
-          >
+          <Text variant="caption" tone="muted" align="center">
             {t('library.fridgeMatching')}
           </Text>
         ) : null}
 
         {matches && matches.length === 0 ? (
-          <Text
-            className="mt-3 text-sm leading-5"
-            style={{ color: colors.textSecondary }}
-            accessibilityLiveRegion="polite"
-          >
+          <Text variant="bodySmall" tone="muted" accessibilityLiveRegion="polite">
             {t('library.fridgeMatchEmptyResults')}
           </Text>
         ) : null}
 
         {matches && matches.length > 0 ? (
-          <View style={{ marginTop: 12, gap: 8, width: '100%' }}>
+          <View style={{ gap: 10, width: '100%' }}>
             {matches.map((match) => {
               const recipe = recipeById.get(match.id);
               if (!recipe) return null;
               return (
-                <Pressable
+                <Tile
                   key={match.id}
+                  size="md"
+                  padding={16}
                   trackId="fridge_match.open_recipe"
                   onPress={() => openRecipe(match.id)}
-                  accessibilityRole="button"
-                  className="rounded-2xl border px-4 py-3 active:opacity-80"
-                  style={{
-                    borderColor: colors.border,
-                    backgroundColor: colors.background,
-                    alignSelf: 'stretch',
-                  }}
+                  style={{ gap: 4 }}
                 >
-                  <Text className="text-base font-semibold" style={{ color: colors.text }}>
-                    {recipe.display_title ?? recipe.title}
-                  </Text>
+                  <Text variant="h3">{recipe.display_title ?? recipe.title}</Text>
                   {match.reason ? (
-                    <Text className="mt-1 text-sm leading-5" style={{ color: colors.textSecondary }}>
+                    <Text variant="bodySmall" tone="muted">
                       {match.reason}
                     </Text>
                   ) : null}
                   {match.missing.length > 0 ? (
-                    <Text className="mt-1 text-xs" style={{ color: colors.warning }}>
+                    <Text variant="caption" color={colors.warning}>
                       {t('library.fridgeMatchMissing', { items: match.missing.join(', ') })}
                     </Text>
                   ) : null}
-                </Pressable>
+                </Tile>
               );
             })}
           </View>

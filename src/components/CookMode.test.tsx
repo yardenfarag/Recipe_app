@@ -34,8 +34,19 @@ vi.mock('@react-native-async-storage/async-storage', () => ({
   },
 }));
 vi.mock('@/hooks/useThemePreference', () => ({
-  useThemePreference: () => ({ colors: getThemePackColors('mist', 'light') }),
+  useThemePreference: () => ({ colors: getThemePackColors('mist', 'light'), packId: 'mist' }),
 }));
+// The kit's Text reads the app language for its fonts.
+vi.mock('@/hooks/useLanguagePreference', () => ({ useLanguagePreference: () => ({ language: 'en' }) }));
+// The kit's tiles import expo-image and expo-linear-gradient, which need native modules.
+vi.mock('expo-image', async () => {
+  const { View } = await import('react-native');
+  return { Image: (props: object) => <View {...props} /> };
+});
+vi.mock('expo-linear-gradient', async () => {
+  const { View } = await import('react-native');
+  return { LinearGradient: (props: object) => <View {...props} /> };
+});
 vi.mock('@/hooks/useRtl', () => ({ useRtl: () => ({ rtl: false }) }));
 vi.mock('@/lib/interactionLog', () => ({ logTap: vi.fn() }));
 vi.mock('@/lib/a11y', () => ({ announce: vi.fn() }));

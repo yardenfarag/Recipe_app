@@ -1,6 +1,6 @@
 import Ionicons from '@expo/vector-icons/Ionicons';
 import { router } from 'expo-router';
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState, type ComponentProps, type ReactNode } from 'react';
 import { useTranslation } from 'react-i18next';
 import {
   ActivityIndicator,
@@ -9,17 +9,24 @@ import {
   KeyboardAvoidingView,
   Modal,
   Platform,
-  Text,
   View,
 } from 'react-native';
-import { Pressable } from '@/components/ui/Pressable';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
-import { BrandHeader } from '@/components/BrandHeader';
 import { ConfirmDialog } from '@/components/ConfirmDialog';
+import { FieldInput } from '@/components/text-input';
 import { Screen } from '@/components/Screen';
 import { SelectRecipesForShoppingListModal } from '@/components/SelectRecipesForShoppingListModal';
-import { TextInput } from '@/components/text-input';
+import { Button } from '@/components/ui/Button';
+import { IconButton } from '@/components/ui/IconButton';
+import { PageHeader } from '@/components/ui/PageHeader';
+import { Pressable } from '@/components/ui/Pressable';
+import { Text } from '@/components/ui/Text';
+import { Tile, TileBadge, TileLabel } from '@/components/ui/Tile';
+import { TopBar } from '@/components/ui/TopBar';
+import { HAIRLINE } from '@/components/ui/tokens';
+import { FormContentWidth } from '@/constants/theme';
+import { useBreakpoint } from '@/hooks/useBreakpoint';
 import { useCollections } from '@/hooks/useCollections';
 import { useKitchenProfile } from '@/hooks/useKitchenProfile';
 import { useLanguagePreference } from '@/hooks/useLanguagePreference';
@@ -41,6 +48,14 @@ import {
 import { SHOPPING_AISLE_ORDER, shoppingAisleForName } from '@shared/lib/shoppingAisles';
 import type { ShoppingListItem } from '@shared/types/shoppingList';
 
+/** One aisle (or "Checked") on its own tile. */
+type ListGroup = { id: string; title: string; checked: boolean; items: ShoppingListItem[] };
+
+/**
+ * The shopping list (Night Market, PIN-177): what to buy, grouped the way a shop is laid out, each aisle a tile with
+ * hairlines between its items, and everything checked on an outlined tile at the end. Tap an item to check it off;
+ * long-press for edit, combine and remove.
+ */
 export default function ShoppingListScreen() {
   const {
     items,
@@ -64,6 +79,7 @@ export default function ShoppingListScreen() {
   const { colors } = useThemePreference();
   const { language: appLanguage } = useLanguagePreference();
   const { rtl } = useRtl();
+  const { isMediumUp } = useBreakpoint();
   const { t } = useTranslation();
 
   const [name, setName] = useState('');
@@ -71,7 +87,6 @@ export default function ShoppingListScreen() {
   const [unit, setUnit] = useState('');
   const [adding, setAdding] = useState(false);
   const [fromRecipesOpen, setFromRecipesOpen] = useState(false);
-  const [addOpen, setAddOpen] = useState(false);
   const [editingItem, setEditingItem] = useState<ShoppingListItem | null>(null);
   const [editName, setEditName] = useState('');
   const [editQuantity, setEditQuantity] = useState('');
@@ -102,45 +117,20 @@ export default function ShoppingListScreen() {
   const checkedCount = useMemo(() => items.filter((item) => item.checked).length, [items]);
   const duplicateCounts = useMemo(() => getDuplicateNameCounts(items), [items]);
 
-  type ListRow =
-    | { kind: 'header'; id: string; title: string; count: number }
-    | { kind: 'item'; id: string; item: ShoppingListItem };
-
-  const listRows = useMemo((): ListRow[] => {
-    const rows: ListRow[] = [];
+  const groups = useMemo((): ListGroup[] => {
+    const result: ListGroup[] = [];
     const unchecked = items.filter((item) => !item.checked);
     const checked = items.filter((item) => item.checked);
     for (const aisle of SHOPPING_AISLE_ORDER) {
       const group = unchecked.filter((item) => shoppingAisleForName(item.name) === aisle);
       if (group.length === 0) continue;
-      rows.push({
-        kind: 'header',
-        id: `aisle-${aisle}`,
-        title: t(`list.aisles.${aisle}`),
-        count: group.length,
-      });
-      for (const item of group) {
-        rows.push({ kind: 'item', id: item.id, item });
-      }
+      result.push({ id: `aisle-${aisle}`, title: t(`list.aisles.${aisle}`), checked: false, items: group });
     }
     if (checked.length > 0) {
-      rows.push({ kind: 'header', id: 'checked', title: t('list.checkedSection'), count: checked.length });
-      for (const item of checked) {
-        rows.push({ kind: 'item', id: item.id, item });
-      }
+      result.push({ id: 'checked', title: t('list.checkedSection'), checked: true, items: checked });
     }
-    return rows;
+    return result;
   }, [items, t]);
-
-  // FlatList counts ListHeaderComponent (the progress line, shown once something
-  // is checked) as row 0, so sticky indices shift by one — otherwise the last
-  // item of the previous aisle sticks instead of the aisle header.
-  const listHeaderOffset = checkedCount > 0 ? 1 : 0;
-  const stickyHeaderIndices = useMemo(
-    () =>
-      listRows.flatMap((row, index) => (row.kind === 'header' ? [index + listHeaderOffset] : [])),
-    [listRows, listHeaderOffset],
-  );
 
   const typingDuplicateCount = useMemo(() => {
     const key = normalizeShoppingName(name);
@@ -393,39 +383,8 @@ export default function ShoppingListScreen() {
     });
   }, [clearAll, items.length, t]);
 
-  const renderItem = useCallback(
-    ({ item: row }: { item: ListRow }) => {
-      if (row.kind === 'header') {
-        return (
-          <View
-            className="-mx-1 mb-2 mt-3 flex-row items-center justify-between rounded-2xl px-3 py-2.5"
-            style={{ backgroundColor: colors.background }}
-            accessible
-            accessibilityRole="header"
-            accessibilityLabel={`${row.title}, ${t(
-              row.count === 1 ? 'a11y.itemCountOne' : 'a11y.itemCountOther',
-              { count: row.count },
-            )}`}
-          >
-            <Text className="flex-shrink text-base font-bold" style={{ color: colors.text }}>
-              {row.title}
-            </Text>
-            <View
-              className="min-h-[24px] min-w-[24px] items-center justify-center rounded-full px-2"
-              style={{ backgroundColor: colors.primarySoft }}
-            >
-              <Text
-                className="text-xs font-bold"
-                style={{ color: colors.primary }}
-                maxFontSizeMultiplier={CHROME_MAX_FONT_SCALE}
-              >
-                {row.count}
-              </Text>
-            </View>
-          </View>
-        );
-      }
-      const item = row.item;
+  const renderItemRow = useCallback(
+    (item: ShoppingListItem) => {
       const amount =
         item.quantity != null
           ? formatQuantity(item.quantity, item.unit ?? '', appLanguage)
@@ -456,18 +415,9 @@ export default function ShoppingListScreen() {
         .join(', ');
 
       return (
-        <View
-          className="mb-2 flex-row items-center gap-3 rounded-3xl border px-4 py-3.5"
-          style={{
-            backgroundColor: colors.surface,
-            borderColor: isDuplicate ? colors.warning : colors.frostedBorder,
-            borderStartWidth: isDuplicate ? 3 : 1,
-            borderStartColor: isDuplicate ? colors.warning : colors.frostedBorder,
-            opacity: item.checked ? 0.55 : 1,
-          }}
-        >
-          <Pressable trackId="shopping_list.item.toggle"
-            className="min-w-0 flex-1 flex-row items-center gap-3 active:opacity-90"
+        <View style={{ flexDirection: 'row', alignItems: 'center', minHeight: 56 }}>
+          <Pressable
+            trackId="shopping_list.item.toggle"
             onPress={() => void handleToggle(item)}
             onLongPress={() => handleLongPress(item)}
             accessibilityRole="checkbox"
@@ -481,86 +431,104 @@ export default function ShoppingListScreen() {
               if (event.nativeEvent.actionName === 'longpress') handleLongPress(item);
               else if (event.nativeEvent.actionName === 'combine') showDuplicatePrompt();
             }}
+            style={({ pressed }) => ({
+              flex: 1,
+              minWidth: 0,
+              flexDirection: 'row',
+              alignItems: 'center',
+              gap: 12,
+              alignSelf: 'stretch',
+              paddingVertical: 10,
+              paddingHorizontal: 8,
+              borderRadius: 16,
+              backgroundColor: pressed ? colors.backgroundElement : 'transparent',
+            })}
           >
+            {/* A round check, filled with the brand colour once ticked off. */}
             <View
-              className="h-6 w-6 items-center justify-center rounded-md border-2"
               style={{
-                borderColor: item.checked ? colors.primary : colors.textSecondary,
+                width: 24,
+                height: 24,
+                borderRadius: 12,
+                alignItems: 'center',
+                justifyContent: 'center',
+                borderWidth: item.checked ? 0 : 2,
+                borderColor: colors.textSecondary,
                 backgroundColor: item.checked ? colors.primary : 'transparent',
               }}
             >
-              {item.checked ? <Ionicons name="checkmark" size={14} color={colors.onPrimary} /> : null}
+              {item.checked ? <Ionicons name="checkmark" size={15} color={colors.onPrimary} /> : null}
             </View>
-            <View className="min-w-0 flex-1">
-              <View className="flex-row flex-wrap items-center gap-2">
-                <Text
-                  className="text-base font-semibold"
-                  style={{
-                    color: colors.text,
-                    textDecorationLine: item.checked ? 'line-through' : 'none',
-                  }}
-                  numberOfLines={2}
-                >
-                  {item.name}
-                </Text>
-                {isDuplicate ? (
-                  <Pressable trackId="shopping_list.item.duplicate_badge"
-                    className="rounded-full px-2 py-0.5"
-                    style={{ backgroundColor: colors.warningSoft }}
-                    onPress={showDuplicatePrompt}
-                    hitSlop={6}
-                    accessibilityRole="button"
-                  >
-                    <Text
-                      className="text-[11px] font-bold"
-                      style={{ color: colors.warning }}
-                      maxFontSizeMultiplier={CHROME_MAX_FONT_SCALE}
-                    >
-                      {t('list.alsoListed', { count: dupCount })}
-                    </Text>
-                  </Pressable>
-                ) : null}
-              </View>
+            <View style={{ flex: 1, minWidth: 0, gap: 2 }}>
+              <Text
+                variant="bodySmall"
+                weight="semibold"
+                tone={item.checked ? 'muted' : 'default'}
+                numberOfLines={2}
+                style={item.checked ? { textDecorationLine: 'line-through' } : null}
+              >
+                {item.name}
+              </Text>
               {amount ? (
-                <Text className="mt-0.5 text-sm tabular-nums" style={{ color: colors.textSecondary }}>
+                <Text variant="caption" tone="muted" style={{ fontVariant: ['tabular-nums'] }}>
                   {amount}
                 </Text>
+              ) : null}
+              {isDuplicate ? (
+                <Pressable
+                  trackId="shopping_list.item.duplicate_badge"
+                  onPress={showDuplicatePrompt}
+                  hitSlop={{ top: 10, bottom: 10, left: 6, right: 6 }}
+                  accessibilityRole="button"
+                  style={{
+                    alignSelf: 'flex-start',
+                    marginTop: 4,
+                    borderRadius: 8,
+                    paddingHorizontal: 8,
+                    paddingVertical: 3,
+                    backgroundColor: colors.warningSoft,
+                  }}
+                >
+                  <Text
+                    variant="caption"
+                    weight="bold"
+                    color={colors.warning}
+                    maxFontSizeMultiplier={CHROME_MAX_FONT_SCALE}
+                    style={{ fontSize: 12, lineHeight: 16 }}
+                  >
+                    {t('list.alsoListed', { count: dupCount })}
+                  </Text>
+                </Pressable>
               ) : null}
             </View>
           </Pressable>
           {!item.checked ? (
-          <Pressable trackId="shopping_list.item.keep_in_pantry"
-            accessibilityRole="button"
-            accessibilityLabel={t('list.keepThisLabel', { name: item.name })}
-            className="min-h-[44px] min-w-[44px] items-center justify-center rounded-full active:opacity-70"
-            hitSlop={8}
-            onPress={() => {
-              keepStaple(item.name);
-              void handleRemove(item);
-              setNotice({ message: t('list.pantrySaved', { name: item.name }) });
-            }}
-          >
-            <Ionicons name="home-outline" size={18} color={colors.textSecondary} />
-          </Pressable>
+            <IconButton
+              trackId="shopping_list.item.keep_in_pantry"
+              icon="home-outline"
+              iconSize={19}
+              label={t('list.keepThisLabel', { name: item.name })}
+              onPress={() => {
+                keepStaple(item.name);
+                void handleRemove(item);
+                setNotice({ message: t('list.pantrySaved', { name: item.name }) });
+              }}
+            />
           ) : null}
-          <Pressable trackId="shopping_list.item.edit"
-            accessibilityRole="button"
-            accessibilityLabel={t('list.editItemLabel', { name: item.name })}
-            className="min-h-[44px] min-w-[44px] items-center justify-center rounded-full active:opacity-70"
-            hitSlop={8}
+          <IconButton
+            trackId="shopping_list.item.edit"
+            icon="pencil-outline"
+            iconSize={19}
+            label={t('list.editItemLabel', { name: item.name })}
             onPress={() => openEdit(item)}
-          >
-            <Ionicons name="pencil-outline" size={18} color={colors.textSecondary} />
-          </Pressable>
-          <Pressable trackId="shopping_list.item.remove"
-            accessibilityRole="button"
-            accessibilityLabel={t('list.removeItemLabel', { name: item.name })}
-            className="min-h-[44px] min-w-[44px] items-center justify-center rounded-full active:opacity-70"
-            hitSlop={8}
+          />
+          <IconButton
+            trackId="shopping_list.item.remove"
+            icon="trash-outline"
+            iconSize={19}
+            label={t('list.removeItemLabel', { name: item.name })}
             onPress={() => void handleRemove(item)}
-          >
-            <Ionicons name="trash-outline" size={18} color={colors.textSecondary} />
-          </Pressable>
+          />
         </View>
       );
     },
@@ -578,10 +546,76 @@ export default function ShoppingListScreen() {
     ],
   );
 
+  const renderGroup = useCallback(
+    ({ item: group }: { item: ListGroup }) => (
+      <Tile
+        // The checked group is an outline with no fill, so what is left to buy stands out.
+        style={[
+          { paddingHorizontal: 8, paddingTop: 6, paddingBottom: 6 },
+          group.checked ? { backgroundColor: 'transparent' } : null,
+        ]}
+      >
+        <View
+          style={{
+            flexDirection: 'row',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            gap: 12,
+            minHeight: 44,
+            paddingStart: 8,
+          }}
+        >
+          <View
+            accessible
+            accessibilityRole="header"
+            accessibilityLabel={`${group.title}, ${t(
+              group.items.length === 1 ? 'a11y.itemCountOne' : 'a11y.itemCountOther',
+              { count: group.items.length },
+            )}`}
+            style={{ flexDirection: 'row', alignItems: 'center', gap: 10, flexShrink: 1 }}
+          >
+            <TileLabel numberOfLines={1} style={{ flexShrink: 1 }}>
+              {group.title}
+            </TileLabel>
+            <TileBadge>{String(group.items.length)}</TileBadge>
+          </View>
+          {group.checked ? (
+            <Button
+              trackId="shopping_list.clear_checked"
+              variant="ghost"
+              size="sm"
+              icon="close-circle-outline"
+              onPress={handleClearChecked}
+            >
+              {t('list.clearChecked')}
+            </Button>
+          ) : null}
+        </View>
+        {group.items.map((item, index) => (
+          <View key={item.id}>
+            {index > 0 ? (
+              <View
+                accessible={false}
+                importantForAccessibility="no"
+                style={{ height: HAIRLINE, backgroundColor: colors.border, marginStart: 44, marginEnd: 8 }}
+              />
+            ) : null}
+            {renderItemRow(item)}
+          </View>
+        ))}
+      </Tile>
+    ),
+    [colors.border, handleClearChecked, renderItemRow, t],
+  );
+
+  const widthStyle = isMediumUp
+    ? ({ maxWidth: FormContentWidth, width: '100%', alignSelf: 'center' } as const)
+    : null;
+
   if (loading && items.length === 0) {
     return (
-      <Screen tabScreen className="items-center justify-center">
-        <ActivityIndicator color={colors.primary} size="large" />
+      <Screen tabScreen style={{ alignItems: 'center', justifyContent: 'center' }}>
+        <ActivityIndicator color={colors.primary} size="large" accessibilityLabel={t('a11y.loading')} />
       </Screen>
     );
   }
@@ -589,297 +623,223 @@ export default function ShoppingListScreen() {
   if (error && items.length === 0) {
     return (
       <Screen tabScreen>
-        <View className="flex-1 items-center justify-center px-8 pb-10">
-          <View accessible={false} importantForAccessibility="no-hide-descendants">
-            <Ionicons name="cloud-offline-outline" size={42} color={colors.textSecondary} />
-          </View>
-          <Text
-            className="mb-2 mt-4 text-center text-2xl font-bold"
-            style={{ color: colors.text }}
-            accessibilityRole="header"
-          >
-            {t('list.loadFailedTitle')}
-          </Text>
-          <Text className="mb-6 text-center text-base leading-6" style={{ color: colors.textSecondary }}>
-            {t('list.loadFailedBody')}
-          </Text>
-          <Pressable trackId="shopping_list.load_error.retry"
-            className="rounded-3xl px-6 py-3.5 active:opacity-80"
-            style={{ backgroundColor: colors.primary }}
-            onPress={() => void refresh()}
-            accessibilityRole="button"
-          >
-            <Text className="text-base font-bold" style={{ color: colors.onPrimary }}>
-              {t('common.tryAgainAction')}
-            </Text>
-          </Pressable>
+        <View style={[{ flex: 1, paddingHorizontal: 20 }, widthStyle]}>
+          <TopBar />
+          <PageHeader title={t('list.title')} style={{ marginTop: 8 }} />
+          <StateTile
+            icon="cloud-offline-outline"
+            title={t('list.loadFailedTitle')}
+            body={t('list.loadFailedBody')}
+            action={
+              <Button trackId="shopping_list.load_error.retry" icon="refresh" onPress={() => void refresh()}>
+                {t('common.tryAgainAction')}
+              </Button>
+            }
+          />
         </View>
       </Screen>
     );
   }
 
+  const header = (
+    <View style={{ gap: 12, marginBottom: 16 }}>
+      <View>
+        <TopBar />
+        <PageHeader
+          title={t('list.title')}
+          subtitle={
+            items.length > 0
+              ? t('list.progress', { left: items.length - checkedCount, checked: checkedCount })
+              : t('list.subtitle')
+          }
+          style={{ marginTop: 8, paddingBottom: 8 }}
+          actions={
+            items.length > 0 ? (
+              <IconButton
+                variant="tile"
+                icon="trash-outline"
+                label={t('list.clearList')}
+                trackId="shopping_list.clear_all"
+                onPress={handleDeleteAll}
+              />
+            ) : null
+          }
+        />
+      </View>
+
+      <Button
+        trackId="shopping_list.from_recipes"
+        variant="secondary"
+        icon="restaurant-outline"
+        fullWidth
+        accessibilityLabel={t('list.fromRecipes')}
+        onPress={() => setFromRecipesOpen(true)}
+      >
+        {t('list.fromRecipes')}
+      </Button>
+
+      {/* Always ready to type into: the name, then an amount and unit if you like. */}
+      <Tile padding={12} style={{ gap: 8 }}>
+        <FieldInput
+          placeholder={t('list.addItemToggle')}
+          accessibilityLabel={t('list.itemName')}
+          value={name}
+          onChangeText={setName}
+          maxLength={120}
+          returnKeyType="done"
+          onSubmitEditing={() => {
+            logTap('shopping_list.add.name_submit_key');
+            void handleAdd();
+          }}
+          leading={<Ionicons name="add" size={20} color={colors.textSecondary} />}
+        />
+        {typingDuplicateCount > 0 ? (
+          <Text
+            variant="caption"
+            weight="medium"
+            color={colors.warning}
+            accessibilityLiveRegion="polite"
+            style={{ paddingHorizontal: 4 }}
+          >
+            {t(
+              typingDuplicateCount === 1 ? 'list.typingDuplicateOne' : 'list.typingDuplicateOther',
+              { count: typingDuplicateCount },
+            )}
+          </Text>
+        ) : null}
+        <View style={{ flexDirection: 'row', gap: 8 }}>
+          <FieldInput
+            containerStyle={{ width: 84 }}
+            placeholder={t('list.quantityShort')}
+            accessibilityLabel={t('a11y.quantity')}
+            value={quantityText}
+            onChangeText={setQuantityText}
+            keyboardType="decimal-pad"
+            maxLength={10}
+          />
+          <FieldInput
+            containerStyle={{ flex: 1 }}
+            placeholder={t('list.unit')}
+            accessibilityLabel={t('list.unitOptional')}
+            value={unit}
+            onChangeText={setUnit}
+            maxLength={30}
+            returnKeyType="done"
+            onSubmitEditing={() => {
+              logTap('shopping_list.add.unit_submit_key');
+              void handleAdd();
+            }}
+          />
+          <Button
+            trackId="shopping_list.add.submit"
+            icon="add"
+            busy={adding}
+            accessibilityLabel={t('list.addItem')}
+            onPress={() => void handleAdd()}
+          >
+            {t('list.addItem')}
+          </Button>
+        </View>
+      </Tile>
+
+      {showRefreshError ? (
+        <View
+          style={{
+            flexDirection: 'row',
+            alignItems: 'center',
+            gap: 10,
+            borderRadius: 16,
+            paddingVertical: 4,
+            paddingStart: 14,
+            paddingEnd: 4,
+            backgroundColor: colors.dangerSoft,
+          }}
+        >
+          <Ionicons name="alert-circle-outline" size={18} color={colors.danger} />
+          <Text variant="caption" tone="danger" style={{ flex: 1 }}>
+            {t('list.refreshFailed')}
+          </Text>
+          <Button trackId="shopping_list.refresh_error.retry" variant="ghost" size="sm" onPress={() => void refresh()}>
+            {t('common.retry')}
+          </Button>
+        </View>
+      ) : null}
+
+      {notice ? (
+        <View
+          accessibilityRole="summary"
+          style={{
+            flexDirection: 'row',
+            alignItems: 'flex-start',
+            gap: 10,
+            borderRadius: 16,
+            paddingVertical: 4,
+            paddingStart: 14,
+            paddingEnd: 0,
+            backgroundColor: colors.warningSoft,
+          }}
+        >
+          <View accessible={false} importantForAccessibility="no-hide-descendants" style={{ paddingTop: 12 }}>
+            <Ionicons name="information-circle" size={18} color={colors.warning} />
+          </View>
+          <View style={{ flex: 1, minWidth: 0, paddingVertical: 10, gap: 4 }}>
+            <Text variant="caption">{notice.message}</Text>
+            {notice.combineName ? (
+              <Button
+                trackId="shopping_list.notice.combine"
+                variant="link"
+                onPress={() => void handleCombine(notice.combineName!)}
+              >
+                {t('list.combineOneLine')}
+              </Button>
+            ) : null}
+          </View>
+          <IconButton
+            trackId="shopping_list.notice.dismiss"
+            icon="close"
+            iconSize={18}
+            label={t('common.dismiss')}
+            onPress={() => setNotice(null)}
+          />
+        </View>
+      ) : null}
+    </View>
+  );
+
   return (
     <Screen tabScreen>
       <KeyboardAvoidingView
-        className="flex-1"
+        style={{ flex: 1 }}
         behavior={Platform.OS === 'ios' ? 'padding' : undefined}
       >
-        <View className="flex-1 px-5 pt-2">
-        <BrandHeader title={t('list.title')} />
-
-        {showRefreshError && (
-          <View
-            className="mt-4 flex-row items-center gap-3 rounded-2xl px-4 py-3"
-            style={{ backgroundColor: colors.dangerSoft }}
-          >
-            <Text className="flex-1 text-sm" style={{ color: colors.danger }}>
-              {t('list.refreshFailed')}
-            </Text>
-            <Pressable trackId="shopping_list.refresh_error.retry"
-              onPress={() => void refresh()}
-              hitSlop={12}
-              accessibilityRole="button"
-              className="min-h-[24px] justify-center"
-            >
-              <Text className="text-sm font-bold" style={{ color: colors.danger }}>
-                {t('common.retry')}
-              </Text>
-            </Pressable>
-          </View>
-        )}
-
-        <Pressable trackId="shopping_list.from_recipes"
-          accessibilityRole="button"
-          accessibilityLabel={t('list.fromRecipes')}
-          className="mt-5 min-h-[44px] flex-row items-center justify-center gap-2 rounded-3xl border px-4 active:opacity-80"
-          style={{
-            backgroundColor: colors.surface,
-            borderColor: colors.frostedBorder,
-          }}
-          onPress={() => setFromRecipesOpen(true)}
-        >
-          <Ionicons name="restaurant-outline" size={18} color={colors.primary} />
-          <Text className="text-sm font-bold" style={{ color: colors.primary }}>
-            {t('list.fromRecipes')}
-          </Text>
-        </Pressable>
-
-        <Pressable trackId="shopping_list.add.toggle"
-          accessibilityRole="button"
-          accessibilityLabel={t('list.addItemToggle')}
-          accessibilityState={{ expanded: addOpen }}
-          className="mt-3 min-h-[44px] flex-row items-center justify-center gap-2 rounded-3xl border px-4 active:opacity-80"
-          style={{
-            backgroundColor: colors.surface,
-            borderColor: colors.frostedBorder,
-          }}
-          onPress={() => setAddOpen((open) => !open)}
-        >
-          <Ionicons name={addOpen ? 'chevron-up' : 'add'} size={18} color={colors.primary} />
-          <Text className="text-sm font-bold" style={{ color: colors.primary }}>
-            {t('list.addItemToggle')}
-          </Text>
-        </Pressable>
-
-        {addOpen ? (
-          <View
-            className="mt-3 gap-2 rounded-3xl border p-3"
-            style={{ backgroundColor: colors.surface, borderColor: colors.frostedBorder }}
-          >
-            <TextInput
-              className="rounded-2xl border px-4 py-3 text-base"
-              style={{
-                color: colors.text,
-                borderColor: colors.frostedBorder,
-                backgroundColor: colors.background,
-              }}
-              placeholder={t('list.itemName')}
-              placeholderTextColor={colors.textSecondary}
-              accessibilityLabel={t('list.itemName')}
-              value={name}
-              onChangeText={setName}
-              returnKeyType="next"
-              onSubmitEditing={() => {
-                logTap('shopping_list.add.name_submit_key');
-                void handleAdd();
-              }}
-            />
-            {typingDuplicateCount > 0 ? (
-              <Text
-                className="px-1 text-xs font-medium"
-                style={{ color: colors.warning }}
-                accessibilityLiveRegion="polite"
-              >
-                {t(
-                  typingDuplicateCount === 1
-                    ? 'list.typingDuplicateOne'
-                    : 'list.typingDuplicateOther',
-                  { count: typingDuplicateCount },
-                )}
-              </Text>
-            ) : null}
-            <View className="flex-row gap-2">
-              <TextInput
-                className="w-[30%] rounded-2xl border px-3 py-3 text-base"
-                style={{
-                  color: colors.text,
-                  borderColor: colors.frostedBorder,
-                  backgroundColor: colors.background,
-                }}
-                placeholder={t('list.quantityShort')}
-                placeholderTextColor={colors.textSecondary}
-                accessibilityLabel={t('a11y.quantity')}
-                value={quantityText}
-                onChangeText={setQuantityText}
-                keyboardType="decimal-pad"
-              />
-              <TextInput
-                className="flex-1 rounded-2xl border px-3 py-3 text-base"
-                style={{
-                  color: colors.text,
-                  borderColor: colors.frostedBorder,
-                  backgroundColor: colors.background,
-                }}
-                placeholder={t('list.unitOptional')}
-                placeholderTextColor={colors.textSecondary}
-                accessibilityLabel={t('list.unitOptional')}
-                value={unit}
-                onChangeText={setUnit}
-                returnKeyType="done"
-                onSubmitEditing={() => {
-                  logTap('shopping_list.add.unit_submit_key');
-                  void handleAdd();
-                }}
-              />
-              <Pressable trackId="shopping_list.add.submit"
-                className="min-h-[44px] items-center justify-center rounded-2xl px-4 active:opacity-80"
-                style={{ backgroundColor: colors.primary, opacity: adding ? 0.7 : 1 }}
-                disabled={adding}
-                onPress={() => void handleAdd()}
-                accessibilityRole="button"
-                accessibilityLabel={t('list.addItem')}
-                accessibilityState={{ disabled: adding, busy: adding }}
-              >
-                {adding ? (
-                  <ActivityIndicator color={colors.onPrimary} />
-                ) : (
-                  <Ionicons name="add" size={22} color={colors.onPrimary} />
-                )}
-              </Pressable>
-            </View>
-          </View>
-        ) : null}
-
-        {notice ? (
-          <View
-            className="mt-3 flex-row items-start gap-2 rounded-2xl px-3.5 py-3"
-            style={{ backgroundColor: colors.warningSoft }}
-          >
-            <View accessible={false} importantForAccessibility="no-hide-descendants">
-              <Ionicons name="information-circle" size={18} color={colors.warning} style={{ marginTop: 1 }} />
-            </View>
-            <View className="min-w-0 flex-1">
-              <Text className="text-sm leading-5" style={{ color: colors.text }}>
-                {notice.message}
-              </Text>
-              {notice.combineName ? (
-                <Pressable trackId="shopping_list.notice.combine"
-                  className="mt-2 min-h-[32px] justify-center self-start active:opacity-70"
-                  hitSlop={6}
-                  onPress={() => void handleCombine(notice.combineName!)}
-                  accessibilityRole="button"
-                >
-                  <Text className="text-sm font-bold" style={{ color: colors.warning }}>
-                    {t('list.combineOneLine')}
-                  </Text>
-                </Pressable>
-              ) : null}
-            </View>
-            <Pressable trackId="shopping_list.notice.dismiss"
-              onPress={() => setNotice(null)}
-              hitSlop={13}
-              accessibilityRole="button"
-              accessibilityLabel={t('common.dismiss')}
-            >
-              <Ionicons name="close" size={18} color={colors.textSecondary} />
-            </Pressable>
-          </View>
-        ) : null}
-
-        {items.length === 0 ? (
-          <View className="flex-1 items-center justify-center px-4 pb-10">
-            <BrandHeader
-              size="hero"
-              align="center"
+        <FlatList
+          style={{ flex: 1 }}
+          data={groups}
+          keyExtractor={(group) => group.id}
+          renderItem={renderGroup}
+          keyboardShouldPersistTaps="handled"
+          showsVerticalScrollIndicator={false}
+          contentContainerStyle={[{ paddingHorizontal: 20, paddingBottom: 24 }, widthStyle]}
+          ItemSeparatorComponent={GroupGap}
+          ListHeaderComponent={header}
+          ListEmptyComponent={
+            <StateTile
+              icon="basket-outline"
               title={t('list.emptyTitle')}
-              subtitle={t('list.emptyBody')}
-            />
-            <Pressable trackId="shopping_list.empty.browse_recipes"
-              className="mt-8 min-h-[44px] items-center justify-center rounded-3xl px-6 active:opacity-80"
-              style={{ backgroundColor: colors.primary }}
-              onPress={() => router.push('/')}
-              accessibilityRole="button"
-            >
-              <Text className="text-base font-bold" style={{ color: colors.onPrimary }}>
-                {t('list.browseRecipes')}
-              </Text>
-            </Pressable>
-          </View>
-        ) : (
-          <>
-            <FlatList
-              className="mt-4 flex-1"
-              data={listRows}
-              keyExtractor={(row) => row.id}
-              renderItem={renderItem}
-              stickyHeaderIndices={stickyHeaderIndices}
-              showsVerticalScrollIndicator={false}
-              contentContainerStyle={{ paddingBottom: 16 }}
-              ListHeaderComponent={
-                checkedCount > 0 ? (
-                  <Text
-                    className="mb-2 text-xs font-semibold uppercase tracking-wide"
-                    style={{ color: colors.textSecondary }}
-                  >
-                    {t('list.progress', {
-                      left: items.length - checkedCount,
-                      checked: checkedCount,
-                    })}
-                  </Text>
-                ) : null
+              body={t('web.list.emptyBody')}
+              action={
+                <Button
+                  trackId="shopping_list.empty.browse_recipes"
+                  variant="outline"
+                  icon="book-outline"
+                  onPress={() => router.push('/')}
+                >
+                  {t('list.browseRecipes')}
+                </Button>
               }
             />
-            <View className="flex-row gap-2 pb-3 pt-1">
-              <Pressable trackId="shopping_list.clear_checked"
-                className="min-h-[44px] flex-1 items-center justify-center rounded-2xl border active:opacity-80"
-                style={{ borderColor: colors.frostedBorder }}
-                onPress={handleClearChecked}
-                disabled={checkedCount === 0}
-                accessibilityRole="button"
-                accessibilityState={{ disabled: checkedCount === 0 }}
-              >
-                <Text
-                  className="text-sm font-semibold"
-                  style={{ color: checkedCount === 0 ? colors.textSecondary : colors.text }}
-                >
-                  {t('list.clearChecked')}
-                </Text>
-              </Pressable>
-              <Pressable trackId="shopping_list.clear_all"
-                className="min-h-[44px] flex-1 items-center justify-center rounded-2xl active:opacity-80"
-                style={{ backgroundColor: colors.dangerSoft }}
-                onPress={handleDeleteAll}
-                accessibilityRole="button"
-                accessibilityLabel={t('list.clearList')}
-              >
-                <Text className="text-sm font-semibold" style={{ color: colors.danger }}>
-                  {t('list.clearList')}
-                </Text>
-              </Pressable>
-            </View>
-          </>
-        )}
-      </View>
+          }
+        />
       </KeyboardAvoidingView>
 
       <Modal
@@ -889,94 +849,67 @@ export default function ShoppingListScreen() {
         onRequestClose={() => setEditingItem(null)}
       >
         <SafeAreaView
-          className="flex-1"
-          style={{ backgroundColor: colors.background, direction: rtl ? 'rtl' : 'ltr' }}
+          style={{ flex: 1, backgroundColor: colors.background, direction: rtl ? 'rtl' : 'ltr' }}
           accessibilityViewIsModal
           onAccessibilityEscape={() => setEditingItem(null)}
         >
           <KeyboardAvoidingView
-            className="flex-1"
+            style={{ flex: 1 }}
             behavior={Platform.OS === 'ios' ? 'padding' : undefined}
           >
-          <View
-            className="flex-row items-center justify-between border-b px-5 py-4"
-            style={{ borderColor: colors.frostedBorder }}
-          >
-            <Pressable trackId="shopping_list.edit.cancel"
-              onPress={() => setEditingItem(null)}
-              hitSlop={12}
-              accessibilityRole="button"
-            >
-              <Text style={{ color: colors.textSecondary }}>{t('common.cancel')}</Text>
-            </Pressable>
-            <Text
-              className="flex-shrink px-2 text-base font-bold"
-              style={{ color: colors.text }}
-              accessibilityRole="header"
-            >
-              {t('list.editItem')}
-            </Text>
-            <Pressable trackId="shopping_list.edit.save"
-              onPress={() => void handleSaveEdit()}
-              disabled={savingEdit}
-              hitSlop={12}
-              accessibilityRole="button"
-              accessibilityLabel={t('common.save')}
-              accessibilityState={{ disabled: savingEdit, busy: savingEdit }}
-            >
-              {savingEdit ? (
-                <ActivityIndicator color={colors.primary} />
-              ) : (
-                <Text className="font-bold" style={{ color: colors.primary }}>
-                  {t('common.save')}
-                </Text>
-              )}
-            </Pressable>
-          </View>
-          <View className="gap-3 px-5 pt-5">
-            <TextInput
-              className="rounded-2xl border px-4 py-3 text-base"
+            <View
               style={{
-                color: colors.text,
-                borderColor: colors.frostedBorder,
-                backgroundColor: colors.surface,
+                flexDirection: 'row',
+                alignItems: 'center',
+                justifyContent: 'space-between',
+                gap: 8,
+                paddingHorizontal: 12,
+                paddingVertical: 8,
+                borderBottomWidth: HAIRLINE,
+                borderColor: colors.border,
               }}
-              placeholder={t('library.namePlaceholder')}
-              placeholderTextColor={colors.textSecondary}
-              accessibilityLabel={t('list.itemName')}
-              value={editName}
-              onChangeText={setEditName}
-            />
-            <View className="flex-row gap-2">
-              <TextInput
-                className="w-[35%] rounded-2xl border px-4 py-3 text-base"
-                style={{
-                  color: colors.text,
-                  borderColor: colors.frostedBorder,
-                  backgroundColor: colors.surface,
-                }}
-                placeholder={t('list.quantityShort')}
-                placeholderTextColor={colors.textSecondary}
-                accessibilityLabel={t('a11y.quantity')}
-                value={editQuantity}
-                onChangeText={setEditQuantity}
-                keyboardType="decimal-pad"
-              />
-              <TextInput
-                className="flex-1 rounded-2xl border px-4 py-3 text-base"
-                style={{
-                  color: colors.text,
-                  borderColor: colors.frostedBorder,
-                  backgroundColor: colors.surface,
-                }}
-                placeholder={t('list.unit')}
-                placeholderTextColor={colors.textSecondary}
-                accessibilityLabel={t('list.unit')}
-                value={editUnit}
-                onChangeText={setEditUnit}
-              />
+            >
+              <Button trackId="shopping_list.edit.cancel" variant="ghost" size="sm" onPress={() => setEditingItem(null)}>
+                {t('common.cancel')}
+              </Button>
+              <Text variant="h3" align="center" numberOfLines={1} style={{ flexShrink: 1 }}>
+                {t('list.editItem')}
+              </Text>
+              <Button
+                trackId="shopping_list.edit.save"
+                size="sm"
+                busy={savingEdit}
+                accessibilityLabel={t('common.save')}
+                onPress={() => void handleSaveEdit()}
+              >
+                {t('common.save')}
+              </Button>
             </View>
-          </View>
+            <View style={{ gap: 10, paddingHorizontal: 20, paddingTop: 20 }}>
+              <FieldInput
+                placeholder={t('library.namePlaceholder')}
+                accessibilityLabel={t('list.itemName')}
+                value={editName}
+                onChangeText={setEditName}
+              />
+              <View style={{ flexDirection: 'row', gap: 8 }}>
+                <FieldInput
+                  containerStyle={{ width: '35%' }}
+                  placeholder={t('list.quantityShort')}
+                  accessibilityLabel={t('a11y.quantity')}
+                  value={editQuantity}
+                  onChangeText={setEditQuantity}
+                  keyboardType="decimal-pad"
+                />
+                <FieldInput
+                  containerStyle={{ flex: 1 }}
+                  placeholder={t('list.unit')}
+                  accessibilityLabel={t('list.unit')}
+                  value={editUnit}
+                  onChangeText={setEditUnit}
+                />
+              </View>
+            </View>
           </KeyboardAvoidingView>
         </SafeAreaView>
       </Modal>
@@ -1011,5 +944,49 @@ export default function ShoppingListScreen() {
         }}
       />
     </Screen>
+  );
+}
+
+function GroupGap() {
+  return <View style={{ height: 14 }} />;
+}
+
+/** An empty or failed list: an icon, a heading, a line, and the one thing to do next, on a tile. */
+function StateTile({
+  icon,
+  title,
+  body,
+  action,
+}: {
+  icon: ComponentProps<typeof Ionicons>['name'];
+  title: string;
+  body: string;
+  action: ReactNode;
+}) {
+  const { colors } = useThemePreference();
+  return (
+    <Tile padding={24} style={{ alignItems: 'center', gap: 12 }}>
+      <View
+        accessible={false}
+        importantForAccessibility="no-hide-descendants"
+        style={{
+          width: 56,
+          height: 56,
+          borderRadius: 16,
+          alignItems: 'center',
+          justifyContent: 'center',
+          backgroundColor: colors.backgroundElement,
+        }}
+      >
+        <Ionicons name={icon} size={26} color={colors.textSecondary} />
+      </View>
+      <Text variant="h2" align="center">
+        {title}
+      </Text>
+      <Text variant="bodySmall" tone="muted" align="center">
+        {body}
+      </Text>
+      <View style={{ marginTop: 4 }}>{action}</View>
+    </Tile>
   );
 }

@@ -1,16 +1,19 @@
 import Ionicons from '@expo/vector-icons/Ionicons';
 import { useEffect, useRef, useState } from 'react';
-import { Animated, Platform, Text, View } from 'react-native';
+import { Animated, Platform, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
+import { Text } from '@/components/ui/Text';
+import { Radii } from '@/components/ui/tokens';
 import { useThemePreference } from '@/hooks/useThemePreference';
 import { announce } from '@/lib/a11y';
 import { subscribeToast, type ToastMessage } from '@shared/lib/toast';
 
 /**
- * Renders `showToast()` messages: a small pill at the bottom of the screen that fades in and
- * out on its own. Mounted once in the root layout. Colors are inverted from the page (dark pill
- * on a light theme and the other way round) so it stands out without a backdrop.
+ * Renders `showToast()` messages: a compact rounded tile at the bottom of the screen that fades in and out on its
+ * own. Mounted once in the root layout. Colours are inverted from the page (the text colour as the fill, the surface
+ * colour for the words), so it stands out without a backdrop or a shadow; the icon carries success or failure, as on
+ * the web.
  */
 export function ToastHost() {
   const { colors } = useThemePreference();
@@ -49,8 +52,8 @@ export function ToastHost() {
       pointerEvents="none"
       style={{
         position: 'absolute',
-        left: 16,
-        right: 16,
+        start: 16,
+        end: 16,
         bottom: insets.bottom + 32,
         alignItems: 'center',
         zIndex: 1000,
@@ -66,15 +69,11 @@ export function ToastHost() {
           alignItems: 'center',
           gap: 10,
           maxWidth: 420,
+          minHeight: 48,
           paddingVertical: 12,
           paddingHorizontal: 18,
-          borderRadius: 999,
+          borderRadius: Radii.inner,
           backgroundColor: colors.text,
-          shadowColor: '#000',
-          shadowOpacity: 0.18,
-          shadowRadius: 16,
-          shadowOffset: { width: 0, height: 6 },
-          elevation: 6,
         }}
       >
         <Ionicons
@@ -88,7 +87,7 @@ export function ToastHost() {
           size={20}
           color={colors.surface}
         />
-        <Text className="text-sm font-semibold" style={{ color: colors.surface }} numberOfLines={2}>
+        <Text variant="bodySmall" weight="semibold" color={colors.surface} numberOfLines={2} style={{ flexShrink: 1 }}>
           {toast.text}
         </Text>
       </Animated.View>

@@ -7,7 +7,7 @@ import { Pressable } from '@/components/ui/Pressable';
 import { useThemePreference } from '@/hooks/useThemePreference';
 
 import { CloseButton } from './CloseButton';
-import type { MessageActionHandler } from './MessageContent';
+import { messageType, type MessageActionHandler } from './MessageContent';
 import { resolveIconName, toneColors } from './tone';
 import type { MessageView } from './viewModel';
 
@@ -41,6 +41,7 @@ export function BannerPresenter({
   const [width, setWidth] = useState(0);
   const { message } = view;
   const tone = toneColors(message.tone, colors);
+  const type = messageType(view);
   const iconName = resolveIconName(message.icon, message.tone, Ionicons.glyphMap);
   const textAlign = view.rtl ? 'right' : 'left';
   const writingDirection = view.rtl ? 'rtl' : 'ltr';
@@ -79,7 +80,7 @@ export function BannerPresenter({
               accessibilityLabel={view.link.label}
               style={{ minHeight: 40, justifyContent: 'center', paddingHorizontal: 4 }}
             >
-              <Text style={{ fontSize: 14, fontWeight: '600', textDecorationLine: 'underline', color: colors.text }}>
+              <Text style={{ ...type.body('semibold'), fontSize: 14, textDecorationLine: 'underline', color: colors.text }}>
                 {view.link.label}
               </Text>
             </Pressable>
@@ -94,9 +95,9 @@ export function BannerPresenter({
               style={({ pressed }) => ({
                 minHeight: 40,
                 justifyContent: 'center',
-                borderRadius: 20,
+                borderRadius: 12,
                 paddingHorizontal: 16,
-                opacity: pressed ? 0.8 : 1,
+                opacity: pressed ? 0.85 : 1,
                 backgroundColor: button.style === 'primary' ? tone.accent : colors.surface,
                 borderWidth: button.style === 'primary' ? 0 : 1,
                 borderColor: colors.border,
@@ -104,8 +105,7 @@ export function BannerPresenter({
             >
               <Text
                 style={{
-                  fontSize: 14,
-                  fontWeight: '700',
+                  ...(button.style === 'primary' ? type.button(14) : { ...type.body('semibold'), fontSize: 14 }),
                   color: button.style === 'primary' ? tone.onAccent : colors.text,
                 }}
               >
@@ -153,14 +153,14 @@ export function BannerPresenter({
           )}
           <View style={{ flex: 1, minWidth: 0 }}>
             <Text
-              style={{ fontSize: 15, lineHeight: 20, fontWeight: '700', color: colors.text, textAlign, writingDirection }}
+              style={{ ...type.variant('h3'), fontSize: 15, lineHeight: 20, color: colors.text, textAlign, writingDirection }}
               numberOfLines={2}
             >
               {view.title}
             </Text>
             {view.body ? (
               <Text
-                style={{ marginTop: 2, fontSize: 13, lineHeight: 18, color: colors.textSecondary, textAlign, writingDirection }}
+                style={{ ...type.variant('caption'), marginTop: 2, color: colors.textSecondary, textAlign, writingDirection }}
                 numberOfLines={3}
               >
                 {view.body}

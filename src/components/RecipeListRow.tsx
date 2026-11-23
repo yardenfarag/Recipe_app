@@ -1,23 +1,25 @@
-import Ionicons from '@expo/vector-icons/Ionicons';
-import { Fragment, memo, type ReactNode } from 'react';
+import { memo } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Text, View } from 'react-native';
-import { Pressable } from '@/components/ui/Pressable';
+import { View } from 'react-native';
 import Animated, { FadeInDown } from 'react-native-reanimated';
 
 import { ApplianceIcon } from '@/components/ApplianceIcon';
 import { CookieMark } from '@/components/CookieMark';
-import { CostEstimateDisplay } from '@/components/CostEstimateDisplay';
 import { RecipeImage } from '@/components/RecipeImage';
+import { IconButton } from '@/components/ui/IconButton';
+import { Pressable } from '@/components/ui/Pressable';
+import { Text } from '@/components/ui/Text';
+import { HAIRLINE, Radii, usePhotoColors, withAlpha } from '@/components/ui/tokens';
 import { useLanguagePreference } from '@/hooks/useLanguagePreference';
 import { useThemePreference } from '@/hooks/useThemePreference';
-import { CHROME_MAX_FONT_SCALE } from '@/lib/a11y';
+import { useTypography } from '@/hooks/useTypography';
 import { applianceNameKey, cardApplianceKeys } from '@shared/lib/applianceDisplay';
 import { recipeAppliancesOf } from '@shared/lib/appliances';
 import { COST_I18N_KEYS } from '@shared/lib/formatCostEstimate';
 import { formatCookedDate } from '@shared/lib/formatCookedDate';
 import { formatRecipeDuration } from '@shared/lib/formatRecipeDuration';
 import { recipeOriginChip } from '@shared/lib/recipeOrigin';
+import { recipeSource } from '@shared/lib/recipeSource';
 import { Recipe } from '@shared/types/recipe';
 
 interface RecipeListRowProps {
@@ -30,7 +32,7 @@ interface RecipeListRowProps {
   onToggleFavorite?: () => void;
   /** Stagger entrance delay index (list position). */
   index?: number;
-  /** `card` stacks image above title for multi-column grids. */
+  /** `card`: a square photo with the name under it, for a grid. `row`: a thumbnail beside the name. */
   variant?: 'row' | 'card';
   /** Skip enter animation while the parent list is flipping layout. */
   animateEnter?: boolean;
@@ -43,7 +45,15 @@ interface RecipeListRowProps {
   trackId?: string;
 }
 
-/** Frosted mist card in the Library list. */
+/** Photo corners in a card (as on the web's phone grid) and a row's thumbnail. */
+const CARD_PHOTO_RADIUS = 18;
+const ROW_PHOTO_SIZE = 72;
+
+/**
+ * One recipe in the Library or the Hub (Night Market, PIN-177; the web's RecipeCard). A card is the photo, with a
+ * chip saying where the recipe came from, and the name and facts under it with no box around them; a row is a
+ * surface tile with a 72 px thumbnail. The heart and the menu are their own buttons.
+ */
 export const RecipeListRow = memo(function RecipeListRow({
   recipe,
   onPress,
@@ -58,8 +68,11 @@ export const RecipeListRow = memo(function RecipeListRow({
 }: RecipeListRowProps) {
   const { t } = useTranslation();
   const { colors } = useThemePreference();
+  const photo = usePhotoColors();
+  const type = useTypography();
   const { language } = useLanguagePreference();
   const isFavorite = recipe.is_favorite === true;
+  const card = variant === 'card';
 
   const timeLabel =
     recipe.estimated_time_minutes != null
@@ -68,65 +81,11 @@ export const RecipeListRow = memo(function RecipeListRow({
           hours: t('recipe.durationHr'),
         })
       : null;
-  const effortLabel = recipe.effort_level
-    ? t(`recipe.effort.${recipe.effort_level.toLowerCase()}`)
-    : null;
-  const costLabel = recipe.cost_estimate
-    ? t(COST_I18N_KEYS[recipe.cost_estimate])
-    : null;
-
-  const card = variant === 'card';
-  const metaClass = card ? 'text-xs' : 'text-sm';
-  const metaStyle = { color: colors.textSecondary };
-  const metaParts: { key: string; node: ReactNode }[] = [];
-  if (timeLabel) {
-    metaParts.push({
-      key: 'time',
-      node: (
-        <Text className={metaClass} style={metaStyle}>
-          {timeLabel}
-        </Text>
-      ),
-    });
-  }
-  if (effortLabel) {
-    metaParts.push({
-      key: 'effort',
-      node: (
-        <Text className={metaClass} style={metaStyle}>
-          {effortLabel}
-        </Text>
-      ),
-    });
-  }
-  if (recipe.cost_estimate && costLabel) {
-    metaParts.push({
-      key: 'cost',
-      node: (
-        <CostEstimateDisplay
-          tier={recipe.cost_estimate}
-          label={costLabel}
-          color={colors.textSecondary}
-          textClassName={metaClass}
-          meterSize={card ? 5 : 6}
-        />
-      ),
-    });
-  }
-  const cookedDate = recipe.last_cooked_at
-    ? formatCookedDate(recipe.last_cooked_at, language)
-    : null;
+  const effortLabel = recipe.effort_level ? t(`recipe.effort.${recipe.effort_level.toLowerCase()}`) : null;
+  const costLabel = recipe.cost_estimate ? t(COST_I18N_KEYS[recipe.cost_estimate]) : null;
+  const cookedDate = recipe.last_cooked_at ? formatCookedDate(recipe.last_cooked_at, language) : null;
   const cookedLabel = cookedDate ? t('recipe.cookedShort', { date: cookedDate }) : null;
-  if (cookedLabel) {
-    metaParts.push({
-      key: 'cooked',
-      node: (
-        <Text className={metaClass} style={metaStyle}>
-          {cookedLabel}
-        </Text>
-      ),
-    });
-  }
+  const meta = [timeLabel, effortLabel, costLabel, cookedLabel].filter(Boolean) as string[];
 
   // ADR 017: only special, required appliances from the recipe; never basics or Pinch tips.
   const neededKeys = cardApplianceKeys(recipeAppliancesOf(recipe));
@@ -143,194 +102,237 @@ export const RecipeListRow = memo(function RecipeListRow({
       : originChip === 'written'
         ? t('recipeEditor.originChip')
         : null;
+
+  // "TikTok", "Instagram"… or, for a website or a photo, the plain word.
+  const source = recipeSource(recipe);
+  const sourceLabel = source
+    ? source.platform === 'photo'
+      ? t('web.library.sourcePhoto')
+      : source.platform === 'web'
+        ? t('web.library.sourceWebsite')
+        : source.name
+    : null;
+
   // One VoiceOver/TalkBack stop per recipe instead of a fragment per line.
-  const rowLabel = [
-    title,
-    detail,
-    originLabel,
-    timeLabel,
-    effortLabel,
-    costLabel,
-    cookedLabel,
-    needsLabel,
-  ]
+  const rowLabel = [title, detail, originLabel, timeLabel, effortLabel, costLabel, cookedLabel, needsLabel]
     .filter(Boolean)
     .join(', ');
 
-  return (
-    <Animated.View
-      entering={
-        animateEnter ? FadeInDown.delay(Math.min(index * 60, 360)).springify() : undefined
-      }
-      style={card ? { flex: 1 } : undefined}
+  const picture = recipe.image_url ? (
+    <RecipeImage
+      uri={recipe.image_url}
+      variant={card ? 'compact' : 'thumb'}
+      aiGenerated={recipe.image_generated}
+      borderRadius={card ? CARD_PHOTO_RADIUS : Radii.inner}
+      style={card ? { width: '100%', height: '100%' } : { width: ROW_PHOTO_SIZE, height: ROW_PHOTO_SIZE }}
+    />
+  ) : (
+    <View
+      accessible={false}
+      importantForAccessibility="no-hide-descendants"
+      style={{
+        width: card ? '100%' : ROW_PHOTO_SIZE,
+        height: card ? '100%' : ROW_PHOTO_SIZE,
+        borderRadius: card ? CARD_PHOTO_RADIUS : Radii.inner,
+        backgroundColor: colors.backgroundElement,
+        alignItems: 'center',
+        justifyContent: 'center',
+      }}
     >
-      <View
-        className={
-          card
-            ? 'overflow-hidden rounded-3xl'
-            : 'flex-row items-center gap-2 rounded-3xl p-3.5'
-        }
-        style={{
-          backgroundColor: colors.frosted,
-          borderWidth: 1,
-          borderColor: colors.frostedBorder,
-          ...(card ? { flex: 1 } : null),
-        }}
-      >
-        <Pressable trackId={`${trackId}.open`}
-          onPress={onPress}
-          onLongPress={onLongPress}
-          accessibilityRole="button"
-          accessibilityLabel={rowLabel}
-          accessibilityActions={
-            onLongPress ? [{ name: 'longpress', label: t('library.recipeActions') }] : undefined
-          }
-          onAccessibilityAction={(event) => {
-            if (event.nativeEvent.actionName === 'longpress') onLongPress?.();
-          }}
-          className={
-            card
-              ? 'active:opacity-90'
-              : 'min-w-0 flex-1 flex-row items-center gap-3.5 active:opacity-90'
-          }
-        >
-          {recipe.image_url ? (
-            card ? (
-              <RecipeImage
-                uri={recipe.image_url}
-                variant="hero"
-                aiGenerated={recipe.image_generated}
-                borderRadius={0}
-                style={{ height: 140 }}
-              />
-            ) : (
-              <RecipeImage uri={recipe.image_url} variant="thumb" borderRadius={22} aiGenerated={recipe.image_generated} />
-            )
-          ) : (
-            <View
-              accessible={false}
-              importantForAccessibility="no-hide-descendants"
-              className={
-                card
-                  ? 'h-36 w-full items-center justify-center'
-                  : 'h-[72px] w-[72px] items-center justify-center rounded-3xl'
-              }
-              style={{ backgroundColor: colors.primarySoft }}
-            >
-              <CookieMark size={card ? 40 : 28} color={colors.primary} />
-            </View>
-          )}
+      <CookieMark size={card ? 44 : 28} color={colors.primaryText} />
+    </View>
+  );
 
-          <View className={card ? 'gap-1 p-3.5' : 'min-w-0 flex-1'} style={card ? undefined : { paddingEnd: 4 }}>
-            <Text
-              className={card ? 'text-[15px] font-bold leading-5' : 'text-base font-bold leading-5'}
-              style={{ color: colors.text }}
-              numberOfLines={card ? 3 : 2}
-            >
-              {title}
-            </Text>
-            {detail ? (
-              <Text className="text-xs" style={{ color: colors.textSecondary }} numberOfLines={1}>
-                {detail}
-              </Text>
-            ) : null}
-            {originLabel ? (
+  const facts = (
+    <>
+      {detail ? (
+        <Text variant="caption" tone="muted" numberOfLines={1}>
+          {detail}
+        </Text>
+      ) : null}
+      {originLabel ? (
+        <View
+          style={{
+            alignSelf: 'flex-start',
+            borderRadius: 6,
+            paddingHorizontal: 8,
+            paddingVertical: 2,
+            backgroundColor: originChip === 'written' ? colors.primarySoft : colors.accentSoft,
+          }}
+        >
+          <Text
+            color={originChip === 'written' ? colors.primaryText : colors.accentText}
+            style={{ ...type.font('body', 'bold'), fontSize: 11, lineHeight: 15 }}
+          >
+            {originLabel}
+          </Text>
+        </View>
+      ) : null}
+      {meta.length > 0 ? (
+        <Text variant="caption" tone="muted" numberOfLines={card ? 1 : 2}>
+          {meta.join(' · ')}
+        </Text>
+      ) : null}
+      {needsLabel ? (
+        <View testID="recipe-row-needs" style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}>
+          <ApplianceIcon appliance={neededKeys[0]} size={card ? 12 : 14} color={colors.textSecondary} />
+          <Text variant="caption" tone="muted" numberOfLines={1} style={{ flexShrink: 1 }}>
+            {needsLabel}
+          </Text>
+        </View>
+      ) : null}
+    </>
+  );
+
+  const titleText = (
+    <Text
+      numberOfLines={2}
+      style={{
+        ...type.font('display', 'bold'),
+        fontSize: 16,
+        lineHeight: type.rtl ? 22 : 20,
+        letterSpacing: type.tracking(-0.01, 16),
+      }}
+    >
+      {title}
+    </Text>
+  );
+
+  const favoriteButton =
+    onToggleFavorite != null ? (
+      <IconButton
+        variant={card ? 'photo' : 'ghost'}
+        icon={isFavorite ? 'heart' : 'heart-outline'}
+        color={isFavorite ? (card ? photo.onScrim : colors.primaryText) : undefined}
+        label={
+          isFavorite
+            ? t('a11y.removeRecipeFromFavorites', { name: title })
+            : t('a11y.addRecipeToFavorites', { name: title })
+        }
+        selected={isFavorite}
+        trackId={`${trackId}.favorite`}
+        onPress={onToggleFavorite}
+      />
+    ) : null;
+
+  const moreButton =
+    onMore != null ? (
+      <IconButton
+        variant={card ? 'photo' : 'ghost'}
+        icon="ellipsis-vertical"
+        iconSize={18}
+        label={t('a11y.recipeActionsFor', { name: title })}
+        trackId={`${trackId}.more`}
+        onPress={onMore}
+      />
+    ) : null;
+
+  const openProps = {
+    trackId: `${trackId}.open`,
+    onPress,
+    onLongPress,
+    accessibilityRole: 'button' as const,
+    accessibilityLabel: rowLabel,
+    accessibilityActions: onLongPress ? [{ name: 'longpress', label: t('library.recipeActions') }] : undefined,
+    onAccessibilityAction: (event: { nativeEvent: { actionName: string } }) => {
+      if (event.nativeEvent.actionName === 'longpress') onLongPress?.();
+    },
+  };
+
+  const entering = animateEnter ? FadeInDown.delay(Math.min(index * 60, 360)).springify() : undefined;
+
+  if (card) {
+    return (
+      <Animated.View entering={entering} style={{ flex: 1, minWidth: 0 }}>
+        <Pressable {...openProps} style={({ pressed }) => [{ gap: 10 }, pressed ? { opacity: 0.9 } : null]}>
+          <View
+            style={{
+              width: '100%',
+              aspectRatio: 1,
+              borderRadius: CARD_PHOTO_RADIUS,
+              overflow: 'hidden',
+              backgroundColor: colors.backgroundElement,
+            }}
+          >
+            {picture}
+            {sourceLabel ? (
               <View
-                className="mt-1 self-start rounded-full px-2 py-0.5"
                 style={{
-                  backgroundColor: originChip === 'written' ? colors.primarySoft : colors.accentSoft,
+                  position: 'absolute',
+                  top: 8,
+                  start: 8,
+                  maxWidth: '60%',
+                  borderRadius: Radii.pill,
+                  paddingHorizontal: 10,
+                  paddingVertical: 5,
+                  backgroundColor: withAlpha(photo.scrim, 0.7),
                 }}
               >
                 <Text
-                  className="text-[10px] font-bold"
-                  style={{ color: originChip === 'written' ? colors.primary : colors.accent }}
-                  maxFontSizeMultiplier={CHROME_MAX_FONT_SCALE}
+                  numberOfLines={1}
+                  tone="onScrim"
+                  style={{ ...type.font('body', 'semibold'), fontSize: 12, lineHeight: 15 }}
                 >
-                  {originLabel}
+                  {sourceLabel}
                 </Text>
               </View>
             ) : null}
-            {metaParts.length > 0 && (
-              <View
-                className={
-                  card
-                    ? 'mt-1 flex-row flex-wrap items-center'
-                    : 'mt-1.5 flex-row flex-wrap items-center'
-                }
-              >
-                {metaParts.map((part, index) => (
-                  <Fragment key={part.key}>
-                    {index > 0 ? (
-                      <Text className={metaClass} style={metaStyle}>
-                        {' · '}
-                      </Text>
-                    ) : null}
-                    {part.node}
-                  </Fragment>
-                ))}
-              </View>
-            )}
-            {needsLabel ? (
-              <View testID="recipe-row-needs" className="mt-1 flex-row items-center gap-1">
-                <ApplianceIcon appliance={neededKeys[0]} size={card ? 12 : 14} color={colors.textSecondary} />
-                <Text className={metaClass} style={metaStyle} numberOfLines={1}>
-                  {needsLabel}
-                </Text>
-              </View>
-            ) : null}
+          </View>
+          <View style={{ gap: 4, paddingHorizontal: 2 }}>
+            {titleText}
+            {facts}
           </View>
         </Pressable>
-
-        {(onToggleFavorite != null || onMore != null) && (
+        {favoriteButton || moreButton ? (
+          // Over the photo, each on its own dark backing: the heart at the top corner, the menu at the bottom one.
           <View
-            className={
-              card
-                ? 'absolute top-2 flex-row gap-1'
-                : 'flex-row items-center'
-            }
-            style={card ? { end: 8 } : undefined}
+            pointerEvents="box-none"
+            style={{ position: 'absolute', top: 0, start: 0, end: 0, aspectRatio: 1 }}
           >
-            {onToggleFavorite != null && (
-              <Pressable trackId={`${trackId}.favorite`}
-                onPress={(e) => {
-                  e.stopPropagation?.();
-                  onToggleFavorite();
-                }}
-                hitSlop={12}
-                className="min-h-[40px] min-w-[40px] items-center justify-center rounded-full active:opacity-60"
-                style={card ? { backgroundColor: colors.frosted } : undefined}
-                accessibilityRole="button"
-                accessibilityLabel={
-                  isFavorite
-                    ? t('a11y.removeRecipeFromFavorites', { name: title })
-                    : t('a11y.addRecipeToFavorites', { name: title })
-                }
-              >
-                <Ionicons
-                  name={isFavorite ? 'heart' : 'heart-outline'}
-                  size={22}
-                  color={isFavorite ? colors.primary : colors.textSecondary}
-                />
-              </Pressable>
-            )}
-
-            {onMore != null && (
-              <Pressable trackId={`${trackId}.more`}
-                onPress={(e) => {
-                  e.stopPropagation?.();
-                  onMore();
-                }}
-                hitSlop={12}
-                className="z-10 min-h-[40px] min-w-[40px] items-center justify-center rounded-full active:opacity-60"
-                style={card ? { backgroundColor: colors.frosted } : undefined}
-                accessibilityRole="button"
-                accessibilityLabel={t('a11y.recipeActionsFor', { name: title })}
-              >
-                <Ionicons name="ellipsis-vertical" size={18} color={colors.textSecondary} />
-              </Pressable>
-            )}
+            {favoriteButton ? (
+              <View style={{ position: 'absolute', top: 6, end: 6 }}>{favoriteButton}</View>
+            ) : null}
+            {moreButton ? <View style={{ position: 'absolute', bottom: 6, end: 6 }}>{moreButton}</View> : null}
           </View>
-        )}
+        ) : null}
+      </Animated.View>
+    );
+  }
+
+  return (
+    <Animated.View entering={entering}>
+      <View
+        style={{
+          flexDirection: 'row',
+          alignItems: 'center',
+          gap: 4,
+          borderRadius: Radii.card,
+          borderWidth: HAIRLINE,
+          borderColor: colors.border,
+          backgroundColor: colors.surface,
+          padding: 10,
+          paddingEnd: 4,
+        }}
+      >
+        <Pressable
+          {...openProps}
+          style={({ pressed }) => [
+            { flex: 1, minWidth: 0, flexDirection: 'row', alignItems: 'center', gap: 14 },
+            pressed ? { opacity: 0.85 } : null,
+          ]}
+        >
+          {picture}
+          <View style={{ flex: 1, minWidth: 0, gap: 3, paddingVertical: 2 }}>
+            {titleText}
+            {facts}
+          </View>
+        </Pressable>
+        {favoriteButton || moreButton ? (
+          <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+            {favoriteButton}
+            {moreButton}
+          </View>
+        ) : null}
       </View>
     </Animated.View>
   );
