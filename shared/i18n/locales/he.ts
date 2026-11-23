@@ -258,6 +258,7 @@ export default {
     "adminUsage": "עלויות ותמיכה",
     "adminActivity": "יומן פעילות",
     "adminMessages": "הודעות",
+    "adminKit": "ערכת עיצוב",
     "rtlReloadTitle": "לרענן כדי לסדר את המסך?",
     "rtlReloadBody": "עברית וערבית נקראות מימין לשמאל. כדאי לרענן עכשיו כדי שהתפריטים והכותרות יישבו במקום הנכון.",
     "rtlReloadConfirm": "רענון",

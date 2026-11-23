@@ -692,6 +692,12 @@ export default function SettingsScreen() {
                 label={t('settings.adminMessages')}
                 icon="chatbubble-ellipses-outline"
                 onPress={() => router.push('/admin/messages')}
+              />
+              <SettingsActionRow
+                trackId="settings.admin.kit"
+                label={t('settings.adminKit')}
+                icon="color-palette-outline"
+                onPress={() => router.push('/admin/kit')}
                 last
               />
             </SettingsSection>

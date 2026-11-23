@@ -258,6 +258,7 @@ export default {
     "adminUsage": "Costos y soporte",
     "adminActivity": "Registro de actividad",
     "adminMessages": "Mensajes",
+    "adminKit": "Kit de diseño",
     "rtlReloadTitle": "¿Recargar para acomodar la pantalla?",
     "rtlReloadBody": "El hebreo y el árabe se leen de derecha a izquierda. Recarga ahora para que menús y títulos queden del lado correcto.",
     "rtlReloadConfirm": "Recargar",

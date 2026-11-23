@@ -258,6 +258,7 @@ export default {
     "adminUsage": "التكلفة والدعم",
     "adminActivity": "سجل النشاط",
     "adminMessages": "الرسائل",
+    "adminKit": "عناصر التصميم",
     "rtlReloadTitle": "إعادة التحميل لتعديل الاتجاه؟",
     "rtlReloadBody": "العربية والعبرية تُقرآن من اليمين إلى اليسار. أعد التحميل الآن حتى تظهر القوائم والعناوين في مكانها الصحيح.",
     "rtlReloadConfirm": "إعادة التحميل",

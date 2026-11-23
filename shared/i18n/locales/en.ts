@@ -258,6 +258,7 @@ export default {
     "adminUsage": "Cost & support",
     "adminActivity": "Activity log",
     "adminMessages": "Messages",
+    "adminKit": "Design kit",
     "rtlReloadTitle": "Reload for layout?",
     "rtlReloadBody": "Hebrew and Arabic need a right-to-left layout. Reload now so navigation and headers flip correctly.",
     "rtlReloadConfirm": "Reload",
