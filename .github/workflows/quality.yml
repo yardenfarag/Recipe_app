@@ -10,9 +10,48 @@ on:
       skip-browser-tests:
         type: boolean
         default: false
+      # A deploy checks only the app it ships: the Expo app and Workers (checks) or the Next.js app (web).
+      # Every PR still runs both.
+      skip-app-checks:
+        type: boolean
+        default: false
+      skip-web-checks:
+        type: boolean
+        default: false
 
 jobs:
+  # On a pull request, which jobs its files need (scripts/pr-checks.mjs). Deploys and manual runs skip this
+  # and run what their inputs ask for. If this job fails, every check runs.
+  changes:
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pull-requests: read
+    outputs:
+      app: ${{ steps.plan.outputs.app }}
+      web: ${{ steps.plan.outputs.web }}
+      e2e: ${{ steps.plan.outputs.e2e }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          sparse-checkout: scripts/pr-checks.mjs
+          sparse-checkout-cone-mode: false
+
+      - name: Pick the checks
+        id: plan
+        env:
+          GH_TOKEN: ${{ github.token }}
+          PR: ${{ github.event.pull_request.number }}
+        run: |
+          gh pr diff "$PR" --repo "$GITHUB_REPOSITORY" --name-only > changed.txt
+          node scripts/pr-checks.mjs changed.txt
+
   checks:
+    needs: changes
+    # The skip inputs are empty on pull_request and workflow_dispatch.
+    if: ${{ !cancelled() && !inputs.skip-app-checks && (needs.changes.result != 'success' || needs.changes.outputs.app == 'true') }}
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
@@ -47,6 +86,8 @@ jobs:
 
   # The new Next.js web app (ADR 026, ADR 027). Own package.json and lockfile in web/.
   web:
+    needs: changes
+    if: ${{ !cancelled() && !inputs.skip-web-checks && (needs.changes.result != 'success' || needs.changes.outputs.web == 'true') }}
     runs-on: ubuntu-latest
     defaults:
       run:
@@ -85,8 +126,8 @@ jobs:
   # They run one at a time (web/playwright.config.ts), so they are split across machines instead, each
   # with its own Supabase and server. Raise the shard count as the suite grows.
   web-e2e:
-    # Empty on pull_request and workflow_dispatch, so they always run there.
-    if: ${{ !inputs.skip-browser-tests }}
+    needs: changes
+    if: ${{ !cancelled() && !inputs.skip-browser-tests && (needs.changes.result != 'success' || needs.changes.outputs.e2e == 'true') }}
     name: web-e2e (${{ matrix.shard }}/4)
     runs-on: ubuntu-latest
     strategy:

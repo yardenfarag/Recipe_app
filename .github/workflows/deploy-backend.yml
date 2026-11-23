@@ -10,6 +10,9 @@ on:
       - 'supabase/functions/**'
       - 'supabase/config.toml'
       - '.github/workflows/deploy-backend.yml'
+      - '.github/workflows/backend-tests.yml'
+      - 'scripts/backend-changes.mjs'
+  # Tests and deploys everything, whatever changed.
   workflow_dispatch:
 
 # Deploys queue behind each other; a running deploy is never cancelled halfway.
@@ -25,11 +28,55 @@ env:
   SUPABASE_CLI_VERSION: 2.109.1
 
 jobs:
+  # What changed since the last successful deploy, so tests and function deploys cover only that
+  # (scripts/backend-changes.mjs). Comparing with the last success, not the previous push, also picks up
+  # anything a failed or cancelled deploy left out.
+  changes:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      actions: read
+    outputs:
+      db-tests: ${{ steps.plan.outputs.db-tests }}
+      function-tests: ${{ steps.plan.outputs.function-tests }}
+      all-functions: ${{ steps.plan.outputs.all-functions }}
+      functions: ${{ steps.plan.outputs.functions }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          filter: blob:none
+
+      - name: Plan the deploy
+        id: plan
+        env:
+          GH_TOKEN: ${{ github.token }}
+          EVENT: ${{ github.event_name }}
+        run: |
+          base=""
+          if [ "$EVENT" != workflow_dispatch ]; then
+            base=$(gh run list --repo "$GITHUB_REPOSITORY" --workflow deploy-backend.yml --branch master               --status success --limit 1 --json headSha --jq '.[0].headSha // ""')
+          fi
+          if [ -n "$base" ] && git merge-base --is-ancestor "$base" HEAD; then
+            echo "Last successful deploy: $base"
+            git diff --name-only "$base" HEAD > changed.txt
+            node scripts/backend-changes.mjs changed.txt
+          else
+            node scripts/backend-changes.mjs
+          fi
+
   tests:
+    needs: changes
     uses: ./.github/workflows/backend-tests.yml
+    with:
+      skip-db: ${{ needs.changes.outputs.db-tests != 'true' }}
+      skip-functions: ${{ needs.changes.outputs.function-tests != 'true' }}
 
   deploy:
-    needs: tests
+    needs: [changes, tests]
+    # Runs when tests passed or none were needed, never after a failure.
+    if: ${{ !cancelled() && needs.changes.result == 'success' && (needs.tests.result == 'success' || needs.tests.result == 'skipped') }}
     runs-on: ubuntu-latest
     environment: production
     env:
@@ -80,19 +127,29 @@ jobs:
         if: steps.migrations.outputs.pending == 'true'
         run: supabase db push --linked --yes
 
-      # Deploys every function from master, so production always matches the repo. Never add --prune:
-      # it would delete the -preview copies a developer deployed to test a branch
-      # (deploy-function-preview.yml), which aren't in the repo under that name.
+      # Deploys the functions that changed since the last successful deploy, or all of them when shared code
+      # changed, so production always matches the repo. Never add --prune: it would delete the -preview copies
+      # a developer deployed to test a branch (deploy-function-preview.yml), which aren't in the repo under that name.
       - name: Deploy Edge Functions
-        run: supabase functions deploy --project-ref "$SUPABASE_PROJECT_REF" --use-api --yes
+        if: needs.changes.outputs.functions != ''
+        env:
+          ALL: ${{ needs.changes.outputs.all-functions }}
+          FUNCTIONS: ${{ needs.changes.outputs.functions }}
+        run: |
+          if [ "$ALL" = true ]; then
+            supabase functions deploy --project-ref "$SUPABASE_PROJECT_REF" --use-api --yes
+          else
+            # shellcheck disable=SC2086 # one argument per name
+            supabase functions deploy $FUNCTIONS --project-ref "$SUPABASE_PROJECT_REF" --use-api --yes
+          fi
 
-      - name: Smoke-check that every function boots
+      - name: Smoke-check that the deployed functions boot
+        if: needs.changes.outputs.functions != ''
+        env:
+          FUNCTIONS: ${{ needs.changes.outputs.functions }}
         run: |
           failed=""
-          for dir in supabase/functions/*/; do
-            fn=$(basename "$dir")
-            case "$fn" in _*) continue ;; esac
-            [ -f "$dir/index.ts" ] || continue
+          for fn in $FUNCTIONS; do
             for attempt in 1 2 3; do
               status=$(curl -s -o /dev/null -w '%{http_code}' -X OPTIONS \
                 "https://$SUPABASE_PROJECT_REF.supabase.co/functions/v1/$fn" || echo 000)

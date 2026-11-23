@@ -7,16 +7,51 @@ on:
     paths:
       - 'supabase/**'
       - '.github/workflows/backend-tests.yml'
+      - 'scripts/backend-changes.mjs'
   workflow_dispatch:
-  # Deploy backend runs these before every production deploy.
+  # Deploy backend runs these before every production deploy, only the half its changes need.
   workflow_call:
+    inputs:
+      skip-db:
+        type: boolean
+        default: false
+      skip-functions:
+        type: boolean
+        default: false
 
 concurrency:
   group: backend-tests-${{ github.ref }}
   cancel-in-progress: true
 
 jobs:
+  # On a pull request, which half its files need (scripts/backend-changes.mjs, the same rules as the deploy).
+  # If this job fails, both run.
+  changes:
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pull-requests: read
+    outputs:
+      db-tests: ${{ steps.plan.outputs.db-tests }}
+      function-tests: ${{ steps.plan.outputs.function-tests }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Pick the tests
+        id: plan
+        env:
+          GH_TOKEN: ${{ github.token }}
+          PR: ${{ github.event.pull_request.number }}
+        run: |
+          gh pr diff "$PR" --repo "$GITHUB_REPOSITORY" --name-only > changed.txt
+          node scripts/backend-changes.mjs changed.txt
+
   db:
+    needs: changes
+    # skip-db is empty on pull_request and workflow_dispatch.
+    if: ${{ !cancelled() && !inputs.skip-db && (needs.changes.result != 'success' || needs.changes.outputs.db-tests == 'true') }}
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
@@ -44,6 +79,8 @@ jobs:
         run: supabase test db
 
   functions:
+    needs: changes
+    if: ${{ !cancelled() && !inputs.skip-functions && (needs.changes.result != 'success' || needs.changes.outputs.function-tests == 'true') }}
     runs-on: ubuntu-latest
     steps:
       - name: Checkout

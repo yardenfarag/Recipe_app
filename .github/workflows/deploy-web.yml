@@ -3,6 +3,21 @@ name: Deploy web to GitHub Pages
 on:
   push:
     branches: [master, main]
+    # Everything the landing page, guides, legal pages and the Expo web app are built from. Edge Functions,
+    # the Next.js app and the share Worker deploy on their own, so a merge that only touches them skips this.
+    # Later lines win: the last two put back this workflow and the checks it runs.
+    paths:
+      - '**'
+      - '!supabase/**'
+      - '!web/**'
+      - '!workers/**'
+      - '!docs/**'
+      - '!eval/**'
+      - '!.github/**'
+      - '!scripts/backend-changes*'
+      - '!scripts/pr-checks*'
+      - '.github/workflows/deploy-web.yml'
+      - '.github/workflows/quality.yml'
   workflow_dispatch:
 
 permissions:
@@ -19,6 +34,7 @@ jobs:
     uses: ./.github/workflows/quality.yml
     with:
       skip-browser-tests: true
+      skip-web-checks: true
 
   build:
     needs: quality

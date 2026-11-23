@@ -15,6 +15,7 @@ jobs:
     uses: ./.github/workflows/quality.yml
     with:
       skip-browser-tests: true
+      skip-web-checks: true
 
   deploy:
     needs: quality
