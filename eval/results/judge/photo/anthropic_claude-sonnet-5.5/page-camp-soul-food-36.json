@@ -30,8 +30,8 @@
     }
   ],
   "extra_ingredients": [
-    "1 unbaked pie shell"
+    "unbaked pie shell"
   ],
   "steps_score": 5,
-  "note": "The candidate lists the pie shell as an extra ingredient, although the reference only mentions it in the steps."
+  "note": "Candidate adds the unbaked pie shell as an ingredient line, though the reference only mentions it in the steps."
 }

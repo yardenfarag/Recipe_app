@@ -1,0 +1,60 @@
+{
+  "caseId": "ig-Dbb9zI9RMcF--he",
+  "judge": "google/gemini-3.1-pro-preview",
+  "letters": {
+    "A": "openai/gpt-6.2-sol@low",
+    "B": "google/gemini-4-hydrogen@low",
+    "C": "anthropic/claude-haiku-5.5@low",
+    "D": "openai/gpt-6.1-terra@low",
+    "E": "openai/gpt-6.1-sol@low",
+    "F": "openai/gpt-6-luna"
+  },
+  "verdict": {
+    "candidates": [
+      {
+        "letter": "A",
+        "accuracy": 5,
+        "quality": 5,
+        "issues": "None. Excellent translation. Minor issue with feminine 'פרמזן מגוררת' but 'פרמזן' can be feminine (גבינת פרמזן) or masculine, though masculine is more common. 'מי כבישה של מלפפונים חמוצים' is a bit long but accurate."
+      },
+      {
+        "letter": "B",
+        "accuracy": 5,
+        "quality": 5,
+        "issues": "Very natural phrasing ('נגיסי עוף', 'קריספיים'). Gender agreement is correct ('פרמזן מגורר', 'קצוץ דק או מגורר' refers to שום which is masculine)."
+      },
+      {
+        "letter": "C",
+        "accuracy": 4,
+        "quality": 4,
+        "issues": "Contains a typo: 'שיני שיני שום'. Uses 'רשת תיוש' which is a typo for 'רשת קירור' or 'רשת ייבוש' (probably meant 'ייבוש'). 'מתבלים' instead of 'משרים' for marinate."
+      },
+      {
+        "letter": "D",
+        "accuracy": 4,
+        "quality": 4,
+        "issues": "Contains a typo: 'שיני שיני שום'. Otherwise very good."
+      },
+      {
+        "letter": "E",
+        "accuracy": 5,
+        "quality": 5,
+        "issues": "Excellent translation, very idiomatic and precise."
+      },
+      {
+        "letter": "F",
+        "accuracy": 4,
+        "quality": 4,
+        "issues": "Contains a typo: 'שיני שיני שום'. 'מיץ חמוצים' is less precise/natural than 'מי מלפפונים חמוצים'."
+      }
+    ],
+    "ranking": [
+      "E",
+      "B",
+      "A",
+      "D",
+      "F",
+      "C"
+    ]
+  }
+}

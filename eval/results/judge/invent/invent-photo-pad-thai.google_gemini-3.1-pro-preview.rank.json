@@ -1,0 +1,60 @@
+{
+  "caseId": "invent-photo-pad-thai",
+  "judge": "google/gemini-3.1-pro-preview",
+  "letters": {
+    "A": "openai/gpt-6.1-sol@low",
+    "B": "anthropic/claude-haiku-5.5@low",
+    "C": "openai/gpt-6.1-terra@low",
+    "D": "anthropic/claude-sonnet-5.5@low",
+    "E": "google/gemini-4-hydrogen@low",
+    "F": "openai/gpt-6.2-sol@low"
+  },
+  "verdict": {
+    "candidates": [
+      {
+        "letter": "A",
+        "accuracy": 3,
+        "quality": 4,
+        "issues": "Missing tofu, which is visible in the photo. Instructs to cook all of the bean sprouts and garlic chives, whereas the image shows a generous portion of them served fresh on the side."
+      },
+      {
+        "letter": "B",
+        "accuracy": 3,
+        "quality": 4,
+        "issues": "Missing the cubed tofu seen in the image. Substitutes green onions for garlic chives and fails to serve any fresh green onions/chives on the side as pictured."
+      },
+      {
+        "letter": "C",
+        "accuracy": 3,
+        "quality": 4,
+        "issues": "Missing the tofu. Uses 2 tablespoons of tamarind concentrate, which is much stronger than regular paste and might be overpowering for this quantity of noodles."
+      },
+      {
+        "letter": "D",
+        "accuracy": 4,
+        "quality": 5,
+        "issues": "Includes the tofu, but does not reserve any fresh garlic chives for the side garnish, which is prominently featured in the photo."
+      },
+      {
+        "letter": "E",
+        "accuracy": 5,
+        "quality": 5,
+        "issues": "None. Accurately identifies the tofu and perfectly replicates the presentation with fresh bean sprouts, garlic chives, peanuts, chili flakes, and lime on the side."
+      },
+      {
+        "letter": "F",
+        "accuracy": 3,
+        "quality": 4,
+        "issues": "Missing tofu. Uses green onions instead of garlic chives. Instructs to cook all of the sprouts and onions instead of plating some fresh on the side as shown."
+      }
+    ],
+    "ranking": [
+      "E",
+      "D",
+      "C",
+      "B",
+      "A",
+      "F"
+    ]
+  }
+}

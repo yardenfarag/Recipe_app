@@ -1,0 +1,60 @@
+{
+  "caseId": "invent-post-Db6ZKHwvgq0",
+  "judge": "google/gemini-3.1-pro-preview",
+  "letters": {
+    "A": "openai/gpt-6.1-terra@low",
+    "B": "openai/gpt-6.2-sol@low",
+    "C": "openai/gpt-6.1-sol@low",
+    "D": "anthropic/claude-sonnet-5.5@low",
+    "E": "anthropic/claude-haiku-5.5@low",
+    "F": "google/gemini-4-hydrogen@low"
+  },
+  "verdict": {
+    "candidates": [
+      {
+        "letter": "A",
+        "accuracy": 4,
+        "quality": 4,
+        "issues": "Pre-boiling the potatoes is less authentic for the classic Asian caramelized potato technique, which usually braises them from raw in the liquid."
+      },
+      {
+        "letter": "B",
+        "accuracy": 5,
+        "quality": 5,
+        "issues": "None. Very solid, traditional method for braised caramelized potatoes (like Korean gamja jorim), with clear steps and sensible ratios."
+      },
+      {
+        "letter": "C",
+        "accuracy": 5,
+        "quality": 4,
+        "issues": "The liquid-to-potato ratio is a bit low for simmering 700g of potatoes for 15-20 minutes, though the recipe smartly instructs the cook to add water if needed."
+      },
+      {
+        "letter": "D",
+        "accuracy": 3,
+        "quality": 4,
+        "issues": "Smashed potatoes are a different dish entirely, straying from the requested classic caramelized baby potatoes, and adding butter makes it less of a traditional Asian recipe."
+      },
+      {
+        "letter": "E",
+        "accuracy": 3,
+        "quality": 4,
+        "issues": "Uses the oven rather than making the glaze on the stovetop, which is the defining cooking method for this specific dish. Also lacks water to create a proper braising liquid."
+      },
+      {
+        "letter": "F",
+        "accuracy": 5,
+        "quality": 5,
+        "issues": "None. Excellent method utilizing the classic one-pan braise-to-glaze technique, with an appetizing combination of honey and brown sugar."
+      }
+    ],
+    "ranking": [
+      "F",
+      "B",
+      "C",
+      "A",
+      "D",
+      "E"
+    ]
+  }
+}

@@ -1,0 +1,60 @@
+{
+  "caseId": "ig-DYhOQ5SDELR--he",
+  "judge": "anthropic/claude-opus-5.5",
+  "letters": {
+    "A": "google/gemini-4-hydrogen@low",
+    "B": "anthropic/claude-haiku-5.5@low",
+    "C": "openai/gpt-6.2-sol@low",
+    "D": "openai/gpt-6-luna",
+    "E": "openai/gpt-6.1-terra@low",
+    "F": "openai/gpt-6.1-sol@low"
+  },
+  "verdict": {
+    "candidates": [
+      {
+        "letter": "A",
+        "accuracy": 5,
+        "quality": 5,
+        "issues": "Essentially none. Phrasing is natural, with correct terms such as שבבי צ'ילי and שמנת מתוקה. 'מחזירים פנימה את העוף' is a fine rendering of 'toss in'."
+      },
+      {
+        "letter": "B",
+        "accuracy": 4,
+        "quality": 3,
+        "issues": "'מציפים' (flood) is a mistake for 'מצפים' (coat). 'חזי עוף' is a nonstandard plural. 'פתיתי פלפל אדום' is a calque. 'ארומטיים' is slightly stiff."
+      },
+      {
+        "letter": "C",
+        "accuracy": 5,
+        "quality": 4,
+        "issues": "Gender agreement errors: 'פרמזן מגוררת' and 'עד שהיא נמסה' should be masculine. Otherwise fluent and idiomatic."
+      },
+      {
+        "letter": "D",
+        "accuracy": 5,
+        "quality": 4,
+        "issues": "Number error: '2 חזה עוף חתוך' should be plural. 'מבשלים על בעבוע עדין' is slightly awkward."
+      },
+      {
+        "letter": "E",
+        "accuracy": 4,
+        "quality": 5,
+        "issues": "Adds 'במים רותחים', which is not in the source. Otherwise natural and correct."
+      },
+      {
+        "letter": "F",
+        "accuracy": 4,
+        "quality": 3,
+        "issues": "Broken word order in the to-taste lines ('0 לפי הטעם מלח'). Several additions not in the source: במים רותחים, תוך ערבוב, עשיר, מבפנים."
+      }
+    ],
+    "ranking": [
+      "A",
+      "E",
+      "C",
+      "D",
+      "F",
+      "B"
+    ]
+  }
+}

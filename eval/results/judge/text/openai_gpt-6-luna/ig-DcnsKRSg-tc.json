@@ -43,5 +43,5 @@
   ],
   "extra_ingredients": [],
   "steps_score": 5,
-  "note": "Candidate adds a minor tip about not spreading the batter, otherwise matches."
+  "note": "The cooking step adds a tip not in the reference about not spreading the batter in the pan."
 }

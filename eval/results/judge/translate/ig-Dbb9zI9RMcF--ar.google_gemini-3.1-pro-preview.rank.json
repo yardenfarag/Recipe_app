@@ -1,0 +1,60 @@
+{
+  "caseId": "ig-Dbb9zI9RMcF--ar",
+  "judge": "google/gemini-3.1-pro-preview",
+  "letters": {
+    "A": "google/gemini-4-hydrogen@low",
+    "B": "openai/gpt-6.1-terra@low",
+    "C": "openai/gpt-6.2-sol@low",
+    "D": "anthropic/claude-haiku-5.5@low",
+    "E": "openai/gpt-6-luna",
+    "F": "openai/gpt-6.1-sol@low"
+  },
+  "verdict": {
+    "candidates": [
+      {
+        "letter": "A",
+        "accuracy": 5,
+        "quality": 4,
+        "issues": "Good translation overall. 'ماء مخلل' is acceptable for pickle juice. 'تجاعيد وملمس خشن' for crinkles and texture is decent but could be more idiomatic for culinary contexts."
+      },
+      {
+        "letter": "B",
+        "accuracy": 5,
+        "quality": 4,
+        "issues": "Accurate and clear. 'عصير المخلل' is slightly less idiomatic than 'ماء المخلل'. Phrasing is natural and flows well."
+      },
+      {
+        "letter": "C",
+        "accuracy": 5,
+        "quality": 5,
+        "issues": "Excellent translation. Translating 'bites' as 'لقيمات' is very fitting. 'نتوءات وثنيات' is an excellent and highly natural way to describe the crinkles and texture in frying."
+      },
+      {
+        "letter": "D",
+        "accuracy": 4,
+        "quality": 3,
+        "issues": "Translating 'brush' as 'افرش' is incorrect in this context (it means to furnish or spread out on the floor); 'ادهن' is the correct culinary term. 'قوام' is a bit generic for 'texture' in breading."
+      },
+      {
+        "letter": "E",
+        "accuracy": 5,
+        "quality": 4,
+        "issues": "Clarifying 'pickle juice' as 'ماء مخلل الخيار' is a nice touch. The phrasing is solid, though 'تجاعيد' is slightly less appetizing than 'نتوءات' or 'تعرجات' for fried chicken."
+      },
+      {
+        "letter": "F",
+        "accuracy": 5,
+        "quality": 5,
+        "issues": "Outstanding translation. 'تعرجات ونتوءات' perfectly captures the desired crispy breading texture. The addition of 'باستخدام فرشاة' clarifies the verb 'Brush' beautifully."
+      }
+    ],
+    "ranking": [
+      "F",
+      "C",
+      "E",
+      "B",
+      "A",
+      "D"
+    ]
+  }
+}

@@ -1,0 +1,60 @@
+{
+  "caseId": "ig-DYKLtTEsi8G--ru",
+  "judge": "anthropic/claude-opus-5.5",
+  "letters": {
+    "A": "openai/gpt-6.1-sol@low",
+    "B": "openai/gpt-6.2-sol@low",
+    "C": "anthropic/claude-haiku-5.5@low",
+    "D": "openai/gpt-6.1-terra@low",
+    "E": "google/gemini-4-hydrogen@low",
+    "F": "openai/gpt-6-luna"
+  },
+  "verdict": {
+    "candidates": [
+      {
+        "letter": "A",
+        "accuracy": 5,
+        "quality": 5,
+        "issues": "Faithful and natural. The title is long but correct."
+      },
+      {
+        "letter": "B",
+        "accuracy": 4,
+        "quality": 5,
+        "issues": "The title adds «с Nutella», which is not in the source. Otherwise very natural phrasing."
+      },
+      {
+        "letter": "C",
+        "accuracy": 3,
+        "quality": 3,
+        "issues": "The title «пирог с печеньем для ложки» is awkward and mistranslates the dish. «Проверяйте готовность через 12 минут» loses the sense of ongoing checking."
+      },
+      {
+        "letter": "D",
+        "accuracy": 4,
+        "quality": 5,
+        "issues": "The title drops 'scoopable'. Otherwise accurate and natural."
+      },
+      {
+        "letter": "E",
+        "accuracy": 4,
+        "quality": 3,
+        "issues": "Agreement error: «0 шоколадные капли». The 'keep checking' nuance is weakened. The title is acceptable."
+      },
+      {
+        "letter": "F",
+        "accuracy": 3,
+        "quality": 4,
+        "issues": "The title «пирог с печеньем, которое едят ложкой» misrepresents the dish as a pie with cookies. The rest is good."
+      }
+    ],
+    "ranking": [
+      "A",
+      "B",
+      "D",
+      "F",
+      "E",
+      "C"
+    ]
+  }
+}

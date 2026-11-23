@@ -1,0 +1,60 @@
+{
+  "caseId": "invent-post-DbbenLLMla8",
+  "judge": "anthropic/claude-opus-5.5",
+  "letters": {
+    "A": "openai/gpt-6.1-terra@low",
+    "B": "openai/gpt-6.1-sol@low",
+    "C": "google/gemini-4-hydrogen@low",
+    "D": "anthropic/claude-sonnet-5.5@low",
+    "E": "anthropic/claude-haiku-5.5@low",
+    "F": "openai/gpt-6.2-sol@low"
+  },
+  "verdict": {
+    "candidates": [
+      {
+        "letter": "A",
+        "accuracy": 4,
+        "quality": 3,
+        "issues": "Typo '1 egg egg'. No cinnamon in the dough, so it is less churro-like. The dough is somewhat dry at 2 cups flour to 1/2 cup butter. Twelve cookies spaced 2 inches apart may not fit on one sheet."
+      },
+      {
+        "letter": "B",
+        "accuracy": 4,
+        "quality": 5,
+        "issues": "Thorough and coherent, with gram measurements, a chill step, two sheets and clear doneness cues. Minor: no cinnamon in the dough."
+      },
+      {
+        "letter": "C",
+        "accuracy": 4,
+        "quality": 4,
+        "issues": "Solid and complete, with cinnamon in the dough and every ingredient used. Only one baking sheet is specified for 12 large cookies, and there is no dough chill."
+      },
+      {
+        "letter": "D",
+        "accuracy": 4,
+        "quality": 3,
+        "issues": "The 8 oz filling is heavy for 12 cookies. The dough is never explicitly divided into 12 portions. The 1-hour freeze is long, and there is excess cinnamon sugar."
+      },
+      {
+        "letter": "E",
+        "accuracy": 3,
+        "quality": 2,
+        "issues": "Garbled ingredient lines such as 'cream cheese filling: cream cheese'. The filling is not frozen, so the soft filling is hard to enclose. 24 × 1/2 tsp uses only about half of the filling, leaving waste."
+      },
+      {
+        "letter": "F",
+        "accuracy": 4,
+        "quality": 5,
+        "issues": "Divided amounts add up correctly, with cinnamon in both the dough and the coating. Baking one sheet at a time with the second chilled is sensible. Cream cheese is measured by volume, which is slightly odd."
+      }
+    ],
+    "ranking": [
+      "B",
+      "F",
+      "C",
+      "D",
+      "A",
+      "E"
+    ]
+  }
+}

@@ -1,0 +1,60 @@
+{
+  "caseId": "ig-DYwzTorRr5---he",
+  "judge": "anthropic/claude-opus-5.5",
+  "letters": {
+    "A": "anthropic/claude-haiku-5.5@low",
+    "B": "openai/gpt-6.2-sol@low",
+    "C": "openai/gpt-6.1-sol@low",
+    "D": "google/gemini-4-hydrogen@low",
+    "E": "openai/gpt-6-luna",
+    "F": "openai/gpt-6.1-terra@low"
+  },
+  "verdict": {
+    "candidates": [
+      {
+        "letter": "A",
+        "accuracy": 4,
+        "quality": 4,
+        "issues": "'מורחים שמן' narrows 'grease' to oil. 'מערבבים את השוקולד המומס' loses the sense of mixing it into the egg mixture. 'הוניל' should be spelled 'הווניל'."
+      },
+      {
+        "letter": "B",
+        "accuracy": 5,
+        "quality": 3,
+        "issues": "Over-specifies ingredients in the steps ('החמאה המלוחה והשוקולד צ׳יפס המריר', 'הקמח הלבן'), which reads clunky and unnatural."
+      },
+      {
+        "letter": "C",
+        "accuracy": 5,
+        "quality": 4,
+        "issues": "'במקטעים של 30 שניות' is awkward; 'בפולסים' or 'בהפסקות' would be more natural. Otherwise fluent."
+      },
+      {
+        "letter": "D",
+        "accuracy": 4,
+        "quality": 4,
+        "issues": "Title 'כוסות בראוניז לזוג' is a somewhat literal calque. 'מוסיפים את הווניל' drops 'extract'."
+      },
+      {
+        "letter": "E",
+        "accuracy": 4,
+        "quality": 5,
+        "issues": "Drops 'לבן' from the granulated sugar; acceptable in Hebrew but less precise. Otherwise natural and fluent."
+      },
+      {
+        "letter": "F",
+        "accuracy": 5,
+        "quality": 5,
+        "issues": "Minor only: 'השוליים יציבים' is slightly less idiomatic than 'מתייצבים'. Natural overall."
+      }
+    ],
+    "ranking": [
+      "F",
+      "E",
+      "C",
+      "D",
+      "A",
+      "B"
+    ]
+  }
+}

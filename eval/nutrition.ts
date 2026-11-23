@@ -64,7 +64,9 @@ async function main(args: string[]): Promise<void> {
   const flags = Object.fromEntries(args.map((a) => a.replace(/^--/, '').split('=')).map(([k, v]) => [k, v ?? 'true']));
   const only = flags.only as string | undefined;
   const model = flags.model as string | undefined;
-  if (model) setEvalHook({ model: () => model });
+  // `vendor/model@low` pins the reasoning effort, as in eval/models.ts.
+  const [modelId, reasoning] = model?.split('@') ?? [];
+  if (modelId) setEvalHook({ model: () => modelId, reasoning: () => reasoning ?? null });
 
   const file = JSON.parse(await Deno.readTextFile(new URL('./cases/nutrition.json', import.meta.url)));
   const cases = (file.cases as NutritionCase[]).filter((c) => !only || c.lang === only || c.id.includes(only));

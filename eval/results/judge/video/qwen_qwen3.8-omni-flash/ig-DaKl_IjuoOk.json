@@ -34,14 +34,16 @@
     },
     {
       "ref_index": 8,
-      "status": "wrong_quantity"
+      "status": "missing"
     },
     {
       "ref_index": 9,
-      "status": "wrong_quantity"
+      "status": "missing"
     }
   ],
-  "extra_ingredients": [],
+  "extra_ingredients": [
+    "פטרוזיליה טרייה, קצוצה"
+  ],
   "steps_score": 4,
-  "note": "All quantities are missing, and the candidate swaps cilantro for parsley and cornstarch for flour."
+  "note": "All quantities are missing, cornstarch is omitted, and cilantro is replaced with parsley."
 }

@@ -1,0 +1,60 @@
+{
+  "caseId": "web-bbc-chocolate-cake--he",
+  "judge": "google/gemini-3.1-pro-preview",
+  "letters": {
+    "A": "google/gemini-4-hydrogen@low",
+    "B": "openai/gpt-6.2-sol@low",
+    "C": "openai/gpt-6.1-sol@low",
+    "D": "anthropic/claude-haiku-5.5@low",
+    "E": "openai/gpt-6-luna",
+    "F": "openai/gpt-6.1-terra@low"
+  },
+  "verdict": {
+    "candidates": [
+      {
+        "letter": "A",
+        "accuracy": 5,
+        "quality": 5,
+        "issues": "None. Very natural and accurate."
+      },
+      {
+        "letter": "B",
+        "accuracy": 5,
+        "quality": 5,
+        "issues": "None. Reads very well."
+      },
+      {
+        "letter": "C",
+        "accuracy": 5,
+        "quality": 5,
+        "issues": "None. Excellent phrasing and accurate instructions."
+      },
+      {
+        "letter": "D",
+        "accuracy": 3,
+        "quality": 3,
+        "issues": "Uses 'מפשירים' (defrost/thaw) instead of 'ממיסים' (melt) for chocolate. Translates 'sandwich tins' awkwardly as 'תבניות סנדוויץ''."
+      },
+      {
+        "letter": "E",
+        "accuracy": 5,
+        "quality": 5,
+        "issues": "None. Very good translation."
+      },
+      {
+        "letter": "F",
+        "accuracy": 5,
+        "quality": 5,
+        "issues": "None. Accurate and idiomatic."
+      }
+    ],
+    "ranking": [
+      "F",
+      "C",
+      "A",
+      "E",
+      "B",
+      "D"
+    ]
+  }
+}

@@ -1,0 +1,60 @@
+{
+  "caseId": "ig-DbTZcdDJWNH--ru",
+  "judge": "anthropic/claude-opus-5.5",
+  "letters": {
+    "A": "openai/gpt-6-luna",
+    "B": "anthropic/claude-haiku-5.5@low",
+    "C": "google/gemini-4-hydrogen@low",
+    "D": "openai/gpt-6.1-terra@low",
+    "E": "openai/gpt-6.2-sol@low",
+    "F": "openai/gpt-6.1-sol@low"
+  },
+  "verdict": {
+    "candidates": [
+      {
+        "letter": "A",
+        "accuracy": 4,
+        "quality": 3,
+        "issues": "Wrong agreement in '2 крупных яиц' (should be 'яйца'). The lemon line '1 лимон цедры лимона' is awkward and redundant. Uses the decimal point '1.5' instead of '1,5'. Phrasing is somewhat clunky."
+      },
+      {
+        "letter": "B",
+        "accuracy": 4,
+        "quality": 3,
+        "issues": "Wrong agreement in '2 крупных яиц'. '1 лимон цедры' is awkward. 'Ванильного экстракта' is an interpretation of plain 'vanilla'. Otherwise concise and natural, with the correct '1,5'."
+      },
+      {
+        "letter": "C",
+        "accuracy": 3,
+        "quality": 3,
+        "issues": "Wrong agreement in '2 крупного яйца'. '1 цедры лимона' is ungrammatical and drops the lemon itself. Uses '1.5' with a dot. The instructions read naturally."
+      },
+      {
+        "letter": "D",
+        "accuracy": 5,
+        "quality": 4,
+        "issues": "'1 лимон лимонной цедры' is awkward and redundant. Otherwise grammatical and natural, with the correct '1,5' and good terms ('без запаха', 'подходить')."
+      },
+      {
+        "letter": "E",
+        "accuracy": 4,
+        "quality": 4,
+        "issues": "Adds 'пончики' and 'в растительном масле' throughout, making it verbose. Uses '1.5' with a dot. '1 лимон на цедру' is natural."
+      },
+      {
+        "letter": "F",
+        "accuracy": 5,
+        "quality": 4,
+        "issues": "Redundant phrasing 'вмешайте…, вымешивая тесто. Вымешивайте'. Uses '1.5' with a dot. The lemon line is handled well."
+      }
+    ],
+    "ranking": [
+      "D",
+      "F",
+      "E",
+      "B",
+      "A",
+      "C"
+    ]
+  }
+}

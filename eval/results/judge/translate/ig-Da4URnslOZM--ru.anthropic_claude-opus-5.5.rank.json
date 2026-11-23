@@ -1,0 +1,60 @@
+{
+  "caseId": "ig-Da4URnslOZM--ru",
+  "judge": "anthropic/claude-opus-5.5",
+  "letters": {
+    "A": "openai/gpt-6.1-sol@low",
+    "B": "openai/gpt-6-luna",
+    "C": "openai/gpt-6.1-terra@low",
+    "D": "openai/gpt-6.2-sol@low",
+    "E": "anthropic/claude-haiku-5.5@low",
+    "F": "google/gemini-4-hydrogen@low"
+  },
+  "verdict": {
+    "candidates": [
+      {
+        "letter": "A",
+        "accuracy": 5,
+        "quality": 5,
+        "issues": "Very natural and complete. Uses a decimal point instead of the Russian comma (4.5, 1.5, 0.5). 'Для использования по частям' is slightly wordy."
+      },
+      {
+        "letter": "B",
+        "accuracy": 5,
+        "quality": 3,
+        "issues": "Case error in the ingredient list: '1 крупной луковицы, нарезанной' should be nominative. Awkward word order in 'легко не будет протыкаться'. Decimal point instead of comma."
+      },
+      {
+        "letter": "C",
+        "accuracy": 5,
+        "quality": 5,
+        "issues": "Concise and idiomatic. 'Чугунной кастрюли' is an acceptable rendering of Dutch oven. Decimal point instead of comma."
+      },
+      {
+        "letter": "D",
+        "accuracy": 5,
+        "quality": 4,
+        "issues": "Repeats 'говяжья грудинка' excessively. 'Полейте мясо ложкой сока' suggests a single spoonful. Otherwise natural, and 'зира' is a good choice for cumin."
+      },
+      {
+        "letter": "E",
+        "accuracy": 3,
+        "quality": 2,
+        "issues": "'Тмин' (caraway) mistranslates cumin. 'Голландской печи' is a literal calque. Case error in '1 крупной луковицы'. 'Разделенного' is unclear. 'Обрезанной' is vague, and 'обильно' is an addition."
+      },
+      {
+        "letter": "F",
+        "accuracy": 5,
+        "quality": 4,
+        "issues": "'Соуса барбекю, разделенного' is a calque and unclear. Repeats 'говяжья грудинка'. Otherwise fine."
+      }
+    ],
+    "ranking": [
+      "A",
+      "C",
+      "D",
+      "F",
+      "B",
+      "E"
+    ]
+  }
+}

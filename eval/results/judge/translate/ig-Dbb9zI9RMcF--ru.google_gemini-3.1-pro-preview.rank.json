@@ -1,0 +1,60 @@
+{
+  "caseId": "ig-Dbb9zI9RMcF--ru",
+  "judge": "google/gemini-3.1-pro-preview",
+  "letters": {
+    "A": "openai/gpt-6.1-terra@low",
+    "B": "openai/gpt-6.2-sol@low",
+    "C": "google/gemini-4-hydrogen@low",
+    "D": "openai/gpt-6.1-sol@low",
+    "E": "anthropic/claude-haiku-5.5@low",
+    "F": "openai/gpt-6-luna"
+  },
+  "verdict": {
+    "candidates": [
+      {
+        "letter": "A",
+        "accuracy": 5,
+        "quality": 5,
+        "issues": "No significant issues. Translates 'garlic powder' as 'сушёный чеснок', which is idiomatic. Phrasing is natural and accurate."
+      },
+      {
+        "letter": "B",
+        "accuracy": 5,
+        "quality": 5,
+        "issues": "Excellent translation. 'На один укус' is a great idiomatic equivalent for 'bite-size'. Adding 'кисточкой' explicitly translates the action of 'brushing' perfectly."
+      },
+      {
+        "letter": "C",
+        "accuracy": 5,
+        "quality": 4,
+        "issues": "Mostly accurate, but phrasing is slightly less natural in a few places (e.g., 'максимальной хрустящей корочки' sounds somewhat awkward)."
+      },
+      {
+        "letter": "D",
+        "accuracy": 5,
+        "quality": 5,
+        "issues": "Exceptional translation with highly natural culinary phrasing. 'Складочки и неровности' captures the texture instruction perfectly, and 'с помощью кисточки' effectively translates 'brush'."
+      },
+      {
+        "letter": "E",
+        "accuracy": 4,
+        "quality": 3,
+        "issues": "Contains grammatical errors ('0 петрушка', '0 итальянская смесь трав' should be in the genitive case). Phrasing is clunky and overly literal in places ('по размеру укуса', 'ультрахрустящей')."
+      },
+      {
+        "letter": "F",
+        "accuracy": 4,
+        "quality": 3,
+        "issues": "Contains noticeable typos and grammar mistakes ('1 яйца' instead of '1 яйцо', repeated words '4 зубчика зубчика')."
+      }
+    ],
+    "ranking": [
+      "D",
+      "B",
+      "A",
+      "C",
+      "F",
+      "E"
+    ]
+  }
+}

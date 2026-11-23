@@ -1,0 +1,60 @@
+{
+  "caseId": "ig-DbqcKjxoYnj--ar",
+  "judge": "google/gemini-3.1-pro-preview",
+  "letters": {
+    "A": "anthropic/claude-haiku-5.5@low",
+    "B": "openai/gpt-6-luna",
+    "C": "openai/gpt-6.1-sol@low",
+    "D": "openai/gpt-6.2-sol@low",
+    "E": "openai/gpt-6.1-terra@low",
+    "F": "google/gemini-4-hydrogen@low"
+  },
+  "verdict": {
+    "candidates": [
+      {
+        "letter": "A",
+        "accuracy": 3,
+        "quality": 3,
+        "issues": "Translates 'spread' as 'دهن', which means fat or grease in this context and is highly unnatural. Phrasing is slightly disjointed in some instructions."
+      },
+      {
+        "letter": "B",
+        "accuracy": 3,
+        "quality": 3,
+        "issues": "Also uses 'دهن' for 'spread', making it sound like melted fat rather than a chocolate spread. Otherwise, phrasing is acceptable."
+      },
+      {
+        "letter": "C",
+        "accuracy": 5,
+        "quality": 4,
+        "issues": "Good translation. 'كريمة شوكولاتة بيضاء قابلة للدهن' accurately conveys the idea of a spread. Phrasing is natural."
+      },
+      {
+        "letter": "D",
+        "accuracy": 5,
+        "quality": 5,
+        "issues": "Excellent, highly natural translation. 'بدون فرن' is a very common and idiomatic way to say 'no bake' in Arabic. Slightly adds 'مباشرةً' in step 4, but it is culinarily appropriate for ganache."
+      },
+      {
+        "letter": "E",
+        "accuracy": 5,
+        "quality": 5,
+        "issues": "Very strong and natural translation. Accurate terminology for the ingredients and baking equipment."
+      },
+      {
+        "letter": "F",
+        "accuracy": 4,
+        "quality": 4,
+        "issues": "Missed translating 'spread' entirely in the ingredient list, calling it just melted white chocolate cream."
+      }
+    ],
+    "ranking": [
+      "D",
+      "E",
+      "C",
+      "F",
+      "B",
+      "A"
+    ]
+  }
+}

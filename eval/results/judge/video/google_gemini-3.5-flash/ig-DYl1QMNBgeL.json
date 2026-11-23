@@ -38,7 +38,7 @@
     },
     {
       "ref_index": 9,
-      "status": "missing"
+      "status": "wrong_quantity"
     },
     {
       "ref_index": 10,
@@ -57,7 +57,9 @@
       "status": "missing"
     }
   ],
-  "extra_ingredients": [],
+  "extra_ingredients": [
+    "Dried thyme"
+  ],
   "steps_score": 3,
-  "note": "All quantities are missing, and salt, pepper, oil, stock, Parmesan and parsley are omitted; the steps also drop the cook times and the garnish."
+  "note": "The candidate omits all quantities and drops salt, pepper, olive oil, Parmesan and parsley; its method skips removing the beef to shred it and the garnish."
 }

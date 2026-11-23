@@ -1,0 +1,60 @@
+{
+  "caseId": "ig-DbjESPBij8v--he",
+  "judge": "google/gemini-3.1-pro-preview",
+  "letters": {
+    "A": "anthropic/claude-haiku-5.5@low",
+    "B": "openai/gpt-6.2-sol@low",
+    "C": "openai/gpt-6.1-terra@low",
+    "D": "openai/gpt-6-luna",
+    "E": "openai/gpt-6.1-sol@low",
+    "F": "google/gemini-4-hydrogen@low"
+  },
+  "verdict": {
+    "candidates": [
+      {
+        "letter": "A",
+        "accuracy": 4,
+        "quality": 3,
+        "issues": "Contains a typo ('מטחונה' instead of 'טחונה'), and phrasing is somewhat literal and unnatural in Hebrew (e.g., 'לפי הרצון', 'פתיתי תירס' instead of the widely used 'קורנפלקס')."
+      },
+      {
+        "letter": "B",
+        "accuracy": 4,
+        "quality": 5,
+        "issues": "Slight addition in the title ('בלי טיפת שמן' - without a drop of oil), but otherwise translated very naturally and accurately."
+      },
+      {
+        "letter": "C",
+        "accuracy": 5,
+        "quality": 5,
+        "issues": "No significant issues. The translation is highly accurate, uses natural culinary terminology (like 'קורנפלקס כתוש' and 'מהדקים בעדינות'), and flows perfectly."
+      },
+      {
+        "letter": "D",
+        "accuracy": 5,
+        "quality": 4,
+        "issues": "Translating 'paprika powder' as 'פפריקה טחונה' is technically correct but a bit overly literal, as it is usually just called 'פפריקה' in Hebrew recipes. Otherwise very good."
+      },
+      {
+        "letter": "E",
+        "accuracy": 5,
+        "quality": 5,
+        "issues": "No significant issues. Excellent phrasing, accurate, and very idiomatic."
+      },
+      {
+        "letter": "F",
+        "accuracy": 5,
+        "quality": 4,
+        "issues": "Uses the loanword 'אופציונלי' instead of the much more natural and common 'לא חובה' for recipes. Otherwise good."
+      }
+    ],
+    "ranking": [
+      "C",
+      "E",
+      "D",
+      "B",
+      "F",
+      "A"
+    ]
+  }
+}

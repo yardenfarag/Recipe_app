@@ -1,0 +1,60 @@
+{
+  "caseId": "ig-Dd1mhKpKbY3--ru",
+  "judge": "anthropic/claude-opus-5.5",
+  "letters": {
+    "A": "openai/gpt-6.1-sol@low",
+    "B": "openai/gpt-6-luna",
+    "C": "openai/gpt-6.1-terra@low",
+    "D": "openai/gpt-6.2-sol@low",
+    "E": "google/gemini-4-hydrogen@low",
+    "F": "anthropic/claude-haiku-5.5@low"
+  },
+  "verdict": {
+    "candidates": [
+      {
+        "letter": "A",
+        "accuracy": 5,
+        "quality": 5,
+        "issues": "The title «Пирожные» loses the 'cups' notion slightly. Otherwise accurate and natural."
+      },
+      {
+        "letter": "B",
+        "accuracy": 4,
+        "quality": 4,
+        "issues": "Omits «с сахаром» for the condensed milk. Omits 'spoon' in the cream step. The title mixes a Cyrillic transliteration with Latin brand names used elsewhere."
+      },
+      {
+        "letter": "C",
+        "accuracy": 5,
+        "quality": 4,
+        "issues": "«Десерт в формочках» is a somewhat generic title. Otherwise accurate and fluent."
+      },
+      {
+        "letter": "D",
+        "accuracy": 5,
+        "quality": 5,
+        "issues": "«Корзиночки» is an apt rendering of 'cups'. Accurate and idiomatic throughout; no notable issues."
+      },
+      {
+        "letter": "E",
+        "accuracy": 5,
+        "quality": 4,
+        "issues": "Keeps an unnecessary comma in the last ingredient. «Поломайте» is slightly less idiomatic. «до полного застывания» is a minor addition."
+      },
+      {
+        "letter": "F",
+        "accuracy": 3,
+        "quality": 2,
+        "issues": "«топлёного масла» (ghee) mistranslates 'melted butter'. «4 батончиков» is a grammar error. «Капкейки» is inaccurate and inconsistent with «корзинки». «Выложите маффинную форму» is awkward."
+      }
+    ],
+    "ranking": [
+      "D",
+      "A",
+      "C",
+      "E",
+      "B",
+      "F"
+    ]
+  }
+}

@@ -1,0 +1,60 @@
+{
+  "caseId": "web-bbc-chocolate-cake--ar",
+  "judge": "anthropic/claude-opus-5.5",
+  "letters": {
+    "A": "openai/gpt-6.2-sol@low",
+    "B": "openai/gpt-6.1-terra@low",
+    "C": "openai/gpt-6.1-sol@low",
+    "D": "google/gemini-4-hydrogen@low",
+    "E": "openai/gpt-6-luna",
+    "F": "anthropic/claude-haiku-5.5@low"
+  },
+  "verdict": {
+    "candidates": [
+      {
+        "letter": "A",
+        "accuracy": 5,
+        "quality": 5,
+        "issues": "Very accurate and natural. The first step is slightly wordy. \"2 ملعقة\" is used instead of \"ملعقتان\", a common recipe convention."
+      },
+      {
+        "letter": "B",
+        "accuracy": 5,
+        "quality": 4,
+        "issues": "Accurate. \"انثرهما\" for drizzle is imprecise. \"50 غرام\" lacks the accusative ending. Minor stylistic points only."
+      },
+      {
+        "letter": "C",
+        "accuracy": 5,
+        "quality": 5,
+        "issues": "Accurate, with clear sandwich assembly and drizzle as \"خيوط رفيعة\". \"4 بيض كبير الحجم\" is a bit awkward in the ingredients. Minor tanween omissions."
+      },
+      {
+        "letter": "D",
+        "accuracy": 4,
+        "quality": 4,
+        "issues": "\"باهت اللون\" is an odd choice for pale. \"ألصق الكيكتين\" is literal. The sifting step omits \"over the mixture\". Otherwise uses good dual forms (ملعقتين)."
+      },
+      {
+        "letter": "E",
+        "accuracy": 4,
+        "quality": 4,
+        "issues": "The oven line copies the slash format. \"ضع الكيك على حامل\" before sandwiching is slightly confusing. \"رشّهما\" is vague for drizzle. \"4 بيض كبير\" is awkward."
+      },
+      {
+        "letter": "F",
+        "accuracy": 3,
+        "quality": 3,
+        "issues": "\"حفنة ملح\" (a handful) mistranslates \"pinch\". \"عود التنقيب\" is wrong. \"شرائح\" (slices) is wrong for shards. \"وفرش\" and \"اذب\" are grammatical errors."
+      }
+    ],
+    "ranking": [
+      "A",
+      "C",
+      "B",
+      "D",
+      "E",
+      "F"
+    ]
+  }
+}

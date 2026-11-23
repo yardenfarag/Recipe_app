@@ -1,0 +1,60 @@
+{
+  "caseId": "ig-DZxC3yBOPul--ru",
+  "judge": "google/gemini-3.1-pro-preview",
+  "letters": {
+    "A": "openai/gpt-6.2-sol@low",
+    "B": "openai/gpt-6.1-terra@low",
+    "C": "openai/gpt-6.1-sol@low",
+    "D": "google/gemini-4-hydrogen@low",
+    "E": "openai/gpt-6-luna",
+    "F": "anthropic/claude-haiku-5.5@low"
+  },
+  "verdict": {
+    "candidates": [
+      {
+        "letter": "A",
+        "accuracy": 5,
+        "quality": 4,
+        "issues": "The title is a bit wordy but acceptable. Phrasing is generally natural, though repeating 'брауни' in the last step is slightly clunky."
+      },
+      {
+        "letter": "B",
+        "accuracy": 5,
+        "quality": 5,
+        "issues": "Good translation. 'Размером 8 дюймов' for a square pan is acceptable, though 'со стороной' is slightly more precise."
+      },
+      {
+        "letter": "C",
+        "accuracy": 5,
+        "quality": 5,
+        "issues": "Excellent translation. Natural phrasing, correct terminology, and accurately captures the meaning of 'fudgy' as 'с влажной серединкой'."
+      },
+      {
+        "letter": "D",
+        "accuracy": 5,
+        "quality": 4,
+        "issues": "Using singular 'брауни' for the title ('Влажный брауни') is less common than plural when referring to a batch. 'Хлопьевидная морская соль' sounds a bit clinical compared to 'морская соль в хлопьях'."
+      },
+      {
+        "letter": "E",
+        "accuracy": 4,
+        "quality": 4,
+        "issues": "Mistranslated 'flaky sea salt' as 'крупного помола' (coarse salt), which is structurally different from flaky salt."
+      },
+      {
+        "letter": "F",
+        "accuracy": 5,
+        "quality": 3,
+        "issues": "The title 'Фаджи-брауни' is an awkward transliteration. Using the diminutive 'кастрюльке' is too colloquial for a standard recipe."
+      }
+    ],
+    "ranking": [
+      "C",
+      "B",
+      "A",
+      "D",
+      "E",
+      "F"
+    ]
+  }
+}

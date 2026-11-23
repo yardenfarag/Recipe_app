@@ -1,0 +1,60 @@
+{
+  "caseId": "ig-DbTZcdDJWNH--ar",
+  "judge": "anthropic/claude-opus-5.5",
+  "letters": {
+    "A": "openai/gpt-6-luna",
+    "B": "anthropic/claude-haiku-5.5@low",
+    "C": "openai/gpt-6.2-sol@low",
+    "D": "openai/gpt-6.1-sol@low",
+    "E": "openai/gpt-6.1-terra@low",
+    "F": "google/gemini-4-hydrogen@low"
+  },
+  "verdict": {
+    "candidates": [
+      {
+        "letter": "A",
+        "accuracy": 5,
+        "quality": 4,
+        "issues": "The ingredient line \"1 ليمونة قشر ليمون مبشور\" is redundant and awkward. \"2 بيض كبير\" has weak number agreement. Otherwise accurate and natural."
+      },
+      {
+        "letter": "B",
+        "accuracy": 4,
+        "quality": 4,
+        "issues": "\"سكر ناعم\" can be read as powdered sugar rather than granulated. \"1 ليمونة قشر ليمون\" is awkward. \"تتضاعف\" lacks حجمها. Otherwise fluent."
+      },
+      {
+        "letter": "C",
+        "accuracy": 5,
+        "quality": 4,
+        "issues": "Adds explicit details (oil, granulated sugar) in the steps, which is harmless. \"لمدة 2 دقيقة\" is less natural than دقيقتين. \"القطع\" is used repetitively."
+      },
+      {
+        "letter": "D",
+        "accuracy": 5,
+        "quality": 4,
+        "issues": "\"سكر حبيبات\" is slightly unidiomatic. \"2 دقيقة\" should be دقيقتين. \"1 بشر ليمون\" is a bit terse."
+      },
+      {
+        "letter": "E",
+        "accuracy": 5,
+        "quality": 3,
+        "issues": "\"بسكر الحبيبات\" and \"سكر حبيبات\" are awkward. \"2 دقيقة\" should be دقيقتين. \"غطّ\" is missing its kasra. \"2 بيض كبير\" has weak agreement."
+      },
+      {
+        "letter": "F",
+        "accuracy": 5,
+        "quality": 5,
+        "issues": "Better agreement in \"بيضة كبيرة\" (ideally بيضتان). \"تتخمر\" and \"دقيقتين\" read naturally. Only minor nitpicks."
+      }
+    ],
+    "ranking": [
+      "F",
+      "A",
+      "C",
+      "D",
+      "B",
+      "E"
+    ]
+  }
+}

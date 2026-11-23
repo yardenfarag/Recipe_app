@@ -74,13 +74,18 @@
     },
     {
       "ref_index": 18,
+      "status": "missing"
+    },
+    {
+      "ref_index": 19,
       "status": "ok"
     }
   ],
   "extra_ingredients": [
-    "שמן לתבנית או להתזה",
-    "שמן זית לטיגון"
+    "שמן זית",
+    "מעט מלח ופלפל",
+    "שמן לתבנית/להתזה"
   ],
   "steps_score": 4,
-  "note": "The candidate adds an invented final sauce step and lists oils that are not in the reference ingredients."
+  "note": "The 'all the meatball spices' sauce ingredient was dropped from the list, and the candidate added a sauce step not in the reference."
 }

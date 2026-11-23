@@ -30,11 +30,11 @@
     },
     {
       "ref_index": 7,
-      "status": "missing"
+      "status": "wrong_quantity"
     },
     {
       "ref_index": 8,
-      "status": "missing"
+      "status": "wrong_quantity"
     },
     {
       "ref_index": 9,
@@ -47,5 +47,5 @@
   ],
   "extra_ingredients": [],
   "steps_score": 3,
-  "note": "All quantities are missing, baking soda and salt are omitted, and the oven temperature, bake time, chilling and cooling steps are dropped."
+  "note": "All ingredient amounts are missing, and the steps omit the oven temperature, bake time, chilling and cooling."
 }

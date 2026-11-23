@@ -79,15 +79,12 @@
     {
       "ref_index": 19,
       "status": "ok"
-    },
-    {
-      "ref_index": 20,
-      "status": "ok"
     }
   ],
   "extra_ingredients": [
-    "extra parmesan"
+    "Oil for frying",
+    "Extra parmesan"
   ],
   "steps_score": 5,
-  "note": "The candidate adds a separate 'extra parmesan' line that the reference does not list."
+  "note": "Candidate adds oil and extra parmesan as separate ingredient lines not in the reference list."
 }

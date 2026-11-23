@@ -1,0 +1,60 @@
+{
+  "caseId": "ig-DYKLtTEsi8G--he",
+  "judge": "google/gemini-3.1-pro-preview",
+  "letters": {
+    "A": "openai/gpt-6.2-sol@low",
+    "B": "openai/gpt-6-luna",
+    "C": "anthropic/claude-haiku-5.5@low",
+    "D": "google/gemini-4-hydrogen@low",
+    "E": "openai/gpt-6.1-sol@low",
+    "F": "openai/gpt-6.1-terra@low"
+  },
+  "verdict": {
+    "candidates": [
+      {
+        "letter": "A",
+        "accuracy": 5,
+        "quality": 5,
+        "issues": "None. Very natural translation, particularly for the instruction to keep checking."
+      },
+      {
+        "letter": "B",
+        "accuracy": 5,
+        "quality": 4,
+        "issues": "Title is slightly clunky. 'ממשיכים לבדוק' is a literal translation of 'keeping checking'."
+      },
+      {
+        "letter": "C",
+        "accuracy": 4,
+        "quality": 3,
+        "issues": "Number disagreement ('1 טיפות'). Title translation ('לגריפה בכף') is unnatural for this context."
+      },
+      {
+        "letter": "D",
+        "accuracy": 4,
+        "quality": 4,
+        "issues": "Title ('רך') translates 'scoopable' as soft, which loses the specific meaning."
+      },
+      {
+        "letter": "E",
+        "accuracy": 5,
+        "quality": 4,
+        "issues": "Literal translation of the last instruction ('ממשיכים לבדוק')."
+      },
+      {
+        "letter": "F",
+        "accuracy": 5,
+        "quality": 4,
+        "issues": "Slightly clunky phrasing in the last instruction ('בודקים את האפייה... וממשיכים לבדוק')."
+      }
+    ],
+    "ranking": [
+      "A",
+      "E",
+      "B",
+      "F",
+      "D",
+      "C"
+    ]
+  }
+}

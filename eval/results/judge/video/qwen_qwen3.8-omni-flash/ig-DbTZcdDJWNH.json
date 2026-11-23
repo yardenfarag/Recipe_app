@@ -50,8 +50,8 @@
     }
   ],
   "extra_ingredients": [
-    "Donut dough rounds"
+    "donut dough (shaped into rounds)"
   ],
   "steps_score": 2,
-  "note": "The candidate skips all of the dough ingredients and dough-making steps, and covers only frying, sugaring and filling."
+  "note": "The candidate omits all the dough ingredients and the mixing, kneading, rising and shaping steps, covering only frying, coating and filling."
 }

@@ -1,0 +1,60 @@
+{
+  "caseId": "invent-text-shakshuka-he",
+  "judge": "google/gemini-3.1-pro-preview",
+  "letters": {
+    "A": "google/gemini-4-hydrogen@low",
+    "B": "openai/gpt-6.1-terra@low",
+    "C": "openai/gpt-6.1-sol@low",
+    "D": "openai/gpt-6.2-sol@low",
+    "E": "anthropic/claude-sonnet-5.5@low",
+    "F": "anthropic/claude-haiku-5.5@low"
+  },
+  "verdict": {
+    "candidates": [
+      {
+        "letter": "A",
+        "accuracy": 5,
+        "quality": 4,
+        "issues": "The recipe is coherent and well-structured, but lacks a specific pan size recommendation."
+      },
+      {
+        "letter": "B",
+        "accuracy": 5,
+        "quality": 4,
+        "issues": "Clear instructions, but lacks a pan size specification. The ingredient amounts are on the smaller side for a standard wide pan (only 400g tomatoes for a wide pan might spread too thin)."
+      },
+      {
+        "letter": "C",
+        "accuracy": 5,
+        "quality": 5,
+        "issues": "Excellent recipe. Clearly specifies the pan size (28 cm) which is very important for shakshuka, and perfectly balances the ingredients and timing."
+      },
+      {
+        "letter": "D",
+        "accuracy": 5,
+        "quality": 4,
+        "issues": "Good recipe, but missing a specific pan size. Uses volume measurements for spinach and feta which is slightly less precise than weight."
+      },
+      {
+        "letter": "E",
+        "accuracy": 5,
+        "quality": 3,
+        "issues": "Missing pan size. Contains a noticeable typo in the instructions ('וסוברים' instead of 'ושוברים'). Feta is added after cooking as a garnish, which is fine, but adding it during cooking yields a better texture."
+      },
+      {
+        "letter": "F",
+        "accuracy": 5,
+        "quality": 4,
+        "issues": "Missing pan size. Ingredients list doesn't mention that the vegetables need to be chopped/diced before the instructions call for them. Feta is added raw at the end rather than being cooked with the eggs."
+      }
+    ],
+    "ranking": [
+      "C",
+      "A",
+      "D",
+      "B",
+      "F",
+      "E"
+    ]
+  }
+}

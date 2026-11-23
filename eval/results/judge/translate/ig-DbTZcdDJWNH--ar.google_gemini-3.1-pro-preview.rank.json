@@ -1,0 +1,60 @@
+{
+  "caseId": "ig-DbTZcdDJWNH--ar",
+  "judge": "google/gemini-3.1-pro-preview",
+  "letters": {
+    "A": "openai/gpt-6-luna",
+    "B": "anthropic/claude-haiku-5.5@low",
+    "C": "openai/gpt-6.2-sol@low",
+    "D": "openai/gpt-6.1-sol@low",
+    "E": "openai/gpt-6.1-terra@low",
+    "F": "google/gemini-4-hydrogen@low"
+  },
+  "verdict": {
+    "candidates": [
+      {
+        "letter": "A",
+        "accuracy": 5,
+        "quality": 4,
+        "issues": "The phrase '1 ليمونة قشر ليمون مبشور' is quite clunky. '2 بيض كبير' is grammatically acceptable but '2 بيضة كبيرة' is more natural."
+      },
+      {
+        "letter": "B",
+        "accuracy": 4,
+        "quality": 3,
+        "issues": "Mistranslates 'granulated sugar' as 'سكر ناعم' (which typically means powdered/caster sugar). Phrasing like '1 ليمونة قشر ليمون' is awkward."
+      },
+      {
+        "letter": "C",
+        "accuracy": 3,
+        "quality": 4,
+        "issues": "Adds unnecessary words not present in the source text, such as adding 'محشو' to the title, repeating 'القطع' in the instructions, and explicitly writing 'في زيت محايد النكهة' in the frying step."
+      },
+      {
+        "letter": "D",
+        "accuracy": 4,
+        "quality": 4,
+        "issues": "Adds 'محشو' (stuffed) to the title. In step 1, it specifies 'دقيق الخبز والخميرة الفورية' while the source simply says 'flour, yeast'."
+      },
+      {
+        "letter": "E",
+        "accuracy": 4,
+        "quality": 4,
+        "issues": "Like D, it overspecifies 'دقيق الخبز والخميرة الفورية' in step 1 instead of just saying flour and yeast. '2 بيض كبير' is slightly less natural than '2 بيضة كبيرة'."
+      },
+      {
+        "letter": "F",
+        "accuracy": 5,
+        "quality": 5,
+        "issues": "No major issues. Excellent use of '2 بيضة كبيرة' and '1 بشر ليمونة'. The instructions are natural and accurate."
+      }
+    ],
+    "ranking": [
+      "F",
+      "A",
+      "E",
+      "D",
+      "C",
+      "B"
+    ]
+  }
+}

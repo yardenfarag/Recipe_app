@@ -1,0 +1,36 @@
+{
+  "ingredients": [
+    {
+      "ref_index": 0,
+      "status": "missing"
+    },
+    {
+      "ref_index": 1,
+      "status": "missing"
+    },
+    {
+      "ref_index": 2,
+      "status": "missing"
+    },
+    {
+      "ref_index": 3,
+      "status": "missing"
+    },
+    {
+      "ref_index": 4,
+      "status": "wrong_quantity"
+    },
+    {
+      "ref_index": 5,
+      "status": "wrong_quantity"
+    }
+  ],
+  "extra_ingredients": [
+    "תפוחי אדמה",
+    "מבצע סוכר",
+    "חמאה",
+    "סוכר חום"
+  ],
+  "steps_score": 1,
+  "note": "The candidate garbled the recipe into potatoes and 'sugar' items, dropping the cabbage, tahini, silan and garlic, and its method is mostly incoherent."
+}

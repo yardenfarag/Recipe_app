@@ -1,0 +1,60 @@
+{
+  "caseId": "ig-Da4URnslOZM--ar",
+  "judge": "google/gemini-3.1-pro-preview",
+  "letters": {
+    "A": "openai/gpt-6-luna",
+    "B": "openai/gpt-6.1-terra@low",
+    "C": "anthropic/claude-haiku-5.5@low",
+    "D": "openai/gpt-6.1-sol@low",
+    "E": "google/gemini-4-hydrogen@low",
+    "F": "openai/gpt-6.2-sol@low"
+  },
+  "verdict": {
+    "candidates": [
+      {
+        "letter": "A",
+        "accuracy": 5,
+        "quality": 4,
+        "issues": "Good translation, though 'صلصة الشواء' is less commonly used than the transliterated 'باربكيو' for BBQ sauce in culinary contexts."
+      },
+      {
+        "letter": "B",
+        "accuracy": 5,
+        "quality": 5,
+        "issues": "Very natural phrasing. Uses common culinary terminology perfectly."
+      },
+      {
+        "letter": "C",
+        "accuracy": 4,
+        "quality": 2,
+        "issues": "Leftover English letters mid-word ('صلصة الورشستershire'). Typo in the second step ('واده' instead of 'وادهنه')."
+      },
+      {
+        "letter": "D",
+        "accuracy": 5,
+        "quality": 5,
+        "issues": "Excellent translation with high-quality culinary phrasing ('مشذّب', 'عكس اتجاه الألياف'). Reads like a native recipe."
+      },
+      {
+        "letter": "E",
+        "accuracy": 5,
+        "quality": 4,
+        "issues": "Overall very good, but 'منظف' is slightly less precise than 'مشذّب' for trimmed meat."
+      },
+      {
+        "letter": "F",
+        "accuracy": 5,
+        "quality": 4,
+        "issues": "Accurate, but 'مقسّمة للاستخدام على دفعتين' is slightly wordy for a recipe ingredient list compared to just 'مقسمة'."
+      }
+    ],
+    "ranking": [
+      "D",
+      "B",
+      "E",
+      "F",
+      "A",
+      "C"
+    ]
+  }
+}

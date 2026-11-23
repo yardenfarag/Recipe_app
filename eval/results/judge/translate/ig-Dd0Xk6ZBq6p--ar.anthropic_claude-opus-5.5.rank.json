@@ -1,0 +1,60 @@
+{
+  "caseId": "ig-Dd0Xk6ZBq6p--ar",
+  "judge": "anthropic/claude-opus-5.5",
+  "letters": {
+    "A": "google/gemini-4-hydrogen@low",
+    "B": "openai/gpt-6.1-sol@low",
+    "C": "openai/gpt-6-luna",
+    "D": "openai/gpt-6.1-terra@low",
+    "E": "anthropic/claude-haiku-5.5@low",
+    "F": "openai/gpt-6.2-sol@low"
+  },
+  "verdict": {
+    "candidates": [
+      {
+        "letter": "A",
+        "accuracy": 5,
+        "quality": 4,
+        "issues": "Minor gender agreement slip in 'كوكيز مرتفع'. The 'spread' nuance is dropped, though acceptable. Natural overall."
+      },
+      {
+        "letter": "B",
+        "accuracy": 5,
+        "quality": 3,
+        "issues": "'للدهن' is repeated clumsily, e.g. 'للدهن لحشو الوسط'. 'سائحًا' is an odd choice for 'gooey'. '2 دقيقة' is unidiomatic."
+      },
+      {
+        "letter": "C",
+        "accuracy": 5,
+        "quality": 5,
+        "issues": "Natural and correct throughout ('دقيقتين', 'غرامًا'). 'سميكة' for 'tall' is acceptable."
+      },
+      {
+        "letter": "D",
+        "accuracy": 5,
+        "quality": 3,
+        "issues": "'السكر الحبيبات' is ungrammatical. '2 دقيقة' should be 'دقيقتين', and 'غرام' should be accusative 'غرامًا'."
+      },
+      {
+        "letter": "E",
+        "accuracy": 3,
+        "quality": 2,
+        "issues": "English is left in the text: 'بويno' and 'while'. 'فرد' should be the imperative 'افرد'. The 'spread' sense is dropped from 'كيندر أو بويno للحشو'."
+      },
+      {
+        "letter": "F",
+        "accuracy": 4,
+        "quality": 4,
+        "issues": "Adds 'البيضاء' to the chocolate, an inference not in the source. '2 دقيقة' is unidiomatic. 'القابلة للدهن' is repeated heavily."
+      }
+    ],
+    "ranking": [
+      "C",
+      "F",
+      "A",
+      "D",
+      "B",
+      "E"
+    ]
+  }
+}

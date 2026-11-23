@@ -1,0 +1,60 @@
+{
+  "caseId": "ig-DYwzTorRr5---ru",
+  "judge": "google/gemini-3.1-pro-preview",
+  "letters": {
+    "A": "google/gemini-4-hydrogen@low",
+    "B": "openai/gpt-6-luna",
+    "C": "openai/gpt-6.1-sol@low",
+    "D": "openai/gpt-6.2-sol@low",
+    "E": "anthropic/claude-haiku-5.5@low",
+    "F": "openai/gpt-6.1-terra@low"
+  },
+  "verdict": {
+    "candidates": [
+      {
+        "letter": "A",
+        "accuracy": 4,
+        "quality": 4,
+        "issues": "The phrase 'пока... середина не останется слегка мягкой' contains a misplaced 'не', which technically reverses the meaning (implies waiting until the center is no longer soft). 'Тёмных шоколадных капель' is slightly literal."
+      },
+      {
+        "letter": "B",
+        "accuracy": 4,
+        "quality": 5,
+        "issues": "Translates 'until pale' as 'до светлой пышной массы', which adds 'пышной' (fluffy), though this is a very natural culinary addition. 'Granulated sugar' is just translated as 'сахара' instead of 'сахара-песка', but perfectly clear."
+      },
+      {
+        "letter": "C",
+        "accuracy": 4,
+        "quality": 3,
+        "issues": "'Шоколадных капель из тёмного шоколада' is redundant. Contains the same awkward double negative 'середина не останется' as Candidate A."
+      },
+      {
+        "letter": "D",
+        "accuracy": 4,
+        "quality": 4,
+        "issues": "A bit wordy and colloquial in the microwave instruction ('включая её на 30 секунд за раз'). Added 'со сливочным маслом' in step 4. Uses the diminutive 'серединка'. Avoids the double negative error in the baking step."
+      },
+      {
+        "letter": "E",
+        "accuracy": 3,
+        "quality": 3,
+        "issues": "Grammar error in the ingredients list: '1 крупного яйца' (should be '1 крупное яйцо'). 'Гранулированного сахара' is a direct, unidiomatic translation of 'granulated sugar' (should be 'сахар-песок' or 'белый сахар')."
+      },
+      {
+        "letter": "F",
+        "accuracy": 4,
+        "quality": 4,
+        "issues": "Good choice of 'капель тёмного шоколада', but suffers from the same logical error in the final sentence ('пока... середина не останется слегка мягкой') as A and C."
+      }
+    ],
+    "ranking": [
+      "B",
+      "D",
+      "F",
+      "A",
+      "C",
+      "E"
+    ]
+  }
+}

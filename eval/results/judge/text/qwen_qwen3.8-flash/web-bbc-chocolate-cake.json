@@ -66,9 +66,9 @@
     }
   ],
   "extra_ingredients": [
-    "1 pinch salt (pinch, for cake batter)",
-    "1 pinch salt (pinch, for buttercream)"
+    "1 pinch salt",
+    "1 pinch salt"
   ],
   "steps_score": 5,
-  "note": "The candidate lists salt twice as separate ingredients; salt appears in the method but is not in the reference ingredient list."
+  "note": "Candidate adds two pinch-of-salt lines that are mentioned in the steps but not in the reference ingredient list."
 }

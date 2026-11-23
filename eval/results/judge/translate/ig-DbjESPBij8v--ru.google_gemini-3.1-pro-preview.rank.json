@@ -1,0 +1,60 @@
+{
+  "caseId": "ig-DbjESPBij8v--ru",
+  "judge": "google/gemini-3.1-pro-preview",
+  "letters": {
+    "A": "openai/gpt-6-luna",
+    "B": "google/gemini-4-hydrogen@low",
+    "C": "anthropic/claude-haiku-5.5@low",
+    "D": "openai/gpt-6.1-sol@low",
+    "E": "openai/gpt-6.1-terra@low",
+    "F": "openai/gpt-6.2-sol@low"
+  },
+  "verdict": {
+    "candidates": [
+      {
+        "letter": "A",
+        "accuracy": 4,
+        "quality": 4,
+        "issues": "Missed the capitalization of 'NO' (БЕЗ) from the title. Uses 'Выпекайте' which is typically used for baking pastries rather than meat ('Запекайте')."
+      },
+      {
+        "letter": "B",
+        "accuracy": 4,
+        "quality": 3,
+        "issues": "Grammar errors in the ingredients list: '0' requires the genitive plural ('0 специй', '0 измельчённых...'), but nominative/genitive singular was used. Also uses 'Выпекайте' instead of 'Запекайте'."
+      },
+      {
+        "letter": "C",
+        "accuracy": 3,
+        "quality": 3,
+        "issues": "Grammar error in ingredients ('0 специи'). Mistranslated 'season' as 'посолите' (salt) rather than 'приправьте' (season). Uses 'Выпекайте' instead of 'Запекайте'."
+      },
+      {
+        "letter": "D",
+        "accuracy": 5,
+        "quality": 5,
+        "issues": "No significant issues. Properly preserved the emphasis on 'БЕЗ' in the title, used correct grammar for ingredients with the number 0, and correctly used 'Запекайте' for meat."
+      },
+      {
+        "letter": "E",
+        "accuracy": 4,
+        "quality": 5,
+        "issues": "Missed the emphasis on 'NO' (БЕЗ) in the title, but otherwise provides a very natural and accurate translation with correct culinary terminology."
+      },
+      {
+        "letter": "F",
+        "accuracy": 4,
+        "quality": 5,
+        "issues": "Missed the emphasis on 'NO' (БЕЗ) in the title. Otherwise, an excellent and idiomatic translation."
+      }
+    ],
+    "ranking": [
+      "D",
+      "F",
+      "E",
+      "A",
+      "B",
+      "C"
+    ]
+  }
+}

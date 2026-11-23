@@ -22,7 +22,7 @@
     },
     {
       "ref_index": 5,
-      "status": "wrong_quantity"
+      "status": "ok"
     },
     {
       "ref_index": 6,
@@ -66,7 +66,7 @@
     },
     {
       "ref_index": 16,
-      "status": "wrong_quantity"
+      "status": "ok"
     },
     {
       "ref_index": 17,
@@ -74,6 +74,6 @@
     }
   ],
   "extra_ingredients": [],
-  "steps_score": 5,
-  "note": "The red color bottles were misread as 2 1/2 oz instead of ½ oz, and the icing salt is given as 0.33 tsp instead of 0.5 tsp."
+  "steps_score": 4,
+  "note": "The method wrongly adds the red color with the flavors, even though the color belongs in the cocoa paste."
 }

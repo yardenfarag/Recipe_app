@@ -1,0 +1,60 @@
+{
+  "caseId": "ig-DZxC3yBOPul--he",
+  "judge": "google/gemini-3.1-pro-preview",
+  "letters": {
+    "A": "google/gemini-4-hydrogen@low",
+    "B": "openai/gpt-6.2-sol@low",
+    "C": "openai/gpt-6.1-terra@low",
+    "D": "openai/gpt-6-luna",
+    "E": "openai/gpt-6.1-sol@low",
+    "F": "anthropic/claude-haiku-5.5@low"
+  },
+  "verdict": {
+    "candidates": [
+      {
+        "letter": "A",
+        "accuracy": 4,
+        "quality": 5,
+        "issues": "Added 'קטן' (small) to the saucepan which wasn't in the source. Translated 'flaky sea salt' as 'coarse sea salt' (מלח ים גס), which is a common substitute but not perfectly accurate."
+      },
+      {
+        "letter": "B",
+        "accuracy": 4,
+        "quality": 4,
+        "issues": "Added 'שוקולדיים' (chocolatey) to the title, which was not in the source. Also added 'קטן' (small) to the saucepan."
+      },
+      {
+        "letter": "C",
+        "accuracy": 5,
+        "quality": 5,
+        "issues": "Very accurate and natural. Excellent translation of 'flaky sea salt' (פתיתי מלח ים)."
+      },
+      {
+        "letter": "D",
+        "accuracy": 5,
+        "quality": 4,
+        "issues": "Accurate, but 'מלח ים פתיתים' sounds slightly less natural than 'פתיתי מלח ים' in construct state."
+      },
+      {
+        "letter": "E",
+        "accuracy": 3,
+        "quality": 5,
+        "issues": "Completely changed the title from 'Fudgy' to 'Rich and tender' (עשירים ונימוחים)."
+      },
+      {
+        "letter": "F",
+        "accuracy": 4,
+        "quality": 3,
+        "issues": "Contains a typo 'בסירית' instead of 'בסיר' or 'בסיר קטן'. Incorrect construct state 'שוקולד הצ׳יפס' instead of 'השוקולד צ'יפס' or 'נטיפי השוקולד'."
+      }
+    ],
+    "ranking": [
+      "C",
+      "D",
+      "A",
+      "B",
+      "E",
+      "F"
+    ]
+  }
+}

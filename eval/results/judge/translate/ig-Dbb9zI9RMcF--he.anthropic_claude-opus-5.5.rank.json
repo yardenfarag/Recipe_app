@@ -1,0 +1,60 @@
+{
+  "caseId": "ig-Dbb9zI9RMcF--he",
+  "judge": "anthropic/claude-opus-5.5",
+  "letters": {
+    "A": "openai/gpt-6.2-sol@low",
+    "B": "google/gemini-4-hydrogen@low",
+    "C": "anthropic/claude-haiku-5.5@low",
+    "D": "openai/gpt-6.1-terra@low",
+    "E": "openai/gpt-6.1-sol@low",
+    "F": "openai/gpt-6-luna"
+  },
+  "verdict": {
+    "candidates": [
+      {
+        "letter": "A",
+        "accuracy": 5,
+        "quality": 4,
+        "issues": "'פרמזן מגוררת' has a gender slip (should be מגורר). 'זהובות עמוקות' is slightly awkward. Otherwise natural and complete."
+      },
+      {
+        "letter": "B",
+        "accuracy": 5,
+        "quality": 4,
+        "issues": "'שיני שום, קצוץ דק או מגורר' has an agreement error (should be feminine plural). 'קריספיים/קריספיות' is an anglicism. The title adds 'ברוטב'. 'בנגלות' is colloquial."
+      },
+      {
+        "letter": "C",
+        "accuracy": 4,
+        "quality": 3,
+        "issues": "'שיני שיני שום' is duplicated. 'מתבלים' is used for marinate. 'רשת תיוש' is a wrong term. 'מגבות נייר' is a calque. The ranges written as 'עד' are fine."
+      },
+      {
+        "letter": "D",
+        "accuracy": 5,
+        "quality": 3,
+        "issues": "'שיני שיני שום' is duplicated. 'פרמזן מגוררת' has a gender slip. Otherwise fluent."
+      },
+      {
+        "letter": "E",
+        "accuracy": 5,
+        "quality": 3,
+        "issues": "'להגרת עודפי השמן' is an odd or erroneous word (should be ניקוז). 'שעה 1' is unnatural. 'פרמזן מגוררת' has a gender slip."
+      },
+      {
+        "letter": "F",
+        "accuracy": 5,
+        "quality": 3,
+        "issues": "'שיני שיני שום' is duplicated. 'פרמזן מגוררת' has a gender slip. 'מיץ חמוצים' is natural."
+      }
+    ],
+    "ranking": [
+      "A",
+      "B",
+      "E",
+      "D",
+      "F",
+      "C"
+    ]
+  }
+}

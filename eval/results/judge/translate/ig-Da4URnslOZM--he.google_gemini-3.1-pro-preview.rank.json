@@ -1,0 +1,60 @@
+{
+  "caseId": "ig-Da4URnslOZM--he",
+  "judge": "google/gemini-3.1-pro-preview",
+  "letters": {
+    "A": "google/gemini-4-hydrogen@low",
+    "B": "anthropic/claude-haiku-5.5@low",
+    "C": "openai/gpt-6-luna",
+    "D": "openai/gpt-6.1-terra@low",
+    "E": "openai/gpt-6.2-sol@low",
+    "F": "openai/gpt-6.1-sol@low"
+  },
+  "verdict": {
+    "candidates": [
+      {
+        "letter": "A",
+        "accuracy": 5,
+        "quality": 4,
+        "issues": "The phrasing 'מנוקה משומן מיותר' is slightly clunky. 'מחולק' is a literal translation of 'divided'. 'נותנים לחזה הבקר לנוח' is a bit colloquial compared to 'מניחים לחזה הבקר'."
+      },
+      {
+        "letter": "B",
+        "accuracy": 4,
+        "quality": 3,
+        "issues": "Contains several overly literal translations: 'סיר הולנדי' (Dutch oven is better translated contextually), 'מרק בקר' (beef broth is better as 'ציר בקר'), 'מגבת נייר' (should be 'נייר סופג'), and 'מיץ האפייה' ('pan juices' should be 'נוזלי הצלייה')."
+      },
+      {
+        "letter": "C",
+        "accuracy": 5,
+        "quality": 5,
+        "issues": "'מחולק' is a literal translation for 'divided' in an ingredient list, but the rest of the translation is very natural, accurate, and uses great culinary terminology ('סיר כבד שמתאים לתנור')."
+      },
+      {
+        "letter": "D",
+        "accuracy": 5,
+        "quality": 5,
+        "issues": "Very similar to C. Excellent flow and terminology. 'מחולק' is still a bit literal for 'divided', but standard enough in translated recipes."
+      },
+      {
+        "letter": "E",
+        "accuracy": 5,
+        "quality": 5,
+        "issues": "No major issues. The translator did an excellent job adapting 'divided' into 'לשימוש בשני שלבים', which is the most idiomatic and clear way to convey this in Hebrew recipes. The phrasing is highly natural throughout."
+      },
+      {
+        "letter": "F",
+        "accuracy": 5,
+        "quality": 5,
+        "issues": "Uses 'מחולק' for 'divided', which is slightly literal, but otherwise the text is perfectly fluent, accurate, and reads like a native recipe."
+      }
+    ],
+    "ranking": [
+      "E",
+      "F",
+      "D",
+      "C",
+      "A",
+      "B"
+    ]
+  }
+}

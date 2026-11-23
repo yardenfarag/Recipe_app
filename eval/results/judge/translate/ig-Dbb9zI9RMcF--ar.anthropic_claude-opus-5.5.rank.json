@@ -1,0 +1,60 @@
+{
+  "caseId": "ig-Dbb9zI9RMcF--ar",
+  "judge": "anthropic/claude-opus-5.5",
+  "letters": {
+    "A": "google/gemini-4-hydrogen@low",
+    "B": "openai/gpt-6.1-terra@low",
+    "C": "openai/gpt-6.2-sol@low",
+    "D": "anthropic/claude-haiku-5.5@low",
+    "E": "openai/gpt-6-luna",
+    "F": "openai/gpt-6.1-sol@low"
+  },
+  "verdict": {
+    "candidates": [
+      {
+        "letter": "C",
+        "accuracy": 5,
+        "quality": 5,
+        "issues": "Very natural, with good terms (لقيمات, شبك معدني, فرشاة). Minor: '1 ساعة' reads less naturally than 'ساعة واحدة'."
+      },
+      {
+        "letter": "F",
+        "accuracy": 5,
+        "quality": 5,
+        "issues": "Natural and accurate. 'فهذه هي سر' has slightly awkward agreement."
+      },
+      {
+        "letter": "A",
+        "accuracy": 5,
+        "quality": 4,
+        "issues": "'ثوم بودرة' is colloquial. 'ادهن صلصة... فوق' is slightly awkward. 'حرّك معه' is a bit loose."
+      },
+      {
+        "letter": "B",
+        "accuracy": 5,
+        "quality": 4,
+        "issues": "'عصير المخلل' is a calque. 'ذهبي اللون فاتحاً' is awkward."
+      },
+      {
+        "letter": "E",
+        "accuracy": 4,
+        "quality": 4,
+        "issues": "Adds 'الخيار' (cucumber) to the pickle juice. 'قلّب المايونيز...' omits stirring it into the butter. 'منقوعًا' is slightly off for marinating."
+      },
+      {
+        "letter": "D",
+        "accuracy": 4,
+        "quality": 3,
+        "issues": "'تجاعيد وقوام' is awkward. 'افرش' is wrong for brushing. 'عصير المخلل' is a calque. 'امزج المايونيز...' does not say what to mix it into."
+      }
+    ],
+    "ranking": [
+      "C",
+      "F",
+      "A",
+      "B",
+      "E",
+      "D"
+    ]
+  }
+}

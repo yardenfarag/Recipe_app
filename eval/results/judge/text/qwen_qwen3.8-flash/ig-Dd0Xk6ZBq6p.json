@@ -34,7 +34,7 @@
     },
     {
       "ref_index": 8,
-      "status": "ok"
+      "status": "wrong_quantity"
     },
     {
       "ref_index": 9,
@@ -50,6 +50,6 @@
     }
   ],
   "extra_ingredients": [],
-  "steps_score": 4,
-  "note": "The optional homemade Bueno spread step is missing from the method, so the white chocolate, cream and hazelnut spread are never used."
+  "steps_score": 5,
+  "note": "The Kinder/Bueno spread is listed as 180 g instead of 150 g."
 }

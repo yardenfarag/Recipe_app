@@ -1,0 +1,60 @@
+{
+  "caseId": "ig-DYhOQ5SDELR--ar",
+  "judge": "anthropic/claude-opus-5.5",
+  "letters": {
+    "A": "openai/gpt-6.2-sol@low",
+    "B": "google/gemini-4-hydrogen@low",
+    "C": "anthropic/claude-haiku-5.5@low",
+    "D": "openai/gpt-6-luna",
+    "E": "openai/gpt-6.1-sol@low",
+    "F": "openai/gpt-6.1-terra@low"
+  },
+  "verdict": {
+    "candidates": [
+      {
+        "letter": "A",
+        "accuracy": 5,
+        "quality": 5,
+        "issues": "Natural, complete and idiomatic. Wording is slightly expanded in places (e.g., 'يتحمّر ويكتسب لونًا ذهبيًا'), but the meaning is unchanged."
+      },
+      {
+        "letter": "B",
+        "accuracy": 4,
+        "quality": 4,
+        "issues": "'Diced' onion is rendered as 'مفرومة ناعماً' (finely chopped). 'حرّك جبن البارميزان' is a literal take on 'stir in' and drops the idea of adding the cheese. 'قدّمه ساخناً وكريمياً' is a bit literal."
+      },
+      {
+        "letter": "C",
+        "accuracy": 4,
+        "quality": 3,
+        "issues": "Agreement error: '0.5 بصل صغير' should be 'بصلة صغيرة'. 'اتركها تهدأ على نار هادئة' is an awkward rendering of 'simmer'. 'قلِّب الدجاج معها وغطِّ كل شيء' is clumsy."
+      },
+      {
+        "letter": "D",
+        "accuracy": 3,
+        "quality": 3,
+        "issues": "Drops 'discard seasoning packets'. Agreement errors: '2 صدر' and '4 فص'. 'يذوب المزيج' is slightly off."
+      },
+      {
+        "letter": "E",
+        "accuracy": 5,
+        "quality": 3,
+        "issues": "Broken word order in the to-taste and garnish lines ('0 حسب الذوق ملح', '0 للتزيين بقدونس طازج'). '2 صدر' should be plural."
+      },
+      {
+        "letter": "F",
+        "accuracy": 5,
+        "quality": 4,
+        "issues": "Minor issues: '2 صدر' should be plural, and 'اطهِ' should be 'اطهُ'. Otherwise natural and complete."
+      }
+    ],
+    "ranking": [
+      "A",
+      "F",
+      "B",
+      "E",
+      "C",
+      "D"
+    ]
+  }
+}

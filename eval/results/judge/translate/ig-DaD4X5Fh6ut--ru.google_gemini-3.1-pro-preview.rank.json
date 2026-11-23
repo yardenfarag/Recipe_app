@@ -1,0 +1,60 @@
+{
+  "caseId": "ig-DaD4X5Fh6ut--ru",
+  "judge": "google/gemini-3.1-pro-preview",
+  "letters": {
+    "A": "openai/gpt-6.1-sol@low",
+    "B": "anthropic/claude-haiku-5.5@low",
+    "C": "openai/gpt-6.1-terra@low",
+    "D": "google/gemini-4-hydrogen@low",
+    "E": "openai/gpt-6.2-sol@low",
+    "F": "openai/gpt-6-luna"
+  },
+  "verdict": {
+    "candidates": [
+      {
+        "letter": "A",
+        "accuracy": 5,
+        "quality": 4,
+        "issues": "Good translation overall, but slightly literal in phrasing in a few spots (e.g., 'вложите внутрь каждой по кусочку' instead of simply hiding the chocolate inside)."
+      },
+      {
+        "letter": "B",
+        "accuracy": 4,
+        "quality": 3,
+        "issues": "Grammar errors in the ingredients list: '1 крупного яйца', '1 желтка' are incorrectly in the genitive case. Redundant phrasing 'шоколадных капель из белого шоколада'."
+      },
+      {
+        "letter": "C",
+        "accuracy": 5,
+        "quality": 5,
+        "issues": "Excellent translation. Uses natural culinary terminology ('вырубка для печенья') and flows perfectly in Russian."
+      },
+      {
+        "letter": "D",
+        "accuracy": 4,
+        "quality": 3,
+        "issues": "Grammar errors in the ingredients list: '0 белые шоколадные капли' and '0 кусочки белого шоколада' fail to use the genitive plural case required after the number zero."
+      },
+      {
+        "letter": "E",
+        "accuracy": 5,
+        "quality": 5,
+        "issues": "Very natural phrasing, especially in step 8 ('подровняйте края'). Added the word 'солёное' in step 1, which is a minor deviation but acceptable in context."
+      },
+      {
+        "letter": "F",
+        "accuracy": 4,
+        "quality": 4,
+        "issues": "Translates 'vanilla' as 'ванильного экстракта' (logical, but an addition) and 'cookie scoop' as 'ложку для мороженого' (ice cream scoop). Otherwise good."
+      }
+    ],
+    "ranking": [
+      "C",
+      "E",
+      "A",
+      "F",
+      "B",
+      "D"
+    ]
+  }
+}

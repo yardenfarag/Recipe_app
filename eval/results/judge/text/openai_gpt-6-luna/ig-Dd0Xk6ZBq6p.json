@@ -34,7 +34,7 @@
     },
     {
       "ref_index": 8,
-      "status": "ok"
+      "status": "wrong_quantity"
     },
     {
       "ref_index": 9,
@@ -49,9 +49,7 @@
       "status": "ok"
     }
   ],
-  "extra_ingredients": [
-    "180 g Kinder/Bueno spread, upper amount for the centers"
-  ],
+  "extra_ingredients": [],
   "steps_score": 5,
-  "note": "The candidate split the 150–180 g spread range into a duplicate line for the upper amount."
+  "note": "The Kinder/Bueno spread is given as a 150–180 g range instead of 150 g."
 }

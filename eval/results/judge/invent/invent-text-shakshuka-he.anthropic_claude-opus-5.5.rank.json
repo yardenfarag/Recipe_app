@@ -1,0 +1,60 @@
+{
+  "caseId": "invent-text-shakshuka-he",
+  "judge": "anthropic/claude-opus-5.5",
+  "letters": {
+    "A": "google/gemini-4-hydrogen@low",
+    "B": "openai/gpt-6.1-terra@low",
+    "C": "openai/gpt-6.1-sol@low",
+    "D": "openai/gpt-6.2-sol@low",
+    "E": "anthropic/claude-sonnet-5.5@low",
+    "F": "anthropic/claude-haiku-5.5@low"
+  },
+  "verdict": {
+    "candidates": [
+      {
+        "letter": "A",
+        "accuracy": 5,
+        "quality": 5,
+        "issues": "Solid and coherent, and every ingredient is used. Feta goes on before covering so it warms through. No pan size given (minor)."
+      },
+      {
+        "letter": "B",
+        "accuracy": 5,
+        "quality": 4,
+        "issues": "Works, but is fairly minimal. Only 1 tbsp oil, and seasoning is light. No pan size."
+      },
+      {
+        "letter": "C",
+        "accuracy": 5,
+        "quality": 5,
+        "issues": "Very clear, with pan size and serving guidance. Sauce-to-egg ratio is good and every ingredient is used. Hardly any issues."
+      },
+      {
+        "letter": "D",
+        "accuracy": 5,
+        "quality": 4,
+        "issues": "Coherent. Volume measures for spinach and feta are less precise. No black pepper and no pan size. Salt is low, though the feta compensates."
+      },
+      {
+        "letter": "E",
+        "accuracy": 4,
+        "quality": 4,
+        "issues": "Hebrew errors: 'סוברים' (should be שוברים), 'שיניים שיני שום', and the awkward 'העדפת העשייה'. The method itself is fine and all ingredients are used."
+      },
+      {
+        "letter": "F",
+        "accuracy": 5,
+        "quality": 4,
+        "issues": "The ingredient list omits prep (chopped onion, garlic, pepper), though the steps assume it. Feta is added only at the end and stays cold. No pan size."
+      }
+    ],
+    "ranking": [
+      "C",
+      "A",
+      "D",
+      "F",
+      "B",
+      "E"
+    ]
+  }
+}

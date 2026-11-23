@@ -67,8 +67,10 @@
   ],
   "extra_ingredients": [
     "0 salt",
-    "0 salt, for the buttercream"
+    "0 butter for the tins",
+    "0 baking parchment",
+    "0 foil"
   ],
   "steps_score": 5,
-  "note": "Candidate adds two salt lines that are not in the reference ingredient list."
+  "note": "Candidate added extra items (salt, tin butter, parchment, foil) that are not in the reference ingredient list."
 }

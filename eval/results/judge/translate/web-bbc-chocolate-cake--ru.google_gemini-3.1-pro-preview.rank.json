@@ -1,0 +1,60 @@
+{
+  "caseId": "web-bbc-chocolate-cake--ru",
+  "judge": "google/gemini-3.1-pro-preview",
+  "letters": {
+    "A": "google/gemini-4-hydrogen@low",
+    "B": "openai/gpt-6.1-terra@low",
+    "C": "openai/gpt-6.1-sol@low",
+    "D": "openai/gpt-6.2-sol@low",
+    "E": "openai/gpt-6-luna",
+    "F": "anthropic/claude-haiku-5.5@low"
+  },
+  "verdict": {
+    "candidates": [
+      {
+        "letter": "A",
+        "accuracy": 4,
+        "quality": 3,
+        "issues": "Contains some overly literal phrasing that sounds unnatural in Russian, such as 'перейдите на деревянную ложку' (literal translation of 'switch to a wooden spoon') and 'соедините коржи с помощью половины масляного крема'."
+      },
+      {
+        "letter": "B",
+        "accuracy": 5,
+        "quality": 4,
+        "issues": "A solid translation overall. 'Полейте' is an adequate but slightly plain choice for 'drizzle', and 'газовая отметка 5' is a bit rigid, but there are no major errors."
+      },
+      {
+        "letter": "C",
+        "accuracy": 5,
+        "quality": 5,
+        "issues": "Excellent translation with highly natural culinary terminology, such as 'прослоив коржи' and translating 'drizzle' perfectly as 'полейте... тонкими струйками'."
+      },
+      {
+        "letter": "D",
+        "accuracy": 5,
+        "quality": 5,
+        "issues": "Exceptional translation. Reads very naturally like a recipe written originally in Russian. Handles specific culinary concepts and instructions perfectly."
+      },
+      {
+        "letter": "E",
+        "accuracy": 3,
+        "quality": 3,
+        "issues": "Grammatical error in the ingredients list ('4 крупных яиц' instead of 'яйца'). Omits the 'pinch of salt' in step 2."
+      },
+      {
+        "letter": "F",
+        "accuracy": 2,
+        "quality": 2,
+        "issues": "Contains the same grammatical error ('4 крупных яиц'). Features a severe mistranslation in step 6: 'переложите смесь в деревянную ложку' means 'transfer the mixture into a wooden spoon' rather than switching the tool."
+      }
+    ],
+    "ranking": [
+      "D",
+      "C",
+      "B",
+      "A",
+      "E",
+      "F"
+    ]
+  }
+}

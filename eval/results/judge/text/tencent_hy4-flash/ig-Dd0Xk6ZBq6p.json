@@ -1,0 +1,57 @@
+{
+  "ingredients": [
+    {
+      "ref_index": 0,
+      "status": "ok"
+    },
+    {
+      "ref_index": 1,
+      "status": "ok"
+    },
+    {
+      "ref_index": 2,
+      "status": "ok"
+    },
+    {
+      "ref_index": 3,
+      "status": "ok"
+    },
+    {
+      "ref_index": 4,
+      "status": "ok"
+    },
+    {
+      "ref_index": 5,
+      "status": "ok"
+    },
+    {
+      "ref_index": 6,
+      "status": "ok"
+    },
+    {
+      "ref_index": 7,
+      "status": "ok"
+    },
+    {
+      "ref_index": 8,
+      "status": "ok"
+    },
+    {
+      "ref_index": 9,
+      "status": "missing"
+    },
+    {
+      "ref_index": 10,
+      "status": "missing"
+    },
+    {
+      "ref_index": 11,
+      "status": "missing"
+    }
+  ],
+  "extra_ingredients": [
+    "180 g Kinder/Bueno spread, for the centers"
+  ],
+  "steps_score": 5,
+  "note": "The candidate omits the white chocolate, heavy cream and hazelnut spread for the homemade spread, and splits the 150–180 g spread range into a duplicate line."
+}

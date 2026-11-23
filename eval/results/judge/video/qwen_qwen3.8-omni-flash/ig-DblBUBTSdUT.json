@@ -2,7 +2,7 @@
   "ingredients": [
     {
       "ref_index": 0,
-      "status": "wrong_quantity"
+      "status": "missing"
     },
     {
       "ref_index": 1,
@@ -34,6 +34,6 @@
     }
   ],
   "extra_ingredients": [],
-  "steps_score": 3,
-  "note": "Candidate omits nearly all amounts, leaves out stevia and the crushed Kinder topping, and gives no cooking temperature or time."
+  "steps_score": 2,
+  "note": "Candidate omits flour, stevia and crushed Kinder, drops most amounts, and swaps the air fryer/oven baking for an invented microwave method."
 }

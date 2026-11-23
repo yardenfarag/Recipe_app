@@ -1,0 +1,60 @@
+{
+  "caseId": "ig-DaD4X5Fh6ut--ru",
+  "judge": "anthropic/claude-opus-5.5",
+  "letters": {
+    "A": "openai/gpt-6.1-sol@low",
+    "B": "anthropic/claude-haiku-5.5@low",
+    "C": "openai/gpt-6.1-terra@low",
+    "D": "google/gemini-4-hydrogen@low",
+    "E": "openai/gpt-6.2-sol@low",
+    "F": "openai/gpt-6-luna"
+  },
+  "verdict": {
+    "candidates": [
+      {
+        "letter": "A",
+        "accuracy": 5,
+        "quality": 4,
+        "issues": "Faithful and correct. Minor wordiness, e.g. 'в этом рецепте использована' drops the first-person voice. The calque 'белых шоколадных капель' is acceptable."
+      },
+      {
+        "letter": "B",
+        "accuracy": 4,
+        "quality": 2,
+        "issues": "Wrong case in the ingredient list ('1 крупного яйца', '1 желтка'). Awkward 'масла комнатной температуры, соленого'. 'пергамент, застеленный на противне' is garbled. 'Наберите тесто формочкой' is odd. The °C conversion is fine."
+      },
+      {
+        "letter": "C",
+        "accuracy": 5,
+        "quality": 5,
+        "issues": "Natural and accurate; only negligible stylistic points."
+      },
+      {
+        "letter": "D",
+        "accuracy": 5,
+        "quality": 3,
+        "issues": "Wrong case in '0 белые шоколадные капли' and '0 кусочки'. Calque 'между каждым печеньем'. 'не пропеченной' should be 'непропечённой'. 'легкой и пышной' is a literal rendering."
+      },
+      {
+        "letter": "E",
+        "accuracy": 5,
+        "quality": 5,
+        "issues": "Very idiomatic. Slight reinterpretation in 'подровняйте края'. Repeats 'солёное' in step 1."
+      },
+      {
+        "letter": "F",
+        "accuracy": 4,
+        "quality": 3,
+        "issues": "'ложку для мороженого' changes the cookie scoop. 'сахара' loses 'granulated'. 'Выложите порции теста для печенья' is clumsy. The title shift to 'кусочками' is minor."
+      }
+    ],
+    "ranking": [
+      "C",
+      "E",
+      "A",
+      "F",
+      "D",
+      "B"
+    ]
+  }
+}

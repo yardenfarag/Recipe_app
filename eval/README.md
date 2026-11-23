@@ -10,12 +10,14 @@ Needs `OPENROUTER_API_KEY` and `SCRAPECREATORS_API_KEY` in the repo `.env` (nati
 deno() { npx -y deno run -A --no-lock --unstable-sloppy-imports --env-file=.env eval/cli.ts "$@"; }
 deno fetch            # snapshot posts, videos and Commons images into eval/private/
 deno label            # reference answers + gate routes (Claude Opus 5.5)
-deno run              # every task × model; add --task=text --models=a,b --limit=3
+deno run              # every task × model; add --task=text --models=a,b --limit=3 --repeat=3
 deno judge            # ingredient matching + blind ranking
 deno report           # writes eval/results/summary.md
 ```
 
-Each step skips work that's already on disk. Pass `--force` to redo it. A full run cost $7.18 on 6 Oct 2026 ($2.67 candidates, the rest references and judges).
+Each step skips work that's already on disk. Pass `--force` to redo it. A full run cost $7.18 on 6 Oct 2026 ($2.67 candidates, the rest references and judges). The 23 Nov 2026 bake-off cost about $23 ($8.26 candidates, with repeats and 27 videos); its findings are in `results/bakeoff-2026-11-23.md`.
+
+`--repeat=N` runs each case N times. Runs 2..N are saved as `<case>~rN.json` and only feed the latency columns; scores come from run 1. Latency is the wall clock of the call: llmClient's `durationMs` stops at the response headers, before the body is read, so it undercounts. Video times include uploading the clip from your machine, so compare models with each other, not with production. Keep video `--concurrency` at 2: at 5, uploads of 10–20 MB clips fail with `fetch failed` for every model.
 
 ## Appliances (PIN-26)
 
@@ -65,7 +67,7 @@ Each answer is rendered the way the recipe screen shows it (unit words, fraction
 ## How each task is scored
 
 - **Text, photo, video extract:** Claude Opus 5.5 writes an answer key from the source text or image. A second Opus call then grades each output ingredient by ingredient (`ok` / `wrong_quantity` / `missing`, plus extra items) and gives the steps a 1–5 score. Video runs **without** the caption or comments, so the score shows what the model gets from the clip alone, measured against the recipe the creator wrote down.
-- **Translate, invent:** Gemini 3.1 Pro ranks the outputs blind (shuffled, lettered) and scores accuracy and quality from 1 to 5. A Google judge has no stake in the Anthropic and OpenAI candidates.
+- **Translate, invent:** Gemini 3.1 Pro and Claude Opus 5.5 each rank the outputs blind (shuffled, lettered) and score accuracy and quality from 1 to 5. Two judges from different vendors, so no candidate is graded only by its own vendor; the report shows each judge's average rank next to the pooled one.
 - **Content gate:** checked in code against the `food` flag in `images.json`.
 - **Extract gate:** checked in code against the Opus route label. The non-recipe captions are hand-labelled.
 

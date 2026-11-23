@@ -39,5 +39,5 @@
   ],
   "extra_ingredients": [],
   "steps_score": 4,
-  "note": "Candidate adds an invented 'Add salt to taste' step not in the reference method."
+  "note": "The candidate adds an 'Add salt to taste' step that is not in the reference method."
 }

@@ -43,5 +43,5 @@
   ],
   "extra_ingredients": [],
   "steps_score": 3,
-  "note": "Candidate invents mixing and ramekin steps that are not in the reference, which has only baking and serving steps."
+  "note": "The candidate invents mixing and ramekin steps that are not in the reference's two-step method."
 }

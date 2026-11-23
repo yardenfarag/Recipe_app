@@ -1,0 +1,60 @@
+{
+  "caseId": "ig-DYl1QMNBgeL--he",
+  "judge": "anthropic/claude-opus-5.5",
+  "letters": {
+    "A": "google/gemini-4-hydrogen@low",
+    "B": "anthropic/claude-haiku-5.5@low",
+    "C": "openai/gpt-6.1-sol@low",
+    "D": "openai/gpt-6.1-terra@low",
+    "E": "openai/gpt-6.2-sol@low",
+    "F": "openai/gpt-6-luna"
+  },
+  "verdict": {
+    "candidates": [
+      {
+        "letter": "A",
+        "accuracy": 4,
+        "quality": 4,
+        "issues": "Drops 'brown' for the onion. 'חתוכות' loses the 'diced' sense. 'בטפיחות נייר סופג' is slightly clunky."
+      },
+      {
+        "letter": "B",
+        "accuracy": 3,
+        "quality": 3,
+        "issues": "Diced tomatoes mistranslated as crushed ('מרוסקות'). 'מרק בקר' is used instead of 'ציר'. 'על אש נמוכה' is odd for a slow cooker. The title lacks 'עם' and reads awkwardly."
+      },
+      {
+        "letter": "C",
+        "accuracy": 4,
+        "quality": 5,
+        "issues": "Omits 'brown' onion. Otherwise accurate and natural, with good slow-cooker terminology."
+      },
+      {
+        "letter": "D",
+        "accuracy": 4,
+        "quality": 4,
+        "issues": "Omits 'brown' onion. 'משימורים' is slightly awkward. Uses 'כמות נדיבה' rather than 'sprinkle'."
+      },
+      {
+        "letter": "E",
+        "accuracy": 4,
+        "quality": 4,
+        "issues": "Gender agreement error: 'פרמזן מגוררת'. Omits 'brown' onion. Adds minor embellishments ('נטמע ברוטב', 'מעל')."
+      },
+      {
+        "letter": "F",
+        "accuracy": 4,
+        "quality": 5,
+        "issues": "Omits 'brown' onion. 'מייבשים היטב' loses the 'pat' nuance. Otherwise fluent."
+      }
+    ],
+    "ranking": [
+      "C",
+      "F",
+      "A",
+      "D",
+      "E",
+      "B"
+    ]
+  }
+}

@@ -1,0 +1,60 @@
+{
+  "caseId": "ig-DbTZcdDJWNH--he",
+  "judge": "anthropic/claude-opus-5.5",
+  "letters": {
+    "A": "openai/gpt-6-luna",
+    "B": "anthropic/claude-haiku-5.5@low",
+    "C": "openai/gpt-6.2-sol@low",
+    "D": "google/gemini-4-hydrogen@low",
+    "E": "openai/gpt-6.1-terra@low",
+    "F": "openai/gpt-6.1-sol@low"
+  },
+  "verdict": {
+    "candidates": [
+      {
+        "letter": "A",
+        "accuracy": 4,
+        "quality": 4,
+        "issues": "The ingredient line \"1 לימון גרידת לימון\" is redundant and awkward. \"Granulated\" was dropped from the sugar. Otherwise natural."
+      },
+      {
+        "letter": "B",
+        "accuracy": 3,
+        "quality": 2,
+        "issues": "English is left in a broken word (\"ואלastי\"). \"מציפים\" (flood) should be \"מצפים\" (coat). The lemon line is clumsy and \"הוניל\" is misspelled."
+      },
+      {
+        "letter": "C",
+        "accuracy": 4,
+        "quality": 3,
+        "issues": "\"סוכר לבן גרגירי\" is awkward and repeated clunkily in the steps. \"גרידת קליפה\" is vague. Some over-explicit additions."
+      },
+      {
+        "letter": "D",
+        "accuracy": 4,
+        "quality": 4,
+        "issues": "Adds \"תמצית\" to the vanilla (minor). Concise and natural; the lemon line drops the count noun but reads fine."
+      },
+      {
+        "letter": "E",
+        "accuracy": 5,
+        "quality": 4,
+        "issues": "Natural and accurate, with minor wordiness."
+      },
+      {
+        "letter": "F",
+        "accuracy": 5,
+        "quality": 5,
+        "issues": "Idiomatic \"חלב פושר\" and a clear lemon-zest line. Very natural."
+      }
+    ],
+    "ranking": [
+      "F",
+      "E",
+      "D",
+      "A",
+      "C",
+      "B"
+    ]
+  }
+}

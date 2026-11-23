@@ -1,0 +1,60 @@
+{
+  "caseId": "ig-DblBUBTSdUT--he",
+  "judge": "google/gemini-3.1-pro-preview",
+  "letters": {
+    "A": "anthropic/claude-haiku-5.5@low",
+    "B": "openai/gpt-6.1-terra@low",
+    "C": "openai/gpt-6-luna",
+    "D": "openai/gpt-6.2-sol@low",
+    "E": "openai/gpt-6.1-sol@low",
+    "F": "google/gemini-4-hydrogen@low"
+  },
+  "verdict": {
+    "candidates": [
+      {
+        "letter": "A",
+        "accuracy": 2,
+        "quality": 2,
+        "issues": "Omitted important notes in the ingredients list ('adjust as needed', 'for the center'). Uses a non-existent verb 'מזלגים' (from 'fork') instead of 'יוצקים' (pour), and awkward phrasing like 'שמרחים בו מעט שמן'."
+      },
+      {
+        "letter": "B",
+        "accuracy": 4,
+        "quality": 4,
+        "issues": "Overall good, but the instruction step 6 says 'Kinder pieces' whereas the translation says 'crushed Kinder chocolate', repeating the ingredient line rather than following the instruction's wording. Phrasing is slightly less elegant than the top candidates."
+      },
+      {
+        "letter": "C",
+        "accuracy": 3,
+        "quality": 3,
+        "issues": "Omitted the parenthetical notes in the ingredients list ('adjust as needed', 'for the center'). Uses 'מבשלים' (cook) instead of 'אופים' (bake) for the air fryer."
+      },
+      {
+        "letter": "D",
+        "accuracy": 5,
+        "quality": 5,
+        "issues": "Very natural phrasing. Altered the title slightly to 'Lava cake with Kinder chocolate', which is acceptable but slightly less direct than 'Kinder Lava Cake'. Uses 'מצפים' (coat/frost) for the melted chocolate, which is a bit heavy for a 10g topping."
+      },
+      {
+        "letter": "E",
+        "accuracy": 5,
+        "quality": 5,
+        "issues": "Very accurate and natural. Similar to D, it uses 'מצפים' (coat) for the white chocolate, which works but isn't as precise as drizzling."
+      },
+      {
+        "letter": "F",
+        "accuracy": 5,
+        "quality": 5,
+        "issues": "Excellent translation. Correctly uses 'מזלפים' (drizzle) for topping with a small amount of melted chocolate, which sounds highly professional and idiomatic."
+      }
+    ],
+    "ranking": [
+      "F",
+      "E",
+      "D",
+      "B",
+      "C",
+      "A"
+    ]
+  }
+}

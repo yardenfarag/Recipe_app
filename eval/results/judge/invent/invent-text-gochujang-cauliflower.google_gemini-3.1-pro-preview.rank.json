@@ -1,0 +1,60 @@
+{
+  "caseId": "invent-text-gochujang-cauliflower",
+  "judge": "google/gemini-3.1-pro-preview",
+  "letters": {
+    "A": "openai/gpt-6.2-sol@low",
+    "B": "google/gemini-4-hydrogen@low",
+    "C": "openai/gpt-6.1-sol@low",
+    "D": "anthropic/claude-sonnet-5.5@low",
+    "E": "openai/gpt-6.1-terra@low",
+    "F": "anthropic/claude-haiku-5.5@low"
+  },
+  "verdict": {
+    "candidates": [
+      {
+        "letter": "A",
+        "accuracy": 5,
+        "quality": 5,
+        "issues": "None. Excellent method—rubbing oil into the panko ensures an even, crispy, golden crust in the oven without deep frying."
+      },
+      {
+        "letter": "B",
+        "accuracy": 5,
+        "quality": 3,
+        "issues": "Drizzling oil directly over wet batter on a baking sheet is an uneven method that can cause the batter to slide off or clump rather than crisping nicely."
+      },
+      {
+        "letter": "C",
+        "accuracy": 5,
+        "quality": 4,
+        "issues": "Drizzling oil over panko after coating can result in uneven crisping; spraying the oil or pre-mixing it into the crumbs works better. Otherwise, a very solid recipe."
+      },
+      {
+        "letter": "D",
+        "accuracy": 5,
+        "quality": 3,
+        "issues": "Baking the glazed cauliflower for 8 minutes at 450°F (230°C) is very risky; the honey and gochujang will likely burn at that temperature."
+      },
+      {
+        "letter": "E",
+        "accuracy": 5,
+        "quality": 2,
+        "issues": "The batter ratio (1.5 cups dry ingredients to 0.75 cups water) is completely off; it will create a thick paste or dough rather than a dippable batter."
+      },
+      {
+        "letter": "F",
+        "accuracy": 5,
+        "quality": 4,
+        "issues": "The batter ratio is slightly on the thin side, which might struggle to adhere well to smooth cauliflower without a pre-dredge, but deep frying is the most authentic method for a takeout-style crunch."
+      }
+    ],
+    "ranking": [
+      "A",
+      "C",
+      "F",
+      "B",
+      "D",
+      "E"
+    ]
+  }
+}

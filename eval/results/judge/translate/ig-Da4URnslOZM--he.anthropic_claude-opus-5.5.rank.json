@@ -1,0 +1,60 @@
+{
+  "caseId": "ig-Da4URnslOZM--he",
+  "judge": "anthropic/claude-opus-5.5",
+  "letters": {
+    "A": "google/gemini-4-hydrogen@low",
+    "B": "anthropic/claude-haiku-5.5@low",
+    "C": "openai/gpt-6-luna",
+    "D": "openai/gpt-6.1-terra@low",
+    "E": "openai/gpt-6.2-sol@low",
+    "F": "openai/gpt-6.1-sol@low"
+  },
+  "verdict": {
+    "candidates": [
+      {
+        "letter": "A",
+        "accuracy": 5,
+        "quality": 4,
+        "issues": "'מחולק' is a calque for 'divided'. 'יוצקים בעזרת כף מנוזלי הצלייה' is slightly clunky. 'מנוקה משומן מיותר' is acceptable."
+      },
+      {
+        "letter": "B",
+        "accuracy": 4,
+        "quality": 3,
+        "issues": "'מרק בקר' is used for broth (ציר is expected). 'סיר הולנדי' is a calque. 'גלייז' is an anglicism. 'אופים' for roast is acceptable but weaker. 'מנוקה' is vague. 'מחולק' is a calque."
+      },
+      {
+        "letter": "C",
+        "accuracy": 5,
+        "quality": 4,
+        "issues": "The title 'בברביקיו' is slightly awkward. 'מחולק' is a calque. Otherwise natural, with a good Dutch oven rendering."
+      },
+      {
+        "letter": "D",
+        "accuracy": 5,
+        "quality": 4,
+        "issues": "'סיר יציקה' is a bit unusual. 'מחולק' is a calque. Otherwise fluent."
+      },
+      {
+        "letter": "E",
+        "accuracy": 5,
+        "quality": 5,
+        "issues": "'מכסים היטב' omits 'the pan' (minor). Handles 'divided' idiomatically, and 'קצוצות דק' fits 'minced'."
+      },
+      {
+        "letter": "F",
+        "accuracy": 5,
+        "quality": 4,
+        "issues": "'מחולק' is a calque. Otherwise very natural and precise."
+      }
+    ],
+    "ranking": [
+      "E",
+      "F",
+      "C",
+      "D",
+      "A",
+      "B"
+    ]
+  }
+}

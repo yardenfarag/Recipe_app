@@ -18,7 +18,7 @@
     },
     {
       "ref_index": 4,
-      "status": "ok"
+      "status": "wrong_quantity"
     },
     {
       "ref_index": 5,
@@ -30,7 +30,7 @@
     },
     {
       "ref_index": 7,
-      "status": "ok"
+      "status": "wrong_quantity"
     },
     {
       "ref_index": 8,
@@ -43,5 +43,5 @@
   ],
   "extra_ingredients": [],
   "steps_score": 4,
-  "note": "The candidate invents mixing steps and a two-ramekin division that are not in the reference method."
+  "note": "Vanilla and salt amounts are listed as 0 instead of 1 drop and 1 pinch, and the method adds mixing and ramekin steps that are not in the reference."
 }

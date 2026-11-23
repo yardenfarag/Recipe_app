@@ -1,0 +1,60 @@
+{
+  "caseId": "ig-Dd1mhKpKbY3--he",
+  "judge": "anthropic/claude-opus-5.5",
+  "letters": {
+    "A": "openai/gpt-6-luna",
+    "B": "google/gemini-4-hydrogen@low",
+    "C": "openai/gpt-6.1-terra@low",
+    "D": "openai/gpt-6.1-sol@low",
+    "E": "anthropic/claude-haiku-5.5@low",
+    "F": "openai/gpt-6.2-sol@low"
+  },
+  "verdict": {
+    "candidates": [
+      {
+        "letter": "A",
+        "accuracy": 5,
+        "quality": 4,
+        "issues": "Uses 'עטרות נייר', a less common term than מנז׳טים. The phrase 'תבנית שקעים למאפינס' is slightly wordy. Otherwise accurate and natural."
+      },
+      {
+        "letter": "B",
+        "accuracy": 4,
+        "quality": 4,
+        "issues": "'כפית' is more specific than the source's 'a little'. The construct 'מממרח הקרם בואנו' is awkward. Leaves the brand name McVitie's in Latin script, which is acceptable."
+      },
+      {
+        "letter": "C",
+        "accuracy": 5,
+        "quality": 5,
+        "issues": "Natural and idiomatic, with correct terms (כותשים, מנז׳טים). No significant issues."
+      },
+      {
+        "letter": "D",
+        "accuracy": 5,
+        "quality": 4,
+        "issues": "The constructions '300 המ״ל של החלב' and '100 הגרם של' are clunky. Otherwise good, and 'כוסיות' is a nice choice."
+      },
+      {
+        "letter": "E",
+        "accuracy": 4,
+        "quality": 3,
+        "issues": "'מצפים תבנית... בתבניות נייר' is awkward. 'מפזרים אותו' is wrong for spreading cream. 'מאוחדת' and 'לוחצים' are unidiomatic. 'כפית קטנה' adds detail not in the source."
+      },
+      {
+        "letter": "F",
+        "accuracy": 5,
+        "quality": 5,
+        "issues": "Natural phrasing, and 'מתקשה' is a good choice. 'עטרות' is slightly less common than מנז׳טים. 'בעזרת כף' is a minor addition."
+      }
+    ],
+    "ranking": [
+      "C",
+      "F",
+      "A",
+      "B",
+      "D",
+      "E"
+    ]
+  }
+}

@@ -1,0 +1,60 @@
+{
+  "caseId": "ig-Dd0Xk6ZBq6p--ar",
+  "judge": "google/gemini-3.1-pro-preview",
+  "letters": {
+    "A": "google/gemini-4-hydrogen@low",
+    "B": "openai/gpt-6.1-sol@low",
+    "C": "openai/gpt-6-luna",
+    "D": "openai/gpt-6.1-terra@low",
+    "E": "anthropic/claude-haiku-5.5@low",
+    "F": "openai/gpt-6.2-sol@low"
+  },
+  "verdict": {
+    "candidates": [
+      {
+        "letter": "A",
+        "accuracy": 5,
+        "quality": 4,
+        "issues": "Slightly less natural phrasing in some steps. 'Chopped' is translated as 'مفرومة' (minced) rather than the more appropriate 'مقطعة' for chocolate. Uses 'سكر أبيض' instead of granulated."
+      },
+      {
+        "letter": "B",
+        "accuracy": 5,
+        "quality": 5,
+        "issues": "Very good translation overall. The phrasing is natural and precise."
+      },
+      {
+        "letter": "C",
+        "accuracy": 5,
+        "quality": 4,
+        "issues": "Good translation, but slightly less idiomatic flow compared to B, D, and F. The term 'سكر حبيبي' is acceptable but less common than 'سكر حبيبات'."
+      },
+      {
+        "letter": "D",
+        "accuracy": 5,
+        "quality": 5,
+        "issues": "Excellent, native-sounding phrasing. Accurately translates all culinary terms and instructions."
+      },
+      {
+        "letter": "E",
+        "accuracy": 2,
+        "quality": 1,
+        "issues": "Contains leftover English characters embedded in Arabic words (e.g., 'بويno', 'while ما زالت'). Unacceptable for a professional translation."
+      },
+      {
+        "letter": "F",
+        "accuracy": 5,
+        "quality": 5,
+        "issues": "Outstanding localization. Brilliantly clarifies 'the chocolate' in step 1 as 'الشوكولاتة البيضاء' avoiding any confusion with the Kinder chocolate. Highly idiomatic."
+      }
+    ],
+    "ranking": [
+      "F",
+      "D",
+      "B",
+      "C",
+      "A",
+      "E"
+    ]
+  }
+}

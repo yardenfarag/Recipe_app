@@ -22,7 +22,7 @@
     },
     {
       "ref_index": 5,
-      "status": "ok"
+      "status": "wrong_quantity"
     },
     {
       "ref_index": 6,
@@ -34,11 +34,11 @@
     },
     {
       "ref_index": 8,
-      "status": "ok"
+      "status": "missing"
     },
     {
       "ref_index": 9,
-      "status": "ok"
+      "status": "wrong_quantity"
     },
     {
       "ref_index": 10,
@@ -49,10 +49,7 @@
       "status": "missing"
     }
   ],
-  "extra_ingredients": [
-    "קורט קינמון",
-    "מלח גס לפיזור"
-  ],
+  "extra_ingredients": [],
   "steps_score": 2,
-  "note": "The candidate appears to be a different recipe: most quantities differ, it adds cinnamon and coarse salt, and it changes the oven temperature and chilling method."
+  "note": "Almost all quantities are missing, baking powder and the optional items are omitted, and the method leaves out the freezing, oven temperature and baking time while adding a coarse-salt topping."
 }

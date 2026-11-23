@@ -1,0 +1,37 @@
+{
+  "ingredients": [
+    {
+      "ref_index": 0,
+      "status": "wrong_quantity"
+    },
+    {
+      "ref_index": 1,
+      "status": "wrong_quantity"
+    },
+    {
+      "ref_index": 2,
+      "status": "wrong_quantity"
+    },
+    {
+      "ref_index": 3,
+      "status": "ok"
+    },
+    {
+      "ref_index": 4,
+      "status": "missing"
+    },
+    {
+      "ref_index": 5,
+      "status": "ok"
+    },
+    {
+      "ref_index": 6,
+      "status": "ok"
+    }
+  ],
+  "extra_ingredients": [
+    "תרסיס שמן לטיגון"
+  ],
+  "steps_score": 3,
+  "note": "The quantities for cheese, flour and milk differ from the reference (1 cup of skim cheese, 1 cup of flour, 0.5 cup of milk), butter was replaced with oil spray, and the step order differs from the reference (milk added together with the flour)."
+}

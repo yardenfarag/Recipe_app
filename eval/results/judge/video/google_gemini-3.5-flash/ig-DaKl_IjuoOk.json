@@ -26,7 +26,7 @@
     },
     {
       "ref_index": 6,
-      "status": "missing"
+      "status": "ok"
     },
     {
       "ref_index": 7,
@@ -41,7 +41,9 @@
       "status": "wrong_quantity"
     }
   ],
-  "extra_ingredients": [],
+  "extra_ingredients": [
+    "פטרוזיליה"
+  ],
   "steps_score": 4,
-  "note": "All quantities are missing, salt is omitted, and cilantro is replaced by parsley."
+  "note": "All quantities are missing, and parsley was added even though it is not in the reference."
 }

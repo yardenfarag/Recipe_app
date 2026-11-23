@@ -18,7 +18,7 @@
     },
     {
       "ref_index": 4,
-      "status": "wrong_quantity"
+      "status": "missing"
     },
     {
       "ref_index": 5,
@@ -38,6 +38,6 @@
     }
   ],
   "extra_ingredients": [],
-  "steps_score": 3,
-  "note": "Most quantities are missing, vanilla is omitted, cornstarch became flour, and the oven temperature, bake time and fridge chilling are absent."
+  "steps_score": 2,
+  "note": "Most quantities are missing, vanilla and brown sugar are absent, and the method omits the oven temperature, bake time and chilling."
 }

@@ -1,0 +1,60 @@
+{
+  "caseId": "ig-DZxC3yBOPul--he",
+  "judge": "anthropic/claude-opus-5.5",
+  "letters": {
+    "A": "google/gemini-4-hydrogen@low",
+    "B": "openai/gpt-6.2-sol@low",
+    "C": "openai/gpt-6.1-terra@low",
+    "D": "openai/gpt-6-luna",
+    "E": "openai/gpt-6.1-sol@low",
+    "F": "anthropic/claude-haiku-5.5@low"
+  },
+  "verdict": {
+    "candidates": [
+      {
+        "letter": "A",
+        "accuracy": 4,
+        "quality": 4,
+        "issues": "'מלח ים גס' means coarse sea salt, not flaky sea salt. 'עד לאיחוד' is slightly stiff. Otherwise natural."
+      },
+      {
+        "letter": "B",
+        "accuracy": 5,
+        "quality": 5,
+        "issues": "The title is slightly expanded ('שוקולדיים במרקם פאדג׳') but faithful. The rest is natural and idiomatic, using 'בלילה' and 'פתיתי מלח ים'."
+      },
+      {
+        "letter": "C",
+        "accuracy": 5,
+        "quality": 5,
+        "issues": "The title 'פאדג׳יים' is a little colloquial. Otherwise clean, natural and accurate."
+      },
+      {
+        "letter": "D",
+        "accuracy": 5,
+        "quality": 4,
+        "issues": "'מלח ים פתיתים' is a slightly awkward construction. Dropping the definite articles is acceptable but terse."
+      },
+      {
+        "letter": "E",
+        "accuracy": 4,
+        "quality": 3,
+        "issues": "The title 'עשירים ונימוחים' loses the meaning of 'fudgy'. 'מלח ים פתיתי' is ungrammatical. 'השוקולד צ׳יפס נמסים' has awkward agreement."
+      },
+      {
+        "letter": "F",
+        "accuracy": 4,
+        "quality": 3,
+        "issues": "'מערבבים את שוקולד הצ׳יפס' is an odd construct and loses the sense of adding. The singular title 'פאדג'י' does not agree with the plural noun. 'הוניל' is misspelled. Geresh marks are inconsistent. 'מצפים' is less apt for lining with paper."
+      }
+    ],
+    "ranking": [
+      "C",
+      "B",
+      "D",
+      "A",
+      "E",
+      "F"
+    ]
+  }
+}

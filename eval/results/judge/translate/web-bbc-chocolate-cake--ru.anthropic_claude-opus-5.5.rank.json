@@ -1,0 +1,60 @@
+{
+  "caseId": "web-bbc-chocolate-cake--ru",
+  "judge": "anthropic/claude-opus-5.5",
+  "letters": {
+    "A": "google/gemini-4-hydrogen@low",
+    "B": "openai/gpt-6.1-terra@low",
+    "C": "openai/gpt-6.1-sol@low",
+    "D": "openai/gpt-6.2-sol@low",
+    "E": "openai/gpt-6-luna",
+    "F": "anthropic/claude-haiku-5.5@low"
+  },
+  "verdict": {
+    "candidates": [
+      {
+        "letter": "A",
+        "accuracy": 5,
+        "quality": 4,
+        "issues": "Accurate. Slightly literal phrasing in places, e.g. 'Разделите тесто между', 'соедините коржи с помощью половины крема' and the subjectless 'Оставьте остывать в форме'."
+      },
+      {
+        "letter": "B",
+        "accuracy": 5,
+        "quality": 5,
+        "issues": "Accurate and natural. The oven line keeps the slash format ('190°C/170°C с конвекцией/газовая отметка 5'), which reads slightly mechanical."
+      },
+      {
+        "letter": "C",
+        "accuracy": 5,
+        "quality": 5,
+        "issues": "Very natural, and 'тонкими струйками' renders 'drizzle' well. 'Поднос' for 'tray' is less usual than 'противень'."
+      },
+      {
+        "letter": "D",
+        "accuracy": 5,
+        "quality": 5,
+        "issues": "Most idiomatic overall ('покачайте противень', 'тонкими струйками', clear cake-assembly step). No significant issues."
+      },
+      {
+        "letter": "E",
+        "accuracy": 3,
+        "quality": 3,
+        "issues": "Drops the pinch of salt from the batter step. Grammar error '4 крупных яиц'. 'До однородности… пока масса не посветлеет' is redundant. 'Поломайте' replaces 'chop'."
+      },
+      {
+        "letter": "F",
+        "accuracy": 3,
+        "quality": 3,
+        "issues": "Mistranslation: 'переложите смесь в деревянную ложку' (should be switch to a spoon). Grammar error '4 крупных яиц'. Awkward 'до гладкости', 'до светлого цвета' and 'соедините коржи половиной крема'."
+      }
+    ],
+    "ranking": [
+      "D",
+      "C",
+      "B",
+      "A",
+      "E",
+      "F"
+    ]
+  }
+}

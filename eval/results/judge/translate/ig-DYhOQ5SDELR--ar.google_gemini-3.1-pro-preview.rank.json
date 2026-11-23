@@ -1,0 +1,60 @@
+{
+  "caseId": "ig-DYhOQ5SDELR--ar",
+  "judge": "google/gemini-3.1-pro-preview",
+  "letters": {
+    "A": "openai/gpt-6.2-sol@low",
+    "B": "google/gemini-4-hydrogen@low",
+    "C": "anthropic/claude-haiku-5.5@low",
+    "D": "openai/gpt-6-luna",
+    "E": "openai/gpt-6.1-sol@low",
+    "F": "openai/gpt-6.1-terra@low"
+  },
+  "verdict": {
+    "candidates": [
+      {
+        "letter": "A",
+        "accuracy": 5,
+        "quality": 5,
+        "issues": "Excellent translation with natural phrasing and correct culinary terminology."
+      },
+      {
+        "letter": "B",
+        "accuracy": 5,
+        "quality": 5,
+        "issues": "Very good translation, accurate and reads naturally."
+      },
+      {
+        "letter": "C",
+        "accuracy": 5,
+        "quality": 4,
+        "issues": "Slightly awkward gender agreement in 'بصل صغير' (should ideally be 'بصلة صغيرة'). The phrase 'تهدأ على نار هادئة' is a bit overly literal for simmering."
+      },
+      {
+        "letter": "D",
+        "accuracy": 4,
+        "quality": 4,
+        "issues": "Omitted the instruction to 'discard seasoning packets' in the ingredients list."
+      },
+      {
+        "letter": "E",
+        "accuracy": 5,
+        "quality": 3,
+        "issues": "Unnatural word order in the zero-quantity ingredients (e.g., 'حسب الذوق ملح' instead of 'ملح حسب الذوق')."
+      },
+      {
+        "letter": "F",
+        "accuracy": 5,
+        "quality": 5,
+        "issues": "Clean and accurate translation with good flow."
+      }
+    ],
+    "ranking": [
+      "A",
+      "B",
+      "F",
+      "C",
+      "D",
+      "E"
+    ]
+  }
+}

@@ -1,0 +1,60 @@
+{
+  "caseId": "invent-photo-moussaka",
+  "judge": "anthropic/claude-opus-5.5",
+  "letters": {
+    "A": "anthropic/claude-sonnet-5.5@low",
+    "B": "openai/gpt-6.1-terra@low",
+    "C": "anthropic/claude-haiku-5.5@low",
+    "D": "openai/gpt-6.1-sol@low",
+    "E": "google/gemini-4-hydrogen@low",
+    "F": "openai/gpt-6.2-sol@low"
+  },
+  "verdict": {
+    "candidates": [
+      {
+        "letter": "A",
+        "accuracy": 5,
+        "quality": 4,
+        "issues": "Closest match: a turmeric-yellow egg custard over ground beef with a potato top. Minor typo in '2 cloves garlic cloves'. Potatoes are sliced in step 1 but not parboiled until step 4, which is slightly awkward ordering. Cheese is not obvious in the photo."
+      },
+      {
+        "letter": "D",
+        "accuracy": 4,
+        "quality": 5,
+        "issues": "Beef, potato and custard bake matches the photo well. It lacks the yellow curry or turmeric tint. Otherwise the method is clear and thorough, with a careful salt split and foil timing."
+      },
+      {
+        "letter": "C",
+        "accuracy": 3,
+        "quality": 4,
+        "issues": "Egg-and-cream potato gratin with no meat layer, which the photo shows. The method works. The thyme amount is vague when divided across layers."
+      },
+      {
+        "letter": "E",
+        "accuracy": 3,
+        "quality": 4,
+        "issues": "Potato and cheese frittata with no meat. The 6-egg base would be eggier than the pictured custard. Method is sound."
+      },
+      {
+        "letter": "F",
+        "accuracy": 2,
+        "quality": 4,
+        "issues": "Classic cream gratin with no egg custard and no meat, so it misses the set yellow custard and the meat layer. Solid technique otherwise."
+      },
+      {
+        "letter": "B",
+        "accuracy": 2,
+        "quality": 3,
+        "issues": "Plain skillet frittata with no meat and no cheese, and a minimal custard. Ingredient lines are sloppy ('6 eggs eggs', '4 potatoes medium potatoes'). Arranging slices on top after the egg is poured is vague."
+      }
+    ],
+    "ranking": [
+      "A",
+      "D",
+      "C",
+      "E",
+      "F",
+      "B"
+    ]
+  }
+}

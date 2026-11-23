@@ -1,0 +1,60 @@
+{
+  "caseId": "ig-DblBUBTSdUT--ar",
+  "judge": "google/gemini-3.1-pro-preview",
+  "letters": {
+    "A": "openai/gpt-6.1-sol@low",
+    "B": "openai/gpt-6-luna",
+    "C": "openai/gpt-6.2-sol@low",
+    "D": "anthropic/claude-haiku-5.5@low",
+    "E": "openai/gpt-6.1-terra@low",
+    "F": "google/gemini-4-hydrogen@low"
+  },
+  "verdict": {
+    "candidates": [
+      {
+        "letter": "A",
+        "accuracy": 5,
+        "quality": 4,
+        "issues": "Good translation, but \"مدهون بقليل من الدهن\" sounds a bit redundant and less natural compared to using 'زيت' or 'زبدة'."
+      },
+      {
+        "letter": "B",
+        "accuracy": 5,
+        "quality": 5,
+        "issues": "Excellent translation. 'كعكة كيندر البركانية' is a creative and natural equivalent for lava cake. Minor formatting in the milk ingredient, but perfectly acceptable."
+      },
+      {
+        "letter": "C",
+        "accuracy": 5,
+        "quality": 5,
+        "issues": "Very natural and accurate translation. Using 'لافا كيك' is very common in Arabic culinary contexts. Instructions are clear and well-phrased."
+      },
+      {
+        "letter": "D",
+        "accuracy": 4,
+        "quality": 3,
+        "issues": "'بروتين بنكهة الفانيليا على شكل مسحوق' is overly wordy. 'عجينة' is not the best translation for 'batter' in this context (خليط or مزيج is better)."
+      },
+      {
+        "letter": "E",
+        "accuracy": 5,
+        "quality": 5,
+        "issues": "Great translation. Natural flow and accurate terminology throughout."
+      },
+      {
+        "letter": "F",
+        "accuracy": 5,
+        "quality": 4,
+        "issues": "Very good translation. 'للمنتصف' is literal; 'للحشوة' or 'في الوسط' would flow slightly better, though still accurate."
+      }
+    ],
+    "ranking": [
+      "C",
+      "E",
+      "B",
+      "F",
+      "A",
+      "D"
+    ]
+  }
+}

@@ -1,0 +1,60 @@
+{
+  "caseId": "ig-DbqcKjxoYnj--he",
+  "judge": "anthropic/claude-opus-5.5",
+  "letters": {
+    "A": "openai/gpt-6.1-sol@low",
+    "B": "openai/gpt-6-luna",
+    "C": "anthropic/claude-haiku-5.5@low",
+    "D": "openai/gpt-6.1-terra@low",
+    "E": "openai/gpt-6.2-sol@low",
+    "F": "google/gemini-4-hydrogen@low"
+  },
+  "verdict": {
+    "candidates": [
+      {
+        "letter": "A",
+        "accuracy": 5,
+        "quality": 4,
+        "issues": "'1 זרעים' is awkward. Uses the colloquial construct 'השמנת לבישול'. Otherwise accurate and natural."
+      },
+      {
+        "letter": "B",
+        "accuracy": 5,
+        "quality": 4,
+        "issues": "'1 זרעי תרמיל וניל / כפית' keeps the slash from the source. Minor colloquial construct 'השמנת לבישול'. Otherwise solid."
+      },
+      {
+        "letter": "C",
+        "accuracy": 4,
+        "quality": 3,
+        "issues": "Title 'עוגת גבינה אוראו' is ungrammatical. 'חלב המרוכז' is missing the article. 'הוניל' is spelled inconsistently. The vanilla line drops the '1 tsp' amount. 'סירית' is odd. 'לוחצים על תחתית' is less precise than pressing into the base."
+      },
+      {
+        "letter": "D",
+        "accuracy": 5,
+        "quality": 4,
+        "issues": "Repeats the redundant 'מקררים במקרר'. '1 זרעים' is awkward. Otherwise fluent."
+      },
+      {
+        "letter": "E",
+        "accuracy": 5,
+        "quality": 5,
+        "issues": "Uses 'חמה' for 'warm' (minor). Adds small helpful clarifications. Clear handling of the vanilla pod line. Very natural."
+      },
+      {
+        "letter": "F",
+        "accuracy": 5,
+        "quality": 4,
+        "issues": "Uses 'חמה' for 'warm'. '1 גרגירים' is awkward. Uses an apostrophe instead of a geresh in 'אינץ''. Otherwise good."
+      }
+    ],
+    "ranking": [
+      "E",
+      "A",
+      "B",
+      "D",
+      "F",
+      "C"
+    ]
+  }
+}

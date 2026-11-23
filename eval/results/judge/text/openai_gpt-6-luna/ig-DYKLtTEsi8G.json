@@ -18,7 +18,7 @@
     },
     {
       "ref_index": 4,
-      "status": "ok"
+      "status": "wrong_quantity"
     },
     {
       "ref_index": 5,
@@ -43,5 +43,5 @@
   ],
   "extra_ingredients": [],
   "steps_score": 4,
-  "note": "Steps add ingredient-listing lines and an invented 'two ramekins' detail not in the reference."
+  "note": "Vanilla is listed as 2 drops instead of 1, and the method adds an ingredient-summary step plus a ramekin detail not in the reference."
 }

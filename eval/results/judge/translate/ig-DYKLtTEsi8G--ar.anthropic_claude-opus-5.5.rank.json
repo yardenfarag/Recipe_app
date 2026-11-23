@@ -1,0 +1,60 @@
+{
+  "caseId": "ig-DYKLtTEsi8G--ar",
+  "judge": "anthropic/claude-opus-5.5",
+  "letters": {
+    "A": "openai/gpt-6.1-terra@low",
+    "B": "openai/gpt-6.1-sol@low",
+    "C": "anthropic/claude-haiku-5.5@low",
+    "D": "openai/gpt-6.2-sol@low",
+    "E": "google/gemini-4-hydrogen@low",
+    "F": "openai/gpt-6-luna"
+  },
+  "verdict": {
+    "candidates": [
+      {
+        "letter": "A",
+        "accuracy": 5,
+        "quality": 4,
+        "issues": "'1 قطرة' and '0 رقائق الشوكولاتة' are kept as literal numerals. 'سكر حبيبات' is slightly awkward. 'استخدم 1 ملعقة' reads mechanically. Adds °C, which is a reasonable assumption."
+      },
+      {
+        "letter": "B",
+        "accuracy": 5,
+        "quality": 4,
+        "issues": "Identical to A: literal '1 قطرة' and '0 رقائق'; 'سكر حبيبات' is slightly awkward; 'استخدم 1 ملعقة' reads mechanically."
+      },
+      {
+        "letter": "C",
+        "accuracy": 5,
+        "quality": 4,
+        "issues": "The title 'مصغّرة بالملعقة' is a bit vague. Literal '0 رقائق' and '1 قطرة' are kept. The instructions are natural and stay faithful to the source by omitting the temperature unit."
+      },
+      {
+        "letter": "D",
+        "accuracy": 5,
+        "quality": 4,
+        "issues": "Adds 'الفطيرة' for clarity, which is acceptable. 'سكر حبيبات' is awkward. 'استخدم 1 ملعقة' reads mechanically. Literal '0 رقائق' is kept."
+      },
+      {
+        "letter": "E",
+        "accuracy": 5,
+        "quality": 4,
+        "issues": "The title 'قابلة للغرف' is overly literal. 'الحشوة عبارة عن 1 ملعقة' reads mechanically. Otherwise the instructions are natural."
+      },
+      {
+        "letter": "F",
+        "accuracy": 5,
+        "quality": 4,
+        "issues": "Literal '0 رقائق' and '1 قطرة' are kept. The instructions are natural and drop the mechanical '1'."
+      }
+    ],
+    "ranking": [
+      "F",
+      "D",
+      "E",
+      "C",
+      "A",
+      "B"
+    ]
+  }
+}

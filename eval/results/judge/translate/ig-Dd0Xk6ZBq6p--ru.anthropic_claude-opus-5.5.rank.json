@@ -1,0 +1,60 @@
+{
+  "caseId": "ig-Dd0Xk6ZBq6p--ru",
+  "judge": "anthropic/claude-opus-5.5",
+  "letters": {
+    "A": "anthropic/claude-haiku-5.5@low",
+    "B": "google/gemini-4-hydrogen@low",
+    "C": "openai/gpt-6.2-sol@low",
+    "D": "openai/gpt-6-luna",
+    "E": "openai/gpt-6.1-terra@low",
+    "F": "openai/gpt-6.1-sol@low"
+  },
+  "verdict": {
+    "candidates": [
+      {
+        "letter": "C",
+        "accuracy": 5,
+        "quality": 5,
+        "issues": "Redundant brand phrasing «шоколада Kinder Chocolate». Adding «белый» to the chocolate clarifies rather than distorts. Otherwise natural and idiomatic."
+      },
+      {
+        "letter": "F",
+        "accuracy": 5,
+        "quality": 4,
+        "issues": "Calque «до объединения». Redundant «Kinder Chocolate». Somewhat paraphrased doneness cue."
+      },
+      {
+        "letter": "A",
+        "accuracy": 4,
+        "quality": 4,
+        "issues": "Drops «light» (brown sugar) and «large» (eggs). «Взбейте» for «mix» contradicts «do not overmix». Otherwise natural."
+      },
+      {
+        "letter": "D",
+        "accuracy": 5,
+        "quality": 3,
+        "issues": "Grammar error «2 крупных яиц». Awkward «Оставьте печенье полностью остыть»."
+      },
+      {
+        "letter": "B",
+        "accuracy": 5,
+        "quality": 3,
+        "issues": "Calque «до объединения». Odd «до затвердения» and «стабилизироваться». Case error «по 25–30 г каждая»."
+      },
+      {
+        "letter": "E",
+        "accuracy": 5,
+        "quality": 3,
+        "issues": "Calque «до объединения». Odd «до затвердения». Awkward «в верх печенья». Redundant «Kinder Chocolate»."
+      }
+    ],
+    "ranking": [
+      "C",
+      "F",
+      "A",
+      "D",
+      "B",
+      "E"
+    ]
+  }
+}

@@ -6,7 +6,7 @@
     },
     {
       "ref_index": 1,
-      "status": "wrong_quantity"
+      "status": "missing"
     },
     {
       "ref_index": 2,
@@ -38,6 +38,6 @@
     }
   ],
   "extra_ingredients": [],
-  "steps_score": 4,
-  "note": "All quantities are missing, cinnamon is omitted, and the oven temperature is wrong (200° instead of 180°)."
+  "steps_score": 3,
+  "note": "All quantities are missing, garlic and cinnamon are omitted, and the oven temperature and time are absent while a serving step is invented."
 }

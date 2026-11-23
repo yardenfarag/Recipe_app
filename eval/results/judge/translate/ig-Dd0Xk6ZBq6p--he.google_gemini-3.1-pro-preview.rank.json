@@ -1,0 +1,60 @@
+{
+  "caseId": "ig-Dd0Xk6ZBq6p--he",
+  "judge": "google/gemini-3.1-pro-preview",
+  "letters": {
+    "A": "openai/gpt-6.1-terra@low",
+    "B": "google/gemini-4-hydrogen@low",
+    "C": "openai/gpt-6.1-sol@low",
+    "D": "openai/gpt-6-luna",
+    "E": "anthropic/claude-haiku-5.5@low",
+    "F": "openai/gpt-6.2-sol@low"
+  },
+  "verdict": {
+    "candidates": [
+      {
+        "letter": "A",
+        "accuracy": 5,
+        "quality": 5,
+        "issues": "Added 'white' to 'chocolate' in step 1, which clarifies the instruction perfectly based on the ingredient list but is slightly explicit compared to the source."
+      },
+      {
+        "letter": "B",
+        "accuracy": 5,
+        "quality": 4,
+        "issues": "Grammar error in step 9: 'נוצרת קרום' ('קרום' is masculine, so it should be 'נוצר קרום'). Minor literal phrasing."
+      },
+      {
+        "letter": "C",
+        "accuracy": 5,
+        "quality": 5,
+        "issues": "Very good translation overall. 'נוזלי' for gooey is a bit liquidy, but acceptable in context."
+      },
+      {
+        "letter": "D",
+        "accuracy": 5,
+        "quality": 4,
+        "issues": "Literal translation of 'centers' as 'המרכזים' in step 9, which sounds a bit awkward in Hebrew. 'דביקים' for gooey is less appetizing."
+      },
+      {
+        "letter": "E",
+        "accuracy": 4,
+        "quality": 3,
+        "issues": "Omitted 'for the centers' in the ingredient list. Added 'electric mixer' in step 1 which is not in the source text. Awkward, literal phrasing in step 7 ('מרכז קפוא')."
+      },
+      {
+        "letter": "F",
+        "accuracy": 5,
+        "quality": 5,
+        "issues": "Repeats 'unsalted' in step 3, which is slightly redundant but accurate. Very natural phrasing throughout."
+      }
+    ],
+    "ranking": [
+      "F",
+      "A",
+      "C",
+      "D",
+      "B",
+      "E"
+    ]
+  }
+}

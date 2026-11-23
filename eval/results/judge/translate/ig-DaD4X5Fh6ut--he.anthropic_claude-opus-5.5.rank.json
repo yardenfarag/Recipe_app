@@ -1,0 +1,60 @@
+{
+  "caseId": "ig-DaD4X5Fh6ut--he",
+  "judge": "anthropic/claude-opus-5.5",
+  "letters": {
+    "A": "anthropic/claude-haiku-5.5@low",
+    "B": "openai/gpt-6.1-terra@low",
+    "C": "openai/gpt-6-luna",
+    "D": "google/gemini-4-hydrogen@low",
+    "E": "openai/gpt-6.1-sol@low",
+    "F": "openai/gpt-6.2-sol@low"
+  },
+  "verdict": {
+    "candidates": [
+      {
+        "letter": "A",
+        "accuracy": 3,
+        "quality": 2,
+        "issues": "'מזלגים' is the wrong verb for 'pour' (should be יוצקים). Awkward title word order ('שוקולד לבן צ׳יפס'). 'סוכר גרגירים' is unidiomatic. Infinitives ('לשטוח… ולמלא… ולעצב') are mixed with present-tense instructions. 'את שוקולד הלבן צ׳יפס' is ungrammatical."
+      },
+      {
+        "letter": "B",
+        "accuracy": 5,
+        "quality": 5,
+        "issues": "The final note is slightly rephrased as the chocolate hardening rather than the cookies setting. Exclamation marks were dropped. Otherwise natural and accurate."
+      },
+      {
+        "letter": "C",
+        "accuracy": 5,
+        "quality": 4,
+        "issues": "Leaves the English unit '4 oz'. Adds 'תמצית' to vanilla (harmless). 'כף גלידה לעוגיות' is slightly clunky."
+      },
+      {
+        "letter": "D",
+        "accuracy": 4,
+        "quality": 4,
+        "issues": "Drops the cookie-scoop and 'I used' detail, rendering it as cookie size instead. 'brand' becomes 'סוג השוקולד'. 'piece' becomes 'קובייה'. Phrasing is otherwise natural."
+      },
+      {
+        "letter": "E",
+        "accuracy": 5,
+        "quality": 4,
+        "issues": "'כאן משתמשים' slightly alters the first-person note. Otherwise accurate and fluent."
+      },
+      {
+        "letter": "F",
+        "accuracy": 5,
+        "quality": 5,
+        "issues": "Very natural, with good terms ('כף קפיצית', 'מרוככת'). Minor additions such as repeating 'המלוחה' in the instructions."
+      }
+    ],
+    "ranking": [
+      "B",
+      "F",
+      "E",
+      "C",
+      "D",
+      "A"
+    ]
+  }
+}

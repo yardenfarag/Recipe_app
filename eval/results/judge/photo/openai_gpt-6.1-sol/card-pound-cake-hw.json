@@ -21,7 +21,10 @@
       "status": "ok"
     }
   ],
-  "extra_ingredients": [],
+  "extra_ingredients": [
+    "0 grease for pan",
+    "0 flour for dusting pan"
+  ],
   "steps_score": 5,
-  "note": "The candidate invented a 4 c flour amount where the reference leaves the quantity unstated."
+  "note": "The flour amount of 3 c was invented; the reference leaves it unstated."
 }

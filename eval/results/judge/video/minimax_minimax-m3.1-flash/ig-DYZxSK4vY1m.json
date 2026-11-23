@@ -1,0 +1,75 @@
+{
+  "ingredients": [
+    {
+      "ref_index": 0,
+      "status": "ok"
+    },
+    {
+      "ref_index": 1,
+      "status": "wrong_quantity"
+    },
+    {
+      "ref_index": 2,
+      "status": "wrong_quantity"
+    },
+    {
+      "ref_index": 3,
+      "status": "missing"
+    },
+    {
+      "ref_index": 4,
+      "status": "missing"
+    },
+    {
+      "ref_index": 5,
+      "status": "missing"
+    },
+    {
+      "ref_index": 6,
+      "status": "ok"
+    },
+    {
+      "ref_index": 7,
+      "status": "wrong_quantity"
+    },
+    {
+      "ref_index": 8,
+      "status": "wrong_quantity"
+    },
+    {
+      "ref_index": 9,
+      "status": "ok"
+    },
+    {
+      "ref_index": 10,
+      "status": "missing"
+    },
+    {
+      "ref_index": 11,
+      "status": "wrong_quantity"
+    },
+    {
+      "ref_index": 12,
+      "status": "wrong_quantity"
+    },
+    {
+      "ref_index": 13,
+      "status": "missing"
+    },
+    {
+      "ref_index": 14,
+      "status": "wrong_quantity"
+    },
+    {
+      "ref_index": 15,
+      "status": "wrong_quantity"
+    }
+  ],
+  "extra_ingredients": [
+    "1 stick Cinnamon",
+    "2 pieces Star anise",
+    "4 Shallots"
+  ],
+  "steps_score": 3,
+  "note": "The candidate swaps cloves, peppercorns and salt for cinnamon, star anise and shallots, omits oyster sauce and the hot-oil step, and drops most sauce quantities."
+}

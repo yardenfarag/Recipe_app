@@ -1,0 +1,60 @@
+{
+  "caseId": "invent-text-ricotta-pancakes",
+  "judge": "google/gemini-3.1-pro-preview",
+  "letters": {
+    "A": "openai/gpt-6.2-sol@low",
+    "B": "openai/gpt-6.1-terra@low",
+    "C": "anthropic/claude-sonnet-5.5@low",
+    "D": "openai/gpt-6.1-sol@low",
+    "E": "google/gemini-4-hydrogen@low",
+    "F": "anthropic/claude-haiku-5.5@low"
+  },
+  "verdict": {
+    "candidates": [
+      {
+        "letter": "A",
+        "accuracy": 5,
+        "quality": 4,
+        "issues": "No fat (melted butter or oil) is included in the pancake batter, which might make them slightly tough or dry. 1 tablespoon of butter for greasing the skillet for the entire batch is also quite sparse."
+      },
+      {
+        "letter": "B",
+        "accuracy": 4,
+        "quality": 3,
+        "issues": "Contains a typo ('1 egg egg') in the ingredient list. The pancake batter only contains 1 teaspoon of lemon zest and no lemon juice, making it less 'lemony' than expected."
+      },
+      {
+        "letter": "C",
+        "accuracy": 5,
+        "quality": 4,
+        "issues": "The instruction uses an imprecise measurement ('a squeeze of the lemon juice') for the compote, which makes it slightly confusing since it is drawn from a precise 2-tablespoon total in the ingredients."
+      },
+      {
+        "letter": "D",
+        "accuracy": 5,
+        "quality": 5,
+        "issues": "No significant issues. The recipe is coherent, well-proportioned, and provides excellent details like resting the batter and using a low oven to keep batches warm."
+      },
+      {
+        "letter": "E",
+        "accuracy": 5,
+        "quality": 4,
+        "issues": "Similar to A, there is no melted butter or oil in the pancake batter itself, though the higher egg ratio will help. Baking soda might be slightly unnecessary since baking powder is already used, but the lemon juice will activate it."
+      },
+      {
+        "letter": "F",
+        "accuracy": 5,
+        "quality": 4,
+        "issues": "The 1 teaspoon of water needed to mix with the cornstarch for the slurry in step 1 is not accounted for in the ingredient list (which only lists the 2 tablespoons of water meant for simmering the berries)."
+      }
+    ],
+    "ranking": [
+      "D",
+      "E",
+      "F",
+      "C",
+      "A",
+      "B"
+    ]
+  }
+}

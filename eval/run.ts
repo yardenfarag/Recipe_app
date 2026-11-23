@@ -38,7 +38,10 @@ export type RunRecord = {
   caseId: string;
   ok: boolean;
   error?: string;
+  /** Wall clock of the call (see runOne). */
   ms: number;
+  /** llmClient's durationMs: time to response headers only. */
+  headersMs?: number;
   costUsd: number;
   promptTokens: number;
   outputTokens: number;
@@ -51,6 +54,11 @@ export type RunRecord = {
 
 export const rawPath = (task: string, model: string, caseId: string) =>
   `${RESULTS}raw/${task}/${slug(model)}/${caseId}.json`;
+
+/** `--repeat=N` writes runs 2..N next to the first. They only feed latency; judges and scores use run 1. */
+export const REPEAT_MARK = '~r';
+export const repeatPath = (task: string, model: string, caseId: string, run: number) =>
+  rawPath(task, model, `${caseId}${REPEAT_MARK}${run}`);
 
 type CallStore = { model: string; reasoning: string | null; results: GenerateLlmJsonResult<unknown>[] };
 const calls = new AsyncLocalStorage<CallStore>();
@@ -274,8 +282,10 @@ async function runOne(task: Task, model: string, c: Case): Promise<RunRecord> {
   }
   record.output = output;
   if (store.results.length > 0) {
-    // Model time only: the wall clock above also covers reading cached inputs.
-    record.ms = store.results.reduce((sum, r) => sum + r.durationMs, 0);
+    // `ms` stays the wall clock of the last attempt. llmClient's durationMs stops when the response
+    // headers arrive, before the body is read, so it undercounts generation time; it's kept as
+    // `headersMs`. The wall clock also covers reading the cached input from disk (tens of ms).
+    record.headersMs = store.results.reduce((sum, r) => sum + r.durationMs, 0);
     record.servedModel = store.results.at(-1)!.model;
   }
   for (const r of store.results) {
@@ -292,6 +302,7 @@ export async function runCommand(args: string[]) {
   const onlyModels = flag('models')?.split(',');
   const limit = Number(flag('limit') ?? Infinity);
   const concurrency = Number(flag('concurrency') ?? 6);
+  const repeat = Number(flag('repeat') ?? 1);
   const force = args.includes('--force');
   // Production code logs every call; keep the eval output readable.
   console.log = () => {};
@@ -299,19 +310,25 @@ export async function runCommand(args: string[]) {
 
   for (const task of tasks) {
     const models = TASK_MODELS[task].filter((m) => !onlyModels || onlyModels.includes(m));
-    const jobs: { model: string; c: Case }[] = [];
+    const jobs: { model: string; c: Case; run: number; path: string }[] = [];
     for (const model of models) {
       for (const c of (await buildCases(task, model)).slice(0, limit)) {
-        if (!force && (await exists(rawPath(task, model, c.id)))) continue;
-        jobs.push({ model, c });
+        for (let run = 1; run <= repeat; run++) {
+          const path = run === 1 ? rawPath(task, model, c.id) : repeatPath(task, model, c.id, run);
+          if (!force && (await exists(path))) continue;
+          jobs.push({ model, c, run, path });
+        }
       }
     }
+    // Interleave repeats across the run so they don't hit the provider back to back.
+    jobs.sort((a, b) => a.run - b.run);
     log(`[${task}] ${jobs.length} calls across ${models.length} models`);
-    await pool(jobs, concurrency, async ({ model, c }) => {
+    await pool(jobs, concurrency, async ({ model, c, run, path }) => {
       const record = await runOne(task, model, c);
-      await writeJson(rawPath(task, model, c.id), record);
+      await writeJson(path, run === 1 ? record : { ...record, run });
       const status = record.ok ? '✓' : `✗ ${record.error?.slice(0, 160)}`;
-      log(`  ${model} ${c.id} ${(record.ms / 1000).toFixed(1)}s $${record.costUsd.toFixed(5)} ${status}`);
+      const tag = run === 1 ? '' : ` (run ${run})`;
+      log(`  ${model} ${c.id}${tag} ${(record.ms / 1000).toFixed(1)}s $${record.costUsd.toFixed(5)} ${status}`);
     });
   }
 }

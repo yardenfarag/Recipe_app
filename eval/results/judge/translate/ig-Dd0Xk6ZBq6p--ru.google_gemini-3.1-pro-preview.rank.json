@@ -1,0 +1,60 @@
+{
+  "caseId": "ig-Dd0Xk6ZBq6p--ru",
+  "judge": "google/gemini-3.1-pro-preview",
+  "letters": {
+    "A": "anthropic/claude-haiku-5.5@low",
+    "B": "google/gemini-4-hydrogen@low",
+    "C": "openai/gpt-6.2-sol@low",
+    "D": "openai/gpt-6-luna",
+    "E": "openai/gpt-6.1-terra@low",
+    "F": "openai/gpt-6.1-sol@low"
+  },
+  "verdict": {
+    "candidates": [
+      {
+        "letter": "A",
+        "accuracy": 4,
+        "quality": 4,
+        "issues": "Omitted the word 'large' (крупные) for eggs. Phrasing is mostly fine but a bit basic in some places."
+      },
+      {
+        "letter": "B",
+        "accuracy": 5,
+        "quality": 4,
+        "issues": "Translates 'until combined' as 'до объединения', which sounds slightly literal; 'до однородности' is more standard in Russian recipes."
+      },
+      {
+        "letter": "C",
+        "accuracy": 5,
+        "quality": 5,
+        "issues": "Excellent, highly idiomatic translation. Uses professional culinary terms ('пробейте блендером', 'заготовку печенья') and flows perfectly."
+      },
+      {
+        "letter": "D",
+        "accuracy": 4,
+        "quality": 3,
+        "issues": "Contains a blatant grammatical error: '2 крупных яиц' instead of '2 крупных яйца'."
+      },
+      {
+        "letter": "E",
+        "accuracy": 5,
+        "quality": 4,
+        "issues": "Slightly clunky phrasing in the instructions ('Считайте печенье готовым', 'в верх печенья' instead of 'сверху')."
+      },
+      {
+        "letter": "F",
+        "accuracy": 5,
+        "quality": 5,
+        "issues": "Very strong and natural translation. Good use of culinary adaptations ('Ориентируйтесь на появление...', 'пробейте блендером'), though 'до объединения' is a bit literal compared to 'до однородности'."
+      }
+    ],
+    "ranking": [
+      "C",
+      "F",
+      "B",
+      "E",
+      "A",
+      "D"
+    ]
+  }
+}

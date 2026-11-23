@@ -30,10 +30,12 @@
     },
     {
       "ref_index": 7,
-      "status": "ok"
+      "status": "missing"
     }
   ],
-  "extra_ingredients": [],
+  "extra_ingredients": [
+    "yogurt"
+  ],
   "steps_score": 3,
-  "note": "The candidate drops all amounts, omits stevia and baking powder, and gives vague cooking instructions with no temperature or time."
+  "note": "Quantities are mostly missing, stevia and baking powder are omitted, and the specific baking temperature and times are lost."
 }

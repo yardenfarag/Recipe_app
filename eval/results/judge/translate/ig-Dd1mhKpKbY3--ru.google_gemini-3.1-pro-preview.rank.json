@@ -1,0 +1,60 @@
+{
+  "caseId": "ig-Dd1mhKpKbY3--ru",
+  "judge": "google/gemini-3.1-pro-preview",
+  "letters": {
+    "A": "openai/gpt-6.1-sol@low",
+    "B": "openai/gpt-6-luna",
+    "C": "openai/gpt-6.1-terra@low",
+    "D": "openai/gpt-6.2-sol@low",
+    "E": "google/gemini-4-hydrogen@low",
+    "F": "anthropic/claude-haiku-5.5@low"
+  },
+  "verdict": {
+    "candidates": [
+      {
+        "letter": "A",
+        "accuracy": 5,
+        "quality": 4,
+        "issues": "Good translation, though 'пирожные' is a bit generic for 'cups'; 'корзиночки' would be more descriptive."
+      },
+      {
+        "letter": "B",
+        "accuracy": 4,
+        "quality": 4,
+        "issues": "Dropped 'sweetened' from condensed milk (though implied in Russian, it's missing from the text). The title is a bit clunky."
+      },
+      {
+        "letter": "C",
+        "accuracy": 5,
+        "quality": 4,
+        "issues": "Accurate, but 'десерты' is too generic for 'cups' in this context."
+      },
+      {
+        "letter": "D",
+        "accuracy": 5,
+        "quality": 5,
+        "issues": "Excellent translation. 'Корзиночки' is the perfect idiomatic term for this kind of molded dessert."
+      },
+      {
+        "letter": "E",
+        "accuracy": 5,
+        "quality": 5,
+        "issues": "Very natural phrasing throughout. 'Корзиночки' is highly idiomatic, and 'выстелите форму... бумажными формочками' sounds like a native recipe."
+      },
+      {
+        "letter": "F",
+        "accuracy": 4,
+        "quality": 3,
+        "issues": "Grammatical error ('4 батончиков' instead of '4 батончика'). Mistranslation: 'топлёного сливочного масла' means ghee/clarified butter, not melted butter ('растопленного'). Translates 'cups' as 'капкейки' in the title but 'корзинки' in the text."
+      }
+    ],
+    "ranking": [
+      "E",
+      "D",
+      "A",
+      "C",
+      "B",
+      "F"
+    ]
+  }
+}

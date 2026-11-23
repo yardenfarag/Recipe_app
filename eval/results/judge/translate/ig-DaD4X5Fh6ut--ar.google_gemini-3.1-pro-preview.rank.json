@@ -1,0 +1,60 @@
+{
+  "caseId": "ig-DaD4X5Fh6ut--ar",
+  "judge": "google/gemini-3.1-pro-preview",
+  "letters": {
+    "A": "anthropic/claude-haiku-5.5@low",
+    "B": "openai/gpt-6.2-sol@low",
+    "C": "openai/gpt-6-luna",
+    "D": "openai/gpt-6.1-terra@low",
+    "E": "google/gemini-4-hydrogen@low",
+    "F": "openai/gpt-6.1-sol@low"
+  },
+  "verdict": {
+    "candidates": [
+      {
+        "letter": "A",
+        "accuracy": 4,
+        "quality": 3,
+        "issues": "Translated 'granulated sugar' as 'سكر أبيض ناعم' which implies caster sugar, not granulated. Missing definite article in 'وسكر بني'. Translated 'cookie scoop' as 'ملعقة الآيس كريم' which is understandable but less precise."
+      },
+      {
+        "letter": "B",
+        "accuracy": 5,
+        "quality": 5,
+        "issues": "Minor issue: handled 'cookie'/'cookies' somewhat inconsistently (using 'حبات الكوكيز' and then singular collective 'يبرد'), but overall natural and accurate."
+      },
+      {
+        "letter": "C",
+        "accuracy": 5,
+        "quality": 4,
+        "issues": "Used 'سكر حبيبي' for 'granulated sugar', which is slightly less standard than 'سكر حبيبات'. Handled the pluralization of cookies very well by using 'قطع الكوكيز'."
+      },
+      {
+        "letter": "D",
+        "accuracy": 5,
+        "quality": 5,
+        "issues": "Very natural translation. Good culinary terminology ('سكر حبيبات', 'مغرفة الكوكيز', 'قلّب برفق'). Consistently treated 'الكوكيز' as a masculine collective noun, which is common in Arabic."
+      },
+      {
+        "letter": "E",
+        "accuracy": 5,
+        "quality": 4,
+        "issues": "Used 'سكر أبيض حبيبي' which is slightly redundant. Handled 'fold in' properly. Good flow."
+      },
+      {
+        "letter": "F",
+        "accuracy": 5,
+        "quality": 4,
+        "issues": "Used the passive 'استُخدمت' instead of 'استخدمتُ' for 'I used'. Used 'صفار بيض' instead of 'صفار بيضة' for a single egg yolk."
+      }
+    ],
+    "ranking": [
+      "D",
+      "B",
+      "C",
+      "E",
+      "F",
+      "A"
+    ]
+  }
+}

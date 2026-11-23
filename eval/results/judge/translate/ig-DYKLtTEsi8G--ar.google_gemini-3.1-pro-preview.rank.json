@@ -1,0 +1,60 @@
+{
+  "caseId": "ig-DYKLtTEsi8G--ar",
+  "judge": "google/gemini-3.1-pro-preview",
+  "letters": {
+    "A": "openai/gpt-6.1-terra@low",
+    "B": "openai/gpt-6.1-sol@low",
+    "C": "anthropic/claude-haiku-5.5@low",
+    "D": "openai/gpt-6.2-sol@low",
+    "E": "google/gemini-4-hydrogen@low",
+    "F": "openai/gpt-6-luna"
+  },
+  "verdict": {
+    "candidates": [
+      {
+        "letter": "A",
+        "accuracy": 5,
+        "quality": 4,
+        "issues": "Good translation, but instructions lack object pronouns or explicit nouns (e.g., 'برّد' instead of 'برّدها' or 'برّد الفطيرة'), making it sound slightly abrupt."
+      },
+      {
+        "letter": "B",
+        "accuracy": 5,
+        "quality": 4,
+        "issues": "Identical to Candidate A. Lacks object pronouns in the instructions."
+      },
+      {
+        "letter": "C",
+        "accuracy": 5,
+        "quality": 3,
+        "issues": "The title 'مصغّرة بالملعقة' sounds slightly awkward compared to other adaptations. Missed adding the Celsius symbol for clarity."
+      },
+      {
+        "letter": "D",
+        "accuracy": 5,
+        "quality": 5,
+        "issues": "Excellent adaptation. The addition of 'الفطيرة' in the instructions makes the Arabic phrasing very natural and cohesive."
+      },
+      {
+        "letter": "E",
+        "accuracy": 5,
+        "quality": 4,
+        "issues": "The term 'قابلة للغرف' is a literal translation of 'scoopable' and sounds slightly unnatural in an Arabic culinary context compared to 'تؤكل بالملعقة'."
+      },
+      {
+        "letter": "F",
+        "accuracy": 5,
+        "quality": 5,
+        "issues": "Very good translation. The use of object pronouns ('برّدها', 'اخبزها') makes the instructions flow naturally."
+      }
+    ],
+    "ranking": [
+      "D",
+      "F",
+      "A",
+      "B",
+      "E",
+      "C"
+    ]
+  }
+}

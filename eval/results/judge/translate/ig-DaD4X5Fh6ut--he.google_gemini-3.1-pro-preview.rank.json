@@ -1,0 +1,60 @@
+{
+  "caseId": "ig-DaD4X5Fh6ut--he",
+  "judge": "google/gemini-3.1-pro-preview",
+  "letters": {
+    "A": "anthropic/claude-haiku-5.5@low",
+    "B": "openai/gpt-6.1-terra@low",
+    "C": "openai/gpt-6-luna",
+    "D": "google/gemini-4-hydrogen@low",
+    "E": "openai/gpt-6.1-sol@low",
+    "F": "openai/gpt-6.2-sol@low"
+  },
+  "verdict": {
+    "candidates": [
+      {
+        "letter": "A",
+        "accuracy": 3,
+        "quality": 2,
+        "issues": "Unnatural literal translations ('סוכר גרגירים' instead of white sugar, 'שוקולד לבן צ׳יפס' instead of 'שוקולד צ'יפס לבן'). Contains a glaring typo/error in the last step ('מזלגים' instead of 'יוצקים' or 'מזלפים'). Grammatical inconsistencies in the instructions."
+      },
+      {
+        "letter": "B",
+        "accuracy": 5,
+        "quality": 5,
+        "issues": "Excellent translation. Uses natural phrasing, correct culinary terminology ('תפוחה', 'קורצן עוגיות'), and maintains the first-person perspective smoothly."
+      },
+      {
+        "letter": "C",
+        "accuracy": 5,
+        "quality": 4,
+        "issues": "Very good, though 'מקרימים' is slightly less common than 'מקציפים' in Hebrew baking. Left 'oz' in English rather than translating to 'אונקיות'."
+      },
+      {
+        "letter": "D",
+        "accuracy": 4,
+        "quality": 4,
+        "issues": "Good overall, but dropped the literal mention of the 'cookie scoop' in step 5 by just saying 'קורצים מהבצק עוגיות'."
+      },
+      {
+        "letter": "E",
+        "accuracy": 4,
+        "quality": 4,
+        "issues": "Good translation, but shifts the first-person '(i used...)' into an awkward impersonal phrasing ('כאן משתמשים בכף...')."
+      },
+      {
+        "letter": "F",
+        "accuracy": 4,
+        "quality": 4,
+        "issues": "Uses excellent culinary terms ('כף קפיצית'), but shifts the first-person voice to third-person ('במתכון השתמשו'). 'מרוככת' is a bit clunky compared to just 'רכה'."
+      }
+    ],
+    "ranking": [
+      "B",
+      "F",
+      "D",
+      "C",
+      "E",
+      "A"
+    ]
+  }
+}

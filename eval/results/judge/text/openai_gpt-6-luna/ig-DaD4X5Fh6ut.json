@@ -49,7 +49,9 @@
       "status": "ok"
     }
   ],
-  "extra_ingredients": [],
+  "extra_ingredients": [
+    "melted white chocolate, optional"
+  ],
   "steps_score": 5,
-  "note": ""
+  "note": "Candidate adds melted white chocolate as a separate ingredient line; it appears only in the reference's optional step, not its ingredient list."
 }

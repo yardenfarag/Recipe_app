@@ -1,0 +1,60 @@
+{
+  "caseId": "ig-DYwzTorRr5---ar",
+  "judge": "anthropic/claude-opus-5.5",
+  "letters": {
+    "A": "openai/gpt-6.1-terra@low",
+    "B": "openai/gpt-6.2-sol@low",
+    "C": "openai/gpt-6.1-sol@low",
+    "D": "google/gemini-4-hydrogen@low",
+    "E": "anthropic/claude-haiku-5.5@low",
+    "F": "openai/gpt-6-luna"
+  },
+  "verdict": {
+    "candidates": [
+      {
+        "letter": "A",
+        "accuracy": 4,
+        "quality": 3,
+        "issues": "'ادهن 2 رامكين' is awkward; it should use the dual. 'مزيج الشوكولاتة المذابة' has a gender-ambiguous agreement. 'Mix in' does not say what the chocolate is mixed into."
+      },
+      {
+        "letter": "B",
+        "accuracy": 5,
+        "quality": 4,
+        "issues": "'2 قالب رامكين' is ungrammatical; it should be 'قالبَي'. 'سكر أبيض حبيبات' is slightly clunky. Otherwise fluent, with correct agreement ('المزيج المذاب')."
+      },
+      {
+        "letter": "C",
+        "accuracy": 5,
+        "quality": 4,
+        "issues": "'2 قالب رامكين' should use the dual. 'بالزبدة' is a minor addition. Helpfully clarifies mixing the chocolate into the egg mixture."
+      },
+      {
+        "letter": "D",
+        "accuracy": 4,
+        "quality": 4,
+        "issues": "'ادهن 2 رامكين' is awkward. 'اخلط الشوكولاتة المذابة' does not say what to mix it into. 'سكر أبيض' loses the 'granulated' nuance. Natural overall."
+      },
+      {
+        "letter": "E",
+        "accuracy": 4,
+        "quality": 3,
+        "issues": "'كاسات' is colloquial. 'اذب' is missing its hamza. 'على دفعات مدة 30 ثانية' is awkward. 'على الرامكين' is singular. The dual 'رامكينين' is good, but 'بقليل من الدهن' is clunky."
+      },
+      {
+        "letter": "F",
+        "accuracy": 5,
+        "quality": 4,
+        "issues": "'سكر حبيبي' is an odd term that could be misread as 'my love'. Otherwise the duals ('قالبَي', 'اتركهما') and agreement are correct, and the phrasing is natural."
+      }
+    ],
+    "ranking": [
+      "F",
+      "C",
+      "B",
+      "D",
+      "A",
+      "E"
+    ]
+  }
+}
