@@ -1,3 +1,4 @@
+/** @jsxImportSource nativewind */
 import { useRef } from 'react';
 import {
   Pressable as RNPressable,
@@ -44,10 +45,22 @@ export function Pressable({ trackId, onPress, onLongPress, ...rest }: PressableP
   return (
     <RNPressable
       {...rest}
+      // NativeWind swaps Pressable for its className wrapper, which on iOS and Android throws away a
+      // `style={({ pressed }) => …}` function (web keeps it). Every row, chip and button in the kit styles
+      // itself that way, so skip the wrapper unless a className actually needs it.
+      {...(hasClassName(rest) ? null : { cssInterop: false })}
       onPress={onPress ? stable.press : undefined}
       onLongPress={onLongPress ? stable.longPress : undefined}
     />
   );
+}
+
+function hasClassName(props: object): boolean {
+  const className = (props as { className?: unknown }).className;
+  if (__DEV__ && className && typeof (props as { style?: unknown }).style === 'function') {
+    console.warn('[Pressable] className and a style function together: the style function is lost on native');
+  }
+  return Boolean(className);
 }
 
 function tapName(trackId: string | undefined, testID: string | null | undefined): string {
