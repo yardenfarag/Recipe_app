@@ -174,6 +174,8 @@ export async function updateGuestRecipeContent(
     tags?: string[];
     kitchen_adapted_summary?: string | null;
     kitchen_original?: Recipe['kitchen_original'] | null;
+    /** PIN-187. The language the text is in, when a translation became the recipe's text. Absent = it stays. */
+    source_language?: string;
   },
 ): Promise<Recipe | null> {
   return serializeMutation(async () => {
@@ -181,7 +183,8 @@ export async function updateGuestRecipeContent(
     let updated: Recipe | null = null;
     const next = existing.map((recipe) => {
       if (recipe.id !== id) return recipe;
-      const textChanged = !recipeContentEquals(recipe, content);
+      const languageChanged = Boolean(content.source_language) && content.source_language !== recipe.source_language;
+      const textChanged = languageChanged || !recipeContentEquals(recipe, content);
       updated = {
         ...recipe,
         title: content.title,
@@ -213,6 +216,7 @@ export async function updateGuestRecipeContent(
         ...(content.kitchen_original !== undefined
           ? { kitchen_original: content.kitchen_original ?? undefined }
           : {}),
+        ...(content.source_language ? { source_language: content.source_language } : {}),
         translations: textChanged ? undefined : recipe.translations,
       };
       return updated;

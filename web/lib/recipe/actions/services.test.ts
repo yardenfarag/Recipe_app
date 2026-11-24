@@ -59,22 +59,6 @@ beforeEach(() => {
   for (const fn of Object.values(calls)) fn.mockReset();
 });
 
-/** A tiny stand-in for supabase.from(table).update().eq().select().single() and .delete().eq(). */
-function fakeTables(row: unknown) {
-  const writes: { table: string; op: string; value?: unknown }[] = [];
-  calls.from.mockImplementation((table: string) => ({
-    update: (value: unknown) => {
-      writes.push({ table, op: "update", value });
-      return { eq: () => ({ select: () => ({ single: async () => ({ data: row, error: null }) }) }) };
-    },
-    delete: () => {
-      writes.push({ table, op: "delete" });
-      return { eq: async () => ({ error: null }) };
-    },
-  }));
-  return writes;
-}
-
 describe("saveRecipeContent", () => {
   it("saves the recipe's own text with the shared update, and says whether the words changed", async () => {
     calls.updateRecipeContent.mockResolvedValue({ ...recipe, title: "Oat pancakes" });
@@ -85,14 +69,21 @@ describe("saveRecipeContent", () => {
     expect(calls.from).not.toHaveBeenCalled();
   });
 
-  it("a translation that becomes the text is written with its language in one update, and old translations go", async () => {
-    const writes = fakeTables({ ...recipe, title: "פנקייק", source_language: "he" });
+  it("a translation that becomes the text is saved with its language, in the same shared update", async () => {
+    calls.updateRecipeContent.mockResolvedValue({ ...recipe, title: "פנקייק", source_language: "he" });
     const update = { title: "פנקייק", servings: 2, ingredients: [], instructions: [] };
     const result = await saveRecipeContent(recipe, { update, sourceLanguage: "he" });
-    expect(calls.updateRecipeContent).not.toHaveBeenCalled();
-    expect(writes[0]).toMatchObject({ table: "recipes", op: "update", value: { title: "פנקייק", source_language: "he" } });
-    expect(writes[1]).toMatchObject({ table: "recipe_translations", op: "delete" });
+    expect(calls.updateRecipeContent).toHaveBeenCalledWith("r1", { ...update, source_language: "he" });
     expect(result).toMatchObject({ textChanged: true, saved: { source_language: "he" } });
+  });
+
+  it("the same words under a new language still count as changed: the stored translations are gone", async () => {
+    calls.updateRecipeContent.mockResolvedValue({ ...recipe, source_language: "he" });
+    const update = { title: recipe.title, servings: 2, ingredients: recipe.ingredients, instructions: recipe.instructions };
+    expect((await saveRecipeContent(recipe, { update, sourceLanguage: "he" })).textChanged).toBe(true);
+    // The recipe's own language again (a revert): nothing to relabel.
+    expect((await saveRecipeContent(recipe, { update, sourceLanguage: "en" })).textChanged).toBe(false);
+    expect(calls.updateRecipeContent).toHaveBeenLastCalledWith("r1", update);
   });
 });
 
