@@ -86,6 +86,27 @@ describe('updateRecipeContent', () => {
     await updateRecipeContent('r1', base);
     expect(updatePayload()).not.toHaveProperty('appliances');
   });
+
+  const translationsDeleted = () => mocks.calls.some((c) => c.table === 'recipe_translations' && c.method === 'delete');
+
+  it('writes a new language with the text, and drops the translations made from the old one (PIN-187)', async () => {
+    // The same words under a new label still count: the stored translations name the wrong source.
+    mocks.results.recipes = { data: { id: 'r1', ...base, source_language: 'en' }, error: null };
+    await updateRecipeContent('r1', { ...base, source_language: 'es' });
+    expect(updatePayload()).toMatchObject({ title: 'Cake', source_language: 'es' });
+    expect(translationsDeleted()).toBe(true);
+  });
+
+  it('leaves the language and the translations alone when neither the text nor the language changed', async () => {
+    mocks.results.recipes = { data: { id: 'r1', ...base, source_language: 'es' }, error: null };
+    await updateRecipeContent('r1', base);
+    expect(updatePayload()).not.toHaveProperty('source_language');
+    expect(translationsDeleted()).toBe(false);
+
+    mocks.calls.length = 0;
+    await updateRecipeContent('r1', { ...base, source_language: 'es' });
+    expect(translationsDeleted()).toBe(false);
+  });
 });
 
 describe('setRecipeTags', () => {

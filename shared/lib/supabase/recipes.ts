@@ -242,6 +242,12 @@ export type RecipeContentUpdate = {
   kitchen_original?: Recipe['kitchen_original'] | null;
   /** ADR 017. undefined = leave the stored list alone; null = not analysed; [] = none needed. */
   appliances?: Recipe['appliances'];
+  /**
+   * The language the text is in, when it is not the recipe's so far: a translation on screen was changed (swap,
+   * remix) and became the recipe's text (PIN-187). Written in the same update as the text, so the words and their
+   * language never disagree. undefined = the language stays.
+   */
+  source_language?: string;
 };
 
 /** The `recipes` columns an update writes. Optional fields are only written when provided. */
@@ -268,13 +274,16 @@ export function recipeContentUpdateRow(content: RecipeContentUpdate): Record<str
       ? { kitchen_original: content.kitchen_original }
       : {}),
     ...(content.appliances !== undefined ? { appliances: content.appliances } : {}),
+    ...(content.source_language ? { source_language: content.source_language } : {}),
   };
 }
 
 /** Persists remix / swap / repair edits on an already-saved recipe (canonical fields only). */
 export async function updateRecipeContent(id: string, content: RecipeContentUpdate): Promise<Recipe> {
   const existing = await fetchRecipeById(id);
-  const textChanged = !existing || !recipeContentEquals(existing, content);
+  const languageChanged = Boolean(content.source_language) && content.source_language !== existing?.source_language;
+  // The stored translations are of the old words, or were made from another language.
+  const textChanged = !existing || languageChanged || !recipeContentEquals(existing, content);
 
   const { data, error } = await supabase
     .from('recipes')
@@ -285,7 +294,7 @@ export async function updateRecipeContent(id: string, content: RecipeContentUpda
 
   if (error) throw error;
 
-  // Only drop overlays when canonical text actually changed (remix / swap / edit).
+  // Only drop overlays when canonical text or its language actually changed (remix / swap / edit).
   if (textChanged) {
     await supabase.from('recipe_translations').delete().eq('recipe_id', id);
   }
