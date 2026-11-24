@@ -47,7 +47,7 @@ import { Pressable } from '@/components/ui/Pressable';
 import { useAuth } from '@/hooks/useAuth';
 import { useBreakpoint } from '@/hooks/useBreakpoint';
 import { useThemePreference } from '@/hooks/useThemePreference';
-import { confirmAction } from '@/lib/confirmAction';
+import { askConfirm } from '@/lib/dialog';
 import { errorText } from '@shared/lib/errorText';
 import {
   PRESENTATIONS,
@@ -133,11 +133,14 @@ export function MessageComposer({ initial, initialStatus, onCancel, onDone }: Pr
         );
         if (found.length > 0) return; // shown beside the fields
         if (form.required) {
-          const ok = await confirmAction(
-            'Send a test copy?',
-            'This message can’t be closed on your device. Stop it from the list, on the website or another device, when you are done.',
-            'Send',
-          );
+          const ok = await askConfirm({
+            trackId: 'admin.messages.test_required_dialog',
+            title: 'Send a test copy?',
+            message:
+              'This message can’t be closed on your device. Stop it from the list, on the website or another device, when you are done.',
+            confirmLabel: 'Send',
+            cancelLabel: 'Cancel',
+          });
           if (!ok) return;
         }
         const saved = await saveAdminMessage(draft);

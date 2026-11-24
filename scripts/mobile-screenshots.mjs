@@ -35,6 +35,20 @@ const PLAYWRIGHT_VERSION = '1.65.1';
 /** The recipe editor's "Add appliance" button (web.editor.addAppliance), which opens a sheet. */
 const ADD_APPLIANCE_LABEL = { en: 'Add appliance', he: 'הוספת כלי', ar: 'إضافة أداة', es: 'Añadir utensilio', ru: 'Добавить технику' };
 
+/** Settings' "Delete account" button (settings.deleteAccount); the dialog's red button has the same words. */
+const DELETE_ACCOUNT_LABEL = { en: 'Delete account', he: 'מחיקת חשבון', ar: 'حذف الحساب', es: 'Eliminar cuenta', ru: 'Удалить аккаунт' };
+
+/** Opens the delete-account question from Settings. */
+async function openDeleteAccountDialog(page, lang) {
+  const label = DELETE_ACCOUNT_LABEL[lang] ?? DELETE_ACCOUNT_LABEL.en;
+  const button = page.getByRole('button', { name: label }).first();
+  await button.scrollIntoViewIfNeeded({ timeout: 15000 });
+  await button.click();
+  await page.getByRole('button', { name: label }).nth(1).waitFor({ timeout: 5000 });
+  await page.waitForTimeout(600);
+  return label;
+}
+
 const SCREENS = {
   library: { path: '/' },
   // A new account: no recipes or collections yet.
@@ -72,6 +86,25 @@ const SCREENS = {
       await button.scrollIntoViewIfNeeded({ timeout: 15000 });
       await button.click();
       await page.waitForTimeout(1200);
+    },
+    viewportOnly: true,
+  },
+  // A question from askConfirm() (src/lib/dialog.ts): deleting the account, asked once with a red button (PIN-184).
+  'delete-account': {
+    path: '/settings',
+    async after(page, { lang }) {
+      await openDeleteAccountDialog(page, lang);
+    },
+    viewportOnly: true,
+  },
+  // A notice from showNotice(): "Account deleted", shown over sign-in once the account and Settings are gone.
+  'account-deleted': {
+    path: '/settings',
+    endsOn: '/auth',
+    async after(page, { lang }) {
+      const label = await openDeleteAccountDialog(page, lang);
+      await page.getByRole('button', { name: label }).last().click();
+      await page.waitForTimeout(2500);
     },
     viewportOnly: true,
   },
@@ -399,6 +432,7 @@ function createFakeSupabase(state) {
 
   const functions = {
     'backfill-thumbnails': () => ({ updated: [], thumbnails: {} }),
+    'delete-account': () => ({ ok: true }),
   };
 
   const json = (status, body, extra = {}) => ({
@@ -626,7 +660,7 @@ async function shoot(browser, baseUrl, job, opts, report) {
     }
     const finalPath = new URL(page.url()).pathname.replace(/^\/app/, '') || '/';
     const text = await page.evaluate(() => document.body.innerText.slice(0, 4000));
-    const expectedPath = def.path.split('?')[0];
+    const expectedPath = def.endsOn ?? def.path.split('?')[0];
     if (finalPath !== expectedPath && !(expectedPath === '/' && finalPath === '')) {
       problems.unshift(`ended on ${finalPath} instead of ${expectedPath}`);
     }

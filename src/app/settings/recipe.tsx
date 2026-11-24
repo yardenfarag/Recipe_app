@@ -36,7 +36,7 @@ import { fetchContributeToHub, setContributeToHub } from '@shared/lib/supabase/c
 import { fetchCloudKitchenProfile, saveCloudKitchenProfile } from '@/lib/supabase/kitchen';
 import { RECIPE_VARIANTS } from '@shared/lib/recipeVariants';
 import { announce } from '@/lib/a11y';
-import { confirmAction } from '@/lib/confirmAction';
+import { askConfirm } from '@/lib/dialog';
 import { applianceNameKey } from '@shared/lib/applianceDisplay';
 import type { ApplianceKey } from '@shared/lib/appliances';
 import {
@@ -507,12 +507,12 @@ function MyAppliancesEditor() {
   }, [status, t]);
 
   async function stopChecking() {
-    const ok = await confirmAction(
-      t('myAppliances.clearTitle'),
-      t('myAppliances.clearBody'),
-      t('myAppliances.clearConfirm'),
-      t('common.cancel'),
-    );
+    const ok = await askConfirm({
+      trackId: 'my_appliances.clear_dialog',
+      title: t('myAppliances.clearTitle'),
+      message: t('myAppliances.clearBody'),
+      confirmLabel: t('myAppliances.clearConfirm'),
+    });
     if (ok) ownedAppliances.clear();
   }
 

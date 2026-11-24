@@ -20,6 +20,8 @@ interface ConfirmDialogProps {
   onConfirm: () => void;
   onCancel: () => void;
   onSecondary?: () => void;
+  /** A notice: only the confirm button. `onCancel` still answers back and Escape. */
+  hideCancel?: boolean;
   /** Tap-log id prefix; logs `<trackId>.cancel`, `.secondary` and `.confirm`. */
   trackId?: string;
 }
@@ -40,6 +42,7 @@ export function ConfirmDialog({
   onConfirm,
   onCancel,
   onSecondary,
+  hideCancel = false,
   trackId = 'confirm_dialog',
 }: ConfirmDialogProps) {
   const { t } = useTranslation();
@@ -49,8 +52,11 @@ export function ConfirmDialog({
   const resolvedConfirm = confirmLabel ?? t('common.continue');
   const resolvedCancel = cancelLabel ?? t('common.cancel');
   const hasSecondary = Boolean(secondaryLabel && onSecondary);
-  // A button's label stays on one line: long labels (or a third button) stack the buttons instead.
-  const stacked = hasSecondary || resolvedConfirm.length + resolvedCancel.length > 26;
+  // A button's label stays on one line: long labels (or a third button) stack the buttons instead. Half the dialog
+  // holds about 11 letters on a phone ("Delete account" was cut off). A lone button takes the width.
+  const longLabels =
+    resolvedConfirm.length + resolvedCancel.length > 26 || Math.max(resolvedConfirm.length, resolvedCancel.length) > 11;
+  const stacked = hideCancel || hasSecondary || longLabels;
   // Side by side, each takes half; stacked, each takes the width.
   const buttonStyle = stacked ? undefined : { flex: 1, minWidth: 0 };
 
@@ -96,17 +102,19 @@ export function ConfirmDialog({
             </Text>
 
             <View style={[{ marginTop: 24, gap: 8 }, stacked ? null : { flexDirection: 'row' }]}>
-              <Button
-                variant="outline"
-                trackId={`${trackId}.cancel`}
-                onPress={onCancel}
-                disabled={loading}
-                fullWidth={stacked}
-                accessibilityLabel={resolvedCancel}
-                style={buttonStyle}
-              >
-                {resolvedCancel}
-              </Button>
+              {hideCancel ? null : (
+                <Button
+                  variant="outline"
+                  trackId={`${trackId}.cancel`}
+                  onPress={onCancel}
+                  disabled={loading}
+                  fullWidth={stacked}
+                  accessibilityLabel={resolvedCancel}
+                  style={buttonStyle}
+                >
+                  {resolvedCancel}
+                </Button>
+              )}
               {hasSecondary ? (
                 <Button
                   variant="secondary"
