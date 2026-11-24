@@ -113,6 +113,11 @@ interface RecipeContentSnapshot {
   kitchen_original?: Recipe['kitchen_original'] | null;
   /** ADR 017. Only set when a remix or revert changes them; absent = leave as stored. */
   appliances?: Recipe['appliances'];
+  /**
+   * The language this text is in, when it may not be the recipe's so far (PIN-187): a swap or remix made a
+   * translation the recipe's text, or a revert goes back to text from before that. Absent = the language stays.
+   */
+  source_language?: string;
 }
 
 interface RecipeViewProps {
@@ -127,7 +132,8 @@ interface RecipeViewProps {
   footer?: ReactNode;
   /**
    * Fired when canonical title/ingredients/instructions/servings/calories change.
-   * Never includes an active translation overlay (ADR 012).
+   * Showing a translation never fires it (ADR 012). A swap or remix made on a translation does: that translation
+   * becomes the recipe's text, and `source_language` says which language it is in (PIN-187).
    */
   onContentChange?: (content: RecipeContentSnapshot) => void;
   /** Saved recipes only — shows a heart toggle in the header. */
@@ -379,6 +385,11 @@ export function RecipeView({
   const isUpdating = (field: RecalcField) => updatingFields.includes(field);
   const updatingLabel = t('recipeEditor.updating');
   const sourceLanguage = resolveRecipeSourceLanguage(recipe);
+  /**
+   * The language `originalRef`'s text is in. The recipe's own language can change after it was taken (a swap on a
+   * translation), so "Revert to original" saves it with the text (PIN-187).
+   */
+  const originalLanguageRef = useRef(sourceLanguage);
   const contentLanguage =
     activeLanguage ?? (isRecipeLanguageCode(sourceLanguage) ? sourceLanguage : null);
   const unitLanguage = resolveCulinaryLanguage(activeLanguage, appLanguage);
@@ -530,46 +541,59 @@ export function RecipeView({
   ) {
     if (swapIndex == null) return;
     const factor = baseServings / servings;
-    setBaseIngredients((prev) =>
-      prev.map((ing, i) =>
-        i === swapIndex
-          ? scaleIngredient(
-              {
-                name: alternative.name,
-                unit: alternative.unit,
-                quantity: alternative.quantity,
-                metric: alternative.metric,
-                spoons: alternative.spoons,
-              },
-              factor,
-            )
-          : ing,
-      ),
+    const nextIngredients = baseIngredients.map((ing, i) =>
+      i === swapIndex
+        ? scaleIngredient(
+            {
+              name: alternative.name,
+              unit: alternative.unit,
+              quantity: alternative.quantity,
+              metric: alternative.metric,
+              spoons: alternative.spoons,
+            },
+            factor,
+          )
+        : ing,
     );
+    setBaseIngredients(nextIngredients);
     setBaseInstructions(nextInstructions);
-    // Promote display content to canonical (same as remix) so the swap persists
-    // instead of echoing the pre-swap translation source.
+    // A swap on a translation makes what is on screen the recipe's text (same as remix), so the swap persists
+    // instead of echoing the pre-swap translation source. Its language is saved with it, as on the web (PIN-187):
+    // without it the recipe is, say, Spanish labelled English, and the next swap or translation is told the wrong one.
     if (activeLanguage != null) {
       setActiveLanguage(null);
+      onContentChange?.({
+        title,
+        servings: baseServings,
+        ingredients: nextIngredients,
+        instructions: nextInstructions,
+        calories,
+        nutrition,
+        source_language: activeLanguage,
+      });
     }
     setSwapIndex(null);
   }
 
   function handleApplyVariant(result: TransformedRecipePayload, variant: RecipeVariantKey) {
-    const canonicalTitle = translationSourceRef.current?.title ?? recipe.title;
+    // The remix was made from what is on screen. Over a translation, that translation becomes the recipe's text:
+    // its title stays with the new steps and its language is saved with them, as on the web (PIN-187).
+    const promotedLanguage = activeLanguage;
     // "Make it without these" (the kitchen fix) keeps the recipe as it was before, so Revert still works after
-    // leaving the page, here and on the web. An earlier kept original stays the one to go back to. A remix keeps none.
+    // leaving the page, here and on the web. An earlier kept original stays the one to go back to, unless it is in
+    // another language than the text saved now. A remix keeps none.
     const kitchenFix = avoidInstruction != null;
-    const canonical = translationSourceRef.current ?? {
-      title: canonicalTitle,
+    const shown: RecipeContentSnapshot = {
+      title,
       servings: baseServings,
       ingredients: baseIngredients,
       instructions: baseInstructions,
       calories,
       nutrition,
+      appliances: recipe.appliances,
     };
-    const before: RecipeContentSnapshot = recipe.kitchen_original ?? { ...canonical, appliances: recipe.appliances };
-    setTitle(canonicalTitle);
+    const earlierOriginal = promotedLanguage == null ? recipe.kitchen_original : null;
+    const before: RecipeContentSnapshot = earlierOriginal ?? shown;
     setBaseServings(result.servings);
     setBaseIngredients(result.ingredients);
     setBaseInstructions(result.instructions);
@@ -581,10 +605,13 @@ export function RecipeView({
     setActiveVariant(variant);
     setVariantSummary(result.summary);
     setKitchenAdapted(kitchenFix);
-    if (kitchenFix) originalRef.current = before;
+    if (kitchenFix) {
+      originalRef.current = before;
+      if (!earlierOriginal) originalLanguageRef.current = promotedLanguage ?? sourceLanguage;
+    }
     setActiveLanguage(null);
     translationSourceRef.current = {
-      title: canonicalTitle,
+      title,
       servings: result.servings,
       ingredients: result.ingredients,
       instructions: result.instructions,
@@ -592,7 +619,7 @@ export function RecipeView({
       nutrition: remixedNutrition,
     };
     onContentChange?.({
-      title: canonicalTitle,
+      title,
       servings: result.servings,
       ingredients: result.ingredients,
       instructions: result.instructions,
@@ -602,6 +629,7 @@ export function RecipeView({
       kitchen_original: kitchenFix ? before : null,
       // The server only sends appliances when the remix changed the steps (ADR 017).
       ...(result.appliances !== undefined ? { appliances: result.appliances } : {}),
+      ...(promotedLanguage != null ? { source_language: promotedLanguage } : {}),
     });
   }
 
@@ -624,6 +652,8 @@ export function RecipeView({
       nutrition: original.nutrition ?? null,
       kitchen_adapted_summary: null,
       kitchen_original: null,
+      // The recipe may have taken a translation's language since (a swap or remix on one).
+      source_language: originalLanguageRef.current,
     });
   }
 
@@ -726,6 +756,7 @@ export function RecipeView({
         nutrition: next.nutrition ?? null,
       };
       originalRef.current = translationSourceRef.current;
+      originalLanguageRef.current = sourceLanguage;
       onRepairApplied?.(next);
     } catch {
       Alert.alert(t('recipe.repairFailedTitle'), t('recipe.repairFailed'));

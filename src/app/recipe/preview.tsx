@@ -115,11 +115,15 @@ export default function RecipePreviewScreen() {
       kitchen_original?: ExtractedRecipe['kitchen_original'] | null;
       /** Only present when a remix or revert changes them (ADR 017). */
       appliances?: ExtractedRecipe['appliances'];
+      /** Only present when the text is in another language than the recipe's so far (PIN-187). */
+      source_language?: string;
     }) => {
       setRecipeToSave((prev) => {
         if (!prev) return prev;
         const kitchenTouched = content.kitchen_adapted_summary !== undefined;
-        if (recipeContentEquals(prev, content) && !kitchenTouched) return prev;
+        const languageChanged =
+          content.source_language !== undefined && content.source_language !== prev.source_language;
+        if (recipeContentEquals(prev, content) && !kitchenTouched && !languageChanged) return prev;
         const {
           kitchen_adapted_summary: kitchenSummary,
           kitchen_original: kitchenOriginal,

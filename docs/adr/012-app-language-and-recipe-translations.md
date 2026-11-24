@@ -26,6 +26,7 @@ Previously, applying a translation could overwrite canonical `recipes` columns v
 - `recipe_translations` stores overlays per `(recipe_id, language_code)` with RLS matching recipe ownership
 - Guest recipes store overlays in an in-memory/AsyncStorage `translations` map
 - Remix / swap / content edits update canonical fields and **invalidate** translation caches
+- A remix or swap made while a translation is showing changes that translation, so it becomes the canonical text: title, ingredients and steps are saved in its language and `source_language` is set to it in the same write (PIN-187, both apps). "Revert to original" saves the original's language back with its text
 
 ### When we translate
 
