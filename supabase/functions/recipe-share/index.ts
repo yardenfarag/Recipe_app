@@ -1,152 +1,14 @@
-import { serve } from '../_shared/core/observe.ts';
-import { recipeAppliancesOf } from '../_shared/recipes/enrich/appliances.ts';
-import { corsHeaders, jsonResponse } from '../_shared/core/cors.ts';
-import { createAuthedSupabase } from '../_shared/core/recipeLookup.ts';
-import { createServiceSupabase, toJson } from '../_shared/core/supabaseAdmin.ts';
-import { fitNutrition } from '../_shared/recipes/recipeLimits.ts';
+import { handler, HttpError } from '../_shared/core/handler.ts';
+import { createAuthedSupabase } from '../_shared/core/supabaseAdmin.ts';
+import { claimShare, createShare } from '../_shared/recipes/recipeShareActions.ts';
+import { parseShareRequest } from '../_shared/recipes/recipeShareRequest.ts';
+import { publicSnapshot, type RecipeSnapshot } from '../_shared/recipes/recipeShareSnapshot.ts';
 
-const MAX_BODY_BYTES = 32_000;
-const TOKEN_BYTES = 18;
+const failed = (status: number, error: string, code?: string) =>
+  HttpError.legacy(status, error, code ? { code } : {});
 
-type ShareAction = 'create' | 'get' | 'claim' | 'revoke' | 'status';
-
-interface RequestBody {
-  action?: ShareAction;
-  recipe_id?: string;
-  token?: string;
-}
-
-interface RecipeSnapshot {
-  title: string;
-  original_url?: string | null;
-  platform?: string | null;
-  image_url?: string | null;
-  source_video_url?: string | null;
-  ingredients: unknown;
-  instructions: unknown;
-  servings: number;
-  calories?: number | null;
-  /** PIN-80. Absent in shares created before it, which show no macros. */
-  nutrition?: unknown;
-  estimated_time_minutes?: number | null;
-  cost_estimate?: string | null;
-  effort_level?: string | null;
-  extraction_status: string;
-  extraction_source?: string | null;
-  tags?: string[] | null;
-  missing_fields?: string[] | null;
-  source_language?: string | null;
-  calories_reasoning?: string | null;
-  time_reasoning?: string | null;
-  /** ADR 017. Absent in shares created before PIN-26, which read as "not analysed". */
-  appliances?: unknown;
-}
-
-function generateToken(): string {
-  const bytes = new Uint8Array(TOKEN_BYTES);
-  crypto.getRandomValues(bytes);
-  let binary = '';
-  for (const b of bytes) binary += String.fromCharCode(b);
-  return btoa(binary).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/g, '');
-}
-
-function isNonEmptyString(value: unknown): value is string {
-  return typeof value === 'string' && value.trim().length > 0;
-}
-
-function snapshotFromRecipe(row: Record<string, unknown>): RecipeSnapshot {
-  const title = typeof row.title === 'string' ? row.title.trim() : '';
-  if (!title) throw new Error('Recipe is missing a title');
-
-  return {
-    title,
-    original_url: typeof row.original_url === 'string' ? row.original_url : null,
-    platform: typeof row.platform === 'string' ? row.platform : null,
-    image_url: typeof row.image_url === 'string' ? row.image_url : null,
-    source_video_url: typeof row.source_video_url === 'string' ? row.source_video_url : null,
-    ingredients: row.ingredients ?? [],
-    instructions: row.instructions ?? [],
-    servings: typeof row.servings === 'number' && row.servings >= 1 ? row.servings : 1,
-    calories: typeof row.calories === 'number' ? row.calories : null,
-    nutrition: typeof row.calories === 'number' ? fitNutrition(row.nutrition) : null,
-    estimated_time_minutes:
-      typeof row.estimated_time_minutes === 'number' ? row.estimated_time_minutes : null,
-    cost_estimate: typeof row.cost_estimate === 'string' ? row.cost_estimate : null,
-    effort_level: typeof row.effort_level === 'string' ? row.effort_level : null,
-    extraction_status:
-      typeof row.extraction_status === 'string' ? row.extraction_status : 'full',
-    extraction_source: typeof row.extraction_source === 'string' ? row.extraction_source : null,
-    tags: Array.isArray(row.tags) ? (row.tags as string[]) : null,
-    missing_fields: Array.isArray(row.missing_fields) ? (row.missing_fields as string[]) : null,
-    source_language: typeof row.source_language === 'string' ? row.source_language : 'en',
-    calories_reasoning: typeof row.calories_reasoning === 'string' ? row.calories_reasoning : null,
-    time_reasoning: typeof row.time_reasoning === 'string' ? row.time_reasoning : null,
-    appliances: recipeAppliancesOf(row),
-  };
-}
-
-function publicSnapshot(snapshot: RecipeSnapshot) {
-  return {
-    title: snapshot.title,
-    original_url: snapshot.original_url ?? undefined,
-    platform: snapshot.platform ?? undefined,
-    image_url: snapshot.image_url ?? undefined,
-    source_video_url: snapshot.source_video_url ?? undefined,
-    ingredients: snapshot.ingredients,
-    instructions: snapshot.instructions,
-    servings: snapshot.servings,
-    calories: snapshot.calories ?? undefined,
-    nutrition: toJson(snapshotNutrition(snapshot)),
-    estimated_time_minutes: snapshot.estimated_time_minutes ?? undefined,
-    cost_estimate: snapshot.cost_estimate ?? undefined,
-    effort_level: snapshot.effort_level ?? undefined,
-    extraction_status: snapshot.extraction_status,
-    extraction_source: snapshot.extraction_source ?? undefined,
-    tags: snapshot.tags ?? undefined,
-    missing_fields: snapshot.missing_fields ?? undefined,
-    source_language: snapshot.source_language ?? undefined,
-    appliances: toJson(snapshotAppliances(snapshot)),
-  };
-}
-
-/** Stored JSON too: macros only next to calories, in the stored shape. */
-function snapshotNutrition(snapshot: RecipeSnapshot) {
-  return typeof snapshot.calories === 'number' ? fitNutrition(snapshot.nutrition) : null;
-}
-
-/** Snapshots are stored JSON, so clean the list again on the way out. */
-function snapshotAppliances(snapshot: RecipeSnapshot) {
-  return recipeAppliancesOf(snapshot);
-}
-
-function insertRowFromSnapshot(userId: string, snapshot: RecipeSnapshot) {
-  return {
-    user_id: userId,
-    title: snapshot.title,
-    original_url: snapshot.original_url ?? null,
-    platform: snapshot.platform ?? null,
-    image_url: snapshot.image_url ?? null,
-    source_video_url: snapshot.source_video_url ?? null,
-    ingredients: toJson(snapshot.ingredients ?? []),
-    instructions: toJson(snapshot.instructions ?? []),
-    servings: snapshot.servings,
-    calories: snapshot.calories ?? null,
-    nutrition: toJson(snapshotNutrition(snapshot)),
-    estimated_time_minutes: snapshot.estimated_time_minutes ?? null,
-    cost_estimate: snapshot.cost_estimate ?? null,
-    effort_level: snapshot.effort_level ?? null,
-    extraction_status: snapshot.extraction_status || 'full',
-    extraction_source: snapshot.extraction_source ?? null,
-    tags: snapshot.tags ?? [],
-    missing_fields: snapshot.missing_fields ?? null,
-    source_language: snapshot.source_language ?? 'en',
-    calories_reasoning: snapshot.calories_reasoning ?? null,
-    time_reasoning: snapshot.time_reasoning ?? null,
-    appliances: toJson(snapshotAppliances(snapshot)),
-    is_favorite: false,
-    migrated_from_guest: false,
-  };
-}
+const missingToken = failed(400, 'Missing token', 'share_not_found');
+const shareFailed = (error: string) => failed(500, error, 'share_failed');
 
 /**
  * POST { action: 'create' | 'get' | 'claim' | 'revoke' | 'status', recipe_id?, token? }
@@ -154,302 +16,107 @@ function insertRowFromSnapshot(userId: string, snapshot: RecipeSnapshot) {
  * Failures keep the old { error, code? } shape (ADR 024). Codes (the app's words for them are in
  * shared/lib/serverErrors.ts): server_misconfigured, auth_required, share_not_found, share_unavailable,
  * recipe_not_saved, recipe_not_found, recipe_invalid, share_failed, claim_failed. Bad requests have no code.
+ *
+ * `get` needs no sign-in (guests open shared links on the web). The others check sign-in after the body, as they
+ * always did, so the wrapper does no auth.
  */
-serve('recipe-share', async (req) => {
-  if (req.method === 'OPTIONS') {
-    return new Response('ok', { headers: corsHeaders });
-  }
-  if (req.method !== 'POST') {
-    return jsonResponse({ error: 'Method not allowed' }, 405);
-  }
+handler(
+  {
+    name: 'recipe-share',
+    auth: 'none',
+    body: 'text',
+    legacyErrorShape: true,
+    errors: {
+      misconfigured: failed(500, 'Server misconfigured', 'server_misconfigured'),
+      authMissing: failed(401, 'Missing Authorization header', 'auth_required'),
+      authInvalid: failed(401, 'Unauthorized', 'auth_required'),
+    },
+    input: parseShareRequest,
+  },
+  async ({ req, input: body, admin, fail }) => {
+    const action = body.action;
 
-  let body: RequestBody;
-  try {
-    const raw = await req.text();
-    if (!raw) return jsonResponse({ error: 'Invalid JSON body' }, 400);
-    if (new TextEncoder().encode(raw).byteLength > MAX_BODY_BYTES) {
-      return jsonResponse({ error: 'Request payload is too large' }, 400);
-    }
-    body = JSON.parse(raw) as RequestBody;
-  } catch {
-    return jsonResponse({ error: 'Invalid JSON body' }, 400);
-  }
+    if (action === 'get') {
+      const token = typeof body.token === 'string' ? body.token.trim() : '';
+      if (!token) throw missingToken;
 
-  const action = body.action;
-  if (!['create', 'get', 'claim', 'revoke', 'status'].includes(action as string)) {
-    return jsonResponse({ error: 'Invalid action' }, 400);
-  }
-
-  const admin = createServiceSupabase();
-  if (!admin) return jsonResponse({ error: 'Server misconfigured', code: 'server_misconfigured' }, 500);
-
-  if (action === 'get') {
-    const token = typeof body.token === 'string' ? body.token.trim() : '';
-    if (!token) return jsonResponse({ error: 'Missing token', code: 'share_not_found' }, 400);
-
-    const { data, error } = await admin
-      .from('recipe_shares')
-      .select('token, snapshot, revoked_at')
-      .eq('token', token)
-      .maybeSingle();
-
-    if (error) {
-      console.error('recipe-share get failed:', error);
-      return jsonResponse({ error: 'Could not load share', code: 'share_unavailable' }, 500);
-    }
-    if (!data || data.revoked_at) {
-      return jsonResponse({ error: 'Share not found', code: 'share_not_found' }, 404);
-    }
-
-    return jsonResponse({
-      status: 'ok',
-      token: data.token,
-      recipe: publicSnapshot(data.snapshot as unknown as RecipeSnapshot),
-    });
-  }
-
-  const authHeader = req.headers.get('Authorization');
-  if (!authHeader) {
-    return jsonResponse({ error: 'Missing Authorization header', code: 'auth_required' }, 401);
-  }
-
-  const authed = createAuthedSupabase(authHeader);
-  if (!authed) return jsonResponse({ error: 'Server misconfigured', code: 'server_misconfigured' }, 500);
-
-  const {
-    data: { user },
-    error: userError,
-  } = await authed.auth.getUser();
-  if (userError || !user) {
-    return jsonResponse({ error: 'Unauthorized', code: 'auth_required' }, 401);
-  }
-
-  // Stops a link (by token) or every link to a recipe (by recipe_id). Only the
-  // sharer can revoke; another user's token matches no rows.
-  if (action === 'revoke') {
-    const token = typeof body.token === 'string' ? body.token.trim() : '';
-    const recipeId = typeof body.recipe_id === 'string' ? body.recipe_id.trim() : '';
-    if (!token && !recipeId) return jsonResponse({ error: 'Missing token or recipe_id' }, 400);
-
-    let query = admin
-      .from('recipe_shares')
-      .update({ revoked_at: new Date().toISOString() })
-      .eq('created_by', user.id)
-      .is('revoked_at', null);
-    query = token ? query.eq('token', token) : query.eq('source_recipe_id', recipeId);
-    const { data, error } = await query.select('token');
-    if (error) {
-      console.error('recipe-share revoke failed:', error);
-      return jsonResponse({ error: 'Could not revoke share', code: 'share_failed' }, 500);
-    }
-    return jsonResponse({ status: 'ok', revoked: data?.length ?? 0 });
-  }
-
-  // Whether the sharer has a live link for this recipe. Not called by the app today: kept with
-  // `revoke` so a "Stop sharing" button can be added without backend work (PIN-110).
-  if (action === 'status') {
-    const recipeId = typeof body.recipe_id === 'string' ? body.recipe_id.trim() : '';
-    if (!recipeId) return jsonResponse({ error: 'Missing recipe_id' }, 400);
-    const { data, error } = await admin
-      .from('recipe_shares')
-      .select('token')
-      .eq('created_by', user.id)
-      .eq('source_recipe_id', recipeId)
-      .is('revoked_at', null)
-      .limit(1);
-    if (error) {
-      console.error('recipe-share status failed:', error);
-      return jsonResponse({ error: 'Could not load share status', code: 'share_failed' }, 500);
-    }
-    return jsonResponse({ status: 'ok', shared: (data?.length ?? 0) > 0 });
-  }
-
-  if (action === 'create') {
-    const recipeId = typeof body.recipe_id === 'string' ? body.recipe_id.trim() : '';
-    if (!recipeId || recipeId.startsWith('guest-')) {
-      return jsonResponse({ error: 'A saved recipe is required to share', code: 'recipe_not_saved' }, 400);
-    }
-
-    const { data: recipe, error: recipeError } = await authed
-      .from('recipes')
-      .select('*')
-      .eq('id', recipeId)
-      .maybeSingle();
-
-    if (recipeError) {
-      console.error('recipe-share create lookup failed:', recipeError);
-      return jsonResponse({ error: 'Could not load recipe', code: 'share_failed' }, 500);
-    }
-    if (!recipe) {
-      return jsonResponse({ error: 'Recipe not found', code: 'recipe_not_found' }, 404);
-    }
-
-    const { data: existing } = await admin
-      .from('recipe_shares')
-      .select('token')
-      .eq('source_recipe_id', recipeId)
-      .eq('created_by', user.id)
-      .is('revoked_at', null)
-      .order('created_at', { ascending: false })
-      .limit(1)
-      .maybeSingle();
-
-    let snapshot: RecipeSnapshot;
-    try {
-      snapshot = snapshotFromRecipe(recipe as Record<string, unknown>);
-    } catch (err) {
-      return jsonResponse(
-        { error: err instanceof Error ? err.message : 'Invalid recipe', code: 'recipe_invalid' },
-        400,
-      );
-    }
-
-    // Sharing again keeps the same link but sends the recipe as it is now, edits included.
-    if (existing?.token) {
-      const { error: refreshError } = await admin
+      const { data, error } = await admin
         .from('recipe_shares')
-        .update({ snapshot: toJson(snapshot) })
-        .eq('token', existing.token);
-      if (refreshError) console.error('recipe-share snapshot refresh failed:', refreshError);
-      return jsonResponse({ status: 'ok', token: existing.token, reused: true });
-    }
+        .select('token, snapshot, revoked_at')
+        .eq('token', token)
+        .maybeSingle();
 
-    for (let attempt = 0; attempt < 5; attempt++) {
-      const token = generateToken();
-      const { error: insertError } = await admin.from('recipe_shares').insert({
-        token,
-        created_by: user.id,
-        source_recipe_id: recipeId,
-        snapshot: toJson(snapshot),
-      });
-
-      if (!insertError) {
-        return jsonResponse({ status: 'ok', token, reused: false });
+      if (error) {
+        console.error('recipe-share get failed:', error);
+        throw failed(500, 'Could not load share', 'share_unavailable');
       }
-      if (insertError.code !== '23505') {
-        console.error('recipe-share create insert failed:', insertError);
-        return jsonResponse({ error: 'Could not create share', code: 'share_failed' }, 500);
-      }
-    }
+      if (!data || data.revoked_at) throw failed(404, 'Share not found', 'share_not_found');
 
-    return jsonResponse({ error: 'Could not create share', code: 'share_failed' }, 500);
-  }
-
-  // claim
-  const token = typeof body.token === 'string' ? body.token.trim() : '';
-  if (!isNonEmptyString(token)) {
-    return jsonResponse({ error: 'Missing token', code: 'share_not_found' }, 400);
-  }
-
-  const { data: share, error: shareError } = await admin
-    .from('recipe_shares')
-    .select('token, snapshot, revoked_at, claim_count')
-    .eq('token', token)
-    .maybeSingle();
-
-  if (shareError) {
-    console.error('recipe-share claim load failed:', shareError);
-    return jsonResponse({ error: 'Could not load share', code: 'share_unavailable' }, 500);
-  }
-  if (!share || share.revoked_at) {
-    return jsonResponse({ error: 'Share not found', code: 'share_not_found' }, 404);
-  }
-
-  const { data: priorClaim } = await admin
-    .from('recipe_share_claims')
-    .select('recipe_id')
-    .eq('token', token)
-    .eq('claimed_by', user.id)
-    .maybeSingle();
-
-  if (priorClaim?.recipe_id) {
-    return jsonResponse({
-      status: 'ok',
-      recipe_id: priorClaim.recipe_id,
-      already_claimed: true,
-    });
-  }
-
-  const snapshot = share.snapshot as unknown as RecipeSnapshot;
-  const originalUrl =
-    typeof snapshot.original_url === 'string' && snapshot.original_url.trim()
-      ? snapshot.original_url.trim()
-      : null;
-
-  if (originalUrl) {
-    const { data: existingRows } = await admin
-      .from('recipes')
-      .select('id, extraction_source')
-      .eq('user_id', user.id)
-      .eq('original_url', originalUrl);
-    const wantInvented = snapshot.extraction_source === 'invented';
-    const existingByUrl = (existingRows ?? []).find(
-      (row) => (row.extraction_source === 'invented') === wantInvented,
-    );
-
-    if (existingByUrl?.id) {
-      await admin.from('recipe_share_claims').upsert({
-        token,
-        claimed_by: user.id,
-        recipe_id: existingByUrl.id,
-      });
-      return jsonResponse({
+      return {
         status: 'ok',
-        recipe_id: existingByUrl.id,
-        already_claimed: true,
-      });
+        token: data.token,
+        recipe: publicSnapshot(data.snapshot as unknown as RecipeSnapshot),
+      };
     }
-  }
 
-  const { data: inserted, error: insertError } = await admin
-    .from('recipes')
-    .insert(insertRowFromSnapshot(user.id, snapshot))
-    .select('id')
-    .single();
+    const authHeader = req.headers.get('Authorization');
+    if (!authHeader) throw fail('authMissing');
+    const authed = createAuthedSupabase(authHeader);
+    if (!authed) throw fail('misconfigured');
+    const {
+      data: { user },
+      error: userError,
+    } = await authed.auth.getUser();
+    if (userError || !user) throw fail('authInvalid');
 
-  if (insertError) {
-    if (insertError.code === '23505' && originalUrl) {
-      const { data: racedRows } = await admin
-        .from('recipes')
-        .select('id, extraction_source')
-        .eq('user_id', user.id)
-        .eq('original_url', originalUrl);
-      const wantInvented = snapshot.extraction_source === 'invented';
-      const raced = (racedRows ?? []).find(
-        (row) => (row.extraction_source === 'invented') === wantInvented,
-      );
-      if (raced?.id) {
-        await admin.from('recipe_share_claims').upsert({
-          token,
-          claimed_by: user.id,
-          recipe_id: raced.id,
-        });
-        return jsonResponse({
-          status: 'ok',
-          recipe_id: raced.id,
-          already_claimed: true,
-        });
+    // Stops a link (by token) or every link to a recipe (by recipe_id). Only the
+    // sharer can revoke; another user's token matches no rows.
+    if (action === 'revoke') {
+      const token = typeof body.token === 'string' ? body.token.trim() : '';
+      const recipeId = typeof body.recipe_id === 'string' ? body.recipe_id.trim() : '';
+      if (!token && !recipeId) throw failed(400, 'Missing token or recipe_id');
+
+      let query = admin
+        .from('recipe_shares')
+        .update({ revoked_at: new Date().toISOString() })
+        .eq('created_by', user.id)
+        .is('revoked_at', null);
+      query = token ? query.eq('token', token) : query.eq('source_recipe_id', recipeId);
+      const { data, error } = await query.select('token');
+      if (error) {
+        console.error('recipe-share revoke failed:', error);
+        throw shareFailed('Could not revoke share');
       }
+      return { status: 'ok', revoked: data?.length ?? 0 };
     }
-    console.error('recipe-share claim insert failed:', insertError);
-    return jsonResponse({ error: 'Could not save shared recipe', code: 'claim_failed' }, 500);
-  }
 
-  const { error: claimError } = await admin.from('recipe_share_claims').insert({
-    token,
-    claimed_by: user.id,
-    recipe_id: inserted.id,
-  });
-  if (claimError && claimError.code !== '23505') {
-    console.error('recipe-share claim row failed:', claimError);
-  }
+    // Whether the sharer has a live link for this recipe. Not called by the app today: kept with
+    // `revoke` so a "Stop sharing" button can be added without backend work (PIN-110).
+    if (action === 'status') {
+      const recipeId = typeof body.recipe_id === 'string' ? body.recipe_id.trim() : '';
+      if (!recipeId) throw failed(400, 'Missing recipe_id');
+      const { data, error } = await admin
+        .from('recipe_shares')
+        .select('token')
+        .eq('created_by', user.id)
+        .eq('source_recipe_id', recipeId)
+        .is('revoked_at', null)
+        .limit(1);
+      if (error) {
+        console.error('recipe-share status failed:', error);
+        throw shareFailed('Could not load share status');
+      }
+      return { status: 'ok', shared: (data?.length ?? 0) > 0 };
+    }
 
-  const priorCount = typeof share.claim_count === 'number' ? share.claim_count : 0;
-  await admin.from('recipe_shares').update({ claim_count: priorCount + 1 }).eq('token', token);
+    if (action === 'create') {
+      const recipeId = typeof body.recipe_id === 'string' ? body.recipe_id.trim() : '';
+      return await createShare(admin, authed, user.id, recipeId);
+    }
 
-  return jsonResponse({
-    status: 'ok',
-    recipe_id: inserted.id,
-    already_claimed: false,
-  });
-});
+    // claim
+    const token = typeof body.token === 'string' ? body.token.trim() : '';
+    if (!token) throw missingToken;
+    return await claimShare(admin, user.id, token);
+  },
+);
