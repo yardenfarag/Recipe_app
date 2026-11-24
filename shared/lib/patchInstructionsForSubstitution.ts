@@ -30,24 +30,22 @@ export function patchInstructionsForSubstitution(
 }
 
 /**
- * Merge AI-rewritten step text onto the original steps, keeping timestamps
- * and falling back to originals when the model drops a step.
+ * The recipe's own steps with the AI-rewritten text put in, step for step. The recipe keeps every step, with its
+ * number and timestamp; an empty rewritten step keeps its text.
+ *
+ * Null when the rewrite doesn't have exactly the recipe's steps (PIN-186: a shorter rewrite used to be saved as it
+ * came, and the missing steps were lost). Which step was dropped can't be known, so none of it is used and the
+ * caller falls back to `patchInstructionsForSubstitution`. suggest-substitution refuses such a rewrite itself; this
+ * is the second check.
  */
 export function mergeRewrittenInstructions(
   original: Instruction[],
   rewritten: { step: number; text: string }[],
-): Instruction[] {
-  if (rewritten.length === 0) return original;
+): Instruction[] | null {
+  if (rewritten.length === 0 || rewritten.length !== original.length) return null;
 
-  return rewritten.map((step, index) => {
-    const stepNumber = Number.isFinite(Number(step.step)) ? Number(step.step) : index + 1;
-    const prev =
-      original.find((row) => row.step === stepNumber) ?? original[index] ?? undefined;
-    const text = (step.text ?? '').trim() || prev?.text || '';
-    const next: Instruction = { step: stepNumber, text };
-    if (prev?.timestamp_seconds != null) {
-      next.timestamp_seconds = prev.timestamp_seconds;
-    }
-    return next;
-  });
+  return original.map((step, index) => ({
+    ...step,
+    text: (rewritten[index]?.text ?? '').trim() || step.text,
+  }));
 }

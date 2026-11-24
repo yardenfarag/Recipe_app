@@ -126,9 +126,11 @@ const REWRITE_SYSTEM_PROMPT = `You are a practical home-cooking expert updating 
 
 Rules:
 - Rewrite instructions so they match the substitute (name, quantity/unit, and technique only when needed).
-- Keep the same number of steps, the same order, and the same language as the input steps.
-- Change only steps that mention the old ingredient or need a technique tweak for the substitute.
-- Do not invent new steps, remove steps, or change unrelated ingredients.
+- Return every input step, in the same order, with the same step numbers. Never drop, merge, split or add a step.
+- Change only steps that mention the old ingredient or need a technique tweak for the substitute. Copy every other step word for word.
+- A step's text is only what the cook does. Never write notes, explanations or comments about the swap, the recipe or these rules. When nothing needs to change, return the steps unchanged.
+- Write each step in the language that step is already written in. Never translate a step.
+- Do not change unrelated ingredients.
 - Return ONLY data matching the schema.`;
 
 const REWRITE_SCHEMA = {
@@ -188,10 +190,72 @@ export async function suggestSubstitutionsWithLlm(
   };
 }
 
-/** Patches step text after the user applies a substitute (keeps step count/order). */
+/** A rewritten step must keep at least this share of the words of the step it replaces. */
+const MIN_WORDS_KEPT = 0.3;
+/** Steps with fewer words than this are too short to compare. */
+const MIN_WORDS_TO_COMPARE = 4;
+
+/** Words of four letters or more. Shorter ones are mostly "the", "and", "for", which any two steps share. */
+const wordsOf = (text: string) => new Set(text.toLowerCase().match(/[\p{L}\p{M}]{4,}/gu) ?? []);
+
+/** True when the text names the ingredient by any of its words ("chicken" for "boneless chicken breast"). */
+function mentions(text: string, ingredient: string): boolean {
+  const name = ingredient.trim().toLowerCase();
+  const words = name.match(/[\p{L}\p{M}]{3,}/gu) ?? (name ? [name] : []);
+  const lower = text.toLowerCase();
+  return words.some((word) => lower.includes(word));
+}
+
+/**
+ * False when `rewritten` is something else than `original`: a note about the swap, another step, or the step in
+ * another language. A rewrite keeps most of a step's words. The one step that may be redone from scratch is a step
+ * about the swapped ingredient (boiling pasta becomes frying courgette), and then it has to be about the substitute.
+ */
+function isSameStep(original: string, rewritten: string, swap: { from: string; to: string }): boolean {
+  const before = wordsOf(original);
+  if (before.size < MIN_WORDS_TO_COMPARE) return true;
+  const after = wordsOf(rewritten);
+  let kept = 0;
+  for (const word of before) if (after.has(word)) kept++;
+  if (kept / before.size >= MIN_WORDS_KEPT) return true;
+  return mentions(original, swap.from) && mentions(rewritten, swap.to);
+}
+
+/**
+ * Holds the model's rewrite to the steps it was given (PIN-186: the apps save what comes back, so a dropped step
+ * was lost for good). Accepted only with the same number of steps, each still the step in that place. Step numbers
+ * are the cook's own, and an empty step keeps its text. Otherwise `refused` says why, and the apps swap the
+ * ingredient's name in the steps themselves.
+ *
+ * The word check catches a step replaced by something else (a note, or the step in another language). It can't
+ * catch a note that reuses most of the step's words, or one that names the substitute in place of a step about the
+ * old ingredient.
+ */
+export function keepStepShape(
+  original: { step: number; text: string }[],
+  rewritten: { step?: unknown; text?: unknown }[],
+  swap: { from: string; to: string },
+): { instructions: { step: number; text: string }[] } | { refused: string } {
+  if (rewritten.length !== original.length) {
+    return { refused: `Rewrite has ${rewritten.length} steps, the recipe has ${original.length}` };
+  }
+  const instructions: { step: number; text: string }[] = [];
+  for (const [index, source] of original.entries()) {
+    const raw = rewritten[index]?.text;
+    const text = (typeof raw === 'string' ? raw : '').trim() || source.text;
+    if (!isSameStep(source.text, text, swap)) return { refused: `Rewrite replaced step ${source.step}` };
+    instructions.push({ step: source.step, text });
+  }
+  return { instructions };
+}
+
+/**
+ * Patches step text after the user applies a substitute. `instructions` is empty when the model's answer can't be
+ * used; `refused` then says why, unless the answer was simply empty.
+ */
 export async function rewriteInstructionsForSubstitutionWithLlm(
   input: RewriteInstructionsForSubstitutionInput,
-): Promise<{ instructions: { step: number; text: string }[]; usage: LlmUsageSnapshot | null }> {
+): Promise<{ instructions: { step: number; text: string }[]; usage: LlmUsageSnapshot | null; refused?: string }> {
   if (input.instructions.length === 0) return { instructions: [], usage: null };
 
   const { data, usage } = await generateLlmJson<{
@@ -206,13 +270,10 @@ export async function rewriteInstructionsForSubstitutionWithLlm(
     context: 'substitution.ts: rewriteInstructionsForSubstitutionWithLlm',
   });
 
-  return {
-    instructions: (data.instructions ?? []).map((step, index) => ({
-    step: Number.isFinite(Number(step.step)) ? Number(step.step) : index + 1,
-    text: sanitizeLlmText(step.text ?? ''),
-  })),
-    usage,
-  };
+  const rewritten = (data.instructions ?? []).map((step) => ({ text: sanitizeLlmText(step.text ?? '') }));
+  if (rewritten.length === 0) return { instructions: [], usage };
+  const kept = keepStepShape(input.instructions, rewritten, { from: input.ingredient.name, to: input.alternative.name });
+  return 'refused' in kept ? { instructions: [], usage, refused: kept.refused } : { instructions: kept.instructions, usage };
 }
 
 function buildTextContext(input: SuggestSubstitutionInput): string {
@@ -241,7 +302,9 @@ function buildTextContext(input: SuggestSubstitutionInput): string {
 }
 
 function buildRewriteContext(input: RewriteInstructionsForSubstitutionInput): string {
-  const locale = resolveLocaleGuidance(input.language, input.ingredient.name);
+  // The steps' own language wins over the app's label: a recipe labelled English with Spanish steps came back as a
+  // mix of both when the label was an order (PIN-186).
+  const label = input.language ? MARKET_CONTEXT[input.language].languageName : null;
   const lines: string[] = [];
 
   if (input.recipeTitle?.trim()) {
@@ -253,7 +316,11 @@ function buildRewriteContext(input: RewriteInstructionsForSubstitutionInput): st
   lines.push(
     `New ingredient: ${input.alternative.quantity} ${input.alternative.unit || ''} ${input.alternative.name}`.trim(),
   );
-  lines.push(`Keep steps in: ${locale.languageName}`);
+  lines.push(
+    label
+      ? `The recipe is labelled ${label}. Keep every step in the language it is written in now, even if that is another one.`
+      : 'Keep every step in the language it is written in now.',
+  );
   lines.push('\n--- INSTRUCTIONS ---');
   for (const step of input.instructions) {
     lines.push(`${step.step}. ${step.text}`);
