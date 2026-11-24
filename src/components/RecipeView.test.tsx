@@ -100,7 +100,7 @@ vi.mock('@/hooks/useTypography', () => ({
 
 vi.mock('@/lib/a11y', () => ({ announce: vi.fn() }));
 vi.mock('@/lib/analytics', () => ({ captureRecipeCooked: vi.fn() }));
-vi.mock('@/lib/confirmAction', () => ({ confirmAction: vi.fn(), showNotice: vi.fn() }));
+vi.mock('@/lib/dialog', () => ({ askConfirm: vi.fn(), showNotice: vi.fn() }));
 vi.mock('@/lib/extractionRequestId', () => ({ clearExtractionRequestId: vi.fn() }));
 vi.mock('@/lib/goBackOrHome', () => ({ goBackOrHome: vi.fn() }));
 vi.mock('@/lib/guestRecipes', () => ({ setGuestRecipeTags: vi.fn() }));
