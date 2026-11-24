@@ -12,6 +12,7 @@ import { useTranslation } from 'react-i18next';
 import { useEffect } from 'react';
 import { Platform } from 'react-native';
 
+import { DialogHost } from '@/components/DialogHost';
 import { ErrorBoundary } from '@/components/ErrorBoundary';
 import { InAppMessageHost } from '@/components/inAppMessages/InAppMessageHost';
 import { PushNotificationsSetup } from '@/components/PushNotificationsSetup';
@@ -228,6 +229,7 @@ export default function RootLayout() {
                       <RootNavigator />
                       <InAppMessageHost />
                       <WebCheckoutReturnDialog />
+                      <DialogHost />
                     </AuthProvider>
                   </ErrorBoundary>
                 </OnboardingProvider>

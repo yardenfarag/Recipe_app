@@ -36,7 +36,7 @@ import { useTranslation } from 'react-i18next';
 import { showToast } from '@shared/lib/toast';
 import { announce } from '@/lib/a11y';
 import { captureAppShared } from '@/lib/analytics';
-import { confirmAction, confirmDestructive, showNotice } from '@/lib/confirmAction';
+import { askConfirm, showNotice } from '@/lib/dialog';
 import { LEGAL_URLS, openLegalUrl } from '@/lib/legal';
 import {
   parseRecipeBackup,
@@ -114,17 +114,32 @@ export default function SettingsScreen() {
     if (!user || deleting) return;
 
     void (async () => {
-      const first = await confirmDestructive(
-        t('settings.deleteConfirmTitle'),
-        t('settings.deleteConfirmBody'),
-        t('common.continue'),
-      );
+      if (Platform.OS === 'web') {
+        // The app's own dialog, asked once: everything that goes spelled out, and a red button.
+        const confirmed = await askConfirm({
+          trackId: 'settings.delete_account_dialog',
+          title: t('settings.deleteConfirmTitle'),
+          message: t('settings.deleteConfirmBody'),
+          confirmLabel: t('settings.deleteAccount'),
+          destructive: true,
+        });
+        if (confirmed) void confirmDeleteAccount();
+        return;
+      }
+      // A phone asks twice, in the system alert: one tap there is too easy.
+      const first = await askConfirm({
+        title: t('settings.deleteConfirmTitle'),
+        message: t('settings.deleteConfirmBody'),
+        confirmLabel: t('common.continue'),
+        destructive: true,
+      });
       if (!first) return;
-      const second = await confirmDestructive(
-        t('settings.deleteConfirmFinalTitle'),
-        t('settings.deleteConfirmFinalBody'),
-        t('settings.deleteAccount'),
-      );
+      const second = await askConfirm({
+        title: t('settings.deleteConfirmFinalTitle'),
+        message: t('settings.deleteConfirmFinalBody'),
+        confirmLabel: t('settings.deleteAccount'),
+        destructive: true,
+      });
       if (second) void confirmDeleteAccount();
     })();
   }
@@ -144,12 +159,18 @@ export default function SettingsScreen() {
 
       await deleteAccount({ appleAuthorizationCode });
       router.replace('/');
-      Alert.alert(t('settings.deleteSuccessTitle'), t('settings.deleteSuccessBody'));
+      // On the web the root DialogHost draws it, so it shows after this screen is gone.
+      void showNotice({
+        trackId: 'settings.account_deleted_notice',
+        title: t('settings.deleteSuccessTitle'),
+        message: t('settings.deleteSuccessBody'),
+      });
     } catch (err) {
-      Alert.alert(
-        t('settings.deleteFailedTitle'),
-        err instanceof Error ? err.message : t('common.tryAgain'),
-      );
+      void showNotice({
+        trackId: 'settings.delete_account_failed_notice',
+        title: t('settings.deleteFailedTitle'),
+        message: err instanceof Error ? err.message : t('common.tryAgain'),
+      });
     } finally {
       setDeleting(false);
     }
@@ -174,15 +195,15 @@ export default function SettingsScreen() {
     try {
       const backup = await fetchRecipeBackup();
       if (backup.recipes.length === 0) {
-        await showNotice(t('settings.backupEmptyTitle'), t('settings.backupEmptyBody'));
+        await showNotice({ title: t('settings.backupEmptyTitle'), message: t('settings.backupEmptyBody') });
         return;
       }
       await saveRecipeBackupFile(JSON.stringify(backup, null, 2), recipeBackupFileName());
     } catch (err) {
-      await showNotice(
-        t('settings.backupFailedTitle'),
-        err instanceof Error ? err.message : t('common.tryAgain'),
-      );
+      await showNotice({
+        title: t('settings.backupFailedTitle'),
+        message: err instanceof Error ? err.message : t('common.tryAgain'),
+      });
     } finally {
       setBackupBusy(null);
     }
@@ -197,42 +218,42 @@ export default function SettingsScreen() {
       if (text == null) return;
       backup = parseRecipeBackup(text);
     } catch (err) {
-      await showNotice(
-        t('settings.restoreFailedTitle'),
-        err instanceof RecipeBackupError
-          ? t(RESTORE_ERROR_KEYS[err.code])
-          : err instanceof Error
-            ? err.message
-            : t('common.tryAgain'),
-      );
+      await showNotice({
+        title: t('settings.restoreFailedTitle'),
+        message:
+          err instanceof RecipeBackupError
+            ? t(RESTORE_ERROR_KEYS[err.code])
+            : err instanceof Error
+              ? err.message
+              : t('common.tryAgain'),
+      });
       return;
     }
 
     if (backup.recipes.length === 0) {
-      await showNotice(t('settings.restoreFailedTitle'), t('settings.restoreEmpty'));
+      await showNotice({ title: t('settings.restoreFailedTitle'), message: t('settings.restoreEmpty') });
       return;
     }
 
-    const ok = await confirmAction(
-      t('settings.restoreConfirmTitle'),
-      t('settings.restoreConfirmBody', { count: backup.recipes.length }),
-      t('settings.restoreConfirm'),
-      t('common.cancel'),
-    );
+    const ok = await askConfirm({
+      trackId: 'settings.restore_recipes_dialog',
+      title: t('settings.restoreConfirmTitle'),
+      message: t('settings.restoreConfirmBody', { count: backup.recipes.length }),
+      confirmLabel: t('settings.restoreConfirm'),
+    });
     if (!ok) return;
 
     setBackupBusy('restore');
     try {
       const result = await restoreRecipeBackup(backup);
       const body = t('settings.restoreDoneBody', { added: result.added, skipped: result.skipped });
-      await showNotice(
-        t('settings.restoreDoneTitle'),
-        result.invalid > 0
-          ? `${body} ${t('settings.restoreInvalidNote', { count: result.invalid })}`
-          : body,
-      );
+      await showNotice({
+        title: t('settings.restoreDoneTitle'),
+        message:
+          result.invalid > 0 ? `${body} ${t('settings.restoreInvalidNote', { count: result.invalid })}` : body,
+      });
     } catch {
-      await showNotice(t('settings.restoreFailedTitle'), t('settings.restoreFailedBody'));
+      await showNotice({ title: t('settings.restoreFailedTitle'), message: t('settings.restoreFailedBody') });
     } finally {
       setBackupBusy(null);
     }
@@ -241,11 +262,12 @@ export default function SettingsScreen() {
   function handleChangeAvatar() {
     if (!user) {
       void (async () => {
-        const ok = await confirmAction(
-          t('settings.signInRequiredTitle'),
-          t('settings.signInRequiredBody'),
-          t('settings.signIn'),
-        );
+        const ok = await askConfirm({
+          trackId: 'settings.avatar_sign_in_dialog',
+          title: t('settings.signInRequiredTitle'),
+          message: t('settings.signInRequiredBody'),
+          confirmLabel: t('settings.signIn'),
+        });
         if (ok) router.push('/auth?mode=signin&reason=sync');
       })();
       return;
