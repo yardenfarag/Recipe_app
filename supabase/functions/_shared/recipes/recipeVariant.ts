@@ -59,8 +59,6 @@ const SYSTEM_PROMPT = `You are a culinary expert adapting home-cooking recipes f
 Rules:
 - Preserve the spirit of the original dish — this should still feel like the same recipe, adapted.
 - Update ingredients with realistic quantities and units; adjust instructions to match any swaps.
-- Return the whole method: every step the adapted dish needs, each one something the cook does. Never put notes, explanations or comments about the changes in a step; those go in the summary.
-- Keep the recipe's language: write the adapted ingredients and steps in the same language as the ingredients and steps you were given, even when the title is in another language.
 ${MEASUREMENT_RULES}
 - Keep the same number of servings unless a change is required for the variant.
 - calories_reasoning: one short phrase estimating kcal from main ingredients; calories is TOTAL for all servings.
