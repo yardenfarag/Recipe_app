@@ -117,7 +117,8 @@ export function SubstitutionModal({
         language,
       );
       if (result.status === 'ok' && result.instructions?.length) {
-        nextInstructions = mergeRewrittenInstructions(instructions, result.instructions);
+        // A rewrite without exactly the recipe's steps isn't used (PIN-186).
+        nextInstructions = mergeRewrittenInstructions(instructions, result.instructions) ?? nextInstructions;
       }
     } catch {
       // Local name patch already prepared above.

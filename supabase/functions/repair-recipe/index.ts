@@ -3,6 +3,7 @@ import { normalizeStoredCalories } from '../_shared/recipes/calories.ts';
 import { normalizeStoredNutrition } from '../_shared/recipes/nutrition.ts';
 import {
   classifyLlmRecipe,
+  keepDraftLists,
   recipeRepairIsUpgrade,
 } from '../_shared/extraction/classifyRecipe.ts';
 import { corsHeaders, jsonResponse } from '../_shared/core/cors.ts';
@@ -231,7 +232,7 @@ serve('repair-recipe', async (req) => {
     }
 
     const repaired = await repairPartialRecipe({ current, extraText });
-    const after = { ...repaired.recipe, found_recipe: true };
+    const after = { ...keepDraftLists(current, repaired.recipe), found_recipe: true };
     const upgraded = recipeRepairIsUpgrade(current, after);
     const classified = classifyLlmRecipe(after);
 

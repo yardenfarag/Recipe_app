@@ -101,7 +101,10 @@ handler(
         calories,
       });
 
-      if (transformed.ingredients.length === 0) {
+      // The app writes the answer over the recipe, so one that would leave a recipe with steps without any is
+      // refused like an empty one (PIN-186).
+      const lostSteps = instructions.length > 0 && transformed.instructions.length === 0;
+      if (transformed.ingredients.length === 0 || lostSteps) {
         await refundAll();
         await log.usage({
           action: 'remix',
@@ -109,7 +112,7 @@ handler(
           usages: transformed.usage ? [transformed.usage] : [],
           tokensCharged: 0,
           metadata,
-          errorMessage: 'Empty adapted ingredients',
+          errorMessage: transformed.ingredients.length === 0 ? 'Empty adapted ingredients' : 'Adapted recipe has no steps',
         });
         // A 200 with a failed body, as the app has always received it.
         return { status: 'failed', code: 'remix_empty', message: "Couldn't adapt this recipe. Try a different option." };

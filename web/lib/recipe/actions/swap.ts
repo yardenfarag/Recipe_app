@@ -47,7 +47,8 @@ export async function stepsAfterSwap(
   const patched = patchInstructionsForSubstitution(context.instructions, target.ingredient.name, alternative.name);
   try {
     const result = await rewriteInstructionsForSubstitution(target.ingredient, alternative, context.instructions, context.title, context.language);
-    if (result.status === "ok" && result.instructions?.length) return mergeRewrittenInstructions(context.instructions, result.instructions);
+    // A rewrite without exactly the recipe's steps isn't used (PIN-186).
+    if (result.status === "ok" && result.instructions?.length) return mergeRewrittenInstructions(context.instructions, result.instructions) ?? patched;
   } catch {
     // The local patch stands.
   }

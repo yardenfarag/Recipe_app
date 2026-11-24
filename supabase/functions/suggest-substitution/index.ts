@@ -1,6 +1,7 @@
 import { withDailyAiUsage } from '../_shared/core/dailyAiUsage.ts';
 import { handler, HttpError } from '../_shared/core/handler.ts';
-import { fitRecipeToLimits } from '../_shared/recipes/recipeLimits.ts';
+import type { LlmUsageSnapshot } from '../_shared/llm/pricing.ts';
+import { RECIPE_LIMITS, truncateChars } from '../_shared/recipes/recipeLimits.ts';
 import {
   rewriteInstructionsForSubstitutionWithLlm,
   suggestSubstitutionsWithLlm,
@@ -58,37 +59,45 @@ handler(
     // Set once today's use is reserved, so a failure after it (which gives the use back) is told apart from the
     // quota's own answers.
     let reserved = false;
+    // The answer that couldn't be used: why, and what the model call cost, for the usage row.
+    let unusable = { errorMessage: rewrite ? 'Empty rewrite' : 'No alternatives', usages: [] as LlmUsageSnapshot[] };
     try {
       // A thrown error gives today's use back (withDailyAiUsage).
       return await withDailyAiUsage(admin, user.id, 'substitution', DAILY_SUBSTITUTION_LIMIT, async () => {
         reserved = true;
         if (input.mode === 'rewrite_instructions') {
           const { mode: _mode, ...rewriteInput } = input;
-          const { instructions, usage } = await rewriteInstructionsForSubstitutionWithLlm(rewriteInput);
-          if (instructions.length === 0) throw rewriteEmpty;
+          const { instructions, usage, refused } = await rewriteInstructionsForSubstitutionWithLlm(rewriteInput);
           const usages = usage ? [usage] : [];
+          // Empty, or not the recipe's own steps (PIN-186). The apps swap the name in the steps themselves.
+          if (instructions.length === 0) {
+            unusable = { errorMessage: refused ?? unusable.errorMessage, usages };
+            throw rewriteEmpty;
+          }
           await log.usage({ action: 'substitution', status: 'ok', usages, tokensCharged: 0, metadata });
-          // The app writes these steps to the recipe, so they must fit the database limits (PIN-79).
-          return { status: 'ok', instructions: fitRecipeToLimits({ instructions }).instructions };
+          // The app writes these steps to the recipe, so each must fit the database limit (PIN-79). The list is
+          // never cut: every step the app sent comes back.
+          return {
+            status: 'ok',
+            instructions: instructions.map((step) => ({ ...step, text: truncateChars(step.text, RECIPE_LIMITS.stepChars) })),
+          };
         }
 
         const { mode: _mode, ...suggestInput } = input;
         const { alternatives, usage } = await suggestSubstitutionsWithLlm(suggestInput);
-        if (alternatives.length === 0) throw noSubstitute;
-        await log.usage({ action: 'substitution', status: 'ok', usages: usage ? [usage] : [], tokensCharged: 0 });
+        const usages = usage ? [usage] : [];
+        if (alternatives.length === 0) {
+          unusable = { ...unusable, usages };
+          throw noSubstitute;
+        }
+        await log.usage({ action: 'substitution', status: 'ok', usages, tokensCharged: 0 });
         return { status: 'ok', alternatives };
       });
     } catch (err) {
       if (!reserved) throw err;
-      // withDailyAiUsage has given the use back by now, before the empty answer is logged, as it always was.
+      // withDailyAiUsage has given the use back by now, before the unusable answer is logged, as it always was.
       if (err === noSubstitute || err === rewriteEmpty) {
-        await log.usage({
-          action: 'substitution',
-          status: 'failed',
-          tokensCharged: 0,
-          errorMessage: rewrite ? 'Empty rewrite' : 'No alternatives',
-          metadata,
-        });
+        await log.usage({ action: 'substitution', status: 'failed', tokensCharged: 0, ...unusable, metadata });
         throw err;
       }
       console.error(rewrite ? 'suggest-substitution rewrite error:' : 'suggest-substitution error:', err);

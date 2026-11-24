@@ -59,6 +59,8 @@ const SYSTEM_PROMPT = `You are a culinary expert adapting home-cooking recipes f
 Rules:
 - Preserve the spirit of the original dish — this should still feel like the same recipe, adapted.
 - Update ingredients with realistic quantities and units; adjust instructions to match any swaps.
+- Return the whole method: every step the adapted dish needs, each one something the cook does. Never put notes, explanations or comments about the changes in a step; those go in the summary.
+- Write ingredient names and steps in the language the recipe's ingredients and steps are written in, even when the title is in another language.
 ${MEASUREMENT_RULES}
 - Keep the same number of servings unless a change is required for the variant.
 - calories_reasoning: one short phrase estimating kcal from main ingredients; calories is TOTAL for all servings.
@@ -210,10 +212,7 @@ export async function transformRecipeWithLlm(
       ...(ing.metric ? { metric: ing.metric } : {}),
       ...(ing.spoons ? { spoons: ing.spoons } : {}),
     })),
-    instructions: (parsed.instructions ?? []).map((step) => ({
-      step: Number(step.step),
-      text: sanitizeLlmText(step.text ?? ''),
-    })),
+    instructions: remixedSteps(parsed.instructions),
     servings,
     calories: normalizeStoredCalories(parsed.calories ?? null, servings) ?? undefined,
     nutrition: normalizeStoredNutrition(parsed, servings),
@@ -225,6 +224,18 @@ export async function transformRecipeWithLlm(
     ),
     usage,
   };
+}
+
+/**
+ * The model's steps as the apps save them: blank ones dropped, and numbered 1, 2, 3… whatever the model numbered
+ * them (a missing number used to be sent as `null`). A remix may change how many steps there are, so the count
+ * isn't held; transform-recipe refuses one that comes back with no steps at all (PIN-186).
+ */
+export function remixedSteps(steps: { step?: unknown; text?: unknown }[] | undefined): { step: number; text: string }[] {
+  return (steps ?? [])
+    .map((step) => sanitizeLlmText(typeof step?.text === 'string' ? step.text : '').trim())
+    .filter(Boolean)
+    .map((text, index) => ({ step: index + 1, text }));
 }
 
 function buildTextContext(input: TransformRecipeInput, goal: string): string {

@@ -65,8 +65,55 @@ describe('mergeRewrittenInstructions', () => {
     ]);
   });
 
-  it('returns originals when rewrite is empty', () => {
-    const original = [{ step: 1, text: 'Bake.' }];
-    expect(mergeRewrittenInstructions(original, [])).toBe(original);
+  const recipe = [
+    { step: 1, text: 'Preheat the oven.', timestamp_seconds: 5 },
+    { step: 2, text: 'Melt butter.', timestamp_seconds: 10 },
+    { step: 3, text: 'Bake for 20 minutes.' },
+  ];
+
+  it('refuses an empty rewrite', () => {
+    expect(mergeRewrittenInstructions(recipe, [])).toBeNull();
+  });
+
+  // PIN-186: the shorter rewrite was saved as it came, and step 1 was gone from the recipe.
+  it('refuses a rewrite that dropped a step', () => {
+    const rewritten = [
+      { step: 2, text: 'Melt coconut oil.' },
+      { step: 3, text: 'Bake for 20 minutes.' },
+    ];
+    expect(mergeRewrittenInstructions(recipe, rewritten)).toBeNull();
+  });
+
+  it('refuses a rewrite that added a step', () => {
+    const rewritten = [...recipe.map(({ step, text }) => ({ step, text })), { step: 4, text: 'Serve warm.' }];
+    expect(mergeRewrittenInstructions(recipe, rewritten)).toBeNull();
+  });
+
+  it("keeps the recipe's step numbers when the rewrite renumbers them", () => {
+    const steps = [
+      { step: 2, text: 'Melt butter.' },
+      { step: 3, text: 'Bake.' },
+    ];
+    const merged = mergeRewrittenInstructions(steps, [
+      { step: 1, text: 'Melt coconut oil.' },
+      { step: 2, text: 'Bake.' },
+    ]);
+    expect(merged).toEqual([
+      { step: 2, text: 'Melt coconut oil.' },
+      { step: 3, text: 'Bake.' },
+    ]);
+  });
+
+  it("keeps a step's text when its rewrite is empty", () => {
+    const merged = mergeRewrittenInstructions(recipe, [
+      { step: 1, text: '  ' },
+      { step: 2, text: 'Melt coconut oil.' },
+      { step: 3, text: 'Bake for 20 minutes.' },
+    ]);
+    expect(merged).toEqual([
+      { step: 1, text: 'Preheat the oven.', timestamp_seconds: 5 },
+      { step: 2, text: 'Melt coconut oil.', timestamp_seconds: 10 },
+      { step: 3, text: 'Bake for 20 minutes.' },
+    ]);
   });
 });
