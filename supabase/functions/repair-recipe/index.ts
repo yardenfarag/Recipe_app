@@ -1,83 +1,36 @@
-import { serve } from '../_shared/core/observe.ts';
-import { normalizeStoredCalories } from '../_shared/recipes/calories.ts';
-import { normalizeStoredNutrition } from '../_shared/recipes/nutrition.ts';
-import {
-  classifyLlmRecipe,
-  keepDraftLists,
-  recipeRepairIsUpgrade,
-} from '../_shared/extraction/classifyRecipe.ts';
-import { corsHeaders, jsonResponse } from '../_shared/core/cors.ts';
-import { repairPartialRecipe, type LlmRecipe } from '../_shared/extraction/recipeExtraction.ts';
-import { parseIngredientAmount } from '../_shared/recipes/ingredientAmounts.ts';
-import { fetchFacebookMeta } from '../_shared/extraction/sources/facebook.ts';
-import { fetchPinterestMeta } from '../_shared/extraction/sources/pinterest.ts';
-import { fetchInstagramMeta } from '../_shared/extraction/sources/instagram.ts';
-import {
-  detectPlatform,
-  type Platform,
-} from '../_shared/extraction/platform.ts';
-import type { PlatformMeta } from '../_shared/extraction/platformMeta.ts';
+import { handler, HttpError } from '../_shared/core/handler.ts';
 import {
   canStartExtract,
-  finalizeSignedInExtract,
-  quotaFields,
   type CreditReservation,
   type GuestExtractionReservation,
-  markGuestExtractionCompensationPending,
-  markSignedInExtractCompensationPending,
-  refundGuestExtraction,
-  refundSignedInExtract,
-  refundSignedInExtractAfterFinalizeFailure,
+  quotaFields,
   reserveSignedInExtract,
 } from '../_shared/core/quotas.ts';
+import { extractVideoIdForPlatform } from '../_shared/core/recipeLookup.ts';
+import { sealJson } from '../_shared/core/sealedPayload.ts';
+import { createAuthedSupabase } from '../_shared/core/supabaseAdmin.ts';
+import { classifyLlmRecipe, keepDraftLists, recipeRepairIsUpgrade } from '../_shared/extraction/classifyRecipe.ts';
+import { pageReadLogger } from '../_shared/extraction/pageReader.ts';
+import { detectPlatform, type Platform } from '../_shared/extraction/platform.ts';
+import { repairPartialRecipe } from '../_shared/extraction/recipeExtraction.ts';
+import {
+  buildExtraText,
+  fetchPlatformMeta,
+  MAX_REPAIR_BODY_BYTES,
+  repairedRecipe,
+  type RepairRequestBody,
+  toLlmRecipe,
+} from '../_shared/extraction/recipeRepair.ts';
+import {
+  refundRepairReservation,
+  repairSealContext,
+  sealingSecret,
+  settleRepairCredit,
+} from '../_shared/extraction/recipeRepairCredit.ts';
 import { appliancesForRecipe } from '../_shared/recipes/enrich/recipeAppliances.ts';
-import { createAuthedSupabase, extractVideoIdForPlatform } from '../_shared/core/recipeLookup.ts';
-import { openJson, sealJson } from '../_shared/core/sealedPayload.ts';
-import { createServiceSupabase } from '../_shared/core/supabaseAdmin.ts';
-import { normalizeRecipeTags } from '../_shared/recipes/tags.ts';
-import { fitRecipeToLimits } from '../_shared/recipes/recipeLimits.ts';
-import { fetchTikTokMeta } from '../_shared/extraction/sources/tiktok.ts';
-import { logUsageEvent } from '../_shared/core/usageLog.ts';
-import { fetchWebRecipeMeta } from '../_shared/extraction/webRecipe.ts';
-import { pageReadLogger, type PageReadEvent } from '../_shared/extraction/pageReader.ts';
-import { fetchYouTubeMeta } from '../_shared/extraction/sources/youtube.ts';
 
-const MAX_BODY_BYTES = 96_000;
-const MAX_TITLE_CHARS = 200;
-const MAX_INGREDIENTS = 60;
-const MAX_INSTRUCTIONS = 50;
-
-interface RepairIngredient {
-  name?: string;
-  quantity?: number;
-  unit?: string;
-  metric?: { quantity?: number; unit?: string };
-  spoons?: { quantity?: number; unit?: string };
-}
-
-interface RequestBody {
-  action?: string;
-  reservation_id?: string;
-  /** The `sealed_recipe` from generate, handed back on commit. */
-  sealed_recipe?: string;
-  original_url?: string;
-  guest_install_id?: string;
-  guestInstallId?: string;
-  request_id?: string;
-  requestId?: string;
-  recipe?: {
-    title?: string;
-    servings?: number;
-    ingredients?: RepairIngredient[];
-    instructions?: { step?: number; text?: string; timestamp_seconds?: number }[];
-    calories?: number;
-    estimated_time_minutes?: number;
-    cost_estimate?: string;
-    effort_level?: string;
-    tags?: string[];
-    source_language?: string;
-  };
-}
+const signIn = new HttpError(401, 'auth_required', 'Sign in to repair recipes.');
+const meteringError = new HttpError(500, 'metering_error', 'metering_error');
 
 /**
  * POST { recipe, original_url?, request_id? }
@@ -90,593 +43,191 @@ interface RequestBody {
  * Failure codes (the app's words for them are in shared/lib/serverErrors.ts): auth_required, metering_error,
  * reservation_required, not_partial, insufficient_credits, no_improvement, repair_failed, reservation_settled,
  * compensation_pending, sealed_recipe_required. Bad requests answer { error }.
+ *
+ * The body is read and checked before sign-in, as it always was, so the wrapper does no auth.
  */
-serve('repair-recipe', async (req) => {
-  if (req.method === 'OPTIONS') {
-    return new Response('ok', { headers: corsHeaders });
-  }
-  if (req.method !== 'POST') {
-    return jsonResponse({ error: 'Method not allowed' }, 405);
-  }
-  if (requestIsTooLarge(req, MAX_BODY_BYTES)) {
-    return jsonResponse({ error: 'Request payload is too large' }, 400);
-  }
+handler(
+  {
+    name: 'repair-recipe',
+    auth: 'none',
+    maxBodyBytes: MAX_REPAIR_BODY_BYTES,
+    legacyErrorShape: true,
+    errors: { misconfigured: meteringError },
+    input: (raw) => raw as RepairRequestBody,
+  },
+  async ({ req, input: body, admin, startedAt, log }) => {
+    const authHeader = req.headers.get('Authorization');
+    const authed = authHeader ? createAuthedSupabase(authHeader) : null;
+    const {
+      data: { user },
+    } = authed ? await authed.auth.getUser() : { data: { user: null } };
+    const userId = user?.id ?? null;
+    if (!userId) throw signIn;
 
-  const started = Date.now();
-  let body: RequestBody;
-  try {
-    const rawBody = await req.text();
-    if (new TextEncoder().encode(rawBody).byteLength > MAX_BODY_BYTES) {
-      return jsonResponse({ error: 'Request payload is too large' }, 400);
+    let requestId: string = crypto.randomUUID();
+    const rawRequestId = body.request_id ?? body.requestId;
+    if (typeof rawRequestId === 'string' && rawRequestId.trim().length >= 8) {
+      requestId = rawRequestId.trim().slice(0, 128);
     }
-    body = JSON.parse(rawBody) as RequestBody;
-  } catch {
-    return jsonResponse({ error: 'Invalid JSON body' }, 400);
-  }
 
-  const admin = createServiceSupabase();
-  const authHeader = req.headers.get('Authorization');
-  const authed = authHeader ? createAuthedSupabase(authHeader) : null;
-  const {
-    data: { user },
-  } = authed ? await authed.auth.getUser() : { data: { user: null } };
-  const userId = user?.id ?? null;
+    const action = body.action === 'commit' || body.action === 'abort' ? body.action : 'generate';
+    const reservationIdRaw = typeof body.reservation_id === 'string' ? body.reservation_id.trim() : '';
+    const settleReservationId = reservationIdRaw.length >= 8 ? reservationIdRaw.slice(0, 128) : null;
 
-  if (!userId) {
-    return jsonResponse(
-      {
-        status: 'failed',
-        code: 'auth_required',
-        message: 'Sign in to repair recipes.',
-      },
-      401,
-    );
-  }
-  if (!admin) {
-    return jsonResponse(
-      { status: 'failed', code: 'metering_error', message: 'metering_error' },
-      500,
-    );
-  }
+    if (action === 'commit' || action === 'abort') {
+      if (!settleReservationId) throw new HttpError(400, 'reservation_required', 'Missing reservation.');
+      return await settleRepairCredit({
+        admin,
+        userId,
+        action,
+        reservationId: settleReservationId,
+        sealedRecipe: typeof body.sealed_recipe === 'string' ? body.sealed_recipe : null,
+        requestId,
+        started: startedAt,
+      });
+    }
 
-  let requestId: string = crypto.randomUUID();
-  const rawRequestId = body.request_id ?? body.requestId;
-  if (typeof rawRequestId === 'string' && rawRequestId.trim().length >= 8) {
-    requestId = rawRequestId.trim().slice(0, 128);
-  }
+    const current = toLlmRecipe(body.recipe);
+    if (!current) throw HttpError.legacy(400, 'Missing or invalid "recipe" in request body');
 
-  const action =
-    body.action === 'commit' || body.action === 'abort' ? body.action : 'generate';
-  const reservationIdRaw =
-    typeof body.reservation_id === 'string' ? body.reservation_id.trim() : '';
-  const settleReservationId = reservationIdRaw.length >= 8 ? reservationIdRaw.slice(0, 128) : null;
+    const beforeClass = classifyLlmRecipe(current);
+    if (beforeClass.status !== 'partial') {
+      throw new HttpError(400, 'not_partial', 'This recipe is already complete.');
+    }
 
-  if (action === 'commit' || action === 'abort') {
-    if (!settleReservationId) {
-      return jsonResponse(
-        { status: 'failed', code: 'reservation_required', message: 'Missing reservation.' },
-        400,
+    const originalUrl = typeof body.original_url === 'string' ? body.original_url.trim().slice(0, 2_000) : '';
+
+    let creditReservation: CreditReservation | null = null;
+    const guestReservation: GuestExtractionReservation | null = null;
+    const guestInstallId: string | null = null;
+
+    // The credit pays for repairing this recipe only. A spent credit is never replayed here:
+    // the repaired recipe is released by commit, so a new generate is a new purchase.
+    const reserved = await reserveSignedInExtract(admin, userId, requestId, {
+      scope: `repair|${originalUrl}|${JSON.stringify(body.recipe)}`,
+      replayWindowMs: 0,
+    });
+    if (!reserved.ok) {
+      throw new HttpError(
+        reserved.code === 'metering_error' ? 500 : 402,
+        reserved.code,
+        reserved.code === 'insufficient_credits' ? 'insufficient_credits' : 'metering_error',
+        quotaFields(reserved.snapshot),
       );
     }
-    return await settleRepairCredit({
-      admin,
-      userId,
-      action,
-      reservationId: settleReservationId,
-      sealedRecipe: typeof body.sealed_recipe === 'string' ? body.sealed_recipe : null,
-      requestId,
-      started,
-    });
-  }
+    creditReservation = reserved.reservation;
 
-  const current = toLlmRecipe(body.recipe);
-  if (!current) {
-    return jsonResponse({ error: 'Missing or invalid "recipe" in request body' }, 400);
-  }
+    const platform: Platform = originalUrl ? detectPlatform(originalUrl) : 'unknown';
 
-  const beforeClass = classifyLlmRecipe(current);
-  if (beforeClass.status !== 'partial') {
-    return jsonResponse(
-      {
-        status: 'failed',
-        code: 'not_partial',
-        message: 'This recipe is already complete.',
-      },
-      400,
-    );
-  }
-
-  const originalUrl =
-    typeof body.original_url === 'string' ? body.original_url.trim().slice(0, 2_000) : '';
-
-  let creditReservation: CreditReservation | null = null;
-  const guestReservation: GuestExtractionReservation | null = null;
-  const guestInstallId: string | null = null;
-
-  // The credit pays for repairing this recipe only. A spent credit is never replayed here:
-  // the repaired recipe is released by commit, so a new generate is a new purchase.
-  const reserved = await reserveSignedInExtract(admin, userId, requestId, {
-    scope: `repair|${originalUrl}|${JSON.stringify(body.recipe)}`,
-    replayWindowMs: 0,
-  });
-  if (!reserved.ok) {
-    return jsonResponse(
-      {
-        status: 'failed',
-        code: reserved.code,
-        message: reserved.code === 'insufficient_credits' ? 'insufficient_credits' : 'metering_error',
-        ...quotaFields(reserved.snapshot),
-      },
-      reserved.code === 'metering_error' ? 500 : 402,
-    );
-  }
-  creditReservation = reserved.reservation;
-
-  const platform: Platform = originalUrl ? detectPlatform(originalUrl) : 'unknown';
-
-  try {
-    let extraText = '';
-    if (originalUrl && platform !== 'unknown' && platform !== 'photo') {
-      try {
-        const contentId = extractVideoIdForPlatform(originalUrl, platform);
-        const meta = await fetchPlatformMeta(
-          platform,
-          originalUrl,
-          contentId,
-          pageReadLogger(admin, { userId, guestInstallId, forAction: 'repair' }),
-        );
-        extraText = buildExtraText(meta);
-      } catch (err) {
-        console.error('[repair-recipe] meta fetch failed', err);
+    try {
+      let extraText = '';
+      if (originalUrl && platform !== 'unknown' && platform !== 'photo') {
+        try {
+          const contentId = extractVideoIdForPlatform(originalUrl, platform);
+          const meta = await fetchPlatformMeta(
+            platform,
+            originalUrl,
+            contentId,
+            pageReadLogger(admin, { userId, guestInstallId, forAction: 'repair' }),
+          );
+          extraText = buildExtraText(meta);
+        } catch (err) {
+          console.error('[repair-recipe] meta fetch failed', err);
+        }
       }
-    }
 
-    const repaired = await repairPartialRecipe({ current, extraText });
-    const after = { ...keepDraftLists(current, repaired.recipe), found_recipe: true };
-    const upgraded = recipeRepairIsUpgrade(current, after);
-    const classified = classifyLlmRecipe(after);
+      const repaired = await repairPartialRecipe({ current, extraText });
+      const after = { ...keepDraftLists(current, repaired.recipe), found_recipe: true };
+      const upgraded = recipeRepairIsUpgrade(current, after);
+      const classified = classifyLlmRecipe(after);
 
-    if (!upgraded || classified.status === 'failed') {
-      await refundReservation(
+      if (!upgraded || classified.status === 'failed') {
+        await refundRepairReservation(
+          admin,
+          userId,
+          guestInstallId,
+          creditReservation,
+          guestReservation,
+          'no_improvement',
+        );
+        creditReservation = null;
+        const snapshot = (await canStartExtract(admin, userId)).snapshot;
+        await log.usage({
+          userId,
+          action: 'repair',
+          platform,
+          status: 'no_improvement',
+          usages: repaired.usage ? [repaired.usage] : [],
+          tokensCharged: 0,
+          metadata: { request_id: requestId },
+        });
+        // A 200 with a failed body, as the app has always received it.
+        return {
+          status: 'failed',
+          code: 'no_improvement',
+          message: "Couldn't find more details this time. Your credit was not used.",
+          ...quotaFields(snapshot),
+        };
+      }
+
+      // Repair can add or rewrite steps, so appliances are derived from the repaired recipe (ADR 017).
+      const usages = repaired.usage ? [repaired.usage] : [];
+      const { appliances, metadata: applianceMetadata } = await appliancesForRecipe(after, usages);
+
+      const recipe = repairedRecipe(current, after, classified, appliances);
+
+      const snapshot = (await canStartExtract(admin, userId)).snapshot;
+      await log.usage({
+        userId,
+        action: 'repair',
+        platform,
+        status: 'preview',
+        usages,
+        tokensCharged: 0,
+        metadata: {
+          request_id: requestId,
+          reservation_id: creditReservation.reservationId,
+          upgraded: true,
+          ...applianceMetadata,
+        },
+      });
+
+      // The recipe stays sealed until commit finalizes the credit, so aborting
+      // can't keep the repair for free.
+      return {
+        status: classified.status,
+        sealed_recipe: await sealJson(
+          recipe,
+          repairSealContext(userId, creditReservation.reservationId),
+          sealingSecret(),
+        ),
+        summary: repaired.filledSummary,
+        filled_fields: beforeClass.missingFields.filter((field) => !classified.missingFields.includes(field)),
+        reservation_id: creditReservation.reservationId,
+        pending_credit: true,
+        tokens_charged: 0,
+        ...quotaFields(snapshot),
+      };
+    } catch (err) {
+      console.error('[repair-recipe] error', err);
+      await refundRepairReservation(
         admin,
         userId,
         guestInstallId,
         creditReservation,
         guestReservation,
-        'no_improvement',
+        'repair_failed',
       );
-      creditReservation = null;
-      const snapshot = (await canStartExtract(admin, userId)).snapshot;
-      await logUsageEvent(admin, {
+      await log.usage({
         userId,
+        guestInstallId: userId ? null : guestInstallId,
         action: 'repair',
         platform,
-        status: 'no_improvement',
-        usages: repaired.usage ? [repaired.usage] : [],
+        status: 'error',
         tokensCharged: 0,
-        durationMs: Date.now() - started,
-        metadata: { request_id: requestId },
+        errorMessage: err instanceof Error ? err.message.slice(0, 500) : String(err),
       });
-      return jsonResponse({
-        status: 'failed',
-        code: 'no_improvement',
-        message: "Couldn't find more details this time. Your credit was not used.",
-        ...quotaFields(snapshot),
-      });
+      throw new HttpError(500, 'repair_failed', "Couldn't repair this recipe. Your credit was not used.");
     }
-
-    // Repair can add or rewrite steps, so appliances are derived from the repaired recipe (ADR 017).
-    const usages = repaired.usage ? [repaired.usage] : [];
-    const { appliances, metadata: applianceMetadata } = await appliancesForRecipe(after, usages);
-
-    const recipe = fitRecipeToLimits({
-      title: after.title,
-      source_language: normalizeLanguageCode(after.source_language),
-      ingredients: after.ingredients,
-      instructions: after.instructions,
-      servings: after.servings > 0 ? after.servings : current.servings || 1,
-      calories: normalizeStoredCalories(
-        after.calories ?? null,
-        after.servings > 0 ? after.servings : current.servings || 1,
-      ),
-      nutrition: normalizeStoredNutrition(after, after.servings > 0 ? after.servings : current.servings || 1),
-      estimated_time_minutes: after.estimated_time_minutes ?? current.estimated_time_minutes ?? null,
-      cost_estimate: after.cost_estimate ?? current.cost_estimate ?? null,
-      effort_level: after.effort_level ?? current.effort_level ?? null,
-      extraction_status: classified.status,
-      calories_reasoning: after.calories_reasoning?.trim() || null,
-      time_reasoning: after.time_reasoning?.trim() || null,
-      tags: normalizeRecipeTags(after.tags?.length ? after.tags : current.tags),
-      missing_fields: classified.missingFields,
-      appliances,
-    });
-
-    const snapshot = (await canStartExtract(admin, userId)).snapshot;
-    await logUsageEvent(admin, {
-      userId,
-      action: 'repair',
-      platform,
-      status: 'preview',
-      usages,
-      tokensCharged: 0,
-      durationMs: Date.now() - started,
-      metadata: {
-        request_id: requestId,
-        reservation_id: creditReservation.reservationId,
-        upgraded: true,
-        ...applianceMetadata,
-      },
-    });
-
-    // The recipe stays sealed until commit finalizes the credit, so aborting
-    // can't keep the repair for free.
-    return jsonResponse({
-      status: classified.status,
-      sealed_recipe: await sealJson(
-        recipe,
-        repairSealContext(userId, creditReservation.reservationId),
-        sealingSecret(),
-      ),
-      summary: repaired.filledSummary,
-      filled_fields: beforeClass.missingFields.filter(
-        (field) => !classified.missingFields.includes(field),
-      ),
-      reservation_id: creditReservation.reservationId,
-      pending_credit: true,
-      tokens_charged: 0,
-      ...quotaFields(snapshot),
-    });
-  } catch (err) {
-    console.error('[repair-recipe] error', err);
-    await refundReservation(
-      admin,
-      userId,
-      guestInstallId,
-      creditReservation,
-      guestReservation,
-      'repair_failed',
-    );
-    await logUsageEvent(admin, {
-      userId,
-      guestInstallId: userId ? null : guestInstallId,
-      action: 'repair',
-      platform,
-      status: 'error',
-      tokensCharged: 0,
-      durationMs: Date.now() - started,
-      errorMessage: err instanceof Error ? err.message.slice(0, 500) : String(err),
-    });
-    return jsonResponse(
-      {
-        status: 'failed',
-        code: 'repair_failed',
-        message: "Couldn't repair this recipe. Your credit was not used.",
-      },
-      500,
-    );
-  }
-});
-
-async function settleRepairCredit(opts: {
-  admin: NonNullable<ReturnType<typeof createServiceSupabase>>;
-  userId: string;
-  action: 'commit' | 'abort';
-  reservationId: string;
-  sealedRecipe: string | null;
-  requestId: string;
-  started: number;
-}): Promise<Response> {
-  const { admin, userId, action, reservationId, sealedRecipe, requestId, started } = opts;
-  const snapshot = (await canStartExtract(admin, userId)).snapshot;
-
-  if (action === 'abort') {
-    const refunded = await refundSignedInExtract(
-      admin,
-      userId,
-      reservationId,
-      'user_cancelled',
-    );
-    if (!refunded.confirmed) {
-      // Only an unspent credit can be queued. A committed (spent) one is refused, so abort
-      // can't give back a credit that already paid for a recipe.
-      const queued = await markSignedInExtractCompensationPending(
-        admin,
-        userId,
-        reservationId,
-        'user_cancelled',
-        refunded.error,
-      );
-      if (!queued) {
-        await logUsageEvent(admin, {
-          userId,
-          action: 'repair',
-          platform: 'unknown',
-          status: 'abort_refused',
-          tokensCharged: 0,
-          durationMs: Date.now() - started,
-          metadata: { request_id: requestId, reservation_id: reservationId, settle: 'abort' },
-        });
-        return jsonResponse(
-          {
-            status: 'failed',
-            code: 'reservation_settled',
-            message: 'This credit was already used.',
-            ...quotaFields(snapshot),
-          },
-          409,
-        );
-      }
-      await logUsageEvent(admin, {
-        userId,
-        action: 'repair',
-        platform: 'unknown',
-        status: 'compensation_pending',
-        tokensCharged: 0,
-        durationMs: Date.now() - started,
-        metadata: { request_id: requestId, reservation_id: reservationId, settle: 'abort' },
-      });
-      return jsonResponse(
-        {
-          status: 'failed',
-          code: 'compensation_pending',
-          message: 'metering_error',
-        },
-        500,
-      );
-    }
-    await logUsageEvent(admin, {
-      userId,
-      action: 'repair',
-      platform: 'unknown',
-      status: 'aborted',
-      tokensCharged: 0,
-      durationMs: Date.now() - started,
-      metadata: { request_id: requestId, reservation_id: reservationId },
-    });
-    const after = (await canStartExtract(admin, userId)).snapshot;
-    return jsonResponse({
-      status: 'ok',
-      action: 'abort',
-      tokens_charged: 0,
-      ...quotaFields(after ?? snapshot),
-    });
-  }
-
-  const recipe = sealedRecipe
-    ? await openJson<Record<string, unknown>>(
-        sealedRecipe,
-        repairSealContext(userId, reservationId),
-        sealingSecret(),
-      )
-    : null;
-  if (!recipe) {
-    return jsonResponse(
-      { status: 'failed', code: 'sealed_recipe_required', message: 'Missing repaired recipe.' },
-      400,
-    );
-  }
-
-  const finalized = await finalizeSignedInExtract(admin, userId, reservationId);
-  if (!finalized) {
-    const compensated = await refundSignedInExtractAfterFinalizeFailure(
-      admin,
-      userId,
-      reservationId,
-    );
-    const refunded = compensated.confirmed
-      ? compensated
-      : await refundSignedInExtract(admin, userId, reservationId, 'commit_failed');
-    if (!compensated.confirmed && !refunded.confirmed) {
-      await markSignedInExtractCompensationPending(
-        admin,
-        userId,
-        reservationId,
-        'commit_failed',
-        refunded.error,
-        { afterFinalizeFailure: true },
-      );
-    }
-    await logUsageEvent(admin, {
-      userId,
-      action: 'repair',
-      platform: 'unknown',
-      status: compensated.confirmed || refunded.confirmed ? 'metering_error' : 'compensation_pending',
-      tokensCharged: 0,
-      durationMs: Date.now() - started,
-      metadata: { request_id: requestId, reservation_id: reservationId, settle: 'commit' },
-    });
-    return jsonResponse(
-      {
-        status: 'failed',
-        code: compensated.confirmed || refunded.confirmed ? 'metering_error' : 'compensation_pending',
-        message: 'metering_error',
-      },
-      500,
-    );
-  }
-
-  await logUsageEvent(admin, {
-    userId,
-    action: 'repair',
-    platform: 'unknown',
-    status: 'committed',
-    tokensCharged: 1,
-    durationMs: Date.now() - started,
-    metadata: { request_id: requestId, reservation_id: reservationId },
-  });
-  const after = (await canStartExtract(admin, userId)).snapshot;
-  return jsonResponse({
-    status: 'ok',
-    action: 'commit',
-    recipe,
-    tokens_charged: 1,
-    ...quotaFields(after ?? snapshot),
-  });
-}
-
-function repairSealContext(userId: string, reservationId: string): string {
-  return `repair:${userId}:${reservationId}`;
-}
-
-/** createServiceSupabase() already returned non-null, so the key is set. */
-function sealingSecret(): string {
-  return Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? '';
-}
-
-function requestIsTooLarge(req: Request, maxBytes: number): boolean {
-  const contentLength = Number(req.headers.get('content-length'));
-  return Number.isFinite(contentLength) && contentLength > maxBytes;
-}
-
-function toLlmRecipe(raw: RequestBody['recipe']): LlmRecipe | null {
-  if (!raw?.title?.trim()) return null;
-  if (raw.title.trim().length > MAX_TITLE_CHARS) return null;
-  if (!Array.isArray(raw.ingredients) || raw.ingredients.length > MAX_INGREDIENTS) return null;
-  if (!Array.isArray(raw.instructions) || raw.instructions.length > MAX_INSTRUCTIONS) return null;
-
-  const ingredients = raw.ingredients
-    .filter((item) => typeof item?.name === 'string' && item.name.trim())
-    .map((item) => ({
-      name: item.name!.trim(),
-      quantity: typeof item.quantity === 'number' && Number.isFinite(item.quantity) ? item.quantity : 0,
-      unit: typeof item.unit === 'string' ? item.unit.trim() : '',
-      metric: parseIngredientAmount(item.metric),
-      spoons: parseIngredientAmount(item.spoons),
-    }));
-  const instructions = raw.instructions
-    .filter((step) => typeof step?.text === 'string' && step.text.trim())
-    .map((step, index) => ({
-      step: typeof step.step === 'number' && Number.isInteger(step.step) ? step.step : index + 1,
-      text: step.text!.trim(),
-      timestamp_seconds: step.timestamp_seconds,
-    }));
-
-  const servings =
-    typeof raw.servings === 'number' && Number.isInteger(raw.servings) && raw.servings > 0
-      ? raw.servings
-      : 1;
-
-  return {
-    found_recipe: true,
-    source_language: typeof raw.source_language === 'string' ? raw.source_language : 'en',
-    title: raw.title.trim(),
-    servings,
-    ingredients,
-    instructions,
-    calories: typeof raw.calories === 'number' ? raw.calories : undefined,
-    estimated_time_minutes:
-      typeof raw.estimated_time_minutes === 'number' ? raw.estimated_time_minutes : undefined,
-    cost_estimate:
-      raw.cost_estimate === '$' || raw.cost_estimate === '$$' || raw.cost_estimate === '$$$'
-        ? raw.cost_estimate
-        : undefined,
-    effort_level:
-      raw.effort_level === 'Easy' || raw.effort_level === 'Medium' || raw.effort_level === 'Hard'
-        ? raw.effort_level
-        : undefined,
-    tags: Array.isArray(raw.tags) ? raw.tags.filter((tag): tag is string => typeof tag === 'string') : [],
-  };
-}
-
-function buildExtraText(meta: PlatformMeta): string {
-  const parts: string[] = [];
-  if (meta.description?.trim()) parts.push(meta.description.trim());
-  if (meta.captions?.trim()) parts.push(meta.captions.trim());
-  for (const comment of meta.topComments.slice(0, 12)) {
-    parts.push(
-      comment.isCreator ? `(from the video's creator) ${comment.text}` : comment.text,
-    );
-  }
-  return parts.join('\n\n');
-}
-
-async function fetchPlatformMeta(
-  platform: Platform,
-  url: string,
-  contentId: string | null,
-  onPageRead?: (event: PageReadEvent) => Promise<void>,
-): Promise<PlatformMeta> {
-  switch (platform) {
-    case 'youtube':
-      return contentId ? await fetchYouTubeMeta(contentId) : { topComments: [] };
-    case 'instagram':
-      return await fetchInstagramMeta(url);
-    case 'tiktok':
-      return await fetchTikTokMeta(url);
-    case 'facebook':
-      return await fetchFacebookMeta(url);
-    case 'pinterest':
-      return await fetchPinterestMeta(url, { onPageRead });
-    case 'web':
-      return await fetchWebRecipeMeta(url, { onPageRead });
-    default:
-      return { topComments: [] };
-  }
-}
-
-function normalizeLanguageCode(value: string | null | undefined): string {
-  const normalized = value?.trim().toLowerCase().split(/[-_]/)[0];
-  return normalized && /^[a-z]{2}$/.test(normalized) ? normalized : 'en';
-}
-
-async function refundReservation(
-  admin: ReturnType<typeof createServiceSupabase>,
-  userId: string | null,
-  guestInstallId: string | null,
-  signedIn: CreditReservation | null,
-  guest: GuestExtractionReservation | null,
-  reason: string,
-): Promise<void> {
-  if (!admin) return;
-  if (userId && signedIn) {
-    await compensateSignedIn(admin, userId, signedIn, reason, false);
-  } else if (guestInstallId && guest) {
-    await compensateGuest(admin, guestInstallId, guest, reason);
-  }
-}
-
-async function compensateSignedIn(
-  admin: NonNullable<ReturnType<typeof createServiceSupabase>>,
-  userId: string,
-  reservation: CreditReservation,
-  reason: string,
-  afterFinalizeFailure: boolean,
-): Promise<boolean> {
-  if (reservation.replayed) return true;
-  const result = afterFinalizeFailure
-    ? await refundSignedInExtractAfterFinalizeFailure(admin, userId, reservation.reservationId)
-    : await refundSignedInExtract(admin, userId, reservation.reservationId, reason);
-  if (result.confirmed) return true;
-  await markSignedInExtractCompensationPending(
-    admin,
-    userId,
-    reservation.reservationId,
-    reason,
-    result.error,
-    { afterFinalizeFailure },
-  );
-  return false;
-}
-
-async function compensateGuest(
-  admin: NonNullable<ReturnType<typeof createServiceSupabase>>,
-  installId: string,
-  reservation: GuestExtractionReservation,
-  reason: string,
-): Promise<boolean> {
-  const result = await refundGuestExtraction(
-    admin,
-    installId,
-    reservation.reservationId,
-    reason,
-  );
-  if (result.confirmed) return true;
-  await markGuestExtractionCompensationPending(
-    admin,
-    installId,
-    reservation.reservationId,
-    reason,
-    result.error,
-  );
-  return false;
-}
+  },
+);
