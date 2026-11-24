@@ -1,8 +1,9 @@
-import { serve } from '../_shared/core/observe.ts';
+import { handler, type HandlerContext, HttpError } from '../_shared/core/handler.ts';
 import { normalizeStoredCalories } from '../_shared/recipes/calories.ts';
 import { normalizeStoredNutrition } from '../_shared/recipes/nutrition.ts';
-import { corsHeaders, jsonResponse } from '../_shared/core/cors.ts';
+import { jsonResponse } from '../_shared/core/cors.ts';
 import { FetchError } from '../_shared/core/errors.ts';
+import { type ExtractRequest, parseExtractRequest, pdfRejectBody } from '../_shared/extraction/extractRequest.ts';
 import { fetchErrorInfo } from '../_shared/extraction/fetchErrorMessage.ts';
 import { classifyLlmRecipe } from '../_shared/extraction/classifyRecipe.ts';
 import {
@@ -45,10 +46,7 @@ import { keepUploadedPhoto, persistSocialThumbnail } from '../_shared/extraction
 import { resolvePhotoCover } from '../_shared/extraction/photoCover.ts';
 import {
   type DecodedPdf,
-  decodePdfBase64,
   extractRecipeFromPdf,
-  pdfRejectMessage,
-  type PdfRejectCode,
   type PdfRoute,
   type PdfText,
   readPdfText,
@@ -56,13 +54,10 @@ import {
 } from '../_shared/extraction/pdfRecipe.ts';
 import {
   extractRecipeFromText,
-  readRecipeText,
   TEXT_RECIPE_ORIGIN,
   textGateInput,
   textGateOutcome,
   textMetadata,
-  textRejectMessage,
-  type TextRejectCode,
 } from '../_shared/extraction/textRecipe.ts';
 import { reserveDailyAiUsage } from '../_shared/core/dailyAiUsage.ts';
 import {
@@ -95,7 +90,7 @@ import {
   extractVideoIdForPlatform,
   findExistingRecipeForUser,
 } from '../_shared/core/recipeLookup.ts';
-import { createServiceSupabase } from '../_shared/core/supabaseAdmin.ts';
+import type { Db } from '../_shared/core/supabaseAdmin.ts';
 import { normalizeRecipeTags } from '../_shared/recipes/tags.ts';
 import { fitRecipeToLimits } from '../_shared/recipes/recipeLimits.ts';
 import { fetchTikTokMeta } from '../_shared/extraction/sources/tiktok.ts';
@@ -150,74 +145,23 @@ const MIN_THUMBNAIL_COPY_MS = 15_000;
  * Guests get `auth_required` and must sign up first. Signed-in users receive
  * 10 monthly credits and can spend non-expiring purchased credits after those.
  * Cached URL re-extract is free, and so is a partial result (ADR 019).
+ *
+ * The request is read and checked before sign-in, as it always was, so the wrapper does no auth: the sign-in code
+ * stays below, where it was. A bad request keeps its old `{ error }` 400 (extractRequest.ts).
  */
-serve('extract-recipe', async (req) => {
-  if (req.method === 'OPTIONS') {
-    return new Response('ok', { headers: corsHeaders });
-  }
-  if (req.method !== 'POST') {
-    return jsonResponse({ error: 'Method not allowed' }, 405);
-  }
+handler(
+  { name: 'extract-recipe', auth: 'none', legacyErrorShape: true, input: parseExtractRequest },
+  extractRecipe,
+);
 
-  const started = Date.now();
+async function extractRecipe(
+  { req, input, admin, startedAt }: HandlerContext<'none', ExtractRequest>,
+): Promise<Response> {
+  const started = startedAt;
   const deadlineAt = started + RESPONSE_DEADLINE_MS;
   const ladderDeadlineAt = deadlineAt - AFTER_LADDER_MS;
-  let url = '';
-  let imageBase64: string | null = null;
-  let imageMime = 'image/jpeg';
-  let pdf: DecodedPdf | null = null;
-  let recipeText: string | null = null;
-  let guestInstallId: string | null = null;
-  let requestId: string = crypto.randomUUID();
-  let forceExtract = false;
-  try {
-    const body = await req.json();
-    url = String(body.url ?? '').trim();
-    const rawImage = body.image_base64 ?? body.imageBase64;
-    if (typeof rawImage === 'string' && rawImage.trim().length > 80) {
-      const trimmed = rawImage.trim();
-      const dataUrl = trimmed.match(/^data:(image\/[a-zA-Z0-9.+-]+);base64,(.+)$/);
-      if (dataUrl) {
-        imageMime = dataUrl[1];
-        imageBase64 = dataUrl[2];
-      } else {
-        imageBase64 = trimmed.replace(/\s/g, '');
-        if (typeof body.image_mime === 'string' && body.image_mime.startsWith('image/')) {
-          imageMime = body.image_mime;
-        }
-      }
-      if (imageBase64.length > 2_000_000) {
-        return jsonResponse({ error: 'Image is too large. Try a smaller photo.' }, 400);
-      }
-    }
-    const rawPdf = body.pdf_base64 ?? body.pdfBase64;
-    if (!imageBase64 && typeof rawPdf === 'string' && rawPdf.trim().length > 80) {
-      const decoded = decodePdfBase64(rawPdf);
-      if (!decoded.ok) return pdfRejectResponse(decoded.code);
-      pdf = decoded.pdf;
-    }
-    if (!imageBase64 && !pdf && !url) {
-      // Too short or too long is turned away here, before sign-in, credits or any model call.
-      const read = readRecipeText(body.text);
-      if (read && !read.ok) return textRejectResponse(read.code);
-      if (read) recipeText = read.text;
-    }
-    const rawInstall = body.guest_install_id ?? body.guestInstallId;
-    if (typeof rawInstall === 'string' && rawInstall.trim().length >= 8) {
-      guestInstallId = rawInstall.trim().slice(0, 128);
-    }
-    const rawRequestId = body.request_id ?? body.requestId;
-    if (typeof rawRequestId === 'string' && rawRequestId.trim().length >= 8) {
-      requestId = rawRequestId.trim().slice(0, 128);
-    }
-    forceExtract = body.force_extract === true || body.forceExtract === true;
-  } catch {
-    return jsonResponse({ error: 'Invalid JSON body' }, 400);
-  }
-
-  if (!url && !imageBase64 && !pdf && recipeText === null) {
-    return jsonResponse({ error: 'Missing "url", "image_base64", "pdf_base64" or "text" in request body' }, 400);
-  }
+  const { imageBase64, imageMime, pdf, recipeText, guestInstallId, requestId, forceExtract } = input;
+  let url = input.url;
 
   const platform: InputPlatform = recipeText !== null
     ? 'text'
@@ -227,7 +171,7 @@ serve('extract-recipe', async (req) => {
 
   // ADR 003 — staged rollout: reject non-live platforms with a clear message.
   if (platform !== 'photo' && platform !== 'text' && !LIVE_PLATFORMS.includes(platform)) {
-    return jsonResponse({
+    throw HttpError.withBody(200, {
       status: 'coming_soon' as ExtractionStatus,
       platform,
       message:
@@ -252,7 +196,7 @@ serve('extract-recipe', async (req) => {
   const contentId = platform === 'photo' || platform === 'text' ? null : extractVideoIdForPlatform(url, platform);
 
   if (platform === 'youtube' && !contentId) {
-    return jsonResponse({
+    throw HttpError.withBody(200, {
       status: 'failed' as ExtractionStatus,
       platform,
       message: "That doesn't look like a valid YouTube video link.",
@@ -260,7 +204,7 @@ serve('extract-recipe', async (req) => {
   }
 
   if (platform === 'instagram' && !contentId) {
-    return jsonResponse({
+    throw HttpError.withBody(200, {
       status: 'failed' as ExtractionStatus,
       platform,
       message: "That doesn't look like a valid Instagram reel or post link.",
@@ -269,7 +213,7 @@ serve('extract-recipe', async (req) => {
 
   if (platform === 'pinterest' && !contentId) {
     // A board, a profile, or a pin.it link that leads to neither.
-    return jsonResponse({
+    throw HttpError.withBody(200, {
       status: 'failed' as ExtractionStatus,
       platform,
       code: 'invalid_url',
@@ -277,7 +221,6 @@ serve('extract-recipe', async (req) => {
     });
   }
 
-  const admin = createServiceSupabase();
   let userId: string | null = null;
   let creditReservation: CreditReservation | null = null;
   let guestReservation: GuestExtractionReservation | null = null;
@@ -290,14 +233,14 @@ serve('extract-recipe', async (req) => {
     } = await authedClient.auth.getUser();
     userId = user?.id ?? null;
 
-    if (userId && admin && platform !== 'photo' && platform !== 'text') {
+    if (userId && platform !== 'photo' && platform !== 'text') {
       const existing = await findExistingRecipeForUser(authedClient, url, platform, contentId);
       if (existing) {
         return await savedRecipeResponse({ admin, existing, platform, userId, started });
       }
     }
 
-    if (admin && !forceExtract && platform !== 'photo' && platform !== 'text') {
+    if (!forceExtract && platform !== 'photo' && platform !== 'text') {
       const hubCard = await findRecipeCard(admin, platform, url, contentId);
       if (hubCard) {
         return await recipeCardHitResponse({
@@ -311,56 +254,36 @@ serve('extract-recipe', async (req) => {
     }
   }
 
-  if (userId && !admin) {
-    return jsonResponse(
-      {
-        status: 'failed' as ExtractionStatus,
-        platform,
-        code: 'metering_error',
-        message: quotaBlockMessage('metering_error'),
-      },
-      500,
-    );
-  }
-
   let guestRemaining: number | null = null;
   if (!userId) {
-    return jsonResponse(
-      {
-        status: 'failed' as ExtractionStatus,
-        platform,
-        code: 'auth_required',
-        message: 'Sign up to extract recipes.',
-      },
-      401,
-    );
+    throw HttpError.withBody(401, {
+      status: 'failed' as ExtractionStatus,
+      platform,
+      code: 'auth_required',
+      message: 'Sign up to extract recipes.',
+    });
   }
 
   // No credits: say so now, before the scrape and model calls below cost anything. The
   // reservation further down is still the real check (credits can run out in between).
-  if (admin) {
-    const precheck = await canStartExtract(admin, userId);
-    if (!precheck.ok && precheck.code === 'insufficient_credits') {
-      await logUsageEvent(admin, {
-        userId,
-        action: 'extract',
-        platform,
-        status: 'insufficient_credits',
-        tokensCharged: 0,
-        durationMs: Date.now() - started,
-        metadata: { request_id: requestId, precheck: true },
-      });
-      return jsonResponse(
-        {
-          status: 'failed' as ExtractionStatus,
-          platform,
-          code: 'insufficient_credits',
-          message: quotaBlockMessage('insufficient_credits'),
-          ...quotaFields(precheck.snapshot),
-        },
-        402,
-      );
-    }
+  const precheck = await canStartExtract(admin, userId);
+  if (!precheck.ok && precheck.code === 'insufficient_credits') {
+    await logUsageEvent(admin, {
+      userId,
+      action: 'extract',
+      platform,
+      status: 'insufficient_credits',
+      tokensCharged: 0,
+      durationMs: Date.now() - started,
+      metadata: { request_id: requestId, precheck: true },
+    });
+    throw HttpError.withBody(402, {
+      status: 'failed' as ExtractionStatus,
+      platform,
+      code: 'insufficient_credits',
+      message: quotaBlockMessage('insufficient_credits'),
+      ...quotaFields(precheck.snapshot),
+    });
   }
 
   // A PDF's pages and text are read before anything is charged: too many pages, or one that won't open, is
@@ -370,19 +293,17 @@ serve('extract-recipe', async (req) => {
   if (pdf) {
     const read = await readPdfText(pdf.bytes);
     if (!read.ok) {
-      if (admin) {
-        await logUsageEvent(admin, {
-          userId,
-          action: 'extract',
-          platform,
-          status: 'failed',
-          tokensCharged: 0,
-          durationMs: Date.now() - started,
-          errorMessage: read.code,
-          metadata: { request_id: requestId, input: 'pdf', pdf_bytes: pdf.bytes.length },
-        });
-      }
-      return pdfRejectResponse(read.code);
+      await logUsageEvent(admin, {
+        userId,
+        action: 'extract',
+        platform,
+        status: 'failed',
+        tokensCharged: 0,
+        durationMs: Date.now() - started,
+        errorMessage: read.code,
+        metadata: { request_id: requestId, input: 'pdf', pdf_bytes: pdf.bytes.length },
+      });
+      throw HttpError.withBody(200, pdfRejectBody(read.code));
     }
     pdfText = read.text;
   }
@@ -392,6 +313,8 @@ serve('extract-recipe', async (req) => {
     ? Promise.resolve(undefined)
     : keepUploadedPhoto(platform, imageBase64, imageMime, userId);
 
+  // From here on, answers are returned, never thrown: the catch below refunds the credit and answers `try_again`
+  // for anything thrown.
   try {
     console.log('[extract-recipe] start', {
       platform,
@@ -441,7 +364,7 @@ serve('extract-recipe', async (req) => {
       });
 
       const resolvedId = meta.contentId ?? contentId;
-      if (admin && authedClient && resolvedId && resolvedId !== contentId) {
+      if (authedClient && resolvedId && resolvedId !== contentId) {
         // The link had no id (a share or short link), so the first saved-recipe check could not
         // match. Check again now the post has named itself, before a credit is reserved.
         const existing = await findExistingRecipeForUser(
@@ -454,7 +377,7 @@ serve('extract-recipe', async (req) => {
           return await savedRecipeResponse({ admin, existing, platform, userId, started });
         }
       }
-      if (admin && !forceExtract && resolvedId && resolvedId !== contentId) {
+      if (!forceExtract && resolvedId && resolvedId !== contentId) {
         const hubCard = await findRecipeCard(admin, platform, url, resolvedId);
         if (hubCard) {
           return await recipeCardHitResponse({
@@ -466,18 +389,6 @@ serve('extract-recipe', async (req) => {
           });
         }
       }
-    }
-
-    if (!admin) {
-      return jsonResponse(
-        {
-          status: 'failed' as ExtractionStatus,
-          platform,
-          code: 'metering_error',
-          message: quotaBlockMessage('metering_error'),
-        },
-        500,
-      );
     }
 
     // PIN-70: a pin that links to a recipe site came back as that page, so the ladder reads it as one.
@@ -1264,10 +1175,10 @@ serve('extract-recipe', async (req) => {
       500,
     );
   }
-});
+}
 
 async function compensateSignedInExtract(
-  admin: NonNullable<ReturnType<typeof createServiceSupabase>>,
+  admin: Db,
   userId: string,
   reservation: CreditReservation,
   reason: string,
@@ -1307,7 +1218,7 @@ async function compensateSignedInExtract(
 }
 
 async function compensateGuestExtraction(
-  admin: NonNullable<ReturnType<typeof createServiceSupabase>>,
+  admin: Db,
   installId: string,
   reservation: GuestExtractionReservation,
   reason: string,
@@ -1337,7 +1248,7 @@ async function compensateGuestExtraction(
 }
 
 async function logExtractGate(
-  admin: NonNullable<ReturnType<typeof createServiceSupabase>>,
+  admin: Db,
   opts: {
     decision: ExtractGateDecision;
     userId: string;
@@ -1405,28 +1316,6 @@ function pdfMetadata(pdf: DecodedPdf | null, text: PdfText | null, route: PdfRou
   };
 }
 
-/** A PDF turned away before any model call (too big, too many pages, won't open). Nothing was charged. */
-function pdfRejectResponse(code: PdfRejectCode): Response {
-  return jsonResponse({
-    status: 'failed' as ExtractionStatus,
-    platform: 'photo',
-    code,
-    message: pdfRejectMessage(code),
-    tokens_charged: 0,
-  });
-}
-
-/** A text turned away before sign-in or any model call (too short, too long). Nothing was charged. */
-function textRejectResponse(code: TextRejectCode): Response {
-  return jsonResponse({
-    status: 'failed' as ExtractionStatus,
-    platform: 'text',
-    code,
-    message: textRejectMessage(code),
-    tokens_charged: 0,
-  });
-}
-
 function compensationMetadata(
   signedIn: CreditReservation | null,
   guest: GuestExtractionReservation | null,
@@ -1473,7 +1362,7 @@ function quotaBlockMessage(code: string): string {
 
 /** The link is already in the user's library: return that recipe, charge nothing. */
 async function savedRecipeResponse(opts: {
-  admin: NonNullable<ReturnType<typeof createServiceSupabase>>;
+  admin: Db;
   existing: Record<string, unknown>;
   platform: Platform;
   userId: string;
@@ -1502,7 +1391,7 @@ async function savedRecipeResponse(opts: {
 }
 
 async function recipeCardHitResponse(opts: {
-  admin: NonNullable<ReturnType<typeof createServiceSupabase>>;
+  admin: Db;
   card: Record<string, unknown>;
   platform: Platform;
   userId: string | null;
@@ -1548,7 +1437,7 @@ function hasTextSources(meta: PlatformMeta): boolean {
 }
 
 async function reserveExtractCredits(opts: {
-  admin: NonNullable<ReturnType<typeof createServiceSupabase>>;
+  admin: Db;
   userId: string | null;
   guestInstallId: string | null;
   requestId: string;
