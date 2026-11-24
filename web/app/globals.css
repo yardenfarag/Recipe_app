@@ -43,13 +43,15 @@
   --color-on-scrim-primary: var(--c-on-scrim-primary);
 
   /*
-   * Inter and Space Grotesk are loaded in app/layout.tsx. Neither has Hebrew or Arabic letters, so those fall
-   * through to the system's own fonts; Space Grotesk has no Cyrillic, so Russian headings fall to Inter.
+   * The fonts are loaded in app/layout.tsx. Hebrew uses Heebo (body) and Rubik (headings), loaded with Hebrew
+   * letters only and listed first: Inter's fallback face is local Arial, which has Hebrew, so anything after it
+   * never gets Hebrew text. Latin skips them. Arabic uses the system's fonts. Space Grotesk has no Cyrillic, so
+   * Russian headings fall to Inter.
    */
-  --font-sans: var(--font-inter), ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, "Noto Sans",
-    "Noto Sans Hebrew", "Noto Sans Arabic", Arial, sans-serif;
-  --font-display: var(--font-space-grotesk), var(--font-inter), ui-sans-serif, system-ui, -apple-system, "Segoe UI",
-    Roboto, "Noto Sans", "Noto Sans Hebrew", "Noto Sans Arabic", Arial, sans-serif;
+  --font-sans: var(--font-heebo), var(--font-inter), ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto,
+    "Noto Sans", "Noto Sans Hebrew", "Noto Sans Arabic", Arial, sans-serif;
+  --font-display: var(--font-rubik), var(--font-space-grotesk), var(--font-inter), ui-sans-serif, system-ui,
+    -apple-system, "Segoe UI", Roboto, "Noto Sans", "Noto Sans Hebrew", "Noto Sans Arabic", Arial, sans-serif;
 
   /* Tiles and the controls inside them. */
   --radius-tile: 1.75rem;
