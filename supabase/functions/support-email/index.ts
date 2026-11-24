@@ -1,4 +1,3 @@
-import { serve } from '../_shared/core/observe.ts';
 // Emails each new support message to support@pinch-app.io. Triggers on public.support_tickets
 // ("Help & support" in the app) and public.feedback ("Send feedback", and the website's "Contact
 // support" form) call this with the row id and a Vault secret; the message itself is read here,
@@ -7,7 +6,7 @@ import { serve } from '../_shared/core/observe.ts';
 // Secrets: RESEND_SUPPORT_API_KEY, falling back to RESEND_API_KEY. A key of its own means a flood
 // of support messages can't use up the key that sends sign-in codes. The triggers' secret lives
 // in Vault (support_email_secret).
-import { jsonResponse } from '../_shared/core/cors.ts';
+import { handler, HttpError } from '../_shared/core/handler.ts';
 import { sendOnce } from '../_shared/email/send.ts';
 import {
   fromFeedback,
@@ -19,78 +18,83 @@ import {
   type SupportMessage,
   type TicketRow,
 } from '../_shared/email/support.ts';
-import { createServiceSupabase, type Db } from '../_shared/core/supabaseAdmin.ts';
+import type { Db } from '../_shared/core/supabaseAdmin.ts';
 
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 const CONTEXT = 'app_version, build_number, platform, os_version, device_model, locale';
+const invalidId = HttpError.legacy(400, 'Invalid id');
 
-serve('support-email', async (req) => {
-  if (req.method !== 'POST') return jsonResponse({ error: 'Method not allowed' }, 405);
+/** `{ ticket_id }` or `{ feedback_id }`, a uuid. Anything else, unreadable JSON included, is 'Invalid id'. */
+function parseIds(body: unknown): { ticketId: string | null; feedbackId: string | null } {
+  const b = body as { ticket_id?: unknown; feedback_id?: unknown } | null;
+  const ticketId = typeof b?.ticket_id === 'string' && UUID.test(b.ticket_id) ? b.ticket_id : null;
+  const feedbackId = typeof b?.feedback_id === 'string' && UUID.test(b.feedback_id) ? b.feedback_id : null;
+  if (!ticketId && !feedbackId) throw invalidId;
+  return { ticketId, feedbackId };
+}
 
-  const admin = createServiceSupabase();
-  if (!admin) return jsonResponse({ error: 'Server is not configured' }, 500);
-
-  const given = req.headers.get('x-support-email-secret') ?? '';
-  const { data: ok, error: secretError } = await admin.rpc('support_email_secret_matches', { p_secret: given });
-  if (secretError) {
-    console.error('[support-email] secret check failed', secretError);
-    return jsonResponse({ error: 'Secret check failed' }, 500);
-  }
-  if (!given || ok !== true) return jsonResponse({ error: 'Unauthorized' }, 401);
-
-  const body = await req.json().catch(() => null);
-  const ticketId = typeof body?.ticket_id === 'string' && UUID.test(body.ticket_id) ? body.ticket_id : null;
-  const feedbackId = typeof body?.feedback_id === 'string' && UUID.test(body.feedback_id) ? body.feedback_id : null;
-  if (!ticketId && !feedbackId) return jsonResponse({ error: 'Invalid id' }, 400);
-
-  let msg: SupportMessage;
-  if (ticketId) {
-    const { data, error } = await admin
-      .from('support_tickets')
-      .select(`id, user_id, email, category, message, created_at, ${CONTEXT}`)
-      .eq('id', ticketId)
-      .maybeSingle();
-    if (error) {
-      console.error('[support-email] could not read ticket', ticketId, error);
-      return jsonResponse({ error: 'Could not read ticket' }, 500);
+handler(
+  {
+    name: 'support-email',
+    auth: 'secret',
+    secret: { header: 'x-support-email-secret', rpc: 'support_email_secret_matches' },
+    // Called by database triggers only; it never answered OPTIONS.
+    cors: false,
+    legacyErrorShape: true,
+    // It used req.json().catch(() => null), so an empty or broken body was just a missing id.
+    errors: { misconfigured: HttpError.legacy(500, 'Server is not configured'), invalidJson: invalidId },
+    input: parseIds,
+  },
+  async ({ input: { ticketId, feedbackId }, admin }) => {
+    let msg: SupportMessage;
+    if (ticketId) {
+      const { data, error } = await admin
+        .from('support_tickets')
+        .select(`id, user_id, email, category, message, created_at, ${CONTEXT}`)
+        .eq('id', ticketId)
+        .maybeSingle();
+      if (error) {
+        console.error('[support-email] could not read ticket', ticketId, error);
+        throw HttpError.legacy(500, 'Could not read ticket');
+      }
+      if (!data) throw HttpError.legacy(404, 'Not found');
+      const row = data as unknown as TicketRow;
+      msg = fromTicket(row, await accountEmail(admin, row.user_id));
+    } else {
+      const { data, error } = await admin
+        .from('feedback')
+        .select(`id, user_id, message, source, contact_email, created_at, ${CONTEXT}`)
+        .eq('id', feedbackId!)
+        .maybeSingle();
+      if (error) {
+        console.error('[support-email] could not read feedback', feedbackId, error);
+        throw HttpError.legacy(500, 'Could not read feedback');
+      }
+      if (!data) throw HttpError.legacy(404, 'Not found');
+      const row = data as unknown as FeedbackRow;
+      msg = fromFeedback(row, await accountEmail(admin, row.user_id));
     }
-    if (!data) return jsonResponse({ error: 'Not found' }, 404);
-    const row = data as unknown as TicketRow;
-    msg = fromTicket(row, await accountEmail(admin, row.user_id));
-  } else {
-    const { data, error } = await admin
-      .from('feedback')
-      .select(`id, user_id, message, source, contact_email, created_at, ${CONTEXT}`)
-      .eq('id', feedbackId)
-      .maybeSingle();
-    if (error) {
-      console.error('[support-email] could not read feedback', feedbackId, error);
-      return jsonResponse({ error: 'Could not read feedback' }, 500);
-    }
-    if (!data) return jsonResponse({ error: 'Not found' }, 404);
-    const row = data as unknown as FeedbackRow;
-    msg = fromFeedback(row, await accountEmail(admin, row.user_id));
-  }
 
-  try {
-    const sent = await sendOnce(admin, {
-      kind: 'support',
-      // Feedback keys stay the bare id, as the first version of this function wrote them.
-      dedupeKey: msg.kind === 'ticket' ? `ticket:${msg.id}` : msg.id,
-      userId: msg.userId,
-      to: SUPPORT_INBOX,
-      email: renderSupportEmail(msg),
-      replyTo: msg.replyTo ?? undefined,
-      from: supportFrom(msg),
-      headers: msg.headers,
-      apiKey: Deno.env.get('RESEND_SUPPORT_API_KEY') || undefined,
-    });
-    return jsonResponse({ sent });
-  } catch (err) {
-    console.error('[support-email] send failed', msg.kind, msg.id, err);
-    return jsonResponse({ error: 'Send failed' }, 500);
-  }
-});
+    try {
+      const sent = await sendOnce(admin, {
+        kind: 'support',
+        // Feedback keys stay the bare id, as the first version of this function wrote them.
+        dedupeKey: msg.kind === 'ticket' ? `ticket:${msg.id}` : msg.id,
+        userId: msg.userId,
+        to: SUPPORT_INBOX,
+        email: renderSupportEmail(msg),
+        replyTo: msg.replyTo ?? undefined,
+        from: supportFrom(msg),
+        headers: msg.headers,
+        apiKey: Deno.env.get('RESEND_SUPPORT_API_KEY') || undefined,
+      });
+      return { sent };
+    } catch (err) {
+      console.error('[support-email] send failed', msg.kind, msg.id, err);
+      throw HttpError.legacy(500, 'Send failed');
+    }
+  },
+);
 
 /** The address the account signed up with, from auth.users. Null for a visitor or a failed lookup. */
 async function accountEmail(admin: Db, userId: string | null): Promise<string | null> {

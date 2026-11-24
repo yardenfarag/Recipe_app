@@ -1,3 +1,4 @@
+import { HttpError } from './httpError.ts';
 import type { Db } from './supabaseAdmin.ts';
 
 export type DailyAiAction =
@@ -64,6 +65,47 @@ export async function refundDailyAiUsage(
   });
   if (error) console.error('[dailyAiUsage] refund_daily_ai_usage', error);
   return !error && data === true;
+}
+
+/** The bodies translate-recipe, suggest-substitution and match-fridge already send. */
+const DAILY_LIMIT = new HttpError(429, 'daily_limit', 'daily_limit');
+const METERING_ERROR = new HttpError(500, 'metering_error', 'metering_error');
+
+export interface DailyAiUsageOptions {
+  usageDate?: string;
+  /** Thrown when the cap is reached. Default: 429 `{ status: 'failed', code: 'daily_limit', message: 'daily_limit' }`. */
+  limited?: HttpError;
+  /** Thrown when the counter can't be reached. Default: 500 `{ ..., code: 'metering_error', message: 'metering_error' }`. */
+  meteringError?: HttpError;
+  /** Runs before `limited` is thrown, e.g. to log the refused call. */
+  onLimited?: () => Promise<unknown>;
+}
+
+/**
+ * Reserves one of today's `limit` uses of `action`, runs `work`, and gives the use back if `work` throws (an
+ * `HttpError` included). Handlers write no refund code (ADR 024 §3). The refund finishes before the error goes on.
+ */
+export async function withDailyAiUsage<T>(
+  admin: Db,
+  userId: string,
+  action: DailyAiAction,
+  limit: number,
+  work: () => Promise<T>,
+  options: DailyAiUsageOptions = {},
+): Promise<T> {
+  const usageDate = options.usageDate ?? currentUtcDate();
+  const reserved = await reserveDailyAiUsage(admin, userId, action, limit, usageDate);
+  if (reserved === 'limited') {
+    await options.onLimited?.();
+    throw options.limited ?? DAILY_LIMIT;
+  }
+  if (reserved === 'error') throw options.meteringError ?? METERING_ERROR;
+  try {
+    return await work();
+  } catch (err) {
+    await refundDailyAiUsage(admin, userId, action, usageDate);
+    throw err;
+  }
 }
 
 export async function reserveGuestDailyAiUsage(

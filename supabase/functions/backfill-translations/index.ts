@@ -1,10 +1,6 @@
-import { serve } from '../_shared/core/observe.ts';
+import { readBackfillBody } from '../_shared/core/backfillRequest.ts';
+import { handler, HttpError } from '../_shared/core/handler.ts';
 import { type Db, toJson } from '../_shared/core/supabaseAdmin.ts';
-
-import { corsHeaders, jsonResponse } from '../_shared/core/cors.ts';
-import { createAuthedSupabase } from '../_shared/core/recipeLookup.ts';
-import { createServiceSupabase } from '../_shared/core/supabaseAdmin.ts';
-import { logUsageEvent } from '../_shared/core/usageLog.ts';
 import {
   clampTranslationBatchSize,
   parseTranslationCursor,
@@ -38,6 +34,16 @@ type JoinedRow = {
 };
 
 const STALE = `translation_version.is.null,translation_version.lt.${TRANSLATION_VERSION}`;
+
+/** The request, checked in the old order. A body that isn't an object (`null`) throws a TypeError: a 500, as before. */
+function parseRequest(raw: unknown) {
+  const body = raw as RequestBody;
+  const after = parseTranslationCursor(body.after);
+  if (after === undefined) {
+    throw HttpError.legacy(400, 'after must be a next_cursor value ({ recipe_id, language_code })');
+  }
+  return { after, dryRun: body.dry_run === true, limit: body.limit };
+}
 
 function sourceFrom(recipe: JoinedRow['recipes']): StaleTranslationRow['source'] | null {
   if (!recipe?.title?.trim()) return null;
@@ -127,82 +133,69 @@ function supabaseTranslationDb(admin: Db): TranslationBackfillDb {
  * TRANSLATION_VERSION (PIN-53), one batch per call. Start with `dry_run: true` to see how many rows are stale and
  * what it should cost. Call again with `after: next_cursor` until it is null. Check the OpenRouter balance first.
  */
-serve('backfill-translations', async (req) => {
-  if (req.method === 'OPTIONS') return new Response('ok', { headers: corsHeaders });
-  if (req.method !== 'POST') return jsonResponse({ error: 'Method not allowed' }, 405);
+handler(
+  {
+    name: 'backfill-translations',
+    auth: 'admin',
+    // Read below: Content-Length 0 is `{}`, an empty body without one is invalid JSON (readBackfillBody).
+    body: 'none',
+    legacyErrorShape: true,
+    errors: { authInvalid: HttpError.legacy(401, 'Sign in required') },
+  },
+  async ({ req, admin, log }) => {
+    const { after, dryRun, limit } = parseRequest(await readBackfillBody(req));
 
-  const authHeader = req.headers.get('Authorization');
-  if (!authHeader) return jsonResponse({ error: 'Missing Authorization header' }, 401);
+    const db = supabaseTranslationDb(admin);
+    const started = Date.now();
+    try {
+      if (dryRun) {
+        const byLanguage = await db.countStale();
+        const stale = Object.values(byLanguage).reduce((sum, n) => sum + n, 0);
+        return {
+          dry_run: true,
+          version: TRANSLATION_VERSION,
+          stale,
+          by_language: byLanguage,
+          estimated_cost_usd: Math.round(stale * TRANSLATION_COST_PER_ROW_USD * 100) / 100,
+        };
+      }
 
-  let body: RequestBody = {};
-  try {
-    if (req.headers.get('content-length') !== '0') body = await req.json();
-  } catch {
-    return jsonResponse({ error: 'Invalid JSON body' }, 400);
-  }
+      const result = await runTranslationBackfillBatch(
+        db,
+        async (input) =>
+          // Same shortcut as translate-recipe: text already in the target language is saved as is.
+          recipeAlreadyInLanguage(input, input.targetLanguage)
+            ? { title: input.title, ingredients: input.ingredients, instructions: input.instructions, usage: null }
+            : await translateRecipeWithLlm(input),
+        {
+          after,
+          limit: clampTranslationBatchSize(limit),
+          version: TRANSLATION_VERSION,
+          isLanguage: isTranslateLanguageCode,
+        },
+      );
 
-  const authed = createAuthedSupabase(authHeader);
-  const admin = createServiceSupabase();
-  if (!authed || !admin) return jsonResponse({ error: 'Server misconfigured' }, 500);
-
-  const {
-    data: { user },
-  } = await authed.auth.getUser();
-  if (!user) return jsonResponse({ error: 'Sign in required' }, 401);
-
-  const { data: isAdmin, error: adminError } = await authed.rpc('is_current_user_admin');
-  if (adminError) {
-    console.error('[backfill-translations] admin check failed', adminError);
-    return jsonResponse({ error: 'Could not verify admin' }, 500);
-  }
-  if (isAdmin !== true) return jsonResponse({ error: 'Admins only' }, 403);
-
-  const after = parseTranslationCursor(body.after);
-  if (after === undefined) {
-    return jsonResponse({ error: 'after must be a next_cursor value ({ recipe_id, language_code })' }, 400);
-  }
-
-  const db = supabaseTranslationDb(admin);
-  const started = Date.now();
-  try {
-    if (body.dry_run === true) {
-      const byLanguage = await db.countStale();
-      const stale = Object.values(byLanguage).reduce((sum, n) => sum + n, 0);
-      return jsonResponse({
-        dry_run: true,
-        version: TRANSLATION_VERSION,
-        stale,
-        by_language: byLanguage,
-        estimated_cost_usd: Math.round(stale * TRANSLATION_COST_PER_ROW_USD * 100) / 100,
+      const nextCursor = result.nextCursor
+        ? { recipe_id: result.nextCursor.recipeId, language_code: result.nextCursor.languageCode }
+        : null;
+      await log.usage({
+        action: 'translation_backfill',
+        status: result.errors.length > 0 ? 'partial' : 'ok',
+        usages: result.usages,
+        tokensCharged: 0,
+        durationMs: Date.now() - started,
+        metadata: {
+          version: TRANSLATION_VERSION,
+          scanned: result.scanned,
+          updated: result.updated,
+          failed: result.failed,
+          skipped: result.skipped,
+          next_cursor: nextCursor,
+          errors: result.errors.slice(0, 10),
+        },
       });
-    }
 
-    const result = await runTranslationBackfillBatch(
-      db,
-      async (input) =>
-        // Same shortcut as translate-recipe: text already in the target language is saved as is.
-        recipeAlreadyInLanguage(input, input.targetLanguage)
-          ? { title: input.title, ingredients: input.ingredients, instructions: input.instructions, usage: null }
-          : await translateRecipeWithLlm(input),
-      {
-        after,
-        limit: clampTranslationBatchSize(body.limit),
-        version: TRANSLATION_VERSION,
-        isLanguage: isTranslateLanguageCode,
-      },
-    );
-
-    const nextCursor = result.nextCursor
-      ? { recipe_id: result.nextCursor.recipeId, language_code: result.nextCursor.languageCode }
-      : null;
-    await logUsageEvent(admin, {
-      userId: user.id,
-      action: 'translation_backfill',
-      status: result.errors.length > 0 ? 'partial' : 'ok',
-      usages: result.usages,
-      tokensCharged: 0,
-      durationMs: Date.now() - started,
-      metadata: {
+      return {
         version: TRANSLATION_VERSION,
         scanned: result.scanned,
         updated: result.updated,
@@ -210,20 +203,10 @@ serve('backfill-translations', async (req) => {
         skipped: result.skipped,
         next_cursor: nextCursor,
         errors: result.errors.slice(0, 10),
-      },
-    });
-
-    return jsonResponse({
-      version: TRANSLATION_VERSION,
-      scanned: result.scanned,
-      updated: result.updated,
-      failed: result.failed,
-      skipped: result.skipped,
-      next_cursor: nextCursor,
-      errors: result.errors.slice(0, 10),
-    });
-  } catch (error) {
-    console.error('[backfill-translations] batch failed', error);
-    return jsonResponse({ error: 'Backfill batch failed' }, 500);
-  }
-});
+      };
+    } catch (error) {
+      console.error('[backfill-translations] batch failed', error);
+      throw HttpError.legacy(500, 'Backfill batch failed');
+    }
+  },
+);
