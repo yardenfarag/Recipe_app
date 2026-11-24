@@ -1,6 +1,6 @@
-import { serve } from '../_shared/core/observe.ts';
-import type { Db } from '../_shared/core/supabaseAdmin.ts';
-
+import { parseUuidCursor, readBackfillBody } from '../_shared/core/backfillRequest.ts';
+import { handler, HttpError } from '../_shared/core/handler.ts';
+import { type Db, toJson } from '../_shared/core/supabaseAdmin.ts';
 import type { RecipeAppliance } from '../_shared/recipes/enrich/appliances.ts';
 import {
   type BackfillDb,
@@ -10,11 +10,7 @@ import {
   type PendingRow,
   runAppliancesBackfillBatch,
 } from '../_shared/recipes/enrich/appliancesBackfill.ts';
-import { corsHeaders, jsonResponse } from '../_shared/core/cors.ts';
 import { deriveRecipeAppliances } from '../_shared/recipes/enrich/recipeAppliances.ts';
-import { createAuthedSupabase } from '../_shared/core/recipeLookup.ts';
-import { createServiceSupabase, toJson } from '../_shared/core/supabaseAdmin.ts';
-import { logUsageEvent } from '../_shared/core/usageLog.ts';
 
 interface RequestBody {
   /** recipes (default) or recipe_cards. */
@@ -27,7 +23,14 @@ interface RequestBody {
   dry_run?: boolean;
 }
 
-const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+/** The request, checked in the old order. A body that isn't an object (`null`) throws a TypeError: a 500, as before. */
+function parseRequest(raw: unknown) {
+  const body = raw as RequestBody;
+  const table = body.table === undefined ? 'recipes' : body.table;
+  if (!isBackfillTable(table)) throw HttpError.legacy(400, 'table must be recipes or recipe_cards');
+  const after = parseUuidCursor(body.after);
+  return { table, after, dryRun: body.dry_run === true, limit: body.limit };
+}
 
 function supabaseBackfillDb(admin: Db): BackfillDb {
   return {
@@ -67,86 +70,61 @@ function supabaseBackfillDb(admin: Db): BackfillDb {
  * PIN-26, one batch per call (ADR 017 decision 8). Call again with `after: next_cursor` until it is
  * null, then do the same for table "recipe_cards". Costs users no credits.
  */
-serve('backfill-appliances', async (req) => {
-  if (req.method === 'OPTIONS') return new Response('ok', { headers: corsHeaders });
-  if (req.method !== 'POST') return jsonResponse({ error: 'Method not allowed' }, 405);
+handler(
+  {
+    name: 'backfill-appliances',
+    auth: 'admin',
+    // Read below: Content-Length 0 is `{}`, an empty body without one is invalid JSON (readBackfillBody).
+    body: 'none',
+    legacyErrorShape: true,
+    errors: { authInvalid: HttpError.legacy(401, 'Sign in required') },
+  },
+  async ({ req, admin, log }) => {
+    const { table, after, dryRun, limit } = parseRequest(await readBackfillBody(req));
 
-  const authHeader = req.headers.get('Authorization');
-  if (!authHeader) return jsonResponse({ error: 'Missing Authorization header' }, 401);
+    const db = supabaseBackfillDb(admin);
+    const started = Date.now();
+    try {
+      if (dryRun) {
+        return { table, dry_run: true, pending: await db.countPending(table) };
+      }
 
-  let body: RequestBody = {};
-  try {
-    if (req.headers.get('content-length') !== '0') body = await req.json();
-  } catch {
-    return jsonResponse({ error: 'Invalid JSON body' }, 400);
-  }
-
-  const authed = createAuthedSupabase(authHeader);
-  const admin = createServiceSupabase();
-  if (!authed || !admin) return jsonResponse({ error: 'Server misconfigured' }, 500);
-
-  const {
-    data: { user },
-  } = await authed.auth.getUser();
-  if (!user) return jsonResponse({ error: 'Sign in required' }, 401);
-
-  const { data: isAdmin, error: adminError } = await authed.rpc('is_current_user_admin');
-  if (adminError) {
-    console.error('[backfill-appliances] admin check failed', adminError);
-    return jsonResponse({ error: 'Could not verify admin' }, 500);
-  }
-  if (isAdmin !== true) return jsonResponse({ error: 'Admins only' }, 403);
-
-  const table = body.table === undefined ? 'recipes' : body.table;
-  if (!isBackfillTable(table)) return jsonResponse({ error: 'table must be recipes or recipe_cards' }, 400);
-  const after = body.after ?? null;
-  if (after !== null && (typeof after !== 'string' || !UUID.test(after))) {
-    return jsonResponse({ error: 'after must be a next_cursor value' }, 400);
-  }
-
-  const db = supabaseBackfillDb(admin);
-  const started = Date.now();
-  try {
-    if (body.dry_run === true) {
-      return jsonResponse({ table, dry_run: true, pending: await db.countPending(table) });
-    }
-
-    const result = await runAppliancesBackfillBatch(db, (recipe) => deriveRecipeAppliances(recipe), {
-      table,
-      after,
-      limit: clampBatchSize(body.limit),
-    });
-
-    await logUsageEvent(admin, {
-      userId: user.id,
-      action: 'appliances_backfill',
-      status: result.errors.length > 0 ? 'partial' : 'ok',
-      usages: result.usages,
-      tokensCharged: 0,
-      durationMs: Date.now() - started,
-      metadata: {
+      const result = await runAppliancesBackfillBatch(db, (recipe) => deriveRecipeAppliances(recipe), {
         table,
         after,
+        limit: clampBatchSize(limit),
+      });
+
+      await log.usage({
+        action: 'appliances_backfill',
+        status: result.errors.length > 0 ? 'partial' : 'ok',
+        usages: result.usages,
+        tokensCharged: 0,
+        durationMs: Date.now() - started,
+        metadata: {
+          table,
+          after,
+          scanned: result.scanned,
+          updated: result.updated,
+          still_null: result.stillNull,
+          skipped: result.skipped,
+          next_cursor: result.nextCursor,
+          errors: result.errors.slice(0, 10),
+        },
+      });
+
+      return {
+        table,
         scanned: result.scanned,
         updated: result.updated,
         still_null: result.stillNull,
         skipped: result.skipped,
         next_cursor: result.nextCursor,
         errors: result.errors.slice(0, 10),
-      },
-    });
-
-    return jsonResponse({
-      table,
-      scanned: result.scanned,
-      updated: result.updated,
-      still_null: result.stillNull,
-      skipped: result.skipped,
-      next_cursor: result.nextCursor,
-      errors: result.errors.slice(0, 10),
-    });
-  } catch (error) {
-    console.error('[backfill-appliances] batch failed', error);
-    return jsonResponse({ error: 'Backfill batch failed' }, 500);
-  }
-});
+      };
+    } catch (error) {
+      console.error('[backfill-appliances] batch failed', error);
+      throw HttpError.legacy(500, 'Backfill batch failed');
+    }
+  },
+);

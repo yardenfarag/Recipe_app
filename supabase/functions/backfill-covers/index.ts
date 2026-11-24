@@ -1,10 +1,7 @@
-import { serve } from '../_shared/core/observe.ts';
-import type { Db } from '../_shared/core/supabaseAdmin.ts';
-
-import { corsHeaders, jsonResponse } from '../_shared/core/cors.ts';
-import { createAuthedSupabase } from '../_shared/core/recipeLookup.ts';
+import { parseUuidCursor, readBackfillBody } from '../_shared/core/backfillRequest.ts';
+import { handler, HttpError } from '../_shared/core/handler.ts';
 import { safeFetch } from '../_shared/core/safeFetch.ts';
-import { createServiceSupabase } from '../_shared/core/supabaseAdmin.ts';
+import type { Db } from '../_shared/core/supabaseAdmin.ts';
 import {
   clampCoverBatch,
   COVER_PLATFORMS,
@@ -33,11 +30,22 @@ interface RequestBody {
   dry_run?: boolean;
 }
 
-const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 /** A header is all `measure` needs; most covers fit whole. */
 const MEASURE_BYTES = 256 * 1024;
 
 const TABLE: Record<CoverSource, 'recipe_cards' | 'recipes'> = { cards: 'recipe_cards', recipes: 'recipes' };
+
+/** The request, checked in the old order. A body that isn't an object (`null`) throws a TypeError: a 500, as before. */
+function parseRequest(raw: unknown) {
+  const body = raw as RequestBody;
+  const platform = body.platform as CoverPlatform;
+  if (!COVER_PLATFORMS.includes(platform)) {
+    throw HttpError.legacy(400, `platform must be one of ${COVER_PLATFORMS.join(', ')}`);
+  }
+  const source: CoverSource = body.source === 'recipes' ? 'recipes' : 'cards';
+  const after = parseUuidCursor(body.after);
+  return { platform, source, after, dryRun: body.dry_run === true, limit: body.limit };
+}
 
 function referer(platform: CoverPlatform): Record<string, string> {
   if (platform === 'instagram') return { Referer: 'https://www.instagram.com/' };
@@ -158,85 +166,58 @@ function coverDeps(admin: Db): CoverBackfillDeps {
  * `after: next_cursor` until it is null; run `source: "cards"` first, then `"recipes"`.
  * TikTok and Instagram spend one ScrapeCreators credit per cover that is below 720 px.
  */
-serve('backfill-covers', async (req) => {
-  if (req.method === 'OPTIONS') return new Response('ok', { headers: corsHeaders });
-  if (req.method !== 'POST') return jsonResponse({ error: 'Method not allowed' }, 405);
+handler(
+  {
+    name: 'backfill-covers',
+    auth: 'admin',
+    // Read below: Content-Length 0 is `{}`, an empty body without one is invalid JSON (readBackfillBody).
+    body: 'none',
+    legacyErrorShape: true,
+    errors: { authInvalid: HttpError.legacy(401, 'Sign in required') },
+  },
+  async ({ req, user, admin }) => {
+    const { platform, source, after, dryRun, limit } = parseRequest(await readBackfillBody(req));
 
-  const authHeader = req.headers.get('Authorization');
-  if (!authHeader) return jsonResponse({ error: 'Missing Authorization header' }, 401);
+    try {
+      if (dryRun) {
+        const { count, error } = await admin
+          .from(TABLE[source])
+          .select('id', { count: 'exact', head: true })
+          .eq('platform', platform)
+          .eq('image_generated', false)
+          .not('image_url', 'is', null);
+        if (error) throw new Error(error.message);
+        return { dry_run: true, platform, source, rows: count ?? 0 };
+      }
 
-  let body: RequestBody = {};
-  try {
-    if (req.headers.get('content-length') !== '0') body = await req.json();
-  } catch {
-    return jsonResponse({ error: 'Invalid JSON body' }, 400);
-  }
-
-  const authed = createAuthedSupabase(authHeader);
-  const admin = createServiceSupabase();
-  if (!authed || !admin) return jsonResponse({ error: 'Server misconfigured' }, 500);
-
-  const {
-    data: { user },
-  } = await authed.auth.getUser();
-  if (!user) return jsonResponse({ error: 'Sign in required' }, 401);
-
-  const { data: isAdmin, error: adminError } = await authed.rpc('is_current_user_admin');
-  if (adminError) {
-    console.error('[backfill-covers] admin check failed', adminError);
-    return jsonResponse({ error: 'Could not verify admin' }, 500);
-  }
-  if (isAdmin !== true) return jsonResponse({ error: 'Admins only' }, 403);
-
-  const platform = body.platform as CoverPlatform;
-  if (!COVER_PLATFORMS.includes(platform)) {
-    return jsonResponse({ error: `platform must be one of ${COVER_PLATFORMS.join(', ')}` }, 400);
-  }
-  const source: CoverSource = body.source === 'recipes' ? 'recipes' : 'cards';
-  const after = body.after ?? null;
-  if (after !== null && (typeof after !== 'string' || !UUID.test(after))) {
-    return jsonResponse({ error: 'after must be a next_cursor value' }, 400);
-  }
-
-  try {
-    if (body.dry_run === true) {
-      const { count, error } = await admin
-        .from(TABLE[source])
-        .select('id', { count: 'exact', head: true })
-        .eq('platform', platform)
-        .eq('image_generated', false)
-        .not('image_url', 'is', null);
-      if (error) throw new Error(error.message);
-      return jsonResponse({ dry_run: true, platform, source, rows: count ?? 0 });
+      const started = Date.now();
+      const result = await runCoverBackfillBatch(coverDeps(admin), {
+        source,
+        platform,
+        after,
+        limit: clampCoverBatch(limit),
+      });
+      console.log('[backfill-covers] batch', {
+        userId: user.id,
+        platform,
+        source,
+        after,
+        ms: Date.now() - started,
+        ...result,
+      });
+      return {
+        platform,
+        source,
+        scanned: result.scanned,
+        counts: result.counts,
+        rows_updated: result.rowsUpdated,
+        lookups: result.lookups,
+        next_cursor: result.nextCursor,
+        details: result.details,
+      };
+    } catch (error) {
+      console.error('[backfill-covers] batch failed', error);
+      throw HttpError.legacy(500, 'Backfill batch failed');
     }
-
-    const started = Date.now();
-    const result = await runCoverBackfillBatch(coverDeps(admin), {
-      source,
-      platform,
-      after,
-      limit: clampCoverBatch(body.limit),
-    });
-    console.log('[backfill-covers] batch', {
-      userId: user.id,
-      platform,
-      source,
-      after,
-      ms: Date.now() - started,
-      ...result,
-    });
-    return jsonResponse({
-      platform,
-      source,
-      scanned: result.scanned,
-      counts: result.counts,
-      rows_updated: result.rowsUpdated,
-      lookups: result.lookups,
-      next_cursor: result.nextCursor,
-      details: result.details,
-    });
-  } catch (error) {
-    console.error('[backfill-covers] batch failed', error);
-    return jsonResponse({ error: 'Backfill batch failed' }, 500);
-  }
-});
+  },
+);
