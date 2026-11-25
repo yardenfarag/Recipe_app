@@ -1,16 +1,15 @@
 import { assert, assertEquals, assertStringIncludes } from 'jsr:@std/assert@1';
 
 import type { Db } from '../core/supabaseAdmin.ts';
-import { EMAIL_LOCALES } from '../email/copy.ts';
+import { COPY, EMAIL_LOCALES } from '../email/copy.ts';
 import { NUDGE_COPY } from '../email/nudgeCopy.ts';
-import { renderNudgeEmail, type RenderedEmail } from '../email/render.ts';
+import { escapeHtml, renderNudgeEmail, type RenderedEmail } from '../email/render.ts';
 import { sendPush, type PushMessage, type PushResult } from './expoPush.ts';
 import {
   nudgeTarget,
   pushMessages,
   runNudges,
   shortTitle,
-  unsubscribeUrl,
   type NudgeCandidate,
 } from './nudges.ts';
 
@@ -86,14 +85,6 @@ Deno.test('nudgeTarget: day1 opens Snap, day3 the recipe, day3 without a recipe 
   assertEquals(nudgeTarget('day3', null), null);
 });
 
-Deno.test('unsubscribeUrl carries the user, token and language', () => {
-  const url = new URL(unsubscribeUrl('https://x.supabase.co/', USER, 'tok', 'he'));
-  assertEquals(url.origin + url.pathname, 'https://x.supabase.co/functions/v1/nudges');
-  assertEquals(url.searchParams.get('u'), USER);
-  assertEquals(url.searchParams.get('t'), 'tok');
-  assertEquals(url.searchParams.get('l'), 'he');
-});
-
 Deno.test('nudge emails escape the recipe title and carry the unsubscribe link', () => {
   for (const locale of EMAIL_LOCALES) {
     const email = renderNudgeEmail({
@@ -101,14 +92,18 @@ Deno.test('nudge emails escape the recipe title and carry the unsubscribe link',
       kind: 'day3',
       title: 'Mac & <cheese>',
       link: 'https://pinch-app.io/app/recipe/r1',
-      unsubscribeUrl: 'https://x.supabase.co/functions/v1/nudges?u=1&t=2',
+      unsubscribe: {
+        page: 'https://pinch-app.io/app/unsubscribe?u=1&t=2&l=en',
+        oneClick: 'https://x.supabase.co/functions/v1/email-preferences?u=1&t=2',
+      },
     });
     assertStringIncludes(email.subject, 'Mac & <cheese>');
     assertStringIncludes(email.html, 'Mac &amp; &lt;cheese&gt;');
     assert(!email.html.includes('<cheese>'));
-    assertStringIncludes(email.html, 'nudges?u=1&amp;t=2');
-    assertStringIncludes(email.text, 'https://x.supabase.co/functions/v1/nudges?u=1&t=2');
-    assertStringIncludes(email.html, NUDGE_COPY[locale].unsubscribeLink);
+    assertStringIncludes(email.html, 'app/unsubscribe?u=1&amp;t=2&amp;l=en');
+    assertStringIncludes(email.text, 'https://pinch-app.io/app/unsubscribe?u=1&t=2&l=en');
+    assertStringIncludes(email.html, escapeHtml(COPY[locale].unsubscribeLink));
+    assertEquals(email.unsubscribe?.oneClick, 'https://x.supabase.co/functions/v1/email-preferences?u=1&t=2');
   }
 });
 
@@ -125,7 +120,7 @@ Deno.test('runNudges sends push and email once, records both, and drops dead tok
     day3: [candidate({ user_id: 'u3', recipe_id: 'r9', recipe_title: 'Lemon pasta', push_tokens: [] })],
   });
   const pushed: PushMessage[][] = [];
-  const emailed: { to: string; email: RenderedEmail; headers: Record<string, string> }[] = [];
+  const emailed: { to: string; email: RenderedEmail }[] = [];
   const result = await runNudges({
     admin,
     functionsBase: 'https://x.supabase.co',
@@ -133,8 +128,8 @@ Deno.test('runNudges sends push and email once, records both, and drops dead tok
       pushed.push(messages);
       return Promise.resolve({ ok: ['ExponentPushToken[live]'], unregistered: ['ExponentPushToken[dead]'], failed: [] });
     },
-    sendEmail: (to, email, options) => {
-      emailed.push({ to, email, headers: options.headers });
+    sendEmail: (to, email) => {
+      emailed.push({ to, email });
       return Promise.resolve('resend-id');
     },
   });
@@ -150,7 +145,12 @@ Deno.test('runNudges sends push and email once, records both, and drops dead tok
   ]);
   assertStringIncludes(emailed[1].email.subject, 'Lemon pasta');
   assertStringIncludes(emailed[1].email.html, 'https://pinch-app.io/app/recipe/r9');
-  assertStringIncludes(emailed[0].headers['List-Unsubscribe'], 'functions/v1/nudges?u=');
+  // sendEmail turns this into the List-Unsubscribe headers.
+  assertEquals(
+    emailed[0].email.unsubscribe?.oneClick,
+    `https://x.supabase.co/functions/v1/email-preferences?u=${USER}&t=abc123`,
+  );
+  assertStringIncludes(emailed[0].email.unsubscribe?.page ?? '', `app/unsubscribe?u=${USER}&t=abc123&l=en`);
 });
 
 Deno.test('runNudges skips channels already sent, and keeps going after a failed email', async () => {

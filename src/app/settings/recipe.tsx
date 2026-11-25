@@ -10,10 +10,10 @@ import { FieldInput } from '@/components/text-input';
 import { MeasurementToggle } from '@/components/MeasurementToggle';
 import { UnitSystemToggle } from '@/components/UnitSystemToggle';
 import { SettingsDetailScreen } from '@/components/SettingsDetailScreen';
+import { SettingsSwitchRow } from '@/components/SettingsSwitchRow';
 import { Button } from '@/components/ui/Button';
 import { Chip } from '@/components/ui/Chip';
 import { IconButton } from '@/components/ui/IconButton';
-import { Pressable } from '@/components/ui/Pressable';
 import { Stepper } from '@/components/ui/Stepper';
 import { Text } from '@/components/ui/Text';
 import { Tile, TileLabel } from '@/components/ui/Tile';
@@ -342,7 +342,7 @@ export default function RecipeSettingsScreen() {
 
       {user ? (
         <Section title={t('hub.title')}>
-          <SwitchRow
+          <SettingsSwitchRow
             trackId="settings.kitchen.contribute_to_hub.toggle"
             label={t('settings.contributeToHub')}
             hint={t('settings.contributeToHubHint')}
@@ -361,7 +361,7 @@ export default function RecipeSettingsScreen() {
       ) : null}
 
       <Section title={t('settings.kitchenAfterSnap')}>
-        <SwitchRow
+        <SettingsSwitchRow
           trackId="settings.kitchen.auto_apply.toggle"
           label={t('settings.kitchenAutoApply')}
           hint={t('settings.kitchenAutoApplyHint')}
@@ -421,67 +421,6 @@ function Section({ title, hint, children }: { title: string; hint?: string; chil
       </View>
       {children}
     </Tile>
-  );
-}
-
-/** An on/off setting: its name and what it does, with a switch at the end. The whole row toggles it. */
-function SwitchRow({
-  label,
-  hint,
-  value,
-  onToggle,
-  trackId,
-}: {
-  label: string;
-  hint: string;
-  value: boolean;
-  onToggle: () => void;
-  trackId: string;
-}) {
-  const { colors } = useThemePreference();
-  return (
-    <Pressable
-      trackId={trackId}
-      onPress={onToggle}
-      accessibilityRole="switch"
-      accessibilityState={{ checked: value }}
-      accessibilityLabel={label}
-      accessibilityHint={hint}
-      style={({ pressed }) => ({
-        flexDirection: 'row',
-        alignItems: 'center',
-        gap: 12,
-        minHeight: 56,
-        marginHorizontal: -8,
-        paddingHorizontal: 8,
-        paddingVertical: 8,
-        borderRadius: 16,
-        backgroundColor: pressed ? colors.backgroundElement : 'transparent',
-      })}
-    >
-      <View style={{ flex: 1, minWidth: 0, gap: 4 }}>
-        <Text variant="bodySmall" weight="semibold">
-          {label}
-        </Text>
-        <Text variant="caption" tone="muted">
-          {hint}
-        </Text>
-      </View>
-      <View
-        accessible={false}
-        importantForAccessibility="no-hide-descendants"
-        style={{
-          width: 48,
-          height: 28,
-          borderRadius: 14,
-          padding: 3,
-          alignItems: value ? 'flex-end' : 'flex-start',
-          backgroundColor: value ? colors.primary : colors.backgroundSelected,
-        }}
-      >
-        <View style={{ width: 22, height: 22, borderRadius: 11, backgroundColor: colors.surface }} />
-      </View>
-    </Pressable>
   );
 }
 

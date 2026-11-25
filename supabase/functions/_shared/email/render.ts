@@ -44,7 +44,25 @@ export interface RenderedEmail {
   subject: string;
   html: string;
   text: string;
+  /**
+   * Set on every non-essential email (welcome, reminders, any future tips or lifecycle email): sendEmail adds the
+   * List-Unsubscribe headers from it, and sendOnce refuses an optional kind without it (EMAIL_CATEGORY in send.ts).
+   */
+  unsubscribe?: EmailUnsubscribe;
 }
+
+/**
+ * Where a non-essential email's unsubscribe leads: `page` is the footer link (pinch-app.io/app/unsubscribe, which
+ * says what was turned off and can turn it back on), `oneClick` the List-Unsubscribe address mail apps POST to
+ * (RFC 8058). Built by unsubscribeLinks() in unsubscribe.ts.
+ */
+export interface EmailUnsubscribe {
+  page: string;
+  oneClick: string;
+}
+
+/** A non-essential email: it always carries its unsubscribe link. */
+export type OptionalEmail = RenderedEmail & { unsubscribe: EmailUnsubscribe };
 
 export function escapeHtml(value: string): string {
   return value
@@ -67,15 +85,15 @@ interface LayoutParts {
   title: string;
   /** Already-safe HTML for the card body. */
   body: string;
-  /** Reminder emails only: a line in the footer with a one-click unsubscribe link. */
-  unsubscribe?: { intro: string; label: string; url: string };
+  /** Non-essential emails: the footer line with the unsubscribe link (EmailUnsubscribe.page). */
+  unsubscribeUrl?: string;
 }
 
 function layout(parts: LayoutParts): string {
   return withFont(baseLayout(parts), parts.locale);
 }
 
-function baseLayout({ locale, subject, preheader, title, body, unsubscribe }: LayoutParts): string {
+function baseLayout({ locale, subject, preheader, title, body, unsubscribeUrl }: LayoutParts): string {
   const copy = COPY[locale];
   const dir = isRtl(locale) ? 'rtl' : 'ltr';
   const align = dir === 'rtl' ? 'right' : 'left';
@@ -106,7 +124,7 @@ function baseLayout({ locale, subject, preheader, title, body, unsubscribe }: La
       <div style="font-weight:700;color:${C.pink};font-size:14px;margin-bottom:6px;">${escapeHtml(copy.footerTagline)}</div>
       <div>${escapeHtml(copy.footerHelp)}</div>
       <div style="margin-top:10px;">${escapeHtml(copy.footerWhy)}<br><a href="${SITE_URL}" style="color:${C.muted};">pinch-app.io</a></div>
-      ${unsubscribe ? `<div style="margin-top:10px;">${escapeHtml(unsubscribe.intro)} <a href="${escapeHtml(unsubscribe.url)}" style="color:${C.muted};">${escapeHtml(unsubscribe.label)}</a></div>` : ''}
+      ${unsubscribeUrl ? `<div style="margin-top:10px;">${escapeHtml(copy.unsubscribeIntro)} <a href="${escapeHtml(unsubscribeUrl)}" style="color:${C.muted};">${escapeHtml(copy.unsubscribeLink)}</a></div>` : ''}
     </td></tr>
   </table>
 </td></tr>
@@ -153,6 +171,12 @@ function divider(): string {
 
 function textBlock(...parts: (string | false | null | undefined)[]): string {
   return parts.filter(Boolean).join('\n\n') + `\n\n—\n${'Pinch · ' + SITE_URL}\n`;
+}
+
+/** The plain-text footer line of a non-essential email. */
+function textUnsubscribe(locale: EmailLocale, unsubscribe: EmailUnsubscribe): string {
+  const c = COPY[locale];
+  return `${c.unsubscribeIntro} ${c.unsubscribeLink}: ${unsubscribe.page}`;
 }
 
 // ── Sign-in code / reauthentication ───────────────────────────────────────
@@ -227,7 +251,8 @@ function featureRows(copy: EmailCopy, rtl: boolean): string {
     .join('\n');
 }
 
-export function renderWelcomeEmail(input: { locale: EmailLocale }): RenderedEmail {
+/** The welcome email. It promotes the app, so it is non-essential and carries an unsubscribe link (PIN-189). */
+export function renderWelcomeEmail(input: { locale: EmailLocale; unsubscribe: EmailUnsubscribe }): OptionalEmail {
   const c = COPY[input.locale];
   const rtl = isRtl(input.locale);
   const body = [
@@ -244,7 +269,14 @@ export function renderWelcomeEmail(input: { locale: EmailLocale }): RenderedEmai
   const features = c.welcomeFeatures.map((f) => `${f.emoji} ${f.title}\n${f.body}`).join('\n\n');
   return {
     subject: c.welcomeSubject,
-    html: layout({ locale: input.locale, subject: c.welcomeSubject, preheader: c.welcomePreheader, title: c.welcomeTitle, body }),
+    html: layout({
+      locale: input.locale,
+      subject: c.welcomeSubject,
+      preheader: c.welcomePreheader,
+      title: c.welcomeTitle,
+      body,
+      unsubscribeUrl: input.unsubscribe.page,
+    }),
     text: textBlock(
       c.welcomeTitle,
       c.welcomeIntro,
@@ -252,7 +284,9 @@ export function renderWelcomeEmail(input: { locale: EmailLocale }): RenderedEmai
       `${c.welcomeFreeTitle}\n${c.welcomeFreeBody}`,
       `${c.welcomeButton}: ${APP_URL}`,
       c.welcomeSignoff,
+      textUnsubscribe(input.locale, input.unsubscribe),
     ),
+    unsubscribe: input.unsubscribe,
   };
 }
 
@@ -334,17 +368,16 @@ ${rows
 
 /**
  * A reminder email. `title` is the saved recipe's title for day3 (already shortened), `link` where
- * the button goes, `unsubscribeUrl` the one-click link that turns reminders off.
+ * the button goes, `unsubscribe` where its unsubscribe link and headers lead.
  */
 export function renderNudgeEmail(input: {
   locale: EmailLocale;
   kind: NudgeKind;
   title: string;
   link: string;
-  unsubscribeUrl: string;
-}): RenderedEmail {
-  const all = NUDGE_COPY[input.locale];
-  const c = all[input.kind];
+  unsubscribe: EmailUnsubscribe;
+}): OptionalEmail {
+  const c = NUDGE_COPY[input.locale][input.kind];
   const values = { title: input.title };
   const subject = fill(c.subject, values);
   const title = fill(c.title, values);
@@ -357,14 +390,9 @@ export function renderNudgeEmail(input: {
       preheader: fill(c.preheader, values),
       title,
       body,
-      unsubscribe: { intro: all.unsubscribeIntro, label: all.unsubscribeLink, url: input.unsubscribeUrl },
+      unsubscribeUrl: input.unsubscribe.page,
     }),
-    text: textBlock(
-      title,
-      c.intro,
-      `${c.button}: ${input.link}`,
-      c.tip,
-      `${all.unsubscribeIntro} ${all.unsubscribeLink}: ${input.unsubscribeUrl}`,
-    ),
+    text: textBlock(title, c.intro, `${c.button}: ${input.link}`, c.tip, textUnsubscribe(input.locale, input.unsubscribe)),
+    unsubscribe: input.unsubscribe,
   };
 }

@@ -620,3 +620,41 @@ test("every theme pack on the main screens", async ({ browser }) => {
     }
   }
 });
+
+test("emails setting, and the unsubscribe page from an email link", async ({ browser }) => {
+  test.setTimeout(180_000);
+  for (const viewport of Object.keys(VIEWPORTS) as (keyof typeof VIEWPORTS)[]) {
+    for (const [language, scheme] of [["en", "light"], ["he", "light"], ["en", "dark"]] as const) {
+      if (viewport === "tablet" && scheme === "dark") continue;
+      const { page, context } = await open(browser, viewport, { language, scheme }, "/app/settings/emails");
+      await page.getByRole("switch").waitFor();
+      await page.screenshot({ path: `${OUT}/settings-emails-${viewport}-${language}-${scheme}.png`, fullPage: true });
+      await context.close();
+
+      // A guest opens the link. The function's answer is stubbed: this is about the page.
+      const guest = await browser.newContext({
+        baseURL: test.info().project.use.baseURL,
+        viewport: VIEWPORTS[viewport],
+        deviceScaleFactor: viewport === "desktop" ? 1 : 2,
+        colorScheme: scheme,
+      });
+      await guest.addInitScript((p: Prefs) => {
+        localStorage.setItem("pinch:appLanguage", p.language);
+        localStorage.setItem("pinch.themePreference", p.scheme);
+      }, { language, scheme });
+      const guestPage = await guest.newPage();
+      await guestPage.route("**/functions/v1/email-preferences", (route) =>
+        route.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify({ status: "ok", opt_out: true }) }),
+      );
+      const link = `u=10000000-0000-4000-8000-00000000aa01&t=${"a".repeat(64)}&l=${language}`;
+      await guestPage.goto(`/app/unsubscribe?${link}`);
+      await guestPage.getByRole("status").waitFor();
+      await guestPage.waitForTimeout(300);
+      await guestPage.screenshot({ path: `${OUT}/unsubscribe-${viewport}-${language}-${scheme}.png`, fullPage: true });
+      await guestPage.goto("/app/unsubscribe");
+      await guestPage.getByRole("status").waitFor();
+      await guestPage.screenshot({ path: `${OUT}/unsubscribe-invalid-${viewport}-${language}-${scheme}.png`, fullPage: true });
+      await guest.close();
+    }
+  }
+});

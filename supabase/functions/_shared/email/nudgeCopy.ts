@@ -19,10 +19,6 @@ export interface NudgeText {
 export interface NudgeCopy {
   day1: NudgeText;
   day3: NudgeText;
-  unsubscribeIntro: string;
-  unsubscribeLink: string;
-  unsubscribedPage: string;
-  unsubscribeFailedPage: string;
 }
 
 const en: NudgeCopy = {
@@ -48,10 +44,6 @@ const en: NudgeCopy = {
     tip: 'When you’re done, tap “I cooked this” so you can find your hits again.',
     button: 'Open the recipe',
   },
-  unsubscribeIntro: 'Don’t want reminders like this?',
-  unsubscribeLink: 'Unsubscribe',
-  unsubscribedPage: 'Done. Pinch won’t send you reminders anymore.',
-  unsubscribeFailedPage: 'This link didn’t work. Reply to any Pinch email and we’ll turn reminders off for you.',
 };
 
 const es: NudgeCopy = {
@@ -77,10 +69,6 @@ const es: NudgeCopy = {
     tip: 'Cuando termines, toca «Lo cociné» para volver a encontrar tus éxitos.',
     button: 'Abrir la receta',
   },
-  unsubscribeIntro: '¿No quieres recordatorios como este?',
-  unsubscribeLink: 'Darte de baja',
-  unsubscribedPage: 'Listo. Pinch ya no te enviará recordatorios.',
-  unsubscribeFailedPage: 'Este enlace no funcionó. Responde a cualquier correo de Pinch y desactivaremos los recordatorios.',
 };
 
 const he: NudgeCopy = {
@@ -106,10 +94,6 @@ const he: NudgeCopy = {
     tip: 'בסוף, הקישו על "בישלתי את זה" כדי למצוא שוב את המנות שהצליחו.',
     button: 'לפתוח את המתכון',
   },
-  unsubscribeIntro: 'לא רוצים תזכורות כאלה?',
-  unsubscribeLink: 'להסרה מרשימת התפוצה',
-  unsubscribedPage: 'בוצע. Pinch לא ישלח לכם יותר תזכורות.',
-  unsubscribeFailedPage: 'הקישור לא עבד. השיבו לכל מייל של Pinch ונכבה את התזכורות בשבילכם.',
 };
 
 const ru: NudgeCopy = {
@@ -135,10 +119,6 @@ const ru: NudgeCopy = {
     tip: 'Когда закончите, нажмите «Я это приготовил(а)», чтобы потом легко найти удачные блюда.',
     button: 'Открыть рецепт',
   },
-  unsubscribeIntro: 'Не хотите получать такие напоминания?',
-  unsubscribeLink: 'Отписаться',
-  unsubscribedPage: 'Готово. Pinch больше не будет присылать вам напоминания.',
-  unsubscribeFailedPage: 'Ссылка не сработала. Ответьте на любое письмо Pinch, и мы отключим напоминания.',
 };
 
 const ar: NudgeCopy = {
@@ -164,10 +144,6 @@ const ar: NudgeCopy = {
     tip: 'عندما تنتهي، اضغط على «طبخت هيدا» لتجد أطباقك الناجحة لاحقًا.',
     button: 'افتح الوصفة',
   },
-  unsubscribeIntro: 'لا تريد تذكيرات كهذه؟',
-  unsubscribeLink: 'إلغاء الاشتراك',
-  unsubscribedPage: 'تم. لن يرسل لك Pinch تذكيرات بعد الآن.',
-  unsubscribeFailedPage: 'لم يعمل هذا الرابط. رد على أي رسالة من Pinch وسنوقف التذكيرات لك.',
 };
 
 export const NUDGE_COPY: Readonly<Record<EmailLocale, NudgeCopy>> = { en, es, he, ru, ar };
