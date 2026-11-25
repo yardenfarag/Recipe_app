@@ -3,6 +3,7 @@ import { useTranslation } from 'react-i18next';
 import { View } from 'react-native';
 import Animated, { FadeInDown } from 'react-native-reanimated';
 
+import { AvoidFlagChip, type AvoidFlag } from '@/components/AvoidFlagChip';
 import { ApplianceIcon } from '@/components/ApplianceIcon';
 import { CookieMark } from '@/components/CookieMark';
 import { RecipeImage } from '@/components/RecipeImage';
@@ -38,6 +39,8 @@ interface RecipeListRowProps {
   animateEnter?: boolean;
   /** Secondary line under the title, such as a hub source and save count. */
   detail?: string;
+  /** Foods from the cook's avoid list, on a Hub card (PIN-180). */
+  flag?: AvoidFlag;
   /**
    * Prefix for the admin Activity log ids: `<trackId>.open`, `.favorite`,
    * `.more`. A fixed string, like 'library.recipe'.
@@ -65,6 +68,7 @@ export const RecipeListRow = memo(function RecipeListRow({
   trackId = 'recipe_row',
   animateEnter = true,
   detail,
+  flag,
 }: RecipeListRowProps) {
   const { t } = useTranslation();
   const { colors } = useThemePreference();
@@ -114,7 +118,7 @@ export const RecipeListRow = memo(function RecipeListRow({
     : null;
 
   // One VoiceOver/TalkBack stop per recipe instead of a fragment per line.
-  const rowLabel = [title, detail, originLabel, timeLabel, effortLabel, costLabel, cookedLabel, needsLabel]
+  const rowLabel = [title, detail, originLabel, timeLabel, effortLabel, costLabel, cookedLabel, needsLabel, flag?.label]
     .filter(Boolean)
     .join(', ');
 
@@ -181,6 +185,7 @@ export const RecipeListRow = memo(function RecipeListRow({
           </Text>
         </View>
       ) : null}
+      {flag ? <AvoidFlagChip flag={flag} /> : null}
     </>
   );
 

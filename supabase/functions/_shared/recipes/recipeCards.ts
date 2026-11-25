@@ -223,7 +223,7 @@ export function hubImageUrl(platform: HubPlatform, imageUrl: string | null | und
  * - `existing`: the link already had a public card, which keeps its text (it may gain a picture,
  *   appliances or nutrition it was missing);
  * - `skipped`: no public card, for `reason`.
- * `needsDiets` says the card's diets still need checking (PIN-83).
+ * `needsDiets` says the card's diets and foods still need checking (PIN-83, PIN-180).
  */
 export type HubPublishDecision =
   | { status: 'published'; cardId: string; canonicalKey: string; needsDiets: true; replaced: boolean }
@@ -302,7 +302,7 @@ export async function publishRecipeCard(
 
   const { data: existing, error: existingError } = await admin
     .from('recipe_cards')
-    .select('id, extraction_status, image_url, image_generated, appliances, calories, nutrition, diets, hidden_at')
+    .select('id, extraction_status, image_url, image_generated, appliances, calories, nutrition, diets, contains, hidden_at')
     .eq('canonical_key', key)
     .maybeSingle();
 
@@ -362,7 +362,7 @@ export async function publishRecipeCard(
   const newNutrition = fitNutrition(row.nutrition);
   const shouldFillNutrition = existing.nutrition == null && newNutrition != null &&
     typeof existing.calories === 'number' && nutritionFitsCalories(newNutrition, existing.calories);
-  const needsDiets = shouldReplace || existing.diets == null;
+  const needsDiets = shouldReplace || existing.diets == null || existing.contains == null;
   const cardId = existing.id as string;
   const filled = [
     ...(shouldFillImage ? ['image'] : []),
@@ -385,7 +385,7 @@ export async function publishRecipeCard(
   // New content means the old diet check no longer applies.
   const { error } = await admin
     .from('recipe_cards')
-    .update(shouldReplace ? { ...row, diets: null } : fill)
+    .update(shouldReplace ? { ...row, diets: null, contains: null } : fill)
     .eq('id', existing.id);
   if (error) {
     console.error('[recipe-cards] update failed', error);
@@ -482,8 +482,9 @@ async function reviewForHub(
 }
 
 /**
- * Checks which diets a published card fits and stores them (PIN-83). Writes only while the card's
- * diets are still null, so a concurrent check or the backfill is never overwritten. Logs its own
+ * Checks which diets a published card fits and which foods it contains, and stores both (PIN-83,
+ * PIN-180). Writes only while the card's `contains` is still null, so a concurrent check or the
+ * backfill is never overwritten. Logs its own
  * usage row, because extract-recipe has already logged the extract by the time this runs.
  */
 export async function fillRecipeCardDiets(
@@ -495,12 +496,12 @@ export async function fillRecipeCardDiets(
   const started = Date.now();
   const result = await deriveRecipeDiets(recipe);
   let saved = false;
-  if (result.diets !== null) {
+  if (result.diets !== null && result.contains !== null) {
     const { data, error } = await admin
       .from('recipe_cards')
-      .update({ diets: result.diets })
+      .update({ diets: result.diets, contains: result.contains })
       .eq('id', cardId)
-      .is('diets', null)
+      .is('contains', null)
       .select('id');
     if (error) console.error('[recipe-cards] diets update failed', error);
     saved = !error && (data ?? []).length > 0;
@@ -514,7 +515,7 @@ export async function fillRecipeCardDiets(
     tokensCharged: 0,
     durationMs: Date.now() - started,
     errorMessage: result.error ?? null,
-    metadata: { card_id: cardId, diets: result.diets, saved },
+    metadata: { card_id: cardId, diets: result.diets, contains: result.contains, saved },
   });
 }
 

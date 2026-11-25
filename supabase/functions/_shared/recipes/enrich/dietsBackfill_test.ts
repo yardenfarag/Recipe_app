@@ -9,14 +9,15 @@ import {
   type PendingCard,
   runDietsBackfillBatch,
 } from './dietsBackfill.ts';
-import type { HubDietKey } from './recipeDiets.ts';
+import type { HubContainsKey, HubDietKey } from './recipeDiets.ts';
 
-type Card = PendingCard & { diets: HubDietKey[] | null };
+type Card = PendingCard & { diets: HubDietKey[] | null; contains: HubContainsKey[] | null };
 
 const USAGE = { model: 'openai/gpt-6-luna', kind: 'diets', promptTokenCount: 500, candidatesTokenCount: 20, thoughtsTokenCount: 0, totalTokenCount: 520 };
 
-function card(id: string, diets: HubDietKey[] | null = null): Card {
-  return { id, title: `Card ${id}`, ingredients: [{ name: 'rice' }], instructions: [], diets };
+/** A card checked since PIN-180 has `contains`; one checked before has only `diets`. */
+function card(id: string, diets: HubDietKey[] | null = null, contains: HubContainsKey[] | null = null): Card {
+  return { id, title: `Card ${id}`, ingredients: [{ name: 'rice' }], instructions: [], diets, contains };
 }
 
 function fakeDb(cards: Card[], onSave?: (id: string) => void): DietsBackfillDb {
@@ -24,25 +25,26 @@ function fakeDb(cards: Card[], onSave?: (id: string) => void): DietsBackfillDb {
     fetchPending: (after, limit) =>
       Promise.resolve(
         cards
-          .filter((c) => c.diets === null && (after === null || c.id > after))
+          .filter((c) => c.contains === null && (after === null || c.id > after))
           .sort((a, b) => a.id.localeCompare(b.id))
           .slice(0, limit),
       ),
-    countPending: () => Promise.resolve(cards.filter((c) => c.diets === null).length),
-    saveDiets(id, diets) {
+    countPending: () => Promise.resolve(cards.filter((c) => c.contains === null).length),
+    saveDiets(id, diets, contains) {
       onSave?.(id);
       const target = cards.find((c) => c.id === id);
-      if (!target || target.diets !== null) return Promise.resolve(false);
+      if (!target || target.contains !== null) return Promise.resolve(false);
       target.diets = diets;
+      target.contains = contains;
       return Promise.resolve(true);
     },
   };
 }
 
-const vegan: DeriveDietsFn = () => Promise.resolve({ diets: ['vegan'], usages: [USAGE] });
+const vegan: DeriveDietsFn = () => Promise.resolve({ diets: ['vegan'], contains: ['soy'], usages: [USAGE] });
 
 Deno.test('fills only unchecked cards and pages with a cursor', async () => {
-  const cards = [card('a'), card('b', []), card('c'), card('d')];
+  const cards = [card('a'), card('b', [], []), card('c'), card('d')];
   const db = fakeDb(cards);
 
   const first = await runDietsBackfillBatch(db, vegan, { after: null, limit: 2 });
@@ -55,13 +57,26 @@ Deno.test('fills only unchecked cards and pages with a cursor', async () => {
   assertEquals(second.scanned, 1);
   assertEquals(second.nextCursor, null);
   assertEquals(cards.map((c) => c.diets), [['vegan'], [], ['vegan'], ['vegan']]);
+  assertEquals(cards.map((c) => c.contains), [['soy'], [], ['soy'], ['soy']]);
+});
+
+Deno.test('re-checks cards checked before PIN-180, so they get halal, kosher and foods', async () => {
+  const cards = [card('a', ['vegetarian']), card('b', ['keto'], ['milk'])];
+  const derive: DeriveDietsFn = () => Promise.resolve({ diets: ['vegetarian', 'halal'], contains: ['eggs'], usages: [USAGE] });
+  const result = await runDietsBackfillBatch(fakeDb(cards), derive, { after: null, limit: 20 });
+  assertEquals(result.updated, 1);
+  assertEquals(cards[0].diets, ['vegetarian', 'halal']);
+  assertEquals(cards[0].contains, ['eggs']);
+  assertEquals(cards[1].diets, ['keto'], 'a card checked since PIN-180 is left alone');
 });
 
 Deno.test('a failed check stays null and is reported', async () => {
   const cards = [card('a'), card('b')];
   const derive: DeriveDietsFn = (recipe) =>
     Promise.resolve(
-      recipe.title === 'Card a' ? { diets: null, usages: [], error: 'timeout' } : { diets: [], usages: [USAGE] },
+      recipe.title === 'Card a'
+        ? { diets: null, contains: null, usages: [], error: 'timeout' }
+        : { diets: [], contains: [], usages: [USAGE] },
     );
   const result = await runDietsBackfillBatch(fakeDb(cards), derive, { after: null, limit: 20 });
   assertEquals(result.updated, 1);
@@ -74,7 +89,10 @@ Deno.test('a card checked by someone else meanwhile is skipped, not overwritten'
   const cards = [card('a')];
   const db = fakeDb(cards, (id) => {
     const target = cards.find((c) => c.id === id);
-    if (target) target.diets = ['keto'];
+    if (target) {
+      target.diets = ['keto'];
+      target.contains = [];
+    }
   });
   const result = await runDietsBackfillBatch(db, vegan, { after: null, limit: 20 });
   assertEquals(result.skipped, 1);

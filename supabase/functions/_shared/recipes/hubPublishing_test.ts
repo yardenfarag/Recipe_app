@@ -374,6 +374,7 @@ Deno.test('an existing public card is found again without a second check', async
   const admin = fakeAdmin(cards);
   await publishRecipeCard(admin, SOUP, null, { moderate: ok, drawImage: drawn });
   cards[0].diets = ['vegetarian'];
+  cards[0].contains = ['milk'];
   const again = await publishRecipeCard(admin, { ...SOUP, title: 'Changed' }, null, { moderate: never });
   assertEquals(again, {
     status: 'existing',
@@ -384,6 +385,15 @@ Deno.test('an existing public card is found again without a second check', async
   });
   assertEquals(cards[0].title, 'Leek soup', "an existing card's text is never rewritten");
   assert((await findRecipeCard(admin, 'web', 'https://www.example.com/leek-soup/'))?.id === 'card-1');
+});
+
+Deno.test('a card checked before PIN-180 is checked again for its foods', async () => {
+  const cards: Row[] = [];
+  const admin = fakeAdmin(cards);
+  await publishRecipeCard(admin, SOUP, null, { moderate: ok, drawImage: drawn });
+  cards[0].diets = ['vegetarian'];
+  const again = await publishRecipeCard(admin, SOUP, null, { moderate: never });
+  assertEquals(again.status === 'existing' && again.needsDiets, true);
 });
 
 Deno.test('a web card only shows our own copy of the image', () => {

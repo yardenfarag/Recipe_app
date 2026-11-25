@@ -5,6 +5,7 @@
  * (src/app/first-recipes.tsx, web/components/onboarding/FirstRecipesPicker.tsx).
  */
 import { findAvoidMatches, type AvoidList } from './avoidList';
+import { hubAvoidOf } from './hubAvoid';
 import type { KitchenProfile } from './kitchenProfile';
 import { supabase } from './supabase/client';
 import { claimHubCard, fetchHubCards } from './supabase/cookingHub';
@@ -73,6 +74,8 @@ export async function fetchFirstRecipeChoices(kitchen: KitchenProfile): Promise<
   const { cards } = await fetchHubCards({
     sort: 'popular',
     diets: kitchen.diets,
+    // Cards with the cook's allergies and dislikes come last, so fewer of the candidates are ruled out below.
+    avoid: hubAvoidOf(avoidListOf(kitchen)),
     limit: CANDIDATES,
     includeCount: false,
   });

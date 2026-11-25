@@ -627,6 +627,14 @@ export default {
         "label": "Pescatarian",
         "description": "No meat or poultry — fish and seafood are fine."
       },
+      "halal": {
+        "label": "Halal",
+        "description": "No pork, alcohol, or blood."
+      },
+      "kosher": {
+        "label": "Kosher",
+        "description": "No pork or shellfish, and no meat with dairy."
+      },
       "custom": {
         "label": "Your version",
         "description": "Adapted from what you asked for."
@@ -1090,6 +1098,8 @@ export default {
     "keto": "Keto",
     "paleo": "Paleo",
     "pescatarian": "Pescatarian",
+    "halal": "Halal",
+    "kosher": "Kosher",
     "healthy": "Healthy",
     "low_carb": "Low-Carb",
     "high_protein": "High-Protein",
@@ -1602,6 +1612,8 @@ export default {
     "hub": {
       "source": "Source",
       "dietFirst": "Recipes that fit {{diets}} come first.",
+      "avoidLastAllergies": "Recipes with your allergies come last.",
+      "avoidLastDislikes": "Recipes with foods you don’t like come later.",
       "addIsFree": "Free: adding it uses no credits.",
       "added": "Added to your Library"
     },

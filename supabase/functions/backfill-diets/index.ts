@@ -31,7 +31,7 @@ function supabaseDietsDb(admin: Db): DietsBackfillDb {
       let query = admin
         .from('recipe_cards')
         .select('id, title, ingredients, instructions')
-        .is('diets', null)
+        .is('contains', null)
         .order('id', { ascending: true })
         .limit(limit);
       if (after) query = query.gt('id', after);
@@ -43,17 +43,17 @@ function supabaseDietsDb(admin: Db): DietsBackfillDb {
       const { count, error } = await admin
         .from('recipe_cards')
         .select('id', { count: 'exact', head: true })
-        .is('diets', null);
+        .is('contains', null);
       if (error) throw new Error(error.message);
       return count ?? 0;
     },
-    async saveDiets(id, diets) {
+    async saveDiets(id, diets, contains) {
       // `is null` makes the write a no-op if a new extract checked the card first.
       const { data, error } = await admin
         .from('recipe_cards')
-        .update({ diets })
+        .update({ diets, contains })
         .eq('id', id)
-        .is('diets', null)
+        .is('contains', null)
         .select('id');
       if (error) throw new Error(error.message);
       return (data ?? []).length > 0;
@@ -62,8 +62,9 @@ function supabaseDietsDb(admin: Db): DietsBackfillDb {
 }
 
 /**
- * Admin only. POST { after?, limit?, dry_run? } fills `recipe_cards.diets` on cards published
- * before PIN-83, one batch per call. Call again with `after: next_cursor` until it is null.
+ * Admin only. POST { after?, limit?, dry_run? } fills `recipe_cards.diets` and `contains` on cards
+ * not checked since PIN-180, one batch per call. Call again with `after: next_cursor` until it is null.
+ * Each card is one model call: check the OpenRouter balance before a full run.
  */
 handler(
   {

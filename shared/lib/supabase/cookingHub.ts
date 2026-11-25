@@ -1,5 +1,6 @@
 import { supabase } from './client';
 import { sqlNullable } from './dbTypes';
+import { hubAvoidIsEmpty, type HubAvoid } from '../hubAvoid';
 import { isHubPlatform } from '../recipeCardKey';
 import type { HubPlatform, RecipeCard } from '../../types/recipeCard';
 
@@ -18,6 +19,12 @@ export interface FetchHubCardsOptions {
   includeCount?: boolean;
   /** Kitchen-profile diets; cards that fit more of them come first (PIN-83). */
   diets?: string[];
+  /** The cook's avoid list (hubAvoidOf): allergies go last, dislikes lower (PIN-180). */
+  avoid?: HubAvoid;
+}
+
+function orNull<T>(list: T[] | undefined): T[] | null {
+  return list && list.length > 0 ? list : null;
 }
 
 function sanitizeSearch(value: string): string {
@@ -49,20 +56,34 @@ export async function fetchHubCards(
       : null;
   const tags = options.tags && options.tags.length > 0 ? options.tags : null;
 
-  // hub_cards does the filtering, the diet-first ordering and the paging (PIN-83).
-  // It returns one extra row so the page can tell if more exist.
-  const rowsQuery = supabase.rpc('hub_cards', {
-    p_diets: sqlNullable(options.diets && options.diets.length > 0 ? options.diets : null),
+  const shared = {
+    p_diets: sqlNullable(orNull(options.diets)),
     p_platform: sqlNullable(platform),
     p_search: sqlNullable(search || null),
     p_tags: sqlNullable(tags),
     p_sort: sort,
     p_offset: offset,
     p_limit: limit + 1,
-  });
+  };
+  const avoid = options.avoid && !hubAvoidIsEmpty(options.avoid) ? options.avoid : null;
+
+  // hub_cards_for_cook does the filtering, the ordering for the cook (diets first, PIN-83; allergies last and
+  // dislikes lower, PIN-180) and the paging. It returns one extra row so the page can tell if more exist.
+  const rowsQuery = async () => {
+    const result = await supabase.rpc('hub_cards_for_cook', {
+      ...shared,
+      p_allergens: sqlNullable(orNull(avoid?.allergens)),
+      p_dislikes: sqlNullable(orNull(avoid?.dislikes)),
+      p_allergy_words: sqlNullable(orNull(avoid?.allergyWords)),
+      p_dislike_words: sqlNullable(orNull(avoid?.dislikeWords)),
+    });
+    // A database without it yet (the app can ship before the migration runs): the diet-first list.
+    if (result.error?.code === 'PGRST202') return supabase.rpc('hub_cards', shared);
+    return result;
+  };
 
   const [rowsResult, total] = await Promise.all([
-    rowsQuery,
+    rowsQuery(),
     includeCount ? countHubCards({ platform, search, tags }) : Promise.resolve(null),
   ]);
   if (rowsResult.error) throw rowsResult.error;
@@ -73,7 +94,7 @@ export async function fetchHubCards(
   return { cards, hasMore, total };
 }
 
-/** Total cards for the current filters. Diets only change the order, so they don't count here. */
+/** Total cards for the current filters. Diets and the avoid list only change the order, so they don't count here. */
 async function countHubCards(filters: {
   platform: HubPlatform | null;
   search: string;

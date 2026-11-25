@@ -35,7 +35,7 @@ beforeEach(() => {
 });
 
 describe('fetchHubCards', () => {
-  it('asks hub_cards for the diets, filters and one extra row', async () => {
+  it('asks hub_cards_for_cook for the diets, filters and one extra row', async () => {
     const result = await fetchHubCards({
       diets: ['vegan', 'keto'],
       platform: 'youtube',
@@ -46,7 +46,7 @@ describe('fetchHubCards', () => {
       limit: 2,
     });
 
-    expect(mocks.rpc).toHaveBeenCalledWith('hub_cards', {
+    expect(mocks.rpc).toHaveBeenCalledWith('hub_cards_for_cook', {
       p_diets: ['vegan', 'keto'],
       p_platform: 'youtube',
       p_search: '50off pasta',
@@ -54,6 +54,10 @@ describe('fetchHubCards', () => {
       p_sort: 'newest',
       p_offset: 0,
       p_limit: 3,
+      p_allergens: null,
+      p_dislikes: null,
+      p_allergy_words: null,
+      p_dislike_words: null,
     });
     expect(result.cards.map((c) => c.id)).toEqual(['a', 'b']);
     expect(result.hasMore).toBe(true);
@@ -64,7 +68,7 @@ describe('fetchHubCards', () => {
 
   it('sends nulls for no diets, all platforms, no search and no tags', async () => {
     await fetchHubCards({ platform: 'all', diets: [], offset: 40, limit: 40 });
-    expect(mocks.rpc).toHaveBeenCalledWith('hub_cards', {
+    expect(mocks.rpc).toHaveBeenCalledWith('hub_cards_for_cook', {
       p_diets: null,
       p_platform: null,
       p_search: null,
@@ -72,12 +76,41 @@ describe('fetchHubCards', () => {
       p_sort: 'popular',
       p_offset: 40,
       p_limit: 41,
+      p_allergens: null,
+      p_dislikes: null,
+      p_allergy_words: null,
+      p_dislike_words: null,
     });
     // Later pages skip the count.
     expect(mocks.from).not.toHaveBeenCalled();
   });
 
-  it('throws when hub_cards fails', async () => {
+  it('sends the avoid list (PIN-180)', async () => {
+    await fetchHubCards({
+      avoid: { allergens: ['peanuts'], dislikes: ['onion', 'cilantro'], allergyWords: ['kiwi'], dislikeWords: [] },
+    });
+    expect(mocks.rpc).toHaveBeenCalledWith(
+      'hub_cards_for_cook',
+      expect.objectContaining({
+        p_allergens: ['peanuts'],
+        p_dislikes: ['onion', 'cilantro'],
+        p_allergy_words: ['kiwi'],
+        p_dislike_words: null,
+      }),
+    );
+  });
+
+  it('falls back to the diet-first hub_cards on a database without hub_cards_for_cook', async () => {
+    mocks.rpc
+      .mockResolvedValueOnce({ data: null, error: { code: 'PGRST202', message: 'not found' } })
+      .mockResolvedValueOnce({ data: [card('a')], error: null });
+    const result = await fetchHubCards({ diets: ['halal'], avoid: { allergens: ['milk'], dislikes: [], allergyWords: [], dislikeWords: [] } });
+    expect(mocks.rpc).toHaveBeenLastCalledWith('hub_cards', expect.objectContaining({ p_diets: ['halal'] }));
+    expect(mocks.rpc.mock.lastCall?.[1]).not.toHaveProperty('p_allergens');
+    expect(result.cards.map((c) => c.id)).toEqual(['a']);
+  });
+
+  it('throws when hub_cards_for_cook fails', async () => {
     mocks.rpc.mockResolvedValue({ data: null, error: new Error('boom') });
     await expect(fetchHubCards()).rejects.toThrow('boom');
   });

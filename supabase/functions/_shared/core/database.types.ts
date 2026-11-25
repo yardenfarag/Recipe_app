@@ -921,6 +921,7 @@ export type Database = {
           calories: number | null
           canonical_key: string
           canonical_url: string
+          contains: string[] | null
           cost_estimate: string | null
           created_at: string
           diets: string[] | null
@@ -953,6 +954,7 @@ export type Database = {
           calories?: number | null
           canonical_key: string
           canonical_url: string
+          contains?: string[] | null
           cost_estimate?: string | null
           created_at?: string
           diets?: string[] | null
@@ -985,6 +987,7 @@ export type Database = {
           calories?: number | null
           canonical_key?: string
           canonical_url?: string
+          contains?: string[] | null
           cost_estimate?: string | null
           created_at?: string
           diets?: string[] | null
@@ -1680,6 +1683,7 @@ export type Database = {
         }
         Returns: number
       }
+      hub_avoid_words: { Args: { p_words: string[] }; Returns: string[] }
       hub_cards: {
         Args: {
           p_diets?: string[]
@@ -1695,6 +1699,61 @@ export type Database = {
           calories: number | null
           canonical_key: string
           canonical_url: string
+          contains: string[] | null
+          cost_estimate: string | null
+          created_at: string
+          diets: string[] | null
+          effort_level: string | null
+          estimated_time_minutes: number | null
+          extract_hit_count: number
+          extraction_source: string | null
+          extraction_status: string
+          hidden_at: string | null
+          hidden_reason: string | null
+          id: string
+          image_generated: boolean
+          image_url: string | null
+          ingredients: Json
+          instructions: Json
+          nutrition: Json | null
+          original_url: string
+          platform: string
+          public_slug: string
+          save_count: number
+          servings: number
+          source_language: string | null
+          source_video_url: string | null
+          tags: string[]
+          title: string
+          updated_at: string
+        }[]
+        SetofOptions: {
+          from: "*"
+          to: "recipe_cards"
+          isOneToOne: false
+          isSetofReturn: true
+        }
+      }
+      hub_cards_for_cook: {
+        Args: {
+          p_allergens?: string[]
+          p_allergy_words?: string[]
+          p_diets?: string[]
+          p_dislike_words?: string[]
+          p_dislikes?: string[]
+          p_limit?: number
+          p_offset?: number
+          p_platform?: string
+          p_search?: string
+          p_sort?: string
+          p_tags?: string[]
+        }
+        Returns: {
+          appliances: Json | null
+          calories: number | null
+          canonical_key: string
+          canonical_url: string
+          contains: string[] | null
           cost_estimate: string | null
           created_at: string
           diets: string[] | null
@@ -1734,6 +1793,10 @@ export type Database = {
         Returns: {
           tag: string
         }[]
+      }
+      hub_words_found: {
+        Args: { p_text: string; p_words: string[] }
+        Returns: number
       }
       in_app_message_action_valid: { Args: { a: Json }; Returns: boolean }
       in_app_message_content_valid: { Args: { c: Json }; Returns: boolean }
