@@ -7,7 +7,7 @@
 import { handler, HttpError } from '../_shared/core/handler.ts';
 import { pickLocale } from '../_shared/email/copy.ts';
 import { NUDGE_COPY } from '../_shared/email/nudgeCopy.ts';
-import { sendEmail } from '../_shared/email/send.ts';
+import { sendEmail, teamCopy } from '../_shared/email/send.ts';
 import { sendPush } from '../_shared/nudges/expoPush.ts';
 import { runNudges } from '../_shared/nudges/nudges.ts';
 
@@ -60,7 +60,7 @@ handler(
       const result = await runNudges({
         admin,
         functionsBase: Deno.env.get('SUPABASE_URL') ?? '',
-        sendEmail: (to, email, options) => sendEmail(to, email, options),
+        sendEmail: (to, email, options) => sendEmail(to, email, { ...options, bcc: teamCopy() }),
         sendPush: (messages) => sendPush(messages),
         pause: () => new Promise((resolve) => setTimeout(resolve, 600)),
       });

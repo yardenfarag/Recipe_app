@@ -5,7 +5,7 @@
 import { handler, HttpError } from '../_shared/core/handler.ts';
 import { pickLocale } from '../_shared/email/copy.ts';
 import { renderWelcomeEmail } from '../_shared/email/render.ts';
-import { sendOnce } from '../_shared/email/send.ts';
+import { sendOnce, teamCopy } from '../_shared/email/send.ts';
 
 handler(
   {
@@ -35,6 +35,7 @@ handler(
           userId: row.user_id,
           to: row.email,
           email: renderWelcomeEmail({ locale: pickLocale(row.locale) }),
+          bcc: teamCopy(),
         });
         if (didSend) {
           sent++;
