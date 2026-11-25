@@ -6,6 +6,7 @@ import type { Db } from '../core/supabaseAdmin.ts';
 
 import type { RenderedEmail } from './render.ts';
 import { SUPPORT_INBOX } from './support.ts';
+import { unsubscribeHeaders } from './unsubscribe.ts';
 
 export const EMAIL_FROM = 'Pinch <hello@pinch-app.io>';
 export const EMAIL_REPLY_TO = 'support@pinch-app.io';
@@ -63,6 +64,9 @@ export async function sendEmail(
   // Resend caps the key at 256 characters.
   if (options.idempotencyKey) headers['Idempotency-Key'] = options.idempotencyKey.slice(0, 256);
 
+  // A non-essential email always carries the one-click unsubscribe headers.
+  const emailHeaders = { ...options.headers, ...(email.unsubscribe ? unsubscribeHeaders(email.unsubscribe) : {}) };
+
   const response = await (options.fetchImpl ?? fetch)('https://api.resend.com/emails', {
     method: 'POST',
     headers,
@@ -71,7 +75,7 @@ export async function sendEmail(
       to: [to],
       ...(options.bcc?.length ? { bcc: options.bcc } : {}),
       reply_to: options.replyTo ?? EMAIL_REPLY_TO,
-      ...(options.headers && Object.keys(options.headers).length ? { headers: options.headers } : {}),
+      ...(Object.keys(emailHeaders).length ? { headers: emailHeaders } : {}),
       subject: email.subject,
       html: email.html,
       text: email.text,
@@ -90,9 +94,29 @@ export async function sendEmail(
 export type OnceKind = 'welcome' | 'purchase' | 'support';
 
 /**
+ * Whether each kind of email is essential (about the account or a purchase: it always goes out) or optional
+ * (tips, onboarding, reminders: the law says people must be able to stop it). A new kind has to be listed here.
+ * An optional email must carry an unsubscribe link (OptionalEmail), and goes only to accounts that haven't opted
+ * out (profiles.email_opt_out). Reminders (nudges) are optional too; they don't go through sendOnce, and
+ * nudge_candidates leaves out the address of anyone who opted out.
+ */
+export const EMAIL_CATEGORY: Readonly<Record<OnceKind, 'essential' | 'optional'>> = {
+  welcome: 'optional',
+  purchase: 'essential',
+  support: 'essential',
+};
+
+/** True when the account turned non-essential email off. */
+export async function emailOptedOut(admin: Db, userId: string): Promise<boolean> {
+  const { data, error } = await admin.from('profiles').select('email_opt_out').eq('id', userId).maybeSingle();
+  if (error) throw error;
+  return data?.email_opt_out === true;
+}
+
+/**
  * Sends an email at most once per (kind, dedupeKey), using public.email_sends as the record.
- * Returns false when it was already sent. A failed send leaves no row, so the next attempt
- * tries again.
+ * Returns false when it was already sent, or when it is optional and the account opted out. A failed
+ * send leaves no row, so the next attempt tries again.
  */
 export async function sendOnce(
   admin: Db,
@@ -109,6 +133,12 @@ export async function sendOnce(
     apiKey?: string;
   },
 ): Promise<boolean> {
+  if (EMAIL_CATEGORY[input.kind] === 'optional') {
+    if (!input.email.unsubscribe) throw new EmailSendError(`A ${input.kind} email needs an unsubscribe link`, 500);
+    if (!input.userId) throw new EmailSendError(`A ${input.kind} email needs an account to check the opt-out`, 500);
+    if (await emailOptedOut(admin, input.userId)) return false;
+  }
+
   const { data: existing, error: readError } = await admin
     .from('email_sends')
     .select('id')

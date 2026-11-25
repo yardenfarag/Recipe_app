@@ -56,6 +56,7 @@ const SIGNED_IN_PAGES = [
   "/app/settings/recipe",
   "/app/settings/appearance",
   "/app/settings/language",
+  "/app/settings/emails",
   "/app/settings/credits",
   "/app/settings/support",
   "/app/settings/legal",

@@ -728,11 +728,13 @@ export type Database = {
           contribute_to_hub: boolean
           created_at: string
           email: string | null
+          email_opt_out: boolean
           free_extracts_used: number
           id: string
           is_admin: boolean
           kitchen: Json
           nudges_opt_out: boolean
+          push_opt_out: boolean
           subscription_expires_at: string | null
           subscription_status: string
           token_balance: number
@@ -743,11 +745,13 @@ export type Database = {
           contribute_to_hub?: boolean
           created_at?: string
           email?: string | null
+          email_opt_out?: boolean
           free_extracts_used?: number
           id: string
           is_admin?: boolean
           kitchen?: Json
           nudges_opt_out?: boolean
+          push_opt_out?: boolean
           subscription_expires_at?: string | null
           subscription_status?: string
           token_balance?: number
@@ -758,11 +762,13 @@ export type Database = {
           contribute_to_hub?: boolean
           created_at?: string
           email?: string | null
+          email_opt_out?: boolean
           free_extracts_used?: number
           id?: string
           is_admin?: boolean
           kitchen?: Json
           nudges_opt_out?: boolean
+          push_opt_out?: boolean
           subscription_expires_at?: string | null
           subscription_status?: string
           token_balance?: number
@@ -1616,6 +1622,11 @@ export type Database = {
         Args: { p_secret: string }
         Returns: boolean
       }
+      email_set_opt_out: {
+        Args: { p_opt_out: boolean; p_token: string; p_user_id: string }
+        Returns: boolean
+      }
+      email_unsubscribe_token: { Args: { p_user_id: string }; Returns: string }
       ensure_user_profile: { Args: { p_user_id?: string }; Returns: string }
       erase_user_personal_data: {
         Args: { p_user_id: string }
@@ -2077,6 +2088,7 @@ export type Database = {
         Returns: {
           email: string
           locale: string
+          unsubscribe_token: string
           user_id: string
         }[]
       }

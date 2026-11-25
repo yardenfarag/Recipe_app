@@ -3,6 +3,7 @@ import {
   CircleHelp,
   Coins,
   Languages,
+  Mail,
   Palette,
   Scale,
   UserRound,
@@ -10,7 +11,16 @@ import {
   type LucideIcon,
 } from "lucide-react";
 
-export type SettingsSectionId = "account" | "credits" | "recipe" | "recipes" | "appearance" | "language" | "support" | "legal";
+export type SettingsSectionId =
+  | "account"
+  | "credits"
+  | "recipe"
+  | "recipes"
+  | "appearance"
+  | "language"
+  | "emails"
+  | "support"
+  | "legal";
 
 export type SettingsSection = {
   id: SettingsSectionId;
@@ -43,6 +53,8 @@ export const SETTINGS_GROUPS: { titleKey: string; sections: SettingsSection[] }[
       { id: "recipes", href: "/settings/recipes", labelKey: "settings.yourRecipes", hintKey: "settings.yourRecipesHint", icon: Archive },
       { id: "appearance", href: "/settings/appearance", labelKey: "settings.appearance", hintKey: "settings.appearanceHint", icon: Palette },
       { id: "language", href: "/settings/language", labelKey: "settings.languageAndRegion", hintKey: "web.settings.languageHint", icon: Languages },
+      // Tips and reminders by email (PIN-189). The mobile app's page of the same path also has reminder pushes.
+      { id: "emails", href: "/settings/emails", labelKey: "messages.titleWeb", hintKey: "messages.hint", icon: Mail },
     ],
   },
   {

@@ -1,9 +1,11 @@
 // The two reminders for new accounts (migration 20261122191000_nudges): what each one says and
-// opens, and one run of the cron job that sends them by push and by email.
+// opens, and one run of the cron job that sends them by push and by email. Each channel has its own opt-out
+// (email_opt_out, push_opt_out); nudge_candidates leaves out the address or the phones of whoever turned it off.
 import type { Db } from '../core/supabaseAdmin.ts';
 import { fill, pickLocale, type EmailLocale } from '../email/copy.ts';
 import { NUDGE_COPY, type NudgeKind } from '../email/nudgeCopy.ts';
 import { APP_URL, renderNudgeEmail, type RenderedEmail } from '../email/render.ts';
+import { unsubscribeLinks } from '../email/unsubscribe.ts';
 import type { PushMessage, PushResult } from './expoPush.ts';
 
 export const NUDGE_KINDS: readonly NudgeKind[] = ['day1', 'day3'];
@@ -35,11 +37,6 @@ export function nudgeTarget(kind: NudgeKind, recipeId: string | null): { path: s
   return { path, web: `${APP_URL}${path}` };
 }
 
-export function unsubscribeUrl(functionsBase: string, userId: string, token: string, locale: EmailLocale): string {
-  const params = new URLSearchParams({ u: userId, t: token, l: locale });
-  return `${functionsBase.replace(/\/+$/, '')}/functions/v1/nudges?${params}`;
-}
-
 export function pushMessages(
   kind: NudgeKind,
   locale: EmailLocale,
@@ -65,7 +62,7 @@ export interface NudgeDeps {
   sendEmail: (
     to: string,
     email: RenderedEmail,
-    options: { idempotencyKey: string; tags: Record<string, string>; headers: Record<string, string> },
+    options: { idempotencyKey: string; tags: Record<string, string> },
   ) => Promise<string>;
   sendPush: (messages: PushMessage[]) => Promise<PushResult>;
   /** Waits between emails (Resend allows 2 requests a second). */
@@ -119,13 +116,12 @@ export async function runNudges(deps: NudgeDeps): Promise<NudgeRunResult> {
 
       if (!row.email_sent && row.email && row.unsubscribe_token) {
         try {
-          const unsubscribe = unsubscribeUrl(deps.functionsBase, row.user_id, row.unsubscribe_token, locale);
-          const email = renderNudgeEmail({ locale, kind, title, link: target.web, unsubscribeUrl: unsubscribe });
+          const unsubscribe = unsubscribeLinks(deps.functionsBase, row.user_id, row.unsubscribe_token, locale);
+          // sendEmail adds the one-click unsubscribe headers (RFC 8058) from the email itself.
+          const email = renderNudgeEmail({ locale, kind, title, link: target.web, unsubscribe });
           await deps.sendEmail(row.email, email, {
             idempotencyKey: `nudge-${kind}/${row.user_id}`,
             tags: { kind: `nudge_${kind}` },
-            // One-click unsubscribe (RFC 8058): Gmail and Apple Mail show their own button for it.
-            headers: { 'List-Unsubscribe': `<${unsubscribe}>`, 'List-Unsubscribe-Post': 'List-Unsubscribe=One-Click' },
           });
           await recordSent(deps.admin, row.user_id, kind, 'email');
           totals.email++;
