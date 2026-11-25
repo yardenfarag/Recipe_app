@@ -6,6 +6,7 @@ import { useSearchParams } from "next/navigation";
 import { Suspense, useEffect, useMemo, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 
+import { hubCardFlag, hubCardFlagLabel, hubCardFlagText } from "@shared/lib/hubAvoid";
 import { hubCardDetail } from "@shared/lib/hubCards";
 import { recipeCardToListRecipe } from "@shared/lib/recipeCardMap";
 
@@ -29,7 +30,8 @@ const LIST = "gap-4 xl:grid-cols-2";
 
 /**
  * Cooking Hub: recipes other people already snapped from public links, free to add to your library. Search, source,
- * tags and sort narrow it with the same shared query as the mobile app; recipes that fit your diets come first.
+ * tags and sort narrow it with the same shared query as the mobile app. It is sorted for you: recipes that fit your diets
+ * come first, ones with foods you don't like lower, ones with your allergies last, and those carry a flag (PIN-180).
  * The chosen filters live in the address, and the list loads more as you scroll.
  */
 function HubScreen() {
@@ -101,6 +103,16 @@ function HubScreen() {
     }
   }, [hub.diets, language, t]);
 
+  const { avoidList } = hub;
+  const flags = useMemo(() => {
+    const byCard = new Map<string, { kind: "allergy" | "dislike"; text: string; label: string }>();
+    for (const card of cards) {
+      const flag = hubCardFlag(card, avoidList);
+      if (flag) byCard.set(card.id, { kind: flag.kind, text: hubCardFlagText(flag, t), label: hubCardFlagLabel(flag, t) });
+    }
+    return byCard;
+  }, [cards, avoidList, t]);
+
   const count = hub.total || cards.length;
   const countText = querying ? t("hub.searching") : t("library.recipeCount", { count });
 
@@ -148,6 +160,8 @@ function HubScreen() {
                 {countText}
               </p>
               {dietNames && cards.length > 0 ? <p className="text-muted">{t("web.hub.dietFirst", { diets: dietNames })}</p> : null}
+              {hub.avoidsAllergies && cards.length > 0 ? <p className="text-muted">{t("web.hub.avoidLastAllergies")}</p> : null}
+              {hub.avoidsDislikes && cards.length > 0 ? <p className="text-muted">{t("web.hub.avoidLastDislikes")}</p> : null}
             </div>
 
             {error && !hub.errorLoadingMore ? <div className="mb-4">{retryAlert}</div> : null}
@@ -177,6 +191,7 @@ function HubScreen() {
                       trackId="hub.recipe"
                       variant={layout}
                       detail={hubCardDetail(card, t)}
+                      flag={flags.get(card.id)}
                     />
                   </li>
                 ))}

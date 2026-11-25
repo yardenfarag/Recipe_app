@@ -41,6 +41,8 @@ export interface RecipeCard {
   extract_hit_count: number;
   /** Kitchen-profile diets the card fits as written (PIN-83). null = not checked yet. */
   diets?: string[] | null;
+  /** Allergen and one-tap dislike keys the card has as written (PIN-180). null = not checked yet. */
+  contains?: string[] | null;
   created_at: string;
   updated_at?: string;
 }

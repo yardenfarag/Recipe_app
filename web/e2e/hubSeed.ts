@@ -23,6 +23,8 @@ export type SeedCard = {
   createdSecondsAgo?: number;
   /** Ingredient names, for avoid-list tests. Default: flour and water. */
   ingredients?: string[];
+  /** Allergen and one-tap dislike keys the card has (PIN-180). */
+  contains?: string[];
 };
 
 export type SeededCard = { id: string; title: string; public_slug: string };
@@ -90,6 +92,7 @@ export async function resetHub(cards: SeedCard[]): Promise<SeededCard[]> {
       extraction_status: "full",
       tags: card.tags ?? [],
       diets: card.diets ?? null,
+      contains: card.contains ?? null,
       source_language: "en",
       save_count: card.save_count ?? 0,
       created_at: new Date(now - (card.createdSecondsAgo ?? index) * 1000).toISOString(),
@@ -108,11 +111,26 @@ export async function resetHub(cards: SeedCard[]): Promise<SeededCard[]> {
   return rows.map((row) => inserted.find((card) => card.title === row.title)!);
 }
 
-/** Sets the test account's kitchen diets ("Usually cook"), which put fitting Hub recipes first. */
-export async function setKitchenDiets(diets: string[]) {
+/**
+ * Sets the test account's kitchen diets ("Usually cook"), which put fitting Hub recipes first, and its avoid list,
+ * which puts recipes with its allergies last and ones with its dislikes lower (PIN-180).
+ */
+export async function setKitchenDiets(
+  diets: string[],
+  avoid: { allergies?: string[]; otherAllergies?: string[]; dislikes?: string[] } = {},
+) {
   const { url } = localSupabase();
   const { id } = await signInTestUser();
-  const kitchen = { diets, alwaysSwap: [], autoApplyOnExtract: false, pantryStaples: [], allergies: [], otherAllergies: [], dislikes: [] };
+  const kitchen = {
+    diets,
+    alwaysSwap: [],
+    autoApplyOnExtract: false,
+    pantryStaples: [],
+    allergies: avoid.allergies ?? [],
+    otherAllergies: avoid.otherAllergies ?? [],
+    dislikes: avoid.dislikes ?? [],
+    ...(avoid.allergies?.length ? { allergyNoticeAcceptedAt: new Date().toISOString() } : {}),
+  };
   await ok(
     await fetch(`${url}/rest/v1/profiles?id=eq.${id}`, {
       method: "PATCH",
@@ -137,13 +155,21 @@ export async function creditState(): Promise<{ token_balance: number; free_extra
 
 /**
  * The titles the Hub query gives for these filters, called as the test account, exactly as the mobile app calls it
- * (shared/lib/supabase/cookingHub.ts fetchHubCards: the hub_cards function, one row more than a page).
+ * (shared/lib/supabase/cookingHub.ts fetchHubCards: the hub_cards_for_cook function, one row more than a page).
  */
-export async function hubTitles(filters: { search?: string; platform?: string; tags?: string[]; sort?: "popular" | "newest"; diets?: string[] }) {
+export async function hubTitles(filters: {
+  search?: string;
+  platform?: string;
+  tags?: string[];
+  sort?: "popular" | "newest";
+  diets?: string[];
+  allergens?: string[];
+  dislikes?: string[];
+}) {
   const { url, anonKey } = localSupabase();
   const { token } = await signInTestUser();
   const response = await ok(
-    await fetch(`${url}/rest/v1/rpc/hub_cards`, {
+    await fetch(`${url}/rest/v1/rpc/hub_cards_for_cook`, {
       method: "POST",
       headers: { apikey: anonKey, Authorization: `Bearer ${token}`, "Content-Type": "application/json" },
       body: JSON.stringify({
@@ -154,9 +180,13 @@ export async function hubTitles(filters: { search?: string; platform?: string; t
         p_sort: filters.sort ?? "popular",
         p_offset: 0,
         p_limit: 41,
+        p_allergens: filters.allergens?.length ? filters.allergens : null,
+        p_dislikes: filters.dislikes?.length ? filters.dislikes : null,
+        p_allergy_words: null,
+        p_dislike_words: null,
       }),
     }),
-    "Calling hub_cards",
+    "Calling hub_cards_for_cook",
   );
   return ((await response.json()) as { title: string }[]).map((card) => card.title).slice(0, 40);
 }

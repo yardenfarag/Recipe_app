@@ -586,7 +586,8 @@ export function dislikeSuggestionFor(item: string): DislikeSuggestionKey | null 
   return null;
 }
 
-function allergenFor(item: string): AllergenKey | null {
+/** The allergen a typed allergy stands for, in any of the five languages ("Арахис" is peanuts). */
+export function allergenFor(item: string): AllergenKey | null {
   const typed = toForms(item);
   if (typed.length === 0) return null;
   for (const key of ALLERGEN_KEYS) {

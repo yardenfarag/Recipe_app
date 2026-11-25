@@ -3,6 +3,7 @@
 import {
   Bone,
   Carrot,
+  CheckCheck,
   ChevronRight,
   Dumbbell,
   Egg,
@@ -12,6 +13,7 @@ import {
   MilkOff,
   Salad,
   Sprout,
+  UtensilsCrossed,
   WheatOff,
   type LucideIcon,
 } from "lucide-react";
@@ -43,6 +45,8 @@ const STYLE_ICONS: Record<StyleKey, LucideIcon> = {
   mediterranean: Grape,
   paleo: Bone,
   pescatarian: Fish,
+  halal: UtensilsCrossed,
+  kosher: CheckCheck,
 };
 
 const STYLES = RECIPE_VARIANTS.filter((variant) => variant.key !== "custom").map((variant) => variant.key as StyleKey);

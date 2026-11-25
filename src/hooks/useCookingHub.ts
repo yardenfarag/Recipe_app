@@ -2,6 +2,8 @@ import { useFocusEffect } from '@react-navigation/native';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 
 import { useKitchenProfile } from '@/hooks/useKitchenProfile';
+import type { AvoidList } from '@shared/lib/avoidList';
+import { EMPTY_HUB_AVOID, hubAvoidFromKey, hubAvoidKey, hubAvoidOf, type HubAvoid } from '@shared/lib/hubAvoid';
 import {
   fetchHubCards,
   fetchHubTags,
@@ -21,6 +23,8 @@ type HubFilters = {
   platform: HubPlatform | 'all';
   /** Kitchen-profile diets; matching cards come first (PIN-83). */
   diets: string[];
+  /** The avoid list: allergies go last, dislikes lower (PIN-180). */
+  avoid: HubAvoid;
 };
 
 function dedupeAppend(current: RecipeCard[], page: RecipeCard[]): RecipeCard[] {
@@ -52,6 +56,12 @@ export function useCookingHub() {
   const [tagChoices, setTagChoices] = useState<string[]>([]);
   const { profile: kitchen, loading: kitchenLoading, reload: reloadKitchen } = useKitchenProfile();
   const dietKey = [...kitchen.diets].sort().join(',');
+  const avoidList = useMemo<AvoidList>(
+    () => ({ allergies: kitchen.allergies, otherAllergies: kitchen.otherAllergies, dislikes: kitchen.dislikes }),
+    [kitchen.allergies, kitchen.otherAllergies, kitchen.dislikes],
+  );
+  // A stable text, like dietKey, so reloading the same profile on focus doesn't run the list again.
+  const avoidKey = hubAvoidKey(hubAvoidOf(avoidList));
   // Latches once the first kitchen load ends, so later focus reloads don't re-run the list.
   const [kitchenReady, setKitchenReady] = useState(false);
   useEffect(() => {
@@ -71,6 +81,7 @@ export function useCookingHub() {
     sort: 'popular',
     platform: 'all',
     diets: [],
+    avoid: EMPTY_HUB_AVOID,
   });
 
   useEffect(() => {
@@ -124,6 +135,7 @@ export function useCookingHub() {
           sort: filters.sort,
           platform: filters.platform,
           diets: filters.diets,
+          avoid: filters.avoid,
           offset,
           limit,
           includeCount: mode !== 'append',
@@ -166,7 +178,7 @@ export function useCookingHub() {
   const tagKey = selectedTags.join('\u0001');
 
   useEffect(() => {
-    // Wait for the kitchen profile so the first page is already in diet order.
+    // Wait for the kitchen profile so the first page is already in the cook's order.
     if (!kitchenReady) return;
     filtersRef.current = {
       search: debouncedSearch,
@@ -174,9 +186,10 @@ export function useCookingHub() {
       sort,
       platform,
       diets: dietKey ? dietKey.split(',') : [],
+      avoid: hubAvoidFromKey(avoidKey),
     };
     void run('replace');
-  }, [debouncedSearch, tagKey, sort, platform, dietKey, kitchenReady, run]);
+  }, [debouncedSearch, tagKey, sort, platform, dietKey, avoidKey, kitchenReady, run]);
 
   useEffect(() => {
     void loadTags(platform);
@@ -187,7 +200,7 @@ export function useCookingHub() {
       if (!hasLoadedRef.current) return;
       void run('refresh');
       void loadTags(filtersRef.current.platform);
-      // Diets may have changed in Settings; a change re-runs the list through the effect above.
+      // Diets and the avoid list may have changed in Settings; a change re-runs the list through the effect above.
       void reloadKitchen();
     }, [loadTags, reloadKitchen, run]),
   );
@@ -219,6 +232,8 @@ export function useCookingHub() {
     hasMore,
     total,
     listEpoch,
+    /** The cook's avoid list, for the flags on the cards. */
+    avoidList,
     search,
     setSearch,
     selectedTags,

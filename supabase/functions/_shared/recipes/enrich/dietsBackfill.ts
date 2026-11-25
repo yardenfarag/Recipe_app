@@ -1,24 +1,26 @@
 /**
- * One-time backfill of `recipe_cards.diets` on cards published before PIN-83.
+ * Backfill of `recipe_cards.diets` and `recipe_cards.contains` on cards checked before PIN-180
+ * (or never checked). A card is pending while `contains` is null; it gets both lists again, so
+ * cards checked before halal and kosher existed get them too.
  *
  * The database and the diets task are passed in, so the batch logic is tested without a network
  * or a database (dietsBackfill_test.ts). backfill-diets/index.ts wires in Supabase.
  */
 
 import type { LlmUsageSnapshot } from '../../llm/pricing.ts';
-import type { DeriveDietsResult, DietsRecipeInput, HubDietKey } from './recipeDiets.ts';
+import type { DeriveDietsResult, DietsRecipeInput, HubContainsKey, HubDietKey } from './recipeDiets.ts';
 
 export const MAX_DIETS_BACKFILL_BATCH = 20;
 
 export type PendingCard = { id: string } & DietsRecipeInput;
 
 export interface DietsBackfillDb {
-  /** Cards with diets IS NULL and id > after, ordered by id, at most `limit`. */
+  /** Cards with contains IS NULL and id > after, ordered by id, at most `limit`. */
   fetchPending(after: string | null, limit: number): Promise<PendingCard[]>;
   /** Cards still NULL, for a dry run. */
   countPending(): Promise<number>;
-  /** Writes only if the card is still NULL; returns false when someone else got there first. */
-  saveDiets(id: string, diets: HubDietKey[]): Promise<boolean>;
+  /** Writes both lists only if `contains` is still NULL; returns false when someone else got there first. */
+  saveDiets(id: string, diets: HubDietKey[], contains: HubContainsKey[]): Promise<boolean>;
 }
 
 export type DeriveDietsFn = (recipe: DietsRecipeInput) => Promise<DeriveDietsResult>;
@@ -63,12 +65,12 @@ export async function runDietsBackfillBatch(
     const derived = await derive(row);
     result.usages.push(...derived.usages);
     if (derived.error) result.errors.push(`${row.id}: ${derived.error}`);
-    if (derived.diets === null) {
+    if (derived.diets === null || derived.contains === null) {
       result.stillNull += 1;
       continue;
     }
     try {
-      if (await db.saveDiets(row.id, derived.diets)) result.updated += 1;
+      if (await db.saveDiets(row.id, derived.diets, derived.contains)) result.updated += 1;
       else result.skipped += 1;
     } catch (error) {
       result.stillNull += 1;
