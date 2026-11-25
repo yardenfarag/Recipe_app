@@ -42,6 +42,7 @@ describe("useHub", () => {
       sort: "newest",
       platform: "youtube",
       diets: ["gluten_free", "vegan"],
+      avoid: { allergens: [], dislikes: [], allergyWords: [], dislikeWords: [] },
       offset: 0,
       limit: 40,
       includeCount: true,
@@ -50,6 +51,25 @@ describe("useHub", () => {
     expect(result.current.total).toBe(2);
     expect(result.current.diets).toEqual(["gluten_free", "vegan"]);
     expect(fetchHubTags).toHaveBeenCalledWith("youtube");
+  });
+
+  it("sends the cook's allergies and dislikes, so the Hub is sorted for them (PIN-180)", async () => {
+    fetchCloudKitchenProfile.mockResolvedValue({
+      diets: ["kosher"],
+      allergies: ["peanuts"],
+      otherAllergies: ["Kiwi"],
+      dislikes: ["Onion", "blue cheese"],
+    });
+    fetchHubCards.mockResolvedValue({ cards: page(0, 1), hasMore: false, total: 1 });
+    const { result } = renderHook(() => useHub(DEFAULT_HUB_FILTERS));
+    await waitFor(() => expect(result.current.cards).toHaveLength(1));
+    expect(fetchHubCards.mock.calls[0][0]).toMatchObject({
+      diets: ["kosher"],
+      avoid: { allergens: ["peanuts"], dislikes: ["onion"], allergyWords: ["kiwi"], dislikeWords: ["blue cheese"] },
+    });
+    expect(result.current.avoidsAllergies).toBe(true);
+    expect(result.current.avoidsDislikes).toBe(true);
+    expect(result.current.avoidList.allergies).toEqual(["peanuts"]);
   });
 
   it("still loads, in plain order, when the kitchen profile can't be read", async () => {

@@ -27,7 +27,9 @@ export type RecipeVariantKey =
   | 'keto'
   | 'mediterranean'
   | 'paleo'
-  | 'pescatarian';
+  | 'pescatarian'
+  | 'halal'
+  | 'kosher';
 
 const VARIANT_INSTRUCTIONS: Record<RecipeVariantKey, string> = {
   healthier:
@@ -52,6 +54,11 @@ const VARIANT_INSTRUCTIONS: Record<RecipeVariantKey, string> = {
     'Make this recipe paleo. Allowed: meat, fish, eggs, vegetables, fruit, nuts, and seeds. Remove all grains (including wheat, rice, corn, and oats), legumes (including beans, lentils, peanuts, and soy), dairy, refined sugar, and processed seed oils. Use swaps such as almond or cassava flour, coconut milk, coconut aminos instead of soy sauce, olive oil or avocado oil, and honey or maple syrup in small amounts.',
   pescatarian:
     'Make this recipe pescatarian. Replace all meat and poultry (including meat-based stocks, gelatin, and lard) with fish or seafood that suits the dish. Eggs and dairy may stay. Unlike vegetarian, fish and seafood are welcome and should be the main protein where meat was.',
+  // PIN-180. A recipe can't show how meat was slaughtered or certified, so both assume meat from a halal or kosher source.
+  halal:
+    'Make this recipe halal. Remove pork and every pork product (bacon, ham, lard, pork sausage, pork gelatin) and swap in beef, lamb, chicken or turkey that suits the dish. Remove all alcohol, including wine, beer, mirin, sake and spirits used in cooking or in sauces: swap wine for stock, or for grape juice with a little vinegar; swap mirin for a little rice vinegar with sugar. Use beef or fish gelatin, or agar, instead of pork gelatin. Fish and seafood may stay. Assume the meat comes from a halal source. Keep the dish recognisable.',
+  kosher:
+    'Make this recipe kosher. Remove pork, rabbit and other non-kosher animals, and swap in beef, lamb, chicken or turkey. Remove shellfish and fish without fins and scales (shrimp, prawns, crab, lobster, squid, octopus, clams, mussels, catfish, eel) and swap in a kosher fish such as salmon, cod or tilapia. Never combine meat or poultry with dairy in the same dish: in a meat dish, swap butter, cream, cheese and milk for oil or non-dairy versions; in a dairy dish, swap the meat for fish, eggs or a plant protein. Wine may stay. Use fish or beef gelatin, or agar, instead of pork gelatin. Assume the meat comes from a kosher source. Keep the dish recognisable.',
 };
 
 const SYSTEM_PROMPT = `You are a culinary expert adapting home-cooking recipes for dietary and lifestyle goals.
@@ -210,10 +217,7 @@ export async function transformRecipeWithLlm(
       ...(ing.metric ? { metric: ing.metric } : {}),
       ...(ing.spoons ? { spoons: ing.spoons } : {}),
     })),
-    instructions: (parsed.instructions ?? []).map((step) => ({
-      step: Number(step.step),
-      text: sanitizeLlmText(step.text ?? ''),
-    })),
+    instructions: remixedSteps(parsed.instructions),
     servings,
     calories: normalizeStoredCalories(parsed.calories ?? null, servings) ?? undefined,
     nutrition: normalizeStoredNutrition(parsed, servings),
@@ -225,6 +229,18 @@ export async function transformRecipeWithLlm(
     ),
     usage,
   };
+}
+
+/**
+ * The model's steps as the apps save them: blank ones dropped, and numbered 1, 2, 3… whatever the model numbered
+ * them (a missing number used to be sent as `null`). A remix may change how many steps there are, so the count
+ * isn't held; transform-recipe refuses one that comes back with no steps at all (PIN-186).
+ */
+export function remixedSteps(steps: { step?: unknown; text?: unknown }[] | undefined): { step: number; text: string }[] {
+  return (steps ?? [])
+    .map((step) => sanitizeLlmText(typeof step?.text === 'string' ? step.text : '').trim())
+    .filter(Boolean)
+    .map((text, index) => ({ step: index + 1, text }));
 }
 
 function buildTextContext(input: TransformRecipeInput, goal: string): string {

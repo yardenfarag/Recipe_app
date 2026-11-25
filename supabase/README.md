@@ -193,6 +193,32 @@ npx supabase secrets set RESEND_SUPPORT_API_KEY=re_...
 npx supabase secrets set REVENUECAT_REST_API_KEY=sk_...
 ```
 
+## Sale alerts
+
+Every credit pack sold (App Store, Google Play, web) sends a "Pinch sale" email to
+support@pinch-app.io, right after the buyer's receipt (`_shared/email/purchaseAlert.ts`). It
+lists the credits, the price the buyer paid (with the dollar amount beside another currency, when
+the store's webhook has it), the store, the buyer's address and account id, and the transaction.
+A sandbox purchase by an admin is marked "Pinch test sale". Nothing to set up. Optional:
+
+```bash
+npx supabase secrets set PURCHASE_ALERT_EMAIL=someone@example.com   # another address
+npx supabase secrets set PURCHASE_ALERT_EMAIL=none                  # turn the alerts off
+```
+
+## Team copies of customer emails
+
+Welcome emails, purchase receipts and the day-1 and day-3 reminders go out with a BCC to
+support@pinch-app.io (`teamCopy` in `_shared/email/send.ts`), so the team sees what customers
+get. Sign-in codes, password resets and email changes never get a copy: whoever reads one can
+open that account. A copy carries the customer's own unsubscribe link, so don't click
+"Unsubscribe" on it. Optional:
+
+```bash
+npx supabase secrets set EMAIL_BCC=someone@example.com   # another address
+npx supabase secrets set EMAIL_BCC=none                  # stop the copies
+```
+
 ### Recipe share links (`recipe-share` + migration `0017`)
 
 Outbound share creates an opaque token + recipe snapshot (so recipients don’t need access to the owner’s private row). Recipients open `…/share.html?t=TOKEN` → app deep link `pinch://s/TOKEN` → claim copies the snapshot into their library.

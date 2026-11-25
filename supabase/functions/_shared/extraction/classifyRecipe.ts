@@ -56,6 +56,22 @@ export function recipeRepairIsUpgrade(
   return false;
 }
 
+/**
+ * A repair fills what is missing and nothing else (PIN-186). A list the draft already had comes back exactly as
+ * the cook has it, whatever the model returned for it: the app saves the repaired recipe over the old one, so a
+ * shorter or reworded list from the model would replace the cook's steps or ingredients.
+ */
+export function keepDraftLists<T extends { ingredients: unknown[]; instructions: unknown[] }>(
+  draft: Pick<T, 'ingredients' | 'instructions'>,
+  repaired: T,
+): T {
+  return {
+    ...repaired,
+    ingredients: draft.ingredients.length > 0 ? draft.ingredients : repaired.ingredients,
+    instructions: draft.instructions.length > 0 ? draft.instructions : repaired.instructions,
+  };
+}
+
 export function filledFieldsSummary(
   before: ClassifiableRecipe,
   after: ClassifiableRecipe,

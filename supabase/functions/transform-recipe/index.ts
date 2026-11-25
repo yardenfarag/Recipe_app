@@ -1,48 +1,23 @@
-import { serve } from '../_shared/core/observe.ts';
-import { corsHeaders, jsonResponse } from '../_shared/core/cors.ts';
 import { currentUtcDate, refundDailyAiUsage, reserveDailyAiUsage } from '../_shared/core/dailyAiUsage.ts';
+import { handler, HttpError } from '../_shared/core/handler.ts';
+import { refundRecipeRemix, reserveRecipeRemix } from '../_shared/core/remixUsage.ts';
 import { RECIPE_REMIX_LIMIT, REMIX_DAILY_LIMIT } from '../_shared/llm/pricing.ts';
 import { appliancesForRecipe, stepsChanged } from '../_shared/recipes/enrich/recipeAppliances.ts';
 import { fitRecipeToLimits } from '../_shared/recipes/recipeLimits.ts';
-import { createAuthedSupabase } from '../_shared/core/recipeLookup.ts';
-import {
-  isRecipeVariantKey,
-  remixInstructionIsRelated,
-  transformRecipeWithLlm,
-} from '../_shared/recipes/recipeVariant.ts';
-import {
-  parseRecipeId,
-  parseSourceUrl,
-  refundRecipeRemix,
-  reserveRecipeRemix,
-} from '../_shared/core/remixUsage.ts';
-import { createServiceSupabase } from '../_shared/core/supabaseAdmin.ts';
-import { logUsageEvent } from '../_shared/core/usageLog.ts';
+import { remixInstructionIsRelated, transformRecipeWithLlm } from '../_shared/recipes/recipeVariant.ts';
+import { MAX_TRANSFORM_BODY_BYTES, parseTransformRequest } from '../_shared/recipes/transformRequest.ts';
 
-const MAX_BODY_BYTES = 64_000;
-const MAX_TITLE_CHARS = 200;
-const MAX_INGREDIENTS = 60;
-const MAX_INSTRUCTIONS = 50;
-const MAX_INGREDIENT_NAME_CHARS = 160;
-const MAX_UNIT_CHARS = 40;
-const MAX_INSTRUCTION_CHARS = 1_000;
+const signIn = new HttpError(401, 'auth_required', 'Sign in to remix recipes.');
+const misconfigured = new HttpError(500, 'server_misconfigured', 'Server is not configured.');
+const meteringError = new HttpError(500, 'metering_error', 'metering_error');
+const remixFailed = new HttpError(500, 'remix_failed', 'Something went wrong adapting the recipe. Please try again.');
 
-interface RequestBody {
-  variant?: string;
-  instruction?: string;
-  kitchen_auto_apply?: boolean;
-  recipe_id?: string;
-  original_url?: string;
-  recipe?: {
-    id?: string;
-    original_url?: string;
-    title?: string;
-    servings?: number;
-    ingredients?: { name?: string; quantity?: number; unit?: string }[];
-    instructions?: { step?: number; text?: string }[];
-    calories?: number;
-  };
-}
+/** The answer when the per-recipe remix can't be reserved. */
+const remixRefused = {
+  identity_required: new HttpError(400, 'recipe_identity_required', 'recipe_identity_required'),
+  error: meteringError,
+  limited: new HttpError(429, 'recipe_limit', 'recipe_limit', { remix_limit: RECIPE_REMIX_LIMIT }),
+};
 
 /**
  * POST { variant, recipe, recipe_id?, original_url? } -> { status, recipe?, code?, message? }
@@ -54,362 +29,130 @@ interface RequestBody {
  * daily_limit, metering_error, instruction_unrelated, recipe_identity_required, recipe_limit, remix_empty,
  * remix_failed. Bad requests answer { error }.
  */
-serve('transform-recipe', async (req) => {
-  if (req.method === 'OPTIONS') {
-    return new Response('ok', { headers: corsHeaders });
-  }
-  if (req.method !== 'POST') {
-    return jsonResponse({ error: 'Method not allowed' }, 405);
-  }
-  if (requestIsTooLarge(req, MAX_BODY_BYTES)) {
-    return jsonResponse({ error: 'Request payload is too large' }, 400);
-  }
+handler(
+  {
+    name: 'transform-recipe',
+    auth: 'user',
+    maxBodyBytes: MAX_TRANSFORM_BODY_BYTES,
+    legacyErrorShape: true,
+    errors: { authMissing: signIn, authInvalid: signIn, misconfigured },
+    input: parseTransformRequest,
+  },
+  async ({ input, user, admin, log }) => {
+    const { instruction, variant, title, servings, ingredients, instructions, calories, recipeId, sourceUrl } = input;
 
-  const started = Date.now();
-  const authHeader = req.headers.get('Authorization');
-  if (!authHeader) {
-    return jsonResponse(
-      {
-        status: 'failed',
-        code: 'auth_required',
-        message: 'Sign in to remix recipes.',
-      },
-      401,
-    );
-  }
-
-  const authed = createAuthedSupabase(authHeader);
-  if (!authed) {
-    return jsonResponse({ status: 'failed', code: 'server_misconfigured', message: 'Auth is not configured.' }, 500);
-  }
-
-  const {
-    data: { user },
-  } = await authed.auth.getUser();
-  if (!user) {
-    return jsonResponse(
-      {
-        status: 'failed',
-        code: 'auth_required',
-        message: 'Sign in to remix recipes.',
-      },
-      401,
-    );
-  }
-
-  const admin = createServiceSupabase();
-  if (!admin) {
-    return jsonResponse({ status: 'failed', code: 'server_misconfigured', message: 'Server is not configured.' }, 500);
-  }
-
-  let body: RequestBody;
-  try {
-    const rawBody = await req.text();
-    if (new TextEncoder().encode(rawBody).byteLength > MAX_BODY_BYTES) {
-      return jsonResponse({ error: 'Request payload is too large' }, 400);
-    }
-    body = JSON.parse(rawBody) as RequestBody;
-  } catch {
-    return jsonResponse({ error: 'Invalid JSON body' }, 400);
-  }
-
-  const instruction = body.instruction?.trim().slice(0, 400) || undefined;
-  const variantRaw = body.variant?.trim();
-  const variant = variantRaw && isRecipeVariantKey(variantRaw) ? variantRaw : undefined;
-  let kitchenAutoApply = body.kitchen_auto_apply === true;
-  if (!instruction && !variant) {
-    return jsonResponse(
-      { error: 'Missing "variant" or "instruction" in request body' },
-      400,
-    );
-  }
-
-  const recipe = body.recipe;
-  if (!recipe?.title?.trim()) {
-    return jsonResponse({ error: 'Missing "recipe.title" in request body' }, 400);
-  }
-  if (recipe.title.trim().length > MAX_TITLE_CHARS) {
-    return jsonResponse({ error: `Recipe title must be ${MAX_TITLE_CHARS} characters or fewer` }, 400);
-  }
-  if (!Array.isArray(recipe.ingredients) || recipe.ingredients.length > MAX_INGREDIENTS) {
-    return jsonResponse({ error: `Recipe may include at most ${MAX_INGREDIENTS} ingredients` }, 400);
-  }
-  if (!Array.isArray(recipe.instructions) || recipe.instructions.length > MAX_INSTRUCTIONS) {
-    return jsonResponse({ error: `Recipe may include at most ${MAX_INSTRUCTIONS} instructions` }, 400);
-  }
-  if (
-    recipe.ingredients.some(
-      (ingredient) =>
-        typeof ingredient?.name !== 'string' ||
-        !ingredient.name.trim() ||
-        ingredient.name.trim().length > MAX_INGREDIENT_NAME_CHARS ||
-        typeof ingredient?.unit !== 'string' ||
-        !ingredient.unit.trim() ||
-        ingredient.unit.trim().length > MAX_UNIT_CHARS ||
-        typeof ingredient?.quantity !== 'number' ||
-        !Number.isFinite(ingredient.quantity) ||
-        ingredient.quantity < 0 ||
-        ingredient.quantity > 1_000_000,
-    )
-  ) {
-    return jsonResponse({ error: 'Recipe contains an invalid ingredient' }, 400);
-  }
-  if (
-    recipe.instructions.some(
-      (instruction) =>
-        typeof instruction?.step !== 'number' ||
-        !Number.isInteger(instruction.step) ||
-        instruction.step < 1 ||
-        typeof instruction?.text !== 'string' ||
-        !instruction.text.trim() ||
-        instruction.text.trim().length > MAX_INSTRUCTION_CHARS,
-    )
-  ) {
-    return jsonResponse({ error: 'Recipe contains an invalid instruction' }, 400);
-  }
-  if (
-    recipe.servings != null &&
-    (!Number.isInteger(recipe.servings) || recipe.servings < 1 || recipe.servings > 1_000)
-  ) {
-    return jsonResponse({ error: 'Recipe servings must be between 1 and 1000' }, 400);
-  }
-  if (
-    recipe.calories != null &&
-    (!Number.isFinite(recipe.calories) || recipe.calories < 0 || recipe.calories > 10_000_000)
-  ) {
-    return jsonResponse({ error: 'Recipe calories are invalid' }, 400);
-  }
-
-  const ingredients = (recipe.ingredients ?? [])
-    .filter(
-      (i): i is { name: string; quantity: number; unit: string } =>
-        Boolean(i.name?.trim()) && i.quantity != null && Boolean(i.unit?.trim()),
-    )
-    .map((i) => ({ name: i.name.trim(), quantity: i.quantity, unit: i.unit.trim() }));
-
-  const instructions = (recipe.instructions ?? [])
-    .filter(
-      (s): s is { step: number; text: string } =>
-        s.step != null && typeof s.text === 'string' && s.text.trim().length > 0,
-    )
-    .map((s) => ({ step: s.step, text: s.text.trim() }));
-
-  if (ingredients.length === 0) {
-    return jsonResponse({ error: 'Recipe must include at least one ingredient' }, 400);
-  }
-
-  if (kitchenAutoApply) {
-    const { data: kitchenRow } = await admin
-      .from('profiles')
-      .select('kitchen')
-      .eq('id', user.id)
-      .maybeSingle();
-    const kitchen = kitchenRow?.kitchen;
-    kitchenAutoApply = Boolean(
-      kitchen &&
-        typeof kitchen === 'object' &&
-        !Array.isArray(kitchen) &&
-        (kitchen as { autoApplyOnExtract?: unknown }).autoApplyOnExtract === true,
-    );
-  }
-
-  // Kitchen auto-apply skips the per-recipe limit and users set the flag
-  // themselves, so every remix also counts against a daily cap (PIN-54).
-  const usageDate = currentUtcDate();
-  const dailyRemix = await reserveDailyAiUsage(admin, user.id, 'remix', REMIX_DAILY_LIMIT, usageDate);
-  if (dailyRemix === 'limited') {
-    return jsonResponse(
-      {
-        status: 'failed',
-        code: 'daily_limit',
-        message: 'daily_limit',
-        remix_daily_limit: REMIX_DAILY_LIMIT,
-      },
-      429,
-    );
-  }
-  if (dailyRemix === 'error') {
-    return jsonResponse(
-      { status: 'failed', code: 'metering_error', message: 'metering_error' },
-      500,
-    );
-  }
-
-  if (instruction && !kitchenAutoApply) {
-    try {
-      const related = await remixInstructionIsRelated(instruction, {
-        title: recipe.title.trim(),
-        ingredients,
-      });
-      if (!related) {
-        await refundDailyAiUsage(admin, user.id, 'remix', usageDate);
-        return jsonResponse(
-          {
-            status: 'failed',
-            code: 'instruction_unrelated',
-            message: 'instruction_unrelated',
-          },
-          400,
-        );
-      }
-    } catch (err) {
-      console.error('remix relatedness check failed:', err);
-      await refundDailyAiUsage(admin, user.id, 'remix', usageDate);
-      return jsonResponse(
-        {
-          status: 'failed',
-          code: 'remix_failed',
-          message: 'Something went wrong adapting the recipe. Please try again.',
-        },
-        500,
+    let kitchenAutoApply = input.kitchenAutoApply;
+    if (kitchenAutoApply) {
+      const { data: kitchenRow } = await admin.from('profiles').select('kitchen').eq('id', user.id).maybeSingle();
+      const kitchen = kitchenRow?.kitchen;
+      kitchenAutoApply = Boolean(
+        kitchen &&
+          typeof kitchen === 'object' &&
+          !Array.isArray(kitchen) &&
+          (kitchen as { autoApplyOnExtract?: unknown }).autoApplyOnExtract === true,
       );
     }
-  }
 
-  const recipeId = parseRecipeId(body.recipe_id) ?? parseRecipeId(recipe.id);
-  const sourceUrl = parseSourceUrl(body.original_url) ?? parseSourceUrl(recipe.original_url);
-  const reserved = kitchenAutoApply
-    ? 'ok'
-    : await reserveRecipeRemix(admin, user.id, recipeId, sourceUrl);
-  if (reserved === 'identity_required') {
-    await refundDailyAiUsage(admin, user.id, 'remix', usageDate);
-    return jsonResponse(
-      {
-        status: 'failed',
-        code: 'recipe_identity_required',
-        message: 'recipe_identity_required',
-      },
-      400,
-    );
-  }
-  if (reserved === 'error') {
-    await refundDailyAiUsage(admin, user.id, 'remix', usageDate);
-    return jsonResponse(
-      {
-        status: 'failed',
-        code: 'metering_error',
-        message: 'metering_error',
-      },
-      500,
-    );
-  }
-  if (reserved === 'limited') {
-    await refundDailyAiUsage(admin, user.id, 'remix', usageDate);
-    return jsonResponse(
-      {
-        status: 'failed',
-        code: 'recipe_limit',
-        message: 'recipe_limit',
-        remix_limit: RECIPE_REMIX_LIMIT,
-      },
-      429,
-    );
-  }
+    // Kitchen auto-apply skips the per-recipe limit and users set the flag
+    // themselves, so every remix also counts against a daily cap (PIN-54).
+    // Not withDailyAiUsage: the refund must come before the per-recipe refund and the usage row, as before.
+    const usageDate = currentUtcDate();
+    const dailyRemix = await reserveDailyAiUsage(admin, user.id, 'remix', REMIX_DAILY_LIMIT, usageDate);
+    if (dailyRemix === 'limited') {
+      throw new HttpError(429, 'daily_limit', 'daily_limit', { remix_daily_limit: REMIX_DAILY_LIMIT });
+    }
+    if (dailyRemix === 'error') throw meteringError;
+    const refundDaily = () => refundDailyAiUsage(admin, user.id, 'remix', usageDate);
 
-  try {
-    const transformed = await transformRecipeWithLlm({
-      variant,
-      instruction,
-      title: recipe.title.trim(),
-      servings: recipe.servings && recipe.servings > 0 ? recipe.servings : 1,
-      ingredients,
-      instructions,
-      calories: recipe.calories,
-    });
+    if (instruction && !kitchenAutoApply) {
+      try {
+        const related = await remixInstructionIsRelated(instruction, { title, ingredients });
+        if (!related) {
+          await refundDaily();
+          return new HttpError(400, 'instruction_unrelated', 'instruction_unrelated').toResponse();
+        }
+      } catch (err) {
+        console.error('remix relatedness check failed:', err);
+        await refundDaily();
+        throw remixFailed;
+      }
+    }
 
-    if (transformed.ingredients.length === 0) {
-      await refundDailyAiUsage(admin, user.id, 'remix', usageDate);
+    const reserved = kitchenAutoApply ? 'ok' : await reserveRecipeRemix(admin, user.id, recipeId, sourceUrl);
+    if (reserved !== 'ok') {
+      await refundDaily();
+      throw remixRefused[reserved];
+    }
+
+    const metadata = { variant, recipe_id: recipeId, original_url: sourceUrl, kitchen_auto_apply: kitchenAutoApply };
+    const refundAll = async () => {
+      await refundDaily();
       if (!kitchenAutoApply) await refundRecipeRemix(admin, user.id, recipeId, sourceUrl);
-      await logUsageEvent(admin, {
-        userId: user.id,
+    };
+
+    try {
+      const transformed = await transformRecipeWithLlm({
+        variant,
+        instruction,
+        title,
+        servings,
+        ingredients,
+        instructions,
+        calories,
+      });
+
+      // The app writes the answer over the recipe, so one that would leave a recipe with steps without any is
+      // refused like an empty one (PIN-186).
+      const lostSteps = instructions.length > 0 && transformed.instructions.length === 0;
+      if (transformed.ingredients.length === 0 || lostSteps) {
+        await refundAll();
+        await log.usage({
+          action: 'remix',
+          status: 'failed',
+          usages: transformed.usage ? [transformed.usage] : [],
+          tokensCharged: 0,
+          metadata,
+          errorMessage: transformed.ingredients.length === 0 ? 'Empty adapted ingredients' : 'Adapted recipe has no steps',
+        });
+        // A 200 with a failed body, as the app has always received it.
+        return { status: 'failed', code: 'remix_empty', message: "Couldn't adapt this recipe. Try a different option." };
+      }
+
+      const { usage: _usage, ...unfitted } = transformed;
+      // The app writes this straight to the recipe, so it must fit the database limits (PIN-79).
+      // An out-of-range calorie estimate is dropped, and the app keeps none.
+      const fitted = fitRecipeToLimits(unfitted);
+      const remixed = { ...fitted, calories: fitted.calories ?? undefined };
+      const usages = transformed.usage ? [transformed.usage] : [];
+      // ADR 017: only re-derive when the steps changed. When `appliances` is left out of the
+      // response, the app keeps the recipe's current list.
+      let recipePayload: typeof remixed & { appliances?: unknown } = remixed;
+      let applianceMetadata: Record<string, unknown> = {};
+      if (stepsChanged(instructions, remixed.instructions)) {
+        const derived = await appliancesForRecipe(remixed, usages);
+        recipePayload = { ...remixed, appliances: derived.appliances };
+        applianceMetadata = derived.metadata;
+      }
+
+      await log.usage({
         action: 'remix',
-        status: 'failed',
-        usages: transformed.usage ? [transformed.usage] : [],
+        status: 'ok',
+        usages,
         tokensCharged: 0,
-        durationMs: Date.now() - started,
-        metadata: {
-          variant,
-          recipe_id: recipeId,
-          original_url: sourceUrl,
-          kitchen_auto_apply: kitchenAutoApply,
-        },
-        errorMessage: 'Empty adapted ingredients',
+        metadata: { ...metadata, ...applianceMetadata },
       });
-      return jsonResponse({
-        status: 'failed',
-        code: 'remix_empty',
-        message: "Couldn't adapt this recipe. Try a different option.",
+      return { status: 'ok', recipe: recipePayload, variant: variant ?? 'custom', tokens_charged: 0 };
+    } catch (err) {
+      console.error('transform-recipe error:', err);
+      await refundAll();
+      await log.usage({
+        action: 'remix',
+        status: 'error',
+        tokensCharged: 0,
+        errorMessage: err instanceof Error ? err.message.slice(0, 500) : String(err),
+        metadata,
       });
+      throw remixFailed;
     }
-
-    const { usage: _usage, ...unfitted } = transformed;
-    // The app writes this straight to the recipe, so it must fit the database limits (PIN-79).
-    // An out-of-range calorie estimate is dropped, and the app keeps none.
-    const fitted = fitRecipeToLimits(unfitted);
-    const remixed = { ...fitted, calories: fitted.calories ?? undefined };
-    const usages = transformed.usage ? [transformed.usage] : [];
-    // ADR 017: only re-derive when the steps changed. When `appliances` is left out of the
-    // response, the app keeps the recipe's current list.
-    let recipePayload: typeof remixed & { appliances?: unknown } = remixed;
-    let applianceMetadata: Record<string, unknown> = {};
-    if (stepsChanged(instructions, remixed.instructions)) {
-      const derived = await appliancesForRecipe(remixed, usages);
-      recipePayload = { ...remixed, appliances: derived.appliances };
-      applianceMetadata = derived.metadata;
-    }
-
-    await logUsageEvent(admin, {
-      userId: user.id,
-      action: 'remix',
-      status: 'ok',
-      usages,
-      tokensCharged: 0,
-      durationMs: Date.now() - started,
-      metadata: {
-        variant,
-        recipe_id: recipeId,
-        original_url: sourceUrl,
-        kitchen_auto_apply: kitchenAutoApply,
-        ...applianceMetadata,
-      },
-    });
-
-    return jsonResponse({
-      status: 'ok',
-      recipe: recipePayload,
-      variant: variant ?? 'custom',
-      tokens_charged: 0,
-    });
-  } catch (err) {
-    console.error('transform-recipe error:', err);
-    await refundDailyAiUsage(admin, user.id, 'remix', usageDate);
-    if (!kitchenAutoApply) await refundRecipeRemix(admin, user.id, recipeId, sourceUrl);
-    await logUsageEvent(admin, {
-      userId: user.id,
-      action: 'remix',
-      status: 'error',
-      tokensCharged: 0,
-      durationMs: Date.now() - started,
-      errorMessage: err instanceof Error ? err.message.slice(0, 500) : String(err),
-      metadata: {
-        variant,
-        recipe_id: recipeId,
-        original_url: sourceUrl,
-        kitchen_auto_apply: kitchenAutoApply,
-      },
-    });
-    return jsonResponse(
-      {
-        status: 'failed',
-        code: 'remix_failed',
-        message: 'Something went wrong adapting the recipe. Please try again.',
-      },
-      500,
-    );
-  }
-});
-
-function requestIsTooLarge(req: Request, maxBytes: number): boolean {
-  const contentLength = Number(req.headers.get('content-length'));
-  return Number.isFinite(contentLength) && contentLength > maxBytes;
-}
+  },
+);

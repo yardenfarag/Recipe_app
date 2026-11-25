@@ -2,6 +2,8 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
+import type { AvoidList } from "@shared/lib/avoidList";
+import { EMPTY_HUB_AVOID, hubAvoidKey, hubAvoidOf, type HubAvoid } from "@shared/lib/hubAvoid";
 import { fetchHubCards, fetchHubTags, type HubSort } from "@shared/lib/supabase/cookingHub";
 import { fetchCloudKitchenProfile } from "@shared/lib/supabase/kitchen";
 import type { HubPlatform, RecipeCard } from "@shared/types/recipeCard";
@@ -16,13 +18,13 @@ const SEARCH_DEBOUNCE_MS = 250;
 
 type LoadMode = "replace" | "append" | "refresh";
 
-type Query = HubFilters & { diets: string[] };
+type Query = HubFilters & { diets: string[]; avoid: HubAvoid };
 
 /**
  * The last list shown, kept while the tab is open. Opening a Hub recipe and coming Back shows the same cards at
  * once (so the page doesn't jump to the top), then checks them again quietly.
  */
-type Snapshot = { key: string; dietKey: string; cards: RecipeCard[]; hasMore: boolean; total: number };
+type Snapshot = { key: string; dietKey: string; avoidKey: string; cards: RecipeCard[]; hasMore: boolean; total: number };
 let lastView: Snapshot | null = null;
 
 /** For tests: forget the kept list. */
@@ -44,8 +46,11 @@ function dedupeAppend(current: RecipeCard[], page: RecipeCard[]): RecipeCard[] {
   return next;
 }
 
+const NO_AVOID: AvoidList = { allergies: [], otherAllergies: [], dislikes: [] };
+
 /**
- * The Cooking Hub list: search, source, tags and sort, with recipes that fit the cook's diets first, a page of 40
+ * The Cooking Hub list: search, source, tags and sort, sorted for the cook (their diets first, their allergies last,
+ * foods they don't like lower; PIN-83, PIN-180), a page of 40
  * at a time. The same queries as the mobile app's useCookingHub, through the same shared calls, so the same
  * filters give the same recipes.
  */
@@ -77,17 +82,24 @@ export function useHub(initial: HubFilters) {
   const [platform, setPlatform] = useState<HubPlatform | "all">(initial.platform);
   const [tagChoices, setTagChoices] = useState<string[]>([]);
 
-  // The kitchen profile's diets: matching recipes come first (PIN-83). The list waits for them, so the first page
-  // is already in diet order. If the profile can't be read, the list is in plain order.
-  const [kitchen, setKitchen] = useState<{ userId: string; diets: string[] } | null>(null);
+  // The kitchen profile's diets and avoid list: the Hub is sorted with them (PIN-83, PIN-180). The list waits for
+  // them, so the first page is already in the cook's order. If the profile can't be read, the list is in plain order.
+  const [kitchen, setKitchen] = useState<{ userId: string; diets: string[]; avoidList: AvoidList } | null>(null);
   useEffect(() => {
     if (!userId) return;
     let cancelled = false;
     fetchCloudKitchenProfile(userId)
-      .then((profile) => profile.diets as string[])
-      .catch(() => [] as string[])
-      .then((diets) => {
-        if (!cancelled) setKitchen({ userId, diets });
+      .then((profile) => ({
+        diets: profile.diets as string[],
+        avoidList: {
+          allergies: profile.allergies ?? [],
+          otherAllergies: profile.otherAllergies ?? [],
+          dislikes: profile.dislikes ?? [],
+        },
+      }))
+      .catch(() => ({ diets: [] as string[], avoidList: NO_AVOID }))
+      .then((read) => {
+        if (!cancelled) setKitchen({ userId, ...read });
       });
     return () => {
       cancelled = true;
@@ -96,6 +108,9 @@ export function useHub(initial: HubFilters) {
   const kitchenReady = kitchen != null && kitchen.userId === userId;
   const diets = useMemo(() => (kitchenReady ? [...kitchen.diets].sort() : []), [kitchenReady, kitchen]);
   const dietKey = diets.join(",");
+  const avoidList = kitchenReady ? kitchen.avoidList : NO_AVOID;
+  const avoid = useMemo(() => (kitchenReady ? hubAvoidOf(kitchen.avoidList) : EMPTY_HUB_AVOID), [kitchenReady, kitchen]);
+  const avoidKey = hubAvoidKey(avoid);
 
   const requestRef = useRef(0);
   const appendLock = useRef(false);
@@ -104,7 +119,7 @@ export function useHub(initial: HubFilters) {
   const hasLoadedRef = useRef(restored != null);
   const restoredRef = useRef(restored);
   const failedModeRef = useRef<LoadMode | null>(null);
-  const queryRef = useRef<Query>({ ...initial, diets: [] });
+  const queryRef = useRef<Query>({ ...initial, diets: [], avoid: EMPTY_HUB_AVOID });
   const userIdRef = useRef(userId);
   useEffect(() => {
     userIdRef.current = userId;
@@ -142,6 +157,7 @@ export function useHub(initial: HubFilters) {
         sort: query.sort,
         platform: query.platform,
         diets: query.diets,
+        avoid: query.avoid,
         offset,
         limit,
         includeCount: mode !== "append",
@@ -160,6 +176,7 @@ export function useHub(initial: HubFilters) {
       lastView = {
         key: viewKey(userIdRef.current, query),
         dietKey: query.diets.join(","),
+        avoidKey: hubAvoidKey(query.avoid),
         cards: next,
         hasMore: result.hasMore,
         total: nextTotal ?? lastView?.total ?? next.length,
@@ -197,13 +214,15 @@ export function useHub(initial: HubFilters) {
       sort,
       platform,
       diets: dietKey ? dietKey.split(",") : [],
+      avoid,
     };
     // Back from a Hub recipe: the kept list is already showing, so only check it again.
     const kept = restoredRef.current;
     restoredRef.current = null;
-    const sameAsKept = kept != null && kept.dietKey === dietKey && kept.key === viewKey(userIdRef.current, queryRef.current);
+    const sameAsKept =
+      kept != null && kept.dietKey === dietKey && kept.avoidKey === avoidKey && kept.key === viewKey(userIdRef.current, queryRef.current);
     void run(sameAsKept ? "refresh" : "replace");
-  }, [debouncedSearch, tagKey, sort, platform, dietKey, kitchenReady, run]);
+  }, [debouncedSearch, tagKey, sort, platform, dietKey, avoid, avoidKey, kitchenReady, run]);
 
   useEffect(() => {
     let cancelled = false;
@@ -254,6 +273,11 @@ export function useHub(initial: HubFilters) {
     total,
     listEpoch,
     diets,
+    /** The cook's avoid list, for the flags on the cards. */
+    avoidList,
+    /** What the order does with it: allergies last, dislikes lower. */
+    avoidsAllergies: avoid.allergens.length > 0 || avoid.allergyWords.length > 0,
+    avoidsDislikes: avoid.dislikes.length > 0 || avoid.dislikeWords.length > 0,
     search,
     setSearch,
     selectedTags,

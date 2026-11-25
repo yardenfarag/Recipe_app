@@ -1,7 +1,6 @@
-import { serve } from '../_shared/core/observe.ts';
-import { createClient, type SupabaseClient } from 'https://esm.sh/@supabase/supabase-js@2.110.6';
-import type { Database } from '../_shared/core/database.types.ts';
-import { corsHeaders, jsonResponse } from '../_shared/core/cors.ts';
+import { readBackfillBody } from '../_shared/core/backfillRequest.ts';
+import { handler, HttpError } from '../_shared/core/handler.ts';
+import { createAuthedSupabase, type Db } from '../_shared/core/supabaseAdmin.ts';
 import { extractYouTubeId, needsThumbnailBackfill, youTubeThumbnail } from '../_shared/extraction/platform.ts';
 import { resolveYouTubeThumbnailUrl } from '../_shared/extraction/sources/youtube.ts';
 
@@ -19,66 +18,48 @@ interface RequestBody {
  * POST { videoIds } (no user) — resolve-only for guest/local recipes. Guests get
  * YouTube's standard thumbnail URL without an API call, so an anonymous script
  * can't spend the YouTube quota that extraction depends on (PIN-54).
+ *
+ * The body is read before the Authorization header is checked, so the handler does both itself, in that order.
  */
-serve('backfill-thumbnails', async (req) => {
-  if (req.method === 'OPTIONS') {
-    return new Response('ok', { headers: corsHeaders });
-  }
-  if (req.method !== 'POST') {
-    return jsonResponse({ error: 'Method not allowed' }, 405);
-  }
+handler(
+  { name: 'backfill-thumbnails', auth: 'none', body: 'none', legacyErrorShape: true },
+  async ({ req, fail }) => {
+    const body = (await readBackfillBody(req)) as RequestBody;
 
-  let body: RequestBody = {};
-  try {
-    if (req.headers.get('content-length') !== '0') {
-      body = await req.json();
+    const authHeader = req.headers.get('Authorization');
+    if (!authHeader) throw fail('authMissing');
+
+    const supabase = createAuthedSupabase(authHeader);
+    if (!supabase) throw fail('misconfigured');
+
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+
+    const videoIds = normalizeVideoIds(body.videoIds);
+    const recipeIds = normalizeRecipeIds(body.recipeIds);
+
+    if (user) {
+      try {
+        const updated =
+          videoIds.length > 0
+            ? await backfillUserRecipesByVideoIds(supabase, videoIds, recipeIds)
+            : [];
+        return { updated, thumbnails: {} };
+      } catch (err) {
+        console.error('backfill-thumbnails error:', err);
+        throw HttpError.legacy(500, 'Could not backfill recipes');
+      }
     }
-  } catch {
-    return jsonResponse({ error: 'Invalid JSON body' }, 400);
-  }
 
-  const authHeader = req.headers.get('Authorization');
-  if (!authHeader) {
-    return jsonResponse({ error: 'Missing Authorization header' }, 401);
-  }
-
-  const supabaseUrl = Deno.env.get('SUPABASE_URL');
-  const supabaseAnonKey = Deno.env.get('SUPABASE_ANON_KEY');
-  if (!supabaseUrl || !supabaseAnonKey) {
-    return jsonResponse({ error: 'Server misconfigured' }, 500);
-  }
-
-  const supabase = createClient<Database>(supabaseUrl, supabaseAnonKey, {
-    global: { headers: { Authorization: authHeader } },
-  });
-
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-
-  const videoIds = normalizeVideoIds(body.videoIds);
-  const recipeIds = normalizeRecipeIds(body.recipeIds);
-
-  if (user) {
-    try {
-      const updated =
-        videoIds.length > 0
-          ? await backfillUserRecipesByVideoIds(supabase, videoIds, recipeIds)
-          : [];
-      return jsonResponse({ updated, thumbnails: {} });
-    } catch (err) {
-      console.error('backfill-thumbnails error:', err);
-      return jsonResponse({ error: 'Could not backfill recipes' }, 500);
+    if (videoIds.length === 0) {
+      throw HttpError.legacy(400, 'Missing videoIds for guest backfill');
     }
-  }
 
-  if (videoIds.length === 0) {
-    return jsonResponse({ error: 'Missing videoIds for guest backfill' }, 400);
-  }
-
-  const thumbnails = guestThumbnails(videoIds);
-  return jsonResponse({ updated: [], thumbnails });
-});
+    const thumbnails = guestThumbnails(videoIds);
+    return { updated: [], thumbnails };
+  },
+);
 
 function normalizeVideoIds(videoIds: unknown): string[] {
   if (!Array.isArray(videoIds)) return [];
@@ -97,7 +78,7 @@ function normalizeRecipeIds(recipeIds: unknown): string[] {
 }
 
 async function backfillUserRecipesByVideoIds(
-  supabase: SupabaseClient<Database>,
+  supabase: Db,
   videoIds: string[],
   recipeIds: string[],
 ): Promise<Array<{ id: string; image_url: string }>> {

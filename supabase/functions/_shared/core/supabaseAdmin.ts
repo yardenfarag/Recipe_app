@@ -41,3 +41,14 @@ export function createServiceSupabase(): Db | null {
   if (!supabaseUrl || !serviceKey) return null;
   return createClient<Database>(supabaseUrl, serviceKey);
 }
+
+/** The caller's own client: it sends their Authorization header, so row level security applies. */
+export function createAuthedSupabase(authHeader: string): Db | null {
+  const supabaseUrl = Deno.env.get('SUPABASE_URL');
+  const supabaseAnonKey = Deno.env.get('SUPABASE_ANON_KEY');
+  if (!supabaseUrl || !supabaseAnonKey) return null;
+
+  return createClient<Database>(supabaseUrl, supabaseAnonKey, {
+    global: { headers: { Authorization: authHeader } },
+  });
+}

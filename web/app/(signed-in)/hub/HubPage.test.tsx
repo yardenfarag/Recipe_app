@@ -36,6 +36,9 @@ const base = (): Hub => ({
   total: 0,
   listEpoch: 0,
   diets: [],
+  avoidList: { allergies: [], otherAllergies: [], dislikes: [] },
+  avoidsAllergies: false,
+  avoidsDislikes: false,
   search: "",
   setSearch: vi.fn(),
   selectedTags: [],
@@ -93,6 +96,24 @@ describe("Hub page", () => {
     expect(screen.getByRole("link", { name: "Hub Soup" }).getAttribute("href")).toBe("/hub/c1");
     expect(screen.getByText("YouTube · 2 saves")).toBeDefined();
     expect(screen.getByText("1 recipe")).toBeDefined();
+  });
+
+  it("flags the cook's allergies and dislikes on the cards, and says how the list is sorted (PIN-180)", () => {
+    const peanut = { ...card, id: "c2", title: "Satay", ingredients: [{ name: "peanut butter" }], contains: ["peanuts", "onion"] } as unknown as RecipeCard;
+    const onion = { ...card, id: "c3", title: "Onion tart", ingredients: [{ name: "onion" }], contains: ["onion"] } as unknown as RecipeCard;
+    hub = {
+      ...base(),
+      cards: [card, onion, peanut],
+      total: 3,
+      avoidList: { allergies: ["peanuts"], otherAllergies: [], dislikes: ["Onion"] },
+      avoidsAllergies: true,
+      avoidsDislikes: true,
+    };
+    renderPage();
+    expect(screen.getByText("Has ingredients from your allergies: Peanuts")).toBeDefined();
+    expect(screen.getByText("Has foods you don’t like: Onion")).toBeDefined();
+    expect(screen.getByText("Recipes with your allergies come last.")).toBeDefined();
+    expect(screen.getByText("Recipes with foods you don’t like come later.")).toBeDefined();
   });
 
   it("when the first load fails, says so and tries again", () => {

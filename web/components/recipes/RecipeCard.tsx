@@ -1,6 +1,6 @@
 "use client";
 
-import { Heart, MoreVertical } from "lucide-react";
+import { CircleAlert, Heart, MoreVertical, TriangleAlert } from "lucide-react";
 import Link from "next/link";
 import { memo, useState, type ReactNode } from "react";
 import { useTranslation } from "react-i18next";
@@ -35,6 +35,11 @@ export type RecipeCardProps = {
   href?: string;
   /** Activity-log prefix, as on mobile: the card logs `<trackId>.open`, `.favorite` and `.more`. */
   trackId?: string;
+  /**
+   * Foods from the cook's avoid list (a Hub card, PIN-180): `text` is the foods ("Peanuts, Milk"), `label` the whole
+   * sentence for a screen reader.
+   */
+  flag?: { kind: "allergy" | "dislike"; text: string; label: string };
 };
 
 /**
@@ -46,7 +51,7 @@ export type RecipeCardProps = {
 // A button on the photo. On a phone each has its own dark backing; from tablet up the pill around them has it.
 const onPhotoButton = "pointer-events-auto max-md:bg-scrim/60 max-md:backdrop-blur-md";
 
-function RecipeCardBase({ recipe, variant = "grid", onToggleFavorite, actions, detail, href, trackId = "library.recipe" }: RecipeCardProps) {
+function RecipeCardBase({ recipe, variant = "grid", onToggleFavorite, actions, detail, href, trackId = "library.recipe", flag }: RecipeCardProps) {
   const { t } = useTranslation();
   const { language } = useLanguage();
   const [pictureFailed, setPictureFailed] = useState(false);
@@ -191,6 +196,20 @@ function RecipeCardBase({ recipe, variant = "grid", onToggleFavorite, actions, d
       ) : null}
       {meta.length > 0 ? <p className={cn("text-muted", list ? "text-[13px]" : "text-[13px] max-md:line-clamp-1 md:text-sm")}>{meta.join(" · ")}</p> : null}
       {needs ? <p className="truncate text-[13px] text-muted">{needs}</p> : null}
+      {flag ? (
+        <p
+          className={cn(
+            "flex w-fit max-w-full items-center gap-1 rounded-md px-2 py-0.5 text-xs font-semibold",
+            flag.kind === "allergy" ? "bg-danger-soft text-danger" : "bg-warning-soft text-warning",
+          )}
+        >
+          {flag.kind === "allergy" ? <CircleAlert aria-hidden className="h-3.5 w-3.5 shrink-0" /> : <TriangleAlert aria-hidden className="h-3.5 w-3.5 shrink-0" />}
+          <span className="sr-only">{flag.label}</span>
+          <span aria-hidden className="truncate">
+            {flag.text}
+          </span>
+        </p>
+      ) : null}
     </>
   );
 

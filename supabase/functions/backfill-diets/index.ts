@@ -1,7 +1,6 @@
-import { serve } from '../_shared/core/observe.ts';
+import { parseUuidCursor, readBackfillBody } from '../_shared/core/backfillRequest.ts';
+import { handler, HttpError } from '../_shared/core/handler.ts';
 import type { Db } from '../_shared/core/supabaseAdmin.ts';
-
-import { corsHeaders, jsonResponse } from '../_shared/core/cors.ts';
 import {
   clampDietsBatchSize,
   type DietsBackfillDb,
@@ -9,9 +8,6 @@ import {
   runDietsBackfillBatch,
 } from '../_shared/recipes/enrich/dietsBackfill.ts';
 import { deriveRecipeDiets } from '../_shared/recipes/enrich/recipeDiets.ts';
-import { createAuthedSupabase } from '../_shared/core/recipeLookup.ts';
-import { createServiceSupabase } from '../_shared/core/supabaseAdmin.ts';
-import { logUsageEvent } from '../_shared/core/usageLog.ts';
 
 interface RequestBody {
   /** next_cursor from the previous response; omit to start. */
@@ -22,7 +18,12 @@ interface RequestBody {
   dry_run?: boolean;
 }
 
-const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+/** The request, checked in the old order. A body that isn't an object (`null`) throws a TypeError: a 500, as before. */
+function parseRequest(raw: unknown) {
+  const body = raw as RequestBody;
+  const after = parseUuidCursor(body.after);
+  return { after, dryRun: body.dry_run === true, limit: body.limit };
+}
 
 function supabaseDietsDb(admin: Db): DietsBackfillDb {
   return {
@@ -30,7 +31,7 @@ function supabaseDietsDb(admin: Db): DietsBackfillDb {
       let query = admin
         .from('recipe_cards')
         .select('id, title, ingredients, instructions')
-        .is('diets', null)
+        .is('contains', null)
         .order('id', { ascending: true })
         .limit(limit);
       if (after) query = query.gt('id', after);
@@ -42,17 +43,17 @@ function supabaseDietsDb(admin: Db): DietsBackfillDb {
       const { count, error } = await admin
         .from('recipe_cards')
         .select('id', { count: 'exact', head: true })
-        .is('diets', null);
+        .is('contains', null);
       if (error) throw new Error(error.message);
       return count ?? 0;
     },
-    async saveDiets(id, diets) {
+    async saveDiets(id, diets, contains) {
       // `is null` makes the write a no-op if a new extract checked the card first.
       const { data, error } = await admin
         .from('recipe_cards')
-        .update({ diets })
+        .update({ diets, contains })
         .eq('id', id)
-        .is('diets', null)
+        .is('contains', null)
         .select('id');
       if (error) throw new Error(error.message);
       return (data ?? []).length > 0;
@@ -61,84 +62,62 @@ function supabaseDietsDb(admin: Db): DietsBackfillDb {
 }
 
 /**
- * Admin only. POST { after?, limit?, dry_run? } fills `recipe_cards.diets` on cards published
- * before PIN-83, one batch per call. Call again with `after: next_cursor` until it is null.
+ * Admin only. POST { after?, limit?, dry_run? } fills `recipe_cards.diets` and `contains` on cards
+ * not checked since PIN-180, one batch per call. Call again with `after: next_cursor` until it is null.
+ * Each card is one model call: check the OpenRouter balance before a full run.
  */
-serve('backfill-diets', async (req) => {
-  if (req.method === 'OPTIONS') return new Response('ok', { headers: corsHeaders });
-  if (req.method !== 'POST') return jsonResponse({ error: 'Method not allowed' }, 405);
+handler(
+  {
+    name: 'backfill-diets',
+    auth: 'admin',
+    // Read below: Content-Length 0 is `{}`, an empty body without one is invalid JSON (readBackfillBody).
+    body: 'none',
+    legacyErrorShape: true,
+    errors: { authInvalid: HttpError.legacy(401, 'Sign in required') },
+  },
+  async ({ req, admin, log }) => {
+    const { after, dryRun, limit } = parseRequest(await readBackfillBody(req));
 
-  const authHeader = req.headers.get('Authorization');
-  if (!authHeader) return jsonResponse({ error: 'Missing Authorization header' }, 401);
+    const db = supabaseDietsDb(admin);
+    const started = Date.now();
+    try {
+      if (dryRun) {
+        return { dry_run: true, pending: await db.countPending() };
+      }
 
-  let body: RequestBody = {};
-  try {
-    if (req.headers.get('content-length') !== '0') body = await req.json();
-  } catch {
-    return jsonResponse({ error: 'Invalid JSON body' }, 400);
-  }
-
-  const authed = createAuthedSupabase(authHeader);
-  const admin = createServiceSupabase();
-  if (!authed || !admin) return jsonResponse({ error: 'Server misconfigured' }, 500);
-
-  const {
-    data: { user },
-  } = await authed.auth.getUser();
-  if (!user) return jsonResponse({ error: 'Sign in required' }, 401);
-
-  const { data: isAdmin, error: adminError } = await authed.rpc('is_current_user_admin');
-  if (adminError) {
-    console.error('[backfill-diets] admin check failed', adminError);
-    return jsonResponse({ error: 'Could not verify admin' }, 500);
-  }
-  if (isAdmin !== true) return jsonResponse({ error: 'Admins only' }, 403);
-
-  const after = body.after ?? null;
-  if (after !== null && (typeof after !== 'string' || !UUID.test(after))) {
-    return jsonResponse({ error: 'after must be a next_cursor value' }, 400);
-  }
-
-  const db = supabaseDietsDb(admin);
-  const started = Date.now();
-  try {
-    if (body.dry_run === true) {
-      return jsonResponse({ dry_run: true, pending: await db.countPending() });
-    }
-
-    const result = await runDietsBackfillBatch(db, (recipe) => deriveRecipeDiets(recipe), {
-      after,
-      limit: clampDietsBatchSize(body.limit),
-    });
-
-    await logUsageEvent(admin, {
-      userId: user.id,
-      action: 'hub_diets_backfill',
-      status: result.errors.length > 0 ? 'partial' : 'ok',
-      usages: result.usages,
-      tokensCharged: 0,
-      durationMs: Date.now() - started,
-      metadata: {
+      const result = await runDietsBackfillBatch(db, (recipe) => deriveRecipeDiets(recipe), {
         after,
+        limit: clampDietsBatchSize(limit),
+      });
+
+      await log.usage({
+        action: 'hub_diets_backfill',
+        status: result.errors.length > 0 ? 'partial' : 'ok',
+        usages: result.usages,
+        tokensCharged: 0,
+        durationMs: Date.now() - started,
+        metadata: {
+          after,
+          scanned: result.scanned,
+          updated: result.updated,
+          still_null: result.stillNull,
+          skipped: result.skipped,
+          next_cursor: result.nextCursor,
+          errors: result.errors.slice(0, 10),
+        },
+      });
+
+      return {
         scanned: result.scanned,
         updated: result.updated,
         still_null: result.stillNull,
         skipped: result.skipped,
         next_cursor: result.nextCursor,
         errors: result.errors.slice(0, 10),
-      },
-    });
-
-    return jsonResponse({
-      scanned: result.scanned,
-      updated: result.updated,
-      still_null: result.stillNull,
-      skipped: result.skipped,
-      next_cursor: result.nextCursor,
-      errors: result.errors.slice(0, 10),
-    });
-  } catch (error) {
-    console.error('[backfill-diets] batch failed', error);
-    return jsonResponse({ error: 'Backfill batch failed' }, 500);
-  }
-});
+      };
+    } catch (error) {
+      console.error('[backfill-diets] batch failed', error);
+      throw HttpError.legacy(500, 'Backfill batch failed');
+    }
+  },
+);

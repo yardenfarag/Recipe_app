@@ -93,6 +93,25 @@ test("recipes that fit your diets come first", async ({ page }) => {
   await expect(page.locator("#main")).toContainText("Vegan");
 });
 
+test("recipes with your allergies come last and ones with foods you don't like lower, with a flag (PIN-180)", async ({ page }) => {
+  await setKitchenDiets(["halal"], { allergies: ["peanuts"], dislikes: ["Onion"] });
+  await openHub(page, [
+    { name: "Satay", save_count: 9, ingredients: ["chicken", "peanut butter"], contains: ["peanuts"], diets: ["halal"] },
+    { name: "Onion soup", save_count: 7, ingredients: ["onion", "stock"], contains: ["onion"], diets: ["halal"] },
+    { name: "Rice bowl", save_count: 5, ingredients: ["rice", "egg"], contains: ["eggs"], diets: ["halal"] },
+    { name: "Pork buns", save_count: 3, ingredients: ["pork", "flour"], contains: ["pork", "gluten"] },
+  ]);
+  await expect(cardTitles(page)).toHaveText(
+    await hubTitles({ search: HUB_TITLE_PREFIX, diets: ["halal"], allergens: ["peanuts"], dislikes: ["onion"] }),
+  );
+  // Halal first, a disliked food lower among them, the peanut recipe last although it is halal and the most saved.
+  await expect(cardTitles(page)).toHaveText(titles(["Rice bowl", "Onion soup", "Pork buns", "Satay"]));
+  await expect(page.locator("#main article").last()).toContainText("Has ingredients from your allergies: Peanuts");
+  await expect(page.locator("#main article").nth(1)).toContainText("Has foods you don’t like: Onion");
+  await expect(page.locator("#main")).toContainText("Recipes with your allergies come last.");
+  await expect(page.locator("#main")).toContainText("Halal");
+});
+
 test("'/' jumps to the search, Escape clears it, and no matches says so", async ({ page }) => {
   await openHub(page, FIVE, "");
   await page.locator("#main h1").click();
@@ -177,11 +196,11 @@ test("more recipes load as you scroll", async ({ page }) => {
 test("when the Hub can't load, it says so and tries again", async ({ page }) => {
   await resetHub(FIVE);
   await signIn(page);
-  await page.route("**/rest/v1/rpc/hub_cards", (route) => route.abort());
+  await page.route("**/rest/v1/rpc/hub_cards*", (route) => route.abort());
   await page.goto(`/app/hub?q=${encodeURIComponent(HUB_TITLE_PREFIX)}`);
   await expect(page.getByRole("heading", { name: "Couldn’t load the Hub" })).toBeVisible();
 
-  await page.unroute("**/rest/v1/rpc/hub_cards");
+  await page.unroute("**/rest/v1/rpc/hub_cards*");
   await page.getByRole("button", { name: "Try again" }).click();
   await expect(cardTitles(page)).toHaveCount(5);
 });

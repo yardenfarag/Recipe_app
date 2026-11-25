@@ -1,12 +1,25 @@
 // Sends Pinch emails through Resend's API, from hello@pinch-app.io with replies going to support@.
 // Secret: RESEND_API_KEY (a Resend key with sending access to pinch-app.io). A caller may pass
 // another key (support-email does), so one kind of email can't use up another's quota.
+// Optional secret EMAIL_BCC: where team copies go (see teamCopy), or `none` to stop them.
 import type { Db } from '../core/supabaseAdmin.ts';
 
 import type { RenderedEmail } from './render.ts';
+import { SUPPORT_INBOX } from './support.ts';
 
 export const EMAIL_FROM = 'Pinch <hello@pinch-app.io>';
 export const EMAIL_REPLY_TO = 'support@pinch-app.io';
+
+/**
+ * The BCC for a copy of a customer email to the team: EMAIL_BCC when it's an address, none when
+ * it's `none`, else support@. Only for welcome, receipt and reminder emails. Never pass it to
+ * sign-in codes, password resets or email changes: whoever reads those can open the account.
+ */
+export function teamCopy(raw: string | null | undefined = Deno.env.get('EMAIL_BCC')): string[] {
+  const value = (raw ?? '').trim();
+  if (value.toLowerCase() === 'none') return [];
+  return [/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(value) ? value : SUPPORT_INBOX];
+}
 
 export class EmailSendError extends Error {
   constructor(
@@ -33,6 +46,8 @@ export async function sendEmail(
     from?: string;
     /** Extra email headers, e.g. X-Pinch-* details that replies don't quote. */
     headers?: Record<string, string>;
+    /** Hidden copies, usually teamCopy(). */
+    bcc?: string[];
     /** Defaults to RESEND_API_KEY. */
     apiKey?: string;
     fetchImpl?: typeof fetch;
@@ -54,6 +69,7 @@ export async function sendEmail(
     body: JSON.stringify({
       from: options.from ?? EMAIL_FROM,
       to: [to],
+      ...(options.bcc?.length ? { bcc: options.bcc } : {}),
       reply_to: options.replyTo ?? EMAIL_REPLY_TO,
       ...(options.headers && Object.keys(options.headers).length ? { headers: options.headers } : {}),
       subject: email.subject,
@@ -89,6 +105,7 @@ export async function sendOnce(
     replyTo?: string;
     from?: string;
     headers?: Record<string, string>;
+    bcc?: string[];
     apiKey?: string;
   },
 ): Promise<boolean> {
@@ -107,6 +124,7 @@ export async function sendOnce(
     replyTo: input.replyTo,
     from: input.from,
     headers: input.headers,
+    bcc: input.bcc,
     apiKey: input.apiKey,
   });
 

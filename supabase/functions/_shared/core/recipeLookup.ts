@@ -1,5 +1,3 @@
-import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.110.6';
-import type { Database } from './database.types.ts';
 import type { Db } from './supabaseAdmin.ts';
 import {
   extractFacebookId,
@@ -10,6 +8,10 @@ import {
   recipeUrlsMatch,
   type Platform,
 } from '../extraction/platform.ts';
+
+// Moved to supabaseAdmin.ts so core/handler.ts needn't import extraction code (ADR 024 §2). Kept here for the
+// functions that still import it from this file.
+export { createAuthedSupabase } from './supabaseAdmin.ts';
 
 /** Looks up a saved recipe for the authenticated user that matches the input URL. */
 export async function findExistingRecipeForUser(
@@ -42,16 +44,6 @@ export async function findExistingRecipeForUser(
       );
     }) ?? null
   );
-}
-
-export function createAuthedSupabase(authHeader: string) {
-  const supabaseUrl = Deno.env.get('SUPABASE_URL');
-  const supabaseAnonKey = Deno.env.get('SUPABASE_ANON_KEY');
-  if (!supabaseUrl || !supabaseAnonKey) return null;
-
-  return createClient<Database>(supabaseUrl, supabaseAnonKey, {
-    global: { headers: { Authorization: authHeader } },
-  });
 }
 
 export function extractVideoIdForPlatform(url: string, platform: Platform): string | null {

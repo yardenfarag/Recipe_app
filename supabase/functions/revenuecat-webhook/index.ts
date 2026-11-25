@@ -147,6 +147,8 @@ serve('revenuecat-webhook', async (req) => {
     transactionId: grant.transactionId,
     store: grant.store,
     purchasedAt: grant.purchasedAtMs ? new Date(grant.purchasedAtMs) : null,
+    sandbox: isSandboxEnvironment(grant.environment),
+    price: grant.price,
   });
 
   return jsonResponse({ received: true, balance: Number(data) });

@@ -117,6 +117,7 @@ serve('polar-webhook', async (req) => {
     transactionId: decision.orderId,
     store: 'polar',
     purchasedAt: occurredAt && !Number.isNaN(occurredAt.getTime()) ? occurredAt : null,
+    price: decision.price,
   });
   return jsonResponse({ received: true, balance: Number(data) });
 });

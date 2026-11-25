@@ -1,11 +1,13 @@
-// "Your credits are in" email after a credit pack is granted. Called by both purchase webhooks
-// once grant_purchased_credits succeeds. Best effort: a failure here never fails the webhook,
-// because the credits are already in the account.
+// "Your credits are in" email after a credit pack is granted, then a "Pinch sale" alert to the
+// team (purchaseAlert.ts). Called by every purchase webhook once grant_purchased_credits
+// succeeds. Best effort: a failure here never fails the webhook, because the credits are already
+// in the account.
 import type { Db } from '../core/supabaseAdmin.ts';
 
 import { pickLocale } from './copy.ts';
+import { sendPurchaseAlert, type SalePrice } from './purchaseAlert.ts';
 import { purchaseStore, renderPurchaseEmail } from './render.ts';
-import { sendOnce } from './send.ts';
+import { sendOnce, teamCopy } from './send.ts';
 
 export interface PurchaseEmailInput {
   userId: string;
@@ -16,6 +18,10 @@ export interface PurchaseEmailInput {
   /** RevenueCat's store (APP_STORE, PLAY_STORE, …) or 'paddle' / 'polar'. */
   store: string | null;
   purchasedAt: Date | null;
+  /** A test purchase nobody paid for. Only the team's alert says so. */
+  sandbox?: boolean;
+  /** What the buyer paid, when the store's webhook says. Only the team's alert shows it. */
+  price?: SalePrice | null;
 }
 
 /** Free credits every account gets each calendar month (UTC); src/lib/quotas.ts has the same number. */
@@ -42,29 +48,46 @@ async function displayBalance(admin: Db, userId: string, purchased: number | nul
 }
 
 export async function sendPurchaseEmail(admin: Db, input: PurchaseEmailInput): Promise<void> {
+  if (!Deno.env.get('RESEND_API_KEY')) return;
+
+  let buyerEmail: string | null = null;
   try {
-    if (!Deno.env.get('RESEND_API_KEY')) return;
     const { data, error } = await admin.auth.admin.getUserById(input.userId);
     if (error) throw error;
     const user = data.user;
-    const to = (user?.email ?? '').trim();
-    if (!to) return;
+    buyerEmail = (user?.email ?? '').trim() || null;
 
-    await sendOnce(admin, {
-      kind: 'purchase',
-      dedupeKey: `${input.provider}/${input.transactionId}`,
-      userId: input.userId,
-      to,
-      email: renderPurchaseEmail({
-        locale: pickLocale(user?.user_metadata?.locale),
-        credits: input.credits,
-        balance: await displayBalance(admin, input.userId, input.balance),
-        store: purchaseStore(input.store),
-        date: input.purchasedAt ?? new Date(),
-        reference: input.transactionId,
-      }),
-    });
+    if (buyerEmail) {
+      await sendOnce(admin, {
+        kind: 'purchase',
+        dedupeKey: `${input.provider}/${input.transactionId}`,
+        userId: input.userId,
+        to: buyerEmail,
+        email: renderPurchaseEmail({
+          locale: pickLocale(user?.user_metadata?.locale),
+          credits: input.credits,
+          balance: await displayBalance(admin, input.userId, input.balance),
+          store: purchaseStore(input.store),
+          date: input.purchasedAt ?? new Date(),
+          reference: input.transactionId,
+        }),
+        bcc: teamCopy(),
+      });
+    }
   } catch (error) {
     console.error('[purchase-email] could not send', input.provider, input.transactionId, error);
   }
+
+  // The team hears about the sale even when the receipt couldn't go out.
+  await sendPurchaseAlert(admin, {
+    userId: input.userId,
+    buyerEmail,
+    credits: input.credits,
+    provider: input.provider,
+    transactionId: input.transactionId,
+    store: input.store,
+    purchasedAt: input.purchasedAt,
+    sandbox: input.sandbox,
+    price: input.price,
+  });
 }
