@@ -21,6 +21,16 @@ export interface CreditGrant {
   store: string | null;
   environment: string | null;
   purchasedAtMs: number | null;
+  /** What the buyer paid, for the team's sale alert. Credits come from the pack, never from this. */
+  price: PurchasePrice | null;
+}
+
+export interface PurchasePrice {
+  amount: number;
+  /** ISO 4217 code, upper case. */
+  currency: string;
+  /** The same in US dollars, when the buyer paid in another currency. */
+  usd: number | null;
 }
 
 export interface CreditRevoke {
@@ -71,6 +81,24 @@ export function purchaseUserId(event: Record<string, unknown>): string | null {
   const aliases = Array.isArray(event.aliases) ? event.aliases : [];
   const candidates = [event.app_user_id, event.original_app_user_id, ...aliases].map(text);
   return candidates.find(isUuid) ?? null;
+}
+
+function amount(value: unknown): number | null {
+  return typeof value === 'number' && Number.isFinite(value) && value >= 0 ? value : null;
+}
+
+/**
+ * RevenueCat sends `price` in US dollars and `price_in_purchased_currency` in `currency`, the
+ * buyer's own. Either may be missing.
+ */
+export function purchasePrice(event: Record<string, unknown>): PurchasePrice | null {
+  const usd = amount(event.price);
+  const paid = amount(event.price_in_purchased_currency);
+  const currency = text(event.currency).toUpperCase();
+  if (paid !== null && /^[A-Z]{3}$/.test(currency)) {
+    return { amount: paid, currency, usd: currency === 'USD' ? null : usd };
+  }
+  return usd === null ? null : { amount: usd, currency: 'USD', usd: null };
 }
 
 /** TestFlight, Play licence testers and StoreKit test purchases: nobody paid. */
@@ -146,6 +174,7 @@ export function creditPurchaseDecision(body: unknown): CreditPurchaseDecision {
       store,
       environment,
       purchasedAtMs: typeof purchasedAt === 'number' ? purchasedAt : null,
+      price: purchasePrice(event),
     },
   };
 }

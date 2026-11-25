@@ -23,6 +23,22 @@ export interface PurchaseAlertInput {
   purchasedAt: Date | null;
   /** A test purchase (TestFlight, Play testers): nobody paid. */
   sandbox?: boolean;
+  /** What the buyer paid, when the store's webhook says. */
+  price?: SalePrice | null;
+}
+
+export interface SalePrice {
+  amount: number;
+  /** ISO 4217 code, upper case. */
+  currency: string;
+  /** The same in US dollars, when the buyer paid in another currency and the store reports it. */
+  usd?: number | null;
+}
+
+/** "4.99 USD", or "17.90 ILS (4.99 USD)" when the store also gave the dollar amount. */
+export function formatSalePrice(price: SalePrice): string {
+  const paid = `${price.amount.toFixed(2)} ${price.currency}`;
+  return typeof price.usd === 'number' ? `${paid} (${price.usd.toFixed(2)} USD)` : paid;
 }
 
 const STORE_NAMES: Record<PurchaseStore, string> = {
@@ -47,10 +63,19 @@ function formatWhen(date: Date): string {
 
 export function renderPurchaseAlertEmail(input: PurchaseAlertInput): RenderedEmail {
   const storeName = STORE_NAMES[purchaseStore(input.store)];
-  const subject = `${input.sandbox ? 'Pinch test sale' : 'Pinch sale'}: ${input.credits} credits, ${storeName}`;
+  const price = input.price ? formatSalePrice(input.price) : null;
+  const subject = [
+    `${input.sandbox ? 'Pinch test sale' : 'Pinch sale'}: ${input.credits} credits`,
+    storeName,
+    // The subject has only what was paid; the dollar amount beside it is in the body.
+    input.price ? formatSalePrice({ ...input.price, usd: null }) : null,
+  ]
+    .filter((part) => part !== null)
+    .join(', ');
   const text = [
     input.sandbox ? 'Sandbox test purchase. Nobody paid.\n' : null,
     `Credits: ${input.credits}`,
+    price ? `Price: ${price}` : null,
     `Store: ${storeName}`,
     `Buyer: ${input.buyerEmail ?? 'unknown'}`,
     `Account: ${input.userId}`,

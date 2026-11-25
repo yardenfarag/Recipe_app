@@ -197,8 +197,9 @@ npx supabase secrets set REVENUECAT_REST_API_KEY=sk_...
 
 Every credit pack sold (App Store, Google Play, web) sends a "Pinch sale" email to
 support@pinch-app.io, right after the buyer's receipt (`_shared/email/purchaseAlert.ts`). It
-lists the credits, the store, the buyer's address and account id, and the transaction. A sandbox
-purchase by an admin is marked "Pinch test sale". Nothing to set up. Optional:
+lists the credits, the price the buyer paid (with the dollar amount beside another currency, when
+the store's webhook has it), the store, the buyer's address and account id, and the transaction.
+A sandbox purchase by an admin is marked "Pinch test sale". Nothing to set up. Optional:
 
 ```bash
 npx supabase secrets set PURCHASE_ALERT_EMAIL=someone@example.com   # another address

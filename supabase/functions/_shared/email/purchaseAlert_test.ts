@@ -102,6 +102,21 @@ Deno.test('sale alert names each store, and says when the buyer is unknown', () 
   assertStringIncludes(renderPurchaseAlertEmail(alert({ buyerEmail: null })).text, 'Buyer: unknown');
 });
 
+Deno.test('sale alert shows the price in the subject and under the credits', () => {
+  const email = renderPurchaseAlertEmail(alert({ price: { amount: 4.99, currency: 'USD', usd: null } }));
+  assertEquals(email.subject, 'Pinch sale: 30 credits, App Store, 4.99 USD');
+  assert(email.text.startsWith('Credits: 30\nPrice: 4.99 USD\nStore: App Store\n'));
+
+  // Paid in another currency: the dollar amount goes beside it in the body only.
+  const abroad = renderPurchaseAlertEmail(alert({ price: { amount: 17.9, currency: 'ILS', usd: 4.99 } }));
+  assertEquals(abroad.subject, 'Pinch sale: 30 credits, App Store, 17.90 ILS');
+  assertStringIncludes(abroad.text, 'Price: 17.90 ILS (4.99 USD)\n');
+
+  // No price from the store: no line. A free order is still a price.
+  assert(!renderPurchaseAlertEmail(alert({ price: null })).text.includes('Price'));
+  assertStringIncludes(renderPurchaseAlertEmail(alert({ price: { amount: 0, currency: 'USD' } })).text, 'Price: 0.00 USD');
+});
+
 Deno.test('a sandbox purchase is marked as a test sale', () => {
   const email = renderPurchaseAlertEmail(alert({ sandbox: true }));
   assertEquals(email.subject, 'Pinch test sale: 30 credits, App Store');
@@ -185,11 +200,16 @@ const PURCHASE: PurchaseEmailInput = {
 
 Deno.test('a purchase sends the buyer their receipt, then the team its alert', async () => {
   const { admin, inserts } = fakeAdmin();
-  const calls = await withResend(200, () => sendPurchaseEmail(admin, PURCHASE));
+  const calls = await withResend(200, () =>
+    sendPurchaseEmail(admin, { ...PURCHASE, price: { amount: 4.99, currency: 'USD' } }),
+  );
 
   assertEquals(calls.map((call) => call.body.to), [['cook@example.com'], ['support@pinch-app.io']]);
-  assertEquals(calls[1].body.subject, 'Pinch sale: 30 credits, Web (Polar)');
+  assertEquals(calls[1].body.subject, 'Pinch sale: 30 credits, Web (Polar), 4.99 USD');
   assertStringIncludes(String(calls[1].body.text), 'Buyer: cook@example.com');
+  assertStringIncludes(String(calls[1].body.text), 'Price: 4.99 USD');
+  // The buyer's receipt is unchanged: the store's own receipt carries the price.
+  assert(!String(calls[0].body.text).includes('4.99'));
   assertEquals(inserts.map((row) => row.dedupe_key), ['polar/order_1', 'alert/polar/order_1']);
 });
 
