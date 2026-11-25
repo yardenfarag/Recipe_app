@@ -71,7 +71,20 @@ describe('polarDecision', () => {
       packId: 'pinch_credits_10',
       credits: 10,
       occurredAt: '2026-11-16T11:59:00Z',
+      price: null,
     });
+  });
+
+  it('reads what the buyer paid from the order total, in cents', () => {
+    expect(polarDecision(paid({ total_amount: 199, currency: 'usd' }))).toMatchObject({
+      action: 'grant',
+      price: { amount: 1.99, currency: 'USD' },
+    });
+    // A free test order is still a price.
+    expect(polarDecision(paid({ total_amount: 0, currency: 'usd' }))).toMatchObject({ price: { amount: 0, currency: 'USD' } });
+    // No usable total or currency: the grant still goes through, without a price.
+    expect(polarDecision(paid({ total_amount: '199', currency: 'usd' }))).toMatchObject({ action: 'grant', price: null });
+    expect(polarDecision(paid({ total_amount: 199 }))).toMatchObject({ action: 'grant', price: null });
   });
 
   it('falls back to the checkout metadata for the user and pack', () => {

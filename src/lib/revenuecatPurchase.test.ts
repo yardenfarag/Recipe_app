@@ -30,8 +30,30 @@ describe('creditPurchaseDecision', () => {
         store: 'APP_STORE',
         environment: 'PRODUCTION',
         purchasedAtMs: paidPack.purchased_at_ms,
+        price: null,
       },
     });
+  });
+
+  it('reads what the buyer paid, with the dollar amount beside another currency', () => {
+    const priceOf = (fields: Record<string, unknown>) => {
+      const decision = creditPurchaseDecision({ ...paidPack, ...fields });
+      return decision.action === 'grant' ? decision.grant.price : 'no grant';
+    };
+    expect(priceOf({ price: 7.99, price_in_purchased_currency: 7.99, currency: 'USD' })).toEqual({
+      amount: 7.99,
+      currency: 'USD',
+      usd: null,
+    });
+    expect(priceOf({ price: 8.14, price_in_purchased_currency: 29.9, currency: 'ils' })).toEqual({
+      amount: 29.9,
+      currency: 'ILS',
+      usd: 8.14,
+    });
+    // Only the dollar price, or nothing usable: the grant still goes through.
+    expect(priceOf({ price: 7.99, price_in_purchased_currency: null })).toEqual({ amount: 7.99, currency: 'USD', usd: null });
+    expect(priceOf({ price: '7.99', currency: 'USD' })).toBeNull();
+    expect(priceOf({ price: -1 })).toBeNull();
   });
 
   it('grants the same pack from the wrapped webhook body', () => {

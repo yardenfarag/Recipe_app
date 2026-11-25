@@ -18,8 +18,31 @@ export const SIGNATURE_TOLERANCE_SECONDS = 5 * 60;
 export type PolarDecision =
   | { action: 'ignore'; reason: string }
   | { action: 'unhandled'; reason: string }
-  | { action: 'grant'; orderId: string; userId: string; packId: string; credits: number; occurredAt: string | null }
+  | {
+      action: 'grant';
+      orderId: string;
+      userId: string;
+      packId: string;
+      credits: number;
+      occurredAt: string | null;
+      /** What the buyer paid, for the team's sale alert. Credits come from the pack, never from this. */
+      price: PolarPrice | null;
+    }
   | { action: 'revoke'; orderId: string };
+
+export interface PolarPrice {
+  amount: number;
+  /** ISO 4217 code, upper case. */
+  currency: string;
+}
+
+/** An order's `total_amount` is in cents, after discounts and taxes; `currency` is lower case. */
+export function polarPrice(order: Record<string, unknown>): PolarPrice | null {
+  const cents = order.total_amount;
+  const currency = text(order.currency).toUpperCase();
+  if (typeof cents !== 'number' || !Number.isFinite(cents) || cents < 0 || !/^[A-Z]{3}$/.test(currency)) return null;
+  return { amount: cents / 100, currency };
+}
 
 function asRecord(value: unknown): Record<string, unknown> | null {
   return value !== null && typeof value === 'object' && !Array.isArray(value)
@@ -138,6 +161,7 @@ export function polarDecision(body: unknown): PolarDecision {
       packId,
       credits,
       occurredAt: text(order.created_at) || text(event.timestamp) || null,
+      price: polarPrice(order),
     };
   }
 

@@ -5,7 +5,7 @@
 import type { Db } from '../core/supabaseAdmin.ts';
 
 import { pickLocale } from './copy.ts';
-import { sendPurchaseAlert } from './purchaseAlert.ts';
+import { sendPurchaseAlert, type SalePrice } from './purchaseAlert.ts';
 import { purchaseStore, renderPurchaseEmail } from './render.ts';
 import { sendOnce } from './send.ts';
 
@@ -20,6 +20,8 @@ export interface PurchaseEmailInput {
   purchasedAt: Date | null;
   /** A test purchase nobody paid for. Only the team's alert says so. */
   sandbox?: boolean;
+  /** What the buyer paid, when the store's webhook says. Only the team's alert shows it. */
+  price?: SalePrice | null;
 }
 
 /** Free credits every account gets each calendar month (UTC); src/lib/quotas.ts has the same number. */
@@ -85,5 +87,6 @@ export async function sendPurchaseEmail(admin: Db, input: PurchaseEmailInput): P
     store: input.store,
     purchasedAt: input.purchasedAt,
     sandbox: input.sandbox,
+    price: input.price,
   });
 }
