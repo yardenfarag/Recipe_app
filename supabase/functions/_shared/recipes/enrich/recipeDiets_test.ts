@@ -36,12 +36,10 @@ Deno.test('sanitizeDiets reads the per-diet true/false answer', () => {
   assertEquals(sanitizeDiets({ unrelated: true }), null);
 });
 
-Deno.test('the schema asks for a boolean for every diet and every food', () => {
-  assertEquals(DIETS_SCHEMA.required, ['diets', 'contains']);
-  assertEquals(DIETS_SCHEMA.properties.diets.required, [...HUB_DIET_KEYS]);
-  assertEquals(Object.keys(DIETS_SCHEMA.properties.diets.properties), [...HUB_DIET_KEYS]);
-  assertEquals(DIETS_SCHEMA.properties.contains.required, [...HUB_CONTAINS_KEYS]);
-  assertEquals(Object.keys(DIETS_SCHEMA.properties.contains.properties), [...HUB_CONTAINS_KEYS]);
+Deno.test('the schema is one flat object with a boolean for every diet and every food', () => {
+  const keys = [...HUB_DIET_KEYS, ...HUB_CONTAINS_KEYS.map((k) => `contains_${k}`)];
+  assertEquals(DIETS_SCHEMA.required, keys);
+  assertEquals(Object.keys(DIETS_SCHEMA.properties), keys);
 });
 
 Deno.test('halal and kosher are Hub diets, with the rules a recipe can show (PIN-180)', () => {
@@ -58,6 +56,10 @@ Deno.test('halal and kosher are Hub diets, with the rules a recipe can show (PIN
 Deno.test('sanitizeDiets: halal and kosher imply nothing and are implied by nothing', () => {
   assertEquals(sanitizeDiets({ diets: ['vegan'] })?.includes('halal'), false);
   assertEquals(sanitizeDiets({ diets: ['halal', 'kosher'] }), ['halal', 'kosher']);
+});
+
+Deno.test('sanitizeContains reads the flat answer the schema asks for', () => {
+  assertEquals(sanitizeContains({ vegan: true, contains_pork: true, contains_milk: true, contains_onion: false }), ['milk', 'pork']);
 });
 
 Deno.test('sanitizeContains reads the per-food answer or a list, in a fixed order', () => {
@@ -93,6 +95,14 @@ function answer(diets: string[], contains: string[]) {
   };
 }
 
+/** The flat answer the schema asks for. */
+function flatAnswer(diets: string[], contains: string[]) {
+  return {
+    ...Object.fromEntries(HUB_DIET_KEYS.map((k) => [k, diets.includes(k)])),
+    ...Object.fromEntries(HUB_CONTAINS_KEYS.map((k) => [`contains_${k}`, contains.includes(k)])),
+  };
+}
+
 Deno.test('deriveRecipeDiets returns the sanitized lists and one usage', async () => {
   await withModel([completion(answer(['gluten_free', 'keto', 'kosher'], ['milk']))], async (stub) => {
     const result = await deriveRecipeDiets(STEAK);
@@ -104,8 +114,17 @@ Deno.test('deriveRecipeDiets returns the sanitized lists and one usage', async (
   });
 });
 
+Deno.test('deriveRecipeDiets reads the flat answer', async () => {
+  await withModel([completion(flatAnswer(['halal'], ['milk', 'onion']))], async () => {
+    const result = await deriveRecipeDiets(STEAK);
+    assertEquals(result.diets, ['halal']);
+    assertEquals(result.contains, ['milk', 'onion']);
+  });
+});
+
 Deno.test('deriveRecipeDiets sets neither list when the answer has only one', async () => {
-  await withModel([completion({ diets: answer(['vegan'], []).diets })], async () => {
+  // The answer that broke the first backfill batch: the diets, but no foods.
+  await withModel([completion(Object.fromEntries(HUB_DIET_KEYS.map((k) => [k, k === 'vegan'])))], async () => {
     const result = await deriveRecipeDiets(STEAK);
     assertEquals(result.diets, null);
     assertEquals(result.contains, null);
