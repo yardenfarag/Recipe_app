@@ -93,7 +93,7 @@ const MAX_STEPS = 20;
 const MAX_STEP_CHARS = 300;
 
 export const DIETS_SYSTEM_PROMPT = `You decide which diets a recipe already fits exactly as written, with no substitutions, and which foods it contains.
-Under "diets", answer every diet separately with true or false. Judge each one on its own rules; one diet failing says nothing about another.
+Answer every key with true or false. For the diets, judge each one on its own rules; one diet failing says nothing about another.
 
 Diets:
 - vegan: no meat, poultry, fish, seafood, eggs, dairy, honey, gelatin or other animal products.
@@ -109,51 +109,47 @@ Diets:
 - halal: no pork or pork products (bacon, ham, lard, pork sausage, prosciutto, chorizo, pork gelatin), no alcohol in the dish (wine, beer, mirin, sake, spirits, cooking wine), and no blood. Fish and seafood are fine. Assume any other meat comes from a halal source. Gelatin of unknown source breaks it. So a cheeseburger IS halal and a beef stew with red wine is NOT.
 - kosher: no pork, rabbit or other non-kosher animals; no shellfish or fish without fins and scales (shrimp, prawns, crab, lobster, clams, mussels, oysters, scallops, squid, octopus, catfish, eel, monkfish, shark); and never meat or poultry together with dairy in the same dish (butter, cream, cheese, milk or yogurt with meat or poultry). Wine is fine. Assume the meat comes from a kosher source. Gelatin of unknown source breaks it. So a cheeseburger is NOT kosher, a shrimp pasta is NOT kosher, and a beef stew with red wine IS kosher.
 
-Under "contains", answer every food with true when the recipe has it in any ingredient, sauce, stock or product normally made with it, else false:
-- milk: milk or dairy (butter, cream, cheese, yogurt, ghee, whey). Plant milks, coconut milk and peanut butter are not milk.
-- eggs: eggs, including mayonnaise, aioli, meringue and fresh egg pasta.
-- fish: fish, including anchovies, fish sauce, Worcestershire sauce and dashi.
-- shellfish: shrimp, prawns, crab, lobster, clams, mussels, oysters, scallops, squid or octopus.
-- tree_nuts: almonds, walnuts, cashews, pistachios, hazelnuts, pecans, pine nuts or macadamias, including pesto, marzipan, nut flours and nut milks. Coconut and nutmeg are not tree nuts.
-- peanuts: peanuts, peanut butter or peanut oil.
-- gluten: wheat, barley, rye or spelt and anything made with them (flour, bread, regular pasta, couscous, bulgur, regular soy sauce, beer), and oats unless they are gluten-free.
-- soy: soybeans, tofu, tempeh, edamame, miso, soy sauce or tamari.
-- sesame: sesame seeds or oil, tahini, hummus, halva or za'atar.
-- cilantro: fresh cilantro (coriander leaves). Ground coriander seed does not count.
-- mushrooms: any mushrooms.
-- olives: olives or tapenade. Olive oil does not count.
-- onion: onions, shallots, spring onions or onion powder.
-- garlic: garlic in any form, including garlic powder.
-- eggplant: eggplant (aubergine).
-- tomato: tomatoes in any form, including tomato paste, passata, tomato sauce and ketchup.
-- chili: hot chili peppers in any form (fresh, dried, flakes, chili powder, hot sauce). Sweet bell peppers and paprika do not count.
-- coconut: coconut in any form, including coconut milk, cream, oil and flakes.
-- pork: pork in any form, including bacon, ham, lard, pork sausage, prosciutto, chorizo and pork gelatin.
+Foods: answer each contains_ key with true when the recipe has that food in any ingredient, sauce, stock or product normally made with it, else false:
+- contains_milk: milk or dairy (butter, cream, cheese, yogurt, ghee, whey). Plant milks, coconut milk and peanut butter are not milk.
+- contains_eggs: eggs, including mayonnaise, aioli, meringue and fresh egg pasta.
+- contains_fish: fish, including anchovies, fish sauce, Worcestershire sauce and dashi.
+- contains_shellfish: shrimp, prawns, crab, lobster, clams, mussels, oysters, scallops, squid or octopus.
+- contains_tree_nuts: almonds, walnuts, cashews, pistachios, hazelnuts, pecans, pine nuts or macadamias, including pesto, marzipan, nut flours and nut milks. Coconut and nutmeg are not tree nuts.
+- contains_peanuts: peanuts, peanut butter or peanut oil.
+- contains_gluten: wheat, barley, rye or spelt and anything made with them (flour, bread, regular pasta, couscous, bulgur, regular soy sauce, beer), and oats unless they are gluten-free.
+- contains_soy: soybeans, tofu, tempeh, edamame, miso, soy sauce or tamari.
+- contains_sesame: sesame seeds or oil, tahini, hummus, halva or za'atar.
+- contains_cilantro: fresh cilantro (coriander leaves). Ground coriander seed does not count.
+- contains_mushrooms: any mushrooms.
+- contains_olives: olives or tapenade. Olive oil does not count.
+- contains_onion: onions, shallots, spring onions or onion powder.
+- contains_garlic: garlic in any form, including garlic powder.
+- contains_eggplant: eggplant (aubergine).
+- contains_tomato: tomatoes in any form, including tomato paste, passata, tomato sauce and ketchup.
+- contains_chili: hot chili peppers in any form (fresh, dried, flakes, chili powder, hot sauce). Sweet bell peppers and paprika do not count.
+- contains_coconut: coconut in any form, including coconut milk, cream, oil and flakes.
+- contains_pork: pork in any form, including bacon, ham, lard, pork sausage, prosciutto, chorizo and pork gelatin.
 
 Rules:
 - Judge the ingredients as listed. Do not assume a swap the recipe does not state.
 - Be strict about what each diet forbids. Answer false when the whole recipe does not clearly fit, or when an ingredient of unknown kind could break that diet (for example "broth", "stock", "sauce", "mayonnaise" or "chocolate").
 - A product name counts as what it normally is: "flour" is wheat flour, "chocolate" is sweetened, "oil" or "vegetable oil" is a seed oil.
 - Optional garnishes count unless the recipe says they can be left out.
-- For the allergens (milk to sesame), answer true when an ingredient of unknown kind could contain it.
+- For the allergens (contains_milk to contains_sesame), answer true when an ingredient of unknown kind could contain it.
 - Return ONLY data matching the schema.`;
 
-function booleans(keys: readonly string[]) {
-  return {
-    type: 'object',
-    properties: Object.fromEntries(keys.map((key) => [key, { type: 'boolean' }])),
-    required: [...keys],
-  };
-}
+const CONTAINS_PREFIX = 'contains_';
+const DIETS_SCHEMA_KEYS = [...HUB_DIET_KEYS, ...HUB_CONTAINS_KEYS.map((key) => `${CONTAINS_PREFIX}${key}`)];
 
 /**
- * One required boolean per diet and per food, so the model has to judge each of them instead of
- * listing a few.
+ * One flat object with a required boolean per diet and per food (`contains_milk`, ...), so the
+ * model has to judge each of them instead of listing a few. Flat on purpose: with a nested
+ * `{ diets, contains }` schema the model left out `contains` on most cards (PIN-180 backfill).
  */
 export const DIETS_SCHEMA = {
   type: 'object',
-  properties: { diets: booleans(HUB_DIET_KEYS), contains: booleans(HUB_CONTAINS_KEYS) },
-  required: ['diets', 'contains'],
+  properties: Object.fromEntries(DIETS_SCHEMA_KEYS.map((key) => [key, { type: 'boolean' }])),
+  required: DIETS_SCHEMA_KEYS,
 };
 
 function isRecord(value: unknown): value is Record<string, unknown> {
@@ -217,10 +213,14 @@ export function sanitizeDiets(value: unknown): HubDietKey[] | null {
 }
 
 /**
- * The foods the model says the recipe contains, in HUB_CONTAINS_KEYS order. Reads
- * `{ contains: { milk: true, ... } }` or a plain list; null when the answer is neither.
+ * The foods the model says the recipe contains, in HUB_CONTAINS_KEYS order. Reads the flat
+ * `{ contains_milk: true, ... }` answer, `{ contains: { milk: true, ... } }` or a plain list; null
+ * when the answer is none of these.
  */
 export function sanitizeContains(value: unknown): HubContainsKey[] | null {
+  if (isRecord(value) && HUB_CONTAINS_KEYS.some((key) => typeof value[`${CONTAINS_PREFIX}${key}`] === 'boolean')) {
+    return HUB_CONTAINS_KEYS.filter((key) => value[`${CONTAINS_PREFIX}${key}`] === true);
+  }
   const list: unknown = isRecord(value) && 'contains' in value ? value.contains : value;
   if (isRecord(list)) {
     if (!HUB_CONTAINS_KEYS.some((key) => typeof list[key] === 'boolean')) return null;
@@ -247,7 +247,7 @@ export async function deriveRecipeDiets(
       maxOutputTokens: 600,
       context: 'recipeDiets.ts: deriveRecipeDiets',
     });
-    const diets = isRecord(data) && 'diets' in data ? sanitizeDiets(data.diets) : null;
+    const diets = sanitizeDiets(data);
     const contains = sanitizeContains(data);
     return diets === null || contains === null
       ? { diets: null, contains: null, usages: [usage], error: 'diets_not_a_list' }
