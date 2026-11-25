@@ -6,7 +6,7 @@ import { FieldInput } from '@/components/text-input';
 import { SheetModal } from '@/components/SheetModal';
 import { Button } from '@/components/ui/Button';
 import { Text } from '@/components/ui/Text';
-import { showNotice } from '@/lib/confirmAction';
+import { showNotice } from '@/lib/dialog';
 import { supportErrorKey } from '@shared/lib/serverErrors';
 import {
   FEEDBACK_MAX_LENGTH,
@@ -32,14 +32,14 @@ export function FeedbackModal({ visible, onClose }: FeedbackModalProps) {
       await submitFeedback({ message, locale: i18n.language ?? null });
       setMessage('');
       onClose();
-      void showNotice(t('feedback.sentTitle'), t('feedback.sentBody'));
+      void showNotice({ title: t('feedback.sentTitle'), message: t('feedback.sentBody') });
     } catch (err) {
       console.warn('[feedback] submit failed', err);
       const limitKey = supportErrorKey(err);
-      void showNotice(
-        t('feedback.sendFailed'),
-        limitKey ? t(limitKey) : err instanceof Error ? err.message : t('common.tryAgain'),
-      );
+      void showNotice({
+        title: t('feedback.sendFailed'),
+        message: limitKey ? t(limitKey) : err instanceof Error ? err.message : t('common.tryAgain'),
+      });
     } finally {
       setSubmitting(false);
     }

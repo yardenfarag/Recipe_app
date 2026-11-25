@@ -10,6 +10,8 @@ export type RecipeVariantKey =
   | 'mediterranean'
   | 'paleo'
   | 'pescatarian'
+  | 'halal'
+  | 'kosher'
   | 'custom';
 
 export const RECIPE_VARIANTS: {
@@ -83,6 +85,18 @@ export const RECIPE_VARIANTS: {
     label: 'Pescatarian',
     icon: 'fish-outline',
     description: 'No meat or poultry — fish and seafood are fine.',
+  },
+  {
+    key: 'halal',
+    label: 'Halal',
+    icon: 'restaurant-outline',
+    description: 'No pork, alcohol, or blood.',
+  },
+  {
+    key: 'kosher',
+    label: 'Kosher',
+    icon: 'checkmark-done-outline',
+    description: 'No pork or shellfish, and no meat with dairy.',
   },
 ];
 

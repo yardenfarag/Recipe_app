@@ -13,6 +13,7 @@ import {
 } from 'react-native';
 import { useTranslation } from 'react-i18next';
 
+import { AvoidFlagChip, type AvoidFlag } from '@/components/AvoidFlagChip';
 import { CookieMark } from '@/components/CookieMark';
 import { RecipeImage } from '@/components/RecipeImage';
 import { RecipeListRow } from '@/components/RecipeListRow';
@@ -35,6 +36,7 @@ import { useTypography } from '@/hooks/useTypography';
 import { announce } from '@/lib/a11y';
 import { logTap } from '@/lib/interactionLog';
 import { formatRecipeDuration } from '@shared/lib/formatRecipeDuration';
+import { hubCardFlag, hubCardFlagLabel, hubCardFlagText } from '@shared/lib/hubAvoid';
 import { hubCardDetail, HUB_PLATFORMS, platformLabelKey } from '@shared/lib/hubCards';
 import { recipeCardToListRecipe } from '@shared/lib/recipeCardMap';
 import { translateRecipeTag } from '@shared/lib/recipeTags';
@@ -48,7 +50,8 @@ const GRID_GAP = 12;
 /**
  * Cooking Hub (Night Market, PIN-177; the web's Hub page): recipes other people already snapped from public links.
  * Search, the popular tags as chips, the source and sort behind Filter, and the recipes as photo cards in a grid
- * (or rows, the Library's choice).
+ * (or rows, the Library's choice). It is sorted for the cook: their diets first, foods they don't like lower, their
+ * allergies last, and those cards carry a flag (PIN-180).
  */
 export default function CookingHubScreen() {
   const { t } = useTranslation();
@@ -66,6 +69,7 @@ export default function CookingHubScreen() {
     error,
     total,
     listEpoch,
+    avoidList,
     search,
     setSearch,
     selectedTags,
@@ -82,8 +86,15 @@ export default function CookingHubScreen() {
   } = useCookingHub();
 
   const rows = useMemo(
-    () => cards.map((card) => ({ card, recipe: recipeCardToListRecipe(card) })),
-    [cards],
+    () =>
+      cards.map((card) => {
+        const found = hubCardFlag(card, avoidList);
+        const flag: AvoidFlag | undefined = found
+          ? { kind: found.kind, text: hubCardFlagText(found, t), label: hubCardFlagLabel(found, t) }
+          : undefined;
+        return { card, recipe: recipeCardToListRecipe(card), flag };
+      }),
+    [cards, avoidList, t],
   );
   const listRef = useRef<FlatList<(typeof rows)[number]>>(null);
   // The tags are always on show; Filter holds the source and the sort.
@@ -305,7 +316,7 @@ export default function CookingHubScreen() {
         renderItem={({ item, index }) =>
           grid ? (
             <View style={{ flex: 1, maxWidth: `${100 / numColumns}%`, paddingHorizontal: GRID_GAP / 2 }}>
-              <HubCard card={item.card} recipe={item.recipe} />
+              <HubCard card={item.card} recipe={item.recipe} flag={item.flag} />
             </View>
           ) : (
             <RecipeListRow
@@ -314,6 +325,7 @@ export default function CookingHubScreen() {
               index={index}
               variant="row"
               detail={hubCardDetail(item.card, t)}
+              flag={item.flag}
               onPress={() => router.push(`/hub/${item.recipe.id}`)}
             />
           )
@@ -394,7 +406,7 @@ export default function CookingHubScreen() {
  * A Hub recipe in the grid, as a Library card (the web's RecipeCard): a square photo with 18 corners and the source
  * on it, the title in Space Grotesk, and how long it takes and how many people saved it, muted.
  */
-const HubCard = memo(function HubCard({ card, recipe }: { card: RecipeCard; recipe: Recipe }) {
+const HubCard = memo(function HubCard({ card, recipe, flag }: { card: RecipeCard; recipe: Recipe; flag?: AvoidFlag }) {
   const { t } = useTranslation();
   const { colors } = useThemePreference();
   const photo = usePhotoColors();
@@ -417,7 +429,7 @@ const HubCard = memo(function HubCard({ card, recipe }: { card: RecipeCard; reci
       trackId="hub.recipe.open"
       onPress={() => router.push(`/hub/${recipe.id}`)}
       accessibilityRole="button"
-      accessibilityLabel={[title, hubCardDetail(card, t), time].filter(Boolean).join(', ')}
+      accessibilityLabel={[title, hubCardDetail(card, t), time, flag?.label].filter(Boolean).join(', ')}
       style={({ pressed }) => ({ gap: 10, opacity: pressed ? 0.88 : 1 })}
     >
       <View
@@ -482,6 +494,7 @@ const HubCard = memo(function HubCard({ card, recipe }: { card: RecipeCard; reci
             {meta}
           </Text>
         ) : null}
+        {flag ? <AvoidFlagChip flag={flag} /> : null}
       </View>
     </Pressable>
   );

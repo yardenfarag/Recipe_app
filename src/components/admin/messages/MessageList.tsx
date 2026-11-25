@@ -12,7 +12,7 @@ import {
 } from '@/components/admin/messages/form';
 import { Pressable } from '@/components/ui/Pressable';
 import { useThemePreference } from '@/hooks/useThemePreference';
-import { confirmAction, confirmDestructive } from '@/lib/confirmAction';
+import { askConfirm } from '@/lib/dialog';
 import { errorText } from '@shared/lib/errorText';
 import { pickContent, type AdminMessage, type MessageStatus } from '@shared/lib/inAppMessages';
 import { deleteAdminMessage, setAdminMessageStatus } from '@shared/lib/supabase/adminMessages';
@@ -59,20 +59,25 @@ export function MessageList({ messages, loading, error, onNew, onEdit, onDuplica
   }
 
   async function stop(message: AdminMessage) {
-    const ok = await confirmAction(
-      'Stop this message?',
-      `“${message.name}” disappears for users the next time their app fetches messages. You can resume it later.`,
-      'Stop',
-    );
+    const ok = await askConfirm({
+      trackId: 'admin.messages.stop_dialog',
+      title: 'Stop this message?',
+      message: `“${message.name}” disappears for users the next time their app fetches messages. You can resume it later.`,
+      confirmLabel: 'Stop',
+      cancelLabel: 'Cancel',
+    });
     if (ok) await run(message, () => setAdminMessageStatus(message.id, 'stopped'), `Stopped “${message.name}”.`);
   }
 
   async function remove(message: AdminMessage) {
-    const ok = await confirmDestructive(
-      'Delete this message?',
-      `“${message.name}” and its seen, dismissed and clicked records are deleted for good. To keep the counts, stop it instead.`,
-      'Delete',
-    );
+    const ok = await askConfirm({
+      trackId: 'admin.messages.delete_dialog',
+      title: 'Delete this message?',
+      message: `“${message.name}” and its seen, dismissed and clicked records are deleted for good. To keep the counts, stop it instead.`,
+      confirmLabel: 'Delete',
+      cancelLabel: 'Cancel',
+      destructive: true,
+    });
     if (ok) await run(message, () => deleteAdminMessage(message.id), `Deleted “${message.name}”.`);
   }
 

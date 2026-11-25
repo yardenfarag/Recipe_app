@@ -26,6 +26,11 @@ describe('recipe variants', () => {
     expect(keys).toEqual(expect.arrayContaining(['keto', 'mediterranean', 'paleo', 'pescatarian']));
   });
 
+  it('includes halal and kosher (PIN-180)', () => {
+    const keys = RECIPE_VARIANTS.map((v) => v.key);
+    expect(keys).toEqual(expect.arrayContaining(['halal', 'kosher']));
+  });
+
   it('has an English label and description for every variant', () => {
     const variants = en.recipe.variants as Record<string, { label: string; description: string }>;
     for (const { key } of RECIPE_VARIANTS) {

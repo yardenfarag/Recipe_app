@@ -37,7 +37,7 @@ import { useThemePreference } from "@/hooks/useThemePreference";
 import { useTypography } from "@/hooks/useTypography";
 import { announce } from "@/lib/a11y";
 import { logTap } from "@/lib/interactionLog";
-import { showNotice } from "@/lib/confirmAction";
+import { showNotice } from "@/lib/dialog";
 import { claimShare, releaseShareClaim } from "@/lib/shareIntentClaim";
 import { creditPurchasesOfferedOn } from "@/lib/purchases";
 import { openAppStore } from "@/lib/appStore";
@@ -458,10 +458,10 @@ export default function AddRecipeScreen() {
       const kitchen = await applyKitchenOnExtract(user.id, recipeToPreview);
       recipeToPreview = kitchen.recipe;
       if (kitchen.failed) {
-        await showNotice(
-          t("recipe.kitchenAutoApplyFailedTitle"),
-          t("recipe.kitchenAutoApplyFailed"),
-        );
+        await showNotice({
+          title: t("recipe.kitchenAutoApplyFailedTitle"),
+          message: t("recipe.kitchenAutoApplyFailed"),
+        });
       }
     }
 

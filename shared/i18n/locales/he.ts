@@ -640,6 +640,14 @@ export default {
         "label": "פסקטריאני",
         "description": "בלי בשר ועוף — דגים ופירות ים כן."
       },
+      "halal": {
+        "label": "חלאל",
+        "description": "בלי חזיר, אלכוהול ודם."
+      },
+      "kosher": {
+        "label": "כשר",
+        "description": "בלי חזיר ופירות ים, ובלי בשר עם חלב."
+      },
       "custom": {
         "label": "הגרסה שלכם",
         "description": "מותאם למה שביקשתם."
@@ -1116,6 +1124,8 @@ export default {
     "keto": "קטו",
     "paleo": "פליאו",
     "pescatarian": "פסקטריאני",
+    "halal": "חלאל",
+    "kosher": "כשר",
     "healthy": "בריא",
     "low_carb": "דל פחמימות",
     "high_protein": "עשיר בחלבון",
@@ -1637,6 +1647,8 @@ export default {
     "hub": {
       "source": "מקור",
       "dietFirst": "מתכונים שמתאימים לתזונה שלכם ({{diets}}) מופיעים ראשונים.",
+      "avoidLastAllergies": "מתכונים עם האלרגיות שלכם מופיעים אחרונים.",
+      "avoidLastDislikes": "מתכונים עם מאכלים שאתם לא אוהבים מופיעים בהמשך.",
       "addIsFree": "בחינם: ההוספה לא משתמשת בקרדיטים.",
       "added": "נוסף למתכונים שלכם"
     },

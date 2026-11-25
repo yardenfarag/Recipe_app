@@ -640,6 +640,14 @@ export default {
         "label": "Pescetariana",
         "description": "Sin carne ni aves; pescado y mariscos, sí."
       },
+      "halal": {
+        "label": "Halal",
+        "description": "Sin cerdo, alcohol ni sangre."
+      },
+      "kosher": {
+        "label": "Kosher",
+        "description": "Sin cerdo ni mariscos, y sin mezclar carne con lácteos."
+      },
       "custom": {
         "label": "Tu versión",
         "description": "Adaptada a lo que pediste."
@@ -1116,6 +1124,8 @@ export default {
     "keto": "Keto",
     "paleo": "Paleo",
     "pescatarian": "Pescetariana",
+    "halal": "Halal",
+    "kosher": "Kosher",
     "healthy": "Saludable",
     "low_carb": "Baja en carbos",
     "high_protein": "Alta en proteína",
@@ -1637,6 +1647,8 @@ export default {
     "hub": {
       "source": "Fuente",
       "dietFirst": "Primero, las recetas aptas para {{diets}}.",
+      "avoidLastAllergies": "Las recetas con tus alergias aparecen al final.",
+      "avoidLastDislikes": "Las recetas con alimentos que no te gustan aparecen más abajo.",
       "addIsFree": "Gratis: añadirla no usa créditos.",
       "added": "Añadida a tus recetas"
     },

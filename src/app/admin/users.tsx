@@ -11,7 +11,7 @@ import { useAuth } from '@/hooks/useAuth';
 import { useThemePreference } from '@/hooks/useThemePreference';
 import { errorText } from '@shared/lib/errorText';
 import { FREE_MONTHLY_EXTRACT_LIMIT } from '@shared/lib/quotas';
-import { confirmAction, showNotice } from '@/lib/confirmAction';
+import { askConfirm, showNotice } from '@/lib/dialog';
 import { adminDeleteUser, fetchAdminPeople, type AdminPerson } from '@shared/lib/supabase/adminPeople';
 import { adminAdjustRecipeCredits } from '@shared/lib/supabase/profile';
 
@@ -71,9 +71,17 @@ function UsersBody() {
         current.map((row) => (row.id === person.id ? { ...row, purchasedCredits: balance } : row)),
       );
       setAmounts((current) => ({ ...current, [person.id]: '' }));
-      await showNotice('Credits updated', `${person.email ?? 'This account'} now has ${balance} purchased credits.`);
+      await showNotice({
+        title: 'Credits updated',
+        message: `${person.email ?? 'This account'} now has ${balance} purchased credits.`,
+        okLabel: 'OK',
+      });
     } catch (err) {
-      await showNotice('Couldn’t update credits', err instanceof Error ? err.message : 'Please try again.');
+      await showNotice({
+        title: 'Couldn’t update credits',
+        message: err instanceof Error ? err.message : 'Please try again.',
+        okLabel: 'OK',
+      });
     } finally {
       setBusyId(null);
     }
@@ -81,19 +89,24 @@ function UsersBody() {
 
   async function remove(person: AdminPerson) {
     if (busyId || person.id === user?.id) return;
-    const confirmed = await confirmAction(
-      'Delete this account?',
-      `${person.email ?? person.id} and their recipes will be removed. This cannot be undone.`,
-      'Delete',
-      'Cancel',
-    );
+    const confirmed = await askConfirm({
+      trackId: 'admin.users.delete_dialog',
+      title: 'Delete this account?',
+      message: `${person.email ?? person.id} and their recipes will be removed. This cannot be undone.`,
+      confirmLabel: 'Delete',
+      cancelLabel: 'Cancel',
+    });
     if (!confirmed) return;
     setBusyId(person.id);
     try {
       await adminDeleteUser(person.id);
       setPeople((current) => current.filter((row) => row.id !== person.id));
     } catch (err) {
-      await showNotice('Couldn’t delete account', err instanceof Error ? err.message : 'Please try again.');
+      await showNotice({
+        title: 'Couldn’t delete account',
+        message: err instanceof Error ? err.message : 'Please try again.',
+        okLabel: 'OK',
+      });
     } finally {
       setBusyId(null);
     }

@@ -53,7 +53,7 @@ import { setGuestRecipeTags } from '@/lib/guestRecipes';
 import { displayStepText } from '@shared/lib/displayStepText';
 import { pickIngredientAmount, scaleIngredient, scaleIngredients } from '@shared/lib/ingredientAmounts';
 import { isRtlAppLanguage } from '@shared/lib/appLanguages';
-import { confirmAction, showNotice } from '@/lib/confirmAction';
+import { askConfirm, showNotice } from '@/lib/dialog';
 import { clearExtractionRequestId } from '@/lib/extractionRequestId';
 import { resolveCulinaryLanguage } from '@shared/lib/culinaryUnits';
 import { displayIngredientAmount, displayedAmountIsPinch, ingredientAmountIsUnknown, recipeHasUnknownAmounts } from '@shared/lib/displayIngredientAmount';
@@ -709,12 +709,12 @@ export function RecipeView({
       }
 
       const summary = result.summary?.trim() || t('recipe.repairDefaultSummary');
-      const apply = await confirmAction(
-        t('recipe.repairApplyTitle'),
-        t('recipe.repairApplyBody', { summary }),
-        t('recipe.repairApply'),
-        t('common.cancel'),
-      );
+      const apply = await askConfirm({
+        trackId: 'recipe.repair_apply_dialog',
+        title: t('recipe.repairApplyTitle'),
+        message: t('recipe.repairApplyBody', { summary }),
+        confirmLabel: t('recipe.repairApply'),
+      });
       if (!apply) {
         if (result.reservation_id) {
           await settleRepairRecipe('abort', result.reservation_id, result.request_id);
@@ -826,7 +826,7 @@ export function RecipeView({
         showToast(t('recipe.linkCopied'));
       }
     } catch {
-      void showNotice(t('recipe.shareFailedTitle'), t('common.tryAgain'));
+      void showNotice({ title: t('recipe.shareFailedTitle'), message: t('common.tryAgain') });
     }
   }
 
@@ -846,10 +846,10 @@ export function RecipeView({
     } else if (sourceShareUrl) {
       await sendShareLink(sourceShareUrl);
     } else {
-      void showNotice(
-        t('recipe.shareFailedTitle'),
-        serverErrorText(result, t, appLanguage, 'common.tryAgain', SHARE_ERROR_KEYS),
-      );
+      void showNotice({
+        title: t('recipe.shareFailedTitle'),
+        message: serverErrorText(result, t, appLanguage, 'common.tryAgain', SHARE_ERROR_KEYS),
+      });
     }
   }
 

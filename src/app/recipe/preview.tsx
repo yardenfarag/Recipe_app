@@ -13,7 +13,7 @@ import { useLocalizedRecipe } from '@/hooks/useLocalizedRecipe';
 import { useThemePreference } from '@/hooks/useThemePreference';
 import { captureRecipeSaved } from '@/lib/analytics';
 import { DEFAULT_SOURCE_LANGUAGE } from '@shared/lib/appLanguages';
-import { confirmAction, showNotice } from '@/lib/confirmAction';
+import { askConfirm, showNotice } from '@/lib/dialog';
 import { ensureRecipeTranslation } from '@/lib/ensureRecipeTranslation';
 import { goBackOrHome } from '@/lib/goBackOrHome';
 import { recipeContentEquals } from '@shared/lib/recipeContentEquals';
@@ -214,12 +214,12 @@ export default function RecipePreviewScreen() {
   }
 
   async function handleDiscard() {
-    const discard = await confirmAction(
-      t('web.snap.discardTitle'),
-      t('web.snap.discardBody'),
-      t('web.snap.discard'),
-      t('common.cancel'),
-    );
+    const discard = await askConfirm({
+      trackId: 'recipe_preview.discard_dialog',
+      title: t('web.snap.discardTitle'),
+      message: t('web.snap.discardBody'),
+      confirmLabel: t('web.snap.discard'),
+    });
     if (!discard) return;
     try {
       await clearRecipeDraft();
@@ -279,7 +279,7 @@ export default function RecipePreviewScreen() {
         console.warn('[recipe-draft] cleanup failed', error);
       }
       if (recoveredDuplicate) {
-        await showNotice(t('recipe.saveFailedTitle'), t('recipe.alreadySaved'));
+        await showNotice({ title: t('recipe.saveFailedTitle'), message: t('recipe.alreadySaved') });
         router.replace(`/recipe/${saved.id}`);
       } else {
         router.dismissTo('/?saved=1');
