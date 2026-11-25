@@ -13,7 +13,7 @@ import {
   type RenderedEmail,
 } from './render.ts';
 import { totalCredits } from './purchase.ts';
-import { EMAIL_FROM, sendEmail } from './send.ts';
+import { EMAIL_FROM, sendEmail, teamCopy } from './send.ts';
 
 const SUPABASE_URL = 'https://example.supabase.co';
 
@@ -217,6 +217,28 @@ Deno.test('sendEmail posts to Resend from hello@ with an idempotency key', async
   assertEquals(body.from, EMAIL_FROM);
   assertEquals(body.reply_to, 'support@pinch-app.io');
   assertEquals(body.to, ['cook@example.com']);
+  assertEquals('bcc' in body, false);
+});
+
+Deno.test('sendEmail passes a team copy as bcc', async () => {
+  Deno.env.set('RESEND_API_KEY', 're_test');
+  let sent: Record<string, unknown> = {};
+  const fakeFetch = ((_url: string, init: RequestInit) => {
+    sent = JSON.parse(String(init.body));
+    return Promise.resolve(new Response(JSON.stringify({ id: 'em_2' }), { status: 200 }));
+  }) as unknown as typeof fetch;
+
+  await sendEmail('cook@example.com', renderWelcomeEmail({ locale: 'en' }), { bcc: teamCopy(''), fetchImpl: fakeFetch });
+  assertEquals(sent.to, ['cook@example.com']);
+  assertEquals(sent.bcc, ['support@pinch-app.io']);
+});
+
+Deno.test('teamCopy: EMAIL_BCC address, none, or support@', () => {
+  assertEquals(teamCopy(null), ['support@pinch-app.io']);
+  assertEquals(teamCopy(''), ['support@pinch-app.io']);
+  assertEquals(teamCopy('not an address'), ['support@pinch-app.io']);
+  assertEquals(teamCopy(' team@pinch-app.io '), ['team@pinch-app.io']);
+  assertEquals(teamCopy('NONE'), []);
 });
 
 Deno.test('sendEmail surfaces Resend errors', async () => {

@@ -206,6 +206,19 @@ npx supabase secrets set PURCHASE_ALERT_EMAIL=someone@example.com   # another ad
 npx supabase secrets set PURCHASE_ALERT_EMAIL=none                  # turn the alerts off
 ```
 
+## Team copies of customer emails
+
+Welcome emails, purchase receipts and the day-1 and day-3 reminders go out with a BCC to
+support@pinch-app.io (`teamCopy` in `_shared/email/send.ts`), so the team sees what customers
+get. Sign-in codes, password resets and email changes never get a copy: whoever reads one can
+open that account. A copy carries the customer's own unsubscribe link, so don't click
+"Unsubscribe" on it. Optional:
+
+```bash
+npx supabase secrets set EMAIL_BCC=someone@example.com   # another address
+npx supabase secrets set EMAIL_BCC=none                  # stop the copies
+```
+
 ### Recipe share links (`recipe-share` + migration `0017`)
 
 Outbound share creates an opaque token + recipe snapshot (so recipients don’t need access to the owner’s private row). Recipients open `…/share.html?t=TOKEN` → app deep link `pinch://s/TOKEN` → claim copies the snapshot into their library.

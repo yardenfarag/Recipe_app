@@ -7,7 +7,7 @@ import type { Db } from '../core/supabaseAdmin.ts';
 import { pickLocale } from './copy.ts';
 import { sendPurchaseAlert, type SalePrice } from './purchaseAlert.ts';
 import { purchaseStore, renderPurchaseEmail } from './render.ts';
-import { sendOnce } from './send.ts';
+import { sendOnce, teamCopy } from './send.ts';
 
 export interface PurchaseEmailInput {
   userId: string;
@@ -71,6 +71,7 @@ export async function sendPurchaseEmail(admin: Db, input: PurchaseEmailInput): P
           date: input.purchasedAt ?? new Date(),
           reference: input.transactionId,
         }),
+        bcc: teamCopy(),
       });
     }
   } catch (error) {
