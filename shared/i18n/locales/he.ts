@@ -2375,7 +2375,7 @@ export default {
   },
   "plan": {
     "title": "השבוע",
-    "nextWeekTitle": "שבוע הבא",
+    "nextWeekTitle": "השבוע הבא",
     "tabTitle": "תכנון",
     "atHome": "יש בבית",
     "signIn": "התחברו כדי לתכנן את השבוע. התכנון נשמר בחשבון שלכם.",
@@ -2387,8 +2387,8 @@ export default {
       "tonightBodyMinutes": "{{minutes}} דק׳. הקישו לפתיחת המתכון."
     },
     "libraryTabs": {
-      "label": "חלקי הספרייה",
-      "mine": "הספרייה שלי"
+      "label": "המתכונים וה-Hub",
+      "mine": "המתכונים שלי"
     },
     "tonightPlanned": "הערב, מהתכנון שלכם",
     "add": {
@@ -2405,7 +2405,7 @@ export default {
     },
     "range": "{{from}} – {{to}}",
     "thisWeek": "השבוע",
-    "nextWeek": "שבוע הבא",
+    "nextWeek": "השבוע הבא",
     "weekLabel": "שבוע",
     "viewLabel": "תצוגה",
     "viewWeek": "כל השבוע",
@@ -2420,7 +2420,7 @@ export default {
     "have": "יש לכם {{have}} מתוך {{total}}",
     "haveAll": "יש לכם הכול",
     "empty": "לא מתוכנן",
-    "addMeal": "מלאו את הארוחה",
+    "addMeal": "הוסיפו מתכון לארוחה",
     "emptyTitle": "עוד לא תכננתם",
     "emptyBody": "Pinch ממלא את השבוע מהמתכונים שלכם ומה-Hub, לפי התזונה שלכם ומה שיש בבית.",
     "loadFailed": "לא הצלחנו לטעון את התכנון",
@@ -2453,7 +2453,7 @@ export default {
       "fitsDiet": "מתאים ל{{diet}}",
       "secondTime": "פעם שנייה השבוע",
       "leftovers": "שאריות מ{{day}}",
-      "batch": "מהמנה של {{day}}",
+      "batch": "מהבישול של {{day}}",
       "pick": "נבחר בשבילכם"
     },
     "fill": {
@@ -2469,16 +2469,16 @@ export default {
       "noDiet": "לא הוגדרו תזונה או אלרגיות",
       "change": "שינוי",
       "useHub": "להוסיף מתכונים מה-Hub",
-      "useHubHint": "מתכוני Hub שבתכנון נשמרים בספרייה שלכם.",
-      "hubLocked": "{{count}} מהמתכונים שלכם מתאימים. מ-14 אפשר לתכנן רק מהספרייה.",
+      "useHubHint": "מתכוני Hub שבתכנון נשמרים במתכונים שלכם.",
+      "hubLocked": "{{count}} מהמתכונים שלכם מתאימים. עם 14 אפשר לתכנן רק מהמתכונים שלכם.",
       "hubThin": "לחלק מהארוחות יש לכם מעט מתכונים, אז הן ימולאו מה-Hub.",
       "leftovers": "לבשל יותר לצהריים",
-      "leftoversHint": "ארוחת ערב מספיקה גם לצהריים של מחר.",
+      "leftoversHint": "ארוחת ערב מספיקה גם לארוחת הצהריים למחרת.",
       "adjust": "התאמות",
       "quickWeeknights": "מהיר באמצע השבוע",
       "cheaper": "זול יותר",
       "moreProtein": "יותר חלבון",
-      "useUpFridge": "לגמור מה שבמקרר",
+      "useUpFridge": "לגמור את מה שבמקרר",
       "fewerNew": "פחות מתכונים חדשים",
       "skipFood": "לדלג על מצרך",
       "skipLabel": "מצרך לדלג עליו השבוע",
