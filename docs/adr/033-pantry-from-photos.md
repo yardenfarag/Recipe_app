@@ -24,7 +24,7 @@ The shopping list, "what can I cook" and the meal planner (PIN-122) all need to 
 
 **Cost.** Free, with a daily cap of 25 photos per person (`pantry_scan` in `ai_usage_daily`), about $0.33 at most at $0.013 a photo.
 
-**Keeping it true.** A rescan of a place lists saved items the photos didn't show and removes them only if ticked. Marking a recipe cooked offers to remove the pantry items it used (none ticked). Ticking an item off the shopping list offers to add it to the pantry. The shopping list unticks anything in the pantry, as it did for staples. A nudge to rescan after two weeks waits for the push and email pipeline.
+**Keeping it true.** A rescan of a place lists saved items the photos didn't show and removes them only if ticked. Marking a recipe cooked offers to remove the pantry items it used (none ticked). Ticking an item off the shopping list offers to add it to the pantry. The shopping list unticks anything in the pantry, as it did for staples. Two weeks after the last scan, the nudges job sends one reminder by push and by email ("Quick pantry check?"), opening a new scan; each channel keeps its own opt-out. A scan resets it, so each stale spell gets one reminder, and pantries left for over 45 days get none.
 
 **"What can I cook?" replaces fridge match.** It ranks the Library by how much of each recipe is in the pantry, fewest missing first, in code (`rankCookable` in `shared/lib/pantry.ts`): no photo, no model, instant, free. Matching is whole words on the item's name and its English name, and "brown sugar" covers "sugar" by its main word. The `match-fridge` function stays deployed for app builds already on phones and goes later.
 
@@ -46,7 +46,8 @@ The shopping list, "what can I cook" and the meal planner (PIN-122) all need to 
 
 ## Consequences
 
-- New Edge Functions `scan-pantry` and `photo-handoff`, migration `20261126120000_pantry`, a cron job purging scan scratch every 5 minutes.
+- New Edge Functions `scan-pantry` and `photo-handoff`, migration `20261126120000_pantry`, a cron job purging scan scratch every 5 minutes, and a third kind in the existing nudges function (`pantry_rescan`, `pantry_rescan_candidates`).
+- The rescan push reaches only phones that allowed reminders, and only once the store build with push is out.
 - The privacy policy says pantry photos aren't stored and phone photos wait at most about 15 minutes.
 - Mobile changes ship over the air (no new native module).
 - The eval (`eval/pantry.ts`) stays in the repo to rerun when a candidate model changes.

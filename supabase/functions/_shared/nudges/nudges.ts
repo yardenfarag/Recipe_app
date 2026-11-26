@@ -1,5 +1,6 @@
-// The two reminders for new accounts (migration 20261122191000_nudges): what each one says and
-// opens, and one run of the cron job that sends them by push and by email. Each channel has its own opt-out
+// The two reminders for new accounts (migration 20261122191000_nudges), and the pantry rescan reminder two
+// weeks after the last scan (PIN-181, migration 20261126120000_pantry): what each one says and opens, and one
+// run of the cron job that sends them by push and by email. Each channel has its own opt-out
 // (email_opt_out, push_opt_out); nudge_candidates leaves out the address or the phones of whoever turned it off.
 import type { Db } from '../core/supabaseAdmin.ts';
 import { fill, pickLocale, type EmailLocale } from '../email/copy.ts';
@@ -8,7 +9,7 @@ import { APP_URL, renderNudgeEmail, type RenderedEmail } from '../email/render.t
 import { unsubscribeLinks } from '../email/unsubscribe.ts';
 import type { PushMessage, PushResult } from './expoPush.ts';
 
-export const NUDGE_KINDS: readonly NudgeKind[] = ['day1', 'day3'];
+export const NUDGE_KINDS: readonly NudgeKind[] = ['day1', 'day3', 'pantry_rescan'];
 
 export interface NudgeCandidate {
   user_id: string;
@@ -32,6 +33,8 @@ export function shortTitle(title: string | null | undefined, max = 48): string {
 /** Where the nudge leads: an app path for the push, the same page on the web for the email. */
 export function nudgeTarget(kind: NudgeKind, recipeId: string | null): { path: string; web: string } | null {
   if (kind === 'day1') return { path: '/add', web: `${APP_URL}/add` };
+  // Two weeks after the last pantry scan (PIN-181): straight to a new scan.
+  if (kind === 'pantry_rescan') return { path: '/pantry/scan', web: `${APP_URL}/pantry/scan` };
   if (!recipeId) return null;
   const path = `/recipe/${encodeURIComponent(recipeId)}`;
   return { path, web: `${APP_URL}${path}` };
@@ -86,7 +89,10 @@ async function recordSent(admin: Db, userId: string, kind: NudgeKind, channel: '
 export async function runNudges(deps: NudgeDeps): Promise<NudgeRunResult> {
   const totals: NudgeRunResult = { email: 0, push: 0, failed: 0 };
   for (const kind of NUDGE_KINDS) {
-    const { data, error } = await deps.admin.rpc('nudge_candidates', { p_kind: kind, p_limit: deps.limit ?? 50 });
+    const { data, error } =
+      kind === 'pantry_rescan'
+        ? await deps.admin.rpc('pantry_rescan_candidates', { p_limit: deps.limit ?? 50 })
+        : await deps.admin.rpc('nudge_candidates', { p_kind: kind, p_limit: deps.limit ?? 50 });
     if (error) throw error;
     for (const row of (data ?? []) as NudgeCandidate[]) {
       const target = nudgeTarget(kind, row.recipe_id);

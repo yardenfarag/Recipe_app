@@ -7,6 +7,7 @@
 --     function reads or writes it. A Snap or Guess photo waits here until the computer takes it, and is
 --     deleted then, or by the purge below within 20 minutes.
 --   * 'pantry_scan' joins the daily AI caps (one use per photo).
+--   * 'pantry_rescan' joins the nudges: a reminder by push and email two weeks after the last scan.
 --
 -- Expand only. Pantry staples stay in profiles.kitchen; the apps show them with the pantry.
 
@@ -199,6 +200,110 @@ begin
   return coalesce(new_count, -1);
 end;
 $$;
+
+-- ── Rescan reminder ────────────────────────────────────────────────────────
+-- A pantry is out of date the day you cook. Two weeks after the last scan, the nudges function (every 15
+-- minutes, migration 20261122191000_nudges) reminds the person once, by push and by email, each with its
+-- own opt-out. Scanning again starts the clock over, so the next stale spell gets its own reminder.
+alter table public.nudge_sends drop constraint if exists nudge_sends_kind_check;
+alter table public.nudge_sends
+  add constraint nudge_sends_kind_check check (kind in ('day1', 'day3', 'pantry_rescan'));
+
+-- Accounts whose last scan is 14 to 45 days old (past that they've stopped using the pantry, and a
+-- reminder is noise), with the same columns as nudge_candidates so the function treats them alike (no
+-- recipe: the reminder opens the scan). p_now is for tests.
+create or replace function public.pantry_rescan_candidates(
+  p_limit int default 50,
+  p_now timestamptz default now()
+)
+returns table (
+  user_id uuid,
+  email text,
+  locale text,
+  recipe_id uuid,
+  recipe_title text,
+  unsubscribe_token text,
+  push_tokens text[],
+  email_sent boolean,
+  push_sent boolean
+)
+language sql
+stable
+security definer
+set search_path = public, auth
+as $$
+  with scanned as (
+    select p.user_id, max(p.last_seen_at) as last_scan
+    from public.pantry_items p
+    where p.source = 'scan'
+    group by p.user_id
+  ),
+  due as (
+    select
+      u.id,
+      case when u.email_confirmed_at is not null and not pr.email_opt_out then nullif(u.email::text, '') end as email,
+      nullif(u.raw_user_meta_data ->> 'locale', '') as locale,
+      pr.push_opt_out,
+      s.last_scan
+    from scanned s
+    join auth.users u on u.id = s.user_id
+    join public.profiles pr on pr.id = u.id
+    where s.last_scan <= p_now - interval '14 days'
+      and s.last_scan > p_now - interval '45 days'
+      and u.deleted_at is null
+      and coalesce(u.is_anonymous, false) = false
+      and not (pr.email_opt_out and pr.push_opt_out)
+  )
+  select
+    d.id,
+    d.email,
+    d.locale,
+    null::uuid,
+    null::text,
+    public.email_unsubscribe_token(d.id),
+    case when d.push_opt_out then '{}'::text[] else
+      coalesce((select array_agg(t.token order by t.updated_at desc) from public.push_tokens t where t.user_id = d.id), '{}')
+    end,
+    exists (select 1 from public.nudge_sends n where n.user_id = d.id and n.kind = 'pantry_rescan' and n.channel = 'email'),
+    exists (select 1 from public.nudge_sends n where n.user_id = d.id and n.kind = 'pantry_rescan' and n.channel = 'push')
+  from due d
+  where (
+      d.email is not null
+      and not exists (select 1 from public.nudge_sends n where n.user_id = d.id and n.kind = 'pantry_rescan' and n.channel = 'email')
+    )
+    or (
+      not d.push_opt_out
+      and exists (select 1 from public.push_tokens t where t.user_id = d.id)
+      and not exists (select 1 from public.nudge_sends n where n.user_id = d.id and n.kind = 'pantry_rescan' and n.channel = 'push')
+    )
+  order by d.last_scan
+  limit greatest(1, least(coalesce(p_limit, 50), 200));
+$$;
+
+revoke all on function public.pantry_rescan_candidates(int, timestamptz) from public, anon, authenticated;
+grant execute on function public.pantry_rescan_candidates(int, timestamptz) to service_role;
+
+-- A scan (new items, or items seen again) clears the reminder already sent, so the next stale spell
+-- gets one too. Runs as the owner: clients can't touch nudge_sends.
+create or replace function public.pantry_scan_resets_reminder()
+returns trigger
+language plpgsql
+security definer
+set search_path = public
+as $$
+begin
+  delete from public.nudge_sends where user_id = new.user_id and kind = 'pantry_rescan';
+  return null;
+end;
+$$;
+
+revoke all on function public.pantry_scan_resets_reminder() from public, anon, authenticated;
+
+create trigger pantry_scan_resets_reminder
+  after insert or update of last_seen_at on public.pantry_items
+  for each row
+  when (new.source = 'scan')
+  execute function public.pantry_scan_resets_reminder();
 
 -- ── Purge ──────────────────────────────────────────────────────────────────
 -- Phone photos never wait longer than 15 minutes (the job runs every 5), handoffs go a day after they

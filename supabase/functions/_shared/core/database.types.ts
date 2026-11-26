@@ -2043,6 +2043,20 @@ export type Database = {
         Returns: boolean
       }
       nudge_unsubscribe_token: { Args: { p_user_id: string }; Returns: string }
+      pantry_rescan_candidates: {
+        Args: { p_limit?: number; p_now?: string }
+        Returns: {
+          email: string
+          email_sent: boolean
+          locale: string
+          push_sent: boolean
+          push_tokens: string[]
+          recipe_id: string
+          recipe_title: string
+          unsubscribe_token: string
+          user_id: string
+        }[]
+      }
       purge_expired_personal_data: { Args: never; Returns: undefined }
       purge_pantry_scratch: { Args: never; Returns: undefined }
       recipe_card_canonical_key: {

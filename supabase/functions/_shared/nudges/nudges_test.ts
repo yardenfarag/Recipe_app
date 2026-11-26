@@ -35,9 +35,10 @@ function fakeAdmin(rows: Record<string, NudgeCandidate[]>) {
   const inserted: Record<string, unknown>[] = [];
   const deletedTokens: string[] = [];
   const admin = {
-    rpc: (name: string, args: { p_kind: string }) => {
+    rpc: (name: string, args: { p_kind?: string }) => {
+      if (name === 'pantry_rescan_candidates') return Promise.resolve({ data: rows.pantry_rescan ?? [], error: null });
       assertEquals(name, 'nudge_candidates');
-      return Promise.resolve({ data: rows[args.p_kind] ?? [], error: null });
+      return Promise.resolve({ data: rows[args.p_kind ?? ''] ?? [], error: null });
     },
     from: (table: string) => ({
       insert: (row: Record<string, unknown>) => {
@@ -57,10 +58,11 @@ function fakeAdmin(rows: Record<string, NudgeCandidate[]>) {
   return { admin: admin as unknown as Db, inserted, deletedTokens };
 }
 
-Deno.test('every locale has both nudges, and day3 names the recipe', () => {
+Deno.test('every locale has every nudge, and day3 names the recipe', () => {
   for (const locale of EMAIL_LOCALES) {
     const copy = NUDGE_COPY[locale];
-    for (const kind of ['day1', 'day3'] as const) {
+    assert(Object.values(copy.pantry_rescan).every((text) => !text.includes('{')), `${locale} pantry_rescan has no placeholder`);
+    for (const kind of ['day1', 'day3', 'pantry_rescan'] as const) {
       for (const [key, value] of Object.entries(copy[kind])) {
         assert(value.trim().length > 0, `${locale}.${kind}.${key} is empty`);
       }
@@ -83,6 +85,34 @@ Deno.test('nudgeTarget: day1 opens Snap, day3 the recipe, day3 without a recipe 
   assertEquals(nudgeTarget('day1', null), { path: '/add', web: 'https://pinch-app.io/app/add' });
   assertEquals(nudgeTarget('day3', 'r1'), { path: '/recipe/r1', web: 'https://pinch-app.io/app/recipe/r1' });
   assertEquals(nudgeTarget('day3', null), null);
+  assertEquals(nudgeTarget('pantry_rescan', null), { path: '/pantry/scan', web: 'https://pinch-app.io/app/pantry/scan' });
+});
+
+Deno.test('the pantry reminder goes out by push and email, opening a new scan', async () => {
+  const { admin, inserted } = fakeAdmin({ pantry_rescan: [candidate({ user_id: 'p1', locale: 'he' })] });
+  const pushed: PushMessage[][] = [];
+  const emailed: RenderedEmail[] = [];
+  const result = await runNudges({
+    admin,
+    functionsBase: 'https://x.supabase.co',
+    sendPush: (messages) => {
+      pushed.push(messages);
+      return Promise.resolve({ ok: messages.map((m) => m.to), unregistered: [], failed: [] });
+    },
+    sendEmail: (_to, email) => {
+      emailed.push(email);
+      return Promise.resolve('id');
+    },
+  });
+  assertEquals(result, { email: 1, push: 1, failed: 0 });
+  assertEquals(pushed[0][0].data, { url: '/pantry/scan' });
+  assertEquals(pushed[0][0].title, NUDGE_COPY.he.pantry_rescan.pushTitle);
+  assertStringIncludes(emailed[0].html, 'https://pinch-app.io/app/pantry/scan');
+  assertEquals(emailed[0].subject, NUDGE_COPY.he.pantry_rescan.subject);
+  assertEquals(inserted, [
+    { user_id: 'p1', kind: 'pantry_rescan', channel: 'push' },
+    { user_id: 'p1', kind: 'pantry_rescan', channel: 'email' },
+  ]);
 });
 
 Deno.test('nudge emails escape the recipe title and carry the unsubscribe link', () => {

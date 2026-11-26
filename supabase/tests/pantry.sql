@@ -1,7 +1,7 @@
 begin;
 
 create extension if not exists pgtap with schema extensions;
-select plan(16);
+select plan(20);
 
 -- PIN-181 (migration 20261126120000_pantry): each person sees and changes only their own pantry, scan
 -- photos come only from the functions, handoffs are out of reach for clients, and the purge keeps its
@@ -140,8 +140,42 @@ select is(
   'an abandoned scan goes after a week'
 );
 
+-- Rescan reminder --------------------------------------------------------------
+select is(
+  (select count(*)::int from public.pantry_rescan_candidates(200, now() + interval '15 days')
+   where user_id = '10000000-0000-4000-8000-0000000fa001'),
+  1,
+  'two weeks after the last scan, the rescan reminder is due'
+);
+select is(
+  (select count(*)::int from public.pantry_rescan_candidates(200, now() + interval '3 days')
+   where user_id = '10000000-0000-4000-8000-0000000fa001')
+  + (select count(*)::int from public.pantry_rescan_candidates(200, now() + interval '60 days')
+     where user_id = '10000000-0000-4000-8000-0000000fa001'),
+  0,
+  'not before two weeks, and not once the pantry has been left for over 45 days'
+);
+insert into public.nudge_sends (user_id, kind, channel)
+values ('10000000-0000-4000-8000-0000000fa001', 'pantry_rescan', 'email');
+select is(
+  (select count(*)::int from public.pantry_rescan_candidates(200, now() + interval '15 days')
+   where user_id = '10000000-0000-4000-8000-0000000fa001'),
+  0,
+  'it goes out once (no phone registered, email sent)'
+);
+update public.pantry_items set last_seen_at = now()
+where user_id = '10000000-0000-4000-8000-0000000fa001' and source = 'scan';
+select is(
+  (select count(*)::int from public.nudge_sends
+   where user_id = '10000000-0000-4000-8000-0000000fa001' and kind = 'pantry_rescan'),
+  0,
+  'scanning again starts the clock over, so the next stale spell gets a reminder too'
+);
+
 select ok(
-  not has_function_privilege('authenticated', 'public.purge_pantry_scratch()', 'execute')
+  not has_function_privilege('authenticated', 'public.pantry_rescan_candidates(int, timestamptz)', 'execute')
+  and has_function_privilege('service_role', 'public.pantry_rescan_candidates(int, timestamptz)', 'execute')
+  and not has_function_privilege('authenticated', 'public.purge_pantry_scratch()', 'execute')
   and not has_function_privilege('anon', 'public.purge_pantry_scratch()', 'execute')
   and not has_table_privilege('anon', 'public.pantry_items', 'select'),
   'guests and clients can''t run the purge or read pantries'
