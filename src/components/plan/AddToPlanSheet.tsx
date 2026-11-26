@@ -4,7 +4,7 @@ import { ActivityIndicator, View } from 'react-native';
 
 import { addDays, mealsOfDay, parsePlanDate, toPlanDate } from '@shared/lib/mealPlan/week';
 import { fetchCloudKitchenProfile } from '@shared/lib/supabase/kitchen';
-import { deleteMealPlanEntries, fetchMealPlanPrefs, fetchMealPlanWithTitles, saveMealPlanMeals } from '@shared/lib/supabase/mealPlan';
+import { fetchMealPlanPrefs, fetchMealPlanWithTitles, replacePlanMeal } from '@shared/lib/supabase/mealPlan';
 import { showToast } from '@shared/lib/toast';
 import type { MealPlanEntry, PlanMeal } from '@shared/types/mealPlan';
 
@@ -76,8 +76,7 @@ function Body({ recipeId, recipeServings, title, onDone }: { recipeId: string; r
     if (!userId || !picked) return;
     setBusy(true);
     try {
-      if (replacing) await deleteMealPlanEntries([replacing.id]);
-      await saveMealPlanMeals(userId, [{ date: picked.date, meal: picked.meal, recipeId, servings }]);
+      await replacePlanMeal(userId, { date: picked.date, meal: picked.meal, recipeId, servings }, replacing);
       void scheduleMealReminders(userId, t, pantry ?? []);
       showToast(t('plan.add.done'));
       onDone();

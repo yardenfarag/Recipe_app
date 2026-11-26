@@ -14,7 +14,12 @@ const mocks = vi.hoisted(() => {
         return node;
       };
     }
-    node.single = () => Promise.resolve(results[table] ?? { data: null, error: null });
+    node.single = () => {
+      // A list answers one read at a time (the row before a save, then the saved row).
+      const result = results[table];
+      if (Array.isArray(result)) return Promise.resolve(result.shift() ?? { data: null, error: null });
+      return Promise.resolve(result ?? { data: null, error: null });
+    };
     node.then = (resolve: (value: unknown) => void) => resolve({ error: null });
     return node;
   }
@@ -23,11 +28,12 @@ const mocks = vi.hoisted(() => {
     results,
     from: vi.fn((table: string) => chain(table)),
     getUser: vi.fn(() => Promise.resolve({ data: { user: { id: 'user-1' } }, error: null })),
+    invoke: vi.fn(() => Promise.resolve({ data: null, error: null })),
   };
 });
 
 vi.mock('./client', () => ({
-  supabase: { from: mocks.from, auth: { getUser: mocks.getUser } },
+  supabase: { from: mocks.from, auth: { getUser: mocks.getUser }, functions: { invoke: mocks.invoke } },
 }));
 
 const OVEN = [{ key: 'oven' as const, required: true, steps: [1], origin: 'source' as const }];
@@ -106,6 +112,22 @@ describe('updateRecipeContent', () => {
     mocks.calls.length = 0;
     await updateRecipeContent('r1', { ...base, source_language: 'es' });
     expect(translationsDeleted()).toBe(false);
+  });
+
+  it('asks for the diets again when the saved ingredient names changed (PIN-77)', async () => {
+    mocks.invoke.mockClear();
+    mocks.results.recipes = { data: { id: 'r1', ...base }, error: null };
+    await updateRecipeContent('r1', base);
+    expect(mocks.invoke).not.toHaveBeenCalled();
+
+    // The row read before the save still had flour; the save answers with tofu.
+    const tofu = { ...base, ingredients: [{ name: 'tofu', quantity: 200, unit: 'g' }] };
+    mocks.results.recipes = [
+      { data: { id: 'r1', ...base }, error: null },
+      { data: { id: 'r1', ...tofu, diets: null }, error: null },
+    ] as never;
+    await updateRecipeContent('r1', tofu);
+    expect(mocks.invoke).toHaveBeenCalledWith('label-recipe-diets', { body: { recipe_id: 'r1' } });
   });
 });
 

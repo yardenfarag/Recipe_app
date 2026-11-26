@@ -165,6 +165,22 @@ export async function deleteMealPlanEntries(ids: string[]): Promise<void> {
   if (error) throw error;
 }
 
+/**
+ * Puts one recipe in a meal, replacing what was there (Add to plan). Saved first, so a failure leaves the plan as it
+ * was. The saved meal keeps the slot's row, so leftovers of the old recipe would still point at it: they go.
+ */
+export async function replacePlanMeal(
+  userId: string,
+  meal: NewPlanMeal,
+  replacing: Pick<MealPlanEntry, 'id' | 'recipeId'> | null,
+): Promise<void> {
+  await saveMealPlanMeals(userId, [meal]);
+  if (replacing && replacing.recipeId !== meal.recipeId) {
+    const { error } = await supabase.from('meal_plan_entries').delete().eq('leftover_of', replacing.id);
+    if (error) throw error;
+  }
+}
+
 export async function updateMealPlanEntry(
   id: string,
   change: { locked?: boolean; servings?: number; cookedAt?: string | null },

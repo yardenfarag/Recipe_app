@@ -6,7 +6,7 @@ import { useTranslation } from "react-i18next";
 
 import { addDays, mealsOfDay, toPlanDate } from "@shared/lib/mealPlan/week";
 import { fetchCloudKitchenProfile } from "@shared/lib/supabase/kitchen";
-import { deleteMealPlanEntries, fetchMealPlanPrefs, fetchMealPlanWithTitles, saveMealPlanMeals } from "@shared/lib/supabase/mealPlan";
+import { fetchMealPlanPrefs, fetchMealPlanWithTitles, replacePlanMeal } from "@shared/lib/supabase/mealPlan";
 import { showToast } from "@shared/lib/toast";
 import type { MealPlanEntry, PlanMeal } from "@shared/types/mealPlan";
 import type { Recipe } from "@shared/types/recipe";
@@ -82,8 +82,7 @@ function Body({ recipe, title, onDone }: { recipe: Recipe; title: string; onDone
     setBusy(true);
     setError(null);
     try {
-      if (replacing) await deleteMealPlanEntries([replacing.id]);
-      await saveMealPlanMeals(userId, [{ date: picked.date, meal: picked.meal, recipeId: recipe.id, servings }]);
+      await replacePlanMeal(userId, { date: picked.date, meal: picked.meal, recipeId: recipe.id, servings }, replacing);
       showToast(t("plan.add.done"));
       onDone();
     } catch {

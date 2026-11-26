@@ -18,7 +18,7 @@ import { deriveRecipeDiets, type DeriveDietsResult, type DietsRecipeInput } from
 export type DietsOnSaveDeps = {
   /** The Hub card's check, stored on the card; returns the diets. */
   fillCard: (cardId: string) => Promise<string[] | null>;
-  /** A card's diets as stored (an existing card that was checked before). */
+  /** A card's diets as stored, only when its ingredients are the ones extracted (an existing card checked before). */
   readCard: (cardId: string) => Promise<string[] | null>;
   /** A check of the recipe alone. */
   derive: () => Promise<DeriveDietsResult>;
@@ -27,23 +27,53 @@ export type DietsOnSaveDeps = {
 };
 
 /**
- * The diets of an extracted recipe, from the Hub decision. Null when unknown (a failed check, a guest with no card,
- * a card not checked yet).
+ * The diets of an extracted recipe, from the Hub decision. Null when unknown (a failed check, a guest, a recipe not
+ * worth a check of its own).
+ *
+ * `ownCheck` says whether the recipe is worth a model call of its own when no card answers: a full extraction with a
+ * real ingredient list. A partial one goes to the editor, whose save checks it (save-recipe-edit).
  */
 export async function dietsAfterExtract(
   decision: HubPublishDecision,
   userId: string | null,
   deps: DietsOnSaveDeps,
+  ownCheck: boolean,
 ): Promise<string[] | null> {
   if (decision.status !== 'skipped') {
-    return decision.needsDiets ? await deps.fillCard(decision.cardId) : await deps.readCard(decision.cardId);
+    // The card's own check ran on this recipe, so its answer fits; a failed one isn't tried twice.
+    if (decision.needsDiets) return await deps.fillCard(decision.cardId);
+    // An older card of the same page can have other ingredients (the page changed, a different extraction).
+    const stored = await deps.readCard(decision.cardId);
+    if (stored) return stored;
   }
   // Guests save on the device: nothing to label, so no model call.
-  if (!userId) return null;
+  if (!userId || !ownCheck) return null;
   const started = Date.now();
   const result = await deps.derive();
   await deps.logOwnCheck(result, Date.now() - started);
   return result.diets;
+}
+
+/** Whether an extraction is worth a diet check of its own: full, with at least two named ingredients. */
+export function worthOwnDietCheck(full: boolean, recipe: DietsRecipeInput): boolean {
+  return full && ingredientNames(recipe.ingredients).filter(Boolean).length >= 2;
+}
+
+/** Lower-case, trimmed ingredient names in order: what the database compares (recipe_ingredient_key). */
+function ingredientNames(ingredients: unknown): string[] {
+  if (!Array.isArray(ingredients)) return [];
+  return ingredients.map((item) =>
+    item && typeof item === 'object' && typeof (item as { name?: unknown }).name === 'string'
+      ? (item as { name: string }).name.trim().toLowerCase()
+      : ''
+  );
+}
+
+/** Same names in the same order, ignoring unnamed lines. */
+export function sameIngredientNames(a: unknown, b: unknown): boolean {
+  const left = ingredientNames(a).filter(Boolean);
+  const right = ingredientNames(b).filter(Boolean);
+  return left.length > 0 && left.length === right.length && left.every((name, i) => name === right[i]);
 }
 
 /** Keeps the answer for the cook's save, and labels the copy if it was saved already. Never throws. */
@@ -67,17 +97,19 @@ export async function labelExtractedRecipe(
   decision: HubPublishDecision,
   recipe: DietsRecipeInput,
   userId: string | null,
+  full: boolean,
 ): Promise<void> {
   try {
     const diets = await dietsAfterExtract(decision, userId, {
       fillCard: (cardId) => fillRecipeCardDiets(admin, cardId, recipe, userId),
       readCard: async (cardId) => {
-        const { data } = await admin.from('recipe_cards').select('diets').eq('id', cardId).maybeSingle();
-        return (data?.diets as string[] | null | undefined) ?? null;
+        const { data } = await admin.from('recipe_cards').select('diets, ingredients').eq('id', cardId).maybeSingle();
+        if (!data?.diets || !sameIngredientNames(data.ingredients, recipe.ingredients)) return null;
+        return data.diets as string[];
       },
       derive: () => deriveRecipeDiets(recipe),
       logOwnCheck: (result, durationMs) => logRecipeDiets(admin, userId, result, durationMs, { source: 'extract' }),
-    });
+    }, worthOwnDietCheck(full, recipe));
     if (userId && diets) await rememberRecipeDiets(admin, userId, recipe.ingredients, diets);
   } catch (error) {
     console.error('[recipe-diets] extract labelling failed', error);

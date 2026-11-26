@@ -209,10 +209,24 @@ export async function fillAndSavePlan(
   );
   const recipeIdFor = (id: string) => (recipeIds.has(id) ? id : claimed.get(id) ?? null);
 
-  await deleteMealPlanEntries(replace.map((entry) => entry.id));
-  await saveMealPlanMeals(context.userId, mealsToSave(result.filled, recipeIdFor, context.defaultServings));
+  // Save first, then take away what the new plan doesn't cover: a failed save leaves the old plan as it was. A saved
+  // meal takes its slot's row (the same id), so only replaced rows that weren't written over go, among them leftovers
+  // of a replaced meal that fell outside these days.
+  const saved = await saveMealPlanMeals(context.userId, mealsToSave(result.filled, recipeIdFor, context.defaultServings));
+  const savedIds = new Set(saved.map((entry) => entry.id));
+  await deleteMealPlanEntries(replace.filter((entry) => !savedIds.has(entry.id)).map((entry) => entry.id));
 
+  // Counted from what was saved: a Hub card that couldn't be saved leaves its meal (and its leftovers) empty.
+  const savedSlots = new Set(saved.map((entry) => slotKey(entry.date, entry.meal)));
   const reasons: Record<string, PlanReason> = {};
-  for (const meal of result.filled) reasons[slotKey(meal.date, meal.meal)] = meal.reason;
-  return { filled: result.filled.length, empty: result.empty.length, reasons, savedHubRecipes: claimed.size > 0 };
+  for (const meal of result.filled) {
+    const key = slotKey(meal.date, meal.meal);
+    if (savedSlots.has(key)) reasons[key] = meal.reason;
+  }
+  return {
+    filled: savedSlots.size,
+    empty: Math.max(0, slots.length - savedSlots.size),
+    reasons,
+    savedHubRecipes: claimed.size > 0,
+  };
 }

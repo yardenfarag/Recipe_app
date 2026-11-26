@@ -1,7 +1,7 @@
 begin;
 
 create extension if not exists pgtap with schema extensions;
-select plan(11);
+select plan(15);
 
 -- PIN-77 (migration 20261127120000_recipe_diets): a Library recipe's checked diets go stale, and back to null,
 -- when its ingredients change; other edits and the backfill's own write keep them.
@@ -32,6 +32,13 @@ update public.recipes set ingredients = '[{"name":"red lentils","quantity":1,"un
 where id = '20000000-0000-4000-8000-0000000ad001';
 select is((select diets from public.recipes where id = '20000000-0000-4000-8000-0000000ad001'),
           null::text[], 'new ingredients make it stale: not checked again yet');
+
+-- Measured amounts (the recalculation after an edit) are the same ingredients: the answer stays.
+update public.recipes set diets = array['vegetarian'] where id = '20000000-0000-4000-8000-0000000ad001';
+update public.recipes set ingredients = '[{"name":"Red lentils","quantity":200,"unit":"g"},{"name":"bacon","quantity":50,"unit":"g"}]'
+where id = '20000000-0000-4000-8000-0000000ad001';
+select is((select diets from public.recipes where id = '20000000-0000-4000-8000-0000000ad001'),
+          array['vegetarian'], 'new amounts of the same ingredients keep it');
 
 select throws_ok(
   $$ update public.recipes set diets = array['a','b','c','d','e','f','g','h','i','j','k','l','m','n','o','p','q']
@@ -76,6 +83,19 @@ values ('20000000-0000-4000-8000-0000000ad005', '10000000-0000-4000-8000-0000000
         '[{"name":"red lentils","quantity":1,"unit":"cup"}]', '[{"step":1,"text":"Cook"}]', 'web', 'https://e2e-diets.example/dal');
 select is((select diets from public.recipes where id = '20000000-0000-4000-8000-0000000ad005'), array['vegan'],
           'a recipe from a Hub card takes the card''s diets');
+
+-- 5. No named ingredients: nothing to match on, so nothing is kept or labelled.
+select is(public.remember_recipe_diets('10000000-0000-4000-8000-0000000ad001', '[{"name":" "}]', array['vegan']),
+          0, 'an answer for a recipe without ingredients is dropped');
+insert into public.recipes (id, user_id, title, ingredients, instructions)
+values ('20000000-0000-4000-8000-0000000ad006', '10000000-0000-4000-8000-0000000ad001', 'Mystery',
+        '[{"name":"","quantity":1,"unit":""}]', '[{"step":1,"text":"Cook"}]');
+select is((select diets from public.recipes where id = '20000000-0000-4000-8000-0000000ad006'), null::text[],
+          'a recipe without named ingredients takes no one''s answer');
+
+-- The check after an app-side change has its own daily cap.
+select is(public.reserve_daily_ai_usage('10000000-0000-4000-8000-0000000ad001', 'recipe_diets', current_date, 1), 1,
+          'recipe_diets is a daily-capped action');
 
 select ok(
   not has_function_privilege('authenticated', 'public.remember_recipe_diets(uuid, jsonb, text[])', 'execute'),

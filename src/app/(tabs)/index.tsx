@@ -227,8 +227,7 @@ export default function HomeScreen() {
   // Tonight's pick, as on the web.
   const { pick: suggested, another } = useTonightsPick(recipes);
   // A dinner planned for today wins over the suggestion (PIN-77).
-  const plannedId = useTonightPlanned();
-  const planned = plannedId ? recipes.find((recipe) => recipe.id === plannedId) ?? null : null;
+  const planned = useTonightPlanned(recipes);
   const pick = planned ?? suggested;
 
   useEffect(() => {

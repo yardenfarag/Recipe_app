@@ -33,7 +33,7 @@ export function usePlan(week: PlanWeek) {
   const { user } = useAuth();
   const userId = user?.id ?? null;
   const { language } = useLanguage();
-  const { recipes, loading: recipesLoading, hasMore, ensureAllLoaded, refresh: refreshRecipes } = useRecipes(40);
+  const { recipes, loading: recipesLoading, hasMore, error: recipesError, ensureAllLoaded, refresh: refreshRecipes } = useRecipes(40);
   const { staples } = usePantryStaples();
   const [entries, setEntries] = useState<MealPlanEntry[] | null>(null);
   const [failed, setFailed] = useState(false);
@@ -41,7 +41,7 @@ export function usePlan(week: PlanWeek) {
   const [prefs, setPrefs] = useState<MealPlanPrefs>(() => cleanMealPlanPrefs(null));
   /** Reasons from the last fill, by meal, for this visit only (they aren't saved). */
   const [reasons, setReasons] = useState<Record<string, PlanReason>>({});
-  const hubPool = useRef<RecipeCard[] | null>(null);
+  const hubPool = useRef<{ key: string; cards: RecipeCard[] } | null>(null);
   const first = week.days[0];
   const last = week.days[6];
 
@@ -49,6 +49,24 @@ export function usePlan(week: PlanWeek) {
   useEffect(() => {
     if (hasMore) void ensureAllLoaded();
   }, [ensureAllLoaded, hasMore]);
+
+  // A fill waits for the whole Library (a failed page counts as done: plan with what came), then reads the latest.
+  const libraryLoaded = !recipesLoading && (!hasMore || recipesError != null);
+  const libraryRef = useRef<Recipe[]>(recipes);
+  const loadedRef = useRef(libraryLoaded);
+  const waiting = useRef<(() => void)[]>([]);
+  useEffect(() => {
+    libraryRef.current = recipes;
+    loadedRef.current = libraryLoaded;
+    if (!libraryLoaded) return;
+    const ready = waiting.current;
+    waiting.current = [];
+    for (const resolve of ready) resolve();
+  }, [libraryLoaded, recipes]);
+  const whenLibraryLoaded = useCallback(
+    () => new Promise<void>((resolve) => (loadedRef.current ? resolve() : waiting.current.push(resolve))),
+    [],
+  );
 
   const load = useCallback(async () => {
     if (!userId) return;
@@ -107,22 +125,34 @@ export function usePlan(week: PlanWeek) {
   const fill = useCallback(
     async (request: FillRequest, onlySlot?: { date: string; meal: PlanMeal }, exclude: string[] = []): Promise<FillOutcome> => {
       if (!userId || !entries) return { filled: 0, empty: 0, reasons: {}, savedHubRecipes: false };
+      // The whole Library first: planning from a part of it would bring in Hub recipes the cook already has.
+      await whenLibraryLoaded();
+      // The kitchen profile as saved now. If it can't be read, the fill fails: never plan without the allergies.
+      const kitchen = await fetchCloudKitchenProfile(userId);
+      const kitchenAvoid = { allergies: kitchen.allergies, otherAllergies: kitchen.otherAllergies, dislikes: kitchen.dislikes };
+      const hubKey = JSON.stringify([kitchen.diets, kitchenAvoid]);
       const outcome = await fillAndSavePlan(
         {
           userId,
           entries,
-          recipes,
-          avoid,
-          diets,
+          recipes: libraryRef.current,
+          avoid: kitchenAvoid,
+          diets: kitchen.diets,
           homeNames,
           weekend: weekendFor(language),
-          defaultServings: profile?.defaultServings ?? 2,
+          defaultServings: kitchen.defaultServings ?? 2,
           hubCards: async () => {
-            if (!hubPool.current) {
-              const { cards } = await fetchHubCards({ diets, avoid: hubAvoidOf(avoid), sort: "popular", limit: HUB_POOL, includeCount: false });
-              hubPool.current = cards;
+            if (hubPool.current?.key !== hubKey) {
+              const { cards } = await fetchHubCards({
+                diets: kitchen.diets,
+                avoid: hubAvoidOf(kitchenAvoid),
+                sort: "popular",
+                limit: HUB_POOL,
+                includeCount: false,
+              });
+              hubPool.current = { key: hubKey, cards };
             }
-            return hubPool.current;
+            return hubPool.current.cards;
           },
         },
         request,
@@ -134,7 +164,7 @@ export function usePlan(week: PlanWeek) {
       await load();
       return outcome;
     },
-    [avoid, diets, entries, homeNames, language, load, profile, recipes, refreshRecipes, userId],
+    [entries, homeNames, language, load, refreshRecipes, userId, whenLibraryLoaded],
   );
 
   /** Another recipe for one meal. Its leftovers go with it. */

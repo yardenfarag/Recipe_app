@@ -1,8 +1,10 @@
 import { useFocusEffect } from 'expo-router';
-import { useCallback, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 
 import { toPlanDate } from '@shared/lib/mealPlan/week';
 import { fetchMealPlan } from '@shared/lib/supabase/mealPlan';
+import { fetchRecipeById } from '@shared/lib/supabase/recipes';
+import type { Recipe } from '@shared/types/recipe';
 
 import { useAuth } from '@/hooks/useAuth';
 
@@ -11,7 +13,7 @@ import { useAuth } from '@/hooks/useAuth';
  * Read again whenever the Library comes back into view, so a change on the Plan tab shows. Null when nothing is
  * planned (the Library shows Tonight's pick instead).
  */
-export function useTonightPlanned(): string | null {
+export function useTonightPlanned(loaded: Recipe[]): Recipe | null {
   const { user } = useAuth();
   const userId = user?.id ?? null;
   const [found, setFound] = useState<{ userId: string; recipeId: string | null } | null>(null);
@@ -33,5 +35,23 @@ export function useTonightPlanned(): string | null {
     }, [userId]),
   );
 
-  return found && found.userId === userId ? found.recipeId : null;
+  const plannedId = found && found.userId === userId ? found.recipeId : null;
+  const inList = plannedId ? loaded.find((recipe) => recipe.id === plannedId) ?? null : null;
+  // A recipe past the Library's first page isn't loaded yet: read it on its own.
+  const [fetched, setFetched] = useState<Recipe | null>(null);
+  const missing = plannedId != null && inList == null && fetched?.id !== plannedId;
+  useEffect(() => {
+    if (!missing || !plannedId) return;
+    let active = true;
+    fetchRecipeById(plannedId)
+      .then((recipe) => {
+        if (active && recipe) setFetched(recipe);
+      })
+      .catch(() => undefined);
+    return () => {
+      active = false;
+    };
+  }, [missing, plannedId]);
+
+  return inList ?? (fetched && fetched.id === plannedId ? fetched : null);
 }

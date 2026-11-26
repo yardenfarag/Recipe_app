@@ -1164,7 +1164,7 @@ serve('extract-recipe', async (req) => {
           durationMs: Date.now() - publishStarted,
         });
         // The card's diet check (or one of its own when there is no card) also labels the cook's copy (PIN-77).
-        await labelExtractedRecipe(admin, decision, recipe, userId ?? null);
+        await labelExtractedRecipe(admin, decision, recipe, userId ?? null, status === 'full');
       };
       const publishing = publishToHub().catch((error) =>
         console.error('[extract-recipe] hub publish failed', error)
