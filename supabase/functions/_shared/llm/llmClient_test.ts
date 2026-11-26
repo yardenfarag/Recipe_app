@@ -300,6 +300,55 @@ const TEXT_CALL = {
 
 const BROKEN = '{"title":"Falafel","ingredients":[{"name":"C"}';
 
+function outOfTokens(model: string): Response {
+  return Response.json({
+    model,
+    provider: 'Relace',
+    choices: [{ message: { content: null }, finish_reason: 'length' }],
+    usage: { prompt_tokens: 1118, completion_tokens: 256 },
+  });
+}
+
+const GATE_CALL = {
+  kind: 'content_gate',
+  systemPrompt: 'sys',
+  parts: [{ text: 'Title: Dakos' }],
+  responseSchema: OBJECT_SCHEMA,
+  timeoutMs: 20_000,
+  maxOutputTokens: 256,
+  context: 'test',
+};
+
+Deno.test('no content from the primary is retried once on the fallback', () =>
+  withEnv({ OPENROUTER_API_KEY: 'test' }, async () => {
+    const primary = TASK_MODELS.content_gate.model;
+    const fallback = TASK_MODELS.content_gate.fallbacks[0];
+    const stub = stubFetch((body) =>
+      body.model === primary ? outOfTokens(primary) : completion('{"title":"Dakos"}', { model: fallback }),
+    );
+    try {
+      const result = await generateLlmJson<{ title: string }>(GATE_CALL);
+      assertEquals(stub.calls.length, 2);
+      assertEquals(stub.calls[1].model, fallback);
+      assertEquals(result.data, { title: 'Dakos' });
+      assertEquals(result.model, fallback);
+    } finally {
+      stub.restore();
+    }
+  }));
+
+Deno.test('no content from every model still fails with the no-content error', () =>
+  withEnv({ OPENROUTER_API_KEY: 'test' }, async () => {
+    const stub = stubFetch((body) => outOfTokens(String(body.model)));
+    try {
+      await assertRejects(() => generateLlmJson(GATE_CALL), Error, 'OpenRouter returned no content');
+      // One retry, as for invalid JSON; later fallbacks ride along in models[] on that call.
+      assertEquals(stub.calls.length, 2);
+    } finally {
+      stub.restore();
+    }
+  }));
+
 Deno.test('invalid JSON from the primary is retried once on the fallback', () =>
   withEnv({ OPENROUTER_API_KEY: 'test' }, async () => {
     const stub = stubFetch((body) =>
