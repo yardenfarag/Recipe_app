@@ -5,6 +5,7 @@ import type { Recipe } from "@shared/types/recipe";
 
 import type { RecipeDisplay } from "@/components/recipe/types";
 import {
+  keptOriginalOf,
   kitchenFixChange,
   promotedLanguage,
   remixChange,
@@ -12,6 +13,7 @@ import {
   repairRequest,
   revertChange,
   shownContent,
+  shownOriginal,
   swapChange,
 } from "@/lib/recipe/actions/contentEdits";
 
@@ -118,16 +120,57 @@ describe("remixChange / kitchenFixChange / revertChange", () => {
 
   it("keeps an earlier original, so Revert lands on the recipe as it came", () => {
     const first = { title: "First", servings: 1, ingredients: [], instructions: [] };
-    expect(kitchenFixChange(displayOf({}, { kitchen_original: first }), remixed).update.kitchen_original).toBe(first);
+    expect(kitchenFixChange(displayOf({}, { kitchen_original: first }), remixed).update.kitchen_original).toEqual({ ...first, language: "en" });
     const visit = { title: "Before this visit's remix", servings: 1, ingredients: [], instructions: [] };
     expect(kitchenFixChange(displayOf({}, { kitchen_original: first }), remixed, visit).update.kitchen_original).toBe(visit);
   });
 
   it("revert writes the original back and clears the adaptation", () => {
     const original = { title: "Pancakes", servings: 2, ingredients: recipe.ingredients, instructions: recipe.instructions, calories: 800, appliances: null };
-    const { update, sourceLanguage } = revertChange(original, "he");
+    const { update, sourceLanguage } = revertChange(original, "en");
     expect(update).toMatchObject({ title: "Pancakes", kitchen_adapted_summary: null, kitchen_original: null, appliances: null });
+    expect(sourceLanguage).toBe("en");
+  });
+});
+
+describe("the kept original's language (PIN-188)", () => {
+  const english = { title: "Pancakes", servings: 2, ingredients: recipe.ingredients, instructions: recipe.instructions };
+
+  it("'Make it without these' on a translation keeps the translation with its language", () => {
+    expect(kitchenFixChange(hebrew, remixed).update.kitchen_original).toMatchObject({ title: "פנקייק", language: "he" });
+  });
+
+  it("a swap on a translation writes the old language into a kept original that has none", () => {
+    const display = { ...hebrew, recipe: { ...hebrew.recipe, kitchen_original: english } };
+    const { update, sourceLanguage } = swapChange(display, 1, { name: "חלב שיבולת", quantity: 0.5, unit: "כוס", reason: "" }, 2, hebrew.instructions);
     expect(sourceLanguage).toBe("he");
+    expect(update.kitchen_original).toEqual({ ...english, language: "en" });
+  });
+
+  it("a swap leaves a kept original that already has its language alone", () => {
+    const display = { ...hebrew, recipe: { ...hebrew.recipe, kitchen_original: { ...english, language: "en" } } };
+    const { update } = swapChange(display, 1, { name: "חלב שיבולת", quantity: 0.5, unit: "כוס", reason: "" }, 2, hebrew.instructions);
+    expect(update).not.toHaveProperty("kitchen_original");
+  });
+
+  it("revert after a reload saves the original's own language, not the recipe's current one", () => {
+    // The recipe became Spanish through a swap on a translation; the kept original is still English.
+    expect(revertChange({ ...english, language: "en" }, "es").sourceLanguage).toBe("en");
+  });
+
+  it("an original kept before PIN-188 is read from its text when the script gives it away", () => {
+    // Hebrew now, kept English text without a language: the label is not trusted over the script.
+    expect(revertChange(english, "he").sourceLanguage).toBe("en");
+    const hebrewOriginal = { title: "פנקייק", servings: 2, ingredients: [], instructions: [] };
+    expect(revertChange(hebrewOriginal, "en").sourceLanguage).toBe("he");
+    // Otherwise it is taken to be in the recipe's language, as it was before any swap.
+    expect(revertChange(english, "en").sourceLanguage).toBe("en");
+  });
+
+  it("keptOriginalOf fills in the language of an older snapshot", () => {
+    expect(keptOriginalOf({ ...recipe, kitchen_original: english })).toEqual({ ...english, language: "en" });
+    expect(keptOriginalOf(recipe)).toBeNull();
+    expect(shownOriginal(hebrew)).toMatchObject({ title: "פנקייק", language: "he" });
   });
 });
 

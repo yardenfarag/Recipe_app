@@ -183,6 +183,9 @@ export default function RecipeDetailScreen() {
       } else if (kitchenSummary !== undefined) {
         optimistic.kitchen_adapted_summary = kitchenSummary;
         if (kitchenOriginal) optimistic.kitchen_original = kitchenOriginal;
+      } else if (kitchenOriginal) {
+        // A swap on a translation writes the kept original's language in (PIN-188).
+        optimistic.kitchen_original = kitchenOriginal;
       }
       setRecipe(optimistic);
       recipeRef.current = optimistic;

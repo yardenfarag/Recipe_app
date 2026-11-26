@@ -16,6 +16,7 @@ import { recipeAppliancesOf } from "@shared/lib/appliances";
 import { scaleIngredients } from "@shared/lib/ingredientAmounts";
 import { isRecipeLanguageCode, type RecipeLanguageCode } from "@shared/lib/recipeLanguages";
 import { recipeHasSource } from "@shared/lib/recipeOrigin";
+import { resolveRecipeSourceLanguage } from "@shared/lib/recipeSourceLanguage";
 import { applianceWorkaroundInstruction, checkKitchen } from "@shared/lib/ownedAppliances";
 import type { RecipeCookedFrom } from "@shared/lib/productEvents";
 import { normalizeRecipeTags } from "@shared/lib/recipeTags";
@@ -46,11 +47,12 @@ import { captureRecipeCooked } from "@/lib/analytics";
 import { useRecipeRecalc } from "@/lib/editor/useRecipeRecalc";
 import { useCollections } from "@/lib/library/useCollections";
 import {
+  keptOriginalOf,
   kitchenFixChange,
   promotedLanguage,
   remixChange,
   revertChange,
-  shownContent,
+  shownOriginal,
   swapChange,
   type ContentChange,
   type OriginalContent,
@@ -67,7 +69,8 @@ import type { ReadyRecipe } from "@/lib/recipe/useRecipe";
 import { useOwnedAppliances } from "@/lib/settings/ownedAppliances";
 
 /** The text before a remix made on this visit, and the language it was in, for "Revert to original". */
-type Session = { original: OriginalContent; language: string | null; remix: { variant: RecipeVariantKey; summary: string } | null };
+/** This visit's adaptation. `original` carries the language it is in, so Revert saves it with the text (PIN-188). */
+type Session = { original: OriginalContent; remix: { variant: RecipeVariantKey; summary: string } | null };
 
 /**
  * Everything a saved recipe's page can do to it beyond reading (PIN-135): swap, remix, "Make it without these",
@@ -126,8 +129,7 @@ export function RecipeActionsProvider({ state, children }: { state: ReadyRecipe;
   async function applyRemix(result: TransformedRecipePayload, variant: RecipeVariantKey | "fix") {
     const language = promotedLanguage(display);
     const before: Session = session ?? {
-      original: !language && recipe.kitchen_original ? recipe.kitchen_original : shownContent(display),
-      language,
+      original: (!language && keptOriginalOf(recipe)) || shownOriginal(display),
       remix: null,
     };
     if (variant === "fix") {
@@ -144,7 +146,7 @@ export function RecipeActionsProvider({ state, children }: { state: ReadyRecipe;
     const original = session?.original ?? recipe.kitchen_original;
     if (!original || busy.revert) return;
     setBusy((b) => ({ ...b, revert: true }));
-    saveChange(revertChange(original, session?.language ?? null))
+    saveChange(revertChange(original, resolveRecipeSourceLanguage(recipe)))
       .then(() => {
         setSession(null);
         showToast(t("web.recipeActions.reverted"));

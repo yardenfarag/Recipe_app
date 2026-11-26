@@ -111,6 +111,8 @@ function sanitizeKitchenOriginal(value: unknown): Recipe['kitchen_original'] | u
   if (calories !== null) original.calories = calories;
   const nutrition = calories !== null ? parseRecipeNutrition(value.nutrition) : null;
   if (nutrition) original.nutrition = nutrition;
+  const language = readString(value.language);
+  if (language && language.length <= 16) original.language = language;
   return original;
 }
 
