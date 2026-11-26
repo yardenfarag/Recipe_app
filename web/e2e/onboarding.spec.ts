@@ -48,7 +48,7 @@ test.describe("desktop", () => {
 
     // Question 1: diets. Wide screen: the questions are listed beside the current one.
     await expect(page).toHaveURL(/\/app\/onboarding$/);
-    await expect(page.locator("#main h1")).toHaveText("How do you usually cook?");
+    await expect(page.locator("#main h1:visible")).toHaveText("How do you usually cook?");
     await expect(page).toHaveTitle("Set up your kitchen · Pinch");
     await expect(page.getByRole("list", { name: "Set up your kitchen" })).toBeVisible();
     await expect(page.getByRole("navigation", { name: "Main" })).toHaveCount(0);
@@ -59,8 +59,8 @@ test.describe("desktop", () => {
 
     // Question 2: allergies and dislikes, with the same allergy notice as Settings.
     await expect(page).toHaveURL(/\/app\/onboarding\?step=avoid$/);
-    await expect(page.locator("#main h1")).toHaveText("Any allergies, or foods you don’t like?");
-    await expect(page.locator("#main h1")).toBeFocused();
+    await expect(page.locator("#main h1:visible")).toHaveText("Any allergies, or foods you don’t like?");
+    await expect(page.locator("#main h1:visible")).toBeFocused();
     await page.getByRole("button", { name: "Peanuts" }).click();
     await page.getByRole("dialog").getByRole("button", { name: "I understand" }).click();
     await expect(page.getByRole("button", { name: "Peanuts" })).toHaveAttribute("aria-pressed", "true");
@@ -68,14 +68,14 @@ test.describe("desktop", () => {
 
     // The browser's Back goes to the previous question, with the answer kept.
     await page.goBack();
-    await expect(page.locator("#main h1")).toHaveText("How do you usually cook?");
+    await expect(page.locator("#main h1:visible")).toHaveText("How do you usually cook?");
     await expect(vegetarian).toHaveAttribute("aria-pressed", "true");
     await page.goForward();
-    await expect(page.locator("#main h1")).toHaveText("Any allergies, or foods you don’t like?");
+    await expect(page.locator("#main h1:visible")).toHaveText("Any allergies, or foods you don’t like?");
     await page.getByRole("button", { name: "Continue" }).click();
 
     // Question 3: one press answers and finishes.
-    await expect(page.locator("#main h1")).toHaveText("How did you hear about Pinch?");
+    await expect(page.locator("#main h1:visible")).toHaveText("How did you hear about Pinch?");
     await page.getByRole("button", { name: "A friend or family member" }).click();
 
     // The offer to fill the pantry from photos (PIN-181); Later goes on.
@@ -84,7 +84,7 @@ test.describe("desktop", () => {
 
     // Then the first recipes, from the Hub: fitting the diet first, never anything on the avoid list, at least one.
     await expect(page).toHaveURL(/\/app\/first-recipes$/);
-    await expect(page.locator("#main h1")).toHaveText("Pick your first recipes");
+    await expect(page.locator("#main h1:visible")).toHaveText("Pick your first recipes");
     await expect(page.getByText("Picked for your diet, with nothing on your avoid list.")).toBeVisible();
     await expect(page.getByRole("button", { name: "Pick at least one" })).toBeDisabled();
     await expect(page.getByRole("button", { name: /Peanut Noodles/ })).toHaveCount(0);
@@ -116,7 +116,7 @@ test.describe("desktop", () => {
     await page.getByLabel("Recipe URL").fill("https://www.example-recipes.com/first-visit-pasta");
     await page.getByRole("button", { name: "Snap", exact: true }).click();
     await expect(page).toHaveURL(/\/app\/recipe\/[0-9a-f-]{36}\?justSaved=1$/);
-    await expect(page.locator("#main h1")).toHaveText("First Visit Pasta");
+    await expect(page.locator("#main h1:visible")).toHaveText("First Visit Pasta");
     await page.goto("/app");
     await expect(page.getByRole("link", { name: "First Visit Pasta" })).toBeVisible();
     await resetHub([]);
@@ -135,7 +135,7 @@ test.describe("desktop", () => {
     await signInWithPassword(page, email, PASSWORD);
 
     await expect(page).toHaveURL(/\/app\/?$/);
-    await expect(page.locator("#main h1")).toHaveText("Your recipes");
+    await expect(page.locator("#main h1:visible")).toHaveText("Your recipes");
     await page.goto("/app/list");
     await expect(page).toHaveURL(/\/app\/list$/);
 
@@ -150,24 +150,24 @@ test.describe("desktop", () => {
     await page.goto("/app/welcome");
     await page.getByRole("link", { name: "Get started free" }).click();
     await signUp(page, email);
-    await expect(page.locator("#main h1")).toHaveText("How do you usually cook?");
+    await expect(page.locator("#main h1:visible")).toHaveText("How do you usually cook?");
 
     await page.goto("/app/list");
     await expect(page).toHaveURL(/\/app\/onboarding\?next=%2Flist$/);
-    await expect(page.locator("#main h1")).toHaveText("How do you usually cook?");
+    await expect(page.locator("#main h1:visible")).toHaveText("How do you usually cook?");
 
     // Skip for now ends it (and goes where they were headed); it doesn't come back.
     await page.getByRole("button", { name: "Skip for now" }).click();
     await expect(page).toHaveURL(/\/app\/list$/);
     await page.goto("/app");
-    await expect(page.locator("#main h1")).toHaveText("Your recipes");
+    await expect(page.locator("#main h1:visible")).toHaveText("Your recipes");
     await expect.poll(async () => typeof (await readOnboardingAccount(email, PASSWORD)).metadata.onboarded_at).toBe("string");
   });
 
   test("a guest opening a Hub recipe sees the recipe, not the welcome page", async ({ page }) => {
     const [card] = await resetHub([{ name: "First Visit Soup" }]);
     await page.goto(`/app/hub/${card.id}`);
-    await expect(page.locator("#main h1")).toHaveText(card.title);
+    await expect(page.locator("#main h1:visible")).toHaveText(card.title);
     await expect(page).toHaveURL(new RegExp(`/app/hub/${card.id}$`));
     // Left behind, the card would put the first-recipes picker (#104) in front of the next test's new account.
     await resetHub([]);
@@ -203,7 +203,7 @@ test.describe("phone, in Hebrew", () => {
     // Skipping the questions still leads to the first recipes, in Hebrew, fitting a phone.
     await expect(page).toHaveURL(/\/app\/first-recipes$/);
     await expect(page.locator("html")).toHaveAttribute("dir", "rtl");
-    await expect(page.locator("#main h1")).toHaveText("בחרו את המתכונים הראשונים שלכם");
+    await expect(page.locator("#main h1:visible")).toHaveText("בחרו את המתכונים הראשונים שלכם");
     expect(await page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth)).toBeLessThanOrEqual(0);
     await page.getByRole("button", { name: /Hummus Bowl/ }).click();
     await page.getByRole("button", { name: "שמירת 1 מתכון" }).click();

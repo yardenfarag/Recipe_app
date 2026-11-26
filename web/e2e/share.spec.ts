@@ -29,14 +29,14 @@ const NOT_FOUND = "This link doesn't work anymore.";
 async function signIn(page: Page) {
   await page.goto("/app/auth?mode=signin");
   await signInWithPassword(page, TEST_USER.email, TEST_USER.password);
-  await expect(page.locator("#main h1")).toBeVisible();
+  await expect(page.locator("#main h1:visible")).toBeVisible();
 }
 
 test("a guest reads a shared recipe, saves it, signs in, and it lands in their library", async ({ page }) => {
   const [share] = await resetShares(["E2E Shared Lentil Soup"]);
 
   await page.goto(`/app/s/${share.token}`);
-  await expect(page.locator("#main h1")).toHaveText(share.title);
+  await expect(page.locator("#main h1:visible")).toHaveText(share.title);
   await expect(page.getByText("Rinse the lentils.")).toBeVisible();
   // No app navigation for a guest: only a way in.
   await expect(page.getByRole("navigation", { name: "Main" })).toHaveCount(0);
@@ -52,9 +52,9 @@ test("a guest reads a shared recipe, saves it, signs in, and it lands in their l
   // Back on the shared recipe, it saves itself and opens the saved copy. The stubbed claim makes several calls
   // to local Supabase from the test runner, so it can take a while.
   await expect(page).toHaveURL(/\/app\/recipe\/[0-9a-f-]{36}$/, { timeout: 30_000 });
-  await expect(page.locator("#main h1")).toHaveText(share.title);
+  await expect(page.locator("#main h1:visible")).toHaveText(share.title);
   await page.goto("/app");
-  await expect(page.locator("#main article").filter({ hasText: share.title })).toHaveCount(1);
+  await expect(page.locator("#main article:visible").filter({ hasText: share.title })).toHaveCount(1);
 });
 
 test("a signed-in cook saves a shared recipe, and opening the link again offers the saved copy", async ({ page }) => {
@@ -62,7 +62,7 @@ test("a signed-in cook saves a shared recipe, and opening the link again offers 
   await signIn(page);
 
   await page.goto(`/app/s/${share.token}`);
-  await expect(page.locator("#main h1")).toHaveText(share.title);
+  await expect(page.locator("#main h1:visible")).toHaveText(share.title);
   await expect(page.getByRole("navigation", { name: "Main" }).filter({ visible: true })).toHaveCount(1);
   await page.getByRole("button", { name: "Save to my Library" }).click();
   await expect(page).toHaveURL(/\/app\/recipe\/[0-9a-f-]{36}$/);
@@ -80,7 +80,7 @@ test("a recipe already in the library opens the saved copy instead of saving it 
   await signIn(page);
 
   await page.goto(`/app/s/${share.token}`);
-  await expect(page.locator("#main h1")).toHaveText(share.title);
+  await expect(page.locator("#main h1:visible")).toHaveText(share.title);
   await expect(page.getByRole("link", { name: "Open in Library" })).toHaveAttribute("href", `/app/recipe/${mine}`);
   await expect(page.getByRole("button", { name: "Save to my Library" })).toHaveCount(0);
   expect(calls).not.toContain("claim");
@@ -105,7 +105,7 @@ test("in Hebrew the shared recipe reads right to left", async ({ browser }) => {
 
   await page.goto(`/app/s/${share.token}`);
   await expect(page.locator("html")).toHaveAttribute("dir", "rtl");
-  await expect(page.locator("#main h1")).toHaveText(share.title);
+  await expect(page.locator("#main h1:visible")).toHaveText(share.title);
   await expect(page.getByRole("button", { name: "שמירה במתכונים שלי" })).toBeVisible();
   await context.close();
 });

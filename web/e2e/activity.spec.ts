@@ -49,12 +49,12 @@ test("a visit is logged as the new web app, joined across sign-in, once per acti
   await signInWithPassword(page, TEST_USER.email, TEST_USER.password);
   await expect(page.getByRole("link", { name: title })).toBeVisible();
   await page.goto("/app/hub");
-  await expect(page.locator("#main h1")).toBeVisible();
+  await expect(page.locator("#main h1:visible")).toBeVisible();
   const search = page.getByRole("searchbox").first();
   if (await search.count()) await search.fill(secret);
   await page.getByRole("link", { name: /Library/ }).filter({ visible: true }).first().click();
   await page.getByRole("link", { name: title }).click();
-  await expect(page.locator("#main h1")).toHaveText(title);
+  await expect(page.locator("#main h1:visible")).toHaveText(title);
   await flushLog(page);
 
   await expect
@@ -94,7 +94,7 @@ test("signing out logs auth.logout under the account before the session ends", a
   const userId = await testUserId();
   await page.goto("/app/auth?mode=signin");
   await signInWithPassword(page, TEST_USER.email, TEST_USER.password);
-  await expect(page.locator("#main h1")).toBeVisible();
+  await expect(page.locator("#main h1:visible")).toBeVisible();
   await page.goto("/app/settings/account");
   await page.getByRole("button", { name: "Sign out" }).filter({ visible: true }).first().click();
   await expect(page).toHaveURL(/\/app\/auth/);
@@ -119,7 +119,7 @@ test("product events: an import, its automatic save and Share Pinch, each once, 
   await page.getByRole("button", { name: "Snap", exact: true }).click();
   // Saved for the cook as it comes in (no Save to tap), and opened.
   await expect(page).toHaveURL(/\/app\/recipe\/[0-9a-f-]{36}\?justSaved=1$/);
-  await expect(page.locator("#main h1")).toHaveText("Secret Lemon Pasta");
+  await expect(page.locator("#main h1:visible")).toHaveText("Secret Lemon Pasta");
 
   // No share sheet in a desktop browser: the link is copied.
   await page.evaluate(() => Object.defineProperty(navigator, "share", { value: undefined, configurable: true }));

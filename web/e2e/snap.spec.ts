@@ -44,7 +44,7 @@ test("a link from each supported source imports, is saved, and opens", async ({ 
     await snapButton(page).click();
     // No Save to tap: it's already in the Library.
     await expect(page).toHaveURL(JUST_SAVED);
-    await expect(page.locator("#main h1")).toHaveText(`Pasta from ${platform}`);
+    await expect(page.locator("#main h1:visible")).toHaveText(`Pasta from ${platform}`);
     await expect(page.getByRole("region", { name: "Ingredients" })).toContainText("spaghetti");
     await expect(savedStrip(page)).toBeVisible();
   }
@@ -69,7 +69,7 @@ test("a photo chosen from the computer imports and saves", async ({ page }) => {
   });
   await openSnap(page);
   await page.locator('input[type="file"]').setInputFiles({ name: "card.png", mimeType: "image/png", buffer: PHOTO_PNG });
-  await expect(page.locator("#main h1")).toHaveText("Grandma's Cake");
+  await expect(page.locator("#main h1:visible")).toHaveText("Grandma's Cake");
   await expect(page).toHaveURL(JUST_SAVED);
   await expect(savedStrip(page)).toBeVisible();
   expect(calls[0].body.image_mime).toBe("image/jpeg");
@@ -94,7 +94,7 @@ test("a PDF chosen from the computer imports as is, and one with no recipe says 
   await expect(page.getByRole("dialog")).toHaveCount(0);
 
   await page.locator('input[type="file"]').setInputFiles(pdf);
-  await expect(page.locator("#main h1")).toHaveText("Printed Lasagne");
+  await expect(page.locator("#main h1:visible")).toHaveText("Printed Lasagne");
   expect(calls[1].body.pdf_base64).toBe(pdf.buffer.toString("base64"));
   expect(calls[1].body.image_base64).toBeUndefined();
 });
@@ -113,7 +113,7 @@ test("a photo dropped onto the page imports", async ({ page }) => {
   }, PHOTO_PNG.toString("base64"));
   await page.dispatchEvent("#main", "dragenter", { dataTransfer: data });
   await page.dispatchEvent("#main", "drop", { dataTransfer: data });
-  await expect(page.locator("#main h1")).toHaveText("Dropped Soup");
+  await expect(page.locator("#main h1:visible")).toHaveText("Dropped Soup");
   expect(calls).toHaveLength(1);
 });
 
@@ -129,9 +129,9 @@ test.describe("pasting", () => {
     await openSnap(page);
     // Copied with a few words around it, as a share sheet does; then a real keyboard paste, outside any field.
     await page.evaluate((link) => navigator.clipboard.writeText(`Try this: ${link}`), url);
-    await page.locator("#main h1").click();
+    await page.locator("#main h1:visible").click();
     await page.keyboard.press("Control+V");
-    await expect(page.locator("#main h1")).toHaveText("Pasted Pasta");
+    await expect(page.locator("#main h1:visible")).toHaveText("Pasted Pasta");
     expect(calls.map((call) => call.fn)).toEqual(["extract-recipe"]);
   });
 
@@ -141,10 +141,10 @@ test.describe("pasting", () => {
     const calls = await stubImports(page, {});
     await openSnap(page);
     await page.evaluate((link) => navigator.clipboard.writeText(link), url);
-    await page.locator("#main h1").click();
+    await page.locator("#main h1:visible").click();
     await page.keyboard.press("Control+V");
     await expect(page).toHaveURL(/\/app\/recipe\/[0-9a-f-]{36}$/);
-    await expect(page.locator("#main h1")).toHaveText("Saved Before");
+    await expect(page.locator("#main h1:visible")).toHaveText("Saved Before");
     expect(calls).toHaveLength(0);
   });
 });
@@ -163,7 +163,7 @@ test("Guess the recipe guesses from a food link", async ({ page }) => {
   await expect(page.getByRole("heading", { level: 1, name: "Guess the recipe" })).toBeVisible();
   await page.getByLabel("Food link").fill(SOURCE_LINKS[1].url);
   await page.getByRole("button", { name: "Guess the recipe", exact: true }).click();
-  await expect(page.locator("#main h1")).toHaveText("Guessed Ramen");
+  await expect(page.locator("#main h1:visible")).toHaveText("Guessed Ramen");
   await expect(page.getByText("Guessed", { exact: true }).first()).toBeVisible();
   expect(calls[0]).toMatchObject({ fn: "invent-recipe", body: { url: SOURCE_LINKS[1].url, language: "en" } });
 });
@@ -181,7 +181,7 @@ test("a dish without a written recipe offers Guess the recipe", async ({ page })
   await expect(dialog).toContainText("This looks like pad thai");
   await expect(dialog.getByRole("button", { name: "It has a recipe — read it" })).toBeVisible();
   await dialog.getByRole("button", { name: "Guess the recipe" }).click();
-  await expect(page.locator("#main h1")).toHaveText("Pad Thai");
+  await expect(page.locator("#main h1:visible")).toHaveText("Pad Thai");
   expect(calls[1]).toMatchObject({ fn: "invent-recipe", body: { already_gated: true } });
 });
 
@@ -235,7 +235,7 @@ test("a link that is already saved opens the saved recipe, without importing", a
   await expect(page.getByText("This link was already in your Library.")).toBeVisible();
   await snapButton(page).click();
   await expect(page).toHaveURL(new RegExp(`/app/recipe/${id}$`));
-  await expect(page.locator("#main h1")).toHaveText("Saved Pasta");
+  await expect(page.locator("#main h1:visible")).toHaveText("Saved Pasta");
   expect(calls).toHaveLength(0);
 });
 
@@ -269,11 +269,11 @@ test("when the save fails, the preview keeps the recipe, and Discard drops it", 
   await linkField(page).fill(SOURCE_LINKS[4].url);
   await snapButton(page).click();
   await expect(page).toHaveURL(/\/app\/recipe\/preview$/);
-  await expect(page.locator("#main h1")).toHaveText("Unwanted Stew");
+  await expect(page.locator("#main h1:visible")).toHaveText("Unwanted Stew");
   await expect(page.getByRole("button", { name: "Save recipe" })).toBeVisible();
   // A reload keeps it.
   await page.reload();
-  await expect(page.locator("#main h1")).toHaveText("Unwanted Stew");
+  await expect(page.locator("#main h1:visible")).toHaveText("Unwanted Stew");
   await page.unroute(recipesTable, failSaves);
   await page.getByRole("button", { name: /Discard|web\.snap\.discard/ }).first().click();
   await page.getByRole("dialog").getByRole("button", { name: /Discard|web\.snap\.discard/ }).click();
@@ -299,7 +299,7 @@ test("a link that can't be read offers ways on, and Try again gets the recipe", 
   await expect(alert.getByRole("button", { name: "Guess the recipe" })).toBeVisible();
   await alert.getByRole("button", { name: "Try again" }).click();
   await expect(page).toHaveURL(JUST_SAVED);
-  await expect(page.locator("#main h1")).toHaveText("Second Try Noodles");
+  await expect(page.locator("#main h1:visible")).toHaveText("Second Try Noodles");
   expect(calls.map((call) => call.body.url)).toEqual([SOURCE_LINKS[2].url, SOURCE_LINKS[2].url]);
 });
 
@@ -320,7 +320,7 @@ test("a partial import opens in the editor to be finished, and saves (PIN-146)",
   // The empty step the source left out has the focus.
   await page.keyboard.type("Simmer for 20 minutes.");
   await page.getByRole("button", { name: "Save", exact: true }).click();
-  await expect(page.locator("#main h1")).toHaveText("Half Soup");
+  await expect(page.locator("#main h1:visible")).toHaveText("Half Soup");
   await expect(page.getByText("Simmer for 20 minutes.")).toBeVisible();
 });
 

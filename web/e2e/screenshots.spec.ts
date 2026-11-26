@@ -81,7 +81,7 @@ async function open(browser: Browser, viewport: keyof typeof VIEWPORTS, prefs: P
   await writeAccountPrefs({ locale: prefs.language, prefs: { scheme: prefs.scheme, pack: prefs.pack ?? "mist", measurement: "original" } });
   const page = await context.newPage();
   await page.goto(path);
-  await page.locator("#main h1").waitFor();
+  await page.locator("#main h1:visible").waitFor();
   await page.waitForTimeout(300);
   return { page, context };
 }
@@ -165,7 +165,7 @@ test("library", async ({ browser }) => {
   for (const viewport of Object.keys(VIEWPORTS) as (keyof typeof VIEWPORTS)[]) {
     for (const [language, scheme] of [["en", "light"], ["en", "dark"], ["he", "light"]] as const) {
       const { page, context } = await open(browser, viewport, { language, scheme });
-      await page.locator("#main article").first().waitFor();
+      await page.locator("#main article:visible").first().waitFor();
       await page.screenshot({ path: `${OUT}/library-${viewport}-${language}-${scheme}.png`, fullPage: viewport !== "desktop" });
       await context.close();
     }
@@ -173,7 +173,7 @@ test("library", async ({ browser }) => {
   // Filters open, and the list layout, on desktop and phone.
   for (const viewport of ["desktop", "phone"] as const) {
     const { page, context } = await open(browser, viewport, { language: "en", scheme: "light" }, "/app?sort=title_asc&tag=dinner");
-    await page.locator("#main article").first().waitFor();
+    await page.locator("#main article:visible").first().waitFor();
     await page.getByRole("radio", { name: "Show as list" }).click();
     await page.waitForTimeout(200);
     await page.screenshot({ path: `${OUT}/library-list-filters-${viewport}.png`, fullPage: true });
@@ -368,7 +368,7 @@ test("pantry: page, scan, review, phone code and What can I cook", async ({ brow
       await page.waitForTimeout(1200);
       await page.screenshot({ path: `${OUT}/pantry-scan-${tag}.png`, fullPage: true });
       await page.locator('#main [data-track="pantry.scan.review"]').click();
-      await page.locator("#main h1").waitFor();
+      await page.locator("#main h1:visible").waitFor();
       await page.waitForTimeout(500);
       await page.screenshot({ path: `${OUT}/pantry-review-${tag}.png`, fullPage: true });
       await context.close();
@@ -446,7 +446,7 @@ test("hub recipe, as a guest", async ({ browser }) => {
     const context = await browser.newContext({ baseURL: test.info().project.use.baseURL, viewport: VIEWPORTS[viewport], deviceScaleFactor: viewport === "desktop" ? 1 : 2 });
     const page = await context.newPage();
     await page.goto(`/app/hub/${card.id}`);
-    await page.locator("#main h1").waitFor();
+    await page.locator("#main h1:visible").waitFor();
     await page.waitForTimeout(300);
     await page.screenshot({ path: `${OUT}/hub-guest-${viewport}.png`, fullPage: true });
     await context.close();
@@ -540,7 +540,7 @@ test("shared recipe, as a guest", async ({ browser }) => {
     const page = await context.newPage();
     await stubRecipeShare(page);
     await page.goto(`/app/s/${share.token}`);
-    await page.locator("#main h1").waitFor();
+    await page.locator("#main h1:visible").waitFor();
     await page.waitForTimeout(300);
     await page.screenshot({ path: `${OUT}/share-guest-${viewport}.png`, fullPage: true });
     await context.close();
@@ -566,7 +566,7 @@ test("welcome and onboarding", async ({ browser }) => {
   for (const viewport of ["desktop", "tablet", "phone"] as const) {
     for (const language of ["en", "he"] as const) {
       const { page, context } = await openSignedOut(browser, viewport, language, "/app/welcome");
-      await page.locator("h1").first().waitFor();
+      await page.locator("h1:visible").first().waitFor();
       await page.waitForTimeout(400);
       await page.screenshot({ path: `${OUT}/welcome-${viewport}-${language}.png`, fullPage: true });
       await context.close();
@@ -586,7 +586,7 @@ test("welcome and onboarding", async ({ browser }) => {
         await page.evaluate((lang) => localStorage.setItem("pinch:appLanguage", lang), language);
         await page.reload();
       }
-      await page.locator("h1").first().waitFor();
+      await page.locator("h1:visible").first().waitFor();
       await page.waitForTimeout(400);
       await page.screenshot({ path: `${OUT}/onboarding-${viewport}-${language}.png`, fullPage: true });
       await context.close();
@@ -660,7 +660,7 @@ test("admin pages", async ({ browser }) => {
     await page.locator("#main").waitFor();
     for (const name of ["dashboard", "insights", "users", "usage", "activity", "messages"]) {
       await page.goto(`/app/admin/${name}`);
-      await page.locator("#main h1").first().waitFor();
+      await page.locator("#main h1:visible").first().waitFor();
       await page.waitForTimeout(1200);
       await page.screenshot({ path: `${OUT}/admin-${name}.png`, fullPage: true });
     }
@@ -702,7 +702,7 @@ test("kit, every theme pack", async ({ browser }) => {
               [language, scheme, pack],
             );
             await page.goto("/app/admin/kit");
-            await page.locator("#main h1").first().waitFor();
+            await page.locator("#main h1:visible").first().waitFor();
             await page.waitForTimeout(500);
             await page.screenshot({ path: `${OUT}/kit-${viewport}-${pack}-${scheme}-${language}.png`, fullPage: true });
           }
@@ -846,7 +846,7 @@ test("household: settings, invite, join page and the shared list", async ({ brow
           }, { language, scheme });
           const page = await context.newPage();
           await page.goto(path);
-          await page.locator("#main h1").waitFor();
+          await page.locator("#main h1:visible").waitFor();
           await page.waitForTimeout(400);
           return { page, context };
         };

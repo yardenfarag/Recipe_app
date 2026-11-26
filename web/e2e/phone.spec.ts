@@ -61,7 +61,7 @@ async function signIn(page: Page, recipes: SeedRecipe[] = LIBRARY): Promise<stri
   const ids = await resetLibrary(recipes);
   await page.goto("/app/auth?mode=signin");
   await signInWithPassword(page, TEST_USER.email, TEST_USER.password);
-  await expect(page.locator("#main h1")).toBeVisible();
+  await expect(page.locator("#main h1:visible")).toBeVisible();
   return ids;
 }
 
@@ -118,7 +118,7 @@ test("Library: the pick on top, the list and cooked tiles side by side, recipes 
   expect(list!.y).toBeGreaterThan(pickBox.y + pickBox.height - 1);
   await expect(page.getByTestId("list-tile")).toContainText("crushed tomatoes, feta, +1 more");
 
-  const cards = page.locator("#main article");
+  const cards = page.locator("#main article:visible");
   await expect(cards).toHaveCount(4);
   const [first, second, third] = await Promise.all([cards.nth(0).boundingBox(), cards.nth(1).boundingBox(), cards.nth(2).boundingBox()]);
   expect(Math.abs(first!.y - second!.y)).toBeLessThan(2);
@@ -144,7 +144,7 @@ test("Library: every control is big enough for a finger", async ({ page }) => {
 test("recipe: the photo with its buttons on it, tabs for ingredients and steps, and Start cooking fixed at the bottom", async ({ page }) => {
   const [id] = await signIn(page);
   await page.goto(`/app/recipe/${id}`);
-  await expect(page.locator("#main h1")).toHaveText("Shakshuka");
+  await expect(page.locator("#main h1:visible")).toHaveText("Shakshuka");
 
   // No app bars here: the photo runs to the top of the screen, with the way back on it.
   await expect(bottomBar(page)).toHaveCount(0);
@@ -204,7 +204,7 @@ test("recipe: the photo with its buttons on it, tabs for ingredients and steps, 
 test("recipe: every control is big enough for a finger", async ({ page }) => {
   const [id] = await signIn(page);
   await page.goto(`/app/recipe/${id}`);
-  await expect(page.locator("#main h1")).toHaveText("Shakshuka");
+  await expect(page.locator("#main h1:visible")).toHaveText("Shakshuka");
   const controls =
     '#main header > div a, #main header > div button, #main [role="group"] :is(a, button), #main [role="tab"], #main section button, #main article > div.fixed :is(a, button)';
   expect(await smallTargets(page, controls)).toEqual([]);
@@ -233,7 +233,7 @@ test("in Hebrew the bottom bar and the swipe rows run right to left", async ({ p
   expect(await sidewaysScroll(page)).toBeLessThanOrEqual(0);
 
   await page.goto(`/app/recipe/${id}`);
-  await expect(page.locator("#main h1")).toBeVisible();
+  await expect(page.locator("#main h1:visible")).toBeVisible();
   const tools = page.getByRole("group", { name: /Shakshuka/ });
   const firstTool = (await tools.getByRole("button").first().boundingBox())!;
   expect(firstTool.x + firstTool.width).toBeGreaterThan(390 - 24);

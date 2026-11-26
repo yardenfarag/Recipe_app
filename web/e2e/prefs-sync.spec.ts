@@ -29,7 +29,7 @@ const PANCAKES: SeedRecipe = {
 async function signIn(page: Page) {
   await page.goto("/app/auth?mode=signin");
   await signInWithPassword(page, TEST_USER.email, TEST_USER.password);
-  await expect(page.locator("#main h1")).toBeVisible();
+  await expect(page.locator("#main h1:visible")).toBeVisible();
 }
 
 /** Sets this browser's own copies once, before the first page (not again on reloads). */

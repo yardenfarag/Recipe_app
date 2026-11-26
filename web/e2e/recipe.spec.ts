@@ -45,7 +45,7 @@ test.afterEach(async () => {
 async function signIn(page: Page) {
   await page.goto("/app/auth?mode=signin");
   await signInWithPassword(page, TEST_USER.email, TEST_USER.password);
-  await expect(page.locator("#main h1")).toBeVisible();
+  await expect(page.locator("#main h1:visible")).toBeVisible();
 }
 
 /** Seeds the recipes, signs in and opens the first one. */
@@ -53,7 +53,7 @@ async function openRecipe(page: Page, recipes: SeedRecipe[]) {
   const ids = await resetLibrary(recipes);
   await signIn(page);
   await page.goto(`/app/recipe/${ids[0]}`);
-  await expect(page.locator("#main h1")).toHaveText(recipes[0].title);
+  await expect(page.locator("#main h1:visible")).toHaveText(recipes[0].title);
   return ids;
 }
 
@@ -67,7 +67,7 @@ test("opening a recipe from the Library shows its header, ingredients and steps"
   await signIn(page);
   await page.getByRole("link", { name: "Fluffy Pancakes" }).click();
   await expect(page).toHaveURL(/\/app\/recipe\/[0-9a-f-]{36}$/);
-  await expect(page.locator("#main h1")).toHaveText("Fluffy Pancakes");
+  await expect(page.locator("#main h1:visible")).toHaveText("Fluffy Pancakes");
   await expect(page).toHaveTitle("Fluffy Pancakes · Pinch");
   await expect(page.locator("#main")).toContainText("20 min");
   await expect(perServing(page)).toContainText(["Calories: 400", "Protein: 12 g", "Carbs: 55 g", "Fat: 14 g"]);
@@ -147,7 +147,7 @@ test("a saved translation shows in the app language", async ({ page }) => {
   ]);
   await writeAccountPrefs({ locale: "he" });
   await page.reload();
-  await expect(page.locator("#main h1")).toHaveText("פנקייק אוורירי");
+  await expect(page.locator("#main h1:visible")).toHaveText("פנקייק אוורירי");
   await expect(page.locator("html")).toHaveAttribute("dir", "rtl");
   await expect(page.getByRole("region", { name: "מצרכים" })).toContainText("קמח");
   await writeAccountPrefs({ locale: "en" });

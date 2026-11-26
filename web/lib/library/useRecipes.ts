@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useLayoutEffect, useRef, useState } from "react";
 
 import { withDisplayTitles } from "@shared/lib/recipeDisplayTitle";
 import { resolveRecipeSourceLanguage } from "@shared/lib/recipeSourceLanguage";
@@ -22,6 +22,7 @@ const normalize = (recipe: Recipe): Recipe => ({ ...recipe, is_favorite: recipe.
  *
  * Coming back to a screen that uses it shows the recipes from last time at once (lib/library/libraryCache.ts), then
  * refreshes them quietly: as many as were showing, so the list doesn't shrink or jump under the reader (PIN-174).
+ * The same happens each time the kept-alive Library shows again (PIN-175).
  */
 export function useRecipes(pageSize = 40) {
   const { user } = useAuth();
@@ -152,6 +153,20 @@ export function useRecipes(pageSize = 40) {
       }
     }
   }, [commit, decorate, hasMore, key, userId]);
+
+  // The Library stays mounted while hidden (PIN-175). When it shows again it takes what changed in the memory
+  // meanwhile (a heart given on a recipe's page, a recipe deleted there, pages another screen loaded) before the
+  // first paint, ahead of the quiet refresh below.
+  useLayoutEffect(() => {
+    const kept = key ? readLibrary(key) : null;
+    if (!kept) return;
+    recipesKey.current = key;
+    nextOffset.current = kept.loaded;
+    // Unchanged, these are the same values, and nothing draws again.
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    setRecipes(kept.recipes);
+    setTotal(kept.total);
+  }, [key]);
 
   useEffect(() => {
     // Loads from the network, so state is set after the response. Runs again when the app's language changes.

@@ -41,7 +41,7 @@ const MERINGUE_APPLIANCES = [
 async function signIn(page: Page) {
   await page.goto("/app/auth?mode=signin");
   await signInWithPassword(page, TEST_USER.email, TEST_USER.password);
-  await expect(page.locator("#main h1")).toBeVisible();
+  await expect(page.locator("#main h1:visible")).toBeVisible();
 }
 
 async function openMeringues(page: Page) {
@@ -49,7 +49,7 @@ async function openMeringues(page: Page) {
   await setRecipeAppliances(id, MERINGUE_APPLIANCES);
   await signIn(page);
   await page.goto(`/app/recipe/${id}`);
-  await expect(page.locator("#main h1")).toHaveText(MERINGUES.title);
+  await expect(page.locator("#main h1:visible")).toHaveText(MERINGUES.title);
   return id;
 }
 

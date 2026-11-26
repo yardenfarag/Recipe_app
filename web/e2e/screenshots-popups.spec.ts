@@ -67,7 +67,7 @@ async function open(browser: Browser, viewport: Viewport, prefs: Prefs, before?:
 
 async function go(page: Page, path: string) {
   await page.goto(path);
-  await page.locator("#main h1").first().waitFor();
+  await page.locator("#main h1:visible").first().waitFor();
   await page.waitForTimeout(400);
 }
 
