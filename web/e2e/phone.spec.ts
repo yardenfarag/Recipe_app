@@ -168,9 +168,9 @@ test("recipe: the photo with its buttons on it, tabs for ingredients and steps, 
   await expect(ingredients).toBeVisible();
   await expect(steps).toBeHidden();
 
-  // The servings stepper sits beside the tabs and scales the amounts.
+  // The servings stepper sits beside the tabs and scales the amounts, eggs to whole ones (6 × 5/4 = 7½ → 8).
   await page.getByRole("button", { name: "Increase servings" }).click();
-  await expect(ingredients).toContainText("7½");
+  await expect(ingredients).toContainText(/8\s*eggs/);
 
   await page.getByRole("tab", { name: "Steps" }).click();
   await expect(steps).toBeVisible();

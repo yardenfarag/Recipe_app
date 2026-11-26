@@ -24,6 +24,13 @@ describe('formatQuantity', () => {
     expect(formatQuantity(1.5, 'cups')).toBe('1½ cups');
   });
 
+  it('picks the unit form from the number shown, not the raw one', () => {
+    expect(formatQuantity(1.06, 'cups', 'en')).toBe('1 cup');
+    expect(formatQuantity(0.97, 'cup', 'en')).toBe('1 cup');
+    expect(formatQuantity(1.94, 'cup', 'en')).toBe('2 cups');
+    expect(formatQuantity(1.06, 'כוסות', 'he')).toBe('1 כוס');
+  });
+
   it('floors sub-threshold non-metric units to the smallest fraction', () => {
     expect(formatQuantity(0.05, 'cup')).toBe('⅛ cup');
   });

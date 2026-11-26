@@ -1,4 +1,5 @@
 import { applyMeasurementSystem, isImperialWeight, type MeasurementSystem } from './convertMeasurement';
+import { roundForKitchen } from './kitchenRounding';
 import type { UnitSystem } from './unitSystem';
 import type { Ingredient, IngredientAmount } from '../types/recipe';
 
@@ -96,11 +97,34 @@ export function scaleIngredient<T extends Ingredient>(ingredient: T, factor: num
   };
 }
 
+function roundAmountForKitchen(amount: IngredientAmount | undefined, name: string): IngredientAmount | undefined {
+  return amount && { quantity: roundForKitchen(amount.quantity, amount.unit, name), unit: amount.unit };
+}
+
+/** A scaled amount, rounded to what a kitchen can measure (6.33 g salt → 6 g, 2.11 eggs → 2). */
+function roundIngredientForKitchen<T extends Ingredient>(ingredient: T): T {
+  return {
+    ...ingredient,
+    quantity: roundForKitchen(ingredient.quantity, ingredient.unit, ingredient.name),
+    metric: roundAmountForKitchen(ingredient.metric, ingredient.name),
+    spoons: roundAmountForKitchen(ingredient.spoons, ingredient.name),
+  };
+}
+
+/**
+ * The ingredients for `target` servings, as the cook sees them: scaled from the recipe's own amounts, then rounded
+ * to what a kitchen can measure. At the recipe's own servings the amounts stay as written. Always scale from the
+ * recipe's amounts, never from an earlier result, so the rounding doesn't add up: 18 → 19 → 18 gives back the
+ * original. To store an amount at the recipe's servings (a swap), use the exact `scaleIngredient`.
+ */
 export function scaleIngredients<T extends Ingredient>(
   ingredients: T[],
   baseServings: number,
   target: number,
 ): T[] {
   const factor = target / Math.max(1, baseServings);
-  return ingredients.map((ingredient) => scaleIngredient(ingredient, factor));
+  return ingredients.map((ingredient) => {
+    const scaled = scaleIngredient(ingredient, factor);
+    return factor === 1 ? scaled : roundIngredientForKitchen(scaled);
+  });
 }
