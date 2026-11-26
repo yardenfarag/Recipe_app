@@ -2031,9 +2031,9 @@ export default {
     "addItem": "Añadir algo",
     "addPlaceholder": "Leche, arroz, pimentón…",
     "addTo": "Añadir a {{place}}",
-    "added": "{{name}} añadido",
+    "added": "Añadido: {{name}}",
     "remove": "Quitar {{name}}",
-    "removed": "{{name}} quitado",
+    "removed": "Quitado: {{name}}",
     "undo": "Deshacer",
     "move": "Mover a {{place}}",
     "emptyPlace": "Aquí no hay nada todavía.",
@@ -2114,7 +2114,7 @@ export default {
       "leaveTitle": "¿Salir del escaneo?",
       "leaveBody": "Lo que ya está leído te espera una semana.",
       "leave": "Salir",
-      "step1": "Fotos",
+      "step1": "Hacer fotos",
       "step2": "Revisar y guardar",
       "nextTitle_one": "{{count}} cosa encontrada",
       "nextTitle_many": "{{count}} cosas encontradas",
@@ -2153,7 +2153,7 @@ export default {
     "cook": {
       "button": "¿Qué puedo cocinar?",
       "title": "¿Qué puedo cocinar?",
-      "hint": "Recetas de tus recetas, ordenadas por lo que ya tienes en la despensa.",
+      "hint": "Tus recetas, ordenadas por lo que ya tienes en la despensa.",
       "have": "{{have}} de {{total}} en casa",
       "allThere": "Lo tienes todo",
       "missing": "Falta: {{items}}",
@@ -2162,9 +2162,9 @@ export default {
       "added_many": "{{count}} cosas añadidas a tu lista",
       "added_other": "{{count}} cosas añadidas a tu lista",
       "emptyPantry": "Escanea primero tu cocina y Pinch te enseña qué puedes cocinar con lo que tienes.",
-      "noMatches": "Todavía ninguna receta encaja con lo que tienes. Haz Snap de una receta nueva o añade a tu despensa.",
+      "noMatches": "Todavía ninguna de tus recetas encaja con lo que tienes. Guarda una receta nueva con Snap o añade cosas a tu despensa.",
       "emptyLibrary": "Guarda primero unas recetas y Pinch te enseña qué puedes cocinar.",
-      "stale": "Despensa escaneada {{when}}. Escanea otra vez para una lista más fresca.",
+      "stale": "Despensa escaneada {{when}}. Escanea otra vez para tener la lista al día.",
       "failed": "No se pudo cargar tu despensa. Inténtalo de nuevo."
     },
     "usedUp": {
@@ -2180,7 +2180,7 @@ export default {
     },
     "bought": {
       "prompt": "¿Añadir {{name}} a tu despensa?",
-      "add": "A la despensa",
+      "add": "Añadir a la despensa",
       "added": "{{name}} está en tu despensa"
     },
     "phone": {
