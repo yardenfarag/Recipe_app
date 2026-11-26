@@ -145,11 +145,11 @@ test("leaving with unsaved changes asks first: Cancel, a link, closing the tab",
   await expect(field(page, "Title")).toHaveValue("Fluffier Pancakes");
 
   // A link in the navigation is held back too; Discard follows it.
-  await page.getByRole("navigation").getByRole("link", { name: "Hub" }).first().click();
+  await page.getByRole("navigation").getByRole("link", { name: "Plan" }).first().click();
   await expect(dialog).toBeVisible();
   await expect(page).toHaveURL(/\/recipe\/edit/);
   await dialog.getByRole("button", { name: "Discard" }).click();
-  await expect(page).toHaveURL(/\/app\/hub$/);
+  await expect(page).toHaveURL(/\/app\/plan$/);
 
   // Closing the tab gets the browser's own question.
   // Typed for real: browsers only ask once the page has had a real key press or click.

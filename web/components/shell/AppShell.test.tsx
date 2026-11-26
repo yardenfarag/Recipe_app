@@ -46,7 +46,7 @@ describe("AppShell", () => {
     expect(document.getElementById("main")?.tagName).toBe("MAIN");
   });
 
-  it("links to every section with real links: the rail adds the meal plan, the phone bar keeps five", () => {
+  it("links to the five sections with real links, side and bottom: the plan took the Hub's place", () => {
     renderShell();
     const [side, bottom] = screen.getAllByRole("navigation", { name: "Main" });
     const hrefs = (region: HTMLElement) =>
@@ -55,16 +55,15 @@ describe("AppShell", () => {
           .getAllByRole("link")
           .map((link) => link.getAttribute("href")),
       );
-    expect(hrefs(side)).toEqual(new Set(["/", "/plan", "/hub", "/add", "/list", "/settings"]));
-    expect(hrefs(bottom)).toEqual(new Set(["/", "/hub", "/add", "/list", "/settings"]));
+    for (const region of [side, bottom]) expect(hrefs(region)).toEqual(new Set(["/", "/plan", "/add", "/list", "/settings"]));
   });
 
   it("marks the current section", () => {
-    nav.pathname = "/hub";
+    nav.pathname = "/plan";
     renderShell();
     const current = screen.getAllByRole("link", { current: "page" });
     expect(current.length).toBeGreaterThan(0);
-    for (const link of current) expect(link.getAttribute("href")).toBe("/hub");
+    for (const link of current) expect(link.getAttribute("href")).toBe("/plan");
   });
 
   it("offers the account menu with who is signed in", async () => {

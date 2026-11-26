@@ -1,15 +1,13 @@
-import { CalendarDays, Compass, LayoutGrid, Plus, Settings, ShoppingCart, type LucideIcon } from "lucide-react";
+import { CalendarDays, LayoutGrid, Plus, Settings, ShoppingCart, type LucideIcon } from "lucide-react";
 
 export type NavItem = {
-  id: "library" | "plan" | "hub" | "snap" | "list" | "settings";
+  id: "library" | "plan" | "snap" | "list" | "settings";
   href: string;
   /** Translation key for the label. */
-  labelKey: "tabs.library" | "tabs.plan" | "tabs.hub" | "tabs.snap" | "tabs.list" | "tabs.settings";
+  labelKey: "tabs.library" | "tabs.plan" | "tabs.snap" | "tabs.list" | "tabs.settings";
   icon: LucideIcon;
   /** The icon points a direction (the cart), so it is mirrored in Hebrew and Arabic. */
   flip?: boolean;
-  /** Shown in the side rail only, not in the phone's bottom bar (which holds five). */
-  railOnly?: boolean;
   /** Whether this section owns the page at `path` (a recipe belongs to the Library, a settings page to Settings). */
   owns: (path: string) => boolean;
 };
@@ -24,12 +22,17 @@ export const NAV_ITEMS: NavItem[] = [
     href: "/",
     labelKey: "tabs.library",
     icon: LayoutGrid,
+    // The Hub is a tab of the Library (PIN-77).
     owns: (path) =>
-      path === "/" || path.startsWith("/favorites") || path.startsWith("/cookbook") || (path.startsWith("/recipe") && !isSnapPreview(path)),
+      path === "/" ||
+      path.startsWith("/favorites") ||
+      path.startsWith("/cookbook") ||
+      path === "/hub" ||
+      path.startsWith("/hub/") ||
+      (path.startsWith("/recipe") && !isSnapPreview(path)),
   },
-  // The meal plan (PIN-77). In the rail for now; the phone bar gets it when the Hub moves into the Library.
-  { id: "plan", href: "/plan", labelKey: "tabs.plan", icon: CalendarDays, railOnly: true, owns: (path) => path === "/plan" || path.startsWith("/plan/") },
-  { id: "hub", href: "/hub", labelKey: "tabs.hub", icon: Compass, owns: (path) => path === "/hub" || path.startsWith("/hub/") },
+  // The meal plan (PIN-77). It took the Hub's place; the Hub is a tab of the Library.
+  { id: "plan", href: "/plan", labelKey: "tabs.plan", icon: CalendarDays, owns: (path) => path === "/plan" || path.startsWith("/plan/") },
   { id: "snap", href: "/add", labelKey: "tabs.snap", icon: Plus, owns: (path) => path.startsWith("/add") || isSnapPreview(path) },
   { id: "list", href: "/list", labelKey: "tabs.list", icon: ShoppingCart, flip: true, owns: (path) => path.startsWith("/list") },
   { id: "settings", href: "/settings", labelKey: "tabs.settings", icon: Settings, owns: (path) => path.startsWith("/settings") },

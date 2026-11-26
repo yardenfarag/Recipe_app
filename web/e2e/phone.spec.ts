@@ -84,19 +84,20 @@ const smallTargets = (page: Page, selector: string) =>
   }, selector);
 
 // The only navigation landmark showing on a phone (the rail is hidden), whatever the app's language calls it.
-const bottomBar = (page: Page) => page.getByRole("navigation").filter({ visible: true });
+// The Library has its own "My Library | Hub" tabs (a navigation too); the bar comes last on the page.
+const bottomBar = (page: Page) => page.getByRole("navigation").filter({ visible: true }).last();
 
 test("the bottom bar has the five sections, with a raised Snap button in the middle", async ({ page }) => {
   await signIn(page);
   const bar = bottomBar(page);
-  await expect(bar.getByRole("link")).toHaveText(["Library", "Hub", "", "List", "Settings"]);
+  await expect(bar.getByRole("link")).toHaveText(["Library", "Plan", "", "List", "Settings"]);
   const snap = bar.getByRole("link", { name: "Snap a recipe" });
-  const [barBox, snapBox, hubBox] = await Promise.all([bar.boundingBox(), snap.boundingBox(), bar.getByRole("link", { name: "Hub" }).boundingBox()]);
+  const [barBox, snapBox, planBox] = await Promise.all([bar.boundingBox(), snap.boundingBox(), bar.getByRole("link", { name: "Plan" }).boundingBox()]);
   // Raised: it starts above the bar's top edge. In the middle: its centre is the screen's.
   expect(snapBox!.y).toBeLessThan(barBox!.y);
   expect(Math.abs(snapBox!.x + snapBox!.width / 2 - 195)).toBeLessThan(2);
   expect(snapBox!.width).toBeGreaterThanOrEqual(56);
-  expect(hubBox!.height).toBeGreaterThanOrEqual(44);
+  expect(planBox!.height).toBeGreaterThanOrEqual(44);
 
   await snap.click();
   await expect(page).toHaveURL(/\/app\/add$/);

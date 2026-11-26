@@ -7,6 +7,7 @@ import { Suspense, useCallback, useDeferredValue, useEffect, useLayoutEffect, us
 import { useTranslation } from "react-i18next";
 
 import { rankCookTonight } from "@shared/lib/cookTonight";
+import { LIBRARY_ONLY_MIN } from "@shared/lib/mealPlan/fillWeek";
 import { normalizeSocialUrl } from "@shared/lib/platformUrls";
 import {
   applyQuickFilters,
@@ -29,6 +30,7 @@ import type { Recipe } from "@shared/types/recipe";
 import { AddToCollectionDialog } from "@/components/library/AddToCollectionDialog";
 import { WhatCanICookDialog } from "@/components/library/WhatCanICookDialog";
 import { KitchenTiles, KitchenTilesSkeleton } from "@/components/library/KitchenTiles";
+import { LibraryTabs } from "@/components/library/LibraryTabs";
 import { LayoutToggle, LibraryToolbar } from "@/components/library/LibraryToolbar";
 import { NameDialog } from "@/components/library/NameDialog";
 import { FirstRecipeGuide } from "@/components/onboarding/FirstRecipeGuide";
@@ -300,6 +302,7 @@ function LibraryScreen() {
 
   return (
     <>
+      <LibraryTabs current="library" small={!loading && !error && total > 0 && total < LIBRARY_ONLY_MIN} />
       <div className="flex items-stretch gap-2.5 md:flex-wrap md:gap-3.5">
         <SnapBarField value={barText} onChange={setBarText} liveSearch inputRef={searchRef} size={phone ? "md" : "lg"} className="min-w-0 flex-1 md:flex-[1_1_20rem]" />
         {credits != null ? (

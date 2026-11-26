@@ -19,7 +19,7 @@ export function FirstRecipeGuide() {
   const ways: Way[] = [
     { icon: Link2, title: t("web.firstRecipe.linkTitle"), body: t("web.firstRecipe.linkBody"), href: snap, trackId: "first_recipe.way.link" },
     { icon: Camera, title: t("web.firstRecipe.photoTitle"), body: t("web.firstRecipe.photoBody"), href: snap, trackId: "first_recipe.way.photo" },
-    { icon: Compass, title: t("web.firstRecipe.hubTitle"), body: t("web.firstRecipe.hubBody"), href: navItem("hub").href, trackId: "first_recipe.way.hub" },
+    { icon: Compass, title: t("web.firstRecipe.hubTitle"), body: t("web.firstRecipe.hubBody"), href: "/hub", trackId: "first_recipe.way.hub" },
     { icon: PenLine, title: t("recipeEditor.entry.write"), body: t("recipeEditor.entry.writeHint"), href: "/recipe/edit", trackId: "first_recipe.way.write" },
   ];
 

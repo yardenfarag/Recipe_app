@@ -42,7 +42,7 @@ export function BottomNav() {
       className="fixed inset-x-0 bottom-0 z-30 border-t border-border bg-tab-bar pb-[env(safe-area-inset-bottom)] backdrop-blur-xl md:hidden"
     >
       <ul className="mx-auto grid h-16 max-w-lg grid-cols-5 items-start">
-        {NAV_ITEMS.filter((item) => !item.railOnly).map((item) => {
+        {NAV_ITEMS.map((item) => {
           const isActive = active === item.id;
           const label = t(item.labelKey);
           if (item.id === "snap") {
