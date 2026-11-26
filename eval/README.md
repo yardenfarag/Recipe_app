@@ -36,6 +36,20 @@ npx -y deno run -A --no-lock --env-file=.env eval/nutrition.ts   # 6 recipes thr
 
 Calories, protein, carbs and fat per serving, scored in code against hand-worked references in `cases/nutrition.json` (no judge). Writes `results/nutrition.md`. One pass costs about $0.0004. Scorer tests: `npx -y deno test -A --no-lock eval/nutrition_test.ts`.
 
+## Pantry scan (PIN-181)
+
+```bash
+node eval/pantryImages.mjs                    # once: resize the photos (needs `npm ci` in web/ for sharp)
+deno pantry                                   # every model in PANTRY_MODELS (models.ts) on all 30 photos
+deno pantry --models=a,b --only=own           # some models; --only=<id part> or own|web|commons|synthetic
+deno pantry --size=small --lang=he            # 1280px photos instead of 2048px; item names in Hebrew
+deno pantry --report                          # rescore what is on disk after a label fix (no calls)
+```
+
+Photos of fridges, freezers and cupboards through the production scan (`_shared/pantry/pantryScan.ts`), scored in code against the hand labels in `cases/pantry.json` (no judge). Writes `results/pantry.md`. The labels file explains its fields at the top. Photos sit in `private/pantry/` and are not in git: Yarden's kitchen and web photos by file name, Commons photos downloaded by title. Two cases are a blurred and a darkened copy of a real photo, so the "retake" verdicts have a known answer.
+
+Made-up items are only counted on the photos marked `strict`, whose labels cover everything in the frame. On the cluttered web photos the report lists unmatched names as unchecked, so a gap in the labels doesn't punish a right answer. Each model runs in its own directory under `results/raw/pantry/<size>-<lang>/`, so several `deno pantry --models=…` can run side by side. It stops at once on a 402 from OpenRouter. Scorer tests: `npx -y deno test -A --no-lock --unstable-sloppy-imports eval/pantry_test.ts`.
+
 ## Translation quality (PIN-53)
 
 ```bash
@@ -58,6 +72,7 @@ Each answer is rendered the way the recipe screen shows it (unit words, fraction
 | `cases/appliances.json` | yes | Appliances cases with hand labels (PIN-26) |
 | `cases/translate.json` | yes | Translation cases with hand labels (PIN-53) |
 | `cases/nutrition.json` | yes | Nutrition cases with hand-worked references (PIN-80) |
+| `cases/pantry.json` | yes | Pantry photos with hand labels (PIN-181) |
 | `models.ts` | yes | Shortlist per task. Production defaults are `TASK_MODELS` in `supabase/functions/_shared/llm/llmClient.ts`. `model@low` pins the reasoning effort |
 | `private/` | no | Post snapshots, videos, images, reference labels |
 | `results/raw/` | no | One JSON per call, holding the output, latency, tokens and cost |

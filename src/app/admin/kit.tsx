@@ -176,7 +176,7 @@ export default function AdminKitScreen() {
                 {t('library.cookTonight')}
               </Chip>
               <Chip size="sm" icon="funnel-outline" trackId="kit.chip.action">
-                {t('library.fridgeMatch')}
+                {t('pantry.cook.button')}
               </Chip>
             </ScrollView>
           </Section>

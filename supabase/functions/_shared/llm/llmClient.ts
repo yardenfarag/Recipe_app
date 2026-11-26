@@ -46,7 +46,8 @@ export type LlmTaskKind =
   | 'appliances'
   | 'diets'
   | 'hub_moderation'
-  | 'recipe_estimates';
+  | 'recipe_estimates'
+  | 'pantry_scan';
 
 export interface TaskModelConfig {
   model: string;
@@ -115,6 +116,11 @@ export const TASK_MODELS: Record<LlmTaskKind, TaskModelConfig> = {
   video: { model: MUSE_EMBER, fallbacks: [GEMINI_FLASH, QWEN_OMNI], reasoning: 'low', urlVideoModel: GEMINI_FLASH },
   // Not in the bake-off, and inventing needs the stronger model; stays on Gemini.
   invent_video: { model: GEMINI_FLASH, fallbacks: [QWEN_OMNI], reasoning: 'low' },
+  // PIN-181 pantry bake-off (eval/results/pantry.md, 26 Nov 2026, 12 models on 30 photos): GPT-6.2 Sol
+  // made up 1 item (unsure, so unticked), found 94% of the food and 96% of what only the label names,
+  // and every item in the Israeli kitchen, at $0.013 a photo. Sonnet 5.5 is as good on recall and the
+  // fastest of the strong models, from another vendor.
+  pantry_scan: { model: SOL_62, fallbacks: [SONNET], reasoning: 'low' },
 };
 
 /** Models that must not reach a given OpenRouter provider. */

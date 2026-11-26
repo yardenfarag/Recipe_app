@@ -1,8 +1,8 @@
 import Ionicons from '@expo/vector-icons/Ionicons';
+import { router } from 'expo-router';
 import { type ReactNode, useCallback, useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { ActivityIndicator, View } from 'react-native';
-import { logTap } from '@/lib/interactionLog';
 
 import { ApplianceIcon } from '@/components/ApplianceIcon';
 import { AvoidListEditor } from '@/components/AvoidListEditor';
@@ -10,6 +10,7 @@ import { FieldInput } from '@/components/text-input';
 import { MeasurementToggle } from '@/components/MeasurementToggle';
 import { UnitSystemToggle } from '@/components/UnitSystemToggle';
 import { SettingsDetailScreen } from '@/components/SettingsDetailScreen';
+import { SettingsRow } from '@/components/SettingsMenu';
 import { SettingsSwitchRow } from '@/components/SettingsSwitchRow';
 import { Button } from '@/components/ui/Button';
 import { Chip } from '@/components/ui/Chip';
@@ -23,9 +24,7 @@ import { ownedAppliances, useOwnedAppliances } from '@/hooks/useOwnedAppliances'
 import { useThemePreference } from '@/hooks/useThemePreference';
 import {
   EMPTY_KITCHEN_PROFILE,
-  addPantryStaple,
   loadGuestKitchenProfile,
-  removePantryStaple,
   saveGuestKitchenProfile,
   type KitchenDietKey,
   type KitchenProfile,
@@ -56,7 +55,6 @@ export default function RecipeSettingsScreen() {
   const [saving, setSaving] = useState(false);
   const [swapFrom, setSwapFrom] = useState('');
   const [swapTo, setSwapTo] = useState('');
-  const [pantryDraft, setPantryDraft] = useState('');
   const [error, setError] = useState<string | null>(null);
   const pendingRef = useRef<KitchenProfile | null>(null);
   const savingRef = useRef(false);
@@ -142,13 +140,6 @@ export default function RecipeSettingsScreen() {
     setSwapFrom('');
     setSwapTo('');
     void persist({ ...profile, alwaysSwap });
-  }
-
-  function addPantry() {
-    const next = addPantryStaple(profile, pantryDraft);
-    if (next === profile) return;
-    setPantryDraft('');
-    void persist(next);
   }
 
   if (loading) {
@@ -296,49 +287,16 @@ export default function RecipeSettingsScreen() {
         </Button>
       </Section>
 
-      <Section title={t('settings.kitchenPantry')} hint={t('settings.kitchenPantryHint')}>
-        {profile.pantryStaples.length === 0 ? (
-          <Text variant="bodySmall" tone="muted">
-            {t('settings.kitchenPantryEmpty')}
-          </Text>
-        ) : (
-          <View>
-            {profile.pantryStaples.map((staple, index) => (
-              <View
-                key={staple}
-                style={[
-                  { flexDirection: 'row', alignItems: 'center', gap: 8 },
-                  index > 0 ? { borderTopWidth: HAIRLINE, borderColor: colors.border } : null,
-                ]}
-              >
-                <Text variant="bodySmall" style={{ flex: 1 }}>
-                  {staple}
-                </Text>
-                <IconButton
-                  trackId="settings.kitchen.pantry.remove"
-                  icon="close"
-                  iconSize={18}
-                  label={t('a11y.removeItem', { item: staple })}
-                  onPress={() => void persist(removePantryStaple(profile, staple))}
-                />
-              </View>
-            ))}
-          </View>
-        )}
-        <FieldInput
-          placeholder={t('settings.kitchenPantryPlaceholder')}
-          accessibilityLabel={t('settings.kitchenPantryPlaceholder')}
-          value={pantryDraft}
-          onChangeText={setPantryDraft}
-          onSubmitEditing={() => {
-            logTap('settings.kitchen.pantry.submit');
-            addPantry();
-          }}
+      {/* The staples are edited on the Pantry page now (PIN-181), under "Always have". */}
+      <Tile padding={12}>
+        <SettingsRow
+          trackId="settings.kitchen.pantry.open"
+          label={t('pantry.alwaysHave')}
+          description={t('pantry.staplesMoved')}
+          icon="basket-outline"
+          onPress={() => router.push('/settings/pantry')}
         />
-        <Button trackId="settings.kitchen.pantry.add" variant="secondary" icon="add" onPress={addPantry}>
-          {t('settings.kitchenPantryAdd')}
-        </Button>
-      </Section>
+      </Tile>
 
       {user ? (
         <Section title={t('hub.title')}>

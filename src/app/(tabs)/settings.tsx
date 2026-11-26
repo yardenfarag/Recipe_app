@@ -490,6 +490,13 @@ export default function SettingsScreen() {
               onPress={() => router.push('/settings/recipe')}
             />
             <SettingsRow
+              trackId="settings.pantry"
+              label={t('pantry.title')}
+              description={t('pantry.settingsHint')}
+              icon="basket-outline"
+              onPress={() => router.push('/settings/pantry')}
+            />
+            <SettingsRow
               trackId="settings.appearance"
               label={t('settings.appearance')}
               value={appearanceValue}

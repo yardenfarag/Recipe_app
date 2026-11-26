@@ -1,27 +1,20 @@
 "use client";
 
 import { ArrowRight, Flag, Scale, Thermometer, UtensilsCrossed, X } from "lucide-react";
+import Link from "next/link";
 import { useId, useState } from "react";
 import { useTranslation } from "react-i18next";
 
 import { avoidListIsEmpty } from "@shared/lib/avoidList";
 import type { MeasurementSystem } from "@shared/lib/convertMeasurement";
-import {
-  MAX_PANTRY_STAPLES,
-  addPantryStaple,
-  removePantryStaple,
-  type KitchenDietKey,
-  type KitchenProfile,
-} from "@shared/lib/kitchenProfile";
+import { type KitchenDietKey, type KitchenProfile } from "@shared/lib/kitchenProfile";
 import { RECIPE_VARIANTS } from "@shared/lib/recipeVariants";
 import type { UnitSystem } from "@shared/lib/unitSystem";
 
 import { AppliancesSettings } from "@/components/settings/AppliancesSettings";
 import { AvoidListEditor } from "@/components/settings/AvoidListEditor";
 import {
-  AddItemField,
   ChoiceGroup,
-  RemovableChip,
   SaveStatusLine,
   SettingsCard,
   SubHeading,
@@ -32,7 +25,7 @@ import {
   segmentedOptionClass,
 } from "@/components/settings/controls";
 import { SettingsPageHeader } from "@/components/settings/SettingsPageHeader";
-import { Button } from "@/components/ui/Button";
+import { Button, buttonClasses } from "@/components/ui/Button";
 import { IconButton } from "@/components/ui/IconButton";
 import { SegmentedControl } from "@/components/ui/SegmentedControl";
 import { ErrorState, LoadingState } from "@/components/ui/States";
@@ -172,7 +165,6 @@ function KitchenCards({
   const servingsLabelId = useId();
   const [swapFrom, setSwapFrom] = useState("");
   const [swapTo, setSwapTo] = useState("");
-  const [pantryDraft, setPantryDraft] = useState("");
   const dietsFull = profile.diets.length >= MAX_DIETS;
   const servings = profile.defaultServings;
 
@@ -192,13 +184,6 @@ function KitchenCards({
     setSwapFrom("");
     setSwapTo("");
     onChange({ ...profile, alwaysSwap: [...profile.alwaysSwap, { from, to }].slice(0, MAX_SWAPS) });
-  }
-
-  function addPantry() {
-    const next = addPantryStaple(profile, pantryDraft);
-    if (next === profile) return;
-    setPantryDraft("");
-    onChange(next);
   }
 
   const summary =
@@ -328,29 +313,12 @@ function KitchenCards({
         )}
       </SettingsCard>
 
-      <SettingsCard title={t("settings.kitchenPantry")} hint={t("settings.kitchenPantryHint")}>
-        {profile.pantryStaples.length === 0 ? (
-          <p className="mb-3 text-sm text-muted">{t("settings.kitchenPantryEmpty")}</p>
-        ) : (
-          <div className="mb-3 flex flex-wrap gap-2">
-            {profile.pantryStaples.map((staple) => (
-              <RemovableChip key={staple} label={staple} onRemove={() => onChange(removePantryStaple(profile, staple))} trackId="settings.kitchen.pantry.remove" />
-            ))}
-          </div>
-        )}
-        {profile.pantryStaples.length >= MAX_PANTRY_STAPLES ? (
-          <p className="text-sm text-muted">{t("avoid.limit", { count: MAX_PANTRY_STAPLES })}</p>
-        ) : (
-          <AddItemField
-            label={t("settings.kitchenPantryPlaceholder")}
-            value={pantryDraft}
-            onChange={setPantryDraft}
-            onAdd={addPantry}
-            maxLength={60}
-            addLabel={t("settings.kitchenPantryAdd")}
-            trackId="settings.kitchen.pantry.add"
-          />
-        )}
+      {/* Staples moved to the Pantry page (PIN-181), next to everything else that's at home. */}
+      <SettingsCard title={t("settings.kitchenPantry")} hint={t("pantry.staplesMoved")}>
+        <Link href="/settings/pantry" data-track="settings.kitchen.pantry.open" className={buttonClasses({ variant: "secondary" })}>
+          {t("pantry.title")}
+          <ArrowRight aria-hidden className="h-4 w-4 rtl:rotate-180" />
+        </Link>
       </SettingsCard>
 
       <SettingsCard title={t("settings.kitchenAfterSnap")}>

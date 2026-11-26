@@ -33,6 +33,12 @@ export const RECIPE_EDIT_DAILY_LIMIT = 40;
 export const FRIDGE_MATCH_DAILY_LIMIT = 8;
 /** Free fridge-match vision calls per UTC day (guest install). */
 export const GUEST_FRIDGE_MATCH_DAILY_LIMIT = 3;
+/**
+ * Pantry scan photos per signed-in user per UTC day (PIN-181). A full setup is 4–10 photos; at about $0.013 a
+ * photo (bake-off, 26 Nov 2026) the cap holds one person to about $0.33 a day. A photo that isn't a kitchen
+ * gives its use back.
+ */
+export const PANTRY_SCAN_DAILY_LIMIT = 25;
 /** Cheap food-gate classifies per UTC day (signed-in). */
 export const CONTENT_GATE_DAILY_LIMIT = 40;
 /** Cheap food-gate classifies per UTC day (guest install). */

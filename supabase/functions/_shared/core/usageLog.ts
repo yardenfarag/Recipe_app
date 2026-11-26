@@ -39,7 +39,9 @@ export interface UsageEventInput {
     /** A blocked recipe page read through the page-reading service: ok, blocked or error (PIN-152). */
     | 'page_read'
     /** An AI picture for a Hub card published without a photo: ok or failed. */
-    | 'recipe_image';
+    | 'recipe_image'
+    /** One photo of a pantry scan: ok, not_kitchen, daily_limit or error (PIN-181). */
+    | 'pantry_scan';
   platform?: string | null;
   status: string;
   extractionSource?: string | null;

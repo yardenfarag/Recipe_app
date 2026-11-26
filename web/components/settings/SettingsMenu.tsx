@@ -25,6 +25,7 @@ const SECTION_TRACK_ID: Record<SettingsSectionId, string> = {
   account: "settings.account",
   credits: "settings.plan",
   recipe: "settings.recipe_preferences",
+  pantry: "settings.pantry",
   recipes: "settings.your_recipes",
   appearance: "settings.appearance",
   language: "settings.language",

@@ -1,0 +1,538 @@
+{
+  "about": [
+    "PIN-181 pantry scan eval. Photos live in eval/private/pantry/ (not in git); Commons files are downloaded by eval/pantryImages.mjs.",
+    "expect: food that is clearly in the photo. A model item matches an entry when its English name contains one of the any_of phrases as whole words (plurals ignored).",
+    "brand: true marks an entry that can only be named by reading the label or knowing the product, not from how the food looks.",
+    "also_ok: things that are, or may be, in the photo but are too unclear to demand. Never counted as made up.",
+    "never: medicine, pet products, cleaning products and the like. Listing one is the worst error.",
+    "strict: true means the labels cover everything in the photo, so any other item counts as made up. On the other photos, unmatched items are only listed for a hand check.",
+    "quality: the photo verdicts that count as right.",
+    "Own-kitchen labels were drafted from the photos by Claude and checked by Yarden on 2026-11-26 (no bread in the spice cupboard)."
+  ],
+  "cases": [
+    {
+      "id": "own-dog-bed",
+      "file": "1.jpg",
+      "source": "own",
+      "market": "il",
+      "place": "other",
+      "strict": true,
+      "quality": ["not_kitchen"],
+      "expect": [],
+      "also_ok": [],
+      "never": ["dog toy", "toy", "blanket"]
+    },
+    {
+      "id": "own-cupboard-cans",
+      "file": "2.jpg",
+      "source": "own",
+      "market": "il",
+      "place": "cupboard",
+      "strict": true,
+      "quality": ["ok"],
+      "expect": [
+        { "any_of": ["pickle", "pickled cucumber", "gherkin", "cucumber in vinegar", "cucumber in brine"], "brand": true },
+        { "any_of": ["pea"], "brand": true },
+        { "any_of": ["tomato paste", "tomato puree", "tomato concentrate"], "brand": true },
+        { "any_of": ["coconut oil"], "brand": true },
+        { "any_of": ["rice"], "brand": false }
+      ],
+      "also_ok": ["carrot", "flour", "sugar", "semolina", "tea", "baking powder", "vanilla sugar", "yeast", "pasta", "lentil", "freekeh", "bulgur", "grain", "bread crumb", "breadcrumb", "couscous", "canned vegetable"],
+      "never": ["salmon oil", "fish oil", "pet", "dog", "supplement"]
+    },
+    {
+      "id": "own-fridge-shelves",
+      "file": "3.jpg",
+      "source": "own",
+      "market": "il",
+      "place": "fridge",
+      "strict": true,
+      "quality": ["ok"],
+      "expect": [
+        { "any_of": ["white cheese", "quark", "soft cheese", "cream cheese", "fromage blanc", "cheese spread", "cheese"], "brand": true },
+        { "any_of": ["tahini", "tahina", "sesame paste"], "brand": true },
+        { "any_of": ["cabbage", "coleslaw", "slaw"], "brand": false },
+        { "any_of": ["lettuce", "leafy green", "salad green", "romaine"], "brand": false },
+        { "any_of": ["grape"], "brand": false },
+        { "any_of": ["cauliflower"], "brand": false }
+      ],
+      "also_ok": ["cheese", "cottage cheese", "yogurt", "sour cream", "butter", "hummus", "soup powder", "soup mix", "bouillon", "stock powder", "seasoning", "breadcrumb", "bread crumb", "chocolate", "soy sauce", "chicken", "leftover", "carrot", "garlic", "cucumber", "zucchini", "pepper", "vegetable", "herb", "wine", "olive", "mushroom", "tomato", "celery", "vanilla"],
+      "never": ["medicine", "vitamin", "supplement"]
+    },
+    {
+      "id": "own-coffee-corner",
+      "file": "4.jpg",
+      "source": "own",
+      "market": "il",
+      "place": "other",
+      "strict": true,
+      "quality": ["ok"],
+      "expect": [
+        { "any_of": ["coffee"], "brand": true },
+        { "any_of": ["sugar"], "brand": false },
+        { "any_of": ["candy", "sweet", "toffee", "caramel", "bonbon"], "brand": false },
+        { "any_of": ["chocolate milk powder", "chocolate drink", "chocolate powder", "cocoa", "hot chocolate", "chocolate milk"], "brand": true }
+      ],
+      "also_ok": ["coffee", "tea", "sweetener", "salt", "pepper", "syrup", "vanilla", "stevia", "sucralose", "honey"],
+      "never": ["straw", "toothpick"]
+    },
+    {
+      "id": "own-fridge-door",
+      "file": "5.jpg",
+      "source": "own",
+      "market": "il",
+      "place": "fridge",
+      "strict": true,
+      "quality": ["ok"],
+      "expect": [
+        { "any_of": ["egg"], "brand": false },
+        { "any_of": ["soy milk", "soy drink", "soya milk", "soya drink"], "brand": true },
+        { "any_of": ["milk"], "brand": true },
+        { "any_of": ["wine", "rose"], "brand": false },
+        { "any_of": ["sweet chili sauce", "sweet chilli sauce", "chili sauce", "chilli sauce"], "brand": false },
+        { "any_of": ["cola", "coke", "soft drink"], "brand": true }
+      ],
+      "also_ok": ["milk", "creamer", "water", "wine", "champagne", "cava", "vanilla", "butter", "yeast", "soda"],
+      "never": ["medicine", "vitamin", "supplement", "drops"]
+    },
+    {
+      "id": "own-cupboard-spices",
+      "file": "6.jpg",
+      "source": "own",
+      "market": "il",
+      "place": "cupboard",
+      "strict": true,
+      "quality": ["ok"],
+      "expect": [
+        { "any_of": ["tea"], "brand": true },
+        { "any_of": ["soup almond", "soup mandel", "soup crouton", "crouton", "soup nut", "shkedei marak", "mandel"], "brand": true },
+        { "any_of": ["sugar"], "brand": true },
+        { "any_of": ["hazelnut spread", "chocolate spread", "hazelnut cream", "chocolate hazelnut spread", "hazelnut chocolate spread"], "brand": true },
+        { "any_of": ["condensed milk"], "brand": true },
+        { "any_of": ["mixed vegetable", "canned vegetable", "vegetable"], "brand": true },
+        { "any_of": ["salt"], "brand": true },
+        { "any_of": ["garlic powder", "granulated garlic", "garlic"], "brand": true },
+        { "any_of": ["chicken seasoning", "bbq seasoning", "barbecue seasoning", "chicken spice", "grill seasoning", "seasoning", "spice mix", "spice blend"], "brand": true },
+        { "any_of": ["paprika", "pimenton"], "brand": true },
+        { "any_of": ["brown sugar"], "brand": true }
+      ],
+      "also_ok": ["tea", "earl grey", "chamomile", "infusion", "paprika", "pimenton", "date syrup", "silan", "syrup", "soy sauce", "balsamic", "vanilla", "coffee", "cereal", "cracker", "rice cake", "pasta", "baking powder", "pea", "corn"],
+      "never": []
+    },
+    {
+      "id": "own-counter-avocados",
+      "file": "7.jpg",
+      "source": "own",
+      "market": "il",
+      "place": "other",
+      "strict": true,
+      "quality": ["ok"],
+      "expect": [
+        { "any_of": ["cracker", "crispbread"], "brand": true },
+        { "any_of": ["avocado"], "brand": false }
+      ],
+      "also_ok": ["rice", "flour", "sugar", "cooking spray", "oil spray"],
+      "never": ["air freshener", "deodorant", "cleaner", "detergent", "insect"]
+    },
+    {
+      "id": "own-produce-corner",
+      "file": "8.jpg",
+      "source": "own",
+      "market": "il",
+      "place": "other",
+      "strict": true,
+      "quality": ["ok"],
+      "expect": [
+        { "any_of": ["sweet potato", "yam"], "brand": false },
+        { "any_of": ["onion"], "brand": false },
+        { "any_of": ["pineapple"], "brand": false },
+        { "any_of": ["cola", "coke", "soft drink"], "brand": true }
+      ],
+      "also_ok": ["pita", "bread", "tortilla", "flatbread", "water", "soda", "seltzer", "potato"],
+      "never": []
+    },
+    {
+      "id": "own-cupboard-spices-blurry",
+      "degrade": { "from": "own-cupboard-spices", "how": "blur" },
+      "source": "synthetic",
+      "market": "il",
+      "place": "cupboard",
+      "strict": false,
+      "quality": ["blurry"],
+      "expect": [],
+      "also_ok": [],
+      "never": []
+    },
+    {
+      "id": "own-fridge-shelves-dark",
+      "degrade": { "from": "own-fridge-shelves", "how": "dark" },
+      "source": "synthetic",
+      "market": "il",
+      "place": "fridge",
+      "strict": false,
+      "quality": ["too_dark"],
+      "expect": [],
+      "also_ok": [],
+      "never": ["medicine", "vitamin", "supplement"]
+    },
+    {
+      "id": "web-pantry-cereal-boxes",
+      "file": "9.jpg",
+      "source": "web",
+      "market": "us",
+      "place": "cupboard",
+      "strict": false,
+      "quality": ["ok"],
+      "expect": [
+        { "any_of": ["cracker", "cheez it"], "brand": true },
+        { "any_of": ["cereal", "cheerio"], "brand": true },
+        { "any_of": ["granola bar", "chewy bar", "snack bar", "cereal bar"], "brand": true },
+        { "any_of": ["pretzel"], "brand": false }
+      ],
+      "also_ok": [],
+      "never": ["fire extinguisher"]
+    },
+    {
+      "id": "web-pantry-pots-dim",
+      "file": "10.jpg",
+      "source": "web",
+      "market": "us",
+      "place": "cupboard",
+      "strict": false,
+      "quality": ["ok", "too_dark", "too_far"],
+      "expect": [{ "any_of": ["pasta", "spaghetti", "noodle"], "brand": true }],
+      "also_ok": [],
+      "never": ["cleaner", "cleaning", "detergent", "bleach", "dish soap", "soap"]
+    },
+    {
+      "id": "web-pantry-quaker",
+      "file": "11.jpg",
+      "source": "web",
+      "market": "us",
+      "place": "cupboard",
+      "strict": false,
+      "quality": ["ok"],
+      "expect": [
+        { "any_of": ["oat", "oatmeal"], "brand": true },
+        { "any_of": ["peanut", "nut", "cashew"], "brand": true },
+        { "any_of": ["hazelnut spread", "chocolate spread", "nutella", "chocolate hazelnut spread"], "brand": true },
+        { "any_of": ["pancake mix", "flapjack", "pancake"], "brand": true },
+        { "any_of": ["cracker"], "brand": true },
+        { "any_of": ["chickpea", "garbanzo", "bean"], "brand": true },
+        { "any_of": ["chili", "chilli"], "brand": true },
+        { "any_of": ["flour"], "brand": true },
+        { "any_of": ["bread crumb", "breadcrumb"], "brand": true }
+      ],
+      "also_ok": [],
+      "never": []
+    },
+    {
+      "id": "web-pantry-teddy-grahams",
+      "file": "12.jpg",
+      "source": "web",
+      "market": "us",
+      "place": "cupboard",
+      "strict": false,
+      "quality": ["ok"],
+      "expect": [
+        { "any_of": ["cracker", "cheez it"], "brand": true },
+        { "any_of": ["graham", "cookie", "biscuit"], "brand": true },
+        { "any_of": ["corn syrup", "syrup"], "brand": true },
+        { "any_of": ["pasta sauce", "tomato sauce", "marinara", "spaghetti sauce"], "brand": true }
+      ],
+      "also_ok": [],
+      "never": []
+    },
+    {
+      "id": "web-kitchen-dark-counter",
+      "file": "13.jpg",
+      "source": "web",
+      "market": "eu",
+      "place": "other",
+      "strict": false,
+      "quality": ["too_dark", "ok"],
+      "expect": [
+        { "any_of": ["onion"], "brand": false },
+        { "any_of": ["lettuce", "leafy green", "salad green", "cabbage", "green"], "brand": false }
+      ],
+      "also_ok": [],
+      "never": []
+    },
+    {
+      "id": "web-spice-drawer",
+      "file": "14.webp",
+      "source": "web",
+      "market": "eu",
+      "place": "cupboard",
+      "strict": false,
+      "quality": ["ok"],
+      "expect": [
+        { "any_of": ["zaatar", "zahtar", "zatar"], "brand": true },
+        { "any_of": ["paprika"], "brand": true }
+      ],
+      "also_ok": [],
+      "never": []
+    },
+    {
+      "id": "web-shelf-soup-cans",
+      "file": "15.jpg",
+      "source": "web",
+      "market": "us",
+      "place": "cupboard",
+      "strict": false,
+      "quality": ["ok", "too_dark", "too_far"],
+      "expect": [{ "any_of": ["soup"], "brand": true }],
+      "also_ok": [],
+      "never": []
+    },
+    {
+      "id": "web-pantry-full",
+      "file": "16.jpg",
+      "source": "web",
+      "market": "us",
+      "place": "cupboard",
+      "strict": false,
+      "quality": ["ok"],
+      "expect": [
+        { "any_of": ["peanut butter"], "brand": true },
+        { "any_of": ["cayenne"], "brand": true },
+        { "any_of": ["cooking spray", "oil spray", "pam"], "brand": true },
+        { "any_of": ["sardine"], "brand": true },
+        { "any_of": ["macaroni", "mac and cheese", "mac cheese"], "brand": true },
+        { "any_of": ["crushed tomato", "canned tomato", "tomato"], "brand": true },
+        { "any_of": ["cocoa"], "brand": true },
+        { "any_of": ["spaghetti", "pasta"], "brand": false },
+        { "any_of": ["salt"], "brand": true },
+        { "any_of": ["onion"], "brand": false },
+        { "any_of": ["bbq sauce", "barbecue sauce"], "brand": true },
+        { "any_of": ["peppercorn", "black pepper"], "brand": true }
+      ],
+      "also_ok": [],
+      "never": ["whimzee", "dog treat", "dog chew", "pet treat", "dental chew"]
+    },
+    {
+      "id": "web-pantry-tidy",
+      "file": "17.jpg",
+      "source": "web",
+      "market": "us",
+      "place": "cupboard",
+      "strict": false,
+      "quality": ["ok"],
+      "expect": [
+        { "any_of": ["soup"], "brand": true },
+        { "any_of": ["chili", "chilli"], "brand": true },
+        { "any_of": ["tortilla chip", "dorito", "nacho", "chip"], "brand": true },
+        { "any_of": ["cheese puff", "cheeto", "puff", "cheese snack"], "brand": true },
+        { "any_of": ["pancake mix", "pancake", "baking mix"], "brand": true },
+        { "any_of": ["lemonade", "drink mix"], "brand": true },
+        { "any_of": ["steak sauce", "a1"], "brand": true },
+        { "any_of": ["pasta sauce", "tomato sauce", "marinara", "spaghetti sauce", "salsa"], "brand": true },
+        { "any_of": ["peanut butter"], "brand": true }
+      ],
+      "also_ok": [],
+      "never": []
+    },
+    {
+      "id": "web-closet-cleaning",
+      "file": "18.jpg",
+      "source": "web",
+      "market": "us",
+      "place": "cupboard",
+      "strict": false,
+      "quality": ["ok"],
+      "expect": [
+        { "any_of": ["soup"], "brand": true },
+        { "any_of": ["bean"], "brand": true },
+        { "any_of": ["cracker"], "brand": true },
+        { "any_of": ["nutty bar", "wafer", "snack bar", "snack cake", "peanut butter bar"], "brand": true },
+        { "any_of": ["twinkie", "snack cake", "sponge cake", "cake"], "brand": true },
+        { "any_of": ["pretzel"], "brand": true },
+        { "any_of": ["broth", "stock"], "brand": true }
+      ],
+      "also_ok": [],
+      "never": ["resolve", "cleaner", "cleaning", "detergent", "swiffer", "tissue", "paper towel", "toilet paper", "bleach", "softener", "stain remover", "air freshener"]
+    },
+    {
+      "id": "web-counter-olive-oil",
+      "file": "19.jpg",
+      "source": "web",
+      "market": "eu",
+      "place": "other",
+      "strict": false,
+      "quality": ["ok"],
+      "expect": [{ "any_of": ["olive oil", "oil"], "brand": false }],
+      "also_ok": [],
+      "never": []
+    },
+    {
+      "id": "web-kitchen-rubbish",
+      "file": "20.jpg",
+      "source": "web",
+      "market": "us",
+      "place": "other",
+      "strict": false,
+      "quality": ["ok", "too_far", "not_kitchen"],
+      "expect": [],
+      "also_ok": [],
+      "never": []
+    },
+    {
+      "id": "commons-mess-tins",
+      "commons": "File:Koschi.JPG",
+      "license": "CC BY 3.0",
+      "source": "commons",
+      "market": "eu",
+      "place": "other",
+      "strict": true,
+      "quality": ["not_kitchen"],
+      "expect": [],
+      "also_ok": [],
+      "never": []
+    },
+    {
+      "id": "commons-fridge-us-sauces",
+      "commons": "File:Inside of double sided refrigerator.jpg",
+      "license": "CC BY 4.0",
+      "source": "commons",
+      "market": "us",
+      "place": "fridge",
+      "strict": false,
+      "quality": ["ok"],
+      "expect": [
+        { "any_of": ["mustard"], "brand": true },
+        { "any_of": ["ketchup", "catsup"], "brand": true },
+        { "any_of": ["mayonnaise", "mayo"], "brand": true },
+        { "any_of": ["soy sauce"], "brand": true },
+        { "any_of": ["hot sauce", "habanero sauce", "chili sauce", "chilli sauce", "pepper sauce"], "brand": true },
+        { "any_of": ["milk"], "brand": false },
+        { "any_of": ["egg"], "brand": false },
+        { "any_of": ["english muffin", "muffin"], "brand": true },
+        { "any_of": ["steak sauce", "a1"], "brand": true },
+        { "any_of": ["bbq sauce", "barbecue sauce"], "brand": true },
+        { "any_of": ["salad dressing", "dressing", "ranch", "vinaigrette"], "brand": true },
+        { "any_of": ["spinach"], "brand": true }
+      ],
+      "also_ok": [],
+      "never": []
+    },
+    {
+      "id": "commons-cellar-jars",
+      "commons": "File:Vorratskammer.jpg",
+      "license": "CC BY-SA 3.0",
+      "source": "commons",
+      "market": "eu",
+      "place": "cupboard",
+      "strict": true,
+      "quality": ["ok"],
+      "expect": [
+        { "any_of": ["cherry", "sour cherry"], "brand": false },
+        { "any_of": ["plum", "prune", "damson"], "brand": false },
+        { "any_of": ["apple", "pear"], "brand": false },
+        { "any_of": ["apricot", "carrot", "pumpkin", "peach", "mandarin", "squash"], "brand": false },
+        { "any_of": ["potted meat", "canned meat", "preserved meat", "pate", "sausage", "meat", "liverwurst", "rillette", "liver"], "brand": false }
+      ],
+      "also_ok": ["jam", "jelly", "marmalade", "preserve", "fruit", "compote", "lard", "schmalz", "pickle", "sauce", "tomato", "beet", "berry", "spread", "plum", "cherry"],
+      "never": []
+    },
+    {
+      "id": "commons-spice-shelf",
+      "commons": "File:Spice-shelf.jpg",
+      "license": "CC BY-SA 3.0",
+      "source": "commons",
+      "market": "us",
+      "place": "cupboard",
+      "strict": true,
+      "quality": ["ok"],
+      "expect": [
+        { "any_of": ["white pepper"], "brand": true },
+        { "any_of": ["curry powder", "curry"], "brand": true },
+        { "any_of": ["mustard"], "brand": true },
+        { "any_of": ["clove"], "brand": true },
+        { "any_of": ["rosemary"], "brand": true },
+        { "any_of": ["cinnamon"], "brand": true },
+        { "any_of": ["nutmeg"], "brand": true },
+        { "any_of": ["thyme"], "brand": true },
+        { "any_of": ["oregano"], "brand": true },
+        { "any_of": ["basil"], "brand": true },
+        { "any_of": ["parsley"], "brand": true }
+      ],
+      "also_ok": ["sage", "cumin", "caraway", "fennel", "dill", "paprika", "cayenne", "chili powder", "chilli powder", "red pepper", "black pepper", "marjoram", "bay", "tarragon", "celery seed", "anise", "curry", "parsley", "seasoning", "spice"],
+      "never": []
+    },
+    {
+      "id": "commons-freezer",
+      "commons": "File:Freezer door open on refrigerator in home kitchen in New Orleans, March 2025.jpg",
+      "license": "CC BY-SA 2.0",
+      "source": "commons",
+      "market": "us",
+      "place": "freezer",
+      "strict": true,
+      "quality": ["ok"],
+      "expect": [
+        { "any_of": ["bread", "loaf"], "brand": false },
+        { "any_of": ["tortilla", "flatbread", "pita", "pancake", "naan", "wrap", "crepe", "waffle", "quesadilla"], "brand": false }
+      ],
+      "also_ok": ["ice", "oat", "orzo", "pasta", "cereal", "granola", "energy drink", "drink", "beer", "meatball", "dough", "cookie", "bread", "roll", "bun", "leftover", "nut", "baby food", "puree", "stock", "broth", "herb"],
+      "never": ["ice pack", "gel pack", "cold pack", "wipe", "sanitizer", "sanitizing", "disinfect"]
+    },
+    {
+      "id": "commons-masala-dabba",
+      "commons": "File:Spices in an Indian kitchen.JPG",
+      "license": "CC BY-SA 3.0",
+      "source": "commons",
+      "market": "in",
+      "place": "other",
+      "strict": true,
+      "quality": ["ok"],
+      "expect": [
+        { "any_of": ["turmeric"], "brand": false },
+        { "any_of": ["chili powder", "chilli powder", "red chili", "red chilli", "cayenne", "paprika", "chili", "chilli"], "brand": false },
+        { "any_of": ["mustard seed", "mustard"], "brand": false },
+        { "any_of": ["coriander", "cumin"], "brand": false }
+      ],
+      "also_ok": ["garam masala", "masala", "curry powder", "spice", "tamarind", "chili", "chilli", "paprika", "pepper", "amchur", "clove", "coriander", "cumin", "cinnamon", "sumac", "jaggery"],
+      "never": []
+    },
+    {
+      "id": "commons-fridge-night",
+      "commons": "File:Open refrigerator with food at night.jpg",
+      "license": "CC BY-SA 4.0",
+      "source": "commons",
+      "market": "eu",
+      "place": "fridge",
+      "strict": true,
+      "quality": ["ok", "too_dark"],
+      "expect": [
+        { "any_of": ["tomato"], "brand": false },
+        { "any_of": ["lemon"], "brand": false },
+        { "any_of": ["grape"], "brand": false },
+        { "any_of": ["carrot"], "brand": false },
+        { "any_of": ["orange", "tangerine", "mandarin", "clementine"], "brand": false },
+        { "any_of": ["cheese"], "brand": false },
+        { "any_of": ["pickle", "gherkin", "pickled cucumber", "cornichon", "olive", "pickled pepper", "pepperoncini"], "brand": false },
+        { "any_of": ["egg"], "brand": false }
+      ],
+      "also_ok": ["juice", "lemonade", "water", "soda", "drink", "canned", "soy sauce", "sauce", "oil", "vinegar", "syrup", "bean", "coffee", "raisin", "pasta", "chip", "leftover", "butter", "kvass", "compote", "broth", "stock", "whey", "jam", "caper", "buckwheat", "grain", "kombucha", "beer", "cider", "pea", "corn", "nut", "dried fruit", "cracker", "condensed milk", "tinned food", "tin", "can", "berry", "lentil"],
+      "never": []
+    },
+    {
+      "id": "commons-fridge-persian",
+      "commons": "File:LG refrigerator interior.jpg",
+      "license": "Attribution",
+      "source": "commons",
+      "market": "ir",
+      "place": "fridge",
+      "strict": false,
+      "quality": ["ok", "too_far"],
+      "expect": [
+        { "any_of": ["watermelon"], "brand": false },
+        { "any_of": ["banana"], "brand": false },
+        { "any_of": ["egg"], "brand": false },
+        { "any_of": ["ketchup", "tomato sauce", "tomato paste"], "brand": true },
+        { "any_of": ["milk"], "brand": true }
+      ],
+      "also_ok": [],
+      "never": []
+    }
+  ]
+}

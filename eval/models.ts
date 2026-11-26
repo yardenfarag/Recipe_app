@@ -60,6 +60,26 @@ export const TASK_MODELS = {
 export type Task = keyof typeof TASK_MODELS;
 
 /**
+ * PIN-181 pantry scan (eval/pantry.ts, its own runner). The ticket's shortlist, Opus 5.5 as a ceiling to
+ * compare against, and four cheaper vision models that were new on OpenRouter on 26 Nov 2026. A bare slug
+ * runs at the task's reasoning effort (low).
+ */
+export const PANTRY_MODELS = [
+  'anthropic/claude-sonnet-5.5',
+  'google/gemini-4-hydrogen',
+  'google/gemini-3.5-flash',
+  'openai/gpt-6.2-sol',
+  'openai/gpt-6.1-terra',
+  'anthropic/claude-haiku-5.5',
+  'openai/gpt-6-luna',
+  'anthropic/claude-opus-5.5',
+  'google/gemini-4-carbon',
+  'thinkingmachines/inkling-2-small',
+  'qwen/qwen4-max',
+  'meta/muse-ember',
+] as const;
+
+/**
  * Rank translate/invent outputs blind. Two judges from different vendors, so no candidate is
  * graded only by its own vendor (Gemini 4 Hydrogen and Haiku 5.5 are candidates; the OpenAI
  * candidates have no judge of their own). The report shows each judge's ranks side by side.

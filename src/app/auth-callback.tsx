@@ -50,8 +50,9 @@ export default function AuthCallbackScreen() {
         if (reason === 'onboarding') {
           captureOnboardingCompleted({ locale, platform: Platform.OS });
           await complete();
-          // New accounts pick their first recipes from the Hub; one with recipes already goes on to Snap.
-          if (active) router.dismissTo('/first-recipes');
+          // New accounts are offered the kitchen scan (PIN-181), then pick their first recipes from the Hub; one
+          // with recipes already goes on to Snap.
+          if (active) router.dismissTo('/pantry-intro');
           return;
         }
         if (returnTo) {

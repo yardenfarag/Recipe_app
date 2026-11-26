@@ -1,22 +1,27 @@
 "use client";
 
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
 import { addPantryStaple, EMPTY_KITCHEN_PROFILE, removePantryStaple, type KitchenProfile } from "@shared/lib/kitchenProfile";
+import { pantryHomeNames } from "@shared/lib/pantry";
 import { isPantryStaple } from "@shared/lib/pantryStaples";
 import { fetchCloudKitchenProfile, saveCloudKitchenProfile } from "@shared/lib/supabase/kitchen";
+import { fetchPantryItems } from "@shared/lib/supabase/pantry";
 
 import { useAuth } from "@/components/AuthProvider";
 
 /**
- * What the person always has at home (the kitchen profile's pantry staples, the same list mobile keeps). Staples
- * start unticked when ingredients are added to the list. Each change reads the saved profile first and changes only
- * the staples, so diets, swaps or allergies changed elsewhere meanwhile are kept.
+ * What the person has at home: the kitchen profile's pantry staples (the same list mobile keeps) and, since PIN-181,
+ * what their pantry scan found. Both start unticked when ingredients are added to the list. Each change to the
+ * staples reads the saved profile first and changes only the staples, so diets, swaps or allergies changed elsewhere
+ * meanwhile are kept. If the pantry can't be read, only the staples count, as before.
  */
 export function usePantryStaples() {
   const { user } = useAuth();
   const userId = user?.id;
   const [loaded, setLoaded] = useState<{ userId: string; staples: string[] } | null>(null);
+  // What the pantry scan found at home (PIN-181). Skipped like a staple; changed only on the Pantry page.
+  const [home, setHome] = useState<{ userId: string; names: string[] } | null>(null);
   const queue = useRef<Promise<unknown>>(Promise.resolve());
 
   useEffect(() => {
@@ -27,12 +32,19 @@ export function usePantryStaples() {
       .then((profile) => {
         if (!cancelled) setLoaded({ userId, staples: profile.pantryStaples });
       });
+    fetchPantryItems()
+      .catch(() => [])
+      .then((items) => {
+        if (!cancelled) setHome({ userId, names: pantryHomeNames(items) });
+      });
     return () => {
       cancelled = true;
     };
   }, [userId]);
 
-  const staples = loaded && loaded.userId === userId ? loaded.staples : null;
+  const ownStaples = loaded && loaded.userId === userId ? loaded.staples : null;
+  const homeNames = home && home.userId === userId ? home.names : null;
+  const staples = useMemo(() => (ownStaples && homeNames ? [...ownStaples, ...homeNames] : null), [ownStaples, homeNames]);
 
   const change = useCallback(
     (edit: (profile: KitchenProfile) => KitchenProfile) => {

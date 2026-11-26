@@ -6,11 +6,15 @@ import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState, typ
 import { useTranslation } from "react-i18next";
 
 import { resolveCulinaryLanguage } from "@shared/lib/culinaryUnits";
+import { placeForAisle } from "@shared/lib/pantry";
+import { shoppingAisleForName } from "@shared/lib/shoppingAisles";
 import { getDuplicateNameCounts, normalizeShoppingName } from "@shared/lib/shoppingListMerge";
+import { upsertPantryItems } from "@shared/lib/supabase/pantry";
 import { showToast } from "@shared/lib/toast";
 import { joinErrorSentences, translateAppError } from "@shared/lib/translateAppError";
 import type { ShoppingListItem } from "@shared/types/shoppingList";
 
+import { useAuth } from "@/components/AuthProvider";
 import { useLanguage } from "@/components/LanguageProvider";
 import { AddFromRecipesDialog } from "@/components/list/AddFromRecipesDialog";
 import { AddItemForm } from "@/components/list/AddItemForm";
@@ -43,7 +47,8 @@ export default function ListPage() {
   const unitLanguage = resolveCulinaryLanguage(language);
   const { items, loading, error, refresh, add, combineDuplicates, toggleChecked, updateItem, removeItem, restoreItem, clearChecked, clearAll } =
     useShoppingList();
-  const { keepStaple, dropStaple } = usePantryStaples();
+  const { keepStaple, dropStaple, isStaple } = usePantryStaples();
+  const { user } = useAuth();
   const [notice, setNotice] = useState<Notice | null>(null);
   const [confirm, setConfirm] = useState<Confirm>(null);
   const [fromRecipesOpen, setFromRecipesOpen] = useState(false);
@@ -96,9 +101,27 @@ export default function ListPage() {
   const toggle = useCallback(
     (item: ShoppingListItem) => {
       passFocusOn(item, true);
-      toggleChecked(item.id).catch(failed("list.updateFailed"));
+      const bought = !item.checked;
+      toggleChecked(item.id)
+        .then(() => {
+          // Just bought, and not at home yet: offer to put it in the pantry (PIN-181). One tap, never automatic.
+          if (!bought || !user || isStaple(item.name)) return;
+          const aisle = shoppingAisleForName(item.name);
+          setNotice({
+            message: t("pantry.bought.prompt", { name: item.name }),
+            action: {
+              label: t("pantry.bought.add"),
+              trackId: "shopping_list.notice.add_to_pantry",
+              run: async () => {
+                await upsertPantryItems(user.id, [{ name: item.name, place: placeForAisle(aisle), aisle, source: "shopping_list" }]);
+                showToast(t("pantry.bought.added", { name: item.name }));
+              },
+            },
+          });
+        })
+        .catch(failed("list.updateFailed"));
     },
-    [failed, passFocusOn, toggleChecked],
+    [failed, isStaple, passFocusOn, t, toggleChecked, user],
   );
 
   const save = useCallback(

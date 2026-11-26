@@ -655,6 +655,159 @@ export type Database = {
         }
         Relationships: []
       }
+      pantry_items: {
+        Row: {
+          added_at: string
+          aisle: string
+          brand: string
+          id: string
+          last_seen_at: string
+          name: string
+          name_en: string
+          name_key: string | null
+          place: string
+          source: string
+          user_id: string
+        }
+        Insert: {
+          added_at?: string
+          aisle?: string
+          brand?: string
+          id?: string
+          last_seen_at?: string
+          name: string
+          name_en?: string
+          name_key?: string | null
+          place: string
+          source?: string
+          user_id: string
+        }
+        Update: {
+          added_at?: string
+          aisle?: string
+          brand?: string
+          id?: string
+          last_seen_at?: string
+          name?: string
+          name_en?: string
+          name_key?: string | null
+          place?: string
+          source?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "pantry_items_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      pantry_scan_photos: {
+        Row: {
+          created_at: string
+          from_phone: boolean
+          id: string
+          items: Json
+          place: string
+          quality: string
+          scan_id: string
+          truncated: boolean
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          from_phone?: boolean
+          id?: string
+          items?: Json
+          place: string
+          quality: string
+          scan_id: string
+          truncated?: boolean
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          from_phone?: boolean
+          id?: string
+          items?: Json
+          place?: string
+          quality?: string
+          scan_id?: string
+          truncated?: boolean
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "pantry_scan_photos_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      photo_handoffs: {
+        Row: {
+          closed_at: string | null
+          connected_at: string | null
+          created_at: string
+          expires_at: string
+          id: string
+          language: string
+          photo: string | null
+          photo_at: string | null
+          photo_mime: string | null
+          place: string | null
+          purpose: string
+          scan_id: string | null
+          token_hash: string
+          user_id: string
+        }
+        Insert: {
+          closed_at?: string | null
+          connected_at?: string | null
+          created_at?: string
+          expires_at: string
+          id?: string
+          language?: string
+          photo?: string | null
+          photo_at?: string | null
+          photo_mime?: string | null
+          place?: string | null
+          purpose: string
+          scan_id?: string | null
+          token_hash: string
+          user_id: string
+        }
+        Update: {
+          closed_at?: string | null
+          connected_at?: string | null
+          created_at?: string
+          expires_at?: string
+          id?: string
+          language?: string
+          photo?: string | null
+          photo_at?: string | null
+          photo_mime?: string | null
+          place?: string | null
+          purpose?: string
+          scan_id?: string | null
+          token_hash?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "photo_handoffs_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       preview_remix_usage: {
         Row: {
           remix_count: number
@@ -1891,6 +2044,7 @@ export type Database = {
       }
       nudge_unsubscribe_token: { Args: { p_user_id: string }; Returns: string }
       purge_expired_personal_data: { Args: never; Returns: undefined }
+      purge_pantry_scratch: { Args: never; Returns: undefined }
       recipe_card_canonical_key: {
         Args: { p_platform: string; p_url: string }
         Returns: string

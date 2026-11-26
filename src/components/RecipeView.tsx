@@ -11,6 +11,7 @@ import { AddToShoppingListModal } from '@/components/AddToShoppingListModal';
 import { CookAlongVideoModal } from '@/components/CookAlongVideoModal';
 import { CookMode } from '@/components/CookMode';
 import { CookedNoteModal } from '@/components/CookedNoteModal';
+import { PantryUsedUpOffer } from '@/components/pantry/PantryUsedUpSheet';
 import { RecipeAppliances } from '@/components/RecipeAppliances';
 import { EditTagsModal } from '@/components/EditTagsModal';
 import { RecipeVideoPanel, type RecipeVideoPanelHandle } from '@/components/RecipeVideoPanel';
@@ -318,6 +319,8 @@ export function RecipeView({
   const [kitchenAdapted, setKitchenAdapted] = useState(Boolean(recipe.kitchen_adapted_summary));
   const [cookModeOpen, setCookModeOpen] = useState(false);
   const [cookedNoteOpen, setCookedNoteOpen] = useState(false);
+  /** Counts "I cooked this" taps, so the pantry can offer to take out what ran out (PIN-181). */
+  const [cookedTimes, setCookedTimes] = useState(0);
   const [lastCookedAt, setLastCookedAt] = useState(recipe.last_cooked_at);
   const [cookNote, setCookNote] = useState(recipe.cook_note ?? '');
   const [activeLanguage, setActiveLanguage] = useState<RecipeLanguageCode | null>(
@@ -806,6 +809,8 @@ export function RecipeView({
   const sourceShareUrl = recipeSourceShareUrl(recipe.original_url);
   // Saved recipes of a signed-in user get a Pinch link (PIN-110); anything else can only pass on its source.
   const pinchShareRecipeId = user && recipeId && !recipeId.startsWith('guest-') ? recipeId : null;
+  // The pantry is the account's: only a signed-in person's saved recipe offers it.
+  const pantryUserId = user && recipeId && !recipeId.startsWith('guest-') ? user.id : null;
   const canShare = Boolean(pinchShareRecipeId || sourceShareUrl);
 
   function stampCooked(openNote: boolean, from: RecipeCookedFrom) {
@@ -816,6 +821,7 @@ export function RecipeView({
     setLastCookedAt(at);
     onCookedChange({ last_cooked_at: at, cook_note: cookNote });
     if (openNote) setCookedNoteOpen(true);
+    if (pantryUserId) setCookedTimes((n) => n + 1);
     // Native only: may show the OS rating sheet once someone has cooked more than once (PIN-61)
     void recordCookForReviewPrompt();
   }
@@ -1977,6 +1983,15 @@ export function RecipeView({
                 }
               : undefined
           }
+        />
+      ) : null}
+
+      {onCookedChange && pantryUserId ? (
+        <PantryUsedUpOffer
+          trigger={cookedTimes}
+          ingredients={[...(recipe.ingredients ?? []), ...scaledIngredients]}
+          blocked={cookedNoteOpen || cookModeOpen}
+          userId={pantryUserId}
         />
       ) : null}
 

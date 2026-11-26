@@ -5,6 +5,7 @@ import { createAdminPagesUsers, deleteAdminPagesUsers } from "./adminSeed";
 import { signInWithPassword } from "./helpers";
 import { resetHub } from "./hubSeed";
 import { resetShoppingList } from "./listSeed";
+import { PHOTO, resetPantry, stubScanPantry } from "./pantrySeed";
 import { setRecipeVideo } from "./cookSeed";
 import { writeAccountPrefs } from "./prefsSeed";
 import { resetShares, stubRecipeShare } from "./shareSeed";
@@ -285,6 +286,138 @@ test("snap, list, hub and settings", async ({ browser }) => {
       }
     }
   }
+});
+
+const PANTRY_ITEMS = {
+  en: [
+    ["Milk", "fridge", "dairy"],
+    ["Eggs", "fridge", "dairy"],
+    ["White cheese", "fridge", "dairy"],
+    ["Tahini", "fridge", "pantry"],
+    ["Grapes", "fridge", "produce"],
+    ["Cauliflower", "fridge", "produce"],
+    ["Frozen peas", "freezer", "frozen"],
+    ["Pita", "freezer", "bakery"],
+    ["Rice", "cupboard", "pantry"],
+    ["Brown sugar", "cupboard", "pantry"],
+    ["Sweet paprika", "cupboard", "spices"],
+    ["Canned chickpeas", "cupboard", "pantry"],
+    ["Coconut oil", "cupboard", "pantry"],
+    ["Avocado", "other", "produce"],
+  ],
+  he: [
+    ["חלב", "fridge", "dairy"],
+    ["ביצים", "fridge", "dairy"],
+    ["גבינה לבנה", "fridge", "dairy"],
+    ["טחינה", "fridge", "pantry"],
+    ["ענבים", "fridge", "produce"],
+    ["כרובית", "fridge", "produce"],
+    ["אפונה קפואה", "freezer", "frozen"],
+    ["פיתות", "freezer", "bakery"],
+    ["אורז", "cupboard", "pantry"],
+    ["סוכר חום", "cupboard", "pantry"],
+    ["פפריקה מתוקה", "cupboard", "spices"],
+    ["חומוס משומר", "cupboard", "pantry"],
+    ["שמן קוקוס", "cupboard", "pantry"],
+    ["אבוקדו", "other", "produce"],
+  ],
+} as const;
+
+const SCAN_ANSWERS = {
+  en: [
+    { items: [{ name: "Milk", aisle: "dairy", brand: "Tnuva" }, { name: "Eggs", aisle: "dairy" }, { name: "Tahini", aisle: "pantry", brand: "Har Bracha" }, { name: "Grapes", aisle: "produce" }, { name: "Leftovers in a red tub", confidence: "low" as const, container_unknown: true }] },
+    { quality: "too_dark", items: [{ name: "White cheese", aisle: "dairy", confidence: "low" as const }] },
+    { items: [{ name: "Sweet paprika", aisle: "spices", brand: "Carrefour" }, { name: "Brown sugar", aisle: "pantry", brand: "Sugat" }, { name: "Flour", aisle: "pantry", confidence: "low" as const }] },
+  ],
+  he: [
+    { items: [{ name: "חלב", aisle: "dairy", brand: "תנובה" }, { name: "ביצים", aisle: "dairy" }, { name: "טחינה", aisle: "pantry", brand: "הר ברכה" }, { name: "ענבים", aisle: "produce" }, { name: "שאריות בקופסה אדומה", confidence: "low" as const, container_unknown: true }] },
+    { quality: "too_dark", items: [{ name: "גבינה לבנה", aisle: "dairy", confidence: "low" as const }] },
+    { items: [{ name: "פפריקה מתוקה", aisle: "spices", brand: "Carrefour" }, { name: "סוכר חום", aisle: "pantry", brand: "סוגת" }, { name: "קמח", aisle: "pantry", confidence: "low" as const }] },
+  ],
+};
+
+test("pantry: page, scan, review, phone code and What can I cook", async ({ browser }) => {
+  test.setTimeout(300_000);
+  await resetLibrary([
+    { ...RECIPE, title: "Shakshuka", ingredients: [{ name: "eggs", quantity: 4, unit: "" }, { name: "sweet paprika", quantity: 1, unit: "tsp" }, { name: "crushed tomatoes", quantity: 400, unit: "g" }] },
+  ]);
+  for (const viewport of ["phone", "tablet", "desktop"] as const) {
+    for (const [language, scheme] of [["en", "light"], ["he", "light"], ["en", "dark"], ["he", "dark"]] as const) {
+      if (viewport === "tablet" && scheme === "dark") continue;
+      const tag = `${viewport}-${language}-${scheme}`;
+      await resetPantry(
+        PANTRY_ITEMS[language].map(([name, place, aisle], index) => ({
+          name,
+          place,
+          aisle,
+          last_seen_at: new Date(Date.now() - (index % 3) * 86_400_000 * 2).toISOString(),
+        })),
+      );
+
+      // The Pantry page.
+      let { page, context } = await open(browser, viewport, { language, scheme }, "/app/settings/pantry");
+      await page.waitForTimeout(500);
+      await page.screenshot({ path: `${OUT}/pantry-${tag}.png`, fullPage: true });
+      await context.close();
+
+      // A scan: three photos, one too dark.
+      ({ page, context } = await open(browser, viewport, { language, scheme }, "/app/pantry/scan?place=fridge"));
+      await stubScanPantry(page, SCAN_ANSWERS[language]);
+      await page.locator('#main input[type="file"]').first().setInputFiles([PHOTO, { ...PHOTO, name: "b.png" }, { ...PHOTO, name: "c.png" }]);
+      await page.waitForTimeout(1200);
+      await page.screenshot({ path: `${OUT}/pantry-scan-${tag}.png`, fullPage: true });
+      await page.locator("#main").getByRole("button").last().click();
+      await page.locator("#main h1").waitFor();
+      await page.waitForTimeout(500);
+      await page.screenshot({ path: `${OUT}/pantry-review-${tag}.png`, fullPage: true });
+      await context.close();
+
+      // The phone code (computers only), connected.
+      if (viewport !== "phone") {
+        ({ page, context } = await open(browser, viewport, { language, scheme }, "/app/pantry/scan"));
+        await page.route("**/functions/v1/photo-handoff", async (route) => {
+          const body = route.request().postDataJSON() as { action: string };
+          if (body.action === "create") await route.fulfill({ json: { status: "ok", handoff: { id: "00000000-0000-4000-8000-000000000001", token: "abcdefghijklmnopqrstuvwxyz012345", expires_at: new Date(Date.now() + 900_000).toISOString() } } });
+          else await route.fulfill({ json: { status: "ok", state: "connected" } });
+        });
+        await page.getByRole("button", { name: language === "en" ? "Use your phone’s camera" : "צילום מהטלפון" }).click();
+        await page.waitForTimeout(2600);
+        await page.screenshot({ path: `${OUT}/pantry-phone-code-${tag}.png` });
+        await context.close();
+      }
+
+      // What can I cook.
+      ({ page, context } = await open(browser, viewport, { language, scheme }, "/app"));
+      await page.getByRole("button", { name: language === "en" ? "What can I cook?" : "מה אפשר לבשל?" }).filter({ visible: true }).first().click();
+      await page.getByRole("dialog").waitFor();
+      await page.waitForTimeout(500);
+      await page.screenshot({ path: `${OUT}/pantry-cook-${tag}.png` });
+      await context.close();
+    }
+  }
+
+  // The page the QR code opens, on a phone.
+  for (const [language, scheme] of [["en", "light"], ["he", "dark"]] as const) {
+    const context = await browser.newContext({ baseURL: test.info().project.use.baseURL, viewport: VIEWPORTS.phone, deviceScaleFactor: 2, colorScheme: scheme });
+    await context.addInitScript((p: Prefs) => {
+      localStorage.setItem("pinch:appLanguage", p.language);
+      localStorage.setItem("pinch.themePreference", p.scheme);
+    }, { language, scheme });
+    const page = await context.newPage();
+    await page.route("**/functions/v1/photo-handoff", async (route) => {
+      const body = route.request().postDataJSON() as { action: string };
+      if (body.action === "open") await route.fulfill({ json: { status: "ok", purpose: "pantry", place: "fridge", language, expires_at: new Date(Date.now() + 600_000).toISOString() } });
+      else await route.fulfill({ json: { status: "ok", photo: { id: null, scan_id: "s", place: "fridge", quality: "ok", truncated: false, from_phone: true, created_at: new Date().toISOString(), items: [{ name: "x", name_en: "x", brand: "", aisle: "other", confidence: "high", container_unknown: false }, { name: "y", name_en: "y", brand: "", aisle: "other", confidence: "high", container_unknown: false }] } } });
+    });
+    await page.goto("/app/phone#abcdefghijklmnopqrstuvwxyz012345");
+    await page.locator("main h1").waitFor();
+    await page.locator('input[type="file"]').setInputFiles(PHOTO);
+    await page.waitForTimeout(800);
+    await page.screenshot({ path: `${OUT}/pantry-phone-page-${language}-${scheme}.png`, fullPage: true });
+    await context.close();
+  }
+  await resetPantry([]);
+  await resetLibrary([]);
 });
 
 test("snap, waiting for an import", async ({ browser }) => {

@@ -39,6 +39,7 @@ vi.mock('@/components/AddToShoppingListModal', () => ({ AddToShoppingListModal: 
 vi.mock('@/components/CookAlongVideoModal', () => ({ CookAlongVideoModal: h.standIn('CookAlongVideoModal') }));
 vi.mock('@/components/CookMode', () => ({ CookMode: h.standIn('CookMode') }));
 vi.mock('@/components/CookedNoteModal', () => ({ CookedNoteModal: h.standIn('CookedNoteModal') }));
+vi.mock('@/components/pantry/PantryUsedUpSheet', () => ({ PantryUsedUpOffer: h.standIn('PantryUsedUpOffer') }));
 vi.mock('@/components/RecipeAppliances', () => ({ RecipeAppliances: h.standIn('RecipeAppliances') }));
 vi.mock('@/components/EditTagsModal', () => ({ EditTagsModal: h.standIn('EditTagsModal') }));
 vi.mock('@/components/RecipeVideoPanel', () => ({ RecipeVideoPanel: h.standIn('RecipeVideoPanel') }));

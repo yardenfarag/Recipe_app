@@ -100,9 +100,10 @@ export function LibraryToolbar(props: LibraryToolbarProps) {
           {t("library.cookTonight")}
         </Chip>
         <span aria-hidden className="mx-1 h-6 w-px shrink-0 bg-border" />
-        <Chip trackId="library.fridge_match" onClick={props.onFridgeMatch}>
+        {/* "What can I cook?" from the saved pantry (PIN-181); it replaced the one-photo fridge match. */}
+        <Chip trackId="library.what_can_i_cook" onClick={props.onFridgeMatch}>
           <Refrigerator aria-hidden className="h-4 w-4" />
-          {t("library.fridgeMatch")}
+          {t("pantry.cook.button")}
         </Chip>
         <Link href="/cookbook" data-track="library.cookbook.open" title={t("settings.cookbookHint")} className={chipClasses()}>
           <Printer aria-hidden className="h-4 w-4" />

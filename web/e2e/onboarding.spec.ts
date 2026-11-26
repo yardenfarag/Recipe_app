@@ -78,6 +78,10 @@ test.describe("desktop", () => {
     await expect(page.locator("#main h1")).toHaveText("How did you hear about Pinch?");
     await page.getByRole("button", { name: "A friend or family member" }).click();
 
+    // The offer to fill the pantry from photos (PIN-181); Later goes on.
+    await expect(page.getByRole("dialog", { name: "Fill your pantry in two minutes?" })).toBeVisible();
+    await page.getByRole("button", { name: "Later" }).click();
+
     // Then the first recipes, from the Hub: fitting the diet first, never anything on the avoid list, at least one.
     await expect(page).toHaveURL(/\/app\/first-recipes$/);
     await expect(page.locator("#main h1")).toHaveText("Pick your first recipes");
@@ -194,6 +198,7 @@ test.describe("phone, in Hebrew", () => {
     await expect(page.getByText("שלב 1 מתוך 3")).toBeVisible();
     await expect(page.locator("aside")).toBeHidden();
     await page.getByRole("button", { name: "דלגו בינתיים" }).click();
+    await page.getByRole("button", { name: "אחר כך" }).click();
 
     // Skipping the questions still leads to the first recipes, in Hebrew, fitting a phone.
     await expect(page).toHaveURL(/\/app\/first-recipes$/);

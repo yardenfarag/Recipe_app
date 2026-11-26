@@ -27,7 +27,7 @@ import { isCollectionNameTaken, isRecipeNameTaken } from "@shared/lib/uniqueName
 import type { Recipe } from "@shared/types/recipe";
 
 import { AddToCollectionDialog } from "@/components/library/AddToCollectionDialog";
-import { FridgeMatchDialog } from "@/components/library/FridgeMatchDialog";
+import { WhatCanICookDialog } from "@/components/library/WhatCanICookDialog";
 import { KitchenTiles, KitchenTilesSkeleton } from "@/components/library/KitchenTiles";
 import { LayoutToggle, LibraryToolbar } from "@/components/library/LibraryToolbar";
 import { NameDialog } from "@/components/library/NameDialog";
@@ -433,7 +433,7 @@ function LibraryScreen() {
         </div>
       </section>
 
-      <FridgeMatchDialog open={fridgeOpen} onOpenChange={setFridgeOpen} recipes={recipes} />
+      <WhatCanICookDialog open={fridgeOpen} onOpenChange={setFridgeOpen} recipes={recipes} />
 
       <AddToCollectionDialog
         recipe={collectionRecipe}
