@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
-import { getNutritionDisplay, parseRecipeNutrition, recipeNutritionOf } from './recipeNutrition';
+import { getNutritionDisplay, macroCalorieShares, parseRecipeNutrition, recipeNutritionOf } from './recipeNutrition';
 
 const nutrition = { protein_g: 120, carbs_g: 160, fat_g: 72 };
 
@@ -27,6 +27,20 @@ describe('getNutritionDisplay', () => {
   it('shows nothing without nutrition', () => {
     expect(getNutritionDisplay(null, 4, 4)).toBeNull();
     expect(getNutritionDisplay(undefined, 4, 4)).toBeNull();
+  });
+});
+
+describe('macroCalorieShares', () => {
+  it('splits the calories 4/4/9 per gram of protein, carbs and fat', () => {
+    // 30 g protein = 120, 40 g carbs = 160, 18 g fat = 162 → 442 calories.
+    const shares = macroCalorieShares({ protein_g: 30, carbs_g: 40, fat_g: 18 });
+    expect(shares?.protein).toBeCloseTo(120 / 442);
+    expect(shares?.carbs).toBeCloseTo(160 / 442);
+    expect(shares?.fat).toBeCloseTo(162 / 442);
+  });
+
+  it('has no split when there are no calories to split', () => {
+    expect(macroCalorieShares({ protein_g: 0, carbs_g: 0, fat_g: 0 })).toBeNull();
   });
 });
 

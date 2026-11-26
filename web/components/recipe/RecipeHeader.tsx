@@ -22,7 +22,7 @@ import { CookAlongButton, StartCookingButton } from "@/components/cook/CookBar";
 import { useLanguage } from "@/components/LanguageProvider";
 import { isUpdating, useRecipeActions } from "@/components/recipe/actions/RecipeActionsContext";
 import { RecipeMoreMenu } from "@/components/recipe/actions/RecipeMoreMenu";
-import { DotSeparated } from "@/components/recipe/DotSeparated";
+import { NutritionPanel } from "@/components/recipe/NutritionPanel";
 import type { RecipeDisplay } from "@/components/recipe/types";
 import { Button } from "@/components/ui/Button";
 import { IconButton, iconButtonClasses, type IconButtonVariant } from "@/components/ui/IconButton";
@@ -96,8 +96,9 @@ export type HeaderCook = {
 
 /**
  * The top of a recipe (PIN-162): a bar with the way back, the heart, Share and "more"; the photo, with "Cook along
- * with the video" on it; and a tile with where it was saved from, the title, four facts (time, servings, calories
- * and cost as a tier, never an amount), its tags and collections, when it was last cooked, and the buttons that
+ * with the video" on it; and a tile with where it was saved from, the title, the facts (time, servings, cost as a
+ * tier, never an amount), a per-serving tile with calories, protein, carbs and fat (just calories as a fact when
+ * there are no macros), its tags and collections, when it was last cooked, and the buttons that
  * start cooking.
  *
  * On a phone, on the saved recipe's own page (`immersive`), the photo fills the width from the top of the screen
@@ -147,6 +148,8 @@ export function RecipeHeader({
   // PIN-80: none next to calories set by hand, and none while the calories are being recalculated.
   const caloriesUpdating = isUpdating(actions, "calories");
   const nutrition = caloriesUpdating ? null : getNutritionDisplay(recipeNutritionOf(recipe), recipe.servings, servings);
+  // With the macros, calories join them in the per-serving tile; without, they stay a fact of their own.
+  const nutritionPanel = calories && nutrition ? <NutritionPanel calories={calories.perServing} nutrition={nutrition.perServing} /> : null;
   const cost = recipe.cost_estimate;
   const tags = normalizeRecipeTags(recipe.tags);
   const cookedDate = recipe.last_cooked_at ? formatCookedDate(recipe.last_cooked_at, language) : "";
@@ -308,7 +311,7 @@ export function RecipeHeader({
             {title}
           </h1>
 
-          <ul className="grid grid-cols-4 gap-2 md:gap-2.5">
+          <ul className={cn("grid gap-2 md:gap-2.5", nutritionPanel ? "grid-cols-3" : "grid-cols-4")}>
             {isUpdating(actions, "estimated_time_minutes") ? (
               <UpdatingFact field={t("recipeEditor.fields.time")} label={t("web.recipe.factTime")} />
             ) : recipe.estimated_time_minutes != null ? (
@@ -320,7 +323,7 @@ export function RecipeHeader({
             <Fact value={servings} label={t("recipe.servings")} />
             {caloriesUpdating ? (
               <UpdatingFact field={t("recipeEditor.fields.calories")} label={t("web.recipe.factCalories")} />
-            ) : calories ? (
+            ) : calories && !nutritionPanel ? (
               <Fact value={calories.perServing.toLocaleString()} label={t("web.recipe.factCalories")} spoken={t("recipe.calPerServing", { count: calories.perServing })} />
             ) : null}
             {isUpdating(actions, "cost_estimate") ? (
@@ -334,17 +337,7 @@ export function RecipeHeader({
             ) : null}
           </ul>
 
-          {calories && nutrition ? (
-            <p data-testid="recipe-nutrition" className="-mt-1 text-sm font-medium text-muted tabular-nums">
-              <DotSeparated
-                text={t("recipe.nutritionPerServing", {
-                  protein: nutrition.perServing.protein_g,
-                  carbs: nutrition.perServing.carbs_g,
-                  fat: nutrition.perServing.fat_g,
-                })}
-              />
-            </p>
-          ) : null}
+          {nutritionPanel}
 
           {tags.length > 0 || actions || recipe.effort_level || isUpdating(actions, "effort_level") ? (
             <ul aria-label={t("library.tags")} className="flex flex-wrap items-center gap-1.5">
