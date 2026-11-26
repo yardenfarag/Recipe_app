@@ -104,8 +104,8 @@ import { formatMaxVideoDurationLabel, isVideoTooLong } from '../_shared/extracti
 import { fetchWebRecipeMeta } from '../_shared/extraction/webRecipe.ts';
 import { pageReadLogger, type PageReadEvent } from '../_shared/extraction/pageReader.ts';
 import { fetchYouTubeMeta } from '../_shared/extraction/sources/youtube.ts';
+import { labelExtractedRecipe } from '../_shared/recipes/enrich/recipeDietsOnSave.ts';
 import {
-  fillRecipeCardDiets,
   findRecipeCard,
   hubCardToExtractRecipe,
   type HubPublishDecision,
@@ -1163,9 +1163,8 @@ serve('extract-recipe', async (req) => {
           platform,
           durationMs: Date.now() - publishStarted,
         });
-        if (decision.status !== 'skipped' && decision.needsDiets) {
-          await fillRecipeCardDiets(admin, decision.cardId, recipe, userId ?? null);
-        }
+        // The card's diet check (or one of its own when there is no card) also labels the cook's copy (PIN-77).
+        await labelExtractedRecipe(admin, decision, recipe, userId ?? null);
       };
       const publishing = publishToHub().catch((error) =>
         console.error('[extract-recipe] hub publish failed', error)

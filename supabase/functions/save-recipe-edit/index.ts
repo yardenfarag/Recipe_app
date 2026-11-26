@@ -40,6 +40,7 @@ import {
   type SaveRecipeEditRequest,
   type SaveRecipeEditResult,
 } from '../_shared/recipes/recipeEditTypes.ts';
+import { labelSavedRecipe } from '../_shared/recipes/enrich/recipeDietsOnSave.ts';
 import { runRecipeRecalculation } from '../_shared/recipes/recipeRecalc.ts';
 
 declare const EdgeRuntime: { waitUntil(promise: Promise<unknown>): void } | undefined;
@@ -123,6 +124,7 @@ handler(
         throw saveFailed;
       }
 
+      labelDietsInBackground(admin, user.id, saved);
       return startRecalculation(admin, user.id, saved, pending, startedAt, reservation, request.mode);
     } catch (err) {
       if (err instanceof HttpError) throw err;
@@ -151,6 +153,20 @@ async function retry(admin: Db, userId: string, recipeId: string): Promise<SaveR
     throw failed('server_error', "Couldn't start the update.", 500);
   }
   return startRecalculation(admin, userId, saved, pending, startedAt, reservation, 'retry');
+}
+
+/**
+ * A written recipe, or one whose ingredients changed (the database clears its diets then), is checked for the diets
+ * it fits, after the response (PIN-77). One small model call; the meal plan uses the answer.
+ */
+function labelDietsInBackground(admin: Db, userId: string, saved: Row): void {
+  if (saved.diets != null || typeof saved.id !== 'string') return;
+  const run = labelSavedRecipe(admin, userId, saved.id, {
+    title: saved.title,
+    ingredients: saved.ingredients,
+    instructions: saved.instructions,
+  });
+  if (typeof EdgeRuntime !== 'undefined') EdgeRuntime.waitUntil(run);
 }
 
 function startRecalculation(

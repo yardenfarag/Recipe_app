@@ -1440,6 +1440,35 @@ export type Database = {
         }
         Relationships: []
       }
+      recipe_diets_pending: {
+        Row: {
+          created_at: string
+          diets: string[]
+          ingredient_key: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          diets: string[]
+          ingredient_key: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          diets?: string[]
+          ingredient_key?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "recipe_diets_pending_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       recipe_remix_usage: {
         Row: {
           recipe_id: string
@@ -2409,6 +2438,7 @@ export type Database = {
         Args: { p_id: string; p_title: string }
         Returns: string
       }
+      recipe_ingredient_key: { Args: { p_ingredients: Json }; Returns: string }
       recipe_ingredients_within_limits: {
         Args: { p_items: Json; p_require_one: boolean }
         Returns: boolean
@@ -2473,6 +2503,10 @@ export type Database = {
       register_push_token: {
         Args: { p_platform: string; p_token: string }
         Returns: undefined
+      }
+      remember_recipe_diets: {
+        Args: { p_diets: string[]; p_ingredients: Json; p_user_id: string }
+        Returns: number
       }
       remove_household_member: { Args: { p_user_id: string }; Returns: Json }
       renew_household_invite: { Args: never; Returns: Json }
