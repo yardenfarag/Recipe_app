@@ -33,15 +33,16 @@ let running: Promise<void> | null = null;
  * The meal plan's reminders on this phone (PIN-77), for today and tomorrow: in the morning, take what tonight's
  * dinner needs out of the freezer (when the pantry has it there); at 17:30, what's for dinner. Scheduled on the
  * device, so they follow the phone's own clock. Only when notifications are already allowed, and not when the cook
- * turned off reminders (Settings › Emails and notifications). Never asks for permission itself.
+ * turned off reminders (Settings › Emails and notifications). Never asks for permission itself. `language` is the
+ * app's: a recipe saved in it is named in it, and its ingredient names in it are matched against the freezer too.
  */
-export function scheduleMealReminders(userId: string, t: Translate, pantry: PantryItem[]): Promise<void> {
+export function scheduleMealReminders(userId: string, t: Translate, pantry: PantryItem[], language?: string): Promise<void> {
   // One at a time: a second call waits, then schedules from fresh data.
-  running = (running ?? Promise.resolve()).then(() => schedule(userId, t, pantry)).catch(() => undefined);
+  running = (running ?? Promise.resolve()).then(() => schedule(userId, t, pantry, language)).catch(() => undefined);
   return running;
 }
 
-async function schedule(userId: string, t: Translate, pantry: PantryItem[]): Promise<void> {
+async function schedule(userId: string, t: Translate, pantry: PantryItem[], language: string | undefined): Promise<void> {
   if (Platform.OS !== 'ios' && Platform.OS !== 'android') return;
   // Loaded here, not at the top: screens that only might schedule (the recipe page) stay light, and tests too.
   const Notifications = await import('expo-notifications');
@@ -58,7 +59,7 @@ async function schedule(userId: string, t: Translate, pantry: PantryItem[]): Pro
   if (!prefs || prefs.pushOptOut) return;
 
   const today = toPlanDate(new Date());
-  const dinners = await fetchPlannedDinners(today, addDays(today, 1));
+  const dinners = await fetchPlannedDinners(today, addDays(today, 1), language);
   const now = Date.now();
   for (const dinner of dinners) {
     const day = parsePlanDate(dinner.date);

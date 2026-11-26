@@ -1,0 +1,53 @@
+{
+  "caseId": "es-fractions-temp",
+  "judge": "google/gemini-3.1-pro-preview",
+  "translation": "Title: Magdalenas de arándanos\nIngredients:\n1. ½ taza leche\n2. ½ cdta sal\n3. 2 tazas harina de trigo\n4. 1 cda levadura química\n5. ¾ taza azúcar\n6. 1 taza arándanos frescos\n7. ⅓ taza aceite vegetal\n8. 1 huevo\nSteps:\n1. Precalienta el horno a 200°C y coloca cápsulas en un molde para magdalenas de 12 cavidades.\n2. Bate la harina, el azúcar, la levadura química y la sal.\n3. Añade la leche, el aceite y el huevo, y después incorpora los arándanos con movimientos envolventes, con cuidado.\n4. Hornea durante 20–25 minutos.",
+  "verdict": {
+    "native_score": 4,
+    "errors": [
+      {
+        "where": "ingredient 1",
+        "category": "grammar",
+        "severity": "minor",
+        "excerpt": "taza leche",
+        "fix": "taza de leche"
+      },
+      {
+        "where": "ingredient 2",
+        "category": "grammar",
+        "severity": "minor",
+        "excerpt": "cdta sal",
+        "fix": "cdta de sal"
+      },
+      {
+        "where": "ingredient 5",
+        "category": "grammar",
+        "severity": "minor",
+        "excerpt": "taza azúcar",
+        "fix": "taza de azúcar"
+      },
+      {
+        "where": "ingredient 6",
+        "category": "grammar",
+        "severity": "minor",
+        "excerpt": "taza arándanos frescos",
+        "fix": "taza de arándanos frescos"
+      },
+      {
+        "where": "ingredient 7",
+        "category": "grammar",
+        "severity": "minor",
+        "excerpt": "taza aceite vegetal",
+        "fix": "taza de aceite vegetal"
+      },
+      {
+        "where": "step 2",
+        "category": "cooking_verb",
+        "severity": "minor",
+        "excerpt": "Bate",
+        "fix": "Mezcla"
+      }
+    ]
+  },
+  "costUsd": 0.011686
+}

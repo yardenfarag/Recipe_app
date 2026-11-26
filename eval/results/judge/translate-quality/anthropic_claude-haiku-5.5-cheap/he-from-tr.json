@@ -1,0 +1,25 @@
+{
+  "caseId": "he-from-tr",
+  "judge": "google/gemini-3.1-pro-preview",
+  "translation": "Title: ביצים מטוגנות עם תפוח אדמה במחבת\nIngredients:\n1. 1 תפוח אדמה גדול\n2. ½ כפית מלח\n3. 1 כף שמן צמחי\n4. 2 ביצים\n5. 1 קמצוץ פלפל שחור\n6. 50 גרם גבינת קשקבל מגוררת\nSteps:\n1. מגרדים את תפוח האדמה ומסננים את המים ממנו.\n2. מוסיפים שמן למחבת, מפזרים את תפוח האדמה ולוחצים עליו עם מרית.\n3. שוברים את הביצים מעל, ומפזרים מלח ופלפל שחור.\n4. מוסיפים את הקשקבל, מכסים ומבשלים 5 דקות.",
+  "verdict": {
+    "native_score": 4,
+    "errors": [
+      {
+        "where": "step 1",
+        "category": "cooking_verb",
+        "severity": "minor",
+        "excerpt": "ומסננים את המים ממנו",
+        "fix": "וסוחטים מנוזלים"
+      },
+      {
+        "where": "step 2",
+        "category": "cooking_verb",
+        "severity": "minor",
+        "excerpt": "ולוחצים עליו",
+        "fix": "ומהדקים"
+      }
+    ]
+  },
+  "costUsd": 0.013964
+}

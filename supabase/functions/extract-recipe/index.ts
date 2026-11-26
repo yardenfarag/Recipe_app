@@ -105,6 +105,7 @@ import { fetchWebRecipeMeta } from '../_shared/extraction/webRecipe.ts';
 import { pageReadLogger, type PageReadEvent } from '../_shared/extraction/pageReader.ts';
 import { fetchYouTubeMeta } from '../_shared/extraction/sources/youtube.ts';
 import { labelExtractedRecipe } from '../_shared/recipes/enrich/recipeDietsOnSave.ts';
+import { translateExtractedRecipe } from '../_shared/recipes/enrich/recipeTranslationsOnSave.ts';
 import {
   findRecipeCard,
   hubCardToExtractRecipe,
@@ -1163,8 +1164,13 @@ serve('extract-recipe', async (req) => {
           platform,
           durationMs: Date.now() - publishStarted,
         });
-        // The card's diet check (or one of its own when there is no card) also labels the cook's copy (PIN-77).
-        await labelExtractedRecipe(admin, decision, recipe, userId ?? null, status === 'full');
+        // The card's diet check (or one of its own when there is no card) also labels the cook's copy, and the
+        // recipe is translated into every app language for the card and the cook's copy (PIN-77). Side by side:
+        // neither needs the other, and both must finish within the background time limit.
+        await Promise.all([
+          labelExtractedRecipe(admin, decision, recipe, userId ?? null, status === 'full'),
+          translateExtractedRecipe(admin, decision, recipe, userId ?? null, status === 'full'),
+        ]);
       };
       const publishing = publishToHub().catch((error) =>
         console.error('[extract-recipe] hub publish failed', error)

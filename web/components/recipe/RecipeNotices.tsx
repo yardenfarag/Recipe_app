@@ -15,6 +15,14 @@ import { cn } from "@/lib/cn";
 
 type Tone = "danger" | "warning" | "accent" | "primary";
 
+/** "Show original language" and back, on a page that only shows a saved translation (a Hub card). */
+export type LanguageToggle = {
+  showingOriginal: boolean;
+  setShowOriginal: (original: boolean) => void;
+  /** The translation's language (the app's). */
+  language: string;
+};
+
 const tones: Record<Tone, { box: string; title: string }> = {
   danger: { box: "bg-danger-soft", title: "text-danger" },
   warning: { box: "bg-warning-soft", title: "text-warning" },
@@ -100,7 +108,19 @@ function HitList({ hits, label, direction }: { hits: AvoidHit[]; label: (hit: Av
  * one offers its fix: "Make it without these", Repair, "Revert to original", "Show original language", and
  * "Translate" when the recipe is in another language than the app's (PIN-135).
  */
-export function RecipeNotices({ display, avoid }: { display: RecipeDisplay; avoid: AvoidMatches | null }) {
+export function RecipeNotices({
+  display,
+  avoid,
+  languageToggle,
+}: {
+  display: RecipeDisplay;
+  avoid: AvoidMatches | null;
+  /**
+   * A recipe without actions (a Hub card) that has a saved translation into the app language: "Show original
+   * language" on it, and the way back to the translation once the original is showing.
+   */
+  languageToggle?: LanguageToggle | null;
+}) {
   const { t } = useTranslation();
   const actions = useRecipeActions();
   const { recipe } = display;
@@ -182,11 +202,30 @@ export function RecipeNotices({ display, avoid }: { display: RecipeDisplay; avoi
         icon={<Languages />}
         title={t("recipe.showingLanguage", { language: t(`languages.${display.contentLanguage}`) })}
         action={
-          actions ? (
-            <NoticeButton icon={<Undo2 className="rtl:-scale-x-100" />} trackId="recipe.show_original_language" onClick={actions.showOriginalLanguage}>
+          actions || languageToggle ? (
+            <NoticeButton
+              icon={<Undo2 className="rtl:-scale-x-100" />}
+              trackId="recipe.show_original_language"
+              onClick={actions ? actions.showOriginalLanguage : () => languageToggle?.setShowOriginal(true)}
+            >
               {t("recipe.showOriginal")}
             </NoticeButton>
           ) : null
+        }
+      />,
+    );
+  } else if (!actions && languageToggle?.showingOriginal) {
+    const source = resolveRecipeSourceLanguage(recipe);
+    notices.push(
+      <Notice
+        key="translate"
+        tone="primary"
+        icon={<Languages />}
+        title={t("web.recipeActions.inOtherLanguage", { language: t(`languages.${source}`, { defaultValue: source }) })}
+        action={
+          <NoticeButton icon={<Languages />} trackId="recipe.show_translation" onClick={() => languageToggle.setShowOriginal(false)}>
+            {t("web.recipeActions.translateTo", { language: t(`languages.${languageToggle.language}`) })}
+          </NoticeButton>
         }
       />,
     );

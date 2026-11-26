@@ -311,6 +311,39 @@ describe('fillWeek: reasons', () => {
     );
     expect(result.filled[0]).toMatchObject({ candidateId: 'soup', reason: { key: 'sharesWith', item: 'cilantro', date: '2026-11-26' } });
   });
+
+  it('matches what is at home by the translated name or the own one, and names it in the app language', () => {
+    const translated = candidate('a', { ingredients: ['spinach', 'feta'], localIngredients: ['תרד', 'פטה'], minutes: 50 });
+    const byLocal = fillWeek(input({ slots: [slot('2026-11-26', 'dinner')], candidates: [translated], homeNames: ['תרד'] }));
+    expect(byLocal.filled[0].reason).toEqual({ key: 'usesPantry', item: 'תרד' });
+    const byOwn = fillWeek(input({ slots: [slot('2026-11-26', 'dinner')], candidates: [translated], homeNames: ['spinach'] }));
+    expect(byOwn.filled[0].reason).toEqual({ key: 'usesPantry', item: 'תרד' });
+  });
+
+  it('links a translated meal with one in its own language through either name', () => {
+    const result = fillWeek(
+      input({
+        slots: [slot('2026-11-27', 'dinner')],
+        planned: [{ date: '2026-11-26', meal: 'dinner', candidateId: 'tacos' }],
+        candidates: [
+          candidate('tacos', { ingredients: ['cilantro', 'tortillas'], localIngredients: ['כוסברה', 'טורטיות'] }),
+          candidate('soup', { source: 'hub', ingredients: ['cilantro', 'lime', 'noodles'], minutes: 50 }),
+        ],
+      }),
+    );
+    expect(result.filled[0]).toMatchObject({ candidateId: 'soup', reason: { key: 'sharesWith', item: 'כוסברה', date: '2026-11-26' } });
+  });
+
+  it('leaves basics out by their own name when the translation is not in the list', () => {
+    const result = fillWeek(
+      input({
+        slots: [slot('2026-11-26', 'dinner')],
+        candidates: [candidate('a', { ingredients: ['salt', 'spinach'], localIngredients: ['מלח', 'תרד'] })],
+        homeNames: ['תרד'],
+      }),
+    );
+    expect(result.filled[0].reason).toEqual({ key: 'haveEverything' });
+  });
 });
 
 describe('libraryOnlyStatus', () => {
@@ -343,6 +376,16 @@ describe('candidates', () => {
     } as Recipe;
     expect(candidateFromRecipe(recipe)).toMatchObject({ source: 'library', minutes: 40, proteinPerServing: 25, favorite: true, diets: null });
     expect(candidateFromRecipe({ ...recipe, diets: ['vegan'] }).diets).toEqual(['vegan']);
+    expect(candidateFromRecipe(recipe).localIngredients).toBeUndefined();
+    const withHebrew = {
+      ...recipe,
+      source_language: 'en',
+      translations: { he: { title: 'קארי', ingredients: [{ name: 'עדשים', quantity: 1, unit: 'cup' }], instructions: [] } },
+    } as Recipe;
+    expect(candidateFromRecipe(withHebrew, 'he')).toMatchObject({ ingredients: ['lentils'], localIngredients: ['עדשים'] });
+    // No translation into the app language, or the recipe is in it already: its own names only.
+    expect(candidateFromRecipe(withHebrew, 'ru').localIngredients).toBeUndefined();
+    expect(candidateFromRecipe({ ...withHebrew, translations: { en: withHebrew.translations!.he } }, 'en').localIngredients).toBeUndefined();
     const card = {
       id: 'c1',
       title: 'Bowl',

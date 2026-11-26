@@ -1,5 +1,5 @@
 import { router, useLocalSearchParams, useNavigation } from 'expo-router';
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { ActivityIndicator, Alert, View } from 'react-native';
 import { useTranslation } from 'react-i18next';
 import type { Edge } from 'react-native-safe-area-context';
@@ -9,12 +9,24 @@ import { Screen } from '@/components/Screen';
 import { Button } from '@/components/ui/Button';
 import { Text } from '@/components/ui/Text';
 import { useAuth } from '@/hooks/useAuth';
+import { useLanguagePreference } from '@/hooks/useLanguagePreference';
 import { useThemePreference } from '@/hooks/useThemePreference';
 import { saveAfterSignInPath } from '@/lib/authReturnPath';
+import { cachedTranslationContent } from '@shared/lib/cachedTranslation';
 import { recipeCardToExtracted } from '@shared/lib/recipeCardMap';
+import { isRecipeLanguageCode } from '@shared/lib/recipeLanguages';
+import { resolveRecipeSourceLanguage } from '@shared/lib/recipeSourceLanguage';
 import { claimHubCard, fetchHubCard, fetchLibraryRecipeForCard } from '@shared/lib/supabase/cookingHub';
+import { fetchRecipeCardTranslation } from '@shared/lib/supabase/recipeCardTranslations';
 import { translateAppError } from '@shared/lib/translateAppError';
+import type { RecipeTranslationContent } from '@shared/types/recipe';
 import type { RecipeCard } from '@shared/types/recipeCard';
+
+/** A card's translation into `language`, if the server made one (PIN-77). A card is never translated from here. */
+async function cardTranslation(card: RecipeCard, language: string): Promise<RecipeTranslationContent | null> {
+  if (resolveRecipeSourceLanguage(card) === language) return null;
+  return fetchRecipeCardTranslation(card.id, language).catch(() => null);
+}
 
 export default function HubRecipeScreen() {
   const { t } = useTranslation();
@@ -25,9 +37,12 @@ export default function HubRecipeScreen() {
   const saveAfterAuth = useRef(save === '1');
   const { session, loading: authLoading } = useAuth();
   const { colors } = useThemePreference();
+  const { language, ready: languageReady } = useLanguagePreference();
   const navigation = useNavigation();
 
   const [card, setCard] = useState<RecipeCard | null>(null);
+  /** The card in the app language, when the server has translated it; shown instead of its own words. */
+  const [translation, setTranslation] = useState<{ language: string; content: RecipeTranslationContent } | null>(null);
   const [existingRecipeId, setExistingRecipeId] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState<string | null>(null);
@@ -52,6 +67,9 @@ export default function HubRecipeScreen() {
           setLoading(false);
           return;
         }
+        const translated = await cardTranslation(next, language);
+        if (cancelled) return;
+        setTranslation(translated ? { language, content: translated } : null);
         setCard(next);
         if (session?.user) {
           try {
@@ -71,17 +89,26 @@ export default function HubRecipeScreen() {
         if (!cancelled) setLoading(false);
       }
     }
-    void load();
+    // Waits for the saved app language, so a translated card doesn't show in its own words first.
+    if (languageReady) void load();
     return () => {
       cancelled = true;
     };
-  }, [id, session?.user, t]);
+  }, [id, language, languageReady, session?.user, t]);
+
+  const recipe = useMemo(() => (card ? recipeCardToExtracted(card) : null), [card]);
+  // Units in the app language and the card's own grams/spoons, as a saved recipe's cached translation is shown.
+  const localized = useMemo(
+    () => (recipe && translation ? cachedTranslationContent(recipe, translation.language, translation.content) : null),
+    [recipe, translation],
+  );
+  const localizedLanguage = localized && translation && isRecipeLanguageCode(translation.language) ? translation.language : null;
 
   useEffect(() => {
     navigation.setOptions({
-      title: card?.title?.trim() || t('hub.recipeTitle'),
+      title: localized?.title?.trim() || card?.title?.trim() || t('hub.recipeTitle'),
     });
-  }, [card?.title, navigation, t]);
+  }, [card?.title, localized?.title, navigation, t]);
 
   const addToLibrary = useCallback(async () => {
     if (!card || claiming) return;
@@ -120,7 +147,7 @@ export default function HubRecipeScreen() {
   // The stack header (root layout) already has the back button and the title.
   const screenEdges: Edge[] = ['bottom'];
 
-  if (loading || authLoading) {
+  if (loading || authLoading || !languageReady) {
     return (
       <Screen edges={screenEdges}>
         <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center' }}>
@@ -130,7 +157,7 @@ export default function HubRecipeScreen() {
     );
   }
 
-  if (loadError || !card) {
+  if (loadError || !card || !recipe) {
     return (
       <Screen edges={screenEdges}>
         <View
@@ -147,8 +174,6 @@ export default function HubRecipeScreen() {
       </Screen>
     );
   }
-
-  const recipe = recipeCardToExtracted(card);
 
   return (
     <Screen edges={screenEdges}>
@@ -172,7 +197,12 @@ export default function HubRecipeScreen() {
           {t('hub.attribution')}
         </Text>
       </View>
-      <RecipeView recipe={recipe} allowAdaptations={false} />
+      <RecipeView
+        recipe={recipe}
+        allowAdaptations={false}
+        localizedContent={localizedLanguage ? localized : null}
+        localizedLanguage={localizedLanguage}
+      />
     </Screen>
   );
 }

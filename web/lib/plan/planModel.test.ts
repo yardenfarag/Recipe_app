@@ -76,6 +76,9 @@ describe("mealsToSave", () => {
 describe("what's at home", () => {
   it("counts ingredients at home, not water and salt", () => {
     expect(haveCount(["Spinach", "chickpeas", "salt", "coconut milk"], ["spinach", "chickpeas"])).toEqual({ have: 2, total: 3 });
+    // The same ingredients in the app language, row for row: either name counts as at home, and salt stays out.
+    expect(haveCount(["Spinach", "chickpeas", "salt"], ["חומוס"], ["תרד", "חומוס", "מלח"])).toEqual({ have: 1, total: 2 });
+    expect(haveCount(["Spinach", "chickpeas"], ["spinach"], ["תרד", "חומוס"])).toEqual({ have: 1, total: 2 });
   });
 
   it("leaves what's at home unticked", () => {

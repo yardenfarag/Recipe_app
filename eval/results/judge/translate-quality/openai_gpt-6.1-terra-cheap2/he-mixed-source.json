@@ -1,0 +1,32 @@
+{
+  "caseId": "he-mixed-source",
+  "judge": "google/gemini-3.1-pro-preview",
+  "translation": "Title: לביבות עם שוקולד Milka\nIngredients:\n1. 300 מ״ל קפיר\n2. 1 ביצה\n3. 2 כפות סוכר\n4. ½ כפית סודה לשתייה\n5. 250 גרם קמח\n6. 1 שוקולד Milka\nSteps:\n1. מערבבים את הקפיר, הביצה, הסוכר והסודה לשתייה.\n2. מוסיפים את הקמח ומערבבים עד לקבלת תערובת אחידה.\n3. מניחים חתיכת שוקולד על כל לביבה ומטגנים משני הצדדים.",
+  "verdict": {
+    "native_score": 4,
+    "errors": [
+      {
+        "where": "title",
+        "category": "ingredient_term",
+        "severity": "minor",
+        "excerpt": "לביבות",
+        "fix": "פנקייקים"
+      },
+      {
+        "where": "ingredient 6",
+        "category": "unit",
+        "severity": "major",
+        "excerpt": "1 שוקולד Milka",
+        "fix": "1 חפיסת שוקולד Milka"
+      },
+      {
+        "where": "step 3",
+        "category": "ingredient_term",
+        "severity": "minor",
+        "excerpt": "לביבה",
+        "fix": "פנקייק"
+      }
+    ]
+  },
+  "costUsd": 0.01029
+}

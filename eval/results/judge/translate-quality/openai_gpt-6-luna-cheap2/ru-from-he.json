@@ -1,0 +1,46 @@
+{
+  "caseId": "ru-from-he",
+  "judge": "google/gemini-3.1-pro-preview",
+  "translation": "Title: Кабачковые оладьи\nIngredients:\n1. 2 кабачков\n2. 1 яйца\n3. 3 ст. л. муки\n4. ½ ч. л. соли\n5. по вкусу чёрного перца\n6. масла\nSteps:\n1. Натрите кабачки, посолите и хорошо отожмите от жидкости.\n2. Смешайте с яйцом, мукой и перцем.\n3. Обжаривайте ложки смеси в горячем масле по 2–3 минуты с каждой стороны до золотистой корочки.\n4. Выложите на бумажное полотенце и подавайте горячими.",
+  "verdict": {
+    "native_score": 3,
+    "errors": [
+      {
+        "where": "ingredient 1",
+        "category": "grammar",
+        "severity": "minor",
+        "excerpt": "2 кабачков",
+        "fix": "2 кабачка"
+      },
+      {
+        "where": "ingredient 2",
+        "category": "grammar",
+        "severity": "minor",
+        "excerpt": "1 яйца",
+        "fix": "1 яйцо"
+      },
+      {
+        "where": "ingredient 5",
+        "category": "grammar",
+        "severity": "minor",
+        "excerpt": "по вкусу чёрного перца",
+        "fix": "чёрный перец по вкусу"
+      },
+      {
+        "where": "ingredient 6",
+        "category": "meaning",
+        "severity": "minor",
+        "excerpt": "масла",
+        "fix": "масло для жарки"
+      },
+      {
+        "where": "step 3",
+        "category": "style_consistency",
+        "severity": "minor",
+        "excerpt": "Обжаривайте ложки смеси",
+        "fix": "Жарьте, выкладывая смесь ложкой,"
+      }
+    ]
+  },
+  "costUsd": 0.011422
+}

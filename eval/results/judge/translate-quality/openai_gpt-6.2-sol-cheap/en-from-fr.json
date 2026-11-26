@@ -1,0 +1,25 @@
+{
+  "caseId": "en-from-fr",
+  "judge": "google/gemini-3.1-pro-preview",
+  "translation": "Title: Smoked Sausage Rougail\nIngredients:\n1. 6 smoked sausages\n2. 2 yellow onions\n3. 3 cloves garlic\n4. 1 drizzle of olive oil\n5. 15 centiliters or so of heavy cream\n6. 2 tbsp tomato paste\n7. 1 large bunch of parsley\n8. ½ lime's worth of lime juice\nSteps:\n1. Prick the smoked sausages and blanch them in boiling water for 5 minutes.\n2. Slice the sausages into rounds and brown them in the olive oil.\n3. Add the thinly sliced yellow onions, garlic, and tomato paste, then pour in a glass of water.\n4. Cover and simmer for 30 minutes. Add the heavy cream and parsley, then add the lime juice.",
+  "verdict": {
+    "native_score": 4,
+    "errors": [
+      {
+        "where": "ingredient 5",
+        "category": "unit",
+        "severity": "minor",
+        "excerpt": "15 centiliters or so",
+        "fix": "about 150 ml"
+      },
+      {
+        "where": "ingredient 8",
+        "category": "grammar",
+        "severity": "minor",
+        "excerpt": "½ lime's worth of lime juice",
+        "fix": "juice of ½ lime"
+      }
+    ]
+  },
+  "costUsd": 0.009564
+}

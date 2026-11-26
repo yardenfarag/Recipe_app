@@ -49,5 +49,6 @@ export function recipeCardToListRecipe(card: RecipeCard): Recipe {
     source_language: card.source_language ?? 'en',
     appliances: card.appliances ?? null,
     created_at: card.created_at,
+    ...(card.display_title ? { display_title: card.display_title } : {}),
   };
 }

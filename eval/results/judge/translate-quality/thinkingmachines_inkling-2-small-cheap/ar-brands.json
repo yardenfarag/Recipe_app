@@ -1,0 +1,46 @@
+{
+  "caseId": "ar-brands",
+  "judge": "google/gemini-3.1-pro-preview",
+  "translation": "Title: أكواب تشيزكيك كيندر بوينو\nIngredients:\n1. 120 غ بسكويت دايجستيف\n2. 30 غ زبدة مذابة\n3. 380 غ جبنة كريمية\n4. 200 مل كريمة الخفق\n5. 2 لوح كيندر بوينو\n6. 2 ملعقة كبيرة دهن البندق\nSteps:\n1. فتّت البسكويت، اخلطه مع الزبدة واضغطه في 6 أكواب.\n2. اخفق الكريمة حتى تتكون قمم ثابتة.\n3. اخفق الجبنة الكريمية مع دهن البندق، ثم قلّب الكريمة المخفوقة برفق.\n4. وزّع الخليط بالملعقة فوق القاعدة، ضعه في الثلاجة لمدة 4 ساعات ثم زيّنه بكندر بوينو مفروم.",
+  "verdict": {
+    "native_score": 4,
+    "errors": [
+      {
+        "where": "ingredient 5",
+        "category": "grammar",
+        "severity": "minor",
+        "excerpt": "2 لوح",
+        "fix": "لوحان"
+      },
+      {
+        "where": "ingredient 6",
+        "category": "ingredient_term",
+        "severity": "major",
+        "excerpt": "دهن البندق",
+        "fix": "كريمة البندق"
+      },
+      {
+        "where": "step 1",
+        "category": "cooking_verb",
+        "severity": "minor",
+        "excerpt": "واضغطه",
+        "fix": "ورصه"
+      },
+      {
+        "where": "step 3",
+        "category": "ingredient_term",
+        "severity": "major",
+        "excerpt": "دهن البندق",
+        "fix": "كريمة البندق"
+      },
+      {
+        "where": "step 4",
+        "category": "cooking_verb",
+        "severity": "minor",
+        "excerpt": "مفروم",
+        "fix": "مقطع"
+      }
+    ]
+  },
+  "costUsd": 0.011244
+}

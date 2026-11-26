@@ -10,6 +10,7 @@ import { showToast } from "@shared/lib/toast";
 import { joinErrorSentences, translateAppError } from "@shared/lib/translateAppError";
 
 import { useAuth } from "@/components/AuthProvider";
+import { useLanguage } from "@/components/LanguageProvider";
 import { RecipeView } from "@/components/recipe/RecipeView";
 import { useSignInHere } from "@/components/shell/OpenShell";
 import { ErrorAlert } from "@/components/ui/Alert";
@@ -36,6 +37,7 @@ export default function HubRecipePage() {
   const { t } = useTranslation();
   const router = useRouter();
   const { user } = useAuth();
+  const { language } = useLanguage();
   const signInHere = useSignInHere();
   const { id } = useParams<{ id: string }>();
   const state = useHubRecipe(id ?? "");
@@ -112,5 +114,18 @@ export default function HubRecipePage() {
     </Tile>
   );
 
-  return <RecipeView display={state.display} back={user ? { href: backHref, label: t("hub.backToHub") } : null} actions={actions} readOnly />;
+  // The card in the app language (the server's translation of it, PIN-77): "Show original language" and back.
+  const languageToggle = state.setShowOriginal
+    ? { showingOriginal: state.showingOriginal, setShowOriginal: state.setShowOriginal, language }
+    : null;
+
+  return (
+    <RecipeView
+      display={state.display}
+      back={user ? { href: backHref, label: t("hub.backToHub") } : null}
+      actions={actions}
+      readOnly
+      languageToggle={languageToggle}
+    />
+  );
 }

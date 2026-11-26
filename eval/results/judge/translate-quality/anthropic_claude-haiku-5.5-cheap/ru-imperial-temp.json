@@ -1,0 +1,39 @@
+{
+  "caseId": "ru-imperial-temp",
+  "judge": "google/gemini-3.1-pro-preview",
+  "translation": "Title: Тыквенный пирог\nIngredients:\n1. 1 коржа для пирога без выпечки, 9 дюймов\n2. 425 г тыквенного пюре\n3. ¾ стакана сахара\n4. 1 ч. л. молотой корицы\n5. 2 яйца\n6. 350 мл концентрированного молока без сахара\nSteps:\n1. Разогрейте духовку до 220°C.\n2. Взбейте тыкву, сахар, корицу, яйца и концентрированное молоко без сахара до гладкости.\n3. Вылейте начинку в корж и выпекайте 15 минут, затем уменьшите температуру до 180°C и выпекайте еще 40 минут.\n4. Остудите пирог на решетке 2 часа.",
+  "verdict": {
+    "native_score": 4,
+    "errors": [
+      {
+        "where": "ingredient 1",
+        "category": "grammar",
+        "severity": "major",
+        "excerpt": "1 коржа",
+        "fix": "1 корж"
+      },
+      {
+        "where": "ingredient 1",
+        "category": "meaning",
+        "severity": "major",
+        "excerpt": "без выпечки",
+        "fix": "невыпеченный"
+      },
+      {
+        "where": "ingredient 1",
+        "category": "unit",
+        "severity": "minor",
+        "excerpt": "9 дюймов",
+        "fix": "23 см"
+      },
+      {
+        "where": "step 2",
+        "category": "cooking_verb",
+        "severity": "minor",
+        "excerpt": "до гладкости",
+        "fix": "до однородности"
+      }
+    ]
+  },
+  "costUsd": 0.013994
+}

@@ -18,11 +18,14 @@ vi.mock("@shared/lib/supabase/kitchen", () => ({
   fetchCloudKitchenProfile: (...args: unknown[]) => fetchCloudKitchenProfile(...args),
 }));
 vi.mock("@/components/AuthProvider", () => ({ useAuth: () => ({ user: { id: "u1" }, session: null, loading: false }) }));
+let language = "en";
+vi.mock("@/components/LanguageProvider", () => ({ useLanguage: () => ({ language, setLanguage: vi.fn() }) }));
 
 const card = (id: string): RecipeCard => ({ id, title: `Card ${id}` }) as RecipeCard;
 const page = (from: number, count: number) => Array.from({ length: count }, (_, index) => card(String(from + index)));
 
 beforeEach(() => {
+  language = "en";
   resetHubSnapshot();
   fetchHubCards.mockReset();
   fetchHubTags.mockReset().mockResolvedValue(["vegan", "quick"]);
@@ -43,6 +46,7 @@ describe("useHub", () => {
       platform: "youtube",
       diets: ["gluten_free", "vegan"],
       avoid: { allergens: [], dislikes: [], allergyWords: [], dislikeWords: [] },
+      language: "en",
       offset: 0,
       limit: 40,
       includeCount: true,
@@ -128,6 +132,20 @@ describe("useHub", () => {
     expect(again.result.current.cards).toHaveLength(40);
     await waitFor(() => expect(fetchHubCards).toHaveBeenCalledTimes(1));
     expect(fetchHubCards.mock.calls[0][0]).toMatchObject({ offset: 0, limit: 40, includeCount: true });
+  });
+
+  it("doesn't show the kept list in another app language: its titles are in the old one (PIN-77)", async () => {
+    fetchHubCards.mockResolvedValue({ cards: page(0, 40), hasMore: true, total: 90 });
+    const first = renderHook(() => useHub(DEFAULT_HUB_FILTERS));
+    await waitFor(() => expect(first.result.current.cards).toHaveLength(40));
+    first.unmount();
+
+    language = "he";
+    fetchHubCards.mockClear();
+    const again = renderHook(() => useHub(DEFAULT_HUB_FILTERS));
+    expect(again.result.current.loading).toBe(true);
+    await waitFor(() => expect(fetchHubCards).toHaveBeenCalledTimes(1));
+    expect(fetchHubCards.mock.calls[0][0]).toMatchObject({ language: "he", offset: 0 });
   });
 
   it("toggles tags, keeps chosen ones in the choices, and clears every filter", async () => {

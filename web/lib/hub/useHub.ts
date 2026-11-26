@@ -9,6 +9,7 @@ import { fetchCloudKitchenProfile } from "@shared/lib/supabase/kitchen";
 import type { HubPlatform, RecipeCard } from "@shared/types/recipeCard";
 
 import { useAuth } from "@/components/AuthProvider";
+import { useLanguage } from "@/components/LanguageProvider";
 import type { HubFilters } from "@/lib/hub/hubAddress";
 
 /** The same pages as the mobile app (src/hooks/useCookingHub.ts). */
@@ -18,7 +19,8 @@ const SEARCH_DEBOUNCE_MS = 250;
 
 type LoadMode = "replace" | "append" | "refresh";
 
-type Query = HubFilters & { diets: string[]; avoid: HubAvoid };
+/** `language`: the app's, for card titles in it (PIN-77). */
+type Query = HubFilters & { diets: string[]; avoid: HubAvoid; language: string };
 
 /**
  * The last list shown, kept while the tab is open. Opening a Hub recipe and coming Back shows the same cards at
@@ -32,8 +34,8 @@ export function resetHubSnapshot() {
   lastView = null;
 }
 
-const viewKey = (userId: string | undefined, filters: HubFilters) =>
-  JSON.stringify([userId ?? "", filters.search.trim(), filters.tags, filters.sort, filters.platform]);
+const viewKey = (userId: string | undefined, filters: HubFilters, language: string) =>
+  JSON.stringify([userId ?? "", language, filters.search.trim(), filters.tags, filters.sort, filters.platform]);
 
 function dedupeAppend(current: RecipeCard[], page: RecipeCard[]): RecipeCard[] {
   const seen = new Set(current.map((card) => card.id));
@@ -57,10 +59,11 @@ const NO_AVOID: AvoidList = { allergies: [], otherAllergies: [], dislikes: [] };
 export function useHub(initial: HubFilters) {
   const { user } = useAuth();
   const userId = user?.id;
+  const { language } = useLanguage();
 
   const [restored] = useState(() => {
     const snapshot = lastView;
-    return snapshot && snapshot.key === viewKey(userId, initial) ? snapshot : null;
+    return snapshot && snapshot.key === viewKey(userId, initial, language) ? snapshot : null;
   });
 
   const [cards, setCards] = useState<RecipeCard[]>(restored?.cards ?? []);
@@ -119,7 +122,7 @@ export function useHub(initial: HubFilters) {
   const hasLoadedRef = useRef(restored != null);
   const restoredRef = useRef(restored);
   const failedModeRef = useRef<LoadMode | null>(null);
-  const queryRef = useRef<Query>({ ...initial, diets: [], avoid: EMPTY_HUB_AVOID });
+  const queryRef = useRef<Query>({ ...initial, diets: [], avoid: EMPTY_HUB_AVOID, language });
   const userIdRef = useRef(userId);
   useEffect(() => {
     userIdRef.current = userId;
@@ -158,6 +161,7 @@ export function useHub(initial: HubFilters) {
         platform: query.platform,
         diets: query.diets,
         avoid: query.avoid,
+        language: query.language,
         offset,
         limit,
         includeCount: mode !== "append",
@@ -174,7 +178,7 @@ export function useHub(initial: HubFilters) {
       if (mode === "replace" && hadLoaded) setListEpoch((epoch) => epoch + 1);
       hasLoadedRef.current = true;
       lastView = {
-        key: viewKey(userIdRef.current, query),
+        key: viewKey(userIdRef.current, query, query.language),
         dietKey: query.diets.join(","),
         avoidKey: hubAvoidKey(query.avoid),
         cards: next,
@@ -215,14 +219,15 @@ export function useHub(initial: HubFilters) {
       platform,
       diets: dietKey ? dietKey.split(",") : [],
       avoid,
+      language,
     };
     // Back from a Hub recipe: the kept list is already showing, so only check it again.
     const kept = restoredRef.current;
     restoredRef.current = null;
     const sameAsKept =
-      kept != null && kept.dietKey === dietKey && kept.avoidKey === avoidKey && kept.key === viewKey(userIdRef.current, queryRef.current);
+      kept != null && kept.dietKey === dietKey && kept.avoidKey === avoidKey && kept.key === viewKey(userIdRef.current, queryRef.current, language);
     void run(sameAsKept ? "refresh" : "replace");
-  }, [debouncedSearch, tagKey, sort, platform, dietKey, avoid, avoidKey, kitchenReady, run]);
+  }, [debouncedSearch, tagKey, sort, platform, dietKey, avoid, avoidKey, language, kitchenReady, run]);
 
   useEffect(() => {
     let cancelled = false;

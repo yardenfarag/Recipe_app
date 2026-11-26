@@ -2,6 +2,8 @@ import { supabase } from './client';
 import { sqlNullable } from './dbTypes';
 import { hubAvoidIsEmpty, type HubAvoid } from '../hubAvoid';
 import { isHubPlatform } from '../recipeCardKey';
+import { resolveRecipeSourceLanguage } from '../recipeSourceLanguage';
+import { fetchRecipeCardTitles } from './recipeCardTranslations';
 import type { HubPlatform, RecipeCard } from '../../types/recipeCard';
 
 const PAGE_SIZE = 40;
@@ -21,6 +23,11 @@ export interface FetchHubCardsOptions {
   diets?: string[];
   /** The cook's avoid list (hubAvoidOf): allergies go last, dislikes lower (PIN-180). */
   avoid?: HubAvoid;
+  /**
+   * The app language: cards written in another one get `display_title` from their translation into it (PIN-77).
+   * Search and filters still work on the card as written.
+   */
+  language?: string;
 }
 
 function orNull<T>(list: T[] | undefined): T[] | null {
@@ -90,8 +97,23 @@ export async function fetchHubCards(
 
   const rows = ((rowsResult.data ?? []) as unknown as RecipeCard[]).map(mapCard);
   const hasMore = rows.length > limit;
-  const cards = hasMore ? rows.slice(0, limit) : rows;
+  const page = hasMore ? rows.slice(0, limit) : rows;
+  const cards = options.language ? await withCardTitles(page, options.language) : page;
   return { cards, hasMore, total };
+}
+
+/**
+ * Cards with their titles in `language` where a translation into it exists, in one query. If that query fails the
+ * cards keep their own titles: the list still works.
+ */
+export async function withCardTitles(cards: RecipeCard[], language: string): Promise<RecipeCard[]> {
+  const other = cards.filter((card) => resolveRecipeSourceLanguage(card) !== language);
+  if (other.length === 0) return cards;
+  const titles = await fetchRecipeCardTitles(
+    language,
+    other.map((card) => card.id),
+  ).catch(() => ({}) as Record<string, string>);
+  return cards.map((card) => (titles[card.id] ? { ...card, display_title: titles[card.id] } : card));
 }
 
 /** Total cards for the current filters. Diets and the avoid list only change the order, so they don't count here. */

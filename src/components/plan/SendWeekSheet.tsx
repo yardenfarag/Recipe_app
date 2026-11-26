@@ -2,6 +2,7 @@ import { useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { View } from 'react-native';
 
+import { recipeIngredientsIn } from '@shared/lib/cachedTranslation';
 import { scaleIngredients } from '@shared/lib/ingredientAmounts';
 import { isAtHome } from '@shared/lib/mealPlan/planner';
 import { showToast } from '@shared/lib/toast';
@@ -13,14 +14,17 @@ import { SheetModal } from '@/components/SheetModal';
 import { Button } from '@/components/ui/Button';
 import { Pressable } from '@/components/ui/Pressable';
 import { Text } from '@/components/ui/Text';
+import { useLanguagePreference } from '@/hooks/useLanguagePreference';
 import { useShoppingList } from '@/hooks/useShoppingList';
 import { useThemePreference } from '@/hooks/useThemePreference';
 
-type Line = { key: string; entry: MealPlanEntry; ingredient: Ingredient };
+/** `original`: the ingredient's name in the recipe's own language, when `ingredient` is from a translation. */
+type Line = { key: string; entry: MealPlanEntry; ingredient: Ingredient; original: string | null };
 
 /**
  * "Send to list" on the phone (PIN-77): what the meals still to cook need, at the planned servings, with what is at
- * home left unticked. Leftovers add nothing. Same name and unit stack into one line on the list.
+ * home left unticked. Leftovers add nothing. Same name and unit stack into one line on the list. Names are in the
+ * app language when the recipe has a saved translation into it; what's at home matches either name.
  */
 export function SendWeekSheet({
   visible,
@@ -61,6 +65,7 @@ function Body({
   const { t } = useTranslation();
   const { colors } = useThemePreference();
   const { addFromRecipes } = useShoppingList();
+  const { language } = useLanguagePreference();
   const sections = useMemo(
     () =>
       entries
@@ -69,15 +74,24 @@ function Body({
         .flatMap((entry) => {
           const recipe = recipeFor(entry);
           if (!recipe) return [];
-          const lines: Line[] = scaleIngredients(recipe.ingredients ?? [], recipe.servings, entry.servings)
-            .filter((ingredient) => ingredient.name?.trim())
-            .map((ingredient, index) => ({ key: `${entry.id}:${index}`, entry, ingredient }));
+          const own = recipeIngredientsIn(recipe, language);
+          const originals = recipe.ingredients ?? [];
+          const lines: Line[] = scaleIngredients(own.ingredients, recipe.servings, entry.servings)
+            .map((ingredient, index) => ({
+              key: `${entry.id}:${index}`,
+              entry,
+              ingredient,
+              original: own.translated && originals.length === own.ingredients.length ? originals[index]?.name ?? null : null,
+            }))
+            .filter((line) => line.ingredient.name?.trim());
           return lines.length > 0 ? [{ entry, title: `${dayLabel(entry.date)} · ${t(`plan.meals.${entry.meal}`)} · ${recipe.display_title?.trim() || recipe.title}`, lines }] : [];
         }),
-    [dayLabel, entries, recipeFor, t],
+    [dayLabel, entries, language, recipeFor, t],
   );
   const all = sections.flatMap((section) => section.lines);
-  const [selected, setSelected] = useState<Set<string>>(() => new Set(all.filter((line) => !isAtHome(line.ingredient.name, homeNames)).map((line) => line.key)));
+  const atHome = (line: Line) =>
+    isAtHome(line.ingredient.name, homeNames) || (line.original != null && isAtHome(line.original, homeNames));
+  const [selected, setSelected] = useState<Set<string>>(() => new Set(all.filter((line) => !atHome(line)).map((line) => line.key)));
   const [busy, setBusy] = useState(false);
 
   async function send() {
@@ -151,7 +165,7 @@ function Body({
                   <Text variant="body" tone={on ? 'default' : 'muted'}>
                     {line.ingredient.name}
                   </Text>
-                  {!on && isAtHome(line.ingredient.name, homeNames) ? (
+                  {!on && atHome(line) ? (
                     <Text variant="caption" tone="success" weight="semibold">
                       {t('plan.atHome')}
                     </Text>

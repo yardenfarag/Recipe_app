@@ -27,6 +27,9 @@ export const TASK_MODELS = {
     'openai/gpt-6.1-terra@low',
     'google/gemini-4-hydrogen@low',
     'anthropic/claude-haiku-5.5@low',
+    // 26 Nov 2026 cheaper-model check (eval/translate.ts, results/translate-*-cheap.md).
+    'thinkingmachines/inkling-2-small@low',
+    'qwen/qwen4-max@low',
   ],
   invent: [
     'anthropic/claude-sonnet-5.5@low',

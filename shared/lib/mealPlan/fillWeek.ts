@@ -17,6 +17,7 @@
  * Each filled meal carries one reason to show the cook ("Uses your spinach").
  */
 import { findAvoidMatches, type AllergenKey, type AvoidList } from '../avoidList';
+import { translatedIngredientNames } from '../cachedTranslation';
 import { foodWords, homeCovers } from '../pantry';
 import type { MealKind, PlanAdjust, PlanMeal } from '../../types/mealPlan';
 import { PLAN_MEALS } from '../../types/mealPlan';
@@ -45,6 +46,11 @@ export type PlanCandidate = {
   source: 'library' | 'hub';
   title: string;
   ingredients: string[];
+  /**
+   * The same ingredients in the app language, row for row, when the recipe has a saved translation into it. What's
+   * at home and the links between meals match either name; the avoid list keeps using `ingredients`.
+   */
+  localIngredients?: string[] | null;
   tags: string[];
   minutes: number | null;
   effort: EffortLevel | null;
@@ -64,13 +70,19 @@ function proteinPerServing(nutrition: RecipeNutrition | null, servings: number):
   return nutrition ? nutrition.protein_g / servings : null;
 }
 
-export function candidateFromRecipe(recipe: Recipe): PlanCandidate {
+/** `language`: the app's. A saved translation into it the recipe carries (useRecipes attaches it) adds its names. */
+export function candidateFromRecipe(recipe: Recipe, language?: string): PlanCandidate {
   const servings = recipe.servings > 0 ? recipe.servings : 1;
+  const local = language ? translatedIngredientNames(recipe, language) : null;
+  const rows = (recipe.ingredients ?? [])
+    .map((ing, index) => ({ name: ing.name, local: local?.[index]?.trim() || null }))
+    .filter((row) => row.name?.trim());
   return {
     id: recipe.id,
     source: 'library',
     title: recipe.title,
-    ingredients: (recipe.ingredients ?? []).map((ing) => ing.name).filter((name) => name?.trim()),
+    ingredients: rows.map((row) => row.name),
+    ...(local ? { localIngredients: rows.map((row) => row.local ?? row.name) } : {}),
     tags: recipe.tags ?? [],
     minutes: recipe.estimated_time_minutes ?? null,
     effort: recipe.effort_level ?? null,
@@ -190,8 +202,11 @@ function daysAgo(iso: string | null, now: Date): number | null {
 type Prepared = {
   candidate: PlanCandidate;
   fit: MealFit;
-  /** Ingredient words, without water, salt and other basics. */
-  words: { name: string; key: string; words: string[] }[];
+  /**
+   * Ingredient words, without water, salt and other basics. `name` is the one to show (the app language's when
+   * there is one); `alt` is the recipe's own, when that is a different name.
+   */
+  words: { name: string; key: string; words: string[]; alt: { key: string; words: string[] } | null }[];
   blocked: boolean;
   dislikeHits: number;
   /** Looser diets it is known to miss. */
@@ -228,16 +243,28 @@ function prepare(input: FillInput): Map<string, Prepared> {
         else softMisses += 1;
       }
     }
+    const local =
+      candidate.localIngredients && candidate.localIngredients.length === names.length ? candidate.localIngredients : null;
     const words = names
-      .map((name) => {
-        const list = foodWords(name);
-        return { name, key: list.join(' '), words: list };
+      .map((name, index) => {
+        const own = foodWords(name);
+        const shown = local?.[index]?.trim() || name;
+        const list = shown === name ? own : foodWords(shown);
+        const chosen = list.length > 0 ? list : own;
+        const key = chosen.join(' ');
+        const ownKey = own.join(' ');
+        return {
+          name: list.length > 0 ? shown : name,
+          key,
+          words: chosen,
+          alt: own.length > 0 && ownKey !== key ? { key: ownKey, words: own } : null,
+        };
       })
-      .filter((entry) => entry.words.length > 0 && !BASICS.has(entry.key));
+      .filter((entry) => entry.words.length > 0 && !BASICS.has(entry.key) && !(entry.alt && BASICS.has(entry.alt.key)));
     let have = 0;
     let pantryItem: string | null = null;
     for (const entry of words) {
-      if (home.some((h) => homeCovers(h, entry.words))) {
+      if (home.some((h) => homeCovers(h, entry.words) || (entry.alt != null && homeCovers(h, entry.alt.words)))) {
         have += 1;
         pantryItem ??= entry.name;
       }
@@ -370,7 +397,9 @@ function pick(
   for (const meal of [...week.values()].sort((a, b) => a.date.localeCompare(b.date))) {
     if (meal.leftover) continue;
     for (const entry of prepared.get(meal.candidateId)?.words ?? []) {
-      if (!weekWords.has(entry.key)) weekWords.set(entry.key, { name: entry.name, date: meal.date });
+      for (const key of entry.alt ? [entry.key, entry.alt.key] : [entry.key]) {
+        if (!weekWords.has(key)) weekWords.set(key, { name: entry.name, date: meal.date });
+      }
     }
   }
 
@@ -412,7 +441,7 @@ function pick(
     let shared: { name: string; date: string } | null = null;
     let sharedCount = 0;
     for (const word of entry.words) {
-      const other = weekWords.get(word.key);
+      const other = weekWords.get(word.key) ?? (word.alt ? weekWords.get(word.alt.key) : undefined);
       if (other && other.date !== slot.date) {
         sharedCount += 1;
         shared ??= other;

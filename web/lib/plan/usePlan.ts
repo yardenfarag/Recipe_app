@@ -140,6 +140,7 @@ export function usePlan(week: PlanWeek) {
           diets: kitchen.diets,
           homeNames,
           weekend: weekendFor(language),
+          language,
           defaultServings: kitchen.defaultServings ?? 2,
           hubCards: async () => {
             if (hubPool.current?.key !== hubKey) {

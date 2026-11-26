@@ -38,6 +38,7 @@ export type LlmTaskKind =
   | 'invent_photo'
   | 'invent_video'
   | 'translate'
+  | 'translate_background'
   | 'transform'
   | 'substitution'
   | 'fridge_match'
@@ -72,6 +73,8 @@ const MISTRAL_SMALL = 'mistralai/mistral-small-2603';
 const INKLING_MINI = 'thinkingmachines/inkling-2-mini';
 const GEMINI_FLASH = 'google/gemini-3.5-flash';
 const MUSE_EMBER = 'meta/muse-ember';
+const TERRA = 'openai/gpt-6.1-terra';
+const QWEN_MAX = 'qwen/qwen4-max';
 
 /**
  * Picks from the PIN-44 eval (docs/research/05-llm-per-task.md, "Final model per task"), updated
@@ -105,6 +108,11 @@ export const TASK_MODELS: Record<LlmTaskKind, TaskModelConfig> = {
   // Bake-off: GPT-6.2 Sol ranked best with both judges (first 43% of the time vs 20% for 6.1 Sol),
   // about 30% faster, same price.
   translate: { model: SOL_62, fallbacks: [LUNA], reasoning: 'low' },
+  // PIN-77: every app language made in the background after an extraction, and the translation backfill. Eval of
+  // 26 Nov 2026 (25 cases, Sol and Terra twice, Gemini 3.1 Pro judge): Terra as good as 6.2 Sol (MQM 1.80 vs 1.86,
+  // 90% vs 94% with no major error) at $0.0025 vs $0.0058 a language. Luna's Hebrew was clearly worse. Qwen 4 Max
+  // falls back from another vendor (no call errors, second-best of the cheaper models).
+  translate_background: { model: TERRA, fallbacks: [QWEN_MAX], reasoning: 'low' },
   // Bake-off: 6.1 Sol still ranked first for text prompts, ahead of 6.2 Sol.
   invent_text: { model: SOL, fallbacks: [LUNA], reasoning: 'low' },
   // Bake-off: 30/30 vs Mistral's 29/30, same speed, a third of the price. Its providers are small,

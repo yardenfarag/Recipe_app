@@ -1,0 +1,53 @@
+{
+  "caseId": "he-glossary-baking",
+  "judge": "google/gemini-3.1-pro-preview",
+  "translation": "Title: עוגיית שוקולד צ׳יפס במחבת\nIngredients:\n1. 115 גרם חמאה לא מלוחה, מומסת\n2. 100 גרם סוכר חום בהיר\n3. 1 ביצה גדולה\n4. 190 גרם קמח תופח\n5. 1 כפית סודה לשתייה\n6. 1 כף קורנפלור\n7. 150 גרם שוקולד מריר צ׳יפס\n8. ½ כפית מלח ים בפתיתים\nSteps:\n1. מחממים את התנור ל-180°C.\n2. מקציפים את החמאה המומסת עם הסוכר, ואז מערבבים פנימה את הביצה.\n3. מקפלים פנימה את הקמח, הסודה לשתייה והקורנפלור עד להתערבבות בלבד, ואז מקפלים פנימה את שוקולד הצ׳יפס.\n4. לוחצים את הבלילה למחבת בקוטר 25 ס״מ, מפזרים מעליה את מלח הים בפתיתים ואופים 18–20 דקות, עד שהשוליים מזהיבים והמרכז נשאר רך ולח.",
+  "verdict": {
+    "native_score": 4,
+    "errors": [
+      {
+        "where": "ingredient 7",
+        "category": "grammar",
+        "severity": "minor",
+        "excerpt": "שוקולד מריר צ׳יפס",
+        "fix": "שוקולד צ׳יפס מריר"
+      },
+      {
+        "where": "ingredient 8",
+        "category": "ingredient_term",
+        "severity": "minor",
+        "excerpt": "מלח ים בפתיתים",
+        "fix": "מלח ים אטלנטי"
+      },
+      {
+        "where": "step 2",
+        "category": "cooking_verb",
+        "severity": "minor",
+        "excerpt": "מקציפים",
+        "fix": "טורפים"
+      },
+      {
+        "where": "step 3",
+        "category": "grammar",
+        "severity": "minor",
+        "excerpt": "שוקולד הצ׳יפס",
+        "fix": "השוקולד צ׳יפס"
+      },
+      {
+        "where": "step 4",
+        "category": "cooking_verb",
+        "severity": "minor",
+        "excerpt": "לוחצים",
+        "fix": "מהדקים"
+      },
+      {
+        "where": "step 4",
+        "category": "ingredient_term",
+        "severity": "minor",
+        "excerpt": "מלח הים בפתיתים",
+        "fix": "מלח הים האטלנטי"
+      }
+    ]
+  },
+  "costUsd": 0.015194
+}

@@ -28,6 +28,8 @@ export interface UsageEventInput {
     | 'recipe_diets_backfill'
     /** A Library recipe's diet check when it is saved: an extract with no Hub card, or a written or edited recipe (PIN-77). */
     | 'recipe_diets'
+    /** An extracted recipe translated into every app language in the background, for its Hub card and the cook's copy (PIN-77). */
+    | 'recipe_translations'
     /** The admin backfill of protein, carbs and fat on cards and recipes saved before PIN-80. */
     | 'nutrition_backfill'
     /** The admin redo of cached translations made before TRANSLATION_VERSION (PIN-53). */

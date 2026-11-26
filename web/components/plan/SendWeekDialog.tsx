@@ -3,6 +3,7 @@
 import { useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 
+import { recipeIngredientsIn } from "@shared/lib/cachedTranslation";
 import { resolveCulinaryLanguage } from "@shared/lib/culinaryUnits";
 import { scaleIngredients } from "@shared/lib/ingredientAmounts";
 import { resolveRecipeSourceLanguage } from "@shared/lib/recipeSourceLanguage";
@@ -24,7 +25,8 @@ import { useUnitSystem } from "@/lib/recipe/useUnitSystem";
 
 /**
  * "Send to list": the ingredients of every meal still to cook, at the servings planned, with what is at home left
- * unticked. Leftovers add nothing. The same ingredient from two recipes stacks into one line on the list.
+ * unticked. Leftovers add nothing. The same ingredient from two recipes stacks into one line on the list. Names are
+ * in the app language when the recipe has a saved translation into it.
  */
 export function SendWeekDialog({
   open,
@@ -74,10 +76,12 @@ function Body({
         .flatMap((entry) => {
           const recipe = recipeFor(entry);
           if (!recipe) return [];
-          const ingredients = scaleIngredients(recipe.ingredients ?? [], recipe.servings, entry.servings);
+          // In the app language when the recipe has a saved translation into it (useRecipes brings it along).
+          const own = recipeIngredientsIn(recipe, language);
+          const ingredients = scaleIngredients(own.ingredients, recipe.servings, entry.servings);
           const choices = ingredientChoices(ingredients, {
             system,
-            unitLanguage: resolveCulinaryLanguage(resolveRecipeSourceLanguage(recipe), language),
+            unitLanguage: resolveCulinaryLanguage(own.translated ? language : resolveRecipeSourceLanguage(recipe), language),
             recipeId: recipe.id,
             keyPrefix: entry.id,
             units,

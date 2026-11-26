@@ -51,7 +51,7 @@ function Body({ recipe, title, onDone }: { recipe: Recipe; title: string; onDone
     if (!userId) return;
     let cancelled = false;
     void Promise.all([
-      fetchMealPlanWithTitles(days[0], days[6]).catch(() => [] as Planned[]),
+      fetchMealPlanWithTitles(days[0], days[6], language).catch(() => [] as Planned[]),
       fetchMealPlanPrefs(userId).catch(() => null),
       fetchCloudKitchenProfile(userId).catch(() => null),
     ]).then(([rows, prefs, kitchen]) => {
@@ -63,7 +63,7 @@ function Body({ recipe, title, onDone }: { recipe: Recipe; title: string; onDone
     return () => {
       cancelled = true;
     };
-  }, [days, userId]);
+  }, [days, language, userId]);
 
   const weekday = useMemo(() => new Intl.DateTimeFormat(language, { weekday: "short" }), [language]);
   const dayLabel = (day: string) => {

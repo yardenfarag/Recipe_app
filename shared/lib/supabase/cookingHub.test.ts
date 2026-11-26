@@ -1,6 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
-import { fetchHubCards } from './cookingHub';
+import { fetchHubCards, withCardTitles } from './cookingHub';
 
 const mocks = vi.hoisted(() => {
   const countQuery = {
@@ -22,8 +22,11 @@ vi.mock('./client', () => ({
   supabase: { from: mocks.from, rpc: mocks.rpc },
 }));
 
-function card(id: string) {
-  return { id, title: id, ingredients: [], instructions: [], tags: [], save_count: 0, extract_hit_count: 0 };
+const titles = vi.hoisted(() => ({ fetchRecipeCardTitles: vi.fn() }));
+vi.mock('./recipeCardTranslations', () => titles);
+
+function card(id: string, source_language = 'en') {
+  return { id, title: id, ingredients: [], instructions: [], tags: [], save_count: 0, extract_hit_count: 0, source_language };
 }
 
 beforeEach(() => {
@@ -113,5 +116,33 @@ describe('fetchHubCards', () => {
   it('throws when hub_cards_for_cook fails', async () => {
     mocks.rpc.mockResolvedValue({ data: null, error: new Error('boom') });
     await expect(fetchHubCards()).rejects.toThrow('boom');
+  });
+});
+
+describe('Hub card titles in the app language (PIN-77)', () => {
+  it('gives cards written in another language their translated title, in one query', async () => {
+    mocks.rpc.mockResolvedValue({ data: [card('a'), { ...card('b', 'he'), title: 'שקשוקה' }, card('c')], error: null });
+    titles.fetchRecipeCardTitles.mockResolvedValue({ a: 'מרק' });
+    const result = await fetchHubCards({ language: 'he', limit: 40 });
+    expect(titles.fetchRecipeCardTitles).toHaveBeenCalledTimes(1);
+    expect(titles.fetchRecipeCardTitles).toHaveBeenCalledWith('he', ['a', 'c']);
+    expect(result.cards.map((c) => c.display_title)).toEqual(['מרק', undefined, undefined]);
+    // The card as written stays: search and saving use it.
+    expect(result.cards[0].title).toBe('a');
+  });
+
+  it('asks nothing without a language, or when every card is in it', async () => {
+    await fetchHubCards();
+    expect(titles.fetchRecipeCardTitles).not.toHaveBeenCalled();
+    const cards = [{ ...card('a', 'he'), title: 'שקשוקה' }] as never[];
+    expect(await withCardTitles(cards, 'he')).toBe(cards);
+    expect(titles.fetchRecipeCardTitles).not.toHaveBeenCalled();
+  });
+
+  it('keeps the cards own titles when the titles cannot be read', async () => {
+    titles.fetchRecipeCardTitles.mockRejectedValue(new Error('offline'));
+    const result = await fetchHubCards({ language: 'he' });
+    expect(result.cards.length).toBeGreaterThan(0);
+    expect(result.cards.every((c) => c.display_title === undefined)).toBe(true);
   });
 });

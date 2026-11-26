@@ -1,0 +1,46 @@
+{
+  "caseId": "he-from-fr",
+  "judge": "google/gemini-3.1-pro-preview",
+  "translation": "Title: בראוניז אקספרס\nIngredients:\n1. 1 כף שמן\n2. 1 קמצוץ מלח\n3. 2 כפיות סוכר וניל\n4. 1 שקית אבקת אפייה\n5. 3 ביצים\n6. 100 גרם שוקולד מריר\n7. לפי הטעם אגוזי לוז קצוצים\nSteps:\n1. מפשירים את השוקולד המריר עם השמן בתוך אמבט מים חמים.\n2. מקציפים את הביצים עם סוכר וניל ומלח, ואז מערבבים פנימה את השוקולד המומס.\n3. מוסיפים את אבקת האפייה, שופכים לתבנית ומפזרים מעל אגוזי לוז קצוצים.\n4. אופים 20 דקות בחום של 180°C.",
+  "verdict": {
+    "native_score": 3,
+    "errors": [
+      {
+        "where": "ingredient 2",
+        "category": "ingredient_term",
+        "severity": "minor",
+        "excerpt": "קמצוץ",
+        "fix": "קורט"
+      },
+      {
+        "where": "ingredient 7",
+        "category": "grammar",
+        "severity": "minor",
+        "excerpt": "לפי הטעם אגוזי לוז קצוצים",
+        "fix": "אגוזי לוז קצוצים, לפי הטעם"
+      },
+      {
+        "where": "step 1",
+        "category": "cooking_verb",
+        "severity": "major",
+        "excerpt": "מפשירים",
+        "fix": "ממיסים"
+      },
+      {
+        "where": "step 1",
+        "category": "ingredient_term",
+        "severity": "minor",
+        "excerpt": "בתוך אמבט מים חמים",
+        "fix": "בבן מארי (או קערה מעל סיר מים רותחים)"
+      },
+      {
+        "where": "step 3",
+        "category": "cooking_verb",
+        "severity": "minor",
+        "excerpt": "שופכים",
+        "fix": "יוצקים"
+      }
+    ]
+  },
+  "costUsd": 0.014622
+}

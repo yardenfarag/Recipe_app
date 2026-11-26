@@ -4,6 +4,7 @@ import { CalendarDays, ShoppingCart, Sparkles } from "lucide-react";
 import { useCallback, useMemo, useState, useSyncExternalStore, type ReactNode } from "react";
 import { useTranslation } from "react-i18next";
 
+import { translatedIngredientNames } from "@shared/lib/cachedTranslation";
 import { planningWeeks, plannableDays, toPlanDate, weekStartFor, defaultPlanWeek, isPlannableWeek } from "@shared/lib/mealPlan/week";
 import { showToast } from "@shared/lib/toast";
 import { PLAN_MEALS, type MealPlanEntry, type PlanMeal } from "@shared/types/mealPlan";
@@ -105,7 +106,7 @@ export function PlanPage() {
     const readOnly = !editable || day < today;
     let have: string | null = null;
     if (recipe && entry && !entry.leftoverOf && plan.homeNames.length > 0) {
-      const count = haveCount((recipe.ingredients ?? []).map((ing) => ing.name), plan.homeNames);
+      const count = haveCount((recipe.ingredients ?? []).map((ing) => ing.name), plan.homeNames, translatedIngredientNames(recipe, language));
       // "You have 0 of 3" says nothing; only what is at home is worth a line.
       if (count.total > 0 && count.have > 0) have = count.have === count.total ? t("plan.haveAll") : t("plan.have", count);
     }

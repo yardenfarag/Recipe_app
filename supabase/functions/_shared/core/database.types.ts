@@ -1338,6 +1338,44 @@ export type Database = {
           },
         ]
       }
+      recipe_card_translations: {
+        Row: {
+          card_id: string
+          created_at: string
+          ingredients: Json
+          instructions: Json
+          language_code: string
+          title: string
+          translation_version: number
+        }
+        Insert: {
+          card_id: string
+          created_at?: string
+          ingredients?: Json
+          instructions?: Json
+          language_code: string
+          title: string
+          translation_version: number
+        }
+        Update: {
+          card_id?: string
+          created_at?: string
+          ingredients?: Json
+          instructions?: Json
+          language_code?: string
+          title?: string
+          translation_version?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "recipe_card_translations_card_id_fkey"
+            columns: ["card_id"]
+            isOneToOne: false
+            referencedRelation: "recipe_cards"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       recipe_cards: {
         Row: {
           appliances: Json | null
@@ -1627,6 +1665,47 @@ export type Database = {
             columns: ["recipe_id"]
             isOneToOne: false
             referencedRelation: "recipes"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      recipe_translations_pending: {
+        Row: {
+          content_key: string
+          created_at: string
+          ingredients: Json
+          instructions: Json
+          language_code: string
+          title: string
+          translation_version: number
+          user_id: string
+        }
+        Insert: {
+          content_key: string
+          created_at?: string
+          ingredients?: Json
+          instructions?: Json
+          language_code: string
+          title: string
+          translation_version: number
+          user_id: string
+        }
+        Update: {
+          content_key?: string
+          created_at?: string
+          ingredients?: Json
+          instructions?: Json
+          language_code?: string
+          title?: string
+          translation_version?: number
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "recipe_translations_pending_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
             referencedColumns: ["id"]
           },
         ]
@@ -2085,6 +2164,13 @@ export type Database = {
         Returns: string[]
       }
       compare_app_versions: { Args: { a: string; b: string }; Returns: number }
+      copy_card_translations_to_recipes: {
+        Args: { p_recipe_ids: string[] }
+        Returns: {
+          language_code: string
+          recipe_id: string
+        }[]
+      }
       email_cron_secret_matches: {
         Args: { p_secret: string }
         Returns: boolean
@@ -2438,6 +2524,10 @@ export type Database = {
         Args: { p_id: string; p_title: string }
         Returns: string
       }
+      recipe_content_key: {
+        Args: { p_ingredients: Json; p_instructions: Json; p_title: string }
+        Returns: string
+      }
       recipe_ingredient_key: { Args: { p_ingredients: Json }; Returns: string }
       recipe_ingredients_within_limits: {
         Args: { p_items: Json; p_require_one: boolean }
@@ -2506,6 +2596,16 @@ export type Database = {
       }
       remember_recipe_diets: {
         Args: { p_diets: string[]; p_ingredients: Json; p_user_id: string }
+        Returns: number
+      }
+      remember_recipe_translations: {
+        Args: {
+          p_ingredients: Json
+          p_instructions: Json
+          p_title: string
+          p_translations: Json
+          p_user_id: string
+        }
         Returns: number
       }
       remove_household_member: { Args: { p_user_id: string }; Returns: Json }

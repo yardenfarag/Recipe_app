@@ -1,0 +1,32 @@
+{
+  "caseId": "he-from-tr",
+  "judge": "google/gemini-3.1-pro-preview",
+  "translation": "Title: חביתת תפוחי אדמה במחבת\nIngredients:\n1. 1 תפוח אדמה גדול\n2. ½ כפית מלח\n3. 1 כף שמן\n4. 2 ביצים\n5. 1 קמצוץ פלפל שחור\n6. 50 גרם גבינת קשאר מגוררת\nSteps:\n1. מגררים את תפוח האדמה וסוחטים ממנו את הנוזלים.\n2. מוסיפים את השמן למחבת, מפזרים בה את תפוח האדמה ומהדקים בעזרת מרית.\n3. שוברים את הביצים מעל, ומפזרים מלח ופלפל שחור.\n4. מוסיפים את גבינת הקשאר, סוגרים את המכסה ומבשלים 5 דקות.",
+  "verdict": {
+    "native_score": 4,
+    "errors": [
+      {
+        "where": "ingredient 5",
+        "category": "ingredient_term",
+        "severity": "minor",
+        "excerpt": "קמצוץ",
+        "fix": "קורט"
+      },
+      {
+        "where": "ingredient 6",
+        "category": "ingredient_term",
+        "severity": "minor",
+        "excerpt": "קשאר",
+        "fix": "קשקבל"
+      },
+      {
+        "where": "step 4",
+        "category": "ingredient_term",
+        "severity": "minor",
+        "excerpt": "הקשאר",
+        "fix": "הקשקבל"
+      }
+    ]
+  },
+  "costUsd": 0.010754
+}

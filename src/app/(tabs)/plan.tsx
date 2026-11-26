@@ -3,6 +3,7 @@ import { useCallback, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { ActivityIndicator, RefreshControl, ScrollView, View } from 'react-native';
 
+import { translatedIngredientNames } from '@shared/lib/cachedTranslation';
 import { reasonKeyText } from '@shared/lib/mealPlan/reasonText';
 import { haveCount, slotKey } from '@shared/lib/mealPlan/planner';
 import { defaultPlanWeek, isPlannableWeek, parsePlanDate, planningWeeks, plannableDays, toPlanDate, weekStartFor } from '@shared/lib/mealPlan/week';
@@ -186,7 +187,7 @@ export default function PlanScreen() {
                   const recipe = entry ? plan.recipeFor(entry) : null;
                   let have: string | null = null;
                   if (recipe && entry && !entry.leftoverOf && plan.homeNames.length > 0) {
-                    const count = haveCount((recipe.ingredients ?? []).map((ing) => ing.name), plan.homeNames);
+                    const count = haveCount((recipe.ingredients ?? []).map((ing) => ing.name), plan.homeNames, translatedIngredientNames(recipe, language));
                     if (count.total > 0 && count.have > 0) have = count.have === count.total ? t('plan.haveAll') : t('plan.have', count);
                   }
                   const source = entry?.leftoverOf ? entries.find((row) => row.id === entry.leftoverOf) : null;

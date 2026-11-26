@@ -53,7 +53,7 @@ function Body({ recipeId, recipeServings, title, onDone }: { recipeId: string; r
     if (!userId) return;
     let active = true;
     void Promise.all([
-      fetchMealPlanWithTitles(days[0], days[6]).catch(() => [] as Planned[]),
+      fetchMealPlanWithTitles(days[0], days[6], language).catch(() => [] as Planned[]),
       fetchMealPlanPrefs(userId).catch(() => null),
       fetchCloudKitchenProfile(userId).catch(() => null),
     ]).then(([rows, prefs, kitchen]) => {
@@ -65,7 +65,7 @@ function Body({ recipeId, recipeServings, title, onDone }: { recipeId: string; r
     return () => {
       active = false;
     };
-  }, [days, userId]);
+  }, [days, language, userId]);
 
   const weekday = useMemo(() => new Intl.DateTimeFormat(language, { weekday: 'short' }), [language]);
   const dayLabel = (day: string) => (day === today ? t('plan.today') : `${weekday.format(parsePlanDate(day))} ${parsePlanDate(day).getDate()}`);
@@ -77,7 +77,7 @@ function Body({ recipeId, recipeServings, title, onDone }: { recipeId: string; r
     setBusy(true);
     try {
       await replacePlanMeal(userId, { date: picked.date, meal: picked.meal, recipeId, servings }, replacing);
-      void scheduleMealReminders(userId, t, pantry ?? []);
+      void scheduleMealReminders(userId, t, pantry ?? [], language);
       showToast(t('plan.add.done'));
       onDone();
     } catch {

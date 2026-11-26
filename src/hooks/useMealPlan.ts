@@ -111,8 +111,8 @@ export function useMealPlan(week: PlanWeek) {
 
   // The phone's reminders for today and tomorrow, scheduled again whenever the plan changes.
   useEffect(() => {
-    if (entries && userId) void scheduleMealReminders(userId, t, pantryItems ?? []);
-  }, [entries, pantryItems, t, userId]);
+    if (entries && userId) void scheduleMealReminders(userId, t, pantryItems ?? [], language);
+  }, [entries, language, pantryItems, t, userId]);
 
   const libraryStatus = useCallback(
     (meals: PlanMeal[]): LibraryOnlyStatus => libraryStatusFor(recipes, avoid, diets, meals),
@@ -145,6 +145,7 @@ export function useMealPlan(week: PlanWeek) {
           diets: kitchen.diets,
           homeNames,
           weekend: weekendFor(language),
+          language,
           defaultServings: kitchen.defaultServings ?? 2,
           hubCards: async () => {
             if (hubPool.current?.key !== hubKey) {

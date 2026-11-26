@@ -1,0 +1,39 @@
+{
+  "caseId": "ar-from-he",
+  "judge": "google/gemini-3.1-pro-preview",
+  "translation": "Title: شكشوكة\nIngredients:\n1. 1 بصل مفروم\n2. 2 فلفل أحمر\n3. 4 فصوص ثوم\n4. 800 غ طماطم مهروسة\n5. 1 ملعقة صغيرة بابريكا حلوة\n6. ½ ملعقة صغيرة كمون\n7. 4 بيض\n8. 1 رشة ملح\nSteps:\n1. سخّن الزيت في مقلاة واسعة واقلِ البصل والفلفل الأحمر حتى يطرى.\n2. أضف الثوم والتوابل وقلّب لمدة دقيقة.\n3. أضف الطماطم واطبخ على نار هادئة لمدة 15 دقيقة.\n4. اكسر البيض في الصلصة، ثم غطِّ المقلاة واطبخ لمدة 5–7 دقائق، حتى يتماسك بياض البيض.",
+  "verdict": {
+    "native_score": 4,
+    "errors": [
+      {
+        "where": "ingredient 1",
+        "category": "grammar",
+        "severity": "minor",
+        "excerpt": "1 بصل مفروم",
+        "fix": "1 بصلة مفرومة"
+      },
+      {
+        "where": "ingredient 2",
+        "category": "grammar",
+        "severity": "minor",
+        "excerpt": "2 فلفل أحمر",
+        "fix": "2 حبة فلفل أحمر"
+      },
+      {
+        "where": "ingredient 7",
+        "category": "grammar",
+        "severity": "minor",
+        "excerpt": "4 بيض",
+        "fix": "4 بيضات"
+      },
+      {
+        "where": "step 1",
+        "category": "grammar",
+        "severity": "minor",
+        "excerpt": "حتى يطرى",
+        "fix": "حتى تذبل"
+      }
+    ]
+  },
+  "costUsd": 0.01053
+}

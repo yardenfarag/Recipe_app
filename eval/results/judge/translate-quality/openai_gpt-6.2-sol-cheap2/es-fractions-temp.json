@@ -1,0 +1,60 @@
+{
+  "caseId": "es-fractions-temp",
+  "judge": "google/gemini-3.1-pro-preview",
+  "translation": "Title: Magdalenas de arándanos\nIngredients:\n1. ½ taza leche\n2. ½ cdta sal\n3. 2 tazas harina de trigo\n4. 1 cda levadura química\n5. ¾ taza azúcar\n6. 1 taza arándanos frescos\n7. ⅓ taza aceite vegetal\n8. 1 huevo\nSteps:\n1. Precalienta el horno a 200°C y coloca cápsulas de papel en un molde para 12 magdalenas.\n2. Mezcla con unas varillas la harina de trigo, el azúcar, la levadura química y la sal.\n3. Añade la leche, el aceite vegetal y el huevo y mezcla. A continuación, incorpora los arándanos con movimientos envolventes suaves.\n4. Hornea durante 20–25 minutos.",
+  "verdict": {
+    "native_score": 4,
+    "errors": [
+      {
+        "where": "ingredient 1",
+        "category": "grammar",
+        "severity": "minor",
+        "excerpt": "½ taza leche",
+        "fix": "½ taza de leche"
+      },
+      {
+        "where": "ingredient 2",
+        "category": "grammar",
+        "severity": "minor",
+        "excerpt": "½ cdta sal",
+        "fix": "½ cdta de sal"
+      },
+      {
+        "where": "ingredient 3",
+        "category": "grammar",
+        "severity": "minor",
+        "excerpt": "2 tazas harina de trigo",
+        "fix": "2 tazas de harina de trigo"
+      },
+      {
+        "where": "ingredient 4",
+        "category": "grammar",
+        "severity": "minor",
+        "excerpt": "1 cda levadura química",
+        "fix": "1 cda de levadura química"
+      },
+      {
+        "where": "ingredient 5",
+        "category": "grammar",
+        "severity": "minor",
+        "excerpt": "¾ taza azúcar",
+        "fix": "¾ taza de azúcar"
+      },
+      {
+        "where": "ingredient 6",
+        "category": "grammar",
+        "severity": "minor",
+        "excerpt": "1 taza arándanos frescos",
+        "fix": "1 taza de arándanos frescos"
+      },
+      {
+        "where": "ingredient 7",
+        "category": "grammar",
+        "severity": "minor",
+        "excerpt": "⅓ taza aceite vegetal",
+        "fix": "⅓ taza de aceite vegetal"
+      }
+    ]
+  },
+  "costUsd": 0.01164
+}

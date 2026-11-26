@@ -170,8 +170,12 @@ export function isTranslateLanguageCode(value: string): value is TranslateLangua
   return (TRANSLATE_LANGUAGE_CODES as readonly string[]).includes(value);
 }
 
+/** `translate` when a cook waits for it (translate-recipe); `translate_background` when nobody does (PIN-77). */
+export type TranslateTaskKind = 'translate' | 'translate_background';
+
 export async function translateRecipeWithLlm(
   input: TranslateRecipeInput,
+  options: { kind?: TranslateTaskKind } = {},
 ): Promise<TranslatedRecipe> {
   const targetName = LANGUAGE_NAMES[input.targetLanguage];
   const text = buildTextContext(input, targetName);
@@ -182,7 +186,7 @@ export async function translateRecipeWithLlm(
     responseSchema: TRANSLATE_SCHEMA,
     timeoutMs: REQUEST_TIMEOUT_MS,
     maxOutputTokens: MAX_OUTPUT_TOKENS,
-    kind: 'translate',
+    kind: options.kind ?? 'translate',
     context: 'translateRecipe.ts: translateRecipeWithLlm',
   });
 

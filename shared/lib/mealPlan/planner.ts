@@ -101,17 +101,28 @@ export function mealsToSave(
   });
 }
 
-/** How much of a recipe is at home: ingredients covered, out of those counted (not water and salt). */
-export function haveCount(ingredientNames: string[], homeNames: string[]): { have: number; total: number } {
+/**
+ * How much of a recipe is at home: ingredients covered, out of those counted (not water and salt). `otherNames` are
+ * the same ingredients in another language, row for row (a saved translation, translatedIngredientNames): an
+ * ingredient is at home when either name is.
+ */
+export function haveCount(
+  ingredientNames: string[],
+  homeNames: string[],
+  otherNames?: string[] | null,
+): { have: number; total: number } {
   const home = homeNames.map(foodWords).filter((words) => words.length > 0);
+  const other = otherNames && otherNames.length === ingredientNames.length ? otherNames : null;
+  const basic = (words: string[]) => ['water', 'salt'].includes(words.join(' '));
   let have = 0;
   let total = 0;
-  for (const name of ingredientNames) {
+  ingredientNames.forEach((name, index) => {
     const words = foodWords(name);
-    if (words.length === 0 || ['water', 'salt'].includes(words.join(' '))) continue;
+    const alt = other?.[index] ? foodWords(other[index]) : [];
+    if ((words.length === 0 && alt.length === 0) || basic(words) || basic(alt)) return;
     total += 1;
-    if (home.some((h) => homeCovers(h, words))) have += 1;
-  }
+    if (home.some((h) => homeCovers(h, words) || homeCovers(h, alt))) have += 1;
+  });
   return { have, total };
 }
 
@@ -123,7 +134,7 @@ export function isAtHome(name: string, homeNames: string[]): boolean {
 
 /** Can the Library carry these meals alone? (the 14-recipe rule, and the meals it is short on) */
 export function libraryStatusFor(recipes: Recipe[], avoid: AvoidList, diets: string[], meals: PlanMeal[]): LibraryOnlyStatus {
-  return libraryOnlyStatus(recipes.map(candidateFromRecipe), avoid, diets, [...new Set(meals.map(mealKindOf))] as MealKind[]);
+  return libraryOnlyStatus(recipes.map((recipe) => candidateFromRecipe(recipe)), avoid, diets, [...new Set(meals.map(mealKindOf))] as MealKind[]);
 }
 
 export type FillRequest = {
@@ -146,6 +157,8 @@ export type FillContext = {
   defaultServings: number;
   /** Hub cards to choose from, asked for only when the Hub is used. */
   hubCards: () => Promise<RecipeCard[]>;
+  /** The app language: recipes' saved translations into it count when matching what is at home. */
+  language?: string;
 };
 
 export type FillOutcome = {
@@ -170,7 +183,7 @@ export async function fillAndSavePlan(
   const status = libraryStatusFor(context.recipes, context.avoid, context.diets, request.meals);
   const useHub = request.useHub || !status.allowed;
   const hubFor = status.thinMeals;
-  const library: PlanCandidate[] = context.recipes.map(candidateFromRecipe);
+  const library: PlanCandidate[] = context.recipes.map((recipe) => candidateFromRecipe(recipe, context.language));
   const hub = useHub || hubFor.length > 0 ? hubCardsNotInLibrary(await context.hubCards(), context.recipes).map(candidateFromCard) : [];
   const candidates = [...library, ...hub].filter((candidate) => !exclude.includes(candidate.id));
 
