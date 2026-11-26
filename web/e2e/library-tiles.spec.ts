@@ -26,11 +26,11 @@ async function openLibrary(page: Page, recipes: SeedRecipe[] = KITCHEN) {
   await resetLibrary(recipes);
   await page.goto("/app/auth?mode=signin");
   await signInWithPassword(page, TEST_USER.email, TEST_USER.password);
-  await expect(page.locator("#main h1")).toBeVisible();
+  await expect(page.locator("#main h1:visible")).toBeVisible();
 }
 
 const pick = (page: Page) => page.getByTestId("tonights-pick");
-const cards = (page: Page) => page.locator("#main article");
+const cards = (page: Page) => page.locator("#main article:visible");
 
 test("tonight's pick is a new, quick recipe that hasn't been cooked, and stays the same after a reload", async ({ page }) => {
   await openLibrary(page);
@@ -63,7 +63,7 @@ test("the pick says where it was saved from, and the photo opens the recipe", as
   await expect(pick(page).getByRole("button", { name: "Show me another" })).toHaveCount(0);
   await pick(page).getByRole("link", { name: "Open the recipe" }).click();
   await expect(page).toHaveURL(/\/app\/recipe\/[0-9a-f-]{36}$/);
-  await expect(page.locator("#main h1")).toHaveText("Miso Soup");
+  await expect(page.locator("#main h1:visible")).toHaveText("Miso Soup");
 });
 
 test("cooked this week counts what was cooked in the last seven days", async ({ page }) => {
@@ -118,7 +118,7 @@ test("the list tile shows what is left and ticks items off", async ({ page }) =>
 
 test("Ctrl+K puts the cursor in the Snap bar, and the credit balance sits beside it", async ({ page }) => {
   await openLibrary(page);
-  await page.locator("#main h1").click();
+  await page.locator("#main h1:visible").click();
   await page.keyboard.press("Control+k");
   await expect(page.getByRole("searchbox", { name: "Snap a recipe or search yours" })).toBeFocused();
   await expect(page.locator("#main").getByRole("link", { name: /credits available$/ })).toHaveAttribute("href", "/app/settings/credits");
@@ -127,7 +127,7 @@ test("Ctrl+K puts the cursor in the Snap bar, and the credit balance sits beside
 test("away from the Library, Ctrl+K opens the Snap bar, and a search lands in the Library", async ({ page }) => {
   await openLibrary(page);
   await page.goto("/app/list");
-  await expect(page.locator("#main h1")).toBeVisible();
+  await expect(page.locator("#main h1:visible")).toBeVisible();
   await page.keyboard.press("Control+k");
   const dialog = page.getByRole("dialog", { name: "Snap or search" });
   await dialog.getByRole("searchbox").fill("pasta");

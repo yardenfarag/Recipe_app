@@ -1,4 +1,4 @@
-import { afterEach, beforeEach, describe, expect, it } from "vitest";
+import { beforeEach, describe, expect, it } from "vitest";
 
 import type { Recipe } from "@shared/types/recipe";
 
@@ -8,8 +8,6 @@ import {
   patchLibrary,
   readCollections,
   readLibrary,
-  rememberedLibraryScroll,
-  rememberLibraryScroll,
   removeFromLibrary,
   writeCollections,
   writeLibrary,
@@ -18,17 +16,8 @@ import {
 const recipe = (id: string, extra: Partial<Recipe> = {}) => ({ id, title: id, is_favorite: false, ...extra }) as Recipe;
 const KEY = libraryKey("u1", "en", 40);
 
-/** Pretends the browser is on a history entry (the Navigation API's `currentEntry`). */
-function onHistoryEntry(key: string | null) {
-  Object.defineProperty(window, "navigation", {
-    configurable: true,
-    value: key ? { currentEntry: { key } } : undefined,
-  });
-}
-
 describe("the Library's memory", () => {
   beforeEach(() => forgetLibrary());
-  afterEach(() => onHistoryEntry(null));
 
   it("gives back what was kept for the same account, language and page size only", () => {
     writeLibrary({ key: KEY, recipes: [recipe("a")], total: 1, loaded: 1 });
@@ -59,30 +48,10 @@ describe("the Library's memory", () => {
   });
 
   it("forgets everything on sign-out", () => {
-    onHistoryEntry("entry-1");
     writeLibrary({ key: KEY, recipes: [recipe("a")], total: 1, loaded: 1 });
     writeCollections("u1", []);
-    rememberLibraryScroll(500);
     forgetLibrary();
     expect(readLibrary(KEY)).toBeNull();
     expect(readCollections("u1")).toBeNull();
-    expect(rememberedLibraryScroll()).toBeNull();
-  });
-
-  it("remembers the scroll position per history entry, so only Back and Forward return to it", () => {
-    onHistoryEntry("entry-1");
-    rememberLibraryScroll(1200);
-    expect(rememberedLibraryScroll()).toBe(1200);
-    // A link to the Library is a new entry: it opens at the top.
-    onHistoryEntry("entry-2");
-    expect(rememberedLibraryScroll()).toBeNull();
-    onHistoryEntry("entry-1");
-    expect(rememberedLibraryScroll()).toBe(1200);
-  });
-
-  it("restores nothing in a browser without the Navigation API", () => {
-    onHistoryEntry(null);
-    rememberLibraryScroll(800);
-    expect(rememberedLibraryScroll()).toBeNull();
   });
 });

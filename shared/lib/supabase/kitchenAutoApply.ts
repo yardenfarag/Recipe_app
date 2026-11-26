@@ -1,5 +1,6 @@
 import { kitchenInstruction } from '../kitchenProfile';
 import { recipeIsInvented } from '../recipeOrigin';
+import { resolveRecipeSourceLanguage } from '../recipeSourceLanguage';
 import type { ExtractedRecipe } from '../../types/recipe';
 import { fetchCloudKitchenProfile } from './kitchen';
 import { transformRecipe } from './transformRecipe';
@@ -54,6 +55,8 @@ export async function applyKitchenOnExtract(
           calories: recipe.calories,
           nutrition: recipe.nutrition ?? null,
           appliances: recipe.appliances,
+          // PIN-188: Revert saves the text back in this language, even after a swap on a translation changed the recipe's.
+          language: resolveRecipeSourceLanguage(recipe),
         },
       },
     };

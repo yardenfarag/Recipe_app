@@ -11,7 +11,7 @@ test.afterEach(async () => {
 test.beforeEach(async ({ page }) => {
   await page.goto("/app/auth?mode=signin");
   await signInWithPassword(page, TEST_USER.email, TEST_USER.password);
-  await expect(page.locator("#main h1")).toBeVisible();
+  await expect(page.locator("#main h1:visible")).toBeVisible();
 });
 
 test.describe("desktop", () => {
@@ -41,7 +41,7 @@ test.describe("desktop", () => {
 
   test("the whole shell works from the keyboard", async ({ page }) => {
     await page.goto("/app/hub");
-    await expect(page.locator("#main h1")).toBeVisible();
+    await expect(page.locator("#main h1:visible")).toBeVisible();
 
     // The first Tab reaches the skip link, which jumps past the navigation.
     await page.keyboard.press("Tab");
@@ -51,7 +51,7 @@ test.describe("desktop", () => {
 
     // Tab order follows the rail: logo, Library, Hub, Snap, List.
     await page.goto("/app/hub");
-    await expect(page.locator("#main h1")).toBeVisible();
+    await expect(page.locator("#main h1:visible")).toBeVisible();
     await page.keyboard.press("Tab"); // skip link
     await page.keyboard.press("Tab"); // logo
     await page.keyboard.press("Tab");
@@ -102,12 +102,12 @@ test.describe("desktop", () => {
     await page.getByRole("menuitemradio", { name: "עברית" }).focus();
     await page.keyboard.press("Enter");
     await expect(page.locator("html")).toHaveAttribute("dir", "rtl");
-    await expect(page.locator("#main h1")).toHaveText("המתכונים שלכם");
+    await expect(page.locator("#main h1:visible")).toHaveText("המתכונים שלכם");
 
     await page.reload();
     await expect(page.locator("html")).toHaveAttribute("data-pack", "dracula");
     await expect(page.locator("html")).toHaveAttribute("dir", "rtl");
-    await expect(page.locator("#main h1")).toHaveText("המתכונים שלכם");
+    await expect(page.locator("#main h1:visible")).toHaveText("המתכונים שלכם");
 
   });
 });
@@ -121,7 +121,7 @@ test.describe("phone", () => {
     await bar.getByRole("link", { name: "Snap" }).tap();
     await expect(page).toHaveURL(/\/app\/add$/);
     await bar.getByRole("link", { name: "List" }).tap();
-    await expect(page.locator("#main h1")).toHaveText("List");
+    await expect(page.locator("#main h1:visible")).toHaveText("List");
     await expect(bar.getByRole("link", { name: "List" })).toHaveAttribute("aria-current", "page");
   });
 });

@@ -40,9 +40,9 @@ async function openRecipe(page: Page, recipes: SeedRecipe[]) {
   const ids = await resetLibrary(recipes);
   await page.goto("/app/auth?mode=signin");
   await signInWithPassword(page, TEST_USER.email, TEST_USER.password);
-  await expect(page.locator("#main h1")).toBeVisible();
+  await expect(page.locator("#main h1:visible")).toBeVisible();
   await page.goto(`/app/recipe/${ids[0]}`);
-  await expect(page.locator("#main h1")).toHaveText(recipes[0].title);
+  await expect(page.locator("#main h1:visible")).toHaveText(recipes[0].title);
   return ids;
 }
 
@@ -153,18 +153,18 @@ test("translate into Hebrew, then show the original again", async ({ page }) => 
   await openRecipe(page, [PANCAKES]);
   await actionBar(page).getByRole("button", { name: "Translate" }).click();
   await page.getByRole("dialog", { name: "Translate recipe" }).getByRole("button", { name: /^עברית/ }).click();
-  await expect(page.locator("#main h1")).toHaveText("פנקייק אוורירי");
+  await expect(page.locator("#main h1:visible")).toHaveText("פנקייק אוורירי");
   await expect(ingredients(page).getByRole("list")).toHaveAttribute("dir", "rtl");
   await expect(page.getByText("Showing Hebrew")).toBeVisible();
   expect(calls).toHaveLength(1);
 
   await page.getByRole("button", { name: "Show original language" }).click();
-  await expect(page.locator("#main h1")).toHaveText("Fluffy Pancakes");
+  await expect(page.locator("#main h1:visible")).toHaveText("Fluffy Pancakes");
 
   // The translation was saved, so picking it again doesn't call the model.
   await actionBar(page).getByRole("button", { name: "Translate" }).click();
   await page.getByRole("dialog", { name: "Translate recipe" }).getByRole("button", { name: /^עברית/ }).click();
-  await expect(page.locator("#main h1")).toHaveText("פנקייק אוורירי");
+  await expect(page.locator("#main h1:visible")).toHaveText("פנקייק אוורירי");
   expect(calls).toHaveLength(1);
 });
 
@@ -194,21 +194,21 @@ test("a recipe in another language opens translated into the app's, as on mobile
   ]);
   await page.goto("/app/auth?mode=signin");
   await signInWithPassword(page, TEST_USER.email, TEST_USER.password);
-  await expect(page.locator("#main h1")).toBeVisible();
+  await expect(page.locator("#main h1:visible")).toBeVisible();
 
   await page.goto(`/app/recipe/${id}`);
-  await expect(page.locator("#main h1")).toHaveText("Shakshuka");
+  await expect(page.locator("#main h1:visible")).toHaveText("Shakshuka");
   await expect(steps(page)).toContainText("Heat the oil and add the eggs.");
   await expect(page.getByText("Showing English")).toBeVisible();
   expect(calls).toHaveLength(1);
 
   // Saved: opening it again shows the translation without asking the model.
   await page.reload();
-  await expect(page.locator("#main h1")).toHaveText("Shakshuka");
+  await expect(page.locator("#main h1:visible")).toHaveText("Shakshuka");
   expect(calls).toHaveLength(1);
 
   await page.getByRole("button", { name: "Show original language" }).click();
-  await expect(page.locator("#main h1")).toHaveText("שקשוקה");
+  await expect(page.locator("#main h1:visible")).toHaveText("שקשוקה");
 });
 
 test("repair a partial import: says what it found, and applies it", async ({ page }) => {

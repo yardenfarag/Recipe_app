@@ -21,17 +21,17 @@ async function openLibrary(page: Page, recipes: SeedRecipe[] = THREE, path = "/a
   const ids = await resetLibrary(recipes);
   await page.goto("/app/auth?mode=signin");
   await signInWithPassword(page, TEST_USER.email, TEST_USER.password);
-  await expect(page.locator("#main h1")).toBeVisible();
+  await expect(page.locator("#main h1:visible")).toBeVisible();
   if (path !== "/app") await page.goto(path);
   return ids;
 }
 
-const cards = (page: Page) => page.locator("#main article");
+const cards = (page: Page) => page.locator("#main article:visible");
 const card = (page: Page, title: string) => cards(page).filter({ hasText: title });
 
 test("shows every recipe, newest first, with time and effort", async ({ page }) => {
   await openLibrary(page);
-  await expect(page.locator("#main h1")).toHaveText("Your recipes");
+  await expect(page.locator("#main h1:visible")).toHaveText("Your recipes");
   await expect(cards(page)).toHaveCount(3);
   await expect(cards(page).first()).toContainText("Lemon Pasta");
   await expect(card(page, "Lemon Pasta")).toContainText("25 min · Easy");
@@ -40,7 +40,7 @@ test("shows every recipe, newest first, with time and effort", async ({ page }) 
 
 test("search narrows the list, '/' jumps to it, and opening a recipe goes to its page", async ({ page }) => {
   await openLibrary(page);
-  await page.locator("#main h1").click();
+  await page.locator("#main h1:visible").click();
   await page.keyboard.press("/");
   const search = page.getByRole("searchbox", { name: "Snap a recipe or search yours" });
   await expect(search).toBeFocused();
@@ -52,7 +52,7 @@ test("search narrows the list, '/' jumps to it, and opening a recipe goes to its
 
   await page.getByRole("link", { name: "Lemon Pasta" }).click();
   await expect(page).toHaveURL(/\/app\/recipe\/[0-9a-f-]{36}$/);
-  await expect(page.locator("#main h1")).toHaveText("Lemon Pasta");
+  await expect(page.locator("#main h1:visible")).toHaveText("Lemon Pasta");
 
   // Back returns to the same search.
   await page.goBack();
@@ -254,7 +254,7 @@ test.describe("coming back (PIN-174)", () => {
   test("a heart given on the recipe's page shows at once back in the Library", async ({ page }) => {
     await openLibrary(page);
     await page.getByRole("link", { name: "Chocolate Cake" }).click();
-    await expect(page.locator("#main h1")).toHaveText("Chocolate Cake");
+    await expect(page.locator("#main h1:visible")).toHaveText("Chocolate Cake");
     await page.getByRole("button", { name: "Add Chocolate Cake to favorites" }).filter({ visible: true }).first().click();
     await expect(page.getByRole("button", { name: "Remove Chocolate Cake from favorites" }).filter({ visible: true }).first()).toBeVisible();
 
@@ -276,12 +276,72 @@ test.describe("coming back (PIN-174)", () => {
     expect(before).toBeGreaterThan(300);
 
     await page.getByRole("link", { name: "Stew number 30" }).click();
-    await expect(page.locator("#main h1")).toHaveText("Stew number 30");
+    await expect(page.locator("#main h1:visible")).toHaveText("Stew number 30");
     await slowRecipeList(page);
     await page.goBack();
 
     await expect(target).toBeInViewport({ timeout: 1_000 });
     expect(Math.abs((await page.evaluate(() => window.scrollY)) - before)).toBeLessThan(5);
+  });
+});
+
+test.describe("kept alive between sections (PIN-175)", () => {
+  const STEWS: SeedRecipe[] = Array.from({ length: 60 }, (_, index) => ({
+    title: `Stew number ${String(index + 1).padStart(2, "0")}`,
+    tags: index === 0 ? ["soup"] : [],
+    createdSecondsAgo: index + 1,
+  }));
+  const nav = (page: Page) => page.getByRole("navigation", { name: "Main" }).filter({ visible: true });
+
+  test("is not drawn again: the same page comes back", async ({ page }) => {
+    await openLibrary(page);
+    await page.locator("#library-heading").evaluate((heading) => heading.setAttribute("data-kept", "yes"));
+    await nav(page).getByRole("link", { name: "List" }).click();
+    await expect(page.locator("#main h1:visible")).not.toHaveText("Your recipes");
+    await nav(page).getByRole("link", { name: "Library", exact: true }).click();
+    await expect(page.locator("#library-heading")).toHaveAttribute("data-kept", "yes");
+    await expect(page).toHaveTitle("Library · Pinch");
+  });
+
+  test("a link back keeps the search and the place, as Back does", async ({ page }) => {
+    await openLibrary(page, STEWS);
+    await page.getByRole("searchbox", { name: "Snap a recipe or search yours" }).fill("stew");
+    await expect(page).toHaveURL(/\/app\?q=stew$/);
+    const target = card(page, "Stew number 30");
+    await target.scrollIntoViewIfNeeded();
+    const before = await page.evaluate(() => window.scrollY);
+    expect(before).toBeGreaterThan(300);
+
+    await nav(page).getByRole("link", { name: "List" }).click();
+    await expect(page.locator("#main h1:visible")).not.toHaveText("Your recipes");
+    await slowRecipeList(page);
+    await nav(page).getByRole("link", { name: "Library", exact: true }).click();
+
+    await expect(page).toHaveURL(/\/app\?q=stew$/);
+    await expect(page.getByRole("searchbox", { name: "Snap a recipe or search yours" })).toHaveValue("stew");
+    await expect(target).toBeInViewport({ timeout: 1_000 });
+    expect(Math.abs((await page.evaluate(() => window.scrollY)) - before)).toBeLessThan(5);
+  });
+
+  test("a link that asks for a filter gets it, from the top", async ({ page }) => {
+    await openLibrary(page, STEWS);
+    await card(page, "Stew number 30").scrollIntoViewIfNeeded();
+    await page.getByRole("link", { name: "Stew number 01" }).click();
+    await expect(page.locator("#main h1:visible")).toHaveText("Stew number 01");
+    await page.locator("#main").getByRole("link", { name: "Soup", exact: true }).first().click();
+
+    await expect(page).toHaveURL(/\/app\?tag=soup$/);
+    await expect(cards(page).filter({ visible: true })).toHaveCount(1);
+    expect(await page.evaluate(() => window.scrollY)).toBeLessThan(5);
+  });
+
+  test("hidden, it leaves the other sections alone: one heading, and keys go to the page on screen", async ({ page }) => {
+    await openLibrary(page);
+    await nav(page).getByRole("link", { name: "List" }).click();
+    await expect(page.getByRole("heading", { level: 1 })).toHaveCount(1);
+    // "/" jumps to the Library's search only while the Library shows.
+    await page.locator("body").press("/");
+    await expect(page.getByRole("searchbox", { name: "Snap a recipe or search yours" })).toHaveCount(0);
   });
 });
 

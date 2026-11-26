@@ -24,6 +24,7 @@ import { cn } from "@/lib/cn";
 import { safeNextPath } from "@/lib/nextPath";
 import { usePantry } from "@/lib/pantry/usePantry";
 import { useScan } from "@/lib/pantry/useScan";
+import { shownPageHeading } from "@/lib/shownPageHeading";
 
 const DEFAULT_NEXT = "/settings/pantry";
 
@@ -67,7 +68,7 @@ export function ScanScreen() {
   // A new step starts at the top, with its heading read out first.
   useEffect(() => {
     window.scrollTo({ top: 0 });
-    const heading = document.querySelector<HTMLElement>("#main h1");
+    const heading = shownPageHeading();
     if (heading) {
       heading.tabIndex = -1;
       heading.focus({ preventScroll: true });

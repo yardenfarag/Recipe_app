@@ -33,9 +33,9 @@ async function openList(page: Page, items: SeedItem[] = WEEK) {
   await resetShoppingList(items);
   await page.goto("/app/auth?mode=signin");
   await signInWithPassword(page, TEST_USER.email, TEST_USER.password);
-  await expect(page.locator("#main h1")).toBeVisible();
+  await expect(page.locator("#main h1:visible")).toBeVisible();
   await page.goto("/app/list");
-  await expect(page.locator("#main h1")).toHaveText("List");
+  await expect(page.locator("#main h1:visible")).toHaveText("List");
 }
 
 const item = (page: Page, name: string | RegExp) => page.getByRole("checkbox", { name: typeof name === "string" ? new RegExp(`^${name}(,|$)`) : name });
@@ -65,7 +65,7 @@ test("checking off with the mouse moves the item to Checked, and the phone sees 
 
 test("keyboard: '/' jumps to the add field, Enter adds, Space checks off a run of items", async ({ page }) => {
   await openList(page);
-  await page.locator("#main h1").click();
+  await page.locator("#main h1:visible").click();
   await page.keyboard.press("/");
   await expect(addField(page)).toBeFocused();
   await page.keyboard.type("garlic");
@@ -218,7 +218,7 @@ test.describe("phone", () => {
     await writeAccountPrefs({ locale: "he" });
     await page.reload();
     await expect(page.locator("html")).toHaveAttribute("dir", "rtl");
-    await expect(page.locator("#main h1")).toHaveText("רשימה");
+    await expect(page.locator("#main h1:visible")).toHaveText("רשימה");
     await expect(page.locator("#main section h2").first()).toBeVisible();
     const overflow = await page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth);
     expect(overflow).toBeLessThanOrEqual(0);

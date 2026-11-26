@@ -74,7 +74,7 @@ test("a recipe written from scratch with the keyboard alone saves and opens", as
 
   await page.keyboard.press("Control+s");
   await expect(page).toHaveURL(/\/app\/recipe\/[0-9a-f-]{36}$/);
-  await expect(page.locator("#main h1")).toHaveText("Lemon Pasta");
+  await expect(page.locator("#main h1:visible")).toHaveText("Lemon Pasta");
   await expect(page.getByRole("region", { name: "Ingredients" })).toContainText("spaghetti");
   await expect(page.getByRole("region", { name: /Instructions/ })).toContainText("Toss with lemon.");
   expect(calls).toHaveLength(1);

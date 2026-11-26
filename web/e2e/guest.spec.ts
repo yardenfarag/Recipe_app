@@ -24,7 +24,7 @@ test("a guest reads a Hub recipe, saves it, signs in, and it lands in their libr
   const [card] = await resetHub([{ name: "Guest Gnocchi" }]);
 
   await page.goto(`/app/hub/${card.id}`);
-  await expect(page.locator("#main h1")).toHaveText(card.title);
+  await expect(page.locator("#main h1:visible")).toHaveText(card.title);
   // No app navigation for a guest: only a way in.
   await expect(page.getByRole("navigation", { name: "Main" })).toHaveCount(0);
   await expect(page.getByRole("link", { name: "Sign in" })).toBeVisible();
@@ -36,9 +36,9 @@ test("a guest reads a Hub recipe, saves it, signs in, and it lands in their libr
 
   // Back on the recipe, it saves itself and opens the saved copy.
   await expect(page).toHaveURL(/\/app\/recipe\/[0-9a-f-]{36}$/);
-  await expect(page.locator("#main h1")).toHaveText(card.title);
+  await expect(page.locator("#main h1:visible")).toHaveText(card.title);
   await page.goto("/app");
-  await expect(page.locator("#main article").filter({ hasText: card.title })).toHaveCount(1);
+  await expect(page.locator("#main article:visible").filter({ hasText: card.title })).toHaveCount(1);
 });
 
 test("the guest bar's Sign in comes back to the same recipe, without saving", async ({ page }) => {

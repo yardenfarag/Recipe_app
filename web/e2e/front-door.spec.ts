@@ -78,7 +78,7 @@ test.describe("signed in", () => {
     await resetLibrary([{ title: "Front Door Soup" }]);
     await page.goto("/app/auth?mode=signin");
     await signInWithPassword(page, TEST_USER.email, TEST_USER.password);
-    await expect(page.locator("#main article")).toHaveCount(1);
+    await expect(page.locator("#main article:visible")).toHaveCount(1);
     // As if this browser had never been in before: signed out, it would get the welcome page.
     await page.evaluate(() => localStorage.removeItem("pinch:onboardingComplete"));
   });
@@ -89,8 +89,8 @@ test.describe("signed in", () => {
     page.on("framenavigated", (frame) => visited.push(frame.url()));
 
     await page.goto("/app");
-    await expect(page.locator("#main h1")).toHaveText("Your recipes");
-    await expect(page.locator("#main article")).toHaveCount(1);
+    await expect(page.locator("#main h1:visible")).toHaveText("Your recipes");
+    await expect(page.locator("#main article:visible")).toHaveCount(1);
     expect(visited.filter((url) => url.includes("/welcome"))).toEqual([]);
     expect(await sawWelcome(page)).toBe(false);
   });

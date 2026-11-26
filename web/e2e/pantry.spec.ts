@@ -18,14 +18,14 @@ test.afterEach(async () => {
 async function signIn(page: Page) {
   await page.goto("/app/auth?mode=signin");
   await signInWithPassword(page, TEST_USER.email, TEST_USER.password);
-  await expect(page.locator("#main h1")).toBeVisible();
+  await expect(page.locator("#main h1:visible")).toBeVisible();
 }
 
 test("an empty pantry invites a scan, and items typed by hand save and come off again", async ({ page }) => {
   await resetPantry([]);
   await signIn(page);
   await page.goto("/app/settings/pantry");
-  await expect(page.locator("#main h1")).toHaveText("Pantry");
+  await expect(page.locator("#main h1:visible")).toHaveText("Pantry");
   await expect(page.getByRole("heading", { name: "Your pantry is empty" })).toBeVisible();
   await expect(page.getByRole("link", { name: "Scan my kitchen" })).toBeVisible();
 
@@ -55,7 +55,7 @@ test("a scan reads each photo as it's added, then saves the checked list", async
     { quality: "too_dark", items: [{ name: "Tahini", aisle: "pantry", confidence: "low" }] },
   ]);
   await page.goto("/app/pantry/scan?place=fridge");
-  await expect(page.locator("#main h1")).toHaveText("Scan your kitchen");
+  await expect(page.locator("#main h1:visible")).toHaveText("Scan your kitchen");
   await expect(page.getByRole("radio", { name: /Fridge/ })).toHaveAttribute("aria-checked", "true");
 
   await page.locator('#main input[type="file"]').first().setInputFiles([PHOTOS[0], PHOTOS[1]]);
@@ -68,7 +68,7 @@ test("a scan reads each photo as it's added, then saves the checked list", async
   // The next step sits right under the photos: what was found, and the one button that moves on.
   await expect(page.getByRole("heading", { name: "4 items found" })).toBeVisible();
   await page.getByRole("button", { name: "Check the list" }).first().click();
-  await expect(page.locator("#main h1")).toHaveText("Check the list");
+  await expect(page.locator("#main h1:visible")).toHaveText("Check the list");
   await expect(page.getByRole("listitem").filter({ hasText: "Check and save" })).toHaveAttribute("aria-current", "step");
   await expect(page.getByText(/Pinch can miss things or get them wrong/)).toBeVisible();
   const unsure = page.getByRole("region", { name: "Not sure about these" });
