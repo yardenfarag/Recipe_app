@@ -163,14 +163,16 @@ Expo: `src/app/(tabs)/list.tsx`, `useShoppingList`. PIN-134.
 
 ## Meal plan (`/plan`)
 
-New with PIN-77; the phone app gets it next, so for now it is web only. Dragging a recipe onto a meal, "Add to plan" from a recipe and Tonight on Home come in the next PRs.
+New with PIN-77, in both apps. Plan took the Hub's place in the navigation (Library · Plan · Snap · List · Settings); the Hub is a "My Library | Hub" tab of the Library and keeps `/hub`.
 
 | Item | Status | Note |
 | --- | --- | --- |
-| This week and next, whole week (wide screens) or day by day | 🔄 | Web only until the phone app's Plan tab. In the side rail; the phone-width bar gets it when the Hub moves into the Library. |
-| Plan my week: days, meals, snacks, Hub, leftovers, Adjust | 🔄 | Web only. Filling runs in code (`shared/lib/mealPlan`), so the phone app will fill the same way. |
-| Lock, another recipe, mark cooked, remove | 🔄 | Web only. |
-| Send to list, with what is at home left off | 🔄 | Web only. Uses the household's list and pantry. |
+| This week and next, whole week (wide screens) or day by day | 🔄 | The phone app goes day by day only. |
+| Plan my week: days, meals, snacks, Hub, leftovers, Adjust | ✅ | One planner for both apps (`shared/lib/mealPlan/planner.ts`). |
+| Lock, another recipe, mark cooked, remove | ✅ | |
+| Add to plan from a recipe; tonight's planned dinner on the Library | ✅ | |
+| Reminders (defrost in the morning, "Tonight" at 17:30) | 🔄 | Phone only: scheduled on the device. |
+| Send to list, with what is at home left off | ✅ | Uses the household's list and pantry. |
 
 ## Hub (`/hub`, `/hub/<id>`)
 
