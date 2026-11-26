@@ -71,14 +71,12 @@ export function formatQuantity(
   unit: string,
   language?: CulinaryUnitLanguage | null,
 ): string {
-  const displayUnit = language
-    ? localizeCulinaryUnit(unit, language, quantity)
-    : isCountUnit(unit)
-      ? ''
-      : unit.trim();
+  // The unit's form follows the number shown, not the raw one: 1.06 cups snaps to "1 cup", not "1 cups".
+  const unitFor = (shown: number) =>
+    language ? localizeCulinaryUnit(unit, language, shown) : isCountUnit(unit) ? '' : unit.trim();
 
   if (!Number.isFinite(quantity) || quantity <= 0) {
-    return `${quantity} ${displayUnit}`.trim();
+    return `${quantity} ${unitFor(quantity)}`.trim();
   }
 
   const unitKey = canonicalUnitKey(unit);
@@ -95,7 +93,7 @@ export function formatQuantity(
       quantity >= 100
         ? Math.round(quantity)
         : Math.round(quantity * 100) / 100;
-    return `${rounded} ${displayUnit}`.trim();
+    return `${rounded} ${unitFor(rounded)}`.trim();
   }
 
   const whole = Math.floor(quantity);
@@ -105,6 +103,7 @@ export function formatQuantity(
   // rather than showing the raw decimal.
   let bestWhole = whole;
   let bestGlyph = '';
+  let bestValue = 0;
   let bestDiff = remainder; // candidate: drop the fraction, keep the whole number
 
   if (1 - remainder < bestDiff) {
@@ -117,6 +116,7 @@ export function formatQuantity(
     if (diff < bestDiff) {
       bestDiff = diff;
       bestGlyph = glyph;
+      bestValue = value;
       bestWhole = whole;
     }
   }
@@ -125,9 +125,9 @@ export function formatQuantity(
   // "g" or "cup" amount) — showing "0" would look broken, so floor it to
   // the smallest fraction we recognize instead.
   if (bestWhole === 0 && !bestGlyph) {
-    return `${NICE_FRACTIONS[0].glyph} ${displayUnit}`.trim();
+    return `${NICE_FRACTIONS[0].glyph} ${unitFor(NICE_FRACTIONS[0].value)}`.trim();
   }
 
   const amount = bestWhole > 0 ? `${bestWhole}${bestGlyph}` : bestGlyph;
-  return `${amount} ${displayUnit}`.trim();
+  return `${amount} ${unitFor(bestWhole + bestValue)}`.trim();
 }
