@@ -37,14 +37,23 @@ describe("useAutoTranslation", () => {
 
   it("does nothing for a recipe already in the app's language", () => {
     const { result } = renderHook(() => useAutoTranslation(hebrew, "he"));
-    expect(result.current).toEqual({ translation: null, translating: false });
+    expect(result.current).toEqual({ translation: null, translating: false, failure: null });
     expect(ensure).not.toHaveBeenCalled();
   });
 
-  it("shows the recipe's own words when translating fails", async () => {
-    ensure.mockResolvedValue({ status: "failed", code: "daily_limit" });
+  it("shows the recipe's own words when translating fails, and says why", async () => {
+    ensure.mockResolvedValue({ status: "failed", code: "daily_limit", message: "Daily limit reached." });
     const { result } = renderHook(() => useAutoTranslation(hebrew, "en"));
     await waitFor(() => expect(result.current.translating).toBe(false));
     expect(result.current.translation).toBeNull();
+    expect(result.current.failure).toEqual({ code: "daily_limit", message: "Daily limit reached." });
+  });
+
+  it("counts anything else that goes wrong as a failure", async () => {
+    // No answer at all, which throws inside the hook. (A rejected mock fails the test in Vitest 5, handled or not.)
+    ensure.mockResolvedValue(undefined);
+    const { result } = renderHook(() => useAutoTranslation(hebrew, "en"));
+    await waitFor(() => expect(result.current.translating).toBe(false));
+    expect(result.current.failure).toEqual({});
   });
 });
