@@ -15,7 +15,7 @@ async function signedIn(browser: Browser, account: Account): Promise<Page> {
   const page = await context.newPage();
   await page.goto("/app/auth?mode=signin");
   await signInWithPassword(page, account.email, account.password);
-  await expect(page.locator("#main h1")).toBeVisible();
+  await expect(page.locator("#main h1:visible")).toBeVisible();
   return page;
 }
 

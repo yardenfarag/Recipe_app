@@ -179,6 +179,21 @@ day in `request_rate_events`); limits for signed-in users count per user.
 Over a limit, the forms get `rate_limited` and the app shows "You've sent several messages in
 the last hour"; interaction events are dropped silently.
 
+## Scheduled jobs and the project address
+
+The pg_cron jobs that call Edge Functions (welcome emails, nudges, household activity, the orphan
+photo sweep) and the support-email triggers post to `public.call_edge_function`. It reads this
+project's address from the Vault secret `project_url` and calls nothing when it isn't set
+(migration `20261127130000`, PIN-185). Production has it set once:
+
+```sql
+select vault.create_secret('https://ccobefeofhnncpgifxel.supabase.co', 'project_url');
+```
+
+A local stack leaves it unset, so it never calls production. To run the jobs against local
+functions, set it to the address the database container sees, for example
+`http://host.docker.internal:54321`, with `npx supabase functions serve` running.
+
 ## Secrets added for PIN-153
 
 All optional: without them the feature is skipped, never broken.

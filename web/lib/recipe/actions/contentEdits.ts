@@ -1,4 +1,6 @@
 import { scaleIngredient } from "@shared/lib/ingredientAmounts";
+import { keptOriginalLanguage, stampKeptOriginalLanguage } from "@shared/lib/keptOriginal";
+import { resolveRecipeSourceLanguage } from "@shared/lib/recipeSourceLanguage";
 import type { RecipeContentUpdate } from "@shared/lib/supabase/recipes";
 import type { RepairedRecipePayload, RepairRecipeRequest } from "@shared/lib/supabase/repairRecipe";
 import type { SubstitutionAlternative } from "@shared/lib/supabase/suggestSubstitution";
@@ -38,6 +40,17 @@ export function promotedLanguage(display: RecipeDisplay): string | null {
   return display.translated && display.contentLanguage ? display.contentLanguage : null;
 }
 
+/** What is on screen, kept to go back to, with the language it is in (PIN-188). */
+export function shownOriginal(display: RecipeDisplay): OriginalContent {
+  return { ...shownContent(display), language: promotedLanguage(display) ?? resolveRecipeSourceLanguage(display.recipe) };
+}
+
+/** The recipe's kept original with its language filled in; one kept before PIN-188 has none stored. */
+export function keptOriginalOf(recipe: Recipe): OriginalContent | null {
+  const kept = recipe.kitchen_original;
+  return kept ? { ...kept, language: keptOriginalLanguage(kept, resolveRecipeSourceLanguage(recipe)) } : null;
+}
+
 const textOf = (content: OriginalContent) => ({
   title: content.title,
   servings: content.servings,
@@ -75,7 +88,16 @@ export function swapChange(
         )
       : ingredient,
   );
-  return { update: { ...textOf(shown), ingredients, instructions }, sourceLanguage: promotedLanguage(display) };
+  const language = promotedLanguage(display);
+  // The recipe takes the translation's language now. A kept original stays in the old one: write that in first, or a
+  // revert after a reload would save it under the new label (PIN-188).
+  const kept = language
+    ? stampKeptOriginalLanguage(display.recipe.kitchen_original, resolveRecipeSourceLanguage(display.recipe))
+    : null;
+  return {
+    update: { ...textOf(shown), ingredients, instructions, ...(kept ? { kitchen_original: kept } : {}) },
+    sourceLanguage: language,
+  };
 }
 
 function adaptedText(display: RecipeDisplay, result: TransformedRecipePayload) {
@@ -112,15 +134,18 @@ export function kitchenFixChange(
   earlier?: OriginalContent | null,
 ): ContentChange {
   const language = promotedLanguage(display);
-  const before = earlier ?? (!language && display.recipe.kitchen_original ? display.recipe.kitchen_original : shownContent(display));
+  const before = earlier ?? ((!language && keptOriginalOf(display.recipe)) || shownOriginal(display));
   return {
     update: { ...adaptedText(display, result), kitchen_adapted_summary: result.summary, kitchen_original: before },
     sourceLanguage: language,
   };
 }
 
-/** Back to the text before a remix or kitchen adaptation. */
-export function revertChange(original: OriginalContent, language: string | null): ContentChange {
+/**
+ * Back to the text before a remix or kitchen adaptation, in the language that text is in (PIN-188): the recipe may
+ * have taken a translation's since. `recipeLanguage` is only read for an original kept before PIN-188, which has none.
+ */
+export function revertChange(original: OriginalContent, recipeLanguage: string | null): ContentChange {
   return {
     update: {
       ...textOf(original),
@@ -128,7 +153,7 @@ export function revertChange(original: OriginalContent, language: string | null)
       kitchen_original: null,
       ...(original.appliances !== undefined ? { appliances: original.appliances } : {}),
     },
-    sourceLanguage: language,
+    sourceLanguage: keptOriginalLanguage(original, recipeLanguage),
   };
 }
 

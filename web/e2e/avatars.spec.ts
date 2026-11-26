@@ -15,7 +15,7 @@ async function signInAsNewCook(page: Page, locale = "en") {
   await createUser(email, PASSWORD, locale);
   await page.goto("/app/auth?mode=signin");
   await signInWithPassword(page, email, PASSWORD);
-  await expect(page.locator("#main h1")).toBeVisible();
+  await expect(page.locator("#main h1:visible")).toBeVisible();
   return email;
 }
 

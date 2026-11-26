@@ -192,6 +192,8 @@ function Screen({ recipe: initial, translated }: { recipe: Recipe; translated: b
     } else if (summary !== undefined) {
       next.kitchen_adapted_summary = summary;
       if (original) next.kitchen_original = original;
+    } else if (original) {
+      next.kitchen_original = original;
     }
     current.current = next;
     setRecipe(next);
@@ -333,5 +335,52 @@ describe('RecipeView: a change made on a translation (PIN-187)', () => {
     });
     // English again, so the screen is back to showing its Spanish translation over it.
     expect(shownIngredients()).toEqual(['pasta', 'nata']);
+  });
+});
+
+describe('RecipeView: the kept original’s language (PIN-188)', () => {
+  const englishOriginal = { ...english, title: 'Creamy tomato pasta with walnuts' };
+  const adapted = {
+    ...english,
+    kitchen_adapted_summary: 'No nuts.',
+    kitchen_original: englishOriginal,
+  } as unknown as Recipe;
+
+  it('a swap on a translation writes the old language into a kept original that has none', async () => {
+    await open({ recipe: adapted });
+    await swapCream();
+
+    expect(saved[0]).toMatchObject({ source_language: 'es' });
+    expect(saved[0].kitchen_original).toMatchObject({ title: 'Creamy tomato pasta with walnuts', language: 'en' });
+  });
+
+  it('“Revert to original” after reopening saves the original’s language, not the swap’s', async () => {
+    // What the swap above left in the database: Spanish text, the English original kept with its language.
+    const reopened = {
+      ...adapted,
+      title: 'Pasta cremosa con tomate',
+      ingredients: [spanish.ingredients[0], oatCream],
+      instructions: stepsWithOatCream,
+      source_language: 'es',
+      kitchen_original: { ...englishOriginal, language: 'en' },
+    } as unknown as Recipe;
+    await open({ recipe: reopened });
+    await revert();
+
+    expect(saved[0]).toMatchObject({
+      title: 'Creamy tomato pasta with walnuts',
+      ingredients: english.ingredients,
+      source_language: 'en',
+      kitchen_original: null,
+    });
+  });
+
+  it('“Make it without these” on a translation keeps the translation with its language', async () => {
+    h.kitchen.dislikes = ['nata'];
+    await open({ recipe: adapted });
+    await doing(() => h.buttons['recipe.avoid.make_without']());
+    await remix();
+
+    expect(saved[0].kitchen_original).toMatchObject({ title: 'Pasta cremosa con tomate', language: 'es' });
   });
 });

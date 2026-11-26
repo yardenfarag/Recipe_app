@@ -20,7 +20,7 @@ test.afterEach(async () => {
 async function signIn(page: Page, email = TEST_USER.email, password = TEST_USER.password) {
   await page.goto("/app/auth?mode=signin");
   await signInWithPassword(page, email, password);
-  await expect(page.locator("#main h1")).toBeVisible();
+  await expect(page.locator("#main h1:visible")).toBeVisible();
 }
 
 const main = (page: Page) => page.locator("#main");
@@ -34,17 +34,17 @@ test.describe("desktop", () => {
     const menu = main(page).getByRole("navigation", { name: "Settings" });
     await expect(menu).toBeVisible();
     // The settings home opens Account beside the menu.
-    await expect(page.locator("#main h1")).toHaveText("Account");
+    await expect(page.locator("#main h1:visible")).toHaveText("Account");
     await expect(main(page).getByText(TEST_USER.email, { exact: true })).toBeVisible();
     await expect(menu.getByRole("link", { name: "Account" })).toHaveAttribute("aria-current", "page");
 
     await menu.getByRole("link", { name: "Appearance" }).click();
     await expect(page).toHaveURL(/\/app\/settings\/appearance$/);
-    await expect(page.locator("#main h1")).toHaveText("Appearance");
+    await expect(page.locator("#main h1:visible")).toHaveText("Appearance");
     await expect(page).toHaveTitle("Appearance · Pinch");
     await expect(menu).toBeVisible();
     const menuBox = await menu.boundingBox();
-    const headingBox = await page.locator("#main h1").boundingBox();
+    const headingBox = await page.locator("#main h1:visible").boundingBox();
     expect(menuBox!.x).toBeLessThan(headingBox!.x);
 
     // Appearance applies at once.
@@ -58,7 +58,7 @@ test.describe("desktop", () => {
     await resetTestUserSettings();
     await signIn(page);
     await page.goto("/app/settings/recipe");
-    await expect(page.locator("#main h1")).toHaveText("Recipe preferences");
+    await expect(page.locator("#main h1:visible")).toHaveText("Recipe preferences");
 
     await main(page).getByRole("button", { name: "Vegan" }).click();
     await expect(main(page).getByRole("button", { name: "Vegan" })).toHaveAttribute("aria-pressed", "true");
@@ -107,19 +107,19 @@ test.describe("desktop", () => {
   test("Hebrew flips the layout at once, on the same page, with the choice still focused", async ({ page }) => {
     await signIn(page);
     await page.goto("/app/settings/language");
-    await expect(page.locator("#main h1")).toHaveText("Language & region");
+    await expect(page.locator("#main h1:visible")).toHaveText("Language & region");
 
     const hebrew = main(page).getByRole("radio", { name: "עברית" });
     await hebrew.click();
     await expect(page.locator("html")).toHaveAttribute("dir", "rtl");
     await expect(page).toHaveURL(/\/app\/settings\/language$/);
-    await expect(page.locator("#main h1")).toHaveText("שפה ואזור");
+    await expect(page.locator("#main h1:visible")).toHaveText("שפה ואזור");
     await expect(hebrew).toBeFocused();
     await expect(hebrew).toHaveAttribute("aria-checked", "true");
 
     // The menu moved to the start side, which is now the right.
     const menuBox = await main(page).getByRole("navigation", { name: "הגדרות" }).boundingBox();
-    const headingBox = await page.locator("#main h1").boundingBox();
+    const headingBox = await page.locator("#main h1:visible").boundingBox();
     expect(menuBox!.x).toBeGreaterThan(headingBox!.x);
 
     // From the keyboard the arrows go the way they point: left is the next language in Hebrew (Russian), and once
@@ -187,16 +187,16 @@ test.describe("phone", () => {
   test("the menu comes first, then the page, with a way back", async ({ page }) => {
     await signIn(page);
     await page.goto("/app/settings");
-    await expect(page.locator("#main h1")).toHaveText("Settings");
+    await expect(page.locator("#main h1:visible")).toHaveText("Settings");
     await main(page).getByRole("link", { name: /Recipe preferences/ }).tap();
     await expect(page).toHaveURL(/\/app\/settings\/recipe$/);
-    await expect(page.locator("#main h1")).toHaveText("Recipe preferences");
+    await expect(page.locator("#main h1:visible")).toHaveText("Recipe preferences");
     await expect(main(page).getByRole("navigation", { name: "Settings" })).toHaveCount(0);
 
     await main(page).getByRole("link", { name: "Settings", exact: true }).tap();
     await expect(page).toHaveURL(/\/app\/settings$/);
     await main(page).getByRole("link", { name: TEST_USER.email }).tap();
-    await expect(page.locator("#main h1")).toHaveText("Account");
+    await expect(page.locator("#main h1:visible")).toHaveText("Account");
   });
 
   test("works in Hebrew, right to left", async ({ page }) => {
@@ -205,10 +205,10 @@ test.describe("phone", () => {
     await signIn(page, email, "shalom-pass-1");
     await page.goto("/app/settings");
     await expect(page.locator("html")).toHaveAttribute("dir", "rtl");
-    await expect(page.locator("#main h1")).toHaveText("הגדרות");
+    await expect(page.locator("#main h1:visible")).toHaveText("הגדרות");
     await main(page).getByRole("link", { name: /מראה/ }).tap();
     await expect(page).toHaveURL(/\/app\/settings\/appearance$/);
-    await expect(page.locator("#main h1")).toHaveText("מראה");
+    await expect(page.locator("#main h1:visible")).toHaveText("מראה");
   });
 });
 
@@ -218,7 +218,7 @@ test.describe("tablet", () => {
   test("uses the phone's menu-then-page flow, with room to spare", async ({ page }) => {
     await signIn(page);
     await page.goto("/app/settings/support");
-    await expect(page.locator("#main h1")).toHaveText("Help & support");
+    await expect(page.locator("#main h1:visible")).toHaveText("Help & support");
     await expect(main(page).getByRole("link", { name: "Settings", exact: true })).toBeVisible();
     await expect(main(page).getByRole("button", { name: "Send message" })).toBeDisabled();
     await main(page).getByRole("textbox", { name: "What happened?" }).fill("The list forgets my last item.");

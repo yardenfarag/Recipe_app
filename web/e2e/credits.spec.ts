@@ -39,7 +39,7 @@ test("the credits page shows the balance, where it comes from, the packs and wha
   await stubCheckout(page);
   await signInTo(page, user);
 
-  await expect(page.locator("#main h1")).toHaveText("Credits");
+  await expect(page.locator("#main h1:visible")).toHaveText("Credits");
   await expect(page).toHaveTitle("Credits · Pinch");
   await expect(balanceTotal(page, "23")).toBeVisible();
   await expect(balance(page).getByText("7 of 10 left")).toBeVisible();

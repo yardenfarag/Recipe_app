@@ -36,7 +36,7 @@ const main = (page: Page) => page.locator("#main");
 async function signIn(page: Page, user: SeedUser) {
   await page.goto("/app/auth?mode=signin");
   await signInWithPassword(page, user.email, user.password);
-  await expect(page.locator("#main h1")).toBeVisible();
+  await expect(page.locator("#main h1:visible")).toBeVisible();
 }
 
 /** The page is no wider than the window: nothing to scroll sideways. */
@@ -53,7 +53,7 @@ test.describe("an admin", () => {
     await accountMenuButton(page).click();
     await page.getByRole("menuitem", { name: "Admin" }).click();
     await expect(page).toHaveURL(/\/app\/admin\/dashboard$/);
-    await expect(page.locator("#main h1")).toHaveText("Dashboard");
+    await expect(page.locator("#main h1:visible")).toHaveText("Dashboard");
     await expect(page).toHaveTitle("Admin dashboard · Pinch");
     await expect(main(page).getByText("What happened in the last 30 days")).toBeVisible();
 
@@ -102,7 +102,7 @@ test.describe("an admin", () => {
   test("grants credits to a user", async ({ page }) => {
     await signIn(page, users.admin);
     await page.goto("/app/admin/users");
-    await expect(page.locator("#main h1")).toHaveText("People");
+    await expect(page.locator("#main h1:visible")).toHaveText("People");
     await main(page).getByRole("searchbox", { name: "Search email" }).fill(users.member.email);
     const before = await purchasedCredits(users.member.id);
     await main(page).getByLabel(`Credit amount, ${users.member.email}`).fill("10");
@@ -114,7 +114,7 @@ test.describe("an admin", () => {
 
     // The same on the cost & support page, by user id.
     await page.goto("/app/admin/usage");
-    await expect(page.locator("#main h1")).toHaveText("Usage & support");
+    await expect(page.locator("#main h1:visible")).toHaveText("Usage & support");
     await main(page).getByLabel("User ID").fill(users.member.id);
     await main(page).getByLabel("Credit amount").fill("-3");
     await main(page).getByRole("button", { name: "Apply adjustment" }).click();
@@ -125,9 +125,9 @@ test.describe("an admin", () => {
   test("writes, saves and deletes an in-app message", async ({ page }) => {
     await signIn(page, users.admin);
     await page.goto("/app/admin/messages");
-    await expect(page.locator("#main h1")).toHaveText("Messages");
+    await expect(page.locator("#main h1:visible")).toHaveText("Messages");
     await main(page).getByRole("button", { name: "New message" }).click();
-    await expect(page.locator("#main h1")).toHaveText("New message");
+    await expect(page.locator("#main h1:visible")).toHaveText("New message");
     await expectNoSidewaysScroll(page);
 
     const name = `E2E message ${Date.now()}`;
@@ -137,7 +137,7 @@ test.describe("an admin", () => {
     await expect(main(page).getByRole("complementary", { name: "Preview" })).toBeVisible();
     await main(page).getByRole("button", { name: "Save", exact: true }).click();
 
-    await expect(page.locator("#main h1")).toHaveText("Messages");
+    await expect(page.locator("#main h1:visible")).toHaveText("Messages");
     await expect(main(page).getByRole("status").getByText(`Saved “${name}”.`)).toBeVisible();
     const card = main(page).getByRole("listitem").filter({ has: page.getByRole("heading", { name }) });
     await expect(card.getByText("Draft")).toBeVisible();
@@ -160,7 +160,7 @@ test.describe("an admin", () => {
     };
     for (const path of ADMIN_PATHS) {
       await page.goto(`/app/admin/${path}`);
-      await expect(page.locator("#main h1")).toHaveText(headings[path]);
+      await expect(page.locator("#main h1:visible")).toHaveText(headings[path]);
       await expect(main(page).getByRole("navigation", { name: "Admin pages" }).locator("a[aria-current=page]")).toBeVisible();
       // Let the data arrive before measuring.
       await expect(main(page).locator("[data-skeleton], [aria-busy=true]")).toHaveCount(0);

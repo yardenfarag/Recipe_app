@@ -149,6 +149,9 @@ export default function RecipePreviewScreen() {
         } else if (kitchenSummary !== undefined) {
           next.kitchen_adapted_summary = kitchenSummary;
           if (kitchenOriginal) next.kitchen_original = kitchenOriginal;
+        } else if (kitchenOriginal) {
+          // A swap on a translation writes the kept original's language in (PIN-188).
+          next.kitchen_original = kitchenOriginal;
         }
         void setRecipeDraft(next).catch((error) => {
           console.warn('[recipe-draft] update persistence failed', error);

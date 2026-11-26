@@ -3,7 +3,7 @@ begin;
 create extension if not exists pgtap with schema extensions;
 select plan(25);
 
--- PIN-77 (migration 20261127130000_recipe_translations_on_save): an extraction's translations reach the cook's
+-- PIN-77 (migration 20261127140000_recipe_translations_on_save): an extraction's translations reach the cook's
 -- copy whichever comes first, a Hub card's translations come along when the card has the same text, and nothing
 -- the recipe already has is replaced.
 

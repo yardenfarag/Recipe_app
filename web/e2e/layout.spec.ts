@@ -122,7 +122,7 @@ async function layoutProblems(page: Page): Promise<string[]> {
 async function check(page: Page, path: string, language: Language) {
   await page.goto(path);
   const loaded = await page
-    .locator("h1")
+    .locator("h1:visible")
     .first()
     .waitFor({ timeout: 15_000 })
     .then(() => true)
@@ -142,7 +142,7 @@ async function signIn(context: BrowserContext) {
   await page.locator('input[name="email"]').fill(TEST_USER.email);
   await page.locator('input[name="password"]').fill(TEST_USER.password);
   await page.locator('input[name="password"]').press("Enter");
-  await page.locator("#main h1").waitFor();
+  await page.locator("#main h1:visible").waitFor();
   return page;
 }
 

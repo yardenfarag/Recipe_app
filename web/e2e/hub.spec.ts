@@ -37,7 +37,7 @@ test.afterAll(async () => {
 async function signIn(page: Page) {
   await page.goto("/app/auth?mode=signin");
   await signInWithPassword(page, TEST_USER.email, TEST_USER.password);
-  await expect(page.locator("#main h1")).toBeVisible();
+  await expect(page.locator("#main h1:visible")).toBeVisible();
 }
 
 /** Seeds the Hub, signs in and opens it, searched down to the seeded cards. */
@@ -45,11 +45,11 @@ async function openHub(page: Page, cards: SeedCard[] = FIVE, query = `?q=${encod
   const seeded = await resetHub(cards);
   await signIn(page);
   await page.goto(`/app/hub${query}`);
-  await expect(page.locator("#main h1")).toHaveText("Cooking Hub");
+  await expect(page.locator("#main h1:visible")).toHaveText("Cooking Hub");
   return seeded;
 }
 
-const cardTitles = (page: Page) => page.locator("#main article h3");
+const cardTitles = (page: Page) => page.locator("#main article:visible h3");
 const searchBox = (page: Page) => page.getByRole("searchbox", { name: "Search the Hub" });
 
 test("search and filters give the same recipes, in the same order, as the mobile app's query", async ({ page }) => {
@@ -57,7 +57,7 @@ test("search and filters give the same recipes, in the same order, as the mobile
   await expect(page).toHaveTitle("Hub · Pinch");
   await expect(cardTitles(page)).toHaveText(await hubTitles({ search: HUB_TITLE_PREFIX }));
   await expect(cardTitles(page)).toHaveText(titles(["Ramen", "Pancakes", "Salad", "Curry", "Tacos"]));
-  await expect(page.locator("#main article").first()).toContainText("YouTube · 9 saves");
+  await expect(page.locator("#main article:visible").first()).toContainText("YouTube · 9 saves");
 
   // Source.
   await page.getByRole("radio", { name: "YouTube" }).click();
@@ -106,15 +106,15 @@ test("recipes with your allergies come last and ones with foods you don't like l
   );
   // Halal first, a disliked food lower among them, the peanut recipe last although it is halal and the most saved.
   await expect(cardTitles(page)).toHaveText(titles(["Rice bowl", "Onion soup", "Pork buns", "Satay"]));
-  await expect(page.locator("#main article").last()).toContainText("Has ingredients from your allergies: Peanuts");
-  await expect(page.locator("#main article").nth(1)).toContainText("Has foods you don’t like: Onion");
+  await expect(page.locator("#main article:visible").last()).toContainText("Has ingredients from your allergies: Peanuts");
+  await expect(page.locator("#main article:visible").nth(1)).toContainText("Has foods you don’t like: Onion");
   await expect(page.locator("#main")).toContainText("Recipes with your allergies come last.");
   await expect(page.locator("#main")).toContainText("Halal");
 });
 
 test("'/' jumps to the search, Escape clears it, and no matches says so", async ({ page }) => {
   await openHub(page, FIVE, "");
-  await page.locator("#main h1").click();
+  await page.locator("#main h1:visible").click();
   await page.keyboard.press("/");
   await expect(searchBox(page)).toBeFocused();
 
@@ -136,7 +136,7 @@ test("adding a Hub recipe puts it in the library, free, and then it opens from t
   await page.getByRole("link", { name: `${HUB_TITLE_PREFIX} Pancakes` }).click();
   await expect(page).toHaveURL(/\/app\/hub\/[0-9a-f-]{36}$/);
   const hubUrl = page.url();
-  await expect(page.locator("#main h1")).toHaveText(`${HUB_TITLE_PREFIX} Pancakes`);
+  await expect(page.locator("#main h1:visible")).toHaveText(`${HUB_TITLE_PREFIX} Pancakes`);
   await expect(page.getByRole("region", { name: "Ingredients" })).toContainText("flour");
   // Read-only: no heart.
   await expect(page.getByRole("button", { name: /favorites/ })).toHaveCount(0);
@@ -144,7 +144,7 @@ test("adding a Hub recipe puts it in the library, free, and then it opens from t
   await page.getByRole("button", { name: "Add to Library" }).click();
   await expect(page).toHaveURL(/\/app\/recipe\/[0-9a-f-]{36}$/);
   const recipeUrl = page.url();
-  await expect(page.locator("#main h1")).toHaveText(`${HUB_TITLE_PREFIX} Pancakes`);
+  await expect(page.locator("#main h1:visible")).toHaveText(`${HUB_TITLE_PREFIX} Pancakes`);
   expect(await creditState()).toEqual(before);
 
   // It is in the Library now.
@@ -167,9 +167,9 @@ test("the public page's link, /hub/<id> or /hub/<slug>, opens the Hub recipe", a
   const [ramen] = await resetHub(FIVE);
   await signIn(page);
   await page.goto(`/app/hub/${ramen.id}`);
-  await expect(page.locator("#main h1")).toHaveText(ramen.title);
+  await expect(page.locator("#main h1:visible")).toHaveText(ramen.title);
   await page.goto(`/app/hub/${ramen.public_slug}`);
-  await expect(page.locator("#main h1")).toHaveText(ramen.title);
+  await expect(page.locator("#main h1:visible")).toHaveText(ramen.title);
   await expect(page.getByRole("button", { name: "Add to Library" })).toBeVisible();
 });
 

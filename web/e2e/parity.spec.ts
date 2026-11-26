@@ -16,7 +16,7 @@ test.afterEach(async () => {
 async function signIn(page: Page, next = "/") {
   await page.goto(`/app/auth?mode=signin&next=${encodeURIComponent(next)}`);
   await signInWithPassword(page, TEST_USER.email, TEST_USER.password);
-  await expect(page.locator("#main h1")).toBeVisible();
+  await expect(page.locator("#main h1:visible")).toBeVisible();
 }
 
 test("old Expo addresses still land somewhere: favorites, and the legal pages", async ({ page, request }) => {
@@ -94,7 +94,7 @@ test("a Hub recipe can be shared: its source link is copied", async ({ page, con
   await signIn(page);
   await page.evaluate(() => Object.defineProperty(navigator, "share", { value: undefined, configurable: true }));
   await page.goto(`/app/hub/${card.id}`);
-  await expect(page.locator("#main h1")).toHaveText(`${HUB_TITLE_PREFIX} Shareable Ramen`);
+  await expect(page.locator("#main h1:visible")).toHaveText(`${HUB_TITLE_PREFIX} Shareable Ramen`);
   await page.getByRole("button", { name: "Share" }).filter({ visible: true }).first().click();
   await expect(page.getByText("Link copied")).toBeVisible();
   expect(await page.evaluate(() => navigator.clipboard.readText())).toMatch(/^https:\/\/e2e-hub\.example\//);

@@ -74,6 +74,7 @@ import {
   isRtlRecipeLanguage,
   RecipeLanguageCode,
 } from '@shared/lib/recipeLanguages';
+import { keptOriginalLanguage, stampKeptOriginalLanguage } from '@shared/lib/keptOriginal';
 import { resolveRecipeSourceLanguage } from '@shared/lib/recipeSourceLanguage';
 import { normalizeRecipeTags, translateRecipeTag } from '@shared/lib/recipeTags';
 import { RecipeVariantKey } from '@shared/lib/recipeVariants';
@@ -393,9 +394,12 @@ export function RecipeView({
   const sourceLanguage = resolveRecipeSourceLanguage(recipe);
   /**
    * The language `originalRef`'s text is in. The recipe's own language can change after it was taken (a swap on a
-   * translation), so "Revert to original" saves it with the text (PIN-187).
+   * translation), so "Revert to original" saves it with the text (PIN-187). A kept original carries its own
+   * (PIN-188), so this holds after the page is reopened too.
    */
-  const originalLanguageRef = useRef(sourceLanguage);
+  const originalLanguageRef = useRef(
+    recipe.kitchen_original ? keptOriginalLanguage(recipe.kitchen_original, sourceLanguage) : sourceLanguage,
+  );
   const contentLanguage =
     activeLanguage ?? (isRecipeLanguageCode(sourceLanguage) ? sourceLanguage : null);
   const unitLanguage = resolveCulinaryLanguage(activeLanguage, appLanguage);
@@ -444,6 +448,10 @@ export function RecipeView({
         nutrition: recipe.kitchen_original.nutrition ?? null,
         appliances: recipe.kitchen_original.appliances,
       };
+      originalLanguageRef.current = keptOriginalLanguage(
+        recipe.kitchen_original,
+        resolveRecipeSourceLanguage(recipe),
+      );
     }
     setBaseServings(recipe.servings);
     setCalories(recipe.calories);
@@ -568,6 +576,9 @@ export function RecipeView({
     // without it the recipe is, say, Spanish labelled English, and the next swap or translation is told the wrong one.
     if (activeLanguage != null) {
       setActiveLanguage(null);
+      // A kept original stays in the recipe's language so far: write that in before the recipe takes the new one,
+      // or a revert after reopening the page would save it under the new label (PIN-188).
+      const keptOriginal = stampKeptOriginalLanguage(recipe.kitchen_original, sourceLanguage);
       onContentChange?.({
         title,
         servings: baseServings,
@@ -576,6 +587,7 @@ export function RecipeView({
         calories,
         nutrition,
         source_language: activeLanguage,
+        ...(keptOriginal ? { kitchen_original: keptOriginal } : {}),
       });
     }
     setSwapIndex(null);
@@ -600,6 +612,9 @@ export function RecipeView({
     };
     const earlierOriginal = promotedLanguage == null ? recipe.kitchen_original : null;
     const before: RecipeContentSnapshot = earlierOriginal ?? shown;
+    const beforeLanguage = earlierOriginal
+      ? keptOriginalLanguage(earlierOriginal, sourceLanguage)
+      : (promotedLanguage ?? sourceLanguage);
     setBaseServings(result.servings);
     setBaseIngredients(result.ingredients);
     setBaseInstructions(result.instructions);
@@ -613,7 +628,7 @@ export function RecipeView({
     setKitchenAdapted(kitchenFix);
     if (kitchenFix) {
       originalRef.current = before;
-      if (!earlierOriginal) originalLanguageRef.current = promotedLanguage ?? sourceLanguage;
+      originalLanguageRef.current = beforeLanguage;
     }
     setActiveLanguage(null);
     translationSourceRef.current = {
@@ -632,7 +647,7 @@ export function RecipeView({
       calories: result.calories,
       nutrition: remixedNutrition,
       kitchen_adapted_summary: kitchenFix ? result.summary : null,
-      kitchen_original: kitchenFix ? before : null,
+      kitchen_original: kitchenFix ? { ...before, language: beforeLanguage } : null,
       // The server only sends appliances when the remix changed the steps (ADR 017).
       ...(result.appliances !== undefined ? { appliances: result.appliances } : {}),
       ...(promotedLanguage != null ? { source_language: promotedLanguage } : {}),

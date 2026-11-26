@@ -102,7 +102,7 @@ async function signIn(page: Page, recipes: SeedRecipe[] = THREE) {
   await stubPrint(page);
   await page.goto("/app/auth?mode=signin");
   await signInWithPassword(page, TEST_USER.email, TEST_USER.password);
-  await expect(page.locator("#main h1")).toBeVisible();
+  await expect(page.locator("#main h1:visible")).toBeVisible();
   return ids;
 }
 
@@ -114,7 +114,7 @@ test("picks recipes, orders them, and downloads the PDF, with a placeholder for 
   const books = await stubPdfServer(page, { missing: [2] });
   await page.getByRole("link", { name: "PDF cookbook" }).click();
   await expect(page).toHaveURL(/\/app\/cookbook$/);
-  await expect(page.locator("#main h1")).toHaveText("PDF cookbook");
+  await expect(page.locator("#main h1:visible")).toHaveText("PDF cookbook");
   await expect(page).toHaveTitle(/PDF cookbook/);
 
   await pick(page, "Green Salad");
@@ -293,7 +293,7 @@ test("Hebrew: the book reads right to left, and a Hebrew recipe stays right to l
   await page.locator("#main").getByRole("radio", { name: "עברית" }).click();
   await expect(page.locator("html")).toHaveAttribute("dir", "rtl");
   await page.goto("/app/cookbook");
-  await expect(page.locator("#main h1")).toHaveText("ספר מתכונים ב־PDF");
+  await expect(page.locator("#main h1:visible")).toHaveText("ספר מתכונים ב־PDF");
   await expect(page.getByRole("list", { name: "הספר שלכם" }).getByRole("listitem")).toHaveCount(2);
   await page.getByRole("button", { name: "יצירת PDF" }).click();
   await expect(page.getByRole("dialog")).toContainText("הספר מוכן");
@@ -313,7 +313,7 @@ test("printing a book of 50 recipes with photos shows progress and keeps the pag
   await stubPrint(page);
   await page.goto("/app/auth?mode=signin");
   await signInWithPassword(page, TEST_USER.email, TEST_USER.password);
-  await expect(page.locator("#main h1")).toBeVisible();
+  await expect(page.locator("#main h1:visible")).toBeVisible();
   await page.goto("/app/cookbook");
 
   await page.getByRole("button", { name: /Select all/ }).click();

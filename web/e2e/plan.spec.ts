@@ -55,12 +55,12 @@ test.afterEach(async () => {
 async function openPlan(page: Page) {
   await page.goto("/app/auth?mode=signin");
   await signInWithPassword(page, TEST_USER.email, TEST_USER.password);
-  await expect(page.locator("#main h1")).toBeVisible();
+  await expect(page.locator("#main h1:visible")).toBeVisible();
   await page.goto("/app/plan");
-  await expect(page.locator("#main h1")).toHaveText(/This week|Next week/);
+  await expect(page.locator("#main h1:visible")).toHaveText(/This week|Next week/);
 }
 
-const meals = (page: Page) => page.locator("#main article");
+const meals = (page: Page) => page.locator("#main article:visible");
 
 test("fills the week, with leftovers, and shows every planned meal", async ({ page }) => {
   await openPlan(page);

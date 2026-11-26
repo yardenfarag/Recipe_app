@@ -47,7 +47,7 @@ test("sign in, import a recipe, open it and add it to the list, with the keyboar
   await page.keyboard.type("https://www.example-recipes.com/keyboard-pasta");
   await page.keyboard.press("Enter");
   await expect(page).toHaveURL(/\/app\/recipe\/[0-9a-f-]+\?justSaved=1$/);
-  await expect(page.locator("#main h1")).toHaveText("Keyboard lemon pasta");
+  await expect(page.locator("#main h1:visible")).toHaveText("Keyboard lemon pasta");
 
   // Open it again from the Library.
   await tabTo(page, page.getByRole("link", { name: "Library" }).filter({ visible: true }).first());
@@ -55,7 +55,7 @@ test("sign in, import a recipe, open it and add it to the list, with the keyboar
   await expect(page).toHaveURL(/\/app\/?$/);
   await tabTo(page, page.getByRole("link", { name: "Keyboard lemon pasta" }).first(), 120);
   await page.keyboard.press("Enter");
-  await expect(page.locator("#main h1")).toHaveText("Keyboard lemon pasta");
+  await expect(page.locator("#main h1:visible")).toHaveText("Keyboard lemon pasta");
 
   // Add its ingredients to the list.
   await tabTo(page, page.getByRole("button", { name: "Add the missing ones to my list" }));

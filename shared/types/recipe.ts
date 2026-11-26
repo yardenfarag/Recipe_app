@@ -152,6 +152,11 @@ export interface Recipe {
     nutrition?: RecipeNutrition | null;
     /** Absent in snapshots saved before PIN-26. */
     appliances?: RecipeAppliance[] | null;
+    /**
+     * The language this text is in, saved back to `source_language` on revert. Absent in snapshots saved before
+     * PIN-188: read it with keptOriginalLanguage().
+     */
+    language?: string;
   };
   /**
    * Kitchen appliances (ADR 017). null or absent = not analysed (show nothing); [] = none needed.
