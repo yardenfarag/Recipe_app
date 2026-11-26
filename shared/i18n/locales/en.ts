@@ -2319,6 +2319,20 @@ export default {
     "title": "This week",
     "nextWeekTitle": "Next week",
     "tabTitle": "Plan",
+    "atHome": "At home",
+    "signIn": "Sign in to plan your week. Your plan is kept on your account.",
+    "reminders": {
+      "defrostTitle": "Take the {{item}} out of the freezer",
+      "defrostBody": "It's for tonight's {{title}}.",
+      "tonightTitle": "Tonight: {{title}}",
+      "tonightBody": "Tap to open the recipe.",
+      "tonightBodyMinutes": "{{minutes}} min. Tap to open the recipe."
+    },
+    "libraryTabs": {
+      "label": "Library sections",
+      "mine": "My Library",
+      "small": "The Hub has more recipes that fit you"
+    },
     "tonightPlanned": "Tonight, from your plan",
     "add": {
       "title": "Add to plan",

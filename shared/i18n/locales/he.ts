@@ -2377,6 +2377,20 @@ export default {
     "title": "השבוע",
     "nextWeekTitle": "שבוע הבא",
     "tabTitle": "תכנון",
+    "atHome": "יש בבית",
+    "signIn": "התחברו כדי לתכנן את השבוע. התכנון נשמר בחשבון שלכם.",
+    "reminders": {
+      "defrostTitle": "הוציאו את ה{{item}} מהמקפיא",
+      "defrostBody": "זה בשביל {{title}} של הערב.",
+      "tonightTitle": "הערב: {{title}}",
+      "tonightBody": "הקישו לפתיחת המתכון.",
+      "tonightBodyMinutes": "{{minutes}} דק׳. הקישו לפתיחת המתכון."
+    },
+    "libraryTabs": {
+      "label": "חלקי הספרייה",
+      "mine": "הספרייה שלי",
+      "small": "ב-Hub יש עוד מתכונים שמתאימים לכם"
+    },
     "tonightPlanned": "הערב, מהתכנון שלכם",
     "add": {
       "title": "הוספה לתכנון",

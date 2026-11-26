@@ -4,28 +4,13 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
 import { hubAvoidOf } from "@shared/lib/hubAvoid";
 import type { KitchenProfile } from "@shared/lib/kitchenProfile";
-import {
-  candidateFromCard,
-  candidateFromRecipe,
-  fillWeek,
-  libraryOnlyStatus,
-  mealKindOf,
-  type LibraryOnlyStatus,
-  type PlanCandidate,
-  type PlanReason,
-} from "@shared/lib/mealPlan/fillWeek";
+import type { LibraryOnlyStatus, PlanReason } from "@shared/lib/mealPlan/fillWeek";
+import { fillAndSavePlan, libraryStatusFor, type FillOutcome, type FillRequest } from "@shared/lib/mealPlan/planner";
 import { cleanMealPlanPrefs, mealsOfDay, weekendFor, type PlanWeek } from "@shared/lib/mealPlan/week";
-import { claimHubCard, fetchHubCards } from "@shared/lib/supabase/cookingHub";
+import { fetchHubCards } from "@shared/lib/supabase/cookingHub";
 import { fetchCloudKitchenProfile } from "@shared/lib/supabase/kitchen";
-import {
-  deleteMealPlanEntries,
-  fetchMealPlan,
-  fetchMealPlanPrefs,
-  saveMealPlanMeals,
-  saveMealPlanPrefs,
-  updateMealPlanEntry,
-} from "@shared/lib/supabase/mealPlan";
-import type { MealKind, MealPlanEntry, MealPlanPrefs, PlanAdjust, PlanMeal } from "@shared/types/mealPlan";
+import { deleteMealPlanEntries, fetchMealPlan, fetchMealPlanPrefs, saveMealPlanPrefs, updateMealPlanEntry } from "@shared/lib/supabase/mealPlan";
+import type { MealPlanEntry, MealPlanPrefs, PlanMeal } from "@shared/types/mealPlan";
 import type { Recipe } from "@shared/types/recipe";
 import type { RecipeCard } from "@shared/types/recipeCard";
 
@@ -33,21 +18,11 @@ import { useAuth } from "@/components/AuthProvider";
 import { useLanguage } from "@/components/LanguageProvider";
 import { useRecipes } from "@/lib/library/useRecipes";
 import { usePantryStaples } from "@/lib/list/usePantryStaples";
-import { hubCardsNotInLibrary, mealsToSave, plannedMeals, slotKey, slotsToFill } from "@/lib/plan/planModel";
 
 /** Hub cards to choose from when filling: the best-fitting ones for the cook's diets and allergies. */
 const HUB_POOL = 240;
 
-export type FillRequest = {
-  days: string[];
-  meals: PlanMeal[];
-  mode: "fill" | "reshuffle";
-  useHub: boolean;
-  leftovers: boolean;
-  adjust: PlanAdjust;
-};
-
-export type FillOutcome = { filled: number; empty: number };
+export type { FillOutcome, FillRequest };
 
 /**
  * One week of the signed-in cook's plan, and everything filling it needs: their recipes, their kitchen profile
@@ -115,20 +90,10 @@ export function usePlan(week: PlanWeek) {
     [profile],
   );
   const diets = useMemo(() => profile?.diets ?? [], [profile]);
-  const library = useMemo(() => recipes.map(candidateFromRecipe), [recipes]);
-
   const libraryStatus = useCallback(
-    (meals: PlanMeal[]): LibraryOnlyStatus => libraryOnlyStatus(library, avoid, diets, [...new Set(meals.map(mealKindOf))] as MealKind[]),
-    [avoid, diets, library],
+    (meals: PlanMeal[]): LibraryOnlyStatus => libraryStatusFor(recipes, avoid, diets, meals),
+    [avoid, diets, recipes],
   );
-
-  const hubCandidates = useCallback(async (): Promise<PlanCandidate[]> => {
-    if (!hubPool.current) {
-      const { cards } = await fetchHubCards({ diets, avoid: hubAvoidOf(avoid), sort: "popular", limit: HUB_POOL, includeCount: false });
-      hubPool.current = cards;
-    }
-    return hubCardsNotInLibrary(hubPool.current, recipes).map(candidateFromCard);
-  }, [avoid, diets, recipes]);
 
   const savePrefs = useCallback(
     async (next: MealPlanPrefs) => {
@@ -141,61 +106,35 @@ export function usePlan(week: PlanWeek) {
   /** Fills (or reshuffles) the chosen days and meals, saves the result and reads the week again. */
   const fill = useCallback(
     async (request: FillRequest, onlySlot?: { date: string; meal: PlanMeal }, exclude: string[] = []): Promise<FillOutcome> => {
-      if (!userId || !entries) return { filled: 0, empty: 0 };
-      const status = libraryStatus(request.meals);
-      const useHub = request.useHub || !status.allowed;
-      const hubFor = status.thinMeals;
-      const needsHub = useHub || hubFor.length > 0;
-      const candidates = [...library, ...(needsHub ? await hubCandidates() : [])].filter((candidate) => !exclude.includes(candidate.id));
-
-      const { slots, replace } = onlySlot
-        ? slotsToFill(entries, [onlySlot.date], [onlySlot.meal], "reshuffle")
-        : slotsToFill(entries, request.days, request.meals, request.mode);
-      if (slots.length === 0) return { filled: 0, empty: 0 };
-
-      const result = fillWeek({
-        slots,
-        planned: plannedMeals(entries, replace),
-        candidates,
-        avoid,
-        diets,
-        homeNames,
-        now: new Date(),
-        weekend: weekendFor(language),
-        useHub,
-        hubFor,
-        leftovers: request.leftovers,
-        adjust: request.adjust,
-        seed: `${Date.now()}`,
-      });
-
-      // Hub cards become the cook's own recipes before they go into the plan.
-      const cardIds = [...new Set(result.filled.map((meal) => meal.candidateId).filter((id) => !recipesById.has(id)))];
-      const claimed = new Map<string, string>();
-      await Promise.all(
-        cardIds.map(async (cardId) => {
-          try {
-            claimed.set(cardId, await claimHubCard(cardId));
-          } catch {
-            // A card that can't be saved leaves its meal empty.
-          }
-        }),
+      if (!userId || !entries) return { filled: 0, empty: 0, reasons: {}, savedHubRecipes: false };
+      const outcome = await fillAndSavePlan(
+        {
+          userId,
+          entries,
+          recipes,
+          avoid,
+          diets,
+          homeNames,
+          weekend: weekendFor(language),
+          defaultServings: profile?.defaultServings ?? 2,
+          hubCards: async () => {
+            if (!hubPool.current) {
+              const { cards } = await fetchHubCards({ diets, avoid: hubAvoidOf(avoid), sort: "popular", limit: HUB_POOL, includeCount: false });
+              hubPool.current = cards;
+            }
+            return hubPool.current;
+          },
+        },
+        request,
+        onlySlot,
+        exclude,
       );
-      const recipeIdFor = (id: string) => (recipesById.has(id) ? id : claimed.get(id) ?? null);
-
-      await deleteMealPlanEntries(replace.map((entry) => entry.id));
-      const servings = profile?.defaultServings ?? 2;
-      await saveMealPlanMeals(userId, mealsToSave(result.filled, recipeIdFor, servings));
-      setReasons((previous) => {
-        const next = { ...previous };
-        for (const meal of result.filled) next[slotKey(meal.date, meal.meal)] = meal.reason;
-        return next;
-      });
-      if (claimed.size > 0) void refreshRecipes();
+      setReasons((previous) => ({ ...previous, ...outcome.reasons }));
+      if (outcome.savedHubRecipes) void refreshRecipes();
       await load();
-      return { filled: result.filled.length, empty: result.empty.length };
+      return outcome;
     },
-    [avoid, diets, entries, homeNames, hubCandidates, language, library, libraryStatus, load, profile, recipesById, refreshRecipes, userId],
+    [avoid, diets, entries, homeNames, language, load, profile, recipes, refreshRecipes, userId],
   );
 
   /** Another recipe for one meal. Its leftovers go with it. */

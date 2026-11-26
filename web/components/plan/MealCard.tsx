@@ -5,7 +5,6 @@ import { Check, Lock, LockOpen, MoreHorizontal, Plus, Shuffle } from "lucide-rea
 import Link from "next/link";
 import { useTranslation } from "react-i18next";
 
-import type { PlanReason } from "@shared/lib/mealPlan/fillWeek";
 import type { MealPlanEntry, PlanMeal } from "@shared/types/mealPlan";
 import type { Recipe } from "@shared/types/recipe";
 
@@ -197,25 +196,5 @@ export function MealCard(props: MealCardProps) {
   );
 }
 
-/** The text for a reason the planner gave, or null when it has nothing worth saying. */
-export function reasonText(reason: PlanReason | undefined, t: (key: string, options?: Record<string, unknown>) => string, dayName: (date: string) => string): string | null {
-  if (!reason) return null;
-  switch (reason.key) {
-    case "usesPantry":
-      return t("plan.reason.usesPantry", { item: reason.item });
-    case "sharesWith":
-      return t("plan.reason.sharesWith", { item: reason.item, day: dayName(reason.date) });
-    case "quick":
-      return t("plan.reason.quick", { minutes: reason.minutes });
-    case "fitsDiet":
-      return t("plan.reason.fitsDiet", { diet: t(`recipe.variants.${reason.diet}.label`) });
-    case "leftovers":
-      return t("plan.reason.leftovers", { day: dayName(reason.date) });
-    case "batch":
-      return t("plan.reason.batch", { day: dayName(reason.date) });
-    case "notCookedFor":
-      return t("plan.reason.notCookedFor");
-    default:
-      return t(`plan.reason.${reason.key}`);
-  }
-}
+/** The text for a reason the planner gave (shared with the phone app). */
+export { reasonKeyText as reasonText } from "@shared/lib/mealPlan/reasonText";

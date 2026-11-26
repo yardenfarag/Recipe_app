@@ -1,0 +1,218 @@
+/**
+ * Filling a plan and saving it (PIN-77), the same in both apps. The apps gather what the cook has (recipes, kitchen
+ * profile, what's at home, Hub cards) and call fillAndSavePlan; this works out which meals to fill, runs fillWeek,
+ * saves Hub picks to the Library (claimHubCard), and writes the result.
+ */
+import type { AvoidList } from '../avoidList';
+import { foodWords, homeCovers } from '../pantry';
+import { claimHubCard } from '../supabase/cookingHub';
+import { deleteMealPlanEntries, saveMealPlanMeals, type NewPlanMeal } from '../supabase/mealPlan';
+import type { MealKind, MealPlanEntry, PlanAdjust, PlanMeal } from '../../types/mealPlan';
+import type { Recipe } from '../../types/recipe';
+import type { RecipeCard } from '../../types/recipeCard';
+import {
+  candidateFromCard,
+  candidateFromRecipe,
+  fillWeek,
+  libraryOnlyStatus,
+  mealKindOf,
+  portionsByMeal,
+  type FilledMeal,
+  type LibraryOnlyStatus,
+  type PlanCandidate,
+  type PlanReason,
+  type PlannedMeal,
+} from './fillWeek';
+
+export const slotKey = (date: string, meal: PlanMeal) => `${date}|${meal}`;
+
+/**
+ * The meals to fill, and the ones a reshuffle replaces. "fill" takes only empty meals; "reshuffle" also takes meals
+ * that aren't locked or cooked. Leftovers of a replaced meal are replaced with it (they go when it goes).
+ */
+export function slotsToFill(
+  entries: MealPlanEntry[],
+  days: string[],
+  meals: PlanMeal[],
+  mode: 'fill' | 'reshuffle',
+): { slots: { date: string; meal: PlanMeal }[]; replace: MealPlanEntry[] } {
+  const byKey = new Map(entries.map((entry) => [slotKey(entry.date, entry.meal), entry]));
+  const replace: MealPlanEntry[] = [];
+  const slots: { date: string; meal: PlanMeal }[] = [];
+  for (const date of days) {
+    for (const meal of meals) {
+      const entry = byKey.get(slotKey(date, meal));
+      if (!entry) slots.push({ date, meal });
+      else if (mode === 'reshuffle' && !entry.locked && !entry.cookedAt) {
+        replace.push(entry);
+        slots.push({ date, meal });
+      }
+    }
+  }
+  const replacedIds = new Set(replace.map((entry) => entry.id));
+  for (const entry of entries) {
+    if (entry.leftoverOf && replacedIds.has(entry.leftoverOf) && !replacedIds.has(entry.id)) {
+      replace.push(entry);
+      replacedIds.add(entry.id);
+      if (days.includes(entry.date) && meals.includes(entry.meal) && !slots.some((s) => s.date === entry.date && s.meal === entry.meal)) {
+        slots.push({ date: entry.date, meal: entry.meal });
+      }
+    }
+  }
+  return { slots, replace };
+}
+
+/** The meals that stay, as the planner sees them. */
+export function plannedMeals(entries: MealPlanEntry[], replaced: MealPlanEntry[]): PlannedMeal[] {
+  const gone = new Set(replaced.map((entry) => entry.id));
+  return entries
+    .filter((entry) => !gone.has(entry.id))
+    .map((entry) => ({ date: entry.date, meal: entry.meal, candidateId: entry.recipeId, leftover: entry.leftoverOf != null }));
+}
+
+/** Hub cards the cook has already saved show up as their own recipe; leave the card out. */
+export function hubCardsNotInLibrary(cards: RecipeCard[], recipes: Recipe[]): RecipeCard[] {
+  const urls = new Set(recipes.map((recipe) => recipe.original_url).filter((url): url is string => !!url));
+  return cards.filter((card) => !urls.has(card.original_url) && !urls.has(card.canonical_url));
+}
+
+/**
+ * Filled meals as rows to save. A meal that also feeds leftovers is cooked in more servings; `recipeIdFor` turns a
+ * Hub card into the Library recipe it was saved as.
+ */
+export function mealsToSave(
+  filled: FilledMeal[],
+  recipeIdFor: (candidateId: string) => string | null,
+  servings: number,
+): NewPlanMeal[] {
+  const portions = portionsByMeal(filled);
+  return filled.flatMap((meal) => {
+    const recipeId = recipeIdFor(meal.candidateId);
+    if (!recipeId) return [];
+    return [
+      {
+        date: meal.date,
+        meal: meal.meal,
+        recipeId,
+        servings: Math.min(48, servings * (meal.leftoverOf ? 1 : portions.get(slotKey(meal.date, meal.meal)) ?? 1)),
+        leftoverOf: meal.leftoverOf,
+      },
+    ];
+  });
+}
+
+/** How much of a recipe is at home: ingredients covered, out of those counted (not water and salt). */
+export function haveCount(ingredientNames: string[], homeNames: string[]): { have: number; total: number } {
+  const home = homeNames.map(foodWords).filter((words) => words.length > 0);
+  let have = 0;
+  let total = 0;
+  for (const name of ingredientNames) {
+    const words = foodWords(name);
+    if (words.length === 0 || ['water', 'salt'].includes(words.join(' '))) continue;
+    total += 1;
+    if (home.some((h) => homeCovers(h, words))) have += 1;
+  }
+  return { have, total };
+}
+
+/** Whether an ingredient name is covered by what's at home. */
+export function isAtHome(name: string, homeNames: string[]): boolean {
+  const words = foodWords(name);
+  return words.length > 0 && homeNames.some((home) => homeCovers(foodWords(home), words));
+}
+
+/** Can the Library carry these meals alone? (the 14-recipe rule, and the meals it is short on) */
+export function libraryStatusFor(recipes: Recipe[], avoid: AvoidList, diets: string[], meals: PlanMeal[]): LibraryOnlyStatus {
+  return libraryOnlyStatus(recipes.map(candidateFromRecipe), avoid, diets, [...new Set(meals.map(mealKindOf))] as MealKind[]);
+}
+
+export type FillRequest = {
+  days: string[];
+  meals: PlanMeal[];
+  mode: 'fill' | 'reshuffle';
+  useHub: boolean;
+  leftovers: boolean;
+  adjust: PlanAdjust;
+};
+
+export type FillContext = {
+  userId: string;
+  entries: MealPlanEntry[];
+  recipes: Recipe[];
+  avoid: AvoidList;
+  diets: string[];
+  homeNames: string[];
+  weekend: number[];
+  defaultServings: number;
+  /** Hub cards to choose from, asked for only when the Hub is used. */
+  hubCards: () => Promise<RecipeCard[]>;
+};
+
+export type FillOutcome = {
+  filled: number;
+  empty: number;
+  /** Why each meal was picked, by slotKey, for this visit (not saved). */
+  reasons: Record<string, PlanReason>;
+  /** Hub cards were saved to the Library: the apps reload their recipes. */
+  savedHubRecipes: boolean;
+};
+
+/**
+ * Fills (or reshuffles) the chosen days and meals and saves the result. `onlySlot` refills one meal; `exclude` keeps
+ * recipes out (a shuffle never gives back the same one).
+ */
+export async function fillAndSavePlan(
+  context: FillContext,
+  request: FillRequest,
+  onlySlot?: { date: string; meal: PlanMeal },
+  exclude: string[] = [],
+): Promise<FillOutcome> {
+  const status = libraryStatusFor(context.recipes, context.avoid, context.diets, request.meals);
+  const useHub = request.useHub || !status.allowed;
+  const hubFor = status.thinMeals;
+  const library: PlanCandidate[] = context.recipes.map(candidateFromRecipe);
+  const hub = useHub || hubFor.length > 0 ? hubCardsNotInLibrary(await context.hubCards(), context.recipes).map(candidateFromCard) : [];
+  const candidates = [...library, ...hub].filter((candidate) => !exclude.includes(candidate.id));
+
+  const { slots, replace } = onlySlot
+    ? slotsToFill(context.entries, [onlySlot.date], [onlySlot.meal], 'reshuffle')
+    : slotsToFill(context.entries, request.days, request.meals, request.mode);
+  if (slots.length === 0) return { filled: 0, empty: 0, reasons: {}, savedHubRecipes: false };
+
+  const result = fillWeek({
+    slots,
+    planned: plannedMeals(context.entries, replace),
+    candidates,
+    avoid: context.avoid,
+    diets: context.diets,
+    homeNames: context.homeNames,
+    now: new Date(),
+    weekend: context.weekend,
+    useHub,
+    hubFor,
+    leftovers: request.leftovers,
+    adjust: request.adjust,
+    seed: `${Date.now()}`,
+  });
+
+  const recipeIds = new Set(context.recipes.map((recipe) => recipe.id));
+  const cardIds = [...new Set(result.filled.map((meal) => meal.candidateId).filter((id) => !recipeIds.has(id)))];
+  const claimed = new Map<string, string>();
+  await Promise.all(
+    cardIds.map(async (cardId) => {
+      try {
+        claimed.set(cardId, await claimHubCard(cardId));
+      } catch {
+        // A card that can't be saved leaves its meal empty.
+      }
+    }),
+  );
+  const recipeIdFor = (id: string) => (recipeIds.has(id) ? id : claimed.get(id) ?? null);
+
+  await deleteMealPlanEntries(replace.map((entry) => entry.id));
+  await saveMealPlanMeals(context.userId, mealsToSave(result.filled, recipeIdFor, context.defaultServings));
+
+  const reasons: Record<string, PlanReason> = {};
+  for (const meal of result.filled) reasons[slotKey(meal.date, meal.meal)] = meal.reason;
+  return { filled: result.filled.length, empty: result.empty.length, reasons, savedHubRecipes: claimed.size > 0 };
+}

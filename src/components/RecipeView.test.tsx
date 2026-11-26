@@ -35,6 +35,7 @@ vi.mock('react-i18next', () => ({ useTranslation: () => ({ t: (key: string) => k
 
 vi.mock('@/components/MeasurementToggle', () => ({ MeasurementToggle: h.standIn('MeasurementToggle') }));
 vi.mock('@/components/AddToCollectionModal', () => ({ AddToCollectionModal: h.standIn('AddToCollectionModal') }));
+vi.mock('@/components/plan/AddToPlanSheet', () => ({ AddToPlanSheet: h.standIn('AddToPlanSheet') }));
 vi.mock('@/components/AddToShoppingListModal', () => ({ AddToShoppingListModal: h.standIn('AddToShoppingListModal') }));
 vi.mock('@/components/CookAlongVideoModal', () => ({ CookAlongVideoModal: h.standIn('CookAlongVideoModal') }));
 vi.mock('@/components/CookMode', () => ({ CookMode: h.standIn('CookMode') }));

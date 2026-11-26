@@ -61,6 +61,36 @@ export async function fetchMealPlanWithTitles(from: string, to: string): Promise
   });
 }
 
+/** Dinners to remind about, with what the phone's reminders need from each recipe. */
+export async function fetchPlannedDinners(
+  from: string,
+  to: string,
+): Promise<{ id: string; date: string; recipeId: string; title: string; minutes: number | null; ingredients: string[] }[]> {
+  const { data, error } = await supabase
+    .from('meal_plan_entries')
+    .select('id, plan_date, recipe_id, leftover_of, cooked_at, recipes(title, estimated_time_minutes, ingredients)')
+    .eq('meal', 'dinner')
+    .is('leftover_of', null)
+    .is('cooked_at', null)
+    .gte('plan_date', from)
+    .lte('plan_date', to);
+  if (error) throw error;
+  type Row = {
+    id: string;
+    plan_date: string;
+    recipe_id: string;
+    recipes?: { title?: string; estimated_time_minutes?: number | null; ingredients?: { name?: string }[] } | null;
+  };
+  return ((data ?? []) as unknown as Row[]).map((row) => ({
+    id: row.id,
+    date: row.plan_date,
+    recipeId: row.recipe_id,
+    title: row.recipes?.title ?? '',
+    minutes: row.recipes?.estimated_time_minutes ?? null,
+    ingredients: (row.recipes?.ingredients ?? []).map((ing) => ing.name ?? '').filter(Boolean),
+  }));
+}
+
 /** A meal to save. Leftovers name the meal that makes them, which is either saved already or in the same call. */
 export type NewPlanMeal = {
   date: string;

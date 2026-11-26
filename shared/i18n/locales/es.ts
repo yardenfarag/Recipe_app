@@ -2377,6 +2377,20 @@ export default {
     "title": "Esta semana",
     "nextWeekTitle": "La semana que viene",
     "tabTitle": "Plan",
+    "atHome": "En casa",
+    "signIn": "Inicia sesión para planificar tu semana. Tu plan se guarda en tu cuenta.",
+    "reminders": {
+      "defrostTitle": "Saca {{item}} del congelador",
+      "defrostBody": "Es para {{title}} de esta noche.",
+      "tonightTitle": "Esta noche: {{title}}",
+      "tonightBody": "Toca para abrir la receta.",
+      "tonightBodyMinutes": "{{minutes}} min. Toca para abrir la receta."
+    },
+    "libraryTabs": {
+      "label": "Secciones de la biblioteca",
+      "mine": "Mi biblioteca",
+      "small": "El Hub tiene más recetas que encajan contigo"
+    },
     "tonightPlanned": "Esta noche, de tu plan",
     "add": {
       "title": "Añadir al plan",

@@ -2551,6 +2551,20 @@ export default {
     "title": "هذا الأسبوع",
     "nextWeekTitle": "الأسبوع القادم",
     "tabTitle": "الخطة",
+    "atHome": "موجود في البيت",
+    "signIn": "سجّل الدخول لتخطط أسبوعك. تُحفظ خطتك في حسابك.",
+    "reminders": {
+      "defrostTitle": "أخرج {{item}} من الفريزر",
+      "defrostBody": "إنه لعشاء الليلة: {{title}}.",
+      "tonightTitle": "الليلة: {{title}}",
+      "tonightBody": "اضغط لفتح الوصفة.",
+      "tonightBodyMinutes": "{{minutes}} د. اضغط لفتح الوصفة."
+    },
+    "libraryTabs": {
+      "label": "أقسام المكتبة",
+      "mine": "مكتبتي",
+      "small": "في الـHub وصفات أخرى تناسبك"
+    },
     "tonightPlanned": "الليلة، من خطتك",
     "add": {
       "title": "أضف إلى الخطة",

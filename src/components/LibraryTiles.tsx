@@ -92,9 +92,9 @@ export function useTonightsPick(recipes: Recipe[]): { pick: Recipe | null; anoth
  * The top of the Library (PIN-177): tonight's pick across the width. Unlike the web, the phone has no "Cooked this
  * week" or List tiles under it: List has its own tab, and the recipes come up sooner without them.
  */
-export function TonightsPick({ pick, onAnother }: { pick: Recipe | null; onAnother: (() => void) | null }) {
+export function TonightsPick({ pick, onAnother, planned = false }: { pick: Recipe | null; onAnother: (() => void) | null; planned?: boolean }) {
   return pick ? (
-    <TonightTile recipe={pick} onAnother={onAnother} />
+    <TonightTile recipe={pick} onAnother={onAnother} planned={planned} />
   ) : (
     <Tile tone="element" style={{ height: TONIGHT_TILE_HEIGHT }} />
   );
@@ -170,7 +170,7 @@ function PhotoActionButton({
 }
 
 /** Tonight's pick: the photo, the name, how long and where it came from, and the ways to start. */
-function TonightTile({ recipe, onAnother }: { recipe: Recipe; onAnother: (() => void) | null }) {
+function TonightTile({ recipe, onAnother, planned }: { recipe: Recipe; onAnother: (() => void) | null; planned: boolean }) {
   const { t } = useTranslation();
   const photo = usePhotoColors();
   const type = useTypography();
@@ -213,7 +213,7 @@ function TonightTile({ recipe, onAnother }: { recipe: Recipe; onAnother: (() => 
         trackId="library.tonight.open"
         onPress={() => router.push(`/recipe/${recipe.id}`)}
         accessibilityRole="button"
-        accessibilityLabel={`${t('web.library.tonightsPick')}: ${title}`}
+        accessibilityLabel={`${planned ? t('plan.tonightPlanned') : t('web.library.tonightsPick')}: ${title}`}
         accessibilityHint={t('web.library.openRecipe')}
         style={({ pressed }) => [
           StyleSheet.absoluteFill,
@@ -221,7 +221,7 @@ function TonightTile({ recipe, onAnother }: { recipe: Recipe; onAnother: (() => 
         ]}
       />
       <View pointerEvents="none" style={{ gap: 8 }}>
-        <TileBadge tone="photo">{t('web.library.tonightsPick')}</TileBadge>
+        <TileBadge tone="photo">{planned ? t('plan.tonightPlanned') : t('web.library.tonightsPick')}</TileBadge>
         <Text
           accessibilityRole="header"
           numberOfLines={3}

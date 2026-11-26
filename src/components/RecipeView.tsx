@@ -7,6 +7,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { MeasurementToggle } from '@/components/MeasurementToggle';
 import { AddToCollectionModal } from '@/components/AddToCollectionModal';
+import { AddToPlanSheet } from '@/components/plan/AddToPlanSheet';
 import { AddToShoppingListModal } from '@/components/AddToShoppingListModal';
 import { CookAlongVideoModal } from '@/components/CookAlongVideoModal';
 import { CookMode } from '@/components/CookMode';
@@ -236,6 +237,7 @@ export function RecipeView({
 }: RecipeViewProps) {
   const { t } = useTranslation();
   const { user } = useAuth();
+  const [planOpen, setPlanOpen] = useState(false);
   const { colors, scheme } = useThemePreference();
   const photo = usePhotoColors();
   const type = useTypography();
@@ -977,6 +979,10 @@ export function RecipeView({
   const menuItems: RecipeMenuItem[] = [];
   if (onEdit) {
     menuItems.push({ key: 'edit', icon: 'create-outline', label: t('recipeEditor.titleEdit'), onPress: onEdit, trackId: 'recipe.title_edit' });
+  }
+  // A saved recipe of a signed-in cook can go into the meal plan (PIN-77).
+  if (onEdit && pinchShareRecipeId) {
+    menuItems.push({ key: 'plan', icon: 'calendar-outline', label: t('plan.add.title'), onPress: () => setPlanOpen(true), trackId: 'recipe.add_to_plan' });
   }
   const fixesStart = menuItems.length > 0;
   const canRepair = allowAdaptations && extractionStatus === 'partial' && recipeHasSource(recipe);
@@ -1859,6 +1865,9 @@ export function RecipeView({
 
       {/* Modals must sit outside ScrollView — nested Modals often fail to present on iOS. */}
       <RecipeMoreMenu visible={moreOpen} title={title} items={menuItems} onClose={() => setMoreOpen(false)} />
+      {pinchShareRecipeId ? (
+        <AddToPlanSheet visible={planOpen} onClose={() => setPlanOpen(false)} recipeId={pinchShareRecipeId} servings={recipe.servings} title={title} />
+      ) : null}
 
       <AddToShoppingListModal
         visible={shoppingListModalOpen}
