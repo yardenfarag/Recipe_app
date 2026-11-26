@@ -4,7 +4,7 @@ import { Platform } from 'react-native';
 
 import { useAuth } from '@/hooks/useAuth';
 import { useOnboarding } from '@/hooks/useOnboarding';
-import { isPublicRecipePath } from '@/lib/authReturnPath';
+import { isJoinPath, isPublicRecipePath } from '@/lib/authReturnPath';
 import { backfillAccountOnboarded } from '@shared/lib/supabase/onboarding';
 
 /**
@@ -46,8 +46,10 @@ export function OnboardingGate() {
     // Shared and Hub recipes show the recipe first and ask for sign-in only on Save, so someone
     // following a link sees what they came for instead of onboarding.
     const onPublicRecipe = isPublicRecipePath(pathname);
+    // A household invite shows whose household it is first, and asks for an account on Join.
+    const onJoin = isJoinPath(pathname);
 
-    if (onWelcome || onLegal || onAdminDashboard || onPublicRecipe) return;
+    if (onWelcome || onLegal || onAdminDashboard || onPublicRecipe || onJoin) return;
 
     if (!completed && !onOnboarding && !onAuth) {
       router.replace('/onboarding');

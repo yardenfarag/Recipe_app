@@ -14,6 +14,7 @@ import {
 import type { ShoppingListIncomingItem, ShoppingListItem } from "@shared/types/shoppingList";
 
 import { useAuth } from "@/components/AuthProvider";
+import { useHouseholdLive } from "@/lib/household/HouseholdProvider";
 import { addToShoppingList, combineOnShoppingList, type AddToListMode, type AddToListResult } from "@/lib/list/shoppingListSync";
 
 export type ItemPatch = { name?: string; quantity?: number | null; unit?: string | null };
@@ -21,7 +22,8 @@ export type ItemPatch = { name?: string; quantity?: number | null; unit?: string
 /**
  * The signed-in person's shopping list: the same rows the mobile app reads, so a change on either shows on the
  * other. Checking, editing and removing show at once and are put back if saving fails. The list is read again when
- * the tab comes back into view, so what was ticked on the phone in the shop is there on return.
+ * the tab comes back into view, so what was ticked on the phone in the shop is there on return, and when someone
+ * else in the household changes it (live, ADR 034).
  */
 export function useShoppingList() {
   const { user } = useAuth();
@@ -69,16 +71,30 @@ export function useShoppingList() {
     return () => document.removeEventListener("visibilitychange", onVisible);
   }, [refresh]);
 
+  // Someone else in the household changed the list (ADR 034). While a save of ours runs, the read waits for it.
+  const staleWhileSaving = useRef(false);
+  useHouseholdLive("list", () => {
+    if (pending.current > 0) staleWhileSaving.current = true;
+    else void refresh();
+  });
+
   /** Runs a save, stopping any read in flight from overwriting what it changes. */
-  const saving = useCallback(async <T>(work: () => Promise<T>): Promise<T> => {
-    pending.current += 1;
-    requestId.current += 1;
-    try {
-      return await work();
-    } finally {
-      pending.current -= 1;
-    }
-  }, []);
+  const saving = useCallback(
+    async <T>(work: () => Promise<T>): Promise<T> => {
+      pending.current += 1;
+      requestId.current += 1;
+      try {
+        return await work();
+      } finally {
+        pending.current -= 1;
+        if (pending.current === 0 && staleWhileSaving.current) {
+          staleWhileSaving.current = false;
+          void refresh();
+        }
+      }
+    },
+    [refresh],
+  );
 
   /** Changes one line at once, saves it, and puts back only that line if saving fails. */
   const changeItem = useCallback(
@@ -91,12 +107,18 @@ export function useShoppingList() {
         try {
           await updateShoppingListItem(after);
         } catch (caught) {
+          // Someone else in the household removed this line meanwhile (no row came back): it's gone, not an error.
+          if ((caught as { code?: string } | null)?.code === "PGRST116") {
+            setItems(itemsRef.current.filter((item) => item.id !== id));
+            void refresh();
+            return;
+          }
           // Only if nothing newer was done to it meanwhile (a second click while the first was saving).
           setItems(sortShoppingListItems(itemsRef.current.map((item) => (item.id === id && item.updated_at === after.updated_at ? before : item))));
           throw caught;
         }
       }),
-    [saving, setItems],
+    [refresh, saving, setItems],
   );
 
   const toggleChecked = useCallback((id: string) => changeItem(id, (item) => ({ ...item, checked: !item.checked })), [changeItem]);

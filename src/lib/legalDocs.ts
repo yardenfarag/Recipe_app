@@ -44,7 +44,7 @@ const DOCS: Record<LegalDocId, LegalDoc> = {
   privacy: {
     id: 'privacy',
     title: 'Privacy Policy',
-    meta: 'Last updated: November 18, 2026',
+    meta: 'Last updated: November 26, 2026',
     blocks: [
       {
         kind: 'card',
@@ -111,7 +111,7 @@ const DOCS: Record<LegalDocId, LegalDoc> = {
         kind: 'p',
         parts: [
           text(
-            'We keep account, library and app activity data while your account exists, and delete it when you delete your account. Photos you upload to Snap or Guess the recipe are stored when you send them and kept until you delete your account, even if no recipe is made or you later delete the recipe. App activity from people who never create an account is linked only to a random install id and has no fixed deletion date. Product events are deleted after 13 months. Aggregated or anonymized usage events may be retained after deletion for cost and abuse analysis. Guest data stays on your device until you clear app data or migrate to an account.',
+            'We keep account, library and app activity data while your account exists, and delete it when you delete your account. Photos you upload to Snap or Guess the recipe are stored when you send them and kept until you delete your account, even if no recipe is made or you later delete the recipe. Photos of your fridge, freezer or cupboards for your pantry are read and not stored: only the list of food you save is kept, until you remove it or delete your account. When you use your phone\'s camera for the web app, the photo waits on our servers until your computer picks it up, at most about 15 minutes, and is then deleted. App activity from people who never create an account is linked only to a random install id and has no fixed deletion date. Product events are deleted after 13 months. Aggregated or anonymized usage events may be retained after deletion for cost and abuse analysis. Guest data stays on your device until you clear app data or migrate to an account.',
           ),
         ],
       },

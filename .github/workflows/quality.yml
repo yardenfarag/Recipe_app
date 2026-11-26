@@ -151,10 +151,11 @@ jobs:
         with:
           version: 2.109.1
 
-      # Auth, REST and the mail catcher (sign-in codes are sent through it) stay up.
+      # Auth, REST, the mail catcher (sign-in codes are sent through it) and Realtime (a household's list updates live
+      # on the others' screens, ADR 034) stay up.
       - name: Start Supabase
         working-directory: .
-        run: supabase start -x studio,imgproxy,realtime,edge-runtime,logflare,vector,supavisor,postgres-meta
+        run: supabase start -x studio,imgproxy,edge-runtime,logflare,vector,supavisor,postgres-meta
 
       - name: Install dependencies
         run: npm ci

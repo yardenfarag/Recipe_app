@@ -1,4 +1,5 @@
 import Ionicons from '@expo/vector-icons/Ionicons';
+import { useFocusEffect } from '@react-navigation/native';
 import { router } from 'expo-router';
 import { useCallback, useEffect, useMemo, useState, type ComponentProps, type ReactNode } from 'react';
 import { useTranslation } from 'react-i18next';
@@ -14,6 +15,8 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { ConfirmDialog } from '@/components/ConfirmDialog';
+import { MemberAvatar } from '@/components/household/HouseholdAvatar';
+import { HouseholdStrip, ShopTogetherPromo } from '@/components/household/ListHousehold';
 import { FieldInput } from '@/components/text-input';
 import { Screen } from '@/components/Screen';
 import { SelectRecipesForShoppingListModal } from '@/components/SelectRecipesForShoppingListModal';
@@ -26,19 +29,26 @@ import { Tile, TileBadge, TileLabel } from '@/components/ui/Tile';
 import { TopBar } from '@/components/ui/TopBar';
 import { HAIRLINE } from '@/components/ui/tokens';
 import { FormContentWidth } from '@/constants/theme';
+import { useAuth } from '@/hooks/useAuth';
 import { useBreakpoint } from '@/hooks/useBreakpoint';
 import { useCollections } from '@/hooks/useCollections';
-import { useKitchenProfile } from '@/hooks/useKitchenProfile';
+import { useHousehold } from '@/hooks/useHousehold';
 import { useLanguagePreference } from '@/hooks/useLanguagePreference';
 import { useMeasurementPreference } from '@/hooks/useMeasurementPreference';
+import { trackPantryWrite, usePantry } from '@/hooks/usePantry';
 import { useUnitSystemPreference } from '@/hooks/useUnitSystemPreference';
 import { useRecipes } from '@/hooks/useRecipes';
 import { useRtl } from '@/hooks/useRtl';
 import { useShoppingList } from '@/hooks/useShoppingList';
+import { useStaples } from '@/hooks/useStaples';
 import { useThemePreference } from '@/hooks/useThemePreference';
 import { announce, CHROME_MAX_FONT_SCALE } from '@/lib/a11y';
 import { pickIngredientAmount } from '@shared/lib/ingredientAmounts';
-import { filterPantryStaples } from '@shared/lib/pantryStaples';
+import { makeAtHome, splitAtHome } from '@/lib/pantryHelpers';
+import { memberWhoAdded } from '@shared/lib/household';
+import { pantryHomeNames, placeForAisle } from '@shared/lib/pantry';
+import { upsertPantryItems } from '@shared/lib/supabase/pantry';
+import { showToast } from '@shared/lib/toast';
 import { formatQuantity } from '@shared/lib/formatQuantity';
 import { logTap } from '@/lib/interactionLog';
 import {
@@ -71,7 +81,22 @@ export default function ShoppingListScreen() {
     clearChecked,
     clearAll,
   } = useShoppingList();
-  const { pantryStaples, keepStaple } = useKitchenProfile();
+  // "Always have" is the household's (docs/adr/034-households.md); a guest's stays on the device.
+  const { staples: pantryStaples, keepStaple } = useStaples();
+  const { user } = useAuth();
+  const { household, refresh: refreshHousehold } = useHousehold();
+  // What's at home stays off the list like a staple (PIN-181). Read quietly: without it, the staples still count.
+  const pantry = usePantry(false);
+  const reloadPantry = pantry.reload;
+  useFocusEffect(
+    useCallback(() => {
+      if (!user) return;
+      void reloadPantry();
+      // Who is in the household, for the strip and "Added by". Not on every tab switch.
+      void refreshHousehold({ maxAgeMs: 30_000 });
+    }, [user, reloadPantry, refreshHousehold]),
+  );
+  const homeNames = useMemo(() => pantryHomeNames(pantry.items, pantryStaples), [pantry.items, pantryStaples]);
   const { recipes } = useRecipes();
   const { collections } = useCollections();
   const { system: measurementSystem } = useMeasurementPreference();
@@ -102,6 +127,8 @@ export default function ShoppingListScreen() {
   const [notice, setNotice] = useState<{
     message: string;
     combineName?: string;
+    /** Just ticked as bought: offer to put it in the pantry. */
+    bought?: ShoppingListItem;
   } | null>(null);
 
   const showRefreshError = Boolean(error) && items.length > 0;
@@ -158,7 +185,7 @@ export default function ShoppingListScreen() {
       const selected = recipes.filter((recipe) => selectedIds.includes(recipe.id));
       const payload = selected.map((recipe) => ({
         id: recipe.id,
-        ingredients: filterPantryStaples(recipe.ingredients ?? [], pantryStaples).kept.map((ing) => {
+        ingredients: splitAtHome(recipe.ingredients ?? [], homeNames).kept.map((ing) => {
           const converted = pickIngredientAmount(ing, measurementSystem, units);
           return {
             name: ing.name,
@@ -168,7 +195,7 @@ export default function ShoppingListScreen() {
         }),
       }));
       const skipped = selected.flatMap((recipe) =>
-        filterPantryStaples(recipe.ingredients ?? [], pantryStaples).skipped,
+        splitAtHome(recipe.ingredients ?? [], homeNames).skipped,
       );
 
       const result = await addFromRecipes(payload);
@@ -187,7 +214,7 @@ export default function ShoppingListScreen() {
         })}${pantryNote}`,
       );
     },
-    [addFromRecipes, measurementSystem, pantryStaples, recipes, t, units],
+    [addFromRecipes, homeNames, measurementSystem, recipes, t, units],
   );
 
   const handleAdd = useCallback(async () => {
@@ -238,6 +265,8 @@ export default function ShoppingListScreen() {
     }
   }, [addManual, name, quantityText, t, unit]);
 
+  const atHome = useMemo(() => makeAtHome(homeNames), [homeNames]);
+
   const handleToggle = useCallback(
     async (item: ShoppingListItem) => {
       try {
@@ -247,9 +276,37 @@ export default function ShoppingListScreen() {
           t('list.updateFailed'),
           err instanceof Error ? err.message : t('common.tryAgain'),
         );
+        return;
+      }
+      // Bought it: offer to add it to the pantry, unless it's there already.
+      if (user && !item.checked && !atHome(item.name)) {
+        setNotice({ message: t('pantry.bought.prompt', { name: item.name }), bought: item });
+      } else if (notice?.bought?.id === item.id) {
+        setNotice(null);
       }
     },
-    [t, toggleChecked],
+    [atHome, notice, t, toggleChecked, user],
+  );
+
+  const pantryItems = pantry.items;
+  const replacePantry = pantry.replace;
+  const handleAddBought = useCallback(
+    async (item: ShoppingListItem) => {
+      if (!user) return;
+      const aisle = shoppingAisleForName(item.name);
+      try {
+        const saved = await trackPantryWrite(
+          upsertPantryItems(user.id, [
+            { name: item.name, place: placeForAisle(aisle), aisle, source: 'shopping_list' },
+          ]),
+        );
+        replacePantry([...pantryItems.filter((row) => !saved.some((s) => s.id === row.id)), ...saved]);
+        setNotice({ message: t('pantry.bought.added', { name: item.name }) });
+      } catch {
+        showToast(t('pantry.saveFailed'), 'error');
+      }
+    },
+    [pantryItems, replacePantry, t, user],
   );
 
   const handleRemove = useCallback(
@@ -390,6 +447,9 @@ export default function ShoppingListScreen() {
             : null;
       const dupCount = duplicateCounts.get(normalizeShoppingName(item.name)) ?? 0;
       const isDuplicate = dupCount > 1;
+      // Someone else in the household put it on the list: their picture, small, next to the name.
+      const adder = memberWhoAdded(household, item.addedBy);
+      const addedByLabel = adder ? t('household.addedBy', { name: adder.displayName }) : null;
       const showDuplicatePrompt = () => {
         Alert.alert(
           t('list.duplicateTitle'),
@@ -406,6 +466,7 @@ export default function ShoppingListScreen() {
       const itemA11yLabel = [
         item.name,
         amount,
+        addedByLabel,
         isDuplicate ? t('list.alsoListed', { count: dupCount }) : null,
       ]
         .filter(Boolean)
@@ -457,15 +518,22 @@ export default function ShoppingListScreen() {
               {item.checked ? <Ionicons name="checkmark" size={15} color={colors.onPrimary} /> : null}
             </View>
             <View style={{ flex: 1, minWidth: 0, gap: 2 }}>
-              <Text
-                variant="bodySmall"
-                weight="semibold"
-                tone={item.checked ? 'muted' : 'default'}
-                numberOfLines={2}
-                style={item.checked ? { textDecorationLine: 'line-through' } : null}
-              >
-                {item.name}
-              </Text>
+              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+                <Text
+                  variant="bodySmall"
+                  weight="semibold"
+                  tone={item.checked ? 'muted' : 'default'}
+                  numberOfLines={2}
+                  style={[{ flexShrink: 1 }, item.checked ? { textDecorationLine: 'line-through' } : null]}
+                >
+                  {item.name}
+                </Text>
+                {adder && addedByLabel ? (
+                  <View accessibilityLabel={addedByLabel} accessibilityRole="image">
+                    <MemberAvatar member={adder} size={18} />
+                  </View>
+                ) : null}
+              </View>
               {amount ? (
                 <Text variant="caption" tone="muted" style={{ fontVariant: ['tabular-nums'] }}>
                   {amount}
@@ -533,6 +601,7 @@ export default function ShoppingListScreen() {
       appLanguage,
       colors,
       duplicateCounts,
+      household,
       handleCombine,
       handleLongPress,
       handleRemove,
@@ -661,6 +730,8 @@ export default function ShoppingListScreen() {
         />
       </View>
 
+      {user ? <HouseholdStrip /> : null}
+
       <Button
         trackId="shopping_list.from_recipes"
         variant="secondary"
@@ -733,6 +804,8 @@ export default function ShoppingListScreen() {
         </View>
       </Tile>
 
+      {user ? <ShopTogetherPromo /> : null}
+
       {showRefreshError ? (
         <View
           style={{
@@ -782,6 +855,16 @@ export default function ShoppingListScreen() {
                 onPress={() => void handleCombine(notice.combineName!)}
               >
                 {t('list.combineOneLine')}
+              </Button>
+            ) : null}
+            {notice.bought ? (
+              <Button
+                trackId="shopping_list.notice.add_to_pantry"
+                variant="link"
+                icon="basket-outline"
+                onPress={() => void handleAddBought(notice.bought!)}
+              >
+                {t('pantry.bought.add')}
               </Button>
             ) : null}
           </View>

@@ -1,4 +1,4 @@
-import { useId, type InputHTMLAttributes, type ReactNode } from "react";
+import { useId, type InputHTMLAttributes, type ReactNode, type Ref } from "react";
 
 import { cn } from "@/lib/cn";
 
@@ -18,6 +18,8 @@ export function TextField({
   invalid?: boolean;
   /** A control inside the field's end, e.g. show/hide password. */
   trailing?: ReactNode;
+  /** The input itself, e.g. to focus it when the form finds it empty. */
+  ref?: Ref<HTMLInputElement>;
 }) {
   const id = useId();
   const hintId = hint ? `${id}-hint` : undefined;

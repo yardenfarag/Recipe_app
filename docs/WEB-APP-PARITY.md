@@ -64,7 +64,7 @@ Expo: `src/app/(tabs)/index.tsx`, `RecipeLibraryToolbar`, `RecipeListRow`, `Reci
 | Favorites, Cook tonight (45 min, up to Medium effort) | ✅ | Same limits, from shared code. |
 | Filter panel: sort, tags, Clear tags | 🔄 | Count badge instead of a dot; radio chips. Clear tags added (G12). |
 | Collections: choose, create, rename, delete | 🔄 | Always visible; the menu is on the selected collection and adds "Make cookbook". |
-| Fridge match (photo, results, daily limit, errors) | ✅ | Adds an "unreadable photo" message. |
+| What can I cook? (from the saved pantry; replaced the one-photo fridge match in PIN-181) | ✅ | Same ranking, from shared code. |
 | Card: photo, title, time, effort, cost, cooked date, needed appliance | 🔄 | Adds a source chip (TikTok, Website, Photo). Real links: middle-click opens a new tab. |
 | Card heart (favorite) | ✅ | A failure shows a toast (silent on Expo web). |
 | Card menu: add to collection, edit, rename, delete | ✅ | Dropdown; Escape closes it. No long-press (touch only). |
@@ -215,7 +215,10 @@ Expo: `src/app/(tabs)/settings.tsx`, `src/app/settings/*`. PIN-139, PIN-154.
 | Credits: balance, free credits, packs, Polar checkout, coming back from checkout, sales switch | 🔄 | Packs on the page; free credits left and reset date; both store links when sales are off. |
 | Appearance: light/dark/auto, theme pack | ✅ | Also in the account menu. Saved on the account. |
 | Language, right to left | ✅ | Also in the account menu. |
-| Recipe preferences: spoons/grams, metric/US, diets, allergies and dislikes, appliances, default servings, always swap, pantry staples, Hub sharing, auto-apply | ✅ | |
+| Recipe preferences: spoons/grams, metric/US, diets, allergies and dislikes, appliances, default servings, always swap, Hub sharing, auto-apply | ✅ | Pantry staples moved to the Pantry page (PIN-181). |
+| Pantry: items by place, add, remove with Undo, Always have, scan a place again (PIN-181) | 🔄 | Web removes with Undo; mobile also moves an item with a long press. |
+| Pantry scan: places, photos read as they're added, retake, resume, review, rescan compare (PIN-181) | 🔄 | Web uploads or drops photos, and adds "Use your phone's camera" (QR code to `/app/phone`). |
+| Pantry offer after sign-up (PIN-181) | ✅ | A dialog on web, a sheet on mobile. |
 | Help: report an issue, send feedback, email support, about Pinch | 🔄 | One page with the forms in it. |
 | Legal: privacy, terms, deletion guides | 🔄 | Static pages in a new tab. Old in-app addresses redirect there (G2). |
 | Share Pinch | ✅ | |

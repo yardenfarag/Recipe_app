@@ -85,29 +85,19 @@ export async function checkListItem(name: string, checked = true): Promise<void>
   );
 }
 
-async function readKitchen(): Promise<Record<string, unknown>> {
-  const { url, userId, headers } = await asTestUser();
-  const response = await ok(await fetch(`${url}/rest/v1/profiles?id=eq.${userId}&select=kitchen`, { headers }), "Reading the kitchen profile");
-  const rows = (await response.json()) as { kitchen: Record<string, unknown> | null }[];
-  return rows[0]?.kitchen ?? {};
+async function rpc(fn: string, args: Record<string, unknown> = {}) {
+  const { url, headers } = await asTestUser();
+  const response = await ok(await fetch(`${url}/rest/v1/rpc/${fn}`, { method: "POST", headers, body: JSON.stringify(args) }), `Calling ${fn}`);
+  return response.json();
 }
 
-/** What the test account keeps at home. */
+/** What the test account's household keeps at home ("Always have"; the household's since ADR 034). */
 export async function readPantryStaples(): Promise<string[]> {
-  const kitchen = await readKitchen();
-  return Array.isArray(kitchen.pantryStaples) ? (kitchen.pantryStaples as string[]) : [];
+  const household = (await rpc("get_my_household")) as { staples: string[] | null };
+  return household.staples ?? [];
 }
 
-/** Sets what the test account keeps at home, leaving the rest of its kitchen profile as it is. */
+/** Sets what the test account's household keeps at home, as the phone would. */
 export async function setPantryStaples(pantryStaples: string[]): Promise<void> {
-  const kitchen = await readKitchen();
-  const { url, userId, headers } = await asTestUser();
-  await ok(
-    await fetch(`${url}/rest/v1/profiles?id=eq.${userId}`, {
-      method: "PATCH",
-      headers: { ...headers, Prefer: "return=minimal" },
-      body: JSON.stringify({ kitchen: { ...kitchen, pantryStaples } }),
-    }),
-    "Setting pantry staples",
-  );
+  await rpc("set_household_staples", { p_staples: pantryStaples });
 }

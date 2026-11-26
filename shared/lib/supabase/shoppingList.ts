@@ -1,8 +1,15 @@
+/**
+ * The shopping list's data. The list belongs to the household (ADR 034): every member reads and changes the same
+ * rows under RLS, and `user_id` on a row is who added it ("Added by"). The database fills in the household on
+ * insert, so callers still only pass their own user id.
+ */
 import { supabase } from './client';
 import type { ShoppingListItem } from '../../types/shoppingList';
 
 type ShoppingListRow = {
   id: string;
+  /** Who added the line; null once their account is gone. */
+  user_id?: string | null;
   name: string;
   quantity: number | string | null;
   unit: string | null;
@@ -30,6 +37,7 @@ function rowToItem(row: ShoppingListRow): ShoppingListItem {
       row.source_recipe_ids && row.source_recipe_ids.length > 0
         ? row.source_recipe_ids
         : undefined,
+    ...(row.user_id ? { addedBy: row.user_id } : {}),
     created_at: row.created_at,
     updated_at: row.updated_at,
   };
@@ -57,6 +65,7 @@ export async function fetchShoppingList(): Promise<ShoppingListItem[]> {
   return ((data as ShoppingListRow[] | null) ?? []).map(rowToItem);
 }
 
+/** Adds a line as `userId` (always the signed-in user: RLS refuses anyone else). */
 export async function insertShoppingListItem(
   userId: string,
   item: Omit<ShoppingListItem, 'id'> & { id?: string },
@@ -86,6 +95,10 @@ export async function insertShoppingListItem(
   return rowToItem(data as ShoppingListRow);
 }
 
+/**
+ * Saves an edit. Never sends user_id (who added the line stays as it was), and never sends updated_at: the database
+ * stamps its own time, so a phone whose clock is off can't make the edit look stale on a shared list (ADR 034).
+ */
 export async function updateShoppingListItem(
   item: ShoppingListItem,
 ): Promise<ShoppingListItem> {
@@ -97,7 +110,6 @@ export async function updateShoppingListItem(
       unit: item.unit,
       checked: item.checked,
       source_recipe_ids: item.sourceRecipeIds ?? null,
-      updated_at: item.updated_at,
     })
     .eq('id', item.id)
     .select('*')
@@ -120,6 +132,7 @@ export async function deleteCheckedShoppingListItems(): Promise<void> {
   if (error) throw error;
 }
 
+/** Empties the household's list (every member's lines: RLS keeps it to my household). */
 export async function clearShoppingList(): Promise<void> {
   const {
     data: { user },
@@ -128,16 +141,35 @@ export async function clearShoppingList(): Promise<void> {
   if (userError) throw userError;
   if (!user) throw new Error('Not signed in.');
 
+  // A delete needs a filter; this one matches every row RLS lets me see.
   const { error } = await supabase
     .from('shopping_list_items')
     .delete()
-    .eq('user_id', user.id);
+    .not('id', 'is', null);
   if (error) throw error;
 }
 
+/** True when the merge changed what a line says (not just carried it over). */
+function lineChanged(before: ShoppingListItem, after: ShoppingListItem): boolean {
+  return (
+    before.name !== after.name ||
+    before.quantity !== after.quantity ||
+    before.unit !== after.unit ||
+    before.checked !== after.checked ||
+    (before.sourceRecipeIds ?? []).join('\u0000') !== (after.sourceRecipeIds ?? []).join('\u0000')
+  );
+}
+
+/** PostgREST's answer to `.single()` when the row isn't there (another member deleted it). */
+function isGone(error: unknown): boolean {
+  return (error as { code?: string } | null)?.code === 'PGRST116';
+}
+
 /**
- * Persist a merged list after local merge: update existing UUID rows, insert
- * client-generated (`list-…`) rows, delete removed rows.
+ * Persist a merged list after local merge: update the UUID rows the merge changed, insert client-generated
+ * (`list-…`) rows, delete removed rows. Lines the merge only carried over are not written, so a tick another member
+ * made meanwhile stays. A changed line someone deleted meanwhile is added again (it holds what was just added);
+ * nothing aborts halfway.
  */
 export async function syncMergedShoppingList(
   userId: string,
@@ -156,10 +188,18 @@ export async function syncMergedShoppingList(
   const saved: ShoppingListItem[] = [];
   for (const item of next) {
     const isClientId = item.id.startsWith('list-');
-    if (!isClientId && prevById.has(item.id)) {
-      saved.push(await updateShoppingListItem(item));
-    } else {
+    const before = isClientId ? undefined : prevById.get(item.id);
+    if (!before) {
       saved.push(await insertShoppingListItem(userId, item));
+    } else if (!lineChanged(before, item)) {
+      saved.push(before);
+    } else {
+      try {
+        saved.push(await updateShoppingListItem(item));
+      } catch (error) {
+        if (!isGone(error)) throw error;
+        saved.push(await insertShoppingListItem(userId, item));
+      }
     }
   }
   return saved;

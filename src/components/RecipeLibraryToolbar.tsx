@@ -289,7 +289,7 @@ export function RecipeLibraryToolbar({
         <View style={{ width: HAIRLINE, height: 24, backgroundColor: colors.border, marginHorizontal: 4 }} />
         {onFridgeMatch ? (
           <Chip icon="nutrition-outline" trackId="library.fridge_match" onPress={onFridgeMatch}>
-            {t('library.fridgeMatch')}
+            {t('pantry.cook.button')}
           </Chip>
         ) : null}
         <Chip

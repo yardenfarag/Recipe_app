@@ -10,11 +10,12 @@ import { markAccountOnboarded } from "@shared/lib/supabase/onboarding";
 import { useAuth } from "@/components/AuthProvider";
 import { useLanguage } from "@/components/LanguageProvider";
 import { OnboardingFrame } from "@/components/onboarding/OnboardingFrame";
+import { PantryIntroDialog } from "@/components/pantry/PantryIntroDialog";
 import { AvoidStep, DietStep, HeardStep } from "@/components/onboarding/OnboardingSteps";
 import { LoadingState } from "@/components/ui/States";
 import { captureHeardAbout, captureOnboardingCompleted } from "@/lib/analytics";
 import { finishOnboardingOnDevice } from "@/lib/onboarding/device";
-import { afterOnboardingPath, afterQuestionsPath } from "@/lib/onboarding/paths";
+import { afterOnboardingPath, afterQuestionsPath, FIRST_RECIPES_PATH } from "@/lib/onboarding/paths";
 import { nextStep, parseOnboardingStep, previousStep, stepPath, type OnboardingStep } from "@/lib/onboarding/steps";
 import { useOnboardingStart } from "@/lib/onboarding/useOnboardingStart";
 import { useKitchenSettings } from "@/lib/settings/useKitchenSettings";
@@ -42,6 +43,7 @@ function Flow({ user }: { user: User }) {
   const start = useOnboardingStart(user, () => router.replace(next));
   const kitchen = useKitchenSettings();
   const [finishing, setFinishing] = useState(false);
+  const [pantryAsk, setPantryAsk] = useState(false);
   /** Steps this page pushed onto the browser's history, so Back can return through them. */
   const pushed = useRef(0);
   const shownStep = useRef<OnboardingStep | null>(null);
@@ -90,8 +92,11 @@ function Flow({ user }: { user: User }) {
     void markAccountOnboarded(getSupabase()).catch((error: unknown) =>
       console.warn("[onboarding] could not save on the account", error instanceof Error ? error.message : error),
     );
-    // Headed for the Library: pick a first recipe from the Hub on the way (it moves on by itself if they have some).
-    router.replace(afterQuestionsPath(next));
+    // Headed for the Library: first offer to fill the pantry (PIN-181), then pick a first recipe from the Hub (it moves
+    // on by itself if they have some). Someone who came to save a shared recipe goes straight back to it.
+    const target = afterQuestionsPath(next);
+    if (target === FIRST_RECIPES_PATH) setPantryAsk(true);
+    else router.replace(target);
   }
 
   if (start === "checking") return <LoadingState className="min-h-dvh" />;
@@ -101,6 +106,11 @@ function Flow({ user }: { user: User }) {
       {step === "diet" ? <DietStep kitchen={kitchen} onNext={goForward} /> : null}
       {step === "avoid" ? <AvoidStep kitchen={kitchen} onBack={goBack} onNext={goForward} /> : null}
       {step === "heard" ? <HeardStep onBack={goBack} onAnswer={finish} busy={finishing} /> : null}
+      <PantryIntroDialog
+        open={pantryAsk}
+        onNow={() => router.replace(`/pantry/scan?next=${encodeURIComponent(FIRST_RECIPES_PATH)}`)}
+        onLater={() => router.replace(FIRST_RECIPES_PATH)}
+      />
     </OnboardingFrame>
   );
 }

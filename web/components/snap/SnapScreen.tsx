@@ -1,6 +1,6 @@
 "use client";
 
-import { ArrowRight, ImageUp, NotebookPen } from "lucide-react";
+import { ArrowRight, ImageUp, NotebookPen, Smartphone } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useRef, useState, type FormEvent } from "react";
@@ -10,6 +10,8 @@ import { normalizeSocialUrl } from "@shared/lib/platformUrls";
 import { fetchRecipeByUrl } from "@shared/lib/supabase/recipes";
 import type { Recipe } from "@shared/types/recipe";
 
+import { useLanguage } from "@/components/LanguageProvider";
+import { PhoneHandoffDialog } from "@/components/pantry/PhoneHandoffDialog";
 import { InventOfferDialog } from "@/components/snap/InventOfferDialog";
 import { PhotoDropZone } from "@/components/snap/PhotoDropZone";
 import { SnapBannerView } from "@/components/snap/SnapBannerView";
@@ -60,6 +62,8 @@ export function SnapScreen() {
   const [existing, setExisting] = useState<{ url: string; intent: SnapIntent; recipe: Recipe } | null>(null);
   const [draftTitle, setDraftTitle] = useState<string | null>(null);
   const [dragging, setDragging] = useState(false);
+  const [phoneOpen, setPhoneOpen] = useState(false);
+  const { language } = useLanguage();
   /** Wraps the link field, to focus its input. */
   const urlField = useRef<HTMLDivElement>(null);
   const focusUrl = useCallback(() => urlField.current?.querySelector("input")?.focus(), []);
@@ -351,6 +355,13 @@ export function SnapScreen() {
                 <div ref={photoZone}>
                   <PhotoDropZone intent={intent} onFile={(file) => void importFile(file)} />
                 </div>
+                {/* On a computer: take the photo with the phone instead (PIN-181). A phone's picker already offers its camera. */}
+                <div className="mt-3 flex justify-center pointer-coarse:hidden">
+                  <Button variant="ghost" size="sm" trackId="snap.use_phone" disabled={busy} onClick={() => setPhoneOpen(true)}>
+                    <Smartphone aria-hidden className="h-4 w-4" />
+                    {t("pantry.scan.usePhone")}
+                  </Button>
+                </div>
               </Tile>
             </>
           )}
@@ -364,6 +375,14 @@ export function SnapScreen() {
       </div>
 
       <InventOfferDialog offer={snap.offer} onAccept={snap.acceptOffer} onExtractAnyway={snap.extractAnyway} onClose={snap.dismissOffer} />
+
+      <PhoneHandoffDialog
+        open={phoneOpen}
+        onOpenChange={setPhoneOpen}
+        purpose={invent ? "guess" : "snap"}
+        language={language}
+        onPhoto={(photo) => void run({ intent, source: { type: "photo", base64: photo.base64, mimeType: photo.mimeType } })}
+      />
 
       {dragging ? (
         <div aria-hidden className="pointer-events-none fixed inset-0 z-50 grid place-items-center bg-overlay p-6 backdrop-blur-[2px] animate-fade-in">

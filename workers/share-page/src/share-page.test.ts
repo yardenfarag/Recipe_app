@@ -275,6 +275,7 @@ describe('handleAppLinkRequest', () => {
               components: [
                 { '/': '/s/*', comment: 'Shared recipes' },
                 { '/': '/r/*', comment: 'Public Hub recipes' },
+                { '/': '/app/join/*', comment: 'Household invites (ADR 034)' },
               ],
             },
           ],

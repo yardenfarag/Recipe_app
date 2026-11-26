@@ -6,11 +6,17 @@ import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState, typ
 import { useTranslation } from "react-i18next";
 
 import { resolveCulinaryLanguage } from "@shared/lib/culinaryUnits";
+import { isShared, memberWhoAdded } from "@shared/lib/household";
+import { placeForAisle } from "@shared/lib/pantry";
+import { shoppingAisleForName } from "@shared/lib/shoppingAisles";
 import { getDuplicateNameCounts, normalizeShoppingName } from "@shared/lib/shoppingListMerge";
+import { upsertPantryItems } from "@shared/lib/supabase/pantry";
 import { showToast } from "@shared/lib/toast";
 import { joinErrorSentences, translateAppError } from "@shared/lib/translateAppError";
 import type { ShoppingListItem } from "@shared/types/shoppingList";
 
+import { useAuth } from "@/components/AuthProvider";
+import { HouseholdStrip, ShopTogetherCard } from "@/components/household/HouseholdStrip";
 import { useLanguage } from "@/components/LanguageProvider";
 import { AddFromRecipesDialog } from "@/components/list/AddFromRecipesDialog";
 import { AddItemForm } from "@/components/list/AddItemForm";
@@ -22,6 +28,7 @@ import { PageHeader } from "@/components/ui/PageHeader";
 import { EmptyState, ErrorState, LoadingState } from "@/components/ui/States";
 import { Tile, TileBadge, TileLabel } from "@/components/ui/Tile";
 import { cn } from "@/lib/cn";
+import { useHousehold } from "@/lib/household/HouseholdProvider";
 import { displayOrder, groupShoppingList, neighbourId } from "@/lib/list/shoppingListView";
 import { usePantryStaples } from "@/lib/list/usePantryStaples";
 import { useShoppingList, type ItemPatch } from "@/lib/list/useShoppingList";
@@ -43,7 +50,10 @@ export default function ListPage() {
   const unitLanguage = resolveCulinaryLanguage(language);
   const { items, loading, error, refresh, add, combineDuplicates, toggleChecked, updateItem, removeItem, restoreItem, clearChecked, clearAll } =
     useShoppingList();
-  const { keepStaple, dropStaple } = usePantryStaples();
+  const { keepStaple, dropStaple, isStaple } = usePantryStaples();
+  const { user } = useAuth();
+  const { household } = useHousehold();
+  const shared = isShared(household);
   const [notice, setNotice] = useState<Notice | null>(null);
   const [confirm, setConfirm] = useState<Confirm>(null);
   const [fromRecipesOpen, setFromRecipesOpen] = useState(false);
@@ -96,9 +106,27 @@ export default function ListPage() {
   const toggle = useCallback(
     (item: ShoppingListItem) => {
       passFocusOn(item, true);
-      toggleChecked(item.id).catch(failed("list.updateFailed"));
+      const bought = !item.checked;
+      toggleChecked(item.id)
+        .then(() => {
+          // Just bought, and not at home yet: offer to put it in the pantry (PIN-181). One tap, never automatic.
+          if (!bought || !user || isStaple(item.name)) return;
+          const aisle = shoppingAisleForName(item.name);
+          setNotice({
+            message: t("pantry.bought.prompt", { name: item.name }),
+            action: {
+              label: t("pantry.bought.add"),
+              trackId: "shopping_list.notice.add_to_pantry",
+              run: async () => {
+                await upsertPantryItems(user.id, [{ name: item.name, place: placeForAisle(aisle), aisle, source: "shopping_list" }]);
+                showToast(t("pantry.bought.added", { name: item.name }));
+              },
+            },
+          });
+        })
+        .catch(failed("list.updateFailed"));
     },
-    [failed, passFocusOn, toggleChecked],
+    [failed, isStaple, passFocusOn, t, toggleChecked, user],
   );
 
   const save = useCallback(
@@ -191,6 +219,8 @@ export default function ListPage() {
     onCombine: (target: ShoppingListItem) =>
       setConfirm({ kind: "combine", name: target.name, count: duplicateCounts.get(normalizeShoppingName(target.name)) ?? 0 }),
     onMove: move,
+    // Read defensively: the column arrives with the households migration (ADR 034).
+    addedBy: shared ? memberWhoAdded(household, (item as ShoppingListItem & { addedBy?: string | null }).addedBy) : null,
     checkboxRef: (element: HTMLButtonElement | null) => {
       // A row that moves group is a new element; the newest one wins. Removed ids are left (a few bytes).
       if (element) checkboxes.current.set(item.id, element);
@@ -249,6 +279,7 @@ export default function ListPage() {
       ) : (
         <div className={cn("flex w-full max-w-2xl flex-col gap-4", wide && "xl:max-w-5xl")}>
           <div className="flex max-w-2xl flex-col gap-3">
+            {household && shared ? <HouseholdStrip household={household} /> : null}
             <AddItemForm ref={nameRef} items={items} onAdd={addManual} />
 
             {error && items.length > 0 ? (
@@ -313,6 +344,8 @@ export default function ListPage() {
               <p className="hidden px-1 text-xs text-muted pointer-fine:block">{t("web.list.keyboardHint")}</p>
             </>
           )}
+
+          {loading || shared ? null : <ShopTogetherCard household={household} className="max-w-2xl" />}
         </div>
       )}
 

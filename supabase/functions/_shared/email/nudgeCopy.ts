@@ -3,7 +3,7 @@
 // Pinch works. Keep pushes short: iOS shows about two lines of the body.
 import type { EmailLocale } from './copy.ts';
 
-export type NudgeKind = 'day1' | 'day3';
+export type NudgeKind = 'day1' | 'day3' | 'pantry_rescan';
 
 export interface NudgeText {
   pushTitle: string;
@@ -19,6 +19,8 @@ export interface NudgeText {
 export interface NudgeCopy {
   day1: NudgeText;
   day3: NudgeText;
+  /** Two weeks after the last pantry scan (PIN-181). No placeholder: it opens the scan. */
+  pantry_rescan: NudgeText;
 }
 
 const en: NudgeCopy = {
@@ -43,6 +45,17 @@ const en: NudgeCopy = {
       'You saved it, so the hard part is done. Open it to see what you need, add what’s missing to your shopping list, and follow the steps one at a time while you cook.',
     tip: 'When you’re done, tap “I cooked this” so you can find your hits again.',
     button: 'Open the recipe',
+  },
+  pantry_rescan: {
+    pushTitle: 'Quick pantry check?',
+    pushBody: 'Two weeks since your last scan. A few photos keep your shopping list from buying what you already have.',
+    subject: 'Time for a quick pantry check',
+    preheader: 'A few photos of the fridge and cupboards, and your list skips what you already have.',
+    title: 'Is your pantry still right?',
+    intro:
+      'It’s been two weeks since you scanned your kitchen. Snap the fridge and cupboards again and Pinch updates the list, so you don’t buy what you already have and you see what you can cook tonight.',
+    tip: 'Short on time? Just scan the fridge. It changes the most.',
+    button: 'Scan my kitchen',
   },
 };
 
@@ -69,6 +82,17 @@ const es: NudgeCopy = {
     tip: 'Cuando termines, toca «Lo cociné» para volver a encontrar tus éxitos.',
     button: 'Abrir la receta',
   },
+  pantry_rescan: {
+    pushTitle: '¿Repasamos la despensa?',
+    pushBody: 'Han pasado dos semanas desde tu último escaneo. Unas fotos y no compras lo que ya tienes.',
+    subject: 'Es hora de repasar la despensa',
+    preheader: 'Unas fotos de la nevera y los armarios, y tu lista se salta lo que ya tienes.',
+    title: '¿Tu despensa sigue al día?',
+    intro:
+      'Han pasado dos semanas desde que escaneaste tu cocina. Haz fotos otra vez de la nevera y los armarios y Pinch actualiza la lista, así no compras lo que ya tienes y ves qué puedes cocinar esta noche.',
+    tip: '¿Poco tiempo? Escanea solo la nevera. Es lo que más cambia.',
+    button: 'Escanear mi cocina',
+  },
 };
 
 const he: NudgeCopy = {
@@ -93,6 +117,17 @@ const he: NudgeCopy = {
       'כבר שמרתם אותו, אז החלק הקשה מאחוריכם. פתחו אותו כדי לראות מה צריך, הוסיפו את החסר לרשימת הקניות ועקבו אחרי השלבים אחד אחד בזמן הבישול.',
     tip: 'בסוף, הקישו על "בישלתי את זה" כדי למצוא שוב את המנות שהצליחו.',
     button: 'לפתוח את המתכון',
+  },
+  pantry_rescan: {
+    pushTitle: 'בדיקה קטנה במזווה?',
+    pushBody: 'עברו שבועיים מהסריקה האחרונה. כמה תמונות, ולא קונים שוב מה שכבר יש בבית.',
+    subject: 'הגיע הזמן לבדיקה קטנה במזווה',
+    preheader: 'כמה תמונות של המקרר והארונות, ורשימת הקניות מדלגת על מה שכבר יש.',
+    title: 'המזווה שלכם עדיין מעודכן?',
+    intro:
+      'עברו שבועיים מאז שסרקתם את המטבח. צלמו שוב את המקרר והארונות, והרשימה תתעדכן: לא תקנו מה שכבר יש, ותראו מה אפשר לבשל הערב.',
+    tip: 'אין זמן? סרקו רק את המקרר. שם הכי הרבה משתנה.',
+    button: 'סריקת המטבח',
   },
 };
 
@@ -119,6 +154,17 @@ const ru: NudgeCopy = {
     tip: 'Когда закончите, нажмите «Я это приготовил(а)», чтобы потом легко найти удачные блюда.',
     button: 'Открыть рецепт',
   },
+  pantry_rescan: {
+    pushTitle: 'Проверим запасы?',
+    pushBody: 'Прошло две недели с последнего сканирования. Пара фото — и вы не купите то, что уже есть.',
+    subject: 'Пора быстро проверить запасы',
+    preheader: 'Пара фото холодильника и шкафов — и то, что уже есть, не попадёт в список покупок.',
+    title: 'Запасы всё ещё актуальны?',
+    intro:
+      'Прошло две недели с тех пор, как вы сканировали кухню. Сфотографируйте холодильник и шкафы ещё раз, и Pinch обновит список: вы не купите лишнего и увидите, что можно приготовить сегодня.',
+    tip: 'Мало времени? Отсканируйте только холодильник: там меняется больше всего.',
+    button: 'Сканировать кухню',
+  },
 };
 
 const ar: NudgeCopy = {
@@ -143,6 +189,17 @@ const ar: NudgeCopy = {
       'لقد حفظتها، فالجزء الصعب انتهى. افتحها لترى ما تحتاجه، وأضف الناقص إلى قائمة التسوق، واتبع الخطوات واحدة تلو الأخرى أثناء الطبخ.',
     tip: 'عندما تنتهي، اضغط على «طبخت هيدا» لتجد أطباقك الناجحة لاحقًا.',
     button: 'افتح الوصفة',
+  },
+  pantry_rescan: {
+    pushTitle: 'نراجع المؤونة بسرعة؟',
+    pushBody: 'مرّ أسبوعان على آخر مسح. بضع صور، وقائمة المشتريات تتخطى ما عندك.',
+    subject: 'حان وقت مراجعة سريعة للمؤونة',
+    preheader: 'بضع صور للثلاجة والخزائن، وقائمة المشتريات تتخطى ما عندك.',
+    title: 'هل مؤونتك ما زالت محدّثة؟',
+    intro:
+      'مرّ أسبوعان منذ مسحت مطبخك. صوّر الثلاجة والخزائن من جديد وسيحدّث Pinch القائمة، فلا تشتري ما عندك وترى ما يمكنك طبخه الليلة.',
+    tip: 'وقتك ضيق؟ امسح الثلاجة فقط، فهي أكثر ما يتغيّر.',
+    button: 'امسح مطبخي',
   },
 };
 

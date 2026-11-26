@@ -148,8 +148,22 @@ describe("OnboardingFlow", () => {
     expect(events.heard).not.toHaveBeenCalled();
     expect(events.completed).toHaveBeenCalledWith({ locale: "en" });
     expect(account.mark).toHaveBeenCalledTimes(1);
-    // Headed for the Library: the first-recipes picker comes first.
+    // Headed for the Library: first the offer to fill the pantry (PIN-181), then the first-recipes picker.
+    expect(nav.replace).not.toHaveBeenCalled();
+    const ask = await screen.findByRole("dialog", { name: "Fill your pantry in two minutes?" });
+    expect(ask).toBeDefined();
+    fireEvent.click(screen.getByRole("button", { name: "Later" }));
     expect(nav.replace).toHaveBeenCalledWith("/first-recipes");
+  });
+
+  it("Scan my kitchen goes to the scan, and from there to the first recipes", async () => {
+    renderFlow();
+    await screen.findByRole("heading", { level: 1, name: "How do you usually cook?" });
+    await act(async () => {
+      fireEvent.click(screen.getByRole("button", { name: "Skip for now" }));
+    });
+    fireEvent.click(await screen.findByRole("button", { name: "Scan my kitchen" }));
+    expect(nav.replace).toHaveBeenCalledWith("/pantry/scan?next=%2Ffirst-recipes");
   });
 
   it("still lets them on when the kitchen profile can't load", async () => {

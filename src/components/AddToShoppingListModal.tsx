@@ -10,7 +10,8 @@ import { Pressable } from '@/components/ui/Pressable';
 import { useTranslation } from 'react-i18next';
 
 import { SheetModal } from '@/components/SheetModal';
-import { useKitchenProfile } from '@/hooks/useKitchenProfile';
+import { useStaples } from '@/hooks/useStaples';
+import { usePantry } from '@/hooks/usePantry';
 import { useLanguagePreference } from '@/hooks/useLanguagePreference';
 import { useMeasurementPreference } from '@/hooks/useMeasurementPreference';
 import { useUnitSystemPreference } from '@/hooks/useUnitSystemPreference';
@@ -18,7 +19,8 @@ import { useThemePreference } from '@/hooks/useThemePreference';
 import { announce, CHROME_MAX_FONT_SCALE } from '@/lib/a11y';
 import { resolveCulinaryLanguage } from '@shared/lib/culinaryUnits';
 import { displayIngredientAmount } from '@shared/lib/displayIngredientAmount';
-import { isPantryStaple } from '@shared/lib/pantryStaples';
+import { makeAtHome } from '@/lib/pantryHelpers';
+import { pantryHomeNames } from '@shared/lib/pantry';
 import { RecipeLanguageCode } from '@shared/lib/recipeLanguages';
 import { Ingredient } from '@shared/types/recipe';
 
@@ -32,7 +34,7 @@ interface AddToShoppingListModalProps {
 
 /**
  * Lets the user pick which scaled ingredients to merge into the shopping list.
- * Pantry staples start unchecked.
+ * Pantry staples and what's in the pantry start unchecked.
  */
 export function AddToShoppingListModal({
   visible,
@@ -46,7 +48,13 @@ export function AddToShoppingListModal({
   const { language: appLanguage } = useLanguagePreference();
   const { system: measurementSystem } = useMeasurementPreference();
   const { units } = useUnitSystemPreference();
-  const { pantryStaples, keepStaple, stapleSaved } = useKitchenProfile();
+  const { staples: pantryStaples, keepStaple } = useStaples();
+  // Staples and what's in the pantry (PIN-181) start unticked. The pantry is read quietly; without it, staples only.
+  const { items: pantryItems } = usePantry(visible);
+  const atHome = useMemo(
+    () => makeAtHome(pantryHomeNames(pantryItems, pantryStaples)),
+    [pantryItems, pantryStaples],
+  );
   const unitLanguage = resolveCulinaryLanguage(language, appLanguage);
   const [selected, setSelected] = useState<Set<number>>(() => new Set());
   const [saving, setSaving] = useState(false);
@@ -57,13 +65,13 @@ export function AddToShoppingListModal({
     setSelected(
       new Set(
         ingredients.flatMap((ing, index) =>
-          isPantryStaple(ing.name, pantryStaples) ? [] : [index],
+          atHome(ing.name) ? [] : [index],
         ),
       ),
     );
     setError(null);
     setSaving(false);
-  }, [visible, ingredients, pantryStaples]);
+  }, [visible, ingredients, atHome]);
 
   const selectedCount = selected.size;
   const allSelected = useMemo(
@@ -171,7 +179,7 @@ export function AddToShoppingListModal({
         >
           {ingredients.map((ing, index) => {
             const isOn = selected.has(index);
-            const inPantry = stapleSaved(ing.name);
+            const inPantry = atHome(ing.name);
             const amount =
               displayIngredientAmount(ing, {
                 system: measurementSystem,

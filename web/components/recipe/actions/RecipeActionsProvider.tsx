@@ -20,7 +20,10 @@ import { applianceWorkaroundInstruction, checkKitchen } from "@shared/lib/ownedA
 import type { RecipeCookedFrom } from "@shared/lib/productEvents";
 import { normalizeRecipeTags } from "@shared/lib/recipeTags";
 import type { RecipeVariantKey } from "@shared/lib/recipeVariants";
+import { pantryItemsUsedBy } from "@shared/lib/pantry";
+import { fetchPantryItems } from "@shared/lib/supabase/pantry";
 import { setRecipeCooked, setRecipeTags } from "@shared/lib/supabase/recipes";
+import type { PantryItem } from "@shared/types/pantry";
 import type { SubstitutionAlternative } from "@shared/lib/supabase/suggestSubstitution";
 import type { TransformedRecipePayload } from "@shared/lib/supabase/transformRecipe";
 import { showToast } from "@shared/lib/toast";
@@ -31,6 +34,7 @@ import { OutOfCreditsDialog } from "@/components/credits/OutOfCreditsDialog";
 import { useLanguage } from "@/components/LanguageProvider";
 import { AddToCollectionDialog } from "@/components/library/AddToCollectionDialog";
 import { AddToShoppingListDialog } from "@/components/list/AddToShoppingListDialog";
+import { UsedUpDialog } from "@/components/pantry/UsedUpDialog";
 import { CookedNoteDialog } from "@/components/recipe/actions/CookedNoteDialog";
 import { EditTagsDialog } from "@/components/recipe/actions/EditTagsDialog";
 import { RecipeActionsContext, type Adaptation, type RecipeActions, type RecipeDialog } from "@/components/recipe/actions/RecipeActionsContext";
@@ -88,6 +92,10 @@ export function RecipeActionsProvider({ state, children }: { state: ReadyRecipe;
   const [session, setSession] = useState<Session | null>(null);
   const [busy, setBusy] = useState({ share: false, revert: false, translate: false });
   const [queue] = useState(createSaveQueue);
+  const [usedUp, setUsedUp] = useState<PantryItem[] | null>(null);
+  const usedUpAfterNote = useRef<PantryItem[] | null>(null);
+  // Whether the first-cook note is still open: the pantry may answer after it closes, and then asks straight away.
+  const noteOpen = useRef(false);
 
   const updatingFields = useRecipeRecalc(recipe, (next) => replaceRecipe(next));
 
@@ -163,8 +171,21 @@ export function RecipeActionsProvider({ state, children }: { state: ReadyRecipe;
     // Cooking is what makes people save (and come back for) more recipes, so it is the number to watch.
     captureRecipeCooked({ from, again: Boolean(before.last_cooked_at) });
     replaceRecipe((current) => ({ ...current, last_cooked_at: at }));
-    if (!before.last_cooked_at) setDialog({ kind: "note" });
-    else showToast(t("web.recipeActions.markedCooked"));
+    const firstTime = !before.last_cooked_at;
+    if (firstTime) {
+      noteOpen.current = true;
+      setDialog({ kind: "note" });
+    } else showToast(t("web.recipeActions.markedCooked"));
+    // Then: did it use anything up? (PIN-181) After the note, when there is one. A pantry that can't be read just
+    // means no question.
+    fetchPantryItems()
+      .then((items) => {
+        const used = pantryItemsUsedBy(display, items);
+        if (used.length === 0) return;
+        if (noteOpen.current) usedUpAfterNote.current = used;
+        else setUsedUp(used);
+      })
+      .catch(() => undefined);
     queue.run(() => setRecipeCooked(recipe.id, { last_cooked_at: at, cook_note: before.cook_note ?? null })).catch(() => {
       replaceRecipe((current) => ({ ...current, ...before }));
       showToast(t("recipe.cookedSaveFailed"), "error");
@@ -281,7 +302,20 @@ export function RecipeActionsProvider({ state, children }: { state: ReadyRecipe;
       />
       <TranslateDialog open={kind === "translate"} display={display} onClose={close} onTranslate={translate} onShowOriginal={showOriginalLanguage} />
       <EditTagsDialog open={kind === "tags"} tags={recipe.tags ?? []} onClose={close} onSave={saveTags} />
-      <CookedNoteDialog open={kind === "note"} initialNote={recipe.cook_note ?? ""} onClose={close} onSave={saveNote} />
+      <CookedNoteDialog
+        open={kind === "note"}
+        initialNote={recipe.cook_note ?? ""}
+        onClose={() => {
+          noteOpen.current = false;
+          close();
+          if (usedUpAfterNote.current) {
+            setUsedUp(usedUpAfterNote.current);
+            usedUpAfterNote.current = null;
+          }
+        }}
+        onSave={saveNote}
+      />
+      <UsedUpDialog items={usedUp} onClose={() => setUsedUp(null)} />
       <RepairDialog
         open={kind === "repair"}
         recipe={recipe}

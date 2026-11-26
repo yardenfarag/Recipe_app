@@ -1,18 +1,25 @@
-import { router } from 'expo-router';
-import { useRef, useState } from 'react';
-import { Alert, Platform, ScrollView, View } from 'react-native';
+import { router, type Href } from 'expo-router';
+import { type ReactNode, useMemo, useState } from 'react';
+import { ActivityIndicator, ScrollView, View } from 'react-native';
 import { useTranslation } from 'react-i18next';
 
+import { PantrySignInPrompt } from '@/components/pantry/PantryParts';
 import { SheetModal } from '@/components/SheetModal';
 import { Button } from '@/components/ui/Button';
 import { Text } from '@/components/ui/Text';
 import { Tile } from '@/components/ui/Tile';
+import { KitIcon, Radii } from '@/components/ui/tokens';
+import { useAuth } from '@/hooks/useAuth';
+import { useStaples } from '@/hooks/useStaples';
+import { useMeasurementPreference } from '@/hooks/useMeasurementPreference';
+import { usePantry } from '@/hooks/usePantry';
+import { useShoppingList } from '@/hooks/useShoppingList';
 import { useThemePreference } from '@/hooks/useThemePreference';
-import { announce } from '@/lib/a11y';
-import { pickCompressedRecipeImage } from '@/lib/pickCompressedImage';
-import { buildFridgeCatalog } from '@shared/lib/fridgeCatalog';
-import { getInstallId } from '@/lib/installId';
-import { matchFridge, type FridgeMatchRow } from '@shared/lib/supabase/matchFridge';
+import { useUnitSystemPreference } from '@/hooks/useUnitSystemPreference';
+import { daysSinceLastScan, pantryWhen } from '@/lib/pantryHelpers';
+import { pickIngredientAmount } from '@shared/lib/ingredientAmounts';
+import { PANTRY_STALE_DAYS, pantryHomeNames, rankCookable, type CookableRecipe } from '@shared/lib/pantry';
+import { showToast } from '@shared/lib/toast';
 import type { Recipe } from '@shared/types/recipe';
 
 type FridgeMatchModalProps = {
@@ -21,203 +28,202 @@ type FridgeMatchModalProps = {
   onClose: () => void;
 };
 
+/**
+ * "What can I cook?" (PIN-181): the Library ranked by what's already in the pantry, fewest missing first, with a
+ * button that puts the missing ones on the shopping list. No photo: the pantry is filled from Settings → Pantry.
+ * (Old builds still call match-fridge with a photo; this one doesn't.)
+ */
 export function FridgeMatchModal({ visible, recipes, onClose }: FridgeMatchModalProps) {
   const { t } = useTranslation();
-  const { colors } = useThemePreference();
-  const libraryEmpty = recipes.length === 0;
-  const [loading, setLoading] = useState(false);
-  const [matches, setMatches] = useState<FridgeMatchRow[] | null>(null);
-  const [error, setError] = useState<string | null>(null);
-  const requestGen = useRef(0);
-
-  function handleClose() {
-    requestGen.current += 1;
-    setLoading(false);
-    setMatches(null);
-    setError(null);
-    onClose();
-  }
-
-  async function runMatch(source: 'camera' | 'library') {
-    if (loading) return;
-    if (recipes.length === 0) {
-      setError('empty');
-      return;
-    }
-
-    const image = await pickCompressedRecipeImage(source, {
-      permissionTitle: t('settings.permissionNeededTitle'),
-      permissionCamera: t('settings.permissionCamera'),
-      permissionLibrary: t('settings.permissionLibrary'),
-      readFailedTitle: t('settings.imageReadFailedTitle'),
-      readFailedBody: t('snap.photoTooLarge'),
-    });
-    if (!image) return;
-
-    const gen = requestGen.current + 1;
-    requestGen.current = gen;
-    setLoading(true);
-    setError(null);
-    setMatches(null);
-    try {
-      const result = await matchFridge(
-        image.base64,
-        image.mimeType,
-        buildFridgeCatalog(recipes),
-        await getInstallId(),
-      );
-      if (requestGen.current !== gen) return;
-      if (result.code === 'auth_required') {
-        handleClose();
-        router.push('/auth?mode=signup&reason=sync');
-        return;
-      }
-      if (result.code === 'daily_limit') {
-        setError('limited');
-        announce(t('library.fridgeMatchLimited'));
-        return;
-      }
-      if (result.status !== 'ok') {
-        setError('failed');
-        announce(t('library.fridgeMatchFailed'));
-        return;
-      }
-      const found = result.matches ?? [];
-      setMatches(found);
-      announce(
-        found.length === 0
-          ? t('library.fridgeMatchEmptyResults')
-          : t('list.recipesVisible', { count: found.length }),
-      );
-    } catch {
-      if (requestGen.current !== gen) return;
-      setError('failed');
-      announce(t('library.fridgeMatchFailed'));
-    } finally {
-      if (requestGen.current === gen) setLoading(false);
-    }
-  }
-
-  function handlePick() {
-    if (recipes.length === 0) {
-      setError('empty');
-      return;
-    }
-    if (Platform.OS === 'web') {
-      void runMatch('library');
-      return;
-    }
-    Alert.alert(t('library.fridgeMatchTitle'), t('library.fridgeMatchHint'), [
-      { text: t('settings.takePhoto'), onPress: () => void runMatch('camera') },
-      { text: t('settings.chooseLibrary'), onPress: () => void runMatch('library') },
-      { text: t('common.cancel'), style: 'cancel' },
-    ]);
-  }
-
-  function openRecipe(id: string) {
-    handleClose();
-    router.push(`/recipe/${id}`);
-  }
-
-  const recipeById = new Map(recipes.map((recipe) => [recipe.id, recipe]));
-
   return (
-    <SheetModal
-      trackId="fridge_match.sheet" visible={visible} onClose={handleClose} title={t('library.fridgeMatchTitle')}>
-      <ScrollView
-        keyboardShouldPersistTaps="handled"
-        style={{ width: '100%', alignSelf: 'stretch' }}
-        contentContainerStyle={{ paddingHorizontal: 20, paddingTop: 8, paddingBottom: 24, gap: 14 }}
-      >
-        <Text variant="bodySmall" tone="muted">
-          {t('library.fridgeMatchHint')}
-        </Text>
+    <SheetModal trackId="cook_match.sheet" visible={visible} onClose={onClose} title={t('pantry.cook.title')}>
+      {/* Mounted only while open, so the pantry and the list are read when asked, not on every Library visit. */}
+      {visible ? <CookMatches recipes={recipes} onClose={onClose} /> : null}
+    </SheetModal>
+  );
+}
 
-        {libraryEmpty || error === 'empty' ? (
-          <View style={{ gap: 12 }}>
-            <Text variant="bodySmall" color={colors.warning} accessibilityLiveRegion="polite">
-              {t('library.fridgeMatchEmptyLibrary')}
+function CookMatches({ recipes, onClose }: { recipes: Recipe[]; onClose: () => void }) {
+  const { t } = useTranslation();
+  const { colors } = useThemePreference();
+  const { user } = useAuth();
+  const { items, status, reload } = usePantry(true);
+  const { staples: pantryStaples } = useStaples();
+  const { addFromRecipe } = useShoppingList();
+  const { system: measurementSystem } = useMeasurementPreference();
+  const { units } = useUnitSystemPreference();
+  const [added, setAdded] = useState<Record<string, number>>({});
+  const [adding, setAdding] = useState<string | null>(null);
+
+  const ranked = useMemo(
+    () => (items.length === 0 ? [] : rankCookable(recipes, pantryHomeNames(items, pantryStaples))),
+    [items, pantryStaples, recipes],
+  );
+  const sinceScan = daysSinceLastScan(items);
+  const stale = sinceScan != null && sinceScan >= PANTRY_STALE_DAYS;
+
+  function go(path: Href) {
+    onClose();
+    router.push(path);
+  }
+
+  async function addMissing(match: CookableRecipe) {
+    if (adding) return;
+    const missing = new Set(match.missing);
+    const ingredients = (match.recipe.ingredients ?? [])
+      .filter((ing) => missing.has(ing.name))
+      .map((ing) => {
+        const amount = pickIngredientAmount(ing, measurementSystem, units);
+        return { name: ing.name, quantity: amount.quantity, unit: amount.unit };
+      });
+    if (ingredients.length === 0) return;
+    setAdding(match.recipe.id);
+    try {
+      await addFromRecipe(ingredients, match.recipe.id);
+      setAdded((current) => ({ ...current, [match.recipe.id]: ingredients.length }));
+      showToast(t('pantry.cook.added', { count: ingredients.length }));
+    } catch {
+      showToast(t('addToList.failed'), 'error');
+    } finally {
+      setAdding(null);
+    }
+  }
+
+  let body: ReactNode;
+  if (!user) {
+    body = <PantrySignInPrompt onBeforeNavigate={onClose} />;
+  } else if (recipes.length === 0) {
+    body = (
+      <Notice text={t('pantry.cook.emptyLibrary')}>
+        <Button trackId="cook_match.add_recipes" fullWidth onPress={() => go('/add')}>
+          {t('library.snapFirst')}
+        </Button>
+      </Notice>
+    );
+  } else if (status === 'loading' && items.length === 0) {
+    body = <ActivityIndicator color={colors.primary} accessibilityLabel={t('a11y.loading')} style={{ paddingVertical: 32 }} />;
+  } else if (status === 'failed') {
+    body = (
+      <Notice text={t('pantry.cook.failed')} tone="danger">
+        <Button trackId="cook_match.retry" variant="secondary" icon="refresh" onPress={() => void reload()}>
+          {t('common.tryAgainAction')}
+        </Button>
+      </Notice>
+    );
+  } else if (items.length === 0) {
+    body = (
+      <Notice text={t('pantry.cook.emptyPantry')}>
+        <Button trackId="cook_match.scan" fullWidth icon="camera-outline" onPress={() => go('/pantry/scan')}>
+          {t('pantry.scanKitchen')}
+        </Button>
+      </Notice>
+    );
+  } else {
+    body = (
+      <View style={{ gap: 12 }}>
+        {stale && sinceScan != null ? (
+          <View
+            style={{
+              flexDirection: 'row',
+              alignItems: 'center',
+              gap: 10,
+              paddingStart: 14,
+              paddingEnd: 4,
+              borderRadius: Radii.inner,
+              backgroundColor: colors.warningSoft,
+            }}
+          >
+            <KitIcon icon="time-outline" size={18} color={colors.warning} />
+            <Text variant="caption" color={colors.warning} style={{ flex: 1, minWidth: 0, paddingVertical: 10 }}>
+              {t('pantry.cook.stale', { when: pantryWhen(sinceScan, t) })}
             </Text>
-            <Button
-              trackId="fridge_match.add_recipes"
-              fullWidth
-              onPress={() => {
-                handleClose();
-                router.push('/add');
-              }}
-            >
-              {t('library.snapFirst')}
+            <Button trackId="cook_match.scan_again" variant="link" onPress={() => go('/pantry/scan')}>
+              {t('pantry.scanAgain')}
             </Button>
           </View>
         ) : null}
-        {error === 'limited' ? (
-          <Text variant="bodySmall" color={colors.warning}>
-            {t('library.fridgeMatchLimited')}
-          </Text>
-        ) : null}
-        {error === 'failed' ? (
-          <Text variant="bodySmall" color={colors.warning}>
-            {t('library.fridgeMatchFailed')}
-          </Text>
-        ) : null}
-
-        {!libraryEmpty ? (
-          <Button
-            trackId="fridge_match.snap"
-            fullWidth
-            size="lg"
-            busy={loading}
-            icon={Platform.OS === 'web' ? 'images-outline' : 'camera-outline'}
-            accessibilityLabel={t('library.fridgeMatchSnap')}
-            onPress={handlePick}
-          >
-            {t('library.fridgeMatchSnap')}
-          </Button>
-        ) : null}
-
-        {loading ? (
-          <Text variant="caption" tone="muted" align="center">
-            {t('library.fridgeMatching')}
-          </Text>
-        ) : null}
-
-        {matches && matches.length === 0 ? (
+        {ranked.length === 0 ? (
           <Text variant="bodySmall" tone="muted" accessibilityLiveRegion="polite">
-            {t('library.fridgeMatchEmptyResults')}
+            {t('pantry.cook.noMatches')}
           </Text>
-        ) : null}
+        ) : (
+          ranked.map((match) => {
+            const title = match.recipe.display_title ?? match.recipe.title;
+            const addedCount = added[match.recipe.id];
+            return (
+              <Tile
+                key={match.recipe.id}
+                size="md"
+                padding={16}
+                trackId="cook_match.open_recipe"
+                accessibilityLabel={title}
+                onPress={() => go(`/recipe/${match.recipe.id}`)}
+                style={{ gap: 6 }}
+              >
+                <Text variant="h3">{title}</Text>
+                <Text variant="caption" weight="semibold" tone={match.missing.length === 0 ? 'success' : 'primary'}>
+                  {match.missing.length === 0
+                    ? t('pantry.cook.allThere')
+                    : t('pantry.cook.have', { have: match.have, total: match.total })}
+                </Text>
+                {match.missing.length > 0 ? (
+                  <>
+                    <Text variant="caption" tone="muted">
+                      {t('pantry.cook.missing', { items: match.missing.join(', ') })}
+                    </Text>
+                    <Button
+                      trackId="cook_match.add_missing"
+                      variant="secondary"
+                      size="sm"
+                      icon={addedCount ? 'checkmark' : 'cart-outline'}
+                      disabled={Boolean(addedCount)}
+                      busy={adding === match.recipe.id}
+                      onPress={() => void addMissing(match)}
+                      style={{ marginTop: 4 }}
+                    >
+                      {addedCount ? t('pantry.cook.added', { count: addedCount }) : t('pantry.cook.addMissing')}
+                    </Button>
+                  </>
+                ) : null}
+              </Tile>
+            );
+          })
+        )}
+      </View>
+    );
+  }
 
-        {matches && matches.length > 0 ? (
-          <View style={{ gap: 10, width: '100%' }}>
-            {matches.map((match) => {
-              const recipe = recipeById.get(match.id);
-              if (!recipe) return null;
-              return (
-                <Tile
-                  key={match.id}
-                  size="md"
-                  padding={16}
-                  trackId="fridge_match.open_recipe"
-                  onPress={() => openRecipe(match.id)}
-                  style={{ gap: 4 }}
-                >
-                  <Text variant="h3">{recipe.display_title ?? recipe.title}</Text>
-                  {match.reason ? (
-                    <Text variant="bodySmall" tone="muted">
-                      {match.reason}
-                    </Text>
-                  ) : null}
-                  {match.missing.length > 0 ? (
-                    <Text variant="caption" color={colors.warning}>
-                      {t('library.fridgeMatchMissing', { items: match.missing.join(', ') })}
-                    </Text>
-                  ) : null}
-                </Tile>
-              );
-            })}
-          </View>
-        ) : null}
-      </ScrollView>
-    </SheetModal>
+  return (
+    <ScrollView
+      keyboardShouldPersistTaps="handled"
+      style={{ width: '100%', alignSelf: 'stretch' }}
+      contentContainerStyle={{ paddingHorizontal: 20, paddingTop: 8, paddingBottom: 24, gap: 14 }}
+    >
+      {user ? (
+        <Text variant="bodySmall" tone="muted">
+          {t('pantry.cook.hint')}
+        </Text>
+      ) : null}
+      {body}
+    </ScrollView>
+  );
+}
+
+function Notice({
+  text,
+  tone = 'muted',
+  children,
+}: {
+  text: string;
+  tone?: 'muted' | 'danger';
+  children: ReactNode;
+}) {
+  return (
+    <View style={{ gap: 12 }}>
+      <Text variant="bodySmall" tone={tone} accessibilityLiveRegion="polite">
+        {text}
+      </Text>
+      {children}
+    </View>
   );
 }

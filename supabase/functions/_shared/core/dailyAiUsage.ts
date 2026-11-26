@@ -9,7 +9,9 @@ export type DailyAiAction =
   | 'remix'
   | 'extract_attempt'
   /** Background recalculation after a hand edit or written recipe (PIN-79). */
-  | 'recipe_edit';
+  | 'recipe_edit'
+  /** One photo of a pantry scan (PIN-181). */
+  | 'pantry_scan';
 
 export function currentUtcDate(date = new Date()): string {
   return date.toISOString().slice(0, 10);

@@ -282,10 +282,10 @@ export const COLLECTION_RECIPES = [
   [2, 0], [2, 4], [2, 6],
 ].map(([c, r]) => ({ collection_id: COLLECTIONS[c].id, recipe_id: RECIPES[r].id, created_at: ago(10) }));
 
-function shoppingItem(n, name, quantity, unit, checked, recipeIdx) {
+function shoppingItem(n, name, quantity, unit, checked, recipeIdx, userId = USER_ID) {
   return {
     id: `5b0bb1e0-00${String(n).padStart(2, '0')}-4c00-8000-000000000000`,
-    user_id: USER_ID,
+    user_id: userId,
     name,
     quantity,
     unit,
@@ -308,6 +308,88 @@ export function shoppingList(language) {
     shoppingItem(6, he ? 'לימונים' : 'lemons', 2, null, false, 1),
     shoppingItem(7, he ? 'פרמזן' : 'parmesan', 40, 'g', true, 1),
     shoppingItem(8, he ? 'פילה סלמון' : 'salmon fillets', 2, null, false, 2),
+    shoppingItem(9, he ? 'חלב שיבולת שועל' : 'oat milk', 1, 'l', false, null),
+  ];
+}
+
+// ---------------------------------------------------------------------------------------------------------------
+// Households (docs/adr/034-households.md): the RPC rows as the database returns them (snake_case).
+
+export const HOUSEHOLD_ID = 'h0u5e000-0000-4000-8000-000000000001';
+export const AVI_ID = 'a71a71a7-0000-4000-8000-000000000002';
+export const NOA_ID = 'n0an0an0-0000-4000-8000-000000000003';
+export const INVITE_TOKEN = 'Xq7pLm2RtV9sKd4WfB8hN3yZ';
+
+const HOUSEHOLD_NAMES = {
+  en: { household: 'The Cohens', me: 'Dana', avi: 'Avi', noa: 'Noa', other: 'The Levis', yael: 'Yael' },
+  he: { household: 'משפחת כהן', me: 'דנה', avi: 'אבי', noa: 'נועה', other: 'משפחת לוי', yael: 'יעל' },
+};
+const householdNames = (language) => HOUSEHOLD_NAMES[language] ?? HOUSEHOLD_NAMES.en;
+
+/** `get_my_household`: 'none' is a household of one that is not set up (everyone's start); 'shared' is three people. */
+export function householdRow(kind, language) {
+  const n = householdNames(language);
+  const me = { user_id: USER_ID, display_name: n.me, avatar_url: 'food:avocado', joined_at: ago(40), is_me: true };
+  if (kind !== 'shared') {
+    return {
+      id: HOUSEHOLD_ID,
+      name: null,
+      avatar: null,
+      is_set_up: false,
+      members: [me],
+      staples: language === 'he' ? ['מלח', 'שמן זית'] : ['salt', 'olive oil'],
+      invite: null,
+      going_shopping_sent_at: null,
+    };
+  }
+  return {
+    id: HOUSEHOLD_ID,
+    name: n.household,
+    avatar: 'house:soup',
+    is_set_up: true,
+    members: [
+      me,
+      { user_id: AVI_ID, display_name: n.avi, avatar_url: 'food:pizza', joined_at: ago(30), is_me: false },
+      { user_id: NOA_ID, display_name: n.noa, avatar_url: null, joined_at: ago(3), is_me: false },
+    ],
+    staples: language === 'he' ? ['מלח', 'שמן זית', 'אורז'] : ['salt', 'olive oil', 'rice'],
+    invite: null,
+    going_shopping_sent_at: null,
+  };
+}
+
+/** `preview_household_invite`, signed in: Avi's household invites me; mine has nobody else, so nothing to leave. */
+export function invitePreviewRow(language) {
+  const n = householdNames(language);
+  return {
+    status: 'ok',
+    household_name: n.other,
+    household_avatar: 'house:challah',
+    invited_by: { display_name: n.avi, avatar_url: 'food:pizza' },
+    members: [
+      { display_name: n.avi, avatar_url: 'food:pizza' },
+      { display_name: n.yael, avatar_url: null },
+    ],
+    member_count: 2,
+    leaving: null,
+  };
+}
+
+/** `get_household_invite`: a live link for a week. */
+export function inviteRow() {
+  return { token: INVITE_TOKEN, expires_at: new Date(Date.now() + 7 * DAY).toISOString() };
+}
+
+/** The list of a shared household: two lines Avi added (for "Added by"), the rest mine. */
+export function sharedShoppingList(language) {
+  const he = language === 'he';
+  return [
+    shoppingItem(1, he ? 'ביצים' : 'eggs', 6, null, false, 0),
+    shoppingItem(2, he ? 'עגבניות מרוסקות' : 'crushed tomatoes', 800, 'g', false, 0),
+    shoppingItem(3, he ? 'יוגורט' : 'yogurt', 2, null, false, null, AVI_ID),
+    shoppingItem(5, he ? 'ספגטי' : 'spaghetti', 200, 'g', false, 1),
+    shoppingItem(6, he ? 'לימונים' : 'lemons', 2, null, false, 1, AVI_ID),
+    shoppingItem(7, he ? 'פרמזן' : 'parmesan', 40, 'g', true, 1),
     shoppingItem(9, he ? 'חלב שיבולת שועל' : 'oat milk', 1, 'l', false, null),
   ];
 }

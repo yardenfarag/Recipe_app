@@ -3,7 +3,7 @@ import { ActivityIndicator, View, type StyleProp, type ViewStyle } from 'react-n
 
 import { Pressable } from '@/components/ui/Pressable';
 import { Text } from '@/components/ui/Text';
-import { Tile, TileLabel } from '@/components/ui/Tile';
+import { Tile, TileBadge, TileLabel } from '@/components/ui/Tile';
 import { HAIRLINE, KitIcon, type IconSource } from '@/components/ui/tokens';
 import { useThemePreference } from '@/hooks/useThemePreference';
 
@@ -97,6 +97,8 @@ type SettingsRowProps = {
   disabled?: boolean;
   /** Shows a spinner in place of the chevron. */
   busy?: boolean;
+  /** A small filled badge before the chevron, such as "New" on a feature not yet opened. */
+  badge?: string;
   /** The chevron at the end (mirrored in Hebrew and Arabic). Default true. */
   chevron?: boolean;
   /** "link" for rows that leave the app (mailto, a website). */
@@ -115,12 +117,13 @@ export function SettingsRow({
   destructive = false,
   disabled = false,
   busy = false,
+  badge,
   chevron = true,
   role = 'button',
   trackId,
 }: SettingsRowProps) {
   const { colors } = useThemePreference();
-  const spoken = [label, value, description].filter(Boolean).join(', ');
+  const spoken = [label, badge, value, description].filter(Boolean).join(', ');
 
   return (
     <Pressable
@@ -158,6 +161,7 @@ export function SettingsRow({
           {value}
         </Text>
       ) : null}
+      {badge ? <TileBadge>{badge}</TileBadge> : null}
       {busy ? (
         <ActivityIndicator size="small" color={colors.textSecondary} />
       ) : chevron ? (

@@ -56,6 +56,7 @@ type AuthReason =
   | 'sync'
   | 'shared_recipe'
   | 'hub_recipe'
+  | 'household_invite'
   | 'onboarding'
   | 'edit'
   | undefined;
@@ -73,6 +74,7 @@ function parseReason(value: string | string[] | undefined): AuthReason {
     raw === 'sync' ||
     raw === 'shared_recipe' ||
     raw === 'hub_recipe' ||
+    raw === 'household_invite' ||
     raw === 'onboarding' ||
     raw === 'edit'
   ) {
@@ -241,8 +243,9 @@ export default function AuthScreen() {
     if (reason === 'onboarding') {
       captureOnboardingCompleted({ locale: language, platform: Platform.OS });
       await completeOnboarding();
-      // New accounts pick their first recipes from the Hub; one with recipes already goes on to Snap.
-      router.dismissTo('/first-recipes');
+      // New accounts are offered the kitchen scan (PIN-181), then pick their first recipes from the Hub; one with
+      // recipes already goes on to Snap.
+      router.dismissTo('/pantry-intro');
       return;
     }
     if (returnTo) {
@@ -418,6 +421,8 @@ export default function AuthScreen() {
             ? t('auth.reasonShared')
             : reason === 'hub_recipe'
               ? t('auth.reasonHub')
+            : reason === 'household_invite'
+              ? t('household.join.signedOut')
             : reason === 'onboarding' && mode === 'signup'
               ? t('auth.reasonOnboarding')
             : reason === 'edit'

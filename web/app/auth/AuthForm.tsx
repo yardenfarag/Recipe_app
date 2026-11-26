@@ -40,6 +40,8 @@ const REASON_SUBTITLES = {
   shared_recipe: "auth.reasonShared",
   hub_recipe: "auth.reasonHub",
   edit: "auth.reasonEdit",
+  // An invite link to a household (ADR 034): joining comes next.
+  join_household: "household.join.signedOut",
   // From the welcome page's "Get started": the first-run questions come next (PIN-140).
   welcome: "web.welcome.signupReason",
 } as const;

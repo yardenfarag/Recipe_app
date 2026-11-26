@@ -3,8 +3,10 @@ import { test, type Browser, type Page } from "@playwright/test";
 import { createUser, resetLibrary, resetTestUserLanguage, uniqueEmail, type SeedRecipe } from "./admin";
 import { createAdminPagesUsers, deleteAdminPagesUsers } from "./adminSeed";
 import { signInWithPassword } from "./helpers";
+import { addListItemsAs, householdOf, newAccount, setFoodAvatar, type Account } from "./householdSeed";
 import { resetHub } from "./hubSeed";
 import { resetShoppingList } from "./listSeed";
+import { PHOTOS, resetPantry, stubScanPantry } from "./pantrySeed";
 import { setRecipeVideo } from "./cookSeed";
 import { writeAccountPrefs } from "./prefsSeed";
 import { resetShares, stubRecipeShare } from "./shareSeed";
@@ -285,6 +287,138 @@ test("snap, list, hub and settings", async ({ browser }) => {
       }
     }
   }
+});
+
+const PANTRY_ITEMS = {
+  en: [
+    ["Milk", "fridge", "dairy"],
+    ["Eggs", "fridge", "dairy"],
+    ["White cheese", "fridge", "dairy"],
+    ["Tahini", "fridge", "pantry"],
+    ["Grapes", "fridge", "produce"],
+    ["Cauliflower", "fridge", "produce"],
+    ["Frozen peas", "freezer", "frozen"],
+    ["Pita", "freezer", "bakery"],
+    ["Rice", "cupboard", "pantry"],
+    ["Brown sugar", "cupboard", "pantry"],
+    ["Sweet paprika", "cupboard", "spices"],
+    ["Canned chickpeas", "cupboard", "pantry"],
+    ["Coconut oil", "cupboard", "pantry"],
+    ["Avocado", "other", "produce"],
+  ],
+  he: [
+    ["חלב", "fridge", "dairy"],
+    ["ביצים", "fridge", "dairy"],
+    ["גבינה לבנה", "fridge", "dairy"],
+    ["טחינה", "fridge", "pantry"],
+    ["ענבים", "fridge", "produce"],
+    ["כרובית", "fridge", "produce"],
+    ["אפונה קפואה", "freezer", "frozen"],
+    ["פיתות", "freezer", "bakery"],
+    ["אורז", "cupboard", "pantry"],
+    ["סוכר חום", "cupboard", "pantry"],
+    ["פפריקה מתוקה", "cupboard", "spices"],
+    ["חומוס משומר", "cupboard", "pantry"],
+    ["שמן קוקוס", "cupboard", "pantry"],
+    ["אבוקדו", "other", "produce"],
+  ],
+} as const;
+
+const SCAN_ANSWERS = {
+  en: [
+    { items: [{ name: "Milk", aisle: "dairy", brand: "Tnuva" }, { name: "Eggs", aisle: "dairy" }, { name: "Tahini", aisle: "pantry", brand: "Har Bracha" }, { name: "Grapes", aisle: "produce" }, { name: "Leftovers in a red tub", confidence: "low" as const, container_unknown: true }] },
+    { quality: "too_dark", items: [{ name: "White cheese", aisle: "dairy", confidence: "low" as const }] },
+    { items: [{ name: "Sweet paprika", aisle: "spices", brand: "Carrefour" }, { name: "Brown sugar", aisle: "pantry", brand: "Sugat" }, { name: "Flour", aisle: "pantry", confidence: "low" as const }] },
+  ],
+  he: [
+    { items: [{ name: "חלב", aisle: "dairy", brand: "תנובה" }, { name: "ביצים", aisle: "dairy" }, { name: "טחינה", aisle: "pantry", brand: "הר ברכה" }, { name: "ענבים", aisle: "produce" }, { name: "שאריות בקופסה אדומה", confidence: "low" as const, container_unknown: true }] },
+    { quality: "too_dark", items: [{ name: "גבינה לבנה", aisle: "dairy", confidence: "low" as const }] },
+    { items: [{ name: "פפריקה מתוקה", aisle: "spices", brand: "Carrefour" }, { name: "סוכר חום", aisle: "pantry", brand: "סוגת" }, { name: "קמח", aisle: "pantry", confidence: "low" as const }] },
+  ],
+};
+
+test("pantry: page, scan, review, phone code and What can I cook", async ({ browser }) => {
+  test.setTimeout(300_000);
+  await resetLibrary([
+    { ...RECIPE, title: "Shakshuka", ingredients: [{ name: "eggs", quantity: 4, unit: "" }, { name: "sweet paprika", quantity: 1, unit: "tsp" }, { name: "crushed tomatoes", quantity: 400, unit: "g" }] },
+  ]);
+  for (const viewport of ["phone", "tablet", "desktop"] as const) {
+    for (const [language, scheme] of [["en", "light"], ["he", "light"], ["en", "dark"], ["he", "dark"]] as const) {
+      if (viewport === "tablet" && scheme === "dark") continue;
+      const tag = `${viewport}-${language}-${scheme}`;
+      await resetPantry(
+        PANTRY_ITEMS[language].map(([name, place, aisle], index) => ({
+          name,
+          place,
+          aisle,
+          last_seen_at: new Date(Date.now() - (index % 3) * 86_400_000 * 2).toISOString(),
+        })),
+      );
+
+      // The Pantry page.
+      let { page, context } = await open(browser, viewport, { language, scheme }, "/app/settings/pantry");
+      await page.waitForTimeout(500);
+      await page.screenshot({ path: `${OUT}/pantry-${tag}.png`, fullPage: true });
+      await context.close();
+
+      // A scan: three photos, one too dark.
+      ({ page, context } = await open(browser, viewport, { language, scheme }, "/app/pantry/scan?place=fridge"));
+      await stubScanPantry(page, SCAN_ANSWERS[language]);
+      await page.locator('#main input[type="file"]').first().setInputFiles(PHOTOS);
+      await page.waitForTimeout(1200);
+      await page.screenshot({ path: `${OUT}/pantry-scan-${tag}.png`, fullPage: true });
+      await page.locator('#main [data-track="pantry.scan.review"]').click();
+      await page.locator("#main h1").waitFor();
+      await page.waitForTimeout(500);
+      await page.screenshot({ path: `${OUT}/pantry-review-${tag}.png`, fullPage: true });
+      await context.close();
+
+      // The phone code (computers only), connected.
+      if (viewport !== "phone") {
+        ({ page, context } = await open(browser, viewport, { language, scheme }, "/app/pantry/scan"));
+        await page.route("**/functions/v1/photo-handoff", async (route) => {
+          const body = route.request().postDataJSON() as { action: string };
+          if (body.action === "create") await route.fulfill({ json: { status: "ok", handoff: { id: "00000000-0000-4000-8000-000000000001", token: "abcdefghijklmnopqrstuvwxyz012345", expires_at: new Date(Date.now() + 900_000).toISOString() } } });
+          else await route.fulfill({ json: { status: "ok", state: "connected" } });
+        });
+        await page.getByRole("button", { name: language === "en" ? "Use your phone’s camera" : "צילום מהטלפון" }).click();
+        await page.waitForTimeout(2600);
+        await page.screenshot({ path: `${OUT}/pantry-phone-code-${tag}.png` });
+        await context.close();
+      }
+
+      // What can I cook.
+      ({ page, context } = await open(browser, viewport, { language, scheme }, "/app"));
+      await page.getByRole("button", { name: language === "en" ? "What can I cook?" : "מה אפשר לבשל?" }).filter({ visible: true }).first().click();
+      await page.getByRole("dialog").waitFor();
+      await page.waitForTimeout(500);
+      await page.screenshot({ path: `${OUT}/pantry-cook-${tag}.png` });
+      await context.close();
+    }
+  }
+
+  // The page the QR code opens, on a phone.
+  for (const [language, scheme] of [["en", "light"], ["he", "dark"]] as const) {
+    const context = await browser.newContext({ baseURL: test.info().project.use.baseURL, viewport: VIEWPORTS.phone, deviceScaleFactor: 2, colorScheme: scheme });
+    await context.addInitScript((p: Prefs) => {
+      localStorage.setItem("pinch:appLanguage", p.language);
+      localStorage.setItem("pinch.themePreference", p.scheme);
+    }, { language, scheme });
+    const page = await context.newPage();
+    await page.route("**/functions/v1/photo-handoff", async (route) => {
+      const body = route.request().postDataJSON() as { action: string };
+      if (body.action === "open") await route.fulfill({ json: { status: "ok", purpose: "pantry", place: "fridge", language, expires_at: new Date(Date.now() + 600_000).toISOString() } });
+      else await route.fulfill({ json: { status: "ok", photo: { id: null, scan_id: "s", place: "fridge", quality: "ok", truncated: false, from_phone: true, created_at: new Date().toISOString(), items: [{ name: "x", name_en: "x", brand: "", aisle: "other", confidence: "high", container_unknown: false }, { name: "y", name_en: "y", brand: "", aisle: "other", confidence: "high", container_unknown: false }] } } });
+    });
+    await page.goto("/app/phone#abcdefghijklmnopqrstuvwxyz012345");
+    await page.locator("main h1").waitFor();
+    await page.locator('input[type="file"][multiple]').setInputFiles(PHOTOS);
+    await page.waitForTimeout(800);
+    await page.screenshot({ path: `${OUT}/pantry-phone-page-${language}-${scheme}.png`, fullPage: true });
+    await context.close();
+  }
+  await resetPantry([]);
+  await resetLibrary([]);
 });
 
 test("snap, waiting for an import", async ({ browser }) => {
@@ -655,6 +789,98 @@ test("emails setting, and the unsubscribe page from an email link", async ({ bro
       await guestPage.getByRole("status").waitFor();
       await guestPage.screenshot({ path: `${OUT}/unsubscribe-invalid-${viewport}-${language}-${scheme}.png`, fullPage: true });
       await guest.close();
+    }
+  }
+});
+
+test("household: settings, invite, join page and the shared list", async ({ browser }) => {
+  test.setTimeout(600_000);
+  const baseURL = test.info().project.use.baseURL;
+  for (const language of ["en", "he"] as const) {
+    const he = language === "he";
+    // Fresh accounts in the screenshot's language: households stay out of the shared test account.
+    const alone = await newAccount("e2e-shot-alone", language);
+    const dana = await newAccount("e2e-shot-dana", language);
+    const avi = await newAccount("e2e-shot-avi", language);
+    const noa = await newAccount("e2e-shot-noa", language);
+    const token = await householdOf(he ? "משפחת כהן" : "The Cohens", [
+      { account: dana, displayName: he ? "דנה" : "Dana" },
+      { account: avi, displayName: he ? "אבי" : "Avi" },
+      { account: noa, displayName: he ? "נועה" : "Noa" },
+    ]);
+    // Pictures as real people would have them (Noa keeps her initial), so the avatars show as they will.
+    await setFoodAvatar(dana, "avocado");
+    await setFoodAvatar(avi, "pizza");
+    await addListItemsAs(dana, he ? ["בצל", "חלב"] : ["onion", "milk"]);
+    await addListItemsAs(avi, he ? ["לחם", "שמן זית"] : ["bread", "olive oil"]);
+
+    // Sign each account in once; every screenshot reuses its session.
+    const sessions = new Map<Account, Awaited<ReturnType<Awaited<ReturnType<Browser["newContext"]>>["storageState"]>>>();
+    for (const account of [alone, dana]) {
+      const context = await browser.newContext({ baseURL });
+      const page = await context.newPage();
+      await page.goto("/app/auth?mode=signin");
+      await signInWithPassword(page, account.email, account.password);
+      await page.locator("#main").waitFor();
+      sessions.set(account, await context.storageState());
+      await context.close();
+    }
+
+    for (const viewport of Object.keys(VIEWPORTS) as (keyof typeof VIEWPORTS)[]) {
+      for (const scheme of ["light", "dark"] as const) {
+        const tag = `${viewport}-${language}-${scheme}`;
+        const as = async (account: Account | null, path: string) => {
+          // The account's saved choices win over the browser's (PIN-154), so the theme goes on the account too.
+          if (account) await writeAccountPrefs({ locale: language, prefs: { scheme, pack: "mist", measurement: "original" } }, account.email, account.password);
+          const context = await browser.newContext({
+            baseURL,
+            viewport: VIEWPORTS[viewport],
+            deviceScaleFactor: viewport === "desktop" ? 1 : 2,
+            storageState: account ? sessions.get(account) : undefined,
+            colorScheme: scheme,
+          });
+          await context.addInitScript((p: Prefs) => {
+            localStorage.setItem("pinch:appLanguage", p.language);
+            localStorage.setItem("pinch.themePreference", p.scheme);
+            localStorage.setItem("pinch.themePack", "mist");
+          }, { language, scheme });
+          const page = await context.newPage();
+          await page.goto(path);
+          await page.locator("#main h1").waitFor();
+          await page.waitForTimeout(400);
+          return { page, context };
+        };
+
+        let shot = await as(alone, "/app/settings/household");
+        await shot.page.getByRole("radiogroup").waitFor();
+        await shot.page.screenshot({ path: `${OUT}/household-setup-${tag}.png`, fullPage: true });
+        await shot.context.close();
+
+        shot = await as(dana, "/app/settings/household");
+        // One remove button per screen size is shown; wait for the visible one.
+        await shot.page.locator("[data-track='household.member.remove']:visible").first().waitFor();
+        await shot.page.screenshot({ path: `${OUT}/household-members-${tag}.png`, fullPage: true });
+        await shot.page.locator("[data-track='household.invite']").click();
+        await shot.page.locator("#household-invite-link").waitFor();
+        await shot.page.waitForTimeout(300);
+        await shot.page.screenshot({ path: `${OUT}/household-invite-${tag}.png` });
+        await shot.context.close();
+
+        shot = await as(dana, "/app/list");
+        await shot.page.locator("[data-testid='added-by']").first().waitFor();
+        await shot.page.screenshot({ path: `${OUT}/household-list-${tag}.png`, fullPage: true });
+        await shot.context.close();
+
+        shot = await as(null, `/app/join/${token}`);
+        await shot.page.locator("[data-track='household.join.sign_up']").waitFor();
+        await shot.page.screenshot({ path: `${OUT}/household-join-guest-${tag}.png`, fullPage: true });
+        await shot.context.close();
+
+        shot = await as(alone, `/app/join/${token}`);
+        await shot.page.locator("[data-track='household.join.join']").waitFor();
+        await shot.page.screenshot({ path: `${OUT}/household-join-${tag}.png`, fullPage: true });
+        await shot.context.close();
+      }
     }
   }
 });

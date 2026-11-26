@@ -16,6 +16,15 @@ describe('appPathForWebLink', () => {
     expect(appPathForWebLink('https://pinch-app.io/r/c160897a0a21/?utm_source=x')).toBe('/hub/c160897a0a21');
   });
 
+  it('opens a household invite on the join screen', () => {
+    expect(appPathForWebLink('https://pinch-app.io/app/join/AbCdEf_-1234567890')).toBe('/join/AbCdEf_-1234567890');
+    expect(appPathForWebLink('https://www.pinch-app.io/join/AbCdEf_-1234567890/?utm=x')).toBe(
+      '/join/AbCdEf_-1234567890',
+    );
+    expect(appPathForWebLink('https://pinch-app.io/app/join/')).toBe('/');
+    expect(appPathForWebLink('https://pinch-app.io/app/join/a/b')).toBe('/');
+  });
+
   it('sends other pinch-app.io pages to the library', () => {
     expect(appPathForWebLink('https://pinch-app.io/guides/save-tiktok/')).toBe('/');
   });

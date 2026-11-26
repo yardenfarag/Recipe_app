@@ -45,6 +45,17 @@ function renderRow(overrides: Partial<ShoppingItemRowProps> = {}) {
 }
 
 describe("ShoppingItemRow", () => {
+  it("shows who else in the household added it, and reads it out with the item", () => {
+    renderRow({ addedBy: { displayName: "Avi", avatarUrl: null } });
+    expect(screen.getByRole("checkbox", { name: "milk, 2 cups, Added by Avi" })).toBeDefined();
+    expect(screen.getByTestId("added-by").textContent).toBe("A");
+  });
+
+  it("shows no one when I added it", () => {
+    renderRow({ addedBy: null });
+    expect(screen.queryByTestId("added-by")).toBeNull();
+  });
+
   it("is a checkbox named with the item and its amount, and clicking checks it off", () => {
     const props = renderRow();
     const box = screen.getByRole("checkbox", { name: "milk, 2 cups" });

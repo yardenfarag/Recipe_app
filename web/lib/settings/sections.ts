@@ -2,9 +2,11 @@ import {
   Archive,
   CircleHelp,
   Coins,
+  House,
   Languages,
   Mail,
   Palette,
+  Refrigerator,
   Scale,
   UserRound,
   UtensilsCrossed,
@@ -15,6 +17,8 @@ export type SettingsSectionId =
   | "account"
   | "credits"
   | "recipe"
+  | "household"
+  | "pantry"
   | "recipes"
   | "appearance"
   | "language"
@@ -50,6 +54,10 @@ export const SETTINGS_GROUPS: { titleKey: string; sections: SettingsSection[] }[
     titleKey: "settings.yourSettings",
     sections: [
       { id: "recipe", href: "/settings/recipe", labelKey: "settings.recipePreferences", hintKey: "settings.recipePreferencesHint", icon: UtensilsCrossed },
+      // The people you live with share the list, the pantry and "Always have" (ADR 034). Same path on mobile.
+      { id: "household", href: "/settings/household", labelKey: "household.title", hintKey: "household.settingsHint", icon: House },
+      // What's at home, from photos of the fridge and cupboards (PIN-181). The mobile app's page has the same path.
+      { id: "pantry", href: "/settings/pantry", labelKey: "pantry.title", hintKey: "pantry.settingsHint", icon: Refrigerator },
       { id: "recipes", href: "/settings/recipes", labelKey: "settings.yourRecipes", hintKey: "settings.yourRecipesHint", icon: Archive },
       { id: "appearance", href: "/settings/appearance", labelKey: "settings.appearance", hintKey: "settings.appearanceHint", icon: Palette },
       { id: "language", href: "/settings/language", labelKey: "settings.languageAndRegion", hintKey: "web.settings.languageHint", icon: Languages },
