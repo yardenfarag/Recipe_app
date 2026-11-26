@@ -2330,8 +2330,7 @@ export default {
     },
     "libraryTabs": {
       "label": "Library sections",
-      "mine": "My Library",
-      "small": "The Hub has more recipes that fit you"
+      "mine": "My Library"
     },
     "tonightPlanned": "Tonight, from your plan",
     "add": {

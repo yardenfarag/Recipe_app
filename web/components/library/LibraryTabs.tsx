@@ -7,10 +7,9 @@ import { cn } from "@/lib/cn";
 
 /**
  * "My Library | Hub" (PIN-77): the Hub sits inside the Library instead of having its own place in the navigation.
- * Real links, so each tab keeps its address (/ and /hub) and old Hub links still work. A small Library gets a nudge
- * towards the Hub, where the recipes that fit the cook are.
+ * Real links, so each tab keeps its address (/ and /hub) and old Hub links still work.
  */
-export function LibraryTabs({ current, small = false }: { current: "library" | "hub"; small?: boolean }) {
+export function LibraryTabs({ current }: { current: "library" | "hub" }) {
   const { t } = useTranslation();
   const tab = (on: boolean) =>
     cn(
@@ -18,7 +17,7 @@ export function LibraryTabs({ current, small = false }: { current: "library" | "
       on ? "bg-surface text-text shadow-soft" : "text-muted hover:text-text",
     );
   return (
-    <div className="mb-4 flex flex-wrap items-center gap-x-4 gap-y-2 md:mb-5">
+    <div className="mb-4 md:mb-5">
       <nav aria-label={t("plan.libraryTabs.label")} className="inline-flex rounded-btn bg-element p-1">
         <Link href="/" data-track="library.tab.mine" aria-current={current === "library" ? "page" : undefined} className={tab(current === "library")}>
           {t("plan.libraryTabs.mine")}
@@ -27,11 +26,6 @@ export function LibraryTabs({ current, small = false }: { current: "library" | "
           {t("tabs.hub")}
         </Link>
       </nav>
-      {small && current === "library" ? (
-        <Link href="/hub" data-track="library.tab.small_hint" className="text-sm font-semibold text-primary-text hover:underline">
-          {t("plan.libraryTabs.small")}
-        </Link>
-      ) : null}
     </div>
   );
 }

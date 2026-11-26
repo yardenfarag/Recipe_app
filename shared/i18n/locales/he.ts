@@ -2388,8 +2388,7 @@ export default {
     },
     "libraryTabs": {
       "label": "חלקי הספרייה",
-      "mine": "הספרייה שלי",
-      "small": "ב-Hub יש עוד מתכונים שמתאימים לכם"
+      "mine": "הספרייה שלי"
     },
     "tonightPlanned": "הערב, מהתכנון שלכם",
     "add": {

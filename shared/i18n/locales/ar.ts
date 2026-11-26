@@ -2562,8 +2562,7 @@ export default {
     },
     "libraryTabs": {
       "label": "أقسام المكتبة",
-      "mine": "مكتبتي",
-      "small": "في الـHub وصفات أخرى تناسبك"
+      "mine": "مكتبتي"
     },
     "tonightPlanned": "الليلة، من خطتك",
     "add": {

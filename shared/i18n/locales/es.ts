@@ -2388,8 +2388,7 @@ export default {
     },
     "libraryTabs": {
       "label": "Secciones de la biblioteca",
-      "mine": "Mi biblioteca",
-      "small": "El Hub tiene más recetas que encajan contigo"
+      "mine": "Mi biblioteca"
     },
     "tonightPlanned": "Esta noche, de tu plan",
     "add": {
