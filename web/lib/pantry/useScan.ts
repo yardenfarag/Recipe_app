@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useRef, useState, type RefObject } from "react";
 
+import { newSessionId } from "@shared/lib/interactionQueue";
 import { clearScan, deleteScanPhotos, fetchScanPhotos, scanPantryPhoto } from "@shared/lib/supabase/pantry";
 import type { PantryPlace, ScanPhoto } from "@shared/types/pantry";
 
@@ -27,8 +28,9 @@ export type ScanEntry = {
   file?: File;
 };
 
+/** Not `crypto.randomUUID()`: browsers only have it on https and localhost, and the scan must work on any page. */
 function newScanId(): string {
-  return crypto.randomUUID();
+  return newSessionId();
 }
 
 function storedScanId(): string | null {
@@ -138,7 +140,7 @@ export function useScan(language: string) {
     (files: File[], place: PantryPlace) => {
       const images = files.filter((file) => file.type.startsWith("image/") || /\.(heic|heif)$/i.test(file.name));
       const added = images.map<ScanEntry>((file) => ({
-        key: `local-${crypto.randomUUID()}`,
+        key: `local-${newSessionId()}`,
         place,
         status: "reading",
         preview: URL.createObjectURL(file),

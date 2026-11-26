@@ -5,6 +5,7 @@ import { useEffect, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 
 import { isAppLanguageCode } from "@shared/lib/appLanguages";
+import { newSessionId } from "@shared/lib/interactionQueue";
 import { openHandoff, readHandoffToken, uploadHandoffPhoto, type HandoffPurpose } from "@shared/lib/supabase/pantry";
 import { PANTRY_PLACES, type PantryPlace, type ScanPhoto } from "@shared/types/pantry";
 
@@ -91,7 +92,7 @@ function PhoneCamera({ link, onExpired }: { link: Link; onExpired: () => void })
   const handedOver = !pantry && sent.some((item) => item.status === "done");
 
   async function send(file: File) {
-    const key = crypto.randomUUID();
+    const key = newSessionId();
     const preview = URL.createObjectURL(file);
     setSent((list) => [{ key, preview, place, status: "sending" }, ...list]);
     const image = await compressImageFile(file, pantry ? "pantry" : "standard");
