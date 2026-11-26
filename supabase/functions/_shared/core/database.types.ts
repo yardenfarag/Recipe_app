@@ -2045,6 +2045,15 @@ export type Database = {
       admin_user_detail: { Args: { p_user_id: string }; Returns: Json }
       app_version_parts: { Args: { v: string }; Returns: number[] }
       backfill_recipe_cards: { Args: never; Returns: number }
+      call_edge_function: {
+        Args: {
+          p_body?: Json
+          p_function: string
+          p_secret_header: string
+          p_secret_name: string
+        }
+        Returns: number
+      }
       can_moderate_recipe_cards: { Args: never; Returns: boolean }
       cancel_subscription: { Args: { p_user_id?: string }; Returns: string }
       claim_recipe_card: { Args: { p_card_id: string }; Returns: string }
