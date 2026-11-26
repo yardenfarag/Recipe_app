@@ -20,6 +20,7 @@ import { SubstitutionModal } from '@/components/SubstitutionModal';
 import { TokenPurchaseSheet } from '@/components/TokenPurchaseSheet';
 import { RecipeCookBar } from '@/components/recipe/RecipeCookBar';
 import { CostDots, RecipeFact, RecipeUpdatingFact } from '@/components/recipe/RecipeFact';
+import { RecipeNutritionPanel } from '@/components/recipe/RecipeNutritionPanel';
 import { HERO_OVERLAP, RecipeHero, type HeroCookAlong } from '@/components/recipe/RecipeHero';
 import { RecipeIngredientList } from '@/components/recipe/RecipeIngredientList';
 import { RecipeMoreMenu, type RecipeMenuItem } from '@/components/recipe/RecipeMoreMenu';
@@ -1073,6 +1074,7 @@ export function RecipeView({
     />
   );
 
+  const showNutritionPanel = calorieDisplay != null && nutritionDisplay != null && !isUpdating('calories');
   const facts: ReactNode[] = [];
   if (isUpdating('estimated_time_minutes')) {
     facts.push(
@@ -1099,7 +1101,8 @@ export function RecipeView({
     facts.push(
       <RecipeUpdatingFact key="calories" field={t('recipeEditor.fields.calories')} label={t('web.recipe.factCalories')} updating={updatingLabel} />,
     );
-  } else if (calorieDisplay != null) {
+  } else if (calorieDisplay != null && !showNutritionPanel) {
+    // With the macros, calories sit in the per-serving panel instead.
     facts.push(
       <RecipeFact
         key="calories"
@@ -1302,14 +1305,8 @@ export function RecipeView({
                   {title}
                 </Text>
                 <View style={{ flexDirection: 'row', gap: 6 }}>{facts}</View>
-                {nutritionDisplay != null && !isUpdating('calories') ? (
-                  <Text testID="recipe-nutrition" variant="caption" tone="muted" style={{ fontVariant: ['tabular-nums'] }}>
-                    {t('recipe.nutritionPerServing', {
-                      protein: nutritionDisplay.perServing.protein_g,
-                      carbs: nutritionDisplay.perServing.carbs_g,
-                      fat: nutritionDisplay.perServing.fat_g,
-                    })}
-                  </Text>
+                {showNutritionPanel ? (
+                  <RecipeNutritionPanel calories={calorieDisplay.perServing} nutrition={nutritionDisplay.perServing} />
                 ) : null}
 
                 {tags.length > 0 ||

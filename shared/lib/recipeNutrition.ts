@@ -40,6 +40,28 @@ export interface NutritionDisplay {
   total: RecipeNutrition;
 }
 
+/** Calories in a gram of each macro (the Atwater factors). */
+const CALORIES_PER_GRAM: RecipeNutrition = { protein_g: 4, carbs_g: 4, fat_g: 9 };
+
+export interface MacroCalorieShares {
+  protein: number;
+  carbs: number;
+  fat: number;
+}
+
+/**
+ * How the calories split between protein, carbs and fat, as fractions that add up to 1, for the bar under the
+ * per-serving numbers. Null when the macros add up to no calories at all.
+ */
+export function macroCalorieShares(nutrition: RecipeNutrition): MacroCalorieShares | null {
+  const protein = nutrition.protein_g * CALORIES_PER_GRAM.protein_g;
+  const carbs = nutrition.carbs_g * CALORIES_PER_GRAM.carbs_g;
+  const fat = nutrition.fat_g * CALORIES_PER_GRAM.fat_g;
+  const sum = protein + carbs + fat;
+  if (!(sum > 0)) return null;
+  return { protein: protein / sum, carbs: carbs / sum, fat: fat / sum };
+}
+
 /** Like getCalorieDisplay: per serving stays, the total scales with the chosen servings. */
 export function getNutritionDisplay(
   nutrition: RecipeNutrition | null | undefined,

@@ -1,4 +1,4 @@
-import { fireEvent, render, screen } from "@testing-library/react";
+import { fireEvent, render, screen, within } from "@testing-library/react";
 import { I18nextProvider } from "react-i18next";
 import { beforeAll, describe, expect, it, vi } from "vitest";
 
@@ -78,11 +78,20 @@ describe("RecipeHeader", () => {
     expect(original?.getAttribute("rel")).toContain("noopener");
   });
 
-  it("shows protein, carbs and fat per serving, whatever the servings chosen (PIN-80)", () => {
+  it("shows calories, protein, carbs and fat per serving in their own tile, whatever the servings chosen (PIN-80)", () => {
     const nutrition = { protein_g: 60, carbs_g: 80, fat_g: 36 };
-    const { unmount } = wrap(<RecipeHeader display={displayOf({ nutrition })} servings={6} />);
-    expect(screen.getByTestId("recipe-nutrition").textContent).toBe("Per serving: 30 g protein · 40 g carbs · 18 g fat");
-    unmount();
+    wrap(<RecipeHeader display={displayOf({ nutrition })} servings={6} />);
+    const tile = within(screen.getByRole("group", { name: "Per serving" }));
+    expect(tile.getAllByRole("listitem").map((item) => item.querySelector(".sr-only")?.textContent)).toEqual([
+      "Calories: 200",
+      "Protein: 30 g",
+      "Carbs: 40 g",
+      "Fat: 18 g",
+    ]);
+    // A meter of each macro's share of the calories (4/4/9 a gram): 120, 160 and 162 of 442.
+    expect(tile.getAllByTestId("macro-meter").map((meter) => (meter.firstElementChild as HTMLElement).style.width)).toEqual(["27%", "36%", "37%"]);
+    // The calories are in the tile now, not a fact of their own as well.
+    expect(screen.queryByText("~200 cal/serving")).toBeNull();
   });
 
   it("shows no macros without them, or next to calories the cook set by hand", () => {
