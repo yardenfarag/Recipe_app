@@ -330,6 +330,18 @@ class InvalidLlmJsonError extends AppError {
   }
 }
 
+/** The model answered (HTTP 200) with no content: a refusal, a content filter, or out of tokens. */
+class EmptyLlmContentError extends AppError {
+  constructor(
+    context: string,
+    readonly usedModel: string,
+    finishReason: string,
+  ) {
+    super(context, 'OpenRouter returned no content', { model: usedModel, finishReason });
+    this.name = 'EmptyLlmContentError';
+  }
+}
+
 /** Characters of the answer logged on each side of where JSON.parse stopped. */
 const JSON_ERROR_WINDOW = 80;
 
@@ -379,13 +391,16 @@ export async function generateOpenRouterJson<T>(
       timeoutMs: options.timeoutMs,
     });
   } catch (err) {
-    if (!(err instanceof InvalidLlmJsonError)) throw err;
-    // OpenRouter's models[] only covers provider errors. A 200 with broken JSON never
-    // reaches the fallback, so retry on it here (extract-recipe, 21 Nov 2026).
+    if (!(err instanceof InvalidLlmJsonError || err instanceof EmptyLlmContentError)) throw err;
+    // OpenRouter's models[] only covers provider errors. A 200 with broken JSON (extract-recipe,
+    // 21 Nov 2026) or with no content at all never reaches the fallback, so retry on it here.
+    // inkling-2-mini on Relace began stopping at max_tokens with no content on some image +
+    // title inputs (content_gate, 26 Nov 2026), which failed those imports with gate_unavailable.
+    const problem = err instanceof EmptyLlmContentError ? 'no content' : 'invalid JSON';
     const next = modelsAfter([model, ...fallbacks], err.usedModel);
     const remainingMs = options.timeoutMs - (Date.now() - started);
     if (next.length === 0 || remainingMs < MIN_RETRY_MS) {
-      console.error('[openrouter] invalid JSON, not retrying', {
+      console.error(`[openrouter] ${problem}, not retrying`, {
         model: err.usedModel,
         kind: options.kind,
         reason: next.length === 0 ? 'no_fallback' : 'no_time',
@@ -393,7 +408,7 @@ export async function generateOpenRouterJson<T>(
       });
       throw err;
     }
-    console.warn('[openrouter] invalid JSON, retrying on fallback', {
+    console.warn(`[openrouter] ${problem}, retrying on fallback`, {
       failedModel: err.usedModel,
       model: next[0],
       kind: options.kind,
@@ -408,7 +423,10 @@ export async function generateOpenRouterJson<T>(
   }
 }
 
-/** One chat completion. Throws InvalidLlmJsonError when the answer doesn't parse. */
+/**
+ * One chat completion. Throws InvalidLlmJsonError when the answer doesn't parse and
+ * EmptyLlmContentError when there is no answer; the caller retries both on the next model.
+ */
 async function requestOpenRouterJson<T>(
   options: GenerateLlmJsonOptions,
   apiKey: string,
@@ -546,10 +564,7 @@ async function requestOpenRouterJson<T>(
       finishReason: choice?.finish_reason,
       nativeFinishReason: choice?.native_finish_reason,
     });
-    throw new AppError(options.context, 'OpenRouter returned no content', {
-      model: usedModel,
-      finishReason: choice?.finish_reason ?? 'unknown',
-    });
+    throw new EmptyLlmContentError(options.context, usedModel, choice?.finish_reason ?? 'unknown');
   }
 
   let data: T;
