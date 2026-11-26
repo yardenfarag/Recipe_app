@@ -4,6 +4,7 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import { ActivityIndicator, Alert, View } from 'react-native';
 import { useTranslation } from 'react-i18next';
 
+import { RecipeTranslatingScreen } from '@/components/recipe/RecipeTranslatingScreen';
 import { RecipeView } from '@/components/RecipeView';
 import { Screen } from '@/components/Screen';
 import { Button } from '@/components/ui/Button';
@@ -66,6 +67,7 @@ export default function RecipeDetailScreen() {
     displayContent,
     activeLanguage,
     translating,
+    waitingForTranslation,
     translationError,
     applyManualTranslation,
     loadCached,
@@ -364,6 +366,8 @@ export default function RecipeDetailScreen() {
       </Screen>
     );
   }
+
+  if (waitingForTranslation) return <RecipeTranslatingScreen back={backRow} />;
 
   return (
     <Screen edges={[]}>
