@@ -3,7 +3,15 @@ import { Image } from 'expo-image';
 import { router, Stack, useLocalSearchParams, type Href } from 'expo-router';
 import { type ReactNode, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { ActivityIndicator, Platform, ScrollView, View } from 'react-native';
+import {
+  ActivityIndicator,
+  Platform,
+  ScrollView,
+  View,
+  type LayoutChangeEvent,
+  type NativeScrollEvent,
+  type NativeSyntheticEvent,
+} from 'react-native';
 
 import { CheckRow, PantryBadgeIcon, PantrySignInPrompt } from '@/components/pantry/PantryParts';
 import { Screen } from '@/components/Screen';
@@ -55,6 +63,8 @@ type Shot = {
   state: 'reading' | 'done' | 'failed';
   photo?: ScanPhoto;
   code?: string;
+  /** The server had read these exact bytes already, for another thumbnail: shown, not counted. */
+  duplicate?: boolean;
 };
 
 type Row = ReviewItem & { ticked: boolean; renamed?: boolean };
@@ -210,7 +220,14 @@ export default function PantryScanScreen() {
       }
       if (result.status === 'ok') {
         base64s.current.delete(key);
-        update(key, { state: 'done', photo: result.photo, code: undefined });
+        const photoId = result.photo.id;
+        // The same photo twice: the server answers with the earlier result. Only a second thumbnail of it is skipped;
+        // when no thumbnail holds it (a resumed scan) it counts as usual.
+        const duplicate =
+          result.photo.duplicate === true &&
+          photoId != null &&
+          shotsRef.current.some((s) => s.key !== key && s.photo?.id === photoId && !s.duplicate);
+        update(key, { state: 'done', photo: result.photo, code: undefined, duplicate });
         return;
       }
       update(key, { state: 'failed', code: result.code });
@@ -262,9 +279,16 @@ export default function PantryScanScreen() {
   function removeShot(shot: Shot) {
     base64s.current.delete(shot.key);
     queue.current = queue.current.filter((key) => key !== shot.key);
-    setShots((current) => current.filter((s) => s.key !== shot.key));
-    shotsRef.current = shotsRef.current.filter((s) => s.key !== shot.key);
-    if (shot.photo?.id) void deleteScanPhotos([shot.photo.id]).catch(() => {});
+    const photoId = shot.photo?.id;
+    // A skipped copy shares the server's row with the first one: removing either keeps the row while the other stays.
+    const twin = photoId ? shotsRef.current.find((s) => s.key !== shot.key && s.photo?.id === photoId) : undefined;
+    const apply = (list: Shot[]) =>
+      list
+        .filter((s) => s.key !== shot.key)
+        .map((s) => (twin && s.key === twin.key ? { ...s, duplicate: false } : s));
+    setShots(apply);
+    shotsRef.current = apply(shotsRef.current);
+    if (photoId && !twin) void deleteScanPhotos([photoId]).catch(() => {});
   }
 
   function retake(shot: Shot) {
@@ -284,7 +308,7 @@ export default function PantryScanScreen() {
 
   // ── What the photos found ───────────────────────────────────────────────────
   const donePhotos = useMemo(
-    () => shots.flatMap((shot) => (shot.state === 'done' && shot.photo ? [shot.photo] : [])),
+    () => shots.flatMap((shot) => (shot.state === 'done' && shot.photo && !shot.duplicate ? [shot.photo] : [])),
     [shots],
   );
   const merged = useMemo(() => mergeScanPhotos(donePhotos), [donePhotos]);
@@ -432,6 +456,11 @@ export default function PantryScanScreen() {
     [navigation, next, t],
   );
 
+  // The "next step" card: the footer button shows only while the card is scrolled out of view.
+  const [scrollY, setScrollY] = useState(0);
+  const [viewportHeight, setViewportHeight] = useState(0);
+  const [nextCard, setNextCard] = useState<{ y: number; height: number } | null>(null);
+
   const title = phase === 'review' ? t('pantry.review.title') : t('pantry.scan.title');
   const screenOptions = (
     <Stack.Screen options={{ title, gestureEnabled: !next && phase !== 'review' }} />
@@ -510,6 +539,10 @@ export default function PantryScanScreen() {
           keyboardShouldPersistTaps="handled"
           contentContainerStyle={[{ padding: 20, paddingBottom: 32, gap: 16 }, widthStyle]}
         >
+          <StepIndicator step={2} onStep1={() => setPhase('capture')} />
+          <Text variant="bodySmall" tone="muted">
+            {t('pantry.review.intro')}
+          </Text>
           <View
             accessibilityRole="summary"
             style={{
@@ -525,10 +558,6 @@ export default function PantryScanScreen() {
               {t('pantry.review.disclaimer')}
             </Text>
           </View>
-
-          <Button trackId="pantry_review.back" variant="link" icon="arrow-back" onPress={() => setPhase('capture')}>
-            {t('pantry.review.back')}
-          </Button>
 
           {notSure.length > 0 ? (
             <Tile padding={20} style={{ gap: 8 }}>
@@ -585,29 +614,45 @@ export default function PantryScanScreen() {
           ) : null}
         </ScrollView>
         <Footer>
-          <Button trackId="pantry_review.save" size="lg" fullWidth busy={saving} onPress={() => void save()}>
-            {tickedCount > 0 ? t('pantry.review.save', { count: tickedCount }) : t('pantry.review.saveNone')}
-          </Button>
+          {/* Save is the one main action; Back to the photos sits beside it (under it on a phone), quieter. */}
+          <View style={isMediumUp ? { flexDirection: 'row', alignItems: 'center', gap: 12 } : { gap: 6 }}>
+            {isMediumUp ? <BackToPhotos onPress={() => setPhase('capture')} /> : null}
+            <Button
+              trackId="pantry_review.save"
+              size="lg"
+              fullWidth={!isMediumUp}
+              busy={saving}
+              style={isMediumUp ? { flex: 1 } : undefined}
+              onPress={() => void save()}
+            >
+              {tickedCount > 0 ? t('pantry.review.save', { count: tickedCount }) : t('pantry.review.saveNone')}
+            </Button>
+            {isMediumUp ? null : <BackToPhotos fullWidth onPress={() => setPhase('capture')} />}
+          </View>
         </Footer>
       </Screen>
     );
   }
 
-  // ── Capture ─────────────────────────────────────────────────────────────────
+  // â”€â”€ Capture â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
   const canReview = !reading && donePhotos.length > 0;
-  const reviewLabel = reading
-    ? t('pantry.scan.waiting')
-    : shots.length === 0
-      ? t('pantry.scan.reviewEmpty')
-      : t('pantry.scan.review', { count: merged.length });
+  const cardOutOfView =
+    nextCard != null &&
+    viewportHeight > 0 &&
+    (nextCard.y + nextCard.height < scrollY || nextCard.y > scrollY + viewportHeight);
+  const placesWithShots = PANTRY_PLACES.filter((place) => shots.some((shot) => shot.place === place));
 
   return (
     <Screen edges={['left', 'right', 'bottom']}>
       {screenOptions}
       <ScrollView
         style={{ flex: 1 }}
+        scrollEventThrottle={64}
+        onScroll={(event: NativeSyntheticEvent<NativeScrollEvent>) => setScrollY(event.nativeEvent.contentOffset.y)}
+        onLayout={(event: LayoutChangeEvent) => setViewportHeight(event.nativeEvent.layout.height)}
         contentContainerStyle={[{ padding: 20, paddingBottom: 32, gap: 16 }, widthStyle]}
       >
+        <StepIndicator step={1} />
         <Text variant="bodySmall" tone="muted">
           {t('pantry.scan.intro')}
         </Text>
@@ -647,16 +692,9 @@ export default function PantryScanScreen() {
 
         {PANTRY_PLACES.map((place) => {
           const placeShots = shots.filter((shot) => shot.place === place);
-          const itemCount = merged.filter((item) => item.place === place).length;
+          // Unique items: the same jar in two photos of the fridge is one item.
+          const itemCount = mergeScanPhotos(donePhotos.filter((photo) => photo.place === place)).length;
           const active = activePlace === place;
-          const placePhotos = placeShots.flatMap((shot) => (shot.photo ? [shot.photo] : []));
-          const hints = [
-            placePhotos.some((p) => p.quality === 'too_dark' || p.quality === 'blurry' || p.quality === 'too_far')
-              ? t('pantry.scan.qualityHint')
-              : null,
-            placePhotos.some((p) => p.quality === 'not_kitchen') ? t('pantry.scan.notKitchenHint') : null,
-            placePhotos.some((p) => p.truncated) ? t('pantry.scan.truncatedHint') : null,
-          ].filter((hint): hint is string => Boolean(hint));
           return (
             <Tile
               key={place}
@@ -692,34 +730,6 @@ export default function PantryScanScreen() {
                 ) : null}
               </Pressable>
 
-              {placeShots.length > 0 ? (
-                <ScrollView
-                  horizontal
-                  showsHorizontalScrollIndicator={false}
-                  contentContainerStyle={{ gap: 10, paddingHorizontal: 18, paddingBottom: 14 }}
-                >
-                  {placeShots.map((shot) => (
-                    <ShotCard
-                      key={shot.key}
-                      shot={shot}
-                      onRemove={() => removeShot(shot)}
-                      onRetake={() => retake(shot)}
-                      onTryAgain={() => tryAgain(shot)}
-                    />
-                  ))}
-                </ScrollView>
-              ) : null}
-
-              {hints.length > 0 ? (
-                <View style={{ gap: 4, paddingHorizontal: 18, paddingBottom: 14 }}>
-                  {hints.map((hint) => (
-                    <Text key={hint} variant="caption" tone="muted">
-                      {hint}
-                    </Text>
-                  ))}
-                </View>
-              ) : null}
-
               {active ? (
                 <View
                   style={{
@@ -732,9 +742,11 @@ export default function PantryScanScreen() {
                     borderColor: colors.border,
                   }}
                 >
+                  {/* Secondary: once photos are going, the next-step card below carries the one primary button. */}
                   {Platform.OS !== 'web' ? (
                     <Button
                       trackId="pantry_scan.take_photo"
+                      variant="secondary"
                       icon="camera-outline"
                       style={{ flexGrow: 1 }}
                       onPress={() => void addPhotos(place, 'camera')}
@@ -744,7 +756,7 @@ export default function PantryScanScreen() {
                   ) : null}
                   <Button
                     trackId="pantry_scan.choose_photos"
-                    variant={Platform.OS === 'web' ? 'primary' : 'secondary'}
+                    variant={Platform.OS === 'web' ? 'secondary' : 'outline'}
                     icon="images-outline"
                     style={{ flexGrow: 1 }}
                     onPress={() => void addPhotos(place, 'library')}
@@ -756,20 +768,225 @@ export default function PantryScanScreen() {
             </Tile>
           );
         })}
+
+        {shots.length > 0 ? (
+          <View onLayout={(event: LayoutChangeEvent) => setNextCard(event.nativeEvent.layout)}>
+            <NextStepCard
+              count={merged.length}
+              anythingRead={donePhotos.length > 0}
+              reading={reading}
+              disabled={!canReview}
+              onPress={() => void goToReview()}
+            />
+          </View>
+        ) : null}
+
+        {placesWithShots.length > 0 ? (
+          <View style={{ gap: 14 }}>
+            <Text variant="caption" tone="muted">
+              {t('pantry.scan.countedOnce')}
+            </Text>
+            {placesWithShots.map((place) => {
+              const placeShots = shots.filter((shot) => shot.place === place);
+              const placePhotos = placeShots.flatMap((shot) => (shot.photo && !shot.duplicate ? [shot.photo] : []));
+              const hints = [
+                placePhotos.some((p) => p.quality === 'too_dark' || p.quality === 'blurry' || p.quality === 'too_far')
+                  ? t('pantry.scan.qualityHint')
+                  : null,
+                placePhotos.some((p) => p.quality === 'not_kitchen') ? t('pantry.scan.notKitchenHint') : null,
+                placePhotos.some((p) => p.truncated) ? t('pantry.scan.truncatedHint') : null,
+              ].filter((hint): hint is string => Boolean(hint));
+              return (
+                <View key={place} style={{ gap: 8 }} testID={`pantry-scan-photos-${place}`}>
+                  <TileLabel accessibilityRole="header">{t(`pantry.places.${place}`)}</TileLabel>
+                  <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 10 }}>
+                    {placeShots.map((shot) => (
+                      <ShotCard
+                        key={shot.key}
+                        shot={shot}
+                        onRemove={() => removeShot(shot)}
+                        onRetake={() => retake(shot)}
+                        onTryAgain={() => tryAgain(shot)}
+                      />
+                    ))}
+                  </ScrollView>
+                  {hints.map((hint) => (
+                    <Text key={hint} variant="caption" tone="muted">
+                      {hint}
+                    </Text>
+                  ))}
+                </View>
+              );
+            })}
+          </View>
+        ) : null}
       </ScrollView>
-      <Footer>
-        <Button
-          trackId="pantry_scan.review"
-          size="lg"
-          fullWidth
-          disabled={!canReview}
-          busy={reading && donePhotos.length === 0}
-          onPress={() => void goToReview()}
-        >
-          {reviewLabel}
-        </Button>
-      </Footer>
+      {shots.length > 0 && cardOutOfView ? (
+        <Footer>
+          <Button
+            trackId="pantry_scan.review_footer"
+            size="lg"
+            fullWidth
+            iconEnd="arrow-forward"
+            disabled={!canReview}
+            busy={reading}
+            onPress={() => void goToReview()}
+          >
+            {t('pantry.scan.nextButton')}
+          </Button>
+        </Footer>
+      ) : null}
     </Screen>
+  );
+}
+
+/** "1 Take photos â†’ 2 Check and save". On step 2, step 1 shows a check and goes back to the photos. */
+function StepIndicator({ step, onStep1 }: { step: 1 | 2; onStep1?: () => void }) {
+  const { t } = useTranslation();
+  const { colors } = useThemePreference();
+  const dot = (n: 1 | 2) => {
+    const current = n === step;
+    const done = n < step;
+    return (
+      <View
+        style={{
+          width: 26,
+          height: 26,
+          borderRadius: 13,
+          alignItems: 'center',
+          justifyContent: 'center',
+          backgroundColor: current ? colors.primary : done ? colors.primarySoft : 'transparent',
+          borderWidth: current || done ? 0 : HAIRLINE,
+          borderColor: colors.border,
+        }}
+      >
+        {done ? (
+          <KitIcon icon="checkmark" size={15} color={colors.primaryText} />
+        ) : (
+          <Text variant="caption" weight="bold" color={current ? colors.onPrimary : colors.textSecondary}>
+            {String(n)}
+          </Text>
+        )}
+      </View>
+    );
+  };
+  const first = (
+    <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+      {dot(1)}
+      <Text variant="bodySmall" weight="semibold" tone={step === 1 ? 'default' : 'primary'}>
+        {t('pantry.scan.step1')}
+      </Text>
+    </View>
+  );
+  return (
+    <View style={{ flexDirection: 'row', alignItems: 'center', flexWrap: 'wrap', columnGap: 10 }}>
+      {step === 2 && onStep1 ? (
+        <Pressable
+          trackId="pantry_scan.step1"
+          onPress={onStep1}
+          accessibilityRole="button"
+          accessibilityLabel={`1. ${t('pantry.scan.step1')}. ${t('pantry.review.back')}`}
+          style={{ minHeight: 44, justifyContent: 'center' }}
+        >
+          {first}
+        </Pressable>
+      ) : (
+        <View accessible accessibilityState={{ selected: step === 1 }} style={{ minHeight: 44, justifyContent: 'center' }}>
+          {first}
+        </View>
+      )}
+      {/* Points along the reading direction: KitIcon mirrors arrows in Hebrew and Arabic. */}
+      <KitIcon icon="arrow-forward" size={16} color={colors.textSecondary} />
+      <View
+        accessible
+        accessibilityState={{ selected: step === 2 }}
+        style={{ flexDirection: 'row', alignItems: 'center', gap: 8, minHeight: 44 }}
+      >
+        {dot(2)}
+        <Text variant="bodySmall" weight="semibold" tone={step === 2 ? 'default' : 'muted'}>
+          {t('pantry.scan.step2')}
+        </Text>
+      </View>
+    </View>
+  );
+}
+
+/** The one next action once photos are going: how many items so far, and "Check the list". */
+function NextStepCard({
+  count,
+  anythingRead,
+  reading,
+  disabled,
+  onPress,
+}: {
+  count: number;
+  anythingRead: boolean;
+  reading: boolean;
+  disabled: boolean;
+  onPress: () => void;
+}) {
+  const { t } = useTranslation();
+  const { colors } = useThemePreference();
+  return (
+    <View
+      testID="pantry-scan-next"
+      style={{
+        gap: 14,
+        padding: 18,
+        borderRadius: Radii.card,
+        borderWidth: 2,
+        borderColor: colors.primary,
+        backgroundColor: colors.primarySoft,
+      }}
+    >
+      <View style={{ flexDirection: 'row', alignItems: 'flex-start', gap: 12 }}>
+        <View
+          accessible={false}
+          importantForAccessibility="no-hide-descendants"
+          style={{
+            width: 40,
+            height: 40,
+            borderRadius: 14,
+            alignItems: 'center',
+            justifyContent: 'center',
+            backgroundColor: colors.primary,
+          }}
+        >
+          {reading && !anythingRead ? (
+            <ActivityIndicator color={colors.onPrimary} />
+          ) : (
+            <KitIcon icon="list-outline" size={22} color={colors.onPrimary} />
+          )}
+        </View>
+        <View style={{ flex: 1, minWidth: 0, gap: 4 }} accessibilityLiveRegion="polite">
+          <Text variant="h3" tone="primary">
+            {anythingRead ? t('pantry.scan.nextTitle', { count }) : t('pantry.scan.waiting')}
+          </Text>
+          <Text variant="bodySmall">{t('pantry.scan.nextBody')}</Text>
+        </View>
+      </View>
+      <Button
+        trackId="pantry_scan.review"
+        size="lg"
+        fullWidth
+        iconEnd="arrow-forward"
+        disabled={disabled}
+        busy={reading}
+        onPress={onPress}
+      >
+        {t('pantry.scan.nextButton')}
+      </Button>
+    </View>
+  );
+}
+
+/** "Back to photos": the quiet action next to Save. */
+function BackToPhotos({ onPress, fullWidth = false }: { onPress: () => void; fullWidth?: boolean }) {
+  const { t } = useTranslation();
+  return (
+    <Button trackId="pantry_review.back" variant="ghost" icon="arrow-back" fullWidth={fullWidth} onPress={onPress}>
+      {t('pantry.review.back')}
+    </Button>
   );
 }
 
@@ -809,11 +1026,12 @@ function ShotCard({
   const { t } = useTranslation();
   const { colors } = useThemePreference();
   const quality = shot.photo?.quality;
-  const problem = quality === 'too_dark' || quality === 'blurry' || quality === 'too_far';
+  const problem = !shot.duplicate && (quality === 'too_dark' || quality === 'blurry' || quality === 'too_far');
 
   let status: string;
   let tone: 'muted' | 'danger' | 'default' = 'muted';
   if (shot.state === 'reading') status = t('pantry.scan.reading');
+  else if (shot.duplicate) status = t('pantry.scan.samePhoto');
   else if (shot.state === 'failed') {
     // The daily limit is spelled out once, above the places.
     status = t('pantry.scan.failed');
@@ -843,7 +1061,11 @@ function ShotCard({
         }}
       >
         {shot.uri ? (
-          <Image source={{ uri: shot.uri }} style={{ width: '100%', height: '100%' }} contentFit="cover" />
+          <Image
+            source={{ uri: shot.uri }}
+            style={{ width: '100%', height: '100%', opacity: shot.duplicate ? 0.45 : 1 }}
+            contentFit="cover"
+          />
         ) : (
           <KitIcon icon="image-outline" size={28} color={colors.textSecondary} />
         )}
@@ -877,7 +1099,8 @@ function ShotCard({
         variant="caption"
         weight="semibold"
         tone={tone}
-        numberOfLines={2}
+        numberOfLines={shot.duplicate ? 4 : 2}
+        color={shot.duplicate ? colors.warning : undefined}
         accessibilityLiveRegion="polite"
       >
         {status}
@@ -929,6 +1152,17 @@ function ReviewRow({
       onToggle={onToggle}
       label={row.name}
       detail={editing ? null : detail}
+      trailing={
+        editing ? null : (
+          <IconButton
+            trackId="pantry_review.rename_pencil"
+            icon="pencil-outline"
+            iconSize={18}
+            label={t('pantry.review.rename', { name: row.name })}
+            onPress={onEdit}
+          />
+        )
+      }
     >
       {editing ? (
         <FieldInput
