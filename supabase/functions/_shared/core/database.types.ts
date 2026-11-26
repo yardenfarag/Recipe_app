@@ -818,6 +818,70 @@ export type Database = {
           },
         ]
       }
+      meal_plan_entries: {
+        Row: {
+          cooked_at: string | null
+          created_at: string
+          id: string
+          leftover_of: string | null
+          locked: boolean
+          meal: string
+          plan_date: string
+          recipe_id: string
+          servings: number
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          cooked_at?: string | null
+          created_at?: string
+          id?: string
+          leftover_of?: string | null
+          locked?: boolean
+          meal: string
+          plan_date: string
+          recipe_id: string
+          servings?: number
+          updated_at?: string
+          user_id?: string
+        }
+        Update: {
+          cooked_at?: string | null
+          created_at?: string
+          id?: string
+          leftover_of?: string | null
+          locked?: boolean
+          meal?: string
+          plan_date?: string
+          recipe_id?: string
+          servings?: number
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "meal_plan_entries_leftover_of_fkey"
+            columns: ["leftover_of"]
+            isOneToOne: false
+            referencedRelation: "meal_plan_entries"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "meal_plan_entries_recipe_id_fkey"
+            columns: ["recipe_id"]
+            isOneToOne: false
+            referencedRelation: "recipes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "meal_plan_entries_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       nudge_sends: {
         Row: {
           channel: string
@@ -1083,6 +1147,7 @@ export type Database = {
           id: string
           is_admin: boolean
           kitchen: Json
+          meal_plan_prefs: Json
           nudges_opt_out: boolean
           push_opt_out: boolean
           subscription_expires_at: string | null
@@ -1100,6 +1165,7 @@ export type Database = {
           id: string
           is_admin?: boolean
           kitchen?: Json
+          meal_plan_prefs?: Json
           nudges_opt_out?: boolean
           push_opt_out?: boolean
           subscription_expires_at?: string | null
@@ -1117,6 +1183,7 @@ export type Database = {
           id?: string
           is_admin?: boolean
           kitchen?: Json
+          meal_plan_prefs?: Json
           nudges_opt_out?: boolean
           push_opt_out?: boolean
           subscription_expires_at?: string | null

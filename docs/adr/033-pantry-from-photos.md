@@ -7,7 +7,7 @@
 
 ## Context
 
-The shopping list, "what can I cook" and the meal planner (PIN-122) all need to know what's at home. Until now Pinch had a short typed list of staples (salt, oil) in the kitchen profile, and fridge match, which read one photo against the Library and forgot it. Fridge match ran on GPT-6 Luna, which in the pantry bake-off made up 8 items and found only 72% of the food in a photo.
+The shopping list, "what can I cook" and the meal planner (PIN-77) all need to know what's at home. Until now Pinch had a short typed list of staples (salt, oil) in the kitchen profile, and fridge match, which read one photo against the Library and forgot it. Fridge match ran on GPT-6 Luna, which in the pantry bake-off made up 8 items and found only 72% of the food in a photo.
 
 ## Decision
 
