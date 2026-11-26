@@ -46,15 +46,17 @@ describe("AppShell", () => {
     expect(document.getElementById("main")?.tagName).toBe("MAIN");
   });
 
-  it("links to all five sections with real links, side and bottom", () => {
+  it("links to every section with real links: the rail adds the meal plan, the phone bar keeps five", () => {
     renderShell();
     const [side, bottom] = screen.getAllByRole("navigation", { name: "Main" });
-    for (const region of [side, bottom]) {
-      const hrefs = within(region)
-        .getAllByRole("link")
-        .map((link) => link.getAttribute("href"));
-      expect(new Set(hrefs)).toEqual(new Set(["/", "/hub", "/add", "/list", "/settings"]));
-    }
+    const hrefs = (region: HTMLElement) =>
+      new Set(
+        within(region)
+          .getAllByRole("link")
+          .map((link) => link.getAttribute("href")),
+      );
+    expect(hrefs(side)).toEqual(new Set(["/", "/plan", "/hub", "/add", "/list", "/settings"]));
+    expect(hrefs(bottom)).toEqual(new Set(["/", "/hub", "/add", "/list", "/settings"]));
   });
 
   it("marks the current section", () => {
