@@ -70,8 +70,10 @@ test.describe("desktop", () => {
     await writeProfileSettings({ kitchen: { diets: ["vegan"], dislikes: ["Celery"], pantryStaples: ["olive oil"] } });
     await page.reload();
     await expect(main(page).getByRole("button", { name: "Remove Celery" })).toBeVisible();
-    await expect(main(page).getByRole("button", { name: "Remove olive oil" })).toBeVisible();
     await expect(main(page).getByRole("switch", { name: "Share recipes I snap from public links in the Cooking Hub" })).toHaveAttribute("aria-checked", "false");
+    // Staples live on the Pantry page since PIN-181, under "Always have".
+    await page.goto("/app/settings/pantry");
+    await expect(main(page).getByRole("region", { name: "Always have" }).getByRole("button", { name: "Remove olive oil" })).toBeVisible();
   });
 
   test("the first allergy asks for the notice before it is saved", async ({ page }) => {
