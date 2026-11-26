@@ -95,7 +95,10 @@ export async function insertShoppingListItem(
   return rowToItem(data as ShoppingListRow);
 }
 
-/** Saves an edit. Never sends user_id: who added the line stays as it was. */
+/**
+ * Saves an edit. Never sends user_id (who added the line stays as it was), and never sends updated_at: the database
+ * stamps its own time, so a phone whose clock is off can't make the edit look stale on a shared list (ADR 034).
+ */
 export async function updateShoppingListItem(
   item: ShoppingListItem,
 ): Promise<ShoppingListItem> {
@@ -107,7 +110,6 @@ export async function updateShoppingListItem(
       unit: item.unit,
       checked: item.checked,
       source_recipe_ids: item.sourceRecipeIds ?? null,
-      updated_at: item.updated_at,
     })
     .eq('id', item.id)
     .select('*')

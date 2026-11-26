@@ -135,27 +135,54 @@ export function foodWords(name: string): string[] {
 }
 
 function containsRun(haystack: string[], needle: string[]): boolean {
-  if (needle.length === 0 || needle.length > haystack.length) return false;
-  outer: for (let i = 0; i <= haystack.length - needle.length; i += 1) {
-    for (let j = 0; j < needle.length; j += 1) if (haystack[i + j] !== needle[j]) continue outer;
-    return true;
-  }
-  return false;
+  return needle.length > 0 && runStart(haystack, needle) >= 0;
 }
 
 const RTL_SCRIPT = /[֐-ۿ]/;
 
+/** After a food in English, these make it a different product: chicken → chicken stock, lemon → lemon juice. */
+const PRODUCT_OF = new Set([
+  'stock', 'broth', 'bouillon', 'cube', 'juice', 'zest', 'powder', 'paste', 'puree', 'sauce', 'ketchup', 'extract',
+  'essence', 'syrup', 'vinegar', 'oil', 'flour', 'jam', 'jelly', 'marmalade', 'concentrate', 'flake', 'seasoning',
+  'liqueur', 'cordial', 'soup', 'chip', 'crisp',
+]);
+
+/** Before a food in English, these make it a different product: butter → peanut butter, milk → coconut milk. */
+const OTHER_KIND = new Set([
+  'peanut', 'almond', 'cashew', 'hazelnut', 'pistachio', 'coconut', 'oat', 'soy', 'soya', 'rice', 'cocoa', 'apple',
+  'nut', 'vegan', 'plant', 'condensed', 'evaporated', 'powdered',
+]);
+
 /**
- * True when what's at home covers the ingredient. "milk" covers "whole milk"; "brown sugar" covers "sugar",
- * because sugar is what brown sugar is (the main word: last in English, first in Hebrew and Arabic).
- * "pepper sauce" doesn't cover "pepper".
+ * True when what's at home covers the ingredient.
+ * - The ingredient is a form of what's at home: "milk" covers "whole milk", "garlic" covers "garlic cloves". But not
+ *   another product made from it or named after it: "chicken" doesn't cover "chicken stock", "butter" doesn't cover
+ *   "peanut butter". In Hebrew and Arabic the main word comes first, so what's at home must start the ingredient
+ *   ("שום" covers "שום כתוש", "עוף" doesn't cover "ציר עוף").
+ * - What's at home is a kind of the ingredient: "brown sugar" covers "sugar", because sugar is what brown sugar is
+ *   (the main word: last in English, first in Hebrew and Arabic). "pepper sauce" doesn't cover "pepper".
  */
 export function homeCovers(home: string[], ingredient: string[]): boolean {
   if (home.length === 0 || ingredient.length === 0) return false;
-  if (containsRun(ingredient, home)) return true;
+  const rtl = RTL_SCRIPT.test(home.join('') + ingredient.join(''));
+  if (containsRun(ingredient, home)) {
+    const start = runStart(ingredient, home);
+    const before = ingredient.slice(0, start);
+    const after = ingredient.slice(start + home.length);
+    if (rtl) return before.length === 0;
+    return !after.some((word) => PRODUCT_OF.has(word)) && !before.some((word) => OTHER_KIND.has(word) && !home.includes(word));
+  }
   if (!containsRun(home, ingredient)) return false;
-  const rtl = RTL_SCRIPT.test(home.join(''));
   return rtl ? home[0] === ingredient[0] : home[home.length - 1] === ingredient[ingredient.length - 1];
+}
+
+/** Where `needle` first appears as a run of words in `haystack`, or -1. */
+function runStart(haystack: string[], needle: string[]): number {
+  outer: for (let i = 0; i <= haystack.length - needle.length; i += 1) {
+    for (let j = 0; j < needle.length; j += 1) if (haystack[i + j] !== needle[j]) continue outer;
+    return i;
+  }
+  return -1;
 }
 
 /** Never worth listing as missing. */

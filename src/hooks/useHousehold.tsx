@@ -75,7 +75,8 @@ export function HouseholdProvider({ children }: { children: ReactNode }) {
   const householdRef = useRef<Household | null>(null);
   const userRef = useRef<string | null>(userId);
   userRef.current = userId;
-  const inFlight = useRef<Promise<Household | null> | null>(null);
+  // The read under way and whose it is: a new account never waits on the previous account's read.
+  const inFlight = useRef<{ user: string; run: Promise<Household | null> } | null>(null);
   const lastReadAt = useRef(0);
   const listeners = useRef(new Map<SharedRows, Set<() => void>>());
   const timers = useRef(new Map<HouseholdChange, ReturnType<typeof setTimeout>>());
@@ -105,8 +106,10 @@ export function HouseholdProvider({ children }: { children: ReactNode }) {
       if (options?.maxAgeMs != null && householdRef.current && Date.now() - lastReadAt.current < options.maxAgeMs) {
         return householdRef.current;
       }
-      if (inFlight.current) return inFlight.current;
-      const run = (async () => {
+      if (inFlight.current?.user === forUser) return inFlight.current.run;
+      // The entry exists before the read starts, so the read can tell whether it is still the current one.
+      const entry = { user: forUser } as { user: string; run: Promise<Household | null> };
+      entry.run = (async () => {
         if (!householdRef.current) setStatus('loading');
         try {
           const next = await fetchHousehold();
@@ -132,11 +135,11 @@ export function HouseholdProvider({ children }: { children: ReactNode }) {
           setStatus(householdRef.current ? 'ready' : 'failed');
           return householdRef.current;
         } finally {
-          inFlight.current = null;
+          if (inFlight.current === entry) inFlight.current = null;
         }
       })();
-      inFlight.current = run;
-      return run;
+      inFlight.current = entry;
+      return entry.run;
     },
     [show],
   );

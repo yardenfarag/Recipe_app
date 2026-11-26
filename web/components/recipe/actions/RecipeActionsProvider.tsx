@@ -94,6 +94,8 @@ export function RecipeActionsProvider({ state, children }: { state: ReadyRecipe;
   const [queue] = useState(createSaveQueue);
   const [usedUp, setUsedUp] = useState<PantryItem[] | null>(null);
   const usedUpAfterNote = useRef<PantryItem[] | null>(null);
+  // Whether the first-cook note is still open: the pantry may answer after it closes, and then asks straight away.
+  const noteOpen = useRef(false);
 
   const updatingFields = useRecipeRecalc(recipe, (next) => replaceRecipe(next));
 
@@ -170,15 +172,17 @@ export function RecipeActionsProvider({ state, children }: { state: ReadyRecipe;
     captureRecipeCooked({ from, again: Boolean(before.last_cooked_at) });
     replaceRecipe((current) => ({ ...current, last_cooked_at: at }));
     const firstTime = !before.last_cooked_at;
-    if (firstTime) setDialog({ kind: "note" });
-    else showToast(t("web.recipeActions.markedCooked"));
+    if (firstTime) {
+      noteOpen.current = true;
+      setDialog({ kind: "note" });
+    } else showToast(t("web.recipeActions.markedCooked"));
     // Then: did it use anything up? (PIN-181) After the note, when there is one. A pantry that can't be read just
     // means no question.
     fetchPantryItems()
       .then((items) => {
         const used = pantryItemsUsedBy(display, items);
         if (used.length === 0) return;
-        if (firstTime) usedUpAfterNote.current = used;
+        if (noteOpen.current) usedUpAfterNote.current = used;
         else setUsedUp(used);
       })
       .catch(() => undefined);
@@ -302,6 +306,7 @@ export function RecipeActionsProvider({ state, children }: { state: ReadyRecipe;
         open={kind === "note"}
         initialNote={recipe.cook_note ?? ""}
         onClose={() => {
+          noteOpen.current = false;
           close();
           if (usedUpAfterNote.current) {
             setUsedUp(usedUpAfterNote.current);

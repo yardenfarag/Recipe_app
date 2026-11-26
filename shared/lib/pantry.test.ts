@@ -143,6 +143,20 @@ describe('homeCovers', () => {
     expect(covers('רוטב שום', 'שום')).toBe(false);
   });
 
+  it('a form of what is at home is covered, another product made from it is not', () => {
+    expect(covers('garlic', 'garlic cloves')).toBe(true);
+    expect(covers('chicken', 'chicken breasts')).toBe(true);
+    expect(covers('chicken', 'chicken stock')).toBe(false);
+    expect(covers('lemon', 'lemon juice')).toBe(false);
+    expect(covers('garlic', 'garlic powder')).toBe(false);
+    expect(covers('tomatoes', 'tomato paste')).toBe(false);
+    expect(covers('butter', 'peanut butter')).toBe(false);
+    expect(covers('milk', 'coconut milk')).toBe(false);
+    expect(covers('peanut butter', 'peanut butter')).toBe(true);
+    expect(covers('שום', 'שום כתוש')).toBe(true);
+    expect(covers('עוף', 'ציר עוף')).toBe(false);
+  });
+
   it('ignores accents and punctuation', () => {
     expect(covers("za'atar", 'Zaatar')).toBe(true);
     expect(covers('jalapeño', 'jalapeno peppers')).toBe(true);

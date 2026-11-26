@@ -38,6 +38,11 @@ export type MergeFromRecipesResult = {
   mergedCount: number;
 };
 
+/** PostgREST's answer to saving a line that isn't there any more (someone else in the household removed it). */
+function removedMeanwhile(err: unknown): boolean {
+  return (err as { code?: string } | null)?.code === 'PGRST116';
+}
+
 /**
  * Loads the shopping list for guest (AsyncStorage) or signed-in (Supabase)
  * users. Adds always append (duplicates allowed); combine is opt-in.
@@ -186,6 +191,16 @@ export function useShoppingList() {
     [persistList, user],
   );
 
+  /** Someone else in the household removed this line while it was being saved: it's gone, not an error. */
+  const dropRemoved = useCallback(
+    (id: string) => {
+      itemsRef.current = itemsRef.current.filter((item) => item.id !== id);
+      setItems(itemsRef.current);
+      void refresh();
+    },
+    [refresh],
+  );
+
   const toggleChecked = useCallback(
     async (id: string) => {
       const now = new Date().toISOString();
@@ -208,13 +223,14 @@ export function useShoppingList() {
             await setGuestShoppingList(next);
           }
         } catch (err) {
+          if (removedMeanwhile(err)) return dropRemoved(id);
           itemsRef.current = previous;
           setItems(previous);
           throw err;
         }
       });
     },
-    [track, user],
+    [dropRemoved, track, user],
   );
 
   const updateItem = useCallback(
@@ -254,13 +270,14 @@ export function useShoppingList() {
             await setGuestShoppingList(next);
           }
         } catch (err) {
+          if (removedMeanwhile(err)) return dropRemoved(id);
           itemsRef.current = previous;
           setItems(previous);
           throw err;
         }
       });
     },
-    [track, user],
+    [dropRemoved, track, user],
   );
 
   const removeItem = useCallback(

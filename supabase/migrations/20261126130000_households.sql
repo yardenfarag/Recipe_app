@@ -338,15 +338,18 @@ create trigger shopping_list_items_fill_household
   before insert on public.shopping_list_items
   for each row execute function public.household_fill_row();
 
--- Who added a line never changes on an edit, and no member can clear it. An account deletion still clears it: the
--- foreign key's set-null runs with no signed-in user.
+-- Who added a line never changes on an edit, and no member can clear it. Only deleting that account clears it (the
+-- foreign key's set-null), whoever runs the delete: the person themselves or an admin, whose auth.uid() is set. So
+-- the test is whether the account is gone, read with the definer's rights (a member can't see others' profiles).
 create or replace function public.shopping_list_keep_added_by()
 returns trigger
 language plpgsql
+security definer
 set search_path = ''
 as $$
 begin
-  if new.user_id is distinct from old.user_id and (new.user_id is not null or (select auth.uid()) is not null) then
+  if new.user_id is distinct from old.user_id
+     and (new.user_id is not null or exists (select 1 from public.profiles p where p.id = old.user_id)) then
     new.user_id := old.user_id;
   end if;
   return new;
@@ -359,12 +362,13 @@ create trigger shopping_list_keep_added_by
   before update on public.shopping_list_items
   for each row execute function public.shopping_list_keep_added_by();
 
--- A write older than the row is dropped. Merging on a phone saves every line it fetched, and app builds already in
--- people's hands do too, so without this a tick another member made meanwhile would be undone. Such a write carries
--- the updated_at it fetched, from before the other member's change. Real edits carry the phone's clock, which can be
--- a little behind, so a write counts as stale only when it is more than 30 seconds older than the row; and a write
--- that goes through is stamped with the database's time, so a phone whose clock runs ahead can't make everyone
--- else's edits look old. Returning the old row (not null) keeps update().select().single() working.
+-- A write older than the row is dropped. App builds already in people's hands merge on the phone and save back every
+-- line they fetched, so without this a tick another member made meanwhile would be undone. Such a write carries the
+-- updated_at it fetched, from before the other member's change. Current apps don't send updated_at on an edit at all
+-- (it stays as it was, so the check passes), so only those old builds are judged by a phone clock; for them a write
+-- counts as stale only when it is more than 30 seconds older than the row. Every write that goes through is stamped
+-- with the database's time, so a phone whose clock runs ahead can't make everyone else's edits look old. Returning
+-- the old row (not null) keeps update().select().single() working.
 create or replace function public.shopping_list_skip_stale_update()
 returns trigger
 language plpgsql
@@ -441,15 +445,23 @@ create trigger pantry_items_fill_household
   for each row execute function public.household_fill_row();
 
 -- An edit that changes user_id (an upsert of a scan, say) records the member who made it; a member can't clear it.
--- An account deletion still clears it: the foreign key's set-null runs with no signed-in user.
+-- Only deleting that account clears it (the foreign key's set-null), whoever runs the delete, admin included; see
+-- shopping_list_keep_added_by.
 create or replace function public.pantry_items_last_touched_by()
 returns trigger
 language plpgsql
+security definer
 set search_path = ''
 as $$
 begin
-  if new.user_id is distinct from old.user_id and (select auth.uid()) is not null then
-    new.user_id := case when new.user_id is null then old.user_id else (select auth.uid()) end;
+  if new.user_id is distinct from old.user_id then
+    if new.user_id is null then
+      if exists (select 1 from public.profiles p where p.id = old.user_id) then
+        new.user_id := old.user_id;
+      end if;
+    elsif (select auth.uid()) is not null then
+      new.user_id := (select auth.uid());
+    end if;
   end if;
   return new;
 end;
@@ -1109,6 +1121,10 @@ begin
   end if;
 
   if exists (select 1 from public.household_members where household_id = v_mine and user_id <> v_uid) then
+    -- Leaving it this way stops its live link too, as leave_household does: no slipping back in with it, and no
+    -- seeing who is there through its preview.
+    update public.household_invites set stopped_at = now()
+    where household_id = v_mine and stopped_at is null;
     insert into public.household_activity (household_id, kind, actor_id, actor_name)
     values (v_mine, 'member_left', v_uid, v_old_name);
   else

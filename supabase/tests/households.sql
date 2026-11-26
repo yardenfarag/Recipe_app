@@ -1,7 +1,7 @@
 begin;
 
 create extension if not exists pgtap with schema extensions;
-select plan(88);
+select plan(90);
 
 -- Households (migration 20261126130000_households, ADR 034).
 --   Ann (A) sets up "Flat 3" and invites. Ben (B) joins from a household of one: his list, pantry and staples
@@ -403,6 +403,10 @@ update public.household_members set household_id = pg_temp.household_of('1000000
 where user_id in ('10000000-0000-4000-8000-00000000d015', '10000000-0000-4000-8000-00000000d016');
 
 -- ── Dov joins from a shared household ─────────────────────────────────────
+-- Eli and Dov's household has a live link of its own, which Dov could otherwise use to slip back in.
+insert into public.household_invites (household_id, token, created_by, expires_at)
+values (pg_temp.household_of('10000000-0000-4000-8000-00000000d004'), repeat('E', 43),
+        '10000000-0000-4000-8000-00000000d005', now() + interval '7 days');
 set local role authenticated;
 set local request.jwt.claims = '{"role":"authenticated","sub":"10000000-0000-4000-8000-00000000d004"}';
 select ok(
@@ -426,6 +430,10 @@ select is(
   (select array_agg(kind || ':' || actor_name) from public.household_activity where household_id = (select id from eli_household)),
   array['member_left:Dov'],
   'and Eli will be told Dov left'
+);
+select ok(
+  (select stopped_at is not null from public.household_invites where token = repeat('E', 43)),
+  'and the household he left stops its live link, so he can''t come back with it'
 );
 
 -- ── Leaving takes a copy ───────────────────────────────────────────────────
@@ -553,12 +561,20 @@ update public.household_members set household_id = pg_temp.household_of('1000000
   display_name = 'Gil'
 where user_id = '10000000-0000-4000-8000-00000000d020';
 insert into public.shopping_list_items (user_id, name) values ('10000000-0000-4000-8000-00000000d020', 'gil''s cheese');
+insert into public.pantry_items (user_id, name, place) values ('10000000-0000-4000-8000-00000000d020', 'gil''s olives', 'fridge');
 create temp table dov_household as select pg_temp.household_of('10000000-0000-4000-8000-00000000d004') as id;
-delete from auth.users where id in ('10000000-0000-4000-8000-00000000d020', '10000000-0000-4000-8000-00000000d004');
+-- Deleted with someone signed in (auth.uid() set), as the admin dashboard's admin_delete_user does.
+set local request.jwt.claims = '{"role":"authenticated","sub":"10000000-0000-4000-8000-00000000d001"}';
+select lives_ok(
+  $$ delete from auth.users where id in ('10000000-0000-4000-8000-00000000d020', '10000000-0000-4000-8000-00000000d004') $$,
+  'an account that added to a shared list and pantry can be deleted, also by someone signed in (an admin)'
+);
+set local request.jwt.claims = '';
 select ok(
   (select user_id is null and household_id = pg_temp.household_of('10000000-0000-4000-8000-00000000d001')
-   from public.shopping_list_items where name = 'gil''s cheese'),
-  'deleting an account keeps what they added on the others'' list'
+   from public.shopping_list_items where name = 'gil''s cheese')
+  and (select user_id is null from public.pantry_items where name = 'gil''s olives'),
+  'deleting an account keeps what they added on the others'' list and pantry'
 );
 select ok(
   exists (select 1 from public.household_activity
