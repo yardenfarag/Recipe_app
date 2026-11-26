@@ -3,7 +3,8 @@
  *
  * - Allergies are a hard filter, and so are the foods skipped this week. A recipe known not to fit a strict diet
  *   (vegetarian, vegan, pescatarian, halal, kosher, gluten-free, dairy-free) is left out; one that misses a looser
- *   diet (low-carb, keto…) only ranks lower. A Library recipe's diets aren't known yet, so it isn't marked down.
+ *   diet (low-carb, keto…) only ranks lower. A recipe whose diets aren't checked yet (recipes.diets null) isn't
+ *   marked down.
  * - Library recipes come before Hub ones. Hub recipes are used only when the caller allows them (see
  *   libraryOnlyStatus).
  * - What's at home counts, and so do ingredients that another meal of the week already uses.
@@ -50,7 +51,7 @@ export type PlanCandidate = {
   cost: CostEstimate | null;
   /** Grams per serving, when estimated. */
   proteinPerServing: number | null;
-  /** Kitchen-profile diets it fits as written. null = not known (Library recipes for now). */
+  /** Kitchen-profile diets it fits as written. null = not checked yet. */
   diets: string[] | null;
   /** Hub cards: allergen and dislike keys found when the card was published. */
   contains: string[] | null;
@@ -75,7 +76,7 @@ export function candidateFromRecipe(recipe: Recipe): PlanCandidate {
     effort: recipe.effort_level ?? null,
     cost: recipe.cost_estimate ?? null,
     proteinPerServing: proteinPerServing(recipeNutritionOf(recipe), servings),
-    diets: null,
+    diets: recipe.diets ?? null,
     contains: null,
     lastCookedAt: recipe.last_cooked_at ?? null,
     createdAt: recipe.created_at ?? null,

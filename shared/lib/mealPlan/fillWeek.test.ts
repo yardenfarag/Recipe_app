@@ -98,6 +98,17 @@ describe('fillWeek: what may be suggested', () => {
     expect(picked(result).sort()).toEqual(['lentils', 'mine']);
   });
 
+  it('leaves out a checked Library recipe that misses a strict diet', () => {
+    const result = fillWeek(
+      input({
+        slots: [slot('2026-11-26', 'dinner')],
+        candidates: [candidate('stew', { diets: ['halal', 'kosher'], favorite: true }), candidate('dal', { diets: ['vegetarian', 'vegan'] })],
+        diets: ['vegetarian'],
+      }),
+    );
+    expect(picked(result)).toEqual(['dal']);
+  });
+
   it('leaves out foods skipped this week', () => {
     const result = fillWeek(
       input({
@@ -331,6 +342,7 @@ describe('candidates', () => {
       is_favorite: true,
     } as Recipe;
     expect(candidateFromRecipe(recipe)).toMatchObject({ source: 'library', minutes: 40, proteinPerServing: 25, favorite: true, diets: null });
+    expect(candidateFromRecipe({ ...recipe, diets: ['vegan'] }).diets).toEqual(['vegan']);
     const card = {
       id: 'c1',
       title: 'Bowl',

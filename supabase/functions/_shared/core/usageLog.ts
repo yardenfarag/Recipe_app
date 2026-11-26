@@ -24,6 +24,8 @@ export interface UsageEventInput {
     /** A Hub card's diet check after publish, and its admin backfill (PIN-83). */
     | 'hub_diets'
     | 'hub_diets_backfill'
+    /** The admin backfill of Library recipes' diets, for the meal plan (PIN-77). */
+    | 'recipe_diets_backfill'
     /** The admin backfill of protein, carbs and fat on cards and recipes saved before PIN-80. */
     | 'nutrition_backfill'
     /** The admin redo of cached translations made before TRANSLATION_VERSION (PIN-53). */

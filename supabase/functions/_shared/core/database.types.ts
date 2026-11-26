@@ -1610,6 +1610,7 @@ export type Database = {
           cook_note: string | null
           cost_estimate: string | null
           created_at: string
+          diets: string[] | null
           effort_level: string | null
           estimated_time_minutes: number | null
           extraction_source: string | null
@@ -1646,6 +1647,7 @@ export type Database = {
           cook_note?: string | null
           cost_estimate?: string | null
           created_at?: string
+          diets?: string[] | null
           effort_level?: string | null
           estimated_time_minutes?: number | null
           extraction_source?: string | null
@@ -1682,6 +1684,7 @@ export type Database = {
           cook_note?: string | null
           cost_estimate?: string | null
           created_at?: string
+          diets?: string[] | null
           effort_level?: string | null
           estimated_time_minutes?: number | null
           extraction_source?: string | null

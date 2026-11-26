@@ -16,13 +16,15 @@ interface RequestBody {
   limit?: number;
   /** Only count the cards still to do; no model calls. */
   dry_run?: boolean;
+  /** "cards" (default): Hub cards' diets and contains. "recipes": Library recipes' diets (PIN-77). */
+  target?: 'cards' | 'recipes';
 }
 
 /** The request, checked in the old order. A body that isn't an object (`null`) throws a TypeError: a 500, as before. */
 function parseRequest(raw: unknown) {
   const body = raw as RequestBody;
   const after = parseUuidCursor(body.after);
-  return { after, dryRun: body.dry_run === true, limit: body.limit };
+  return { after, dryRun: body.dry_run === true, limit: body.limit, target: body.target === 'recipes' ? 'recipes' : 'cards' };
 }
 
 function supabaseDietsDb(admin: Db): DietsBackfillDb {
@@ -62,7 +64,42 @@ function supabaseDietsDb(admin: Db): DietsBackfillDb {
 }
 
 /**
- * Admin only. POST { after?, limit?, dry_run? } fills `recipe_cards.diets` and `contains` on cards
+ * Library recipes (PIN-77): only `diets`, which the meal plan uses to leave out recipes that don't fit a strict diet.
+ * Allergies are matched on the device, so `contains` isn't kept for them.
+ */
+function supabaseRecipeDietsDb(admin: Db): DietsBackfillDb {
+  return {
+    async fetchPending(after, limit) {
+      let query = admin
+        .from('recipes')
+        .select('id, title, ingredients, instructions')
+        .is('diets', null)
+        .order('id', { ascending: true })
+        .limit(limit);
+      if (after) query = query.gt('id', after);
+      const { data, error } = await query;
+      if (error) throw new Error(error.message);
+      return (data ?? []) as PendingCard[];
+    },
+    async countPending() {
+      const { count, error } = await admin
+        .from('recipes')
+        .select('id', { count: 'exact', head: true })
+        .is('diets', null);
+      if (error) throw new Error(error.message);
+      return count ?? 0;
+    },
+    async saveDiets(id, diets) {
+      // `is null`: an edit made since the read cleared it again, and wins.
+      const { data, error } = await admin.from('recipes').update({ diets }).eq('id', id).is('diets', null).select('id');
+      if (error) throw new Error(error.message);
+      return (data ?? []).length > 0;
+    },
+  };
+}
+
+/**
+ * Admin only. POST { after?, limit?, dry_run?, target? } fills `recipe_cards.diets` and `contains` on cards
  * not checked since PIN-180, one batch per call. Call again with `after: next_cursor` until it is null.
  * Each card is one model call: check the OpenRouter balance before a full run.
  */
@@ -76,13 +113,13 @@ handler(
     errors: { authInvalid: HttpError.legacy(401, 'Sign in required') },
   },
   async ({ req, admin, log }) => {
-    const { after, dryRun, limit } = parseRequest(await readBackfillBody(req));
+    const { after, dryRun, limit, target } = parseRequest(await readBackfillBody(req));
 
-    const db = supabaseDietsDb(admin);
+    const db = target === 'recipes' ? supabaseRecipeDietsDb(admin) : supabaseDietsDb(admin);
     const started = Date.now();
     try {
       if (dryRun) {
-        return { dry_run: true, pending: await db.countPending() };
+        return { dry_run: true, target, pending: await db.countPending() };
       }
 
       const result = await runDietsBackfillBatch(db, (recipe) => deriveRecipeDiets(recipe), {
@@ -91,13 +128,14 @@ handler(
       });
 
       await log.usage({
-        action: 'hub_diets_backfill',
+        action: target === 'recipes' ? 'recipe_diets_backfill' : 'hub_diets_backfill',
         status: result.errors.length > 0 ? 'partial' : 'ok',
         usages: result.usages,
         tokensCharged: 0,
         durationMs: Date.now() - started,
         metadata: {
           after,
+          target,
           scanned: result.scanned,
           updated: result.updated,
           still_null: result.stillNull,

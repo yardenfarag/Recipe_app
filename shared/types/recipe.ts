@@ -118,6 +118,8 @@ export interface Recipe {
   /** Gemini reasoning for the time estimate — stored for QA, not shown in MVP UI. */
   time_reasoning?: string;
   /** Short lowercase labels (cuisine, meal, dish type, etc.) for browsing / trends. */
+  /** Kitchen-profile diets it fits as written (PIN-77). null or absent = not checked yet. */
+  diets?: string[] | null;
   tags?: string[];
   missing_fields?: string[];
   migrated_from_guest?: boolean;
