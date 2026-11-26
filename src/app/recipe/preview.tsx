@@ -3,6 +3,7 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import { ActivityIndicator, Alert, View } from 'react-native';
 import { useTranslation } from 'react-i18next';
 
+import { RecipeTranslatingScreen } from '@/components/recipe/RecipeTranslatingScreen';
 import { RecipeView } from '@/components/RecipeView';
 import { Screen } from '@/components/Screen';
 import { Button } from '@/components/ui/Button';
@@ -86,8 +87,20 @@ export default function RecipePreviewScreen() {
     displayContent,
     activeLanguage,
     translating,
+    waitingForTranslation,
+    translationError,
     applyManualTranslation,
   } = useLocalizedRecipe(recipeToSave, undefined);
+
+  // As on the saved recipe's page: a translation that failed says why, and the recipe shows in its own language.
+  const lastTranslationError = useRef<string | null>(null);
+  useEffect(() => {
+    if (translationError && translationError !== lastTranslationError.current) {
+      lastTranslationError.current = translationError;
+      Alert.alert(t('recipe.translateFailedTitle'), translationError);
+    }
+    if (!translationError) lastTranslationError.current = null;
+  }, [translationError, t]);
 
   useEffect(() => {
     navigation.setOptions({
@@ -212,6 +225,8 @@ export default function RecipePreviewScreen() {
       </Screen>
     );
   }
+
+  if (waitingForTranslation) return <RecipeTranslatingScreen back={backRow} />;
 
   async function handleDiscard() {
     const discard = await askConfirm({

@@ -8,6 +8,7 @@ import { useTranslation } from "react-i18next";
 
 import { DEFAULT_SOURCE_LANGUAGE } from "@shared/lib/appLanguages";
 import { recipeIsInvented } from "@shared/lib/recipeOrigin";
+import { upsertRecipeTranslation } from "@shared/lib/supabase/recipeTranslations";
 import { saveRecipeDraft } from "@shared/lib/supabase/saveRecipeDraft";
 import { showToast } from "@shared/lib/toast";
 import { joinErrorSentences, translateAppError } from "@shared/lib/translateAppError";
@@ -22,6 +23,7 @@ import { usePageTitle } from "@/components/ui/PageHeader";
 import { EmptyState, LoadingState } from "@/components/ui/States";
 import { Tile } from "@/components/ui/Tile";
 import { captureRecipeSaved } from "@/lib/analytics";
+import { translateFailure } from "@/lib/recipe/actions/translate";
 import { buildRecipeDisplay } from "@/lib/recipe/recipeDisplay";
 import { useAutoTranslation } from "@/lib/recipe/useAutoTranslation";
 import { clearSnapDraft, getSnapDraft, PREVIEW_RECIPE_ID, type SnapDraft } from "@/lib/snap/draft";
@@ -52,12 +54,18 @@ export function SnapPreview() {
   }, []);
 
   const recipe = useMemo(() => (draft ? asPreviewRecipe(draft.recipe) : null), [draft]);
-  // In another language than the app's: shown translated, as on mobile.
-  const { translation } = useAutoTranslation(recipe, language);
+  // In another language than the app's: shown translated, as on mobile. Until then the page waits, so the recipe
+  // doesn't show in its own language and then change under the reader.
+  const { translation, translating, failure } = useAutoTranslation(recipe, language);
   const display = useMemo(() => (recipe ? buildRecipeDisplay(recipe, language, translation) : null), [recipe, language, translation]);
-  usePageTitle(display?.title || t("recipe.preview"));
+  usePageTitle((!translating && display?.title) || t("recipe.preview"));
+
+  useEffect(() => {
+    if (failure) showToast(translateFailure({ status: "failed", ...failure }, t, language), "error");
+  }, [failure, t, language]);
 
   if (draft === undefined) return <LoadingState label={t("a11y.loading")} />;
+  if (draft && translating) return <LoadingState label={t("recipe.translating")} />;
   if (!draft || !display) {
     const snap = navItem("snap");
     return (
@@ -83,6 +91,11 @@ export function SnapPreview() {
         ...draft.recipe,
         source_language: draft.recipe.source_language ?? DEFAULT_SOURCE_LANGUAGE,
       });
+      // The translation on screen goes with it, as on mobile, so the saved recipe opens in the app's language
+      // straight away instead of translating again. If storing it fails, the recipe's page translates it on open.
+      if (translation && display?.translated) {
+        await upsertRecipeTranslation(saved.id, language, translation).catch(() => undefined);
+      }
       clearSnapDraft();
       if (!recoveredDuplicate) captureRecipeSaved({ from: recipeIsInvented(draft.recipe) ? "invent" : "extract", save: "manual" });
       if (recoveredDuplicate) {
