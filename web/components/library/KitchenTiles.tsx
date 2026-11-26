@@ -25,7 +25,18 @@ const onPhotoButton =
  * this week, as a bento of tiles. Four columns on a desktop, three on a tablet (Snap becomes a strip underneath),
  * and on a phone the pick at full width with the list and the cooked count side by side under it.
  */
-export function KitchenTiles({ pick, onAnother, cooked }: { pick: Recipe | null; onAnother: (() => void) | null; cooked: CookedRecipe[] }) {
+export function KitchenTiles({
+  pick,
+  planned = false,
+  onAnother,
+  cooked,
+}: {
+  pick: Recipe | null;
+  /** The pick is tonight's dinner from the meal plan, not a suggestion. */
+  planned?: boolean;
+  onAnother: (() => void) | null;
+  cooked: CookedRecipe[];
+}) {
   const { t } = useTranslation();
   return (
     <section
@@ -33,7 +44,7 @@ export function KitchenTiles({ pick, onAnother, cooked }: { pick: Recipe | null;
       className="grid grid-cols-2 gap-3 md:grid-cols-3 md:grid-rows-[190px_190px_auto] md:gap-4 lg:grid-cols-4 lg:grid-rows-[190px_190px]"
     >
       {pick ? (
-        <TonightTile recipe={pick} onAnother={onAnother} className="col-span-2 h-[300px] md:col-start-1 md:row-span-2 md:row-start-1 md:h-auto" />
+        <TonightTile recipe={pick} planned={planned} onAnother={onAnother} className="col-span-2 h-[300px] md:col-start-1 md:row-span-2 md:row-start-1 md:h-auto" />
       ) : (
         <Tile tone="element" className="col-span-2 h-[300px] md:col-start-1 md:row-span-2 md:row-start-1 md:h-auto" />
       )}
@@ -60,7 +71,7 @@ export function KitchenTilesSkeleton() {
 }
 
 /** Tonight's pick: the photo, the name, how long and where it came from, and the ways to start. */
-function TonightTile({ recipe, onAnother, className }: { recipe: Recipe; onAnother: (() => void) | null; className?: string }) {
+function TonightTile({ recipe, planned, onAnother, className }: { recipe: Recipe; planned: boolean; onAnother: (() => void) | null; className?: string }) {
   const { t } = useTranslation();
   const headingId = useId();
   const title = recipe.display_title ?? recipe.title;
@@ -104,7 +115,7 @@ function TonightTile({ recipe, onAnother, className }: { recipe: Recipe; onAnoth
         className="absolute inset-0 rounded-tile outline-offset-[-3px]"
       />
       <TileBadge tone="photo" className="text-[11px] md:text-xs">
-        {t("web.library.tonightsPick")}
+        {planned ? t("plan.tonightPlanned") : t("web.library.tonightsPick")}
       </TileBadge>
       <h2
         id={headingId}

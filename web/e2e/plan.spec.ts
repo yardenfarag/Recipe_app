@@ -121,3 +121,26 @@ test("sends what the week needs to the list, leaving out what is at home", async
   expect(list.length).toBeGreaterThan(0);
   expect(list.some((item) => item.name === "eggs" || item.name === "spinach")).toBe(false);
 });
+
+test("adds a recipe to tonight's dinner from its page, and the Library shows it as tonight's", async ({ page }) => {
+  const ids = await resetLibrary(LIBRARY);
+  const risotto = ids[LIBRARY.findIndex((recipe) => recipe.title === "Mushroom risotto")];
+  await openPlan(page);
+  await page.goto(`/app/recipe/${risotto}`);
+  await page.locator('[data-track="recipe.more"]').first().click();
+  await page.locator('[data-track="recipe.add_to_plan"]').click();
+
+  const dialog = page.getByRole("dialog", { name: "Add to plan" });
+  await dialog.getByRole("row", { name: /^Today/ }).getByRole("button", { name: /Dinner: free$/ }).click();
+  await dialog.locator('[data-track="plan.add.confirm"]').click();
+  await expect(dialog).toBeHidden();
+
+  const rows = await readMealPlan();
+  expect(rows).toHaveLength(1);
+  expect(rows[0]).toMatchObject({ meal: "dinner", recipe_id: risotto });
+
+  await page.goto("/app");
+  const tonight = page.getByTestId("tonights-pick");
+  await expect(tonight).toContainText("Tonight, from your plan");
+  await expect(tonight).toContainText("Mushroom risotto");
+});

@@ -50,6 +50,7 @@ import { useCookedThisWeek } from "@/lib/library/useCookedThisWeek";
 import { useLibraryLayout } from "@/lib/library/useLibraryLayout";
 import { useRecipes } from "@/lib/library/useRecipes";
 import { useTonightsPick } from "@/lib/library/useTonightsPick";
+import { useTonightPlanned } from "@/lib/plan/useTonightPlanned";
 import { usePhoneLayout } from "@/lib/usePhoneLayout";
 
 const SORT_KEYS = RECIPE_SORT_OPTIONS.map((option) => option.key);
@@ -234,7 +235,11 @@ function LibraryScreen() {
     setQuick([]);
   }, [setSearch]);
 
-  const { pick, another } = useTonightsPick(recipes);
+  const { pick: suggested, another } = useTonightsPick(recipes);
+  // A dinner planned for today wins over the suggestion (PIN-77).
+  const plannedId = useTonightPlanned();
+  const planned = plannedId ? recipes.find((recipe) => recipe.id === plannedId) ?? null : null;
+  const pick = planned ?? suggested;
   const cooked = useCookedThisWeek(recipes, total);
   const { quota } = useCreditBalance();
   const phone = usePhoneLayout();
@@ -325,7 +330,7 @@ function LibraryScreen() {
 
       {/* The tiles step aside while searching, so what was typed and what it found sit together. */}
       {libraryEmpty || error || searching ? null : (
-        <div className="mt-5 md:mt-7">{loading ? <KitchenTilesSkeleton /> : <KitchenTiles pick={pick} onAnother={another} cooked={cooked} />}</div>
+        <div className="mt-5 md:mt-7">{loading ? <KitchenTilesSkeleton /> : <KitchenTiles pick={pick} planned={planned != null} onAnother={planned ? null : another} cooked={cooked} />}</div>
       )}
 
       <section aria-labelledby="library-heading" className="mt-6 flex flex-col gap-4 md:mt-7 md:gap-[18px]">

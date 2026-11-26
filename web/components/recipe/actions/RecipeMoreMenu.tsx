@@ -1,7 +1,7 @@
 "use client";
 
 import * as Menu from "@radix-ui/react-dropdown-menu";
-import { Ellipsis, FolderPlus, Languages, NotebookPen, PencilLine, Tags, Trash2, Undo2, Wrench, type LucideIcon } from "lucide-react";
+import { CalendarPlus, Ellipsis, FolderPlus, Languages, NotebookPen, PencilLine, Tags, Trash2, Undo2, Wrench, type LucideIcon } from "lucide-react";
 import Link from "next/link";
 import { useTranslation } from "react-i18next";
 
@@ -47,6 +47,10 @@ export function RecipeMoreMenu({ actions, onDelete, variant = "tile" }: { action
               <ItemIcon icon={PencilLine} className="rtl:-scale-x-100" />
               {t("recipeEditor.titleEdit")}
             </Link>
+          </Menu.Item>
+          <Menu.Item className={itemClass} data-track="recipe.add_to_plan" onSelect={() => actions.open({ kind: "plan" })}>
+            <ItemIcon icon={CalendarPlus} />
+            {t("plan.add.title")}
           </Menu.Item>
           <Menu.Item className={itemClass} data-track="recipe.add_to_collection" onSelect={() => actions.open({ kind: "collection" })}>
             <ItemIcon icon={FolderPlus} />

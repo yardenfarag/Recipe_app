@@ -45,6 +45,22 @@ export async function fetchMealPlan(from: string, to: string): Promise<MealPlanE
   return (data ?? []).map((row) => toEntry(row as EntryRow));
 }
 
+/** The plan from `from` to `to` with each meal's recipe title, for places that show a plan without the Library. */
+export async function fetchMealPlanWithTitles(from: string, to: string): Promise<(MealPlanEntry & { title: string })[]> {
+  const { data, error } = await supabase
+    .from('meal_plan_entries')
+    .select(`${COLUMNS}, recipes(title)`)
+    .gte('plan_date', from)
+    .lte('plan_date', to)
+    .order('plan_date');
+  if (error) throw error;
+  return (data ?? []).map((row) => {
+    const recipe = (row as { recipes?: { title?: string } | { title?: string }[] | null }).recipes;
+    const title = (Array.isArray(recipe) ? recipe[0]?.title : recipe?.title) ?? '';
+    return { ...toEntry(row as unknown as EntryRow), title };
+  });
+}
+
 /** A meal to save. Leftovers name the meal that makes them, which is either saved already or in the same call. */
 export type NewPlanMeal = {
   date: string;
