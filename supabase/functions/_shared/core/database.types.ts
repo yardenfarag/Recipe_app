@@ -711,6 +711,7 @@ export type Database = {
           from_phone: boolean
           id: string
           items: Json
+          photo_hash: string | null
           place: string
           quality: string
           scan_id: string
@@ -722,6 +723,7 @@ export type Database = {
           from_phone?: boolean
           id?: string
           items?: Json
+          photo_hash?: string | null
           place: string
           quality: string
           scan_id: string
@@ -733,6 +735,7 @@ export type Database = {
           from_phone?: boolean
           id?: string
           items?: Json
+          photo_hash?: string | null
           place?: string
           quality?: string
           scan_id?: string

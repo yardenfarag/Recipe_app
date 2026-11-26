@@ -130,7 +130,8 @@ select is(
 -- Purge -----------------------------------------------------------------------
 select public.purge_pantry_scratch();
 select is(
-  (select array_agg(row(token_hash, photo is not null)::text order by token_hash) from public.photo_handoffs),
+  (select array_agg(row(token_hash, photo is not null)::text order by token_hash) from public.photo_handoffs
+   where user_id = '10000000-0000-4000-8000-0000000fa001'),
   array[row('hash-fresh', true)::text, row('hash-pantry', false)::text, row('hash-stale', false)::text],
   'a phone photo goes after 15 minutes, and a handoff a day after it expired'
 );

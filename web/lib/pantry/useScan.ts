@@ -7,13 +7,18 @@ import { clearScan, deleteScanPhotos, fetchScanPhotos, scanPantryPhoto } from "@
 import type { PantryPlace, ScanPhoto } from "@shared/types/pantry";
 
 import { compressImageFile } from "@/lib/compressImage";
+import { isSamePhoto, photoFingerprint, type Fingerprint } from "@/lib/pantry/photoFingerprint";
 
 /** The scan in progress, so leaving and coming back picks it up (its results wait on the server for a week). */
 const SCAN_KEY = "pinch:pantry-scan-id";
 /** Photos read at the same time. Each is its own model call; more at once only queues at the provider. */
 const PARALLEL = 3;
 
-export type PhotoStatus = "reading" | "done" | "failed" | "unreadable" | "limited";
+/**
+ * - similar: looks the same as a photo already in this scan, so it wasn't sent (Add anyway sends it).
+ * - duplicate: the server had already read this exact photo in this scan (from the phone, say); it adds nothing.
+ */
+export type PhotoStatus = "reading" | "done" | "failed" | "unreadable" | "limited" | "similar" | "duplicate";
 
 export type ScanEntry = {
   /** Stable on this page: the server id once read, else a local one. */
@@ -83,6 +88,8 @@ export function useScan(language: string) {
   const queue = useRef<Array<() => Promise<void>>>([]);
   const running = useRef(0);
   const scanIdRef = useRef<string | null>(null);
+  /** Fingerprints of the photos in this scan, by entry key, to notice the same shot twice. */
+  const fingerprints = useRef(new Map<string, Fingerprint>());
 
   useEffect(() => {
     let cancelled = false;
@@ -115,17 +122,36 @@ export function useScan(language: string) {
   const pump = useCallback(() => drain(queue, running), []);
 
   const read = useCallback(
-    (key: string, file: File, place: PantryPlace) => {
+    (key: string, file: File, place: PantryPlace, checkSimilar = true) => {
       queue.current.push(async () => {
         const id = scanIdRef.current;
         if (!id) return;
+        const fingerprint = await photoFingerprint(file);
+        // Checked and recorded in one step (no await in between), so two copies in one batch can't both pass.
+        if (fingerprint) {
+          const twin =
+            checkSimilar && [...fingerprints.current.entries()].some(([other, print]) => other !== key && isSamePhoto(print, fingerprint));
+          if (twin) {
+            update(key, { status: "similar" });
+            return;
+          }
+          fingerprints.current.set(key, fingerprint);
+        }
         const image = await compressImageFile(file, "pantry");
         if (!image) {
           update(key, { status: "unreadable" });
           return;
         }
         const result = await scanPantryPhoto({ scanId: id, place, language, imageBase64: image.base64 });
-        if (result.status === "ok") {
+        if (result.status === "ok" && result.photo.duplicate) {
+          // Already read in this scan (the same file again, or sent from the phone too): nothing new.
+          const photo = result.photo;
+          setEntries((list) =>
+            list.some((entry) => entry.key !== key && entry.photo?.id === photo.id)
+              ? list.map((entry) => (entry.key === key ? { ...entry, status: "duplicate", file: undefined } : entry))
+              : list.map((entry) => (entry.key === key ? { ...entry, status: "done", photo, file: undefined } : entry)),
+          );
+        } else if (result.status === "ok") {
           update(key, { status: "done", photo: result.photo, file: undefined });
         } else {
           update(key, { status: result.code === "daily_limit" ? "limited" : result.code === "invalid_photo" ? "unreadable" : "failed" });
@@ -165,7 +191,19 @@ export function useScan(language: string) {
     [entries, read, update],
   );
 
+  /** Sends a photo that was skipped as a look-alike. */
+  const addAnyway = useCallback(
+    (key: string) => {
+      const entry = entries.find((e) => e.key === key);
+      if (!entry?.file) return;
+      update(key, { status: "reading" });
+      read(key, entry.file, entry.place, false);
+    },
+    [entries, read, update],
+  );
+
   const remove = useCallback((key: string) => {
+    fingerprints.current.delete(key);
     setEntries((list) => {
       const entry = list.find((e) => e.key === key);
       if (entry?.preview) URL.revokeObjectURL(entry.preview);
@@ -175,9 +213,10 @@ export function useScan(language: string) {
   }, []);
 
   /** Picks up photos that arrived from a phone (or anywhere else) since the last look. */
-  const sync = useCallback(async () => {
+  /** Returns how many photos of this scan came from a phone. */
+  const sync = useCallback(async (): Promise<number> => {
     const id = scanIdRef.current;
-    if (!id) return;
+    if (!id) return 0;
     try {
       const photos = await fetchScanPhotos(id);
       setEntries((list) => {
@@ -185,8 +224,10 @@ export function useScan(language: string) {
         const fresh = photos.filter((photo) => photo.id && !known.has(photo.id)).map(fromServer);
         return fresh.length > 0 ? [...list, ...fresh] : list;
       });
+      return photos.filter((photo) => photo.from_phone).length;
     } catch {
       // Tried again on the next tick.
+      return 0;
     }
   }, []);
 
@@ -211,5 +252,5 @@ export function useScan(language: string) {
     storeScanId(null);
   }, []);
 
-  return { scanId, entries, resumable, addFiles, retry, remove, sync, resume, startOver, finish };
+  return { scanId, entries, resumable, addFiles, retry, addAnyway, remove, sync, resume, startOver, finish };
 }

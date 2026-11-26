@@ -280,6 +280,11 @@ export async function uploadHandoffPhoto(
   return invokeHandoff<{ photo?: ScanPhoto; sent?: boolean }>({ action: 'upload', token, image_base64: imageBase64, place });
 }
 
+/** The phone's "I'm done": closes the link, and the computer's dialog closes with it. */
+export async function finishHandoff(token: string): Promise<void> {
+  await invokeHandoff({ action: 'finish', token });
+}
+
 /** The address a phone opens. The token rides in the fragment, so it never reaches a server log. */
 export function handoffUrl(origin: string, token: string): string {
   return `${origin.replace(/\/$/, '')}/app/phone#${token}`;

@@ -91,8 +91,15 @@ create table public.pantry_scan_photos (
   items jsonb not null default '[]'::jsonb check (jsonb_typeof(items) = 'array'),
   truncated boolean not null default false,
   from_phone boolean not null default false,
+  -- sha256 of the photo's bytes, so the same photo sent twice (from the phone and the computer, say) is read
+  -- once. The photo itself is not kept.
+  photo_hash text check (photo_hash is null or photo_hash ~ '^[0-9a-f]{64}$'),
   created_at timestamptz not null default now()
 );
+
+create unique index pantry_scan_photos_same_photo_idx
+  on public.pantry_scan_photos (user_id, scan_id, photo_hash)
+  where photo_hash is not null;
 
 comment on table public.pantry_scan_photos is
   'PIN-181: the items read from one photo of an unsaved scan. No image is stored. Purged after 7 days.';

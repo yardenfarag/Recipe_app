@@ -3,7 +3,7 @@ import { expect, test, type Page } from "@playwright/test";
 import { resetLibrary, resetTestUserLanguage, type SeedRecipe } from "./admin";
 import { signInWithPassword } from "./helpers";
 import { resetShoppingList, readShoppingList } from "./listSeed";
-import { PHOTO, readPantry, resetPantry, stubScanPantry } from "./pantrySeed";
+import { PHOTO, PHOTOS, readPantry, resetPantry, stubScanPantry } from "./pantrySeed";
 import { TEST_USER } from "./testUser";
 
 /** PIN-181: the pantry page, a scan from photos (with the model stubbed), and What can I cook. */
@@ -58,15 +58,18 @@ test("a scan reads each photo as it's added, then saves the checked list", async
   await expect(page.locator("#main h1")).toHaveText("Scan your kitchen");
   await expect(page.getByRole("radio", { name: /Fridge/ })).toHaveAttribute("aria-checked", "true");
 
-  await page.locator('#main input[type="file"]').first().setInputFiles([PHOTO, { ...PHOTO, name: "door.png" }]);
+  await page.locator('#main input[type="file"]').first().setInputFiles([PHOTOS[0], PHOTOS[1]]);
   const photos = page.locator("#main ul[aria-live]");
   await expect(photos.getByText("3 items", { exact: true })).toBeVisible();
   await expect(photos.getByText("Too dark · 1 item")).toBeVisible();
   await expect(page.getByRole("radio", { name: /Fridge/ })).toContainText("2 photos · 4 items");
   await expect(page.getByRole("button", { name: "Retake" })).toBeVisible();
 
-  await page.getByRole("button", { name: "Review 4 items" }).click();
+  // The next step sits right under the photos: what was found, and the one button that moves on.
+  await expect(page.getByRole("heading", { name: "4 items found" })).toBeVisible();
+  await page.getByRole("button", { name: "Check the list" }).first().click();
   await expect(page.locator("#main h1")).toHaveText("Check the list");
+  await expect(page.getByRole("listitem").filter({ hasText: "Check and save" })).toHaveAttribute("aria-current", "step");
   await expect(page.getByText(/Pinch can miss things or get them wrong/)).toBeVisible();
   const unsure = page.getByRole("region", { name: "Not sure about these" });
   await expect(unsure.getByRole("checkbox", { name: /Tahini/ })).toHaveAttribute("aria-checked", "false");
@@ -79,6 +82,24 @@ test("a scan reads each photo as it's added, then saves the checked list", async
   await expect
     .poll(async () => (await readPantry()).map((row) => row.name).sort())
     .toEqual(["Butter", "Eggs", "Milk", "Tahini"]);
+});
+
+test("the same photo picked twice is read once", async ({ page }) => {
+  await resetPantry([]);
+  await signIn(page);
+  let reads = 0;
+  await page.route("**/functions/v1/scan-pantry", async (route) => {
+    reads += 1;
+    await route.fulfill({
+      json: { status: "ok", photo: { id: "00000000-0000-4000-8000-000000000009", scan_id: "s", place: "fridge", quality: "ok", truncated: false, from_phone: false, created_at: new Date().toISOString(), items: [{ name: "Milk", name_en: "milk", brand: "", aisle: "dairy", confidence: "high", container_unknown: false }] } },
+    });
+  });
+  await page.goto("/app/pantry/scan?place=fridge");
+  await page.locator('#main input[type="file"]').first().setInputFiles([PHOTO, { ...PHOTO, name: "again.png" }]);
+  await expect(page.getByText("Looks like a photo you already added, so it was skipped.")).toBeVisible();
+  await expect(page.getByRole("heading", { name: "1 item found" })).toBeVisible();
+  expect(reads).toBe(1);
+  await expect(page.getByRole("button", { name: "Add anyway" })).toBeVisible();
 });
 
 test("the phone page opens a link and sends photos without signing in", async ({ browser }) => {
@@ -98,8 +119,14 @@ test("the phone page opens a link and sends photos without signing in", async ({
   await page.goto("/app/phone#abcdefghijklmnopqrstuvwxyz012345");
   await expect(page.getByRole("heading", { name: "Send photos to Pinch" })).toBeVisible();
   await expect(page.getByRole("radio", { name: "Cupboards" })).toHaveAttribute("aria-checked", "true");
-  await page.locator('input[type="file"]').setInputFiles(PHOTO);
+  await page.locator('input[type="file"]').first().setInputFiles(PHOTO);
   await expect(page.getByText("1 item")).toBeVisible();
+  // Several at once from the photo library.
+  await expect(page.locator('input[type="file"][multiple]')).toHaveCount(1);
+  // "I'm done" ends it, and says what to do next.
+  await page.getByRole("button", { name: "I’m done" }).click();
+  await expect(page.getByRole("heading", { name: "All done" })).toBeVisible();
+  await expect(page.getByText("Your photos are on your computer. Close this page and carry on there.")).toBeVisible();
   await context.close();
 });
 

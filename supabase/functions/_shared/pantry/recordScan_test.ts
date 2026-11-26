@@ -6,9 +6,13 @@ import type { PantryScanResult } from './pantryScan.ts';
 import { scanOnePhoto, type ScanOnePhotoInput } from './recordScan.ts';
 
 /** Just enough of the service client: the daily-cap RPCs and the scan photo insert. */
-function fakeAdmin(options: { limited?: boolean } = {}) {
+function fakeAdmin(options: { limited?: boolean; earlier?: Record<string, unknown> } = {}) {
   const calls: string[] = [];
   const inserted: Record<string, unknown>[] = [];
+  const lookup = {
+    eq: () => lookup,
+    maybeSingle: () => Promise.resolve({ data: options.earlier ?? null, error: null }),
+  };
   const admin = {
     rpc(name: string) {
       calls.push(name);
@@ -20,6 +24,7 @@ function fakeAdmin(options: { limited?: boolean } = {}) {
         return { select: () => ({ eq: () => ({ maybeSingle: () => Promise.resolve({ data: { is_admin: false }, error: null }) }) }) };
       }
       return {
+        select: () => lookup,
         insert(row: Record<string, unknown>) {
           inserted.push(row);
           return {
@@ -49,7 +54,7 @@ function input(admin: Db, scan: ScanOnePhotoInput['scan'], logged: unknown[]): S
     scanId: '00000000-0000-4000-8000-000000000001',
     place: 'fridge',
     language: 'he',
-    photo: { base64: 'abc', mime: 'image/jpeg' },
+    photo: { base64: 'YWJj', mime: 'image/jpeg' },
     fromPhone: true,
     logUsage: (event) => Promise.resolve(logged.push(event)),
     scan,
@@ -65,6 +70,30 @@ Deno.test('a kitchen photo is counted, read, kept on the scan and logged', async
   assertEquals(calls, ['reserve_daily_ai_usage']);
   assertEquals(inserted[0].from_phone, true);
   assertEquals((logged[0] as { status: string }).status, 'ok');
+});
+
+Deno.test('the same photo again in a scan is the earlier result: no model call, no charge', async () => {
+  const earlier = {
+    id: 'photo-0',
+    scan_id: '00000000-0000-4000-8000-000000000001',
+    place: 'fridge',
+    quality: 'ok',
+    items: [{ name: 'milk' }],
+    truncated: false,
+    from_phone: false,
+    created_at: '2026-11-26T11:00:00Z',
+  };
+  const { admin, calls, inserted } = fakeAdmin({ earlier });
+  let read = false;
+  const photo = await scanOnePhoto(input(admin, () => ((read = true), Promise.resolve(result())), []));
+  assertEquals([photo.id, photo.duplicate, read], ['photo-0', true, false]);
+  assertEquals([calls, inserted], [[], []]);
+});
+
+Deno.test('the photo hash is stored, so a repeat can be found', async () => {
+  const { admin, inserted } = fakeAdmin();
+  await scanOnePhoto(input(admin, () => Promise.resolve(result()), []));
+  assertEquals(inserted[0].photo_hash, 'ba7816bf8f01cfea414140de5dae2223b00361a396177a9cb410ff61f20015ad');
 });
 
 Deno.test('a photo that is not a kitchen gives its use back and keeps nothing', async () => {

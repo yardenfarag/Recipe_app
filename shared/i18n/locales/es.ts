@@ -2113,7 +2113,17 @@ export default {
       "startOver": "Empezar de nuevo",
       "leaveTitle": "¿Salir del escaneo?",
       "leaveBody": "Lo que ya está leído te espera una semana.",
-      "leave": "Salir"
+      "leave": "Salir",
+      "step1": "Fotos",
+      "step2": "Revisar y guardar",
+      "nextTitle_one": "{{count}} cosa encontrada",
+      "nextTitle_many": "{{count}} cosas encontradas",
+      "nextTitle_other": "{{count}} cosas encontradas",
+      "nextBody": "Añade más sitios si quieres. Cuando acabes, revisa la lista y guárdala.",
+      "nextButton": "Revisar la lista",
+      "countedOnce": "Lo que sale en dos fotos cuenta una sola vez.",
+      "samePhoto": "Parece una foto que ya añadiste, así que la saltamos.",
+      "addAnyway": "Añadirla igualmente"
     },
     "review": {
       "title": "Revisa la lista",
@@ -2130,7 +2140,8 @@ export default {
       "save_other": "Guardar {{count}} cosas",
       "saveNone": "Guardar",
       "saved": "Despensa guardada",
-      "back": "Volver a las fotos"
+      "back": "Volver a las fotos",
+      "intro": "Desmarca lo que no esté, corrige un nombre con el lápiz y añade lo que se nos pasó. Luego guarda."
     },
     "intro": {
       "title": "¿Llenas tu despensa en dos minutos?",
@@ -2198,7 +2209,15 @@ export default {
       "sent": "Enviada. Mira tu ordenador.",
       "linkExpired": "Este enlace ha caducado. Crea uno nuevo en tu ordenador.",
       "finished": "Listo. Puedes cerrar esta página.",
-      "opening": "Abriendo…"
+      "opening": "Abriendo…",
+      "choose": "Elegir fotos",
+      "multiHint": "Hazlas una a una o elige varias de tus fotos.",
+      "imDone": "He terminado",
+      "doneTitle": "Listo",
+      "doneBody": "Tus fotos ya están en el ordenador. Cierra esta página y sigue allí.",
+      "phoneFinished_one": "Tu móvil envió {{count}} foto",
+      "phoneFinished_many": "Tu móvil envió {{count}} fotos",
+      "phoneFinished_other": "Tu móvil envió {{count}} fotos"
     }
   }
 } as const;

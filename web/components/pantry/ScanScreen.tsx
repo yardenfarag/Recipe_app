@@ -1,9 +1,9 @@
 "use client";
 
-import { ArrowLeft, LoaderCircle } from "lucide-react";
+import { ArrowLeft, ArrowRight, Check, LoaderCircle, ScanLine } from "lucide-react";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 
 import { mergeScanPhotos } from "@shared/lib/pantry";
@@ -20,6 +20,7 @@ import { Button, buttonClasses } from "@/components/ui/Button";
 import { Dialog, DialogClose, DialogContent } from "@/components/ui/Dialog";
 import { PageHeader } from "@/components/ui/PageHeader";
 import { LoadingState } from "@/components/ui/States";
+import { cn } from "@/lib/cn";
 import { safeNextPath } from "@/lib/nextPath";
 import { usePantry } from "@/lib/pantry/usePantry";
 import { useScan } from "@/lib/pantry/useScan";
@@ -51,6 +52,17 @@ export function ScanScreen() {
   const itemCount = useMemo(() => mergeScanPhotos(done).length, [done]);
   const reading = scan.entries.some((entry) => entry.status === "reading");
   const fromPhone = scan.entries.filter((entry) => entry.fromPhone).length;
+  const [nextInView, setNextInView] = useState(true);
+  const observer = useRef<IntersectionObserver | null>(null);
+  const nextCard = useCallback((node: HTMLDivElement | null) => {
+    observer.current?.disconnect();
+    if (!node) {
+      setNextInView(true);
+      return;
+    }
+    observer.current = new IntersectionObserver(([entry]) => setNextInView(entry.isIntersecting), { threshold: 0.3 });
+    observer.current.observe(node);
+  }, []);
 
   // A new step starts at the top, with its heading read out first.
   useEffect(() => {
@@ -80,7 +92,8 @@ export function ScanScreen() {
     return (
       <>
         <div className="mx-auto w-full max-w-3xl">
-          <PageHeader title={t("pantry.review.title")} tabTitle={t("pantry.scan.title")} />
+          <PageHeader title={t("pantry.review.title")} subtitle={t("pantry.review.intro")} tabTitle={t("pantry.scan.title")} />
+          <ScanSteps current={2} onBack={() => setStep("capture")} />
         </div>
         <ScanReview photos={done} saved={pantry.items} onBack={() => setStep("capture")} onSave={save} />
       </>
@@ -100,6 +113,8 @@ export function ScanScreen() {
         }
       />
 
+      <ScanSteps current={1} />
+
       <ScanCapture
         place={place}
         onPlace={setPlace}
@@ -109,25 +124,31 @@ export function ScanScreen() {
           if (added === 0) showToast(t("pantry.scan.photoUnreadable"), "error");
         }}
         onRetry={scan.retry}
+        onAddAnyway={scan.addAnyway}
         onRemove={scan.remove}
         onUsePhone={() => setPhoneOpen(true)}
+        nextStep={
+          done.length > 0 || reading ? (
+            <div ref={nextCard}>
+              <NextStepCard itemCount={itemCount} reading={reading} ready={done.length > 0} onReview={() => setStep("review")} />
+            </div>
+          ) : null
+        }
       />
 
-      <div className="sticky bottom-[calc(5rem+env(safe-area-inset-bottom))] z-20 mt-6 flex items-center justify-between gap-3 rounded-[22px] border border-border bg-surface/95 p-2 ps-4 shadow-lift backdrop-blur md:bottom-6">
-        <p aria-live="polite" className="flex min-w-0 items-center gap-2 text-sm font-medium text-muted">
-          {reading ? (
-            <>
-              <LoaderCircle aria-hidden className="h-4 w-4 shrink-0 animate-spin" />
-              <span className="truncate">{t("pantry.scan.waiting")}</span>
-            </>
-          ) : done.length === 0 ? (
-            <span className="truncate">{t("pantry.scan.reviewEmpty")}</span>
-          ) : null}
-        </p>
-        <Button size="lg" trackId="pantry.scan.review" disabled={done.length === 0} onClick={() => setStep("review")}>
-          {t("pantry.scan.review", { count: itemCount })}
-        </Button>
-      </div>
+      {/* The same step, kept in reach once the card above has scrolled away. */}
+      {done.length > 0 && !nextInView ? (
+        <div className="sticky bottom-[calc(5rem+env(safe-area-inset-bottom))] z-20 mt-6 flex items-center justify-between gap-3 rounded-[22px] border border-border bg-surface/95 p-2 ps-4 shadow-lift backdrop-blur md:bottom-6">
+          <p aria-live="polite" className="flex min-w-0 items-center gap-2 text-sm font-semibold text-text">
+            {reading ? <LoaderCircle aria-hidden className="h-4 w-4 shrink-0 animate-spin text-muted" /> : null}
+            <span className="truncate">{t("pantry.scan.nextTitle", { count: itemCount })}</span>
+          </p>
+          <Button size="lg" trackId="pantry.scan.review_sticky" onClick={() => setStep("review")}>
+            {t("pantry.scan.nextButton")}
+            <ArrowRight aria-hidden className="h-5 w-5 rtl:rotate-180" />
+          </Button>
+        </div>
+      ) : null}
 
       <PhoneHandoffDialog
         open={phoneOpen}
@@ -140,6 +161,10 @@ export function ScanScreen() {
         scanId={scan.scanId}
         place={place}
         onTick={() => void scan.sync()}
+        onFinished={() =>
+          // The last photos land on the next sync; the count is read once they have.
+          void scan.sync().then((count) => showToast(t("pantry.phone.phoneFinished", { count })))
+        }
         arrived={fromPhone}
       />
 
@@ -162,5 +187,79 @@ export function ScanScreen() {
         ) : null}
       </Dialog>
     </>
+  );
+}
+
+/** "1 Take photos → 2 Check and save": where the person is in the scan. On step 2, step 1 goes back. */
+function ScanSteps({ current, onBack }: { current: 1 | 2; onBack?: () => void }) {
+  const { t } = useTranslation();
+  const steps = [t("pantry.scan.step1"), t("pantry.scan.step2")];
+  return (
+    <ol aria-label={t("pantry.scan.title")} className="mb-5 flex flex-wrap items-center gap-2 text-sm font-semibold">
+      {steps.map((label, index) => {
+        const number = index + 1;
+        const done = number < current;
+        const here = number === current;
+        const content = (
+          <>
+            <span
+              aria-hidden
+              className={cn(
+                "grid h-6 w-6 shrink-0 place-items-center rounded-full text-xs",
+                here ? "bg-primary text-on-primary" : done ? "bg-primary-soft text-primary-text" : "bg-element text-muted",
+              )}
+            >
+              {done ? <Check className="h-3.5 w-3.5" strokeWidth={3} /> : number}
+            </span>
+            <span className={here ? "text-text" : "text-muted"}>{label}</span>
+          </>
+        );
+        return (
+          <li key={label} aria-current={here ? "step" : undefined} className="flex items-center gap-2">
+            {index > 0 ? <ArrowRight aria-hidden className="h-4 w-4 text-muted rtl:rotate-180" /> : null}
+            {done && onBack ? (
+              <button type="button" data-track="pantry.scan.step_back" onClick={onBack} className="flex items-center gap-2 rounded-lg hover:underline">
+                {content}
+              </button>
+            ) : (
+              <span className="flex items-center gap-2">{content}</span>
+            )}
+          </li>
+        );
+      })}
+    </ol>
+  );
+}
+
+/**
+ * What to do now, right under the photos: how many items were found, that more places can still be added, and the
+ * one button that moves on. Shown as soon as the first photo is being read.
+ */
+function NextStepCard({ itemCount, reading, ready, onReview }: { itemCount: number; reading: boolean; ready: boolean; onReview: () => void }) {
+  const { t } = useTranslation();
+  return (
+    <section
+      aria-live="polite"
+      className="flex flex-col gap-4 rounded-tile border-2 border-primary bg-primary-soft p-5 sm:flex-row sm:items-center sm:justify-between md:p-6"
+    >
+      <div className="flex min-w-0 items-start gap-3.5">
+        <span aria-hidden className="grid h-11 w-11 shrink-0 place-items-center rounded-xl bg-primary text-on-primary">
+          {reading && !ready ? <LoaderCircle className="h-5 w-5 animate-spin" /> : <ScanLine className="h-5 w-5" />}
+        </span>
+        <div className="min-w-0">
+          <h2 className="font-display text-xl font-bold text-text">
+            {ready ? t("pantry.scan.nextTitle", { count: itemCount }) : t("pantry.scan.waiting")}
+          </h2>
+          <p className="mt-1 text-[15px] leading-relaxed text-pretty text-muted">
+            {reading && ready ? `${t("pantry.scan.waiting")} ` : null}
+            {t("pantry.scan.nextBody")}
+          </p>
+        </div>
+      </div>
+      <Button size="lg" trackId="pantry.scan.review" disabled={!ready} onClick={onReview} className="shrink-0">
+        {t("pantry.scan.nextButton")}
+        <ArrowRight aria-hidden className="h-5 w-5 rtl:rotate-180" />
+      </Button>
+    </section>
   );
 }

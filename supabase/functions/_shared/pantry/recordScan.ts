@@ -7,7 +7,7 @@ import { HttpError } from '../core/httpError.ts';
 import { type Db, toJson } from '../core/supabaseAdmin.ts';
 import type { UsageEventInput } from '../core/usageLog.ts';
 import { PANTRY_SCAN_DAILY_LIMIT } from '../llm/pricing.ts';
-import type { PhotoMime } from './photoInput.ts';
+import { type PhotoMime, photoBytes } from './photoInput.ts';
 import { PANTRY_PLACES, type PantryPlace, type PantryScanResult, scanPantryPhoto } from './pantryScan.ts';
 
 /** The items as they are stored on the scan photo and sent to the apps. */
@@ -30,7 +30,55 @@ export type ScanPhotoJson = {
   truncated: boolean;
   from_phone: boolean;
   created_at: string;
+  /** The same photo was already read in this scan: this is that earlier result, and nothing was charged. */
+  duplicate?: boolean;
 };
+
+const PHOTO_ROW = 'id, scan_id, place, quality, items, truncated, from_phone, created_at';
+
+type PhotoRow = {
+  id: string;
+  scan_id: string;
+  place: string;
+  quality: string;
+  items: unknown;
+  truncated: boolean;
+  from_phone: boolean;
+  created_at: string;
+};
+
+function fromRow(row: PhotoRow): ScanPhotoJson {
+  return {
+    id: row.id,
+    scan_id: row.scan_id,
+    place: row.place as PantryPlace,
+    quality: row.quality as PantryScanResult['quality'],
+    items: Array.isArray(row.items) ? (row.items as ScanItemJson[]) : [],
+    truncated: row.truncated,
+    from_phone: row.from_phone,
+    created_at: row.created_at,
+    duplicate: true,
+  };
+}
+
+/** sha256 of the photo's bytes, hex. */
+export async function photoHash(base64: string): Promise<string> {
+  const digest = await crypto.subtle.digest('SHA-256', photoBytes(base64) as Uint8Array<ArrayBuffer>);
+  return [...new Uint8Array(digest)].map((b) => b.toString(16).padStart(2, '0')).join('');
+}
+
+/** This scan's earlier result for the same photo, if it was already read. */
+async function alreadyRead(admin: Db, userId: string, scanId: string, hash: string): Promise<ScanPhotoJson | null> {
+  const { data, error } = await admin
+    .from('pantry_scan_photos')
+    .select(PHOTO_ROW)
+    .eq('user_id', userId)
+    .eq('scan_id', scanId)
+    .eq('photo_hash', hash)
+    .maybeSingle();
+  if (error) throw error;
+  return data ? fromRow(data as PhotoRow) : null;
+}
 
 export const SUPPORTED_LANGUAGES = ['en', 'he', 'ar', 'ru', 'es'] as const;
 
@@ -62,6 +110,13 @@ const meteringError = new HttpError(500, 'metering_error', 'Something went wrong
 /** Thrown inside the daily-cap reservation so it gives the use back; caught right outside it. */
 class NotKitchen extends Error {}
 
+/** The same photo was saved by a parallel request: its result is returned and this use given back. */
+class AlreadyRead extends Error {
+  constructor(readonly photo: ScanPhotoJson) {
+    super('already read');
+  }
+}
+
 export function toItemJson(result: PantryScanResult): ScanItemJson[] {
   return result.items.map((item) => ({
     name: item.name,
@@ -90,6 +145,10 @@ export async function scanOnePhoto(input: ScanOnePhotoInput): Promise<ScanPhotoJ
   const scan = input.scan ?? scanPantryPhoto;
   const now = new Date().toISOString();
   const metadata = { place: input.place, language: input.language, from_phone: input.fromPhone };
+  // The same photo twice in one scan (picked again, or sent from both the phone and the computer) is read once.
+  const hash = await photoHash(input.photo.base64);
+  const earlier = await alreadyRead(input.admin, input.userId, input.scanId, hash);
+  if (earlier) return earlier;
   let reserved = false;
   try {
     return await withDailyAiUsage(
@@ -138,9 +197,15 @@ export async function scanOnePhoto(input: ScanOnePhotoInput): Promise<ScanPhotoJ
             items: toJson(items),
             truncated: result.truncated,
             from_phone: input.fromPhone,
+            photo_hash: hash,
           })
           .select('id, created_at')
           .single();
+        if (error?.code === '23505') {
+          // Read twice at the same moment: keep the first, and give this use back.
+          const first = await alreadyRead(input.admin, input.userId, input.scanId, hash);
+          if (first) throw new AlreadyRead(first);
+        }
         if (error || !data) {
           console.error('[pantry] save scan photo', error);
           throw scanFailed;
@@ -163,6 +228,7 @@ export async function scanOnePhoto(input: ScanOnePhotoInput): Promise<ScanPhotoJ
       },
     );
   } catch (error) {
+    if (reserved && error instanceof AlreadyRead) return error.photo;
     // The use has been given back by now: a photo of the dog doesn't count.
     if (reserved && error instanceof NotKitchen) {
       return {

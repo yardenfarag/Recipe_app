@@ -36,6 +36,7 @@ type Body = Record<string, unknown>;
  * From the phone, with the link's token and no sign-in:
  *   open   { token } -> { purpose, place, language, expires_at }
  *   upload { token, image_base64, place? } -> pantry: { photo } (read now, as the owner) | snap, guess: { sent: true }
+ *   finish { token }   "I'm done": closes the link, which the computer sees as state 'closed'
  */
 handler(
   {
@@ -96,6 +97,17 @@ handler(
         .update({ closed_at: new Date().toISOString(), photo: null, photo_mime: null, photo_at: null })
         .eq('id', row.id);
       if (error) throw error;
+      return { status: 'ok' };
+    }
+
+    if (action === 'finish') {
+      // The phone's "I'm done": the link closes, and the computer's dialog sees it and closes too.
+      if (!isHandoffToken(input.token)) throw handoffGone;
+      const row = await openHandoffByToken(admin, input.token).catch(() => null);
+      if (row) {
+        const { error } = await admin.from('photo_handoffs').update({ closed_at: new Date().toISOString() }).eq('id', row.id);
+        if (error) throw error;
+      }
       return { status: 'ok' };
     }
 

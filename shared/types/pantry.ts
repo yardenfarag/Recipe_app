@@ -56,6 +56,8 @@ export type ScanPhoto = {
   truncated: boolean;
   from_phone: boolean;
   created_at: string;
+  /** scan-pantry had already read this exact photo in this scan; this is that earlier result. */
+  duplicate?: boolean;
 };
 
 /** A row on the review screen, after the photos of a scan are merged. */

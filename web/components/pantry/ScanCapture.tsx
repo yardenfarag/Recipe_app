@@ -1,9 +1,10 @@
 "use client";
 
 import { Camera, CircleAlert, DoorOpen, Eye, ImagePlus, LoaderCircle, Rows3, Smartphone, Sun, X } from "lucide-react";
-import { useRef, useState, type DragEvent } from "react";
+import { useRef, useState, type DragEvent, type ReactNode } from "react";
 import { useTranslation } from "react-i18next";
 
+import { mergeScanPhotos } from "@shared/lib/pantry";
 import { PANTRY_PLACES, type PantryPlace } from "@shared/types/pantry";
 
 import { PLACE_ICONS } from "@/components/pantry/places";
@@ -30,16 +31,21 @@ export function ScanCapture({
   entries,
   onFiles,
   onRetry,
+  onAddAnyway,
   onRemove,
   onUsePhone,
+  nextStep,
 }: {
   place: PantryPlace;
   onPlace: (place: PantryPlace) => void;
   entries: ScanEntry[];
   onFiles: (files: File[], place: PantryPlace) => void;
   onRetry: (key: string) => void;
+  onAddAnyway: (key: string) => void;
   onRemove: (key: string) => void;
   onUsePhone: () => void;
+  /** What to do next once photos are read: shown right under the upload area, where the eye already is. */
+  nextStep?: ReactNode;
 }) {
   const { t } = useTranslation();
   const input = useRef<HTMLInputElement>(null);
@@ -67,8 +73,9 @@ export function ScanCapture({
       <div role="radiogroup" aria-label={t("pantry.scan.title")} className="grid grid-cols-2 gap-3 lg:grid-cols-4">
         {PANTRY_PLACES.map((value) => {
           const Icon = PLACE_ICONS[value];
-          const mine = entries.filter((entry) => entry.place === value);
-          const items = mine.reduce((sum, entry) => sum + (entry.photo?.items.length ?? 0), 0);
+          const mine = entries.filter((entry) => entry.place === value && entry.status !== "similar" && entry.status !== "duplicate");
+          // Unique items: something in two photos of the fridge is one item.
+          const items = mergeScanPhotos(mine.flatMap((entry) => (entry.photo ? [entry.photo] : []))).length;
           const on = value === place;
           return (
             <button
@@ -150,12 +157,22 @@ export function ScanCapture({
         </div>
       </Tile>
 
+      {nextStep}
+
       {entries.length > 0 ? (
+        <section aria-labelledby="scan-photos" className="flex flex-col gap-2">
+          <div className="flex flex-wrap items-baseline justify-between gap-x-4 gap-y-1">
+            <h2 id="scan-photos" className="text-lg font-bold text-text">
+              {t("pantry.scan.photos", { count: entries.length })}
+            </h2>
+            <p className="text-sm text-muted">{t("pantry.scan.countedOnce")}</p>
+          </div>
         <ul aria-live="polite" className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5">
           {entries.map((entry) => (
             <PhotoCard
               key={entry.key}
               entry={entry}
+              onAddAnyway={() => onAddAnyway(entry.key)}
               onRetake={() => {
                 // The new photo replaces this one, in the same place. Opened from the click, so the picker is allowed.
                 onRemove(entry.key);
@@ -167,12 +184,25 @@ export function ScanCapture({
             />
           ))}
         </ul>
+        </section>
       ) : null}
     </div>
   );
 }
 
-function PhotoCard({ entry, onRetake, onRetry, onRemove }: { entry: ScanEntry; onRetake: () => void; onRetry: () => void; onRemove: () => void }) {
+function PhotoCard({
+  entry,
+  onRetake,
+  onRetry,
+  onAddAnyway,
+  onRemove,
+}: {
+  entry: ScanEntry;
+  onRetake: () => void;
+  onRetry: () => void;
+  onAddAnyway: () => void;
+  onRemove: () => void;
+}) {
   const { t } = useTranslation();
   const Icon = PLACE_ICONS[entry.place];
   const quality = entry.photo?.quality ?? "ok";
@@ -182,6 +212,7 @@ function PhotoCard({ entry, onRetake, onRetry, onRemove }: { entry: ScanEntry; o
   let status: string;
   let hint: string | null = null;
   if (entry.status === "reading") status = t("pantry.scan.reading");
+  else if (entry.status === "similar" || entry.status === "duplicate") status = t("pantry.scan.samePhoto");
   else if (entry.status === "failed") status = t("pantry.scan.failed");
   else if (entry.status === "unreadable") status = t("pantry.scan.photoUnreadable");
   else if (entry.status === "limited") status = t("pantry.scan.dailyLimit");
@@ -243,6 +274,11 @@ function PhotoCard({ entry, onRetake, onRetry, onRemove }: { entry: ScanEntry; o
         {entry.status === "failed" && entry.file ? (
           <Button variant="secondary" size="sm" trackId="pantry.scan.retry" onClick={onRetry} className="mt-auto self-start">
             {t("pantry.scan.tryAgain")}
+          </Button>
+        ) : null}
+        {entry.status === "similar" && entry.file ? (
+          <Button variant="ghost" size="sm" trackId="pantry.scan.add_anyway" onClick={onAddAnyway} className="mt-auto -ms-2 self-start">
+            {t("pantry.scan.addAnyway")}
           </Button>
         ) : null}
       </div>

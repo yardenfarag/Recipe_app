@@ -2260,7 +2260,20 @@ export default {
       "startOver": "بلّش من جديد",
       "leaveTitle": "بتطلع من المسح؟",
       "leaveBody": "اللي انقرأ بيستناك أسبوع.",
-      "leave": "اطلع"
+      "leave": "اطلع",
+      "step1": "صوّر",
+      "step2": "راجع واحفظ",
+      "nextTitle_zero": "ما لقينا شي",
+      "nextTitle_one": "لقينا غرض واحد",
+      "nextTitle_two": "لقينا غرضين",
+      "nextTitle_few": "لقينا {{count}} أغراض",
+      "nextTitle_many": "لقينا {{count}} غرض",
+      "nextTitle_other": "لقينا {{count}} غرض",
+      "nextBody": "فيك تزيد أماكن كمان. لما تخلص، راجع القائمة واحفظها.",
+      "nextButton": "راجع القائمة",
+      "countedOnce": "اللي بيطلع بصورتين بينحسب مرة وحدة.",
+      "samePhoto": "بتشبه صورة زدتها قبل، فتخطيناها.",
+      "addAnyway": "زيدها ع كل حال"
     },
     "review": {
       "title": "راجع القائمة",
@@ -2280,7 +2293,8 @@ export default {
       "save_other": "احفظ {{count}} غرض",
       "saveNone": "احفظ",
       "saved": "انحفظت المؤونة",
-      "back": "ارجع للصور"
+      "back": "ارجع للصور",
+      "intro": "شيل العلامة عن اللي مش موجود، صحّح الاسم بالقلم، وزيد اللي فوّتناه. وبعدين احفظ."
     },
     "intro": {
       "title": "بتعبّي المؤونة بدقيقتين؟",
@@ -2360,7 +2374,18 @@ export default {
       "sent": "انبعتت. شوف الكمبيوتر.",
       "linkExpired": "الرابط انتهى. اعمل واحد جديد على الكمبيوتر.",
       "finished": "خلصنا. فيك تسكّر الصفحة.",
-      "opening": "عم نفتح…"
+      "opening": "عم نفتح…",
+      "choose": "اختار صور",
+      "multiHint": "صوّر وحدة وحدة، أو اختار كم صورة من صورك.",
+      "imDone": "خلصت",
+      "doneTitle": "خلصنا",
+      "doneBody": "الصور صارت على الكمبيوتر. فيك تسكّر الصفحة وتكمّل هونيك.",
+      "phoneFinished_zero": "التلفون ما بعت صور",
+      "phoneFinished_one": "التلفون بعت صورة وحدة",
+      "phoneFinished_two": "التلفون بعت صورتين",
+      "phoneFinished_few": "التلفون بعت {{count}} صور",
+      "phoneFinished_many": "التلفون بعت {{count}} صورة",
+      "phoneFinished_other": "التلفون بعت {{count}} صورة"
     }
   }
 } as const;

@@ -5,7 +5,7 @@ import { createAdminPagesUsers, deleteAdminPagesUsers } from "./adminSeed";
 import { signInWithPassword } from "./helpers";
 import { resetHub } from "./hubSeed";
 import { resetShoppingList } from "./listSeed";
-import { PHOTO, resetPantry, stubScanPantry } from "./pantrySeed";
+import { PHOTOS, resetPantry, stubScanPantry } from "./pantrySeed";
 import { setRecipeVideo } from "./cookSeed";
 import { writeAccountPrefs } from "./prefsSeed";
 import { resetShares, stubRecipeShare } from "./shareSeed";
@@ -363,10 +363,10 @@ test("pantry: page, scan, review, phone code and What can I cook", async ({ brow
       // A scan: three photos, one too dark.
       ({ page, context } = await open(browser, viewport, { language, scheme }, "/app/pantry/scan?place=fridge"));
       await stubScanPantry(page, SCAN_ANSWERS[language]);
-      await page.locator('#main input[type="file"]').first().setInputFiles([PHOTO, { ...PHOTO, name: "b.png" }, { ...PHOTO, name: "c.png" }]);
+      await page.locator('#main input[type="file"]').first().setInputFiles(PHOTOS);
       await page.waitForTimeout(1200);
       await page.screenshot({ path: `${OUT}/pantry-scan-${tag}.png`, fullPage: true });
-      await page.locator("#main").getByRole("button").last().click();
+      await page.locator('#main [data-track="pantry.scan.review"]').click();
       await page.locator("#main h1").waitFor();
       await page.waitForTimeout(500);
       await page.screenshot({ path: `${OUT}/pantry-review-${tag}.png`, fullPage: true });
@@ -411,7 +411,7 @@ test("pantry: page, scan, review, phone code and What can I cook", async ({ brow
     });
     await page.goto("/app/phone#abcdefghijklmnopqrstuvwxyz012345");
     await page.locator("main h1").waitFor();
-    await page.locator('input[type="file"]').setInputFiles(PHOTO);
+    await page.locator('input[type="file"][multiple]').setInputFiles(PHOTOS);
     await page.waitForTimeout(800);
     await page.screenshot({ path: `${OUT}/pantry-phone-page-${language}-${scheme}.png`, fullPage: true });
     await context.close();

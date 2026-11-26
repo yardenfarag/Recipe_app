@@ -2064,7 +2064,16 @@ export default {
       "startOver": "Start over",
       "leaveTitle": "Leave the scan?",
       "leaveBody": "What’s read so far waits for you for a week.",
-      "leave": "Leave"
+      "leave": "Leave",
+      "step1": "Take photos",
+      "step2": "Check and save",
+      "nextTitle_one": "{{count}} item found",
+      "nextTitle_other": "{{count}} items found",
+      "nextBody": "Add more places if you like. When you’re done, check the list and save it.",
+      "nextButton": "Check the list",
+      "countedOnce": "Something in two photos is counted once.",
+      "samePhoto": "Looks like a photo you already added, so it was skipped.",
+      "addAnyway": "Add anyway"
     },
     "review": {
       "title": "Check the list",
@@ -2080,7 +2089,8 @@ export default {
       "save_other": "Save {{count}} items",
       "saveNone": "Save",
       "saved": "Pantry saved",
-      "back": "Back to photos"
+      "back": "Back to photos",
+      "intro": "Untick anything that isn’t there, fix a name with the pencil, and add what we missed. Then save."
     },
     "intro": {
       "title": "Fill your pantry in two minutes?",
@@ -2144,7 +2154,14 @@ export default {
       "sent": "Sent. Look at your computer.",
       "linkExpired": "This link has expired. Make a new one on your computer.",
       "finished": "All done. You can close this page.",
-      "opening": "Opening…"
+      "opening": "Opening…",
+      "choose": "Choose photos",
+      "multiHint": "Take them one by one, or choose several from your photos.",
+      "imDone": "I’m done",
+      "doneTitle": "All done",
+      "doneBody": "Your photos are on your computer. Close this page and carry on there.",
+      "phoneFinished_one": "Your phone sent {{count}} photo",
+      "phoneFinished_other": "Your phone sent {{count}} photos"
     }
   }
 } as const;

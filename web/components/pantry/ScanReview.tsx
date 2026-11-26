@@ -1,6 +1,6 @@
 "use client";
 
-import { Check, Info, Pencil } from "lucide-react";
+import { ArrowLeft, Check, Info, Pencil } from "lucide-react";
 import { useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 
@@ -164,11 +164,14 @@ export function ScanReview({
         </Tile>
       ) : null}
 
-      <div className="sticky bottom-[calc(5rem+env(safe-area-inset-bottom))] z-20 flex items-center justify-between gap-3 rounded-[22px] border border-border bg-surface/95 p-2 shadow-lift backdrop-blur md:bottom-6">
-        <Button variant="ghost" trackId="pantry.review.back" onClick={onBack} disabled={saving}>
+      {/* The last step, in reach while scrolling: what will be saved, and the button that saves it. */}
+      <div className="sticky bottom-[calc(5rem+env(safe-area-inset-bottom))] z-20 flex flex-col gap-2 rounded-[22px] border-2 border-primary bg-surface/95 p-3 shadow-lift backdrop-blur sm:flex-row sm:items-center sm:justify-between md:bottom-6">
+        <Button variant="ghost" trackId="pantry.review.back" onClick={onBack} disabled={saving} className="order-2 sm:order-1">
+          <ArrowLeft aria-hidden className="h-4 w-4 rtl:rotate-180" />
           {t("pantry.review.back")}
         </Button>
-        <Button size="lg" trackId="pantry.review.save" busy={saving} onClick={() => void save()}>
+        <Button size="lg" trackId="pantry.review.save" busy={saving} onClick={() => void save()} className="order-1 w-full sm:order-2 sm:w-auto">
+          <Check aria-hidden className="h-5 w-5" />
           {tickedCount > 0 ? t("pantry.review.save", { count: tickedCount }) : t("pantry.review.saveNone")}
         </Button>
       </div>

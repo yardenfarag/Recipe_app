@@ -38,6 +38,8 @@ type Props = {
   onTick?: () => void;
   /** Pantry: how many photos have arrived from the phone so far. */
   arrived?: number;
+  /** Pantry: the phone pressed "I'm done". The dialog closes itself. */
+  onFinished?: () => void;
 };
 
 /**
@@ -53,14 +55,14 @@ export function PhoneHandoffDialog(props: Props) {
   );
 }
 
-function Body({ purpose, language, scanId, place, onPhoto, onTick, arrived = 0, onOpenChange }: Props) {
+function Body({ purpose, language, scanId, place, onPhoto, onTick, onFinished, arrived = 0, onOpenChange }: Props) {
   const { t } = useTranslation();
   const [handoff, setHandoff] = useState<Handoff | null>(null);
   const [state, setState] = useState<HandoffState | "creating" | "failed">("creating");
   const current = useRef<Handoff | null>(null);
-  const latest = useRef({ onPhoto, onTick });
+  const latest = useRef({ onPhoto, onTick, onFinished });
   useEffect(() => {
-    latest.current = { onPhoto, onTick };
+    latest.current = { onPhoto, onTick, onFinished };
   });
 
   const create = useCallback(async () => {
@@ -95,6 +97,14 @@ function Body({ purpose, language, scanId, place, onPhoto, onTick, arrived = 0, 
       }
       const next = await handoffStatus(handoff.id);
       if (stopped || !next) return;
+      // The phone pressed "I'm done": pick up its last photos and close.
+      if (next === "closed" && (state === "connected" || state === "photo_ready")) {
+        current.current = null;
+        latest.current.onTick?.();
+        latest.current.onFinished?.();
+        onOpenChange(false);
+        return;
+      }
       setState(next);
       if (next === "connected" || next === "photo_ready") latest.current.onTick?.();
       if (next === "photo_ready" && latest.current.onPhoto) {
