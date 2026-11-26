@@ -59,6 +59,8 @@ async function openRecipe(page: Page, recipes: SeedRecipe[]) {
 
 const ingredients = (page: Page) => page.getByRole("region", { name: "Ingredients" });
 const steps = (page: Page) => page.getByRole("region", { name: /Instructions/ });
+// What a screen reader hears for each of one serving's numbers.
+const perServing = (page: Page) => page.getByRole("group", { name: "Per serving" }).getByRole("listitem");
 
 test("opening a recipe from the Library shows its header, ingredients and steps", async ({ page }) => {
   await resetLibrary([PANCAKES]);
@@ -68,7 +70,7 @@ test("opening a recipe from the Library shows its header, ingredients and steps"
   await expect(page.locator("#main h1")).toHaveText("Fluffy Pancakes");
   await expect(page).toHaveTitle("Fluffy Pancakes · Pinch");
   await expect(page.locator("#main")).toContainText("20 min");
-  await expect(page.getByTestId("recipe-nutrition")).toHaveText("Per serving: 12 g protein · 55 g carbs · 14 g fat");
+  await expect(perServing(page)).toContainText(["Calories: 400", "Protein: 12 g", "Carbs: 55 g", "Fat: 14 g"]);
   await expect(ingredients(page)).toContainText("flour");
   await expect(ingredients(page)).toContainText("1 cup");
   await expect(steps(page)).toContainText("Whisk the flour and milk.");
@@ -84,7 +86,7 @@ test("changing servings rescales every amount and is remembered", async ({ page 
   await expect(ingredients(page)).toContainText("1 cup");
   // The totals follow the servings; one serving's macros don't change.
   await expect(ingredients(page)).toContainText("≈ 1,600 cal · 48 g protein · 220 g carbs · 56 g fat total");
-  await expect(page.getByTestId("recipe-nutrition")).toHaveText("Per serving: 12 g protein · 55 g carbs · 14 g fat");
+  await expect(perServing(page)).toContainText(["Calories: 400", "Protein: 12 g", "Carbs: 55 g", "Fat: 14 g"]);
 
   await page.reload();
   await expect(ingredients(page)).toContainText("4 servings");
