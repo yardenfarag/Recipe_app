@@ -13,9 +13,13 @@ import {
   type RenderedEmail,
 } from './render.ts';
 import { totalCredits } from './purchase.ts';
-import { EMAIL_FROM, sendEmail, teamCopy } from './send.ts';
+import { EMAIL_CATEGORY, EMAIL_FROM, sendEmail, sendOnce, teamCopy } from './send.ts';
 
 const SUPABASE_URL = 'https://example.supabase.co';
+const UNSUBSCRIBE = {
+  page: 'https://pinch-app.io/app/unsubscribe?u=u1&t=tok&l=en',
+  oneClick: 'https://example.supabase.co/functions/v1/email-preferences?u=u1&t=tok',
+};
 
 function allKinds(locale: (typeof EMAIL_LOCALES)[number]): RenderedEmail[] {
   return [
@@ -23,7 +27,7 @@ function allKinds(locale: (typeof EMAIL_LOCALES)[number]): RenderedEmail[] {
     renderCodeEmail({ locale, code: '654321', purpose: 'reauth' }),
     renderResetEmail({ locale, code: '111222', link: 'https://example.com/reset?a=1&b=2' }),
     renderEmailChangeEmail({ locale, link: 'https://example.com/change' }),
-    renderWelcomeEmail({ locale }),
+    renderWelcomeEmail({ locale, unsubscribe: UNSUBSCRIBE }),
     renderPurchaseEmail({
       locale,
       credits: 30,
@@ -63,7 +67,7 @@ Deno.test('Hebrew and Arabic render right-to-left, codes stay left-to-right', ()
     assertStringIncludes(email.html, `<html lang="${locale}" dir="rtl">`);
     assertMatch(email.html, /dir="ltr"[^>]*>123456</);
   }
-  assertStringIncludes(renderWelcomeEmail({ locale: 'en' }).html, 'dir="ltr"');
+  assertStringIncludes(renderWelcomeEmail({ locale: 'en', unsubscribe: UNSUBSCRIBE }).html, 'dir="ltr"');
 });
 
 Deno.test('Hebrew and Arabic use Arial/Tahoma on every heading and paragraph', () => {
@@ -75,7 +79,7 @@ Deno.test('Hebrew and Arabic use Arial/Tahoma on every heading and paragraph', (
       }
     }
   }
-  const en = renderWelcomeEmail({ locale: 'en' }).html;
+  const en = renderWelcomeEmail({ locale: 'en', unsubscribe: UNSUBSCRIBE }).html;
   assertMatch(en, /<h1 style="font-family:-apple-system/);
   // The code keeps its monospace font: it comes later in the same style, so it wins.
   assertMatch(renderCodeEmail({ locale: 'he', code: '1', purpose: 'signin' }).html, /font-family:Arial[^"]*font-family:'SF Mono'/);
@@ -203,7 +207,7 @@ Deno.test('sendEmail posts to Resend from hello@ with an idempotency key', async
     return Promise.resolve(new Response(JSON.stringify({ id: 'em_1' }), { status: 200 }));
   }) as unknown as typeof fetch;
 
-  const id = await sendEmail('cook@example.com', renderWelcomeEmail({ locale: 'en' }), {
+  const id = await sendEmail('cook@example.com', renderWelcomeEmail({ locale: 'en', unsubscribe: UNSUBSCRIBE }), {
     idempotencyKey: 'welcome/u1',
     fetchImpl: fakeFetch,
   });
@@ -228,7 +232,7 @@ Deno.test('sendEmail passes a team copy as bcc', async () => {
     return Promise.resolve(new Response(JSON.stringify({ id: 'em_2' }), { status: 200 }));
   }) as unknown as typeof fetch;
 
-  await sendEmail('cook@example.com', renderWelcomeEmail({ locale: 'en' }), { bcc: teamCopy(''), fetchImpl: fakeFetch });
+  await sendEmail('cook@example.com', renderWelcomeEmail({ locale: 'en', unsubscribe: UNSUBSCRIBE }), { bcc: teamCopy(''), fetchImpl: fakeFetch });
   assertEquals(sent.to, ['cook@example.com']);
   assertEquals(sent.bcc, ['support@pinch-app.io']);
 });
@@ -247,9 +251,116 @@ Deno.test('sendEmail surfaces Resend errors', async () => {
     Promise.resolve(new Response(JSON.stringify({ message: 'domain not verified' }), { status: 403 }))) as unknown as typeof fetch;
   let message = '';
   try {
-    await sendEmail('a@b.co', renderWelcomeEmail({ locale: 'en' }), { fetchImpl: fakeFetch });
+    await sendEmail('a@b.co', renderWelcomeEmail({ locale: 'en', unsubscribe: UNSUBSCRIBE }), { fetchImpl: fakeFetch });
   } catch (error) {
     message = (error as Error).message;
   }
   assertEquals(message, 'domain not verified');
+});
+
+// ── Unsubscribe (PIN-189) ─────────────────────────────────────────────────
+
+Deno.test('the welcome email carries the unsubscribe link in every language; account emails do not', () => {
+  for (const locale of EMAIL_LOCALES) {
+    const welcome = renderWelcomeEmail({ locale, unsubscribe: UNSUBSCRIBE });
+    assertStringIncludes(welcome.html, 'app/unsubscribe?u=u1&amp;t=tok&amp;l=en');
+    assertStringIncludes(welcome.html, escapeHtml(COPY[locale].unsubscribeLink));
+    assertStringIncludes(welcome.text, `${COPY[locale].unsubscribeLink}: ${UNSUBSCRIBE.page}`);
+    assertEquals(welcome.unsubscribe, UNSUBSCRIBE);
+    for (const email of allKinds(locale)) {
+      if (email.subject === welcome.subject) continue;
+      assertEquals(email.unsubscribe, undefined, `${locale}: ${email.subject}`);
+      assert(!email.html.includes(COPY[locale].unsubscribeIntro), `${locale}: ${email.subject} has no unsubscribe line`);
+    }
+  }
+});
+
+Deno.test('sendEmail adds the one-click headers to an optional email, and none to an account email', async () => {
+  Deno.env.set('RESEND_API_KEY', 're_test');
+  const bodies: Record<string, unknown>[] = [];
+  const fakeFetch = ((_url: string, init: RequestInit) => {
+    bodies.push(JSON.parse(String(init.body)));
+    return Promise.resolve(new Response(JSON.stringify({ id: 'em' }), { status: 200 }));
+  }) as unknown as typeof fetch;
+
+  await sendEmail('cook@example.com', renderWelcomeEmail({ locale: 'en', unsubscribe: UNSUBSCRIBE }), {
+    headers: { 'X-Pinch-Test': '1' },
+    fetchImpl: fakeFetch,
+  });
+  await sendEmail('cook@example.com', renderCodeEmail({ locale: 'en', code: '123456', purpose: 'signin' }), {
+    fetchImpl: fakeFetch,
+  });
+  assertEquals(bodies[0].headers, {
+    'X-Pinch-Test': '1',
+    'List-Unsubscribe': `<${UNSUBSCRIBE.oneClick}>`,
+    'List-Unsubscribe-Post': 'List-Unsubscribe=One-Click',
+  });
+  assertEquals('headers' in bodies[1], false);
+});
+
+/** Just enough of the Supabase client for sendOnce: the opt-out, the sent record and the insert. */
+function onceAdmin(optedOut: boolean) {
+  const reads: string[] = [];
+  const inserted: Record<string, unknown>[] = [];
+  const admin = {
+    from: (table: string) => ({
+      select: () => {
+        const filter = {
+          eq: () => filter,
+          maybeSingle: () => {
+            reads.push(table);
+            return Promise.resolve({ data: table === 'profiles' ? { email_opt_out: optedOut } : null, error: null });
+          },
+        };
+        return filter;
+      },
+      insert: (row: Record<string, unknown>) => {
+        inserted.push(row);
+        return Promise.resolve({ error: null });
+      },
+    }),
+  };
+  return { admin: admin as never, reads, inserted };
+}
+
+Deno.test('sendOnce skips an optional email for an account that opted out', async () => {
+  Deno.env.set('RESEND_API_KEY', 're_test');
+  let sends = 0;
+  const realFetch = globalThis.fetch;
+  globalThis.fetch = (() => {
+    sends++;
+    return Promise.resolve(new Response(JSON.stringify({ id: 'em' }), { status: 200 }));
+  }) as typeof fetch;
+  try {
+    const email = renderWelcomeEmail({ locale: 'en', unsubscribe: UNSUBSCRIBE });
+    const out = onceAdmin(true);
+    assertEquals(await sendOnce(out.admin, { kind: 'welcome', dedupeKey: 'u1', userId: 'u1', to: 'a@b.co', email }), false);
+    assertEquals(out.inserted, []);
+
+    const subscribed = onceAdmin(false);
+    assertEquals(
+      await sendOnce(subscribed.admin, { kind: 'welcome', dedupeKey: 'u1', userId: 'u1', to: 'a@b.co', email }),
+      true,
+    );
+    assertEquals(subscribed.reads, ['profiles', 'email_sends']);
+    assertEquals(sends, 1);
+  } finally {
+    globalThis.fetch = realFetch;
+  }
+});
+
+Deno.test('sendOnce refuses an optional email without an unsubscribe link', async () => {
+  const { admin } = onceAdmin(false);
+  const email = renderCodeEmail({ locale: 'en', code: '123456', purpose: 'signin' });
+  let message = '';
+  try {
+    await sendOnce(admin, { kind: 'welcome', dedupeKey: 'u1', userId: 'u1', to: 'a@b.co', email });
+  } catch (error) {
+    message = (error as Error).message;
+  }
+  assertEquals(message, 'A welcome email needs an unsubscribe link');
+});
+
+Deno.test('every kind sent once is marked essential or optional', () => {
+  assertEquals(EMAIL_CATEGORY, { welcome: 'optional', purchase: 'essential', support: 'essential' });
 });

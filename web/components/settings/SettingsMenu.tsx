@@ -28,6 +28,7 @@ const SECTION_TRACK_ID: Record<SettingsSectionId, string> = {
   recipes: "settings.your_recipes",
   appearance: "settings.appearance",
   language: "settings.language",
+  emails: "settings.emails",
   support: "settings.help_support",
   legal: "settings.legal_support",
 };

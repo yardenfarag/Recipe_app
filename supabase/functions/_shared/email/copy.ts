@@ -24,6 +24,9 @@ export interface EmailCopy {
   footerTagline: string;
   footerHelp: string;
   footerWhy: string;
+  /** The footer line on every non-essential email (welcome, reminders), before its unsubscribe link. */
+  unsubscribeIntro: string;
+  unsubscribeLink: string;
 
   codeSubject: string;
   codePreheader: string;
@@ -82,6 +85,8 @@ const en: EmailCopy = {
   footerTagline: 'See it. Snap it. Cook it.',
   footerHelp: 'Questions? Just reply to this email, we read every one.',
   footerWhy: 'You got this email because of your Pinch account.',
+  unsubscribeIntro: 'Don’t want tips and reminders by email?',
+  unsubscribeLink: 'Unsubscribe',
 
   codeSubject: 'Your Pinch code: {code}',
   codePreheader: 'Type it in Pinch to sign in.',
@@ -167,6 +172,8 @@ const es: EmailCopy = {
   footerTagline: 'Míralo. Guárdalo. Cocínalo.',
   footerHelp: '¿Preguntas? Responde a este correo, leemos todos.',
   footerWhy: 'Recibes este correo por tu cuenta de Pinch.',
+  unsubscribeIntro: '¿No quieres consejos ni recordatorios por correo?',
+  unsubscribeLink: 'Darte de baja',
 
   codeSubject: 'Tu código de Pinch: {code}',
   codePreheader: 'Escríbelo en Pinch para iniciar sesión.',
@@ -252,6 +259,8 @@ const he: EmailCopy = {
   footerTagline: 'רואים. מצלמים. מבשלים.',
   footerHelp: 'שאלות? פשוט עונים למייל הזה, אנחנו קוראים כל אחד.',
   footerWhy: 'קיבלת את המייל הזה בגלל החשבון שלך ב-Pinch.',
+  unsubscribeIntro: 'לא רוצים טיפים ותזכורות במייל?',
+  unsubscribeLink: 'להסרה מרשימת התפוצה',
 
   codeSubject: 'הקוד שלך ל-Pinch: {code}',
   codePreheader: 'מקלידים אותו ב-Pinch כדי להתחבר.',
@@ -337,6 +346,8 @@ const ru: EmailCopy = {
   footerTagline: 'Увидел. Сохранил. Приготовил.',
   footerHelp: 'Есть вопросы? Просто ответьте на это письмо, мы читаем каждое.',
   footerWhy: 'Вы получили это письмо, потому что у вас есть аккаунт Pinch.',
+  unsubscribeIntro: 'Не хотите получать советы и напоминания по почте?',
+  unsubscribeLink: 'Отписаться',
 
   codeSubject: 'Ваш код Pinch: {code}',
   codePreheader: 'Введите его в Pinch, чтобы войти.',
@@ -422,6 +433,8 @@ const ar: EmailCopy = {
   footerTagline: 'شاهِد. صوِّر. اطبخ.',
   footerHelp: 'لديك سؤال؟ فقط رُدّ على هذه الرسالة، نقرأ كل رسالة.',
   footerWhy: 'وصلتك هذه الرسالة بسبب حسابك في Pinch.',
+  unsubscribeIntro: 'لا تريد نصائح وتذكيرات بالبريد؟',
+  unsubscribeLink: 'إلغاء الاشتراك',
 
   codeSubject: 'رمزك في Pinch: {code}',
   codePreheader: 'اكتبه في Pinch لتسجيل الدخول.',

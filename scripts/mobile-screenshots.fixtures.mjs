@@ -325,6 +325,8 @@ export function profileRow({ admin }) {
     free_extracts_used: 10,
     contribute_to_hub: true,
     nudges_opt_out: false,
+    email_opt_out: false,
+    push_opt_out: false,
     created_at: ago(60),
     kitchen: {
       diets: ['vegetarian'],

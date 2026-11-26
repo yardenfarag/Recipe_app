@@ -503,6 +503,15 @@ export default function SettingsScreen() {
               icon="language-outline"
               onPress={() => router.push('/settings/language')}
             />
+            {user ? (
+              <SettingsRow
+                trackId="settings.emails"
+                label={t('messages.title')}
+                description={t('messages.hint')}
+                icon="mail-outline"
+                onPress={() => router.push('/settings/emails')}
+              />
+            ) : null}
             <SettingsRow
               trackId="settings.cookbook"
               label={t('settings.cookbook')}

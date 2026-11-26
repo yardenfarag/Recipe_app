@@ -163,6 +163,15 @@ function RootNavigator() {
             }}
           />
           <Stack.Screen
+            name="settings/emails"
+            options={{
+              title: t('messages.title'),
+              headerLeft: (props) => (
+                <StackHeaderBackButton tintColor={props.tintColor} fallback="/settings" />
+              ),
+            }}
+          />
+          <Stack.Screen
             name="settings/support"
             options={{
               title: t('settings.legalSupport'),
