@@ -26,6 +26,49 @@ export function cachedPantry(userId: string | null | undefined): PantryItem[] | 
   return userId && cache?.userId === userId ? cache.items : null;
 }
 
+// Pantry saves in flight on this phone. A refresh from someone else's change waits for them, so it can't bring back
+// a row the person just removed, or drop one they just added, before the save lands.
+let writesInFlight = 0;
+let reloadWaiting: string | null = null;
+
+/** Wraps a pantry save, so a household refresh (another member's change) waits until it is done. */
+export async function trackPantryWrite<T>(write: Promise<T>): Promise<T> {
+  writesInFlight += 1;
+  try {
+    return await write;
+  } finally {
+    writesInFlight -= 1;
+    if (writesInFlight === 0 && reloadWaiting) {
+      const userId = reloadWaiting;
+      reloadWaiting = null;
+      void reloadPantryCache(userId);
+    }
+  }
+}
+
+/**
+ * Someone in the household changed the pantry (households, PIN-181): re-read it into the shared cache, so every open
+ * `usePantry` shows it. Only when this account's pantry was read already; a failed read keeps what is shown.
+ */
+export async function reloadPantryCache(userId: string): Promise<void> {
+  if (cache?.userId !== userId) return;
+  if (writesInFlight > 0) {
+    reloadWaiting = userId;
+    return;
+  }
+  try {
+    const next = await fetchPantryItems();
+    // A save started meanwhile wins: it reloads once it lands.
+    if (writesInFlight > 0) {
+      reloadWaiting = userId;
+      return;
+    }
+    if (cache?.userId === userId) setPantryCache(userId, next);
+  } catch {
+    // Keep what is shown; the next focus or change reads again.
+  }
+}
+
 /**
  * The signed-in person's pantry (PIN-181), read when `active` turns true and kept in a small cache that every screen
  * shares. Guests have none: their list is always empty and ready. A failed read keeps what was cached.

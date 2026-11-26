@@ -6,7 +6,7 @@ import { useEffect, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 
 import { daysSince, lastScannedByPlace, PANTRY_STALE_DAYS, pantryHomeNames, rankCookable, type CookableRecipe } from "@shared/lib/pantry";
-import { fetchCloudKitchenProfile } from "@shared/lib/supabase/kitchen";
+import { fetchHousehold } from "@shared/lib/supabase/household";
 import { fetchPantryItems } from "@shared/lib/supabase/pantry";
 import { showToast } from "@shared/lib/toast";
 import type { PantryItem } from "@shared/types/pantry";
@@ -44,7 +44,8 @@ function Body({ recipes }: { recipes: Recipe[] }) {
   useEffect(() => {
     if (!user) return;
     let cancelled = false;
-    Promise.all([fetchPantryItems(), fetchCloudKitchenProfile(user.id).then((p) => p.pantryStaples).catch(() => [])])
+    // "Always have" belongs to the household (ADR 034).
+    Promise.all([fetchPantryItems(), fetchHousehold().then((household) => household.staples).catch(() => [])])
       .then(([items, staples]) => {
         if (!cancelled) setHome({ items, staples });
       })

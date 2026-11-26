@@ -441,6 +441,190 @@ export type Database = {
         }
         Relationships: []
       }
+      household_activity: {
+        Row: {
+          actor_id: string | null
+          actor_name: string
+          created_at: string
+          household_id: string
+          id: number
+          item_count: number
+          kind: string
+          sent_at: string | null
+          subject_id: string | null
+          subject_name: string
+          updated_at: string
+        }
+        Insert: {
+          actor_id?: string | null
+          actor_name?: string
+          created_at?: string
+          household_id: string
+          id?: never
+          item_count?: number
+          kind: string
+          sent_at?: string | null
+          subject_id?: string | null
+          subject_name?: string
+          updated_at?: string
+        }
+        Update: {
+          actor_id?: string | null
+          actor_name?: string
+          created_at?: string
+          household_id?: string
+          id?: never
+          item_count?: number
+          kind?: string
+          sent_at?: string | null
+          subject_id?: string | null
+          subject_name?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "household_activity_actor_id_fkey"
+            columns: ["actor_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "household_activity_household_id_fkey"
+            columns: ["household_id"]
+            isOneToOne: false
+            referencedRelation: "households"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "household_activity_subject_id_fkey"
+            columns: ["subject_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      household_invites: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          expires_at: string
+          household_id: string
+          id: string
+          stopped_at: string | null
+          token: string
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          expires_at: string
+          household_id: string
+          id?: string
+          stopped_at?: string | null
+          token: string
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          expires_at?: string
+          household_id?: string
+          id?: string
+          stopped_at?: string | null
+          token?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "household_invites_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "household_invites_household_id_fkey"
+            columns: ["household_id"]
+            isOneToOne: false
+            referencedRelation: "households"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      household_members: {
+        Row: {
+          display_name: string
+          going_shopping_sent_at: string | null
+          household_id: string
+          joined_at: string
+          user_id: string
+        }
+        Insert: {
+          display_name?: string
+          going_shopping_sent_at?: string | null
+          household_id: string
+          joined_at?: string
+          user_id: string
+        }
+        Update: {
+          display_name?: string
+          going_shopping_sent_at?: string | null
+          household_id?: string
+          joined_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "household_members_household_id_fkey"
+            columns: ["household_id"]
+            isOneToOne: false
+            referencedRelation: "households"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "household_members_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: true
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      households: {
+        Row: {
+          avatar: string | null
+          created_at: string
+          household_changed_at: string
+          id: string
+          list_changed_at: string
+          name: string | null
+          pantry_changed_at: string
+          set_up_at: string | null
+          staples: string[]
+        }
+        Insert: {
+          avatar?: string | null
+          created_at?: string
+          household_changed_at?: string
+          id?: string
+          list_changed_at?: string
+          name?: string | null
+          pantry_changed_at?: string
+          set_up_at?: string | null
+          staples?: string[]
+        }
+        Update: {
+          avatar?: string | null
+          created_at?: string
+          household_changed_at?: string
+          id?: string
+          list_changed_at?: string
+          name?: string | null
+          pantry_changed_at?: string
+          set_up_at?: string | null
+          staples?: string[]
+        }
+        Relationships: []
+      }
       in_app_message_receipts: {
         Row: {
           clicked_at: string | null
@@ -660,6 +844,7 @@ export type Database = {
           added_at: string
           aisle: string
           brand: string
+          household_id: string
           id: string
           last_seen_at: string
           name: string
@@ -667,12 +852,13 @@ export type Database = {
           name_key: string | null
           place: string
           source: string
-          user_id: string
+          user_id: string | null
         }
         Insert: {
           added_at?: string
           aisle?: string
           brand?: string
+          household_id?: string
           id?: string
           last_seen_at?: string
           name: string
@@ -680,12 +866,13 @@ export type Database = {
           name_key?: string | null
           place: string
           source?: string
-          user_id: string
+          user_id?: string | null
         }
         Update: {
           added_at?: string
           aisle?: string
           brand?: string
+          household_id?: string
           id?: string
           last_seen_at?: string
           name?: string
@@ -693,9 +880,16 @@ export type Database = {
           name_key?: string | null
           place?: string
           source?: string
-          user_id?: string
+          user_id?: string | null
         }
         Relationships: [
+          {
+            foreignKeyName: "pantry_items_household_id_fkey"
+            columns: ["household_id"]
+            isOneToOne: false
+            referencedRelation: "households"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "pantry_items_user_id_fkey"
             columns: ["user_id"]
@@ -1517,37 +1711,47 @@ export type Database = {
         Row: {
           checked: boolean
           created_at: string
+          household_id: string
           id: string
           name: string
           quantity: number | null
           source_recipe_ids: string[] | null
           unit: string | null
           updated_at: string
-          user_id: string
+          user_id: string | null
         }
         Insert: {
           checked?: boolean
           created_at?: string
+          household_id?: string
           id?: string
           name: string
           quantity?: number | null
           source_recipe_ids?: string[] | null
           unit?: string | null
           updated_at?: string
-          user_id: string
+          user_id?: string | null
         }
         Update: {
           checked?: boolean
           created_at?: string
+          household_id?: string
           id?: string
           name?: string
           quantity?: number | null
           source_recipe_ids?: string[] | null
           unit?: string | null
           updated_at?: string
-          user_id?: string
+          user_id?: string | null
         }
         Relationships: [
+          {
+            foreignKeyName: "shopping_list_items_household_id_fkey"
+            columns: ["household_id"]
+            isOneToOne: false
+            referencedRelation: "households"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "shopping_list_items_user_id_fkey"
             columns: ["user_id"]
@@ -1659,6 +1863,10 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      accept_household_invite: {
+        Args: { p_display_name: string; p_token: string }
+        Returns: Json
+      }
       activate_subscription: { Args: { p_user_id?: string }; Returns: string }
       admin_credit_health: { Args: never; Returns: Json }
       admin_dashboard: {
@@ -1773,6 +1981,10 @@ export type Database = {
       can_moderate_recipe_cards: { Args: never; Returns: boolean }
       cancel_subscription: { Args: { p_user_id?: string }; Returns: string }
       claim_recipe_card: { Args: { p_card_id: string }; Returns: string }
+      clean_household_staples: {
+        Args: { p_staples: string[] }
+        Returns: string[]
+      }
       compare_app_versions: { Args: { a: string; b: string }; Returns: number }
       email_cron_secret_matches: {
         Args: { p_secret: string }
@@ -1800,6 +2012,7 @@ export type Database = {
         Args: { p_card_id: string; p_user_id: string }
         Returns: string
       }
+      get_household_invite: { Args: never; Returns: Json }
       get_in_app_messages: {
         Args: { p_app_version: string; p_language: string; p_platform: string }
         Returns: {
@@ -1828,6 +2041,7 @@ export type Database = {
           tone: string
         }[]
       }
+      get_my_household: { Args: never; Returns: Json }
       grant_purchased_credits: {
         Args: {
           p_amount: number
@@ -1850,6 +2064,50 @@ export type Database = {
         }
         Returns: number
       }
+      household_activity_claim: {
+        Args: { p_limit?: number; p_now?: string }
+        Returns: {
+          actor_name: string
+          household_name: string
+          id: number
+          item_count: number
+          kind: string
+          recipients: Json
+          subject_name: string
+        }[]
+      }
+      household_activity_pending: { Args: never; Returns: boolean }
+      household_clean_text: {
+        Args: { p_max: number; p_text: string }
+        Returns: string
+      }
+      household_ensure: { Args: { p_user: string }; Returns: string }
+      household_going_shopping: {
+        Args: { p_cooldown_hours?: number; p_now?: string; p_user_id: string }
+        Returns: Json
+      }
+      household_going_shopping_failed: {
+        Args: { p_sent_at: string; p_user_id: string }
+        Returns: boolean
+      }
+      household_json: {
+        Args: { p_household_id: string; p_me: string }
+        Returns: Json
+      }
+      household_lock_mine: { Args: { p_user: string }; Returns: string }
+      household_new_invite: {
+        Args: { p_household: string; p_user: string }
+        Returns: Json
+      }
+      household_push_target: {
+        Args: { p_role: string; p_user: string }
+        Returns: Json
+      }
+      household_split_off: {
+        Args: { p_household: string; p_user: string }
+        Returns: string
+      }
+      household_staples_fit: { Args: { p_staples: string[] }; Returns: boolean }
       hub_avoid_words: { Args: { p_words: string[] }; Returns: string[] }
       hub_cards: {
         Args: {
@@ -1986,6 +2244,7 @@ export type Database = {
       }
       is_current_user_admin: { Args: never; Returns: boolean }
       is_subscription_active: { Args: { p_user_id: string }; Returns: boolean }
+      leave_household: { Args: never; Returns: Json }
       library_recipe_for_card: { Args: { p_card_id: string }; Returns: string }
       library_recipe_for_url: {
         Args: { p_platform: string; p_url: string }
@@ -2027,6 +2286,7 @@ export type Database = {
         Args: { p_items: Json; p_user_id: string }
         Returns: number
       }
+      my_household_id: { Args: never; Returns: string }
       nudge_candidates: {
         Args: { p_kind: string; p_limit?: number; p_now?: string }
         Returns: {
@@ -2060,6 +2320,7 @@ export type Database = {
           user_id: string
         }[]
       }
+      preview_household_invite: { Args: { p_token: string }; Returns: Json }
       purge_expired_personal_data: { Args: never; Returns: undefined }
       purge_pantry_scratch: { Args: never; Returns: undefined }
       recipe_card_canonical_key: {
@@ -2143,6 +2404,8 @@ export type Database = {
         Args: { p_platform: string; p_token: string }
         Returns: undefined
       }
+      remove_household_member: { Args: { p_user_id: string }; Returns: Json }
+      renew_household_invite: { Args: never; Returns: Json }
       reopen_refunded_recipe_credit: {
         Args: {
           p_free_limit?: number
@@ -2222,6 +2485,18 @@ export type Database = {
         }
         Returns: number
       }
+      set_household_staples: {
+        Args: { p_previous?: string[]; p_staples: string[] }
+        Returns: string[]
+      }
+      set_my_household_display_name: {
+        Args: { p_display_name: string }
+        Returns: Json
+      }
+      set_up_household: {
+        Args: { p_avatar: string; p_display_name: string; p_name: string }
+        Returns: Json
+      }
       show_limit: { Args: never; Returns: number }
       show_trgm: { Args: { "": string }; Returns: string[] }
       spend_tokens: {
@@ -2234,6 +2509,7 @@ export type Database = {
         }
         Returns: number
       }
+      stop_household_invite: { Args: never; Returns: undefined }
       submit_website_feedback: {
         Args: { p_email?: string; p_locale?: string; p_message: string }
         Returns: undefined
@@ -2254,6 +2530,10 @@ export type Database = {
       }
       touch_recipe_card_hit: { Args: { p_card_id: string }; Returns: undefined }
       unregister_push_token: { Args: { p_token: string }; Returns: undefined }
+      update_household: {
+        Args: { p_avatar: string; p_name: string }
+        Returns: Json
+      }
       welcome_email_candidates: {
         Args: { p_limit?: number }
         Returns: {

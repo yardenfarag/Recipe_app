@@ -15,11 +15,15 @@ import { Text } from '@/components/ui/Text';
 import { Tile, TileBadge } from '@/components/ui/Tile';
 import { KitIcon, Radii } from '@/components/ui/tokens';
 import { useAuth } from '@/hooks/useAuth';
-import { useKitchenProfile } from '@/hooks/useKitchenProfile';
-import { usePantry } from '@/hooks/usePantry';
+import { useHousehold } from '@/hooks/useHousehold';
+import { useLanguagePreference } from '@/hooks/useLanguagePreference';
+import { trackPantryWrite, usePantry } from '@/hooks/usePantry';
+import { useStaples } from '@/hooks/useStaples';
 import { useThemePreference } from '@/hooks/useThemePreference';
 import { announce } from '@/lib/a11y';
+import { joinNames } from '@/lib/householdHelpers';
 import { daysSinceLastScan, pantryWhen } from '@/lib/pantryHelpers';
+import { isShared, otherMembers } from '@shared/lib/household';
 import { PANTRY_STALE_DAYS, daysSince, lastScannedByPlace } from '@shared/lib/pantry';
 import { shoppingAisleForName } from '@shared/lib/shoppingAisles';
 import { deletePantryItems, movePantryItem, upsertPantryItems } from '@shared/lib/supabase/pantry';
@@ -30,15 +34,24 @@ const UNDO_MS = 6000;
 
 /**
  * Pantry (PIN-181): what's at home, one tile per place, filled by photographing the fridge and cupboards
- * (`/pantry/scan`) or typed in. The staples ("Always have", kept on the kitchen profile) live here too. Shopping lists
- * skip what's here, and "What can I cook?" ranks the Library by it. Account only.
+ * (`/pantry/scan`) or typed in. The staples ("Always have") live here too. Shopping lists skip what's here, and
+ * "What can I cook?" ranks the Library by it. Account only. Both belong to the household (docs/adr/034-households.md):
+ * when someone else lives there too, a line says who it is shared with, and their changes show up here.
  */
 export default function PantryScreen() {
   const { t, i18n } = useTranslation();
   const { colors } = useThemePreference();
   const { user, loading: authLoading } = useAuth();
   const { items, status, reload, replace } = usePantry(false);
-  const kitchen = useKitchenProfile();
+  const kitchen = useStaples();
+  const { household } = useHousehold();
+  const { language } = useLanguagePreference();
+  const sharedWith = isShared(household)
+    ? joinNames(
+        otherMembers(household).map((member) => member.displayName),
+        language,
+      )
+    : null;
   const [draft, setDraft] = useState('');
   const [draftPlace, setDraftPlace] = useState<PantryPlace>('fridge');
   const [adding, setAdding] = useState(false);
@@ -118,7 +131,7 @@ export default function PantryScreen() {
     announce(t('pantry.removed', { name: item.name }));
     startUndo(item);
     try {
-      await deletePantryItems([item.id]);
+      await trackPantryWrite(deletePantryItems([item.id]));
     } catch {
       replace(before);
       setUndo(null);
@@ -132,9 +145,11 @@ export default function PantryScreen() {
     setUndo(null);
     if (undoTimer.current) clearTimeout(undoTimer.current);
     try {
-      const saved = await upsertPantryItems(userId, [
-        { name: item.name, nameEn: item.nameEn, brand: item.brand, place: item.place, aisle: item.aisle, source: item.source },
-      ]);
+      const saved = await trackPantryWrite(
+        upsertPantryItems(userId, [
+          { name: item.name, nameEn: item.nameEn, brand: item.brand, place: item.place, aisle: item.aisle, source: item.source },
+        ]),
+      );
       replace([...itemsRef.current.filter((row) => !saved.some((s) => s.id === row.id)), ...saved]);
     } catch {
       showToast(t('pantry.saveFailed'), 'error');
@@ -145,7 +160,7 @@ export default function PantryScreen() {
     const before = itemsRef.current;
     replace(before.map((row) => (row.id === item.id ? { ...row, place } : row)));
     try {
-      await movePantryItem(item.id, place);
+      await trackPantryWrite(movePantryItem(item.id, place));
     } catch {
       replace(before);
       showToast(t('pantry.saveFailed'), 'error');
@@ -170,9 +185,9 @@ export default function PantryScreen() {
     if (!name || adding) return;
     setAdding(true);
     try {
-      const saved = await upsertPantryItems(userId, [
-        { name, place: draftPlace, aisle: shoppingAisleForName(name), source: 'manual' },
-      ]);
+      const saved = await trackPantryWrite(
+        upsertPantryItems(userId, [{ name, place: draftPlace, aisle: shoppingAisleForName(name), source: 'manual' }]),
+      );
       replace([...itemsRef.current.filter((row) => !saved.some((s) => s.id === row.id)), ...saved]);
       setDraft('');
       showToast(t('pantry.added', { name }));
@@ -194,6 +209,30 @@ export default function PantryScreen() {
 
   return (
     <SettingsDetailScreen>
+      {sharedWith ? (
+        <Pressable
+          trackId="pantry.shared_with"
+          onPress={() => router.push('/settings/household')}
+          accessibilityRole="button"
+          accessibilityLabel={t('household.live', { names: sharedWith })}
+          style={({ pressed }) => ({
+            flexDirection: 'row',
+            alignItems: 'center',
+            gap: 8,
+            alignSelf: 'flex-start',
+            maxWidth: '100%',
+            minHeight: 36,
+            paddingHorizontal: 12,
+            borderRadius: Radii.pill,
+            backgroundColor: pressed ? colors.backgroundSelected : colors.backgroundElement,
+          })}
+        >
+          <KitIcon icon="people-outline" size={16} color={colors.textSecondary} />
+          <Text variant="caption" tone="muted" numberOfLines={1} style={{ flexShrink: 1 }}>
+            {t('household.live', { names: sharedWith })}
+          </Text>
+        </Pressable>
+      ) : null}
       {empty ? (
         <Tile padding={24} style={{ alignItems: 'center', gap: 14 }}>
           <PantryBadgeIcon icon="basket-outline" />
@@ -361,9 +400,9 @@ export default function PantryScreen() {
             {t('pantry.alwaysHaveHint')}
           </Text>
         </View>
-        {kitchen.pantryStaples.length > 0 ? (
+        {kitchen.staples.length > 0 ? (
           <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8 }}>
-            {kitchen.pantryStaples.map((staple) => (
+            {kitchen.staples.map((staple) => (
               <PantryChip
                 key={staple}
                 label={staple}

@@ -7,6 +7,11 @@ export interface ShoppingListItem {
   checked: boolean;
   /** Recipe ids that contributed to this line (provenance only; not used for merge). */
   sourceRecipeIds?: string[];
+  /**
+   * Who added the line (their user id), for "Added by" on a shared household list (ADR 034). Missing for guest
+   * lists and for lines whose author has deleted their account. See memberWhoAdded in shared/lib/household.ts.
+   */
+  addedBy?: string;
   created_at: string;
   updated_at: string;
 }

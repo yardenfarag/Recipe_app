@@ -32,6 +32,14 @@ verify_jwt = false
 [functions.email-preferences]
 verify_jwt = false
 
+# Households (ADR 034). The cron job sends its own secret (x-email-cron-secret), not a JWT.
+[functions.household-activity]
+verify_jwt = false
+
+# "I'm going shopping": a signed-in member.
+[functions.household-going-shopping]
+verify_jwt = true
+
 # The feedback trigger sends a Vault secret (x-support-email-secret), not a JWT.
 [functions.support-email]
 verify_jwt = false

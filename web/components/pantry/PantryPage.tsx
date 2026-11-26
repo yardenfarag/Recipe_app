@@ -5,10 +5,12 @@ import Link from "next/link";
 import { useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 
+import { otherMembers } from "@shared/lib/household";
 import { daysSince, lastScannedByPlace, PANTRY_STALE_DAYS } from "@shared/lib/pantry";
 import { showToast } from "@shared/lib/toast";
 import { PANTRY_PLACES, type PantryItem, type PantryPlace } from "@shared/types/pantry";
 
+import { AvatarStack } from "@/components/household/HouseholdAvatar";
 import { PLACE_ICONS, whenText } from "@/components/pantry/places";
 import { StaplesCard } from "@/components/pantry/StaplesCard";
 import { AddItemField, RemovableChip } from "@/components/settings/controls";
@@ -17,6 +19,8 @@ import { Button, buttonClasses } from "@/components/ui/Button";
 import { EmptyState, ErrorState, LoadingState } from "@/components/ui/States";
 import { Tile } from "@/components/ui/Tile";
 import { cn } from "@/lib/cn";
+import { useHousehold } from "@/lib/household/HouseholdProvider";
+import { listNames } from "@/lib/household/householdText";
 import { usePantry } from "@/lib/pantry/usePantry";
 
 type Undo = { message: string; run: () => Promise<unknown> };
@@ -75,6 +79,7 @@ export function PantryPage() {
     <>
       <SettingsPageHeader id="pantry" actions={items && items.length > 0 ? scanLink : undefined} />
       <div className="flex flex-col gap-4">
+        <SharedWith />
         {pantry.failed ? (
           <ErrorState body={t("pantry.loadFailed")} trackId="pantry.load_error" onRetry={() => void pantry.reload()} />
         ) : !items ? (
@@ -136,6 +141,24 @@ export function PantryPage() {
         <StaplesCard />
       </div>
     </>
+  );
+}
+
+/** "Shared with Dana and Avi" when someone else lives here too (ADR 034): their changes show here as they happen. */
+function SharedWith() {
+  const { t, i18n } = useTranslation();
+  const { household } = useHousehold();
+  const others = otherMembers(household);
+  if (others.length === 0) return null;
+  return (
+    <Link
+      href="/settings/household"
+      data-track="pantry.household"
+      className="flex w-fit max-w-full items-center gap-2.5 rounded-full border border-border bg-surface py-1.5 ps-1.5 pe-4 text-sm font-semibold text-text transition-colors hover:bg-element"
+    >
+      <AvatarStack people={others} size="sm" max={3} />
+      <span className="min-w-0 truncate">{t("household.live", { names: listNames(others.map((member) => member.displayName), i18n.language) })}</span>
+    </Link>
   );
 }
 

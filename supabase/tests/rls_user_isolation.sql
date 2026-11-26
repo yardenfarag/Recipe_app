@@ -3,7 +3,8 @@ begin;
 create extension if not exists pgtap with schema extensions;
 select plan(14);
 
--- User A owns the rows; user B and anon try to reach them (PIN-35, PIN-54).
+-- User A owns the rows; user B and anon try to reach them (PIN-35, PIN-54). The shopping list and pantry belong to
+-- a household (ADR 034); A and B are in separate ones, so B still sees none of A's. households.sql tests sharing.
 insert into auth.users (
   instance_id, id, aud, role, email, encrypted_password,
   email_confirmed_at, raw_app_meta_data, raw_user_meta_data, created_at, updated_at
@@ -88,10 +89,10 @@ select is(
    join information_schema.columns c
      on c.table_schema = 'public' and c.table_name = p.polrelid::regclass::text and c.column_name = 'user_id'
    where coalesce(pg_get_expr(p.polqual, p.polrelid), '') || coalesce(pg_get_expr(p.polwithcheck, p.polrelid), '')
-         !~ '(auth\.uid\(\)|is_current_user_admin\(\)|is_admin)'
+         !~ '(auth\.uid\(\)|is_current_user_admin\(\)|is_admin|my_household_id\(\))'
      and not (p.polrelid::regclass::text = 'product_events' and p.polcmd = 'a')),
   0,
-  'every policy on a user-owned table checks auth.uid() or admin'
+  'every policy on a user-owned table checks auth.uid(), the household or admin'
 );
 
 -- User B.

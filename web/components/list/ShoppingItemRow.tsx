@@ -7,7 +7,9 @@ import { useTranslation } from "react-i18next";
 import type { CulinaryUnitLanguage } from "@shared/lib/culinaryUnits";
 import type { ShoppingListItem } from "@shared/types/shoppingList";
 
+import { MemberAvatar } from "@/components/household/HouseholdAvatar";
 import { IconButton } from "@/components/ui/IconButton";
+import { Tooltip } from "@/components/ui/Tooltip";
 import { cn } from "@/lib/cn";
 import { parseQuantity, shoppingAmount } from "@/lib/list/shoppingListView";
 import type { ItemPatch } from "@/lib/list/useShoppingList";
@@ -27,6 +29,8 @@ export type ShoppingItemRowProps = {
   /** Arrow keys on an item move between items, across groups. */
   onMove: (item: ShoppingListItem, to: MoveTarget) => void;
   checkboxRef: (element: HTMLButtonElement | null) => void;
+  /** Someone else in the household who put this on the list (ADR 034): their picture, and "Added by" for readers. */
+  addedBy?: { displayName: string; avatarUrl: string | null } | null;
 };
 
 const MOVE_KEYS: Record<string, MoveTarget> = { ArrowDown: "next", ArrowUp: "previous", Home: "first", End: "last" };
@@ -76,10 +80,12 @@ function ViewRow({
   onMove,
   checkboxRef,
   onEdit,
+  addedBy,
 }: ShoppingItemRowProps & { onEdit: () => void }) {
   const { t } = useTranslation();
   const amount = shoppingAmount(item, language);
   const duplicate = duplicateCount > 1;
+  const addedByText = addedBy ? t("household.addedBy", { name: addedBy.displayName }) : null;
 
   function onKeyDown(event: KeyboardEvent<HTMLButtonElement>) {
     if (event.metaKey || event.ctrlKey || event.altKey) return;
@@ -104,7 +110,7 @@ function ViewRow({
         role="checkbox"
         data-track="shopping_list.item.toggle"
         aria-checked={item.checked}
-        aria-label={[item.name, amount, duplicate ? t("list.alsoListed", { count: duplicateCount }) : null].filter(Boolean).join(", ")}
+        aria-label={[item.name, amount, duplicate ? t("list.alsoListed", { count: duplicateCount }) : null, addedByText].filter(Boolean).join(", ")}
         aria-keyshortcuts="ArrowDown ArrowUp E Delete"
         data-list-item
         onClick={() => onToggle(item)}
@@ -120,13 +126,24 @@ function ViewRow({
         >
           {item.checked ? <Check className="h-3.5 w-3.5" strokeWidth={3.5} /> : null}
         </span>
-        <span
-          className={cn(
-            "min-w-0 flex-1 text-[15px] font-semibold [overflow-wrap:anywhere]",
-            item.checked ? "text-muted line-through decoration-muted/70" : "text-text",
-          )}
-        >
-          {item.name}
+        <span className="flex min-w-0 flex-1 items-center gap-2">
+          <span
+            className={cn(
+              "min-w-0 text-[15px] font-semibold [overflow-wrap:anywhere]",
+              item.checked ? "text-muted line-through decoration-muted/70" : "text-text",
+            )}
+          >
+            {item.name}
+          </span>
+          {addedBy && addedByText ? (
+            // Right after the name, so it reads as "olive oil, added by Avi" and never floats in the space the
+            // hover actions keep. Screen readers get it from the row's label above; the name shows on hover.
+            <Tooltip label={addedByText}>
+              <span data-testid="added-by" aria-hidden className={cn("shrink-0", item.checked && "opacity-60")}>
+                <MemberAvatar name={addedBy.displayName} avatarUrl={addedBy.avatarUrl} className="h-6 w-6 text-[24px] ring-1 ring-border" />
+              </span>
+            </Tooltip>
+          ) : null}
         </span>
         {amount ? (
           <span dir="auto" className={cn("max-w-[40%] shrink-0 text-end text-sm tabular-nums", item.checked ? "text-muted/70" : "text-muted")}>

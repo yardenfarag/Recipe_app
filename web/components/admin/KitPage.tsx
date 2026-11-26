@@ -4,6 +4,9 @@ import { Heart, LayoutGrid, List, MoreHorizontal, Play, Scale, Share, UtensilsCr
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
 
+import { HOUSEHOLD_AVATAR_IDS, householdAvatarValue } from "@shared/lib/householdAvatars";
+
+import { AvatarStack, HouseholdAvatar, MemberAvatar } from "@/components/household/HouseholdAvatar";
 import { SnapBarField } from "@/components/snapbar/SnapBarField";
 import { Button } from "@/components/ui/Button";
 import { Chip } from "@/components/ui/Chip";
@@ -18,6 +21,15 @@ import { FactTile, PhotoTile, StatTile, Tile, TileBadge, TileLabel } from "@/com
 const PHOTO = `data:image/svg+xml;utf8,${encodeURIComponent(
   '<svg xmlns="http://www.w3.org/2000/svg" width="640" height="480"><defs><linearGradient id="g" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="hsl(28 80% 64%)"/><stop offset="1" stop-color="hsl(8 70% 46%)"/></linearGradient></defs><rect width="640" height="480" fill="url(#g)"/><circle cx="430" cy="190" r="120" fill="hsl(44 90% 70%)" opacity="0.7"/></svg>',
 )}`;
+
+/** People for the avatar stacks: a food avatar, initials, and enough of them to show "+n". */
+const KIT_PEOPLE = [
+  { displayName: "Dana", avatarUrl: "food:avocado" },
+  { displayName: "Avi", avatarUrl: null },
+  { displayName: "נועה", avatarUrl: "food:taco" },
+  { displayName: "Eli", avatarUrl: null },
+  { displayName: "Maya", avatarUrl: "food:donut" },
+];
 
 function Section({ title, children }: { title: string; children: React.ReactNode }) {
   return (
@@ -187,6 +199,23 @@ export function KitPage() {
           <FactTile value="4" label={t("recipe.servings")} />
           <FactTile value="310" label={t("recipeEditor.fields.calories")} />
           <FactTile value="●●○" label={t("recipeEditor.fields.cost")} />
+        </Tile>
+      </Section>
+
+      <Section title="Household pictures and people">
+        <Tile className="flex flex-col gap-5 p-6">
+          <div className="flex flex-wrap items-end gap-3">
+            {HOUSEHOLD_AVATAR_IDS.map((id, index) => (
+              <HouseholdAvatar key={id} value={householdAvatarValue(id)} className={index % 3 === 0 ? "h-24 w-24" : index % 3 === 1 ? "h-11 w-11" : "h-8 w-8"} />
+            ))}
+            <HouseholdAvatar value={null} className="h-11 w-11" />
+          </div>
+          <div className="flex flex-wrap items-center gap-6">
+            <AvatarStack size="sm" people={KIT_PEOPLE.slice(0, 2)} />
+            <AvatarStack people={KIT_PEOPLE} />
+            <AvatarStack size="lg" people={KIT_PEOPLE} max={3} />
+            <MemberAvatar name="Noa" avatarUrl={null} className="h-11 w-11 text-[44px]" />
+          </div>
         </Tile>
       </Section>
     </div>

@@ -20,6 +20,9 @@ export function appPathForWebLink(path: string): string {
   // Public Hub recipe page (PIN-124): the Hub screen loads a card by its public slug too.
   const hub = /^\/r\/([^/]+)\/?$/.exec(url.pathname);
   if (hub) return `/hub/${hub[1]}`;
-  // Only /s/* and /r/* are claimed; any other pinch-app.io page opens the library.
+  // A household invite (docs/adr/034-households.md): the join screen, signed in or not.
+  const join = /^\/(?:app\/)?join\/([A-Za-z0-9_-]+)\/?$/.exec(url.pathname);
+  if (join) return `/join/${join[1]}`;
+  // Only /s/*, /r/* and /app/join/* are claimed; any other pinch-app.io page opens the library.
   return '/';
 }

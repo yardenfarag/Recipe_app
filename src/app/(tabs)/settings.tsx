@@ -1,8 +1,9 @@
 import Ionicons from '@expo/vector-icons/Ionicons';
+import { useFocusEffect } from '@react-navigation/native';
 import Constants from 'expo-constants';
 import * as ImagePicker from 'expo-image-picker';
 import { router } from 'expo-router';
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import {
   ActivityIndicator,
   Alert,
@@ -28,6 +29,7 @@ import { HAIRLINE } from '@/components/ui/tokens';
 import { FormContentWidth } from '@/constants/theme';
 import { useAuth } from '@/hooks/useAuth';
 import { useBreakpoint } from '@/hooks/useBreakpoint';
+import { useHousehold } from '@/hooks/useHousehold';
 import { useLanguagePreference } from '@/hooks/useLanguagePreference';
 import { useProfile } from '@/hooks/useProfile';
 import { useThemePreference } from '@/hooks/useThemePreference';
@@ -37,6 +39,8 @@ import { showToast } from '@shared/lib/toast';
 import { announce } from '@/lib/a11y';
 import { captureAppShared } from '@/lib/analytics';
 import { askConfirm, showNotice } from '@/lib/dialog';
+import { householdRowSeen } from '@/lib/householdDiscovery';
+import { isShared } from '@shared/lib/household';
 import { LEGAL_URLS, openLegalUrl } from '@/lib/legal';
 import {
   parseRecipeBackup,
@@ -94,6 +98,20 @@ export default function SettingsScreen() {
   const [feedbackOpen, setFeedbackOpen] = useState(false);
   const [supportOpen, setSupportOpen] = useState(false);
   const [backupBusy, setBackupBusy] = useState<'export' | 'restore' | null>(null);
+  const { household } = useHousehold();
+  // "New" on the Household row until that screen was opened on this phone. Re-read on focus, so it goes on return.
+  const [householdSeen, setHouseholdSeen] = useState(true);
+  useFocusEffect(
+    useCallback(() => {
+      let active = true;
+      void householdRowSeen().then((seen) => {
+        if (active) setHouseholdSeen(seen);
+      });
+      return () => {
+        active = false;
+      };
+    }, []),
+  );
 
   useEffect(() => {
     if (migrationError) announce(t('settings.migrationTitle'));
@@ -489,6 +507,23 @@ export default function SettingsScreen() {
               icon="restaurant-outline"
               onPress={() => router.push('/settings/recipe')}
             />
+            {user ? (
+              <SettingsRow
+                trackId="settings.household"
+                label={t('household.title')}
+                description={
+                  household?.isSetUp && isShared(household)
+                    ? t('household.settingsHintShared', {
+                        name: household.name ?? '',
+                        count: household.members.length,
+                      })
+                    : t('household.settingsHint')
+                }
+                badge={householdSeen ? undefined : t('household.new')}
+                icon="home-outline"
+                onPress={() => router.push('/settings/household')}
+              />
+            ) : null}
             <SettingsRow
               trackId="settings.pantry"
               label={t('pantry.title')}

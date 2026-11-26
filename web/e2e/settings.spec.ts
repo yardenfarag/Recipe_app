@@ -2,6 +2,7 @@ import { expect, test, type Page } from "@playwright/test";
 
 import { createUser, resetTestUserLanguage, uniqueEmail } from "./admin";
 import { signInWithPassword } from "./helpers";
+import { setPantryStaples } from "./listSeed";
 import { canSignIn, readProfileSettings, resetTestUserSettings, writeProfileSettings } from "./settingsSeed";
 import { TEST_USER } from "./testUser";
 
@@ -13,6 +14,7 @@ test.use({ locale: "en-US" });
 test.afterEach(async () => {
   await resetTestUserLanguage();
   await resetTestUserSettings();
+  await setPantryStaples([]);
 });
 
 async function signIn(page: Page, email = TEST_USER.email, password = TEST_USER.password) {
@@ -66,8 +68,10 @@ test.describe("desktop", () => {
     await main(page).getByRole("switch", { name: "Share recipes I snap from public links in the Cooking Hub" }).click();
     await expect.poll(async () => (await readProfileSettings()).contribute_to_hub).toBe(false);
 
-    // The mobile app saves a dislike and a pantry staple; a refresh here shows them.
-    await writeProfileSettings({ kitchen: { diets: ["vegan"], dislikes: ["Celery"], pantryStaples: ["olive oil"] } });
+    // The mobile app saves a dislike and a pantry staple (the household's "Always have", ADR 034); a refresh here
+    // shows them.
+    await writeProfileSettings({ kitchen: { diets: ["vegan"], dislikes: ["Celery"] } });
+    await setPantryStaples(["olive oil"]);
     await page.reload();
     await expect(main(page).getByRole("button", { name: "Remove Celery" })).toBeVisible();
     await expect(main(page).getByRole("switch", { name: "Share recipes I snap from public links in the Cooking Hub" })).toHaveAttribute("aria-checked", "false");

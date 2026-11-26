@@ -1,9 +1,9 @@
 /**
- * Where to send someone after they sign in from a shared or Hub recipe, so the recipe they came
- * for isn't lost. Only in-app recipe pages are allowed: anything else (another site, another
- * screen) is dropped, so the parameter can't be used as an open redirect.
+ * Where to send someone after they sign in from a shared or Hub recipe, or a household invite, so
+ * what they came for isn't lost. Only those in-app pages are allowed: anything else (another site,
+ * another screen) is dropped, so the parameter can't be used as an open redirect.
  */
-const ALLOWED = /^\/(s|hub)\/[A-Za-z0-9_-]{1,128}(\?save=1)?$/;
+const ALLOWED = /^(?:\/(s|hub)\/[A-Za-z0-9_-]{1,128}(\?save=1)?|\/join\/[A-Za-z0-9_-]{16,128})$/;
 
 export function safeReturnPath(value: string | string[] | null | undefined): string | null {
   const raw = Array.isArray(value) ? value[0] : value;
@@ -20,4 +20,12 @@ export function saveAfterSignInPath(kind: 's' | 'hub', id: string): string | nul
 /** True for the recipe pages a signed-out visitor may open without onboarding first. */
 export function isPublicRecipePath(pathname: string): boolean {
   return pathname.startsWith('/s/') || pathname.startsWith('/hub/');
+}
+
+/**
+ * True for a household invite (docs/adr/034-households.md): it shows whose household it is before asking for an
+ * account, so it opens without onboarding or sign-in first, like a shared recipe.
+ */
+export function isJoinPath(pathname: string): boolean {
+  return pathname.startsWith('/join/');
 }

@@ -10,7 +10,7 @@ import { Text } from '@/components/ui/Text';
 import { Tile } from '@/components/ui/Tile';
 import { KitIcon, Radii } from '@/components/ui/tokens';
 import { useAuth } from '@/hooks/useAuth';
-import { useKitchenProfile } from '@/hooks/useKitchenProfile';
+import { useStaples } from '@/hooks/useStaples';
 import { useMeasurementPreference } from '@/hooks/useMeasurementPreference';
 import { usePantry } from '@/hooks/usePantry';
 import { useShoppingList } from '@/hooks/useShoppingList';
@@ -48,7 +48,7 @@ function CookMatches({ recipes, onClose }: { recipes: Recipe[]; onClose: () => v
   const { colors } = useThemePreference();
   const { user } = useAuth();
   const { items, status, reload } = usePantry(true);
-  const { pantryStaples } = useKitchenProfile();
+  const { staples: pantryStaples } = useStaples();
   const { addFromRecipe } = useShoppingList();
   const { system: measurementSystem } = useMeasurementPreference();
   const { units } = useUnitSystemPreference();

@@ -35,6 +35,9 @@ const PLAYWRIGHT_VERSION = '1.65.1';
 /** The recipe editor's "Add appliance" button (web.editor.addAppliance), which opens a sheet. */
 const ADD_APPLIANCE_LABEL = { en: 'Add appliance', he: 'הוספת כלי', ar: 'إضافة أداة', es: 'Añadir utensilio', ru: 'Добавить технику' };
 
+/** Household's "Invite people" button (household.manage.invite). */
+const INVITE_PEOPLE_LABEL = { en: 'Invite people', he: 'הזמנת אנשים' };
+
 /** Settings' "Delete account" button (settings.deleteAccount); the dialog's red button has the same words. */
 const DELETE_ACCOUNT_LABEL = { en: 'Delete account', he: 'מחיקת חשבון', ar: 'حذف الحساب', es: 'Eliminar cuenta', ru: 'Удалить аккаунт' };
 
@@ -109,6 +112,25 @@ const SCREENS = {
     viewportOnly: true,
   },
   kit: { path: '/admin/kit' },
+  // Households (docs/adr/034-households.md). `household` picks the get_my_household answer: 'none' (the default for
+  // every screen) is a household of one that is not set up; 'shared' is "The Cohens", three people.
+  'household-setup': { path: '/settings/household', household: 'none' },
+  household: { path: '/settings/household', household: 'shared' },
+  'household-invite': {
+    path: '/settings/household',
+    household: 'shared',
+    async after(page, { lang }) {
+      const label = INVITE_PEOPLE_LABEL[lang] ?? INVITE_PEOPLE_LABEL.en;
+      const button = page.getByRole('button', { name: label }).first();
+      await button.scrollIntoViewIfNeeded({ timeout: 15000 });
+      await button.click();
+      await page.waitForTimeout(1500);
+    },
+    viewportOnly: true,
+  },
+  join: { path: `/join/${F.INVITE_TOKEN}`, household: 'none' },
+  'list-shared': { path: '/list', household: 'shared' },
+  'list-promo': { path: '/list', household: 'none' },
 };
 
 // ---------------------------------------------------------------------------------------------------------------
@@ -393,14 +415,14 @@ function queryRows(rows, url, headers) {
 }
 
 function createFakeSupabase(state) {
-  const { lang, scheme, pack, unmocked, emptyLibrary } = state;
+  const { lang, scheme, pack, unmocked, emptyLibrary, household = 'none' } = state;
   const user = F.fakeUser({ lang, scheme, pack });
   const session = F.fakeSession(user);
   const tables = {
     recipes: emptyLibrary ? [] : F.RECIPES,
     collections: emptyLibrary ? [] : F.COLLECTIONS,
     collection_recipes: emptyLibrary ? [] : F.COLLECTION_RECIPES,
-    shopping_list_items: F.shoppingList(lang),
+    shopping_list_items: household === 'shared' ? F.sharedShoppingList(lang) : F.shoppingList(lang),
     profiles: [F.profileRow({ admin: true })],
     extract_usage_monthly: [{ ...F.EXTRACT_USAGE, year_month: new Date().toISOString().slice(0, 7) }],
     recipe_translations: F.recipeTranslations(lang),
@@ -428,6 +450,9 @@ function createFakeSupabase(state) {
     library_recipe_for_card: () => null,
     library_recipe_for_url: () => null,
     migrate_guest_shopping_list: () => null,
+    get_my_household: () => F.householdRow(household, lang),
+    preview_household_invite: () => F.invitePreviewRow(lang),
+    get_household_invite: () => F.inviteRow(),
   };
 
   const functions = {
@@ -611,7 +636,14 @@ async function shoot(browser, baseUrl, job, opts, report) {
     locale: LOCALES[lang] ?? lang,
     serviceWorkers: 'block',
   });
-  const state = { lang, scheme, pack: opts.pack, unmocked: report.unmocked, emptyLibrary: Boolean(def.emptyLibrary) };
+  const state = {
+    lang,
+    scheme,
+    pack: opts.pack,
+    unmocked: report.unmocked,
+    emptyLibrary: Boolean(def.emptyLibrary),
+    household: def.household ?? 'none',
+  };
   const handle = createFakeSupabase(state);
   const inflight = new Set();
   const problems = [];

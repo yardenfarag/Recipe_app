@@ -10,7 +10,7 @@ import { Pressable } from '@/components/ui/Pressable';
 import { useTranslation } from 'react-i18next';
 
 import { SheetModal } from '@/components/SheetModal';
-import { useKitchenProfile } from '@/hooks/useKitchenProfile';
+import { useStaples } from '@/hooks/useStaples';
 import { usePantry } from '@/hooks/usePantry';
 import { useLanguagePreference } from '@/hooks/useLanguagePreference';
 import { useMeasurementPreference } from '@/hooks/useMeasurementPreference';
@@ -48,7 +48,7 @@ export function AddToShoppingListModal({
   const { language: appLanguage } = useLanguagePreference();
   const { system: measurementSystem } = useMeasurementPreference();
   const { units } = useUnitSystemPreference();
-  const { pantryStaples, keepStaple } = useKitchenProfile();
+  const { staples: pantryStaples, keepStaple } = useStaples();
   // Staples and what's in the pantry (PIN-181) start unticked. The pantry is read quietly; without it, staples only.
   const { items: pantryItems } = usePantry(visible);
   const atHome = useMemo(

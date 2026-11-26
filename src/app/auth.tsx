@@ -56,6 +56,7 @@ type AuthReason =
   | 'sync'
   | 'shared_recipe'
   | 'hub_recipe'
+  | 'household_invite'
   | 'onboarding'
   | 'edit'
   | undefined;
@@ -73,6 +74,7 @@ function parseReason(value: string | string[] | undefined): AuthReason {
     raw === 'sync' ||
     raw === 'shared_recipe' ||
     raw === 'hub_recipe' ||
+    raw === 'household_invite' ||
     raw === 'onboarding' ||
     raw === 'edit'
   ) {
@@ -419,6 +421,8 @@ export default function AuthScreen() {
             ? t('auth.reasonShared')
             : reason === 'hub_recipe'
               ? t('auth.reasonHub')
+            : reason === 'household_invite'
+              ? t('household.join.signedOut')
             : reason === 'onboarding' && mode === 'signup'
               ? t('auth.reasonOnboarding')
             : reason === 'edit'

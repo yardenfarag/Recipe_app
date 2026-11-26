@@ -3,6 +3,7 @@ import { test, type Browser, type Page } from "@playwright/test";
 import { createUser, resetLibrary, resetTestUserLanguage, uniqueEmail, type SeedRecipe } from "./admin";
 import { createAdminPagesUsers, deleteAdminPagesUsers } from "./adminSeed";
 import { signInWithPassword } from "./helpers";
+import { addListItemsAs, householdOf, newAccount, setFoodAvatar, type Account } from "./householdSeed";
 import { resetHub } from "./hubSeed";
 import { resetShoppingList } from "./listSeed";
 import { PHOTOS, resetPantry, stubScanPantry } from "./pantrySeed";
@@ -788,6 +789,98 @@ test("emails setting, and the unsubscribe page from an email link", async ({ bro
       await guestPage.getByRole("status").waitFor();
       await guestPage.screenshot({ path: `${OUT}/unsubscribe-invalid-${viewport}-${language}-${scheme}.png`, fullPage: true });
       await guest.close();
+    }
+  }
+});
+
+test("household: settings, invite, join page and the shared list", async ({ browser }) => {
+  test.setTimeout(600_000);
+  const baseURL = test.info().project.use.baseURL;
+  for (const language of ["en", "he"] as const) {
+    const he = language === "he";
+    // Fresh accounts in the screenshot's language: households stay out of the shared test account.
+    const alone = await newAccount("e2e-shot-alone", language);
+    const dana = await newAccount("e2e-shot-dana", language);
+    const avi = await newAccount("e2e-shot-avi", language);
+    const noa = await newAccount("e2e-shot-noa", language);
+    const token = await householdOf(he ? "משפחת כהן" : "The Cohens", [
+      { account: dana, displayName: he ? "דנה" : "Dana" },
+      { account: avi, displayName: he ? "אבי" : "Avi" },
+      { account: noa, displayName: he ? "נועה" : "Noa" },
+    ]);
+    // Pictures as real people would have them (Noa keeps her initial), so the avatars show as they will.
+    await setFoodAvatar(dana, "avocado");
+    await setFoodAvatar(avi, "pizza");
+    await addListItemsAs(dana, he ? ["בצל", "חלב"] : ["onion", "milk"]);
+    await addListItemsAs(avi, he ? ["לחם", "שמן זית"] : ["bread", "olive oil"]);
+
+    // Sign each account in once; every screenshot reuses its session.
+    const sessions = new Map<Account, Awaited<ReturnType<Awaited<ReturnType<Browser["newContext"]>>["storageState"]>>>();
+    for (const account of [alone, dana]) {
+      const context = await browser.newContext({ baseURL });
+      const page = await context.newPage();
+      await page.goto("/app/auth?mode=signin");
+      await signInWithPassword(page, account.email, account.password);
+      await page.locator("#main").waitFor();
+      sessions.set(account, await context.storageState());
+      await context.close();
+    }
+
+    for (const viewport of Object.keys(VIEWPORTS) as (keyof typeof VIEWPORTS)[]) {
+      for (const scheme of ["light", "dark"] as const) {
+        const tag = `${viewport}-${language}-${scheme}`;
+        const as = async (account: Account | null, path: string) => {
+          // The account's saved choices win over the browser's (PIN-154), so the theme goes on the account too.
+          if (account) await writeAccountPrefs({ locale: language, prefs: { scheme, pack: "mist", measurement: "original" } }, account.email, account.password);
+          const context = await browser.newContext({
+            baseURL,
+            viewport: VIEWPORTS[viewport],
+            deviceScaleFactor: viewport === "desktop" ? 1 : 2,
+            storageState: account ? sessions.get(account) : undefined,
+            colorScheme: scheme,
+          });
+          await context.addInitScript((p: Prefs) => {
+            localStorage.setItem("pinch:appLanguage", p.language);
+            localStorage.setItem("pinch.themePreference", p.scheme);
+            localStorage.setItem("pinch.themePack", "mist");
+          }, { language, scheme });
+          const page = await context.newPage();
+          await page.goto(path);
+          await page.locator("#main h1").waitFor();
+          await page.waitForTimeout(400);
+          return { page, context };
+        };
+
+        let shot = await as(alone, "/app/settings/household");
+        await shot.page.getByRole("radiogroup").waitFor();
+        await shot.page.screenshot({ path: `${OUT}/household-setup-${tag}.png`, fullPage: true });
+        await shot.context.close();
+
+        shot = await as(dana, "/app/settings/household");
+        // One remove button per screen size is shown; wait for the visible one.
+        await shot.page.locator("[data-track='household.member.remove']:visible").first().waitFor();
+        await shot.page.screenshot({ path: `${OUT}/household-members-${tag}.png`, fullPage: true });
+        await shot.page.locator("[data-track='household.invite']").click();
+        await shot.page.locator("#household-invite-link").waitFor();
+        await shot.page.waitForTimeout(300);
+        await shot.page.screenshot({ path: `${OUT}/household-invite-${tag}.png` });
+        await shot.context.close();
+
+        shot = await as(dana, "/app/list");
+        await shot.page.locator("[data-testid='added-by']").first().waitFor();
+        await shot.page.screenshot({ path: `${OUT}/household-list-${tag}.png`, fullPage: true });
+        await shot.context.close();
+
+        shot = await as(null, `/app/join/${token}`);
+        await shot.page.locator("[data-track='household.join.sign_up']").waitFor();
+        await shot.page.screenshot({ path: `${OUT}/household-join-guest-${tag}.png`, fullPage: true });
+        await shot.context.close();
+
+        shot = await as(alone, `/app/join/${token}`);
+        await shot.page.locator("[data-track='household.join.join']").waitFor();
+        await shot.page.screenshot({ path: `${OUT}/household-join-${tag}.png`, fullPage: true });
+        await shot.context.close();
+      }
     }
   }
 });

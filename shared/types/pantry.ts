@@ -31,6 +31,8 @@ export type PantryItem = {
   source: PantryItemSource;
   addedAt: string;
   lastSeenAt: string;
+  /** Who last added or scanned it (their user id), on a shared household pantry (ADR 034). Missing once they deleted their account. */
+  addedBy?: string;
 };
 
 export type PhotoQuality = 'ok' | 'too_dark' | 'blurry' | 'too_far' | 'not_kitchen';

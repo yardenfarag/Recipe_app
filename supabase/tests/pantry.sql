@@ -5,7 +5,8 @@ select plan(20);
 
 -- PIN-181 (migration 20261126120000_pantry): each person sees and changes only their own pantry, scan
 -- photos come only from the functions, handoffs are out of reach for clients, and the purge keeps its
--- promises.
+-- promises. Since 20261126130000_households the pantry belongs to a household; A and B are each in a household
+-- of one here, and households.sql tests sharing it.
 
 insert into auth.users (
   instance_id, id, aud, role, email, encrypted_password,

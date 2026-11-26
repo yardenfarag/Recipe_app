@@ -23,6 +23,7 @@ import { ToastHost } from '@/components/ToastHost';
 import { AccountLocaleSync } from '@/components/AccountLocaleSync';
 import { FONT_ASSETS } from '@/constants/fonts';
 import { AuthProvider } from '@/hooks/useAuth';
+import { HouseholdProvider } from '@/hooks/useHousehold';
 import { LanguageProvider } from '@/hooks/useLanguagePreference';
 import { MeasurementProvider } from '@/hooks/useMeasurementPreference';
 import { UnitSystemProvider } from '@/hooks/useUnitSystemPreference';
@@ -168,6 +169,24 @@ function RootNavigator() {
               ),
             }}
           />
+          {/* Households (docs/adr/034-households.md): who shares the list and pantry. */}
+          <Stack.Screen
+            name="settings/household"
+            options={{
+              title: t('household.title'),
+              headerLeft: (props) => (
+                <StackHeaderBackButton tintColor={props.tintColor} fallback="/settings" />
+              ),
+            }}
+          />
+          {/* An invite link (https://pinch-app.io/app/join/<token>), signed in or not. */}
+          <Stack.Screen
+            name="join/[token]"
+            options={{
+              title: t('household.join.pageTitle'),
+              headerLeft: (props) => <StackHeaderBackButton tintColor={props.tintColor} fallback="/" />,
+            }}
+          />
           <Stack.Screen
             name="settings/appearance"
             options={{
@@ -254,15 +273,17 @@ export default function RootLayout() {
                 <OnboardingProvider>
                   <ErrorBoundary>
                     <AuthProvider>
-                      <AccountLocaleSync />
-                      <OnboardingGate />
-                      <ShareIntentRouter />
-                      <ScreenViewLogger />
-                      <PushNotificationsSetup />
-                      <RootNavigator />
-                      <InAppMessageHost />
-                      <WebCheckoutReturnDialog />
-                      <DialogHost />
+                      <HouseholdProvider>
+                        <AccountLocaleSync />
+                        <OnboardingGate />
+                        <ShareIntentRouter />
+                        <ScreenViewLogger />
+                        <PushNotificationsSetup />
+                        <RootNavigator />
+                        <InAppMessageHost />
+                        <WebCheckoutReturnDialog />
+                        <DialogHost />
+                      </HouseholdProvider>
                     </AuthProvider>
                   </ErrorBoundary>
                 </OnboardingProvider>

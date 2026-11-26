@@ -1,7 +1,8 @@
 /**
- * PIN-181: the pantry's data. Saved items are the person's own rows, read and written directly under RLS
- * (`pantry_items`). Photos go through the scan-pantry function; a scan's results wait in `pantry_scan_photos`
- * until the list is saved. "Use your phone's camera" goes through photo-handoff.
+ * PIN-181: the pantry's data. Saved items belong to the household (ADR 034): every member reads and writes the same
+ * rows directly under RLS (`pantry_items`), and `user_id` is who last added or scanned an item. Photos go through
+ * the scan-pantry function; a scan's results wait in `pantry_scan_photos` (each person's own) until the list is
+ * saved. "Use your phone's camera" goes through photo-handoff.
  */
 import { FunctionsHttpError } from '@supabase/supabase-js';
 
@@ -25,9 +26,11 @@ type PantryRow = {
   source: string;
   added_at: string;
   last_seen_at: string;
+  /** Who last added or scanned it; null once their account is gone. */
+  user_id: string | null;
 };
 
-const COLUMNS = 'id, name, name_en, brand, place, aisle, source, added_at, last_seen_at';
+const COLUMNS = 'id, name, name_en, brand, place, aisle, source, added_at, last_seen_at, user_id';
 
 function toItem(row: PantryRow): PantryItem {
   return {
@@ -40,6 +43,7 @@ function toItem(row: PantryRow): PantryItem {
     source: row.source as PantryItemSource,
     addedAt: row.added_at,
     lastSeenAt: row.last_seen_at,
+    ...(row.user_id ? { addedBy: row.user_id } : {}),
   };
 }
 
@@ -61,8 +65,8 @@ export type NewPantryItem = {
 const clip = (value: string | undefined, max: number) => (value ?? '').trim().replace(/\s+/g, ' ').slice(0, max);
 
 /**
- * Adds items, or marks them as seen again when they are already there (one row per product and place). Returns the
- * saved rows.
+ * Adds items, or marks them as seen again when they are already there (one row per product and place in the
+ * household). Returns the saved rows. `userId` is the signed-in user; the database fills in the household.
  */
 export async function upsertPantryItems(userId: string, items: NewPantryItem[]): Promise<PantryItem[]> {
   const now = new Date().toISOString();
@@ -89,7 +93,8 @@ export async function upsertPantryItems(userId: string, items: NewPantryItem[]):
   });
   const { data, error } = await supabase
     .from('pantry_items')
-    .upsert(unique, { onConflict: 'user_id,place,name_key' })
+    // household_id is filled by a trigger before the conflict check (migration 20261126130000_households).
+    .upsert(unique, { onConflict: 'household_id,place,name_key' })
     .select(COLUMNS);
   if (error) throw error;
   return ((data as PantryRow[] | null) ?? []).map(toItem);

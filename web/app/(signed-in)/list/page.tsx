@@ -6,6 +6,7 @@ import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState, typ
 import { useTranslation } from "react-i18next";
 
 import { resolveCulinaryLanguage } from "@shared/lib/culinaryUnits";
+import { isShared, memberWhoAdded } from "@shared/lib/household";
 import { placeForAisle } from "@shared/lib/pantry";
 import { shoppingAisleForName } from "@shared/lib/shoppingAisles";
 import { getDuplicateNameCounts, normalizeShoppingName } from "@shared/lib/shoppingListMerge";
@@ -15,6 +16,7 @@ import { joinErrorSentences, translateAppError } from "@shared/lib/translateAppE
 import type { ShoppingListItem } from "@shared/types/shoppingList";
 
 import { useAuth } from "@/components/AuthProvider";
+import { HouseholdStrip, ShopTogetherCard } from "@/components/household/HouseholdStrip";
 import { useLanguage } from "@/components/LanguageProvider";
 import { AddFromRecipesDialog } from "@/components/list/AddFromRecipesDialog";
 import { AddItemForm } from "@/components/list/AddItemForm";
@@ -26,6 +28,7 @@ import { PageHeader } from "@/components/ui/PageHeader";
 import { EmptyState, ErrorState, LoadingState } from "@/components/ui/States";
 import { Tile, TileBadge, TileLabel } from "@/components/ui/Tile";
 import { cn } from "@/lib/cn";
+import { useHousehold } from "@/lib/household/HouseholdProvider";
 import { displayOrder, groupShoppingList, neighbourId } from "@/lib/list/shoppingListView";
 import { usePantryStaples } from "@/lib/list/usePantryStaples";
 import { useShoppingList, type ItemPatch } from "@/lib/list/useShoppingList";
@@ -49,6 +52,8 @@ export default function ListPage() {
     useShoppingList();
   const { keepStaple, dropStaple, isStaple } = usePantryStaples();
   const { user } = useAuth();
+  const { household } = useHousehold();
+  const shared = isShared(household);
   const [notice, setNotice] = useState<Notice | null>(null);
   const [confirm, setConfirm] = useState<Confirm>(null);
   const [fromRecipesOpen, setFromRecipesOpen] = useState(false);
@@ -214,6 +219,8 @@ export default function ListPage() {
     onCombine: (target: ShoppingListItem) =>
       setConfirm({ kind: "combine", name: target.name, count: duplicateCounts.get(normalizeShoppingName(target.name)) ?? 0 }),
     onMove: move,
+    // Read defensively: the column arrives with the households migration (ADR 034).
+    addedBy: shared ? memberWhoAdded(household, (item as ShoppingListItem & { addedBy?: string | null }).addedBy) : null,
     checkboxRef: (element: HTMLButtonElement | null) => {
       // A row that moves group is a new element; the newest one wins. Removed ids are left (a few bytes).
       if (element) checkboxes.current.set(item.id, element);
@@ -272,6 +279,7 @@ export default function ListPage() {
       ) : (
         <div className={cn("flex w-full max-w-2xl flex-col gap-4", wide && "xl:max-w-5xl")}>
           <div className="flex max-w-2xl flex-col gap-3">
+            {household && shared ? <HouseholdStrip household={household} /> : null}
             <AddItemForm ref={nameRef} items={items} onAdd={addManual} />
 
             {error && items.length > 0 ? (
@@ -336,6 +344,8 @@ export default function ListPage() {
               <p className="hidden px-1 text-xs text-muted pointer-fine:block">{t("web.list.keyboardHint")}</p>
             </>
           )}
+
+          {loading || shared ? null : <ShopTogetherCard household={household} className="max-w-2xl" />}
         </div>
       )}
 
