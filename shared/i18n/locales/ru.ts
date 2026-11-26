@@ -2503,7 +2503,7 @@ export default {
     "reason": {
       "haveEverything": "Всё есть дома",
       "usesPantry": "Есть дома: {{item}}",
-      "sharesWith": "{{item}}: как и в {{day}}",
+      "sharesWith": "Меньше покупок: {{item}} нужны и в {{day}}",
       "quick": "Быстро: {{minutes}} мин",
       "weekendLonger": "Дольше: выходные",
       "newFromHub": "Новое из Hub",

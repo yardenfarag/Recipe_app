@@ -2619,7 +2619,7 @@ export default {
     "reason": {
       "haveEverything": "لديك كل شيء",
       "usesPantry": "تستخدم {{item}} الموجود لديك",
-      "sharesWith": "{{item}} أيضًا في {{day}}",
+      "sharesWith": "مشتريات أقل: وجبة {{day}} فيها {{item}} أيضًا",
       "quick": "سريعة: {{minutes}} د",
       "weekendLonger": "تأخذ وقتًا: عطلة الأسبوع",
       "newFromHub": "جديدة من الـHub",

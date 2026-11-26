@@ -2445,7 +2445,7 @@ export default {
     "reason": {
       "haveEverything": "Lo tienes todo",
       "usesPantry": "Usa tu {{item}}",
-      "sharesWith": "Comparte {{item}} con el {{day}}",
+      "sharesWith": "Menos compras: la comida del {{day}} también lleva {{item}}",
       "quick": "Rápido: {{minutes}} min",
       "weekendLonger": "Más larga: fin de semana",
       "newFromHub": "Nueva del Hub",

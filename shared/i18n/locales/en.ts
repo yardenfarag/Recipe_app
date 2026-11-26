@@ -2387,7 +2387,7 @@ export default {
     "reason": {
       "haveEverything": "You have everything",
       "usesPantry": "Uses your {{item}}",
-      "sharesWith": "Shares {{item}} with {{day}}",
+      "sharesWith": "Less to buy: {{day}}'s meal uses {{item}} too",
       "quick": "Quick: {{minutes}} min",
       "weekendLonger": "Takes longer: weekend",
       "newFromHub": "New from the Hub",

@@ -2445,7 +2445,7 @@ export default {
     "reason": {
       "haveEverything": "יש לכם הכול",
       "usesPantry": "משתמש ב{{item}} שיש לכם",
-      "sharesWith": "גם ב{{day}}: {{item}}",
+      "sharesWith": "פחות קניות: גם בארוחה של {{day}} יש {{item}}",
       "quick": "מהיר: {{minutes}} דק׳",
       "weekendLonger": "לוקח זמן: סוף שבוע",
       "newFromHub": "חדש מה-Hub",
