@@ -3,7 +3,8 @@ import { useTranslation } from 'react-i18next';
 import { View } from 'react-native';
 
 import { recipeIngredientsIn } from '@shared/lib/cachedTranslation';
-import { scaleIngredients } from '@shared/lib/ingredientAmounts';
+import { ingredientAmountIsUnknown } from '@shared/lib/displayIngredientAmount';
+import { pickIngredientAmount, scaleIngredients } from '@shared/lib/ingredientAmounts';
 import { isAtHome } from '@shared/lib/mealPlan/planner';
 import { showToast } from '@shared/lib/toast';
 import { PLAN_MEALS, type MealPlanEntry } from '@shared/types/mealPlan';
@@ -15,7 +16,9 @@ import { Button } from '@/components/ui/Button';
 import { Pressable } from '@/components/ui/Pressable';
 import { Text } from '@/components/ui/Text';
 import { useLanguagePreference } from '@/hooks/useLanguagePreference';
+import { useMeasurementPreference } from '@/hooks/useMeasurementPreference';
 import { useShoppingList } from '@/hooks/useShoppingList';
+import { useUnitSystemPreference } from '@/hooks/useUnitSystemPreference';
 import { useThemePreference } from '@/hooks/useThemePreference';
 
 /** `original`: the ingredient's name in the recipe's own language, when `ingredient` is from a translation. */
@@ -66,6 +69,8 @@ function Body({
   const { colors } = useThemePreference();
   const { addFromRecipes } = useShoppingList();
   const { language } = useLanguagePreference();
+  const { system } = useMeasurementPreference();
+  const { units } = useUnitSystemPreference();
   const sections = useMemo(
     () =>
       entries
@@ -102,7 +107,12 @@ function Body({
           id: section.entry.recipeId,
           ingredients: section.lines
             .filter((line) => selected.has(line.key))
-            .map((line) => ({ name: line.ingredient.name, quantity: line.ingredient.quantity, unit: line.ingredient.unit ?? '' })),
+            // In the cook's spoons-or-grams and Metric-or-US choice, as on the recipe screen.
+            .map((line) => {
+              const amount = pickIngredientAmount(line.ingredient, system, units);
+              const unknown = ingredientAmountIsUnknown(line.ingredient, system);
+              return { name: line.ingredient.name, quantity: unknown ? 0 : amount.quantity, unit: amount.unit ?? '' };
+            }),
         })),
       );
       showToast(t('plan.send.done'));

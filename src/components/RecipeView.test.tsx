@@ -23,7 +23,13 @@ const h = vi.hoisted(() => {
     seen[name] = props;
     return container ? (props.children ?? null) : null;
   };
-  return { seen, buttons, standIn, kitchen: { allergies: [], otherAllergies: [], dislikes: [] as string[] } };
+  return {
+    seen,
+    buttons,
+    standIn,
+    kitchen: { allergies: [], otherAllergies: [], dislikes: [] as string[] },
+    addFromRecipe: vi.fn(async () => ({ items: [], alreadyOnList: [] as string[] })),
+  };
 });
 
 vi.mock('expo-router', () => ({ router: { push: vi.fn() }, useFocusEffect: () => undefined }));
@@ -94,7 +100,7 @@ vi.mock('@/hooks/useOwnedAppliances', () => ({ useOwnedAppliances: () => ({ kitc
 vi.mock('@/hooks/useLanguagePreference', () => ({ useLanguagePreference: () => ({ language: 'es' }) }));
 vi.mock('@/hooks/useMeasurementPreference', () => ({ useMeasurementPreference: () => ({ system: 'original' }) }));
 vi.mock('@/hooks/useUnitSystemPreference', () => ({ useUnitSystemPreference: () => ({ units: 'metric' }) }));
-vi.mock('@/hooks/useShoppingList', () => ({ useShoppingList: () => ({ addFromRecipe: vi.fn() }) }));
+vi.mock('@/hooks/useShoppingList', () => ({ useShoppingList: () => ({ addFromRecipe: h.addFromRecipe }) }));
 vi.mock('@/hooks/useThemePreference', () => ({ useThemePreference: () => ({ colors: {}, scheme: 'light' }) }));
 vi.mock('@/hooks/useTypography', () => ({
   useTypography: () => ({ rtl: false, tracking: () => 0, font: () => ({}) }),
@@ -382,5 +388,15 @@ describe('RecipeView: the kept original’s language (PIN-188)', () => {
     await remix();
 
     expect(saved[0].kitchen_original).toMatchObject({ title: 'Pasta cremosa con tomate', language: 'es' });
+  });
+});
+
+describe('RecipeView: adding to the shopping list', () => {
+  it('a Metric cook in Spoons mode gets ounces as grams on the list, as the list sheet shows them', async () => {
+    await open({ translated: false });
+    const cheddar = { name: 'cheddar', quantity: 8, unit: 'oz', metric: { quantity: 227, unit: 'g' }, spoons: { quantity: 8, unit: 'oz' } };
+    await doing(() => h.seen.AddToShoppingListModal.onConfirm([cheddar]));
+
+    expect(h.addFromRecipe).toHaveBeenCalledWith([expect.objectContaining({ name: 'cheddar', quantity: 227, unit: 'g' })], 'r1');
   });
 });
