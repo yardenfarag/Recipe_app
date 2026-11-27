@@ -627,11 +627,7 @@ footer button:hover {
   }
 }
 
-/* Comparison table, Pinch column highlighted. */
-.compare-wrap {
-  max-width: 860px;
-  margin: 32px auto 0;
-}
+/* Tables in guides: they scroll sideways on phones. */
 .table-scroll {
   overflow-x: auto;
   border: 1px solid var(--line);
@@ -661,103 +657,6 @@ tr:last-child td {
 td:first-child {
   font-weight: 700;
   color: var(--cream);
-}
-table.compare {
-  min-width: 760px;
-}
-.compare td:first-child {
-  width: 26%;
-}
-.compare th:not(:first-child),
-.compare td:not(:first-child) {
-  text-align: center;
-  vertical-align: middle;
-}
-.compare th:nth-child(2),
-.compare td:nth-child(2) {
-  background: var(--well);
-}
-.compare th:nth-child(2) {
-  color: var(--pink-bright);
-  font-size: 16px;
-}
-.compare td.yes,
-.compare td.no,
-.compare td.na {
-  font-size: 18px;
-  font-weight: 700;
-}
-.compare td.yes {
-  color: #8fd9a8;
-}
-.compare td:nth-child(2).yes {
-  color: var(--pink-bright);
-}
-.compare td.no,
-.compare td.na {
-  color: #8a7880;
-}
-.compare td.na {
-  font-weight: 400;
-}
-/* Platforms and price: short text instead of a mark. */
-.compare tr.text td:not(:first-child) {
-  font-size: 13px;
-  line-height: 18px;
-  vertical-align: top;
-}
-.compare tr.text td:nth-child(2) {
-  color: var(--cream);
-  font-weight: 600;
-}
-.footnote {
-  margin: 12px 0 0;
-  font-size: 13px;
-  line-height: 20px;
-  color: var(--muted);
-}
-.footnote a {
-  color: var(--pink-bright);
-}
-/* Phones: the feature and Pinch columns stay put while the other apps scroll past. */
-@media (max-width: 560px) {
-  table.compare {
-    min-width: 640px;
-    font-size: 13px;
-    line-height: 18px;
-  }
-  .compare th,
-  .compare td {
-    padding: 10px 6px;
-  }
-  .compare th:first-child,
-  .compare td:first-child {
-    position: sticky;
-    inset-inline-start: 0;
-    z-index: 1;
-    width: 120px;
-    min-width: 120px;
-    padding-inline-start: 12px;
-    background: #110b0f;
-  }
-  .compare th:nth-child(2),
-  .compare td:nth-child(2) {
-    position: sticky;
-    inset-inline-start: 120px;
-    z-index: 1;
-    width: 72px;
-    min-width: 72px;
-    background: #2a1420;
-    box-shadow: 6px 0 8px -6px rgba(0, 0, 0, 0.8);
-  }
-  [dir="rtl"] .compare th:nth-child(2),
-  [dir="rtl"] .compare td:nth-child(2) {
-    box-shadow: -6px 0 8px -6px rgba(0, 0, 0, 0.8);
-  }
-  .compare tr.text td:not(:first-child) {
-    font-size: 12px;
-    line-height: 16px;
-  }
 }
 
 /* Guides: a card per guide on the landing page, each linking to its own page. */

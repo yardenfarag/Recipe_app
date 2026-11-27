@@ -28,11 +28,11 @@
   },
   "features": {
     "title": "A recipe organizer for the videos you cook from",
-    "sub": "The recipe, the list, and the video, kept in one kitchen.",
+    "sub": "Save the recipe, plan the week, and shop from one list.",
     "items": [
       {
         "title": "Save TikTok and Instagram recipes",
-        "text": "Share a TikTok or an Instagram Reel to Pinch, or paste the link yourself."
+        "text": "Share a TikTok, an Instagram Reel, a Facebook video or a Pinterest pin to Pinch, or paste the link yourself."
       },
       {
         "title": "YouTube video to recipe",
@@ -43,28 +43,40 @@
         "text": "Even when the amounts are only said out loud or flashed on screen, Pinch writes them down."
       },
       {
-        "title": "Cook along",
-        "text": "Keep the source video beside the steps, or follow a step-by-step cook mode with timers."
+        "title": "Websites and cookbooks too",
+        "text": "Paste a recipe website link, snap a cookbook page or a handwritten card, or add a PDF."
+      },
+      {
+        "title": "Recipes from your WhatsApp chats",
+        "text": "Bring in the links, written recipes and photos your family shared in a group chat, all at once."
+      },
+      {
+        "title": "Plan your week",
+        "text": "Pinch fills breakfast, lunch and dinner around your diet and what's at home. Free, and one tap sends it to your list."
       },
       {
         "title": "A shopping list that knows your pantry",
-        "text": "Ingredients from several recipes stack into one line, grouped by aisle. Staples you always have stay off."
+        "text": "Ingredients from several recipes stack into one line, grouped by aisle. What you already have stays off."
       },
       {
-        "title": "What's in the fridge?",
-        "text": "Snap your fridge and Pinch ranks the recipes you already saved by what you have."
+        "title": "Shop together",
+        "text": "Share one shopping list and pantry with the people you live with. Everyone sees changes as they happen."
+      },
+      {
+        "title": "What can I cook tonight?",
+        "text": "Snap your fridge and cupboards, and Pinch ranks the recipes you saved by what you already have."
+      },
+      {
+        "title": "Cook along",
+        "text": "Keep the source video beside the steps, or cook step by step with timers and the steps read aloud."
       },
       {
         "title": "Make it yours",
         "text": "Remix any recipe (healthier, vegetarian, gluten-free, and more), swap an ingredient, scale servings, or translate it."
       },
       {
-        "title": "Websites and cookbooks too",
-        "text": "Paste a recipe website link, or snap a cookbook page or a handwritten card."
-      },
-      {
         "title": "Your recipe library",
-        "text": "Keep every saved recipe in one place and group them for dinner, baking, or easy weeknights."
+        "text": "Keep every saved recipe in one place, group them into collections, or turn them into a PDF cookbook."
       }
     ]
   },
@@ -100,43 +112,9 @@
       "pastaGrains": "Pasta & grains"
     }
   },
-  "compare": {
-    "title": "How Pinch compares",
-    "sub": "Built for the recipes that live in videos.",
-    "feature": "Feature",
-    "rows": [
-      "Save from TikTok, Instagram & YouTube",
-      "Reads the video itself: speech and on-screen text",
-      "Scan cookbook pages and handwritten cards",
-      "Shopping list that merges ingredients and sorts by aisle",
-      "Translate a recipe",
-      "Remix with AI: healthier, vegetarian, ingredient swaps",
-      "Recipes from a photo of your fridge",
-      "Cooking Hub: browse recipes other cooks saved"
-    ],
-    "platformsLabel": "Platforms",
-    "platforms": {
-      "pinch": "iPhone, Android, web",
-      "osta": "iPhone, Android, Mac",
-      "paprika": "iPhone, Android, Mac, Windows",
-      "mela": "iPhone, Mac",
-      "recime": "iPhone, Android, web",
-      "samsung": "iPhone, Android, web"
-    },
-    "priceLabel": "Price",
-    "prices": {
-      "pinch": "Free, 10 recipes a month. Extra credits, no subscription",
-      "osta": "Free with ads, 5 imports a week. $49.99–59.99/yr",
-      "paprika": "$4.99 one‑time",
-      "mela": "$6.99 one‑time",
-      "recime": "Free, 5 imports a week. $59.99/yr",
-      "samsung": "Free. AI features $59.99/yr"
-    },
-    "footnote": "✓ Yes · ✗ No · – The app's maker doesn't say. * Paprika 3. The Paprika 4 beta adds these, as part of a subscription. Osta's photo scanning, and Samsung Food's AI remix and fridge photo, need their paid plans. Prices are in US dollars. Based on each app's website, help pages, and App Store listing, checked October 2026."
-  },
   "guides": {
     "title": "Recipe guides",
-    "sub": "Save, organize, and shop for the recipes in your feed.",
+    "sub": "Save, plan, and shop for the recipes in your feed.",
     "updated": "Updated {date}",
     "more": "More recipe guides",
     "ctaTitle": "Save your next recipe with Pinch",
@@ -148,7 +126,7 @@
     "items": [
       {
         "q": "What does Pinch do?",
-        "a": "Pinch reads a cooking video from TikTok, Instagram, or YouTube and turns it into a written recipe: ingredients, steps, and a shopping list you can check off at the store."
+        "a": "Pinch turns a cooking video from TikTok, Instagram, or YouTube into a written recipe: ingredients, steps, and a shopping list you can check off at the store. It also plans your week around your diet and keeps track of what's already in your pantry."
       },
       {
         "q": "Is this the same as other apps called Pinch?",
@@ -156,11 +134,27 @@
       },
       {
         "q": "Can Pinch turn a YouTube video into a recipe?",
-        "a": "Yes. Paste a YouTube link and Pinch's AI recipe extractor writes out the ingredients and steps, so you don't have to pause and rewind while you cook."
+        "a": "Yes. Paste a YouTube link and Pinch writes out the ingredients and steps, so you don't have to pause and rewind while you cook."
       },
       {
         "q": "How do I save a recipe from TikTok or Instagram?",
-        "a": "Tap Share on the video and pick Pinch, or copy the link and paste it into Pinch. Preview the recipe, then tap save to keep it in your library."
+        "a": "Tap Share on the video and pick Pinch, or copy the link and paste it into Pinch. The recipe goes straight into your Library as soon as it's ready."
+      },
+      {
+        "q": "Does Pinch work with Pinterest and Facebook?",
+        "a": "Yes. Paste a Pinterest pin or a public Facebook reel or post, or share it to Pinch. When a pin links to a recipe website, Pinch reads the recipe from that site."
+      },
+      {
+        "q": "Can Pinch plan my meals for the week?",
+        "a": "Yes. Tap Plan my week and Pinch fills breakfast, lunch and dinner from your saved recipes and the Cooking Hub, following your diet and leaving out your allergies. Planning is free. Send to list puts what you need on your shopping list and leaves off what you already have."
+      },
+      {
+        "q": "Can I share my shopping list with my family?",
+        "a": "Yes. Set up a household in Settings and invite the people you live with by link or QR code. You share one shopping list and one pantry, and everyone sees changes as they happen. Recipes and credits stay yours. A household can have up to 8 people."
+      },
+      {
+        "q": "Can I import recipes from a WhatsApp chat?",
+        "a": "Yes. Export the chat from WhatsApp and choose it in Pinch. Pinch reads the chat on your device, lists the links, written recipes and photos it finds, and imports only the ones you pick, one credit each."
       },
       {
         "q": "Is Pinch free?",
@@ -172,7 +166,7 @@
       },
       {
         "q": "Can I move my recipes from another app?",
-        "a": "Yes, one recipe at a time. Paste the original link, from a website or a video, and Pinch saves it to your library."
+        "a": "Yes, one recipe at a time. Paste the original link, from a website or a video, and Pinch saves it to your Library."
       },
       {
         "q": "Which languages does Pinch support?",
@@ -193,7 +187,6 @@
     "home": "Home",
     "features": "Features",
     "how": "How it works",
-    "compare": "Compare apps",
     "faq": "FAQ",
     "iphone": "Pinch for iPhone",
     "android": "Pinch for Android",

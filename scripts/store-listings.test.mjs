@@ -5,14 +5,15 @@ import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
 
 const legal = join(import.meta.dirname, '..', 'legal');
-const text = readdirSync(legal)
+const files = readdirSync(legal)
   .filter((f) => /^STORE_LISTINGS_.+\.txt$/.test(f))
-  .map((f) => readFileSync(join(legal, f), 'utf8').replace(/\r/g, ''))
-  .join('\n');
+  .map((f) => readFileSync(join(legal, f), 'utf8').replace(/\r/g, ''));
 const chars = (s) => [...s].length;
 
-// One block per language, split on the "=== HEBREW (he) ===" style banners.
-const languages = [...text.matchAll(/=+ [A-Z]+ \((\w+)\) =+\n([\s\S]*?)(?=\n=+ [A-Z]+ \(|$)/g)].map(([, code, body]) => {
+// One block per language, split on the "=== HEBREW (he) ===" style banners. Each file is split on its own, so
+// a file's last language doesn't run on into the next file's introduction.
+const blocks = files.flatMap((text) => [...text.matchAll(/=+ [A-Z]+ \((\w+)\) =+\n([\s\S]*?)(?=\n=+ [A-Z]+ \(|$)/g)]);
+const languages = blocks.map(([, code, body]) => {
   const fields = Object.fromEntries(
     [...body.matchAll(/^([A-Za-z ]+) \(≤(\d+)\): (.+)$/gm)].map(([, label, max, value]) => [
       `${label}`,

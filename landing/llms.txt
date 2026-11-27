@@ -1,19 +1,24 @@
 # Pinch: Recipe Library
 
-> Pinch is a recipe keeper app that turns TikTok, Instagram, and YouTube cooking videos into written recipes, with ingredients, steps, and a shopping list. It reads the whole video (speech and on-screen text), not just the caption. It runs on iPhone, Android, and in any browser.
+> Pinch is a recipe keeper app that turns TikTok, Instagram, and YouTube cooking videos into written recipes, with ingredients, steps, and a shopping list. It reads the whole video (speech and on-screen text), not just the caption. It also plans the week's meals, keeps track of the pantry, and shares one shopping list with a household. It runs on iPhone, Android, and in any browser.
 
 Pinch: Recipe Library is the app at pinch-app.io. It isn't related to other apps or sites named Pinch, such as getpinch.io or the Pinch It! Recipe Box app.
 
 ## What Pinch does
 
-- Save a recipe from a TikTok, Instagram Reel, or YouTube video: tap Share and pick Pinch, or paste the link.
+- Save a recipe from a TikTok, Instagram Reel, YouTube video, Facebook reel or post, or Pinterest pin: tap Share and pick Pinch, or paste the link.
 - Write out the amounts and steps that are only said out loud or shown on screen.
-- Save recipes from recipe websites, cookbook page photos, and handwritten recipe cards.
-- Build one shopping list from several recipes: same ingredients merge into one line, grouped by aisle, and pantry staples stay off.
-- Rank your saved recipes by what's in a photo of your fridge.
-- Remix a recipe with AI (healthier, vegetarian, vegan, gluten-free, dairy-free), swap an ingredient, scale servings, or translate it.
-- Cook mode with step-by-step instructions and timers, next to the source video.
+- Save recipes from recipe websites, cookbook page photos, handwritten recipe cards, and PDFs.
+- Import the recipes shared in a WhatsApp chat: the exported chat is read on the device, and only the recipes you pick are imported.
+- Plan the week: Pinch fills breakfast, lunch and dinner (and snacks, if you want them) from your recipes and the Cooking Hub, following your diet, allergies and dislikes. Planning is free.
+- Build one shopping list from several recipes or the week's plan: same ingredients merge into one line, grouped by aisle, and what's already in the pantry stays off.
+- Fill the pantry from photos of the fridge, freezer and cupboards, then see which saved recipes you can cook with what you have.
+- Share the shopping list and pantry with up to 8 people in a household, with live updates. Recipes and credits stay personal.
+- Remix a recipe with AI (healthier, vegetarian, vegan, gluten-free, dairy-free, halal, kosher and more), swap an ingredient, scale servings, switch metric and US units, or translate it.
+- Calories, protein, carbs and fat per serving on every recipe.
+- Cook mode with step-by-step instructions, timers and steps read aloud, next to the source video.
 - Flag allergies and disliked ingredients on every recipe.
+- Share a recipe as a Pinch link, and turn recipes into a PDF cookbook.
 
 ## Price
 

@@ -2,7 +2,7 @@
 title: How to save a recipe from TikTok
 description: Four ways to save a recipe from a TikTok video, from TikTok Favorites to turning the video into a written recipe with ingredients, steps, and a shopping list.
 order: 1
-updated: 2026-10-21
+updated: 2026-11-27
 ---
 
 You found the perfect pasta on TikTok. Two weeks later you want to cook it, and it is gone: buried in your likes, or the caption just says "recipe in bio."
@@ -38,16 +38,17 @@ Pause on the frame that shows the ingredients and take a screenshot.
 Pinch reads a TikTok cooking video and writes the recipe out for you: ingredients with amounts, numbered steps, and a shopping list.
 
 1. On TikTok, tap **Share**, then **Copy link**.
-2. Open Pinch, go to **Snap**, and paste the link. On iPhone you can also share the video straight to Pinch from the share sheet.
-3. Check the preview and tap **Save recipe**. It lands in your Library.
+2. Open Pinch, go to **Snap**, and paste the link. On your phone you can also tap **Share** on the video and pick Pinch.
+3. That's it. The recipe goes straight into your Library as soon as it's ready.
 
 Pinch gets the whole recipe, even when the amounts are only said out loud, shown on screen for a second, or tucked away in the comments.
 
 Once it is saved you can:
 
-- **Cook along** with the original video next to the steps.
+- **Cook along** with the original video next to the steps, or cook step by step with the steps read aloud.
 - **Scale** the servings, or switch between cups and grams.
 - **Send the ingredients to your shopping list**, grouped by aisle.
+- **Add it to your week's plan.** See [how to plan a week of meals](/guides/weekly-meal-plan/).
 - **Sort it into a collection** with recipes saved from Instagram, YouTube, and recipe websites.
 
 A free Pinch account includes 10 recipe credits a month, and you can buy more credits that never expire.
@@ -67,7 +68,7 @@ A free Pinch account includes 10 recipe credits a month, and you can buy more cr
 
 ### Can I save a TikTok recipe without an account?
 
-You need a TikTok account to use Favorites. You can copy a video's link without one. In Pinch, you can try a few extractions as a guest, and a free account lets you save them to your library.
+You need a TikTok account to use Favorites. You can copy a video's link without one. To save recipes in Pinch, you need a free Pinch account.
 
 ### What if the creator says "recipe in bio"?
 
@@ -75,4 +76,4 @@ That usually means the recipe is on their blog. Open the link in their bio, copy
 
 ### Does it work for Instagram and YouTube?
 
-Yes. The same steps work for Instagram Reels and YouTube videos. See [how to organize your Instagram saved recipes](/guides/organize-instagram-saved-recipes/).
+Yes. The same steps work for Instagram Reels and YouTube videos. See [how to organize your Instagram saved recipes](/guides/organize-instagram-saved-recipes/). They work for Facebook and Pinterest too: see [how to save recipes from Pinterest and Facebook](/guides/save-pinterest-facebook-recipes/).

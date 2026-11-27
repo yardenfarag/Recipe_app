@@ -1,9 +1,8 @@
 ---
 title: Cómo hacer la lista de la compra del meal prep a partir de tus recetas
 description: Elige las recetas de la semana, junta los ingredientes en una sola lista, deja fuera lo que ya tienes en la despensa y compra por pasillos. Un método sencillo para la lista de la compra de tu meal prep.
-order: 3
-updated: 2026-11-15
-sourceUpdated: 2026-10-05
+updated: 2026-11-27
+sourceUpdated: 2026-11-27
 ---
 
 Lo difícil del meal prep no es cocinar. Es la lista de la compra. Tres recetas que llevan cebolla se convierten en tres líneas separadas de «1 cebolla», compras comino que ya tienes y recorres el supermercado dos veces porque los lácteos estaban al final de la lista.
@@ -53,6 +52,14 @@ Los pasos 2 a 4 son los que más tiempo llevan, y son justo lo que Pinch hace po
 
 Luego ve marcando las cosas en el supermercado. Si todavía falta algo, añádelo a mano.
 
+## Deja que Pinch elija también las recetas
+
+¿No sabes qué cocinar esta semana? Abre **Plan** y toca **Planificar mi semana**. Pinch completa los días que elijas con tus recetas, según tu dieta y lo que ya tienes en casa, y da preferencia a las recetas que comparten ingredientes. Activa **Cocinar de más para la comida** y una cena sirve también para la comida del día siguiente: meal prep sin tener que planificarlo.
+
+Cuando la semana te convenza, toca **Enviar a la lista**. Lo que ya tienes en casa se queda fuera. Mira [cómo planificar las comidas de la semana](/guides/weekly-meal-plan/) para ver los detalles.
+
+¿Haces la compra para toda la casa? Comparte una sola lista con quienes viven contigo, para que la tenga quien esté en el supermercado. Mira [cómo compartir la lista de la compra con tu familia](/guides/share-shopping-list-with-family/).
+
 ## Una semana de meal prep de ejemplo
 
 | Receta | Papel | Comparte ingredientes con |
@@ -72,7 +79,7 @@ Tres o cuatro. Con más, la lista se alarga, la nevera se llena y la comida se e
 
 ### ¿Cómo evito que la lista crezca cada semana?
 
-Repite lo que funciona. Ten una colección «Meal prep» con las recetas que se recalentaron bien y haz la lista de la semana siguiente a partir de ella.
+Repite lo que funciona. Ten una colección «Meal prep» con las recetas que se recalentaron bien y haz la lista de la semana siguiente a partir de ella. En el plan de Pinch, **fija** las comidas que quieras conservar y vuelve a mezclar el resto.
 
 ### ¿Dónde encuentro recetas para meal prep?
 

@@ -28,11 +28,11 @@
   },
   "features": {
     "title": "Un organizador de recetas para los videos con los que cocinas",
-    "sub": "La receta, la lista y el video, en una misma cocina.",
+    "sub": "Guarda la receta, planifica la semana y compra con una sola lista.",
     "items": [
       {
         "title": "Guarda recetas de TikTok e Instagram",
-        "text": "Comparte un TikTok o un Reel de Instagram con Pinch, o pega tú el enlace."
+        "text": "Comparte un TikTok, un Reel de Instagram, un video de Facebook o un pin de Pinterest con Pinch, o pega tú el enlace."
       },
       {
         "title": "De video de YouTube a receta",
@@ -43,28 +43,40 @@
         "text": "Aunque las cantidades solo se digan en voz alta o aparezcan un segundo en pantalla, Pinch las anota."
       },
       {
-        "title": "Cocina siguiendo el video",
-        "text": "Ten el video original al lado de los pasos, o sigue el modo cocina paso a paso, con temporizadores."
+        "title": "También webs y libros de cocina",
+        "text": "Pega el enlace de una web de recetas, toma una foto de una página de un libro de cocina o de una receta escrita a mano, o añade un PDF."
+      },
+      {
+        "title": "Recetas de tus chats de WhatsApp",
+        "text": "Trae de una vez los enlaces, las recetas escritas y las fotos que tu familia compartió en un chat de grupo."
+      },
+      {
+        "title": "Planifica tu semana",
+        "text": "Pinch completa el desayuno, la comida y la cena según tu dieta y lo que tienes en casa. Gratis, y con un toque lo envías a tu lista."
       },
       {
         "title": "Una lista de la compra que conoce tu despensa",
-        "text": "Los ingredientes de varias recetas se juntan en una sola línea, agrupados por pasillos. Los básicos que siempre tienes se quedan fuera."
+        "text": "Los ingredientes de varias recetas se juntan en una sola línea, agrupados por pasillos. Lo que ya tienes se queda fuera."
       },
       {
-        "title": "¿Qué hay en la nevera?",
-        "text": "Toma una foto de tu nevera y Pinch ordena las recetas que ya guardaste según lo que tienes."
+        "title": "La compra, entre todos",
+        "text": "Comparte una lista de la compra y una despensa con quienes viven contigo. Todos ven los cambios al momento."
+      },
+      {
+        "title": "¿Qué puedo cocinar esta noche?",
+        "text": "Toma fotos de tu nevera y tus armarios, y Pinch ordena las recetas que guardaste según lo que ya tienes."
+      },
+      {
+        "title": "Cocina siguiendo el video",
+        "text": "Ten el video original al lado de los pasos, o cocina paso a paso con temporizadores y los pasos leídos en voz alta."
       },
       {
         "title": "Hazla tuya",
         "text": "Haz un remix de cualquier receta (más sana, vegetariana, sin gluten y más), cambia un ingrediente, ajusta las porciones o tradúcela."
       },
       {
-        "title": "También webs y libros de cocina",
-        "text": "Pega el enlace de una web de recetas, o toma una foto de una página de un libro de cocina o de una receta escrita a mano."
-      },
-      {
         "title": "Tu biblioteca de recetas",
-        "text": "Ten todas tus recetas guardadas en un solo lugar y agrúpalas: cenas, repostería o platos fáciles para entre semana."
+        "text": "Ten todas tus recetas guardadas en un solo lugar, agrúpalas en colecciones o conviértelas en un libro de cocina en PDF."
       }
     ]
   },
@@ -100,43 +112,9 @@
       "pastaGrains": "Pasta y cereales"
     }
   },
-  "compare": {
-    "title": "Pinch frente a otras apps",
-    "sub": "Pensado para las recetas que están en videos.",
-    "feature": "Función",
-    "rows": [
-      "Guardar de TikTok, Instagram y YouTube",
-      "Lee el propio video: voz y texto en pantalla",
-      "Escanear páginas de libros de cocina y recetas escritas a mano",
-      "Lista de la compra que junta ingredientes y ordena por pasillos",
-      "Traducir una receta",
-      "Remix con IA: más sana, vegetariana, cambios de ingredientes",
-      "Recetas a partir de una foto de tu nevera",
-      "Cooking Hub: explora recetas que otros ya guardaron"
-    ],
-    "platformsLabel": "Plataformas",
-    "platforms": {
-      "pinch": "iPhone, Android, web",
-      "osta": "iPhone, Android, Mac",
-      "paprika": "iPhone, Android, Mac, Windows",
-      "mela": "iPhone, Mac",
-      "recime": "iPhone, Android, web",
-      "samsung": "iPhone, Android, web"
-    },
-    "priceLabel": "Precio",
-    "prices": {
-      "pinch": "Gratis, 10 recetas al mes. Créditos extra, sin suscripción",
-      "osta": "Gratis con anuncios, 5 importaciones a la semana. $49.99–59.99/año",
-      "paprika": "$4.99, pago único",
-      "mela": "$6.99, pago único",
-      "recime": "Gratis, 5 importaciones a la semana. $59.99/año",
-      "samsung": "Gratis. Funciones de IA, $59.99/año"
-    },
-    "footnote": "✓ Sí · ✗ No · – El creador de la app no lo indica. * Paprika 3. La beta de Paprika 4 las añade, como parte de una suscripción. Osta solo ofrece el escaneo de fotos en su plan de pago, y Samsung Food, el remix con IA y la foto de la nevera. Los precios están en dólares estadounidenses. Según el sitio web, las páginas de ayuda y la ficha del App Store de cada app, consultados en octubre de 2026."
-  },
   "guides": {
     "title": "Guías de recetas",
-    "sub": "Guarda y organiza las recetas de tu feed, y haz la compra para cocinarlas.",
+    "sub": "Guarda, planifica y haz la compra para las recetas de tu feed.",
     "updated": "Actualizada el {date}",
     "more": "Más guías de recetas",
     "ctaTitle": "Guarda tu próxima receta con Pinch",
@@ -148,7 +126,7 @@
     "items": [
       {
         "q": "¿Qué hace Pinch?",
-        "a": "Pinch lee un video de cocina de TikTok, Instagram o YouTube y lo convierte en una receta escrita: ingredientes, pasos y una lista de la compra que puedes ir marcando en el supermercado."
+        "a": "Pinch convierte un video de cocina de TikTok, Instagram o YouTube en una receta escrita: ingredientes, pasos y una lista de la compra que puedes ir marcando en el supermercado. También planifica tu semana según tu dieta y lleva la cuenta de lo que ya tienes en la despensa."
       },
       {
         "q": "¿Es la misma app que otras que se llaman Pinch?",
@@ -156,11 +134,27 @@
       },
       {
         "q": "¿Pinch puede convertir un video de YouTube en una receta?",
-        "a": "Sí. Pega un enlace de YouTube y el extractor de recetas con IA de Pinch escribe los ingredientes y los pasos, para que no tengas que pausar y retroceder mientras cocinas."
+        "a": "Sí. Pega un enlace de YouTube y Pinch escribe los ingredientes y los pasos, para que no tengas que pausar y retroceder mientras cocinas."
       },
       {
         "q": "¿Cómo guardo una receta de TikTok o Instagram?",
-        "a": "Toca Compartir en el video y elige Pinch, o copia el enlace y pégalo en Pinch. Revisa la vista previa de la receta y toca Guardar receta para tenerla en tu biblioteca."
+        "a": "Toca Compartir en el video y elige Pinch, o copia el enlace y pégalo en Pinch. La receta va directa a tus Recetas en cuanto está lista."
+      },
+      {
+        "q": "¿Pinch funciona con Pinterest y Facebook?",
+        "a": "Sí. Pega un pin de Pinterest o un reel o una publicación pública de Facebook, o compártelo con Pinch. Cuando un pin enlaza a una web de recetas, Pinch lee la receta en esa web."
+      },
+      {
+        "q": "¿Pinch puede planificar mis comidas de la semana?",
+        "a": "Sí. Toca Planificar mi semana y Pinch completa el desayuno, la comida y la cena con tus recetas guardadas y el Cooking Hub, siguiendo tu dieta y dejando fuera tus alergias. Planificar es gratis. Enviar a la lista pone en tu lista de la compra lo que necesitas y deja fuera lo que ya tienes."
+      },
+      {
+        "q": "¿Puedo compartir mi lista de la compra con mi familia?",
+        "a": "Sí. Crea un hogar en Ajustes e invita a quienes viven contigo con un enlace o un código QR. Toda la casa comparte una sola lista de la compra y una sola despensa, y todos ven los cambios al momento. Las recetas y los créditos siguen siendo tuyos. Un hogar admite hasta 8 personas."
+      },
+      {
+        "q": "¿Puedo importar recetas de un chat de WhatsApp?",
+        "a": "Sí. Exporta el chat desde WhatsApp y elígelo en Pinch. Pinch lee el chat en tu dispositivo, te muestra los enlaces, las recetas escritas y las fotos que encuentra, e importa solo los que elijas, a un crédito cada uno."
       },
       {
         "q": "¿Pinch es gratis?",
@@ -168,11 +162,11 @@
       },
       {
         "q": "¿Puedo usar Pinch sin la app?",
-        "a": "Sí. Pinch también funciona en tu navegador en [pinch-app.io/app](/app/). Tu biblioteca se sincroniza cuando inicias sesión con la misma cuenta."
+        "a": "Sí. Pinch también funciona en tu navegador en [pinch-app.io/app](/app/). Tus recetas se sincronizan cuando inicias sesión con la misma cuenta."
       },
       {
         "q": "¿Puedo pasar mis recetas desde otra app?",
-        "a": "Sí, de una en una. Pega el enlace original, de una web o de un video, y Pinch la guarda en tu biblioteca."
+        "a": "Sí, de una en una. Pega el enlace original, de una web o de un video, y Pinch la guarda en tus Recetas."
       },
       {
         "q": "¿En qué idiomas está Pinch?",
@@ -193,7 +187,6 @@
     "home": "Inicio",
     "features": "Funciones",
     "how": "Cómo funciona",
-    "compare": "Comparar apps",
     "faq": "Preguntas frecuentes",
     "iphone": "Pinch para iPhone",
     "android": "Pinch para Android",

@@ -1,8 +1,8 @@
 ---
 title: How to turn a YouTube cooking video into a recipe
 description: Turn any YouTube cooking video or Short into a written recipe with ingredients, steps and a shopping list, so you can cook without pausing and rewinding.
-order: 4
-updated: 2026-11-15
+order: 3
+updated: 2026-11-27
 ---
 
 YouTube cooking videos are great to watch and hard to cook from. You pause to catch "two tablespoons of butter," rewind to see the oven temperature, and lose your place every time your hands are messy.
@@ -14,7 +14,7 @@ Pinch turns a YouTube video into a written recipe: ingredients with amounts, num
 1. **Copy the video's link.** In the YouTube app, tap **Share**, then **Copy link**. On a computer, copy the address from your browser.
 2. **Open Pinch and go to Snap.** Paste the link into the **Recipe URL** box and tap the Snap button.
 3. **Wait a few seconds.** Pinch shows "Reading the video…", "Reading the ingredients…" and "Writing the steps…" while it works.
-4. **Check the preview and save it.** The recipe lands in your library.
+4. **That's it.** The recipe goes straight into your Library as soon as it's ready.
 
 **Even faster on your phone:** in the YouTube app, tap **Share**, then pick **Pinch**. The link opens in Pinch and the recipe starts right away. On iPhone, if you don't see Pinch, tap **More** and add it.
 
@@ -34,13 +34,13 @@ Saved recipes keep the original video. On the recipe, open **Cook along** and ta
 
 When the steps have times next to them, **tap a time to jump** to that moment in the video. That's handy for checking how thick the batter should look.
 
-For hands-free cooking, tap **Cook** for step-by-step cook mode. It shows one big step at a time, keeps your screen on, and has a timer chip on any step that mentions a time.
+For hands-free cooking, tap **Cook** for step-by-step cook mode. It shows one big step at a time, keeps your screen on, and has a timer chip on any step that mentions a time. Turn on **Read steps aloud** and Pinch reads each step to you, so you don't have to touch the screen with messy hands.
 
 ## What it costs
 
 Every Pinch account gets **10 free recipes a month**. If you need more, you can buy recipe credits that never expire, with no subscription.
 
-If Pinch can't find a recipe in a video, you get the credit back. If a recipe comes in half-finished, Pinch asks before saving it and doesn't charge you.
+If Pinch can't find a recipe in a video, you get the credit back. If a recipe comes in half-finished, you can fill in the rest yourself, and that import is free.
 
 ## Common questions
 
@@ -58,4 +58,4 @@ Yes. Pinch runs in your browser at [pinch-app.io/app](/app/), and your library s
 
 ### Does it work for TikTok and Instagram too?
 
-Yes. See [how to save a recipe from TikTok](/guides/save-tiktok-recipes/) and [how to organize your Instagram saved recipes](/guides/organize-instagram-saved-recipes/).
+Yes. See [how to save a recipe from TikTok](/guides/save-tiktok-recipes/) and [how to organize your Instagram saved recipes](/guides/organize-instagram-saved-recipes/). Facebook and Pinterest work too: see [how to save recipes from Pinterest and Facebook](/guides/save-pinterest-facebook-recipes/).

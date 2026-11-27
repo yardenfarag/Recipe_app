@@ -1,9 +1,8 @@
 ---
 title: Cómo guardar una receta de TikTok
 description: Cuatro formas de guardar una receta de un video de TikTok, desde los Favoritos de TikTok hasta convertir el video en una receta escrita con ingredientes, pasos y lista de la compra.
-order: 1
-updated: 2026-11-15
-sourceUpdated: 2026-10-21
+updated: 2026-11-27
+sourceUpdated: 2026-11-27
 ---
 
 Encontraste la pasta perfecta en TikTok. Dos semanas después quieres cocinarla y ya no aparece: está enterrada entre tus «me gusta», o la descripción solo dice «receta en la bio».
@@ -39,16 +38,17 @@ Pausa el video en el momento en que aparecen los ingredientes y haz una captura 
 Pinch lee un video de cocina de TikTok y te escribe la receta: ingredientes con cantidades, pasos numerados y lista de la compra.
 
 1. En TikTok, toca **Compartir** y luego **Copiar enlace**.
-2. Abre Pinch, ve a **Snap** y pega el enlace. En iPhone también puedes compartir el video directamente con Pinch desde el menú de compartir.
-3. Revisa la vista previa y toca **Guardar receta**. Se guarda en tu biblioteca.
+2. Abre Pinch, ve a **Snap** y pega el enlace. En el teléfono también puedes tocar **Compartir** en el video y elegir Pinch.
+3. Y listo. La receta va directa a tus **Recetas** en cuanto está lista.
 
 Pinch saca la receta completa, incluso cuando las cantidades solo se dicen en voz alta, aparecen un segundo en pantalla o están escondidas en los comentarios.
 
 Una vez guardada, puedes:
 
-- **Cocinar siguiendo el video** original, al lado de los pasos.
+- **Cocinar siguiendo el video** original, al lado de los pasos, o cocinar paso a paso mientras Pinch te lee los pasos en voz alta.
 - **Ajustar** las porciones, o cambiar entre tazas y gramos.
 - **Enviar los ingredientes a tu lista de la compra**, agrupados por pasillos.
+- **Añadirla al plan de tu semana.** Mira [cómo planificar las comidas de la semana](/guides/weekly-meal-plan/).
 - **Ordenarla en una colección** con recetas guardadas de Instagram, YouTube y webs de recetas.
 
 Una cuenta gratis de Pinch incluye 10 créditos de recetas al mes, y puedes comprar más créditos que no caducan.
@@ -68,7 +68,7 @@ Una cuenta gratis de Pinch incluye 10 créditos de recetas al mes, y puedes comp
 
 ### ¿Puedo guardar una receta de TikTok sin cuenta?
 
-Para usar Favoritos necesitas una cuenta de TikTok. El enlace de un video sí puedes copiarlo sin cuenta. En Pinch puedes sacar algunas recetas de prueba sin iniciar sesión, y con una cuenta gratis las guardas en tu biblioteca.
+Para usar Favoritos necesitas una cuenta de TikTok. El enlace de un video sí puedes copiarlo sin cuenta. Para guardar recetas en Pinch necesitas una cuenta gratis de Pinch.
 
 ### ¿Y si el creador dice «receta en la bio»?
 
@@ -76,4 +76,4 @@ Normalmente significa que la receta está en su blog. Abre el enlace de su bio, 
 
 ### ¿Funciona con Instagram y YouTube?
 
-Sí. Los mismos pasos sirven para los Reels de Instagram y los videos de YouTube. Mira [cómo organizar tus recetas guardadas de Instagram](/guides/organize-instagram-saved-recipes/).
+Sí. Los mismos pasos sirven para los Reels de Instagram y los videos de YouTube. Mira [cómo organizar tus recetas guardadas de Instagram](/guides/organize-instagram-saved-recipes/). También sirven para Facebook y Pinterest: mira [cómo guardar recetas de Pinterest y Facebook](/guides/save-pinterest-facebook-recipes/).

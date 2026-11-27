@@ -1,8 +1,8 @@
 ---
 title: How to make any recipe vegan, gluten-free or dairy-free
 description: Adapt any saved recipe to your diet in one tap with Pinch Remix. Vegan, vegetarian, gluten-free, dairy-free, keto, lower carb and more, with the ingredients and steps rewritten to match.
-order: 5
-updated: 2026-11-15
+order: 12
+updated: 2026-11-27
 ---
 
 You found a great recipe, but it's full of butter and you're vegan. Or it calls for flour and you cook gluten-free. Swapping one ingredient isn't enough: the steps, the amounts and the cooking times often need to change too.
@@ -24,6 +24,8 @@ Open any recipe and tap **Remix**, then pick a style:
 - **Mediterranean**
 - **Paleo**
 - **Pescatarian**
+- **Halal**
+- **Kosher**
 
 Or type your own request in **What should change?**, for example "for 2, no cream", "nut-free" or "air fryer", and tap **Remix with this**.
 
@@ -45,13 +47,13 @@ Don't need a whole new version? Every ingredient has a **Swap** button. Tap it, 
 If you always cook a certain way, set it once:
 
 1. Go to **Settings → Recipe preferences**.
-2. Under **How I cook**, pick up to 4 diets you usually cook.
+2. Under **Usually cook**, pick up to 4 diets.
 3. Under **Always swap**, add swaps you always make, like "butter → olive oil".
-4. Turn on **Adapt new extracts automatically**.
+4. Turn on **Adapt recipes I snap automatically**.
 
 Every new recipe you save is then adapted to your diets and swaps as soon as it's saved. You can still revert any recipe to the original.
 
-Your diets also shape the **Cooking Hub**: recipes that already fit your diets, as written, show up first.
+Your diets also shape the **Cooking Hub**, where recipes that already fit your diets, as written, show up first, and your **meal plan**, which only picks recipes that fit. See [how to plan a week of meals](/guides/weekly-meal-plan/).
 
 ## What it costs
 
