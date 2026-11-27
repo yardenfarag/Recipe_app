@@ -237,7 +237,8 @@ const UNIT_MAP: Record<string, Record<CulinaryUnitLanguage, UnitForms>> = {
     en: { one: 'stick', other: 'sticks' },
     es: { one: 'barra', other: 'barras' },
     he: { one: 'מקל', other: 'מקלות' },
-    ru: { one: 'пачка', other: 'пачки', many: 'пачек' },
+    // A cinnamon or lemongrass stick; not пачка, a ~200 g pack (a US butter stick is 113 g).
+    ru: { one: 'палочка', other: 'палочки', many: 'палочек' },
     ar: { one: 'عصا', other: 'عصي' },
     de: { one: 'Stange', other: 'Stangen' },
     fr: { one: 'plaquette', other: 'plaquettes' },
@@ -362,6 +363,10 @@ const ALIASES: Record<string, string> = {
   'ч л': 'tsp',
   'стакана': 'cup',
   'стаканов': 'cup',
+  // A Russian pack (of pasta, of butter): a package, not a US stick.
+  'пачка': 'package',
+  'пачки': 'package',
+  'пачек': 'package',
   'зубчика': 'clove',
   'зубчиков': 'clove',
   'щепотки': 'pinch',
