@@ -1,9 +1,8 @@
 ---
 title: Cómo convertir cualquier receta en vegana, sin gluten o sin lácteos
 description: Adapta cualquier receta guardada a tu dieta en un toque con Remix de Pinch. Vegana, vegetariana, sin gluten, sin lácteos, keto, con menos carbohidratos y más, con los ingredientes y los pasos reescritos para que encajen.
-order: 5
-updated: 2026-11-15
-sourceUpdated: 2026-11-15
+updated: 2026-11-27
+sourceUpdated: 2026-11-27
 ---
 
 Encontraste una receta buenísima, pero está llena de mantequilla y sigues una dieta vegana. O lleva harina y cocinas sin gluten. Cambiar un ingrediente no basta: muchas veces también hay que cambiar los pasos, las cantidades y los tiempos de cocción.
@@ -25,6 +24,8 @@ Abre cualquier receta, toca **Remix** y elige un estilo:
 - **Mediterránea**
 - **Paleo**
 - **Pescetariana**
+- **Halal**
+- **Kosher**
 
 O escribe lo que quieras en **¿Qué hay que cambiar?**, por ejemplo «para 2, sin nata», «sin frutos secos» o «air fryer», y toca **Remezclar con esto**.
 
@@ -46,13 +47,13 @@ La receta se actualiza ahí mismo y muestra una etiqueta «Versión {dieta}». S
 Si siempre cocinas de cierta manera, configúralo una sola vez:
 
 1. Ve a **Ajustes → Cómo ves las recetas**.
-2. En **Cómo cocino**, elige hasta 4 dietas que sigues al cocinar.
+2. En **Suelo cocinar**, elige hasta 4 dietas.
 3. En **Cambiar siempre**, añade los cambios que haces siempre, como «mantequilla → aceite de oliva».
-4. Activa **Adaptar extractos nuevos automáticamente**.
+4. Activa **Adaptar automáticamente las recetas que saco**.
 
 A partir de ahí, cada receta nueva que guardes se adapta a tus dietas y cambios en cuanto se guarda. Aun así, puedes devolver cualquier receta al original.
 
-Tus dietas también influyen en el **Cooking Hub**: las recetas que ya encajan con tus dietas, tal como están escritas, aparecen primero.
+Tus dietas también influyen en el **Cooking Hub**, donde las recetas que ya encajan con tus dietas, tal como están escritas, aparecen primero, y en tu **plan de comidas**, que solo elige recetas que encajan. Mira [cómo planificar las comidas de la semana](/guides/weekly-meal-plan/).
 
 ## Cuánto cuesta
 

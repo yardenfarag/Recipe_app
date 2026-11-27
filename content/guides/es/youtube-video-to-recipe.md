@@ -1,9 +1,8 @@
 ---
 title: Cómo convertir un video de cocina de YouTube en una receta
 description: Convierte cualquier video de cocina o Short de YouTube en una receta escrita con ingredientes, pasos y lista de la compra, para cocinar sin pausar ni retroceder.
-order: 4
-updated: 2026-11-15
-sourceUpdated: 2026-11-15
+updated: 2026-11-27
+sourceUpdated: 2026-11-27
 ---
 
 Los videos de cocina de YouTube son geniales para verlos, pero cuesta cocinar con ellos. Pausas para alcanzar a oír «dos cucharadas de mantequilla», retrocedes para ver la temperatura del horno y pierdes el hilo cada vez que tienes las manos sucias.
@@ -15,7 +14,7 @@ Pinch convierte un video de YouTube en una receta escrita: ingredientes con cant
 1. **Copia el enlace del video.** En la app de YouTube, toca **Compartir** y luego **Copiar enlace**. En una computadora, copia la dirección desde el navegador.
 2. **Abre Pinch y ve a Snap.** Pega el enlace en el campo **Enlace de la receta** y toca el botón Snap.
 3. **Espera unos segundos.** Mientras trabaja, Pinch muestra «Mirando el video…», «Leyendo los ingredientes…» y «Escribiendo los pasos…».
-4. **Revisa la vista previa y guárdala.** La receta llega a tu biblioteca.
+4. **Y listo.** La receta va directa a tus **Recetas** en cuanto está lista.
 
 **Todavía más rápido en el teléfono:** en la app de YouTube, toca **Compartir** y elige **Pinch**. El enlace se abre en Pinch, que empieza a sacar la receta enseguida. En iPhone, si no ves Pinch, toca **Más** y añádelo.
 
@@ -35,13 +34,13 @@ Las recetas guardadas conservan el video original. En la receta, abre **Cocina c
 
 Cuando los pasos tienen tiempos al lado, **toca un tiempo para saltar** a ese momento del video. Viene muy bien para comprobar el espesor que debe tener la masa.
 
-Para cocinar con las manos libres, toca **Cocinar** y entra al modo cocina, paso a paso. Muestra un paso grande cada vez, mantiene la pantalla encendida y pone un botón de temporizador en cada paso que menciona un tiempo.
+Para cocinar con las manos libres, toca **Cocinar** y entra al modo cocina, paso a paso. Muestra un paso grande cada vez, mantiene la pantalla encendida y pone un botón de temporizador en cada paso que menciona un tiempo. Activa **Leer los pasos en voz alta** y Pinch te lee cada paso, para que no tengas que tocar la pantalla con las manos sucias.
 
 ## Cuánto cuesta
 
 Cada cuenta de Pinch tiene **10 recetas gratis al mes**. Si necesitas más, puedes comprar créditos de recetas que no caducan, sin suscripción.
 
-Si Pinch no encuentra una receta en un video, te devuelve el crédito. Si una receta llega a medias, Pinch te pregunta antes de guardarla y no te cobra.
+Si Pinch no encuentra una receta en un video, te devuelve el crédito. Si una receta llega a medias, puedes completar tú lo que falta, y esa importación no te cuesta nada.
 
 ## Preguntas frecuentes
 
@@ -55,8 +54,8 @@ Pinch lee los subtítulos del video, que incluyen lo que se dice, así que las c
 
 ### ¿Puedo usar Pinch en mi computadora?
 
-Sí. Pinch funciona en tu navegador en [pinch-app.io/app](/app/), y tu biblioteca se sincroniza con las apps de iPhone y Android.
+Sí. Pinch funciona en tu navegador en [pinch-app.io/app](/app/), y tus recetas se sincronizan con las apps de iPhone y Android.
 
 ### ¿También funciona con TikTok e Instagram?
 
-Sí. Mira [cómo guardar una receta de TikTok](/guides/save-tiktok-recipes/) y [cómo organizar tus recetas guardadas de Instagram](/guides/organize-instagram-saved-recipes/).
+Sí. Mira [cómo guardar una receta de TikTok](/guides/save-tiktok-recipes/) y [cómo organizar tus recetas guardadas de Instagram](/guides/organize-instagram-saved-recipes/). Facebook y Pinterest también funcionan: mira [cómo guardar recetas de Pinterest y Facebook](/guides/save-pinterest-facebook-recipes/).

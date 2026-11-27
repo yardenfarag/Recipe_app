@@ -1,9 +1,8 @@
 ---
 title: Cómo organizar tus recetas guardadas de Instagram
 description: ¿Cientos de Reels guardados en Instagram y ni idea de dónde quedó la lasaña? Cómo ordenar tus recetas guardadas de Instagram en colecciones y cómo convertirlas en recetas con las que puedas cocinar.
-order: 2
-updated: 2026-11-15
-sourceUpdated: 2026-10-05
+updated: 2026-11-27
+sourceUpdated: 2026-11-27
 ---
 
 Guardar una receta en Instagram es cosa de un toque. Volver a encontrarla lleva mucho más. Después de unos meses, «Guardado» es un muro de cientos de miniaturas, y la receta que buscas está perdida por el medio.
@@ -34,8 +33,8 @@ Sé realista. Recorre «Todas las publicaciones» y quita de tus guardados todo 
 Instagram está hecho para descubrir recetas, no para cocinar con ellas. Cuando decidas quedarte con una receta, conviértela en una receta escrita con Pinch:
 
 1. En el Reel, toca **Compartir** y luego **Copiar enlace**.
-2. Abre Pinch, ve a **Snap** y pega el enlace. En iPhone también puedes compartir el Reel directamente con Pinch.
-3. Revisa la vista previa y toca **Guardar receta**.
+2. Abre Pinch, ve a **Snap** y pega el enlace. En el teléfono también puedes tocar **Compartir** en el Reel y elegir Pinch.
+3. La receta va directa a tus **Recetas** en cuanto está lista.
 
 Obtienes los ingredientes con cantidades y los pasos numerados, incluso cuando el creador solo los dijo en voz alta o los mostró en pantalla.
 
@@ -47,7 +46,8 @@ Con tus recetas ya en Pinch, tienes más formas de ordenarlas que las que te da 
 - **Búsqueda** por nombre de receta o por ingrediente.
 - **Etiquetas** como «vegetariana» o «para congelar».
 - **Cocinar hoy**, un filtro para recetas de menos de 45 minutos y de dificultad media o más fácil.
-- **¿Qué hay en la nevera?** Toma una foto de tu nevera y Pinch ordena las recetas que ya guardaste según lo que tienes.
+- **¿Qué puedo cocinar?** Toma una vez fotos de tu nevera y tus armarios, y Pinch ordena las recetas que guardaste según lo que ya tienes. Mira [qué cocinar con lo que tienes en la nevera](/guides/what-to-cook-with-whats-in-your-fridge/).
+- **Un plan para la semana.** Pinch puede completar tu semana con las recetas que guardaste. Mira [cómo planificar las comidas de la semana](/guides/weekly-meal-plan/).
 
 Y como la receta queda escrita, no desaparece si el creador borra la publicación.
 
@@ -67,8 +67,12 @@ La descarga de datos de Instagram incluye los enlaces a tus publicaciones guarda
 
 ### ¿Funciona con los carruseles de Instagram?
 
-Si la receta está escrita en la descripción, sí. Si está escrita en una imagen del carrusel, haz una captura de pantalla de esa imagen y usa **Sacar de una foto** en Pinch.
+Si la receta está escrita en la descripción, sí. Si está escrita en una imagen del carrusel, haz una captura de pantalla de esa imagen y elígela en **Snap** de Pinch, igual que una foto de una página de un libro de cocina.
 
 ### ¿Y TikTok?
 
 Allí funciona la misma idea. Mira [cómo guardar una receta de TikTok](/guides/save-tiktok-recipes/).
+
+### ¿Y los Reels que me mandan mis amigos por WhatsApp?
+
+Si tu familia o tus amigos comparten recetas en un grupo de WhatsApp, Pinch puede traerlas todas de una vez. Mira [cómo guardar las recetas de un chat de WhatsApp](/guides/save-recipes-from-whatsapp/).

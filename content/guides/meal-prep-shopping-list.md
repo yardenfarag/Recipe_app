@@ -1,8 +1,8 @@
 ---
 title: How to make a meal-prep shopping list from your recipes
 description: Pick your recipes for the week, combine the ingredients into one list, skip what is already in the pantry, and shop by aisle. A simple meal-prep shopping list method.
-order: 3
-updated: 2026-10-05
+order: 8
+updated: 2026-11-27
 ---
 
 The hard part of meal prep isn't the cooking. It's the shopping list. Three recipes that each need an onion turn into three separate "1 onion" lines, you buy cumin you already have, and you walk the store twice because dairy was at the bottom of the list.
@@ -52,6 +52,14 @@ Steps 2 to 4 are where most of the time goes, and they are exactly what Pinch do
 
 Then check things off in the store. If something is still missing, add it by hand.
 
+## Let Pinch pick the recipes too
+
+Not sure what to cook this week? Open **Plan** and tap **Plan my week**. Pinch fills the days you choose from your recipes, around your diet and what's already at home, and prefers recipes that share ingredients. Turn on **Cook extra for lunch** and a dinner covers the next day's lunch, which is meal prep without the planning.
+
+When the week looks right, tap **Send to list**. What you already have at home is left off. See [how to plan a week of meals](/guides/weekly-meal-plan/) for the details.
+
+Shopping for a household? Share one list with the people you live with, so whoever is at the store has it. See [how to share a shopping list with your family](/guides/share-shopping-list-with-family/).
+
 ## A sample meal-prep week
 
 | Recipe | Role | Shares ingredients with |
@@ -71,7 +79,7 @@ Three or four. More than that and the list gets long, the fridge fills up, and f
 
 ### How do I keep the list from growing every week?
 
-Repeat what works. Keep a "Meal prep" collection of recipes that reheated well, and build next week's list from it.
+Repeat what works. Keep a "Meal prep" collection of recipes that reheated well, and build next week's list from it. In Pinch's plan, **Lock** the meals you want to keep and reshuffle the rest.
 
 ### Where do I find meal-prep recipes?
 
