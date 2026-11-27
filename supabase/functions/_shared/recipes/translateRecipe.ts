@@ -215,15 +215,11 @@ export async function translateRecipeWithLlm(
     const sourceUnit = source.unit ?? '';
     // The model's unit as given: "" is its answer for a count ("1 lemon"), not a gap to fill with the source unit.
     const rawUnit = sanitizeLlmText(typeof translated?.unit === 'string' ? translated.unit : '');
+    const unit = resolveTranslatedUnit(sourceUnit, rawUnit, input.targetLanguage, source.quantity);
     return {
-      name,
+      name: nameWithoutUnit(name, unit),
       quantity: source.quantity,
-      unit: resolveTranslatedUnit(
-        sourceUnit,
-        rawUnit,
-        input.targetLanguage,
-        source.quantity,
-      ),
+      unit,
       ...(source.metric ? { metric: source.metric } : {}),
       ...(source.spoons ? { spoons: source.spoons } : {}),
     };
@@ -256,6 +252,19 @@ export async function translateRecipeWithLlm(
  * an empty one. An unknown source unit the model dropped is a placeholder or a repeat of the name, so the number
  * stands alone (PIN-53: falling back to the source put "קישוא", "adet" and "green cabbage" next to translated names).
  */
+/**
+ * The name without a leading copy of the unit. The app shows "<amount> <unit> <name>", and the model sometimes keeps
+ * the unit in the name too: unit שיני + name "שיני שום כתושות" read "2 שיני שיני שום כתושות" (PIN-77).
+ */
+export function nameWithoutUnit(name: string, unit: string): string {
+  const u = unit.trim();
+  if (!u) return name;
+  const prefix = `${u.toLocaleLowerCase()} `;
+  if (!name.toLocaleLowerCase().startsWith(prefix)) return name;
+  const rest = name.slice(prefix.length).trim();
+  return rest || name;
+}
+
 export function resolveTranslatedUnit(
   sourceUnit: string,
   modelUnit: string,

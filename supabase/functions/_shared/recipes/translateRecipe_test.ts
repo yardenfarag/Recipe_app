@@ -3,6 +3,7 @@ import { assert, assertEquals, assertStringIncludes } from 'jsr:@std/assert@1';
 import { completion, withModel } from '../testing/applianceModelStub.ts';
 import { localizeCulinaryUnit } from './culinaryUnits.ts';
 import {
+  nameWithoutUnit,
   recipeAlreadyInLanguage,
   resolveTranslatedUnit,
   translateRecipeWithLlm,
@@ -18,6 +19,44 @@ Deno.test('resolveTranslatedUnit keeps the model’s empty unit instead of the s
   assertEquals(resolveTranslatedUnit('beau bouquet', 'bunch', 'en', 1), 'bunch');
   assertEquals(resolveTranslatedUnit('shot', 'מנה', 'he', 1), 'מנה');
   assertEquals(resolveTranslatedUnit('cups', 'כוסות', 'he', 0.5), 'כוס');
+});
+
+Deno.test('a Russian pack is a package, and a stick in Russian is палочка, not пачка (PIN-77)', () => {
+  assertEquals(resolveTranslatedUnit('пачки', 'stick', 'en', 0.333), 'package');
+  assertEquals(resolveTranslatedUnit('пачка', '', 'he', 1), 'אריזה');
+  assertEquals(resolveTranslatedUnit('stick', 'пачка', 'ru', 1), 'палочка');
+  assertEquals(resolveTranslatedUnit('sticks', '', 'ru', 2), 'палочки');
+});
+
+Deno.test('nameWithoutUnit drops a leading copy of the unit, and nothing else (PIN-77)', () => {
+  assertEquals(nameWithoutUnit('שיני שום כתושות', 'שיני'), 'שום כתושות');
+  assertEquals(nameWithoutUnit('שן שום', 'שן'), 'שום');
+  assertEquals(nameWithoutUnit('Aceitunas negras', 'aceitunas'), 'negras');
+  assertEquals(nameWithoutUnit('שום', 'שיני'), 'שום');
+  assertEquals(nameWithoutUnit('שיני', 'שיני'), 'שיני');
+  assertEquals(nameWithoutUnit('cupcake liners', 'cup'), 'cupcake liners');
+  assertEquals(nameWithoutUnit('שמנת מתוקה', ''), 'שמנת מתוקה');
+});
+
+Deno.test('a translated garlic clove reads "2 שיני שום", not "2 שיני שיני שום" (PIN-77)', async () => {
+  await withModel(
+    [
+      completion({
+        title: 'שום',
+        ingredients: [{ source_index: 0, name: 'שיני שום כתושות', quantity: 2, unit: 'שיני' }],
+        instructions: [{ source_index: 0, step: 1, text: 'כותשים את השום.' }],
+      }),
+    ],
+    async () => {
+      const result = await translateRecipeWithLlm({
+        targetLanguage: 'he',
+        title: 'Garlic',
+        ingredients: [{ name: 'garlic, minced', quantity: 2, unit: 'cloves' }],
+        instructions: [{ step: 1, text: 'Mince the garlic.' }],
+      });
+      assertEquals(result.ingredients.map((i) => `${i.quantity} ${i.unit} ${i.name}`), ['2 שיני שום כתושות']);
+    },
+  );
 });
 
 Deno.test('the server unit table follows the same plural rules as the app', () => {
