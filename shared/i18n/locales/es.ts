@@ -170,6 +170,8 @@ export default {
     "languageHint": "Cambia el idioma de la app y las recetas se traducen solas. Con hebreo o árabe a veces hay que recargar para que la pantalla se voltee bien.",
     "lightDark": "Claro / oscuro",
     "driftTheme": "Tema Drift",
+    "haptics": "Vibración",
+    "hapticsHint": "Una vibración suave al guardar una receta, cambiar de paso en modo cocina, terminar un temporizador o marcar algo.",
     "measurements": "Medidas",
     "measurementsHint": "Para todas las recetas: tazas y cucharadas, o gramos y mililitros. En cada receta igual puedes cambiarlo.",
     "kitchenTitle": "Tu cocina",

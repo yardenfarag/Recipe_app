@@ -15,6 +15,7 @@ import { useRtl } from '@/hooks/useRtl';
 import { useThemePreference } from '@/hooks/useThemePreference';
 import { useTypography } from '@/hooks/useTypography';
 import { announce } from '@/lib/a11y';
+import { haptics } from '@/lib/haptics';
 import { logTap } from '@/lib/interactionLog';
 import { stepSpeech, voiceAvailability } from '@shared/lib/readAloud';
 import { formatCountdown, parseStepTimers } from '@shared/lib/stepTimers';
@@ -182,6 +183,7 @@ export function CookMode({
   });
   useEffect(() => {
     if (!timerDone) return;
+    haptics.timerDone();
     const voice = appVoiceRef.current;
     if (!readingRef.current) {
       announce(t('recipe.cookModeTimerDone'));
@@ -190,11 +192,19 @@ export function CookMode({
     }
   }, [timerDone, t, appLanguage, queue]);
 
+  // A light tap when the step really changes: not on Back at the first step or Next on the finish screen.
+  const indexRef = useRef(index);
+  useEffect(() => {
+    indexRef.current = index;
+  }, [index]);
+
   const goNext = useCallback(() => {
+    if (indexRef.current < steps.length) haptics.step();
     setIndex((current) => Math.min(steps.length, current + 1));
   }, [steps.length]);
 
   const goBack = useCallback(() => {
+    if (indexRef.current > 0) haptics.step();
     setIndex((current) => Math.max(0, current - 1));
   }, []);
 

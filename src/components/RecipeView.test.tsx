@@ -116,6 +116,9 @@ vi.mock('@/lib/analytics', () => ({ captureRecipeCooked: vi.fn() }));
 vi.mock('@/lib/dialog', () => ({ askConfirm: vi.fn(), showNotice: vi.fn() }));
 vi.mock('@/lib/extractionRequestId', () => ({ clearExtractionRequestId: vi.fn() }));
 vi.mock('@/lib/goBackOrHome', () => ({ goBackOrHome: vi.fn() }));
+vi.mock('@/lib/haptics', () => ({
+  haptics: { saved: vi.fn(), step: vi.fn(), timerDone: vi.fn(), cooked: vi.fn(), tick: vi.fn(), refresh: vi.fn(), error: vi.fn() },
+}));
 vi.mock('@/lib/guestRecipes', () => ({ setGuestRecipeTags: vi.fn() }));
 vi.mock('@/lib/recipeVideo', () => ({
   getRecipePlatformLabel: () => '',

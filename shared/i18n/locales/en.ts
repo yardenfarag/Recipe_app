@@ -166,6 +166,8 @@ export default {
     "languageHint": "This sets the app language and auto-translates recipes. Hebrew and Arabic may ask you to reload so the layout flips the right way.",
     "lightDark": "Light / dark",
     "driftTheme": "Drift theme",
+    "haptics": "Vibration",
+    "hapticsHint": "A light buzz when you save a recipe, change a cook-mode step, a timer ends or you tick something off.",
     "measurements": "Recipe measurements",
     "measurementsHint": "Default for every recipe — cups & spoons, or grams & milliliters. You can still flip it on any recipe.",
     "kitchenTitle": "Your kitchen",

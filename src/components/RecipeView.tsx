@@ -56,6 +56,7 @@ import { useTypography } from '@/hooks/useTypography';
 import { useAuth } from '@/hooks/useAuth';
 import { announce } from '@/lib/a11y';
 import { goBackOrHome } from '@/lib/goBackOrHome';
+import { haptics } from '@/lib/haptics';
 import { captureRecipeCooked, type RecipeCookedFrom } from '@/lib/analytics';
 import { allergyInstruction, findAvoidMatches, hasAllergies, makeWithoutInstruction } from '@shared/lib/avoidList';
 import { setGuestRecipeTags } from '@/lib/guestRecipes';
@@ -841,6 +842,7 @@ export function RecipeView({
     const at = new Date().toISOString();
     // Cooking is what makes people save (and come back for) more recipes, so it is the number to watch.
     captureRecipeCooked({ from, again: Boolean(lastCookedAt) });
+    haptics.cooked();
     setLastCookedAt(at);
     onCookedChange({ last_cooked_at: at, cook_note: cookNote });
     if (openNote) setCookedNoteOpen(true);

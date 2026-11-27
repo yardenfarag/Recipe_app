@@ -17,6 +17,7 @@ import { DEFAULT_SOURCE_LANGUAGE } from '@shared/lib/appLanguages';
 import { askConfirm, showNotice } from '@/lib/dialog';
 import { ensureRecipeTranslation } from '@/lib/ensureRecipeTranslation';
 import { goBackOrHome } from '@/lib/goBackOrHome';
+import { haptics } from '@/lib/haptics';
 import { recipeContentEquals } from '@shared/lib/recipeContentEquals';
 import { recipeIsInvented } from '@shared/lib/recipeOrigin';
 import {
@@ -300,6 +301,7 @@ export default function RecipePreviewScreen() {
         await showNotice({ title: t('recipe.saveFailedTitle'), message: t('recipe.alreadySaved') });
         router.replace(`/recipe/${saved.id}`);
       } else {
+        haptics.saved();
         router.dismissTo('/?saved=1');
       }
     } catch (err) {

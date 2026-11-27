@@ -50,6 +50,7 @@ import { pantryHomeNames, placeForAisle } from '@shared/lib/pantry';
 import { upsertPantryItems } from '@shared/lib/supabase/pantry';
 import { showToast } from '@shared/lib/toast';
 import { formatQuantity } from '@shared/lib/formatQuantity';
+import { haptics } from '@/lib/haptics';
 import { logTap } from '@/lib/interactionLog';
 import {
   getDuplicateNameCounts,
@@ -476,7 +477,10 @@ export default function ShoppingListScreen() {
         <View style={{ flexDirection: 'row', alignItems: 'center', minHeight: 56 }}>
           <Pressable
             trackId="shopping_list.item.toggle"
-            onPress={() => void handleToggle(item)}
+            onPress={() => {
+              haptics.tick();
+              void handleToggle(item);
+            }}
             onLongPress={() => handleLongPress(item)}
             accessibilityRole="checkbox"
             accessibilityState={{ checked: item.checked }}

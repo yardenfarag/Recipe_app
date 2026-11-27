@@ -17,6 +17,7 @@ import { useMeasurementPreference } from '@/hooks/useMeasurementPreference';
 import { useUnitSystemPreference } from '@/hooks/useUnitSystemPreference';
 import { useThemePreference } from '@/hooks/useThemePreference';
 import { announce, CHROME_MAX_FONT_SCALE } from '@/lib/a11y';
+import { haptics } from '@/lib/haptics';
 import { resolveCulinaryLanguage } from '@shared/lib/culinaryUnits';
 import { displayIngredientAmount } from '@shared/lib/displayIngredientAmount';
 import { makeAtHome } from '@/lib/pantryHelpers';
@@ -201,7 +202,10 @@ export function AddToShoppingListModal({
                 <Pressable
                   trackId="add_to_list.item.toggle"
                   className="min-w-0 flex-1 flex-row items-center gap-3 active:opacity-80"
-                  onPress={() => toggleIndex(index)}
+                  onPress={() => {
+                    haptics.tick();
+                    toggleIndex(index);
+                  }}
                   accessibilityRole="checkbox"
                   accessibilityState={{ checked: isOn }}
                   accessibilityLabel={[ing.name, amount, inPantry ? t('addToList.inPantry') : null]
