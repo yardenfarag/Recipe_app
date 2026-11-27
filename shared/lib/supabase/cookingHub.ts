@@ -25,7 +25,7 @@ export interface FetchHubCardsOptions {
   avoid?: HubAvoid;
   /**
    * The app language: cards written in another one get `display_title` from their translation into it (PIN-77).
-   * Search and filters still work on the card as written.
+   * Search matches both the card as written and its translated titles, in the database.
    */
   language?: string;
 }
@@ -116,12 +116,23 @@ export async function withCardTitles(cards: RecipeCard[], language: string): Pro
   return cards.map((card) => (titles[card.id] ? { ...card, display_title: titles[card.id] } : card));
 }
 
-/** Total cards for the current filters. Diets and the avoid list only change the order, so they don't count here. */
+/**
+ * Total cards for the current filters. Diets and the avoid list only change the order, so they don't count here.
+ * hub_cards_count searches the translated titles too, like the list; a database without it counts title matches.
+ */
 async function countHubCards(filters: {
   platform: HubPlatform | null;
   search: string;
   tags: string[] | null;
 }): Promise<number | null> {
+  const counted = await supabase.rpc('hub_cards_count', {
+    p_platform: sqlNullable(filters.platform),
+    p_search: sqlNullable(filters.search || null),
+    p_tags: sqlNullable(filters.tags),
+  });
+  if (!counted.error) return typeof counted.data === 'number' ? counted.data : null;
+  if (counted.error.code !== 'PGRST202') throw counted.error;
+
   let query = supabase.from('recipe_cards').select('id', { count: 'exact', head: true });
   if (filters.platform) query = query.eq('platform', filters.platform);
   if (filters.search) query = query.ilike('title', `%${filters.search}%`);
