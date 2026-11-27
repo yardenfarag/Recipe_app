@@ -26,7 +26,7 @@ Enable Pages (one-time, required before the workflow succeeds):
 1. Create app: Pinch / package com.pinch.myapp
 2. Store listing (full description shared with the App Store; see "Store listing copy" below):
    App name (≤30):          Pinch: Recipe Library
-   Short description (≤80): Video to recipe & shopping list. No subscription, 10 free recipes a month.
+   Short description (≤80): Video to recipe, meal plan & shopping list. 10 free recipes a month.
    Full description (≤4000): the shared full description below.
 3. Configure and sandbox-test RevenueCat consumable packs before store submission.
 4. Privacy policy URL: (see above)
@@ -86,50 +86,66 @@ App Store only:
    Name (≤30):     Pinch: Recipe Library
    Subtitle (≤30): Save TikTok & YouTube Recipes
    Promotional text (≤170):
-   Turn the cooking videos you save into recipes you can cook from: ingredients, steps, and a shopping list grouped by aisle. 10 free recipes every month.
+   Save recipes from TikTok, Instagram and YouTube, plan your week around your diet and what's at home, and shop from one list. 10 free recipes every month.
    Keywords (≤100, no spaces, no words already in the name or subtitle):
    instagram,reels,extractor,ai,shopping,list,grocery,cookbook,scan,keeper,meal,translate,fridge,pantry
 
 Full description (both stores, ≤4000):
-   Share a cooking video from TikTok, Instagram, or YouTube and Pinch writes out the recipe and your shopping list. No subscription: 10 free recipes every month.
+   Share a cooking video from TikTok, Instagram, or YouTube and Pinch writes out the recipe and your shopping list, then plans your week with it. No subscription: 10 free recipes every month.
 
-   Pinch is a recipe keeper app for the recipes in your feed. Share a cooking video to Pinch and its AI recipe extractor writes out the ingredients and steps, then puts them on a shopping list. No more pausing, rewinding, and screenshotting.
-
-   READS THE WHOLE VIDEO, NOT JUST THE CAPTION
-   Most creators say the amounts out loud or flash them on screen. Pinch watches the video, listens to it, and reads the on-screen text, so you get the whole recipe, every time.
+   Pinch is a recipe keeper app for the recipes in your feed, and a meal planner that cooks from them. Save a recipe once and get the ingredients, the steps, a week of meals and one shopping list. No more pausing, rewinding, screenshotting, or wondering what's for dinner.
 
    SAVE RECIPES FROM ANYWHERE
-   • Save TikTok recipes and Instagram Reels: tap Share and pick Pinch, or paste the link
+   • TikTok recipes and Instagram Reels: tap Share and pick Pinch, or paste the link
    • YouTube video to recipe: ingredients and steps, written out
-   • Recipe websites: paste a link and skip the life story
+   • Pinterest pins, recipe websites, PDFs and Google Docs: paste a link and skip the life story
    • Cookbooks and handwritten cards: snap a photo of the page
+   • A WhatsApp chat: bring in the recipes your family shared in a group
+   • Pinch watches the video, listens to it and reads the on-screen text, so the amounts are there
 
-   A RECIPE TO SHOPPING LIST IN ONE TAP
-   • Ingredients from several recipes merge into one line each
-   • Grouped by aisle, so you shop the store once
-   • Staples you always have stay off the list
+   PLAN YOUR WEEK IN ONE TAP
+   • Pinch fills breakfast, lunch and dinner from your recipes and the Hub, for free
+   • It follows your diet (vegetarian, vegan, keto, halal, kosher and more) and your allergies, and leaves out foods you don't eat
+   • Ask for quick weeknights, cheaper meals or more protein
+   • Meals that use what's already at home come first, and a dinner can cover the next day's lunch
+   • Lock the meals you love and reshuffle the rest
+   • A reminder with tonight's dinner, and one in the morning when something needs to come out of the freezer
+
+   A SHOPPING LIST THAT KNOWS YOUR KITCHEN
+   • Send one recipe or the whole week to your list
+   • Ingredients from several recipes merge into one line each, grouped by aisle
+   • Snap your fridge and cupboards, and Pinch keeps your pantry list
+   • What you already have stays off the list
+   • Amounts come in your units, metric or US
+
+   SHOP TOGETHER
+   Set up a household and share one shopping list and pantry with the people you live with. Changes show up for everyone as they happen. Your recipes and credits stay yours.
 
    COOK ALONG
    • Keep the source video right beside the steps
-   • Step-by-step cook mode with built-in timers
-   • Scale servings up or down and the amounts follow
+   • Cook mode reads the steps aloud, with built-in timers
+   • Scale servings up or down, and the amounts round to what you can measure
+   • Calories, protein, carbs and fat for each serving
 
    MAKE IT YOURS
    • Remix any recipe with AI: healthier, vegetarian, gluten-free, and more
    • Swap an ingredient and the steps update to match
-   • What's in the fridge? Snap it, and Pinch ranks your saved recipes by what you have
+   • Recipes without a photo get a picture Pinch draws, or one you choose
+
+   THE COOKING HUB
+   Browse recipes other cooks already saved from public links. Recipes that fit your diet come first, and you can add any of them to your Library for free.
 
    A RECIPE ORGANIZER THAT SPEAKS YOUR LANGUAGE
    Use Pinch in English, Spanish, Hebrew, Arabic, or Russian, with full right-to-left support for Hebrew and Arabic. Saved a recipe from a video in another language? Translate it into any of those, or into German or French, in one tap.
 
-   YOUR RECIPE LIBRARY, EVERYWHERE
-   Keep every saved recipe in one place and group them for dinner, baking, or easy weeknights. Sign in and your library syncs between your phone and the web at pinch-app.io.
+   YOUR LIBRARY, EVERYWHERE
+   Keep every saved recipe in one place and group them for dinner, baking, or easy weeknights. Sign in and your Library and your plan sync between your phone and the web at pinch-app.io. Share any recipe as a link that opens in Pinch or in a browser.
 
    FREE TO START, NO SUBSCRIPTION
-   Every account gets 10 free recipe credits each month. Need more? Buy a credit pack in the app. Credits you buy never expire, and there's no subscription.
+   Every account gets 10 free recipe credits each month. Planning your week and saving recipes from the Hub are free. Need more credits? Buy a pack in the app. Credits you buy never expire, and there's no subscription.
 
    PRIVATE BY DEFAULT
-   Pinch doesn't sell your personal information. You can delete your account and data at any time in Settings.
+   Pinch doesn't sell your personal information. WhatsApp chats are read on your device, and only the recipes you pick are sent. You can delete your account and data at any time in Settings.
 
    See it. Snap it. Cook it.
 

@@ -28,50 +28,69 @@ Russian addresses the reader as вы, as most Russian store listings do.
 --- App Store ---
 Name (≤30): Pinch: Recetario de videos
 Subtitle (≤30): Recetas de TikTok y YouTube
-Promotional text (≤170): Convierte los videos de cocina que guardas en recetas que de verdad cocinas: ingredientes, pasos y una lista de compras por pasillos. 10 recetas gratis al mes.
+Promotional text (≤170): Guarda recetas de TikTok, Instagram y YouTube, planea tu semana según tu dieta y lo que hay en casa, y compra con una sola lista. 10 recetas gratis al mes.
 Keywords (≤100): instagram,reels,lista,compras,super,cocinar,organizador,menu,despensa,ia,guardar,escanear,refri
 
 --- Google Play ---
 App name (≤30): Pinch: Guarda recetas de video
-Short description (≤80): De video a receta y lista de compras. Sin suscripción, 10 recetas gratis al mes.
+Short description (≤80): De video a receta, menú semanal y lista de compras. 10 recetas gratis al mes.
 
 --- Full description (both stores, ≤4000) ---
-Comparte un video de cocina de TikTok, Instagram o YouTube y Pinch te escribe la receta y la lista de la compra. Sin suscripción: 10 recetas gratis cada mes.
+Comparte un video de cocina de TikTok, Instagram o YouTube y Pinch te escribe la receta y la lista de compras, y luego planea tu semana con ella. Sin suscripción: 10 recetas gratis cada mes.
 
-Pinch es el recetario de las recetas que ves en tu feed. Comparte un video de cocina con Pinch: su IA escribe los ingredientes y los pasos, y los manda a tu lista de compras. Se acabó pausar, retroceder y hacer capturas de pantalla.
+Pinch es el recetario de las recetas que ves en tu feed, y un planificador de comidas que cocina con ellas. Guarda una receta una vez y obtén los ingredientes, los pasos, una semana de comidas y una sola lista de compras. Se acabó pausar, retroceder, hacer capturas o preguntarte qué hay de cenar.
 
 GUARDA RECETAS DE DONDE SEA
 • Recetas de TikTok y Reels de Instagram: toca Compartir y elige Pinch, o pega el enlace
 • De un video de YouTube a una receta: ingredientes y pasos, por escrito
-• Sitios de recetas: pega el enlace y sáltate la historia de vida
+• Pinterest, sitios de recetas, PDF y enlaces de Google Docs: pega el enlace y sáltate la historia de vida
 • Libros de cocina y recetas escritas a mano: toma una foto de la página
+• Un chat de WhatsApp: trae las recetas que tu familia compartió en un grupo
+• Pinch ve el video, lo escucha y lee el texto en pantalla, para que no falten las cantidades
 
-DE LA RECETA A LA LISTA DE COMPRAS EN UN TOQUE
-• Si varias recetas llevan el mismo ingrediente, se suma en una sola línea
-• Ordenada por pasillos, para recorrer el súper una sola vez
-• Lo que siempre tienes en casa no entra en la lista
+PLANEA TU SEMANA EN UN TOQUE
+• Pinch llena desayuno, almuerzo y cena con tus recetas y las del Hub, gratis
+• Sigue tu dieta (vegetariana, vegana, keto, halal, kosher y más) y tus alergias, y deja fuera lo que no comes
+• Pide noches rápidas entre semana, comidas más baratas o más proteína
+• Primero van las comidas que usan lo que ya tienes en casa, y una cena puede ser el almuerzo del día siguiente
+• Fija las comidas que te encantan y vuelve a mezclar el resto
+• Un aviso con la cena de hoy, y otro en la mañana cuando hay que sacar algo del congelador
+
+UNA LISTA DE COMPRAS QUE CONOCE TU COCINA
+• Manda una receta o toda la semana a tu lista
+• Si varias recetas llevan el mismo ingrediente, se suma en una sola línea, ordenada por pasillos
+• Toma fotos de tu refri y tu alacena, y Pinch arma tu despensa
+• Lo que ya tienes no entra en la lista
+• Las cantidades salen en tus unidades, métricas o de EE. UU.
+
+COMPRA EN CASA, JUNTOS
+Crea un hogar y comparte una lista de compras y una despensa con quienes viven contigo. Todos ven cada cambio al momento. Tus recetas y tus créditos siguen siendo tuyos.
 
 COCINA CON EL VIDEO
 • El video original junto a los pasos
-• Modo cocina paso a paso con temporizadores
-• Cambia el número de porciones y las cantidades se ajustan solas
+• El modo cocina lee los pasos en voz alta, con temporizadores
+• Cambia el número de porciones y las cantidades se redondean a lo que puedes medir
+• Calorías, proteína, carbohidratos y grasa por porción
 
 HAZLA A TU GUSTO
 • Haz un remix de cualquier receta con IA: más saludable, vegetariana, sin gluten y mucho más
 • Cambia un ingrediente y los pasos se actualizan
-• ¿Qué hay en tu refrigerador? Tómale una foto y Pinch ordena tus recetas guardadas según lo que tienes
+• Las recetas sin foto reciben un dibujo de Pinch o la foto que elijas
+
+EL COOKING HUB
+Explora recetas que otras personas ya guardaron de enlaces públicos. Primero salen las que van con tu dieta, y puedes agregar cualquiera a tus Recetas gratis.
 
 UN RECETARIO EN TU IDIOMA
 Usa Pinch en español, inglés, ruso, hebreo o árabe. ¿Guardaste una receta de un video en otro idioma? Tradúcela a cualquiera de ellos, o al alemán o al francés, en un toque.
 
 TU RECETARIO, EN TODAS PARTES
-Todas tus recetas guardadas en un solo lugar, organizadas en colecciones para la cena, la repostería o las noches con prisa. Inicia sesión y tu recetario se sincroniza entre tu teléfono y la web, en pinch-app.io.
+Todas tus recetas guardadas en un solo lugar, organizadas en colecciones para la cena, la repostería o las noches con prisa. Inicia sesión y tus recetas y tu plan se sincronizan entre tu teléfono y la web, en pinch-app.io. Comparte cualquier receta con un enlace que abre Pinch o el navegador.
 
 GRATIS PARA EMPEZAR, SIN SUSCRIPCIÓN
-Cada cuenta recibe 10 créditos gratis al mes para recetas. ¿Necesitas más? Compra un paquete de créditos en la app. Los créditos que compras no vencen y no hay suscripción.
+Cada cuenta recibe 10 créditos gratis al mes para recetas. Planear tu semana y guardar recetas del Hub es gratis. ¿Necesitas más créditos? Compra un paquete en la app. Los créditos que compras no vencen y no hay suscripción.
 
 PRIVADO DESDE EL PRINCIPIO
-Pinch no vende tu información personal. Puedes eliminar tu cuenta y tus datos cuando quieras desde Ajustes.
+Pinch no vende tu información personal. Los chats de WhatsApp se leen en tu teléfono y solo se envían las recetas que eliges. Puedes eliminar tu cuenta y tus datos cuando quieras desde Ajustes.
 
 Míralo. Guárdalo. Cocínalo.
 
@@ -81,49 +100,68 @@ Míralo. Guárdalo. Cocínalo.
 --- App Store ---
 Name (≤30): Pinch: Книга рецептов
 Subtitle (≤30): Рецепты из TikTok и YouTube
-Promotional text (≤170): Превращайте сохранённые кулинарные видео в рецепты, по которым удобно готовить: ингредиенты, шаги и список покупок по отделам. 10 рецептов в месяц бесплатно.
+Promotional text (≤170): Сохраняйте рецепты из TikTok, Instagram и YouTube, планируйте неделю с учётом диеты и того, что есть дома, и покупайте по одному списку. 10 рецептов в месяц бесплатно.
 Keywords (≤100): instagram,инстаграм,reels,тикток,ютуб,нейросеть,рецепт,видео,список,покупок,продукты,холодильник
 
 --- Google Play ---
 App name (≤30): Pinch: Рецепты из видео
-Short description (≤80): Из видео в рецепт и список покупок. Без подписки, 10 рецептов в месяц бесплатно.
+Short description (≤80): Рецепт из видео, меню на неделю, список покупок. 10 рецептов в месяц бесплатно.
 
 --- Full description (both stores, ≤4000) ---
-Поделитесь кулинарным видео из TikTok, Instagram или YouTube, и Pinch запишет рецепт и список покупок. Без подписки: 10 бесплатных рецептов каждый месяц.
+Поделитесь кулинарным видео из TikTok, Instagram или YouTube, и Pinch запишет рецепт и список покупок, а потом спланирует с ним вашу неделю. Без подписки: 10 бесплатных рецептов каждый месяц.
 
-Pinch — книга рецептов для всего, что попадается вам в ленте. Поделитесь кулинарным видео с Pinch, и ИИ выпишет ингредиенты и шаги, а продукты сразу добавит в список покупок. Больше никаких пауз, перемоток и скриншотов.
+Pinch — книга рецептов для всего, что попадается вам в ленте, и планировщик меню, который готовит по ней. Сохраните рецепт один раз и получите ингредиенты, шаги, неделю блюд и один список покупок. Больше никаких пауз, перемоток, скриншотов и вопроса «что на ужин?».
 
 СОХРАНЯЙТЕ РЕЦЕПТЫ ОТОВСЮДУ
 • Рецепты из TikTok и Reels в Instagram: нажмите «Поделиться» и выберите Pinch или вставьте ссылку
 • Из видео на YouTube в рецепт: ингредиенты и шаги текстом
-• Сайты с рецептами: вставьте ссылку — и без долгих предисловий
+• Pinterest, сайты с рецептами, PDF и ссылки Google Docs: вставьте ссылку — и без долгих предисловий
 • Кулинарные книги и рукописные рецепты: сфотографируйте страницу
+• Чат в WhatsApp: перенесите рецепты, которыми делилась семья в группе
+• Pinch смотрит видео, слушает его и читает текст на экране, так что количества не теряются
 
-ОТ РЕЦЕПТА ДО СПИСКА ПОКУПОК В ОДНО КАСАНИЕ
-• Одинаковые ингредиенты из разных рецептов объединяются в одну строку
-• Список разбит по отделам — обойдёте магазин за один раз
-• То, что всегда есть дома, в список не попадает
+НЕДЕЛЯ ПО ПЛАНУ В ОДНО КАСАНИЕ
+• Pinch бесплатно составит завтраки, обеды и ужины из ваших рецептов и рецептов из Hub
+• Учитывает вашу диету (вегетарианская, веганская, кето, халяль, кошерная и другие) и аллергии и обходит то, что вы не едите
+• Попросите быстрые ужины в будни, блюда подешевле или побольше белка
+• Сначала идут блюда из того, что уже есть дома, а ужин может стать обедом на следующий день
+• Закрепите любимые блюда и перемешайте остальные
+• Напоминание об ужине на сегодня и утреннее — когда что-то нужно достать из морозилки
+
+СПИСОК ПОКУПОК, КОТОРЫЙ ЗНАЕТ ВАШУ КУХНЮ
+• Отправьте в список один рецепт или всю неделю
+• Одинаковые ингредиенты из разных рецептов объединяются в одну строку, список разбит по отделам
+• Сфотографируйте холодильник и шкафы, и Pinch составит список запасов
+• То, что уже есть дома, в список не попадает
+• Количества — в ваших единицах, метрических или американских
+
+ПОКУПАЙТЕ ВМЕСТЕ
+Создайте семью в Pinch и ведите общий список покупок и запасы со всеми, кто живёт с вами. Изменения сразу видны всем. Ваши рецепты и кредиты остаются вашими.
 
 ГОТОВЬТЕ ПО ВИДЕО
 • Исходное видео рядом с шагами
-• Пошаговый режим готовки со встроенными таймерами
-• Меняйте число порций — количества пересчитаются сами
+• Режим готовки читает шаги вслух, со встроенными таймерами
+• Меняйте число порций — количества округляются до того, что можно отмерить
+• Калории, белки, углеводы и жиры на порцию
 
 ПОД ВАШ ВКУС
 • Ремикс любого рецепта с помощью ИИ: сделайте его полезнее, вегетарианским, без глютена — и не только
 • Замените ингредиент, и шаги обновятся
-• Что в холодильнике? Сфотографируйте его, и Pinch отсортирует сохранённые рецепты по тому, что у вас есть
+• Рецепт без фото получит рисунок от Pinch или фото на ваш выбор
+
+COOKING HUB
+Рецепты, которые другие повара уже сохранили из открытых ссылок. Подходящие под вашу диету идут первыми, и любой из них можно бесплатно добавить в «Рецепты».
 
 НА ВАШЕМ ЯЗЫКЕ
 Pinch работает на русском, английском, испанском, иврите и арабском. Сохранили рецепт из видео на другом языке? Переведите его на любой из этих языков, а также на немецкий или французский, в одно касание.
 
-ВАША КНИГА РЕЦЕПТОВ ВСЕГДА С ВАМИ
-Все сохранённые рецепты в одном месте, по подборкам: ужины, выпечка, быстрые блюда на будни. Войдите в аккаунт, и рецепты синхронизируются между телефоном и сайтом pinch-app.io.
+ВАШИ РЕЦЕПТЫ ВСЕГДА С ВАМИ
+Все сохранённые рецепты в одном месте, по подборкам: ужины, выпечка, быстрые блюда на будни. Войдите в аккаунт, и рецепты и план синхронизируются между телефоном и сайтом pinch-app.io. Любым рецептом можно поделиться ссылкой, которая откроется в Pinch или в браузере.
 
 НАЧНИТЕ БЕСПЛАТНО, БЕЗ ПОДПИСКИ
-В начале каждого месяца вы получаете 10 бесплатных кредитов на рецепты. Нужно больше? Купите пакет кредитов в приложении. Купленные кредиты не сгорают, и никакой подписки.
+В начале каждого месяца вы получаете 10 бесплатных кредитов на рецепты. Планировать неделю и сохранять рецепты из Hub — бесплатно. Нужно больше кредитов? Купите пакет в приложении. Купленные кредиты не сгорают, и никакой подписки.
 
 КОНФИДЕНЦИАЛЬНОСТЬ ПО УМОЛЧАНИЮ
-Pinch не продаёт ваши личные данные. Удалить аккаунт и данные можно в любой момент в «Настройках».
+Pinch не продаёт ваши личные данные. Чаты WhatsApp читаются на вашем телефоне, отправляются только выбранные вами рецепты. Удалить аккаунт и данные можно в любой момент в «Настройках».
 
 Увидели. Сохранили. Приготовили.
