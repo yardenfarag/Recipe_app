@@ -3,6 +3,7 @@ import { Image } from 'expo-image';
 import { Text, View } from 'react-native';
 
 import { Pressable } from '@/components/ui/Pressable';
+import { textDirectionStyle } from '@/components/ui/Text';
 import { HAIRLINE, Radii } from '@/components/ui/tokens';
 import { fontFor, tracking, variantStyle } from '@/constants/typography';
 import { useThemePreference } from '@/hooks/useThemePreference';
@@ -58,8 +59,9 @@ export function MessageContent({
   const type = messageType(view);
   const iconName = resolveIconName(message.icon, message.tone, Ionicons.glyphMap);
   const centered = align === 'center';
-  const textAlign = centered ? 'center' : view.rtl ? 'right' : 'left';
   const writingDirection = view.rtl ? 'rtl' : 'ltr';
+  // Start-aligned (or centred) in the message's language (textDirectionStyle explains why not a plain 'right').
+  const textDirection = textDirectionStyle(view.rtl, centered ? 'center' : 'start');
 
   return (
     <View style={{ width: '100%', direction: writingDirection }}>
@@ -101,8 +103,7 @@ export function MessageContent({
             ...type.variant('h2'),
             marginTop: 14,
             color: colors.text,
-            textAlign,
-            writingDirection,
+            ...textDirection,
           }}
         >
           {view.title}
@@ -114,8 +115,7 @@ export function MessageContent({
             ...type.variant('bodySmall'),
             marginTop: showTitle ? 8 : 12,
             color: colors.textSecondary,
-            textAlign,
-            writingDirection,
+            ...textDirection,
           }}
         >
           {view.body}
@@ -173,8 +173,7 @@ export function MessageContent({
               fontSize: 15,
               textDecorationLine: 'underline',
               color: tone.accent === colors.primary ? colors.primaryText : colors.text,
-              textAlign,
-              writingDirection,
+              ...textDirection,
             }}
           >
             {view.link.label}

@@ -1,6 +1,7 @@
 // Branded Pinch emails: one layout, five kinds. Email clients ignore <style> blocks and modern
-// CSS, so this is tables and inline styles on purpose. Colours follow the website (landing/site.css):
-// the Pinch pink on a warm cream page, with a white rounded card.
+// CSS, so this is tables and inline styles on purpose (the only <style> loads Hebrew's web fonts).
+// Colours follow the website (landing/site.css): the Pinch pink on a warm cream page, with a white
+// rounded card.
 import { COPY, fill, isRtl, type EmailCopy, type EmailLocale } from './copy.ts';
 import { NUDGE_COPY, type NudgeKind } from './nudgeCopy.ts';
 
@@ -22,22 +23,55 @@ const FONT = "-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, 
 // Hebrew and Arabic: fonts every mail app has with those scripts. Some apps (Gmail among them)
 // drop the system-font stack above and fall back to Times New Roman.
 const RTL_FONT = 'Arial, Tahoma, Helvetica, sans-serif';
+// Hebrew: the web app's fonts, Heebo for text and Rubik for headings (web/app/fonts/). Only mail apps
+// that load web fonts (Apple Mail, iOS Mail, Outlook for Mac) show them; the rest, Gmail included, use
+// Arial/Tahoma. Arabic stays on RTL_FONT: the web app uses the system's fonts for it.
+const HE_FONT = `Heebo, ${RTL_FONT}`;
+const HE_HEADING_FONT = `Rubik, ${HE_FONT}`;
+// The weights the layout uses: text 400/700 (600 rounds up), bold labels 800, the h1 800.
+const HE_FONTS_URL =
+  'https://fonts.googleapis.com/css2?family=Heebo:wght@400;700;800&family=Rubik:wght@800&display=swap';
 
-function fontFor(locale: EmailLocale): string {
-  return isRtl(locale) ? RTL_FONT : FONT;
+interface EmailFonts {
+  body: string;
+  heading: string;
+  /** Tags for <head> that load the web fonts, or '' when the locale needs none. */
+  head: string;
+}
+
+function fontsFor(locale: EmailLocale): EmailFonts {
+  if (locale === 'he') {
+    // The <link> first; the @import is a backup for apps that strip links. Outlook for Windows falls
+    // back to Times New Roman when a stack starts with a web font, so it gets Arial (and the code its
+    // monospace) from the [if mso] block.
+    const mso =
+      `body,table,td,p,a,h1,div{font-family:${RTL_FONT} !important;}` +
+      `.code{font-family:Consolas,'Courier New',monospace !important;}`;
+    const head = `<link href="${HE_FONTS_URL}" rel="stylesheet">
+<style>@import url('${HE_FONTS_URL}');</style>
+<!--[if mso]><style>${mso}</style><![endif]-->`;
+    return { body: HE_FONT, heading: HE_HEADING_FONT, head };
+  }
+  const font = isRtl(locale) ? RTL_FONT : FONT;
+  return { body: font, heading: font, head: '' };
 }
 
 /**
- * Puts the locale's font on every text element. Mail apps don't always inherit font-family into
- * headings and paragraphs; an element's own font-family later in its style (the monospace code)
- * still wins.
+ * Puts the locale's fonts on every text element (the heading font on the h1). Mail apps don't always
+ * inherit font-family into headings and paragraphs; an element's own font-family later in its style
+ * (the monospace code) still wins.
  */
 function withFont(html: string, locale: EmailLocale): string {
-  const font = fontFor(locale);
+  const fonts = fontsFor(locale);
   return html
+    .replace('<!--fonts-->', fonts.head)
     .split(`font-family:${FONT}`)
-    .join(`font-family:${font}`)
-    .replace(/<(p|div|h1|a|td)((?: [a-z-]+="[^"]*")*?) style="/g, `<$1$2 style="font-family:${font};`);
+    .join(`font-family:${fonts.body}`)
+    .replace(
+      /<(p|div|h1|a|td)((?: [a-z-]+="[^"]*")*?) style="/g,
+      (_, tag: string, attrs: string) =>
+        `<${tag}${attrs} style="font-family:${tag === 'h1' ? fonts.heading : fonts.body};`,
+    );
 }
 
 export interface RenderedEmail {
@@ -105,6 +139,7 @@ function baseLayout({ locale, subject, preheader, title, body, unsubscribeUrl }:
 <meta name="color-scheme" content="light">
 <meta name="supported-color-schemes" content="light">
 <title>${escapeHtml(subject)}</title>
+<!--fonts-->
 </head>
 <body style="margin:0;padding:0;background:${C.page};">
 <div style="display:none;max-height:0;overflow:hidden;opacity:0;color:${C.page};">${escapeHtml(preheader)}&#8199;&#65279;&#847;&#8199;&#65279;&#847;</div>
@@ -157,7 +192,7 @@ export function copyCodeUrl(code: string, locale: EmailLocale): string {
  */
 function codeBlock(code: string, locale: EmailLocale): string {
   return `<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="margin:8px 0 12px;">
-<tr><td align="center" dir="ltr" style="background:${C.pinkSoft};border:2px dashed ${C.pinkLine};border-radius:18px;padding:20px 12px;font-family:'SF Mono',Menlo,Consolas,monospace;font-size:36px;font-weight:800;letter-spacing:10px;color:${C.pink};-webkit-user-select:all;user-select:all;">${escapeHtml(code)}</td></tr>
+<tr><td align="center" dir="ltr" class="code" style="background:${C.pinkSoft};border:2px dashed ${C.pinkLine};border-radius:18px;padding:20px 12px;font-family:'SF Mono',Menlo,Consolas,monospace;font-size:36px;font-weight:800;letter-spacing:10px;color:${C.pink};-webkit-user-select:all;user-select:all;">${escapeHtml(code)}</td></tr>
 </table>
 <table role="presentation" cellpadding="0" cellspacing="0" border="0" align="center" style="margin:0 auto 20px;">
 <tr><td align="center" style="border-radius:999px;border:2px solid ${C.pink};">

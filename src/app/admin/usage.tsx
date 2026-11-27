@@ -1,5 +1,4 @@
 import { useFocusEffect } from '@react-navigation/native';
-import { router } from 'expo-router';
 import { useCallback, useState, type ReactNode } from 'react';
 import { useTranslation } from 'react-i18next';
 import {
@@ -17,6 +16,7 @@ import { TextInput } from '@/components/text-input';
 import { useAuth } from '@/hooks/useAuth';
 import { useProfile } from '@/hooks/useProfile';
 import { useThemePreference } from '@/hooks/useThemePreference';
+import { goBackOrHome } from '@/lib/goBackOrHome';
 import { errorText } from '@shared/lib/errorText';
 import { ADMIN_PRICE_CARD } from '@shared/lib/quotas';
 import { formatTokens, shortModelName } from '@shared/lib/aiCostSummary';
@@ -158,7 +158,7 @@ export default function AdminUsageScreen() {
           </Text>
           <Pressable
             trackId="admin.usage.back"
-            onPress={() => router.back()}
+            onPress={() => goBackOrHome('/settings')}
             accessibilityRole="button"
             className="rounded-[18px] px-5 py-3"
             style={{ backgroundColor: colors.primarySoft }}

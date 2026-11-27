@@ -197,7 +197,7 @@ export default function RecipePreviewScreen() {
         icon="arrow-back"
         label={t('common.back')}
         trackId="recipe_preview.back"
-        onPress={() => goBackOrHome('/')}
+        onPress={() => goBackOrHome('/add')}
       />
     </View>
   );
@@ -317,7 +317,7 @@ export default function RecipePreviewScreen() {
     <Screen edges={[]}>
       <RecipeView
         immersive
-        onBack={() => goBackOrHome('/')}
+        onBack={() => goBackOrHome('/add')}
         primaryAction={{
           label: t('recipe.save'),
           onPress: () => void handleSave(),

@@ -4,6 +4,7 @@ import { useState } from 'react';
 import { Platform, Text, View } from 'react-native';
 
 import { Pressable } from '@/components/ui/Pressable';
+import { textDirectionStyle } from '@/components/ui/Text';
 import { useThemePreference } from '@/hooks/useThemePreference';
 
 import { CloseButton } from './CloseButton';
@@ -43,8 +44,9 @@ export function BannerPresenter({
   const tone = toneColors(message.tone, colors);
   const type = messageType(view);
   const iconName = resolveIconName(message.icon, message.tone, Ionicons.glyphMap);
-  const textAlign = view.rtl ? 'right' : 'left';
   const writingDirection = view.rtl ? 'rtl' : 'ltr';
+  // Start-aligned in the message's language (textDirectionStyle explains why not a plain 'right').
+  const textDirection = textDirectionStyle(view.rtl);
 
   // Web: Escape closes a dismissible banner while focus is inside it.
   const keyProps =
@@ -153,14 +155,14 @@ export function BannerPresenter({
           )}
           <View style={{ flex: 1, minWidth: 0 }}>
             <Text
-              style={{ ...type.variant('h3'), fontSize: 15, lineHeight: 20, color: colors.text, textAlign, writingDirection }}
+              style={{ ...type.variant('h3'), fontSize: 15, lineHeight: 20, color: colors.text, ...textDirection }}
               numberOfLines={2}
             >
               {view.title}
             </Text>
             {view.body ? (
               <Text
-                style={{ ...type.variant('caption'), marginTop: 2, color: colors.textSecondary, textAlign, writingDirection }}
+                style={{ ...type.variant('caption'), marginTop: 2, color: colors.textSecondary, ...textDirection }}
                 numberOfLines={3}
               >
                 {view.body}

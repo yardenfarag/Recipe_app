@@ -167,7 +167,8 @@ export default function HubRecipeScreen() {
           <Text variant="body" tone="muted" align="center">
             {loadError ?? t('hub.notFound')}
           </Text>
-          <Button trackId="hub_recipe.back_to_hub" icon="chevron-back" onPress={() => router.replace('/hub')}>
+          {/* dismissTo, not replace: replace put a second set of tabs on top of the first one. */}
+          <Button trackId="hub_recipe.back_to_hub" icon="chevron-back" onPress={() => router.dismissTo('/hub')}>
             {t('hub.backToHub')}
           </Button>
         </View>

@@ -88,6 +88,12 @@ function flat(style: unknown) {
   return StyleSheet.flatten(style as never) as { writingDirection?: string; textAlign?: string };
 }
 
+/**
+ * The kit's Text at the reading start in Hebrew on the phone: React Native mirrors 'left' in a right-to-left
+ * layout, so the text pins its direction to rtl and asks for 'left', which lands on the right (textDirectionStyle).
+ */
+const HEBREW_START = { writingDirection: 'rtl', direction: 'rtl', textAlign: 'left' };
+
 async function inLanguage(language: 'en' | 'he') {
   rtlState.rtl = language === 'he';
   await changeAppLanguage(language);
@@ -138,7 +144,7 @@ describe('RecipeAppliances: recalculating after a hand edit (ADR 018)', () => {
     await inLanguage('he');
     await render(<RecipeAppliances appliances={[OVEN]} instructions={STEPS_HE} updating />);
     const note = screen.getByText('מתעדכן…');
-    expect(flat(note.props.style)).toMatchObject({ writingDirection: 'rtl', textAlign: 'right' });
+    expect(flat(note.props.style)).toMatchObject(HEBREW_START);
   });
 
   it('shows no "Updating…" when nothing is recalculating', async () => {
@@ -213,7 +219,7 @@ describe('RecipeAppliances: Hebrew, right to left', () => {
   it('lays text out right to left', async () => {
     await inLanguage('he');
     await render(<RecipeAppliances appliances={ALL} instructions={STEPS_HE} />);
-    expect(flat(screen.getByText('מה צריך').props.style)).toMatchObject({ writingDirection: 'rtl', textAlign: 'right' });
+    expect(flat(screen.getByText('מה צריך').props.style)).toMatchObject(HEBREW_START);
     expect(flat(screen.getByText('טעם עשיר יותר · או תבלינים טחונים').props.style)).toMatchObject({ writingDirection: 'rtl' });
   });
 

@@ -5,10 +5,9 @@ import { useAuth } from '@/hooks/useAuth';
 import { useLanguagePreference } from '@/hooks/useLanguagePreference';
 import { backfillRecipeThumbnails } from '@/lib/backfillRecipeThumbnails';
 import { getGuestRecipes } from '@/lib/guestRecipes';
+import { localizeRecipes } from '@shared/lib/localizeRecipes';
 import { withDisplayTitles } from '@shared/lib/recipeDisplayTitle';
-import { resolveRecipeSourceLanguage } from '@shared/lib/recipeSourceLanguage';
 import { normalizeRecipeFavorite, normalizeRecipes, toggleRecipeFavorite } from '@/lib/recipeFavorites';
-import { fetchRecipeTranslationsForLanguage } from '@shared/lib/supabase/recipeTranslations';
 import { fetchRecipes, fetchRecipesPage } from '@shared/lib/supabase/recipes';
 import { Recipe } from '@shared/types/recipe';
 
@@ -23,13 +22,18 @@ type UseRecipesOptions = {
  * focus (e.g. after saving a recipe or signing in/out).
  *
  * Waits for guest→cloud migration to finish so the library does not flash empty.
+ * `loading` stays true while the saved session is still being read, and until the first load for whoever is signed
+ * in has come back: an empty list then means an empty Library, not "not loaded yet".
  */
 export function useRecipes(options?: UseRecipesOptions) {
   const pageSize = options?.pageSize;
-  const { user, migrationStatus } = useAuth();
+  const { user, loading: authLoading, migrationStatus } = useAuth();
+  const userId = user?.id ?? null;
   const { language: preferredLanguage } = useLanguagePreference();
   const [recipes, setRecipes] = useState<Recipe[]>([]);
   const [loading, setLoading] = useState(true);
+  /** Whose recipes are in `recipes`: a user id, null for a guest, undefined before the first load. */
+  const [loadedFor, setLoadedFor] = useState<string | null | undefined>(undefined);
   const [loadingMore, setLoadingMore] = useState(false);
   const [hasMore, setHasMore] = useState(false);
   const [total, setTotal] = useState(0);
@@ -40,32 +44,10 @@ export function useRecipes(options?: UseRecipesOptions) {
   const decorate = useCallback(
     async (data: Recipe[]) => {
       const backfilled = await backfillRecipeThumbnails(normalizeRecipes(data));
-
-      let withTranslations = backfilled;
-      if (user) {
-        const needingTitle = backfilled.filter(
-          (recipe) => resolveRecipeSourceLanguage(recipe) !== preferredLanguage,
-        );
-        if (needingTitle.length > 0) {
-          const map = await fetchRecipeTranslationsForLanguage(
-            preferredLanguage,
-            needingTitle.map((r) => r.id),
-          );
-          withTranslations = backfilled.map((recipe) => {
-            const cached = map[recipe.id];
-            if (!cached) return recipe;
-            return {
-              ...recipe,
-              translations: {
-                ...(recipe.translations ?? {}),
-                [preferredLanguage]: cached,
-              },
-            };
-          });
-        }
-      }
-
-      return withDisplayTitles(withTranslations, preferredLanguage);
+      // A guest's translations are already on the recipe (device storage).
+      return user
+        ? localizeRecipes(backfilled, preferredLanguage)
+        : withDisplayTitles(backfilled, preferredLanguage);
     },
     [preferredLanguage, user],
   );
@@ -86,6 +68,7 @@ export function useRecipes(options?: UseRecipesOptions) {
 
   const refresh = useCallback(async () => {
     const requestId = ++requestIdRef.current;
+    const loadingFor = user?.id ?? null;
     setError(null);
     try {
       if (!user) {
@@ -112,7 +95,10 @@ export function useRecipes(options?: UseRecipesOptions) {
       if (requestIdRef.current !== requestId) return;
       setError(err instanceof Error ? err.message : 'Could not load your recipes.');
     } finally {
-      if (requestIdRef.current === requestId) setLoading(false);
+      if (requestIdRef.current === requestId) {
+        setLoading(false);
+        setLoadedFor(loadingFor);
+      }
     }
   }, [commit, decorate, pageSize, user]);
 
@@ -180,12 +166,14 @@ export function useRecipes(options?: UseRecipesOptions) {
 
   useFocusEffect(
     useCallback(() => {
+      // Not as a guest while the saved session is still being read: that would show an empty Library first.
+      if (authLoading) return;
       if (user && migrationStatus === 'running') {
         setLoading(true);
         return;
       }
       refresh();
-    }, [refresh, user, migrationStatus]),
+    }, [authLoading, refresh, user, migrationStatus]),
   );
 
   useEffect(() => {
@@ -197,7 +185,7 @@ export function useRecipes(options?: UseRecipesOptions) {
 
   return {
     recipes,
-    loading,
+    loading: loading || authLoading || loadedFor !== userId,
     loadingMore,
     hasMore,
     total,

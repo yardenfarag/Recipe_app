@@ -3,10 +3,12 @@ import { assert, assertEquals, assertMatch, assertStringIncludes } from 'jsr:@st
 import { emailsForAuthHook, verifyLink, type AuthHookPayload } from './authHook.ts';
 import { COPY, EMAIL_LOCALES, fill, pickLocale } from './copy.ts';
 import {
+  APP_URL,
   escapeHtml,
   purchaseStore,
   renderCodeEmail,
   renderEmailChangeEmail,
+  renderNudgeEmail,
   renderPurchaseEmail,
   renderResetEmail,
   renderWelcomeEmail,
@@ -70,19 +72,58 @@ Deno.test('Hebrew and Arabic render right-to-left, codes stay left-to-right', ()
   assertStringIncludes(renderWelcomeEmail({ locale: 'en', unsubscribe: UNSUBSCRIBE }).html, 'dir="ltr"');
 });
 
-Deno.test('Hebrew and Arabic use Arial/Tahoma on every heading and paragraph', () => {
-  for (const locale of ['he', 'ar'] as const) {
-    for (const email of allKinds(locale)) {
-      assert(!email.html.includes('-apple-system'), `${locale}: ${email.subject}`);
-      for (const tag of email.html.match(/<(h1|p) style="[^"]*"/g) ?? []) {
-        assertStringIncludes(tag, 'font-family:Arial, Tahoma');
-      }
+const FONTS_LINK = '<link href="https://fonts.googleapis.com/css2?family=Heebo';
+
+function withNudge(locale: (typeof EMAIL_LOCALES)[number]): RenderedEmail[] {
+  const nudge = renderNudgeEmail({
+    locale,
+    kind: 'day3',
+    title: 'Shakshuka',
+    link: APP_URL,
+    unsubscribe: UNSUBSCRIBE,
+  });
+  return [...allKinds(locale), nudge];
+}
+
+Deno.test('Hebrew uses Heebo text and Rubik headings, Arial/Tahoma as fallback, and loads the fonts', () => {
+  for (const email of withNudge('he')) {
+    assert(!email.html.includes('-apple-system'), email.subject);
+    for (const tag of email.html.match(/<p style="[^"]*"/g) ?? []) {
+      assertStringIncludes(tag, 'font-family:Heebo, Arial, Tahoma');
+    }
+    assertMatch(email.html, /<h1 style="font-family:Rubik, Heebo, Arial, Tahoma[^"]*font-weight:800/);
+    assertStringIncludes(email.html, FONTS_LINK);
+    assertStringIncludes(email.html, "@import url('https://fonts.googleapis.com/css2?family=Heebo");
+    assertStringIncludes(email.html, 'family=Rubik:wght@800');
+  }
+});
+
+Deno.test('Arabic keeps Arial/Tahoma on every heading and paragraph; only Hebrew loads web fonts', () => {
+  for (const email of withNudge('ar')) {
+    assert(!email.html.includes('-apple-system'), email.subject);
+    for (const tag of email.html.match(/<(h1|p) style="[^"]*"/g) ?? []) {
+      assertStringIncludes(tag, 'font-family:Arial, Tahoma');
+    }
+  }
+  for (const locale of EMAIL_LOCALES) {
+    if (locale === 'he') continue;
+    for (const email of withNudge(locale)) {
+      assert(!email.html.includes('fonts.googleapis.com'), `${locale}: ${email.subject}`);
+      assert(!/Heebo|Rubik/.test(email.html), `${locale}: ${email.subject}`);
     }
   }
   const en = renderWelcomeEmail({ locale: 'en', unsubscribe: UNSUBSCRIBE }).html;
   assertMatch(en, /<h1 style="font-family:-apple-system/);
-  // The code keeps its monospace font: it comes later in the same style, so it wins.
-  assertMatch(renderCodeEmail({ locale: 'he', code: '1', purpose: 'signin' }).html, /font-family:Arial[^"]*font-family:'SF Mono'/);
+});
+
+Deno.test('the sign-in code keeps its monospace font in every language', () => {
+  // It comes later in the same style as the injected font, so it wins.
+  const he = renderCodeEmail({ locale: 'he', code: '1', purpose: 'signin' }).html;
+  assertMatch(he, /font-family:Heebo[^"]*font-family:'SF Mono'/);
+  const ar = renderCodeEmail({ locale: 'ar', code: '1', purpose: 'signin' }).html;
+  assertMatch(ar, /font-family:Arial[^"]*font-family:'SF Mono'/);
+  // Outlook for Windows ignores the web fonts and gets Arial, but the code stays monospace there too.
+  assertMatch(he, /<!--\[if mso\]><style>[^<]*\.code\{font-family:Consolas/);
 });
 
 Deno.test('sign-in code email shows the code in the subject, html and text', () => {

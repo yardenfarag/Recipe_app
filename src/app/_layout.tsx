@@ -9,7 +9,7 @@ import * as SplashScreen from 'expo-splash-screen';
 import { StatusBar } from 'expo-status-bar';
 import { ShareIntentProvider } from 'expo-share-intent';
 import { useTranslation } from 'react-i18next';
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { Platform } from 'react-native';
 
 import { DialogHost } from '@/components/DialogHost';
@@ -22,7 +22,7 @@ import { StackHeaderBackButton } from '@/components/StackHeaderBackButton';
 import { ToastHost } from '@/components/ToastHost';
 import { AccountLocaleSync } from '@/components/AccountLocaleSync';
 import { FONT_ASSETS } from '@/constants/fonts';
-import { AuthProvider } from '@/hooks/useAuth';
+import { AuthProvider, useAuth } from '@/hooks/useAuth';
 import { HouseholdProvider } from '@/hooks/useHousehold';
 import { LanguageProvider } from '@/hooks/useLanguagePreference';
 import { MeasurementProvider } from '@/hooks/useMeasurementPreference';
@@ -39,8 +39,34 @@ import { I18nProvider } from '@/i18n';
 // It re-enables itself automatically once running in a dev build (ADR 010).
 const isExpoGo = Constants.executionEnvironment === ExecutionEnvironment.StoreClient;
 
-// The splash screen stays up until the Night Market fonts (Inter, Space Grotesk) have loaded (PIN-177).
+// The splash screen stays up until the Night Market fonts (Inter, Space Grotesk) have loaded (PIN-177), and until the
+// saved session has been read, so the app doesn't open as signed out and then switch to the cook's Library.
 void SplashScreen.preventAutoHideAsync().catch(() => {});
+
+/** The longest the splash screen waits for the saved session; after that the screens show their own loading. */
+const SESSION_WAIT_MS = 4000;
+
+let splashHidden = false;
+function hideSplash() {
+  if (splashHidden) return;
+  splashHidden = true;
+  try {
+    SplashScreen.hide();
+  } catch {
+    // Nothing to hide (web, or already gone).
+  }
+}
+
+/** True once `done`, or once `ms` have passed, whichever comes first. */
+function useDoneOrTimedOut(done: boolean, ms: number) {
+  const [timedOut, setTimedOut] = useState(false);
+  useEffect(() => {
+    if (done) return;
+    const timer = setTimeout(() => setTimedOut(true), ms);
+    return () => clearTimeout(timer);
+  }, [done, ms]);
+  return done || timedOut;
+}
 
 /** Keep Library under recipe/deep links so the header back control has a target. */
 export const unstable_settings = {
@@ -52,11 +78,19 @@ function RootNavigator() {
   const { t } = useTranslation();
   const type = useTypography();
   const { ready: onboardingReady } = useOnboarding();
+  const { loading: authLoading } = useAuth();
+  // Screens open once it's known who is signed in, so a returning cook never sees the signed-out, empty app first.
+  const sessionKnown = useDoneOrTimedOut(!authLoading, SESSION_WAIT_MS);
+  const ready = onboardingReady && sessionKnown;
+
+  useEffect(() => {
+    if (ready) hideSplash();
+  }, [ready]);
 
   return (
     <>
       <StatusBar style={scheme === 'dark' ? 'light' : 'dark'} />
-      {onboardingReady ? (
+      {ready ? (
         <Stack
           screenOptions={{
             headerShadowVisible: false,
@@ -234,7 +268,17 @@ function RootNavigator() {
               ),
             }}
           />
-          <Stack.Screen name="admin/dashboard" options={{ headerShown: false, title: 'Pinch admin' }} />
+          {/* The web page brings its own chrome. On a phone it's a "use a computer" note, which needs a way back. */}
+          <Stack.Screen
+            name="admin/dashboard"
+            options={{
+              headerShown: Platform.OS !== 'web',
+              title: 'Pinch admin',
+              headerLeft: (props) => (
+                <StackHeaderBackButton tintColor={props.tintColor} fallback="/settings" />
+              ),
+            }}
+          />
           <Stack.Screen name="admin/insights" options={{ title: t('nav.insights') }} />
           <Stack.Screen name="admin/users" options={{ title: t('nav.people') }} />
           <Stack.Screen name="admin/usage" options={{ title: t('nav.usage') }} />
@@ -255,8 +299,12 @@ export default function RootLayout() {
   const [fontsLoaded, fontError] = useFonts(FONT_ASSETS);
   const fontsSettled = fontsLoaded || fontError != null;
 
+  // The navigator hides the splash screen once the session is known. This is the backstop, so a screen that never
+  // gets that far (a crash shown by the error boundary) isn't left behind the splash screen.
   useEffect(() => {
-    if (fontsSettled) void SplashScreen.hideAsync().catch(() => {});
+    if (!fontsSettled) return;
+    const timer = setTimeout(hideSplash, SESSION_WAIT_MS + 1000);
+    return () => clearTimeout(timer);
   }, [fontsSettled]);
 
   if (!fontsSettled) return null;

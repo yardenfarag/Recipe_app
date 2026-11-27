@@ -218,6 +218,8 @@ export default function AuthScreen() {
   const [loading, setLoading] = useState(false);
   const [isAppleAvailable, setIsAppleAvailable] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  /** Where the failure shows: under Apple and Google when one of them failed, else under the email form. */
+  const [errorAt, setErrorAt] = useState<'form' | 'providers'>('form');
   const { colors, scheme } = useThemePreference();
   const type = useTypography();
   const { completed: onboardingCompleted, completeOnboarding } = useOnboarding();
@@ -317,6 +319,7 @@ export default function AuthScreen() {
 
   async function handleEmail() {
     setError(null);
+    setErrorAt('form');
     const normalizedEmail = normalizeEmail(email);
     if (!isValidEmail(normalizedEmail)) {
       setError(t('auth.validEmail'));
@@ -369,6 +372,7 @@ export default function AuthScreen() {
 
   async function handleApple() {
     setError(null);
+    setErrorAt('providers');
     setLoading(true);
     try {
       await signInWithApple();
@@ -389,6 +393,7 @@ export default function AuthScreen() {
 
   async function handleGoogle() {
     setError(null);
+    setErrorAt('providers');
     setLoading(true);
     try {
       if (Platform.OS === 'web') {
@@ -584,11 +589,48 @@ export default function AuthScreen() {
           ? t('auth.sendCode')
           : t('auth.signIn');
 
+  // Apple and Google go first, so both are on screen without scrolling on the smallest iPhone (375x667) as well.
+  const providers = usesPassword ? (
+    <View style={{ gap: 12 }}>
+      {isAppleAvailable ? (
+        <View pointerEvents={loading ? 'none' : 'auto'} style={{ opacity: loading ? 0.5 : 1 }}>
+          {/* Apple's own button, as its rules require: white with an outline on a light page, white on a dark one. */}
+          <AppleAuthentication.AppleAuthenticationButton
+            buttonType={
+              mode === 'signup'
+                ? AppleAuthentication.AppleAuthenticationButtonType.SIGN_UP
+                : AppleAuthentication.AppleAuthenticationButtonType.SIGN_IN
+            }
+            buttonStyle={
+              scheme === 'dark'
+                ? AppleAuthentication.AppleAuthenticationButtonStyle.WHITE
+                : AppleAuthentication.AppleAuthenticationButtonStyle.WHITE_OUTLINE
+            }
+            cornerRadius={16}
+            style={{ width: '100%', height: 56 }}
+            onPress={handleApple}
+          />
+        </View>
+      ) : null}
+      <Button variant="outline" size="lg" fullWidth trackId="auth.google" onPress={handleGoogle} disabled={loading}>
+        {t('auth.continueGoogle')}
+      </Button>
+      {error && errorAt === 'providers' ? <FormAlert message={error} /> : null}
+      <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12, marginTop: 4, marginBottom: 4 }}>
+        <View style={{ flex: 1, height: 1, backgroundColor: colors.border }} />
+        <Text variant="caption" tone="muted">
+          {t('auth.orUseEmail')}
+        </Text>
+        <View style={{ flex: 1, height: 1, backgroundColor: colors.border }} />
+      </View>
+    </View>
+  ) : null;
+
   return (
     <AuthShell>
-      <View style={{ flex: 1, paddingHorizontal: pagePadding, paddingTop: 28, paddingBottom: 24 }}>
-        <View style={{ alignItems: 'center', marginBottom: 28 }}>
-          <PinchLogo style={{ marginBottom: 24 }} />
+      <View style={{ flex: 1, paddingHorizontal: pagePadding, paddingTop: 16, paddingBottom: 24, gap: 20 }}>
+        <View style={{ alignItems: 'center' }}>
+          <PinchLogo size="sm" style={{ marginBottom: 14 }} />
           <Text variant="h1" align="center">
             {mode === 'signup'
               ? t('auth.createAccount')
@@ -598,10 +640,12 @@ export default function AuthScreen() {
                   ? t('auth.codeTitle')
                   : t('auth.welcomeBack')}
           </Text>
-          <Text tone="muted" align="center" style={{ marginTop: 8 }}>
+          <Text tone="muted" align="center" style={{ marginTop: 6 }}>
             {subtitle}
           </Text>
         </View>
+
+        {providers}
 
         <View style={{ gap: 16 }}>
           <TextField
@@ -617,6 +661,7 @@ export default function AuthScreen() {
               const normalized = normalizeEmail(email);
               if (!normalized) return;
               if (!isValidEmail(normalized)) {
+                setErrorAt('form');
                 setError(t('auth.validEmail'));
                 return;
               }
@@ -713,7 +758,7 @@ export default function AuthScreen() {
             </View>
           ) : null}
 
-          {error ? <FormAlert message={error} /> : null}
+          {error && errorAt === 'form' ? <FormAlert message={error} /> : null}
 
           <Button
             size="lg"
@@ -748,7 +793,7 @@ export default function AuthScreen() {
           trackId={mode === 'signin' ? 'auth.switch_to_signup' : 'auth.switch_to_signin'}
           onPress={() => switchMode(mode === 'signin' ? 'signup' : 'signin')}
           disabled={loading}
-          style={{ alignSelf: 'center', marginTop: 12 }}
+          style={{ alignSelf: 'center', marginTop: -8 }}
         >
           {mode === 'signup'
             ? t('auth.haveAccount')
@@ -759,46 +804,9 @@ export default function AuthScreen() {
                 : t('auth.needAccount')}
         </Button>
 
-        {usesPassword ? (
-          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12, marginTop: 12, marginBottom: 16 }}>
-            <View style={{ flex: 1, height: 1, backgroundColor: colors.border }} />
-            <Text variant="caption" tone="muted">
-              {t('auth.orContinueWith')}
-            </Text>
-            <View style={{ flex: 1, height: 1, backgroundColor: colors.border }} />
-          </View>
-        ) : null}
-
-        {usesPassword && isAppleAvailable ? (
-          <View pointerEvents={loading ? 'none' : 'auto'} style={{ opacity: loading ? 0.5 : 1, marginBottom: 12 }}>
-            {/* Apple's own button, as its rules require: white with an outline on a light page, white on a dark one. */}
-            <AppleAuthentication.AppleAuthenticationButton
-              buttonType={
-                mode === 'signup'
-                  ? AppleAuthentication.AppleAuthenticationButtonType.SIGN_UP
-                  : AppleAuthentication.AppleAuthenticationButtonType.SIGN_IN
-              }
-              buttonStyle={
-                scheme === 'dark'
-                  ? AppleAuthentication.AppleAuthenticationButtonStyle.WHITE
-                  : AppleAuthentication.AppleAuthenticationButtonStyle.WHITE_OUTLINE
-              }
-              cornerRadius={16}
-              style={{ width: '100%', height: 56 }}
-              onPress={handleApple}
-            />
-          </View>
-        ) : null}
-
-        {usesPassword ? (
-          <Button variant="outline" size="lg" fullWidth trackId="auth.google" onPress={handleGoogle} disabled={loading}>
-            {t('auth.continueGoogle')}
-          </Button>
-        ) : null}
-
         <View
           style={{
-            marginTop: 28,
+            marginTop: 'auto',
             flexDirection: 'row',
             flexWrap: 'wrap',
             alignItems: 'center',

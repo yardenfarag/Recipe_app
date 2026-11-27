@@ -1,6 +1,7 @@
 import { Tabs, useSegments } from 'expo-router';
 import { useTranslation } from 'react-i18next';
-import { View } from 'react-native';
+import { Animated, Easing, I18nManager, Platform, View } from 'react-native';
+import { useReducedMotion } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { InAppMessageBanner } from '@/components/inAppMessages/InAppMessageBanner';
@@ -26,6 +27,35 @@ function tabIcon(outline: IconName, filled: IconName) {
 }
 
 const SNAP_BUTTON_SIZE = 44;
+
+/** How far a tab's screen slides as it fades in or out (React Navigation's own 'shift' uses 50). */
+const TAB_SHIFT_DISTANCE = 40;
+const TAB_TRANSITION_SPEC = {
+  animation: 'timing',
+  config: { duration: 220, easing: Easing.out(Easing.cubic) },
+} as const;
+
+/**
+ * React Navigation's 'shift' (fade and a short slide towards the tab you picked), but mirrored in Hebrew and
+ * Arabic: there the bar runs right to left, so a tab further along comes in from the left. Follows I18nManager,
+ * which is what lays the bar out.
+ */
+function tabShiftInterpolator(rtl: boolean) {
+  const distance = rtl ? -TAB_SHIFT_DISTANCE : TAB_SHIFT_DISTANCE;
+  return ({ current }: { current: { progress: Animated.Value } }) => ({
+    sceneStyle: {
+      opacity: current.progress.interpolate({ inputRange: [-1, 0, 1], outputRange: [0, 1, 0] }),
+      transform: [
+        {
+          translateX: current.progress.interpolate({
+            inputRange: [-1, 0, 1],
+            outputRange: [-distance, 0, distance],
+          }),
+        },
+      ],
+    },
+  });
+}
 
 /**
  * Snap, the main action: a plus on a brand-coloured rounded square in the middle of the bar, level with the other
@@ -65,6 +95,7 @@ function SnapTabIcon({ focused }: { focused: boolean }) {
  * Favorites lives as a Library filter — tab hidden via href: null.
  * On wide viewports, bottom tabs hide and WebSidebar takes over.
  * Right after onboarding, FirstRunWalkthrough coaches over the bottom tab bar.
+ * On phones, switching tabs (and Library ↔ Hub) fades and slides the screen a little towards the chosen tab.
  */
 export default function AppTabs() {
   const { t } = useTranslation();
@@ -78,11 +109,24 @@ export default function AppTabs() {
   const segments = useSegments();
   // Tabs stay mounted under pushed screens; only coach while a tab is showing.
   const showWalkthrough = walkthroughPending && !isWide && segments[0] === '(tabs)';
+  const reduceMotion = useReducedMotion();
+  // Phones only: the Expo web app (sidebar on wide screens) switches at once, as a website does.
+  const tabTransition =
+    Platform.OS === 'web'
+      ? ({ animation: 'none' } as const)
+      : reduceMotion
+        ? ({ animation: 'fade' } as const)
+        : ({
+            animation: 'shift',
+            sceneStyleInterpolator: tabShiftInterpolator(I18nManager.isRTL),
+            transitionSpec: TAB_TRANSITION_SPEC,
+          } as const);
 
   const tabs = (
     <Tabs
       screenOptions={{
         headerShown: false,
+        ...tabTransition,
         tabBarActiveTintColor: colors.text,
         tabBarInactiveTintColor: colors.textSecondary,
         tabBarStyle: isWide
@@ -117,6 +161,14 @@ export default function AppTabs() {
         options={{
           title: t('tabs.library'),
           tabBarIcon: tabIcon('grid-outline', 'grid'),
+        }}
+      />
+      {/* The Hub is a tab of the Library ("My Library | Hub", PIN-77), not of the bar. It comes right after the
+          Library so the slide runs the way the switcher reads: Library → Hub (and Hub → Plan) towards the end. */}
+      <Tabs.Screen
+        name="hub"
+        options={{
+          href: null,
         }}
       />
       <Tabs.Screen
@@ -158,13 +210,6 @@ export default function AppTabs() {
           href: null,
         }}
       />
-      {/* The Hub is a tab of the Library ("My Library | Hub", PIN-77), not of the bar. */}
-      <Tabs.Screen
-        name="hub"
-        options={{
-          href: null,
-        }}
-      />
     </Tabs>
   );
 
@@ -173,7 +218,8 @@ export default function AppTabs() {
   const withBanners = (
     <View style={{ flex: 1 }}>
       <InAppMessageBanner position="top" />
-      <View style={{ flex: 1 }}>{tabs}</View>
+      {/* What shows through while two tab screens cross-fade: the page colour, also in dark mode. */}
+      <View style={{ flex: 1, backgroundColor: colors.background }}>{tabs}</View>
       <InAppMessageBanner position="bottom" />
     </View>
   );

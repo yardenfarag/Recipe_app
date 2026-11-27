@@ -27,13 +27,14 @@ import { ConfirmDialog } from '@/components/ConfirmDialog';
 import { CookieMark } from '@/components/CookieMark';
 import { FridgeMatchModal } from '@/components/FridgeMatchModal';
 import { LibraryLayoutToggle } from '@/components/LibraryLayoutToggle';
-import { TonightsPick, TonightsPickSkeleton, useTonightsPick } from '@/components/LibraryTiles';
+import { TonightsPick, useTonightsPick } from '@/components/LibraryTiles';
 import { NameEditModal } from '@/components/NameEditModal';
 import { RecipeActionsMenu } from '@/components/RecipeActionsMenu';
 import { LibrarySearchBar, RecipeLibraryToolbar } from '@/components/RecipeLibraryToolbar';
 import { RecipeListRow } from '@/components/RecipeListRow';
 import { Screen } from '@/components/Screen';
 import { Button } from '@/components/ui/Button';
+import { CookieLoader } from '@/components/ui/CookieLoader';
 import { IconButton } from '@/components/ui/IconButton';
 import { Text } from '@/components/ui/Text';
 import { Tile } from '@/components/ui/Tile';
@@ -632,25 +633,18 @@ export default function HomeScreen() {
     ? collections.find((c) => c.id === deleteCollectionId)
     : null;
 
-  if (loading) {
+  // Until the first load for whoever is signed in comes back, a loading cookie, never "Your Library is empty".
+  // Signed out, the Library has nothing to show: the onboarding gate is about to send them to sign-in.
+  if (loading || !user) {
     return (
       <Screen tabScreen>
-        <View
-          accessible
-          accessibilityRole="progressbar"
-          accessibilityLabel={t('a11y.loadingRecipes')}
-          style={{ flex: 1, paddingHorizontal: GUTTER, gap: 16, overflow: 'hidden' }}
-        >
+        {/* The same header as the list, so the switch to the Hub stays put and is there with no recipes too. */}
+        <View style={{ paddingHorizontal: GUTTER, gap: 16 }}>
           <TopBar />
-          <View
-            style={{ height: 52, borderRadius: Radii.inner, backgroundColor: colors.backgroundElement }}
-          />
-          <TonightsPickSkeleton />
-          <View style={{ width: 180, height: 28, marginTop: 4, borderRadius: 8, backgroundColor: colors.backgroundElement }} />
-          <View style={{ flexDirection: 'row', gap: 12 }}>
-            <View style={{ flex: 1, aspectRatio: 1, borderRadius: 18, backgroundColor: colors.backgroundElement }} />
-            <View style={{ flex: 1, aspectRatio: 1, borderRadius: 18, backgroundColor: colors.backgroundElement }} />
-          </View>
+          <LibraryTabs current="library" />
+        </View>
+        <View style={{ flex: 1, justifyContent: 'center', paddingHorizontal: GUTTER, paddingBottom: 80 }}>
+          <CookieLoader label={t('a11y.loadingRecipes')} caption={t('library.opening')} />
         </View>
       </Screen>
     );
@@ -659,8 +653,10 @@ export default function HomeScreen() {
   if (error && recipes.length === 0) {
     return (
       <Screen tabScreen>
-        <View style={{ paddingHorizontal: GUTTER }}>
+        {/* The same header as the list, so the switch to the Hub stays put and is there with no recipes too. */}
+        <View style={{ paddingHorizontal: GUTTER, gap: 16 }}>
           <TopBar />
+          <LibraryTabs current="library" />
         </View>
         <View style={{ flex: 1, justifyContent: 'center', paddingHorizontal: GUTTER, paddingBottom: 40 }}>
           <Tile padding={24} style={{ alignItems: 'center', gap: 12 }}>
@@ -696,8 +692,10 @@ export default function HomeScreen() {
   if (recipes.length === 0) {
     return (
       <Screen tabScreen>
-        <View style={{ paddingHorizontal: GUTTER }}>
+        {/* The same header as the list, so the switch to the Hub stays put and is there with no recipes too. */}
+        <View style={{ paddingHorizontal: GUTTER, gap: 16 }}>
           <TopBar />
+          <LibraryTabs current="library" />
         </View>
         <View style={{ flex: 1, justifyContent: 'center', paddingHorizontal: GUTTER, paddingBottom: 40 }}>
           <Tile padding={24} style={{ gap: 14 }}>

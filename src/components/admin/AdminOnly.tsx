@@ -1,4 +1,3 @@
-import { router } from 'expo-router';
 import { type ReactNode } from 'react';
 import { ActivityIndicator, Text, View } from 'react-native';
 import { Pressable } from '@/components/ui/Pressable';
@@ -8,6 +7,7 @@ import { Screen } from '@/components/Screen';
 import { useAuth } from '@/hooks/useAuth';
 import { useProfile } from '@/hooks/useProfile';
 import { useThemePreference } from '@/hooks/useThemePreference';
+import { goBackOrHome } from '@/lib/goBackOrHome';
 
 export function AdminOnly({ children }: { children: ReactNode }) {
   const { user } = useAuth();
@@ -37,7 +37,7 @@ export function AdminOnly({ children }: { children: ReactNode }) {
             Admin only
           </Text>
           <Pressable trackId="admin_only.go_back"
-            onPress={() => router.back()}
+            onPress={() => goBackOrHome('/settings')}
             accessibilityRole="button"
             className="rounded-[18px] px-5 py-3"
             style={{ backgroundColor: colors.primarySoft }}

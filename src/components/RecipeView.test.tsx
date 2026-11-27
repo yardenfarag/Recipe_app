@@ -60,7 +60,12 @@ vi.mock('@/components/recipe/RecipeFact', () => ({
   RecipeFact: h.standIn('RecipeFact'),
   RecipeUpdatingFact: h.standIn('RecipeUpdatingFact'),
 }));
-vi.mock('@/components/recipe/RecipeHero', () => ({ HERO_OVERLAP: 0, RecipeHero: h.standIn('RecipeHero') }));
+vi.mock('@/components/recipe/RecipeHero', () => ({
+  HERO_OVERLAP: 0,
+  HERO_TOP_ROW_OFFSET: 0,
+  RecipeHero: h.standIn('RecipeHero'),
+  RecipeHeroTopRow: h.standIn('RecipeHeroTopRow'),
+}));
 vi.mock('@/components/recipe/RecipeIngredientList', () => ({ RecipeIngredientList: h.standIn('RecipeIngredientList') }));
 vi.mock('@/components/recipe/RecipeMoreMenu', () => ({ RecipeMoreMenu: h.standIn('RecipeMoreMenu') }));
 // A notice's buttons are in `actions`: draw them, so "Make it without these" can be pressed.
