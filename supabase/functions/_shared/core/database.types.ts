@@ -2303,6 +2303,10 @@ export type Database = {
       }
       household_staples_fit: { Args: { p_staples: string[] }; Returns: boolean }
       hub_avoid_words: { Args: { p_words: string[] }; Returns: string[] }
+      hub_card_matches_search: {
+        Args: { p_card_id: string; p_search: string; p_title: string }
+        Returns: boolean
+      }
       hub_cards: {
         Args: {
           p_diets?: string[]
@@ -2352,6 +2356,10 @@ export type Database = {
           isOneToOne: false
           isSetofReturn: true
         }
+      }
+      hub_cards_count: {
+        Args: { p_platform?: string; p_search?: string; p_tags?: string[] }
+        Returns: number
       }
       hub_cards_for_cook: {
         Args: {

@@ -15,11 +15,16 @@ const mocks = vi.hoisted(() => {
   const select = vi.fn(() => countQuery);
   const from = vi.fn(() => ({ select }));
   const rpc = vi.fn();
-  return { countQuery, select, from, rpc };
+  const countRpc = vi.fn();
+  return { countQuery, select, from, rpc, countRpc };
 });
 
+// hub_cards_count answers on its own mock; every other RPC (the rows) on `rpc`.
 vi.mock('./client', () => ({
-  supabase: { from: mocks.from, rpc: mocks.rpc },
+  supabase: {
+    from: mocks.from,
+    rpc: (name: string, args: unknown) => (name === 'hub_cards_count' ? mocks.countRpc(args) : mocks.rpc(name, args)),
+  },
 }));
 
 const titles = vi.hoisted(() => ({ fetchRecipeCardTitles: vi.fn() }));
@@ -35,6 +40,7 @@ beforeEach(() => {
     resolve({ count: 7, error: null }),
   );
   mocks.rpc.mockResolvedValue({ data: [card('a'), card('b'), card('c')], error: null });
+  mocks.countRpc.mockResolvedValue({ data: 7, error: null });
 });
 
 describe('fetchHubCards', () => {
@@ -65,8 +71,22 @@ describe('fetchHubCards', () => {
     expect(result.cards.map((c) => c.id)).toEqual(['a', 'b']);
     expect(result.hasMore).toBe(true);
     expect(result.total).toBe(7);
+    expect(mocks.countRpc).toHaveBeenCalledWith({ p_platform: 'youtube', p_search: '50off pasta', p_tags: ['quick'] });
+    expect(mocks.from).not.toHaveBeenCalled();
+  });
+
+  it('counts title matches on a database without hub_cards_count', async () => {
+    mocks.countRpc.mockResolvedValue({ data: null, error: { code: 'PGRST202', message: 'not found' } });
+    const result = await fetchHubCards({ platform: 'youtube', search: 'rice', tags: ['quick'] });
+    expect(result.total).toBe(7);
     expect(mocks.countQuery.eq).toHaveBeenCalledWith('platform', 'youtube');
+    expect(mocks.countQuery.ilike).toHaveBeenCalledWith('title', '%rice%');
     expect(mocks.countQuery.overlaps).toHaveBeenCalledWith('tags', ['quick']);
+  });
+
+  it('throws when hub_cards_count fails for another reason', async () => {
+    mocks.countRpc.mockResolvedValue({ data: null, error: new Error('count down') });
+    await expect(fetchHubCards()).rejects.toThrow('count down');
   });
 
   it('sends nulls for no diets, all platforms, no search and no tags', async () => {
@@ -85,7 +105,7 @@ describe('fetchHubCards', () => {
       p_dislike_words: null,
     });
     // Later pages skip the count.
-    expect(mocks.from).not.toHaveBeenCalled();
+    expect(mocks.countRpc).not.toHaveBeenCalled();
   });
 
   it('sends the avoid list (PIN-180)', async () => {

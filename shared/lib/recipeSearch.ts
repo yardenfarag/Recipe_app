@@ -2,7 +2,7 @@
  * Searching saved recipes the way people type: "something with eggs", "pasta tomato", "משהו עם ביצים". The words
  * that only carry the sentence ("something", "with", "עם", "con"…) are dropped, and a recipe matches when every
  * word left appears in its title, ingredients or tags. A word also matches its singular or a form without a
- * common prefix ("eggs" finds "egg", "ביצים" finds "ביצה", "بالبيض" finds "بيض"), so plain spelling is enough.
+ * common prefix ("eggs" finds "egg", "ביצים" finds "ביצה" and back, "بالبيض" finds "بيض"), so plain spelling is enough.
  */
 
 /** Words that say nothing about the food, in the five app languages. */
@@ -24,8 +24,11 @@ const FILLER = new Set(
     .split(' '),
 );
 
-/** Endings to try without, longest first: plurals and common case endings. */
-const SUFFIXES = ['ами', 'ями', 'es', 'ים', 'ות', 'ات', 'ов', 'ей', 'ах', 's', 'ы', 'и', 'а', 'я', 'у', 'ة'];
+/**
+ * Endings to try without, longest first: plurals, common case endings, and the feminine singular ("ביצה" and
+ * "ביצים" share "ביצ").
+ */
+const SUFFIXES = ['ами', 'ями', 'es', 'ים', 'ות', 'ات', 'ов', 'ей', 'ах', 's', 'ы', 'и', 'а', 'я', 'у', 'ة', 'ה'];
 /** Letters glued to the front of a word: Arabic "the", "with the", "and"; Hebrew "the", "and", "in". */
 const PREFIXES = ['وال', 'بال', 'لل', 'ال', 'و', 'ب', 'ל', 'ה', 'ו', 'ב'];
 

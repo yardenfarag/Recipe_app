@@ -62,6 +62,8 @@ describe('recipe search', () => {
       translations: { he: { title: 'שקשוקה', ingredients: [{ name: 'ביצים', quantity: 4, unit: '' }], instructions: [] } },
     });
     expect(filterAndSortRecipes([translated], { searchQuery: 'שקשוקה' }).map((r) => r.id)).toEqual(['t']);
+    // The singular finds the plural, as "egg" finds "eggs".
+    expect(filterAndSortRecipes([translated], { searchQuery: 'ביצה' }).map((r) => r.id)).toEqual(['t']);
   });
 
   it('does not stretch short words', () => {
