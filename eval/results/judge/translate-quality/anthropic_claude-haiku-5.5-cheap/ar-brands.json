@@ -1,0 +1,53 @@
+{
+  "caseId": "ar-brands",
+  "judge": "google/gemini-3.1-pro-preview",
+  "translation": "Title: كؤوس تشيز كيك كيندر بوينو\nIngredients:\n1. 120 غ بسكويت ديجستيف\n2. 30 غ زبدة مذابة\n3. 380 غ جبنة كريمية\n4. 200 مل كريمة الخفق\n5. 2 لوح ألواح كيندر بوينو\n6. 2 ملعقة كبيرة كريمة البندق\nSteps:\n1. اسحق البسكويت، واخلطه مع الزبدة، واضغطه في 6 أكواب.\n2. اخفق الكريمة حتى تتكون قمم ثابتة.\n3. اخفق الجبنة الكريمية مع كريمة البندق، ثم قلّب برفق كريمة الخفق المخفوقة.\n4. انثر الخليط فوق القاعدة، وبرّده لمدة 4 ساعات، وزيّنه بقطع كيندر بوينو المفرومة.",
+  "verdict": {
+    "native_score": 4,
+    "errors": [
+      {
+        "where": "ingredient 5",
+        "category": "grammar",
+        "severity": "major",
+        "excerpt": "لوح ألواح",
+        "fix": "لوح"
+      },
+      {
+        "where": "step 1",
+        "category": "cooking_verb",
+        "severity": "minor",
+        "excerpt": "اسحق",
+        "fix": "اطحن"
+      },
+      {
+        "where": "step 2",
+        "category": "cooking_verb",
+        "severity": "minor",
+        "excerpt": "حتى تتكون قمم ثابتة",
+        "fix": "حتى تتماسك"
+      },
+      {
+        "where": "step 3",
+        "category": "meaning",
+        "severity": "minor",
+        "excerpt": "كريمة الخفق المخفوقة",
+        "fix": "الكريمة المخفوقة"
+      },
+      {
+        "where": "step 4",
+        "category": "cooking_verb",
+        "severity": "major",
+        "excerpt": "انثر",
+        "fix": "وزّع"
+      },
+      {
+        "where": "step 4",
+        "category": "cooking_verb",
+        "severity": "minor",
+        "excerpt": "المفرومة",
+        "fix": "المقطعة"
+      }
+    ]
+  },
+  "costUsd": 0.010234
+}

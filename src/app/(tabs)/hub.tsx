@@ -23,6 +23,7 @@ import { Button } from '@/components/ui/Button';
 import { Chip } from '@/components/ui/Chip';
 import { IconButton } from '@/components/ui/IconButton';
 import { PageHeader } from '@/components/ui/PageHeader';
+import { LibraryTabs } from '@/components/LibraryTabs';
 import { Pressable } from '@/components/ui/Pressable';
 import { SegmentedControl } from '@/components/ui/SegmentedControl';
 import { Text } from '@/components/ui/Text';
@@ -128,6 +129,7 @@ export default function CookingHubScreen() {
 
   const header = (
     <View style={{ gap: 14, paddingBottom: 16 }}>
+      <LibraryTabs current="hub" />
       <PageHeader title={t('hub.title')} subtitle={t('hub.subtitle')} style={{ paddingBottom: 6 }} />
 
       <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>

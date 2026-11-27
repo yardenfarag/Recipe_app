@@ -59,7 +59,7 @@ function SnapTabIcon({ focused }: { focused: boolean }) {
  * property 'displayName' of undefined). Stick to the stable `Tabs` API
  * until that's resolved upstream.
  *
- * Night Market (PIN-177): five tabs, Library · Hub · Snap · List · Settings. Snap is a plus on a brand-coloured
+ * Night Market (PIN-177): five tabs, Library · Plan · Snap · List · Settings (the Hub is a tab of the Library, PIN-77). Snap is a plus on a brand-coloured
  * square, level with the others (not the web's raised button). The active tab is in the text colour with a filled icon, the others muted; a hairline on
  * top in the border colour.
  * Favorites lives as a Library filter — tab hidden via href: null.
@@ -120,10 +120,10 @@ export default function AppTabs() {
         }}
       />
       <Tabs.Screen
-        name="hub"
+        name="plan"
         options={{
-          title: t('tabs.hub'),
-          tabBarIcon: tabIcon('compass-outline', 'compass'),
+          title: t('tabs.plan'),
+          tabBarIcon: tabIcon('calendar-outline', 'calendar'),
         }}
       />
       <Tabs.Screen
@@ -154,6 +154,13 @@ export default function AppTabs() {
       />
       <Tabs.Screen
         name="favorites"
+        options={{
+          href: null,
+        }}
+      />
+      {/* The Hub is a tab of the Library ("My Library | Hub", PIN-77), not of the bar. */}
+      <Tabs.Screen
+        name="hub"
         options={{
           href: null,
         }}

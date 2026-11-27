@@ -2,6 +2,7 @@ import { useFocusEffect } from '@react-navigation/native';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 
 import { useKitchenProfile } from '@/hooks/useKitchenProfile';
+import { useLanguagePreference } from '@/hooks/useLanguagePreference';
 import type { AvoidList } from '@shared/lib/avoidList';
 import { EMPTY_HUB_AVOID, hubAvoidFromKey, hubAvoidKey, hubAvoidOf, type HubAvoid } from '@shared/lib/hubAvoid';
 import {
@@ -25,6 +26,8 @@ type HubFilters = {
   diets: string[];
   /** The avoid list: allergies go last, dislikes lower (PIN-180). */
   avoid: HubAvoid;
+  /** The app language: titles of cards written in another come from their translation (PIN-77). */
+  language: string;
 };
 
 function dedupeAppend(current: RecipeCard[], page: RecipeCard[]): RecipeCard[] {
@@ -55,6 +58,7 @@ export function useCookingHub() {
   const [platform, setPlatform] = useState<HubPlatform | 'all'>('all');
   const [tagChoices, setTagChoices] = useState<string[]>([]);
   const { profile: kitchen, loading: kitchenLoading, reload: reloadKitchen } = useKitchenProfile();
+  const { language } = useLanguagePreference();
   const dietKey = [...kitchen.diets].sort().join(',');
   const avoidList = useMemo<AvoidList>(
     () => ({ allergies: kitchen.allergies, otherAllergies: kitchen.otherAllergies, dislikes: kitchen.dislikes }),
@@ -82,6 +86,7 @@ export function useCookingHub() {
     platform: 'all',
     diets: [],
     avoid: EMPTY_HUB_AVOID,
+    language,
   });
 
   useEffect(() => {
@@ -136,6 +141,7 @@ export function useCookingHub() {
           platform: filters.platform,
           diets: filters.diets,
           avoid: filters.avoid,
+          language: filters.language,
           offset,
           limit,
           includeCount: mode !== 'append',
@@ -187,9 +193,10 @@ export function useCookingHub() {
       platform,
       diets: dietKey ? dietKey.split(',') : [],
       avoid: hubAvoidFromKey(avoidKey),
+      language,
     };
     void run('replace');
-  }, [debouncedSearch, tagKey, sort, platform, dietKey, avoidKey, kitchenReady, run]);
+  }, [debouncedSearch, tagKey, sort, platform, dietKey, avoidKey, language, kitchenReady, run]);
 
   useEffect(() => {
     void loadTags(platform);

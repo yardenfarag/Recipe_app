@@ -1,0 +1,25 @@
+{
+  "caseId": "he-from-de",
+  "judge": "google/gemini-3.1-pro-preview",
+  "translation": "Title: כיסוני בצק עלים בשוקולד\nIngredients:\n1. 1 אריזה בצק עלים\n2. 8 חטיפי קינדר שוקולד\n3. 1 שקית סוכר וניל\n4. 1 חלמון ביצה\n5. 2 כפות חלב\n6. לפי הטעם אבקת סוכר\nSteps:\n1. מחממים את התנור ל-200°C בחום עליון/תחתון.\n2. חותכים את בצק העלים ל-8 מלבנים ומניחים על כל אחד חטיף.\n3. מקפלים את הבצק, מהדקים את הקצוות בעזרת מזלג ומברישים בחלמון ביצה ובחלב.\n4. אופים 12 עד 15 דקות עד להזהבה ומפדרים באבקת סוכר.",
+  "verdict": {
+    "native_score": 4,
+    "errors": [
+      {
+        "where": "ingredient 1",
+        "category": "ingredient_term",
+        "severity": "minor",
+        "excerpt": "אריזה",
+        "fix": "חבילת"
+      },
+      {
+        "where": "step 4",
+        "category": "cooking_verb",
+        "severity": "minor",
+        "excerpt": "ומפדרים",
+        "fix": "ובוזקים"
+      }
+    ]
+  },
+  "costUsd": 0.011346
+}

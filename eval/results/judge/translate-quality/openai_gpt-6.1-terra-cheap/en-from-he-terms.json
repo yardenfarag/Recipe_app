@@ -1,0 +1,10 @@
+{
+  "caseId": "en-from-he-terms",
+  "judge": "google/gemini-3.1-pro-preview",
+  "translation": "Title: Quark Pancakes\nIngredients:\n1. 1 cup 5% quark (soft white cheese)\n2. 2 eggs\n3. ½ cup all-purpose flour\n4. 2 tbsp silan (date syrup)\n5. 1 cup heavy cream\n6. 4 petit beurre biscuits\nSteps:\n1. Mix the quark with the eggs and flour to make a thick batter.\n2. Fry spoonfuls of batter in a greased skillet until golden on both sides.\n3. Whip the heavy cream until fluffy.\n4. Serve with the whipped cream, crumbled petit beurre biscuits, and silan.",
+  "verdict": {
+    "native_score": 5,
+    "errors": []
+  },
+  "costUsd": 0.005432
+}

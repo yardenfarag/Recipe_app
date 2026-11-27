@@ -1,0 +1,10 @@
+{
+  "caseId": "en-from-he-units",
+  "judge": "google/gemini-3.1-pro-preview",
+  "translation": "Title: Vanilla Chocolate Chip Cake\nIngredients:\n1. 3 large eggs\n2. 150 g sugar\n3. 240 ml oil\n4. ½ cup chocolate chips\n5. 1 packet baking powder\n6. 280 g self-raising flour\n7. 1 pinch salt\nSteps:\n1. Preheat the oven to 350°F.\n2. Beat the eggs and sugar together until pale and fluffy.\n3. Add the oil, then add the self-raising flour, baking powder, and salt. Mix until the batter is smooth.\n4. Fold in the chocolate chips, pour the batter into a cake pan, and bake for 40 minutes.",
+  "verdict": {
+    "native_score": 5,
+    "errors": []
+  },
+  "costUsd": 0.00811
+}

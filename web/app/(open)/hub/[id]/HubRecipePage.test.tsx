@@ -29,11 +29,18 @@ vi.mock("next/link", () => ({
   ),
 }));
 vi.mock("@/lib/hub/useHubRecipe", () => ({ useHubRecipe: () => state }));
+vi.mock("@/components/LanguageProvider", () => ({ useLanguage: () => ({ language: "he", setLanguage: vi.fn() }) }));
+type Toggle = { showingOriginal: boolean; setShowOriginal: (original: boolean) => void; language: string } | null;
 vi.mock("@/components/recipe/RecipeView", () => ({
-  RecipeView: ({ back, actions }: { back: { href: string; label: string } | null; actions: ReactNode }) => (
+  RecipeView: ({ back, actions, languageToggle }: { back: { href: string; label: string } | null; actions: ReactNode; languageToggle?: Toggle }) => (
     <div>
       {back ? <a href={back.href}>{back.label}</a> : null}
       {actions}
+      {languageToggle ? (
+        <button type="button" onClick={() => languageToggle.setShowOriginal(!languageToggle.showingOriginal)}>
+          {`toggle ${languageToggle.language} ${languageToggle.showingOriginal ? "original" : "translated"}`}
+        </button>
+      ) : null}
     </div>
   ),
 }));
@@ -45,6 +52,8 @@ const ready = (overrides: Partial<Extract<HubRecipeState, { status: "ready" }>> 
     display: { title: "Hub Soup" },
     libraryRecipeId: null,
     addToLibrary: vi.fn().mockResolvedValue("recipe-9"),
+    setShowOriginal: null,
+    showingOriginal: false,
     ...overrides,
   }) as unknown as HubRecipeState;
 
@@ -117,6 +126,19 @@ describe("Hub recipe page", () => {
     state = ready();
     renderPage();
     expect(screen.getByRole("link", { name: "Back to Hub" }).getAttribute("href")).toBe("/hub?q=soup");
+  });
+
+  it("offers the original language only for a card shown in a translation (PIN-77)", () => {
+    state = ready();
+    const { unmount } = renderPage();
+    expect(screen.queryByRole("button", { name: /^toggle/ })).toBeNull();
+    unmount();
+
+    const setShowOriginal = vi.fn();
+    state = ready({ setShowOriginal });
+    renderPage();
+    fireEvent.click(screen.getByRole("button", { name: "toggle he translated" }));
+    expect(setShowOriginal).toHaveBeenCalledWith(true);
   });
 
   it("a recipe that left the Hub says so, with a way back", () => {

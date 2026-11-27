@@ -235,7 +235,8 @@ test.describe("coming back (PIN-174)", () => {
     const ids = await openLibrary(page);
     await expect(cards(page)).toHaveCount(3);
     const nav = page.getByRole("navigation", { name: "Main" }).filter({ visible: true });
-    await nav.getByRole("link", { name: "Hub" }).click();
+    // The Hub is a tab of the Library (PIN-77).
+    await page.getByRole("navigation", { name: "Library sections" }).getByRole("link", { name: "Hub" }).click();
     await expect(page.getByRole("heading", { level: 1 })).toHaveText("Cooking Hub");
 
     // Renamed on another device while the Hub was open.

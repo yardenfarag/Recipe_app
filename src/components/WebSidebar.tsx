@@ -12,7 +12,7 @@ import { useTypography } from '@/hooks/useTypography';
 
 type NavItem = {
   href: Href;
-  labelKey: 'tabs.library' | 'tabs.hub' | 'tabs.snap' | 'tabs.list' | 'tabs.settings';
+  labelKey: 'tabs.library' | 'tabs.plan' | 'tabs.snap' | 'tabs.list' | 'tabs.settings';
   icon: IconName;
   iconFocused: IconName;
   match: (path: string) => boolean;
@@ -25,14 +25,15 @@ const NAV_ITEMS: NavItem[] = [
     labelKey: 'tabs.library',
     icon: 'grid-outline',
     iconFocused: 'grid',
-    match: (path) => path === '/' || path.startsWith('/favorites') || path === '',
+    // The Hub is a tab of the Library (PIN-77).
+    match: (path) => path === '/' || path.startsWith('/favorites') || path === '' || path === '/hub' || path.startsWith('/hub/'),
   },
   {
-    href: '/hub',
-    labelKey: 'tabs.hub',
-    icon: 'compass-outline',
-    iconFocused: 'compass',
-    match: (path) => path === '/hub' || path.startsWith('/hub/'),
+    href: '/plan',
+    labelKey: 'tabs.plan',
+    icon: 'calendar-outline',
+    iconFocused: 'calendar',
+    match: (path) => path === '/plan',
   },
   {
     href: '/add',

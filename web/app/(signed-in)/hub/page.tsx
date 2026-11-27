@@ -13,6 +13,7 @@ import { recipeCardToListRecipe } from "@shared/lib/recipeCardMap";
 import { useLanguage } from "@/components/LanguageProvider";
 import { RecipeCard } from "@/components/recipes/RecipeCard";
 import { HubToolbar } from "@/components/hub/HubToolbar";
+import { LibraryTabs } from "@/components/library/LibraryTabs";
 import { navItem } from "@/components/shell/nav";
 import { ErrorAlert } from "@/components/ui/Alert";
 import { Button, buttonClasses } from "@/components/ui/Button";
@@ -128,6 +129,7 @@ function HubScreen() {
 
   return (
     <>
+      <LibraryTabs current="hub" />
       <PageHeader title={t("hub.title")} subtitle={t("hub.subtitle")} tabTitle={t("tabs.hub")} />
 
       <HubToolbar

@@ -161,6 +161,19 @@ Expo: `src/app/(tabs)/list.tsx`, `useShoppingList`. PIN-134.
 | Clear checked, clear list, with confirmation | 🔄 | In the "…" menu. |
 | Empty, failed to load, refresh failed | ✅ | The empty state opens "From recipes". |
 
+## Meal plan (`/plan`)
+
+New with PIN-77, in both apps. Plan took the Hub's place in the navigation (Library · Plan · Snap · List · Settings); the Hub is a "My Library | Hub" tab of the Library and keeps `/hub`.
+
+| Item | Status | Note |
+| --- | --- | --- |
+| This week and next, whole week (wide screens) or day by day | 🔄 | The phone app goes day by day only. |
+| Plan my week: days, meals, snacks, Hub, leftovers, Adjust | ✅ | One planner for both apps (`shared/lib/mealPlan/planner.ts`). |
+| Lock, another recipe, mark cooked, remove | ✅ | |
+| Add to plan from a recipe; tonight's planned dinner on the Library | ✅ | |
+| Reminders (defrost in the morning, "Tonight" at 17:30) | 🔄 | Phone only: scheduled on the device. |
+| Send to list, with what is at home left off | ✅ | Uses the household's list and pantry. |
+
 ## Hub (`/hub`, `/hub/<id>`)
 
 Expo: `src/app/(tabs)/hub.tsx`, `src/app/hub/[id].tsx`. PIN-138.

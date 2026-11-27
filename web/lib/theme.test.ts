@@ -75,7 +75,10 @@ describe("activeSection", () => {
     ["/recipe/12", "library"],
     ["/recipe/preview", "snap"],
     ["/add", "snap"],
-    ["/hub/4", "hub"],
+    // The Hub is a tab of the Library (PIN-77).
+    ["/hub", "library"],
+    ["/hub/4", "library"],
+    ["/plan", "plan"],
     ["/list", "list"],
     ["/settings/language", "settings"],
     ["/unknown", null],

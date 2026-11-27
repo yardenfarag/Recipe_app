@@ -146,6 +146,36 @@ describe("RecipeNotices", () => {
     expect(screen.getByText("Swapped butter for oil.")).toBeDefined();
     expect(screen.getByText("Showing Hebrew")).toBeDefined();
   });
+
+  it("a Hub card in a saved translation offers its original language, and the way back (PIN-77)", () => {
+    const setShowOriginal = vi.fn();
+    const translated = wrap(
+      <RecipeNotices
+        display={displayOf({ source_language: "en" }, { translated: true, contentLanguage: "he" })}
+        avoid={null}
+        languageToggle={{ showingOriginal: false, setShowOriginal, language: "he" }}
+      />,
+    );
+    fireEvent.click(screen.getByRole("button", { name: "Show original language" }));
+    expect(setShowOriginal).toHaveBeenCalledWith(true);
+    translated.unmount();
+
+    wrap(
+      <RecipeNotices
+        display={displayOf({ source_language: "en" })}
+        avoid={null}
+        languageToggle={{ showingOriginal: true, setShowOriginal, language: "he" }}
+      />,
+    );
+    expect(screen.getByText("This recipe is in English")).toBeDefined();
+    fireEvent.click(screen.getByRole("button", { name: "Translate to Hebrew" }));
+    expect(setShowOriginal).toHaveBeenLastCalledWith(false);
+  });
+
+  it("a translated recipe without actions or a toggle has no Show original button", () => {
+    wrap(<RecipeNotices display={displayOf({}, { translated: true, contentLanguage: "he" })} avoid={null} />);
+    expect(screen.queryByRole("button", { name: "Show original language" })).toBeNull();
+  });
 });
 
 describe("with recipe actions (a saved recipe's page)", () => {

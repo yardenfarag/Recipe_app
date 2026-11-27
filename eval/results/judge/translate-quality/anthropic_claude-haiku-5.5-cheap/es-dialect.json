@@ -1,0 +1,10 @@
+{
+  "caseId": "es-dialect",
+  "judge": "google/gemini-3.1-pro-preview",
+  "translation": "Title: Galletas con pepitas de chocolate\nIngredients:\n1. 115 g mantequilla blanda\n2. 100 g azúcar moreno\n3. 50 g azúcar blanco\n4. 1 huevo\n5. 1 cdta extracto de vainilla\n6. 180 g harina de trigo\n7. ½ cdta bicarbonato sódico\n8. 150 g pepitas de chocolate\n9. 60 ml nata para montar\nSteps:\n1. Bate la mantequilla y los dos azúcares en un bol grande hasta obtener una crema esponjosa.\n2. Añade el huevo, la vainilla y la nata y bate hasta integrar.\n3. Incorpora la harina y el bicarbonato sódico, y después las pepitas de chocolate.\n4. Reparte la masa en porciones sobre una bandeja de horno forrada con papel y hornea a 180°C durante 10–12 minutos.",
+  "verdict": {
+    "native_score": 5,
+    "errors": []
+  },
+  "costUsd": 0.007986
+}

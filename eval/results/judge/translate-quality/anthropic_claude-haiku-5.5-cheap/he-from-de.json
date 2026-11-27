@@ -1,0 +1,46 @@
+{
+  "caseId": "he-from-de",
+  "judge": "google/gemini-3.1-pro-preview",
+  "translation": "Title: טרטיות בצק עלים עם שוקולד\nIngredients:\n1. 1 אריזה בצק עלים\n2. 8 חטיפי שוקולד קינדר\n3. 1 שקית סוכר וניל\n4. 1 חלמון\n5. 2 כפות חלב\n6. לפי הטעם אבקת סוכר\nSteps:\n1. מחממים את התנור ל-200°C באש עליונה ותחתונה.\n2. חותכים את בצק העלים ל-8 מלבנים ומניחים על כל אחד חטיף שוקולד.\n3. מקפלים את הבצק, לוחצים את הקצוות בעזרת מזלג ומברישים בחלמון ובחלב.\n4. אופים 12 עד 15 דקות עד שהם משחימים לזהב, ומפזרים מעל אבקת סוכר.",
+  "verdict": {
+    "native_score": 3,
+    "errors": [
+      {
+        "where": "title",
+        "category": "meaning",
+        "severity": "major",
+        "excerpt": "טרטיות",
+        "fix": "כיסוני"
+      },
+      {
+        "where": "ingredient 6",
+        "category": "grammar",
+        "severity": "minor",
+        "excerpt": "לפי הטעם אבקת סוכר",
+        "fix": "אבקת סוכר לפי הטעם"
+      },
+      {
+        "where": "step 1",
+        "category": "cooking_verb",
+        "severity": "minor",
+        "excerpt": "באש עליונה ותחתונה",
+        "fix": "במצב חום עליון ותחתון"
+      },
+      {
+        "where": "step 3",
+        "category": "cooking_verb",
+        "severity": "minor",
+        "excerpt": "לוחצים",
+        "fix": "מהדקים"
+      },
+      {
+        "where": "step 4",
+        "category": "style_consistency",
+        "severity": "minor",
+        "excerpt": "עד שהם משחימים לזהב",
+        "fix": "עד להזהבה"
+      }
+    ]
+  },
+  "costUsd": 0.014988
+}

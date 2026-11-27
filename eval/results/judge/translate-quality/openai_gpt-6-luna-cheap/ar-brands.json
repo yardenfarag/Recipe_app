@@ -1,0 +1,46 @@
+{
+  "caseId": "ar-brands",
+  "judge": "google/gemini-3.1-pro-preview",
+  "translation": "Title: أكواب تشيز كيك كيندر بوينو\nIngredients:\n1. 120 غ بسكويت دايجستف\n2. 30 غ زبدة مذابة\n3. 380 غ جبنة كريمية\n4. 200 مل كريمة الخفق\n5. 2 لوح كيندر بوينو\n6. 2 ملعقة كبيرة كريمة البندق\nSteps:\n1. اسحق البسكويت، واخلطه بالزبدة واضغطه في 6 أكواب.\n2. اخفق الكريمة حتى تتكون قمم ثابتة.\n3. اخفق الجبنة الكريمية مع كريمة البندق، ثم قلّب برفق الكريمة المخفوقة.\n4. وزّع المزيج بالملعقة فوق القاعدة، وبرّده لمدة 4 ساعات، ثم زيّنه بكيندر بوينو المقطّع.",
+  "verdict": {
+    "native_score": 4,
+    "errors": [
+      {
+        "where": "ingredient 5",
+        "category": "grammar",
+        "severity": "minor",
+        "excerpt": "2 لوح",
+        "fix": "لوحان من"
+      },
+      {
+        "where": "ingredient 6",
+        "category": "grammar",
+        "severity": "minor",
+        "excerpt": "2 ملعقة كبيرة",
+        "fix": "ملعقتان كبيرتان"
+      },
+      {
+        "where": "step 1",
+        "category": "cooking_verb",
+        "severity": "minor",
+        "excerpt": "اسحق",
+        "fix": "اطحن"
+      },
+      {
+        "where": "step 1",
+        "category": "cooking_verb",
+        "severity": "minor",
+        "excerpt": "واضغطه",
+        "fix": "ورصه"
+      },
+      {
+        "where": "step 2",
+        "category": "meaning",
+        "severity": "minor",
+        "excerpt": "تتكون قمم ثابتة",
+        "fix": "تتماسك"
+      }
+    ]
+  },
+  "costUsd": 0.012072
+}

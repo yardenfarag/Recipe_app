@@ -1,0 +1,32 @@
+{
+  "caseId": "he-fractions-temp",
+  "judge": "google/gemini-3.1-pro-preview",
+  "translation": "Title: עוגת לימון מזוגגת\nIngredients:\n1. 1½ כוסות קמח לבן\n2. ¾ כוס סוכר דק\n3. ½ כפית מלח\n4. ¼ כפית תמצית וניל\n5. 3 ביצים גדולות\n6. 2 כפות מיץ לימון\n7. ½ כוס שמנת מתוקה\nSteps:\n1. מחממים את התנור ל-180°C ומורחים שמן בתבנית אינגליש קייק במידות 23 × 13 ס״מ.\n2. מקציפים את הביצים והסוכר עד שהתערובת מתבהרת, ואז מקפלים פנימה את הקמח והמלח.\n3. מערבבים את השמנת, הוניל ומיץ הלימון, מוזגים את הבלילה לתבנית ואופים 45 דקות.\n4. מניחים לעוגה להתקרר 10 דקות, ואז מטפטפים עליה את זיגוג הלימון.",
+  "verdict": {
+    "native_score": 4,
+    "errors": [
+      {
+        "where": "step 1",
+        "category": "cooking_verb",
+        "severity": "minor",
+        "excerpt": "ומורחים שמן ב",
+        "fix": "ומשמנים"
+      },
+      {
+        "where": "step 3",
+        "category": "grammar",
+        "severity": "minor",
+        "excerpt": "הוניל",
+        "fix": "הווניל"
+      },
+      {
+        "where": "step 4",
+        "category": "cooking_verb",
+        "severity": "minor",
+        "excerpt": "מטפטפים עליה",
+        "fix": "מזלפים עליה"
+      }
+    ]
+  },
+  "costUsd": 0.011356
+}

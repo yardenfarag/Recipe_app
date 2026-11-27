@@ -19,11 +19,11 @@ test.describe("desktop", () => {
 
   test("the five sections navigate with real links, and Back works", async ({ page }) => {
     const nav = page.getByRole("navigation", { name: "Main" }).filter({ visible: true });
-    await nav.getByRole("link", { name: "Hub" }).click();
-    await expect(page).toHaveURL(/\/app\/hub$/);
-    await expect(page.getByRole("heading", { level: 1 })).toHaveText("Cooking Hub");
-    await expect(page).toHaveTitle("Hub · Pinch");
-    await expect(nav.getByRole("link", { name: "Hub" })).toHaveAttribute("aria-current", "page");
+    await nav.getByRole("link", { name: "Plan" }).click();
+    await expect(page).toHaveURL(/\/app\/plan$/);
+    await expect(page.getByRole("heading", { level: 1 })).toHaveText(/This week|Next week/);
+    await expect(page).toHaveTitle("Plan · Pinch");
+    await expect(nav.getByRole("link", { name: "Plan" })).toHaveAttribute("aria-current", "page");
 
     await nav.getByRole("link", { name: "List" }).click();
     await expect(page).toHaveURL(/\/app\/list$/);
@@ -49,14 +49,14 @@ test.describe("desktop", () => {
     await page.keyboard.press("Enter");
     await expect(page).toHaveURL(/#main$/);
 
-    // Tab order follows the rail: logo, Library, Hub, Snap, List.
+    // Tab order follows the rail: logo, Library, Plan, Snap, List.
     await page.goto("/app/hub");
     await expect(page.locator("#main h1:visible")).toBeVisible();
     await page.keyboard.press("Tab"); // skip link
     await page.keyboard.press("Tab"); // logo
     await page.keyboard.press("Tab");
     await expect(page.getByRole("link", { name: "Library", exact: true }).filter({ visible: true })).toBeFocused();
-    await page.keyboard.press("Tab"); // Hub
+    await page.keyboard.press("Tab"); // Plan
     await page.keyboard.press("Tab");
     // The rail's Snap (an empty Library has its own "Snap a recipe" button further down).
     await expect(page.getByRole("link", { name: "Snap a recipe" }).filter({ visible: true }).first()).toBeFocused();

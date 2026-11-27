@@ -45,4 +45,6 @@ export interface RecipeCard {
   contains?: string[] | null;
   created_at: string;
   updated_at?: string;
+  /** Client-only: the title in the app language, from the card's translation into it (PIN-77). */
+  display_title?: string;
 }

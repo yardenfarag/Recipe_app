@@ -1,0 +1,10 @@
+{
+  "caseId": "en-from-tr",
+  "judge": "google/gemini-3.1-pro-preview",
+  "translation": "Title: Chocolate Cake\nIngredients:\n1. 3 eggs\n2. 1 cup granulated sugar\n3. 1 cup milk\n4. ½ cup vegetable oil\n5. 2 tbsp cocoa powder\n6. 1 packet baking powder\n7. 2 cups all-purpose flour\nSteps:\n1. Whisk the eggs and sugar until foamy.\n2. Add the milk and vegetable oil, then mix.\n3. Sift in the flour, cocoa powder, and baking powder.\n4. Pour the batter into a greased pan and bake for 35 minutes in a preheated 350°F oven.",
+  "verdict": {
+    "native_score": 5,
+    "errors": []
+  },
+  "costUsd": 0.008488
+}

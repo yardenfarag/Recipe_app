@@ -34,6 +34,7 @@ import type { Instruction, Recipe } from "@shared/types/recipe";
 import { OutOfCreditsDialog } from "@/components/credits/OutOfCreditsDialog";
 import { useLanguage } from "@/components/LanguageProvider";
 import { AddToCollectionDialog } from "@/components/library/AddToCollectionDialog";
+import { AddToPlanDialog } from "@/components/plan/AddToPlanDialog";
 import { AddToShoppingListDialog } from "@/components/list/AddToShoppingListDialog";
 import { UsedUpDialog } from "@/components/pantry/UsedUpDialog";
 import { CookedNoteDialog } from "@/components/recipe/actions/CookedNoteDialog";
@@ -344,6 +345,7 @@ export function RecipeActionsProvider({ state, children }: { state: ReadyRecipe;
         system={system}
         unitLanguage={display.unitLanguage}
       />
+      <AddToPlanDialog open={kind === "plan"} recipe={recipe} title={display.title} onClose={close} />
       <OutOfCreditsDialog
         open={creditsNeeded !== null}
         onOpenChange={(open) => !open && setCreditsNeeded(null)}

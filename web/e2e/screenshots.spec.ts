@@ -5,8 +5,9 @@ import { createAdminPagesUsers, deleteAdminPagesUsers } from "./adminSeed";
 import { signInWithPassword } from "./helpers";
 import { addListItemsAs, householdOf, newAccount, setFoodAvatar, type Account } from "./householdSeed";
 import { resetHub } from "./hubSeed";
-import { resetShoppingList } from "./listSeed";
+import { resetShoppingList, setPantryStaples } from "./listSeed";
 import { PHOTOS, resetPantry, stubScanPantry } from "./pantrySeed";
+import { resetMealPlan } from "./planSeed";
 import { setRecipeVideo } from "./cookSeed";
 import { writeAccountPrefs } from "./prefsSeed";
 import { resetShares, stubRecipeShare } from "./shareSeed";
@@ -883,4 +884,75 @@ test("household: settings, invite, join page and the shared list", async ({ brow
       }
     }
   }
+});
+
+test("meal plan: whole week, day by day, Plan my week and Send to list", async ({ browser }) => {
+  test.setTimeout(400_000);
+  const dish = (title: string, hue: number, tags: string[], ingredients: string[], minutes = 25): SeedRecipe => ({
+    title,
+    image_url: picture(hue),
+    tags,
+    servings: 2,
+    estimated_time_minutes: minutes,
+    effort_level: "Easy",
+    cost_estimate: "$",
+    ingredients: ingredients.map((name) => ({ name, quantity: 1, unit: "" })),
+    instructions: [{ step: 1, text: "Cook it." }],
+  });
+  await resetLibrary([
+    dish("Overnight oats with berries", 20, ["breakfast"], ["oats", "milk", "berries"], 5),
+    dish("Banana oat pancakes", 35, ["breakfast", "pancakes"], ["banana", "eggs", "oats"], 20),
+    dish("Spinach and feta omelette", 90, ["breakfast"], ["eggs", "spinach", "feta"], 10),
+    dish("Menemen", 10, ["breakfast", "eggs"], ["eggs", "tomatoes", "peppers"], 20),
+    dish("Red lentil soup", 25, ["soup", "lunch"], ["red lentils", "carrots", "cumin"], 40),
+    dish("Greek salad", 120, ["salad", "lunch"], ["cucumber", "tomatoes", "feta"], 10),
+    dish("Caprese sandwich", 0, ["sandwich", "lunch"], ["mozzarella", "tomatoes", "basil"], 10),
+    dish("Coconut chickpea curry", 45, ["dinner", "curry"], ["chickpeas", "spinach", "coconut milk"], 35),
+    dish("Tomato and basil pasta", 5, ["dinner", "pasta"], ["spaghetti", "tomatoes", "basil"], 20),
+    dish("Black bean tacos", 280, ["dinner", "tacos"], ["black beans", "tortillas", "lime"], 25),
+    dish("Mushroom risotto", 60, ["dinner", "risotto"], ["arborio rice", "mushrooms", "parmesan"], 45),
+    dish("Falafel bowls", 160, ["dinner"], ["chickpeas", "tahini", "cucumber"], 45),
+    dish("Miso noodle soup", 200, ["soup", "dinner"], ["miso", "noodles", "spring onions"], 25),
+    dish("Pumpkin oat bites", 30, ["snack", "bites"], ["pumpkin", "oats", "dates"], 30),
+  ]);
+  await resetMealPlan({ snacksPerDay: 1 });
+  await setPantryStaples(["eggs", "spinach", "tomatoes"]);
+
+  // Fill the week once, as the cook would.
+  const filling = await open(browser, "desktop", { language: "en", scheme: "light" }, "/app/plan");
+  await filling.page.locator("[data-track='plan.empty.plan']").click();
+  await filling.page.locator("[data-track='plan.fill.fill']").click();
+  await filling.page.getByRole("dialog").waitFor({ state: "hidden" });
+  await filling.context.close();
+
+  for (const viewport of ["phone", "tablet", "desktop"] as const) {
+    for (const [language, scheme] of [["en", "light"], ["he", "light"], ["en", "dark"], ["he", "dark"]] as const) {
+      if (viewport === "tablet" && scheme === "dark") continue;
+      const tag = `${viewport}-${language}-${scheme}`;
+      let { page, context } = await open(browser, viewport, { language, scheme }, "/app/plan");
+      await page.locator("#main article:visible").first().waitFor();
+      await page.waitForTimeout(500);
+      await page.screenshot({ path: `${OUT}/plan-${tag}.png`, fullPage: true });
+      if (viewport === "desktop") {
+        await page.locator("[data-track='plan.view.days']").click();
+        await page.waitForTimeout(300);
+        await page.screenshot({ path: `${OUT}/plan-days-${tag}.png`, fullPage: true });
+      }
+      await page.locator("[data-track='plan.open_fill']").click();
+      await page.getByRole("dialog").waitFor();
+      await page.waitForTimeout(300);
+      await page.screenshot({ path: `${OUT}/plan-fill-${tag}.png` });
+      await context.close();
+
+      ({ page, context } = await open(browser, viewport, { language, scheme }, "/app/plan"));
+      await page.locator("#main article:visible").first().waitFor();
+      await page.locator("[data-track='plan.open_send']").click();
+      await page.getByRole("dialog").waitFor();
+      await page.waitForTimeout(300);
+      await page.screenshot({ path: `${OUT}/plan-send-${tag}.png` });
+      await context.close();
+    }
+  }
+  await resetMealPlan();
+  await setPantryStaples([]);
 });

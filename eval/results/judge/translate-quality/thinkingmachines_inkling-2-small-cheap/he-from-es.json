@@ -1,0 +1,32 @@
+{
+  "caseId": "he-from-es",
+  "judge": "google/gemini-3.1-pro-preview",
+  "translation": "Title: מיני צ׳יזקייקים\nIngredients:\n1. 150 גרם ביסקוויטים (פתי בר)\n2. 60 גרם חמאה מומסת\n3. 300 גרם גבינת שמנת\n4. 2 ביצים\n5. 1 כף תמצית וניל\n6. 150 מ״ל שמנת מתוקה\nSteps:\n1. טוחנים את הביסקוויטים ומערבבים עם החמאה.\n2. מקציפים את גבינת השמנת עם הביצים, תמצית הווניל והשמנת המתוקה.\n3. מחלקים לתבניות מאפינס ואופים ב-170°C במשך 15 דקות.\n4. מניחים לצינון ומצננים במקרר במשך 2 שעות.",
+  "verdict": {
+    "native_score": 4,
+    "errors": [
+      {
+        "where": "title",
+        "category": "meaning",
+        "severity": "minor",
+        "excerpt": "צ׳יזקייקים",
+        "fix": "עוגות גבינה"
+      },
+      {
+        "where": "step 2",
+        "category": "cooking_verb",
+        "severity": "minor",
+        "excerpt": "מקציפים",
+        "fix": "טורפים"
+      },
+      {
+        "where": "step 4",
+        "category": "style_consistency",
+        "severity": "minor",
+        "excerpt": "ומצננים במקרר",
+        "fix": "ומעבירים למקרר"
+      }
+    ]
+  },
+  "costUsd": 0.012278
+}

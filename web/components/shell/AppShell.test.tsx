@@ -46,23 +46,24 @@ describe("AppShell", () => {
     expect(document.getElementById("main")?.tagName).toBe("MAIN");
   });
 
-  it("links to all five sections with real links, side and bottom", () => {
+  it("links to the five sections with real links, side and bottom: the plan took the Hub's place", () => {
     renderShell();
     const [side, bottom] = screen.getAllByRole("navigation", { name: "Main" });
-    for (const region of [side, bottom]) {
-      const hrefs = within(region)
-        .getAllByRole("link")
-        .map((link) => link.getAttribute("href"));
-      expect(new Set(hrefs)).toEqual(new Set(["/", "/hub", "/add", "/list", "/settings"]));
-    }
+    const hrefs = (region: HTMLElement) =>
+      new Set(
+        within(region)
+          .getAllByRole("link")
+          .map((link) => link.getAttribute("href")),
+      );
+    for (const region of [side, bottom]) expect(hrefs(region)).toEqual(new Set(["/", "/plan", "/add", "/list", "/settings"]));
   });
 
   it("marks the current section", () => {
-    nav.pathname = "/hub";
+    nav.pathname = "/plan";
     renderShell();
     const current = screen.getAllByRole("link", { current: "page" });
     expect(current.length).toBeGreaterThan(0);
-    for (const link of current) expect(link.getAttribute("href")).toBe("/hub");
+    for (const link of current) expect(link.getAttribute("href")).toBe("/plan");
   });
 
   it("offers the account menu with who is signed in", async () => {

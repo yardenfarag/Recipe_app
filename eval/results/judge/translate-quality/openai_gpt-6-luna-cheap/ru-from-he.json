@@ -1,0 +1,39 @@
+{
+  "caseId": "ru-from-he",
+  "judge": "google/gemini-3.1-pro-preview",
+  "translation": "Title: Кабачковые оладьи\nIngredients:\n1. 2 кабачков\n2. 1 яйца\n3. 3 ст. л. муки\n4. ½ ч. л. соли\n5. по вкусу черного перца\n6. масла\nSteps:\n1. Натрите кабачки, посолите и хорошо отожмите от жидкости.\n2. Смешайте с яйцом, мукой и перцем.\n3. Выкладывайте ложками порции смеси в горячее масло и жарьте по 2–3 минуты с каждой стороны до золотистой корочки.\n4. Выложите на бумажное полотенце и подавайте горячими.",
+  "verdict": {
+    "native_score": 4,
+    "errors": [
+      {
+        "where": "ingredient 1",
+        "category": "grammar",
+        "severity": "minor",
+        "excerpt": "2 кабачков",
+        "fix": "2 кабачка"
+      },
+      {
+        "where": "ingredient 2",
+        "category": "grammar",
+        "severity": "minor",
+        "excerpt": "1 яйца",
+        "fix": "1 яйцо"
+      },
+      {
+        "where": "ingredient 5",
+        "category": "grammar",
+        "severity": "minor",
+        "excerpt": "по вкусу черного перца",
+        "fix": "по вкусу черный перец"
+      },
+      {
+        "where": "ingredient 6",
+        "category": "grammar",
+        "severity": "minor",
+        "excerpt": "масла",
+        "fix": "масло для жарки"
+      }
+    ]
+  },
+  "costUsd": 0.013662
+}

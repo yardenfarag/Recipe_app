@@ -1,0 +1,10 @@
+{
+  "caseId": "he-mixed-source",
+  "judge": "google/gemini-3.1-pro-preview",
+  "translation": "Title: פנקייקים עם שוקולד Milka\nIngredients:\n1. 300 מ״ל קפיר\n2. 1 ביצה\n3. 2 כפות סוכר\n4. ½ כפית סודה לשתייה\n5. 250 גרם קמח\n6. 1 טבלת שוקולד Milka\nSteps:\n1. מערבבים את הקפיר, הביצה, הסוכר והסודה לשתייה.\n2. מוסיפים את הקמח ומערבבים עד שמתקבלת בלילה חלקה.\n3. מניחים חתיכת שוקולד Milka על כל פנקייק ומטגנים משני הצדדים.",
+  "verdict": {
+    "native_score": 5,
+    "errors": []
+  },
+  "costUsd": 0.00956
+}

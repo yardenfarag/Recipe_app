@@ -299,7 +299,18 @@ export async function updateRecipeContent(id: string, content: RecipeContentUpda
     await supabase.from('recipe_translations').delete().eq('recipe_id', id);
   }
 
-  return data as unknown as Recipe;
+  const saved = data as unknown as Recipe;
+  // New ingredient names clear the diets the meal plan reads (PIN-77): ask for a new check, in the background.
+  if (saved.diets == null && ingredientNamesChanged(existing?.ingredients, saved.ingredients)) {
+    void supabase.functions.invoke('label-recipe-diets', { body: { recipe_id: id } }).catch(() => undefined);
+  }
+  return saved;
+}
+
+function ingredientNamesChanged(before: Recipe['ingredients'] | undefined, after: Recipe['ingredients'] | undefined): boolean {
+  const names = (list: Recipe['ingredients'] | undefined) =>
+    (list ?? []).map((ing) => (ing.name ?? '').trim().toLowerCase()).join('|');
+  return names(before) !== names(after);
 }
 
 const COOK_NOTE_MAX = 160;

@@ -1,0 +1,39 @@
+{
+  "caseId": "ar-from-he",
+  "judge": "google/gemini-3.1-pro-preview",
+  "translation": "Title: شakshouka\nIngredients:\n1. 1 بصل، مفروم\n2. 2 فلفل أحمر\n3. 4 فصوص فص ثوم\n4. 800 غ طماطم مهروسة\n5. 1 ملعقة صغيرة بابريكا حلوة\n6. ½ ملعقة صغيرة كمون\n7. 4 بيض\n8. 1 رشة ملح\nSteps:\n1. سخّن الزيت في مقلاة واسعة وقلِّ البصل والفلفل حتى يلينا.\n2. أضف الثوم والتوابل وقلّب لمدة دقيقة.\n3. أضف الطماطم واطبخها على نار هادئة لمدة 15 دقيقة.\n4. اكسر البيض داخل الصلصة، غطِّ واطبخ لمدة 5–7 دقائق، حتى يتماسك البياض.",
+  "verdict": {
+    "native_score": 3,
+    "errors": [
+      {
+        "where": "title",
+        "category": "untranslated",
+        "severity": "major",
+        "excerpt": "شakshouka",
+        "fix": "شكشوكة"
+      },
+      {
+        "where": "ingredient 1",
+        "category": "grammar",
+        "severity": "minor",
+        "excerpt": "1 بصل",
+        "fix": "1 حبة بصل"
+      },
+      {
+        "where": "ingredient 3",
+        "category": "grammar",
+        "severity": "minor",
+        "excerpt": "4 فصوص فص ثوم",
+        "fix": "4 فصوص ثوم"
+      },
+      {
+        "where": "ingredient 7",
+        "category": "grammar",
+        "severity": "minor",
+        "excerpt": "4 بيض",
+        "fix": "4 بيضات"
+      }
+    ]
+  },
+  "costUsd": 0.01469
+}

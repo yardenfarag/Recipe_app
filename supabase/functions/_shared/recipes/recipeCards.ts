@@ -486,13 +486,14 @@ async function reviewForHub(
  * PIN-180). Writes only while the card's `contains` is still null, so a concurrent check or the
  * backfill is never overwritten. Logs its own
  * usage row, because extract-recipe has already logged the extract by the time this runs.
+ * Returns the diets found (null when the check failed), so the cook's own copy can take them too (PIN-77).
  */
 export async function fillRecipeCardDiets(
   admin: Db,
   cardId: string,
   recipe: DietsRecipeInput,
   userId: string | null,
-): Promise<void> {
+): Promise<string[] | null> {
   const started = Date.now();
   const result = await deriveRecipeDiets(recipe);
   let saved = false;
@@ -506,7 +507,7 @@ export async function fillRecipeCardDiets(
     if (error) console.error('[recipe-cards] diets update failed', error);
     saved = !error && (data ?? []).length > 0;
   }
-  if (result.usages.length === 0) return;
+  if (result.usages.length === 0) return result.diets;
   await logUsageEvent(admin, {
     userId,
     action: 'hub_diets',
@@ -517,6 +518,7 @@ export async function fillRecipeCardDiets(
     errorMessage: result.error ?? null,
     metadata: { card_id: cardId, diets: result.diets, contains: result.contains, saved },
   });
+  return result.diets;
 }
 
 export async function userContributesToHub(

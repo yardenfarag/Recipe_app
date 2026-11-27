@@ -1,27 +1,11 @@
 import { localizeIngredientUnits } from './culinaryUnits';
-import { withSourceAmounts } from './ingredientAmounts';
+import { localizeCachedTranslation, type CanonicalRecipeText } from './cachedTranslation';
 import { resolveRecipeSourceLanguage } from './recipeSourceLanguage';
 import { translateRecipe } from './supabase/translateRecipe';
-import type { Ingredient, Instruction, RecipeTranslationContent } from '../types/recipe';
-import type { RecipeLanguageCode } from './recipeLanguages';
+import type { RecipeTranslationContent } from '../types/recipe';
 import { isRecipeLanguageCode } from './recipeLanguages';
 
-function withLocalizedUnits(
-  content: RecipeTranslationContent,
-  language: RecipeLanguageCode,
-): RecipeTranslationContent {
-  return {
-    ...content,
-    ingredients: localizeIngredientUnits(content.ingredients, language),
-  };
-}
-
-export type CanonicalRecipeText = {
-  title: string;
-  ingredients: Ingredient[];
-  instructions: Instruction[];
-  source_language?: string | null;
-};
+export type { CanonicalRecipeText };
 
 export type EnsureTranslationResult =
   | { status: 'source'; content: RecipeTranslationContent }
@@ -64,12 +48,7 @@ export async function ensureRecipeTranslation(options: {
   const language = options.targetLanguage;
 
   // Older caches may still hold source-language units and lack grams/spoons amounts — normalize on read.
-  const cachedContent = options.cached
-    ? withLocalizedUnits(
-        { ...options.cached, ingredients: withSourceAmounts(options.cached.ingredients, canonical.ingredients) },
-        language,
-      )
-    : null;
+  const cachedContent = options.cached ? localizeCachedTranslation(options.cached, canonical.ingredients, language) : null;
 
   // A cached translation is shown as it is, whatever translator made it: opening a recipe never re-translates. Old
   // ones (before PIN-53) are redone by the admin backfill-translations function, and the display-time unit fixes
@@ -95,15 +74,12 @@ export async function ensureRecipeTranslation(options: {
 
   return {
     status: 'ok',
-    content: withLocalizedUnits(
-      {
-        title: result.recipe.title,
-        ingredients: result.recipe.ingredients,
-        instructions: result.recipe.instructions,
-        translation_version: result.translation_version ?? null,
-      },
-      language,
-    ),
+    content: {
+      title: result.recipe.title,
+      ingredients: localizeIngredientUnits(result.recipe.ingredients, language),
+      instructions: result.recipe.instructions,
+      translation_version: result.translation_version ?? null,
+    },
     fromCache: false,
   };
 }

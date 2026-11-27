@@ -1,0 +1,39 @@
+{
+  "caseId": "he-unit-is-noun",
+  "judge": "google/gemini-3.1-pro-preview",
+  "translation": "Title: כרוב צלוי בטחינה\nIngredients:\n1. 1 כרוב ירוק, חתוך לפלחים\n2. 1 מיץ לימון\n3. 2 ביצים קשות\n4. 3 שיני שום כתושות\n5. 1 צרור פטרוזיליה קצוצה\n6. ⅓ כוס טחינה\n7. 2 כפות סילאן\nSteps:\n1. מחממים את התנור ל-220°C.\n2. מברישים את פלחי הכרוב בשמן זית וקולים 30 דקות עד להשחמה.\n3. טורפים את הטחינה עם מיץ הלימון, השום ומעט מים.\n4. מטפטפים את הטחינה והסילאן מעל הכרוב ומפזרים מעל את הפטרוזיליה והביצים הקצוצות.",
+  "verdict": {
+    "native_score": 4,
+    "errors": [
+      {
+        "where": "ingredient 2",
+        "category": "meaning",
+        "severity": "minor",
+        "excerpt": "1 מיץ לימון",
+        "fix": "1 לימון סחוט"
+      },
+      {
+        "where": "step 2",
+        "category": "cooking_verb",
+        "severity": "major",
+        "excerpt": "וקולים",
+        "fix": "וצולים"
+      },
+      {
+        "where": "step 2",
+        "category": "meaning",
+        "severity": "minor",
+        "excerpt": "עד להשחמה",
+        "fix": "עד שהם נחרכים"
+      },
+      {
+        "where": "step 4",
+        "category": "cooking_verb",
+        "severity": "minor",
+        "excerpt": "מטפטפים",
+        "fix": "מזלפים"
+      }
+    ]
+  },
+  "costUsd": 0.01255
+}

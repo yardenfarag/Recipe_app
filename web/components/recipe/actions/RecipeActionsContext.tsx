@@ -22,7 +22,9 @@ export type RecipeDialog =
   /** Add to the shopping list, at the servings on screen. `have`: the ingredients (by position) the cook ticked as already at home. */
   | { kind: "list"; servings: number; have?: number[] }
   | { kind: "note" }
-  | { kind: "repair" };
+  | { kind: "repair" }
+  /** Put the recipe on a day and meal of the plan (PIN-77). */
+  | { kind: "plan" };
 
 /** What "Revert to original" would undo: a remix made on this visit, or a saved kitchen adaptation. */
 export type Adaptation = { kind: "remix"; variant: RecipeVariantKey; summary: string } | { kind: "kitchen"; summary: string | null };

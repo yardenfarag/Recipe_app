@@ -11,7 +11,9 @@ export type DailyAiAction =
   /** Background recalculation after a hand edit or written recipe (PIN-79). */
   | 'recipe_edit'
   /** One photo of a pantry scan (PIN-181). */
-  | 'pantry_scan';
+  | 'pantry_scan'
+  /** A recipe's diet check after a change the app saved itself (PIN-77, label-recipe-diets). */
+  | 'recipe_diets';
 
 export function currentUtcDate(date = new Date()): string {
   return date.toISOString().slice(0, 10);

@@ -1,0 +1,32 @@
+{
+  "caseId": "he-from-fr",
+  "judge": "google/gemini-3.1-pro-preview",
+  "translation": "Title: בראוני מהיר\nIngredients:\n1. 1 כף שמן\n2. 1 קמצוץ מלח\n3. 2 כפיות סוכר וניל\n4. 1 שקית אבקת אפייה\n5. 3 ביצים\n6. 100 גרם שוקולד מריר\n7. לפי הטעם אגוזי לוז קצוצים\nSteps:\n1. ממיסים את השוקולד המריר עם השמן באמבט מים.\n2. טורפים את הביצים עם סוכר הווניל והמלח, ואז מערבבים פנימה את השוקולד המומס.\n3. מוסיפים את אבקת האפייה, יוצקים לתבנית ומפזרים מעל את אגוזי הלוז.\n4. אופים 20 דקות ב-180°C.",
+  "verdict": {
+    "native_score": 4,
+    "errors": [
+      {
+        "where": "ingredient 2",
+        "category": "ingredient_term",
+        "severity": "minor",
+        "excerpt": "קמצוץ",
+        "fix": "קורט"
+      },
+      {
+        "where": "ingredient 7",
+        "category": "grammar",
+        "severity": "minor",
+        "excerpt": "לפי הטעם אגוזי לוז קצוצים",
+        "fix": "אגוזי לוז קצוצים, לפי הטעם"
+      },
+      {
+        "where": "step 1",
+        "category": "cooking_verb",
+        "severity": "minor",
+        "excerpt": "באמבט מים",
+        "fix": "בבן מארי"
+      }
+    ]
+  },
+  "costUsd": 0.01356
+}

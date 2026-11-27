@@ -38,6 +38,8 @@ import { IconButton } from '@/components/ui/IconButton';
 import { Text } from '@/components/ui/Text';
 import { Tile } from '@/components/ui/Tile';
 import { TopBar } from '@/components/ui/TopBar';
+import { LibraryTabs } from '@/components/LibraryTabs';
+import { useTonightPlanned } from '@/hooks/useTonightPlanned';
 import { KitIcon, Radii, type IconName } from '@/components/ui/tokens';
 import { useAuth } from '@/hooks/useAuth';
 import { useCollections } from '@/hooks/useCollections';
@@ -223,7 +225,10 @@ export default function HomeScreen() {
     quick.length > 0;
 
   // Tonight's pick, as on the web.
-  const { pick, another } = useTonightsPick(recipes);
+  const { pick: suggested, another } = useTonightsPick(recipes);
+  // A dinner planned for today wins over the suggestion (PIN-77).
+  const planned = useTonightPlanned(recipes);
+  const pick = planned ?? suggested;
 
   useEffect(() => {
     if (hasActiveFilters) void ensureAllLoaded();
@@ -515,6 +520,7 @@ export default function HomeScreen() {
   const listHeader = (
     <View style={{ gap: 16, paddingBottom: 16 }}>
       <TopBar />
+      <LibraryTabs current="library" />
       {backToRecipeId ? (
         <Button
           variant="secondary"
@@ -571,7 +577,7 @@ export default function HomeScreen() {
       ) : null}
 
       {/* Tonight's pick steps aside while searching, so what was typed and what it found sit together. */}
-      {searching || error ? null : <TonightsPick pick={pick} onAnother={another} />}
+      {searching || error ? null : <TonightsPick pick={pick} planned={planned != null} onAnother={planned ? null : another} />}
 
       <View style={{ gap: 14, marginTop: 4 }}>
         <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 12 }}>

@@ -1,0 +1,39 @@
+{
+  "caseId": "he-taste-phrases",
+  "judge": "google/gemini-3.1-pro-preview",
+  "translation": "Title: כדורי סופגניות מצופים בסוכר\nIngredients:\n1. 250 גרם קמח לחם\n2. 7 גרם שמרים יבשים\n3. לפי הטעם מלח\n4. 1 לטיגון שמן ניטרלי\n5. 1 לציפוי סוכר לבן\n6. 2 ביצים גדולות\n7. 1 גרידת לימון\nSteps:\n1. מערבבים את הקמח, השמרים, הביצים, גרידת הלימון וקורט מלח לבצק רך ומניחים לו לתפוח במשך שעה.\n2. מגלגלים לכדורים קטנים ומטגנים בשמן החם עד להזהבה.\n3. מגלגלים את כדורי הסופגנייה החמים בסוכר.",
+  "verdict": {
+    "native_score": 4,
+    "errors": [
+      {
+        "where": "ingredient 3",
+        "category": "grammar",
+        "severity": "minor",
+        "excerpt": "לפי הטעם מלח",
+        "fix": "מלח לפי הטעם"
+      },
+      {
+        "where": "ingredient 4",
+        "category": "grammar",
+        "severity": "minor",
+        "excerpt": "1 לטיגון שמן ניטרלי",
+        "fix": "שמן ניטרלי לטיגון"
+      },
+      {
+        "where": "ingredient 5",
+        "category": "grammar",
+        "severity": "minor",
+        "excerpt": "1 לציפוי סוכר לבן",
+        "fix": "סוכר לבן לציפוי"
+      },
+      {
+        "where": "ingredient 7",
+        "category": "grammar",
+        "severity": "minor",
+        "excerpt": "1 גרידת לימון",
+        "fix": "גרידת לימון מ-1 לימון"
+      }
+    ]
+  },
+  "costUsd": 0.013418
+}

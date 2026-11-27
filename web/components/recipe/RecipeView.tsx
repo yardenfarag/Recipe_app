@@ -16,7 +16,7 @@ import { IngredientsPanel } from "@/components/recipe/IngredientsPanel";
 import { RecipeActionsSlot } from "@/components/recipe/RecipeActionsSlot";
 import { RecipeAppliancesSection } from "@/components/recipe/RecipeAppliancesSection";
 import { RecipeHeader } from "@/components/recipe/RecipeHeader";
-import { RecipeNotices } from "@/components/recipe/RecipeNotices";
+import { RecipeNotices, type LanguageToggle } from "@/components/recipe/RecipeNotices";
 import { StepsPanel } from "@/components/recipe/StepsPanel";
 import type { RecipeDisplay } from "@/components/recipe/types";
 import { IconButton } from "@/components/ui/IconButton";
@@ -58,6 +58,7 @@ export function RecipeView({
   onCooked,
   onDelete,
   immersive = false,
+  languageToggle,
 }: {
   display: RecipeDisplay;
   /** The heart; leave out for a recipe that isn't saved. */
@@ -74,6 +75,8 @@ export function RecipeView({
   onDelete?: () => void;
   /** The saved recipe's own page: on a phone the photo runs to the top of the screen and the Start bar is fixed. */
   immersive?: boolean;
+  /** A read-only recipe shown in a saved translation (a Hub card): "Show original language" and back. */
+  languageToggle?: LanguageToggle | null;
 }) {
   const { t } = useTranslation();
   const recipeActions = useRecipeActions();
@@ -184,7 +187,7 @@ export function RecipeView({
         immersive={immersive}
       />
       {/* What the cook must know (allergies first) comes before the tools that change the recipe. */}
-      <RecipeNotices display={display} avoid={avoid} />
+      <RecipeNotices display={display} avoid={avoid} languageToggle={languageToggle} />
       {readOnly ? null : <RecipeActionsSlot display={display} servings={choices.servings} />}
       <RecipeAppliancesSection display={display} system={system} />
 
