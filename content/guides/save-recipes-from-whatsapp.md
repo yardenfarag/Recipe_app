@@ -11,10 +11,10 @@ Pinch reads the whole chat for you, lists every recipe it finds, and saves the o
 
 ## Step 1: Export the chat from WhatsApp
 
-- **iPhone:** open the chat, tap its name at the top, then **Export Chat**.
+- **iPhone:** open the chat, tap its name at the top, then **Export chat**.
 - **Android:** open the chat, tap **⋮ › More › Export chat**.
 
-Choose **Attach Media** to bring the recipe photos too. Without media, the file is smaller, and links and typed recipes still come through.
+To bring the recipe photos too, choose **With all media** on iPhone or **Include media** on Android. **Without media**, the file is smaller, and links and typed recipes still come through.
 
 **Then, on your phone:** pick **Pinch** from the share options. Or save the file, open Pinch, go to **Snap**, tap **Import from a WhatsApp chat**, and choose it.
 
@@ -48,7 +48,7 @@ Yes. Sign in first, and the recipes go straight to your Library.
 
 ### The file is too big. What now?
 
-Export the chat again and choose **Without Media**. Links and typed recipes still come through. For a recipe that's only in a photo, save that photo and add it in **Snap**, like a photo of a cookbook page: see [how to save a recipe from a cookbook photo](/guides/cookbook-photo-to-recipe/).
+Export the chat again and choose **Without media**. Links and typed recipes still come through. For a recipe that's only in a photo, save that photo and add it in **Snap**, like a photo of a cookbook page: see [how to save a recipe from a cookbook photo](/guides/cookbook-photo-to-recipe/).
 
 ### Does it work with group chats?
 

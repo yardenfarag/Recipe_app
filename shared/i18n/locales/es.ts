@@ -1956,7 +1956,7 @@ export default {
     "howToTitle": "Primero, exporta el chat desde WhatsApp",
     "howToIphone": "iPhone: abre el chat, toca su nombre arriba y luego Exportar chat.",
     "howToAndroid": "Android: abre el chat, toca ⋮ › Más › Exportar chat.",
-    "howToMedia": "Elige Adjuntar archivos para traer también las fotos de las recetas.",
+    "howToMedia": "Para traer también las fotos de las recetas, elige Con todo el contenido multimedia (iPhone) o Incluir archivos (Android).",
     "howToShareMobile": "Luego elige Pinch entre las opciones para compartir, o guarda el archivo y elígelo aquí.",
     "howToWeb": "Luego envíate el archivo (por correo o Drive) y elígelo aquí.",
     "chooseFile": "Elegir el archivo del chat",

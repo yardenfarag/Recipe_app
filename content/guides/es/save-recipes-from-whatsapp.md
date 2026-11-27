@@ -14,7 +14,7 @@ Pinch lee el chat entero por ti, te muestra todas las recetas que encuentra y gu
 - **iPhone:** abre el chat, toca su nombre arriba y luego **Exportar chat**.
 - **Android:** abre el chat y toca **⋮ › Más › Exportar chat**.
 
-Elige **Adjuntar archivos** para traer también las fotos de las recetas. Sin archivos, el archivo pesa menos, y los enlaces y las recetas escritas llegan igual.
+Para traer también las fotos de las recetas, elige **Con todo el contenido multimedia** en iPhone o **Incluir archivos** en Android. Sin archivos, el archivo pesa menos, y los enlaces y las recetas escritas llegan igual.
 
 **Luego, en el teléfono:** elige **Pinch** entre las opciones para compartir. O guarda el archivo, abre Pinch, ve a **Snap**, toca **Importar desde un chat de WhatsApp** y elígelo.
 
@@ -48,7 +48,7 @@ Sí. Inicia sesión primero, y las recetas van directas a tus **Recetas**.
 
 ### El archivo es demasiado grande. ¿Qué hago?
 
-Vuelve a exportar el chat y elige **Sin archivos**. Los enlaces y las recetas escritas llegan igual. Para una receta que solo está en una foto, guarda esa foto y añádela en **Snap**, como una foto de una página de un libro de cocina: mira [cómo digitalizar una receta con una foto](/guides/cookbook-photo-to-recipe/).
+Vuelve a exportar el chat y elige **Sin archivos** (en iPhone, **Sin archivos multimedia**). Los enlaces y las recetas escritas llegan igual. Para una receta que solo está en una foto, guarda esa foto y añádela en **Snap**, como una foto de una página de un libro de cocina: mira [cómo digitalizar una receta con una foto](/guides/cookbook-photo-to-recipe/).
 
 ### ¿Funciona con chats de grupo?
 
