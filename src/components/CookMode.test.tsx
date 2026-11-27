@@ -18,7 +18,10 @@ const mocks = vi.hoisted(() => ({
   voices: [] as { identifier: string; name: string; quality: string; language: string }[],
   stop: vi.fn(async () => undefined),
   appState: [] as ((state: AppStateStatus) => void)[],
+  haptics: { step: vi.fn(), timerDone: vi.fn() },
 }));
+
+vi.mock('@/lib/haptics', () => ({ haptics: mocks.haptics }));
 
 vi.mock('expo-speech', () => ({
   VoiceQuality: { Default: 'Default', Enhanced: 'Enhanced' },
@@ -90,6 +93,8 @@ beforeEach(() => {
     { identifier: 'carmit', name: 'Carmit', quality: 'Default', language: 'he-IL' },
   ];
   mocks.appState.length = 0;
+  mocks.haptics.step.mockClear();
+  mocks.haptics.timerDone.mockClear();
   vi.spyOn(AppState, 'addEventListener').mockImplementation((_type, listener) => {
     mocks.appState.push(listener as (state: AppStateStatus) => void);
     return { remove: vi.fn() } as unknown as ReturnType<typeof AppState.addEventListener>;
@@ -171,5 +176,31 @@ describe('CookMode read aloud', () => {
     mocks.storage.set('pinch:cookReadAloud', 'on');
     await renderCookMode({ contentLanguage: 'es', instructions: [{ step: 1, text: 'Hornear.' }] });
     expect(mocks.spoken[0]).toMatchObject({ text: 'Hornear.', options: { language: 'es-ES', voice: undefined } });
+  });
+});
+
+describe('CookMode haptics', () => {
+  it('taps when the step changes, not at either end', async () => {
+    await renderCookMode();
+    await fireEvent.press(screen.getByRole('button', { name: 'Next' }));
+    expect(mocks.haptics.step).toHaveBeenCalledTimes(1);
+    await fireEvent.press(screen.getByRole('button', { name: 'Back' }));
+    expect(mocks.haptics.step).toHaveBeenCalledTimes(2);
+    await fireEvent.press(screen.getByRole('button', { name: 'Back' }));
+    expect(mocks.haptics.step).toHaveBeenCalledTimes(2);
+  });
+
+  it('buzzes once when a timer finishes', async () => {
+    await renderCookMode({ instructions: [{ step: 1, text: 'Rest for 1 minute.' }] });
+    vi.useFakeTimers();
+    try {
+      await fireEvent.press(screen.getByRole('button', { name: /timer/i }));
+      await act(async () => {
+        vi.advanceTimersByTime(61_000);
+      });
+      expect(mocks.haptics.timerDone).toHaveBeenCalledTimes(1);
+    } finally {
+      vi.useRealTimers();
+    }
   });
 });

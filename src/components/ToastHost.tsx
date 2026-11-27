@@ -7,6 +7,7 @@ import { Text } from '@/components/ui/Text';
 import { Radii } from '@/components/ui/tokens';
 import { useThemePreference } from '@/hooks/useThemePreference';
 import { announce } from '@/lib/a11y';
+import { haptics } from '@/lib/haptics';
 import { subscribeToast, type ToastMessage } from '@shared/lib/toast';
 
 /**
@@ -27,6 +28,7 @@ export function ToastHost() {
         if (next) {
           setToast(next);
           announce(next.text);
+          if (next.icon === 'error') haptics.error();
           Animated.timing(progress, {
             toValue: 1,
             duration: 180,

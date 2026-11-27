@@ -36,6 +36,7 @@ import { useRtl } from '@/hooks/useRtl';
 import { useThemePreference } from '@/hooks/useThemePreference';
 import { useTypography } from '@/hooks/useTypography';
 import { announce } from '@/lib/a11y';
+import { haptics } from '@/lib/haptics';
 import { logTap } from '@/lib/interactionLog';
 import { formatRecipeDuration } from '@shared/lib/formatRecipeDuration';
 import { hubCardFlag, hubCardFlagLabel, hubCardFlagText } from '@shared/lib/hubAvoid';
@@ -349,6 +350,7 @@ export default function CookingHubScreen() {
             refreshing={refreshing}
             onRefresh={() => {
               logTap('hub.pull_refresh');
+              haptics.refresh();
               void pullRefresh();
             }}
             tintColor={colors.primary}

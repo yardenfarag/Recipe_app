@@ -24,6 +24,7 @@ import { useAuth } from '@/hooks/useAuth';
 import { useLanguagePreference } from '@/hooks/useLanguagePreference';
 import { useMealPlan } from '@/hooks/useMealPlan';
 import { useThemePreference } from '@/hooks/useThemePreference';
+import { haptics } from '@/lib/haptics';
 
 /** The page's side gutter, as on the Library. */
 const GUTTER = 16;
@@ -116,6 +117,7 @@ export default function PlanScreen() {
             refreshing={refreshing}
             tintColor={colors.primary}
             onRefresh={() => {
+              haptics.refresh();
               setRefreshing(true);
               void plan.reload().finally(() => setRefreshing(false));
             }}
@@ -268,6 +270,7 @@ export default function PlanScreen() {
                 onPress={() => {
                   const entry = menuFor;
                   setMenuFor(null);
+                  if (!entry.cookedAt) haptics.cooked();
                   void guarded(slotKey(entry.date, entry.meal), () => plan.change(entry, { cookedAt: entry.cookedAt ? null : new Date().toISOString() }));
                 }}
               >
