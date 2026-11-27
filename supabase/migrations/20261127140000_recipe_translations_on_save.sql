@@ -101,7 +101,7 @@ create trigger recipe_cards_clear_stale_translations
 -- ── Translated when saved ───────────────────────────────────────────────────
 -- An extraction translates the recipe in the background, after it has answered the app (the Hub card's translations,
 -- or ones of its own when there is no card or the card's text differs). The app saves the cook's copy separately, so
--- the two meet here, in either order, like the diets (20261127120000_recipe_diets.sql):
+-- the two meet here, in either order, like the diets (20261127135000_recipe_diets.sql):
 --   * the translations wait in recipe_translations_pending, by cook, text and language, and the save picks them up;
 --   * if the recipe was saved first, remember_recipe_translations copies them into it straight away.
 -- A recipe saved from the Hub (claim_recipe_card), or extracted from a page whose card has the same text, takes the
