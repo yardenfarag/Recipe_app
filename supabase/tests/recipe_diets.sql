@@ -3,7 +3,7 @@ begin;
 create extension if not exists pgtap with schema extensions;
 select plan(15);
 
--- PIN-77 (migration 20261127120000_recipe_diets): a Library recipe's checked diets go stale, and back to null,
+-- PIN-77 (migration 20261127135000_recipe_diets): a Library recipe's checked diets go stale, and back to null,
 -- when its ingredients change; other edits and the backfill's own write keep them.
 
 insert into auth.users (
