@@ -18,6 +18,9 @@ import { Button, buttonClasses } from "@/components/ui/Button";
 import { Dialog, DialogContent } from "@/components/ui/Dialog";
 import { ErrorState, LoadingState } from "@/components/ui/States";
 import { addToShoppingList } from "@/lib/list/shoppingListSync";
+import { ingredientToListItem } from "@/lib/list/shoppingListView";
+import { useMeasurementSystem } from "@/lib/recipe/useMeasurementSystem";
+import { useUnitSystem } from "@/lib/recipe/useUnitSystem";
 
 type Home = { items: PantryItem[]; staples: string[] };
 
@@ -132,6 +135,8 @@ function Body({ recipes }: { recipes: Recipe[] }) {
 function CookableRow({ entry }: { entry: CookableRecipe }) {
   const { t } = useTranslation();
   const { user } = useAuth();
+  const { system } = useMeasurementSystem();
+  const { units } = useUnitSystem();
   const [busy, setBusy] = useState(false);
   const [added, setAdded] = useState(false);
   const { recipe, have, total, missing } = entry;
@@ -143,7 +148,8 @@ function CookableRow({ entry }: { entry: CookableRecipe }) {
       const wanted = new Set(missing);
       const items = recipe.ingredients
         .filter((ingredient) => wanted.has(ingredient.name))
-        .map((ingredient) => ({ name: ingredient.name, quantity: ingredient.quantity ?? null, unit: ingredient.unit ?? null, sourceRecipeId: recipe.id }));
+        // In the cook's spoons-or-grams and Metric-or-US choice, as the other ways onto the list.
+        .map((ingredient) => ingredientToListItem(ingredient, system, recipe.id, units));
       await addToShoppingList(user.id, items, "merge");
       setAdded(true);
       showToast(t("pantry.cook.added", { count: items.length }));

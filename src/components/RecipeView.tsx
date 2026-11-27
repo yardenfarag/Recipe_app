@@ -1891,7 +1891,7 @@ export function RecipeView({
         onClose={() => setShoppingListModalOpen(false)}
         onConfirm={async (selected) => {
           const normalized = selected.map((ing) => {
-            const converted = pickIngredientAmount(ing, measurementSystem);
+            const converted = pickIngredientAmount(ing, measurementSystem, units);
             const unknown = ingredientAmountIsUnknown(ing, measurementSystem);
             return {
               ...ing,
