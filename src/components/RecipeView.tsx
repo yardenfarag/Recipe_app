@@ -23,7 +23,13 @@ import { TokenPurchaseSheet } from '@/components/TokenPurchaseSheet';
 import { RecipeCookBar } from '@/components/recipe/RecipeCookBar';
 import { CostDots, RecipeFact, RecipeUpdatingFact } from '@/components/recipe/RecipeFact';
 import { RecipeNutritionPanel } from '@/components/recipe/RecipeNutritionPanel';
-import { HERO_OVERLAP, RecipeHero, type HeroCookAlong } from '@/components/recipe/RecipeHero';
+import {
+  HERO_OVERLAP,
+  HERO_TOP_ROW_OFFSET,
+  RecipeHero,
+  RecipeHeroTopRow,
+  type HeroCookAlong,
+} from '@/components/recipe/RecipeHero';
 import { RecipeIngredientList } from '@/components/recipe/RecipeIngredientList';
 import { RecipeMoreMenu, type RecipeMenuItem } from '@/components/recipe/RecipeMoreMenu';
 import { RecipeNotice } from '@/components/recipe/RecipeNotice';
@@ -945,6 +951,9 @@ export function RecipeView({
   const overPhoto = immersive && hasPicture;
   const heroHeight = 380 + insets.top;
   const goBack = onBack ?? (() => goBackOrHome('/'));
+  // Back and the page's buttons float above the scroll view, so a tap while the page still glides isn't swallowed
+  // and back is there however far down they read. Beside a cook-along panel they stay on the photo.
+  const floatTopRow = immersive && !sideCookAlong;
   const hasIngredients = scaledIngredients.length > 0;
   const hasSteps = baseInstructions.length > 0;
   const useTabs = hasIngredients && hasSteps && !splitRecipeBody;
@@ -1098,6 +1107,7 @@ export function RecipeView({
       onBack={immersive ? goBack : undefined}
       actions={topActions}
       cookAlong={heroCookAlong}
+      floatingTopRow={floatTopRow}
     />
   );
 
@@ -1812,6 +1822,19 @@ export function RecipeView({
           pointerEvents="none"
           style={{ position: 'absolute', top: 0, start: 0, end: 0, height: insets.top, backgroundColor: colors.background }}
         />
+      ) : null}
+
+      {floatTopRow ? (
+        <View
+          pointerEvents="box-none"
+          style={{ position: 'absolute', top: insets.top + HERO_TOP_ROW_OFFSET, start: 16, end: 16 }}
+        >
+          <RecipeHeroTopRow
+            variant={overPhoto && !pastPhoto ? 'photo' : 'tile'}
+            onBack={goBack}
+            actions={topActions}
+          />
+        </View>
       ) : null}
 
       {showBar ? (

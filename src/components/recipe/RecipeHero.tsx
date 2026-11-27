@@ -19,12 +19,46 @@ export type HeroCookAlong = {
   onPress: () => void;
 };
 
+/** How far below the status bar the top row (back and the page's buttons) sits on the recipe's own page. */
+export const HERO_TOP_ROW_OFFSET = 12;
+
+/**
+ * Back at the start and the page's buttons at the end. On the recipe's own page RecipeView floats this row above
+ * the scrolling page instead of letting the hero draw it: a tap on a button inside a scroll view that is still
+ * gliding (a flick back to the top, the bounce) only stops the scroll on iOS, so back seemed not to work.
+ */
+export function RecipeHeroTopRow({
+  variant,
+  onBack,
+  actions,
+}: {
+  variant: 'photo' | 'tile';
+  onBack?: () => void;
+  actions: (variant: 'photo' | 'tile') => ReactNode;
+}) {
+  const { t } = useTranslation();
+  const ownActions = actions(variant);
+  if (!onBack && !ownActions) return null;
+  return (
+    <View pointerEvents="box-none" style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+      {onBack ? (
+        <IconButton variant={variant} icon="arrow-back" label={t('common.back')} trackId="recipe.back" onPress={onBack} />
+      ) : null}
+      <View pointerEvents="none" style={{ flex: 1 }} />
+      {ownActions}
+    </View>
+  );
+}
+
 /**
  * The top of a recipe (PIN-177). With a photo on the recipe's own page (`immersive`), the photo fills the width
  * from the very top of the screen with back at the start and the page's buttons at the end, and "Cook along with the
  * video" near its bottom; the details sheet then slides up over its last 28 points. Elsewhere (a Hub or shared
  * recipe, under the screen's own header) the photo is a rounded tile. Without a photo there is no empty frame: just
  * the row of buttons, or a loader while Pinch draws the picture the owner asked for.
+ *
+ * `floatingTopRow`: the page draws the row of buttons itself (RecipeHeroTopRow, above the scroll view), so the hero
+ * leaves it out and keeps its space.
  */
 export function RecipeHero({
   imageUrl,
@@ -36,6 +70,7 @@ export function RecipeHero({
   onBack,
   actions,
   cookAlong,
+  floatingTopRow = false,
 }: {
   imageUrl: string | null;
   aiGenerated?: boolean;
@@ -49,20 +84,21 @@ export function RecipeHero({
   /** Buttons at the end of the top row, given the variant to draw them in. */
   actions: (variant: 'photo' | 'tile') => ReactNode;
   cookAlong: HeroCookAlong | null;
+  floatingTopRow?: boolean;
 }) {
   const { t } = useTranslation();
   const photo = usePhotoColors();
   const { colors } = useThemePreference();
 
   const backButton = (variant: 'photo' | 'tile') =>
-    onBack ? (
+    onBack && !floatingTopRow ? (
       <IconButton variant={variant} icon="arrow-back" label={t('common.back')} trackId="recipe.back" onPress={onBack} />
     ) : null;
 
   if (imageUrl) {
     const height = immersive ? 380 + topInset : 260;
     const bottomGap = immersive ? HERO_OVERLAP + 16 : 16;
-    const ownActions = actions('photo');
+    const ownActions = floatingTopRow ? null : actions('photo');
     return (
       <PhotoTile
         src={imageUrl}
@@ -80,7 +116,7 @@ export function RecipeHero({
               pointerEvents="box-none"
               style={{
                 position: 'absolute',
-                top: (immersive ? topInset : 0) + 12,
+                top: (immersive ? topInset : 0) + HERO_TOP_ROW_OFFSET,
                 start: 16,
                 end: 16,
                 flexDirection: 'row',
@@ -167,16 +203,18 @@ export function RecipeHero({
     );
   }
 
-  const ownActions = actions('tile');
-  const row =
-    backButton('tile') || ownActions ? (
+  const ownActions = floatingTopRow ? null : actions('tile');
+  const row = floatingTopRow ? (
+    // Keeps the place of the row the page floats above it.
+    <View style={{ height: topInset + HERO_TOP_ROW_OFFSET + MIN_TOUCH }} />
+  ) : backButton('tile') || ownActions ? (
       <View
         style={{
           flexDirection: 'row',
           alignItems: 'center',
           gap: 8,
           paddingHorizontal: immersive ? 16 : 0,
-          paddingTop: immersive ? topInset + 12 : 0,
+          paddingTop: immersive ? topInset + HERO_TOP_ROW_OFFSET : 0,
         }}
       >
         {backButton('tile')}

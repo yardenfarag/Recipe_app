@@ -1,4 +1,4 @@
-import { useNavigation } from '@react-navigation/native';
+import { type NavigationAction, useNavigation, usePreventRemove } from '@react-navigation/native';
 import { Image } from 'expo-image';
 import { router, Stack, useLocalSearchParams, type Href } from 'expo-router';
 import { type ReactNode, useCallback, useEffect, useMemo, useRef, useState } from 'react';
@@ -30,6 +30,7 @@ import { setPantryCache } from '@/hooks/usePantry';
 import { useThemePreference } from '@/hooks/useThemePreference';
 import { announce } from '@/lib/a11y';
 import { askConfirm } from '@/lib/dialog';
+import { goBackOrHome } from '@/lib/goBackOrHome';
 import { newScanId, readCurrentScanId, writeCurrentScanId } from '@/lib/pantryHelpers';
 import { compressPantryPhoto, pickPantryPhotoUris } from '@/lib/pickCompressedImage';
 import { groupByPlaceAndAisle, mergeScanPhotos, notSeenInScan } from '@shared/lib/pantry';
@@ -70,6 +71,8 @@ type Shot = {
 type Row = ReviewItem & { ticked: boolean; renamed?: boolean };
 
 type Phase = 'starting' | 'resume' | 'capture' | 'review';
+/** How the screen goes once it may: to a place (or back, for null), or by finishing the action it held back. */
+type Leave = { kind: 'to'; to: Href | null } | { kind: 'action'; action: NavigationAction };
 
 const TIPS: { key: 'tipDoor' | 'tipLight' | 'tipShelf' | 'tipHidden'; icon: IconName }[] = [
   { key: 'tipDoor', icon: 'expand-outline' },
@@ -130,7 +133,8 @@ export default function PantryScanScreen() {
   const base64s = useRef(new Map<string, string>());
   const queue = useRef<string[]>([]);
   const running = useRef(0);
-  const allowLeave = useRef(false);
+  /** Set once the screen may go: the guard below is dropped, then the effect under it leaves. */
+  const [leaving, setLeaving] = useState<Leave | null>(null);
   const mounted = useRef(true);
   useEffect(
     () => () => {
@@ -389,10 +393,7 @@ export default function PantryScanScreen() {
   }
 
   function leaveTo(target: Href | null) {
-    allowLeave.current = true;
-    if (target) router.replace(target);
-    else if (router.canGoBack()) router.back();
-    else router.replace('/settings/pantry');
+    setLeaving({ kind: 'to', to: target });
   }
 
   async function save() {
@@ -425,36 +426,37 @@ export default function PantryScanScreen() {
   }
 
   // ── Leaving ─────────────────────────────────────────────────────────────────
-  useEffect(
-    () =>
-      navigation.addListener('beforeRemove', (event) => {
-        if (allowLeave.current) return;
-        if (phaseRef.current === 'review') {
-          event.preventDefault();
-          setPhase('capture');
-          return;
-        }
-        const hasPhotos = shotsRef.current.length > 0;
-        if (!hasPhotos && !next) return;
-        event.preventDefault();
-        void (async () => {
-          if (hasPhotos) {
-            const ok = await askConfirm({
-              trackId: 'pantry_scan.leave_dialog',
-              title: t('pantry.scan.leaveTitle'),
-              message: t('pantry.scan.leaveBody'),
-              confirmLabel: t('pantry.scan.leave'),
-            });
-            if (!ok) return;
-          }
-          allowLeave.current = true;
-          // From sign-up the screen below is onboarding: go on to where the flow continues instead.
-          if (next) router.replace(next);
-          else navigation.dispatch(event.data.action);
-        })();
-      }),
-    [navigation, next, t],
-  );
+  // usePreventRemove, not a bare 'beforeRemove' listener: on iOS only the hook stops the native swipe back. With the
+  // listener the swipe took the screen away while the app still thought it was open, and back on the screen
+  // underneath then did nothing (it kept trying to leave this one).
+  usePreventRemove(!leaving && (phase === 'review' || shots.length > 0 || next != null), ({ data }) => {
+    if (phaseRef.current === 'review') {
+      setPhase('capture');
+      return;
+    }
+    const hasPhotos = shotsRef.current.length > 0;
+    void (async () => {
+      if (hasPhotos) {
+        const ok = await askConfirm({
+          trackId: 'pantry_scan.leave_dialog',
+          title: t('pantry.scan.leaveTitle'),
+          message: t('pantry.scan.leaveBody'),
+          confirmLabel: t('pantry.scan.leave'),
+        });
+        if (!ok) return;
+      }
+      // From sign-up the screen below is onboarding: go on to where the flow continues instead.
+      setLeaving(next ? { kind: 'to', to: next } : { kind: 'action', action: data.action });
+    })();
+  });
+
+  // Leave once the screen has re-rendered without the guard.
+  useEffect(() => {
+    if (!leaving) return;
+    if (leaving.kind === 'action') navigation.dispatch(leaving.action);
+    else if (leaving.to) router.replace(leaving.to);
+    else goBackOrHome('/settings/pantry');
+  }, [leaving, navigation]);
 
   // The "next step" card: the footer button shows only while the card is scrolled out of view.
   const [scrollY, setScrollY] = useState(0);
