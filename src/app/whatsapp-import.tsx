@@ -7,6 +7,7 @@ import { memo, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { ActivityIndicator, FlatList, Platform, ScrollView, Text, View } from 'react-native';
 
+import { textDirectionStyle } from '@/components/ui/Text';
 import { Pressable } from '@/components/ui/Pressable';
 import { Screen } from '@/components/Screen';
 import { TokenPurchaseSheet } from '@/components/TokenPurchaseSheet';
@@ -96,8 +97,9 @@ export default function WhatsAppImportScreen() {
   const { language } = useLanguagePreference();
   const { colors } = useThemePreference();
   const { isMediumUp } = useBreakpoint();
-  const { textAlign, writingDirection } = useRtl();
-  const rtlText = { textAlign, writingDirection };
+  const { rtl } = useRtl();
+  // Not a plain 'right': iOS and Android mirror that in Hebrew (see textDirectionStyle).
+  const rtlText = textDirectionStyle(rtl);
   const { user, loading: authLoading } = useAuth();
   const { totalCredits, refresh: refreshProfile } = useProfile();
   const purchasesHere = creditPurchasesOfferedOn(Platform.OS);
@@ -801,7 +803,7 @@ const CandidateRow = memo(function CandidateRow({
 }) {
   const { t } = useTranslation();
   const { colors } = useThemePreference();
-  const { textAlign, writingDirection } = useRtl();
+  const rtlText = textDirectionStyle(useRtl().rtl);
   const date = formatSentAt(candidate.sentAt, language);
   const byline = date ? t('whatsappImport.sentBy', { sender: candidate.sender, date }) : candidate.sender;
   const disabled = candidate.alreadySaved && !state;
@@ -832,16 +834,16 @@ const CandidateRow = memo(function CandidateRow({
       <View className="min-w-0 flex-1">
         <Text
           className="text-sm font-semibold"
-          style={{ color: colors.text, textAlign, writingDirection }}
+          style={{ color: colors.text, ...rtlText }}
           numberOfLines={2}
         >
           {preview}
         </Text>
-        <Text className="mt-0.5 text-xs" style={{ color: colors.textSecondary, textAlign }} numberOfLines={1}>
+        <Text className="mt-0.5 text-xs" style={{ color: colors.textSecondary, ...rtlText }} numberOfLines={1}>
           {byline}
         </Text>
         {disabled ? (
-          <Text className="mt-0.5 text-xs font-semibold" style={{ color: colors.success, textAlign }}>
+          <Text className="mt-0.5 text-xs font-semibold" style={{ color: colors.success, ...rtlText }}>
             {t('whatsappImport.alreadySaved')}
           </Text>
         ) : null}

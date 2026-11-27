@@ -25,6 +25,9 @@ import { useLanguagePreference } from '@/hooks/useLanguagePreference';
 import { useMealPlan } from '@/hooks/useMealPlan';
 import { useThemePreference } from '@/hooks/useThemePreference';
 
+/** The page's side gutter, as on the Library. */
+const GUTTER = 16;
+
 /**
  * The meal plan on the phone (PIN-77): this week or next, day by day from today, filled by "Plan my week" from the
  * cook's recipes and the Hub. The same plan, rules and filling as the web (shared/lib/mealPlan).
@@ -88,7 +91,7 @@ export default function PlanScreen() {
   if (!user) {
     return (
       <Screen tabScreen>
-        <TopBar />
+        <TopBar style={{ paddingHorizontal: GUTTER }} />
         <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center', gap: 12, padding: 24 }}>
           <Text variant="h2" align="center">
             {t('plan.emptyTitle')}
@@ -107,7 +110,7 @@ export default function PlanScreen() {
   return (
     <Screen tabScreen>
       <ScrollView
-        contentContainerStyle={{ paddingBottom: 32 }}
+        contentContainerStyle={{ paddingHorizontal: GUTTER, paddingBottom: 32 }}
         refreshControl={
           <RefreshControl
             refreshing={refreshing}
@@ -170,7 +173,7 @@ export default function PlanScreen() {
             {shownDays.map((day) => (
               <View key={day} style={{ gap: 8 }} accessibilityLabel={longDay.format(parsePlanDate(day))}>
                 <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
-                  <Text variant="h3" accessibilityRole="header">
+                  <Text variant="h3" accessibilityRole="header" style={{ flexShrink: 1 }}>
                     {longDay.format(parsePlanDate(day))}
                   </Text>
                   {day === today ? (

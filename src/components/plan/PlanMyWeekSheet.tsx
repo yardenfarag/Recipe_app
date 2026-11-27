@@ -15,6 +15,7 @@ import { Button } from '@/components/ui/Button';
 import { Chip } from '@/components/ui/Chip';
 import { SegmentedControl } from '@/components/ui/SegmentedControl';
 import { Text } from '@/components/ui/Text';
+import { useRtl } from '@/hooks/useRtl';
 import { useThemePreference } from '@/hooks/useThemePreference';
 import { useTypography } from '@/hooks/useTypography';
 
@@ -56,6 +57,8 @@ function Body({
   const { t } = useTranslation();
   const { colors } = useThemePreference();
   const type = useTypography();
+  // A TextInput takes the physical side on iOS (unlike Text), so start is 'right' in Hebrew and Arabic.
+  const { textAlign, writingDirection } = useRtl();
   const [chosenDays, setChosenDays] = useState<string[]>(days);
   const [meals, setMeals] = useState<MainMeal[]>(prefs.meals);
   const [snacks, setSnacks] = useState<SnacksPerDay>(prefs.snacksPerDay);
@@ -239,6 +242,7 @@ function Body({
               style={[
                 type.variant('bodySmall'),
                 { flex: 1, minHeight: 44, borderRadius: 12, borderWidth: 1, borderColor: colors.border, backgroundColor: colors.surface, color: colors.text, paddingHorizontal: 12 },
+                { textAlign, writingDirection },
               ]}
             />
             <Button size="sm" variant="secondary" trackId="plan.adjust.skip_add" disabled={!skipDraft.trim()} onPress={addSkip}>
