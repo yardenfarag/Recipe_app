@@ -24,6 +24,7 @@ import { Chip } from '@/components/ui/Chip';
 import { IconButton } from '@/components/ui/IconButton';
 import { PageHeader } from '@/components/ui/PageHeader';
 import { LibraryTabs } from '@/components/LibraryTabs';
+import { TopBar } from '@/components/ui/TopBar';
 import { Pressable } from '@/components/ui/Pressable';
 import { SegmentedControl } from '@/components/ui/SegmentedControl';
 import { Text } from '@/components/ui/Text';
@@ -47,6 +48,8 @@ import type { Recipe } from '@shared/types/recipe';
 const SEARCH_HEIGHT = 52;
 /** Space between the columns of the grid, and half of it around each card. */
 const GRID_GAP = 12;
+/** The Library's side margin: the two sides of "My Library | Hub" line up, so switching doesn't jump. */
+const GUTTER = 16;
 
 /**
  * Cooking Hub (Night Market, PIN-177; the web's Hub page): recipes other people already snapped from public links.
@@ -129,7 +132,11 @@ export default function CookingHubScreen() {
 
   const header = (
     <View style={{ gap: 14, paddingBottom: 16 }}>
-      <LibraryTabs current="hub" />
+      {/* The same top as the Library's list (TopBar, 16, the switcher), so the switcher stays put on a switch. */}
+      <View style={{ gap: 16 }}>
+        <TopBar />
+        <LibraryTabs current="hub" />
+      </View>
       <PageHeader title={t('hub.title')} subtitle={t('hub.subtitle')} style={{ paddingBottom: 6 }} />
 
       <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
@@ -196,8 +203,8 @@ export default function CookingHubScreen() {
         horizontal
         showsHorizontalScrollIndicator={false}
         keyboardShouldPersistTaps="handled"
-        style={{ marginHorizontal: -20 }}
-        contentContainerStyle={{ gap: 8, paddingHorizontal: 20 }}
+        style={{ marginHorizontal: -GUTTER }}
+        contentContainerStyle={{ gap: 8, paddingHorizontal: GUTTER }}
       >
         <Chip
           trackId="hub.filter.toggle"
@@ -390,8 +397,7 @@ export default function CookingHubScreen() {
           </View>
         }
         contentContainerStyle={{
-          paddingHorizontal: numColumns > 1 ? 20 - GRID_GAP / 2 : 20,
-          paddingTop: 8,
+          paddingHorizontal: numColumns > 1 ? GUTTER - GRID_GAP / 2 : GUTTER,
           paddingBottom: 28,
           gap: numColumns > 1 ? 0 : 12,
           flexGrow: 1,
