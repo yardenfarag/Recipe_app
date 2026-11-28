@@ -98,6 +98,37 @@
   }
 }
 
+/* The Snap reveal (PIN-192, components/recipe/SnapReveal.tsx): while the page root says "playing", each marked piece
+   fades in and rises a little at its own time (--reveal-at, for --reveal-for). The header tile's other blocks
+   ([data-reveal-rest]) and the panels inside [data-reveal-child] take the time set on them, or the end of the reveal.
+   "done" (a click) or reduced motion: no animation, everything is simply there. */
+@keyframes snap-reveal-in {
+  from {
+    opacity: 0;
+    translate: 0 var(--reveal-rise, 12px);
+  }
+}
+@keyframes snap-strip-in {
+  from {
+    opacity: 0;
+    translate: 0 10px;
+  }
+}
+@media (prefers-reduced-motion: no-preference) {
+  [data-snap-reveal="playing"] [data-reveal],
+  [data-snap-reveal="playing"] [data-reveal-rest] > :not([data-reveal]),
+  [data-snap-reveal="playing"] [data-reveal-child] > * {
+    animation: snap-reveal-in var(--reveal-for, 400ms) cubic-bezier(0.2, 0.8, 0.2, 1) var(--reveal-at, 1100ms) both;
+  }
+  [data-reveal-rest] {
+    --reveal-at: initial;
+    --reveal-for: initial;
+  }
+  .snap-strip-in {
+    animation: snap-strip-in 260ms cubic-bezier(0.2, 0.9, 0.3, 1) both;
+  }
+}
+
 @keyframes indeterminate {
   from {
     transform: translateX(calc(-100% * var(--dir-sign, 1)));

@@ -12,6 +12,7 @@ import { recipeHasSource } from "@shared/lib/recipeOrigin";
 
 import { isUpdating, useRecipeActions } from "@/components/recipe/actions/RecipeActionsContext";
 import { DotSeparated } from "@/components/recipe/DotSeparated";
+import { useIngredientReveal } from "@/components/recipe/SnapReveal";
 import type { AvoidMatches, ReadingChoices, RecipeDisplay } from "@/components/recipe/types";
 import { Button } from "@/components/ui/Button";
 import { SegmentedControl } from "@/components/ui/SegmentedControl";
@@ -217,6 +218,7 @@ function IngredientList({
   onTick: (index: number, have: boolean) => void;
 }) {
   const { t, i18n } = useTranslation();
+  const reveal = useIngredientReveal();
 
   return (
     <ul
@@ -227,7 +229,7 @@ function IngredientList({
         const amount = row.amount || t("recipe.amountUnknown");
         const have = ticked.has(index);
         return (
-          <li key={row.key} className="col-span-full grid min-h-[46px] grid-cols-subgrid items-center border-b border-border py-2 last:border-b-0">
+          <li key={row.key} {...reveal(index, rows.length)} className="col-span-full grid min-h-[46px] grid-cols-subgrid items-center border-b border-border py-2 last:border-b-0">
             {/* The label gives the small box a 44 px target. */}
             <label className="-my-2 grid h-11 w-7 cursor-pointer place-items-center">
               <input

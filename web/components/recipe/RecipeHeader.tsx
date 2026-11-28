@@ -12,6 +12,7 @@ import { getCalorieDisplay } from "@shared/lib/recipeCalories";
 import { getNutritionDisplay, recipeNutritionOf } from "@shared/lib/recipeNutrition";
 import { recipeOriginChip } from "@shared/lib/recipeOrigin";
 import { recipeSource } from "@shared/lib/recipeSource";
+import { SNAP_REVEAL } from "@shared/lib/snapReveal";
 import { shareAppInBrowser } from "@shared/lib/shareApp";
 import { normalizeRecipeTags, translateRecipeTag } from "@shared/lib/recipeTags";
 import { showToast } from "@shared/lib/toast";
@@ -23,6 +24,7 @@ import { useLanguage } from "@/components/LanguageProvider";
 import { isUpdating, useRecipeActions } from "@/components/recipe/actions/RecipeActionsContext";
 import { RecipeMoreMenu } from "@/components/recipe/actions/RecipeMoreMenu";
 import { NutritionPanel } from "@/components/recipe/NutritionPanel";
+import { useRevealAttributes, useRevealing } from "@/components/recipe/SnapReveal";
 import type { RecipeDisplay } from "@/components/recipe/types";
 import { Button } from "@/components/ui/Button";
 import { IconButton, iconButtonClasses, type IconButtonVariant } from "@/components/ui/IconButton";
@@ -130,6 +132,8 @@ export function RecipeHeader({
   const { t } = useTranslation();
   const { language } = useLanguage();
   const actions = useRecipeActions();
+  const reveal = useRevealAttributes();
+  const revealing = useRevealing();
   const { recipe, title } = display;
   const [pictureFailed, setPictureFailed] = useState(false);
   const isFavorite = recipe.is_favorite === true;
@@ -237,6 +241,8 @@ export function RecipeHeader({
       <div className="flex flex-col gap-4 md:flex-row md:flex-wrap">
         {hasPicture ? (
           <PhotoTile
+            {...reveal(SNAP_REVEAL.cover, 0)}
+            data-recipe-cover=""
             src={recipe.image_url}
             priority
             fade="none"
@@ -287,6 +293,7 @@ export function RecipeHeader({
           </PhotoTile>
         ) : drawingPicture ? (
           <Tile
+            {...reveal(SNAP_REVEAL.cover, 0)}
             data-testid="drawing-picture"
             className="grid min-h-[200px] place-items-center p-6 md:min-h-[460px] md:flex-[7_1_520px]"
           >
@@ -295,15 +302,21 @@ export function RecipeHeader({
         ) : null}
 
         <Tile
+          data-reveal-rest={revealing ? "" : undefined}
           className={cn(
             "flex min-w-0 flex-col gap-3.5 p-5 md:flex-[5_1_380px] md:gap-[18px] md:p-8",
             // On the phone the details are a sheet that slides up over the photo, on the page's own colour.
             overPhoto && "max-md:relative max-md:-mx-4 max-md:-mt-12 max-md:rounded-b-none max-md:border-0 max-md:bg-bg max-md:px-4 max-md:pt-[22px] max-md:pb-0 sm:max-md:-mx-6 sm:max-md:px-6",
           )}
         >
-          {badge ? <TileBadge className="text-[11px] md:text-xs">{badge}</TileBadge> : null}
+          {badge ? (
+            <TileBadge {...reveal(SNAP_REVEAL.title)} className="text-[11px] md:text-xs">
+              {badge}
+            </TileBadge>
+          ) : null}
 
           <h1
+            {...reveal(SNAP_REVEAL.title)}
             dir={display.direction}
             lang={display.contentLanguage ?? undefined}
             className={cn("min-w-0 text-start leading-[0.95] font-bold tracking-[-0.035em] text-balance text-text rtl:leading-[1.15] rtl:tracking-normal", titleSize)}

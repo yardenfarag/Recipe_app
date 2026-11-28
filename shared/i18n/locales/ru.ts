@@ -488,6 +488,7 @@ export default {
   "recipe": {
     "autoSaved": "Сохранено в ваших рецептах",
     "autoSavedRemove": "Убрать",
+    "revealSkip": "Показать весь рецепт",
     "autoSavedRemoved": "Убрано из ваших рецептов",
     "autoSavedRemoveFailed": "Не удалось убрать. Попробуйте ещё раз.",
     "autoSavedRemoveTitle": "Убрать этот рецепт?",

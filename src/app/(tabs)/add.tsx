@@ -36,7 +36,6 @@ import { useRtl } from "@/hooks/useRtl";
 import { useThemePreference } from "@/hooks/useThemePreference";
 import { useTypography } from "@/hooks/useTypography";
 import { announce } from "@/lib/a11y";
-import { haptics } from "@/lib/haptics";
 import { logTap } from "@/lib/interactionLog";
 import { showNotice } from "@/lib/dialog";
 import { claimShare, releaseShareClaim } from "@/lib/shareIntentClaim";
@@ -481,7 +480,7 @@ export default function AddRecipeScreen() {
     const savedId = user ? await autoSaveRecipe(recipeToPreview) : null;
     announce(t("a11y.recipeReady"));
     if (savedId) {
-      haptics.saved();
+      // The recipe page plays the reveal, then the saved haptic as the card lands (PIN-192).
       router.push({ pathname: "/recipe/[id]", params: { id: savedId, justSaved: "1" } });
     } else {
       router.push("/recipe/preview");

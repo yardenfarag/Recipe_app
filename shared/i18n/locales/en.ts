@@ -470,6 +470,7 @@ export default {
   "recipe": {
     "autoSaved": "Saved to your Library",
     "autoSavedRemove": "Remove",
+    "revealSkip": "Show the whole recipe",
     "autoSavedRemoved": "Removed from your Library",
     "autoSavedRemoveFailed": "Couldn't remove it. Try again.",
     "autoSavedRemoveTitle": "Remove this recipe?",

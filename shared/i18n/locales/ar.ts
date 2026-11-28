@@ -506,6 +506,7 @@ export default {
   "recipe": {
     "autoSaved": "انحفظت بوصفاتك",
     "autoSavedRemove": "شيل",
+    "revealSkip": "اعرض الوصفة كاملة",
     "autoSavedRemoved": "انشالت من وصفاتك",
     "autoSavedRemoveFailed": "ما قدرنا نشيلها. جرّب مرة ثانية.",
     "autoSavedRemoveTitle": "إزالة هذه الوصفة؟",

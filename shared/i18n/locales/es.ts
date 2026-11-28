@@ -479,6 +479,7 @@ export default {
   "recipe": {
     "autoSaved": "Guardada en tus recetas",
     "autoSavedRemove": "Quitar",
+    "revealSkip": "Ver la receta completa",
     "autoSavedRemoved": "Quitada de tus recetas",
     "autoSavedRemoveFailed": "No se pudo quitar. Inténtalo de nuevo.",
     "autoSavedRemoveTitle": "¿Quitar esta receta?",

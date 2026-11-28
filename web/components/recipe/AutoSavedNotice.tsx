@@ -11,13 +11,19 @@ import { showToast } from "@shared/lib/toast";
 import { Button } from "@/components/ui/Button";
 import { ConfirmDialog } from "@/components/ui/Dialog";
 import { IconButton } from "@/components/ui/IconButton";
+import { cn } from "@/lib/cn";
 import { removeFromLibrary } from "@/lib/library/libraryCache";
 
 /**
  * Snap saved this recipe for the cook as soon as it came in (`?justSaved=1`), with no Save tap: say so once, with a
  * way to take it back. Before, about a third of the people who got a recipe never saved it.
  */
-export function AutoSavedNotice() {
+export function AutoSavedNotice({ ready = true, arriving = false }: {
+  /** False while the Snap reveal plays (PIN-192): the strip comes in once the card has landed in the Library. */
+  ready?: boolean;
+  /** Slide in when it appears, as the end of the reveal. */
+  arriving?: boolean;
+} = {}) {
   const { t } = useTranslation();
   const router = useRouter();
   const params = useSearchParams();
@@ -45,10 +51,16 @@ export function AutoSavedNotice() {
 
   return (
     <>
-      {/* On a phone the recipe page is immersive (the photo runs to the top), so the strip floats at the bottom there. */}
+      {/* On a phone the recipe page is immersive (the photo runs to the top), so the strip floats at the bottom there.
+          During the Snap reveal it keeps its place, unseen, so the page doesn't jump when it comes in. */}
       <div
         role="status"
-        className="fixed inset-x-4 bottom-[max(1rem,env(safe-area-inset-bottom))] z-40 flex items-center gap-3 rounded-2xl border border-frosted-border bg-primary-soft px-4 py-2.5 text-sm shadow-lift md:static md:mb-4 md:border-0 md:shadow-none"
+        aria-hidden={ready ? undefined : true}
+        className={cn(
+          "fixed inset-x-4 bottom-[max(1rem,env(safe-area-inset-bottom))] z-40 flex items-center gap-3 rounded-2xl border border-frosted-border bg-primary-soft px-4 py-2.5 text-sm shadow-lift md:static md:mb-4 md:border-0 md:shadow-none",
+          !ready && "invisible",
+          ready && arriving && "snap-strip-in",
+        )}
       >
         <CircleCheck aria-hidden className="h-4 w-4 shrink-0 text-primary" />
         <span className="min-w-0 flex-1 font-semibold text-primary">{t("recipe.autoSaved")}</span>

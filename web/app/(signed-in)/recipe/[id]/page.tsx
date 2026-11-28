@@ -1,8 +1,8 @@
 "use client";
 
 import Link from "next/link";
-import { useParams, useRouter } from "next/navigation";
-import { Suspense, useState } from "react";
+import { useParams, useRouter, useSearchParams } from "next/navigation";
+import { Suspense, useCallback, useState } from "react";
 import { useTranslation } from "react-i18next";
 
 import { deleteRecipe } from "@shared/lib/supabase/recipes";
@@ -13,6 +13,7 @@ import { useRecipeActions } from "@/components/recipe/actions/RecipeActionsConte
 import { RecipeActionsProvider } from "@/components/recipe/actions/RecipeActionsProvider";
 import { AutoSavedNotice } from "@/components/recipe/AutoSavedNotice";
 import { RecipeView } from "@/components/recipe/RecipeView";
+import { SavedFlight, SnapRevealProvider, useSnapRevealPhase } from "@/components/recipe/SnapReveal";
 import type { RecipeDisplay } from "@/components/recipe/types";
 import { buttonClasses } from "@/components/ui/Button";
 import { ConfirmDialog } from "@/components/ui/Dialog";
@@ -53,17 +54,32 @@ export default function RecipePage() {
 
   return (
     <RecipeActionsProvider state={state}>
-      <SavedRecipeView display={display} onToggleFavorite={state.toggleFavorite} />
+      {/* It reads ?justSaved=1, for the Snap reveal. */}
+      <Suspense fallback={null}>
+        <SavedRecipeView display={display} onToggleFavorite={state.toggleFavorite} />
+      </Suspense>
     </RecipeActionsProvider>
   );
 }
 
-/** Inside the actions, so cook mode's last screen can offer "I cooked this". */
+/**
+ * Inside the actions, so cook mode's last screen can offer "I cooked this". A Snap that just saved the recipe
+ * (`?justSaved=1`) plays the reveal first (PIN-192): the recipe builds itself, a click shows it all, a small card
+ * drops toward the Library, then "Saved to your Library · Remove" comes in.
+ */
 function SavedRecipeView({ display, onToggleFavorite }: { display: RecipeDisplay; onToggleFavorite: () => void }) {
   const { t } = useTranslation();
   const router = useRouter();
   const actions = useRecipeActions();
   const [deleting, setDeleting] = useState(false);
+  const justSaved = useSearchParams().get("justSaved") === "1";
+  const { phase, skip, land } = useSnapRevealPhase(justSaved);
+  const [root, setRoot] = useState<HTMLDivElement | null>(null);
+  // The cover, or the title tile when there is no picture: where the card takes off from.
+  const flightSource = useCallback(
+    () => root?.querySelector<HTMLElement>("[data-recipe-cover], header h1") ?? null,
+    [root],
+  );
 
   async function remove() {
     try {
@@ -80,15 +96,26 @@ function SavedRecipeView({ display, onToggleFavorite }: { display: RecipeDisplay
     <>
       {/* A Snap saved for the cook (`?justSaved=1`): "Saved to your Library", with Remove. */}
       <Suspense fallback={null}>
-        <AutoSavedNotice />
+        <AutoSavedNotice ready={phase === "landed"} arriving={justSaved} />
       </Suspense>
-      <RecipeView
-        display={display}
-        onToggleFavorite={onToggleFavorite}
-        onCooked={actions ? () => actions.markCooked("cook_mode") : undefined}
-        onDelete={() => setDeleting(true)}
-        immersive
-      />
+      <div
+        ref={setRoot}
+        data-snap-reveal={justSaved ? (phase === "playing" ? "playing" : "done") : undefined}
+        onClickCapture={phase === "playing" ? skip : undefined}
+      >
+        <SnapRevealProvider value={phase === "playing"}>
+          <RecipeView
+            display={display}
+            onToggleFavorite={onToggleFavorite}
+            onCooked={actions ? () => actions.markCooked("cook_mode") : undefined}
+            onDelete={() => setDeleting(true)}
+            immersive
+          />
+        </SnapRevealProvider>
+      </div>
+      {phase === "flight" ? (
+        <SavedFlight from={flightSource} imageUrl={display.recipe.image_url ?? null} title={display.title} onLanded={land} />
+      ) : null}
       <ConfirmDialog
         open={deleting}
         onOpenChange={setDeleting}

@@ -2,9 +2,11 @@ import { useFocusEffect, useNavigation } from '@react-navigation/native';
 import { router, useLocalSearchParams } from 'expo-router';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { ActivityIndicator, Alert, View } from 'react-native';
+import Animated, { FadeInDown } from 'react-native-reanimated';
 import { useTranslation } from 'react-i18next';
 
 import { RecipeTranslatingScreen } from '@/components/recipe/RecipeTranslatingScreen';
+import { SavedFlight } from '@/components/recipe/SnapReveal';
 import { RecipeView } from '@/components/RecipeView';
 import { Screen } from '@/components/Screen';
 import { Button } from '@/components/ui/Button';
@@ -15,10 +17,12 @@ import { KitIcon, Radii } from '@/components/ui/tokens';
 import { useAuth } from '@/hooks/useAuth';
 import { useLocalizedRecipe } from '@/hooks/useLocalizedRecipe';
 import { useRecipeRecalc } from '@/hooks/useRecipeRecalc';
+import { useRtl } from '@/hooks/useRtl';
 import { useThemePreference } from '@/hooks/useThemePreference';
 import { announce } from '@/lib/a11y';
 import { backfillRecipeThumbnails } from '@/lib/backfillRecipeThumbnails';
 import { goBackOrHome } from '@/lib/goBackOrHome';
+import { haptics } from '@/lib/haptics';
 import { openRecipeEditor } from '@/lib/openRecipeEditor';
 import { offerRemindersOnce } from '@/lib/pushPrompt';
 import { getGuestRecipeById, setGuestRecipeCooked, updateGuestRecipeContent } from '@/lib/guestRecipes';
@@ -41,6 +45,19 @@ export default function RecipeDetailScreen() {
   const navigation = useNavigation();
   /** Snap saved it for them (no Save tap): say so once, with a way to take it back. */
   const [autoSavedNotice, setAutoSavedNotice] = useState(justSaved === '1');
+  /**
+   * The Snap reveal (PIN-192), first open only: the recipe builds itself, a small card drops toward the Library tab
+   * with the saved haptic, then the "Saved · Remove" strip.
+   */
+  const [savedMoment, setSavedMoment] = useState<'reveal' | 'flight' | 'landed'>(
+    justSaved === '1' ? 'reveal' : 'landed',
+  );
+  const handleRevealed = useCallback(() => setSavedMoment((phase) => (phase === 'reveal' ? 'flight' : phase)), []);
+  const handleLanded = useCallback(() => {
+    haptics.saved();
+    setSavedMoment('landed');
+  }, []);
+  const { rtl } = useRtl();
   /**
    * The Library's "Tonight's pick" sends ?cook=1 (Start cooking) or ?video=1 (play): open it once the recipe shows,
    * then forget it, so coming back to the page or closing cook mode doesn't open it again.
@@ -378,9 +395,12 @@ export default function RecipeDetailScreen() {
         immersive
         autoStart={autoStart}
         onAutoStarted={forgetAutoStart}
+        reveal={justSaved === '1'}
+        onRevealed={handleRevealed}
         topNotice={
-          autoSavedNotice ? (
-            <View
+          autoSavedNotice && savedMoment === 'landed' ? (
+            <Animated.View
+              entering={justSaved === '1' ? FadeInDown.duration(260) : undefined}
               accessibilityLiveRegion="polite"
               style={{
                 flexDirection: 'row',
@@ -413,7 +433,7 @@ export default function RecipeDetailScreen() {
                 trackId="recipe.auto_saved.dismiss"
                 onPress={() => setAutoSavedNotice(false)}
               />
-            </View>
+            </Animated.View>
           ) : null
         }
         recipe={recipe}
@@ -433,6 +453,14 @@ export default function RecipeDetailScreen() {
         }}
         getCachedTranslation={loadCached}
       />
+      {savedMoment === 'flight' ? (
+        <SavedFlight
+          imageUrl={recipe.image_url ?? null}
+          title={displayContent?.title ?? recipe.title}
+          rtl={rtl}
+          onLanded={handleLanded}
+        />
+      ) : null}
     </Screen>
   );
 }

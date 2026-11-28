@@ -73,6 +73,17 @@ vi.mock('@/components/recipe/RecipeNotice', () => ({
   RecipeNotice: (props: Record<string, any>) => props.actions ?? null,
 }));
 vi.mock('@/components/recipe/RecipeStepList', () => ({ RecipeStepList: h.standIn('RecipeStepList') }));
+// The Snap reveal (PIN-192) is off on these pages: its wrappers pass their children through.
+vi.mock('@/components/recipe/SnapReveal', async () => {
+  const { Fragment, createElement } = await import('react');
+  const { View } = await import('react-native');
+  const passThrough = ({ children }: { children?: unknown }) => createElement(Fragment, null, children as never);
+  return {
+    RevealGroup: passThrough,
+    RevealBox: ({ children, style }: { children?: unknown; style?: object }) => createElement(View, { style }, children as never),
+    useSnapReveal: () => ({ progress: null, revealing: false, skip: () => undefined }),
+  };
+});
 vi.mock('@/components/ui/Button', () => ({
   Button: (props: Record<string, any>) => {
     h.buttons[props.trackId] = props.onPress;
