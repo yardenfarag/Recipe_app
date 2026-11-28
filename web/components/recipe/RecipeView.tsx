@@ -6,6 +6,7 @@ import { useTranslation } from "react-i18next";
 
 import { findAvoidMatches } from "@shared/lib/avoidList";
 import { displayStepText } from "@shared/lib/displayStepText";
+import { SNAP_REVEAL } from "@shared/lib/snapReveal";
 import { showToast } from "@shared/lib/toast";
 
 import { CookAlongPlayer } from "@/components/cook/CookAlongPlayer";
@@ -17,6 +18,7 @@ import { RecipeActionsSlot } from "@/components/recipe/RecipeActionsSlot";
 import { RecipeAppliancesSection } from "@/components/recipe/RecipeAppliancesSection";
 import { RecipeHeader } from "@/components/recipe/RecipeHeader";
 import { RecipeNotices, type LanguageToggle } from "@/components/recipe/RecipeNotices";
+import { INGREDIENTS_HEAD, RevealHeadGroup, useRevealAttributes } from "@/components/recipe/SnapReveal";
 import { StepsPanel } from "@/components/recipe/StepsPanel";
 import type { RecipeDisplay } from "@/components/recipe/types";
 import { IconButton } from "@/components/ui/IconButton";
@@ -80,6 +82,7 @@ export function RecipeView({
 }) {
   const { t } = useTranslation();
   const recipeActions = useRecipeActions();
+  const reveal = useRevealAttributes();
   const tabsId = useId();
   // Remembered per recipe; an unsaved recipe has its own id or key, so this works for it too.
   const { servings, setServings } = useServings(display.recipe.id, display.recipe.servings);
@@ -173,6 +176,12 @@ export function RecipeView({
   const hasBoth = display.ingredients.length > 0 && display.instructions.length > 0;
   const ingredientsPanelId = `${tabsId}-ingredients`;
   const stepsPanelId = `${tabsId}-steps`;
+  // The Snap reveal (PIN-192): the panels sit in `lg:contents` wrappers, which have no box to animate, so the
+  // wrapper only carries the timing and the panel inside it moves.
+  const revealChild = (at: readonly [number, number]) => {
+    const attributes = reveal(at);
+    return attributes["data-reveal"] == null ? {} : { "data-reveal-child": "", style: attributes.style };
+  };
 
   return (
     <article className="flex flex-col gap-5 md:gap-6">
@@ -186,6 +195,7 @@ export function RecipeView({
         onDelete={onDelete}
         immersive={immersive}
       />
+      <RevealHeadGroup>
       {/* What the cook must know (allergies first) comes before the tools that change the recipe. */}
       <RecipeNotices display={display} avoid={avoid} languageToggle={languageToggle} />
       {readOnly ? null : <RecipeActionsSlot display={display} servings={choices.servings} />}
@@ -219,6 +229,7 @@ export function RecipeView({
           />
         </div>
       ) : null}
+      </RevealHeadGroup>
 
       <div
         className={cn(
@@ -238,7 +249,7 @@ export function RecipeView({
           />
         ) : null}
         <div className={cn("grid items-start gap-4 lg:grid-cols-[minmax(0,4fr)_minmax(0,7fr)]", playerOpen && "xl:col-start-1 xl:row-start-1 xl:grid-cols-1")}>
-          <div id={ingredientsPanelId} className={cn("min-w-0 lg:contents", hasBoth && tab !== "ingredients" && "max-md:hidden")}>
+          <div id={ingredientsPanelId} {...revealChild(INGREDIENTS_HEAD)} className={cn("min-w-0 lg:contents", hasBoth && tab !== "ingredients" && "max-md:hidden")}>
             <IngredientsPanel
               display={display}
               choices={choices}
@@ -251,7 +262,7 @@ export function RecipeView({
               stepperOnPhone={!hasBoth}
             />
           </div>
-          <div id={stepsPanelId} className={cn("min-w-0 lg:contents", hasBoth && tab !== "steps" && "max-md:hidden")}>
+          <div id={stepsPanelId} {...revealChild(SNAP_REVEAL.rest)} className={cn("min-w-0 lg:contents", hasBoth && tab !== "steps" && "max-md:hidden")}>
             <StepsPanel
               display={display}
               system={system}

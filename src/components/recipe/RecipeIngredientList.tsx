@@ -1,13 +1,16 @@
 import { useTranslation } from 'react-i18next';
 import { View } from 'react-native';
+import type { SharedValue } from 'react-native-reanimated';
 
 import { IngredientAmountText } from '@/components/IngredientAmountText';
+import { RevealView } from '@/components/recipe/SnapReveal';
 import { IconButton } from '@/components/ui/IconButton';
 import { Text } from '@/components/ui/Text';
 import { Tile } from '@/components/ui/Tile';
 import { HAIRLINE, KitIcon } from '@/components/ui/tokens';
 import { useThemePreference } from '@/hooks/useThemePreference';
 import { useTypography } from '@/hooks/useTypography';
+import { ingredientRevealWindow } from '@shared/lib/snapReveal';
 
 export type IngredientRowData = {
   key: string;
@@ -31,6 +34,7 @@ export function RecipeIngredientList({
   rowDirection,
   onSwap,
   updatingLabel,
+  reveal = null,
 }: {
   rows: IngredientRowData[];
   direction: 'ltr' | 'rtl';
@@ -39,6 +43,8 @@ export function RecipeIngredientList({
   /** Opens Swap for the row at this index; left out where the recipe can't be changed. */
   onSwap?: (index: number) => void;
   updatingLabel: string;
+  /** The Snap reveal's progress (PIN-192): the rows then appear one after another. */
+  reveal?: SharedValue<number> | null;
 }) {
   const { t } = useTranslation();
   const { colors } = useThemePreference();
@@ -52,19 +58,17 @@ export function RecipeIngredientList({
         const spoken = row.avoid
           ? `${row.name}, ${row.amount}, ${t(row.avoid === 'allergy' ? 'avoid.ingredientAllergy' : 'avoid.ingredientDislike')}`
           : `${row.name}, ${row.amount}`;
-        return (
-          <View
-            key={row.key}
-            style={{
-              flexDirection: rowDirection,
-              alignItems: 'center',
-              gap: 10,
-              minHeight: 52,
-              paddingVertical: 8,
-              borderBottomWidth: index < rows.length - 1 ? HAIRLINE : 0,
-              borderBottomColor: colors.border,
-            }}
-          >
+        const rowStyle = {
+          flexDirection: rowDirection,
+          alignItems: 'center',
+          gap: 10,
+          minHeight: 52,
+          paddingVertical: 8,
+          borderBottomWidth: index < rows.length - 1 ? HAIRLINE : 0,
+          borderBottomColor: colors.border,
+        } as const;
+        const content = (
+          <>
             {row.avoid ? (
               <KitIcon
                 icon={row.avoid === 'allergy' ? 'alert-circle' : 'remove-circle-outline'}
@@ -111,7 +115,20 @@ export function RecipeIngredientList({
                 style={{ marginVertical: -4 }}
               />
             ) : null}
-          </View>
+          </>
+        );
+        if (!reveal) {
+          return (
+            <View key={row.key} style={rowStyle}>
+              {content}
+            </View>
+          );
+        }
+        const [revealStart, revealEnd] = ingredientRevealWindow(index, rows.length);
+        return (
+          <RevealView key={row.key} progress={reveal} start={revealStart} end={revealEnd} rise={8} style={rowStyle}>
+            {content}
+          </RevealView>
         );
       })}
     </Tile>

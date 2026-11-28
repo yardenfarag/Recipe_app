@@ -31,10 +31,12 @@ import {
   type HeroCookAlong,
 } from '@/components/recipe/RecipeHero';
 import { RecipeIngredientList } from '@/components/recipe/RecipeIngredientList';
+import { RevealBox, RevealGroup, useSnapReveal } from '@/components/recipe/SnapReveal';
 import { RecipeMoreMenu, type RecipeMenuItem } from '@/components/recipe/RecipeMoreMenu';
 import { RecipeNotice } from '@/components/recipe/RecipeNotice';
 import { RecipeStepList } from '@/components/recipe/RecipeStepList';
 import { Button } from '@/components/ui/Button';
+import { Pressable } from '@/components/ui/Pressable';
 import { Chip } from '@/components/ui/Chip';
 import { IconButton } from '@/components/ui/IconButton';
 import { SegmentedControl } from '@/components/ui/SegmentedControl';
@@ -58,6 +60,7 @@ import { announce } from '@/lib/a11y';
 import { goBackOrHome } from '@/lib/goBackOrHome';
 import { haptics } from '@/lib/haptics';
 import { captureRecipeCooked, type RecipeCookedFrom } from '@/lib/analytics';
+import { SNAP_REVEAL } from '@shared/lib/snapReveal';
 import { allergyInstruction, findAvoidMatches, hasAllergies, makeWithoutInstruction } from '@shared/lib/avoidList';
 import { setGuestRecipeTags } from '@/lib/guestRecipes';
 import { displayStepText } from '@shared/lib/displayStepText';
@@ -204,11 +207,20 @@ interface RecipeViewProps {
   autoStart?: 'cook' | 'video' | null;
   /** Called once the auto start has been handled, so the screen can forget it. */
   onAutoStarted?: () => void;
+  /**
+   * Build the recipe on screen (PIN-192): a Snap just saved it and this is its first open. Title, cover, ingredients
+   * one by one, then the rest; a tap shows it all. Reduced motion or a screen reader: all at once.
+   */
+  reveal?: boolean;
+  /** The reveal has finished, or was skipped. */
+  onRevealed?: () => void;
 }
 
 /** Stack header on web — used so the side cook-along can fill the remaining viewport. */
 const WEB_RECIPE_HEADER = 64;
 const NO_FIELDS: readonly RecalcField[] = [];
+/** The reveal: notices, tools and the ingredients heading come in just before the first ingredient. */
+const INGREDIENTS_HEAD = [SNAP_REVEAL.ingredientsFrom - 50, SNAP_REVEAL.ingredientsFrom + 200] as const;
 
 /**
  * Full recipe display in the Night Market look (PIN-177): the photo with the page's buttons on it, a details tile
@@ -242,6 +254,8 @@ export function RecipeView({
   onDiscard,
   autoStart = null,
   onAutoStarted,
+  reveal = false,
+  onRevealed,
 }: RecipeViewProps) {
   const { t } = useTranslation();
   const { user } = useAuth();
@@ -252,6 +266,7 @@ export function RecipeView({
   const insets = useSafeAreaInsets();
   const [photoFailed, setPhotoFailed] = useState(false);
   const [pastPhoto, setPastPhoto] = useState(false);
+  const { progress: revealProgress, revealing, skip: skipReveal } = useSnapReveal(reveal, onRevealed);
   const [moreOpen, setMoreOpen] = useState(false);
   const [tab, setTab] = useState<RecipeTab>('ingredients');
   const [barHeight, setBarHeight] = useState(0);
@@ -1178,7 +1193,7 @@ export function RecipeView({
       : null;
 
   const ingredientsSection = showIngredients ? (
-    <View style={{ gap: 12, minWidth: 0, flex: splitRecipeBody ? 1 : undefined }}>
+    <RevealBox progress={revealProgress} at={INGREDIENTS_HEAD} style={{ gap: 12, minWidth: 0, flex: splitRecipeBody ? 1 : undefined }}>
       {!useTabs ? (
         <SectionHeading
           title={t('recipe.ingredients')}
@@ -1246,6 +1261,7 @@ export function RecipeView({
         rowDirection={recipeRowDirection}
         onSwap={allowAdaptations ? (index) => setSwapIndex(index) : undefined}
         updatingLabel={updatingLabel}
+        reveal={revealProgress}
       />
       {hasUnknownAmounts && recipeHasSource(recipe) ? (
         <Text variant="caption" tone="muted">
@@ -1263,14 +1279,14 @@ export function RecipeView({
           {t('addToList.title')}
         </Button>
       ) : null}
-    </View>
+    </RevealBox>
   ) : null;
 
   const stepCount = t('recipe.stepCount', {
     count: baseInstructions.length,
   });
   const stepsSection = showSteps ? (
-    <View style={{ gap: 12, minWidth: 0, flex: splitRecipeBody ? 1.2 : undefined }}>
+    <RevealBox progress={revealProgress} at={SNAP_REVEAL.rest} style={{ gap: 12, minWidth: 0, flex: splitRecipeBody ? 1.2 : undefined }}>
       {!useTabs ? (
         <SectionHeading title={t('recipe.instructions')} count={stepCount} />
       ) : (
@@ -1289,7 +1305,7 @@ export function RecipeView({
         rowDirection={recipeRowDirection}
         onJump={hasVideo ? (seconds) => void handleStepTimestamp(seconds) : undefined}
       />
-    </View>
+    </RevealBox>
   ) : null;
 
   return (
@@ -1320,7 +1336,11 @@ export function RecipeView({
             paddingBottom: 24 + (sideCookAlong ? 0 : cookAlongSheetHeight) + (showBar ? barHeight : 0),
           }}
         >
-          {immersive ? hero : null}
+          {immersive ? (
+            <RevealGroup progress={revealProgress} at={SNAP_REVEAL.cover} rise={0}>
+              {hero}
+            </RevealGroup>
+          ) : null}
           <View
             style={[
               { paddingHorizontal: 16, paddingTop: overPhoto ? 20 : 16 },
@@ -1335,14 +1355,21 @@ export function RecipeView({
             ]}
           >
             <View style={[{ gap: 16 }, contentWidth]}>
-              {!immersive ? hero : null}
+              {!immersive ? (
+                <RevealGroup progress={revealProgress} at={SNAP_REVEAL.cover} rise={0}>
+                  {hero}
+                </RevealGroup>
+              ) : null}
               {topNotice}
 
               <Tile padding={20} style={{ gap: 14 }}>
-                {badge ? <TileBadge>{badge}</TileBadge> : null}
-                <Text variant="h1" style={titleStyle}>
-                  {title}
-                </Text>
+                <RevealGroup progress={revealProgress} at={SNAP_REVEAL.title} style={{ gap: 14 }}>
+                  {badge ? <TileBadge>{badge}</TileBadge> : null}
+                  <Text variant="h1" style={titleStyle}>
+                    {title}
+                  </Text>
+                </RevealGroup>
+                <RevealGroup progress={revealProgress} at={SNAP_REVEAL.rest} style={{ gap: 14 }}>
                 <View style={{ flexDirection: 'row', gap: 6 }}>{facts}</View>
                 {showNutritionPanel ? (
                   <RecipeNutritionPanel calories={calorieDisplay.perServing} nutrition={nutritionDisplay.perServing} />
@@ -1491,8 +1518,10 @@ export function RecipeView({
                     ) : null}
                   </View>
                 ) : null}
+                </RevealGroup>
               </Tile>
 
+              <RevealGroup progress={revealProgress} at={INGREDIENTS_HEAD} style={{ gap: 16 }}>
               {translating ? (
                 <RecipeNotice icon="language-outline" title={t('recipe.translating')} accessibilityLiveRegion="polite" />
               ) : null}
@@ -1751,6 +1780,7 @@ export function RecipeView({
                   ]}
                 />
               ) : null}
+              </RevealGroup>
 
               {splitRecipeBody ? (
                 <View style={{ flexDirection: 'row', alignItems: 'flex-start', gap: 24 }}>
@@ -1764,7 +1794,9 @@ export function RecipeView({
                 </>
               )}
 
-              {footer}
+              <RevealGroup progress={revealProgress} at={SNAP_REVEAL.rest} style={{ gap: 16 }}>
+                {footer}
+              </RevealGroup>
             </View>
           </View>
         </ScrollView>
@@ -2055,6 +2087,16 @@ export function RecipeView({
             setCookNote(note);
             onCookedChange({ last_cooked_at: at, cook_note: note });
           }}
+        />
+      ) : null}
+      {revealing ? (
+        // While the recipe builds itself, a tap anywhere shows all of it.
+        <Pressable
+          trackId="recipe.reveal.skip"
+          onPress={skipReveal}
+          accessibilityRole="button"
+          accessibilityLabel={t('recipe.revealSkip')}
+          style={{ position: 'absolute', top: 0, start: 0, end: 0, bottom: 0, zIndex: 40 }}
         />
       ) : null}
     </View>

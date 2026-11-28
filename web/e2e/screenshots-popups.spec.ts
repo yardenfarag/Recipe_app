@@ -127,6 +127,8 @@ test("recipe notices, auto-saved strip, remove and repair dialogs, error toast",
         stubFunctions(p, { "repair-recipe": repairHandler({ ...SATAY, extraction_status: "full" }, "Added the missing steps: cook the noodles, then toss them in the sauce.") }),
       );
       await go(page, `/app/recipe/${satay}?justSaved=1`);
+      // The Snap reveal (PIN-192) plays first; the strip comes in once the card has landed.
+      await page.locator('[data-track="recipe.auto_saved.remove"]').filter({ visible: true }).first().waitFor();
       await page.screenshot({ path: name("recipe-notices", viewport, prefs), fullPage: true });
 
       await click(page, "recipe.auto_saved.remove");

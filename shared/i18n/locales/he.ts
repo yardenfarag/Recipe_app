@@ -479,6 +479,7 @@ export default {
   "recipe": {
     "autoSaved": "נשמר במתכונים שלכם",
     "autoSavedRemove": "הסרה",
+    "revealSkip": "הצגת המתכון כולו",
     "autoSavedRemoved": "הוסר מהמתכונים שלכם",
     "autoSavedRemoveFailed": "לא הצלחנו להסיר. נסו שוב.",
     "autoSavedRemoveTitle": "להסיר את המתכון?",
